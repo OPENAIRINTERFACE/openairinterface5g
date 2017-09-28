@@ -813,7 +813,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 #endif
     { // This is normal LTE case
       if ((RA_template->Msg4_frame == frameP) && (RA_template->Msg4_subframe == subframeP)) {	      
-	LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
+	LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
 	      module_idP, CC_idP, frameP, subframeP,RA_template->rnti);
 	
 	/// Choose first 4 RBs for Msg4, should really check that these are free!
@@ -868,9 +868,15 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	  
 	  RA_template->generate_Msg4=0;
 	  RA_template->wait_ack_Msg4=1;
-	  RA_template->Msg4_frame++;
+	  
+	  // increment Absolute subframe by 8 for Msg4 retransmission
+	  LOG_I(MAC,"Frame %d, Subframe %d: Preparing for Msg4 retransmission currently %d.%d\n",
+		frameP,subframeP,RA_template->Msg4_frame,RA_template->Msg4_subframe);
+	  if (RA_template->Msg4_subframe > 1) RA_template->Msg4_frame++;
 	  RA_template->Msg4_frame&=1023;
-
+	  RA_template->Msg4_subframe = (RA_template->Msg4_subframe+8)%10;
+	  LOG_I(MAC,"Frame %d, Subframe %d: Msg4 retransmission in %d.%d\n",
+		frameP,subframeP,RA_template->Msg4_frame,RA_template->Msg4_subframe);
 	  lcid=0;
 	  
 	  // put HARQ process round to 0
@@ -1091,8 +1097,6 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 	  }
 	  else
 	    LOG_D(MAC,"msg4 retransmission for rnti %x (round %d) fsf %d/%d CCE allocation failed!\n", RA_template->rnti, round, frameP, subframeP);
-	  LOG_W(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Msg4 not acknowledged, adding ue specific dci (rnti %x) for RA (Msg4 Retransmission round %d)\n",
-		module_idP,CC_idP,frameP,subframeP,RA_template->rnti,round);
 	  
 	  
 	  // Program PUCCH1a for ACK/NAK
@@ -1104,8 +1108,13 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 				dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
 	  
 	  // prepare frame for retransmission
-	  RA_template->Msg4_frame++;
+	  if (RA_template->Msg4_subframe>1) RA_template->Msg4_frame++;
 	  RA_template->Msg4_frame&=1023;
+	  RA_template->Msg4_subframe=(RA_template->Msg4_subframe+8)%10;
+
+	  LOG_W(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Msg4 not acknowledged, adding ue specific dci (rnti %x) for RA (Msg4 Retransmission round %d in %d.%d)\n",
+		module_idP,CC_idP,frameP,subframeP,RA_template->rnti,round,RA_template->Msg4_frame,RA_template->Msg4_subframe);
+
 	} // Msg4 frame/subframe
       } // regular LTE case
   } else {

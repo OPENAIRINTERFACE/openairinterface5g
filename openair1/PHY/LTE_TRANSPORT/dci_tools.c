@@ -881,7 +881,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   dci_alloc->harq_pid = rel8->harq_process;
   dci_alloc->ra_flag  = 0;
 
-  LOG_D(PHY,"NFAPI: DCI format %d, nCCE %d, L %d, rnti %x,harq_pid %d\n",
+  LOG_I(PHY,"NFAPI: DCI format %d, nCCE %d, L %d, rnti %x,harq_pid %d\n",
 	rel8->dci_format,rel8->cce_idx,rel8->aggregation_level,rel8->rnti,rel8->harq_process);
   if ((rel8->rnti_type == 2 ) && (rel8->rnti != SI_RNTI) && (rel8->rnti != P_RNTI)) dci_alloc->ra_flag = 1;
 
@@ -906,13 +906,18 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
     dlsch0->harq_mask                         |= (1<<rel8->harq_process);
     dlsch0_harq->round=0;
   }
-  
+  dlsch0_harq->ndi = rel8->new_data_indicator_1;
+
+  LOG_I(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) \n",rel8->harq_process,dlsch0->harq_mask,dlsch0_harq->round,
+	dlsch0_harq->ndi,rel8->new_data_indicator_1);
+
   switch (rel8->dci_format) {
 
   case NFAPI_DL_DCI_FORMAT_1A:
     dci_alloc->format     = format1A;
-    dlsch0->active       = 1;
-
+    dlsch0->active        = 1;
+    if (rel8->rnti == SI_RNTI)
+      dlsch0_harq->round    = 0;
 
     switch (fp->N_RB_DL) {
     case 6:
@@ -2257,6 +2262,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
 
   uint32_t ndi     = pdu->dci_pdu_rel8.new_data_indication_1;
 
+#ifdef T_TRACER
   T(T_ENB_PHY_ULSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx),
     T_INT(pdu->dci_pdu_rel8.rnti), T_INT(((proc->frame_tx*10+proc->subframe_tx+4) % 8) /* TODO: correct harq pid */),
     T_INT(mcs), T_INT(-1 /* TODO: remove round? */),
@@ -2265,6 +2271,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
     T_INT(-1 /* TODO: get TBS */),
     T_INT(pdu->dci_pdu_rel8.aggregation_level),
     T_INT(pdu->dci_pdu_rel8.cce_index));
+#endif
 
   void *dci_pdu = (void*)dci_alloc->dci_pdu;
 
