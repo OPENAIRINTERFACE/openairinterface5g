@@ -596,7 +596,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
       average_rbs_per_user[CC_id]=0;
 
 
-      if(round>0) {
+      if(round != 8) {
         nb_rbs_required[CC_id][UE_id] = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
       }
 
