@@ -51,28 +51,7 @@
 #define ENB_CONF_STRING_OTG_APP_TYPE                       "app_type"
 #define ENB_CONF_STRING_OTG_BG_TRAFFIC                     "bg_traffic"
 
-// per eNB configuration
-#define ENB_CONFIG_STRING_LOG_CONFIG                       "log_config"
-#define ENB_CONFIG_STRING_GLOBAL_LOG_LEVEL                 "global_log_level"
-#define ENB_CONFIG_STRING_GLOBAL_LOG_VERBOSITY             "global_log_verbosity"
-#define ENB_CONFIG_STRING_HW_LOG_LEVEL                     "hw_log_level"
-#define ENB_CONFIG_STRING_HW_LOG_VERBOSITY                 "hw_log_verbosity"
-#define ENB_CONFIG_STRING_PHY_LOG_LEVEL                    "phy_log_level"
-#define ENB_CONFIG_STRING_PHY_LOG_VERBOSITY                "phy_log_verbosity"
-#define ENB_CONFIG_STRING_MAC_LOG_LEVEL                    "mac_log_level"
-#define ENB_CONFIG_STRING_MAC_LOG_VERBOSITY                "mac_log_verbosity"
-#define ENB_CONFIG_STRING_RLC_LOG_LEVEL                    "rlc_log_level"
-#define ENB_CONFIG_STRING_RLC_LOG_VERBOSITY                "rlc_log_verbosity"
-#define ENB_CONFIG_STRING_PDCP_LOG_LEVEL                   "pdcp_log_level"
-#define ENB_CONFIG_STRING_PDCP_LOG_VERBOSITY               "pdcp_log_verbosity"
-#define ENB_CONFIG_STRING_RRC_LOG_LEVEL                    "rrc_log_level"
-#define ENB_CONFIG_STRING_RRC_LOG_VERBOSITY                "rrc_log_verbosity"
-#define ENB_CONFIG_STRING_GTPU_LOG_LEVEL                   "gtpu_log_level"
-#define ENB_CONFIG_STRING_GTPU_LOG_VERBOSITY               "gtpu_log_verbosity"
-#define ENB_CONFIG_STRING_UDP_LOG_LEVEL                    "udp_log_level"
-#define ENB_CONFIG_STRING_UDP_LOG_VERBOSITY                "udp_log_verbosity"
-#define ENB_CONFIG_STRING_OSA_LOG_LEVEL                    "osa_log_level"
-#define ENB_CONFIG_STRING_OSA_LOG_VERBOSITY                "osa_log_verbosity"
+
 
 
 

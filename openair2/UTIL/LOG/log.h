@@ -268,8 +268,9 @@ int  set_comp_log(int component, int level, int verbosity, int interval);
 int  set_log(int component, int level, int interval);
 void set_glog(int level, int verbosity);
 void set_log_syslog(int enable);
-void set_log_onlinelog(int enable);
-void set_log_filelog(int enable);
+void set_glog_onlinelog(int enable);
+void set_glog_filelog(int enable);
+
 void set_component_filelog(int comp);
 int  map_str_to_int(mapping *map, const char *str);
 char *map_int_to_str(mapping *map, int val);
@@ -297,7 +298,28 @@ void *log_thread_function(void * list);
 #endif
 /* @}*/
 
+/*----------------macro definitions for reading log configuration from the config module */
+#define CONFIG_STRING_LOG_PREFIX                           "log_config"
 
+#define LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL                 "global_log_level"
+#define LOG_CONFIG_STRING_GLOBAL_LOG_VERBOSITY             "global_log_verbosity"
+#define LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE                "global_log_online"
+#define LOG_CONFIG_STRING_GLOBAL_LOG_INFILE                "global_log_infile"
+
+#define LOG_CONFIG_LEVEL_FORMAT                            "%s_log_level"
+#define LOG_CONFIG_VERBOSITY_FORMAT                        "%s_log_verbosity"
+#define LOG_CONFIG_LOGFILE_FORMAT                          "%s_log_infile"
+/*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                       LOG globalconfiguration parameters										        */
+/*   optname                              helpstr   paramflags    XXXptr	             defXXXval				      type	     numelt	*/
+/*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define LOG_GLOBALPARAMS_DESC { \
+{LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    NULL,	    0,  	 strptr:(char **)&gloglevel, defstrval:log_level_names[2].name,       TYPE_STRING,  sizeof(gloglevel)}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_VERBOSITY,NULL,	    0,  	 strptr:(char **)&glogverbo, defstrval:log_verbosity_names[2].name,   TYPE_STRING,  sizeof(glogverbo)}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   NULL,	    0,  	 iptr:&(g_log->onlinelog),   defintval:1,                             TYPE_INT,      0,              }, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_INFILE,   NULL,	    0,  	 iptr:&(g_log->filelog),     defintval:0,                             TYPE_INT,      0,              }, \
+}
+/*----------------------------------------------------------------------------------*/
 /** @defgroup _debugging debugging macros
  *  @ingroup _macro
  *  @brief Macro used to call logIt function with different message levels

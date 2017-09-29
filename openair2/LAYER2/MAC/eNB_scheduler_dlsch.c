@@ -1276,7 +1276,7 @@ schedule_ue_spec(
 							  (frameP*10)+subframeP,
 							  TBS,
 							  &eNB->pdu_index[CC_id],
-							  eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char)UE_id].payload[harq_pid]);
+							  eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char)UE_id].payload[0]);
 	    
 	    LOG_D(MAC,"Filled NFAPI configuration for DCI/DLSCH/TXREQ %d, new SDU\n",eNB->pdu_index[CC_id]);
 

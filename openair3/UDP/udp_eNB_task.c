@@ -99,7 +99,7 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP);
 
 void *udp_eNB_task(void *args_p);
 
-int udp_enb_init();
+int udp_enb_init(void);
 /* @brief Retrieve the descriptor associated with the task_id
  */
 static

@@ -2439,7 +2439,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       *payload = (stat_re<0) ? 1 : 2; // 1 == ACK, 2 == NAK
 
       if (fmt==pucch_format1b)
-        *(1+payload) = (stat_im<0) ? 1 : 0;
+        *(1+payload) = (stat_im<0) ? 1 : 2;
     } else { // insufficient energy on PUCCH so NAK
       LOG_D(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
       *payload = 4;  // DTX
@@ -2448,7 +2448,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       eNB->pucch1ab_stats_cnt[UE_id][subframe] = (eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
 
       if (fmt==pucch_format1b)
-        *(1+payload) = 6;
+        *(1+payload) = 4;
     }
   } else {
     LOG_E(PHY,"[eNB] PUCCH fmt2/2a/2b not supported\n");
