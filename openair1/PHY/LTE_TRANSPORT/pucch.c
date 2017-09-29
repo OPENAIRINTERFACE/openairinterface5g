@@ -1175,10 +1175,10 @@ uint16_t pucchfmt3_subCarrierDeMapping( PHY_VARS_eNB *eNB,
                 if (carrier_offset==frame_parms->ofdm_symbol_size)
                     carrier_offset = 0;
                 
-                #ifdef DEBUG_PUCCH_RX
+		/*                #ifdef DEBUG_PUCCH_RX
                     LOG_D(PHY,"[eNB] PUCCH subframe %d (%d,%d,%d,%d) : (%d,%d)\n",subframe,l,k,carrier_offset,m,
                     SubCarrierDeMapData[aa][l][k][0],SubCarrierDeMapData[aa][l][k][1]);
-                #endif
+		    #endif*/
             }
         }
     }
@@ -1810,9 +1810,13 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   int16_t tmp_re,tmp_im,W_re=0,W_im=0;
   int16_t *rxptr;
   uint32_t symbol_offset;
-  int16_t stat_ref_re,stat_ref_im,*cfo,chest_re,chest_im;
+  int16_t stat_ref_re,stat_ref_im,*cfo;
+  int16_t chest0_re[NB_ANTENNAS_RX][12],chest0_im[NB_ANTENNAS_RX][12];
+  int16_t chest1_re[NB_ANTENNAS_RX][12],chest1_im[NB_ANTENNAS_RX][12];
+  int32_t chest_mag;
   int32_t stat_re=0,stat_im=0;
   uint32_t stat,stat_max=0;
+  uint8_t log2_maxh;
 
   uint8_t deltaPUCCH_Shift          = frame_parms->pucch_config_common.deltaPUCCH_Shift;
   uint8_t NRB2                      = frame_parms->pucch_config_common.nRB_CQI;
@@ -2194,6 +2198,10 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
       for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
         for (re=0; re<12; re++) {
+
+	  // compute received energy first slot, seperately for data and reference
+	  // by coherent combining across symbols but not resource elements
+	  // Note: assumption is that channel is stationary over symbols in slot after CFO
           stat_re=0;
           stat_im=0;
           stat_ref_re=0;
@@ -2219,9 +2227,15 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
                   stat_re,stat_im);
 #endif
           }
+	  // this is total energy received, summed over data and reference
+	  stat += ((((stat_re*stat_re)) + ((stat_im*stat_im)) +
+		    ((stat_ref_re*stat_ref_re)) + ((stat_ref_im*stat_ref_im)))/nsymb);
 
-
-
+	  // now second slot
+	  stat_re=0;
+	  stat_im=0;
+          stat_ref_re=0;
+          stat_ref_im=0;
 
           for (l2=0,l=(nsymb>>1); l<(nsymb-1); l++,l2++) {
             if ((l2<2) || ((l2>(nsymb>>1) - 3)) ) {  // data symbols
@@ -2284,101 +2298,121 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     // Do detection now
     if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {//
 
-
       *Po_PUCCH = ((*Po_PUCCH*1023) + stat_max)>>10;
 
       chL = (nsymb>>1)-4;
+      chest_mag=0;
+      cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase_max] : &cfo_pucch_ep[12*phase_max];
 
       for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+	// channel estimates first
         for (re=0; re<12; re++) {
-          chest_re=0;
-          chest_im=0;
-          cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase_max] : &cfo_pucch_ep[12*phase_max];
 
           // channel estimate for first slot
+          chest0_re[aa][re]=0;
+          chest0_im[aa][re]=0;
+	  for (l=2; l<(nsymb>>1)-2; l++) {
+	    off=(re<<1) + (24*l);
+	    chest0_re[aa][re] += (((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15))/chL;
+	    chest0_im[aa][re] += (((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15))/chL;
+	  }	    
+	  
+
+          // channel estimate for second slot
+	  chest1_re[aa][re]=0;
+	  chest1_im[aa][re]=0;
           for (l=2; l<(nsymb>>1)-2; l++) {
-            off=(re<<1) + (24*l);
-            chest_re += (((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15))/chL;
-	    chest_im += (((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15))/chL;
+            off=(re<<1) + (24*l) + (nsymb>>1)*24;
+            chest1_re[aa][re] += (((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15))/chL;
+	    chest1_im[aa][re] += (((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15))/chL;
           }
+	  chest_mag = max(chest_mag,(chest0_re[aa][re]*chest0_re[aa][re]) + (chest0_im[aa][re]*chest0_im[aa][re]));
+	  chest_mag = max(chest_mag,(chest1_re[aa][re]*chest1_re[aa][re]) + (chest1_im[aa][re]*chest1_im[aa][re]));
+
+	}
+      }
+      log2_maxh = log2_approx(chest_mag)/2;
+#ifdef DEBUG_PUCCH_RX
+      printf("PUCCH 1A: log2_maxh %d\n",log2_maxh);
+#endif
+	// now do channel matched filter
+      for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+	for (re=0; re<12; re++) {
 
 #ifdef DEBUG_PUCCH_RX
-          printf("[eNB] PUCCH subframe %d l %d re %d chest1 => (%d,%d)\n",subframe,l,re,
-                chest_re,chest_im);
+          printf("[eNB] PUCCH subframe %d chest0[%d][%d] => (%d,%d)\n",subframe,aa,re,
+                chest0_re[aa][re],chest0_im[aa][re]);
 #endif
-
+	  // first slot, left of RS    
           for (l=0; l<2; l++) {
             off=(re<<1) + (24*l);
             tmp_re = ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
             tmp_im = ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
-            stat_re += (((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15))/4;
-            stat_im += (((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15))/4;
+            stat_re += (((tmp_re*chest0_re[aa][re])>>log2_maxh) + ((tmp_im*chest0_im[aa][re])>>log2_maxh));
+            stat_im += (((tmp_re*chest0_im[aa][re])>>log2_maxh) - ((tmp_im*chest0_re[aa][re])>>log2_maxh));
             off+=2;
 #ifdef DEBUG_PUCCH_RX
-            printf("[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
-                  rxcomp[aa][off],rxcomp[aa][1+off],
-                  cfo[l<<1],cfo[1+(l<<1)],
-                  stat_re,stat_im);
+            printf("[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d) => (%d,%d)\n",subframe,l,re,
+		   rxcomp[aa][off],rxcomp[aa][1+off],
+		   cfo[l<<1],cfo[1+(l<<1)],
+		   tmp_re,tmp_im,
+		   stat_re,stat_im);
 #endif
-          }
-
+	  }
+	  // first slot, right of RS
           for (l=(nsymb>>1)-2; l<(nsymb>>1); l++) {
             off=(re<<1) + (24*l);
             tmp_re = ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
             tmp_im = ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
-            stat_re += (((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15))/4;
-            stat_im += (((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15))/4;
+            stat_re += (((tmp_re*chest0_re[aa][re])>>log2_maxh) + ((tmp_im*chest0_im[aa][re])>>log2_maxh));
+            stat_im += (((tmp_re*chest0_im[aa][re])>>log2_maxh) - ((tmp_im*chest0_re[aa][re])>>log2_maxh));
             off+=2;
 #ifdef DEBUG_PUCCH_RX
-            printf("[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
-                  rxcomp[aa][off],rxcomp[aa][1+off],
-                  cfo[l<<1],cfo[1+(l<<1)],
-                  stat_re,stat_im);
+            printf("[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d) => (%d,%d)\n",subframe,l,re,
+		   rxcomp[aa][off],rxcomp[aa][1+off],
+		   cfo[l<<1],cfo[1+(l<<1)],
+		   tmp_re,tmp_im,
+		   stat_re,stat_im);
 #endif
-          }
-
-          chest_re=0;
-          chest_im=0;
-
-          // channel estimate for second slot
-          for (l=2; l<(nsymb>>1)-2; l++) {
-            off=(re<<1) + (24*l) + (nsymb>>1)*24;
-            chest_re += (((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15))/chL;
-	    chest_im += (((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15))/chL;
-          }
+	  }
+	  
+      
 
 #ifdef DEBUG_PUCCH_RX
-          printf("[eNB] PUCCH subframe %d l %d re %d chest2 => (%d,%d)\n",subframe,l,re,
-                chest_re,chest_im);
+          printf("[eNB] PUCCH subframe %d chest1[%d][%d] => (%d,%d)\n",subframe,aa,re,
+                chest0_re[aa][re],chest0_im[aa][re]);
 #endif
-
+	  // second slot, left of RS    	  
           for (l=0; l<2; l++) {
-            off=(re<<1) + (24*l) + (nsymb>>1)*24;
-            tmp_re = ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
-            tmp_im = ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
-            stat_re += (((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15))/4;
-            stat_im += (((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15))/4;
+	    off=(re<<1) + (24*l) + (nsymb>>1)*24;
+	    tmp_re = ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
+	    tmp_im = ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
+	    stat_re += (((tmp_re*chest1_re[aa][re])>>log2_maxh) + ((tmp_im*chest1_im[aa][re])>>log2_maxh));
+            stat_im += (((tmp_re*chest1_im[aa][re])>>log2_maxh) - ((tmp_im*chest1_re[aa][re])>>log2_maxh));
             off+=2;
 #ifdef DEBUG_PUCCH_RX
-            printf("[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
-                  rxcomp[aa][off],rxcomp[aa][1+off],
-                  cfo[l<<1],cfo[1+(l<<1)],
-                  stat_re,stat_im);
+            printf("[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d) => (%d,%d)\n",subframe,l,re,
+		   rxcomp[aa][off],rxcomp[aa][1+off],
+		   cfo[l<<1],cfo[1+(l<<1)],
+		   tmp_re,tmp_im,
+		   stat_re,stat_im);
 #endif
           }
 
+	  // second slot, right of RS    	  
           for (l=(nsymb>>1)-2; l<(nsymb>>1)-1; l++) {
             off=(re<<1) + (24*l) + (nsymb>>1)*24;
             tmp_re = ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
             tmp_im = ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
-            stat_re += (((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15))/4;
-            stat_im += (((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15))/4;
+            stat_re += (((tmp_re*chest1_re[aa][re])>>log2_maxh) + ((tmp_im*chest1_im[aa][re])>>log2_maxh));
+            stat_im += (((tmp_re*chest1_im[aa][re])>>log2_maxh) - ((tmp_im*chest1_re[aa][re])>>log2_maxh));
             off+=2;
 #ifdef DEBUG_PUCCH_RX
-            printf("[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
-                  rxcomp[aa][off],rxcomp[aa][1+off],
-                  cfo[l<<1],cfo[1+(l<<1)],
-                  stat_re,stat_im);
+            printf("[PHY][eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d) => (%d,%d)\n",subframe,l,re,
+		   rxcomp[aa][off],rxcomp[aa][1+off],
+		   cfo[l<<1],cfo[1+(l<<1)],
+		   tmp_re,tmp_im,
+		   stat_re,stat_im);
 #endif
           }
 
@@ -2392,7 +2426,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
       LOG_I(PHY,"PUCCH 1a/b: subframe %d : stat %d,%d (pos %d)\n",subframe,stat_re,stat_im,
 	    (subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe]));
-      
+      LOG_I(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);      
       
       eNB->pucch1ab_stats[UE_id][(subframe<<11) + 2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_re);
       eNB->pucch1ab_stats[UE_id][(subframe<<11) + 1+2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_im);

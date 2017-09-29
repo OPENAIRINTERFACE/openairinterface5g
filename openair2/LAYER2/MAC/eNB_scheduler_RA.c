@@ -1118,7 +1118,7 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 	} // Msg4 frame/subframe
       } // regular LTE case
   } else {
-    LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",module_idP,CC_idP,frameP,subframeP);
+    LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",module_idP,CC_idP,frameP,subframeP);
     RA_template->wait_ack_Msg4=0;
     RA_template->RA_active=FALSE;
     UE_id = find_UE_id(module_idP,RA_template->rnti);
