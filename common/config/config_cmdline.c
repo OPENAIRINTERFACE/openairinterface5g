@@ -37,24 +37,16 @@
 
 int processoption(paramdef_t *cfgoptions, char *value)
 {
-int argok=1;
 char *tmpval = value;
-int optisset;
+int optisset=0;
 char defbool[2]="1";
-     if (value == NULL) {
-     	 argok=0; 
-     } else if ( value[0] == '-') {
-     	 argok = 0;
-     }
-     if ((cfgoptions->paramflags &PARAMFLAG_BOOL) == 0) { /* not a boolean, argument required */
-	if (argok == 0) {
+
+     if ( ((cfgoptions->paramflags &PARAMFLAG_BOOL) == 0) && value == NULL ) { /* not a boolean, argument required */
 	    fprintf(stderr,"[CONFIG] command line, option %s requires an argument\n",cfgoptions->optname);
 	    return 0;
-	} 
-     } else {        /* boolean value */
-         tmpval = defbool;
+     } else {        /* boolean value option without argument, set value to true*/
+            tmpval = defbool;
      }
-     
      switch(cfgoptions->type)
        {
        	case TYPE_STRING:
@@ -107,7 +99,7 @@ char defbool[2]="1";
           cfgoptions->paramflags = cfgoptions->paramflags |  PARAMFLAG_PARAMSET;
        }
        
-    return argok;
+    return optisset;
 }
 
 int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix)
@@ -115,6 +107,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix)
 char **p = config_get_if()->argv;
 int c = config_get_if()->argc;
 int j;
+char *pp;
 char *cfgpath; 
  
   j = (prefix ==NULL) ? 0 : strlen(prefix); 
@@ -131,32 +124,31 @@ char *cfgpath;
         if (strcmp(*p, "-h") == 0 || strcmp(*p, "--help") == 0 ) {
             config_printhelp(cfgoptions,numoptions);
         }
-        for(int i=0;i<numoptions;i++) {
-            if ( ( cfgoptions[i].paramflags & PARAMFLAG_DISABLECMDLINE) != 0) {
-              continue;
-             }
-	    if (prefix != NULL) {
-               sprintf(cfgpath,"%s.%s",prefix,cfgoptions[i].optname);
-	    } else {
-	       sprintf(cfgpath,"%s",cfgoptions[i].optname);
-	    }
-            if ( ((strlen(*p) == 2) && (strcmp(*p + 1,cfgpath) == 0))  || 
-                 ((strlen(*p) > 2) && (strcmp(*p + 2,cfgpath ) == 0 )) ) {
+        if (*p[0] == '-') {
+          
+    	    for(int i=0;i<numoptions;i++) {
+    		if ( ( cfgoptions[i].paramflags & PARAMFLAG_DISABLECMDLINE) != 0) {
+    		  continue;
+    		 }
+    		if (prefix != NULL) {
+    		   sprintf(cfgpath,"%s.%s",prefix,cfgoptions[i].optname);
+    		} else {
+    		   sprintf(cfgpath,"%s",cfgoptions[i].optname);
+    		}
+    		if ( ((strlen(*p) == 2) && (strcmp(*p + 1,cfgpath) == 0))  || 
+    		     ((strlen(*p) > 2) && (strcmp(*p + 2,cfgpath ) == 0 )) ) {
+    		   pp = *(p+1);
+    		   if ( ( pp != NULL )   &&  (pp[0]!= '-') ) {
+    		      p++;
+    		      c--;
+    		      j += processoption(&(cfgoptions[i]), pp);
+    		   } else {
+    		      j += processoption(&(cfgoptions[i]), NULL);
+    		   }
 
-               if (c > 1) {
-                  p++;
-                  c--;
-                  j = processoption(&(cfgoptions[i]), *p);
-                  if ( j== 0) {
-                      c++;
-                      p--;
-                  }
-               } else {
-                  j = processoption(&(cfgoptions[i]), NULL);
-               }
-
-            }
-         }   	     
+    		}
+    	     } /* for */
+         } /* if (*p[0] == '-') */  	     
    	 p++;
          c--;  
     }   /* fin du while */

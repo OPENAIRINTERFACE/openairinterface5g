@@ -1,7 +1,7 @@
 #ifndef TELNETSRV_H
 #define TELNETSRV_H
 
-#define TELNETSRV_SHAREDLIB "libtelnetsrv.so"
+#define TELNETSRV_MODNAME  "telnetsrv"
 
 #define TELNET_PORT               9090
 #define TELNET_MAX_MSGLENGTH      2048
@@ -80,7 +80,7 @@ typedef struct {
 
 
 typedef int(*addcmdfunc_t)(char*, telnetshell_vardef_t*, telnetshell_cmddef_t*);
-typedef int(*initfunc_t)(char *cfgfile);
+
 typedef void(*settelnetmodule_t)(char *name, void *ptr); 
 
 /*-------------------------------------------------------------------------------------------*/

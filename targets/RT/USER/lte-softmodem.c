@@ -50,7 +50,7 @@
 #include "PHY/defs.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
-#include "common/utils/telnetsrv/load_telnet.h"
+#include "common/utils/load_module_shlib.h"
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -559,6 +559,7 @@ static void get_options(void) {
   int dumpframe;
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;
+  uint32_t start_telnetsrv;
 
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
@@ -586,6 +587,10 @@ static void get_options(void) {
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
       set_glog(-1, glog_verbosity);
   }
+  if (start_telnetsrv) {
+     load_module_shlib("telnetsrv");
+  }
+
   
   if (UE_flag > 0) {
      paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;

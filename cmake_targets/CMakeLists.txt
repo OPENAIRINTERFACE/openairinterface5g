@@ -502,6 +502,10 @@ set (CONFIG_LIBCONFIG_SOURCES
    )   
 add_library(params_libconfig MODULE ${CONFIG_LIBCONFIG_SOURCES} )
 target_link_libraries(params_libconfig config)  
+# shared library loader
+set (SHLIB_LOADER_SOURCES
+    ${OPENAIR_DIR}/common/utils/load_module_shlib.c
+)
 # include RF devices / transport protocols library modules
 ######################################################################
 
@@ -1767,6 +1771,7 @@ add_executable(lte-softmodem
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
+  ${SHLIB_LOADER_SOURCES}
   )
 
 target_link_libraries (lte-softmodem -ldl 
@@ -1802,6 +1807,7 @@ add_executable(lte-softmodem-nos1
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
+  ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
@@ -1890,6 +1896,7 @@ add_executable(oaisim
   ${XFORMS_SOURCE}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
+  ${SHLIB_LOADER_SOURCES}
 )
 
 
@@ -1933,6 +1940,8 @@ add_executable(oaisim_nos1
   ${OPENAIR_DIR}/common/utils/system.c
   ${XFORMS_SOURCE}
   ${T_SOURCE}
+  ${CONFIG_SOURCES}
+  ${SHLIB_LOADER_SOURCES}
 )
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1

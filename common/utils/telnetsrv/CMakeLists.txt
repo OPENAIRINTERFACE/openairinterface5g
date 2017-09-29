@@ -8,8 +8,9 @@ ELSE()
 ENDIF()
 
 
-set(APPROOT . )
+
 set(OPENAIR_DIR $ENV{OPENAIR_DIR})
+set(APPROOT ${OPENAIR_DIR}/common/utils/telnetsrv )
 set(OPENAIR_BUILD_DIR $ENV{OPENAIR_DIR}/cmake_targets)
 set(OPENAIR1_DIR $ENV{OPENAIR1_DIR})
 set(OPENAIR2_DIR $ENV{OPENAIR2_DIR})
