@@ -54,7 +54,7 @@ char defbool[2]="1";
      } else {        /* boolean value */
          tmpval = defbool;
      }
-     printf("cc 0x%08x, %i\n",tmpval,argok);
+     
      switch(cfgoptions->type)
        {
        	case TYPE_STRING:

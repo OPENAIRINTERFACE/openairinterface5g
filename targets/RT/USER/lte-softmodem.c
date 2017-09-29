@@ -50,7 +50,7 @@
 #include "PHY/defs.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
-
+#include "common/utils/telnetsrv/load_telnet.h"
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
