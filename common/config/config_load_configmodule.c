@@ -109,14 +109,14 @@ char *atoken;
 uint32_t tmpflags=0;
 int i;
  
-
 /* first parse the command line to look for the -O option */
   opterr=0;
-  while ((i = getopt(argc, argv, "O:h")) != -1) {
-       if ( i == 'O' ) {
-          cfgparam = optarg; 
+  for (i = 0;i<argc;i++) {
+       if (strlen(argv[i]) < 2) continue;
+       if ( argv[i][1] == 'O' && i < (argc -1)) {
+          cfgparam = argv[i+1]; 
        } 
-        if ( i == 'h' ) {
+        if ( argv[i][1] == 'h' ) {
           tmpflags = CONFIG_HELP; 
        }            
    }

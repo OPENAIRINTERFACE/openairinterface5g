@@ -584,7 +584,7 @@ static void get_options(void) {
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
       set_glog(glog_level, -1);
   }
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
+  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGVERBO_IDX)) {
       set_glog(-1, glog_verbosity);
   }
   if (start_telnetsrv) {
@@ -889,7 +889,6 @@ int main( int argc, char **argv )
   if ( load_configmodule(argc,argv) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   } 
-
       
 #ifdef DEBUG_CONSOLE
   setvbuf(stdout, NULL, _IONBF, 0);
@@ -918,7 +917,6 @@ int main( int argc, char **argv )
       fprintf(stderr,"Getting configuration failed\n");
       exit(-1);
   }
-
 
 
 #if T_TRACER

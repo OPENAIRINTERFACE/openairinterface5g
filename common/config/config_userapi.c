@@ -123,6 +123,11 @@ void config_printhelp(paramdef_t *params,int numparams)
 int config_get(paramdef_t *params,int numparams, char *prefix)
 {
 int ret= -1;
+
+if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
+    fprintf(stderr,"[CONFIG] config_get skipped, config module not properly initialized\n");
+    return ret;
+}
 configmodule_interface_t *cfgif = config_get_if();
   if (cfgif != NULL) {
       ret = config_get_if()->get(params, numparams,prefix);

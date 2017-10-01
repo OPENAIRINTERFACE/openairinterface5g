@@ -41,11 +41,13 @@ char *tmpval = value;
 int optisset=0;
 char defbool[2]="1";
 
-     if ( ((cfgoptions->paramflags &PARAMFLAG_BOOL) == 0) && value == NULL ) { /* not a boolean, argument required */
+     if ( value == NULL) {
+        if( (cfgoptions->paramflags &PARAMFLAG_BOOL) == 0 ) { /* not a boolean, argument required */
 	    fprintf(stderr,"[CONFIG] command line, option %s requires an argument\n",cfgoptions->optname);
 	    return 0;
-     } else {        /* boolean value option without argument, set value to true*/
+        } else {        /* boolean value option without argument, set value to true*/
             tmpval = defbool;
+        }
      }
      switch(cfgoptions->type)
        {
@@ -124,8 +126,8 @@ char *cfgpath;
         if (strcmp(*p, "-h") == 0 || strcmp(*p, "--help") == 0 ) {
             config_printhelp(cfgoptions,numoptions);
         }
-        if (*p[0] == '-') {
-          
+
+        if (*p[0] == '-') {        
     	    for(int i=0;i<numoptions;i++) {
     		if ( ( cfgoptions[i].paramflags & PARAMFLAG_DISABLECMDLINE) != 0) {
     		  continue;
@@ -135,17 +137,17 @@ char *cfgpath;
     		} else {
     		   sprintf(cfgpath,"%s",cfgoptions[i].optname);
     		}
+
     		if ( ((strlen(*p) == 2) && (strcmp(*p + 1,cfgpath) == 0))  || 
     		     ((strlen(*p) > 2) && (strcmp(*p + 2,cfgpath ) == 0 )) ) {
     		   pp = *(p+1);
-    		   if ( ( pp != NULL )   &&  (pp[0]!= '-') ) {
-    		      p++;
-    		      c--;
+    		   if ( ( pp != NULL ) && (c>1) &&  (pp[0]!= '-') ) {
+    		
     		      j += processoption(&(cfgoptions[i]), pp);
     		   } else {
     		      j += processoption(&(cfgoptions[i]), NULL);
     		   }
-
+                   break;
     		}
     	     } /* for */
          } /* if (*p[0] == '-') */  	     

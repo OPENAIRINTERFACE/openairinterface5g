@@ -113,7 +113,11 @@ void  log_getconfig(log_t *g_log) {
   paramdef_t logparams_verbosity[MAX_LOG_COMPONENTS];
   paramdef_t logparams_logfile[MAX_LOG_COMPONENTS];
   
-  config_get( logparams_defaults,sizeof(logparams_defaults)/sizeof(paramdef_t),CONFIG_STRING_LOG_PREFIX); 
+  int ret = config_get( logparams_defaults,sizeof(logparams_defaults)/sizeof(paramdef_t),CONFIG_STRING_LOG_PREFIX);
+  if (ret <0) {
+       fprintf(stderr,"[LOG] init aborted, configuration couldn't be performed");
+       return;
+  } 
   memset(logparams_level,    0, sizeof(paramdef_t)*MAX_LOG_COMPONENTS);
   memset(logparams_verbosity,0, sizeof(paramdef_t)*MAX_LOG_COMPONENTS);
   memset(logparams_logfile,  0, sizeof(paramdef_t)*MAX_LOG_COMPONENTS);
