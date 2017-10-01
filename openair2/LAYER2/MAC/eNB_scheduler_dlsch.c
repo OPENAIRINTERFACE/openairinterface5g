@@ -582,7 +582,7 @@ schedule_ue_spec(
       } /* if (continue_flag != 1 */
 
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||  // no RBs allocated 
-	  CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)
+	  CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,aggregation,rnti)
 	  ) {
         LOG_D(MAC,"[eNB %d] Frame %d : no RB allocated for UE %d on CC_id %d: continue \n",
               module_idP, frameP, UE_id, CC_id);
@@ -1230,6 +1230,7 @@ schedule_ue_spec(
 		  module_idP,CC_id,harq_pid,mcs);
 	    
 	  }
+	  LOG_D(MAC,"Checking feasibility pdu %d (new sdu)\n",dl_req->number_pdu);
 	  if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,rnti)) {
 
 

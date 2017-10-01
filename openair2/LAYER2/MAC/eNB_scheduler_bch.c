@@ -679,7 +679,8 @@ schedule_SI(
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 2; // not BR
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF; // absolute SF	
 
-	if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,SI_RNTI)) {
+	if (!CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,
+				       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,SI_RNTI)) {
 	  LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for S_RNTI\n",
 		frameP,subframeP);
 	  dl_req->number_dci++;

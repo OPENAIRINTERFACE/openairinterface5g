@@ -555,7 +555,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
   hi_dci0_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms             = 0;
   hi_dci0_pdu->hi_pdu.hi_pdu_rel8.hi_value                            = 1;
   hi_dci0_req->number_of_hi++;
-
+																	
   /* NN--> FK: we could either check the payload, or use a phy helper to detect a false msg3 */
   if ((num_sdu == 0) && (num_ce==0)) {
     if (UE_id != -1)
@@ -966,7 +966,7 @@ abort();
 
       RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO,RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP]);	
-      if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0) && harq_pid == 0) || (round>0))// || ((frameP%10)==0))
+      if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0) && harq_pid == 1) || (round>0))// || ((frameP%10)==0))
 	// if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames
         {
 	  LOG_I(MAC,"[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
@@ -1166,7 +1166,7 @@ abort();
               T_INT(round));
 
 	    // fill in NAK information
-
+	    
 	    hi_dci0_pdu                                                         = &hi_dci0_req->hi_dci0_pdu_list[hi_dci0_req->number_of_dci+hi_dci0_req->number_of_hi]; 	
 	    memset((void*)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
 	    hi_dci0_pdu->pdu_type                                               = NFAPI_HI_DCI0_HI_PDU_TYPE; 
