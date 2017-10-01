@@ -4,7 +4,8 @@
 
 #include "UTIL/LOG/log.h"
 
-#include "openair1/PHY/defs.h"
+
+#include "openair1/PHY/extern.h"
 
 
 #define TELNETVAR_PHYCC0    0
@@ -23,7 +24,7 @@ telnetshell_vardef_t phy_vardef[] = {
 //{"rachdmax",TELNET_VARTYPE_INT32,NULL},
 {"",0,NULL}
 };
-extern PHY_VARS_eNB ***PHY_vars_eNB_g;
+
 #else
 
 extern void add_phy_cmds();
