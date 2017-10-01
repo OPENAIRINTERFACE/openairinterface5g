@@ -568,6 +568,8 @@ typedef struct {
   uint16_t    n_pucch_3[2];
   /// TDD Bundling/multiplexing flag
   uint8_t     tdd_bundling;
+  /// Received Energy
+  uint32_t stat;
 #ifdef Rel14
   /// non BL/CE, CEmodeA, CEmodeB
   UE_type_t ue_type;

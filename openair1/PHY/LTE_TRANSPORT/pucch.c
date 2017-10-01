@@ -1790,12 +1790,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   LTE_eNB_COMMON *common_vars                        = &eNB->common_vars;
   LTE_DL_FRAME_PARMS *frame_parms                    = &eNB->frame_parms;
   //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &eNB->pucch_config_dedicated[UE_id];
-  int8_t sigma2_dB                                   = eNB->measurements.n0_subband_power_tot_dB[0]-10;
-  uint32_t *Po_PUCCH                                 = &(eNB->UE_stats[UE_id].Po_PUCCH);
-  int32_t *Po_PUCCH_dBm                              = &(eNB->UE_stats[UE_id].Po_PUCCH_dBm);
-  uint32_t *Po_PUCCH1_below                          = &(eNB->UE_stats[UE_id].Po_PUCCH1_below);
-  uint32_t *Po_PUCCH1_above                          = &(eNB->UE_stats[UE_id].Po_PUCCH1_above);
-  int32_t *Po_PUCCH_update                           = &(eNB->UE_stats[UE_id].Po_PUCCH_update);
+
+  int8_t sigma2_dB                                   = 20;//eNB->measurements.n0_subband_power_tot_dB[0]-10;
+
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
   int16_t *zptr;
@@ -2154,6 +2151,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements.n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
 #endif
 
+    
     eNB->pucch1_stats[UE_id][(subframe<<10)+eNB->pucch1_stats_cnt[UE_id][subframe]] = stat_max;
     eNB->pucch1_stats_thres[UE_id][(subframe<<10)+eNB->pucch1_stats_cnt[UE_id][subframe]] = sigma2_dB+pucch1_thres;
     eNB->pucch1_stats_cnt[UE_id][subframe] = (eNB->pucch1_stats_cnt[UE_id][subframe]+1)&1023;
@@ -2174,15 +2172,10 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     // This is a moving average of the PUCCH1 statistics conditioned on being above or below the threshold
     if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {
       *payload = 1;
-      *Po_PUCCH1_above = ((*Po_PUCCH1_above<<9) + (stat_max<<9)+1024)>>10;
-      //LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->PHY_measurements_eNB[0].n0_power_tot_dBm,pucch1_thres,phase_max);
     }
     else {
       *payload = 0;
-      *Po_PUCCH1_below = ((*Po_PUCCH1_below<<9) + (stat_max<<9)+1024)>>10;
     }
-    //printf("[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (I0 %d dBm, thres %d), Po_PUCCH1_below/above : %d / %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements[0].n0_subband_power_tot_dBm[6],pucch1_thres,dB_fixed(*Po_PUCCH1_below),dB_fixed(*Po_PUCCH1_above));
-    *Po_PUCCH_update = 1;
     if (UE_id==0) {
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SR_ENERGY,dB_fixed(stat_max));
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SR_THRES,sigma2_dB+pucch1_thres);
@@ -2283,22 +2276,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
     stat_re=0;
     stat_im=0;
-    //    printf("PUCCH1A : Po_PUCCH before %d dB (%d)\n",dB_fixed(*Po_PUCCH),*Po_PUCCH);
-    *Po_PUCCH = ((*Po_PUCCH>>1) + ((stat_max)>>1));
-    *Po_PUCCH_dBm = dB_fixed(*Po_PUCCH/frame_parms->N_RB_UL) - eNB->rx_total_gain_dB;
-    *Po_PUCCH_update = 1;
-    /*
-    printf("PUCCH1A : stat_max %d (%d,%d,%d) => Po_PUCCH %d\n",
-	   dB_fixed(stat_max),
-	   pucch1_thres+sigma2_dB,
-	   pucch1_thres,
-	   sigma2_dB,
-	   dB_fixed(*Po_PUCCH));
-    */
+
     // Do detection now
     if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {//
-
-      *Po_PUCCH = ((*Po_PUCCH*1023) + stat_max)>>10;
 
       chL = (nsymb>>1)-4;
       chest_mag=0;
@@ -2533,46 +2513,4 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
   return((int32_t)stat_max);
 
-}
-
-
-int32_t rx_pucch_emul(PHY_VARS_eNB *eNB,
-		      eNB_rxtx_proc_t *proc,
-                      uint8_t UE_index,
-                      PUCCH_FMT_t fmt,
-                      uint8_t n1_pucch_sel,
-                      uint8_t *payload)
-
-{
-  uint8_t UE_id;
-  uint16_t rnti;
-  int subframe = proc->subframe_rx;
-  uint8_t CC_id = eNB->CC_id;
-
-  rnti = eNB->ulsch[UE_index]->rnti;
-
-  for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[PHY_vars_UE_g[UE_id][CC_id]->current_thread_id[subframe]][0]->crnti)
-      break;
-  }
-
-  if (UE_id==NB_UE_INST) {
-    LOG_W(PHY,"rx_pucch_emul: Didn't find UE with rnti %x\n",rnti);
-    return(-1);
-  }
-
-  if (fmt == pucch_format1) {
-    payload[0] = PHY_vars_UE_g[UE_id][CC_id]->sr[subframe];
-  } else if (fmt == pucch_format1a) {
-    payload[0] = PHY_vars_UE_g[UE_id][CC_id]->pucch_payload[0];
-  } else if (fmt == pucch_format1b) {
-    payload[0] = PHY_vars_UE_g[UE_id][CC_id]->pucch_payload[0];
-    payload[1] = PHY_vars_UE_g[UE_id][CC_id]->pucch_payload[1];
-  } else
-    LOG_E(PHY,"[eNB] Frame %d: Can't handle formats 2/2a/2b\n",proc->frame_rx);
-
-  if (PHY_vars_UE_g[UE_id][CC_id]->pucch_sel[subframe] == n1_pucch_sel)
-    return(99);
-  else
-    return(0);
 }

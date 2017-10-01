@@ -819,8 +819,11 @@ typedef struct {
   int32_t       phr_received;
   uint8_t       periodic_ri_received[NFAPI_CC_MAX];
   uint8_t       aperiodic_ri_received[NFAPI_CC_MAX];
+  uint8_t       pucch1_cqi_update[NFAPI_CC_MAX];
   uint8_t       pucch1_snr[NFAPI_CC_MAX];
+  uint8_t       pucch2_cqi_update[NFAPI_CC_MAX];
   uint8_t       pucch2_snr[NFAPI_CC_MAX];
+  uint8_t       pucch3_cqi_update[NFAPI_CC_MAX];
   uint8_t       pucch3_snr[NFAPI_CC_MAX];
   uint8_t       pusch_snr[NFAPI_CC_MAX];
   uint16_t      feedback_cnt[NFAPI_CC_MAX];

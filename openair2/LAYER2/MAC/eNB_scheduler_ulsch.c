@@ -994,8 +994,8 @@ abort();
           //compute the expected ULSCH RX power (for the stats)
 	  
           // this is the normalized RX power and this should be constant (regardless of mcs
-          normalized_rx_power = eNB_UE_stats->UL_rssi;
-          target_rx_power = cc[CC_id].radioResourceConfigCommon->uplinkPowerControlCommon.p0_NominalPUSCH;//get_target_pusch_rx_power(module_idP,CC_id);
+          normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
+          target_rx_power = 20;
 	  
           // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out

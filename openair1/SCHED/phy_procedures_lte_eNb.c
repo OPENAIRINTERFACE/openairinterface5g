@@ -752,14 +752,22 @@ void srs_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   }
 }
 
-void fill_sr_indication(PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe) {
-
+void fill_sr_indication(PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe,uint32_t stat) {
+  
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   nfapi_sr_indication_pdu_t *pdu =   &eNB->UL_INFO.sr_ind.sr_pdu_list[eNB->UL_INFO.sr_ind.number_of_srs];
 
   pdu->instance_length                                = 0; // don't know what to do with this
   //  pdu->rx_ue_information.handle                       = handle;
   pdu->rx_ue_information.rnti                         = rnti;
+
+  int SNRtimes10 = dB_fixed_times10(stat) - 200;//(10*eNB->measurements.n0_power_dB[0]);
+
+
+  if      (SNRtimes10 < -640) pdu->ul_cqi_information.ul_cqi=0;
+  else if (SNRtimes10 >  635) pdu->ul_cqi_information.ul_cqi=255;
+  else                        pdu->ul_cqi_information.ul_cqi=(640+SNRtimes10)/5;
+  pdu->ul_cqi_information.channel = 0;
 
   eNB->UL_INFO.sr_ind.number_of_srs++;
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
@@ -838,7 +846,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      uci->n_pucch_1_0_sr[0]);
 	if (uci->type == SR) {
 	  if (SR_payload == 1) {
-	    fill_sr_indication(eNB,uci->rnti,frame,subframe);
+	    fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
 	    return;
 	  }
 	  else {
@@ -867,7 +875,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	  
 	  /* cancel SR detection if reception on n1_pucch0 is better than on SR PUCCH resource index, otherwise send it up to MAC */
 	  if (uci->type==HARQ_SR && metric[0] > metric_SR) SR_payload = 0;
-	  else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe);
+	  else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
  
 	  if (uci->type==HARQ_SR && metric[0] <= metric_SR) {
 	    /* when transmitting ACK/NACK on SR PUCCH resource index, SR payload is always 1 */
@@ -1740,7 +1748,13 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
 
 }
 
-void fill_uci_harq_indication(PHY_VARS_eNB *eNB,LTE_eNB_UCI *uci,int frame,int subframe,uint8_t *harq_ack,uint8_t tdd_mapping_mode,uint16_t tdd_multiplexing_mask) {
+void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
+			      LTE_eNB_UCI *uci,
+			      int frame,
+			      int subframe,
+			      uint8_t *harq_ack,
+			      uint8_t tdd_mapping_mode,
+			      uint16_t tdd_multiplexing_mask) {
 
   int UE_id=find_dlsch(uci->rnti,eNB,SEARCH_EXIST);
 
@@ -1752,6 +1766,14 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,LTE_eNB_UCI *uci,int frame,int s
   //  pdu->rx_ue_information.handle                       = handle;
   pdu->rx_ue_information.rnti                         = uci->rnti;
 
+  // estimate UL_CQI for MAC (from antenna port 0 only)
+  int SNRtimes10 = dB_fixed_times10(uci->stat) - 200;//(10*eNB->measurements.n0_power_dB[0]);
+
+
+  if      (SNRtimes10 < -640) pdu->ul_cqi_information.ul_cqi=0;
+  else if (SNRtimes10 >  635) pdu->ul_cqi_information.ul_cqi=255;
+  else                        pdu->ul_cqi_information.ul_cqi=(640+SNRtimes10)/5;
+  pdu->ul_cqi_information.channel = 0;
 
   if (eNB->frame_parms.frame_type == FDD) {
     if (uci->pucch_fmt == pucch_format1a) {

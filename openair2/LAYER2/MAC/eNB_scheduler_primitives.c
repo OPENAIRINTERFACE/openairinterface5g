@@ -3626,6 +3626,12 @@ void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, sub_frame_t 
   if (UE_id  != -1) {
     if (mac_eNB_get_rrc_status(mod_idP,UE_RNTI(mod_idP,UE_id)) < RRC_CONNECTED)
       LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+
+    UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+
+    sched_ctl->pucch1_snr[cc_idP]        = ul_cqi;
+    sched_ctl->pucch1_cqi_update[cc_idP] = 1;
+
     UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
     UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION,1);
@@ -3667,9 +3673,11 @@ void harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP, sub_frame_
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc    = &RC.mac[mod_idP]->common_channels[CC_idP];
     // extract HARQ Information
-  LOG_D(MAC,"Frame %d, subframe %d: Received harq indication (%d) from UE %d/%x\n",frameP,subframeP,channel,UE_id,rnti);
+  LOG_D(MAC,"Frame %d, subframe %d: Received harq indication (%d) from UE %d/%x, ul_cqi %d\n",frameP,subframeP,channel,UE_id,rnti,ul_cqi);
   if (cc->tdd_Config) extract_harq(mod_idP,CC_idP,UE_id,frameP,subframeP,(void*)&harq_pdu->harq_indication_tdd_rel13,channel);
   else                extract_harq(mod_idP,CC_idP,UE_id,frameP,subframeP,(void*)&harq_pdu->harq_indication_fdd_rel13,channel);
-  if (channel == 0)     sched_ctl->pucch1_snr[CC_idP] = ul_cqi;
-
+  if (channel == 0) {
+    sched_ctl->pucch1_snr[CC_idP]       = ul_cqi;
+    sched_ctl->pucch1_cqi_update[CC_idP] = 1;
+  }
 }
