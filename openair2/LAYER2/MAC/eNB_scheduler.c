@@ -258,17 +258,23 @@ void schedule_SR(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP) {
 
       // if we get here there is some PUCCH1 reception to schedule for SR
 
-      int ul_ulsch_only=0;
+      int skip_ue=0;
       // check that there is no existing UL grant for ULSCH which overrides the SR
       for (int i=0;i<ul_req->number_of_pdus;i++)
-	if ((ul_req->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) &&
+	if (((ul_req->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE)||
+	     (ul_req->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE)||
+	     (ul_req->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE)||
+	     (ul_req->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE))&&
 	    (ul_req->ul_config_pdu_list[i].ulsch_pdu.ulsch_pdu_rel8.rnti == UE_list->UE_template[CC_id][UE_id].rnti)) {
-	    ul_ulsch_only=1;
+	    skip_ue=1;
 	    break;
 	}
+	else if ((ul_req->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE)&&
+		 (ul_req->ul_config_pdu_list[i].ulsch_pdu.ulsch_pdu_rel8.rnti == UE_list->UE_template[CC_id][UE_id].rnti))
+	  skip_ue=1;
 
       // drop the allocation because ULSCH with handle it with BSR
-      if (ul_ulsch_only==1) continue;
+      if (skip_ue==1) continue;
 
       // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
       if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED) continue;

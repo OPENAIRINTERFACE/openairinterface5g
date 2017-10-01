@@ -2456,7 +2456,8 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
   
   ulsch->harq_processes[harq_pid]->rvidx = ulsch_pdu->ulsch_pdu_rel8.redundancy_version;
   ulsch->harq_processes[harq_pid]->Qm    = ulsch_pdu->ulsch_pdu_rel8.modulation_type;
-
+  // Set O_ACK to 0 by default, will be set of DLSCH is scheduled and needs to be 
+  ulsch->harq_processes[harq_pid]->O_ACK         = 0;
 
   if ((ulsch->harq_processes[harq_pid]->status == SCH_IDLE) ||
       (ulsch->harq_processes[harq_pid]->ndi    != ulsch_pdu->ulsch_pdu_rel8.new_data_indication)){
@@ -2468,9 +2469,11 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
     ulsch->harq_processes[harq_pid]->Nsymb_initial = ulsch->harq_processes[harq_pid]->Nsymb_pusch;
     ulsch->harq_processes[harq_pid]->round         = 0;
     ulsch->harq_processes[harq_pid]->ndi           = ulsch_pdu->ulsch_pdu_rel8.new_data_indication;
+    // note here, the CQI bits need to be kept constant as in initial transmission
+    // set to 0 in initial transmission, and don't touch them during retransmissions
+    // will be set if MAC has activated ULSCH_CQI_RI_PDU or ULSCH_CQI_HARQ_RI_PDU
     ulsch->harq_processes[harq_pid]->Or1           = 0;
     ulsch->harq_processes[harq_pid]->Or2           = 0;
-    ulsch->harq_processes[harq_pid]->O_ACK         = 0;
   } 
   else  ulsch->harq_processes[harq_pid]->round++;
 

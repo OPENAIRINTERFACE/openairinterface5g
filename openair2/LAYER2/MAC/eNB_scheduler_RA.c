@@ -420,7 +420,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL,first_rb,4);      
 
 	// This checks if the above DCI allocation is feasible in current subframe
-	if (!CCE_allocation_infeasible(module_idP,CC_idP,1,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,RA_template->RA_rnti)) {
+	if (!CCE_allocation_infeasible(module_idP,CC_idP,0,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,RA_template->RA_rnti)) {
 	  LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for RA_RNTI %x\n",
 		frameP,subframeP,RA_template->RA_rnti);
 	  dl_req->number_dci++;
@@ -860,7 +860,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 			     0,                           // rv
 			     0);                          // vrb_flag
 	
-	if (!CCE_allocation_infeasible(module_idP,CC_idP,0,
+	if (!CCE_allocation_infeasible(module_idP,CC_idP,1,
 				       subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,
 				       RA_template->rnti)) {
 	  dl_req->number_dci++;
@@ -1064,7 +1064,7 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 			       round&3,                       // rv
 			       0);                          // vrb_flag
 	  
-	  if (!CCE_allocation_infeasible(module_idP,CC_idP,0,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,RA_template->rnti)) {
+	  if (!CCE_allocation_infeasible(module_idP,CC_idP,1,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,RA_template->rnti)) {
 	    dl_req->number_dci++;
 	    dl_req->number_pdu++;
 	    
