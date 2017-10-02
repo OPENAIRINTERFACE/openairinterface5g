@@ -216,11 +216,15 @@ int s = sscanf(buf,"%*s %i-%i",&idx1,&idx2);
        {
        set_glog_onlinelog(0);
        }
+    if (strcasestr(buf,"show") != NULL)
+       {
+       proccmd_show("loglvl",debug,prnt);
+       }      
    return 0;
 } 
 /*-------------------------------------------------------------------------------------*/
 
 void add_softmodem_cmds()
 {
-   add_telnetcmd("softmodem",NULL,proc_cmdarray);
+   add_telnetcmd("softmodem",proc_vardef,proc_cmdarray);
 }
