@@ -3044,6 +3044,8 @@ boolean_t CCE_allocation_infeasible(int module_idP,
   }
   else { // ue-specific UL DCI
     if (HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi == MAX_NUM_HI_DCI0_PDU) {
+      LOG_W(MAC, "Subframe %d: FAPI UL structure is full, skip scheduling UE %d\n",
+            subframe, rnti);
     } else {
       hi_dci0_pdu->pdu_type                               = NFAPI_HI_DCI0_DCI_PDU_TYPE;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti              = rnti;
