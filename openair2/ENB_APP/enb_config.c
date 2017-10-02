@@ -543,7 +543,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
       }
 
       
-      printf("RRC %d: Southbound Transport %s\n",j,*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr));
+      printf("RRC %d: Southbound Transport %s\n",i,*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr));
 	    
       if (strcmp(*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
 
@@ -1719,8 +1719,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	      }
 	    }
 	    char srb1path[MAX_OPTNAME_SIZE*2 + 8];
-	    int npar = config_get( SRB1Params,sizeof(SRB1Params)/sizeof(paramdef_t),enbpath);
 	    sprintf(srb1path,"%s.%s",enbpath,ENB_CONFIG_STRING_SRB1);
+	    int npar = config_get( SRB1Params,sizeof(SRB1Params)/sizeof(paramdef_t), srb1path);
 	    if (npar == sizeof(SRB1Params)/sizeof(paramdef_t)) {
 	      switch (srb1_max_retx_threshold) {
 	      case 1:
