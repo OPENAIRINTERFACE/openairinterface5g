@@ -3008,48 +3008,55 @@ nfapi_ul_config_request_pdu_t* has_ul_grant(module_id_t module_idP,int CC_idP,ui
 }
  
 boolean_t CCE_allocation_infeasible(int module_idP,
-
 				    int CC_idP,
 				    int format_flag,
 				    int subframe,
 				    int aggregation,
-				    int rnti) {
-
-  nfapi_dl_config_request_body_t *DL_req       = &RC.mac[module_idP]->DL_req[CC_idP].dl_config_request_body;
-  nfapi_dl_config_request_pdu_t* dl_config_pdu = &DL_req->dl_config_pdu_list[DL_req->number_pdu];
-  nfapi_hi_dci0_request_body_t *HI_DCI0_req    = &RC.mac[module_idP]->HI_DCI0_req[CC_idP].hi_dci0_request_body;
-  nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu     = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi]; 
-  //DCI_ALLOC_t *dci_alloc;
+				    int rnti)
+{
+  nfapi_dl_config_request_body_t *DL_req        = &RC.mac[module_idP]->DL_req[CC_idP].dl_config_request_body;
+  nfapi_dl_config_request_pdu_t  *dl_config_pdu = &DL_req->dl_config_pdu_list[DL_req->number_pdu];
+  nfapi_hi_dci0_request_body_t   *HI_DCI0_req   = &RC.mac[module_idP]->HI_DCI0_req[CC_idP].hi_dci0_request_body;
+  nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu   = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi]; 
   int ret;
-  boolean_t res=FALSE;
+  boolean_t res = FALSE;
 
-
-  if (format_flag!=2) { // DL DCI
-    LOG_D(MAC,"Subframe %d: Checking CCE feasibility format %d : (%x,%d) (%x,%d,%d)\n",
+  if (format_flag != 2) { // DL DCI
+    if (DL_req->number_pdu == MAX_NUM_DL_PDU) {
+      LOG_W(MAC, "Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n",
+            subframe, rnti);
+    } else {
+      dl_config_pdu->pdu_type                                     = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti              = rnti;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type         = (format_flag == 0)?2:1;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = aggregation;
+      DL_req->number_pdu++;
+      LOG_D(MAC,"Subframe %d: Checking CCE feasibility format %d : (%x,%d) (%x,%d,%d)\n",
 	subframe,format_flag,rnti,aggregation,
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti,
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type);
-    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti              = rnti;
-    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type         = (format_flag == 0)?2:1;
-    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = aggregation;
-    DL_req->number_pdu++;
-    ret = allocate_CCEs(module_idP,CC_idP,subframe,0);
-    if (ret==-1)
-      res = TRUE;
-    DL_req->number_pdu--;
+      ret = allocate_CCEs(module_idP,CC_idP,subframe,0);
+      if (ret==-1)
+        res = TRUE;
+      DL_req->number_pdu--;
+    }
   }
-  else if (format_flag == 2) { // ue-specific UL DCI
-    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti             = rnti;
-    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
-    HI_DCI0_req->number_of_dci++;
-    ret = allocate_CCEs(module_idP,CC_idP,subframe,0);
-    if (ret==-1)
-      res = TRUE;
-    HI_DCI0_req->number_of_dci--;
+  else { // ue-specific UL DCI
+    if (HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi == MAX_NUM_HI_DCI0_PDU) {
+    } else {
+      hi_dci0_pdu->pdu_type                               = NFAPI_HI_DCI0_DCI_PDU_TYPE;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti              = rnti;
+      hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
+      HI_DCI0_req->number_of_dci++;
+      ret = allocate_CCEs(module_idP,CC_idP,subframe,0);
+      if (ret==-1)
+        res = TRUE;
+      HI_DCI0_req->number_of_dci--;
+    }
   }
-  return(res);
 
+  return res;
 }
 
 void extract_harq(module_id_t mod_idP,int CC_idP,int UE_id,frame_t frameP,sub_frame_t subframeP,void *harq_indication,int format) {
