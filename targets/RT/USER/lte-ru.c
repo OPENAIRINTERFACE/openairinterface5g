@@ -774,6 +774,9 @@ void tx_rf(RU_t *ru) {
   unsigned int txs;
   int i;
 
+  T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(proc->frame_tx), T_INT(proc->subframe_tx),
+    T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->subframe_tx * fp->samples_per_tti], fp->samples_per_tti * 4));
+
   lte_subframe_t SF_type     = subframe_select(fp,proc->subframe_tx%10);
   lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_tx+9)%10);
   lte_subframe_t nextSF_type = subframe_select(fp,(proc->subframe_tx+1)%10);
