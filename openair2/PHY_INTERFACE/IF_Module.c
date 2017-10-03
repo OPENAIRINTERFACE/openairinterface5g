@@ -193,14 +193,14 @@ void UL_indication(UL_IND_t *UL_info)
   if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
 
     eNB_dlsch_ulsch_scheduler(module_id,
-			      UL_info->frame+((UL_info->subframe>5)?1:0),
+			      (UL_info->frame+((UL_info->subframe>5)?1:0)) % 1024,
 			      (UL_info->subframe+4)%10);
 
     ifi->CC_mask            = 0;
 
     sched_info->module_id   = module_id;
     sched_info->CC_id       = CC_id;
-    sched_info->frame       = UL_info->frame + ((UL_info->subframe>5) ? 1 : 0);
+    sched_info->frame       = (UL_info->frame + ((UL_info->subframe>5) ? 1 : 0)) % 1024;
     sched_info->subframe    = (UL_info->subframe+4)%10;
     sched_info->DL_req      = &mac->DL_req[CC_id];
     sched_info->HI_DCI0_req = &mac->HI_DCI0_req[CC_id];

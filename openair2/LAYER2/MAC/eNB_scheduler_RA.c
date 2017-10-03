@@ -370,7 +370,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	add_msg3(module_idP,CC_idP, RA_template,frameP,subframeP);
 	fill_rar_br(eNB,CC_idP,RA_template,frameP,subframeP,cc[CC_idP].RAR_pdu.payload,RA_template->rach_resource_type-1);
 	// DL request
-	eNB->TX_req[CC_idP].sfn_sf                                            = (frameP<<3)+subframeP;
+	eNB->TX_req[CC_idP].sfn_sf                                            = (frameP<<4)+subframeP;
 	TX_req                                                                = &eNB->TX_req[CC_idP].tx_request_body.tx_pdu_list[eNB->TX_req[CC_idP].tx_request_body.number_of_pdus]; 		     
 	TX_req->pdu_length                                                    = 7;  // This should be changed if we have more than 1 preamble 
 	TX_req->pdu_index                                                     = eNB->pdu_index[CC_idP]++;
@@ -464,7 +464,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	  add_msg3(module_idP,CC_idP, RA_template,frameP,subframeP);
 
 	  // DL request
-	  eNB->TX_req[CC_idP].sfn_sf                                             = (frameP<<3)+subframeP;
+	  eNB->TX_req[CC_idP].sfn_sf                                             = (frameP<<4)+subframeP;
 	  TX_req                                                                = &eNB->TX_req[CC_idP].tx_request_body.tx_pdu_list[eNB->TX_req[CC_idP].tx_request_body.number_of_pdus]; 		     
 	  TX_req->pdu_length                                                    = 7;  // This should be changed if we have more than 1 preamble 
 	  TX_req->pdu_index                                                     = eNB->pdu_index[CC_idP]++;
@@ -758,7 +758,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	       rrc_sdu_length);
 	
 	// DL request
-	eNB->TX_req[CC_idP].sfn_sf                                             = (frameP<<3)+subframeP;
+	eNB->TX_req[CC_idP].sfn_sf                                             = (frameP<<4)+subframeP;
 	TX_req                                                                = &eNB->TX_req[CC_idP].tx_request_body.tx_pdu_list[eNB->TX_req[CC_idP].tx_request_body.number_of_pdus]; 		     	      
 	TX_req->pdu_length                                                    = rrc_sdu_length;
 	TX_req->pdu_index                                                     = eNB->pdu_index[CC_idP]++;
