@@ -1979,21 +1979,8 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
 
 #endif
     
-#if 0
-    // compute DL power control parameters
-
-    if (dlsch0 != NULL){
-      computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch0,dlsch0_harq->dl_power_off, fp->nb_antenna_ports_eNB);
-      computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(fp->pdsch_config_common),fp->nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
-    }
-    if (dlsch1 != NULL){
-      computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch1,dlsch1_harq->dl_power_off, fp->nb_antenna_ports_eNB);
-      computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(fp->pdsch_config_common),fp->nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
-    }
-#endif
-
 #if T_TRACER
-  if (dlsch0 != NULL)
+  if (dlsch0->active)
     T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(0), T_INT(proc->frame_tx), T_INT(proc->subframe_tx),
       T_INT(rel8->rnti), T_INT(rel8->dci_format), T_INT(rel8->harq_process),
       T_INT(rel8->mcs_1), T_INT(dlsch0_harq->TBS));
