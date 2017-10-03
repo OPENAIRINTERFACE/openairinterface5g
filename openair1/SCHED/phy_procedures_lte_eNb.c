@@ -1676,13 +1676,13 @@ void fill_ulsch_cqi_indication(PHY_VARS_eNB *eNB,uint16_t frame,uint8_t subframe
   else               pdu->cqi_indication_rel9.data_offset = 1; // fill in after all cqi_indications have been generated when non-zero
 
   // by default set O to rank 1 value
-  pdu->cqi_indication_rel9.length = (ulsch_harq->Or1>>3) + (ulsch_harq->Or1&7) > 0 ? 1 : 0; 
+  pdu->cqi_indication_rel9.length = (ulsch_harq->Or1>>3) + ((ulsch_harq->Or1&7) > 0 ? 1 : 0);
   pdu->cqi_indication_rel9.ri[0]  = 0;
 
   // if we have RI bits, set them and if rank2 overwrite O
   if (ulsch_harq->O_RI>0) {
     pdu->cqi_indication_rel9.ri[0] = ulsch_harq->o_RI[0];
-    if (ulsch_harq->o_RI[0] == 2)   pdu->cqi_indication_rel9.length = (ulsch_harq->Or2>>3) + (ulsch_harq->Or2&7) > 0 ? 1 : 0; 
+    if (ulsch_harq->o_RI[0] == 2)   pdu->cqi_indication_rel9.length = (ulsch_harq->Or2>>3) + ((ulsch_harq->Or2&7) > 0 ? 1 : 0);
     pdu->cqi_indication_rel9.timing_advance = 0;
   }
   
