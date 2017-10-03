@@ -1000,8 +1000,8 @@ void program_dlsch_acknak(module_id_t module_idP, int CC_idP,int UE_idP, frame_t
     case NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE:
     case NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE:
       if (use_simultaneous_pucch_pusch==1) {
-	AssertFatal(ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE||
-		    ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE,
+	AssertFatal(ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE ||
+		    ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE,
 		    "Cannot be NFAPI_UL_CONFIG_ULSCH_CQI_RI_xxx_PDU_TYPE, simultaneous_pucch_pusch is active\n");
 	// convert it to an NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE
 	harq_information = &ul_config_pdu->ulsch_csi_uci_harq_pdu.harq_information;
@@ -1009,8 +1009,8 @@ void program_dlsch_acknak(module_id_t module_idP, int CC_idP,int UE_idP, frame_t
 	
       }
       else { 
-	AssertFatal(ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE ||
-		    ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE,
+	AssertFatal(ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE ||
+		    ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE,
 		    "Cannot be NFAPI_UL_CONFIG_ULSCH_UCI_xxx_PDU_TYPE, simultaneous_pucch_pusch is inactive\n");
 	// Convert it to an NFAPI_UL_CONFIG_ULSCH_CQI_RI_HARQ_PDU_TYPE 
 	ulsch_harq_information = &ul_config_pdu->ulsch_cqi_harq_ri_pdu.harq_information;
