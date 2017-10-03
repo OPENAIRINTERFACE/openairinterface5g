@@ -158,6 +158,18 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   dlsch1_harq     = dlsch1->harq_processes[harq_pid];
   AssertFatal(dlsch0_harq!=NULL,"dlsch_harq is null\n");
 
+  // compute DL power control parameters
+  eNB->pdsch_config_dedicated[UE_id].p_a = rel8->pa;
+
+  if (dlsch0->active){
+    computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch0,dlsch0_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
+    computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
+  }
+  if (dlsch1->active){
+    computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch1,dlsch1_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
+    computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
+  }
+
   
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
 
