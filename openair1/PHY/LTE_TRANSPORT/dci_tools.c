@@ -2453,7 +2453,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
     
     ulsch->harq_processes[harq_pid]->TBS           = ulsch_pdu->ulsch_pdu_rel8.size<<3;
     
-    ulsch->harq_processes[harq_pid]->Msc_initial   = ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
+    ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
     ulsch->harq_processes[harq_pid]->Nsymb_initial = ulsch->harq_processes[harq_pid]->Nsymb_pusch;
     ulsch->harq_processes[harq_pid]->round         = 0;
     ulsch->harq_processes[harq_pid]->ndi           = ulsch_pdu->ulsch_pdu_rel8.new_data_indication;
