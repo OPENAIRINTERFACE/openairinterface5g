@@ -684,9 +684,8 @@ static void get_options(void) {
 }
 
 
-  
 #if T_TRACER
-int T_wait = 1;       /* by default we wait for the tracer */
+int T_nowait = 0;     /* by default we wait for the tracer */
 int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
@@ -920,7 +919,7 @@ int main( int argc, char **argv )
 
 
 #if T_TRACER
-  T_init(T_port, T_wait, T_dont_fork);
+  T_init(T_port, 1-T_nowait, T_dont_fork);
 #endif
 
 

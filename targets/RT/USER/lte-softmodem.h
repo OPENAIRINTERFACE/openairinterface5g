@@ -190,7 +190,7 @@ extern int16_t dlsch_demod_shift;
 
 
 extern int T_port;
-extern int T_wait;
+extern int T_nowait;
 extern int T_dont_fork;
 
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
