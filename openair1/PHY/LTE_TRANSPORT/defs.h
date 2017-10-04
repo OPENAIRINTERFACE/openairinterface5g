@@ -321,8 +321,8 @@ typedef struct {
   uint8_t srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_UE_HARQ_t *harq_processes[8];
-  /// Pointer to CQI data
-  uint8_t o[MAX_CQI_BYTES];
+  /// Pointer to CQI data (+1 for 8 bits crc)
+  uint8_t o[1+MAX_CQI_BYTES];
   /// Length of CQI data (bits)
   uint8_t O;
   /// Format of CQI data

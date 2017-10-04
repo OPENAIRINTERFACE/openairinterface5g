@@ -830,7 +830,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   rnti_t            rnti           = -1;
   uint8_t           round          = 0;
   uint8_t           harq_pid       = 0;
-  eNB_UE_STATS      *eNB_UE_stats   = NULL;
   uint8_t           status         = 0; 
   uint8_t           rb_table_index = -1;
   uint32_t          cqi_req,cshift,ndi,tpc;
@@ -932,7 +931,6 @@ abort();
       // This is the actual CC_id in the list
       CC_id        = UE_list->ordered_ULCCids[n][UE_id];
       N_RB_UL      = to_prb(cc[CC_id].ul_Bandwidth);
-      eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 
       /*
       aggregation=get_aggregation(get_bw_index(module_idP,CC_id), 
@@ -988,7 +986,6 @@ abort();
 	  else
 	    cqi_req = 0;
 	  
-	  cqi_req = 0;
 
           //power control
           //compute the expected ULSCH RX power (for the stats)

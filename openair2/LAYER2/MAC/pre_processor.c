@@ -196,7 +196,7 @@ void assign_rbs_required (module_id_t Mod_id,
       CC_id = UE_list->ordered_CCids[n][UE_id];
       eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 
-      eNB_UE_stats->dlsch_mcs1=cqi_to_mcs[eNB_UE_stats->dl_cqi];
+      eNB_UE_stats->dlsch_mcs1=cqi_to_mcs[UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id]];
 
     }
 
@@ -288,22 +288,19 @@ int maxround(module_id_t Mod_id,uint16_t rnti,int frame,sub_frame_t subframe,uin
 // it returns -1 if the UE is not found in PHY layer (get_eNB_UE_stats gives NULL)
 int maxcqi(module_id_t Mod_id,int32_t UE_id)
 {
-
-  eNB_UE_STATS *eNB_UE_stats = NULL;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   int CC_id,n;
   int CQI = 0;
 
   for (n=0; n<UE_list->numactiveCCs[UE_id]; n++) {
     CC_id = UE_list->ordered_CCids[n][UE_id];
-    eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 
-    if (eNB_UE_stats->dl_cqi > CQI) {
-      CQI = eNB_UE_stats->dl_cqi;
+    if (UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id] > CQI) {
+      CQI = UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id];
     }
   }
 
-  return(CQI);
+  return CQI;
 }
 
 struct sort_ue_dl_params {

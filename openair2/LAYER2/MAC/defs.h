@@ -515,8 +515,6 @@ typedef struct {
   uint8_t harq_pid;
   /// harq rounf
   uint8_t harq_round;
-  /// DL Wideband CQI index (2 TBs)
-  uint8_t dl_cqi;
   /// total available number of PRBs for a new transmission
   uint16_t rbs_used;
   /// total available number of PRBs for a retransmission
@@ -843,6 +841,7 @@ typedef struct {
   uint8_t       aperiodic_wideband_pmi[NFAPI_CC_MAX];
   uint8_t       aperiodic_wideband_cqi1[NFAPI_CC_MAX];
   uint8_t       aperiodic_wideband_pmi1[NFAPI_CC_MAX];
+  uint8_t       dl_cqi[NFAPI_CC_MAX];
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {

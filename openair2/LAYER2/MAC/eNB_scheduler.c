@@ -314,7 +314,6 @@ void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
   UE_list_t                           *UE_list      = &RC.mac[module_idP]->UE_list;
   nfapi_dl_config_request_t           *DL_req       = &RC.mac[module_idP]->DL_req[0];
   uint16_t                            rnti          = UE_RNTI(module_idP,UE_id);
-  eNB_UE_STATS                        *eNB_UE_stats = &RC.mac[module_idP]->UE_list.eNB_UE_stats[CC_id][UE_id];
   COMMON_channels_t                   *cc           = RC.mac[module_idP]->common_channels;
 
   // check uplink failure
@@ -331,7 +330,7 @@ void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
       dl_config_pdu->pdu_type                                         = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
       dl_config_pdu->pdu_size                                         = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format            = NFAPI_DL_DCI_FORMAT_1A;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level     = get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->dl_cqi,format1A);
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level     = get_aggregation(get_bw_index(module_idP,CC_id),UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id],format1A);
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                  = rnti;
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type             = 1;    // CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power    = 6000; // equal to RS power
@@ -472,7 +471,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
       LOG_D(MAC,"UE  rnti %x : %s, PHR %d dB CQI %d\n", rnti,
             UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync",
             UE_list->UE_template[CC_id][i].phr_info,
-            eNB_UE_stats->dl_cqi);
+            UE_list->UE_sched_ctrl[i].dl_cqi[CC_id]);
     }
 
     RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;

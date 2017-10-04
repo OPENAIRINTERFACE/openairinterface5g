@@ -567,12 +567,12 @@ schedule_ue_spec(
         case 2:
         case 7:
 	  aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
-					eNB_UE_stats->dl_cqi,
+					ue_sched_ctl->dl_cqi[CC_id],
 					format1);
 	  break;
         case 3:
 	  aggregation = get_aggregation(get_bw_index(module_idP,CC_id), 
-					eNB_UE_stats->dl_cqi,
+					ue_sched_ctl->dl_cqi[CC_id],
 					format2A);
 	  break;
         default:
@@ -642,12 +642,12 @@ schedule_ue_spec(
       DevCheck(((eNB_UE_stats->dl_cqi < MIN_CQI_VALUE) || (eNB_UE_stats->dl_cqi > MAX_CQI_VALUE)),
       eNB_UE_stats->dl_cqi, MIN_CQI_VALUE, MAX_CQI_VALUE);
       */
-      eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[eNB_UE_stats->dl_cqi];
+      eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1;//cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
 
 
       // store stats
-      UE_list->eNB_UE_stats[CC_id][UE_id].dl_cqi= eNB_UE_stats->dl_cqi;
+      //UE_list->eNB_UE_stats[CC_id][UE_id].dl_cqi= eNB_UE_stats->dl_cqi;
 
       // initializing the rb allocation indicator for each UE
       for(j=0; j<N_RBG[CC_id]; j++) {
@@ -656,7 +656,7 @@ schedule_ue_spec(
 
       LOG_D(MAC,"[eNB %d] Frame %d: Scheduling UE %d on CC_id %d (rnti %x, harq_pid %d, round %d, rb %d, cqi %d, mcs %d, rrc %d)\n",
             module_idP, frameP, UE_id,CC_id,rnti,harq_pid, round,nb_available_rb,
-            eNB_UE_stats->dl_cqi, eNB_UE_stats->dlsch_mcs1,
+            ue_sched_ctl->dl_cqi[CC_id], eNB_UE_stats->dlsch_mcs1,
 	    UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status);
 
 
@@ -722,7 +722,7 @@ schedule_ue_spec(
 	    dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
 	    dl_config_pdu->pdu_size                                               = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1;
-	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->dl_cqi,format1);
+	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = get_aggregation(get_bw_index(module_idP,CC_id),ue_sched_ctl->dl_cqi[CC_id],format1);
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                        = rnti;
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type                   = 1;    // CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power          = 6000; // equal to RS power
@@ -1207,7 +1207,7 @@ schedule_ue_spec(
 	  dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
 	  dl_config_pdu->pdu_size                                               = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1;
-	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = get_aggregation(get_bw_index(module_idP,CC_id),eNB_UE_stats->dl_cqi,format1);
+	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = get_aggregation(get_bw_index(module_idP,CC_id),ue_sched_ctl->dl_cqi[CC_id],format1);
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                        = rnti;
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type                   = 1;    // CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
 	  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power          = 6000; // equal to RS power

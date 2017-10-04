@@ -175,7 +175,7 @@ int dump_eNB_l2_stats(char *buffer, int length)
                        UE_id,
                        map_int_to_str(rrc_status_names, UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status),
                        UE_list->eNB_UE_stats[CC_id][UE_id].crnti,
-                       UE_list->eNB_UE_stats[CC_id][UE_id].dl_cqi,
+                       UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id],
                        UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1,
                        UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2,
                        UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used,

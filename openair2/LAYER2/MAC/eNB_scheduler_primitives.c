@@ -3416,6 +3416,7 @@ void extract_pusch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,
   int v[6];
   int i;
   uint64_t p = *(uint64_t*)pdu;
+  int curbyte, curbit;
   CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic;
 
   AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n",UE_id);
@@ -3433,6 +3434,7 @@ void extract_pusch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,
   switch(*cqi_ReportModeAperiodic) {
 
   case CQI_ReportModeAperiodic_rm12:
+    AssertFatal(0==1, "to be fixed, don't use p but pdu directly\n");
     // wideband multiple PMI (TM4/6), Table 5.2.2.6.1-1 (for TM4/6)
     AssertFatal(tmode==4 || tmode==6 || tmode==8|| tmode==9 || tmode==10,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm12\n",tmode);
     if (tmode <= 6) { //Table 5.2.2.6.1-1 36.213
@@ -3473,6 +3475,7 @@ void extract_pusch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,
 
    break;
   case CQI_ReportModeAperiodic_rm20:
+    AssertFatal(0==1, "to be fixed, don't use p but pdu directly\n");
     // UE-selected subband CQI no PMI (TM1/2/3/7) , Table 5.2.2.6.3-1 from 36.213 
     AssertFatal(tmode==1 || tmode==2 || tmode==3 || tmode==7,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm20\n",tmode);
 
@@ -3483,6 +3486,7 @@ void extract_pusch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,
     for (m=0;m<Mtab_uesel[bw];m++) sched_ctl->aperiodic_subband_diffcqi0[CC_idP][v[m]] = diffcqi0;
     break;
   case CQI_ReportModeAperiodic_rm22:
+    AssertFatal(0==1, "to be fixed, don't use p but pdu directly\n");
     // UE-selected subband CQI multiple PMI (TM4/6) Table 5.2.2.6.3-2 from 36.213
 
     AssertFatal(tmode==4 || tmode==6 || tmode==8|| tmode==9 || tmode==10,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm22\n",tmode);
@@ -3517,13 +3521,21 @@ void extract_pusch_csi(module_id_t mod_idP,int CC_idP,int UE_id, frame_t frameP,
   case CQI_ReportModeAperiodic_rm30:
     //subband CQI no PMI (TM1/2/3/7)
     AssertFatal(tmode==1 || tmode==2 || tmode==3 || tmode==7,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm30\n",tmode);
-    sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t)(p&0x0F); p>>=4;
+    sched_ctl->aperiodic_wideband_cqi0[CC_idP] = pdu[0]>>4;
+    curbyte = 0;
+    curbit = 3;
     for (i=0;i<N;i++) {
-      sched_ctl->aperiodic_subband_diffcqi0[CC_idP][i] = (uint8_t)(p&0x03);
-      p>>=2;
+      sched_ctl->aperiodic_subband_diffcqi0[CC_idP][i] = (pdu[curbyte] >> (curbit-1)) & 0x03;
+      curbit -= 2;
+      if (curbit < 0) {
+        curbit = 7;
+        curbyte++;
+      }
     }
+    sched_ctl->dl_cqi[CC_idP] = sched_ctl->aperiodic_wideband_cqi0[CC_idP];
     break;
   case CQI_ReportModeAperiodic_rm31:
+    AssertFatal(0==1, "to be fixed, don't use p but pdu directly\n");
     //subband CQI single PMI (TM4/5/6)
     AssertFatal(tmode==4 || tmode==5 || tmode==6 || tmode==8|| tmode==9|| tmode==10,"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm31\n",tmode);
 

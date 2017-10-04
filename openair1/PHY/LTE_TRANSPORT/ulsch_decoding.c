@@ -864,7 +864,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   unsigned int Qprime_ACK,Qprime_RI,len_ACK=0,len_RI=0;
   //  uint8_t q_ACK[MAX_ACK_PAYLOAD],q_RI[MAX_RI_PAYLOAD];
   int metric,metric_new;
-  uint8_t o_flip[8];
   uint32_t x1, x2, s=0;
   int16_t ys,c;
   uint32_t wACK_idx;
@@ -1561,28 +1560,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                                 &ulsch_harq->o_d[96],
                                 &ulsch_harq->o_w[0]);
 
-    memset(o_flip,0,1+((8+ulsch_harq->Or1)/8));
-    phy_viterbi_lte_sse2(ulsch_harq->o_d+96,o_flip,8+ulsch_harq->Or1);
+    memset(ulsch_harq->o,0,(7+8+ulsch_harq->Or1) / 8);
+    phy_viterbi_lte_sse2(ulsch_harq->o_d+96,ulsch_harq->o,8+ulsch_harq->Or1);
 
-    if (extract_cqi_crc(o_flip,ulsch_harq->Or1) == (crc8(o_flip,ulsch_harq->Or1)>>24))
+    if (extract_cqi_crc(ulsch_harq->o,ulsch_harq->Or1) == (crc8(ulsch_harq->o,ulsch_harq->Or1)>>24))
       ulsch_harq->cqi_crc_status = 1;
-
-    if (ulsch->harq_processes[harq_pid]->Or1<=32) {
-      ulsch_harq->o[3] = o_flip[0] ;
-      ulsch_harq->o[2] = o_flip[1] ;
-      ulsch_harq->o[1] = o_flip[2] ;
-      ulsch_harq->o[0] = o_flip[3] ;
-    } else {
-      ulsch_harq->o[7] = o_flip[0] ;
-      ulsch_harq->o[6] = o_flip[1] ;
-      ulsch_harq->o[5] = o_flip[2] ;
-      ulsch_harq->o[4] = o_flip[3] ;
-      ulsch_harq->o[3] = o_flip[4] ;
-      ulsch_harq->o[2] = o_flip[5] ;
-      ulsch_harq->o[1] = o_flip[6] ;
-      ulsch_harq->o[0] = o_flip[7] ;
-
-    }
 
 #ifdef DEBUG_ULSCH_DECODING
     printf("ulsch_decoding: Or1=%d\n",ulsch_harq->Or1);
@@ -1591,9 +1573,9 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
       printf("ulsch_decoding: O[%d] %d\n",i,ulsch_harq->o[i]);
 
     if (ulsch_harq->cqi_crc_status == 1)
-      printf("RX CQI CRC OK (%x)\n",extract_cqi_crc(o_flip,ulsch_harq->Or1));
+      printf("RX CQI CRC OK (%x)\n",extract_cqi_crc(ulsch_harq->o,ulsch_harq->Or1));
     else
-      printf("RX CQI CRC NOT OK (%x)\n",extract_cqi_crc(o_flip,ulsch_harq->Or1));
+      printf("RX CQI CRC NOT OK (%x)\n",extract_cqi_crc(ulsch_harq->o,ulsch_harq->Or1));
 
 #endif
   }
