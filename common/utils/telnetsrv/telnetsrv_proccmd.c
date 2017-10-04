@@ -22,6 +22,7 @@
 #include "telnetsrv.h"
 #define TELNETSRV_PROCCMD_MAIN
 #include "log.h"
+#include "log_extern.h"
 #include "telnetsrv_proccmd.h"
 
 void decode_procstat(char *record, int debug, telnet_printfunc_t prnt)

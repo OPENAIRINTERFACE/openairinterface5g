@@ -34,9 +34,7 @@
 
 
 #ifdef TELNETSRV_PROCCMD_MAIN
-/* global variable from log.c */
-extern mapping *log_level_names;
-extern mapping *log_verbosity_names;
+
 
 extern int proccmd_show(char *buf, int debug, telnet_printfunc_t prnt);
 extern int proccmd_thread(char *buf, int debug, telnet_printfunc_t prnt);
