@@ -871,7 +871,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   int16_t y[6*14*1200] __attribute__((aligned(32)));
   uint8_t ytag[14*1200];
   //  uint8_t ytag2[6*14*1200],*ytag2_ptr;
-  int16_t cseq[6*14*1200];
+  int16_t cseq[6*14*1200] __attribute__((aligned(32)));
   int off;
 
   int subframe = proc->subframe_rx;
