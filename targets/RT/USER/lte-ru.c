@@ -252,6 +252,8 @@ int connect_rau(RU_t *ru) {
   }
   cap->num_bands                                  = ru->num_bands;
   for (i=0;i<ru->num_bands;i++) {
+	LOG_I(PHY,"Band %d: nb_rx %d nb_tx %d pdschReferenceSignalPower %d rxgain %d\n",
+	ru->band[i],ru->nb_rx,ru->nb_tx,ru->max_pdschReferenceSignalPower,ru->max_rxgain);
     cap->band_list[i]                             = ru->band[i];
     cap->nb_rx[i]                                 = ru->nb_rx;
     cap->nb_tx[i]                                 = ru->nb_tx;
@@ -1350,17 +1352,18 @@ static void* ru_thread( void* param ) {
     else ret = attach_rru(ru);
     AssertFatal(ret==0,"Cannot connect to radio\n");
   }
-//      if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
+  if (ru->if_south == LOCAL_RF) { // configure RF parameters only 
         fill_rf_config(ru,ru->rf_config_file);
         init_frame_parms(&ru->frame_parms,1);
         phy_init_RU(ru);
- //     }
+ 
 
-      ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-      if (setup_RU_buffers(ru)!=0) {
+        ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+  }
+  if (setup_RU_buffers(ru)!=0) {
         printf("Exiting, cannot initialize RU Buffers\n");
         exit(-1);
-      }
+  }
 
   LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
   pthread_mutex_lock(&RC.ru_mutex);

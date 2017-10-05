@@ -174,13 +174,13 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
 
   if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
-    if (rel8->rnti != 0xFFFF) LOG_I(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
+    if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
 				    proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
     if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;
     else                     dlsch1_harq->pdu                    = sdu;
   }
   else {
-    if (rel8->rnti != 0xFFFF) LOG_I(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round %d, rnti %x, UE_id %d, harq_pid %d\n",
+    if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round %d, rnti %x, UE_id %d, harq_pid %d\n",
 				    proc->frame_tx,proc->subframe_tx,dlsch0_harq->round,
 				    rel8->rnti,UE_id,harq_pid);
   }
@@ -279,7 +279,7 @@ void handle_ulsch_cqi_ri_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request
   if (ulsch_harq->O_RI>1) ulsch_harq->Or2 = rel9->aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[1];
   ulsch->beta_offset_ri_times8            = to_beta_offset_ri[rel9->delta_offset_ri];
   ulsch->beta_offset_cqi_times8           = to_beta_offset_cqi[rel9->delta_offset_cqi];
-  LOG_I(PHY,"Filling ulsch_cqi_ri information for frame %d, subframe %d : O_RI %d, Or1 %d, beta_offset_cqi_times8 %d (%d)\n",
+  LOG_D(PHY,"Filling ulsch_cqi_ri information for frame %d, subframe %d : O_RI %d, Or1 %d, beta_offset_cqi_times8 %d (%d)\n",
 	frame,subframe,ulsch_harq->O_RI,ulsch_harq->Or1,ulsch->beta_offset_cqi_times8,
 	rel9->delta_offset_cqi);
 }
@@ -313,7 +313,7 @@ void handle_uci_harq_information(PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci,nfapi_ul_co
   if (eNB->frame_parms.frame_type == FDD) {
     uci->num_pucch_resources = harq_information->harq_information_rel9_fdd.number_of_pucch_resources; 
 
-    LOG_I(PHY,"Programming UCI HARQ mode %d : size %d in (%d,%d)\n",
+    LOG_D(PHY,"Programming UCI HARQ mode %d : size %d in (%d,%d)\n",
 	  harq_information->harq_information_rel9_fdd.ack_nack_mode,
 	  harq_information->harq_information_rel9_fdd.harq_size,
 	  uci->frame,uci->subframe);
@@ -418,7 +418,7 @@ void handle_uci_sr_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu_t
   uci->srs_active          = srs_active;
   uci->active              = 1;
 
-  LOG_I(PHY,"Programming UCI SR rnti %x, pucch1_0 %d for (%d,%d)\n",
+  LOG_D(PHY,"Programming UCI SR rnti %x, pucch1_0 %d for (%d,%d)\n",
 	uci->rnti,uci->n_pucch_1_0_sr[0],frame,subframe);
   
 
@@ -449,7 +449,7 @@ void handle_uci_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu
 
   LTE_eNB_UCI *uci = &eNB->uci_vars[UE_id];
 
-  LOG_I(PHY,"Frame %d, Subframe %d: Programming UCI_HARQ process (type %d)\n",frame,subframe,HARQ);
+  LOG_D(PHY,"Frame %d, Subframe %d: Programming UCI_HARQ process (type %d)\n",frame,subframe,HARQ);
   uci->frame             = frame;
   uci->subframe          = subframe;
   uci->rnti              = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti;

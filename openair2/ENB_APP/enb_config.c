@@ -113,7 +113,6 @@ void RCconfig_RU(void) {
   
   int               j                             = 0;
   int               i                             = 0;
-  int               num_bands                     = 0;
 
   
   paramdef_t RUParams[] = RUPARAMS_DESC;
@@ -141,7 +140,10 @@ void RCconfig_RU(void) {
       RC.ru[j]->idx                                 = j;
 
       RC.ru[j]->if_timing                           = synch_to_ext_device;
-      RC.ru[j]->num_eNB                             = RUParamList.paramarray[j][RU_ENB_LIST_IDX].numelt;
+      if (RC.nb_L1_inst >0)
+        RC.ru[j]->num_eNB                           = RUParamList.paramarray[j][RU_ENB_LIST_IDX].numelt;
+      else
+	    RC.ru[j]->num_eNB                           = 0;
       for (i=0;i<RC.ru[j]->num_eNB;i++) RC.ru[j]->eNB_list[i] = RC.eNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];     
 
 
@@ -185,7 +187,7 @@ void RCconfig_RU(void) {
 	RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
 	RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
 	RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
-	for (i=0;i<num_bands;i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i]; 
+	for (i=0;i<RC.ru[j]->num_bands;i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i]; 
       } //strcmp(local_rf, "yes") == 0
       else {
 	printf("RU %d: Transport %s\n",j,*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr));
@@ -292,8 +294,7 @@ void RCconfig_L1() {
     printf("Initializing northbound interface for L1\n");
     l1_north_init_eNB();
   } else {
-	  AssertFatal (0,
-		       "No " CONFIG_STRING_L1_LIST " configuration found");    
+    LOG_I(PHY,"No " CONFIG_STRING_L1_LIST " configuration found");    
   }
 }
 

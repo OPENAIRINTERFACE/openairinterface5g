@@ -881,7 +881,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   dci_alloc->harq_pid = rel8->harq_process;
   dci_alloc->ra_flag  = 0;
 
-  LOG_I(PHY,"NFAPI: DCI format %d, nCCE %d, L %d, rnti %x,harq_pid %d\n",
+  LOG_D(PHY,"NFAPI: DCI format %d, nCCE %d, L %d, rnti %x,harq_pid %d\n",
 	rel8->dci_format,rel8->cce_idx,rel8->aggregation_level,rel8->rnti,rel8->harq_process);
   if ((rel8->rnti_type == 2 ) && (rel8->rnti != SI_RNTI) && (rel8->rnti != P_RNTI)) dci_alloc->ra_flag = 1;
 
@@ -908,7 +908,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   }
   dlsch0_harq->ndi = rel8->new_data_indicator_1;
 
-  LOG_I(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) \n",rel8->harq_process,dlsch0->harq_mask,dlsch0_harq->round,
+  LOG_D(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) \n",rel8->harq_process,dlsch0->harq_mask,dlsch0_harq->round,
 	dlsch0_harq->ndi,rel8->new_data_indicator_1);
 
   switch (rel8->dci_format) {
