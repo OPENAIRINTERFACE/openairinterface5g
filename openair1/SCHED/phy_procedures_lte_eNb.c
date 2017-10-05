@@ -1694,8 +1694,8 @@ void fill_ulsch_cqi_indication(PHY_VARS_eNB *eNB,uint16_t frame,uint8_t subframe
 
 }
 
-void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,uint16_t rnti, int frame,int subframe,int bundling) {
-
+void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,uint16_t rnti, int frame,int subframe,int bundling)
+{
   int UE_id = find_dlsch(rnti,eNB,SEARCH_EXIST);
   AssertFatal(UE_id>=0,"UE_id doesn't exist\n");
 
@@ -1709,7 +1709,7 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
   pdu->rx_ue_information.rnti                         = rnti;
 
   if (eNB->frame_parms.frame_type == FDD) {
-    pdu->harq_indication_fdd_rel13.mode = 0;  
+    pdu->harq_indication_fdd_rel13.mode = 0;
     pdu->harq_indication_fdd_rel13.number_of_ack_nack = ulsch_harq->O_ACK;
 
     for (i=0;i<ulsch_harq->O_ACK;i++) {
@@ -1718,14 +1718,23 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
       pdu->harq_indication_fdd_rel13.harq_tb_n[i] = 2-ulsch_harq->o_ACK[i];
       // release DLSCH if needed
       if (ulsch_harq->o_ACK[i] == 1) release_harq(eNB,UE_id,i,frame,subframe,0xffff);
-   
+
+#if T_TRACER
+      /* TODO: get correct harq pid */
+      if (ulsch_harq->o_ACK[i] != 1)
+        T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
+          T_INT(rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[(subframe+6)%10]));
+      else
+        T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
+          T_INT(rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[(subframe+6)%10]));
+#endif
     }
   }
   else { // TDD
     M=ul_ACK_subframe2_M(&eNB->frame_parms,
 			 subframe);
 
-    pdu->harq_indication_fdd_rel13.mode = 1-bundling;  
+    pdu->harq_indication_fdd_rel13.mode = 1-bundling;
     pdu->harq_indication_fdd_rel13.number_of_ack_nack = ulsch_harq->O_ACK;
 
     for (i=0;i<ulsch_harq->O_ACK;i++) {
@@ -1743,9 +1752,9 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
       }
     }	
   }
+
   eNB->UL_INFO.harq_ind.number_of_harqs++;
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-
 }
 
 void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
