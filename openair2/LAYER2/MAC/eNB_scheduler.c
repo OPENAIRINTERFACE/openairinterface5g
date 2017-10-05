@@ -382,7 +382,7 @@ void clear_nfapi_information(eNB_MAC_INST *eNB,int CC_idP,frame_t frameP,sub_fra
   DL_req[CC_idP].dl_config_request_body.number_pdsch_rnti                   = 0;
   DL_req[CC_idP].dl_config_request_body.transmission_power_pcfich           = 6000;
   
-  HI_DCI0_req[CC_idP].hi_dci0_request_body.sfnsf                            = subframeP + (frameP<<3);
+  HI_DCI0_req[CC_idP].hi_dci0_request_body.sfnsf                            = subframeP + (frameP<<4);
   HI_DCI0_req[CC_idP].hi_dci0_request_body.number_of_dci                    = 0;
   
   
