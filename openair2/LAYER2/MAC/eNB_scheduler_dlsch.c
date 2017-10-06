@@ -753,7 +753,7 @@ schedule_ue_spec(
 
 	      fill_nfapi_dlsch_config(eNB,dl_req,
 				      TBS,
-				      eNB->pdu_index[CC_id],
+				      -1            /* retransmission, no pdu_index */,
 				      rnti,
 				      0, // type 0 allocation from 7.1.6 in 36.213
 				      0, // virtual_resource_block_assignment_flag, unused here
@@ -778,7 +778,6 @@ schedule_ue_spec(
 
 	      LOG_D(MAC,"Filled NFAPI configuration for DCI/DLSCH %d, retransmission round %d\n",eNB->pdu_index[CC_id],round);
 
-	      eNB->pdu_index[CC_id]++;
 	      program_dlsch_acknak(module_idP,CC_id,UE_id,frameP,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
 	      // No TX request for retransmission (check if null request for FAPI)
 	    }
@@ -1277,7 +1276,7 @@ schedule_ue_spec(
 	    eNB->TX_req[CC_id].sfn_sf = fill_nfapi_tx_req(&eNB->TX_req[CC_id].tx_request_body,
 							  (frameP*10)+subframeP,
 							  TBS,
-							  &eNB->pdu_index[CC_id],
+							  eNB->pdu_index[CC_id],
 							  eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char)UE_id].payload[0]);
 	    
 	    LOG_D(MAC,"Filled NFAPI configuration for DCI/DLSCH/TXREQ %d, new SDU\n",eNB->pdu_index[CC_id]);

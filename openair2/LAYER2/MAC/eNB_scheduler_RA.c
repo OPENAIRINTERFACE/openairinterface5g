@@ -914,7 +914,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	  fill_nfapi_dlsch_config(eNB,
 				  dl_req,
 				  RA_template->msg4_TBsize,
-				  eNB->pdu_index[CC_idP]++,
+				  eNB->pdu_index[CC_idP],
 				  RA_template->rnti,
 				  2,                           // resource_allocation_type : format 1A/1B/1D
 				  0,                           // virtual_resource_block_assignment_flag : localized
@@ -940,8 +940,9 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	  eNB->TX_req[CC_idP].sfn_sf = fill_nfapi_tx_req(&eNB->TX_req[CC_idP].tx_request_body,
 							 (frameP*10)+subframeP,
 							 rrc_sdu_length,
-							 &eNB->pdu_index[CC_idP],
+							 eNB->pdu_index[CC_idP],
 							 eNB->UE_list.DLSCH_pdu[CC_idP][0][(unsigned char)UE_id].payload[0]); 
+	  eNB->pdu_index[CC_idP]++;
 
 	  LOG_D(MAC,"Filling UCI ACK/NAK information, cce_idx %d\n",dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
 	  // Program PUCCH1a for ACK/NAK
@@ -1073,7 +1074,7 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 	    fill_nfapi_dlsch_config(eNB,
 				    dl_req,
 				    RA_template->msg4_TBsize,
-				    eNB->pdu_index[CC_idP]++,
+				    -1                           /* retransmission, no pdu_index */,
 				    RA_template->rnti,
 				    2,                           // resource_allocation_type : format 1A/1B/1D
 				    0,                           // virtual_resource_block_assignment_flag : localized

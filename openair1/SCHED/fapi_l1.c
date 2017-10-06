@@ -651,7 +651,8 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
                   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks);
       handle_nfapi_dlsch_pdu(eNB,proc,dl_config_pdu,
                              dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks-1,
-                             TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_data);
+                             dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index == -1 ? NULL
+                               : TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index].segments[0].segment_data);
       /*
       if (dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti == eNB->preamble_list[0].preamble_rel8.rnti) {// is RAR pdu
         LOG_D(PHY,"Frame %d, Subframe %d: Received LTE RAR pdu, programming based on UL Grant\n",frame,subframe);

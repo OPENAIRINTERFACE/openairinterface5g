@@ -1300,12 +1300,12 @@ void fill_nfapi_dlsch_config(eNB_MAC_INST *eNB,
   dl_req->number_pdu++;
 }
 
-uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t *tx_req_body,uint16_t absSF,uint16_t pdu_length, uint16_t *pdu_index, uint8_t *pdu)
+uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t *tx_req_body,uint16_t absSF,uint16_t pdu_length, uint16_t pdu_index, uint8_t *pdu)
 {
   nfapi_tx_request_pdu_t *TX_req        = &tx_req_body->tx_pdu_list[tx_req_body->number_of_pdus];
   LOG_D(MAC,"Filling TX_req %d for pdu length %d\n",tx_req_body->number_of_pdus,pdu_length);
   TX_req->pdu_length                    = pdu_length;
-  TX_req->pdu_index                     = *pdu_index++;
+  TX_req->pdu_index                     = pdu_index;
   TX_req->num_segments                  = 1;
   TX_req->segments[0].segment_length    = pdu_length;
   TX_req->segments[0].segment_data      = pdu;
