@@ -145,11 +145,216 @@ void handle_ulsch(UL_IND_t *UL_info) {
   UL_info->crc_ind.number_of_crcs=0;
 }
 
+/****************************************************************************/
+/* debug utility functions begin                                            */
+/****************************************************************************/
+
+//#define DUMP_FAPI
+
+#ifdef DUMP_FAPI
+
+#define C do { size = 0; put(0); } while (0)
+#define A(...) do { char t[4096]; sprintf(t, __VA_ARGS__); append_string(t); } while (0)
+
+static char *s;
+static int size;
+static int maxsize;
+
+static void put(char x)
+{
+  if (size == maxsize) {
+    maxsize += 32768;
+    s = realloc(s, maxsize); if (s == NULL) abort();
+  }
+  s[size++] = x;
+}
+
+static void append_string(char *t)
+{
+  size--;
+  while (*t) put(*t++);
+  put(0);
+}
+
+void dump_ul(UL_IND_t *u)
+{
+  int i;
+
+  C;
+  A("XXXX UL  mod %d CC %d f.sf %d.%d\n",
+    u->module_id, u->CC_id, u->frame, u->subframe);
+
+  A("XXXX     harq_ind %d\n", u->harq_ind.number_of_harqs);
+      for (i = 0; i < u->harq_ind.number_of_harqs; i++) {
+        nfapi_harq_indication_pdu_t *v = &u->harq_ind.harq_pdu_list[i];
+  A("XXXX         rnti %d\n", v->rx_ue_information.rnti);
+  A("XXXX         tb1 %d tb2 %d\n", v->harq_indication_fdd_rel8.harq_tb1,
+                                    v->harq_indication_fdd_rel8.harq_tb2);
+  A("XXXX         number_of_ack_nack %d\n",
+                          v->harq_indication_fdd_rel9.number_of_ack_nack);
+  A("XXXX         harq[0] = %d\n", v->harq_indication_fdd_rel9.harq_tb_n[0]);
+  A("XXXX         ul_cqi %d channel %d\n", v->ul_cqi_information.ul_cqi,
+                                           v->ul_cqi_information.channel);
+      }
+
+  A("XXXX     crc_ind  %d\n", u->crc_ind.number_of_crcs);
+
+  A("XXXX     sr_ind   %d\n", u->sr_ind.number_of_srs);
+
+  A("XXXX     cqi_ind  %d\n", u->cqi_ind.number_of_cqis);
+
+  A("XXXX     rach_ind %d\n", u->rach_ind.number_of_preambles);
+
+  A("XXXX     rx_ind   %d\n", u->rx_ind.number_of_pdus);
+
+  LOG_I(PHY, "XXXX UL\nXXXX UL\n%s", s);
+}
+
+static char *DL_PDU_TYPE(int x)
+{
+  switch (x) {
+  case NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE: return "NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE";
+  case NFAPI_DL_CONFIG_BCH_PDU_TYPE: return "NFAPI_DL_CONFIG_BCH_PDU_TYPE";
+  case NFAPI_DL_CONFIG_MCH_PDU_TYPE: return "NFAPI_DL_CONFIG_MCH_PDU_TYPE";
+  case NFAPI_DL_CONFIG_DLSCH_PDU_TYPE: return "NFAPI_DL_CONFIG_DLSCH_PDU_TYPE";
+  case NFAPI_DL_CONFIG_PCH_PDU_TYPE: return "NFAPI_DL_CONFIG_PCH_PDU_TYPE";
+  case NFAPI_DL_CONFIG_PRS_PDU_TYPE: return "NFAPI_DL_CONFIG_PRS_PDU_TYPE";
+  case NFAPI_DL_CONFIG_CSI_RS_PDU_TYPE: return "NFAPI_DL_CONFIG_CSI_RS_PDU_TYPE";
+  case NFAPI_DL_CONFIG_EPDCCH_DL_PDU_TYPE: return "NFAPI_DL_CONFIG_EPDCCH_DL_PDU_TYPE";
+  case NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE: return "NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE";
+  case NFAPI_DL_CONFIG_NBCH_PDU_TYPE: return "NFAPI_DL_CONFIG_NBCH_PDU_TYPE";
+  case NFAPI_DL_CONFIG_NPDCCH_PDU_TYPE: return "NFAPI_DL_CONFIG_NPDCCH_PDU_TYPE";
+  case NFAPI_DL_CONFIG_NDLSCH_PDU_TYPE: return "NFAPI_DL_CONFIG_NDLSCH_PDU_TYPE";
+  }
+  return "UNKNOWN";
+}
+
+static char *UL_PDU_TYPE(int x)
+{
+  switch (x) {
+  case NFAPI_UL_CONFIG_ULSCH_PDU_TYPE: return "NFAPI_UL_CONFIG_ULSCH_PDU_TYPE";
+  case NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE: return "NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE";
+  case NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE: return "NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE";
+  case NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE: return "NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE";
+  case NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE: return "NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE";
+  case NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE: return "NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE";
+  case NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE: return "NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE";
+  case NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE: return "NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE";
+  case NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE: return "NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE";
+  case NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE: return "NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE";
+  case NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE: return "NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE";
+  case NFAPI_UL_CONFIG_SRS_PDU_TYPE: return "NFAPI_UL_CONFIG_SRS_PDU_TYPE";
+  case NFAPI_UL_CONFIG_HARQ_BUFFER_PDU_TYPE: return "NFAPI_UL_CONFIG_HARQ_BUFFER_PDU_TYPE";
+  case NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE: return "NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE";
+  case NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE: return "NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE";
+  case NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE: return "NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE";
+  case NFAPI_UL_CONFIG_NULSCH_PDU_TYPE: return "NFAPI_UL_CONFIG_NULSCH_PDU_TYPE";
+  case NFAPI_UL_CONFIG_NRACH_PDU_TYPE: return "NFAPI_UL_CONFIG_NRACH_PDU_TYPE";
+  }
+  return "UNKNOWN";
+}
+
+void dump_dl(Sched_Rsp_t *d)
+{
+  int i;
+
+  C;
+  A("XXXX DL  mod %d CC %d f.sf %d.%d\n",
+    d->module_id, d->CC_id, d->frame, d->subframe);
+
+      if (d->DL_req != NULL) {
+        nfapi_dl_config_request_body_t *v=&d->DL_req->dl_config_request_body;
+        nfapi_dl_config_request_pdu_t *p = v->dl_config_pdu_list;
+  A("XXXX     DL_req sfnsf %d\n", d->DL_req->sfn_sf);
+  A("XXXX     PDCCH size   %d\n", v->number_pdcch_ofdm_symbols);
+  A("XXXX     DCIs         %d\n", v->number_dci);
+  A("XXXX     PDUs         %d\n", v->number_pdu);
+  A("XXXX     rntis        %d\n", v->number_pdsch_rnti);
+  A("XXXX     pcfich power %d\n", v->transmission_power_pcfich);
+        for (i = 0; i < v->number_pdu; i++) {
+  A("XXXX         pdu %d\n", i);
+  A("XXXX             type %d %s\n", p[i].pdu_type, DL_PDU_TYPE(p[i].pdu_type));
+          switch (p[i].pdu_type) {
+          case NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE: {
+            nfapi_dl_config_dci_dl_pdu_rel8_t *q =
+                &p[i].dci_dl_pdu.dci_dl_pdu_rel8;
+  A("XXXX                 dci format %d\n", q->dci_format);
+  A("XXXX                 cce idx    %d\n", q->cce_idx);
+  A("XXXX                 agg lvl    %d\n", q->aggregation_level);
+  A("XXXX                 rnti       %d\n", q->rnti);
+  A("XXXX                 rb coding  %8.8x\n", q->resource_block_coding);
+  A("XXXX                 mcs_1      %d\n", q->mcs_1);
+  A("XXXX                 rv_1       %d\n", q->redundancy_version_1);
+  A("XXXX                 ndi_1      %d\n", q->new_data_indicator_1);
+  A("XXXX                 harq pid   %d\n", q->harq_process);
+  A("XXXX                 tpc        %d\n", q->tpc);
+  A("XXXX                 tbs idx    %d\n", q->transport_block_size_index);
+  A("XXXX                 dl pow off %d\n", q->downlink_power_offset);
+  A("XXXX                 rnti type  %d\n", q->rnti_type);
+  A("XXXX                 xmit pow   %d\n", q->transmission_power);
+            break;
+          }}
+        }
+      }
+
+      if (d->UL_req != NULL) {
+        nfapi_ul_config_request_body_t *v=&d->UL_req->ul_config_request_body;
+  A("XXXX     UL_req sfnsf %d (%d.%d)\n", d->UL_req->sfn_sf,
+    d->UL_req->sfn_sf/16, d->UL_req->sfn_sf%16);
+  A("XXXX     PDUs         %d\n", v->number_of_pdus);
+  A("XXXX     ra freq      %d\n", v->rach_prach_frequency_resources);
+  A("XXXX     srs?         %d\n", v->srs_present);
+        for (i = 0; i < v->number_of_pdus; i++) {
+          nfapi_ul_config_request_pdu_t *p = &v->ul_config_pdu_list[i];
+  A("XXXX         pdu %d\n", i);
+  A("XXXX             type %d %s\n", p->pdu_type, UL_PDU_TYPE(p->pdu_type));
+          switch(p->pdu_type) {
+          case NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE: {
+            nfapi_ul_config_uci_harq_pdu *q = &p->uci_harq_pdu;
+            nfapi_ul_config_harq_information_rel9_fdd_t *h =
+                &q->harq_information.harq_information_rel9_fdd;
+  A("XXXX                 rnti          %d\n",
+    q->ue_information.ue_information_rel8.rnti);
+  A("XXXX                 harq size     %d\n", h->harq_size);
+  A("XXXX                 ack_nack_mode %d\n", h->ack_nack_mode);
+  A("XXXX                 # pucch res   %d\n", h->number_of_pucch_resources);
+  A("XXXX                 n_pucch_1_0   %d\n", h->n_pucch_1_0);
+  A("XXXX                 n_pucch_1_1   %d\n", h->n_pucch_1_1);
+  A("XXXX                 n_pucch_1_2   %d\n", h->n_pucch_1_2);
+  A("XXXX                 n_pucch_1_3   %d\n", h->n_pucch_1_3);
+            break;
+          }
+          case NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE: {
+            nfapi_ul_config_uci_sr_pdu *q = &p->uci_sr_pdu;
+            nfapi_ul_config_sr_information_rel8_t *h =
+                &q->sr_information.sr_information_rel8;
+  A("XXXX                 rnti          %d\n",
+    q->ue_information.ue_information_rel8.rnti);
+  A("XXXX                 pucch_index   %d\n", h->pucch_index);
+          }}
+        }
+      }
+
+  LOG_I(PHY, "XXXX DL\nXXXX DL\n%s", s);
+}
+
+#undef C
+#undef A
+
+#endif /* DUMP_FAPI */
+
+/****************************************************************************/
+/* debug utility functions end                                              */
+/****************************************************************************/
+
 void UL_indication(UL_IND_t *UL_info)
 {
 
   AssertFatal(UL_info!=NULL,"UL_INFO is null\n");
 
+#ifdef DUMP_FAPI
+  dump_ul(UL_info);
+#endif
 
   module_id_t  module_id   = UL_info->module_id;
   int          CC_id       = UL_info->CC_id;
@@ -211,6 +416,11 @@ void UL_indication(UL_IND_t *UL_info)
       sched_info->UL_req      = NULL;
 
     sched_info->TX_req      = &mac->TX_req[CC_id];
+
+#ifdef DUMP_FAPI
+    dump_dl(sched_info);
+#endif
+
     AssertFatal(ifi->schedule_response!=NULL,
 		"UL_indication is null (mod %d, cc %d)\n",
 		module_id,
