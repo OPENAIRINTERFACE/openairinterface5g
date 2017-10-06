@@ -927,7 +927,9 @@ void program_dlsch_acknak(module_id_t module_idP, int CC_idP,int UE_idP, frame_t
   if ((UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2) &&
       (UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020) &&
       (UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020->simultaneousPUCCH_PUSCH_r10) &&
-      (*UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020->simultaneousPUCCH_PUSCH_r10 == PUCCH_ConfigDedicated_v1020__simultaneousPUCCH_PUSCH_r10_true)) use_simultaneous_pucch_pusch=1;
+      (*UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020->simultaneousPUCCH_PUSCH_r10 ==
+          PUCCH_ConfigDedicated_v1020__simultaneousPUCCH_PUSCH_r10_true))
+    use_simultaneous_pucch_pusch=1;
 #endif
 
   // pucch1 and pusch feedback is similar, namely in n+k subframes from now
@@ -949,23 +951,22 @@ void program_dlsch_acknak(module_id_t module_idP, int CC_idP,int UE_idP, frame_t
                           (frameP*10)+subframeP,
                           cce_idx);
   }
-  else { // there is already an existing UL grant so update it if needed
-    // on top of some other UL resource (PUSCH,combined SR/CQI/HARQ on PUCCH, etc)
+  else {
+    /* there is already an existing UL grant so update it if needed
+     * on top of some other UL resource (PUSCH,combined SR/CQI/HARQ on PUCCH, etc)
+     */
     switch(ul_config_pdu->pdu_type) {
+
+    /* [ulsch] to [ulsch + harq] or [ulsch + harq on pucch] */
+
     case NFAPI_UL_CONFIG_ULSCH_PDU_TYPE:
-    case NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE:
-    case NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE:
       if (use_simultaneous_pucch_pusch==1) {
-        AssertFatal(ul_config_pdu->pdu_type!=NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE,
-                    "Cannot be NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE, simultaneous_pucch_pusch is active\n");
         // Convert it to an NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE
         harq_information = &ul_config_pdu->ulsch_uci_harq_pdu.harq_information;
         ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE;
         LOG_D(MAC,"Frame %d, Subframe %d: Switched UCI HARQ to ULSCH UCI HARQ\n",frameP,subframeP);
       }
       else {
-        AssertFatal(ul_config_pdu->pdu_type!=NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE,
-                    "Cannot be NFAPI_UL_CONFIG_ULSCH_UCI_PDU_TYPE, simultaneous_pucch_pusch is inactive\n");
         // Convert it to an NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE
         ulsch_harq_information = &ul_config_pdu->ulsch_harq_pdu.harq_information;
         ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
@@ -975,51 +976,79 @@ void program_dlsch_acknak(module_id_t module_idP, int CC_idP,int UE_idP, frame_t
         LOG_D(MAC,"Frame %d, Subframe %d: Switched UCI HARQ to ULSCH HARQ\n",frameP,subframeP);
       }
       break;
-    case NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE:
-    case NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE:
-    case NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE:
-    case NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE:
-      if (use_simultaneous_pucch_pusch==1) {
-        AssertFatal(ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE ||
-                    ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE,
-                    "Cannot be NFAPI_UL_CONFIG_ULSCH_CQI_RI_xxx_PDU_TYPE, simultaneous_pucch_pusch is active\n");
-        // convert it to an NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE
-        harq_information = &ul_config_pdu->ulsch_csi_uci_harq_pdu.harq_information;
-        ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE;
-
-      }
-      else {
-        AssertFatal(ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE ||
-                    ul_config_pdu->pdu_type==NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE,
-                    "Cannot be NFAPI_UL_CONFIG_ULSCH_UCI_xxx_PDU_TYPE, simultaneous_pucch_pusch is inactive\n");
-        // Convert it to an NFAPI_UL_CONFIG_ULSCH_CQI_RI_HARQ_PDU_TYPE
-        ulsch_harq_information = &ul_config_pdu->ulsch_cqi_harq_ri_pdu.harq_information;
-        ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE;
-        ul_config_pdu->ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial=0; // last symbol not punctured
-        ul_config_pdu->ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks=
-          ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.number_of_resource_blocks; // we don't change the number of resource blocks across retransmissions yet
-      }
-
+    case NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE:
+      AssertFatal(use_simultaneous_pucch_pusch == 1,
+                  "Cannot be NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE, simultaneous_pucch_pusch is active");
+      break;
+    case NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE:
+      AssertFatal(use_simultaneous_pucch_pusch == 0,
+                  "Cannot be NFAPI_UL_CONFIG_ULSCH_UCI_PDU_TYPE, simultaneous_pucch_pusch is inactive\n");
       break;
 
+    /* [ulsch + cqi] to [ulsch + cqi + harq] */
+
+    case NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE:
+      // Convert it to an NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE
+      ulsch_harq_information = &ul_config_pdu->ulsch_cqi_harq_ri_pdu.harq_information;
+      ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE;
+      /* TODO: check this - when converting from nfapi_ul_config_ulsch_cqi_ri_pdu to
+       * nfapi_ul_config_ulsch_cqi_harq_ri_pdu, shouldn't we copy initial_transmission_parameters
+       * from the one to the other?
+       * Those two types are not compatible. 'initial_transmission_parameters' is not at the
+       * place in both.
+       */
+      ul_config_pdu->ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial=0; // last symbol not punctured
+      ul_config_pdu->ulsch_cqi_harq_ri_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks=
+        ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.number_of_resource_blocks; // we don't change the number of resource blocks across retransmissions yet
+      break;
+    case NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE:
+      AssertFatal(use_simultaneous_pucch_pusch == 0,
+                  "Cannot be NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE, simultaneous_pucch_pusch is active\n");
+      break;
+
+    /* [ulsch + cqi on pucch] to [ulsch + cqi on pucch + harq on pucch] */
+
+    case NFAPI_UL_CONFIG_ULSCH_UCI_CSI_PDU_TYPE:
+      // convert it to an NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE
+      harq_information = &ul_config_pdu->ulsch_csi_uci_harq_pdu.harq_information;
+      ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE;
+      break;
+    case NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE:
+      AssertFatal(use_simultaneous_pucch_pusch == 1,
+                  "Cannot be NFAPI_UL_CONFIG_ULSCH_CSI_UCI_HARQ_PDU_TYPE, simultaneous_pucch_pusch is inactive\n");
+      break;
+
+    /* [sr] to [sr + harq] */
+
     case NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE:
-    case NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE:
-      // convert/keep it to NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE
+      // convert to NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE
       ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE;
       harq_information = &ul_config_pdu->uci_sr_harq_pdu.harq_information;
       break;
+    case NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE:
+      /* nothing to do */
+      break;
+
+    /* [cqi] to [cqi + harq] */
+
     case NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE:
-    case NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE:
-      // convert/keep it to NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE
+      // convert to NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE
       ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE;
       harq_information = &ul_config_pdu->uci_cqi_harq_pdu.harq_information;
       break;
+    case NFAPI_UL_CONFIG_UCI_CQI_HARQ_PDU_TYPE:
+      /* nothing to do */
+      break;
+
+    /* [cqi + sr] to [cqr + sr + harq] */
 
     case NFAPI_UL_CONFIG_UCI_CQI_SR_PDU_TYPE:
-    case NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE:
-      // convert/keep it to NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE
+      // convert to NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE
       ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE;
       harq_information = &ul_config_pdu->uci_cqi_sr_harq_pdu.harq_information;
+      break;
+    case NFAPI_UL_CONFIG_UCI_CQI_SR_HARQ_PDU_TYPE:
+      /* nothing to do */
       break;
     }
   }
@@ -1308,10 +1337,8 @@ void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t  *ul_con
                                           )
 {
   memset((void*)ul_config_pdu,0,sizeof(nfapi_ul_config_request_pdu_t));
-  if (cqi_req==0)
-    ul_config_pdu->pdu_type                                                      = NFAPI_UL_CONFIG_ULSCH_PDU_TYPE; 
-  else
-    ul_config_pdu->pdu_type                                                      = NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE; 
+
+  ul_config_pdu->pdu_type                                                        = NFAPI_UL_CONFIG_ULSCH_PDU_TYPE;
   ul_config_pdu->pdu_size                                                        = (uint8_t)(2+sizeof(nfapi_ul_config_ulsch_pdu));
   ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.handle                                 = handle;
   ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.rnti                                   = rnti;
@@ -1330,12 +1357,10 @@ void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t  *ul_con
   ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.current_tx_nb                          = current_tx_nb;
   ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.n_srs                                  = n_srs;
   ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.size                                   = size;
-  
-  if (cqi_req == 1) {
-    // Add CQI portion 
 
-    
-    ul_config_pdu->pdu_type                                                           = NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE; 
+  if (cqi_req == 1) {
+    // Add CQI portion
+    ul_config_pdu->pdu_type                                                           = NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE;
     ul_config_pdu->pdu_size                                                           = (uint8_t)(2+sizeof(nfapi_ul_config_ulsch_cqi_ri_pdu));
     ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.report_type             = 1;
     ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.number_of_cc = 1;
