@@ -176,7 +176,7 @@ static void append_string(char *t)
   put(0);
 }
 
-void dump_ul(UL_IND_t *u)
+static void dump_ul(UL_IND_t *u)
 {
   int i;
 
@@ -254,7 +254,7 @@ static char *UL_PDU_TYPE(int x)
   return "UNKNOWN";
 }
 
-void dump_dl(Sched_Rsp_t *d)
+static void dump_dl(Sched_Rsp_t *d)
 {
   int i;
 
