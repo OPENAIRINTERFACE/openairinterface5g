@@ -563,6 +563,15 @@ add_library(oai_mobipass MODULE ${TPLIB_MOBIPASS_SOURCE} )
 get_target_property(mobipas_cflags oai_mobipass COMPILE_FLAGS)
 set_target_properties(oai_mobipass PROPERTIES COMPILE_FLAGS "${mobipass_cflags} -fvisibility=hidden")
 
+set(HWLIB_TCP_BRIDGE_SOURCE
+  ${OPENAIR_TARGETS}/ARCH/tcp_bridge/tcp_bridge.c
+  )
+add_library(oai_tcp_bridge MODULE ${HWLIB_TCP_BRIDGE_SOURCE} )
+
+#get_target_property(tcp_bridge_cflags oai_tcp_bridge COMPILE_FLAGS)
+#set_target_properties(oai_tcp_bridge PROPERTIES COMPILE_FLAGS "${tcp_bridge_cflags} -fvisibility=hidden")
+set_target_properties(oai_tcp_bridge PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
+
 ##########################################################
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
