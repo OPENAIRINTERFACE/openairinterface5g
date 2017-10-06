@@ -588,7 +588,7 @@ static void get_options(void) {
       set_glog(-1, glog_verbosity);
   }
   if (start_telnetsrv) {
-     load_module_shlib("telnetsrv");
+     load_module_shlib("telnetsrv",NULL,0);
   }
 
   

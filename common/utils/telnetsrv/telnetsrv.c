@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/telnetsrv.c
+/*! \file common/utils/telnetsrv/telnetsrv.c
  * \brief: implementation of a telnet server
  * \author Francois TABURET
  * \date 2017
