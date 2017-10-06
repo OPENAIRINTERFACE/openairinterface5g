@@ -239,13 +239,18 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
 uint16_t to_beta_offset_harqack[16]={16,20,25,32,40,50,64,80,101,127,160,248,400,640,1008,8};
 
-void handle_ulsch_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu_t *ul_config_pdu,uint16_t frame,uint8_t subframe)
+void handle_ulsch_harq_pdu(
+        PHY_VARS_eNB                           *eNB,
+        int                                     UE_id,
+        nfapi_ul_config_request_pdu_t          *ul_config_pdu,
+        nfapi_ul_config_ulsch_harq_information *harq_information,
+        uint16_t                                frame,
+        uint8_t                                 subframe)
 {
   nfapi_ul_config_ulsch_pdu_rel8_t *rel8 = &ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8;
 
   LTE_eNB_ULSCH_t *ulsch=eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq;
-  nfapi_ul_config_ulsch_harq_information *harq_information = &ul_config_pdu->ulsch_harq_pdu.harq_information;
 
   int harq_pid = rel8->harq_process_number;
   ulsch_harq = ulsch->harq_processes[harq_pid];
@@ -496,7 +501,8 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                 "No available UE ULSCH for rnti %x\n",ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti);
 
     fill_ulsch(eNB,&ul_config_pdu->ulsch_harq_pdu.ulsch_pdu,frame,subframe);
-    handle_ulsch_harq_pdu(eNB,UE_id,ul_config_pdu,frame,subframe);
+    handle_ulsch_harq_pdu(eNB, UE_id, ul_config_pdu,
+        &ul_config_pdu->ulsch_harq_pdu.harq_information, frame, subframe);
 
   }
   else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE) {
@@ -513,7 +519,8 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                 "No available UE ULSCH for rnti %x\n",ul_config_pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti);
     fill_ulsch(eNB,&ul_config_pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu,frame,subframe);
     handle_ulsch_cqi_harq_ri_pdu(eNB,UE_id,ul_config_pdu,frame,subframe);
-    handle_ulsch_harq_pdu(eNB,UE_id,ul_config_pdu,frame,subframe);
+    handle_ulsch_harq_pdu(eNB, UE_id, ul_config_pdu,
+        &ul_config_pdu->ulsch_cqi_harq_ri_pdu.harq_information, frame, subframe);
   }
   else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE) {
     AssertFatal((UE_id = find_uci(ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,

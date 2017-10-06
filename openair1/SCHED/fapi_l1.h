@@ -56,7 +56,13 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 			 nfapi_ul_config_request_pdu_t *ul_config_pdu,
 			 uint16_t frame,uint8_t subframe,uint8_t srs_present);
 
-void handle_ulsch_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu_t *ul_config_pdu,uint16_t frame,uint8_t subframe);
+void handle_ulsch_harq_pdu(
+        PHY_VARS_eNB                           *eNB,
+        int                                     UE_id,
+        nfapi_ul_config_request_pdu_t          *ul_config_pdu,
+        nfapi_ul_config_ulsch_harq_information *harq_information,
+        uint16_t                                frame,
+        uint8_t                                 subframe);
 
 void handle_ulsch_cqi_ri_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu_t *ul_config_pdu,uint16_t frame,uint8_t subframe);
 
