@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/telnetsrv_proccmd.h
+/*! \file common/utils/telnetsrv/telnetsrv_proccmd.h
  * \brief: Include file defining telnet commands related to this linux process
  * \author Francois TABURET
  * \date 2017
