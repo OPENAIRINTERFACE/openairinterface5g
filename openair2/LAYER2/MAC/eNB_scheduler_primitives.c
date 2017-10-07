@@ -1760,7 +1760,7 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
 
   pCC_id = UE_PCCID(mod_idP,UE_id);
 
-  LOG_D(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
+  LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
   dump_ue_list(UE_list,0);
 
   UE_list->active[UE_id] = FALSE;
