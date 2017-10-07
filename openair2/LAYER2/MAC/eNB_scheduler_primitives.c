@@ -3591,7 +3591,7 @@ void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, sub_frame_t 
 
   if (UE_id  != -1) {
     if (mac_eNB_get_rrc_status(mod_idP,UE_RNTI(mod_idP,UE_id)) < RRC_CONNECTED)
-      LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+      LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
 
     UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 

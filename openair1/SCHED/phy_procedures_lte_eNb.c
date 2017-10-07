@@ -666,7 +666,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     {
       if (max_preamble_energy[0] > 350) {
 
-	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
+	LOG_I(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	      eNB->Mod_id,
 	      eNB->CC_id,
 	      frame,
@@ -792,7 +792,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	(uci->frame == frame) &&
 	(uci->subframe == subframe)) {
 
-      LOG_I(PHY,"Frame %d, subframe %d: Running uci procedures (type %d) for %d \n",frame,subframe,uci->type,i);
+      LOG_D(PHY,"Frame %d, subframe %d: Running uci procedures (type %d) for %d \n",frame,subframe,uci->type,i);
       uci->active=0;
 
       // Null out PUCCH PRBs for noise measurement
@@ -855,7 +855,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	}
       case HARQ:
 	if (fp->frame_type == FDD) {
-	  LOG_I(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
+	  LOG_D(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
 		frame,subframe,i,
 		uci->pucch_fmt,uci->type,
 		uci->frame,uci->subframe,uci->n_pucch_1[0][0],
@@ -894,7 +894,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	  }
 	  
 
-	  LOG_I(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n",
+	  LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n",
 		eNB->Mod_id,
 		uci->rnti,
 		frame,subframe,
@@ -1403,11 +1403,11 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 	      ulsch->Mlimit,
 	      ulsch_harq->o_ACK[0],
 	      ulsch_harq->o_ACK[1]);
-	/*
-	if (dB_fixed_times10(eNB->pusch_vars[i]->ulsch_power[0]) > 300) {
+	
+	/*if (dB_fixed_times10(eNB->pusch_vars[i]->ulsch_power[0]) > 300) {
 	  dump_ulsch(eNB,frame,subframe,i); exit(-1);
-	  }*/
-
+	  }
+     */
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
 	MSC_LOG_RX_DISCARDED_MESSAGE(
 				     MSC_PHY_ENB,MSC_PHY_UE,
@@ -1458,7 +1458,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
       if (ulsch_harq->O_ACK>0) fill_ulsch_harq_indication(eNB,ulsch_harq,ulsch->rnti,frame,subframe,ulsch->bundling);
 
 
-      LOG_I(PHY,"[eNB %d] Frame %d subframe %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n",
+      LOG_D(PHY,"[eNB %d] Frame %d subframe %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n",
             eNB->Mod_id,frame,subframe,
             harq_pid,
             i,

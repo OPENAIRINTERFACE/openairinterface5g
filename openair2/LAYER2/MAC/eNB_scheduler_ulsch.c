@@ -106,8 +106,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
   if (UE_id!=-1) {
 
-    LOG_I(MAC,"[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",enb_mod_idP,harq_pid,CC_idP,
-	  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
+    LOG_D(MAC,"[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",enb_mod_idP,harq_pid,CC_idP, UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 	  rntiP,UE_id,ul_cqi);
 
     AssertFatal(UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] < 8,
@@ -144,6 +143,10 @@ void rx_sdu(const module_id_t enb_mod_idP,
     AssertFatal(eNB->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx>1,
 		"maxHARQ %d should be greater than 1\n",
 		(int)eNB->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
+
+    LOG_D(MAC,"[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",enb_mod_idP,harq_pid,CC_idP,
+     RA_template[RA_id].msg3_round,
+     rntiP,RA_id,ul_cqi);
 
     first_rb                   = RA_template->msg3_first_rb; 
 
@@ -545,7 +548,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
   }
 
   // Program ACK for PHICH
-  LOG_I(MAC,"Programming PHICH ACK for rnti %x harq_pid %d (first_rb %d)\n",rntiP,harq_pid,first_rb);
+  LOG_D(MAC,"Programming PHICH ACK for rnti %x harq_pid %d (first_rb %d)\n",rntiP,harq_pid,first_rb);
   nfapi_hi_dci0_request_body_t   *hi_dci0_req = &eNB->HI_DCI0_req[CC_idP].hi_dci0_request_body;
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu = &hi_dci0_req->hi_dci0_pdu_list[hi_dci0_req->number_of_dci+hi_dci0_req->number_of_hi]; 	
   memset((void*)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
@@ -967,7 +970,7 @@ abort();
       if (UE_is_to_be_scheduled(module_idP,CC_id,UE_id) > 0 || round > 0)// || ((frameP%10)==0))
 	// if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames
         {
-	  LOG_I(MAC,"[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
+	  LOG_D(MAC,"[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
 		module_idP,harq_pid,frameP,subframeP,UE_id,rnti,round,UE_template->ul_SR,
 		UE_sched_ctrl->ul_inactivity_timer,
 
@@ -1057,7 +1060,7 @@ abort();
               T_INT(UE_template->TBS_UL[harq_pid]), T_INT(ndi));
 	    
 	    if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
-	      LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
+	      LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
 		    module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,UE_template->mcs_UL[harq_pid],
 		    first_rb[CC_id],rb_table[rb_table_index],
 		    rb_table_index,UE_template->TBS_UL[harq_pid],harq_pid);

@@ -2148,7 +2148,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #endif
 
 #ifdef DEBUG_PUCCH_RX
-    LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements.n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
+    LOG_D(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements.n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
 #endif
 
     
@@ -2183,7 +2183,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   } else if ((fmt == pucch_format1a)||(fmt == pucch_format1b)) {
     stat_max = 0;
 #ifdef DEBUG_PUCCH_RX
-    LOG_I(PHY,"Doing PUCCH detection for format 1a/1b\n");
+    LOG_D(PHY,"Doing PUCCH detection for format 1a/1b\n");
 #endif
 
     for (phase=0; phase<7; phase++) {
@@ -2261,7 +2261,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       } // aa
 
 #ifdef DEBUG_PUCCH_RX
-      LOG_I(PHY,"Format 1A: phase %d : stat %d\n",phase,stat);
+      LOG_D(PHY,"Format 1A: phase %d : stat %d\n",phase,stat);
 #endif
       if (stat>stat_max) {
         stat_max = stat;
@@ -2404,9 +2404,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       } // aa
 
 
-      LOG_I(PHY,"PUCCH 1a/b: subframe %d : stat %d,%d (pos %d)\n",subframe,stat_re,stat_im,
+      LOG_D(PHY,"PUCCH 1a/b: subframe %d : stat %d,%d (pos %d)\n",subframe,stat_re,stat_im,
 	    (subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe]));
-      LOG_I(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);      
+      LOG_D(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);      
       
       eNB->pucch1ab_stats[UE_id][(subframe<<11) + 2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_re);
       eNB->pucch1ab_stats[UE_id][(subframe<<11) + 1+2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_im);

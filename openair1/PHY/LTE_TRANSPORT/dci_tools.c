@@ -2263,7 +2263,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
 
   void *dci_pdu = (void*)dci_alloc->dci_pdu;
 
-  LOG_I(PHY,"Filling DCI0 with cqi %d, mcs %d, hopping %d, rballoc %x (%d,%d) ndi %d TPC %d cshift %d\n",cqi_req,
+  LOG_D(PHY,"Filling DCI0 with cqi %d, mcs %d, hopping %d, rballoc %x (%d,%d) ndi %d TPC %d cshift %d\n",cqi_req,
 	mcs,hopping,rballoc,pdu->dci_pdu_rel8.resource_block_start,pdu->dci_pdu_rel8.number_of_resource_block,
 	ndi,TPC,cshift);
 
@@ -2285,6 +2285,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->rballoc = rballoc;
       ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->hopping = hopping;
       ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->type    = 0;
+      ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->padding = 0;
       dci_alloc->dci_length                       = sizeof_DCI0_1_5MHz_TDD_1_6_t; 
     } else {
       ((DCI0_1_5MHz_FDD_t *)dci_pdu)->cqi_req     = cqi_req;
@@ -2295,6 +2296,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_1_5MHz_FDD_t *)dci_pdu)->rballoc     = rballoc;
       ((DCI0_1_5MHz_FDD_t *)dci_pdu)->hopping     = hopping;
       ((DCI0_1_5MHz_FDD_t *)dci_pdu)->type        = 0;
+      ((DCI0_1_5MHz_FDD_t *)dci_pdu)->padding     = 0;
       dci_alloc->dci_length                       = sizeof_DCI0_1_5MHz_FDD_t; 
     }
     
@@ -2311,6 +2313,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc = rballoc;
       ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->hopping = hopping;
       ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->type    = 0;
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->padding = 0;
       dci_alloc->dci_length                     = sizeof_DCI0_5MHz_TDD_1_6_t; 
     } else {
       ((DCI0_5MHz_FDD_t *)dci_pdu)->cqi_req     = cqi_req;
@@ -2321,6 +2324,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_5MHz_FDD_t *)dci_pdu)->rballoc     = rballoc;
       ((DCI0_5MHz_FDD_t *)dci_pdu)->hopping     = hopping;
       ((DCI0_5MHz_FDD_t *)dci_pdu)->type        = 0;
+      ((DCI0_5MHz_FDD_t *)dci_pdu)->padding     = 0;
       dci_alloc->dci_length                     = sizeof_DCI0_5MHz_FDD_t; 
     }
     
@@ -2337,6 +2341,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->rballoc = rballoc;
       ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->hopping = hopping;
       ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->type    = 0;
+      ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->padding = 0;
       dci_alloc->dci_length                      = sizeof_DCI0_10MHz_TDD_1_6_t; 
     } else {
       ((DCI0_10MHz_FDD_t *)dci_pdu)->cqi_req     = cqi_req;
@@ -2347,6 +2352,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_10MHz_FDD_t *)dci_pdu)->rballoc     = rballoc;
       ((DCI0_10MHz_FDD_t *)dci_pdu)->hopping     = hopping;
       ((DCI0_10MHz_FDD_t *)dci_pdu)->type        = 0;
+      ((DCI0_10MHz_FDD_t *)dci_pdu)->padding     = 0;
       dci_alloc->dci_length                      = sizeof_DCI0_10MHz_FDD_t; 
     }
     
@@ -2363,6 +2369,8 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->rballoc = rballoc;
       ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->hopping = hopping;
       ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->type    = 0;
+      ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->padding = 0;
+
       dci_alloc->dci_length                      = sizeof_DCI0_20MHz_TDD_1_6_t; 
     } else {
       ((DCI0_20MHz_FDD_t *)dci_pdu)->cqi_req     = cqi_req;
@@ -2373,6 +2381,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_20MHz_FDD_t *)dci_pdu)->rballoc     = rballoc;
       ((DCI0_20MHz_FDD_t *)dci_pdu)->hopping     = hopping;
       ((DCI0_20MHz_FDD_t *)dci_pdu)->type        = 0;
+      ((DCI0_20MHz_FDD_t *)dci_pdu)->padding     = 0;
       dci_alloc->dci_length                      = sizeof_DCI0_20MHz_FDD_t; 
     }
     
@@ -2466,7 +2475,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
   else  ulsch->harq_processes[harq_pid]->round++;
 
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;
-  LOG_I(PHY,"Filling ULSCH %x for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
+  LOG_D(PHY,"Filling ULSCH %x for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
 	ulsch->rnti,
 	frame,
 	subframe,
