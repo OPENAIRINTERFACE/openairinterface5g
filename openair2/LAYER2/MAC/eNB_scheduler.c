@@ -108,8 +108,8 @@ void schedule_SRS(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
 
       if((1<<tmp) & deltaTSFC) {
 	// This is an SRS subframe, loop over UEs
-	for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
-
+	for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+	  if (RC.mac[module_idP]->UE_list.active[UE_id]!=TRUE) continue;
 	  ul_req        = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
 
 
@@ -161,7 +161,8 @@ void schedule_CSI(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
     cc = &eNB->common_channels[CC_id];
-    for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+    for (UE_id=0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+      if (UE_list->active[UE_id] != TRUE) continue;
 
       ul_req        = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
 
@@ -231,7 +232,8 @@ void schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     RC.mac[module_idP]->UL_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
 
-    for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    for (UE_id = 0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+      if (RC.mac[module_idP]->UE_list.active[UE_id]!=TRUE) continue;
 
       ul_req        = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
 

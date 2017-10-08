@@ -1766,6 +1766,11 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   UE_list->active[UE_id] = FALSE;
   UE_list->num_UEs--;
 
+  if (UE_list->head == UE_id) UE_list->head=UE_list->next[UE_id];
+  else UE_list->next[prev(UE_list,UE_id,0)]=UE_list->next[UE_id];
+  if (UE_list->head_ul == UE_id) UE_list->head_ul=UE_list->next_ul[UE_id];
+  else UE_list->next_ul[prev(UE_list,UE_id,0)]=UE_list->next_ul[UE_id];
+
   // clear all remaining pending transmissions
   UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID0]  = 0;
   UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID1]  = 0;

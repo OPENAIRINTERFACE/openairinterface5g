@@ -398,11 +398,11 @@ void sort_UEs (module_id_t Mod_idP,
   UE_list_t *UE_list = &RC.mac[Mod_idP]->UE_list;
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
-    rnti = UE_RNTI(Mod_idP, i);
-    if (rnti == NOT_A_RNTI)
-      continue;
-    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
-      continue;
+
+    if (UE_list->active[i]==FALSE) continue;
+    if ((rnti = UE_RNTI(Mod_idP, i)) == NOT_A_RNTI) continue;
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1) continue;
+
     list[list_size] = i;
     list_size++;
   }
@@ -1453,11 +1453,9 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
   UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
-    rnti = UE_RNTI(module_idP, i);
-    if (rnti == NOT_A_RNTI)
-      continue;
-    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
-      continue;
+    if (UE_list->active[i] == FALSE) continue;
+    if ((rnti = UE_RNTI(module_idP, i)) == NOT_A_RNTI) continue;
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1) continue;
 
     list[list_size] = i;
     list_size++;
