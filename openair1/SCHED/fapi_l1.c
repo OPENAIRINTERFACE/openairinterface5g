@@ -168,6 +168,9 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
 
   if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
+    AssertFatal(sdu!=NULL,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
+                proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
+                dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
     if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
                                     proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
     if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;

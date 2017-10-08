@@ -330,12 +330,11 @@ void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
   // check uplink failure
   if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer>0)&&
       (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync==0)) {
-    LOG_D(MAC,"UE %d rnti %x: UL Failure timer %d \n",UE_id,rnti,UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+    LOG_I(MAC,"UE %d rnti %x: UL Failure timer %d \n",UE_id,rnti,UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
     if (UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent==0) {
       UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent=1;
 
       // add a format 1A dci for this UE to request an RA procedure (only one UE per subframe)
-      LOG_D(MAC,"UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d) \n",UE_id,rnti,UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
       nfapi_dl_config_request_pdu_t* dl_config_pdu                    = &DL_req[CC_id].dl_config_request_body.dl_config_pdu_list[DL_req[CC_id].dl_config_request_body.number_pdu];
       memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
       dl_config_pdu->pdu_type                                         = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
@@ -351,16 +350,10 @@ void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = pdcch_order_table[cc[CC_id].mib->message.dl_Bandwidth];
       DL_req[CC_id].dl_config_request_body.number_dci++;
       DL_req[CC_id].dl_config_request_body.number_pdu++;
-
-      /*
-	 add_ue_spec_dci(&DL_req[CC_id],
-	 rnti,
-	 get_aggregation(get_tw_index(module_idP,CC_id),eNB_UE_stats->DL_cqi[0],format1A),
-	 format1A,
-	 NO_DLSCH);*/
+      LOG_I(MAC,"UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d), resource_block_coding %d \n",UE_id,rnti,UE_list->UE_sched_ctrl[UE_id].ul_failure_timer,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding);
     }
     else { // ra_pdcch_sent==1
-      LOG_D(MAC,"UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",UE_id,rnti,UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+      LOG_I(MAC,"UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",UE_id,rnti,UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
       if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer % 40) == 0)
 	UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent=0; // resend every 4 frames
     }
@@ -369,7 +362,7 @@ void check_ul_failure(module_id_t module_idP,int CC_id,int UE_id,
     // check threshold
     if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 200) {
       // inform RRC of failure and clear timer
-      LOG_D(MAC,"UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti);
+      LOG_I(MAC,"UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti);
       mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
       UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;
       UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=1;

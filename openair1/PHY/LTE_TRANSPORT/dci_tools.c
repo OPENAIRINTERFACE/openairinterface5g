@@ -874,7 +874,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   int TB1_active;
   uint16_t DL_pmi_single=0; // This should be taken from DLSCH parameters for PUSCH precoding
   uint8_t I_mcs = 0;
-  
+ 
   dci_alloc->firstCCE = rel8->cce_idx;
   dci_alloc->L        = rel8->aggregation_level;
   dci_alloc->rnti     = rel8->rnti;
@@ -898,6 +898,10 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   dlsch1_harq                               = dlsch1->harq_processes[rel8->harq_process];
   dlsch1_harq->codeword                     = 1;
   dlsch0->subframe_tx[subframe]             = 1;
+  if (dlsch0->rnti != rel8->rnti) { // if rnti of dlsch is not the same as in the config, this is a new entry
+    dlsch0_harq->round=0;
+    dlsch0->harq_mask=0;
+  }
   if ((dlsch0->harq_mask & (1<<rel8->harq_process)) > 0 ) {
     if (rel8->new_data_indicator_1 != dlsch0_harq->ndi)
       dlsch0_harq->round=0;
@@ -908,16 +912,22 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   }
   dlsch0_harq->ndi = rel8->new_data_indicator_1;
 
-  LOG_D(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) \n",rel8->harq_process,dlsch0->harq_mask,dlsch0_harq->round,
+  dlsch0->active        = 1;
+  if (rel8->rnti_type == 2)
+      dlsch0_harq->round    = 0;
+LOG_D(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) \n",rel8->harq_process,dlsch0->harq_mask,dlsch0_harq->round,
 	dlsch0_harq->ndi,rel8->new_data_indicator_1);
 
   switch (rel8->dci_format) {
 
   case NFAPI_DL_DCI_FORMAT_1A:
+
+      AssertFatal(rel8->resource_block_coding < 8192, "Frame %d, Subframe %d: rel8->resource_block_coding (%p) %u >= 8192 (rnti %x, rnti_type %d, format %d, harq_id %d\n",
+                proc->frame_tx,subframe,
+                &rel8->resource_block_coding,rel8->resource_block_coding,rel8->rnti,rel8->rnti_type,rel8->dci_format,rel8->harq_process);
+  
+
     dci_alloc->format     = format1A;
-    dlsch0->active        = 1;
-    if (rel8->rnti == SI_RNTI)
-      dlsch0_harq->round    = 0;
 
     switch (fp->N_RB_DL) {
     case 6:
@@ -945,7 +955,11 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
         ((DCI1A_1_5MHz_FDD_t *)dci_pdu)->harq_pid     = rel8->harq_process;
         //      printf("FDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
       }
-
+      // check if PDCCH order
+      if (rel8->resource_block_coding == 63) { 
+          dlsch0->active        = 0;
+          return;
+      }
       AssertFatal(rel8->virtual_resource_block_assignment_flag==LOCALIZED,"Distributed RB allocation not done yet\n");
       dlsch0_harq->rb_alloc[0]    = localRIV2alloc_LUT6[rel8->resource_block_coding];
       dlsch0_harq->vrb_type           =  rel8->virtual_resource_block_assignment_flag;
@@ -976,6 +990,12 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
         ((DCI1A_5MHz_FDD_t *)dci_pdu)->harq_pid       = rel8->harq_process;
         //      printf("FDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
       }
+
+      // check if PDCCH order
+	  if (rel8->resource_block_coding == 511)  {
+          dlsch0->active        = 0;
+          return;
+      }
       AssertFatal(rel8->virtual_resource_block_assignment_flag==LOCALIZED,"Distributed RB allocation not done yet\n");
       dlsch0_harq->rb_alloc[0]    = localRIV2alloc_LUT25[rel8->resource_block_coding];
       dlsch0_harq->vrb_type           =  rel8->virtual_resource_block_assignment_flag;
@@ -1005,6 +1025,11 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
         ((DCI1A_10MHz_FDD_t *)dci_pdu)->TPC           = rel8->tpc;
         ((DCI1A_10MHz_FDD_t *)dci_pdu)->harq_pid      = rel8->harq_process;
 	//      printf("FDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
+      }
+      // check if PDCCH order
+      if (rel8->resource_block_coding == 2047) {
+          dlsch0->active        = 0;
+          return;
       }
       AssertFatal(rel8->virtual_resource_block_assignment_flag==LOCALIZED,"Distributed RB allocation not done yet\n");
       dlsch0_harq->rb_alloc[0]     = localRIV2alloc_LUT50_0[rel8->resource_block_coding];
@@ -1037,6 +1062,11 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
         ((DCI1A_20MHz_FDD_t *)dci_pdu)->harq_pid      = rel8->harq_process;
 	//      printf("FDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
       }
+      // check if PDCCH order
+      if (rel8->resource_block_coding == 8191) {
+          dlsch0->active        = 0;
+          return;
+      }
       AssertFatal(rel8->virtual_resource_block_assignment_flag==LOCALIZED,"Distributed RB allocation not done yet\n");
       dlsch0_harq->rb_alloc[0]      = localRIV2alloc_LUT100_0[rel8->resource_block_coding];
       dlsch0_harq->rb_alloc[1]      = localRIV2alloc_LUT100_1[rel8->resource_block_coding];
@@ -1057,7 +1087,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
       NPRB      = dlsch0_harq->nb_rb;
       I_mcs     = get_I_TBS(rel8->mcs_1);
     }
-    AssertFatal(NPRB>0,"DCI 1A: NPRB == 0\n");
+    AssertFatal(NPRB>0,"DCI 1A: NPRB = 0 (rnti %x, rnti type %d, tpc %d, round %d, resource_block_coding %d)\n",rel8->rnti,rel8->rnti_type,rel8->tpc,dlsch0_harq->round,rel8->resource_block_coding);
     dlsch0_harq->rvidx         = rel8->redundancy_version_1;
     dlsch0_harq->Nl            = 1;
     dlsch0_harq->mimo_mode     = (fp->nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI;
@@ -1075,7 +1105,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
     if (dlsch0_harq->round == 0)
       dlsch0_harq->status = ACTIVE;
 
-    LOG_D(PHY,"DCI 1A: mcs %d, rballoc %x,rv %d, rnti %x\n",rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti);
+    if (rel8->rnti_type == 1) LOG_I(PHY,"DCI 1A: round %d, mcs %d, rballoc %x,rv %d, rnti %x\n",dlsch0_harq->round,rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti);
 
     break;
   case NFAPI_DL_DCI_FORMAT_1:

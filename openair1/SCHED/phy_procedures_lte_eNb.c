@@ -270,9 +270,9 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   int input_buffer_length = dlsch_harq->TBS/8;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
-  if (frame < 200) {
+  if (dlsch->rnti == 0x02) {//frame < 200) {
 
-    LOG_D(PHY,
+    LOG_I(PHY,
 	  "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", pdsch_start %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	  eNB->Mod_id, dlsch->rnti,harq_pid,
 	  frame, subframe, input_buffer_length, dlsch_harq->pdsch_start,
@@ -1619,10 +1619,12 @@ void release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,uint8_t subf
     AssertFatal(dlsch0_harq!=NULL,"dlsch0_harq is null\n");
 
     dlsch0_harq->status = SCH_IDLE;
-    if ((dlsch1_harq == NULL)||
+    /*if ((dlsch1_harq == NULL)||
 	((dlsch1_harq!=NULL)&&
-	 (dlsch1_harq->status == SCH_IDLE)))
-      dlsch0->harq_mask   &= ~(1<<harq_pid);
+	 (dlsch1_harq->status == SCH_IDLE)))*/
+    dlsch0->harq_mask   &= ~(1<<harq_pid);
+    LOG_D(PHY,"Frame %d, subframe %d: Releasing harq %d for UE %x\n",frame,subframe,harq_pid,dlsch0->rnti);
+
   }
   else { // release all processes in the bundle that was acked, based on mask
          // This is at most 4 for multiplexing and 9 for bundling/special bundling

@@ -635,6 +635,9 @@ schedule_ue_spec(
       UE_list->eNB_UE_stats[CC_id][UE_id].harq_pid = harq_pid; 
       UE_list->eNB_UE_stats[CC_id][UE_id].harq_round = round;
 
+
+      if (UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status < RRC_CONNECTED) continue;
+
       sdu_length_total=0;
       num_sdus=0;
 
@@ -1378,14 +1381,15 @@ fill_DLSCH_dci(
 	for (i=0;i<DL_req[CC_id].dl_config_request_body.number_pdu;i++) {
 	  dl_config_pdu                    = &DL_req[CC_id].dl_config_request_body.dl_config_pdu_list[i];
 	  if ((dl_config_pdu->pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)&&
-	      (dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti == rnti)) {
+	      (dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti == rnti) &&
+          (dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format != 1)) {
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding    = allocate_prbs_sub(nb_rb,N_RB_DL,N_RBG,rballoc_sub);
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_allocation_type = 0;
 	  }
 	  else if ((dl_config_pdu->pdu_type == NFAPI_DL_CONFIG_DLSCH_PDU_TYPE)&&
-		   (dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti == rnti)) {
+		       (dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti == rnti) &&
+               (dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type==0)) {
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding    = allocate_prbs_sub(nb_rb,N_RB_DL,N_RBG,rballoc_sub);
-	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type = 0;
 	  }
 	}
       }
