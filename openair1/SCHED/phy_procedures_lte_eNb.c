@@ -666,7 +666,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     {
       if (max_preamble_energy[0] > 350) {
 
-	LOG_I(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
+	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	      eNB->Mod_id,
 	      eNB->CC_id,
 	      frame,
@@ -1294,11 +1294,12 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
     if ((ulsch) &&
         (ulsch->rnti>0) &&
         (ulsch_harq->status == ACTIVE) &&
-	(ulsch_harq->frame == frame) &&
-	(ulsch_harq->subframe == subframe)) {
+	    (ulsch_harq->frame == frame) &&
+	    (ulsch_harq->subframe == subframe) &&
+        (ulsch_harq->handled == 0)) {
       
       
-      // UE is has ULSCH scheduling
+      // UE has ULSCH scheduling
  
       for (int rb=0;
            rb<=ulsch_harq->nb_rb;
@@ -1469,9 +1470,23 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
             eNB->UE_stats[i].ulsch_errors[harq_pid],
             eNB->UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
       
+           ulsch_harq->handled = 1;
     } //     if ((ulsch) &&
       //         (ulsch->rnti>0) &&
       //         (ulsch_harq->status == ACTIVE))
+
+    else if ((ulsch) &&
+             (ulsch->rnti>0) &&
+             (ulsch_harq->status == ACTIVE) &&
+             (ulsch_harq->frame == frame) &&
+             (ulsch_harq->subframe == subframe) &&
+             (ulsch_harq->handled == 1)) {
+          // this harq process is stale, kill it, this 1024 frames later (10s), consider reducing that
+           ulsch_harq->status = SCH_IDLE;
+           ulsch->harq_mask   = 0;
+           LOG_W(PHY,"Removing stale ULSCH config for UE %x\n",ulsch->rnti);
+    }
+
   }   //   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
 }
 

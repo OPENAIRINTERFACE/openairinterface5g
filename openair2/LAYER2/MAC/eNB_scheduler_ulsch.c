@@ -111,35 +111,37 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
     AssertFatal(UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] < 8,
 		"round >= 8\n");
-    UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer = 0;
-    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer    = 0;
-    UE_list->UE_sched_ctrl[UE_id].ul_scheduled       &= (~(1<<harq_pid));
-    UE_list->UE_sched_ctrl[UE_id].ta_update           = timing_advance;
-    UE_list->UE_sched_ctrl[UE_id].ul_cqi              = ul_cqi;
-    first_rb =  UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
+    if (sduP!=NULL) { 
+       UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer   = 0;
+       UE_list->UE_sched_ctrl[UE_id].ul_failure_timer      = 0;
+       UE_list->UE_sched_ctrl[UE_id].ul_scheduled         &= (~(1<<harq_pid));
+       UE_list->UE_sched_ctrl[UE_id].ta_update             = timing_advance;
+       UE_list->UE_sched_ctrl[UE_id].ul_cqi                = ul_cqi;
+       UE_list->UE_sched_ctrl[UE_id].ul_consecutive_errors = 0;
+       first_rb =  UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
 
-    if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
-      UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=0;
-      mac_eNB_rrc_ul_in_sync(enb_mod_idP,CC_idP,frameP,subframeP,UE_RNTI(enb_mod_idP,UE_id));
+       if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
+         UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=0;
+         mac_eNB_rrc_ul_in_sync(enb_mod_idP,CC_idP,frameP,subframeP,UE_RNTI(enb_mod_idP,UE_id));
+       }
     }
-
-    if (sduP==NULL) { // we've got an error
+    else { // we've got an error
       LOG_D(MAC,"[eNB %d][PUSCH %d] CC_id %d ULSCH in error in round %d, ul_cqi %d\n",enb_mod_idP,harq_pid,CC_idP,
-	    UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],ul_cqi);
+	        UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],ul_cqi);
+
       //      AssertFatal(1==0,"ulsch in error\n");
       if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] == 3) {
-	UE_list->UE_sched_ctrl[UE_id].ul_scheduled       &= (~(1<<harq_pid));
-	UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]=0;
-	// here we increment error statistics
+	     UE_list->UE_sched_ctrl[UE_id].ul_scheduled       &= (~(1<<harq_pid));
+	     UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]=0;
+	     if (UE_list->UE_sched_ctrl[UE_id].ul_consecutive_errors++ == 10)
+            UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
       }
       else UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]++;
       return;
 
     }
   }
-  else { // Check if this is an RA process for the rnti
-    AssertFatal((RA_id = find_RA_id(enb_mod_idP,CC_idP,rntiP))!=-1,
-		"Cannot find rnti %x in RA list\n",rntiP);
+  else if ((RA_id = find_RA_id(enb_mod_idP,CC_idP,rntiP))!=-1) { // Check if this is an RA process for the rnti
     AssertFatal(eNB->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx>1,
 		"maxHARQ %d should be greater than 1\n",
 		(int)eNB->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
@@ -158,14 +160,21 @@ void rx_sdu(const module_id_t enb_mod_idP,
 	cancel_ra_proc(enb_mod_idP,CC_idP,frameP,rntiP);
       }
 
-      first_rb =  UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
-      RA_template[RA_id].msg3_round++;
-      // prepare handling of retransmission
-      RA_template[RA_id].Msg3_frame += ((RA_template[RA_id].Msg3_subframe>1) ? 1 : 0);
-      RA_template[RA_id].Msg3_subframe = (RA_template[RA_id].Msg3_subframe+8)%10;
-      add_msg3(enb_mod_idP,CC_idP, &RA_template[RA_id],frameP,subframeP);
+      else {
+        first_rb =  UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
+        RA_template[RA_id].msg3_round++;
+        // prepare handling of retransmission
+        RA_template[RA_id].Msg3_frame += ((RA_template[RA_id].Msg3_subframe>1) ? 1 : 0);
+        RA_template[RA_id].Msg3_subframe = (RA_template[RA_id].Msg3_subframe+8)%10;
+        add_msg3(enb_mod_idP,CC_idP, &RA_template[RA_id],frameP,subframeP);
+      }
       return;
     }
+  }
+  else  {
+    LOG_W(MAC,"Cannot find UE or RA corresponding to ULSCH rnti %x, dropping it\n",
+          rntiP);
+    return;
   }
   payload_ptr = parse_ulsch_header(sduP,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_lenP);
 

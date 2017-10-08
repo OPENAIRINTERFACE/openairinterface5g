@@ -86,8 +86,8 @@ void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_
     LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d CE level %d is active, Msg3 in (%d,%d)\n",
 	  module_idP,frameP,subframeP,CC_id,RA_template->rach_resource_type-1,
 	  RA_template->Msg3_frame,RA_template->Msg3_subframe);
-    LOG_D(MAC,"Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d)\n",
-	  frameP,subframeP,RA_template->Msg3_frame,RA_template->Msg3_subframe);
+    LOG_D(MAC,"Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d)\n",
+	  frameP,subframeP,RA_template->Msg3_frame,RA_template->Msg3_subframe,RA_template->msg3_nb_rb,RA_template->msg3_round);
 
     ul_config_pdu                                                                  = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus]; 
     
@@ -123,8 +123,9 @@ void add_msg3(module_id_t module_idP,int CC_id, RA_TEMPLATE *RA_template, frame_
       LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA is active, Msg3 in (%d,%d)\n",
 	    module_idP,frameP,subframeP,CC_id,RA_template->Msg3_frame,RA_template->Msg3_subframe);
 	    
-      LOG_D(MAC,"Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d)\n",
-	    frameP,subframeP,RA_template->Msg3_frame,RA_template->Msg3_subframe);
+      LOG_D(MAC,"Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d,%d)\n",
+	    frameP,subframeP,RA_template->Msg3_frame,RA_template->Msg3_subframe,
+	    RA_template->msg3_nb_rb,RA_template->msg3_first_rb,RA_template->msg3_round);
       
       ul_config_pdu                                                                  = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus]; 
       
@@ -813,7 +814,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 #endif
     { // This is normal LTE case
       if ((RA_template->Msg4_frame == frameP) && (RA_template->Msg4_subframe == subframeP)) {	      
-	LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
+	LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
 	      module_idP, CC_idP, frameP, subframeP,RA_template->rnti);
 	
 	/// Choose first 4 RBs for Msg4, should really check that these are free!
@@ -870,12 +871,12 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	  RA_template->wait_ack_Msg4=1;
 	  
 	  // increment Absolute subframe by 8 for Msg4 retransmission
-	  LOG_I(MAC,"Frame %d, Subframe %d: Preparing for Msg4 retransmission currently %d.%d\n",
+	  LOG_D(MAC,"Frame %d, Subframe %d: Preparing for Msg4 retransmission currently %d.%d\n",
 		frameP,subframeP,RA_template->Msg4_frame,RA_template->Msg4_subframe);
 	  if (RA_template->Msg4_subframe > 1) RA_template->Msg4_frame++;
 	  RA_template->Msg4_frame&=1023;
 	  RA_template->Msg4_subframe = (RA_template->Msg4_subframe+8)%10;
-	  LOG_I(MAC,"Frame %d, Subframe %d: Msg4 retransmission in %d.%d\n",
+	  LOG_D(MAC,"Frame %d, Subframe %d: Msg4 retransmission in %d.%d\n",
 		frameP,subframeP,RA_template->Msg4_frame,RA_template->Msg4_subframe);
 	  lcid=0;
 	  
@@ -1119,7 +1120,7 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 	} // Msg4 frame/subframe
       } // regular LTE case
   } else {
-    LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",module_idP,CC_idP,frameP,subframeP);
+    LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",module_idP,CC_idP,frameP,subframeP);
     RA_template->wait_ack_Msg4=0;
     RA_template->RA_active=FALSE;
     UE_id = find_UE_id(module_idP,RA_template->rnti);
@@ -1215,6 +1216,7 @@ void initiate_ra_proc(module_id_t module_idP,
     if (RA_template[i].RA_active==FALSE &&
         RA_template[i].wait_ack_Msg4 == 0) {
       int loop = 0;
+      LOG_D(MAC,"Frame %d, Subframe %d: Activating RA process %d\n",frameP,subframeP,i);
       RA_template[i].RA_active          = TRUE;
       RA_template[i].generate_rar       = 1;
       RA_template[i].generate_Msg4      = 0;

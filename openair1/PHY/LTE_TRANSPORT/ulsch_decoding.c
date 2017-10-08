@@ -887,17 +887,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   x2 = ((uint32_t)ulsch->rnti<<14) + ((uint32_t)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   ulsch_harq = ulsch->harq_processes[harq_pid];
 
-  if (harq_pid==255) {
-    LOG_E(PHY, "FATAL ERROR: illegal harq_pid, returning\n");
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0);
-    return -1;
-  }
+  AssertFatal(harq_pid!=255,
+              "FATAL ERROR: illegal harq_pid, returning\n");
 
-  if (ulsch_harq->Nsymb_pusch == 0) {
-      LOG_E(PHY, "FATAL ERROR: harq_pid %d, Nsymb 0!\n",harq_pid);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0); 
-      return 1+ulsch->max_turbo_iterations;
-  }
+  AssertFatal(ulsch_harq->Nsymb_pusch != 0,
+              "FATAL ERROR: harq_pid %d, Nsymb 0!\n",harq_pid);
 
 
   nb_rb = ulsch_harq->nb_rb;
@@ -1032,10 +1026,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   G = G - Q_RI - Q_CQI;
   ulsch_harq->G = G;
 
-  if ((int)G < 0) {
-    LOG_E(PHY,"FATAL: ulsch_decoding.c G < 0 (%d) : Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
-    return(-1);
-  }
+  AssertFatal((int)G > 0,
+              "FATAL: ulsch_decoding.c G < 0 (%d) : Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
 
   H = G + Q_CQI;
   Hprime = H/Q_m;

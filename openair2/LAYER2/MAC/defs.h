@@ -807,6 +807,7 @@ typedef struct {
   uint16_t      ta_timer;
   int16_t       ta_update;
   uint8_t       ul_cqi;
+  uint16_t      ul_consecutive_errors;
   int32_t       context_active_timer;
   int32_t       cqi_req_timer;
   int32_t       ul_inactivity_timer;

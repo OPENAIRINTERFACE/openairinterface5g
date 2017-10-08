@@ -400,6 +400,8 @@ typedef struct {
   uint8_t subframe;
   /// Frame for reception
   uint32_t frame;
+  /// Flag to indicate that the UL configuration has been handled. Used to remove a stale ULSCH when frame wraps around
+  uint8_t handled;
   /// PHICH active flag
   uint8_t phich_active;
   /// PHICH ACK

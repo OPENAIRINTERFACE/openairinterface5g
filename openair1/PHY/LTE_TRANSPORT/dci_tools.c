@@ -2402,7 +2402,9 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
   uint8_t UE_id;
 
   AssertFatal((UE_id=find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
-	      "No existing UE ULSCH for rnti %x\n",ulsch_pdu->ulsch_pdu_rel8.rnti);
+	      "No existing/free UE ULSCH for rnti %x\n",ulsch_pdu->ulsch_pdu_rel8.rnti);
+
+  boolean_t new_ulsch = (find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST)==-1) ? TRUE : FALSE;
 
   LTE_eNB_ULSCH_t *ulsch=eNB->ulsch[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
@@ -2414,6 +2416,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
 
   ulsch->harq_processes[harq_pid]->frame                                 = frame;
   ulsch->harq_processes[harq_pid]->subframe                              = subframe;
+  ulsch->harq_processes[harq_pid]->handled                               = 0;
 
   ulsch->harq_processes[harq_pid]->first_rb                              = ulsch_pdu->ulsch_pdu_rel8.resource_block_start;
   ulsch->harq_processes[harq_pid]->nb_rb                                 = ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
@@ -2457,7 +2460,8 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
   ulsch->harq_processes[harq_pid]->O_ACK         = 0;
 
   if ((ulsch->harq_processes[harq_pid]->status == SCH_IDLE) ||
-      (ulsch->harq_processes[harq_pid]->ndi    != ulsch_pdu->ulsch_pdu_rel8.new_data_indication)){
+      (ulsch->harq_processes[harq_pid]->ndi    != ulsch_pdu->ulsch_pdu_rel8.new_data_indication) ||
+	  (new_ulsch == TRUE)){
     ulsch->harq_processes[harq_pid]->status        = ACTIVE;
     
     ulsch->harq_processes[harq_pid]->TBS           = ulsch_pdu->ulsch_pdu_rel8.size<<3;
@@ -2475,8 +2479,8 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
   else  ulsch->harq_processes[harq_pid]->round++;
 
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;
-  LOG_D(PHY,"Filling ULSCH %x for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
-	ulsch->rnti,
+  LOG_D(PHY,"Filling ULSCH %x (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
+	ulsch->rnti, new_ulsch,
 	frame,
 	subframe,
 	harq_pid,
