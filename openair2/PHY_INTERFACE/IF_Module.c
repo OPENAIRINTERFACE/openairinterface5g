@@ -187,14 +187,16 @@ static void dump_ul(UL_IND_t *u)
   A("XXXX     harq_ind %d\n", u->harq_ind.number_of_harqs);
       for (i = 0; i < u->harq_ind.number_of_harqs; i++) {
         nfapi_harq_indication_pdu_t *v = &u->harq_ind.harq_pdu_list[i];
-  A("XXXX         rnti %d\n", v->rx_ue_information.rnti);
-  A("XXXX         tb1 %d tb2 %d\n", v->harq_indication_fdd_rel8.harq_tb1,
-                                    v->harq_indication_fdd_rel8.harq_tb2);
-  A("XXXX         number_of_ack_nack %d\n",
-                          v->harq_indication_fdd_rel9.number_of_ack_nack);
-  A("XXXX         harq[0] = %d\n", v->harq_indication_fdd_rel9.harq_tb_n[0]);
-  A("XXXX         ul_cqi %d channel %d\n", v->ul_cqi_information.ul_cqi,
-                                           v->ul_cqi_information.channel);
+  A("XXXX         harq ind %d\n", i);
+  A("XXXX             rnti %d\n", v->rx_ue_information.rnti);
+  A("XXXX             tb1 %d tb2 %d\n", v->harq_indication_fdd_rel8.harq_tb1,
+                                        v->harq_indication_fdd_rel8.harq_tb2);
+  A("XXXX             number_of_ack_nack %d\n",
+                              v->harq_indication_fdd_rel9.number_of_ack_nack);
+  A("XXXX             harq[0] = %d\n",
+                                    v->harq_indication_fdd_rel9.harq_tb_n[0]);
+  A("XXXX harq        ul_cqi %d channel %d\n", v->ul_cqi_information.ul_cqi,
+                                               v->ul_cqi_information.channel);
       }
 
   A("XXXX     crc_ind  %d\n", u->crc_ind.number_of_crcs);
@@ -202,10 +204,23 @@ static void dump_ul(UL_IND_t *u)
   A("XXXX     sr_ind   %d\n", u->sr_ind.number_of_srs);
 
   A("XXXX     cqi_ind  %d\n", u->cqi_ind.number_of_cqis);
+      for (i = 0; i < u->cqi_ind.number_of_cqis; i++) {
+        nfapi_cqi_indication_pdu_t *v = &u->cqi_ind.cqi_pdu_list[i];
+  A("XXXX         cqi ind %d\n", i);
+  A("XXXX cqi         ul_cqi %d channel %d\n", v->ul_cqi_information.ul_cqi,
+                                               v->ul_cqi_information.channel);
+      }
 
   A("XXXX     rach_ind %d\n", u->rach_ind.number_of_preambles);
 
   A("XXXX     rx_ind   %d\n", u->rx_ind.number_of_pdus);
+      for (i = 0; i < u->rx_ind.number_of_pdus; i++) {
+        nfapi_rx_indication_pdu_t *v = &u->rx_ind.rx_pdu_list[i];
+  A("XXXX         rx ind %d\n", i);
+  A("XXXX             timing_advance %d\n",
+                                    v->rx_indication_rel8.timing_advance);
+  A("XXXX rx          ul_cqi %d\n", v->rx_indication_rel8.ul_cqi);
+      }
 
   LOG_I(PHY, "XXXX UL\nXXXX UL\n%s", s);
 }
@@ -254,6 +269,18 @@ static char *UL_PDU_TYPE(int x)
   return "UNKNOWN";
 }
 
+static char *HI_DCI0_PDU_TYPE(int x)
+{
+  switch (x) {
+  case NFAPI_HI_DCI0_HI_PDU_TYPE: return "NFAPI_HI_DCI0_HI_PDU_TYPE";
+  case NFAPI_HI_DCI0_DCI_PDU_TYPE: return "NFAPI_HI_DCI0_DCI_PDU_TYPE";
+  case NFAPI_HI_DCI0_EPDCCH_DCI_PDU_TYPE: return "NFAPI_HI_DCI0_EPDCCH_DCI_PDU_TYPE";
+  case NFAPI_HI_DCI0_MPDCCH_DCI_PDU_TYPE: return "NFAPI_HI_DCI0_MPDCCH_DCI_PDU_TYPE";
+  case NFAPI_HI_DCI0_NPDCCH_DCI_PDU_TYPE: return "NFAPI_HI_DCI0_NPDCCH_DCI_PDU_TYPE";
+  }
+  return "UNKNOWN";
+}
+
 static void dump_dl(Sched_Rsp_t *d)
 {
   int i;
@@ -293,7 +320,52 @@ static void dump_dl(Sched_Rsp_t *d)
   A("XXXX                 rnti type  %d\n", q->rnti_type);
   A("XXXX                 xmit pow   %d\n", q->transmission_power);
             break;
+          }
+          case NFAPI_DL_CONFIG_DLSCH_PDU_TYPE: {
+            nfapi_dl_config_dlsch_pdu_rel8_t *q =
+                &p[i].dlsch_pdu.dlsch_pdu_rel8;
+  A("XXXX                 pdu_index %d\n", q->pdu_index);
+  A("XXXX                 rnti      %d\n", q->rnti);
+  A("XXXX                 rv        %d\n", q->redundancy_version);
+  A("XXXX                 mcs       %d\n", q->modulation);
+  A("XXXX                 pa        %d\n", q->pa);
+            break;
           }}
+        }
+      }
+
+      if (d->HI_DCI0_req != NULL) {
+        nfapi_hi_dci0_request_body_t *v=&d->HI_DCI0_req->hi_dci0_request_body;
+  A("XXXX up  HI_DCI0_req sfnsf %d (%d.%d)\n", d->HI_DCI0_req->sfn_sf,
+    d->HI_DCI0_req->sfn_sf/16, d->HI_DCI0_req->sfn_sf%16);
+  A("XXXX up     sfnsf %d\n", v->sfnsf);
+  A("XXXX up     DCIs  %d\n", v->number_of_dci);
+  A("XXXX up     HIs   %d\n", v->number_of_hi);
+        for (i = 0; i < v->number_of_dci + v->number_of_hi; i++) {
+          nfapi_hi_dci0_request_pdu_t *p = &v->hi_dci0_pdu_list[i];
+  A("XXXX up      pdu %d\n", i);
+  A("XXXX up          type %d %s\n",p->pdu_type,HI_DCI0_PDU_TYPE(p->pdu_type));
+          if (p->pdu_type == NFAPI_HI_DCI0_DCI_PDU_TYPE) {
+            nfapi_hi_dci0_dci_pdu_rel8_t *q = &p->dci_pdu.dci_pdu_rel8;
+  A("XXXX up          dci_format           %d\n", q->dci_format);
+  A("XXXX up          cce_index            %d\n", q->cce_index);
+  A("XXXX up          aggregation_level    %d\n", q->aggregation_level);
+  A("XXXX up          rnti                 %d\n", q->rnti);
+  A("XXXX up          rb start             %d\n", q->resource_block_start);
+  A("XXXX up          # rb                 %d\n", q->number_of_resource_block);
+  A("XXXX up          mcs_1                %d\n", q->mcs_1);
+  A("XXXX up          cshift_2_for_drms    %d\n", q->cyclic_shift_2_for_drms);
+  A("XXXX up          freq hop enabled     %d\n", q->frequency_hopping_enabled_flag);
+  A("XXXX up          fre hop bits         %d\n", q->frequency_hopping_bits);
+  A("XXXX up          NDI_1                %d\n", q->new_data_indication_1);
+  A("XXXX up          tx_antenna_seleciton %d\n", q->ue_tx_antenna_seleciton);
+  A("XXXX up          tpc                  %d\n", q->tpc);
+  A("XXXX up          cqi_csi_request      %d\n", q->cqi_csi_request);
+  A("XXXX up          ul_index             %d\n", q->ul_index);
+  A("XXXX up          dl_assignment_index  %d\n", q->dl_assignment_index);
+  A("XXXX up          tpc_bitmap           %d\n", q->tpc_bitmap);
+  A("XXXX up          transmission_power   %d\n", q->transmission_power);
+          }
         }
       }
 
