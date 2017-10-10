@@ -597,8 +597,8 @@ int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_fra
                                    sdu_lengths,
                                    sdu_lcids,
                                    255,    // no drx
-                                   0,  // no timing advance
-                                   NULL,  // no contention res id
+                                   31,     // no timing advance
+                                   NULL,   // no contention res id
                                    padding,
                                    post_padding);
 
