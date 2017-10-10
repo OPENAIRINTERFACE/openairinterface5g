@@ -118,7 +118,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
        /* don't take into account TA if timer is running */
        if (UE_list->UE_sched_ctrl[UE_id].ta_timer == 0)
          UE_list->UE_sched_ctrl[UE_id].ta_update             = timing_advance;
-       UE_list->UE_sched_ctrl[UE_id].ul_cqi                = ul_cqi;
+       UE_list->UE_sched_ctrl[UE_id].pusch_snr[CC_idP]       = ul_cqi;
        UE_list->UE_sched_ctrl[UE_id].ul_consecutive_errors = 0;
        first_rb =  UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
 
@@ -1006,7 +1006,7 @@ abort();
 	  
           // this is the normalized RX power and this should be constant (regardless of mcs
           normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
-          target_rx_power = 20;
+          target_rx_power = 200;
 	  
           // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -1028,7 +1028,7 @@ abort();
 	    } else {
             tpc = 1; //0
           }
-	  tpc = 1;
+	  //tpc = 1;
 	  if (tpc!=1) {
 	    LOG_D(MAC,"[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
 		  module_idP,frameP,subframeP,harq_pid,tpc,
