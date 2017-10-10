@@ -749,8 +749,8 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 				       (unsigned short*)&rrc_sdu_length,             //
 				       &lcid,                       // sdu_lcid
 				       255,                         // no drx
-				       0,                           // no timing advance
-				       RA_template->cont_res_id,  // contention res id
+				       31,                          // no timing advance
+				       RA_template->cont_res_id,    // contention res id
 				       msg4_padding,                // no padding
 				       msg4_post_padding);
 	
@@ -913,8 +913,8 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 					 (unsigned short*)&rrc_sdu_length,             //
 					 &lcid,                       // sdu_lcid
 					 255,                         // no drx
-					 0,                           // no timing advance
-					 RA_template->cont_res_id,  // contention res id
+					 31,                          // no timing advance
+					 RA_template->cont_res_id,    // contention res id
 					 msg4_padding,                // no padding
 					 msg4_post_padding);
 	  

@@ -894,6 +894,8 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   LOG_D(MAC,"Running preprocessor for UE %d (%x)\n",UE_id,rnti);
   // initialize harq_pid and round
 
+  if (ue_sched_ctl->ta_timer) ue_sched_ctl->ta_timer--;
+
   /*
   eNB_UE_stats *eNB_UE_stats;
 

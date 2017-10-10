@@ -115,7 +115,9 @@ void rx_sdu(const module_id_t enb_mod_idP,
        UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer   = 0;
        UE_list->UE_sched_ctrl[UE_id].ul_failure_timer      = 0;
        UE_list->UE_sched_ctrl[UE_id].ul_scheduled         &= (~(1<<harq_pid));
-       UE_list->UE_sched_ctrl[UE_id].ta_update             = timing_advance;
+       /* don't take into account TA if timer is running */
+       if (UE_list->UE_sched_ctrl[UE_id].ta_timer == 0)
+         UE_list->UE_sched_ctrl[UE_id].ta_update             = timing_advance;
        UE_list->UE_sched_ctrl[UE_id].ul_cqi                = ul_cqi;
        UE_list->UE_sched_ctrl[UE_id].ul_consecutive_errors = 0;
        first_rb =  UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];

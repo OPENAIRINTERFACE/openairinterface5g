@@ -1525,19 +1525,15 @@ void init_te_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_te) {
 
 }
 
-
-
-
-
-void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
-
+void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe)
+{
   nfapi_rx_indication_pdu_t *pdu;
 
   int timing_advance_update;
   int sync_pos;
 
   uint32_t harq_pid = subframe2harq_pid(&eNB->frame_parms,
-					frame,subframe);
+                                        frame,subframe);
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   pdu                                    = &eNB->UL_INFO.rx_ind.rx_pdu_list[eNB->UL_INFO.rx_ind.number_of_pdus];
@@ -1546,55 +1542,41 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
   pdu->rx_ue_information.rnti            = eNB->ulsch[UE_id]->rnti;
   pdu->rx_indication_rel8.length         = eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS>>3;
   pdu->rx_indication_rel8.offset         = 0;  // filled in at the end of the UL_INFO formation
-  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->b;  
+  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->b;
   // estimate timing advance for MAC
   sync_pos                               = lte_est_timing_advance_pusch(eNB,UE_id);
   timing_advance_update                  = sync_pos - eNB->frame_parms.nb_prefix_samples/4; //to check
 
-
   //  if (timing_advance_update > 10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}
   //  if (timing_advance_update < -10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}
   switch (eNB->frame_parms.N_RB_DL) {
-  case 6:
-    pdu->rx_indication_rel8.timing_advance = timing_advance_update;  
-    break;
-  case 15:
-    pdu->rx_indication_rel8.timing_advance = timing_advance_update/2;  
-    break;
-  case 25:
-    pdu->rx_indication_rel8.timing_advance = timing_advance_update/4;  
-    break;
-  case 50:
-    pdu->rx_indication_rel8.timing_advance = timing_advance_update/8;  
-    break;
-  case 75:
-    pdu->rx_indication_rel8.timing_advance = timing_advance_update/12;  
-    break;
-  case 100:
-    pdu->rx_indication_rel8.timing_advance = timing_advance_update/16;  
-    break;
+  case 6:   /* nothing to do */          break;
+  case 15:  timing_advance_update /= 2;  break;
+  case 25:  timing_advance_update /= 4;  break;
+  case 50:  timing_advance_update /= 8;  break;
+  case 75:  timing_advance_update /= 12; break;
+  case 100: timing_advance_update /= 16; break;
+  default: abort();
   }
   // put timing advance command in 0..63 range
-  pdu->rx_indication_rel8.timing_advance += 31;
-  if (pdu->rx_indication_rel8.timing_advance < 0)  pdu->rx_indication_rel8.timing_advance = 0;
-  if (pdu->rx_indication_rel8.timing_advance > 63) pdu->rx_indication_rel8.timing_advance = 63;
+  timing_advance_update += 31;
+  if (timing_advance_update < 0)  timing_advance_update = 0;
+  if (timing_advance_update > 63) timing_advance_update = 63;
+  pdu->rx_indication_rel8.timing_advance = timing_advance_update;
 
   // estimate UL_CQI for MAC (from antenna port 0 only)
   int SNRtimes10 = dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[0]) - 200;//(10*eNB->measurements.n0_power_dB[0]);
-
 
   if      (SNRtimes10 < -640) pdu->rx_indication_rel8.ul_cqi=0;
   else if (SNRtimes10 >  635) pdu->rx_indication_rel8.ul_cqi=255;
   else                        pdu->rx_indication_rel8.ul_cqi=(640+SNRtimes10)/5;
 
-
   LOG_D(PHY,"[PUSCH %d] Filling RX_indication with SNR %d (%d), timing_advance %d (update %d)\n",
-	harq_pid,SNRtimes10,pdu->rx_indication_rel8.ul_cqi,pdu->rx_indication_rel8.timing_advance,
-	timing_advance_update);
+        harq_pid,SNRtimes10,pdu->rx_indication_rel8.ul_cqi,pdu->rx_indication_rel8.timing_advance,
+        timing_advance_update);
 
   eNB->UL_INFO.rx_ind.number_of_pdus++;
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-
 }
 
 void release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,uint8_t subframe,uint16_t mask) {

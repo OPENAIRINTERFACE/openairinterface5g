@@ -169,7 +169,7 @@ generate_dlsch_header(
     last_size=1;
   }
 
-  if (timing_advance_cmd != 0) {
+  if (timing_advance_cmd != 31) {
     if (first_element>0) {
       mac_header_ptr->E = 1;
       mac_header_ptr++;
@@ -457,6 +457,7 @@ schedule_ue_spec(
   nfapi_dl_config_request_body_t *dl_req;
   nfapi_dl_config_request_pdu_t  *dl_config_pdu;
   int                            tdd_sfa;
+  int                            ta_update;
 
 #if 0
   if (UE_list->head==-1) {
@@ -816,7 +817,18 @@ schedule_ue_spec(
         // check first for RLC data on DCCH
         // add the length for  all the control elements (timing adv, drx, etc) : header + payload
 
-        ta_len = (ue_sched_ctl->ta_update!=0) ? 2 : 0;
+        if (ue_sched_ctl->ta_timer == 0) {
+          ta_update = ue_sched_ctl->ta_update;
+          /* if we send TA then set timer to not send it for a while */
+          if (ta_update != 31)
+            ue_sched_ctl->ta_timer = 20;
+          /* reset ta_update */
+          ue_sched_ctl->ta_update = 31;
+        } else {
+          ta_update = 31;
+        }
+
+        ta_len = (ta_update != 31) ? 2 : 0;
 
         header_len_dcch = 2; // 2 bytes DCCH SDU subheader
 
@@ -1094,17 +1106,17 @@ schedule_ue_spec(
                                          sdu_lengths,  //
                                          sdu_lcids,
                                          255,                                   // no drx
-                                         ue_sched_ctl->ta_update, // timing advance
+                                         ta_update, // timing advance
                                          NULL,                                  // contention res id
                                          padding,
                                          post_padding);
 
           //#ifdef DEBUG_eNB_SCHEDULER
-          if (ue_sched_ctl->ta_update) {
+          if (ta_update != 31) {
             LOG_D(MAC,
                   "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
                   module_idP,frameP, UE_id, CC_id, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
-                  ue_sched_ctl->ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
+                  ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
 	  }
           //#endif
 #ifdef DEBUG_eNB_SCHEDULER
@@ -1116,6 +1128,7 @@ schedule_ue_spec(
 
           LOG_T(MAC,"\n");
 #endif
+
           // cycle through SDUs and place in dlsch_buffer
           memcpy(&UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset],dlsch_buffer,sdu_length_total);
           // memcpy(RC.mac[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
