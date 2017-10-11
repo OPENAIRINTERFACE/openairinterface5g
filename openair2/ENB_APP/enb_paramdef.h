@@ -489,141 +489,155 @@ static int DEFENBS[] = {0};
 
 #define ENB_CONFIG_STRING_SCHEDULING_INFO_LIST                   "scheduling_info_br"
 
-#define ENB_CONFIG_STRING_BR_PARAMETERS                          "br_parameters"
-#define ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_LIST                    "system_info_value_tag_SI"
-#define ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_SI_R13                  "systemInfoValueTagSi_r13"
 
-#define BR_PARAMS_DESC { \
-    {"schedulingInfoSIB1_BR_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-      {"cellSelectionInfoCE_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"si_Narrowband_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"si_TBS_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"cellSelectionInfoCE_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"q_RxLevMinCE_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"bandwidthReducedAccessRelatedInfo_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"si_WindowLength_BR_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"si_RepetitionPattern_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"fdd_DownlinkOrTddSubframeBitmapBR_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"fdd_DownlinkOrTddSubframeBitmapBR_val_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"startSymbolBR_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"si_HoppingConfigCommon_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"si_ValidityTime_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"freqHoppingParametersDL_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"mpdcch_pdsch_HoppingNB_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"interval_DLHoppingConfigCommonModeA_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"interval_DLHoppingConfigCommonModeA_r13_val",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"interval_DLHoppingConfigCommonModeB_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"interval_DLHoppingConfigCommonModeB_r13_val",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"mpdcch_pdsch_HoppingOffset_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"frame_type",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"preambleTransMax_CE_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"rach_numberOfRA_Preambles",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"rach_powerRampingStep",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"rach_preambleInitialReceivedTargetPower",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"rach_preambleTransMax",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"rach_raResponseWindowSize",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"rach_macContentionResolutionTimer",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"rach_maxHARQ_Msg3Tx",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"bcch_modificationPeriodCoeff",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pcch_default_PagingCycle",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pcch_nB",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"prach_root",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"prach_config_index",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"prach_high_speed",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"prach_zero_correlation",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"prach_freq_offset",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pdsch_referenceSignalPower",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pdsch_p_b",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_n_SB",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_hoppingMode",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_hoppingOffset",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_enable64QAM",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_groupHoppingEnabled",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_groupAssignment",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_sequenceHoppingEnabled",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_delta_shift",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_nRB_CQI",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_nCS_AN",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_n1_AN",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_p0_Nominal",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_alpha",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_p0_Nominal",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_deltaF_Format1",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_deltaF_Format1b",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_deltaF_Format2",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_deltaF_Format2a",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_deltaF_Format2b",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"msg3_delta_Preamble",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"prach_ConfigCommon_v1310",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pdsch_maxNumRepetitionCEmodeA_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pdsch_maxNumRepetitionCEmodeB_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_maxNumRepetitionCEmodeA_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_maxNumRepetitionCEmodeB_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_HoppingOffset_v1310",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"mpdcch_startSF_CSS_RA_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"mpdcch_startSF_CSS_RA_r13_val",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"prach_HoppingOffset_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"ue_TimersAndConstants_t300",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"ue_TimersAndConstants_t301",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"ue_TimersAndConstants_t310",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"ue_TimersAndConstants_t311",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"ue_TimersAndConstants_n310",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"ue_TimersAndConstants_n311",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"ue_TransmissionMode",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_NumRepetitionCE_Msg4_Level0_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_NumRepetitionCE_Msg4_Level1_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_NumRepetitionCE_Msg4_Level2_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pucch_NumRepetitionCE_Msg4_Level3_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"rach_preamblesGroupAConfig",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"pusch_nDMRS1",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"phich_duration",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"phich_resource",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-{"srs_enable",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \
+
+#define ENB_CONFIG_STRING_BR_PARAMETERS                          "br_parameters"
+#define BRPARAMS_DESC { \
+{"schedulingInfoSIB1_BR_r13",                                    NULL,   0,           iptr:&schedulingInfoSIB1_BR_r13,                              defintval:,              TYPE_UINT,       0}, \
+{"cellSelectionInfoCE_r13",                                      NULL,   0,           strptr:&cellSelectionInfoCE_r13,                              defintval:,              TYPE_STRING,       0}, \
+{"si_Narrowband_r13",                                            NULL,   0,           iptr:&q_RxLevMinCE_r13,                              defintval:,              TYPE_UINT,       0}, \
+{"si_TBS_r13",                                                   NULL,   0,           iptr:&si_TBS_r13,                              defintval:,              TYPE_UINT,       0}, \
+{"cellSelectionInfoCE_r13",                                      NULL,   0,           strptr:&cellSelectionInfoCE_r13,                              defintval:,              TYPE_STRING,       0}, \
+{"q_RxLevMinCE_r13",                                             NULL,   0,           iptr:&q_RxLevMinCE_r13,                              defintval:,              TYPE_INT,       0}, \
+{"bandwidthReducedAccessRelatedInfo_r13",                        NULL,   0,           iptr:&bandwidthReducedAccessRelatedInfo_r13,                              defintval:,              TYPE_UINT,       0}, \
+{"si_WindowLength_BR_r13",                                       NULL,   0,           strptr:&si_WindowLength_BR_r13,                              defintval:,              TYPE_STRING,       0}, \
+{"si_RepetitionPattern_r13",                                     NULL,   0,           strptr:&si_RepetitionPattern_r13,                              defintval:,              TYPE_STRING,       0}, \
+{"fdd_DownlinkOrTddSubframeBitmapBR_r13",                        NULL,   0,           strptr:&fdd_DownlinkOrTddSubframeBitmapBR_r13,                              defintval:,              TYPE_STRING,       0}, \
+{"fdd_DownlinkOrTddSubframeBitmapBR_val_r13",                    NULL,   0,           i64ptr:&fdd_DownlinkOrTddSubframeBitmapBR_val_r13,                              defintval:,              TYPE_UINT64,       0}, \
+{"startSymbolBR_r13",                                            NULL,   0,           iptr:&startSymbolBR_r13,                              defintval:,              TYPE_UINT,       0}, \
+{"si_HoppingConfigCommon_r13",                                   NULL,   0,           dytptr:&si_HoppingConfigCommon_r13 ,                              defintval:,              TYPE_STRING,       0}, \
+{"si_ValidityTime_r13",                                          NULL,   0,           strptr:&si_ValidityTime_r13,                              defintval:,              TYPE_STRING,       0}, \
+{"freqHoppingParametersDL_r13",                                  NULL,   0,           strptr:&freqHoppingParametersDL_r13,                              defintval:,              TYPE_STRING,       0}, \
+{"mpdcch_pdsch_HoppingNB_r13",                                   NULL,   0,           strptr:&mpdcch_pdsch_HoppingNB_r13,                              defintval:,              TYPE_STRING,       0}, \
+{"interval_DLHoppingConfigCommonModeA_r13",                      NULL,   0,           strptr:&interval_DLHoppingConfigCommonModeA_r13,                              defintval:,              TYPE_STRING,       0}, \
+{"interval_DLHoppingConfigCommonModeA_r13_val",                  NULL,   0,           iptr:&interval_DLHoppingConfigCommonModeA_r13_val,                              defintval:,              TYPE_UINT,       0}, \
+{"interval_DLHoppingConfigCommonModeB_r13",                      NULL,   0,           strptr:&interval_DLHoppingConfigCommonModeB_r13,                              defintval:,              TYPE_STRING,       0}, \
+{"interval_DLHoppingConfigCommonModeB_r13_val",                  NULL,   0,           iptr:&interval_DLHoppingConfigCommonModeB_r13_val,                              defintval:,              TYPE_UINT,       0}, \
+{"mpdcch_pdsch_HoppingOffset_r13",                               NULL,   0,           iptr:&mpdcch_pdsch_HoppingOffset_r13,                              defintval:,              TYPE_UINT,       0}, \
+{ENB_CONFIG_STRING_FRAME_TYPE,                                   NULL,   0,           strptr:&frame_type,                                defstrval:"FDD",           TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_TDD_CONFIG,                                   NULL,   0,           iptr:&tdd_config,                                  defintval:3,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_TDD_CONFIG_S,                                 NULL,   0,           iptr:&tdd_config_s,                                defintval:0,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PREFIX_TYPE,                                  NULL,   0,           strptr:&prefix_type,                               defstrval:"NORMAL",        TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PBCH_REPETITION,                              NULL,   0,           strptr:&pbch_repetition,                           defstrval:"FALSE",         TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_EUTRA_BAND,                                   NULL,   0,           iptr:&eutra_band,                                  defintval:7,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_DOWNLINK_FREQUENCY,                           NULL,   0,           i64ptr:(int64_t *)&downlink_frequency,             defint64val:2680000000,    TYPE_UINT64,     0},  \
+{ENB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET,                      NULL,   0,           iptr:&uplink_frequency_offset,                     defintval:-120000000,      TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_NID_CELL,                                     NULL,   0,           iptr:&Nid_cell,                                    defintval:0,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_N_RB_DL,                                      NULL,   0,           iptr:&N_RB_DL,                                     defintval:25,              TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_CELL_MBSFN,                                   NULL,   0,           iptr:&Nid_cell_mbsfn,                              defintval:0,               TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_NB_ANT_PORTS,                                 NULL,   0,           iptr:&nb_antenna_ports,                            defintval:1,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PRACH_ROOT,                                   NULL,   0,           iptr:&prach_root,                                  defintval:0,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PRACH_CONFIG_INDEX,                           NULL,   0,           iptr:&prach_config_index,                          defintval:0,               TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_PRACH_HIGH_SPEED,                             NULL,   0,           strptr:&prach_high_speed,                          defstrval:"DISABLE",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PRACH_ZERO_CORRELATION,                       NULL,   0,           iptr:&prach_zero_correlation,                      defintval:1,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PRACH_FREQ_OFFSET,                            NULL,   0,           iptr:&prach_freq_offset,                           defintval:2,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PUCCH_DELTA_SHIFT,                            NULL,   0,           iptr:&pucch_delta_shift,                           defintval:1,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PUCCH_NRB_CQI,                                NULL,   0,           iptr:&pucch_nRB_CQI,                               defintval:1,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PUCCH_NCS_AN,                                 NULL,   0,           iptr:&pucch_nCS_AN,                                defintval:0,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PUCCH_N1_AN,                                  NULL,   0,           iptr:&pucch_n1_AN,                                 defintval:32,              TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PDSCH_RS_EPRE,                                NULL,   0,           iptr:&pdsch_referenceSignalPower,                  defintval:-29,             TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_PDSCH_PB,                                     NULL,   0,           iptr:&pdsch_p_b,                                   defintval:0,               TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_PUSCH_N_SB,                                   NULL,   0,           iptr:&pusch_n_SB,                                  defintval:1,               TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_PUSCH_HOPPINGMODE,                            NULL,   0,           strptr:&pusch_hoppingMode,                         defstrval:"interSubFrame", TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PUSCH_HOPPINGOFFSET,                          NULL,   0,           iptr:&pusch_hoppingOffset,                         defintval:0,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PUSCH_ENABLE64QAM,                            NULL,   0,           strptr:&pusch_enable64QAM,                         defstrval:"DISABLE",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PUSCH_GROUP_HOPPING_EN,                       NULL,   0,           strptr:&pusch_groupHoppingEnabled,                 defstrval:"ENABLE",        TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PUSCH_GROUP_ASSIGNMENT,                       NULL,   0,           iptr:&pusch_groupAssignment,                       defintval:0,               TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_PUSCH_SEQUENCE_HOPPING_EN,                    NULL,   0,           strptr:&pusch_sequenceHoppingEnabled,              defstrval:"DISABLE",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PUSCH_NDMRS1,                                 NULL,   0,           iptr:&pusch_nDMRS1,                                defintval:0,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PHICH_DURATION,                               NULL,   0,           strptr:&phich_duration,                            defstrval:"NORMAL",        TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PHICH_RESOURCE,                               NULL,   0,           strptr:&phich_resource,                            defstrval:"ONESIXTH",      TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_SRS_ENABLE,                                   NULL,   0,           strptr:&srs_enable,                                defstrval:"DISABLE",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_SRS_BANDWIDTH_CONFIG,                         NULL,   0,           iptr:&srs_BandwidthConfig,                         defintval:0,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_SRS_SUBFRAME_CONFIG,                          NULL,   0,           iptr:&srs_SubframeConfig,                          defintval:0,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_SRS_ACKNACKST_CONFIG,                         NULL,   0,           strptr:&srs_ackNackST,                             defstrval:"DISABLE",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_SRS_MAXUPPTS,                                 NULL,   0,           strptr:&srs_MaxUpPts,                              defstrval:"DISABLE",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PUSCH_PO_NOMINAL,                             NULL,   0,           iptr:&pusch_p0_Nominal,                            defintval:-90,             TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_PUSCH_ALPHA,                                  NULL,   0,           strptr:&pusch_alpha,                               defstrval:"AL1",           TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PUCCH_PO_NOMINAL,                             NULL,   0,           iptr:&pucch_p0_Nominal,                            defintval:-96,             TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_MSG3_DELTA_PREAMBLE,                          NULL,   0,           iptr:&msg3_delta_Preamble,                         defintval:6,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT1,                         NULL,   0,           strptr:&pucch_deltaF_Format1,                      defstrval:"DELTAF2",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT1b,                        NULL,   0,           strptr:&pucch_deltaF_Format1b,                     defstrval:"deltaF3",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT2,                         NULL,   0,           strptr:&pucch_deltaF_Format2,                      defstrval:"deltaF0",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT2A,                        NULL,   0,           strptr:&pucch_deltaF_Format2a,                     defstrval:"deltaF0",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT2B,                        NULL,   0,           strptr:&pucch_deltaF_Format2b,                     defstrval:"deltaF0",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_RACH_NUM_RA_PREAMBLES,                        NULL,   0,           iptr:&rach_numberOfRA_Preambles,                   defintval:4,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_RACH_PREAMBLESGROUPACONFIG,                   NULL,   0,           strptr:&rach_preamblesGroupAConfig,                defstrval:"DISABLE",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_RACH_SIZEOFRA_PREAMBLESGROUPA,                NULL,   0,           iptr:&rach_sizeOfRA_PreamblesGroupA,               defintval:0,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_RACH_MESSAGESIZEGROUPA,                       NULL,   0,           iptr:&rach_messageSizeGroupA,                      defintval:56,              TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_RACH_MESSAGEPOWEROFFSETGROUPB,                NULL,   0,           strptr:&rach_messagePowerOffsetGroupB,             defstrval:"minusinfinity", TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_RACH_POWERRAMPINGSTEP,                        NULL,   0,           iptr:&rach_powerRampingStep,                       defintval:4,               TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_RACH_PREAMBLEINITIALRECEIVEDTARGETPOWER,      NULL,   0,           iptr:&rach_preambleInitialReceivedTargetPower,     defintval:-100,            TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_RACH_PREAMBLETRANSMAX,                        NULL,   0,           iptr:&rach_preambleTransMax,                       defintval:10,              TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_RACH_RARESPONSEWINDOWSIZE,                    NULL,   0,           iptr:&rach_raResponseWindowSize,                   defintval:10,              TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_RACH_MACCONTENTIONRESOLUTIONTIMER,            NULL,   0,           iptr:&rach_macContentionResolutionTimer,           defintval:48,              TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_RACH_MAXHARQMSG3TX,                           NULL,   0,           iptr:&rach_maxHARQ_Msg3Tx,                         defintval:4,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PCCH_DEFAULT_PAGING_CYCLE,                    NULL,   0,           iptr:&pcch_defaultPagingCycle,                     defintval:128,             TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_PCCH_NB,                                      NULL,   0,           strptr:&pcch_nB,                                   defstrval:"oneT",          TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_BCCH_MODIFICATIONPERIODCOEFF,                 NULL,   0,           iptr:&bcch_modificationPeriodCoeff,                defintval:2,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_UETIMERS_T300,                                NULL,   0,           iptr:&ue_TimersAndConstants_t300,                  defintval:1000,            TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_UETIMERS_T301,                                NULL,   0,           iptr:&ue_TimersAndConstants_t301,                  defintval:1000,            TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_UETIMERS_T310,                                NULL,   0,           iptr:&ue_TimersAndConstants_t310,                  defintval:1000,            TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_UETIMERS_T311,                                NULL,   0,           iptr:&ue_TimersAndConstants_t311,                  defintval:10000,           TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_UETIMERS_N310,                                NULL,   0,           iptr:&ue_TimersAndConstants_n310,                  defintval:20,              TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ue_TimersAndConstants_n311,                  defintval:1,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ue_TransmissionMode,                         defintval:1,               TYPE_UINT,       0}, \
+{"pucch_NumRepetitionCE_Msg4_Level0_r13",                        NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level0_r13,     defstrval:,              TYPE_STRING,       0}, \
+{"pucch_NumRepetitionCE_Msg4_Level1_r13",                        NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level1_r13,     defstrval:,              TYPE_STRING,       0}, \
+{"pucch_NumRepetitionCE_Msg4_Level2_r13",                        NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level2_r13,     defstrval:,              TYPE_STRING,       0}, \
+{"pucch_NumRepetitionCE_Msg4_Level3_r13",                        NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level3_r13,     defstrval:,              TYPE_STRING,       0}, \
+{"rach_preamblesGroupAConfig",                                   NULL,   0,           strptr:&rach_preamblesGroupAConfig,                defstrval:,              TYPE_STRING,       0}, \
 }
+
+#define ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_LIST                    "system_info_value_tag_SI"
+#define RSRP_RANGE_LIST_DESC { \
+{"systemInfoValueTagSi_r13", NULL,   0,           iptr:&systemInfoValueTagSi_r13,                              defintval:,              TYPE_UINT,       0} \
+  }
+
 
 #define ENB_CONFIG_STRING_SCHEDULING_INFO_BR                           "scheduling_info_br"
 #define SI_INFO_BR_DESC { \
-    {"si_Narrowband_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-      {"si_TBS_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \
+{"si_Narrowband_r13", NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
+{"si_TBS_r13",        NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \
   }
 
 #define ENB_CONFIG_STRING_RSRP_RANGE_LIST "rsrp_range_list"
 #define RSRP_RANGE_LIST_DESC { \
-{"rsrp_range_br",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \
+{"rsrp_range_br", NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \
   }
 
 
 #define ENB_CONFIG_STRING_RACH_CE_LEVELINFOLIST_R13 "rach_CE_LevelInfoList_r13"
-#define BR_PARAMS_DESC { \
+#define RACH_CE_LEVELINFOLIST_R13_DESC { \
 {"firstPreamble_r13",                     NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-  {"lastPreamble_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
-    {"ra_ResponseWindowSize_r13",             NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
+{"lastPreamble_r13",                      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
+{"ra_ResponseWindowSize_r13",             NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
 {"mac_ContentionResolutionTimer_r13",     NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \
 {"rar_HoppingConfig_r13",                 NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}\
 }
 
 #define ENB_CONFIG_STRING_PRACH_PARAMETERS_CE_R13 "prach_parameters_ce_r13"							
 #define PRACH_PARAMS_CE_R13_DESC { \
-{"prach_config_index_br",                    NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \ 
-{"prach_freq_offset_br",                     NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \   
-{"prach_StartingSubframe_r13",               NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \  
-{"maxNumPreambleAttemptCE_r13",              NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \  
-{"numRepetitionPerPreambleAttempt_r13",      NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \  
-{"mpdcch_NumRepetition_RA_r13",              NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \ 
-{"prach_HoppingConfig_r13",                  NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \    
-{"max_available_narrow_band",                NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \  
+{"prach_config_index_br",               NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \ 
+{"prach_freq_offset_br",                NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \   
+{"prach_StartingSubframe_r13",          NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \  
+{"maxNumPreambleAttemptCE_r13",         NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \  
+{"numRepetitionPerPreambleAttempt_r13", NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \  
+{"mpdcch_NumRepetition_RA_r13",         NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \ 
+{"prach_HoppingConfig_r13",             NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0}, \    
+{"max_available_narrow_band",           NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \  
 }
 
 #define ENB_CONFIG_STRING_N1PUCCH_AN_INFOLIST_R13 "n1PUCCH_AN_InfoList_r13"
-#define PRACH_PARAMS_CE_R13_DESC { \
-"pucch_info_value",                  NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \  
+#define N1PUCCH_AN_INFOLIST_R13_DESC { \
+"pucch_info_value", NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \  
 }
 
 #define ENB_CONFIG_STRING_PCCH_CONFIG_V1310 "pcch_config_v1310"
 #define PCCH_CONFIG_V1310_DESC { \
-"paging_narrowbands_r13",            NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \  
-"mpdcch_numrepetition_paging_r13",   NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \  
-"nb_v1310",                          NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \  
+"paging_narrowbands_r13",          NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \  
+"mpdcch_numrepetition_paging_r13", NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \  
+"nb_v1310",                        NULL,   0,           iptr:&,                              defintval:,              TYPE_UINT,       0} \  
  }
 
 #define ENB_CONFIG_STRING_SIB2_FREQ_HOPPINGPARAMETERS_R13          "sib2_freq_hoppingParameters_r13" 

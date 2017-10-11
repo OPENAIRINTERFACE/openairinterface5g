@@ -480,15 +480,24 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   
   // for no gcc warnings 
   (void)my_int;
-  paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
+  paramdef_t ENBSParams[]            = ENBSPARAMS_DESC;
   
-  paramdef_t ENBParams[]  = ENBPARAMS_DESC;
-  paramlist_def_t ENBParamList = {ENB_CONFIG_STRING_ENB_LIST,NULL,0};  
+  paramdef_t ENBParams[]             = ENBPARAMS_DESC;
+  paramlist_def_t ENBParamList       = {ENB_CONFIG_STRING_ENB_LIST,NULL,0};  
 
-  paramdef_t CCsParams[] = CCPARAMS_DESC;
-  paramlist_def_t CCsParamList = {ENB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
-  
-  paramdef_t SRB1Params[] = SRB1PARAMS_DESC;  
+  paramdef_t CCsParams[]             = CCPARAMS_DESC;
+  paramlist_def_t CCsParamList       = {ENB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
+
+  paramdef_t brParams[]              = BRPARAMS_DESC;
+  paramdef_t siInfoBRParams[]        = SI_INFO_BR_DESC;
+  paramdef_t rsrprangeParams[]       = RSRP_RANGE_LIST_DESC;
+  paramdef_t rachcelevelParams[]     = RACH_CE_LEVELINFOLIST_R13_DESC;
+  paramdef_t prachParams[]           = PRACH_PARAMS_CE_R13_DESC;
+  paramdef_t n1PUCCH_ANR13Params[]   = N1PUCCH_AN_INFOLIST_R13_DESC;
+  paramdef_t pcchv1310Params[]       = PCCH_CONFIG_V1310_DESC;
+  paramdef_t sib2freqhoppingParams[] = SIB2_FREQ_HOPPING_R13_DESC;
+
+  paramdef_t SRB1Params[]            = SRB1PARAMS_DESC;  
 
   
 
@@ -1717,6 +1726,11 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       RC.config_file_name, i, ue_TransmissionMode);
 		  break;
 		}
+
+		
+		sprintf(brpath,"%s.%s.[%i].%s",enbpath,ENB_CONFIG_STRING_COMPONENT_CARRIERS,ENB_CONFIG_STRING_BR_PARAMETERS,j);
+		config_get( CCsParams,sizeof(CCsParams)/sizeof(paramdef_t),ccspath);	      
+
 	      }
 	    }
 	    char srb1path[MAX_OPTNAME_SIZE*2 + 8];
