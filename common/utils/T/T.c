@@ -36,7 +36,7 @@ static void get_message(int s)
   int is_on;
 
   if (read(s, &t, 1) != 1) QUIT("get_message fails");
-printf("got mess %d\n", t);
+printf("T tracer: got mess %d\n", t);
   switch (t) {
   case 0:
     /* toggle all those IDs */
