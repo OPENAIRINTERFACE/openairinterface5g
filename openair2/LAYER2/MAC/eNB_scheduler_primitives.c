@@ -2812,7 +2812,7 @@ try_again:
   } // for i = 0 ... num_UL_DCIs
 
   for (i=0;i<DL_req->number_pdu;i++) {
-    // allocate DL common DCIs first
+    // allocate DL UE specific DCIs
     if ((dl_config_pdu[i].pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)&&
         (dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.rnti_type==1)) {
       LOG_D(MAC,"Trying to allocate DL UE-SPECIFIC DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
