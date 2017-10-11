@@ -811,13 +811,15 @@ int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
     AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d] is null\n",i);
     AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d][0] is null\n",i);
     LOG_D(PHY,"searching for rnti %x : UE index %d=> harq_mask %x, rnti %x, first_free_index %d\n",
-	  rnti,i,eNB->dlsch[i][0]->harq_mask,eNB->dlsch[i][0]->rnti,first_free_index);
+          rnti,i,eNB->dlsch[i][0]->harq_mask,eNB->dlsch[i][0]->rnti,first_free_index);
     if ((eNB->dlsch[i][0]->harq_mask >0) &&
-	(eNB->dlsch[i][0]->rnti==rnti))       return(i); 
+        (eNB->dlsch[i][0]->rnti==rnti))       return i;
     else if ((eNB->dlsch[i][0]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
   }
-  if (type == SEARCH_EXIST) return(-1);
-  else return(first_free_index);
+  if (type == SEARCH_EXIST) return -1;
+  if (first_free_index != -1)
+    eNB->dlsch[first_free_index][0]->rnti = -1;
+  return first_free_index;
 }
 
 int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
@@ -827,13 +829,15 @@ int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
 
   AssertFatal(eNB!=NULL,"eNB is null\n");
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    AssertFatal(eNB->ulsch[i]!=NULL,"eNB->dlsch[%d] is null\n",i);
+    AssertFatal(eNB->ulsch[i]!=NULL,"eNB->ulsch[%d] is null\n",i);
     if ((eNB->ulsch[i]->harq_mask >0) &&
-	(eNB->ulsch[i]->rnti==rnti))       return(i); 
+        (eNB->ulsch[i]->rnti==rnti))       return i;
     else if ((eNB->ulsch[i]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
   }
-  if (type == SEARCH_EXIST) return(-1);
-  else return(first_free_index);
+  if (type == SEARCH_EXIST) return -1;
+  if (first_free_index != -1)
+    eNB->ulsch[first_free_index]->rnti = -1;
+  return first_free_index;
 }
 
 
