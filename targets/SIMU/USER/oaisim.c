@@ -183,7 +183,7 @@ extern uint16_t Nid_cell;
 
 double cpuf;
 #include "threads_t.h"
-threads_t threads= {-1,-1,-1};
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 
 //#ifdef XFORMS
 int otg_enabled;
@@ -1457,7 +1457,8 @@ reset_opp_meas_oaisim (void)
   reset_meas (&ul_chan_stats);
 
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc[0]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc[1]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[0]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[1]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_tx);
@@ -1626,7 +1627,9 @@ print_opp_meas_oaisim (void)
   }
 
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc, "[UE][total_phy_proc]",
+    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc[0], "[UE][total_phy_proc[0]]",
+                &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc[1], "[UE][total_phy_proc[1]]",
                 &oaisim_stats, &oaisim_stats_f);
 
 

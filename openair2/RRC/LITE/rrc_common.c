@@ -151,72 +151,9 @@ rrc_init_global_param(
   Rlc_info_am_config.rlc.rlc_am_info.t_poll_retransmit = 15;
   Rlc_info_am_config.rlc.rlc_am_info.t_reordering = 50;
   Rlc_info_am_config.rlc.rlc_am_info.t_status_prohibit = 10;
-#ifndef NO_RRM
-
-  if (L3_xface_init ()) {
-    return (-1);
-  }
-
-#endif
 
   return 0;
 }
-
-#ifndef NO_RRM
-//-----------------------------------------------------------------------------
-int
-L3_xface_init(
-  void
-)
-//-----------------------------------------------------------------------------
-{
-
-  int ret = 0;
-
-#ifdef USER_MODE
-
-  int sock;
-  LOG_D(RRC, "[L3_XFACE] init de l'interface \n");
-
-  if (open_socket (&S_rrc, RRC_RRM_SOCK_PATH, RRM_RRC_SOCK_PATH, 0) == -1) {
-    return (-1);
-  }
-
-  if (S_rrc.s == -1) {
-    return (-1);
-  }
-
-  socket_setnonblocking (S_rrc.s);
-  msg ("Interface Connected... RRM-RRC\n");
-  return 0;
-
-#else
-
-  ret=rtf_create(RRC2RRM_FIFO,32768);
-
-  if (ret < 0) {
-    msg("[openair][MAC][INIT] Cannot create RRC2RRM fifo %d (ERROR %d)\n",RRC2RRM_FIFO,ret);
-    return(-1);
-  } else {
-    msg("[openair][MAC][INIT] Created RRC2RRM fifo %d\n",RRC2RRM_FIFO);
-    rtf_reset(RRC2RRM_FIFO);
-  }
-
-  ret=rtf_create(RRM2RRC_FIFO,32768);
-
-  if (ret < 0) {
-    msg("[openair][MAC][INIT] Cannot create RRM2RRC fifo %d (ERROR %d)\n",RRM2RRC_FIFO,ret);
-    return(-1);
-  } else {
-    msg("[openair][MAC][INIT] Created RRC2RRM fifo %d\n",RRM2RRC_FIFO);
-    rtf_reset(RRM2RRC_FIFO);
-  }
-
-  return(0);
-
-#endif
-}
-#endif
 
 //-----------------------------------------------------------------------------
 void

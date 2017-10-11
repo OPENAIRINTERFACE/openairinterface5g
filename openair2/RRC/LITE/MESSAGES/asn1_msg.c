@@ -202,7 +202,8 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
   asn_enc_rval_t enc_rval;
   BCCH_BCH_Message_t *mib=&carrier->mib ;
   uint8_t sfn = (uint8_t)((frame>>2)&0xff);
-  uint16_t spare=0;
+  uint16_t *spare= calloc(1, sizeof(uint16_t));
+  if (spare == NULL) abort();
 
   switch (N_RB_DL) {
 
@@ -246,7 +247,7 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
   mib->message.systemFrameNumber.buf = &sfn;
   mib->message.systemFrameNumber.size = 1;
   mib->message.systemFrameNumber.bits_unused=0;
-  mib->message.spare.buf = (uint8_t *)&spare;
+  mib->message.spare.buf = (uint8_t *)spare;
 #ifndef Rel14
   mib->message.spare.size = 2;
   mib->message.spare.bits_unused = 6;  // This makes a spare of 10 bits
@@ -261,8 +262,8 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
                                    (void*)mib,
-                                   &carrier->MIB,
-                                   100);
+                                   carrier->MIB,
+                                   24);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
 
@@ -2767,9 +2768,7 @@ do_RRCConnectionSetup(
     physicalConfigDedicated2->soundingRS_UL_ConfigDedicated = NULL;
   physicalConfigDedicated2->antennaInfo                   = CALLOC(1,sizeof(*physicalConfigDedicated2->antennaInfo));
   physicalConfigDedicated2->schedulingRequestConfig       = CALLOC(1,sizeof(*physicalConfigDedicated2->schedulingRequestConfig));
-#ifdef CBA
-  physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola = CALLOC(1,sizeof(*physicalConfigDedicated2->pusch_CBAConfigDedicated_vlola));
-#endif
+
   // PDSCH
   //assign_enum(&physicalConfigDedicated2->pdsch_ConfigDedicated->p_a,
   //        PDSCH_ConfigDedicated__p_a_dB0);
@@ -2954,8 +2953,7 @@ do_RRCConnectionSetup(
   // SchedulingRequestConfig
 
   physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
-  // FIXME -- sr_PUCCH_resourceIndex should be 18
-  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 3;//ue_context_pP->local_uid;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 71 - ue_context_pP->local_uid/10;//ue_context_pP->local_uid;
 
   if (carrier->sib1->tdd_Config == NULL) { // FDD
     // FIXME -- check this -- 5 + (ue_context_pP->local_uid % 10) should produce 76
@@ -3991,6 +3989,7 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
 
   encoded = uper_encode_to_new_buffer (&asn_DEF_DL_DCCH_Message, NULL, (void*) &dl_dcch_msg, (void **) buffer);
 
+  /*
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -4009,6 +4008,7 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
   }
 # endif
 #endif
+  */
 
   return encoded;
 }

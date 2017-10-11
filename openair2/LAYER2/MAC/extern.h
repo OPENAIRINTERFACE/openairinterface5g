@@ -77,7 +77,7 @@ extern int cqi_to_mcs[16];
 
 extern uint32_t RRC_CONNECTION_FLAG;
 
-extern uint8_t rb_table[33];
+extern uint8_t rb_table[34];
 
 extern DCI0_5MHz_TDD_1_6_t       UL_alloc_pdu;
 

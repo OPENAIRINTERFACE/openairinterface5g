@@ -5,7 +5,8 @@ CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 LIBS=-lX11 -lm -lpng -lXft
 
-all: record replay extract_config textlog enb ue vcd macpdu2wireshark
+all: record replay extract_config textlog enb ue vcd macpdu2wireshark \
+     extract_input_subframe
 
 record: utils.o record.o database.o config.o
 	$(CC) $(CFLAGS) -o record $^ $(LIBS)
@@ -15,6 +16,10 @@ replay: utils.o replay.o
 
 extract_config: extract_config.o
 	$(CC) $(CFLAGS) -o extract_config $^ $(LIBS)
+
+extract_input_subframe: extract_input_subframe.o database.o event.o utils.o \
+    config.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 textlog: utils.o textlog.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
@@ -58,8 +63,8 @@ filter/filter.a:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o core tracer_remote textlog enb vcd record replay
-	rm -f extract_config macpdu2wireshark
+	rm -f *.o core tracer_remote textlog enb ue vcd record replay
+	rm -f extract_config macpdu2wireshark extract_input_subframe
 	cd gui && make clean
 	cd view && make clean
 	cd logger && make clean

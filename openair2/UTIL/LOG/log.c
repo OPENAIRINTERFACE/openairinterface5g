@@ -33,7 +33,7 @@
 
 #define COMPONENT_LOG
 #define COMPONENT_LOG_IF
-
+#include <ctype.h>
 #include "log.h"
 #include "vcd_signal_dumper.h"
 #include "assertions.h"
@@ -53,7 +53,7 @@
 #    define FIFO_PRINTF_NO              62
 #    define FIFO_PRINTF_SIZE            65536
 #endif
-
+#include "common/config/config_userapi.h"
 // main log variables
 log_t *g_log;
 
@@ -102,6 +102,65 @@ static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG
 #if defined(ENABLE_ITTI)
 static log_instance_type_t log_instance_type;
 #endif
+
+/* get log parameters from configuration file */
+void  log_getconfig(log_t *g_log) {
+  char *gloglevel = NULL;
+  char *glogverbo = NULL;
+  int level,verbosity;
+  paramdef_t logparams_defaults[] = LOG_GLOBALPARAMS_DESC;
+  paramdef_t logparams_level[MAX_LOG_COMPONENTS];
+  paramdef_t logparams_verbosity[MAX_LOG_COMPONENTS];
+  paramdef_t logparams_logfile[MAX_LOG_COMPONENTS];
+  
+  int ret = config_get( logparams_defaults,sizeof(logparams_defaults)/sizeof(paramdef_t),CONFIG_STRING_LOG_PREFIX);
+  if (ret <0) {
+       fprintf(stderr,"[LOG] init aborted, configuration couldn't be performed");
+       return;
+  } 
+  memset(logparams_level,    0, sizeof(paramdef_t)*MAX_LOG_COMPONENTS);
+  memset(logparams_verbosity,0, sizeof(paramdef_t)*MAX_LOG_COMPONENTS);
+  memset(logparams_logfile,  0, sizeof(paramdef_t)*MAX_LOG_COMPONENTS);
+  for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
+    if(g_log->log_component[i].name == NULL) {
+       g_log->log_component[i].name = malloc(16);
+       sprintf((char *)g_log->log_component[i].name,"comp%i?",i);
+       logparams_logfile[i].paramflags = PARAMFLAG_DONOTREAD;
+       logparams_level[i].paramflags = PARAMFLAG_DONOTREAD;
+       logparams_verbosity[i].paramflags = PARAMFLAG_DONOTREAD;
+    }
+    sprintf(logparams_level[i].optname,    LOG_CONFIG_LEVEL_FORMAT,       g_log->log_component[i].name);
+    sprintf(logparams_verbosity[i].optname,LOG_CONFIG_VERBOSITY_FORMAT,   g_log->log_component[i].name);
+    sprintf(logparams_logfile[i].optname,  LOG_CONFIG_LOGFILE_FORMAT,     g_log->log_component[i].name);
+/* workaround: all log options in existing configuration files use lower case component names
+   where component names include uppercase char in log.h....                                */ 
+    for (int j=0 ; j<strlen(logparams_level[i].optname); j++) 
+          logparams_level[i].optname[j] = tolower(logparams_level[i].optname[j]);
+    for (int j=0 ; j<strlen(logparams_level[i].optname); j++) 
+          logparams_verbosity[i].optname[j] = tolower(logparams_verbosity[i].optname[j]);
+    for (int j=0 ; j<strlen(logparams_level[i].optname); j++) 
+          logparams_logfile[i].optname[j] = tolower(logparams_logfile[i].optname[j]);
+/* */
+    logparams_level[i].defstrval     = gloglevel;
+    logparams_verbosity[i].defstrval = glogverbo; 
+
+    logparams_level[i].type          = TYPE_STRING;
+    logparams_verbosity[i].type      = TYPE_STRING;
+    logparams_logfile[i].type        = TYPE_UINT;
+
+    logparams_logfile[i].paramflags  = logparams_logfile[i].paramflags|PARAMFLAG_BOOL;
+    }
+  config_get( logparams_level,    MAX_LOG_COMPONENTS,CONFIG_STRING_LOG_PREFIX); 
+  config_get( logparams_verbosity,MAX_LOG_COMPONENTS,CONFIG_STRING_LOG_PREFIX); 
+  config_get( logparams_logfile,  MAX_LOG_COMPONENTS,CONFIG_STRING_LOG_PREFIX); 
+  for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
+    verbosity = map_str_to_int(log_verbosity_names,*(logparams_verbosity[i].strptr));
+    level     = map_str_to_int(log_level_names,    *(logparams_level[i].strptr));
+    set_comp_log(i, level,verbosity,1);
+    set_component_filelog(*(logparams_logfile[i].uptr));
+    }
+}
+
 
 int logInit (void)
 {
@@ -441,7 +500,7 @@ int logInit (void)
     openlog(g_log->log_component[EMU].name, LOG_PID, g_log->config.facility);
 #endif // ! defined(CN_BUILD)
   }
-
+  log_getconfig(g_log);
   if (g_log->filelog) {
     gfd = open(g_log->filelog_name, O_WRONLY | O_CREAT, 0666);
   }
@@ -1319,8 +1378,8 @@ int set_comp_log(int component, int level, int verbosity, int interval)
 
 void set_glog(int level, int verbosity)
 {
-  g_log->level = level;
-  g_log->flag = verbosity;
+  if( g_log->level >= 0) g_log->level = level;
+  if( g_log->flag >= 0)  g_log->flag = verbosity;
 }
 void set_glog_syslog(int enable)
 {

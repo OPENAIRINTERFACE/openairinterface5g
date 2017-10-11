@@ -302,7 +302,7 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
 
 #if T_TRACER
       if (aa == 0)
-        T(T_ENB_PHY_UL_CHANNEL_ESTIMATE, T_INT(0), T_INT(UE_id),
+        T(T_ENB_PHY_UL_CHANNEL_ESTIMATE, T_INT(0), T_INT(eNB->ulsch[UE_id]->rnti),
           T_INT(proc->frame_rx), T_INT(subframe),
           T_INT(0), T_BUFFER(ul_ch_estimates_time[0], 512  * 4));
 #endif

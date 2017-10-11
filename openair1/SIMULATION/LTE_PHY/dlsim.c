@@ -390,10 +390,11 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = n_rnti+k;
-          dci_alloc[*num_dci].format     = format1;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = n_rnti+k;
+          dci_alloc[*num_dci].format       = format1;
+          dci_alloc[*num_dci].search_space = DCI_UE_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
 	  //          printf("Generating dlsch params for user %d\n",k);
@@ -530,11 +531,12 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = SI_RNTI;
-          dci_alloc[*num_dci].format     = format1A;
-          dci_alloc[*num_dci].firstCCE       = 0;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = SI_RNTI;
+          dci_alloc[*num_dci].format       = format1A;
+          dci_alloc[*num_dci].firstCCE     = 0;
+          dci_alloc[*num_dci].search_space = DCI_COMMON_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -699,13 +701,14 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = n_rnti+k;
-          dci_alloc[*num_dci].format     = format2A;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = n_rnti+k;
+          dci_alloc[*num_dci].format       = format2A;
+          dci_alloc[*num_dci].search_space = DCI_UE_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
-          printf("Generating dlsch params for user %d / format 2A (%d)\n",k,format2A);
+          //printf("Generating dlsch params for user %d / format 2A (%d)\n",k,format2A);
           generate_eNB_dlsch_params_from_dci(0,
 					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
@@ -839,14 +842,15 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = SI_RNTI;
-          dci_alloc[*num_dci].format     = format1A;
-          dci_alloc[*num_dci].firstCCE       = 0;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = SI_RNTI;
+          dci_alloc[*num_dci].format       = format1A;
+          dci_alloc[*num_dci].firstCCE     = 0;
+          dci_alloc[*num_dci].search_space = DCI_COMMON_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
-          printf("Generating dlsch params for user %d\n",k);
+          //printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
 					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
@@ -866,7 +870,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 
         }
 
-        printf("Generated DCI format 2A (Transmission Mode 3)\n");
+        //printf("Generated DCI format 2A (Transmission Mode 3)\n");
         break;
 
       case 4:
@@ -1009,10 +1013,11 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = n_rnti+k;
-          dci_alloc[*num_dci].format     = format2;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = n_rnti+k;
+          dci_alloc[*num_dci].format       = format2;
+          dci_alloc[*num_dci].search_space = DCI_UE_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1149,11 +1154,12 @@ void fill_DCI(PHY_VARS_eNB *eNB,
           }
 
           memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu_1[k],dci_length_bytes);
-          dci_alloc[*num_dci].dci_length = dci_length;
-          dci_alloc[*num_dci].L          = 1;
-          dci_alloc[*num_dci].rnti       = SI_RNTI;
-          dci_alloc[*num_dci].format     = format1A;
-          dci_alloc[*num_dci].firstCCE       = 0;
+          dci_alloc[*num_dci].dci_length   = dci_length;
+          dci_alloc[*num_dci].L            = 1;
+          dci_alloc[*num_dci].rnti         = SI_RNTI;
+          dci_alloc[*num_dci].format       = format1A;
+          dci_alloc[*num_dci].firstCCE     = 0;
+          dci_alloc[*num_dci].search_space = DCI_COMMON_SPACE;
           dump_dci(&eNB->frame_parms,&dci_alloc[*num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1181,11 +1187,12 @@ void fill_DCI(PHY_VARS_eNB *eNB,
       case 5:
       case 6:
         memcpy(&dci_alloc[*num_dci].dci_pdu[0],&DLSCH_alloc_pdu2_1E[k],sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
-        dci_alloc[*num_dci].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
-        dci_alloc[*num_dci].L          = 1;
-        dci_alloc[*num_dci].rnti       = n_rnti+k;
-        dci_alloc[*num_dci].format     = format1E_2A_M10PRB;
-        dci_alloc[*num_dci].firstCCE       = 4*k;
+        dci_alloc[*num_dci].dci_length   = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
+        dci_alloc[*num_dci].L            = 1;
+        dci_alloc[*num_dci].rnti         = n_rnti+k;
+        dci_alloc[*num_dci].format       = format1E_2A_M10PRB;
+        dci_alloc[*num_dci].firstCCE     = 4*k;
+        dci_alloc[*num_dci].search_space = DCI_UE_SPACE;
         printf("Generating dlsch params for user %d\n",k);
         generate_eNB_dlsch_params_from_dci(0,
 					   subframe,
@@ -1224,12 +1231,10 @@ int num_common_dci=0,num_ue_spec_dci=0,num_dci=0,num_pdcch_symbols=1;
 DCI_PDU *get_dci_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subframeP) {
 
   if (subframeP == subframe) {
-    DCI_pdu.Num_ue_spec_dci   = num_ue_spec_dci;
-    DCI_pdu.Num_common_dci    = num_common_dci;
+    DCI_pdu.Num_dci   = num_ue_spec_dci + num_common_dci;
     DCI_pdu.num_pdcch_symbols = num_pdcch_symbols;
   } else {
-    DCI_pdu.Num_ue_spec_dci   = 0;
-    DCI_pdu.Num_common_dci    = 0;
+    DCI_pdu.Num_dci   = 0;
     DCI_pdu.num_pdcch_symbols = num_pdcch_symbols;
   }
 
@@ -1292,7 +1297,6 @@ int main(int argc, char **argv)
   uint16_t tdd_config=3;
 
 
-
   SCM_t channel_model=Rayleigh1;
   //  unsigned char *input_data,*decoded_output;
 
@@ -1347,7 +1351,7 @@ int main(int argc, char **argv)
   // void *data;
   // int ii;
   //  int bler;
-  double blerr[4],uncoded_ber; //,avg_ber;
+  double blerr[4],uncoded_ber=0; //,avg_ber;
   short *uncoded_ber_bit=NULL;
   uint8_t N_RB_DL=25,osf=1;
   frame_t frame_type = FDD;
@@ -1366,6 +1370,7 @@ int main(int argc, char **argv)
   int rballocset=0;
   int print_perf=0;
   int test_perf=0;
+  int test_passed=0;
   int dump_table=0;
 
   double effective_rate=0.0;
@@ -1391,9 +1396,12 @@ int main(int argc, char **argv)
 
   FILE *csv_fd=NULL;
   char csv_fname[32];
-  //int dci_flag=1;
+  int dci_flag=0;
   int two_thread_flag=0;
   int DLSCH_RB_ALLOC = 0;
+
+  int log_level = LOG_ERR;
+  int dci_received;
 
 #if defined(__arm__)
   FILE    *proc_fd = NULL;
@@ -1418,15 +1426,13 @@ int main(int argc, char **argv)
   //signal(SIGSEGV, handler);
   //signal(SIGABRT, handler);
 
-  logInit();
-
   // default parameters
   n_frames = 1000;
   snr0 = 0;
   //  num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:q:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXY")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:q:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXYL:")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -1453,9 +1459,9 @@ int main(int argc, char **argv)
       Nid_cell = atoi(optarg);
       break;
 
-    //case 'd':
-    //  dci_flag = 1;
-    //  break;
+    case 'd':
+      dci_flag = 1;
+      break;
 
     case 'D':
       frame_type=TDD;
@@ -1482,7 +1488,7 @@ int main(int argc, char **argv)
     case 'i':
       input_fd = fopen(optarg,"r");
       input_file=1;
-      //dci_flag = 1;
+      dci_flag = 1;
       break;
 
     case 'I':
@@ -1722,7 +1728,9 @@ int main(int argc, char **argv)
       dump_table=1;
       break;
 
-
+    case 'L':
+      log_level=atoi(optarg);
+      break;
 
     case 'h':
     default:
@@ -1732,12 +1740,17 @@ int main(int argc, char **argv)
       printf("-c Number of PDCCH symbols\n");
       printf("-m MCS1 for TB 1\n");
       printf("-M MCS2 for TB 2\n");
-      printf("-d Transmit the DCI and compute its error statistics and the overall throughput\n");
+      printf("-d Transmit the DCI and compute its error statistics\n");
       printf("-p Use extended prefix mode\n");
       printf("-n Number of frames to simulate\n");
       printf("-o Sample offset for receiver\n");
       printf("-s Starting SNR, runs from SNR to SNR+%.1fdB in steps of %.1fdB. If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated\n", snr_int, snr_step);
       printf("-f step size of SNR, default value is 1.\n");
+      printf("-C cell id\n");
+      printf("-S subframe\n");
+      printf("-D use TDD mode\n");
+      printf("-b TDD config\n");
+      printf("-B bandwidth configuration (in number of ressource blocks): 6, 25, 50, 100\n");
       printf("-r ressource block allocation (see  section 7.1.6.3 in 36.213\n");
       printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
@@ -1756,6 +1769,16 @@ int main(int argc, char **argv)
       break;
     }
   }
+
+  logInit();
+  // enable these lines if you need debug info
+  set_comp_log(PHY,LOG_DEBUG,LOG_HIGH,1);
+  set_glog(log_level,LOG_HIGH);
+  // moreover you need to init itti with the following line
+  // however itti will catch all signals, so ctrl-c won't work anymore
+  // alternatively you can disable ITTI completely in CMakeLists.txt
+  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+
 
   if (common_flag == 0) {
     switch (N_RB_DL) {
@@ -1999,7 +2022,7 @@ int main(int argc, char **argv)
     }
   */
 
-  UE->pdcch_vars[subframe & 0x1][0]->crnti = n_rnti;
+  UE->pdcch_vars[UE->current_thread_id[subframe]][0]->crnti = n_rnti;
 
   // Fill in UL_alloc
   UL_alloc_pdu.type    = 0;
@@ -2159,7 +2182,7 @@ int main(int argc, char **argv)
 	     TPC,
 	     mcs1,
 	     mcs2,
-	     0,
+	     1,
 	     0,
 	     &num_common_dci,
 	     &num_ue_spec_dci,
@@ -2240,7 +2263,7 @@ int main(int argc, char **argv)
     }
 
     for (SNR=snr0; SNR<snr1; SNR+=snr_step) {
-      UE->proc.proc_rxtx[subframe&1].frame_rx=0;
+      UE->proc.proc_rxtx[UE->current_thread_id[subframe]].frame_rx=0;
       errs[0]=0;
       errs[1]=0;
       errs[2]=0;
@@ -2273,7 +2296,7 @@ int main(int argc, char **argv)
       reset_meas(&eNB->dlsch_rate_matching_stats);
       reset_meas(&eNB->dlsch_turbo_encoding_stats);
 
-      reset_meas(&UE->phy_proc_rx[subframe&0x1]); // total UE rx
+      reset_meas(&UE->phy_proc_rx[UE->current_thread_id[subframe]]); // total UE rx
       reset_meas(&UE->ofdm_demod_stats);
       reset_meas(&UE->dlsch_channel_estimation_stats);
       reset_meas(&UE->dlsch_freq_offset_estimation_stats);
@@ -2309,7 +2332,7 @@ int main(int argc, char **argv)
       struct list time_vector_rx_dec;
       initialize(&time_vector_rx_dec);
 
-      eNB_rxtx_proc_t *proc_eNB = &eNB->proc.proc_rxtx[subframe&1];
+      eNB_rxtx_proc_t *proc_eNB = &eNB->proc.proc_rxtx[UE->current_thread_id[subframe]];
 
       for (trials = 0; trials<n_frames; trials++) {
 	//printf("Trial %d\n",trials);
@@ -2318,10 +2341,10 @@ int main(int argc, char **argv)
 
         //if (trials%100==0)
         eNB2UE[0]->first_run = 1;
+	UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_ack[subframe].ack = 0;
+	UE->dlsch[UE->current_thread_id[subframe]][eNB_id][1]->harq_ack[subframe].ack = 0;
 
-        UE->dlsch_errors[0] = 1;
-
-        while ((round < num_rounds) && (UE->dlsch_errors[0] > 0)) {
+        while ((round < num_rounds) && (UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_ack[subframe].ack == 0)) {
 	  //	  printf("Trial %d, round %d\n",trials,round);
           round_trials[round]++;
 
@@ -2361,11 +2384,12 @@ int main(int argc, char **argv)
 
                 eNB->dlsch[0][0]->harq_processes[0]->rvidx = round&3;
 
-		fill_DCI(eNB,&dci_alloc[0],subframe,n_rnti,n_users,transmission_mode,common_flag,DLSCH_RB_ALLOC,TPC,mcs1,mcs2,trials&1,round&3,&num_common_dci,&num_ue_spec_dci,&num_dci);
+		fill_DCI(eNB,&dci_alloc[0],subframe,n_rnti,n_users,transmission_mode,common_flag,DLSCH_RB_ALLOC,TPC,
+			 mcs1,mcs2,!(trials&1),round&3,&num_common_dci,&num_ue_spec_dci,&num_dci);
 	      }
 	      else {
 		fill_DCI(eNB,&dci_alloc[0],subframe,n_rnti,n_users,transmission_mode,common_flag,DLSCH_RB_ALLOC,TPC,
-			 (TB0_active==1)?mcs1:0,mcs2,trials&1,(TB0_active==1)?round&3:0,&num_common_dci,&num_ue_spec_dci,&num_dci);
+			 (TB0_active==1)?mcs1:0,mcs2,!(trials&1),(TB0_active==1)?round&3:0,&num_common_dci,&num_ue_spec_dci,&num_dci);
 	      }
 	      for (i=num_common_dci; i<num_dci; i++) {
 
@@ -2419,7 +2443,7 @@ int main(int argc, char **argv)
 	    proc_eNB->subframe_tx = subframe;
 	    eNB->abstraction_flag=0;
 
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,1);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,1,dci_flag);
 
 
 	    start_meas(&eNB->ofdm_mod_stats);
@@ -2455,7 +2479,7 @@ int main(int argc, char **argv)
 
 	    proc_eNB->subframe_tx = subframe+1;
 
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,0);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,0,dci_flag);
 
 	    do_OFDM_mod_l(eNB->common_vars.txdataF[eNB_id],
 			  eNB->common_vars.txdata[eNB_id],
@@ -2493,10 +2517,10 @@ int main(int argc, char **argv)
 	  DL_channel(eNB,UE,subframe,awgn_flag,SNR,tx_lev,hold_channel,abstx,num_rounds,trials,round,eNB2UE,s_re,s_im,r_re,r_im,csv_fd);
 
 
-	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[subframe&1];
+	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[UE->current_thread_id[subframe]];
 	  proc->subframe_rx = subframe;
 	  UE->UE_mode[0] = PUSCH;
-	  UE->dlsch_errors[0] = 0;
+
 	  // first symbol has to be done separately in one-shot mode
 	  slot_fep(UE,
 		   0,
@@ -2506,12 +2530,48 @@ int main(int argc, char **argv)
 		   0);
 
 	  if (n_frames==1) printf("Running phy_procedures_UE_RX\n");
-	  phy_procedures_UE_RX(UE,proc,0,0,normal_txrx,no_relay,NULL);
 
-	  if (UE->dlsch[subframe&0x1][0][0]->active == 0) {
+	  if (dci_flag==0) {
+	    if (n_frames==1)
+	      printf("bypassing PDCCH/DCI detection\n");
+	    if  (generate_ue_dlsch_params_from_dci(proc->frame_rx,
+						   proc->subframe_rx,
+						   (void *)&dci_alloc[0].dci_pdu,
+						   n_rnti,
+						   dci_alloc[0].format,
+						   UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id],
+						   UE->pdsch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id],
+                           UE->dlsch[UE->current_thread_id[proc->subframe_rx]][0],
+						   &UE->frame_parms,
+						   UE->pdsch_config_dedicated,
+						   SI_RNTI,
+						   0,
+						   P_RNTI,
+						   UE->transmission_mode[eNB_id]<7?0:UE->transmission_mode[eNB_id],
+						   0)==0) {
+
+		dump_dci(&UE->frame_parms, &dci_alloc[0]);
+
+		//UE->dlsch[UE->current_thread_id[proc->subframe_rx]][eNB_id][0]->active = 1;
+		//UE->dlsch[UE->current_thread_id[proc->subframe_rx]][eNB_id][1]->active = 1;
+
+		UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id]->num_pdcch_symbols = num_pdcch_symbols;
+
+		UE->dlsch_received[eNB_id]++;
+	    } else {
+	      LOG_E(PHY,"Problem in DCI!\n");
+	    }
+	  }
+
+	  dci_received = UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id]->dci_received;
+
+	  phy_procedures_UE_RX(UE,proc,0,0,dci_flag,normal_txrx,no_relay,NULL);
+
+	  dci_received = dci_received - UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id]->dci_received;
+
+	  if (dci_flag && (dci_received == 0)) {
 	    //printf("DCI not received\n");
 	    dci_errors[round]++;
-	    UE->dlsch_errors[0] = 1;
 
 	    /*
 	    write_output("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
@@ -2538,35 +2598,35 @@ int main(int argc, char **argv)
 	    //common vars
 	    write_output("rxsig0.m","rxs0", &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
 
-	    write_output("rxsigF0.m","rxsF0", &UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+	    write_output("rxsigF0.m","rxsF0", &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
 	    if (UE->frame_parms.nb_antennas_rx>1) {
 	      write_output("rxsig1.m","rxs1", UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
-	      write_output("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+	      write_output("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 	    }
 
 	    write_output("dlsch00_r0.m","dl00_r0",
-			 &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][0]),
+			 &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0]),
 			 UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
 	    if (UE->frame_parms.nb_antennas_rx>1)
 	      write_output("dlsch01_r0.m","dl01_r0",
-			   &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][0]),
+			   &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][1][0]),
 			   UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
 	    if (eNB->frame_parms.nb_antennas_tx>1)
 	      write_output("dlsch10_r0.m","dl10_r0",
-			   &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][0]),
+			   &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2][0]),
 			   UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
 	    if ((UE->frame_parms.nb_antennas_rx>1) && (eNB->frame_parms.nb_antennas_tx>1))
 	      write_output("dlsch11_r0.m","dl11_r0",
-			   &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][0]),
+			   &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][3][0]),
 			   UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
 
 	    //pdsch_vars
 
-	    dump_dlsch2(UE,eNB_id,subframe,&coded_bits_per_codeword,round, UE->dlsch[subframe&0x1][0][0]->current_harq_pid);
+	    dump_dlsch2(UE,eNB_id,subframe,&coded_bits_per_codeword,round, UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid);
 
 	    write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
 
@@ -2582,15 +2642,15 @@ int main(int argc, char **argv)
 
 
 
-          if (UE->dlsch_errors[0] == 0) {
+          if (UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_ack[subframe].ack == 1) {
 
-            avg_iter += UE->dlsch[subframe&0x1][eNB_id][0]->last_iteration_cnt;
+            avg_iter += UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->last_iteration_cnt;
             iter_trials++;
 
             if (n_frames==1)
               printf("No DLSCH errors found (round %d),uncoded ber %f\n",round,uncoded_ber);
 
-            UE->total_TBS[eNB_id] =  UE->total_TBS[eNB_id] + UE->dlsch[subframe&0x1][eNB_id][0]->harq_processes[UE->dlsch[subframe&0x1][eNB_id][0]->current_harq_pid]->TBS;
+            UE->total_TBS[eNB_id] =  UE->total_TBS[eNB_id] + UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->current_harq_pid]->TBS;
             TB0_active = 0;
 
 
@@ -2598,25 +2658,25 @@ int main(int argc, char **argv)
 	  else {
             errs[round]++;
 
-            avg_iter += UE->dlsch[subframe&0x1][eNB_id][0]->last_iteration_cnt-1;
+            avg_iter += UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->last_iteration_cnt-1;
             iter_trials++;
 
             if (n_frames==1) {
               //if ((n_frames==1) || (SNR>=30)) {
               printf("DLSCH errors found (round %d), uncoded ber %f\n",round,uncoded_ber);
 
-              for (s=0; s<UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->C; s++) {
-                if (s<UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Cminus)
-                  Kr = UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Kminus;
+              for (s=0; s<UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->C; s++) {
+                if (s<UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Cminus)
+                  Kr = UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kminus;
                 else
-                  Kr = UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Kplus;
+                  Kr = UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kplus;
 
                 Kr_bytes = Kr>>3;
 
                 printf("Decoded_output (Segment %d):\n",s);
 
                 for (i=0; i<Kr_bytes; i++)
-                  printf("%d : %x (%x)\n",i,UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->c[s][i],UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->c[s][i]^eNB->dlsch[0][0]->harq_processes[0]->c[s][i]);
+                  printf("%d : %x (%x)\n",i,UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->c[s][i],UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->c[s][i]^eNB->dlsch[0][0]->harq_processes[0]->c[s][i]);
               }
 
               sprintf(fname,"rxsig0_r%d.m",round);
@@ -2625,7 +2685,7 @@ int main(int argc, char **argv)
               sprintf(fname,"rxsigF0_r%d.m",round);
               sprintf(vname,"rxs0F_r%d",round);
 
-              write_output(fname,vname, &UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+              write_output(fname,vname, &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
               if (UE->frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"rxsig1_r%d.m",round);
@@ -2633,20 +2693,20 @@ int main(int argc, char **argv)
                 write_output(fname,vname, UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
                 sprintf(fname,"rxsigF1_r%d.m",round);
                 sprintf(vname,"rxs1F_r%d.m",round);
-                write_output(fname,vname, UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+                write_output(fname,vname, UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
               }
 
               sprintf(fname,"dlsch00_r%d.m",round);
               sprintf(vname,"dl00_r%d",round);
               write_output(fname,vname,
-                           &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][0]),
+                           &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0]),
                            UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
               if (UE->frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"dlsch01_r%d.m",round);
                 sprintf(vname,"dl01_r%d",round);
                 write_output(fname,vname,
-                             &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][0]),
+                             &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][1][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
 
@@ -2654,7 +2714,7 @@ int main(int argc, char **argv)
                 sprintf(fname,"dlsch10_r%d.m",round);
                 sprintf(vname,"dl10_r%d",round);
                 write_output(fname,vname,
-                             &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][0]),
+                             &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
 
@@ -2662,18 +2722,18 @@ int main(int argc, char **argv)
                 sprintf(fname,"dlsch11_r%d.m",round);
                 sprintf(vname,"dl11_r%d",round);
                 write_output(fname,vname,
-                             &(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][0]),
+                             &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][3][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
 
               //pdsch_vars
-              dump_dlsch2(UE,eNB_id,subframe,&coded_bits_per_codeword,round, UE->dlsch[subframe&0x1][0][0]->current_harq_pid);
+              dump_dlsch2(UE,eNB_id,subframe,&coded_bits_per_codeword,round, UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid);
 
 
               //write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
               //write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
               //write_output("dlsch_w.m","w",eNB->dlsch[0][0]->harq_processes[0]->w[0],3*(tbs+64),1,4);
-              //write_output("dlsch_w.m","w",UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->w[0],3*(tbs+64),1,0);
+              //write_output("dlsch_w.m","w",UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->w[0],3*(tbs+64),1,0);
 	      //pdcch_vars
 	      write_output("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[0][eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
 	      write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",UE->pdcch_vars[0][eNB_id]->dl_ch_estimates_ext[0],300*3,1,1);
@@ -2687,7 +2747,7 @@ int main(int argc, char **argv)
             //      printf("round %d errors %d/%d\n",round,errs[round],trials);
 
             round++;
-            //      UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->round++;
+            //      UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->round++;
           }
 
 	  if (xforms==1) {
@@ -2698,7 +2758,7 @@ int main(int argc, char **argv)
 			 subframe);
 	  }
 
-	  UE->proc.proc_rxtx[subframe&1].frame_rx++;
+	  UE->proc.proc_rxtx[UE->current_thread_id[subframe]].frame_rx++;
 	}  //round
 
         //      printf("\n");
@@ -2709,7 +2769,7 @@ int main(int argc, char **argv)
         //len = chbch_stats_read(stats_buffer,NULL,0,4096);
         //printf("%s\n\n",stats_buffer);
 
-        if (UE->proc.proc_rxtx[subframe&1].frame_rx % 10 == 0) {
+        if (UE->proc.proc_rxtx[UE->current_thread_id[subframe]].frame_rx % 10 == 0) {
           UE->bitrate[eNB_id] = (UE->total_TBS[eNB_id] - UE->total_TBS_last[eNB_id])*10;
           LOG_D(PHY,"[UE %d] Calculating bitrate: total_TBS = %d, total_TBS_last = %d, bitrate = %d kbits/s\n",UE->Mod_id,UE->total_TBS[eNB_id],UE->total_TBS_last[eNB_id],
                 UE->bitrate[eNB_id]/1000);
@@ -2728,10 +2788,10 @@ int main(int argc, char **argv)
         double t_tx_enc = (double)eNB->dlsch_encoding_stats.p_time/cpu_freq_GHz/1000.0;
 
 
-        double t_rx = (double)UE->phy_proc_rx[subframe&0x1].p_time/cpu_freq_GHz/1000.0;
+        double t_rx = (double)UE->phy_proc_rx[UE->current_thread_id[subframe]].p_time/cpu_freq_GHz/1000.0;
         double t_rx_fft = (double)UE->ofdm_demod_stats.p_time/cpu_freq_GHz/1000.0;
         double t_rx_demod = (double)UE->dlsch_rx_pdcch_stats.p_time/cpu_freq_GHz/1000.0;
-        double t_rx_dec = (double)UE->dlsch_decoding_stats[subframe&1].p_time/cpu_freq_GHz/1000.0;
+        double t_rx_dec = (double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].p_time/cpu_freq_GHz/1000.0;
 
         if (t_tx > t_tx_max)
           t_tx_max = t_tx;
@@ -2862,22 +2922,22 @@ int main(int argc, char **argv)
              errs2[0],
              round_trials[0],
              errs[1],
-             round_trials[0],
+             round_trials[1],
              errs[2],
-             round_trials[0],
+             round_trials[2],
              errs[3],
-             round_trials[0],
+             round_trials[3],
              (double)errs[0]/(round_trials[0]),
-             (double)errs[1]/(round_trials[0]),
-             (double)errs[2]/(round_trials[0]),
-             (double)errs[3]/(round_trials[0]),
+             (double)errs[1]/(round_trials[1]),
+             (double)errs[2]/(round_trials[2]),
+             (double)errs[3]/(round_trials[3]),
              dci_errors[0]+dci_errors[1]+dci_errors[2]+dci_errors[3],
              round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
              (double)(dci_errors[0]+dci_errors[1]+dci_errors[2]+dci_errors[3])/(round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]),
              //rate*effective_rate,
              100*effective_rate,
              //rate,
-             //rate*get_Qm(UE->dlsch[subframe&0x1][0][0]->harq_processes[UE->dlsch[subframe&0x1][0][0]->current_harq_pid]->mcs),
+             //rate*get_Qm(UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->mcs),
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/
              (double)eNB->dlsch[0][0]->harq_processes[0]->TBS,
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
@@ -2917,10 +2977,10 @@ int main(int argc, char **argv)
                eNB->dlsch_interleaving_stats.diff/eNB->dlsch_interleaving_stats.trials/cpu_freq_GHz/1000.0,eNB->dlsch_interleaving_stats.trials);
 
         printf("\n\nUE RX function statistics (per 1ms subframe)\n\n");
-        std_phy_proc_rx = sqrt((double)UE->phy_proc_rx[subframe&0x1].diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                               2)/UE->phy_proc_rx[subframe&0x1].trials - pow((double)UE->phy_proc_rx[subframe&0x1].diff/UE->phy_proc_rx[subframe&0x1].trials/cpu_freq_GHz/1000,2));
-        printf("Total PHY proc rx                                   :%f us (%d trials)\n",(double)UE->phy_proc_rx[subframe&0x1].diff/UE->phy_proc_rx[subframe&0x1].trials/cpu_freq_GHz/1000.0,
-               UE->phy_proc_rx[subframe&0x1].trials*2/3);
+        std_phy_proc_rx = sqrt((double)UE->phy_proc_rx[UE->current_thread_id[subframe]].diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                               2)/UE->phy_proc_rx[UE->current_thread_id[subframe]].trials - pow((double)UE->phy_proc_rx[UE->current_thread_id[subframe]].diff/UE->phy_proc_rx[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000,2));
+        printf("Total PHY proc rx                                   :%f us (%d trials)\n",(double)UE->phy_proc_rx[UE->current_thread_id[subframe]].diff/UE->phy_proc_rx[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000.0,
+               UE->phy_proc_rx[UE->current_thread_id[subframe]].trials*2/3);
         printf("|__Statistcs                                            std: %fus max: %fus min: %fus median %fus q1 %fus q3 %fus n_dropped: %d packet \n", std_phy_proc_rx, t_rx_max, t_rx_min, rx_median,
                rx_q1, rx_q3, n_rx_dropped);
         std_phy_proc_rx_fft = sqrt((double)UE->ofdm_demod_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
@@ -2944,17 +3004,17 @@ int main(int argc, char **argv)
         printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_rx_demod, rx_demod_median, rx_demod_q1, rx_demod_q3);
         printf("DLSCH unscrambling time                             :%f us (%d trials)\n",(double)UE->dlsch_unscrambling_stats.diff/UE->dlsch_unscrambling_stats.trials/cpu_freq_GHz/1000.0,
                UE->dlsch_unscrambling_stats.trials);
-        std_phy_proc_rx_dec = sqrt((double)UE->dlsch_decoding_stats[subframe&1].diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                   2)/UE->dlsch_decoding_stats[subframe&1].trials - pow((double)UE->dlsch_decoding_stats[subframe&1].diff/UE->dlsch_decoding_stats[subframe&1].trials/cpu_freq_GHz/1000,2));
+        std_phy_proc_rx_dec = sqrt((double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].diff_square/pow(cpu_freq_GHz,2)/pow(1000,
+                                   2)/UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials - pow((double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].diff/UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000,2));
         printf("DLSCH Decoding time (%02.2f Mbit/s, avg iter %1.2f)    :%f us (%d trials, max %f)\n",
                eNB->dlsch[0][0]->harq_processes[0]->TBS/1000.0,(double)avg_iter/iter_trials,
-               (double)UE->dlsch_decoding_stats[subframe&1].diff/UE->dlsch_decoding_stats[subframe&1].trials/cpu_freq_GHz/1000.0,UE->dlsch_decoding_stats[subframe&1].trials,
-               (double)UE->dlsch_decoding_stats[subframe&1].max/cpu_freq_GHz/1000.0);
+               (double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].diff/UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000.0,UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials,
+               (double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].max/cpu_freq_GHz/1000.0);
         printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_rx_dec, rx_dec_median, rx_dec_q1, rx_dec_q3);
         printf("|__ DLSCH Rate Unmatching                               :%f us (%d trials)\n",
                (double)UE->dlsch_rate_unmatching_stats.diff/UE->dlsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,UE->dlsch_rate_unmatching_stats.trials);
         printf("|__ DLSCH Turbo Decoding(%d bits)                       :%f us (%d trials)\n",
-               UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Cminus ? UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Kminus : UE->dlsch[subframe&0x1][0][0]->harq_processes[0]->Kplus,
+               UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Cminus ? UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kminus : UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kplus,
                (double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials/cpu_freq_GHz/1000.0,UE->dlsch_turbo_decoding_stats.trials);
         printf("    |__ init                                            %f us (cycles/iter %f, %d trials)\n",
                (double)UE->dlsch_tc_init_stats.diff/UE->dlsch_tc_init_stats.trials/cpu_freq_GHz/1000.0,
@@ -3132,12 +3192,12 @@ int main(int argc, char **argv)
                 eNB->dlsch_modulation_stats.trials,
                 eNB->dlsch_scrambling_stats.trials,
                 eNB->dlsch_encoding_stats.trials,
-                UE->phy_proc_rx[subframe&0x1].trials,
+                UE->phy_proc_rx[UE->current_thread_id[subframe]].trials,
                 UE->ofdm_demod_stats.trials,
                 UE->dlsch_rx_pdcch_stats.trials,
                 UE->dlsch_llr_stats.trials,
                 UE->dlsch_unscrambling_stats.trials,
-                UE->dlsch_decoding_stats[subframe&1].trials
+                UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials
                );
         fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;",
                 get_time_meas_us(&eNB->phy_proc_tx),
@@ -3145,12 +3205,12 @@ int main(int argc, char **argv)
                 get_time_meas_us(&eNB->dlsch_modulation_stats),
                 get_time_meas_us(&eNB->dlsch_scrambling_stats),
                 get_time_meas_us(&eNB->dlsch_encoding_stats),
-                get_time_meas_us(&UE->phy_proc_rx[subframe&0x1]),
+                get_time_meas_us(&UE->phy_proc_rx[UE->current_thread_id[subframe]]),
                 nsymb*get_time_meas_us(&UE->ofdm_demod_stats),
                 get_time_meas_us(&UE->dlsch_rx_pdcch_stats),
                 3*get_time_meas_us(&UE->dlsch_llr_stats),
                 get_time_meas_us(&UE->dlsch_unscrambling_stats),
-                get_time_meas_us(&UE->dlsch_decoding_stats[subframe&1])
+                get_time_meas_us(&UE->dlsch_decoding_stats[UE->current_thread_id[subframe]])
                );
         //fprintf(time_meas_fd,"eNB_PROC_TX_STD;eNB_PROC_TX_MAX;eNB_PROC_TX_MIN;eNB_PROC_TX_MED;eNB_PROC_TX_Q1;eNB_PROC_TX_Q3;eNB_PROC_TX_DROPPED;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%d;", std_phy_proc_tx, t_tx_max, t_tx_min, tx_median, tx_q1, tx_q3, n_tx_dropped);
@@ -3185,17 +3245,19 @@ int main(int argc, char **argv)
         eNB->dlsch_modulation_stats.trials,
         eNB->dlsch_scrambling_stats.trials,
         eNB->dlsch_encoding_stats.trials,
-        UE->phy_proc_rx[subframe&0x1].trials,
+        UE->phy_proc_rx[UE->current_thread_id[subframe]].trials,
         UE->ofdm_demod_stats.trials,
         UE->dlsch_rx_pdcch_stats.trials,
         UE->dlsch_llr_stats.trials,
         UE->dlsch_unscrambling_stats.trials,
-        UE->dlsch_decoding_stats[subframe&1].trials);
+        UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials);
         */
         printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate*effective_rate, 100*effective_rate, rate );
+	test_passed = 1;
         break;
       } else if (test_perf !=0 ) {
         printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate*effective_rate, 100*effective_rate, rate);
+	test_passed = 0;
       }
 
       if (((double)errs[0]/(round_trials[0]))<(10.0/n_frames))
@@ -3243,11 +3305,13 @@ int main(int argc, char **argv)
     printf("eNB %d\n",i);
     free_eNB_dlsch(eNB->dlsch[0][i]);
     printf("UE %d\n",i);
-    free_ue_dlsch(UE->dlsch[subframe&0x1][0][i]);
+    free_ue_dlsch(UE->dlsch[UE->current_thread_id[subframe]][0][i]);
   }
 
-
-  return(0);
+  if (test_perf && !test_passed)
+    return(-1);
+  else 
+    return(0);
 }
 
 

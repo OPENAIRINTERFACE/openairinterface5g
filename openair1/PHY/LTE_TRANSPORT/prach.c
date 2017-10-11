@@ -490,13 +490,10 @@ int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex
     //implement Table 5.7.1-2 from 36.211 (Rel-10, p.41)
     if ((((frame&1) == 1) && (subframe < 9)) ||
         (((frame&1) == 0) && (subframe == 9)))  // This is an odd frame, ignore even-only PRACH frames
-
-      /*
       if (((prach_ConfigIndex&0xf)<3) || // 0,1,2,16,17,18,32,33,34,48,49,50
           ((prach_ConfigIndex&0x1f)==18) || // 18,50
           ((prach_ConfigIndex&0xf)==15))   // 15,47
         return(0);
-      */
 
     switch (prach_ConfigIndex&0x1f) {
     case 0:
@@ -1095,9 +1092,9 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
 void rx_prach0(PHY_VARS_eNB *eNB,
 	       RU_t *ru,
-	       int16_t *max_preamble,
-	       int16_t *max_preamble_energy,
-	       int16_t *max_preamble_delay,
+	       uint16_t *max_preamble,
+	       uint16_t *max_preamble_energy,
+	       uint16_t *max_preamble_delay,
 	       uint16_t Nf, 
 	       uint8_t tdd_mapindex
 #ifdef Rel14
@@ -1133,8 +1130,6 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   uint16_t d_start=0;
   uint16_t numshift=0;
   uint16_t *prach_root_sequence_map;
-  uint8_t prach_fmt = get_prach_fmt(prach_ConfigIndex,frame_type);
-  uint16_t N_ZC = (prach_fmt <4)?839:139;
   uint8_t not_found;
   int k;
   uint16_t u;
@@ -1148,8 +1143,8 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   int16_t levdB;
   int fft_size,log2_ifft_size;
   int16_t prach_ifft_tmp[2048*2] __attribute__((aligned(32)));
-  int32_t *prach_ifft;
-  int32_t **prach_ifftp;
+  int32_t *prach_ifft=(int32_t*)NULL;
+  int32_t **prach_ifftp=(int32_t **)NULL;
 #ifdef Rel14
   int prach_ifft_cnt=0;
 #endif
@@ -1200,6 +1195,8 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     }
 
   int16_t *prach[nb_rx];
+  uint8_t prach_fmt = get_prach_fmt(prach_ConfigIndex,frame_type);
+  uint16_t N_ZC = (prach_fmt <4)?839:139;
   
   if (eNB) {
 #ifdef Rel14
@@ -1208,7 +1205,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       frame               = eNB->proc.frame_prach_br;
       subframe            = eNB->proc.subframe_prach_br;
       prachF              = eNB->prach_vars_br.prachF;
-      rxsigF              = eNB->prach_vars_br.rxsigF;
+      rxsigF              = eNB->prach_vars_br.rxsigF[ce_level];
 #ifdef PRACH_DEBUG
       if ((frame&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d, rootSequenceIndex %d, repetition number %d,numRepetitionsPrePreambleAttempt %d\n",
 				   br_flag,ce_level,frame,subframe,
@@ -1225,7 +1222,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         frame             = eNB->proc.frame_prach;
         subframe          = eNB->proc.subframe_prach;
         prachF            = eNB->prach_vars.prachF;
-        rxsigF            = eNB->prach_vars.rxsigF;
+        rxsigF            = eNB->prach_vars.rxsigF[0];
 #ifdef PRACH_DEBUG
         if ((frame&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d , rootSequenceIndex %d\n",
 				     subframe,fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex,rootSequenceIndex);
@@ -1475,7 +1472,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     return;
   } else if (eNB!=NULL) {
 
-    en = dB_fixed(signal_energy(&rxsigF[0][0],840));
+    en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
 #ifdef PRACH_DEBUG
     if ((en > 60)&&(br_flag==1)) LOG_I(PHY,"PRACH (br_flag %d,ce_level %d, n_ra_prb %d, k %d): Frame %d, Subframe %d => %d dB\n",br_flag,ce_level,n_ra_prb,k,eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
 #endif
@@ -1686,9 +1683,9 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	    *max_preamble_energy  = levdB;
 	    *max_preamble_delay   = ((i*fft_size)>>log2_ifft_size)*update_TA/update_TA2;
 	    *max_preamble         = preamble_index;
-	    //#ifdef PRACH_DEBUG
-	    if ((en>60) && (br_flag==1)) LOG_I(PHY,"frame %d, subframe %d : max_preamble_energy %d, max_preamble_delay %d, max_preamble %d (br_flag %d,ce_level %d, levdB %d, lev %d)\n",frame,subframe,*max_preamble_energy,*max_preamble_delay,*max_preamble,br_flag,ce_level,levdB,lev);
-	    //#endif
+#ifdef PRACH_DEBUG
+	    if ((en>60) && (br_flag==1)) LOG_D(PHY,"frame %d, subframe %d : max_preamble_energy %d, max_preamble_delay %d, max_preamble %d (br_flag %d,ce_level %d, levdB %d, lev %d)\n",frame,subframe,*max_preamble_energy,*max_preamble_delay,*max_preamble,br_flag,ce_level,levdB,lev);
+#endif
 	  }
 	}
 

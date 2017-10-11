@@ -1,4 +1,4 @@
-//'syntax = "proto2";' 
+syntax = "proto2";
 package protocol;
 
 import "stats_messages.proto";
@@ -40,7 +40,7 @@ enum flexran_direction {
 }
 	
 enum flexran_err {
-        option allow_alias = true;
+        //option allow_alias = true;
 	// message errors
 	NO_ERR = 0;	
 	MSG_DEQUEUING = -1;

@@ -61,9 +61,12 @@ BUILD_DOXYGEN=0
 T_TRACER="False"
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE=""
+CMAKE_CMD="$CMAKE"
 UE_AUTOTEST_TRACE="False"
+UE_DEBUG_TRACE="False"
+UE_TIMING_TRACE="False"
+DISABLE_LOG_X="False"
 BUILD_ECLIPSE=0
-CMAKE_CMD='cmake'
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -147,6 +150,12 @@ Options
    Disable HW dependency during installation
 --ue-autotest-trace
     Enable specific traces for UE autotest framework
+--ue-trace
+    Enable traces for UE debugging
+--ue-timing
+    Enable traces for timing
+--disable-log
+   Disable all LOG_* macros
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
 Usage (first build):
@@ -316,6 +325,18 @@ function main() {
             UE_AUTOTEST_TRACE="True"
             echo_info "Enabling autotest specific trace for UE"
             shift 1;;
+        --ue-trace)
+            UE_DEBUG_TRACE="True"
+            echo_info "Enabling UE trace for debug"
+            shift 1;;
+        --ue-timing)
+            UE_TIMING_TRACE="True"
+            echo_info "Enabling UE timing trace"
+            shift 1;;
+        --disable-log)
+            DISABLE_LOG_X="True"
+            echo_info "Disabling all LOG_* traces"
+            shift 1;;
         --uhd-images-dir)
             UHD_IMAGES_DIR=$2
             echo_info "Downloading UHD images in the indicated location"
@@ -324,7 +345,11 @@ function main() {
             BUILD_ECLIPSE=1
             CMAKE_CMD="$CMAKE_CMD"' -DCMAKE_ECLIPSE_GENERATE_SOURCE_PROJECT=TRUE -G"Eclipse CDT4 - Unix Makefiles"'
             echo_info "Enabling build eclipse project support"
-            shift 1;;			
+            shift 1;;
+       --build-telnetsrv)
+            BUILD_TELNETSRV=1
+            echo_info "Build embedded telnet server"
+            shift ;;			
         -h | --help)
             print_help
             exit 1;;
@@ -448,6 +473,11 @@ function main() {
         flash_firmware_bladerf
       fi
     fi
+    if [ "$FLEXRAN_AGENT" == "1" ] ; then
+      echo_info "installing protobuf/protobuf-c for flexran agent support"
+      install_protobuf_from_source
+      install_protobuf_c_from_source
+    fi
   fi
 
   if [ "$INSTALL_OPTIONAL" = "1" ] ; then
@@ -478,6 +508,9 @@ function main() {
       lte_exec=lte-softmodem
   fi
 
+# configuration module libraries, one currently available, using libconfig 
+  config_libconfig_shlib=params_libconfig
+  
   # first generate the CMakefile in the right directory
   if [ "$eNB" = "1" -o "$UE" = "1" -o "$HW" = "EXMIMO" ] ; then
 
@@ -504,6 +537,9 @@ function main() {
     echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"      >>$cmake_file
     echo "set ( T_TRACER $T_TRACER )"              >>  $cmake_file
     echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)"        >>  $cmake_file
+    echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"        >>  $cmake_file
+    echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"        >>  $cmake_file
+    echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"        >>  $cmake_file
     if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
      echo_info "Compiling UE S1 build : enabling Linux and NETLINK"
      echo "set (LINUX True )"              >>  $cmake_file
@@ -520,6 +556,11 @@ function main() {
 	  $lte_build_dir $lte_exec \
 	  $lte_exec $dbin/$lte_exec.$REL
 
+# mandatory shared lib
+    compilations \
+	  $lte_build_dir $config_libconfig_shlib \
+	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+	  
     if [ "$NOS1" = "1" ] ; then
 	compilations \
 	    $lte_build_dir nasmesh \
@@ -774,7 +815,22 @@ function main() {
 	 rrh_gw $dbin/rrh_gw
 
   fi
-  
+  # Telnet server compilation
+  #####################
+  if [ "$BUILD_TELNETSRV" = "1" ] ; then
+
+     telnetsrv_build_dir=telnetsrv
+     mkdir -p $DIR/$telnetsrv_build_dir/build
+     cd $DIR/$telnetsrv_build_dir/build   
+     echo_info "Compiling telnet server library ..."
+    
+     [ "$CLEAN" = "1" ] && rm -rf $DIR/$telnetsrv_build_dir 
+     cmake_file=$OPENAIR_DIR/common/utils/$telnetsrv_build_dir/CMakeLists.txt   
+     cd $DIR/$telnetsrv_build_dir/build
+     eval  "$CMAKE_CMD $OPENAIR_DIR/common/utils/$telnetsrv_build_dir/"
+     make
+
+  fi  
   # build RF device and transport protocol libraries
   #####################################
   if [ "$eNB" = "1" -o "$UE" = "1" -o  "$RRH" = "1" ] ; then

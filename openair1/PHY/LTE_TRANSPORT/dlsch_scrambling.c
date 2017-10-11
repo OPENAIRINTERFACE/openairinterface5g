@@ -123,7 +123,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_SCRAMBLING
-  printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G);
+  printf("scrambling: i0 %d rnti %x, q %d, Ns %d, Nid_cell %d, G %d x2 %x\n",dlsch->i0,dlsch->rnti,q,Ns,frame_parms->Nid_cell, G, x2);
 #endif
   s = lte_gold_scram(&x1, &x2, 1);
 
@@ -205,7 +205,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
     x2 = ((Ns>>1)<<9) + frame_parms->Nid_cell_mbsfn; //this is c_init in 36.211 Sec 6.3.1
 
 #ifdef DEBUG_SCRAMBLING
-  printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d length %d\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G);
+    printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d G %d, x2 %x\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G,x2);
 #endif
   s = lte_gold_scram(&x1, &x2, 1);
 

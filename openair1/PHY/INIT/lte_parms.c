@@ -44,7 +44,11 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
 
   uint8_t log2_osf;
 
+#if DISABLE_LOG_X
+  printf("Initializing frame parms for N_RB_DL %d, Ncp %d, osf %d\n",frame_parms->N_RB_DL,frame_parms->Ncp,osf);
+#else
   LOG_I(PHY,"Initializing frame parms for N_RB_DL %d, Ncp %d, osf %d\n",frame_parms->N_RB_DL,frame_parms->Ncp,osf);
+#endif
 
   if (frame_parms->Ncp==EXTENDED) {
     frame_parms->nb_prefix_samples0=512;

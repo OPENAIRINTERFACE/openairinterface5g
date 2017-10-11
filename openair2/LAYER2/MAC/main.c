@@ -61,7 +61,7 @@ void dl_phy_sync_success(module_id_t   module_idP,
 #endif
 
   if (first_sync==1 && !(mme_enabled==1)) {
-    layer2_init_UE(module_idP);
+    //layer2_init_UE(module_idP);
     openair_rrc_ue_init(module_idP,eNB_index);
   } else
   {
@@ -79,14 +79,8 @@ void mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP, uint16_t eNB
 int mac_top_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active)
 {
 
-  module_id_t    Mod_id,i,j;
-  RA_TEMPLATE *RA_template;
-  UE_TEMPLATE *UE_template;
-  int size_bytes1,size_bytes2,size_bits1,size_bits2;
-  int CC_id;
-  int list_el;
-  UE_list_t *UE_list;
-  COMMON_channels_t   *cc;
+  int i;
+
   LOG_I(MAC,"[MAIN] Init function start:Nb_UE_INST=%d\n",NB_UE_INST);
 
   if (NB_UE_INST>0) {
@@ -107,36 +101,6 @@ int mac_top_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
   }
 
 
-  if (NB_eNB_INST>0) {
-    RC.mac = (eNB_MAC_INST**)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST*));
-    for (i=0;i<NB_eNB_INST;i++)
-      RC.mac[i] = (eNB_MAC_INST*)malloc16(sizeof(eNB_MAC_INST));
-    AssertFatal(RC.mac != NULL,
-		"[MAIN] can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",NB_eNB_INST*sizeof(eNB_MAC_INST*),NB_eNB_INST,sizeof(eNB_MAC_INST));
-    LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",sizeof(eNB_MAC_INST),NB_eNB_INST,RC.mac);
-    for (i=0;i<NB_eNB_INST;i++) bzero(RC.mac[i],sizeof(eNB_MAC_INST));
-  } else {
-    RC.mac = NULL;
-  }
-
-  // Initialize Linked-List for Active UEs
-  for(Mod_id=0; Mod_id<NB_eNB_INST; Mod_id++) {
-    UE_list = &RC.mac[Mod_id]->UE_list;
-
-    UE_list->num_UEs=0;
-    UE_list->head=-1;
-    UE_list->head_ul=-1;
-    UE_list->avail=0;
-
-    for (list_el=0; list_el<NUMBER_OF_UE_MAX-1; list_el++) {
-      UE_list->next[list_el]=list_el+1;
-      UE_list->next_ul[list_el]=list_el+1;
-    }
-
-    UE_list->next[list_el]=-1;
-    UE_list->next_ul[list_el]=-1;
-  }
-
   LOG_I(MAC,"[MAIN] calling RRC\n");
   openair_rrc_top_init_ue(eMBMS_active, uecap_xer, cba_group_active,HO_active);
 
@@ -148,10 +112,10 @@ int mac_top_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
 }
 
 
-int mac_top_init_eNB()
+void mac_top_init_eNB()
 {
 
-  module_id_t    Mod_id,i,j;
+  module_id_t    i,j;
   int list_el;
   UE_list_t *UE_list;
   eNB_MAC_INST *mac;
@@ -171,25 +135,34 @@ int mac_top_init_eNB()
 		  RC.nb_macrlc_inst*sizeof(eNB_MAC_INST*),RC.nb_macrlc_inst,sizeof(eNB_MAC_INST));
       LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",sizeof(eNB_MAC_INST),RC.nb_macrlc_inst,RC.mac);
       bzero(RC.mac[i],sizeof(eNB_MAC_INST));
-      RC.mac[i]->Mod_id = Mod_id;
+      RC.mac[i]->Mod_id = i;
       for (j=0;j<MAX_NUM_CCs;j++) {
 	RC.mac[i]->DL_req[j].dl_config_request_body.dl_config_pdu_list      = RC.mac[i]->dl_config_pdu_list[j];
 	RC.mac[i]->UL_req[j].ul_config_request_body.ul_config_pdu_list      = RC.mac[i]->ul_config_pdu_list[j];
+	for (int k=0;k<10;k++) RC.mac[i]->UL_req_tmp[j][k].ul_config_request_body.ul_config_pdu_list   = RC.mac[i]->ul_config_pdu_list_tmp[j][k];
 	RC.mac[i]->HI_DCI0_req[j].hi_dci0_request_body.hi_dci0_pdu_list     = RC.mac[i]->hi_dci0_pdu_list[j];
 	RC.mac[i]->TX_req[j].tx_request_body.tx_pdu_list                    = RC.mac[i]->tx_request_pdu[j];
 	RC.mac[i]->ul_handle                                                = 0;
       }
     }
+
+    AssertFatal(rlc_module_init()==0,"Could not initialize RLC layer\n");
+
+    // These should be out of here later
+    pdcp_layer_init ();
+
+    rrc_init_global_param();
+
   } else {
     RC.mac = NULL;
   }
   
   // Initialize Linked-List for Active UEs
-  for(Mod_id=0; Mod_id<RC.nb_macrlc_inst; Mod_id++) {
-    mac = RC.mac[Mod_id];
+  for(i=0; i<RC.nb_macrlc_inst; i++) {
+    mac = RC.mac[i];
 
 
-    mac->if_inst                = IF_Module_init(Mod_id);
+    mac->if_inst                = IF_Module_init(i);
 
     UE_list = &mac->UE_list;
 
@@ -374,7 +347,6 @@ int l2_init_eNB()
 {
 
 
-  int i;
 
   LOG_I(MAC,"[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
 

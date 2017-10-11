@@ -116,7 +116,7 @@ int generate_eNB_ulsch_params_from_rar(PHY_VARS_eNB *eNB,
     break;
   }
 
-  ulsch_harq->TPC                = (rar[3]>>2)&7;//rar->TPC;
+
   rballoc = (((uint16_t)(rar[1]&7))<<7)|(rar[2]>>1);
 
   if (rballoc>RIV_max) {
@@ -150,19 +150,19 @@ int generate_eNB_ulsch_params_from_rar(PHY_VARS_eNB *eNB,
   ulsch->rnti = rnti;
   ulsch->harq_mask = 1<<harq_pid;
 
-  if (ulsch_harq->round == 0) {
+  //  if (ulsch_harq->round == 0) {
     ulsch_harq->status = ACTIVE;
     ulsch_harq->rvidx = 0;
-    ulsch_harq->mcs         = ((rar[2]&1)<<3)|(rar[3]>>5);
-    //ulsch_harq->TBS         = dlsch_tbs25[ulsch_harq->mcs][ulsch_harq->nb_rb-1];
-    ulsch_harq->TBS         = TBStable[get_I_TBS_UL(ulsch_harq->mcs)][ulsch_harq->nb_rb-1];
+    uint8_t mcs               = ((rar[2]&1)<<3)|(rar[3]>>5);
+    ulsch_harq->TBS           = TBStable[get_I_TBS_UL(mcs)][ulsch_harq->nb_rb-1];
+    ulsch_harq->Qm            = get_Qm_ul(mcs);
     ulsch_harq->Msc_initial   = 12*ulsch_harq->nb_rb;
     ulsch_harq->Nsymb_initial = 9;
     ulsch_harq->round = 0;
-  } else {
+    /*  } else {
     ulsch_harq->rvidx = 0;
     ulsch_harq->round++;
-  }
+    }*/
 
 
   ulsch->Msg3_active = 1;
@@ -173,6 +173,7 @@ int generate_eNB_ulsch_params_from_rar(PHY_VARS_eNB *eNB,
 		 &ulsch_harq->frame,
 		 &ulsch_harq->subframe);
 
+  LOG_I(PHY,"Programming msg3 reception in (%d,%d)\n",ulsch_harq->frame,ulsch_harq->subframe);
   use_srs = is_srs_occasion_common(frame_parms,ulsch_harq->frame,ulsch_harq->subframe);
   ulsch_harq->Nsymb_pusch = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
   ulsch_harq->srs_active                            = use_srs;
@@ -264,15 +265,11 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *ue,
   ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT[rballoc];
   ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT[rballoc];
 
-  if (ulsch->harq_processes[harq_pid]->nb_rb ==0)
-    return(-1);
+  AssertFatal(ulsch->harq_processes[harq_pid]->nb_rb >0, "nb_rb == 0\n");
 
   ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb];
 
-  if (ulsch->harq_processes[harq_pid]->nb_rb > 4) {
-    LOG_D(PHY,"rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
-    return(-1);
-  }
+  AssertFatal(ulsch->harq_processes[harq_pid]->nb_rb <= 6,"unlikely rb count for RAR grant : nb_rb > 6\n");
 
   //  ulsch->harq_processes[harq_pid]->Ndi                                   = 1;
   if (ulsch->harq_processes[harq_pid]->round == 0)

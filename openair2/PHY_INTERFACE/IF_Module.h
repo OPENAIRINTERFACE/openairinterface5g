@@ -1,10 +1,4 @@
-
-/*This is the interface module between PHY
-*Provided the FAPI style interface structures for P7.
-*
-*
-*
-*//*
+/*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -43,14 +37,6 @@
 #include "openair1/PHY/LTE_TRANSPORT/defs.h"
 #include "nfapi_interface.h"
 
-// uplink subframe P7
-
-
-	///
-
-/*UL_IND_t:
-* A structure handles all the uplink information.
-*/
 
 #define MAX_NUM_DL_PDU 100
 #define MAX_NUM_UL_PDU 100

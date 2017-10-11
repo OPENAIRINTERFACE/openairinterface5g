@@ -200,14 +200,14 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
     if (packet_type > IF4p5_PRACH)
       rxF = &prach_rxsigF_br[packet_type - IF4p5_PRACH - 1][0][0];
     else 
-#else
+#endif
       rxF = &prach_rxsigF[0][0];
-#endif    
 
+    AssertFatal(rxF!=NULL,"rxF is null\n");
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
-       memcpy((void *)(tx_buffer_prach + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t),
-              (void*)rxF, 
-              PRACH_BLOCK_SIZE_BYTES);
+      memcpy((void *)(tx_buffer_prach + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t),
+	     (void*)rxF, 
+	     PRACH_BLOCK_SIZE_BYTES);
     } else {
       memcpy((void *)(tx_buffer_prach + sizeof_IF4p5_header_t),
              (void *)rxF,
@@ -335,12 +335,13 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
     if (*packet_type > IF4p5_PRACH)
       rxF = &prach_rxsigF_br[*packet_type - IF4p5_PRACH - 1][0][0];
     else 
-#else
-      rxF = &prach_rxsigF[0][0];
 #endif
+      rxF = &prach_rxsigF[0][0];
 
     // FIX: hard coded prach samples length
     db_fulllength = PRACH_NUM_SAMPLES;
+
+    AssertFatal(rxF!=NULL,"rxF is null\n");
 
     if (eth->flags == ETH_RAW_IF4p5_MODE) {		
       memcpy(rxF, 
@@ -352,8 +353,8 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
              PRACH_BLOCK_SIZE_BYTES);
     }
 
-    LOG_I(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
-	  dB_fixed(signal_energy(&prach_rxsigF[0][0],839)));
+    LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
+	  dB_fixed(signal_energy((int*)&prach_rxsigF[0][0],839)));
     for (idx=0;idx<ru->num_eNB;idx++) ru->wakeup_prach_eNB(ru->eNB_list[idx],ru,*frame,*subframe);
 
   } else if (*packet_type == IF4p5_PULTICK) {

@@ -39,6 +39,11 @@
 //#include "defs.h"
 #include "openair2/COMMON/platform_types.h"
 
+#define RX_NB_TH_MAX 2
+#define RX_NB_TH 2
+
+#define LTE_SLOTS_PER_SUBFRAME 2
+
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
 #define LTE_SLOTS_PER_FRAME  20
 #define LTE_CE_FILTER_LENGTH 5
@@ -350,6 +355,14 @@ typedef struct {
 
 /// SoundingRS-UL-ConfigDedicated Information Element from 36.331 RRC spec
 typedef struct {
+  /// This descriptor is active
+  uint8_t active;
+  /// This descriptor's frame
+  uint16_t frame;
+  /// This descriptor's subframe
+  uint8_t  subframe;
+  /// rnti
+  uint16_t rnti;
   /// Parameter: \f$B_\text{SRS}\f$, see TS 36.211 (table 5.5.3.2-1, 5.5.3.2-2, 5.5.3.2-3 and 5.5.3.2-4). \vr{[0..3]} \note the specification sais it is an enumerated value.
   uint8_t srs_Bandwidth;
   /// Parameter: SRS hopping bandwidth \f$b_\text{hop}\in\{0,1,2,3\}\f$, see TS 36.211 (5.5.3.2) \vr{[0..3]} \note the specification sais it is an enumerated value.
@@ -831,6 +844,16 @@ typedef struct {
   DCI_ALLOC_t dci_alloc[32];
 } LTE_eNB_PDCCH;
 
+typedef struct {
+  uint8_t hi;
+  uint8_t first_rb;
+  uint8_t n_DMRS;
+} phich_config_t;
+
+typedef struct {
+  uint8_t num_hi;
+  phich_config_t config[32];
+} LTE_eNB_PHICH;
 
 typedef struct {
   uint8_t     num_dci;
@@ -936,7 +959,7 @@ typedef struct {
   /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES+2048[
   int32_t **rxdata;
 
-  LTE_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[2];
+  LTE_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[RX_NB_TH_MAX];
 
   /// holds output of the sync correlator
   int32_t *sync_corr;
@@ -1039,6 +1062,10 @@ typedef struct {
   //uint32_t *rb_alloc;
   //uint8_t Qm[2];
   //MIMO_mode_t mimo_mode;
+  // llr offset per ofdm symbol
+  uint32_t llr_offset[14];
+  // llr length per ofdm symbol
+  uint32_t llr_length[14];
 } LTE_UE_PDSCH;
 
 typedef struct {
@@ -1139,6 +1166,9 @@ typedef struct {
   uint32_t dci_missed;
   /// nCCE for PUCCH per subframe
   uint8_t nCCE[10];
+  //Check for specific DCIFormat and AgregationLevel
+  uint8_t dciFormat;
+  uint8_t agregationLevel;
 } LTE_UE_PDCCH;
 
 #define PBCH_A 24

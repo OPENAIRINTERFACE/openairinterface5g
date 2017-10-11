@@ -87,7 +87,7 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
-    printf("generate_drs_pusch: index for Msc_RS=%d not found\n",Msc_RS);
+    LOG_I(PHY,"generate_drs_pusch: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
 

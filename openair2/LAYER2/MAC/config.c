@@ -333,7 +333,7 @@ void config_sib2(int Mod_idP,
     struct PRACH_ConfigSIB_v1310 *ext4_prach=radioResourceConfigCommon_BRP->ext4->prach_ConfigCommon_v1310; 
 
     PRACH_ParametersListCE_r13_t	 *prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
-    int i;
+
     PRACH_ParametersCE_r13_t *p;
     cfg->emtc_config.prach_ce_level_0_enable.value=0;
     cfg->emtc_config.prach_ce_level_1_enable.value=0;
@@ -593,7 +593,7 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
     if (UE_id == -1)
       LOG_E(MAC,"%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
     else
-      config_dedicated(Mod_idP, CC_idP, UE_RNTI(Mod_idP, UE_id), physicalConfigDedicated);
+      UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated=physicalConfigDedicated;
   } 
 
 
@@ -669,19 +669,20 @@ int rrc_mac_config_req_eNB(module_id_t                      Mod_idP,
 
 #endif
 
-  AssertFatal(RC.mac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
-  PHY_Config_t phycfg;
-  phycfg.Mod_id = Mod_idP;
-  phycfg.CC_id  = CC_idP;
-  phycfg.cfg    = &RC.mac[Mod_idP]->config[CC_idP];
-
-  if (RC.mac[Mod_idP]->if_inst->PHY_config_req) RC.mac[Mod_idP]->if_inst->PHY_config_req(&phycfg); 
-
+  if (radioResourceConfigCommon!=NULL) {
+    AssertFatal(RC.mac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
+    PHY_Config_t phycfg;
+    phycfg.Mod_id = Mod_idP;
+    phycfg.CC_id  = CC_idP;
+    phycfg.cfg    = &RC.mac[Mod_idP]->config[CC_idP];
+    
+    if (RC.mac[Mod_idP]->if_inst->PHY_config_req) RC.mac[Mod_idP]->if_inst->PHY_config_req(&phycfg); 
+  }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
-
-  return(0);			   
-
+  
+  return(0);			     
 }
+
 int
 rrc_mac_config_req_ue(
   module_id_t                      Mod_idP,

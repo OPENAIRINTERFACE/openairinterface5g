@@ -56,6 +56,8 @@ typedef struct {
   int *nb_CC;
   /// Number of MACRLC instances in this node
   int nb_macrlc_inst;
+  /// Number of component carriers per instance in this node
+  int *nb_mac_CC;
   /// Number of L1 instances in this node
   int nb_L1_inst;
   /// Number of Component Carriers per instance in this node

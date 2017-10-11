@@ -96,7 +96,7 @@ typedef enum { SEARCH_EXIST=0,
 	       SEARCH_EXIST_OR_FREE} find_type_t;
 
 typedef enum {
-  SCH_IDLE,
+  SCH_IDLE=0,
   ACTIVE,
   CBA_ACTIVE,
   DISABLED
@@ -146,6 +146,8 @@ typedef struct {
   uint32_t cqi_alloc2;
   /// Current Number of RBs
   uint16_t nb_rb;
+  /// Current NDI
+  uint8_t ndi;
   /// downlink power offset field
   uint8_t dl_power_off;
   /// start symbold of pdsch
@@ -319,8 +321,8 @@ typedef struct {
   uint8_t srs_active;
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_UE_HARQ_t *harq_processes[8];
-  /// Pointer to CQI data
-  uint8_t o[MAX_CQI_BYTES];
+  /// Pointer to CQI data (+1 for 8 bits crc)
+  uint8_t o[1+MAX_CQI_BYTES];
   /// Length of CQI data (bits)
   uint8_t O;
   /// Format of CQI data
@@ -398,14 +400,10 @@ typedef struct {
   uint8_t subframe;
   /// Frame for reception
   uint32_t frame;
-  /// Subframe cba scheduling indicator (i.e. CBA Transmission opportunity indicator)
-  uint8_t subframe_cba_scheduling_flag;
   /// PHICH active flag
   uint8_t phich_active;
   /// PHICH ACK
   uint8_t phich_ACK;
-  /// Last TPC command
-  uint8_t TPC;
   /// First Allocated RB
   uint16_t first_rb;
   /// First Allocated RB - previous scheduling
@@ -413,7 +411,9 @@ typedef struct {
   /// is done after a new scheduling
   uint16_t previous_first_rb;
   /// Current Number of RBs
-  uint16_t nb_rb;
+  uint16_t nb_rb; 
+  /// Current Modulation order
+  uint8_t Qm;
   /// Transport block size
   uint32_t TBS;
   /// The payload + CRC size in bits
@@ -466,10 +466,10 @@ typedef struct {
   uint8_t Nsymb_pusch;
   /// SRS active flag
   uint8_t srs_active;
+  /// NDI
+  uint8_t ndi;
   /// Index of current HARQ round for this ULSCH
   uint8_t round;
-  /// MCS format for this ULSCH
-  uint8_t mcs;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
@@ -513,6 +513,9 @@ typedef enum {
   pucch_format1=0,
   pucch_format1a,
   pucch_format1b,
+  pucch_format1b_csA2,
+  pucch_format1b_csA3,
+  pucch_format1b_csA4,
   pucch_format2,
   pucch_format2a,
   pucch_format2b,
@@ -547,14 +550,26 @@ typedef struct {
   uint16_t    rnti;
   /// Type (SR,HARQ,CQI,HARQ_SR,HARQ_CQI,SR_CQI,HARQ_SR_CQI)
   UCI_type_t  type;
+  /// SRS active flag
+  uint8_t     srs_active;
   /// PUCCH format to use
   PUCCH_FMT_t pucch_fmt;
-  /// antenna indicator
+  /// number of PUCCH antenna ports 
+  uint8_t     num_antenna_ports;
+  /// number of PUCCH resources
   uint8_t     num_pucch_resources;
-  /// two antenna n1_pucch
-  uint16_t    n_pucch_1[2];
-  /// two antenna n2_pucch
+  /// two antenna n1_pucch 1_0
+  uint16_t    n_pucch_1[4][2];
+  /// two antenna n1_pucch 1_0 for SR
+  uint16_t    n_pucch_1_0_sr[2];
+   /// two antenna n2_pucch
   uint16_t    n_pucch_2[2];
+  /// two antenna n3_pucch
+  uint16_t    n_pucch_3[2];
+  /// TDD Bundling/multiplexing flag
+  uint8_t     tdd_bundling;
+  /// Received Energy
+  uint32_t stat;
 #ifdef Rel14
   /// non BL/CE, CEmodeA, CEmodeB
   UE_type_t ue_type;
@@ -573,7 +588,7 @@ typedef struct {
   // Indicates if the resource blocks allocated for this grant overlap with the SRS configuration.
   uint8_t Nsrs;
 #endif
-} LTE_eNB_UCI_t;
+} LTE_eNB_UCI;
 
 typedef struct {
   /// HARQ process mask, indicates which processes are currently active
@@ -847,7 +862,10 @@ typedef enum {
 } RX_type_t;
 
 
-
+typedef enum {
+  DCI_COMMON_SPACE,
+  DCI_UE_SPACE
+} dci_space_t;
 
 
 /**@}*/

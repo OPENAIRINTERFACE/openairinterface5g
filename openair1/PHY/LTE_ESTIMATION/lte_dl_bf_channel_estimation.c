@@ -51,7 +51,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   int uespec_pilot[300];
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
-  LTE_UE_DLSCH_t **dlsch_ue       = phy_vars_ue->dlsch[(Ns>>1)&0x1][eNB_id];
+  LTE_UE_DLSCH_t **dlsch_ue       = phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[Ns>>1]][eNB_id];
   LTE_DL_UE_HARQ_t *dlsch0_harq; 
 
   harq_pid    = dlsch_ue[0]->current_harq_pid;
@@ -63,9 +63,9 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   else
     rballoc = dlsch0_harq->rb_alloc_even;
 
-  rxdataF = phy_vars_ue->common_vars.common_vars_rx_data_per_thread[(Ns>>1)&0x1].rxdataF;
+  rxdataF = phy_vars_ue->common_vars.common_vars_rx_data_per_thread[phy_vars_ue->current_thread_id[Ns>>1]].rxdataF;
 
-  dl_bf_ch_estimates = phy_vars_ue->pdsch_vars[(Ns>>1)&0x1][eNB_id]->dl_bf_ch_estimates;
+  dl_bf_ch_estimates = phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[Ns>>1]][eNB_id]->dl_bf_ch_estimates;
   beamforming_mode   = phy_vars_ue->transmission_mode[eNB_id]>6 ? phy_vars_ue->transmission_mode[eNB_id] : 0;
 
   if (phy_vars_ue->high_speed_flag == 0) // use second channel estimate position for temporary storage

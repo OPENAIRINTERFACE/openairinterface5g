@@ -297,7 +297,7 @@ int main(int argc, char **argv)
   }
 
   logInit();
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
   g_log->log_component[PHY].level = LOG_DEBUG;
   g_log->log_component[PHY].flag = LOG_HIGH;
 

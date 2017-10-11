@@ -610,6 +610,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
 
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 
+
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,
                  A)>>8;
@@ -709,6 +710,9 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
 #endif
 
     start_meas(rm_stats);
+#ifdef DEBUG_DLSCH_CODING
+  printf("rvidx in encoding = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
+#endif
     r_offset += lte_rate_matching_turbo(dlsch->harq_processes[harq_pid]->RTC[r],
                                         G,  //G
                                         dlsch->harq_processes[harq_pid]->w[r],
@@ -779,7 +783,9 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
-
+#ifdef DEBUG_DLSCH_CODING
+  printf("SIC encoding thinks this is a new packet \n");
+#endif
     /*
     int i;
     printf("dlsch (tx): \n");
@@ -886,6 +892,9 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
 #endif
 
     start_meas(rm_stats);
+#ifdef DEBUG_DLSCH_CODING
+    printf("rvidx in SIC encoding = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
+#endif
     r_offset += lte_rate_matching_turbo(dlsch->harq_processes[harq_pid]->RTC[r],
                                         G,  //G
                                         dlsch->harq_processes[harq_pid]->w[r],

@@ -52,7 +52,7 @@ double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
     rho_a_dB-=10*log10(2);
 
   if(n_antenna_port==4) // see TS 36.213 Section 5.2
-    rho_a_dB=+10*log10(2);
+    rho_a_dB+=10*log10(2);
 
   sqrt_rho_a_lin= pow(10,(0.05*rho_a_dB));
 

@@ -163,6 +163,7 @@ void pusch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_
 
     ue->ulsch[eNB_id]->Po_PUSCH += (get_Po_NOMINAL_PUSCH(ue->Mod_id,0) + PL);
 
+
     LOG_I(PHY,"[UE  %d][RAPROC] frame %d, subframe %d: Msg3 Po_PUSCH %d dBm (%d,%d,100*PL=%d,%d,%d)\n",
           ue->Mod_id,proc->frame_tx,proc->subframe_tx,ue->ulsch[eNB_id]->Po_PUSCH,
           100*get_Po_NOMINAL_PUSCH(ue->Mod_id,0),

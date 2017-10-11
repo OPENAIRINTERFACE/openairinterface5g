@@ -55,43 +55,94 @@ void handle_rach(UL_IND_t *UL_info) {
 #endif
 }
 
-void handle_ulsch(UL_IND_t *UL_info) {
+void handle_sr(UL_IND_t *UL_info) {
 
   int i;
 
+  for (i=0;i<UL_info->sr_ind.number_of_srs;i++) 
+    SR_indication(UL_info->module_id,
+		  UL_info->CC_id,
+		  UL_info->frame,
+		  UL_info->subframe,
+		  UL_info->sr_ind.sr_pdu_list[i].rx_ue_information.rnti,
+		  UL_info->sr_ind.sr_pdu_list[i].ul_cqi_information.ul_cqi);
+
+  UL_info->sr_ind.number_of_srs=0;
+}
+
+void handle_cqi(UL_IND_t *UL_info) {
+
+  int i;
+
+  for (i=0;i<UL_info->cqi_ind.number_of_cqis;i++) 
+    cqi_indication(UL_info->module_id,
+		   UL_info->CC_id,
+		   UL_info->frame,
+		   UL_info->subframe,
+		   UL_info->cqi_ind.cqi_pdu_list[i].rx_ue_information.rnti,
+		   &UL_info->cqi_ind.cqi_pdu_list[i].cqi_indication_rel9,
+		   UL_info->cqi_ind.cqi_raw_pdu_list[i].pdu,
+		   &UL_info->cqi_ind.cqi_pdu_list[i].ul_cqi_information);
+
+  UL_info->cqi_ind.number_of_cqis=0;
+}
+
+void handle_harq(UL_IND_t *UL_info) {
+
+  int i;
+
+  for (i=0;i<UL_info->harq_ind.number_of_harqs;i++) 
+    harq_indication(UL_info->module_id,
+		    UL_info->CC_id,
+		    UL_info->frame,
+		    UL_info->subframe,
+		    &UL_info->harq_ind.harq_pdu_list[i]);
+
+  UL_info->harq_ind.number_of_harqs=0;
+}
+
+void handle_ulsch(UL_IND_t *UL_info) {
+
+  int i,j;
+
   for (i=0;i<UL_info->rx_ind.number_of_pdus;i++) {
 
-    LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu \n",UL_info->frame,UL_info->subframe);
-    rx_sdu(UL_info->module_id,
-	   UL_info->CC_id,
-	   UL_info->frame,
-	   UL_info->subframe,
-	   UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti,
-	   UL_info->rx_ind.rx_pdu_list[i].data,
-	   UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.length,
-	   UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.timing_advance,
-	   UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
-
-  }
+    for (j=0;j<UL_info->crc_ind.number_of_crcs;j++) {
+      // find crc_indication j corresponding rx_indication i
+      if (UL_info->crc_ind.crc_pdu_list[j].rx_ue_information.rnti ==
+	  UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti) {
+	if (UL_info->crc_ind.crc_pdu_list[j].crc_indication_rel8.crc_flag == 1) { // CRC error indication
+	  LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->subframe);
+	  rx_sdu(UL_info->module_id,
+		 UL_info->CC_id,
+		 UL_info->frame,
+		 UL_info->subframe,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti,
+		 (uint8_t *)NULL,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.length,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.timing_advance,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
+	}
+	else {
+	  LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC ok) \n",UL_info->frame,UL_info->subframe);
+	  rx_sdu(UL_info->module_id,
+		 UL_info->CC_id,
+		 UL_info->frame,
+		 UL_info->subframe,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti,
+		 UL_info->rx_ind.rx_pdu_list[i].data,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.length,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.timing_advance,
+		 UL_info->rx_ind.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
+	}
+	break;
+      } //if (UL_info->crc_ind.crc_pdu_list[j].rx_ue_information.rnti ==
+	//    UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti) {
+    } //    for (j=0;j<UL_info->crc_ind.number_of_crcs;j++) {
+    AssertFatal(j<UL_info->crc_ind.number_of_crcs,"Couldn't find matchin CRC indication\n");
+  } //   for (i=0;i<UL_info->rx_ind.number_of_pdus;i++) {
+    
   UL_info->rx_ind.number_of_pdus=0;
-
-  for (i=0;i<UL_info->crc_ind.number_of_crcs;i++) {
-
-    if (UL_info->crc_ind.crc_pdu_list[i].crc_indication_rel8.crc_flag == 1) { // CRC error indication
-      LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->subframe);
-      rx_sdu(UL_info->module_id,
-	     UL_info->CC_id,
-	     UL_info->frame,
-	     UL_info->subframe,
-	     UL_info->crc_ind.crc_pdu_list[i].rx_ue_information.rnti,
-	     (uint8_t *)NULL,
-	     0,
-	     0,
-	     0);
-    }
-
- 
-  }
   UL_info->crc_ind.number_of_crcs=0;
 }
 
@@ -122,8 +173,18 @@ void UL_indication(UL_IND_t *UL_info)
   ifi->CC_mask |= (1<<CC_id);
  
 
+  // clear DL/UL info for new scheduling round
+  clear_nfapi_information(RC.mac[module_id],CC_id,
+			  UL_info->frame,UL_info->subframe);
+
 
   handle_rach(UL_info);
+
+  handle_sr(UL_info);
+
+  handle_cqi(UL_info);
+
+  handle_harq(UL_info);
 
   // clear HI prior to hanling ULSCH
   mac->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_hi                     = 0;
@@ -133,24 +194,30 @@ void UL_indication(UL_IND_t *UL_info)
   if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
 
     eNB_dlsch_ulsch_scheduler(module_id,
-			      UL_info->frame+((UL_info->subframe>5)?1:0),
+			      (UL_info->frame+((UL_info->subframe>5)?1:0)) % 1024,
 			      (UL_info->subframe+4)%10);
 
     ifi->CC_mask            = 0;
 
     sched_info->module_id   = module_id;
     sched_info->CC_id       = CC_id;
-    sched_info->frame       = UL_info->frame + ((UL_info->subframe>5) ? 1 : 0);
+    sched_info->frame       = (UL_info->frame + ((UL_info->subframe>5) ? 1 : 0)) % 1024;
     sched_info->subframe    = (UL_info->subframe+4)%10;
     sched_info->DL_req      = &mac->DL_req[CC_id];
     sched_info->HI_DCI0_req = &mac->HI_DCI0_req[CC_id];
-    sched_info->UL_req      = &mac->UL_req[CC_id];
+    if ((mac->common_channels[CC_id].tdd_Config==NULL) ||
+	(is_UL_sf(&mac->common_channels[CC_id],(sched_info->subframe+4)%10)>0)) 
+      sched_info->UL_req      = &mac->UL_req[CC_id];
+    else
+      sched_info->UL_req      = NULL;
+
     sched_info->TX_req      = &mac->TX_req[CC_id];
     AssertFatal(ifi->schedule_response!=NULL,
 		"UL_indication is null (mod %d, cc %d)\n",
 		module_id,
 		CC_id);
     ifi->schedule_response(sched_info);
+
     LOG_D(PHY,"Schedule_response: frame %d, subframe %d (dl_pdus %d / %p)\n",sched_info->frame,sched_info->subframe,sched_info->DL_req->dl_config_request_body.number_pdu,
 	  &sched_info->DL_req->dl_config_request_body.number_pdu);
   }						 

@@ -1,4 +1,4 @@
-//'syntax = "proto2";'
+syntax = "proto2";
 package protocol;
 
 import "config_common.proto";

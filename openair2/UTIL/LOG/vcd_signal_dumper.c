@@ -185,16 +185,16 @@ const char* eurecomVariablesNames[] = {
   "ue0_SFN5",
   "ue0_SFN6",
   "ue0_SFN7",
+  "send_if4_symbol",
+  "recv_if4_symbol",
+  "send_if5_pkt_id",
+  "recv_if5_pkt_id",
   "ue_pdcp_flush_size",
   "ue_pdcp_flush_err",
   "ue0_trx_read_ns",
   "ue0_trx_write_ns",
   "ue0_trx_read_ns_missing",
-  "ue0_trx_write_ns_missing"
-  "send_if4_symbol",
-  "recv_if4_symbol",
-  "send_if5_pkt_id",
-  "recv_if5_pkt_id"
+  "ue0_trx_write_ns_missing",
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -398,10 +398,10 @@ const char* eurecomFunctionsNames[] = {
   "recv_if5",
 
   "compress_if",
-  "decompress_if"
+  "decompress_if",
 };
 
-struct vcd_module_s vcd_modules[VCD_SIGNAL_DUMPER_MODULE_END] = {
+struct vcd_module_s vcd_modules[] = {
   { "variables", VCD_SIGNAL_DUMPER_VARIABLES_END, eurecomVariablesNames, VCD_WIRE, 64 },
   { "functions", VCD_SIGNAL_DUMPER_FUNCTIONS_END, eurecomFunctionsNames, VCD_WIRE, 1 },
   //    { "ue_procedures_functions", VCD_SIGNAL_DUMPER_UE_PROCEDURES_FUNCTIONS_END, eurecomUEFunctionsNames, VCD_WIRE, 1 },
@@ -702,7 +702,7 @@ void vcd_signal_dumper_create_header(void)
       fprintf(vcd_fd, "$timescale 1 ns $end\n");
 
       /* Initialize each module definition */
-      for(i = 0; i < VCD_SIGNAL_DUMPER_MODULE_END; i++) {
+      for(i = 0; i < sizeof(vcd_modules) / sizeof(struct vcd_module_s); i++) {
         struct vcd_module_s *module;
         module = &vcd_modules[i];
         fprintf(vcd_fd, "$scope module %s $end\n", module->name);
@@ -727,7 +727,7 @@ void vcd_signal_dumper_create_header(void)
       /* Init variables and functions to 0 */
       fprintf(vcd_fd, "$dumpvars\n");
 
-      for(i = 0; i < VCD_SIGNAL_DUMPER_MODULE_END; i++) {
+      for(i = 0; i < sizeof(vcd_modules) / sizeof(struct vcd_module_s); i++) {
         struct vcd_module_s *module;
         module = &vcd_modules[i];
 

@@ -570,7 +570,6 @@ int main(int argc, char **argv)
 
     /*
     num_pdcch_symbols = generate_dci_top(1,
-           0,
            dci_alloc,
            0,
            1024,
@@ -936,6 +935,7 @@ int main(int argc, char **argv)
             lte_ue_measurements(UE,
                                 0,
                                 1,
+                                0,
                                 0,
                                 0);
             /*

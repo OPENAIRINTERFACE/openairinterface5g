@@ -127,7 +127,6 @@ init_SI(
 )
 //-----------------------------------------------------------------------------
 {
-    puts("[DEBUGGING][KOGO] Inside init_SI function ...");
 #if defined(Rel10) || defined(Rel14)
   int                                 i;
 #endif
@@ -328,9 +327,8 @@ init_SI(
 		  "sib2_br->nonCriticalExtension is null (v11.3)\n");
       AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
 		  "sib2_br->nonCriticalExtension is null (v12.5)\n");
-      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
+      AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension!=NULL,
 		  "sib2_br->nonCriticalExtension is null (v13.10)\n");
-    
       sib1_v13ext = RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension;
 
       // Basic Asserts for CE_level0 PRACH configuration
@@ -346,11 +344,6 @@ init_SI(
 		  "prachce0->numReptitionPerPreambleAttempt_r13 %d > prach_StartingSubframe_r13 %d\n",
 		  1<<p->numRepetitionPerPreambleAttempt_r13,
 		  2<<*p->prach_StartingSubframe_r13);
-
-      
-
-
-
   }
 #endif
 
@@ -3525,38 +3518,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                      ue_context_pP->ue_context.kenb, &kRRCint);
 
 #endif
-#if ENABLE_RAL
-  {
-    MessageDef                         *message_ral_p = NULL;
-    rrc_ral_connection_reconfiguration_ind_t connection_reconfiguration_ind;
-    int                                 i;
 
-    message_ral_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_RAL_CONNECTION_RECONFIGURATION_IND);
-    memset(&connection_reconfiguration_ind, 0, sizeof(rrc_ral_connection_reconfiguration_ind_t));
-    connection_reconfiguration_ind.ue_id = ctxt_pP->rnti;
-
-    if (DRB_configList != NULL) {
-      connection_reconfiguration_ind.num_drb = DRB_configList->list.count;
-
-      for (i = 0; (i < DRB_configList->list.count) && (i < maxDRB); i++) {
-        connection_reconfiguration_ind.drb_id[i] = DRB_configList->list.array[i]->drb_Identity;
-      }
-    } else {
-      connection_reconfiguration_ind.num_drb = 0;
-    }
-
-    if (SRB_configList != NULL) {
-      connection_reconfiguration_ind.num_srb = SRB_configList->list.count;
-    } else {
-      connection_reconfiguration_ind.num_srb = 0;
-    }
-
-    memcpy(&message_ral_p->ittiMsg, (void *)&connection_reconfiguration_ind,
-           sizeof(rrc_ral_connection_reconfiguration_ind_t));
-    LOG_I(RRC, "Sending RRC_RAL_CONNECTION_RECONFIGURATION_IND to RAL\n");
-    itti_send_msg_to_task(TASK_RAL_ENB, ctxt_pP->instance, message_ral_p);
-  }
-#endif
   // Refresh SRBs/DRBs
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
@@ -4511,7 +4473,7 @@ rrc_eNB_decode_dcch(
                sdu_sizeP,
                0,
                0);
-
+  /*
 #if defined(ENABLE_ITTI)
 #   if defined(DISABLE_ITTI_XER_PRINT)
   {
@@ -4540,7 +4502,7 @@ rrc_eNB_decode_dcch(
   }
 #   endif
 #endif
-
+  */
   {
     for (i = 0; i < sdu_sizeP; i++) {
       LOG_T(RRC, "%x.", Rx_sdu[i]);
@@ -5059,13 +5021,14 @@ rrc_enb_task(
 
   protocol_ctxt_t                     ctxt;
   itti_mark_task_ready(TASK_RRC_ENB);
-
+  LOG_I(RRC,"Entering main loop of RRC message task\n");
   while (1) {
     // Wait for a message
     itti_receive_msg(TASK_RRC_ENB, &msg_p);
 
     msg_name_p = ITTI_MSG_NAME(msg_p);
     instance = ITTI_MSG_INSTANCE(msg_p);
+    LOG_I(RRC,"Received message %s\n",msg_name_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:

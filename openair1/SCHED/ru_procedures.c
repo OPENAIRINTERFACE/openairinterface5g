@@ -75,7 +75,7 @@ void feptx_ofdm(RU_t *ru) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
 
-  //  slot_offset_F = (subframe<<1)*slot_sizeF;
+  slot_offset_F = 0;
 
   slot_offset = subframe*fp->samples_per_tti;
 
@@ -186,7 +186,7 @@ void feptx_ofdm(RU_t *ru) {
        }
      }
      LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, subframe %d: txp (time %p) %d dB, txp (freq) %d dB\n",
-	   ru->proc.frame_tx,subframe,txdata,dB_fixed(signal_energy(txdata,fp->samples_per_tti)),
+	   ru->proc.frame_tx,subframe,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_tti)),
 	   dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
   }

@@ -572,16 +572,16 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
 
     case 4:
           if (subframe_tx == 2) {  // ACK subframes 4, 5 and 0
-            subframe_dl0 = 4;
-            subframe_dl1 = 5;
-            subframe_dl2 = 0;
+            subframe_dl0 = 0;
+            subframe_dl1 = 4;
+            subframe_dl2 = 5;
             subframe_ul  = 2;
             //printf("subframe_tx 2, TDD config 3: harq_ack[5] = %d (%d),harq_ack[6] = %d (%d)\n",harq_ack[5].ack,harq_ack[5].send_harq_status,harq_ack[6].ack,harq_ack[6].send_harq_status);
           } else if (subframe_tx == 3) { // ACK subframes 6, 7 8 and 9
-            subframe_dl0 = 6;
-            subframe_dl1 = 7;
-            subframe_dl2 = 8;
-            subframe_dl3 = 9;
+            subframe_dl0 = 7;
+            subframe_dl1 = 8;
+            subframe_dl2 = 9;
+            subframe_dl3 = 6;
             subframe_ul  = 3;
             //printf("Subframe 3, TDD config 3: harq_ack[7] = %d,harq_ack[8] = %d\n",harq_ack[7].ack,harq_ack[8].ack);
             //printf("status %d : o_ACK (%d,%d)\n", status,o_ACK[0],o_ACK[1]);

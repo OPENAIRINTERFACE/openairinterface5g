@@ -45,6 +45,9 @@
 #include <stdarg.h>
 #include <time.h>
 #include <stdint.h>
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -265,8 +268,9 @@ int  set_comp_log(int component, int level, int verbosity, int interval);
 int  set_log(int component, int level, int interval);
 void set_glog(int level, int verbosity);
 void set_log_syslog(int enable);
-void set_log_onlinelog(int enable);
-void set_log_filelog(int enable);
+void set_glog_onlinelog(int enable);
+void set_glog_filelog(int enable);
+
 void set_component_filelog(int comp);
 int  map_str_to_int(mapping *map, const char *str);
 char *map_int_to_str(mapping *map, int val);
@@ -294,7 +298,28 @@ void *log_thread_function(void * list);
 #endif
 /* @}*/
 
+/*----------------macro definitions for reading log configuration from the config module */
+#define CONFIG_STRING_LOG_PREFIX                           "log_config"
 
+#define LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL                 "global_log_level"
+#define LOG_CONFIG_STRING_GLOBAL_LOG_VERBOSITY             "global_log_verbosity"
+#define LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE                "global_log_online"
+#define LOG_CONFIG_STRING_GLOBAL_LOG_INFILE                "global_log_infile"
+
+#define LOG_CONFIG_LEVEL_FORMAT                            "%s_log_level"
+#define LOG_CONFIG_VERBOSITY_FORMAT                        "%s_log_verbosity"
+#define LOG_CONFIG_LOGFILE_FORMAT                          "%s_log_infile"
+/*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                       LOG globalconfiguration parameters										        */
+/*   optname                              helpstr   paramflags    XXXptr	             defXXXval				      type	     numelt	*/
+/*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define LOG_GLOBALPARAMS_DESC { \
+{LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    NULL,	    0,  	 strptr:(char **)&gloglevel, defstrval:log_level_names[2].name,       TYPE_STRING,  sizeof(gloglevel)}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_VERBOSITY,NULL,	    0,  	 strptr:(char **)&glogverbo, defstrval:log_verbosity_names[2].name,   TYPE_STRING,  sizeof(glogverbo)}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   NULL,	    0,  	 iptr:&(g_log->onlinelog),   defintval:1,                             TYPE_INT,      0,              }, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_INFILE,   NULL,	    0,  	 iptr:&(g_log->filelog),     defintval:0,                             TYPE_INT,      0,              }, \
+}
+/*----------------------------------------------------------------------------------*/
 /** @defgroup _debugging debugging macros
  *  @ingroup _macro
  *  @brief Macro used to call logIt function with different message levels
@@ -315,16 +340,29 @@ void *log_thread_function(void * list);
 #    define LOG_N(c, x...) /* */
 #    define LOG_F(c, x...) /* */
 #  else /* T_TRACER */
-#    define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
-#    define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
-#    define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
-#    define LOG_E(c, x...) logIt(c, LOG_ERR, x)
-#    define LOG_W(c, x...) logIt(c, LOG_WARNING, x)
-#    define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
-#    define LOG_I(c, x...) logIt(c, LOG_INFO, x)
-#    define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
-#    define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
-#    define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
+#    if DISABLE_LOG_X
+#        define LOG_I(c, x...) /* */
+#        define LOG_W(c, x...) /* */
+#        define LOG_E(c, x...) /* */
+#        define LOG_D(c, x...) /* */
+#        define LOG_T(c, x...) /* */
+#        define LOG_G(c, x...) /* */
+#        define LOG_A(c, x...) /* */
+#        define LOG_C(c, x...) /* */
+#        define LOG_N(c, x...) /* */
+#        define LOG_F(c, x...) /* */
+#    else  /*DISABLE_LOG_X*/
+#        define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
+#        define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
+#        define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
+#        define LOG_E(c, x...) logIt(c, LOG_ERR, x)
+#        define LOG_W(c, x...) logIt(c, LOG_WARNING, x)
+#        define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
+#        define LOG_I(c, x...) logIt(c, LOG_INFO, x)
+#        define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
+#        define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
+#        define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
+#    endif /*DISABLE_LOG_X*/
 #  endif /* T_TRACER */
 #else /* USER_MODE */
 #  define LOG_G(c, x...) printk(x)
@@ -408,7 +446,11 @@ static inline void printMeas(char * txt, Meas *M, int period) {
                 M->iterations,
                 M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5], 
                 M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
-        LOG_W(PHY,"%s",txt2);
+#if DISABLE_LOG_X
+        printf("%s",txt2);
+#else
+        LOG_W(PHY, "%s",txt2);
+#endif
     }
 }
 
