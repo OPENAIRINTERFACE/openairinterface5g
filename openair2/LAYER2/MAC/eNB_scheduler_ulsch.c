@@ -952,7 +952,7 @@ abort();
 				  format0);
       */
 
-      if (CCE_allocation_infeasible(module_idP,CC_id,2,subframeP,aggregation,rnti)) {
+      if (CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,aggregation,rnti)) {
         LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: not enough nCCE\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
         continue; // break;
       } 

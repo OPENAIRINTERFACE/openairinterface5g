@@ -749,7 +749,7 @@ schedule_ue_spec(
 		    UE_list->UE_template[CC_id][UE_id].oldmcs1[harq_pid]);
 	      
 	    }
-	    if (!CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,
+	    if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,
 					   dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,
 					   rnti)) {
 	      dl_req->number_dci++;
