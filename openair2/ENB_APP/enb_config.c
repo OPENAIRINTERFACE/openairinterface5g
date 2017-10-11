@@ -449,7 +449,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   int32_t     my_int;
 
 
-  
 /* 
   char*             flexran_agent_interface_name      = NULL;
   char*             flexran_agent_ipv4_address        = NULL;
@@ -488,14 +487,14 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   paramdef_t CCsParams[]             = CCPARAMS_DESC;
   paramlist_def_t CCsParamList       = {ENB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
 
-  paramdef_t brParams[]              = BRPARAMS_DESC;
-  paramdef_t siInfoBRParams[]        = SI_INFO_BR_DESC;
-  paramdef_t rsrprangeParams[]       = RSRP_RANGE_LIST_DESC;
-  paramdef_t rachcelevelParams[]     = RACH_CE_LEVELINFOLIST_R13_DESC;
-  paramdef_t prachParams[]           = PRACH_PARAMS_CE_R13_DESC;
-  paramdef_t n1PUCCH_ANR13Params[]   = N1PUCCH_AN_INFOLIST_R13_DESC;
-  paramdef_t pcchv1310Params[]       = PCCH_CONFIG_V1310_DESC;
-  paramdef_t sib2freqhoppingParams[] = SIB2_FREQ_HOPPING_R13_DESC;
+  //paramdef_t brParams[]              = BRPARAMS_DESC;
+ // paramdef_t siInfoBRParams[]        = SI_INFO_BR_DESC;
+  //paramdef_t rsrprangeParams[]       = RSRP_RANGE_LIST_DESC;
+  //paramdef_t rachcelevelParams[]     = RACH_CE_LEVELINFOLIST_R13_DESC;
+  //paramdef_t prachParams[]           = PRACH_PARAMS_CE_R13_DESC;
+  //paramdef_t n1PUCCH_ANR13Params[]   = N1PUCCH_AN_INFOLIST_R13_DESC;
+  //paramdef_t pcchv1310Params[]       = PCCH_CONFIG_V1310_DESC;
+  //paramdef_t sib2freqhoppingParams[] = SIB2_FREQ_HOPPING_R13_DESC;
 
   paramdef_t SRB1Params[]            = SRB1PARAMS_DESC;  
 
@@ -616,6 +615,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	  
 	  LOG_I(RRC,"num component carriers %d \n", num_component_carriers);  
 	  if ( CCsParamList.numelt> 0) {
+#ifdef CLOSE_FOR_NOW
 	    char ccspath[MAX_OPTNAME_SIZE*2 + 16];
 	    
 
@@ -1732,6 +1732,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		config_get( CCsParams,sizeof(CCsParams)/sizeof(paramdef_t),ccspath);	      
 
 	      }
+#endif
 	    }
 	    char srb1path[MAX_OPTNAME_SIZE*2 + 8];
 	    sprintf(srb1path,"%s.%s",enbpath,ENB_CONFIG_STRING_SRB1);
@@ -2346,7 +2347,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	    */
 	    break;
 	}
-      
+
     }
   }
 return 0;

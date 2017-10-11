@@ -275,8 +275,8 @@ void handle_ulsch_cqi_ri_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request
   ulsch_harq->frame                       = frame;
   ulsch_harq->subframe                    = subframe;  
   ulsch_harq->O_RI                        = rel9->aperiodic_cqi_pmi_ri_report.cc[0].ri_size;
-  ulsch_harq->Or1                         = rel9->aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[0];
-  if (ulsch_harq->O_RI>1) ulsch_harq->Or2 = rel9->aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[1];
+  //ulsch_harq->Or1                         = rel9->aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[0];
+  //if (ulsch_harq->O_RI>1) ulsch_harq->Or2 = rel9->aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[1];
   ulsch->beta_offset_ri_times8            = to_beta_offset_ri[rel9->delta_offset_ri];
   ulsch->beta_offset_cqi_times8           = to_beta_offset_cqi[rel9->delta_offset_cqi];
   LOG_I(PHY,"Filling ulsch_cqi_ri information for frame %d, subframe %d : O_RI %d, Or1 %d, beta_offset_cqi_times8 %d (%d)\n",
@@ -296,10 +296,10 @@ void handle_ulsch_cqi_harq_ri_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_re
   ulsch_harq->frame                       = frame;
   ulsch_harq->subframe                    = subframe;  
   ulsch_harq->O_RI                        = rel9->aperiodic_cqi_pmi_ri_report.cc[0].ri_size;
-  ulsch_harq->Or1                         = rel9->aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[0];
+  //ulsch_harq->Or1                         = rel9->aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[0];
   ulsch_harq->O_ACK                       = harq_information->harq_information_rel10.harq_size;
 
-  if (ulsch_harq->O_RI>1) ulsch_harq->Or2 = rel9->aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[1];
+  //if (ulsch_harq->O_RI>1) ulsch_harq->Or2 = rel9->aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[1];
 
   ulsch->beta_offset_harqack_times8       = to_beta_offset_harqack[harq_information->harq_information_rel10.delta_offset_harq];
   ulsch->beta_offset_ri_times8            = to_beta_offset_ri[rel9->delta_offset_ri];

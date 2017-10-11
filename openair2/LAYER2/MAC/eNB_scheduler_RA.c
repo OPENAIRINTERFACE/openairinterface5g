@@ -307,7 +307,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 
     } //repetition_count==0 && SF condition met
     if (RA_template->msg2_mpdcch_repetition_cnt>0) { // we're in a stream of repetitions
-<<<<<<< HEAD
+
       LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, MPDCCH repetition %d\n",
 	    module_idP,frameP,subframeP,RA_template->msg2_mpdcch_repetition_cnt);
 

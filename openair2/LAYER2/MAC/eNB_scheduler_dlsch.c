@@ -436,7 +436,7 @@ void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned i
 
 
 
-void
+/*void
 schedule_ue_spec_br(
     module_id_t   module_idP,
     frame_t       frameP,
@@ -1503,7 +1503,7 @@ schedule_ue_spec_br(
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_OUT);
 
 }
-
+*/
 
 			
 //------------------------------------------------------------------------------
