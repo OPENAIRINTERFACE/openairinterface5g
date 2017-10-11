@@ -818,7 +818,7 @@ int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
   }
   if (type == SEARCH_EXIST) return -1;
   if (first_free_index != -1)
-    eNB->dlsch[first_free_index][0]->rnti = -1;
+    eNB->dlsch[first_free_index][0]->rnti = 0;
   return first_free_index;
 }
 
@@ -836,7 +836,7 @@ int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
   }
   if (type == SEARCH_EXIST) return -1;
   if (first_free_index != -1)
-    eNB->ulsch[first_free_index]->rnti = -1;
+    eNB->ulsch[first_free_index]->rnti = 0;
   return first_free_index;
 }
 
