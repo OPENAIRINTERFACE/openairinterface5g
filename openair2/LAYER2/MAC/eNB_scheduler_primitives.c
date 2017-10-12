@@ -3558,6 +3558,10 @@ void cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP, sub_frame_t
 {
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  if (UE_id == -1) {
+    LOG_W(MAC, "cqi_indication: UE %x not found\n", rntiP);
+    return;
+  }
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
   if (UE_id  >= 0) {
@@ -3640,6 +3644,10 @@ void harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP, sub_frame_
   uint8_t ul_cqi           = harq_pdu->ul_cqi_information.ul_cqi;
   uint8_t channel          = harq_pdu->ul_cqi_information.channel;
   int UE_id                = find_UE_id(mod_idP, rnti);
+  if (UE_id == -1) {
+    LOG_W(MAC, "harq_indication: UE %x not found\n", rnti);
+    return;
+  }
   UE_list_t *UE_list       = &RC.mac[mod_idP]->UE_list;
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc    = &RC.mac[mod_idP]->common_channels[CC_idP];
