@@ -27,7 +27,8 @@ cmake_minimum_required (VERSION 2.8)
 # Base directories, compatible with legacy OAI building
 ################################################
 set (OPENAIR_DIR     $ENV{OPENAIR_DIR})
-set (NFAPI_DIR       $ENV{NFAPI_DIR})
+#set (NFAPI_DIR       $ENV{NFAPI_DIR})
+set (NFAPI_DIR       ${OPENAIR_DIR}/nfapi)
 set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
 set (OPENAIR2_DIR    ${OPENAIR_DIR}/openair2)
 set (OPENAIR3_DIR    ${OPENAIR_DIR}/openair3)
