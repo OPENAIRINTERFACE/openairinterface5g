@@ -36,7 +36,8 @@ void reset_ue_ids(void)
 
 int ue_id_from_rnti(void *_priv, int rnti)
 {
-rnti = 0; /* HACK, to be removed */
+  if (rnti < 0) rnti = 65534; /* HACK, to be removed */
+
   if (rnti < 0 || rnti > 65535) { printf("bad rnti %d\n", rnti); exit(1); }
   /* rnti not seen yet? give it a new ue_id */
   if (ue_id[rnti] == -1) {
