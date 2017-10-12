@@ -113,6 +113,9 @@ void schedule_SRS(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
 	  ul_req        = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
 
 
+          // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
+          if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED) continue;
+
 	  AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n",UE_id);
 
 	  if ((soundingRS_UL_ConfigDedicated = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated)!=NULL) {
