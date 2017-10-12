@@ -148,7 +148,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
 		"maxHARQ %d should be greater than 1\n",
 		(int)eNB->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
 
-    LOG_D(MAC,"[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",enb_mod_idP,harq_pid,CC_idP,
+    LOG_I(MAC,"[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",enb_mod_idP,harq_pid,CC_idP,
      RA_template[RA_id].msg3_round,
      rntiP,RA_id,ul_cqi);
 
@@ -1032,7 +1032,7 @@ abort();
           }
 	  //tpc = 1;
 	  if (tpc!=1) {
-	    LOG_D(MAC,"[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
+	    LOG_I(MAC,"[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
 		  module_idP,frameP,subframeP,harq_pid,tpc,
 		  tpc_accumulated,normalized_rx_power,target_rx_power);
 	  }

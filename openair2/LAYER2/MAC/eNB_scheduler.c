@@ -470,10 +470,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
     CC_id        = UE_PCCID(module_idP, i);
 
     if ((frameP==0)&&(subframeP==0)) {
-      LOG_D(MAC,"UE  rnti %x : %s, PHR %d dB CQI %d\n", rnti,
+      LOG_I(MAC,"UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n", rnti,
             UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync",
             UE_list->UE_template[CC_id][i].phr_info,
-            UE_list->UE_sched_ctrl[i].dl_cqi[CC_id]);
+            UE_list->UE_sched_ctrl[i].dl_cqi[CC_id],
+	    (UE_list->UE_sched_ctrl[i].pusch_snr[CC_id]-128)/2,
+	    (UE_list->UE_sched_ctrl[i].pucch_snr[CC_id]-128)/2);
     }
 
     RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;
