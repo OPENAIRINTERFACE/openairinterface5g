@@ -911,7 +911,6 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
       dlsch0_harq->round=0;
   }
   else  { // process is inactive, so activate and set round to 0
-    dlsch0->harq_mask                         |= (1<<rel8->harq_process);
     dlsch0_harq->round=0;
   }
   dlsch0_harq->ndi = rel8->new_data_indicator_1;
@@ -919,8 +918,8 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   dlsch0->active        = 1;
   if (rel8->rnti_type == 2)
       dlsch0_harq->round    = 0;
-LOG_D(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) \n",rel8->harq_process,dlsch0->harq_mask,dlsch0_harq->round,
-	dlsch0_harq->ndi,rel8->new_data_indicator_1);
+LOG_D(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) rnti type %d\n",rel8->harq_process,dlsch0->harq_mask,dlsch0_harq->round,
+	dlsch0_harq->ndi,rel8->new_data_indicator_1, rel8->rnti_type);
 
   switch (rel8->dci_format) {
 
@@ -1109,6 +1108,8 @@ LOG_D(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) \n",rel8->harq_
     if (dlsch0_harq->round == 0)
       dlsch0_harq->status = ACTIVE;
 
+    dlsch0->harq_mask            |= (1<<rel8->harq_process);
+
     if (rel8->rnti_type == 1) LOG_I(PHY,"DCI 1A: round %d, mcs %d, rballoc %x,rv %d, rnti %x\n",dlsch0_harq->round,rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti);
 
     break;
@@ -1270,6 +1271,7 @@ LOG_D(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) \n",rel8->harq_
     LOG_D(PHY,"DCI: Set harq_ids[%d] to %d (%p)\n",subframe,rel8->harq_process,dlsch0);
     dlsch0->harq_ids[subframe] = rel8->harq_process;
 
+    dlsch0->harq_mask          |= (1<<rel8->harq_process);
 
 
     dlsch0->rnti = rel8->rnti;
@@ -2265,11 +2267,6 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
 void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
                nfapi_hi_dci0_dci_pdu *pdu)
 {
-  uint8_t UE_id;
-
-  AssertFatal((UE_id=find_ulsch(pdu->dci_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
-	      "No existing UE ULSCH for rnti %x\n",pdu->dci_pdu_rel8.rnti);
-
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
 
   uint32_t cqi_req = pdu->dci_pdu_rel8.cqi_csi_request;
@@ -2429,12 +2426,10 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
   }
 }
 
-void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe) {
-
+void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe)
+{
   uint8_t harq_pid;
-
   uint8_t UE_id;
-
   boolean_t new_ulsch = (find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST)==-1) ? TRUE : FALSE;
 
   AssertFatal((UE_id=find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
@@ -2447,6 +2442,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
 
   harq_pid = ulsch_pdu->ulsch_pdu_rel8.harq_process_number;
 
+  ulsch->harq_mask |= 1 << harq_pid;
 
   ulsch->harq_processes[harq_pid]->frame                                 = frame;
   ulsch->harq_processes[harq_pid]->subframe                              = subframe;
@@ -2460,10 +2456,10 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
   ulsch->harq_processes[harq_pid]->dci_alloc                             = 1;
   ulsch->harq_processes[harq_pid]->rar_alloc                             = 0;
   ulsch->harq_processes[harq_pid]->n_DMRS                                = ulsch_pdu->ulsch_pdu_rel8.cyclic_shift_2_for_drms;
-  
+
   ulsch->harq_processes[harq_pid]->Nsymb_pusch                           = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
   ulsch->harq_processes[harq_pid]->srs_active                            = use_srs;
-  
+
   //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
   if(ulsch->harq_processes[harq_pid]->n_DMRS == 0)
     ulsch->harq_processes[harq_pid]->n_DMRS2 = 0;
@@ -2481,25 +2477,23 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
     ulsch->harq_processes[harq_pid]->n_DMRS2 = 10;
   else if(ulsch->harq_processes[harq_pid]->n_DMRS == 7)
     ulsch->harq_processes[harq_pid]->n_DMRS2 = 9;
-  
-   
+
   LOG_D(PHY,"[eNB %d][PUSCH %d] Programming PUSCH with n_DMRS2 %d (cshift %d) for Frame %d, Subframe %d\n",
 	eNB->Mod_id,harq_pid,ulsch->harq_processes[harq_pid]->n_DMRS2,ulsch->harq_processes[harq_pid]->n_DMRS,
 	frame,subframe);
-  
-  
+
   ulsch->harq_processes[harq_pid]->rvidx = ulsch_pdu->ulsch_pdu_rel8.redundancy_version;
   ulsch->harq_processes[harq_pid]->Qm    = ulsch_pdu->ulsch_pdu_rel8.modulation_type;
-  // Set O_ACK to 0 by default, will be set of DLSCH is scheduled and needs to be 
+  // Set O_ACK to 0 by default, will be set of DLSCH is scheduled and needs to be
   ulsch->harq_processes[harq_pid]->O_ACK         = 0;
 
   if ((ulsch->harq_processes[harq_pid]->status == SCH_IDLE) ||
       (ulsch->harq_processes[harq_pid]->ndi    != ulsch_pdu->ulsch_pdu_rel8.new_data_indication) ||
 	  (new_ulsch == TRUE)){
     ulsch->harq_processes[harq_pid]->status        = ACTIVE;
-    
+
     ulsch->harq_processes[harq_pid]->TBS           = ulsch_pdu->ulsch_pdu_rel8.size<<3;
-    
+
     ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
     ulsch->harq_processes[harq_pid]->Nsymb_initial = ulsch->harq_processes[harq_pid]->Nsymb_pusch;
     ulsch->harq_processes[harq_pid]->round         = 0;
@@ -2509,12 +2503,14 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
     // will be set if MAC has activated ULSCH_CQI_RI_PDU or ULSCH_CQI_HARQ_RI_PDU
     ulsch->harq_processes[harq_pid]->Or1           = 0;
     ulsch->harq_processes[harq_pid]->Or2           = 0;
-  } 
+  }
   else  ulsch->harq_processes[harq_pid]->round++;
 
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;
-  LOG_D(PHY,"Filling ULSCH %x (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
-	ulsch->rnti, new_ulsch,
+  LOG_D(PHY,"Filling ULSCH %x (UE_id %d) (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
+	ulsch->rnti,
+        UE_id,
+        new_ulsch,
 	frame,
 	subframe,
 	harq_pid,
@@ -2523,12 +2519,8 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
 	ulsch->harq_processes[harq_pid]->rvidx,
 	ulsch->harq_processes[harq_pid]->Qm,
 	ulsch->harq_processes[harq_pid]->TBS,
-	ulsch->harq_processes[harq_pid]->round);  
-  
-  
+	ulsch->harq_processes[harq_pid]->round);
 }
-
-
 
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
 {
