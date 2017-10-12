@@ -911,7 +911,6 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
       dlsch0_harq->round=0;
   }
   else  { // process is inactive, so activate and set round to 0
-    dlsch0->harq_mask                         |= (1<<rel8->harq_process);
     dlsch0_harq->round=0;
   }
   dlsch0_harq->ndi = rel8->new_data_indicator_1;
@@ -1109,6 +1108,8 @@ LOG_D(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) rnti type %d\n"
     if (dlsch0_harq->round == 0)
       dlsch0_harq->status = ACTIVE;
 
+    dlsch0->harq_mask            |= (1<<rel8->harq_process);
+
     if (rel8->rnti_type == 1) LOG_I(PHY,"DCI 1A: round %d, mcs %d, rballoc %x,rv %d, rnti %x\n",dlsch0_harq->round,rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti);
 
     break;
@@ -1270,6 +1271,7 @@ LOG_D(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) rnti type %d\n"
     LOG_D(PHY,"DCI: Set harq_ids[%d] to %d (%p)\n",subframe,rel8->harq_process,dlsch0);
     dlsch0->harq_ids[subframe] = rel8->harq_process;
 
+    dlsch0->harq_mask          |= (1<<rel8->harq_process);
 
 
     dlsch0->rnti = rel8->rnti;
