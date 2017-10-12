@@ -220,6 +220,8 @@ void rx_sdu(const module_id_t enb_mod_idP,
 	  UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=0;
 	  mac_eNB_rrc_ul_in_sync(enb_mod_idP,CC_idP,frameP,subframeP,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1]);
 	}
+printf("TODO: deal with CRNTI\n");
+abort();
       }
       crnti_rx=1;
       payload_ptr+=2;
