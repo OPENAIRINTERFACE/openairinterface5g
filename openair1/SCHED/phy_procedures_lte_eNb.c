@@ -1765,6 +1765,7 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
 			      uint16_t tdd_multiplexing_mask) {
 
   int UE_id=find_dlsch(uci->rnti,eNB,SEARCH_EXIST);
+  AssertFatal(UE_id>=0,"UE_id doesn't exist\n");
 
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
