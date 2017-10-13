@@ -6394,12 +6394,11 @@ uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
     return(9);
   else
     return((n+6)%10);
-
 }
 
 uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n)
 {
-  uint32_t ul_frame = 255;
+  uint32_t ul_frame;
 
   if ((frame_parms->frame_type == TDD) &&
       (frame_parms->tdd_config == 1) &&
@@ -6417,8 +6416,7 @@ uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, ui
     ul_frame = (frame+(n>=6 ? 1 : 0));
 
   LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, n, ul_frame);
-  return ul_frame;
-
+  return ul_frame % 1024;
 }
 
 int32_t pmi_convert_rank1_from_rank2(uint16_t pmi_alloc, int tpmi, int nb_rb)
