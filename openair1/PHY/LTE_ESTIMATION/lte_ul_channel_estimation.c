@@ -267,33 +267,28 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
 #endif
       }
 
-
-
-      
       // Convert to time domain for visualization
+      memset(temp_in_ifft_0,0,frame_parms->ofdm_symbol_size*sizeof(int32_t));
       for(i=0; i<Msc_RS; i++)
         ((int32_t*)temp_in_ifft_0)[i] = ul_ch_estimates[aa][symbol_offset+i];
+
       switch(frame_parms->N_RB_DL) {
       case 6:
-	
 	idft128((int16_t*) temp_in_ifft_0,
 	       (int16_t*) ul_ch_estimates_time[aa],
 	       1);
 	break;
       case 25:
-	
 	idft512((int16_t*) temp_in_ifft_0,
 	       (int16_t*) ul_ch_estimates_time[aa],
 	       1);
 	break;
       case 50:
-	
 	idft1024((int16_t*) temp_in_ifft_0,
 	       (int16_t*) ul_ch_estimates_time[aa],
 	       1);
 	break;
       case 100:
-	
 	idft2048((int16_t*) temp_in_ifft_0,
 	       (int16_t*) ul_ch_estimates_time[aa],
 	       1);
