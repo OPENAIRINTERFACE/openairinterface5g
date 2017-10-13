@@ -151,18 +151,19 @@ unsigned char subframe2_ul_harq(LTE_DL_FRAME_PARMS *frame_parms,unsigned char su
   return(0);
 }
 
-uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe)
+int phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms, int frame, int subframe)
 {
-  uint8_t pusch_frame = 255;
+  int pusch_frame;
+
   if (frame_parms->frame_type == FDD) {
-    pusch_frame = ((subframe<4) ? (frame - 1) : frame);
+    pusch_frame = subframe<4 ? frame + 1024 - 1 : frame;
   } else {
     // Note this is not true, but it doesn't matter, the frame number is irrelevant for TDD!
     pusch_frame = (frame);
   }
 
   LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, subframe, pusch_frame);
-  return pusch_frame;
+  return pusch_frame % 1024;
 }
 
 uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe)

@@ -1950,7 +1950,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     @param subframe Subframe of received/transmitted PHICH
     @returns frame of PUSCH transmission
 */
-uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);
+int phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms, int frame, int subframe);
 
 void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id,int N_RB_DL);
 
