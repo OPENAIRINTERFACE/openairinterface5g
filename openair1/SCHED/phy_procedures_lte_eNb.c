@@ -900,7 +900,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 		frame,subframe,
 		pucch_b0b1[0][0],metric[0]);
 
-	  
+      uci->stat = metric[0]; 	  
 	  fill_uci_harq_indication(eNB,uci,frame,subframe,pucch_b0b1[0],0,0xffff);
 
 	}
@@ -971,6 +971,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	    else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] != 1) { // 0 ACKs, or at least one DL assignment missed
 	      harq_ack[0] = 0;
 	    }
+        uci->stat = metric[0];
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,2,0xffff); // special_bundling mode
 	  } 
 	  else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==2)){ // multiplexing + no SR, implement Table 10.1.3-5 (Rel14) for multiplexing with M=2
@@ -1012,6 +1013,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 		}
 	      }
 	    }
+        uci->stat = max(metric[0],metric[1]);
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
 	  } //else if ((uci->tdd_bundling == 0) && (res==2))
 	  else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==3)){ // multiplexing + no SR, implement Table 10.1.3-6 (Rel14) for multiplexing with M=3
@@ -1093,6 +1095,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 		}
 	      }
 	    }
+        uci->stat = max_metric;
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
 	  } //else if ((uci->tdd_bundling == 0) && (res==3)) 
 	  else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==4)){ // multiplexing + no SR, implement Table 10.1.3-7 (Rel14) for multiplexing with M=4
@@ -1229,11 +1232,13 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 		}
 	      }
 	    }
+        uci->stat = max_metric;
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
 	  } // else if ((uci->tdd_bundling == 0) && (res==4))
 	  else { // bundling
 	    harq_ack[0] = pucch_b0b1[0][0];
 	    harq_ack[1] = pucch_b0b1[0][1];
+        uci->stat = metric[0];
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,0,0xffff); // special_bundling mode
 	  }
 	  
@@ -1765,6 +1770,7 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
   // estimate UL_CQI for MAC (from antenna port 0 only)
   int SNRtimes10 = dB_fixed_times10(uci->stat) - 200;//(10*eNB->measurements.n0_power_dB[0]);
 
+  if (SNRtimes10 < -100) LOG_I(PHY,"uci->stat %d \n",uci->stat);
 
   if      (SNRtimes10 < -640) pdu->ul_cqi_information.ul_cqi=0;
   else if (SNRtimes10 >  635) pdu->ul_cqi_information.ul_cqi=255;
