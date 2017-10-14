@@ -1032,7 +1032,7 @@ abort();
           }
 	  //tpc = 1;
 	  if (tpc!=1) {
-	    LOG_I(MAC,"[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
+	    LOG_D(MAC,"[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
 		  module_idP,frameP,subframeP,harq_pid,tpc,
 		  tpc_accumulated,normalized_rx_power,target_rx_power);
 	  }
