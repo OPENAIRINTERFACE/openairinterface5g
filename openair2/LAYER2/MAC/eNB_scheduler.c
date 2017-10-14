@@ -481,7 +481,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
             UE_list->UE_template[CC_id][i].phr_info,
             UE_list->UE_sched_ctrl[i].dl_cqi[CC_id],
 	    (UE_list->UE_sched_ctrl[i].pusch_snr[CC_id]-128)/2,
-	    (UE_list->UE_sched_ctrl[i].pucch_snr[CC_id]-128)/2);
+	    (UE_list->UE_sched_ctrl[i].pucch1_snr[CC_id]-128)/2);
     }
 
     RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;
