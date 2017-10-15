@@ -295,6 +295,7 @@ static int DEFENBS[] = {0};
 
 /* component carriers configuration section name */		
 #define ENB_CONFIG_STRING_COMPONENT_CARRIERS                            "component_carriers"		 
+#define ENB_CONFIG_STRING_COMPONENT_BR_PARAMETERS                       "br_parameters"
 
 #define ENB_CONFIG_STRING_SCHEDULING_INFO_LIST                          "scheduling_info_br"
 #define ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_LIST                    "system_info_value_tag_SI"
@@ -526,12 +527,12 @@ static int DEFENBS[] = {0};
 {ENB_CONFIG_STRING_SI_HOPPING_CONFIG_COMMON_R13,                         NULL,   0,           strptr:&si_HoppingConfigCommon_r13 ,               defstrval:"off",                   TYPE_STRING,       0}, \
 {ENB_CONFIG_STRING_SI_VALIDITY_TIME_R13,                                 NULL,   0,           strptr:&si_ValidityTime_r13,                       defstrval:"true",                  TYPE_STRING,       0}, \
 {ENB_CONFIG_STRING_FREQ_HOPPING_PARAMETERS_DL_R13,                       NULL,   0,           strptr:&freqHoppingParametersDL_r13,               defstrval:"DISABLE",               TYPE_STRING,       0}, \
-{ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_NB_R13                           NULL,   0,           strptr:&mpdcch_pdsch_HoppingNB_r13,                defstrval:"nb2",                   TYPE_STRING,       0}, \
+{ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_NB_R13,                          NULL,   0,           strptr:&mpdcch_pdsch_HoppingNB_r13,                defstrval:"nb2",                   TYPE_STRING,       0}, \
 {ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_A_R13,         NULL,   0,           strptr:&interval_DLHoppingConfigCommonModeA_r13,   defstrval:"interval-FDD-r13",      TYPE_STRING,       0}, \
 {ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_A_R13_VAL,     NULL,   0,           iptr:&interval_DLHoppingConfigCommonModeA_r13_val, defintval:0,                       TYPE_UINT,         0}, \
 {ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_B_R13,         NULL,   0,           strptr:&interval_DLHoppingConfigCommonModeB_r13,   defstrval:"interval-FDD-r13",      TYPE_STRING,       0}, \
 {ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_B_R13_VAL,     NULL,   0,           iptr:&interval_DLHoppingConfigCommonModeB_r13_val, defintval:0,                       TYPE_UINT,         0}, \
-{ENB_CONFIG_STRING_INTERVAL_,                                            NULL,   0,           iptr:&mpdcch_pdsch_HoppingOffset_r13,              defintval:1,                       TYPE_UINT,         0}, \
+{ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_OFFSET_R13,                      NULL,   0,           iptr:&mpdcch_pdsch_HoppingOffset_r13,              defintval:1,                       TYPE_UINT,         0}, \
 {ENB_CONFIG_STRING_FRAME_TYPE,                                           NULL,   0,           strptr:&frame_type,                                defstrval:"FDD",                   TYPE_STRING,       0},  \
 {ENB_CONFIG_STRING_TDD_CONFIG,                                           NULL,   0,           iptr:&tdd_config,                                  defintval:3,                       TYPE_UINT,         0},  \
 {ENB_CONFIG_STRING_TDD_CONFIG_S,                                         NULL,   0,           iptr:&tdd_config_s,                                defintval:0,                       TYPE_UINT,         0},  \
