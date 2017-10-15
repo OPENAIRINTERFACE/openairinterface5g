@@ -165,9 +165,10 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
       if (fftsize==128) 
 #endif
       {
-        for (j=0; j<fftsize ; j++) {
+        /*for (j=0; j<fftsize ; j++) {
           output_ptr[j] = temp_ptr[j];
-        }
+        }*/
+        memcpy((void*)output_ptr,(void*)temp_ptr,fftsize<<2);
       }
 
       j=fftsize;

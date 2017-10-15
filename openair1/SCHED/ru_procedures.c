@@ -66,7 +66,7 @@ extern int oai_exit;
 void feptx0(RU_t *ru,int slot) {
 
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
-  int dummy_tx_b[7680*2] __attribute__((aligned(32)));
+  //int dummy_tx_b[7680*2] __attribute__((aligned(32)));
 
   unsigned int aa,slot_offset;
   int i,j, tx_offset;
@@ -82,20 +82,20 @@ void feptx0(RU_t *ru,int slot) {
 
   for (aa=0; aa<ru->nb_tx; aa++) {
     if (fp->Ncp == EXTENDED) PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
-					  dummy_tx_b,
-					  fp->ofdm_symbol_size,
-					  6,
-					  fp->nb_prefix_samples,
-					  CYCLIC_PREFIX);
+					                      (int*)&ru->common.txdata[aa][slot_offset],
+					                      fp->ofdm_symbol_size,
+					                      6,
+					                      fp->nb_prefix_samples,
+					                      CYCLIC_PREFIX);
     else                     normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
-					       dummy_tx_b,
-					       7,
-					       fp);
+					                           (int*)&ru->common.txdata[aa][slot_offset],
+					                           7,
+					                           fp);
     
-    
+   /* 
     len = fp->samples_per_tti>>1;
 
-    // cyclic extension
+    
     if ((slot_offset+len)>(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti)) {
       tx_offset = (int)slot_offset;
       txdata = (int16_t*)&ru->common.txdata[aa][tx_offset];
@@ -111,20 +111,17 @@ void feptx0(RU_t *ru,int slot) {
     else {
       tx_offset = (int)slot_offset;
       txdata = (int16_t*)&ru->common.txdata[aa][tx_offset];
-      
-      for (i=0; i<(len<<1); i++) {
-	txdata[i] = ((int16_t*)dummy_tx_b)[i];
-      }
+      memcpy((void*)txdata,(void*)dummy_tx_b,len<<2);   
     }
-
+*/
     // TDD: turn on tx switch N_TA_offset before by setting buffer in these samples to 0    
     if ((slot == 0) &&
-	((((fp->tdd_config==0) ||
-	   (fp->tdd_config==1) ||
-	   (fp->tdd_config==2) ||
-	   (fp->tdd_config==6)) && 
-	  (subframe==0)) || (subframe==5))) {
-
+        (fp->frame_type == TDD) && 
+        ((fp->tdd_config==0) ||
+         (fp->tdd_config==1) ||
+         (fp->tdd_config==2) ||
+         (fp->tdd_config==6)) &&  
+        ((subframe==0) || (subframe==5))) {
       for (i=0; i<ru->N_TA_offset; i++) {
 	tx_offset = (int)slot_offset+i-ru->N_TA_offset/2;
 	if (tx_offset<0)
@@ -136,9 +133,6 @@ void feptx0(RU_t *ru,int slot) {
 	ru->common.txdata[aa][tx_offset] = 0x00000000;
       }
     }
-    LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, subframe %d: txp (time %p) %d dB, txp (freq) %d dB\n",
-	  ru->proc.frame_tx,subframe,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_tti)),
-	  dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
   }
 }
 
@@ -177,7 +171,7 @@ void feptx_ofdm_2thread(RU_t *ru) {
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
-  start_meas(&ru->ofdm_demod_stats);
+  start_meas(&ru->ofdm_mod_stats);
 
   if (subframe_select(fp,subframe) == SF_UL) return;
 
@@ -209,12 +203,10 @@ void feptx_ofdm_2thread(RU_t *ru) {
   }
 
   // call first slot in this thread
-  
   feptx0(ru,0);
-
   wait_on_busy_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread");  
 
-  stop_meas(&ru->ofdm_demod_stats);
+  stop_meas(&ru->ofdm_mod_stats);
 
 }
 
@@ -329,11 +321,12 @@ void feptx_ofdm(RU_t *ru) {
        }
      }
       */
-     if ((((fp->tdd_config==0) ||
-	   (fp->tdd_config==1) ||
-	   (fp->tdd_config==2) ||
-	   (fp->tdd_config==6)) && 
-	   (subframe==0)) || (subframe==5)) {
+     if ((fp->frame_type == TDD) && 
+         ((fp->tdd_config==0) ||
+	      (fp->tdd_config==1) ||
+	      (fp->tdd_config==2) ||
+	      (fp->tdd_config==6)) && 
+	     ((subframe==0) || (subframe==5))) {
        // turn on tx switch N_TA_offset before
        //LOG_D(HW,"subframe %d, time to switch to tx (N_TA_offset %d, slot_offset %d) \n",subframe,ru->N_TA_offset,slot_offset);
        for (i=0; i<ru->N_TA_offset; i++) {

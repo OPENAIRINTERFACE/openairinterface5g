@@ -388,7 +388,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
     {
 
       if ((RA_template->Msg2_frame == frameP) && (RA_template->Msg2_subframe == subframeP)) {
-	LOG_I(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generating RAR DCI, RA_active %d format 1A (%d,%d))\n",
+	LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generating RAR DCI, RA_active %d format 1A (%d,%d))\n",
 	      module_idP, CC_idP, frameP, subframeP,
 	      RA_template->RA_active,
 	      
@@ -860,7 +860,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 			     1,                           // ndi
 			     0,                           // rv
 			     0);                          // vrb_flag
-    LOG_I(MAC,"Frame %d, subframe %d: Msg4 DCI pdu_num %d (rnti %x,rnti_type %d,harq_pid %d, resource_block_coding (%p) %d\n",
+    LOG_D(MAC,"Frame %d, subframe %d: Msg4 DCI pdu_num %d (rnti %x,rnti_type %d,harq_pid %d, resource_block_coding (%p) %d\n",
 		  frameP,
 	      subframeP,
           dl_req->number_pdu,
@@ -947,7 +947,7 @@ void generate_Msg4(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 				  (cc->p_eNB==1 ) ? 1 : 2,     // transmission mode
 				  1,                           // num_bf_prb_per_subband
 				  1);                          // num_bf_vector
-      LOG_I(MAC,"Filled DLSCH config, pdu number %d, non-dci pdu_index %d\n",dl_req->number_pdu,eNB->pdu_index[CC_idP]);
+      LOG_D(MAC,"Filled DLSCH config, pdu number %d, non-dci pdu_index %d\n",dl_req->number_pdu,eNB->pdu_index[CC_idP]);
 
 	  // DL request
 	  eNB->TX_req[CC_idP].sfn_sf = fill_nfapi_tx_req(&eNB->TX_req[CC_idP].tx_request_body,
@@ -1082,7 +1082,7 @@ void check_Msg4_retransmission(module_id_t module_idP,int CC_idP,frame_t frameP,
 	    dl_req->number_dci++;
 	    dl_req->number_pdu++;
 	    
-	    LOG_I(MAC,"msg4 retransmission for rnti %x (round %d) fsf %d/%d\n", RA_template->rnti, round, frameP, subframeP);
+	    LOG_D(MAC,"msg4 retransmission for rnti %x (round %d) fsf %d/%d\n", RA_template->rnti, round, frameP, subframeP);
 	    	  // DLSCH Config
 	    fill_nfapi_dlsch_config(eNB,
 				    dl_req,
@@ -1164,7 +1164,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP)
 
       if (RA_template->RA_active == TRUE) {
 
-        LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d is active (generate RAR %d, generate_Msg4 %d, wait_ack_Msg4 %d, rnti %x)\n",
+        LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d is active (generate RAR %d, generate_Msg4 %d, wait_ack_Msg4 %d, rnti %x)\n",
               module_idP,frameP,subframeP,CC_id,i,RA_template->generate_rar,RA_template->generate_Msg4,RA_template->wait_ack_Msg4, RA_template->rnti);
 
         if      (RA_template->generate_rar == 1)  generate_Msg2(module_idP,CC_id,frameP,subframeP,RA_template);
