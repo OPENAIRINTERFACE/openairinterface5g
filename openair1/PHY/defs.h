@@ -740,6 +740,8 @@ typedef struct RU_t_s{
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string);
   /// Timing statistics
   time_stats_t ofdm_demod_stats;
+  /// Timing statistics (TX)
+  time_stats_t ofdm_mod_stats;
   /// RX and TX buffers for precoder output
   RU_COMMON            common;
   /// beamforming weight vectors per eNB
@@ -755,6 +757,8 @@ typedef struct RU_t_s{
   openair0_timestamp   ts_offset;
   /// process scheduling variables
   RU_proc_t            proc;
+  /// stats thread pthread descriptor
+  pthread_t            ru_stats_thread;
 } RU_t;
 
 

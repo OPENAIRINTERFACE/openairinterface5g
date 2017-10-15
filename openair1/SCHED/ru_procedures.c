@@ -83,6 +83,8 @@ void feptx_ofdm(RU_t *ru) {
       ((subframe_select(fp,subframe)==SF_S))) {
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
 
+    start_meas(&ru->ofdm_mod_stats);
+
     for (aa=0; aa<ru->nb_tx; aa++) {
       if (fp->Ncp == EXTENDED) {
         PHY_ofdm_mod(&ru->common.txdataF_BF[aa][0],
@@ -185,6 +187,7 @@ void feptx_ofdm(RU_t *ru) {
          ru->common.txdata[aa][tx_offset] = 0x00000000;
        }
      }
+     stop_meas(&ru->ofdm_mod_stats);
      LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, subframe %d: txp (time %p) %d dB, txp (freq) %d dB\n",
 	   ru->proc.frame_tx,subframe,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_tti)),
 	   dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
@@ -265,6 +268,9 @@ static void *fep_thread(void *param) {
 
   RU_t *ru = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
+
+  thread_top_init("fep_thread",0,870000,1000000,1000000);
+
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread")<0) break;  
