@@ -464,7 +464,7 @@ static int DEFENBS[] = {0};
 {ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT2,                         NULL,   0,           strptr:&pucch_deltaF_Format2,                   defstrval:"deltaF0",       TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT2A,                        NULL,   0,           strptr:&pucch_deltaF_Format2a,                  defstrval:"deltaF0",       TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT2B,                        NULL,   0,           strptr:&pucch_deltaF_Format2b,                  defstrval:"deltaF0",       TYPE_STRING,     0},  \
-{ENB_CONFIG_STRING_RACH_NUM_RA_PREAMBLES,                        NULL,   0,           iptr:&rach_numberOfRA_Preambles,                defintval:4,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_RACH_NUM_RA_PREAMBLES,                        NULL,   0,           strptr:&rach_numberOfRA_Preambles,              defstrval:"n64",           TYPE_STRING,       0},  \
 {ENB_CONFIG_STRING_RACH_PREAMBLESGROUPACONFIG,                   NULL,   0,           strptr:&rach_preamblesGroupAConfig,             defstrval:"DISABLE",       TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_RACH_SIZEOFRA_PREAMBLESGROUPA,                NULL,   0,           iptr:&rach_sizeOfRA_PreamblesGroupA,            defintval:0,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_RACH_MESSAGESIZEGROUPA,                       NULL,   0,           iptr:&rach_messageSizeGroupA,                   defintval:56,              TYPE_UINT,       0},  \
@@ -475,16 +475,16 @@ static int DEFENBS[] = {0};
 {ENB_CONFIG_STRING_RACH_RARESPONSEWINDOWSIZE,                    NULL,   0,           iptr:&rach_raResponseWindowSize,                defintval:10,              TYPE_INT,        0},  \
 {ENB_CONFIG_STRING_RACH_MACCONTENTIONRESOLUTIONTIMER,            NULL,   0,           iptr:&rach_macContentionResolutionTimer,        defintval:48,              TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_RACH_MAXHARQMSG3TX,                           NULL,   0,           iptr:&rach_maxHARQ_Msg3Tx,                      defintval:4,               TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_PCCH_DEFAULT_PAGING_CYCLE,                    NULL,   0,           iptr:&pcch_defaultPagingCycle,                  defintval:128,             TYPE_INT,        0},  \
+{ENB_CONFIG_STRING_PCCH_DEFAULT_PAGING_CYCLE,                    NULL,   0,           strptr:&pcch_defaultPagingCycle,                defstrval:"rf128",         TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_PCCH_NB,                                      NULL,   0,           strptr:&pcch_nB,                                defstrval:"oneT",          TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_BCCH_MODIFICATIONPERIODCOEFF,                 NULL,   0,           iptr:&bcch_modificationPeriodCoeff,             defintval:2,               TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_T300,                                NULL,   0,           iptr:&ue_TimersAndConstants_t300,               defintval:1000,            TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_T301,                                NULL,   0,           iptr:&ue_TimersAndConstants_t301,               defintval:1000,            TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_T310,                                NULL,   0,           iptr:&ue_TimersAndConstants_t310,               defintval:1000,            TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_T311,                                NULL,   0,           iptr:&ue_TimersAndConstants_t311,               defintval:10000,           TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_N310,                                NULL,   0,           iptr:&ue_TimersAndConstants_n310,               defintval:20,              TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ue_TimersAndConstants_n311,               defintval:1,               TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0}   \
+{ENB_CONFIG_STRING_UETIMERS_T300,                                NULL,   0,           strptr:&ue_TimersAndConstants_t300,             defintval:"ms1000",        TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_UETIMERS_T301,                                NULL,   0,           strptr:&ue_TimersAndConstants_t301,             defintval:"ms1000",        TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_UETIMERS_T310,                                NULL,   0,           strptr:&ue_TimersAndConstants_t310,             defintval:"ms1000",        TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_UETIMERS_T311,                                NULL,   0,           strptr:&ue_TimersAndConstants_t311,             defintval:"ms10000",       TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_UETIMERS_N310,                                NULL,   0,           strptr:&ue_TimersAndConstants_n310,             defintval:"n20",           TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           strptr:&ue_TimersAndConstants_n311,             defintval:"n1",            TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           strptr:&ue_TransmissionMode,                    defintval:"tm1",           TYPE_STRING,     0}   \
 }
 
 
@@ -580,7 +580,7 @@ static int DEFENBS[] = {0};
 {ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT2,                                 NULL,   0,           strptr:&pucch_deltaF_Format2,                      defstrval:"deltaF0",               TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT2A,                                NULL,   0,           strptr:&pucch_deltaF_Format2a,                     defstrval:"deltaF0",               TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_PUCCH_DELTAF_FORMAT2B,                                NULL,   0,           strptr:&pucch_deltaF_Format2b,                     defstrval:"deltaF0",               TYPE_STRING,     0},  \
-{ENB_CONFIG_STRING_RACH_NUM_RA_PREAMBLES,                                NULL,   0,           iptr:&rach_numberOfRA_Preambles,                   defintval:4,                       TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_RACH_NUM_RA_PREAMBLES,                                NULL,   0,           iptr:&rach_numberOfRA_Preambles,                   defstrval:"n4",                    TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_RACH_PREAMBLESGROUPACONFIG,                           NULL,   0,           strptr:&rach_preamblesGroupAConfig,                defstrval:"DISABLE",               TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_RACH_SIZEOFRA_PREAMBLESGROUPA,                        NULL,   0,           iptr:&rach_sizeOfRA_PreamblesGroupA,               defintval:0,                       TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_RACH_MESSAGESIZEGROUPA,                               NULL,   0,           iptr:&rach_messageSizeGroupA,                      defintval:56,                      TYPE_UINT,       0},  \
@@ -594,18 +594,18 @@ static int DEFENBS[] = {0};
 {ENB_CONFIG_STRING_PCCH_DEFAULT_PAGING_CYCLE,                            NULL,   0,           iptr:&pcch_defaultPagingCycle,                     defintval:128,                     TYPE_INT,        0},  \
 {ENB_CONFIG_STRING_PCCH_NB,                                              NULL,   0,           strptr:&pcch_nB,                                   defstrval:"oneT",                  TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_BCCH_MODIFICATIONPERIODCOEFF,                         NULL,   0,           iptr:&bcch_modificationPeriodCoeff,                defintval:2,                       TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_T300,                                        NULL,   0,           iptr:&ue_TimersAndConstants_t300,                  defintval:1000,                    TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_T301,                                        NULL,   0,           iptr:&ue_TimersAndConstants_t301,                  defintval:1000,                    TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_T310,                                        NULL,   0,           iptr:&ue_TimersAndConstants_t310,                  defintval:1000,                    TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_T311,                                        NULL,   0,           iptr:&ue_TimersAndConstants_t311,                  defintval:10000,                   TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_N310,                                        NULL,   0,           iptr:&ue_TimersAndConstants_n310,                  defintval:20,                      TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UETIMERS_N311,                                        NULL,   0,           iptr:&ue_TimersAndConstants_n311,                  defintval:1,                       TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                                 NULL,   0,           iptr:&ue_TransmissionMode,                         defintval:1,                       TYPE_UINT,       0}, \
-{ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL0,                  NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level0_r13,     defstrval:"n1",                    TYPE_STRING,       0}, \
-{ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL1,                  NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level1_r13,     defstrval:"",                      TYPE_STRING,       0}, \
-{ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL2,                  NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level2_r13,     defstrval:"",                      TYPE_STRING,       0}, \
-{ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL3,                  NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level3_r13,     defstrval:"",                      TYPE_STRING,       0}, \
-{ENB_CONFIG_STRING_RACH_PREAMBLESGROUPACONFIG,                           NULL,   0,           strptr:&rach_preamblesGroupAConfig,                defstrval:"",                      TYPE_STRING,       0}, \
+{ENB_CONFIG_STRING_UETIMERS_T300,                                        NULL,   0,           strptr:&ue_TimersAndConstants_t300,                defstrval:"ms1000",                TYPE_STRING,     0},  \
+{ENB_CONFIG_STRING_UETIMERS_T301,                                        NULL,   0,           strptr:&ue_TimersAndConstants_t301,                defstrval:"ms1000",                TYPE_STRING,       0},  \
+{ENB_CONFIG_STRING_UETIMERS_T310,                                        NULL,   0,           strptr:&ue_TimersAndConstants_t310,                defstrval:"ms1000",                TYPE_STRING,       0},  \
+{ENB_CONFIG_STRING_UETIMERS_T311,                                        NULL,   0,           strptr:&ue_TimersAndConstants_t311,                defstrval:"ms10000",               TYPE_STRING,       0},  \
+{ENB_CONFIG_STRING_UETIMERS_N310,                                        NULL,   0,           strptr:&ue_TimersAndConstants_n310,                defstrval:"n20",                   TYPE_STRING,       0},  \
+{ENB_CONFIG_STRING_UETIMERS_N311,                                        NULL,   0,           strptr:&ue_TimersAndConstants_n311,                defstrval:"n1",                    TYPE_STRING,       0},  \
+{ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                                 NULL,   0,           strptr:&ue_TransmissionMode,                       defstrval:"tm1",                   TYPE_STRING,       0}, \
+{ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL0,                  NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level0_r13,     defstrval:"n1",                    TYPE_STRING,     0}, \
+{ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL1,                  NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level1_r13,     defstrval:"",                      TYPE_STRING,     0}, \
+{ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL2,                  NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level2_r13,     defstrval:"",                      TYPE_STRING,     0}, \
+{ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL3,                  NULL,   0,           strptr:&pucch_NumRepetitionCE_Msg4_Level3_r13,     defstrval:"",                      TYPE_STRING,     0}, \
+{ENB_CONFIG_STRING_RACH_PREAMBLESGROUPACONFIG,                           NULL,   0,           strptr:&rach_preamblesGroupAConfig,                defstrval:"",                      TYPE_STRING,     0}, \
 }
 
 #define ENB_CONFIG_STRING_SYSTEM_INFO_VALUE_TAG_LIST                    "system_info_value_tag_SI"
