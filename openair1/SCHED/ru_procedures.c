@@ -54,9 +54,169 @@
 
 #include <time.h>
 
+#include "targets/RT/USER/rt_wrapper.h"
+
 // RU OFDM Modulator, used in IF4p5 RRU, RCC/RAU with IF5, eNodeB
 
 extern openair0_config_t openair0_cfg[MAX_CARDS];
+
+extern int oai_exit;
+
+
+void feptx0(RU_t *ru,int slot) {
+
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  int dummy_tx_b[7680*2] __attribute__((aligned(32)));
+
+  unsigned int aa,slot_offset;
+  int i,j, tx_offset;
+  int slot_sizeF = (fp->ofdm_symbol_size)*
+                   ((fp->Ncp==1) ? 6 : 7);
+  int len,len2;
+  int16_t *txdata;
+  int subframe = ru->proc.subframe_tx;
+
+  slot_offset = subframe*fp->samples_per_tti + (slot*(fp->samples_per_tti>>1));
+
+  //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
+
+  for (aa=0; aa<ru->nb_tx; aa++) {
+    if (fp->Ncp == EXTENDED) PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
+					  dummy_tx_b,
+					  fp->ofdm_symbol_size,
+					  6,
+					  fp->nb_prefix_samples,
+					  CYCLIC_PREFIX);
+    else                     normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
+					       dummy_tx_b,
+					       7,
+					       fp);
+    
+    
+    len = fp->samples_per_tti>>1;
+
+    // cyclic extension
+    if ((slot_offset+len)>(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti)) {
+      tx_offset = (int)slot_offset;
+      txdata = (int16_t*)&ru->common.txdata[aa][tx_offset];
+      len2 = -tx_offset+LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
+      for (i=0; i<(len2<<1); i++) {
+	txdata[i] = ((int16_t*)dummy_tx_b)[i];
+      }
+      txdata = (int16_t*)&ru->common.txdata[aa][0];
+      for (j=0; i<(len<<1); i++,j++) {
+	txdata[j++] = ((int16_t*)dummy_tx_b)[i];
+      }
+    }
+    else {
+      tx_offset = (int)slot_offset;
+      txdata = (int16_t*)&ru->common.txdata[aa][tx_offset];
+      
+      for (i=0; i<(len<<1); i++) {
+	txdata[i] = ((int16_t*)dummy_tx_b)[i];
+      }
+    }
+
+    // TDD: turn on tx switch N_TA_offset before by setting buffer in these samples to 0    
+    if ((slot == 0) &&
+	((((fp->tdd_config==0) ||
+	   (fp->tdd_config==1) ||
+	   (fp->tdd_config==2) ||
+	   (fp->tdd_config==6)) && 
+	  (subframe==0)) || (subframe==5))) {
+
+      for (i=0; i<ru->N_TA_offset; i++) {
+	tx_offset = (int)slot_offset+i-ru->N_TA_offset/2;
+	if (tx_offset<0)
+	  tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
+	
+	if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti))
+	  tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
+	
+	ru->common.txdata[aa][tx_offset] = 0x00000000;
+      }
+    }
+    LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, subframe %d: txp (time %p) %d dB, txp (freq) %d dB\n",
+	  ru->proc.frame_tx,subframe,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_tti)),
+	  dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
+  }
+}
+
+static void *feptx_thread(void *param) {
+
+  RU_t *ru = (RU_t *)param;
+  RU_proc_t *proc  = &ru->proc;
+
+  thread_top_init("feptx_thread",0,870000,1000000,1000000);
+
+  while (!oai_exit) {
+
+    if (wait_on_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread")<0) break;  
+    feptx0(ru,1);
+    if (release_thread(&proc->mutex_feptx,&proc->instance_cnt_feptx,"feptx thread")<0) break;
+
+    if (pthread_cond_signal(&proc->cond_feptx) != 0) {
+      printf("[eNB] ERROR pthread_cond_signal for feptx thread exit\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+      return NULL;
+    }
+  }
+
+
+
+  return(NULL);
+}
+
+void feptx_ofdm_2thread(RU_t *ru) {
+
+  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+  RU_proc_t *proc = &ru->proc;
+  struct timespec wait;
+  int subframe = ru->proc.subframe_tx;
+
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
+
+  start_meas(&ru->ofdm_demod_stats);
+
+  if (subframe_select(fp,subframe) == SF_UL) return;
+
+  if (subframe_select(fp,subframe)==SF_DL) {
+    // If this is not an S-subframe
+    if (pthread_mutex_timedlock(&proc->mutex_feptx,&wait) != 0) {
+      printf("[RU] ERROR pthread_mutex_lock for feptx thread (IC %d)\n", proc->instance_cnt_feptx);
+      exit_fun( "error locking mutex_feptx" );
+      return;
+    }
+    
+    if (proc->instance_cnt_feptx==0) {
+      printf("[RU] FEPtx thread busy\n");
+      exit_fun("FEPtx thread busy");
+      pthread_mutex_unlock( &proc->mutex_feptx );
+      return;
+    }
+    
+    ++proc->instance_cnt_feptx;
+    
+    
+    if (pthread_cond_signal(&proc->cond_feptx) != 0) {
+      printf("[RU] ERROR pthread_cond_signal for feptx thread\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+      return;
+    }
+    
+    pthread_mutex_unlock( &proc->mutex_feptx );
+  }
+
+  // call first slot in this thread
+  
+  feptx0(ru,0);
+
+  wait_on_busy_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread");  
+
+  stop_meas(&ru->ofdm_demod_stats);
+
+}
 
 void feptx_ofdm(RU_t *ru) {
      
@@ -237,11 +397,6 @@ void feptx_prec(RU_t *ru) {
   }
 }
 
-typedef struct {
-  RU_t *ru;
-  int slot;
-} fep_task;
-
 void fep0(RU_t *ru,int slot) {
 
   RU_proc_t *proc       = &ru->proc;
@@ -261,8 +416,6 @@ void fep0(RU_t *ru,int slot) {
 }
 
 
-
-extern int oai_exit;
 
 static void *fep_thread(void *param) {
 
@@ -287,6 +440,20 @@ static void *fep_thread(void *param) {
 
 
   return(NULL);
+}
+
+void init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
+
+  RU_proc_t *proc = &ru->proc;
+
+  proc->instance_cnt_feptx         = -1;
+    
+  pthread_mutex_init( &proc->mutex_feptx, NULL);
+  pthread_cond_init( &proc->cond_feptx, NULL);
+
+  pthread_create(&proc->pthread_feptx, attr_feptx, feptx_thread, (void*)ru);
+
+
 }
 
 void init_fep_thread(RU_t *ru,pthread_attr_t *attr_fep) {

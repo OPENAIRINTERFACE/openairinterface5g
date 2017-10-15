@@ -1094,9 +1094,9 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 		  tdd_multiplexing_mask = 0x4;
 		}
 	      }
+            uci->stat = max_metric;
+            fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
 	    }
-        uci->stat = max_metric;
-	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
 	  } //else if ((uci->tdd_bundling == 0) && (res==3)) 
 	  else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==4)){ // multiplexing + no SR, implement Table 10.1.3-7 (Rel14) for multiplexing with M=4
 	    if (pucch_b0b1[0][0] == 4 ||
