@@ -1383,11 +1383,11 @@ void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t  *ul_con
     for (int ri=0;
 	 ri<(1<<ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].ri_size);
 	 ri++)
-      /*ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[ri] =
+      ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[ri] =
 	get_dl_cqi_pmi_size_pusch(cc,
 				  tmode,
 				  1+ri,
-                  physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic);*/
+                  physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic);
     
     ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.delta_offset_cqi        = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index;
     ((nfapi_ul_config_ulsch_cqi_ri_pdu*)ul_config_pdu)->cqi_ri_information.cqi_ri_information_rel9.delta_offset_ri         = physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_RI_Index;
