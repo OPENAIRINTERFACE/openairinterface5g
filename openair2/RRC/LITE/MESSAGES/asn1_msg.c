@@ -558,6 +558,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
       if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
       {
+          printf("[DEBUGGING][KOGO][TANY2]: bandwidthReducedAccessRelatedInfo_r13 = %d\n", configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id]);
 
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13
                   = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
@@ -572,6 +573,8 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
                   = configuration->si_RepetitionPattern_r13[CC_id]; // 0
 
+          printf("[DEBUGGING][KOGO][ASN1]: si_RepetitionPattern_r13 = %d\n", configuration->si_RepetitionPattern_r13[CC_id]);
+
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13 = calloc(1, sizeof(SchedulingInfoList_BR_r13_t));
 
           SchedulingInfo_BR_r13_t *schedulinginfo_br_13 = calloc(1, sizeof(SchedulingInfo_BR_r13_t));
@@ -584,6 +587,8 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
               schedulinginfo_br_13->si_Narrowband_r13 = configuration->si_Narrowband_r13[CC_id][index];
               schedulinginfo_br_13->si_TBS_r13 = configuration->si_TBS_r13[CC_id][index];
+              printf("[DEBUGGING][ASN1]: si_NarrowBand_r13: %d\n", configuration->si_Narrowband_r13[CC_id][index]);
+              printf("[DEBUGGING][ASN1]: si_TBS_r13: %d\n", configuration->si_TBS_r13[CC_id][index]);
               LOG_I(RRC,"Adding (%d,%d) to scheduling_info_br_13\n",schedulinginfo_br_13->si_Narrowband_r13,schedulinginfo_br_13->si_TBS_r13);
               ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
           }
@@ -1276,14 +1281,18 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
       if (configuration->sib2_interval_ULHoppingConfigCommonModeA_r13[CC_id])
       {
+          puts("[DEBUGGING][KOGO][ASN]: SIB2 Interval UL HOPPING CONFIG COMMON MODE A\n");
           (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13
                   = CALLOC(1, sizeof(struct FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13));
           if (*configuration->sib2_interval_ULHoppingConfigCommonModeA_r13[CC_id] == 0)
           {
+              printf("[DEBUGGING][KOGO][ASN]: FDD UL HOPPING CONFIG COMMON MODE A\n");
+              printf("[DEBUGGING][KOGO][ASN]: interval UL hopping config common:  %d\n", configuration->sib2_interval_ULHoppingConfigCommonModeA_r13_val[CC_id]);
               (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13->present
                       = FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
               (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13->choice.interval_FDD_r13
                       = configuration->sib2_interval_ULHoppingConfigCommonModeA_r13_val[CC_id];
+
           }
           else
           {
@@ -1296,6 +1305,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       }
       else
       {
+          printf("[DEBUGGING][KOGO][ALLOC ERROR] interval ul hopping: %d\n", configuration->sib2_interval_ULHoppingConfigCommonModeA_r13[CC_id]);
           (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13 = NULL;
       }
 
@@ -1419,7 +1429,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
           ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->rsrp_ThresholdsPrachInfoList_r13.list, rsrp_range);
       }
 
-
       (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13 = NULL;
 
       if (rrconfig->mpdcch_startSF_CSS_RA_r13)
@@ -1437,6 +1446,8 @@ uint8_t do_SIB23(uint8_t Mod_id,
               (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->present = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13_PR_tdd_r13;
               (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.tdd_r13 = rrconfig->mpdcch_startSF_CSS_RA_r13_val;
           }
+          printf("[DEBUGGING][KOGO][SIB23]: mpdcch_startSF_CSS_RA_r13->choice.fdd_r13 = %d\n",
+                 (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13);
       }
 
       if (rrconfig->prach_HoppingOffset_r13)
@@ -1448,6 +1459,8 @@ uint8_t do_SIB23(uint8_t Mod_id,
       {
           (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = NULL;
       }
+      printf("[DEBUGGING][KOGO][SIB23]: prach_HoppingOffset_r13 = %d\n",
+             *(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13);
 
       PRACH_ParametersCE_r13_t *prach_parametersce_r13;
 
@@ -1457,53 +1470,68 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
       for (prach_parameters_index = 0; prach_parameters_index < num_prach_parameters_ce; ++prach_parameters_index)
       {
-	prach_parametersce_r13 = CALLOC(1, sizeof(PRACH_ParametersCE_r13_t));
-        
-	prach_parametersce_r13->prach_ConfigIndex_r13 = configuration->prach_config_index[CC_id][prach_parameters_index];
-	prach_parametersce_r13->prach_FreqOffset_r13 = configuration->prach_freq_offset[CC_id][prach_parameters_index];
-	
-	AssertFatal(configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index]!=NULL,
-		    "configuration->prach_StartingSubframe_r13[%d][%d] is null",
-		    (int)CC_id,(int)prach_parameters_index);
-    if (configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index])
-    {
-        prach_parametersce_r13->prach_StartingSubframe_r13 = CALLOC(1, sizeof(long));
-        *prach_parametersce_r13->prach_StartingSubframe_r13 = *configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index];
-    }
-    else
-    {
-        prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
-    }
+          prach_parametersce_r13 = CALLOC(1, sizeof(PRACH_ParametersCE_r13_t));
+          prach_parametersce_r13->prach_ConfigIndex_r13 = configuration->prach_config_index[CC_id][prach_parameters_index];
+          prach_parametersce_r13->prach_FreqOffset_r13 = configuration->prach_freq_offset[CC_id][prach_parameters_index];
 
-    if (configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index])
-    {
-        prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = CALLOC(1, sizeof(long));
-        *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = *configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index];
-    }
-    else
-    {
-        prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = NULL;
-    }
+          AssertFatal(configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index]!=NULL,
+                      "configuration->prach_StartingSubframe_r13[%d][%d] is null",
+                      (int)CC_id,(int)prach_parameters_index);
+          if (configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index])
+          {
+              prach_parametersce_r13->prach_StartingSubframe_r13 = CALLOC(1, sizeof(long));
+              *prach_parametersce_r13->prach_StartingSubframe_r13 = *configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index];
+          }
+          else
+          {
+              prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
+          }
 
-    prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = configuration->numRepetitionPerPreambleAttempt_r13[CC_id][prach_parameters_index];
-    prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = configuration->mpdcch_NumRepetition_RA_r13[CC_id][prach_parameters_index];
-    prach_parametersce_r13->prach_HoppingConfig_r13 = configuration->prach_HoppingConfig_r13[CC_id][prach_parameters_index];
-    printf("[DEBUGGING][KOGO][SIB23] : prach hopping config = %d\n", prach_parametersce_r13->prach_HoppingConfig_r13);
+          if (configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index])
+          {
+              prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = CALLOC(1, sizeof(long));
+              *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = *configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index];
+          }
+          else
+          {
+              prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = NULL;
+          }
+
+          prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = configuration->numRepetitionPerPreambleAttempt_r13[CC_id][prach_parameters_index];
+          prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = configuration->mpdcch_NumRepetition_RA_r13[CC_id][prach_parameters_index];
+          prach_parametersce_r13->prach_HoppingConfig_r13 = configuration->prach_HoppingConfig_r13[CC_id][prach_parameters_index];
 
 
-    long *maxavailablenarrowband;
-    int num_narrow_bands = configuration->max_available_narrow_band_size[CC_id][prach_parameters_index];
-    int narrow_band_index;
-    for (narrow_band_index = 0; narrow_band_index < num_narrow_bands; narrow_band_index++)
-    {
-        maxavailablenarrowband = CALLOC(1, sizeof(long));
-        *maxavailablenarrowband = configuration->max_available_narrow_band[CC_id][prach_parameters_index][narrow_band_index];
-        ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, maxavailablenarrowband);
-    }
+          printf("[DEBUGGING][KOGO][SIB23][WTF] : prach_ConfigIndex_r13 = %d\n", prach_parametersce_r13->prach_ConfigIndex_r13);
+          printf("[DEBUGGING][KOGO][SIB23][WTF] : prach_FreqOffset_r13 = %d\n", prach_parametersce_r13->prach_FreqOffset_r13);
+          printf("[DEBUGGING][KOGO][SIB23][WTF] : prach_StartingSubframe_r13 = %d\n", *prach_parametersce_r13->prach_StartingSubframe_r13);
+          printf("[DEBUGGING][KOGO][SIB23][WTF] : maxNumPreambleAttemptCE_r13 = %d\n", *prach_parametersce_r13->maxNumPreambleAttemptCE_r13);
+          printf("[DEBUGGING][KOGO][SIB23][WTF] : numRepetitionPerPreambleAttempt_r13 = %d\n", prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13);
+          printf("[DEBUGGING][KOGO][SIB23][WTF] : mpdcch_NumRepetition_RA_r13 = %d\n", prach_parametersce_r13->mpdcch_NumRepetition_RA_r13);
+          printf("[DEBUGGING][KOGO][SIB23][WTF] : prach_HoppingConfig_r13 = %d\n", prach_parametersce_r13->prach_HoppingConfig_r13);
 
-    prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
-    prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
-    ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_ParametersListCE_r13.list, prach_parametersce_r13);
+          long *maxavailablenarrowband;
+          int num_narrow_bands = configuration->max_available_narrow_band_size[CC_id][prach_parameters_index];
+          int narrow_band_index;
+          for (narrow_band_index = 0; narrow_band_index < num_narrow_bands; narrow_band_index++)
+          {
+              maxavailablenarrowband = CALLOC(1, sizeof(long));
+              *maxavailablenarrowband = configuration->max_available_narrow_band[CC_id][prach_parameters_index][narrow_band_index];
+              ASN_SEQUENCE_ADD(&prach_parametersce_r13->mpdcch_NarrowbandsToMonitor_r13.list, maxavailablenarrowband);
+          }
+
+
+          printf("[DEBUGGING][KOGO][SIB23][WTF] : maxavailablenarrowband = %d\n", *maxavailablenarrowband);
+
+
+          prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
+          prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
+
+          printf("[DEBUGGING][KOGO][SIB23][WTF] : mpdcch_NumRepetition_RA_r13 = %d\n", prach_parametersce_r13->mpdcch_NumRepetition_RA_r13);
+          printf("[DEBUGGING][KOGO][SIB23][WTF] : prach_HoppingConfig_r13 = %d\n", prach_parametersce_r13->prach_HoppingConfig_r13);
+
+
+          ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_ParametersListCE_r13.list, prach_parametersce_r13);
       }
   }
   else

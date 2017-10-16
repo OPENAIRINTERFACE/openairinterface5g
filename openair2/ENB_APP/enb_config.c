@@ -144,7 +144,7 @@ void RCconfig_RU(void) {
         RC.ru[j]->num_eNB                           = RUParamList.paramarray[j][RU_ENB_LIST_IDX].numelt;
       else
 	    RC.ru[j]->num_eNB                           = 0;
-      for (i=0;i<RC.ru[j]->num_eNB;i++) RC.ru[j]->eNB_list[i] = RC.eNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];     
+      for (i=0;i<RC.ru[j]->num_eNB;i++) RC.ru[j]->eNB_list[i] = RC.eNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]] [0];
 
 
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
@@ -479,7 +479,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
     const char*   numRepetitionPerPreambleAttempt_r13   = NULL;
     const char*   mpdcch_NumRepetition_RA_r13           = NULL;
     const char*   prach_HoppingConfig_r13               = NULL;
-    int           maxavailablenarrowband                = 0;
+    int           *maxavailablenarrowband               = NULL;
     int           pucch_info_value                      = 0;
 
     int           paging_narrowbands_r13                = 0;
@@ -526,7 +526,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
     int           mpdcch_pdsch_HoppingOffset_r13                    = 0;
     const char*   preambleTransMax_CE_r13                           = NULL;
     const char*   rach_numberOfRA_Preambles_br                      = NULL;
-    const char*   mpdcch_startSF_CSS_RA_r13_val                     = NULL;
+
     int           prach_HoppingOffset_r13                           = 0;
     int           schedulingInfoSIB1_BR_r13                         = 0;
     uint64_t      fdd_DownlinkOrTddSubframeBitmapBR_val_r13         = 0;
@@ -538,9 +538,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
     char* freqHoppingParametersDL_r13                                   = NULL;
     char* interval_DLHoppingConfigCommonModeA_r13                       = NULL;
     char* interval_DLHoppingConfigCommonModeB_r13                       = NULL;
-    char* prach_ConfigCommon_v1310                                      = NULL;
-    char* mpdcch_startSF_CSS_RA_r13                                     = NULL;
-
+    const char* prach_ConfigCommon_v1310                                = NULL;
+    const char* mpdcch_startSF_CSS_RA_r13                               = NULL;
+    const char* mpdcch_startSF_CSS_RA_r13_val                           = NULL;
 
     int     srb1_timer_poll_retransmit    = 0;
     int     srb1_timer_reordering         = 0;
@@ -604,15 +604,23 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
     paramdef_t schedulingInfoBrParams[] = SI_INFO_BR_DESC;
     paramlist_def_t schedulingInfoBrParamList = {ENB_CONFIG_STRING_SCHEDULING_INFO_BR, NULL, 0};
 
-    //paramdef_t rsrprangeParams[]       = RSRP_RANGE_LIST_DESC;
 
     paramdef_t rachcelevelParams[]     = RACH_CE_LEVELINFOLIST_R13_DESC;
     paramlist_def_t rachcelevellist    = {ENB_CONFIG_STRING_RACH_CE_LEVELINFOLIST_R13, NULL, 0};
 
-    //paramdef_t prachParams[]           = PRACH_PARAMS_CE_R13_DESC;
-    //paramdef_t n1PUCCH_ANR13Params[]   = N1PUCCH_AN_INFOLIST_R13_DESC;
-    //paramdef_t pcchv1310Params[]       = PCCH_CONFIG_V1310_DESC;
-    //paramdef_t sib2freqhoppingParams[] = SIB2_FREQ_HOPPING_R13_DESC;
+    paramdef_t rsrprangeParams[]       = RSRP_RANGE_LIST_DESC;
+    paramlist_def_t rsrprangelist      = {ENB_CONFIG_STRING_RSRP_RANGE_LIST, NULL, 0};
+
+
+    paramdef_t prachParams[]           = PRACH_PARAMS_CE_R13_DESC;
+    paramlist_def_t prachParamslist    = {ENB_CONFIG_STRING_PRACH_PARAMETERS_CE_R13, NULL, 0};
+
+    paramdef_t n1PUCCH_ANR13Params[]   = N1PUCCH_AN_INFOLIST_R13_DESC;
+    paramlist_def_t n1PUCCHInfoList    = {ENB_CONFIG_STRING_N1PUCCH_AN_INFOLIST_R13, NULL, 0};
+
+    paramdef_t pcchv1310Params[]       = PCCH_CONFIG_V1310_DESC;
+
+    paramdef_t sib2freqhoppingParams[] = SIB2_FREQ_HOPPING_R13_DESC;
 
     paramdef_t SRB1Params[]            = SRB1PARAMS_DESC;
 
@@ -1839,16 +1847,20 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                         if (!strcmp(cellSelectionInfoCE_r13, "ENABLE")) {
                             RRC_CONFIGURATION_REQ(msg_p).cellSelectionInfoCE_r13[j] = TRUE;
                             RRC_CONFIGURATION_REQ(msg_p).q_RxLevMinCE_r13[j]= q_RxLevMinCE_r13;
-                            RRC_CONFIGURATION_REQ(msg_p).q_QualMinRSRQ_CE_r13[j]= calloc(1, sizeof(long));
-                            *RRC_CONFIGURATION_REQ(msg_p).q_QualMinRSRQ_CE_r13[j]= q_QualMinRSRQ_CE_r13;
+//                            RRC_CONFIGURATION_REQ(msg_p).q_QualMinRSRQ_CE_r13[j]= calloc(1, sizeof(long));
+//                            *RRC_CONFIGURATION_REQ(msg_p).q_QualMinRSRQ_CE_r13[j]= q_QualMinRSRQ_CE_r13;
                         } else {
                             RRC_CONFIGURATION_REQ(msg_p).cellSelectionInfoCE_r13[j] = FALSE;
                         }
 
 
+                        printf("[DEBUGGING][KOGO]: bandwidthReducedAccessRelatedInfo_r13 = %s\n", bandwidthReducedAccessRelatedInfo_r13);
 
                         if (!strcmp(bandwidthReducedAccessRelatedInfo_r13, "ENABLE")) {
                             RRC_CONFIGURATION_REQ(msg_p).bandwidthReducedAccessRelatedInfo_r13[j] = TRUE;
+
+
+                            printf("[DEBUGGING][KOGO][TANY]: bandwidthReducedAccessRelatedInfo_r13 = %s\n", bandwidthReducedAccessRelatedInfo_r13);
 
                             if (!strcmp(si_WindowLength_BR_r13, "ms20")) {
                                 RRC_CONFIGURATION_REQ(msg_p).si_WindowLength_BR_r13[j] = 0;
@@ -1883,10 +1895,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                             RRC_CONFIGURATION_REQ(msg_p).bandwidthReducedAccessRelatedInfo_r13[j] = FALSE;
                         }
 
-
                         char schedulingInfoBrPath[MAX_OPTNAME_SIZE * 2];
                         config_getlist(&schedulingInfoBrParamList, NULL, 0, brparamspath);
-
+                        RRC_CONFIGURATION_REQ (msg_p).scheduling_info_br_size[j] = schedulingInfoBrParamList.numelt;
                         int siInfoindex;
                         for (siInfoindex = 0; siInfoindex < schedulingInfoBrParamList.numelt; siInfoindex++) {
                             sprintf(schedulingInfoBrPath, "%s.%s.[%i]", brparamspath, ENB_CONFIG_STRING_SCHEDULING_INFO_LIST, siInfoindex);
@@ -1898,14 +1909,19 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                         }
 
 
+
+//                        RRC_CONFIGURATION_REQ (msg_p).system_info_value_tag_SI_size[j] = 0;
+
                         // kogo -- recheck
                         RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = CALLOC(1, sizeof(BOOLEAN_t));
                         if (!strcmp(fdd_DownlinkOrTddSubframeBitmapBR_r13, "subframePattern40-r13")) {
                             *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = TRUE;
                             RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_val_r13[j] = fdd_DownlinkOrTddSubframeBitmapBR_val_r13;
                          } else {
-                          *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = FALSE;
+                            *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = FALSE;
+                            RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_val_r13[j] = fdd_DownlinkOrTddSubframeBitmapBR_val_r13;
                         }
+                        printf("[DEBUGGING][KOGO] fdd_DownlinkOrTddSubframeBitmapBR_r13 = %s\n", fdd_DownlinkOrTddSubframeBitmapBR_r13);
                         printf("[DEBUGGING][KOGO] fdd_DownlinkOrTddSubframeBitmapBR_val_r13 = %x\n", fdd_DownlinkOrTddSubframeBitmapBR_val_r13);
 
                         RRC_CONFIGURATION_REQ(msg_p).startSymbolBR_r13[j] = startSymbolBR_r13;
@@ -1967,6 +1983,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                         }
 
                         /** ------------------------------SIB23------------------------------------------ */
+
+
 
                         RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = calloc(1, sizeof(long));
                         if (!strcmp(preambleTransMax_CE_r13, "n3")) {
@@ -2043,6 +2061,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
 
                         RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_powerRampingStep = rach_powerRampingStep / 2;
 
+                        printf("[DEBUGGING][KOGO]: rach_powerRampingStep = %d\n", rach_powerRampingStep);
+
 
                         RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_preambleInitialReceivedTargetPower = (rach_preambleInitialReceivedTargetPower + 120) / 2;
 
@@ -2051,6 +2071,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                                          "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_preambleInitialReceivedTargetPower choice: -120,-118,...,-90 !\n",
                                          RC.config_file_name, i, rach_preambleInitialReceivedTargetPower);
 
+
+                        printf("[DEBUGGING][KOGO]: rach_preambleInitialReceivedTargetPower = %d\n", rach_preambleInitialReceivedTargetPower);
 
                         switch (rach_preambleTransMax) {
                         case 3:
@@ -2094,6 +2116,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                         }
 
 
+                        printf("[DEBUGGING][KOGO]: rach_preambleTransMax = %d\n", rach_preambleTransMax);
+
                         RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_raResponseWindowSize=  (rach_raResponseWindowSize==10)?7:rach_raResponseWindowSize-2;
 
                         if ((rach_raResponseWindowSize<0)||(rach_raResponseWindowSize==9)||(rach_raResponseWindowSize>10))
@@ -2101,7 +2125,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                                          "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_raResponseWindowSize choice: 2,3,4,5,6,7,8,10!\n",
                                          RC.config_file_name, i, rach_preambleTransMax);
 
-
+                        printf("[DEBUGGING][KOGO]: rach_raResponseWindowSize = %d\n", rach_raResponseWindowSize);
 
                         RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_macContentionResolutionTimer= (rach_macContentionResolutionTimer/8)-1;
 
@@ -2110,6 +2134,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                                          "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_macContentionResolutionTimer choice: 8,16,...,56,64!\n",
                                          RC.config_file_name, i, rach_preambleTransMax);
 
+                        printf("[DEBUGGING][KOGO]: rach_macContentionResolutionTimer = %d\n", rach_macContentionResolutionTimer);
+
                         RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].rach_maxHARQ_Msg3Tx= rach_maxHARQ_Msg3Tx;
 
                         if ((rach_maxHARQ_Msg3Tx<0) || (rach_maxHARQ_Msg3Tx>8))
@@ -2117,11 +2143,11 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                                          "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_maxHARQ_Msg3Tx choice: 1..8!\n",
                                          RC.config_file_name, i, rach_preambleTransMax);
 
-
+                        printf("[DEBUGGING][KOGO]: rach_maxHARQ_Msg3Tx = %d\n", rach_maxHARQ_Msg3Tx);
 
                         char rachCELevelInfoListPath[MAX_OPTNAME_SIZE * 2];
                         config_getlist(&rachcelevellist, NULL, 0, brparamspath);
-
+                        RRC_CONFIGURATION_REQ (msg_p).rach_CE_LevelInfoList_r13_size[j] = rachcelevellist.numelt;
                         int rachCEInfoIndex;
                         for (rachCEInfoIndex = 0; rachCEInfoIndex < rachcelevellist.numelt; rachCEInfoIndex++) {
                             sprintf(rachCELevelInfoListPath, "%s.%s.[%i]", brparamspath, ENB_CONFIG_STRING_RACH_CE_LEVELINFOLIST_R13, rachCEInfoIndex);
@@ -2445,8 +2471,747 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                         printf("DEBUGGING][KOGO]: pusch_sequenceHoppingEnabled: %s\n", pusch_sequenceHoppingEnabled);
 
 
+
+
                         /** PUCCH Config Common */
                         /** TO BE CONTINUED */
+
+                        RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pucch_delta_shift = pucch_delta_shift-1;
+
+                        if ((pucch_delta_shift <1) || (pucch_delta_shift > 3))
+                            AssertFatal (0,
+                                         "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_delta_shift choice: 1..3!\n",
+                                         RC.config_file_name, i, pucch_delta_shift);
+
+
+                        RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pucch_nRB_CQI = pucch_nRB_CQI;
+
+                        if ((pucch_nRB_CQI <0) || (pucch_nRB_CQI > 98))
+                            AssertFatal (0,
+                                         "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nRB_CQI choice: 0..98!\n",
+                                         RC.config_file_name, i, pucch_nRB_CQI);
+
+                        RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pucch_nCS_AN = pucch_nCS_AN;
+
+                        if ((pucch_nCS_AN <0) || (pucch_nCS_AN > 7))
+                            AssertFatal (0,
+                                         "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
+                                         RC.config_file_name, i, pucch_nCS_AN);
+
+
+                           /**
+                                 check if pucch_n1_AN is in necessary the BR parameters
+                            */
+
+
+
+                        RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_p0_Nominal = pusch_p0_Nominal;
+
+                        if ((pusch_p0_Nominal < -126) || (pusch_p0_Nominal > 24))
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_p0_Nominal choice: -126..24 !\n",
+                                        RC.config_file_name, i, pusch_p0_Nominal);
+
+                        if (strcmp(pusch_alpha, "AL0") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al0;
+                        } else if (strcmp(pusch_alpha, "AL04") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al04;
+                        } else if (strcmp(pusch_alpha, "AL05") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al05;
+                        } else if (strcmp(pusch_alpha, "AL06") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al06;
+                        } else if (strcmp(pusch_alpha, "AL07") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al07;
+                        } else if (strcmp(pusch_alpha, "AL08") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al08;
+                        } else if (strcmp(pusch_alpha, "AL09") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al09;
+                        } else if (strcmp(pusch_alpha, "AL1") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al1;
+                        }
+                        else
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_Alpha choice: AL0,AL04,AL05,AL06,AL07,AL08,AL09,AL1!\n",
+                                        RC.config_file_name, i, pusch_alpha);
+
+                        RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_p0_Nominal = pucch_p0_Nominal;
+                        if ((pucch_p0_Nominal < -127) || (pucch_p0_Nominal > -96))
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_p0_Nominal choice: -127..-96 !\n",
+                                        RC.config_file_name, i, pucch_p0_Nominal);
+
+                        if (strcmp(pucch_deltaF_Format1, "deltaF_2") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1 = DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF_2;
+                        }
+                        else if (strcmp(pucch_deltaF_Format1, "deltaF0") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1= DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF0;
+                        }
+                        else if (strcmp(pucch_deltaF_Format1, "deltaF2") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1= DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
+                        }
+                        else
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format1 choice: deltaF_2,dltaF0,deltaF2!\n",
+                                        RC.config_file_name, i, pucch_deltaF_Format1);
+
+                        if (strcmp(pucch_deltaF_Format1b, "deltaF1") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1b= DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF1;
+                        }
+                        else if (strcmp(pucch_deltaF_Format1b, "deltaF3") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1b= DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
+                        }
+                        else if (strcmp(pucch_deltaF_Format1b, "deltaF5") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1b= DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF5;
+                        }
+                        else
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format1b choice: deltaF1,dltaF3,deltaF5!\n",
+                                        RC.config_file_name, i, pucch_deltaF_Format1b);
+
+
+                        if (strcmp(pucch_deltaF_Format2, "deltaF_2") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2= DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF_2;
+                        }
+                        else if (strcmp(pucch_deltaF_Format2, "deltaF0") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2= DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF0;
+                        }
+                        else if (strcmp(pucch_deltaF_Format2, "deltaF1") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2= DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF1;
+                        }
+                        else if (strcmp(pucch_deltaF_Format2, "deltaF2") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2= DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF2;
+                        }
+                        else
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2 choice: deltaF_2,dltaF0,deltaF1,deltaF2!\n",
+                                        RC.config_file_name, i, pucch_deltaF_Format2);
+
+                        if (strcmp(pucch_deltaF_Format2a, "deltaF_2") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2a= DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF_2;
+                        }
+                        else if (strcmp(pucch_deltaF_Format2a, "deltaF0") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2a= DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF0;
+                        }
+                        else if (strcmp(pucch_deltaF_Format2a, "deltaF2") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2a= DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF2;
+                        }
+                        else
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2a choice: deltaF_2,dltaF0,deltaF2!\n",
+                                        RC.config_file_name, i, pucch_deltaF_Format2a);
+
+                        if (strcmp(pucch_deltaF_Format2b, "deltaF_2") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2b= DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF_2;
+                        }
+                        else if (strcmp(pucch_deltaF_Format2b, "deltaF0") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2b= DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF0;
+                        }
+                        else if (strcmp(pucch_deltaF_Format2b, "deltaF2") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2b= DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF2;
+                        }
+                        else
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2b choice: deltaF_2,dltaF0,deltaF2!\n",
+                                        RC.config_file_name, i, pucch_deltaF_Format2b);
+
+
+
+                        RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].msg3_delta_Preamble = msg3_delta_Preamble;
+
+                        if ((msg3_delta_Preamble < -1) || (msg3_delta_Preamble > 6))
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for msg3_delta_Preamble choice: -1..6 !\n",
+                                        RC.config_file_name, i, msg3_delta_Preamble);
+
+
+
+
+                        if (!strcmp(prach_ConfigCommon_v1310, "ENABLE"))
+                        {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_ConfigCommon_v1310 = TRUE;
+
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13 = calloc(1, sizeof(BOOLEAN_t));
+
+                            if (!strcmp(mpdcch_startSF_CSS_RA_r13, "tdd-r13")) {
+                                *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13 = FALSE;
+                            } else {
+                                *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13 = TRUE;
+                            }
+
+                            if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v1")) {
+                                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 0;
+                            } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v1dot5")) {
+                                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 1;
+                            } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v2")) {
+                                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 2;
+                            } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v2dot5")) {
+                                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 3;
+                            } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v4")) {
+                                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 4;
+                            } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v5")) {
+                                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 5;
+                            } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v8")) {
+                                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 6;
+                            } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "10")) {
+                                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 7;
+                            } else {
+                                AssertFatal(0,
+                                            "Failed to parse eNB configuration file %s, enb %d mpdcch_startSF_CSS_RA_r13_val! Unknown Value !!\n",
+                                            RC.config_file_name, i);
+                            }
+                            printf("[DEBUGGING][KOGO] mpdcch_startSF_CSS_RA_r13_val %s\n", mpdcch_startSF_CSS_RA_r13_val);
+
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_HoppingOffset_r13 = calloc(1, sizeof(long));
+                            *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_HoppingOffset_r13 = prach_HoppingOffset_r13;
+                        } else {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_ConfigCommon_v1310 = FALSE;
+                        }
+
+
+                        RRC_CONFIGURATION_REQ(msg_p).pdsch_maxNumRepetitionCEmodeA_r13[j] = CALLOC(1, sizeof(long));
+                        if (!strcmp(pdsch_maxNumRepetitionCEmodeA_r13, "r16")) {
+                            *RRC_CONFIGURATION_REQ(msg_p).pdsch_maxNumRepetitionCEmodeA_r13[j] = 0;
+                        } else if (!strcmp(pdsch_maxNumRepetitionCEmodeA_r13, "r32")) {
+                            *RRC_CONFIGURATION_REQ(msg_p).pdsch_maxNumRepetitionCEmodeA_r13[j] = 1;
+                        } else {
+                            AssertFatal (0,
+                                         "Failed to parse eNB configuration file %s, pdsch_maxNumRepetitionCEmodeA_r13 unknown value!\n",
+                                         RC.config_file_name);
+                        }
+                        printf("DEBUGGING][KOGO]: pdsch_maxNumRepetitionCEmodeA_r13: %s\n", pdsch_maxNumRepetitionCEmodeA_r13);
+
+
+                        RRC_CONFIGURATION_REQ(msg_p).pusch_maxNumRepetitionCEmodeA_r13[j] = CALLOC(1, sizeof(long));
+                        if (!strcmp(pusch_maxNumRepetitionCEmodeA_r13, "r8")) {
+                            *RRC_CONFIGURATION_REQ(msg_p).pusch_maxNumRepetitionCEmodeA_r13[j] =  0;
+                        } else if (!strcmp(pusch_maxNumRepetitionCEmodeA_r13, "r16")) {
+                            *RRC_CONFIGURATION_REQ(msg_p).pusch_maxNumRepetitionCEmodeA_r13[j] =  1;
+                        } else if (!strcmp(pusch_maxNumRepetitionCEmodeA_r13, "r32")) {
+                            *RRC_CONFIGURATION_REQ(msg_p).pusch_maxNumRepetitionCEmodeA_r13[j] =  2;
+                        } else {
+                            AssertFatal (0,
+                                         "Failed to parse eNB configuration file %s, pusch_maxNumRepetitionCEmodeA_r13 unknown value!\n",
+                                         RC.config_file_name);
+                        }
+                        printf("DEBUGGING][KOGO]: pusch_maxNumRepetitionCEmodeA_r13: %s\n", pusch_maxNumRepetitionCEmodeA_r13);
+
+
+                        char rsrpRangeListPath[MAX_OPTNAME_SIZE * 2];
+                        config_getlist(&rsrprangelist, NULL, 0, brparamspath);
+                        RRC_CONFIGURATION_REQ (msg_p).rsrp_range_list_size[j] = rsrprangelist.numelt;
+
+
+                        int rsrprangeindex;
+                        for (rsrprangeindex = 0; rsrprangeindex < rsrprangelist.numelt; rsrprangeindex++) {
+                            sprintf(rsrpRangeListPath, "%s.%s.[%i]", brparamspath, ENB_CONFIG_STRING_RSRP_RANGE_LIST, rsrprangeindex);
+                            config_get(rsrprangeParams, sizeof(rsrprangeParams) / sizeof(paramdef_t), rsrpRangeListPath);
+                            RRC_CONFIGURATION_REQ (msg_p).rsrp_range[j][rsrprangeindex] = rsrp_range_br;
+                            printf("[DEBUGGING][KOGO] : rsrp range br = %d\n", rsrp_range_br);
+                        }
+
+
+                        char prachparameterscePath[MAX_OPTNAME_SIZE * 2];
+                        config_getlist(&prachParamslist, NULL, 0, brparamspath);
+                        RRC_CONFIGURATION_REQ (msg_p).prach_parameters_list_size[j] = prachParamslist.numelt;
+
+                        int prachparamsindex;
+                        for (prachparamsindex = 0; prachparamsindex < prachParamslist.numelt; prachparamsindex++) {
+                            sprintf(prachparameterscePath, "%s.%s.[%i]", brparamspath, ENB_CONFIG_STRING_PRACH_PARAMETERS_CE_R13, prachparamsindex);
+                            config_get(prachParams, sizeof(prachParams) / sizeof(paramdef_t), prachparameterscePath);
+
+                            RRC_CONFIGURATION_REQ (msg_p).prach_config_index[j][prachparamsindex]                  = prach_config_index_br;
+                            RRC_CONFIGURATION_REQ (msg_p).prach_freq_offset[j][prachparamsindex]                   = prach_freq_offset_br;
+
+                            RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prachparamsindex] = calloc(1, sizeof(long));
+                            *RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prachparamsindex] = prach_StartingSubframe_r13;
+
+                            RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prachparamsindex] = calloc(1, sizeof(long));
+                            if (!strcmp(maxNumPreambleAttemptCE_r13, "n3")) {
+                                *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prachparamsindex] = 0;
+                            } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n4")) {
+                                *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prachparamsindex] = 1;
+                            } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n5")) {
+                                *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prachparamsindex] = 2;
+                            } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n6")) {
+                                *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prachparamsindex] = 3;
+                            } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n7")) {
+                                *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prachparamsindex] = 4;
+                            } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n8")) {
+                                *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prachparamsindex] = 5;
+                            } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n10")) {
+                                *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prachparamsindex] = 6;
+                            } else if (!strcmp(maxNumPreambleAttemptCE_r13, "spare1")) {
+                                *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prachparamsindex] = 7;
+                            } else {
+                                AssertFatal (0,
+                                             "Failed to parse eNB configuration file %s, maxNumPreambleAttemptCE_r13 unknown value !! %d!\n",
+                                             RC.config_file_name, nb_cc++);
+                            }
+                            printf("[DEBUGGING][KOGO]: maxNumPreambleAttemptCE_r13: %s\n", maxNumPreambleAttemptCE_r13);
+
+
+                            if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n1")) {
+                                RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prachparamsindex] = 0;
+                            } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n2")) {
+                                RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prachparamsindex] = 1;
+                            } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n4")) {
+                                RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prachparamsindex] = 2;
+                            } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n8")) {
+                                RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prachparamsindex] = 3;
+                            } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n16")) {
+                                RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prachparamsindex] = 4;
+                            } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n32")) {
+                                RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prachparamsindex] = 5;
+                            } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n64")) {
+                                RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prachparamsindex] = 6;
+                            } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n128")) {
+                                RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prachparamsindex] = 7;
+                            } else {
+                                AssertFatal (0,
+                                             "Failed to parse eNB configuration file %s, numRepetitionPerPreambleAttempt_r13 unknown value !! %d!\n",
+                                             RC.config_file_name, nb_cc++);
+                            }
+
+                            printf("[DEBUGGING][KOGO]: numRepetitionPerPreambleAttempt_r13: %s\n", numRepetitionPerPreambleAttempt_r13);
+
+
+                            if (!strcmp(mpdcch_NumRepetition_RA_r13, "r1")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 0;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r2")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 1;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r4")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 2;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r8")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 3;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r16")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 4;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r32")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 5;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r64")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 6;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r128")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 7;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r256")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 8;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r512")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 9;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r1024")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 10;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r2048")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 11;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "spare4")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 12;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "spare3")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 13;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "spare2")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 14;
+                            } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "spare1")) {
+                                RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prachparamsindex] = 15;
+                            } else {
+                                AssertFatal (0,
+                                             "Failed to parse eNB configuration file %s, mpdcch_NumRepetition_RA_r13 unknown value !! %d!\n",
+                                             RC.config_file_name, nb_cc++);
+                            }
+
+                            printf("[DEBUGGING][KOGO]: mpdcch_NumRepetition_RA_r13: %s\n", mpdcch_NumRepetition_RA_r13);
+
+                            if (!strcmp(prach_HoppingConfig_r13, "off")) {
+                                RRC_CONFIGURATION_REQ (msg_p).prach_HoppingConfig_r13[j][prachparamsindex] = 1;
+                            } else if (!strcmp(prach_HoppingConfig_r13, "on")) {
+                                RRC_CONFIGURATION_REQ (msg_p).prach_HoppingConfig_r13[j][prachparamsindex] = 0;
+                            } else {
+                                AssertFatal (0,
+                                             "Failed to parse eNB configuration file %s, prach_HoppingConfig_r13 unknown value !! %d!\n",
+                                             RC.config_file_name, nb_cc++);
+                            }
+
+                            printf("[DEBUGGING][KOGO]: prach_HoppingConfig_r13: %s\n", prach_HoppingConfig_r13);
+
+
+
+                            int maxavailablenarrowband_count = prachParams[7].numelt;
+                            printf("[DEBUGGING][KOGO]: maxavailablenarrowband count = %d\n", prachParams[7].numelt);
+                            RRC_CONFIGURATION_REQ (msg_p).max_available_narrow_band_size[j][prachparamsindex] = maxavailablenarrowband_count;
+                            int narrow_band_index;
+                            for (narrow_band_index = 0; narrow_band_index < maxavailablenarrowband_count; narrow_band_index++)
+                            {
+                                RRC_CONFIGURATION_REQ (msg_p).max_available_narrow_band[j][prachparamsindex][narrow_band_index] = prachParams[7].iptr[narrow_band_index];
+                                printf("[DEBUGGING][KOGO]: maxavailablenarrowband[index] = %d\n", prachParams[7].iptr[narrow_band_index]);
+                            }
+
+
+                        }
+
+                        char n1PUCCHInfoParamsPath[MAX_OPTNAME_SIZE * 2];
+                        config_getlist(&n1PUCCHInfoList, NULL, 0, brparamspath);
+                        RRC_CONFIGURATION_REQ (msg_p).pucch_info_value_size[j] = n1PUCCHInfoList.numelt;
+
+                        int n1PUCCHinfolistindex;
+                        for (n1PUCCHinfolistindex = 0; n1PUCCHinfolistindex < n1PUCCHInfoList.numelt; n1PUCCHinfolistindex++) {
+                            sprintf(n1PUCCHInfoParamsPath, "%s.%s.[%i]", brparamspath, ENB_CONFIG_STRING_N1PUCCH_AN_INFOLIST_R13, n1PUCCHinfolistindex);
+                            config_get(n1PUCCH_ANR13Params, sizeof(n1PUCCH_ANR13Params) / sizeof(paramdef_t), n1PUCCHInfoParamsPath);
+                            RRC_CONFIGURATION_REQ (msg_p).pucch_info_value[j][n1PUCCHinfolistindex] = pucch_info_value;
+                            printf("[DEBUGGING][KOGO]: pucch_info_value: %d\n", pucch_info_value);
+                        }
+
+                        /**  UE Timers And Constants */
+
+
+                        if (!strcmp(ue_TimersAndConstants_t300, "ms100")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t300 = UE_TimersAndConstants__t300_ms100;
+                        } else if (!strcmp(ue_TimersAndConstants_t300, "ms200")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t300 = UE_TimersAndConstants__t300_ms200;
+                        } else if (!strcmp(ue_TimersAndConstants_t300, "ms300")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t300 = UE_TimersAndConstants__t300_ms300;
+                        } else if (!strcmp(ue_TimersAndConstants_t300, "ms400")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t300 = UE_TimersAndConstants__t300_ms400;
+                        } else if (!strcmp(ue_TimersAndConstants_t300, "ms600")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t300 = UE_TimersAndConstants__t300_ms600;
+                        } else if (!strcmp(ue_TimersAndConstants_t300, "ms1000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t300 = UE_TimersAndConstants__t300_ms1000;
+                        } else if (!strcmp(ue_TimersAndConstants_t300, "ms1500")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t300 = UE_TimersAndConstants__t300_ms1500;
+                        } else if (!strcmp(ue_TimersAndConstants_t300, "ms2000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t300 = UE_TimersAndConstants__t300_ms2000;
+                        } else {
+                            AssertFatal (0,
+                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_t300 unknown value !!",
+                                RC.config_file_name, i, ue_TimersAndConstants_t300);
+                        }
+
+                        printf("[DEBUGGING][KOGO]: ue_TimersAndConstants_t300 : %s\n", ue_TimersAndConstants_t300);
+
+                        if (!strcmp(ue_TimersAndConstants_t301, "ms100")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t301= UE_TimersAndConstants__t301_ms100;
+                        } else if (!strcmp(ue_TimersAndConstants_t301, "ms200")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t301= UE_TimersAndConstants__t301_ms200;
+                        } else if (!strcmp(ue_TimersAndConstants_t301, "ms300")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t301= UE_TimersAndConstants__t301_ms300;
+                        } else if (!strcmp(ue_TimersAndConstants_t301, "ms400")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t301= UE_TimersAndConstants__t301_ms400;
+                        } else if (!strcmp(ue_TimersAndConstants_t301, "ms600")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t301= UE_TimersAndConstants__t301_ms600;
+                        } else if (!strcmp(ue_TimersAndConstants_t301, "ms1000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t301= UE_TimersAndConstants__t301_ms1000;
+                        } else if (!strcmp(ue_TimersAndConstants_t301, "ms1500")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t301= UE_TimersAndConstants__t301_ms1500;
+                        } else if (!strcmp(ue_TimersAndConstants_t301, "ms2000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t301= UE_TimersAndConstants__t301_ms2000;
+                        } else {
+                            AssertFatal (0,
+                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_t301 !!",
+                                RC.config_file_name, i, ue_TimersAndConstants_t301);
+                        }
+
+                        printf("[DEBUGGING][KOGO]: ue_TimersAndConstants_t301 : %s\n", ue_TimersAndConstants_t301);
+
+                        if (!strcmp(ue_TimersAndConstants_t310, "ms0")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t310 = UE_TimersAndConstants__t310_ms0;
+                        } else if (!strcmp(ue_TimersAndConstants_t310, "ms50")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t310 = UE_TimersAndConstants__t310_ms50;
+                        } else if (!strcmp(ue_TimersAndConstants_t310, "ms100")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t310 = UE_TimersAndConstants__t310_ms100;
+                        } else if (!strcmp(ue_TimersAndConstants_t310, "ms200")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t310 = UE_TimersAndConstants__t310_ms200;
+                        } else if (!strcmp(ue_TimersAndConstants_t310, "ms500")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t310 = UE_TimersAndConstants__t310_ms500;
+                        } else if (!strcmp(ue_TimersAndConstants_t310, "ms1000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t310 = UE_TimersAndConstants__t310_ms1000;
+                        } else if (!strcmp(ue_TimersAndConstants_t310, "ms2000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t310 = UE_TimersAndConstants__t310_ms2000;
+                        } else {
+                            AssertFatal (0,
+                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_t310 !!",
+                                RC.config_file_name, i, ue_TimersAndConstants_t310);
+                        }
+
+                        printf("[DEBUGGING][KOGO]: ue_TimersAndConstants_t310 : %s\n", ue_TimersAndConstants_t310);
+
+                        if (!strcmp(ue_TimersAndConstants_t311, "ms1000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311 = UE_TimersAndConstants__t311_ms1000;
+                        } else if (!strcmp(ue_TimersAndConstants_t311, "ms3000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311 = UE_TimersAndConstants__t311_ms3000;
+                        } else if (!strcmp(ue_TimersAndConstants_t311, "ms5000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311 = UE_TimersAndConstants__t311_ms5000;
+                        } else if (!strcmp(ue_TimersAndConstants_t311, "ms10000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311 = UE_TimersAndConstants__t311_ms10000;
+                        } else if (!strcmp(ue_TimersAndConstants_t311, "ms15000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311 = UE_TimersAndConstants__t311_ms15000;
+                        } else if (!strcmp(ue_TimersAndConstants_t311, "ms20000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311 = UE_TimersAndConstants__t311_ms20000;
+                        } else if (!strcmp(ue_TimersAndConstants_t311, "ms30000")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_t311 = UE_TimersAndConstants__t311_ms30000;
+                        } else {
+                            AssertFatal (0,
+                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_t311 !!",
+                                RC.config_file_name, i, ue_TimersAndConstants_t311);
+                        }
+
+                        printf("[DEBUGGING][KOGO]: ue_TimersAndConstants_t311 : %s\n", ue_TimersAndConstants_t311);
+
+                        if (!strcmp(ue_TimersAndConstants_n310, "n1")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n310 = UE_TimersAndConstants__n310_n1;
+                        } else if (!strcmp(ue_TimersAndConstants_n310, "n2")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n310 = UE_TimersAndConstants__n310_n2;
+                        } else if (!strcmp(ue_TimersAndConstants_n310, "n3")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n310 = UE_TimersAndConstants__n310_n3;
+                        } else if (!strcmp(ue_TimersAndConstants_n310, "n4")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n310 = UE_TimersAndConstants__n310_n4;
+                        } else if (!strcmp(ue_TimersAndConstants_n310, "n6")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n310 = UE_TimersAndConstants__n310_n6;
+                        } else if (!strcmp(ue_TimersAndConstants_n310, "n8")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n310 = UE_TimersAndConstants__n310_n8;
+                        } else if (!strcmp(ue_TimersAndConstants_n310, "n10")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n310 = UE_TimersAndConstants__n310_n10;
+                        } else if (!strcmp(ue_TimersAndConstants_n310, "n20")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n310 = UE_TimersAndConstants__n310_n20;
+                        } else {
+                            AssertFatal (0,
+                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_n310 !!",
+                                RC.config_file_name, i, ue_TimersAndConstants_n310);
+                        }
+
+                        printf("[DEBUGGING][KOGO]: ue_TimersAndConstants_n310 : %s\n", ue_TimersAndConstants_n310);
+
+                        if (!strcmp(ue_TimersAndConstants_n311, "n1")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n311 = UE_TimersAndConstants__n311_n1;
+                        } else if (!strcmp(ue_TimersAndConstants_n311, "n2")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n311 = UE_TimersAndConstants__n311_n2;
+                        } else if (!strcmp(ue_TimersAndConstants_n311, "n3")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n311 = UE_TimersAndConstants__n311_n3;
+                        } else if (!strcmp(ue_TimersAndConstants_n311, "n4")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n311 = UE_TimersAndConstants__n311_n4;
+                        } else if (!strcmp(ue_TimersAndConstants_n311, "n5")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n311 = UE_TimersAndConstants__n311_n5;
+                        } else if (!strcmp(ue_TimersAndConstants_n311, "n6")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n311 = UE_TimersAndConstants__n311_n6;
+                        } else if (!strcmp(ue_TimersAndConstants_n311, "n8")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n311 = UE_TimersAndConstants__n311_n8;
+                        } else if (!strcmp(ue_TimersAndConstants_n311, "n10")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TimersAndConstants_n311 = UE_TimersAndConstants__n311_n10;
+                        } else {
+                            AssertFatal (0,
+                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_n311!!",
+                                RC.config_file_name, i, ue_TimersAndConstants_n311);
+                        }
+
+                        printf("[DEBUGGING][KOGO]: ue_TimersAndConstants_n311 : %s\n", ue_TimersAndConstants_n311);
+
+
+                        if (!strcmp(ue_TransmissionMode, "tm1")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TransmissionMode = AntennaInfoDedicated__transmissionMode_tm1;
+                        } else if (!strcmp(ue_TransmissionMode, "tm2")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TransmissionMode = AntennaInfoDedicated__transmissionMode_tm2;
+                        } else if (!strcmp(ue_TransmissionMode, "tm3")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TransmissionMode = AntennaInfoDedicated__transmissionMode_tm3;
+                        } else if (!strcmp(ue_TransmissionMode, "tm4")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TransmissionMode = AntennaInfoDedicated__transmissionMode_tm4;
+                        } else if (!strcmp(ue_TransmissionMode, "tm5")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TransmissionMode = AntennaInfoDedicated__transmissionMode_tm5;
+                        } else if (!strcmp(ue_TransmissionMode, "tm6")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TransmissionMode = AntennaInfoDedicated__transmissionMode_tm6;
+                        } else if (!strcmp(ue_TransmissionMode, "tm7")) {
+                            RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TransmissionMode = AntennaInfoDedicated__transmissionMode_tm7;
+                        } else {
+                            AssertFatal (0,
+                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TransmissionMode !!",
+                                RC.config_file_name, i, ue_TransmissionMode);
+                        }
+
+                        printf("[DEBUGGING][KOGO]: ue_TransmissionMode : %s\n", ue_TransmissionMode);
+
+                        char PCCHConfigv1310Path[MAX_OPTNAME_SIZE*2 + 16];
+                        sprintf(PCCHConfigv1310Path, "%s.%s", brparamspath, ENB_CONFIG_STRING_PCCH_CONFIG_V1310);
+                        config_get(pcchv1310Params, sizeof(pcchv1310Params)/sizeof(paramdef_t), PCCHConfigv1310Path);
+
+
+
+                        /** PCCH CONFIG V1310 */
+
+                        RRC_CONFIGURATION_REQ(msg_p).pcch_config_v1310[j] = TRUE;
+                        RRC_CONFIGURATION_REQ(msg_p).paging_narrowbands_r13[j] = paging_narrowbands_r13;
+                        printf("[DEBUGGING][KOGO]: paging_narrowbands_r13 = %d\n", paging_narrowbands_r13);
+
+                        if (!strcmp(mpdcch_numrepetition_paging_r13, "r1")) {
+                            RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 0;
+                        } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r2")) {
+                            RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 1;
+                        } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r4")) {
+                            RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 2;
+                        } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r8")) {
+                            RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 3;
+                        } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r16")) {
+                            RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 4;
+                        } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r32")) {
+                            RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 5;
+                        } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r64")) {
+                            RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 6;
+                        } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r128")) {
+                            RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 7;
+                        } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r256")) {
+                            RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 8;
+                        } else {
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, nb_v1310, unknown value !\n",
+                                        RC.config_file_name);
+                        }
+
+                        printf("[DEBUGGING][KOGO] mpdcch_numrepetition_paging_r13: %s\n", mpdcch_numrepetition_paging_r13);
+
+//                        RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = CALLOC(1, sizeof(long));
+//                        if (!strcmp(nb_v1310, "one64thT")) {
+//                            *RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = 0;
+//                        } else if (!strcmp(nb_v1310, "one128thT")) {
+//                            *RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = 1;
+//                        } else if (!strcmp(nb_v1310, "one256thT")) {
+//                            *RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = 2;
+//                        } else {
+//                            AssertFatal(0,
+//                                        "Failed to parse eNB configuration file %s, nb_v1310, unknown value !\n",
+//                                        RC.config_file_name);
+//                        }
+//                        printf("[DEBUGGING][KOGO][CHAR*] nb_v1310: %s - %d\n", nb_v1310,  *RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j]);
+
+
+                        RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = CALLOC(1, sizeof(long));
+                        // ++cnt; // check this ,, the conter is up above
+                        if (!strcmp(pucch_NumRepetitionCE_Msg4_Level0_r13, "n1")) {
+                            *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = 0;
+                        } else if (!strcmp(pucch_NumRepetitionCE_Msg4_Level0_r13, "n2")) {
+                            *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = 1;
+                        } else if (!strcmp(pucch_NumRepetitionCE_Msg4_Level0_r13, "n4")) {
+                            *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = 2;
+                        } else if (!strcmp(pucch_NumRepetitionCE_Msg4_Level0_r13, "n8")) {
+                            *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = 3;
+                        } else {
+                            AssertFatal (0,
+                                         "Failed to parse eNB configuration file %s, pucch_NumRepetitionCE_Msg4_Level0_r13 unknown value!\n",
+                                         RC.config_file_name);
+                        }
+                        printf("DEBUGGING][KOGO]: pucch_NumRepetitionCE_Msg4_Level0_r13: %s\n", pucch_NumRepetitionCE_Msg4_Level0_r13);
+
+
+
+                        /** SIB2 FREQ HOPPING PARAMETERS R13 */
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_freq_hoppingParameters_r13_exists[j] = TRUE;
+
+                        char sib2FreqHoppingParametersR13Path[MAX_OPTNAME_SIZE*2 + 16];
+                        sprintf(sib2FreqHoppingParametersR13Path, "%s.%s", brparamspath, ENB_CONFIG_STRING_SIB2_FREQ_HOPPINGPARAMETERS_R13);
+                        config_get(sib2freqhoppingParams, sizeof(sib2freqhoppingParams)/sizeof(paramdef_t), sib2FreqHoppingParametersR13Path);
+
+
+                        RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j] = CALLOC(1, sizeof(long));
+                        if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13, "FDD")) {
+                            *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j] = 0;
+                            if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int1")) {
+                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 0;
+                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int2")) {
+                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 1;
+                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int4")) {
+                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 2;
+                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int8")) {
+                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 3;
+                            } else {
+                                AssertFatal (0,
+                                             "Failed to parse eNB configuration file %s, sib2_interval_ULHoppingConfigCommonModeA_r13_val unknown value !!\n",
+                                             RC.config_file_name);
+                            }
+                        } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13, "TDD")) {
+                            *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j] = 1;
+                            if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int1")) {
+                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 0;
+                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int5")) {
+                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 1;
+                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int10")) {
+                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 2;
+                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int20")) {
+                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 3;
+                            } else {
+                                AssertFatal (0,
+                                             "Failed to parse eNB configuration file %s, sib2_interval_ULHoppingConfigCommonModeA_r13_val unknown value !!\n",
+                                             RC.config_file_name);
+                            }
+                        } else {
+                            AssertFatal (0,
+                                         "Failed to parse eNB configuration file %s, sib2_interval_ULHoppingConfigCommonModeA_r13 unknown value !!\n",
+                                         RC.config_file_name);
+                        }
+
+                        printf("[DEBUGGING][KOGO]: sib2_interval_ULHoppingConfigCommonModeA_r13: %s\n", sib2_interval_ULHoppingConfigCommonModeA_r13);
+                        printf("[DEBUGGING][KOGO]: sib2_interval_ULHoppingConfigCommonModeA_r13_val: %s\n", sib2_interval_ULHoppingConfigCommonModeA_r13_val);
+
+
+
+                        if (strcmp(rach_preamblesGroupAConfig, "ENABLE") == 0)
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].rach_preamblesGroupAConfig= TRUE;
+
+
+
+                        RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pusch_nDMRS1 = pusch_nDMRS1;  //cyclic_shift in RRC!
+
+                        printf("[DEBUGGING][KOGO]: pusch_nDMRS1 = %d\n", pusch_nDMRS1);
+
+                        if ((pusch_nDMRS1 <0) || (pusch_nDMRS1>7))
+                            AssertFatal (0,
+                                         "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_nDMRS1 choice: 0..7!\n",
+                                         RC.config_file_name, i, pusch_nDMRS1);
+
+
+                        if (strcmp(phich_duration, "NORMAL") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_duration = PHICH_Config__phich_Duration_normal;
+                        }
+                        else if (strcmp(phich_duration, "EXTENDED") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_duration = PHICH_Config__phich_Duration_extended;
+                        }
+                        else
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for phich_duration choice: NORMAL,EXTENDED!\n",
+                                        RC.config_file_name, i, phich_duration);
+
+
+                        printf("[DEBUGGING][KOGO]: phich_duration = %s\n", phich_duration);
+
+                        if (strcmp(phich_resource, "ONESIXTH") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_resource = PHICH_Config__phich_Resource_oneSixth;
+                        }
+                        else if (strcmp(phich_resource, "HALF") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_resource = PHICH_Config__phich_Resource_half;
+                        }
+                        else if (strcmp(phich_resource, "ONE") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_resource = PHICH_Config__phich_Resource_one;
+                        }
+                        else if (strcmp(phich_resource, "TWO") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_resource = PHICH_Config__phich_Resource_two;
+                        }
+                        else {
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for phich_resource choice: ONESIXTH,HALF,ONE,TWO!\n",
+                                        RC.config_file_name, i, phich_resource);
+                        }
+
+                        printf("[DEBUGGING][KOGO]: phich_resource = %s\n", phich_resource);
+
+
+                        printf("phich.resource %d (%s), phich.duration %d (%s)\n",
+                               RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_resource, phich_resource,
+                               RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_duration, phich_duration);
+
+                        if (strcmp(srs_enable, "ENABLE") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].srs_enable = TRUE;
+                        }
+                        else if (strcmp(srs_enable, "DISABLE") == 0) {
+                            RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].srs_enable = FALSE;
+                        }
+                        else {
+                            AssertFatal(0,
+                                        "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
+                                        RC.config_file_name, i, srs_enable);
+                        }
+
+                        printf("[DEBUGGING][KOGO]: srs_enable = %s\n", srs_enable);
+
+
+
 
 
 
@@ -2472,90 +3237,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                   RRC_CONFIGURATION_REQ (msg_p).system_info_value_tag_SI_size[j] = num_system_info;
 
 
-
-                  if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_BRAccessRelatedInfo, &bandwidthReducedAccessRelatedInfo_r13) && !strcmp(bandwidthReducedAccessRelatedInfo_r13, "ENABLE"))
-                  {
-                      printf("Enabling BR access SI scheduling parameters\n");
-                      RRC_CONFIGURATION_REQ(msg_p).bandwidthReducedAccessRelatedInfo_r13[j] = TRUE;
-                      if (!config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_SI_WINDOWLENGTH_BR, &si_WindowLength_BR_r13) ||
-                              !config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_SI_REPETITIONPATTERN, &si_RepetitionPattern_r13) ||
-                              !config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_STARTSYMBOLBR, &startSymbolBR_r13) ||
-                              !config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_SI_HOPPINGCONFIGCOMMON, &si_HoppingConfigCommon_r13))
-                      {
-                          AssertFatal(0,
-                                      "Failed to parse eNB configuration file %s, enb %d  si_WindowLength_BR_r13, si_RepetitionPattern_r13, fdd_DownlinkOrTddSubframeBitmapBR_r13, fdd_UplinkSubframeBitmapBR_r13!\n",
-                                      RC.config_file_name, i);
-
-                      }
-
-
-
-                      RRC_CONFIGURATION_REQ(msg_p).startSymbolBR_r13[j] = startSymbolBR_r13;
-
-                      if (!strcmp(si_HoppingConfigCommon_r13, "off")) {
-                          RRC_CONFIGURATION_REQ(msg_p).si_HoppingConfigCommon_r13[j] = 1;
-                      } else if (!strcmp(si_HoppingConfigCommon_r13, "on")) {
-                          RRC_CONFIGURATION_REQ(msg_p).si_HoppingConfigCommon_r13[j] = 0;
-                      }
-
-
-                      printf("DEBUGGING][KOGO][CHAR*]: window length: %s - %d\n", si_WindowLength_BR_r13, RRC_CONFIGURATION_REQ(msg_p).si_WindowLength_BR_r13[j]);
-                      printf("DEBUGGING][KOGO][CHAR*]: repetition pattern: %s - %d\n", si_RepetitionPattern_r13, RRC_CONFIGURATION_REQ(msg_p).si_RepetitionPattern_r13[j]);
-                      printf("DEBUGGING][KOGO][CHAR*]: hopping config common: %s - %d\n", si_HoppingConfigCommon_r13, RRC_CONFIGURATION_REQ(msg_p).si_HoppingConfigCommon_r13[j]);
-
-                      scheduling_info_br_list       = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_SCHEDULING_INFO_LIST);
-                      int num_scheduling_info       = config_setting_length(scheduling_info_br_list);
-                      RRC_CONFIGURATION_REQ (msg_p).scheduling_info_br_size[j] = num_scheduling_info;
-
-                      for (sched_info_idx = 0; sched_info_idx < num_scheduling_info; ++sched_info_idx)
-                      {
-                          scheduling_info_br = config_setting_get_elem(scheduling_info_br_list, sched_info_idx);
-                          if (!(
-                                      config_setting_lookup_int(scheduling_info_br, ENB_CONFIG_STRING_SI_NARROWBAND_R13, &si_Narrowband_r13)
-                                      && config_setting_lookup_int(scheduling_info_br, ENB_CONFIG_STRING_SI_TBS_R13, &si_TBS_r13)
-                                      )
-                                  ){
-                              AssertFatal (0, "Failed to parse eNB configuration file %s, scheduking info br %d!\n", RC.config_file_name, nb_cc++);
-                          }
-                          RRC_CONFIGURATION_REQ (msg_p).si_Narrowband_r13[j][sched_info_idx] = si_Narrowband_r13;
-                          RRC_CONFIGURATION_REQ (msg_p).si_TBS_r13[j][sched_info_idx] = si_TBS_r13;
-                      }
-
-                      bool fdd_downlink_exist = config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_FDD_DLORTDD_SFB_BR, &fdd_DownlinkOrTddSubframeBitmapBR_r13);
-                      if (fdd_downlink_exist)
-                      {
-                        RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = CALLOC(1, sizeof(BOOLEAN_t));
-                        if (!strcmp(fdd_DownlinkOrTddSubframeBitmapBR_r13, "subframePattern40-r13"))
-                          *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = FALSE;
-                        else
-                          *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = TRUE;
-
-                        config_setting_lookup_int64(setting_br13, ENB_CONFIG_STRING_FDD_DLORTDDSFB_BR_VAL, &fdd_DownlinkOrTddSubframeBitmapBR_val_r13);
-                        RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_val_r13[j] = fdd_DownlinkOrTddSubframeBitmapBR_val_r13;
-                      }
-                      else
-                      {
-                        RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = NULL;
-                      }
-
-                      if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_SI_VALIDITYTIME, &si_ValidityTime_r13))
-                      {
-                          RRC_CONFIGURATION_REQ(msg_p).si_ValidityTime_r13[j] = calloc(1, sizeof(long));
-                          if (!strcmp(si_ValidityTime_r13, "true")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).si_ValidityTime_r13[j] = 0;
-                          } else {
-                              AssertFatal(0,
-                                          "Failed to parse eNB configuration file %s, enb %d  si_ValidityTime_r13 unknown value!\n",
-                                          RC.config_file_name, i);
-                          }
-                          printf("DEBUGGING][KOGO][CHAR*]: si_ValidityTime_r13: %s - %d\n", si_ValidityTime_r13, *RRC_CONFIGURATION_REQ(msg_p).si_ValidityTime_r13[j]);
-                      }
-                      else
-                      {
-                          RRC_CONFIGURATION_REQ(msg_p).si_ValidityTime_r13[j] = NULL;
-                      }
-
-
                       if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_FREQHOPPINGPARAMETERSDL, &freqHoppingParametersDL_r13) && !strcmp(freqHoppingParametersDL_r13, "ENABLE"))
                       {
                           RRC_CONFIGURATION_REQ(msg_p).freqHoppingParametersDL_r13[j] = TRUE;
@@ -2571,187 +3252,14 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                           }
 
 
-                          if (!strcmp(interval_DLHoppingConfigCommonModeA_r13, "interval-TDD-r13"))
-                              RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeA_r13[j] = FALSE;
-                          else
-                              RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeA_r13[j] = TRUE;
-                          RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeA_r13_val[j] = interval_DLHoppingConfigCommonModeA_r13_val;
-
-                          if (!strcmp(interval_DLHoppingConfigCommonModeB_r13, "interval-TDD-r13"))
-                              RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeB_r13[j] = FALSE;
-                          else
-                              RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeB_r13[j] = TRUE;
-                          RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeB_r13_val[j] = interval_DLHoppingConfigCommonModeB_r13_val;
 
 
 
-
-                          if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPINGNB, &mpdcch_pdsch_HoppingNB_r13))
-                          {
-                              RRC_CONFIGURATION_REQ(msg_p).mpdcch_pdsch_HoppingNB_r13[j] = calloc(1, sizeof(long));
-                              if (!strcmp(mpdcch_pdsch_HoppingNB_r13, "nb2")) {
-                                  *RRC_CONFIGURATION_REQ(msg_p).mpdcch_pdsch_HoppingNB_r13[j] = 0;
-                              } else if (!strcmp(mpdcch_pdsch_HoppingNB_r13, "nb4")) {
-                                  *RRC_CONFIGURATION_REQ(msg_p).mpdcch_pdsch_HoppingNB_r13[j] = 1;
-                              } else {
-                                  AssertFatal(0,
-                                              "Failed to parse eNB configuration file %s, enb %d  mpdcch_pdsch_HoppingNB_r13 unknown value!\n",
-                                              RC.config_file_name, i);
-                              }
-                          }
-                          else {
-                              RRC_CONFIGURATION_REQ(msg_p).mpdcch_pdsch_HoppingNB_r13[j] = NULL;
-                          }
-
-                          if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPINGOFFSET, &mpdcch_pdsch_HoppingOffset_r13))
-                          {
-                              RRC_CONFIGURATION_REQ(msg_p).mpdcch_pdsch_HoppingOffset_r13[j] = calloc(1, sizeof(long));
-                              *RRC_CONFIGURATION_REQ(msg_p).mpdcch_pdsch_HoppingOffset_r13[j] = mpdcch_pdsch_HoppingOffset_r13;
-                          }
-                          else
-                              RRC_CONFIGURATION_REQ(msg_p).mpdcch_pdsch_HoppingOffset_r13[j] = NULL;
-
-                      }
-                      else
-                      {
-                          RRC_CONFIGURATION_REQ(msg_p).freqHoppingParametersDL_r13[j] = FALSE;
-                      }
 
                   // SIB23 parameters ---------------------------------------------------------------------------------------------------------------------------
 
-                      if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_PREAMBLETRANSMAX_CE_R13, &preambleTransMax_CE_r13))
-                      {
-                          RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = calloc(1, sizeof(long));
-                          if (!strcmp(preambleTransMax_CE_r13, "n3")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 0;
-                          } else if (!strcmp(preambleTransMax_CE_r13, "n4")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 1;
-                          } else if (!strcmp(preambleTransMax_CE_r13, "n5")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 2;
-                          } else if (!strcmp(preambleTransMax_CE_r13, "n6")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 3;
-                          } else if (!strcmp(preambleTransMax_CE_r13, "n7")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 4;
-                          } else if (!strcmp(preambleTransMax_CE_r13, "n8")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 5;
-                          } else if (!strcmp(preambleTransMax_CE_r13, "n10")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 6;
-                          } else if (!strcmp(preambleTransMax_CE_r13, "n20")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 7;
-                          } else if (!strcmp(preambleTransMax_CE_r13, "n50")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 8;
-                          } else if (!strcmp(preambleTransMax_CE_r13, "n100")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 9;
-                          } else if (!strcmp(preambleTransMax_CE_r13, "n200")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = 10;
-                          } else {
-                              AssertFatal(0,
-                                          "Failed to parse eNB configuration file %s, enb %d  preambleTransMax_CE_r13 unknown value!\n",
-                                          RC.config_file_name, i);
-                          }
-                      }
-                      else
-                      {
-                          RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13 = NULL;
-                      }
 
-                      printf("DEBUGGING][KOGO][CHAR*]: preambleTransMax_CE_r13: %s - %d\n", preambleTransMax_CE_r13, *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].preambleTransMax_CE_r13);
 
-                      rach_ce_level_info_r13_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_RACH_CE_LEVEL_INFO_LIST);
-                      int num_rach_ce_level_info_list = config_setting_length(rach_ce_level_info_r13_list);
-                      RRC_CONFIGURATION_REQ (msg_p).rach_CE_LevelInfoList_r13_size[j] = num_rach_ce_level_info_list;
-                      int rach_info_level_idx;
-                      for (rach_info_level_idx = 0; rach_info_level_idx < num_rach_ce_level_info_list; ++rach_info_level_idx)
-                      {
-                          rach_ce_level_info_r13 = config_setting_get_elem(rach_ce_level_info_r13_list, rach_info_level_idx);
-                          if (!     (config_setting_lookup_int(rach_ce_level_info_r13, ENB_CONFIG_STRING_FIRST_PREAMBLE,                   &firstPreamble_r13)
-                                     && config_setting_lookup_int(rach_ce_level_info_r13, ENB_CONFIG_STRING_LAST_PREAMBLE,                    &lastPreamble_r13)
-                                     && config_setting_lookup_string(rach_ce_level_info_r13, ENB_CONFIG_STRING_RA_RESPONSE_WINDOW_SIZE_R13,      &ra_ResponseWindowSize_r13)
-                                     && config_setting_lookup_string(rach_ce_level_info_r13, ENB_CONFIG_STRING_MAC_CONTENT_RESOLUTION_TIMER_R13, &mac_ContentionResolutionTimer_r13)
-                                     && config_setting_lookup_string(rach_ce_level_info_r13, ENB_CONFIG_STRING_RAR_HOPPING_CONFIG_R13,           &rar_HoppingConfig_r13) )
-                                  )
-                          {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, rach_ce_level_info_r13 %d!\n",
-                                           RC.config_file_name, nb_cc++);
-                          }
-
-                          RRC_CONFIGURATION_REQ (msg_p).firstPreamble_r13[j][rach_info_level_idx]                 = firstPreamble_r13;
-                          RRC_CONFIGURATION_REQ (msg_p).lastPreamble_r13[j][rach_info_level_idx]                  = lastPreamble_r13;
-
-                          if (!strcmp(ra_ResponseWindowSize_r13, "sf20")) {
-                              RRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindowSize_r13[j][rach_info_level_idx] = 0;
-                          } else if (!strcmp(ra_ResponseWindowSize_r13, "sf50")) {
-                              RRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindowSize_r13[j][rach_info_level_idx] = 1;
-                          } else if (!strcmp(ra_ResponseWindowSize_r13, "sf80")) {
-                              RRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindowSize_r13[j][rach_info_level_idx] = 2;
-                          } else if (!strcmp(ra_ResponseWindowSize_r13, "sf120")) {
-                              RRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindowSize_r13[j][rach_info_level_idx] = 3;
-                          } else if (!strcmp(ra_ResponseWindowSize_r13, "sf180")) {
-                              RRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindowSize_r13[j][rach_info_level_idx] = 4;
-                          } else if (!strcmp(ra_ResponseWindowSize_r13, "sf240")) {
-                              RRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindowSize_r13[j][rach_info_level_idx] = 5;
-                          } else if (!strcmp(ra_ResponseWindowSize_r13, "sf320")) {
-                              RRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindowSize_r13[j][rach_info_level_idx] = 6;
-                          } else if (!strcmp(ra_ResponseWindowSize_r13, "sf400")) {
-                              RRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindowSize_r13[j][rach_info_level_idx] = 7;
-                          } else {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, ra_ResponseWindowSize_r13 unknown value!\n",
-                                           RC.config_file_name);
-                          }
-
-                          if (!strcmp(mac_ContentionResolutionTimer_r13, "sf80")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mac_ContentionResolutionTimer_r13[j][rach_info_level_idx] = 0;
-                          } else if (!strcmp(mac_ContentionResolutionTimer_r13, "sf100")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mac_ContentionResolutionTimer_r13[j][rach_info_level_idx] = 1;
-                          } else if (!strcmp(mac_ContentionResolutionTimer_r13, "sf120")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mac_ContentionResolutionTimer_r13[j][rach_info_level_idx] = 2;
-                          } else if (!strcmp(mac_ContentionResolutionTimer_r13, "sf160")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mac_ContentionResolutionTimer_r13[j][rach_info_level_idx] = 3;
-                          } else if (!strcmp(mac_ContentionResolutionTimer_r13, "sf200")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mac_ContentionResolutionTimer_r13[j][rach_info_level_idx] = 4;
-                          } else if (!strcmp(mac_ContentionResolutionTimer_r13, "sf240")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mac_ContentionResolutionTimer_r13[j][rach_info_level_idx] = 5;
-                          } else if (!strcmp(mac_ContentionResolutionTimer_r13, "sf480")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mac_ContentionResolutionTimer_r13[j][rach_info_level_idx] = 6;
-                          } else if (!strcmp(mac_ContentionResolutionTimer_r13, "sf960")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mac_ContentionResolutionTimer_r13[j][rach_info_level_idx] = 7;
-                          } else {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, mac_ContentionResolutionTimer_r13 unknown value!\n",
-                                           RC.config_file_name);
-                          }
-
-                          if (!strcmp(rar_HoppingConfig_r13, "on")) {
-                              RRC_CONFIGURATION_REQ (msg_p).rar_HoppingConfig_r13[j][rach_info_level_idx] = 0;
-                          } else if (!strcmp(rar_HoppingConfig_r13, "off")) {
-                              RRC_CONFIGURATION_REQ (msg_p).rar_HoppingConfig_r13[j][rach_info_level_idx] = 1;
-                          } else {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, rar_HoppingConfig_r13 unknown value!\n",
-                                           RC.config_file_name);
-                          }
-
-                      } // for
-
-                      printf("DEBUGGING][KOGO][CHAR*]: ra_ResponseWindowSize_r13: %s - %d\n", preambleTransMax_CE_r13, RRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindowSize_r13[j][0]);
-                      printf("DEBUGGING][KOGO][CHAR*]: mac_ContentionResolutionTimer_r13: %s - %d\n", mac_ContentionResolutionTimer_r13, RRC_CONFIGURATION_REQ (msg_p).mac_ContentionResolutionTimer_r13[j][0]);
-                      printf("DEBUGGING][KOGO][CHAR*]: rar_HoppingConfig_r13: %s - %d\n", rar_HoppingConfig_r13, RRC_CONFIGURATION_REQ (msg_p).rar_HoppingConfig_r13[j][0]);
-
-                      if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_A_R13, &pdsch_maxNumRepetitionCEmodeA_r13)) {
-                          RRC_CONFIGURATION_REQ(msg_p).pdsch_maxNumRepetitionCEmodeA_r13[j] = CALLOC(1, sizeof(long));
-                          if (!strcmp(pdsch_maxNumRepetitionCEmodeA_r13, "r16")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).pdsch_maxNumRepetitionCEmodeA_r13[j] = 0;
-                          } else if (!strcmp(pdsch_maxNumRepetitionCEmodeA_r13, "r32")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).pdsch_maxNumRepetitionCEmodeA_r13[j] = 1;
-                          } else {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, pdsch_maxNumRepetitionCEmodeA_r13 unknown value!\n",
-                                           RC.config_file_name);
-                          }
-                          printf("DEBUGGING][KOGO][CHAR*]: pdsch_maxNumRepetitionCEmodeA_r13: %s - %d\n", pdsch_maxNumRepetitionCEmodeA_r13, *RRC_CONFIGURATION_REQ (msg_p).pdsch_maxNumRepetitionCEmodeA_r13[j]);
-                      }
 
 
                       if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_B_R13, &pdsch_maxNumRepetitionCEmodeB_r13)) {
@@ -2779,25 +3287,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                           }
                           printf("DEBUGGING][KOGO][CHAR*]: pdsch_maxNumRepetitionCEmodeB_r13: %s - %d\n", pdsch_maxNumRepetitionCEmodeB_r13, *RRC_CONFIGURATION_REQ (msg_p).pdsch_maxNumRepetitionCEmodeB_r13[j]);
                       }
-
-
-
-                      if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_A_R13, &pusch_maxNumRepetitionCEmodeA_r13)) {
-                          RRC_CONFIGURATION_REQ(msg_p).pusch_maxNumRepetitionCEmodeA_r13[j] = CALLOC(1, sizeof(long));
-                          if (!strcmp(pusch_maxNumRepetitionCEmodeA_r13, "r8")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).pusch_maxNumRepetitionCEmodeA_r13[j] =  0;
-                          } else if (!strcmp(pusch_maxNumRepetitionCEmodeA_r13, "r16")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).pusch_maxNumRepetitionCEmodeA_r13[j] =  1;
-                          } else if (!strcmp(pusch_maxNumRepetitionCEmodeA_r13, "r32")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).pusch_maxNumRepetitionCEmodeA_r13[j] =  2;
-                          } else {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, pusch_maxNumRepetitionCEmodeA_r13 unknown value!\n",
-                                           RC.config_file_name);
-                          }
-                          printf("DEBUGGING][KOGO][CHAR*]: pusch_maxNumRepetitionCEmodeA_r13: %s - %d\n", pusch_maxNumRepetitionCEmodeA_r13, *RRC_CONFIGURATION_REQ (msg_p).pusch_maxNumRepetitionCEmodeA_r13[j]);
-                      }
-
 
 
                       if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_B_R13, &pusch_maxNumRepetitionCEmodeB_r13)) {
@@ -2831,30 +3320,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                              RRC_CONFIGURATION_REQ(msg_p).pusch_HoppingOffset_v1310[j] = CALLOC(1, sizeof(long));
                              *RRC_CONFIGURATION_REQ(msg_p).pusch_HoppingOffset_v1310[j] = pusch_HoppingOffset_v1310;
                              printf("DEBUGGING][KOGO][CHAR*]: pusch_HoppingOffset_v1310 %d\n", *RRC_CONFIGURATION_REQ (msg_p).pusch_HoppingOffset_v1310[j]);
-                      }
-
-                      if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL0, &pucch_NumRepetitionCE_Msg4_Level0_r13))
-                      {
-                          RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = CALLOC(1, sizeof(long));
-                          ++cnt;
-                          if (!strcmp(pucch_NumRepetitionCE_Msg4_Level0_r13, "n1")) {
-                              *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = 0;
-                          } else if (!strcmp(pucch_NumRepetitionCE_Msg4_Level0_r13, "n2")) {
-                              *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = 1;
-                          } else if (!strcmp(pucch_NumRepetitionCE_Msg4_Level0_r13, "n4")) {
-                              *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = 2;
-                          } else if (!strcmp(pucch_NumRepetitionCE_Msg4_Level0_r13, "n8")) {
-                              *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = 3;
-                          } else {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, pucch_NumRepetitionCE_Msg4_Level0_r13 unknown value!\n",
-                                           RC.config_file_name);
-                          }
-                          printf("DEBUGGING][KOGO][CHAR*]: pucch_NumRepetitionCE_Msg4_Level0_r13: %s - %d\n", pucch_NumRepetitionCE_Msg4_Level0_r13, *RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j]);
-                      }
-                      else
-                      {
-                          RRC_CONFIGURATION_REQ (msg_p).pucch_NumRepetitionCE_Msg4_Level0_r13[j] = NULL;;
                       }
 
 
@@ -2934,23 +3399,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                       }
 
 
-                      rsrp_range_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_RSRP_RANGE_LIST);
-                      int num_rsrp_list = config_setting_length(rsrp_range_list);
-                      RRC_CONFIGURATION_REQ (msg_p).rsrp_range_list_size[j] = num_rsrp_list;
-                      int rsrp_range_idx;
-                      for (rsrp_range_idx = 0; rsrp_range_idx < num_rsrp_list; ++rsrp_range_idx)
-                      {
-                          rsrp_range_member = config_setting_get_elem(rsrp_range_list, rsrp_range_idx);
-                          if (!(config_setting_lookup_int(rsrp_range_member, ENB_CONFIG_STRING_RSRP_RANGE_BR, &rsrp_range_br)))
-                          {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, rsrp_range %d!\n",
-                                           RC.config_file_name, nb_cc++);
-                          }
-                          RRC_CONFIGURATION_REQ (msg_p).rsrp_range[j][rsrp_range_idx] = rsrp_range_br;
-                          printf("[DEBUGGING][KOGO] : rsrp range br = %d\n", rsrp_range_br);
-                      }
-
                       prach_parameters_ce_r13_list = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_PRACH_PARAMETERS_CE_R13);
                       int num_prach_parameters_ce_r13 = config_setting_length(prach_parameters_ce_r13_list);
                       RRC_CONFIGURATION_REQ (msg_p).prach_parameters_list_size[j] = num_prach_parameters_ce_r13;
@@ -2972,128 +3420,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
 
                           printf("[DEBUGGING][KOGO] : prach hopping config = %d\n", prach_HoppingConfig_r13);
 
-                          RRC_CONFIGURATION_REQ (msg_p).prach_config_index[j][prach_parameters_index]                  = prach_config_index_br;
-                          RRC_CONFIGURATION_REQ (msg_p).prach_freq_offset[j][prach_parameters_index]                   = prach_freq_offset_br;
-                          RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index]          = prach_StartingSubframe_r13;
-
-                          if (config_setting_lookup_string(prach_parameters_ce_r13, ENB_CONFIG_STRING_MAX_NUM_PREAMBLE_ATTEMPT_CE_R13, &maxNumPreambleAttemptCE_r13))
-                          {
-                              RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = calloc(1, sizeof(long));
-                              if (!strcmp(maxNumPreambleAttemptCE_r13, "n3")) {
-                                  *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = 0;
-                              } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n4")) {
-                                  *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = 1;
-                              } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n5")) {
-                                  *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = 2;
-                              } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n6")) {
-                                  *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = 3;
-                              } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n7")) {
-                                  *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = 4;
-                              } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n8")) {
-                                  *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = 5;
-                              } else if (!strcmp(maxNumPreambleAttemptCE_r13, "n10")) {
-                                  *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = 6;
-                              } else if (!strcmp(maxNumPreambleAttemptCE_r13, "spare1")) {
-                                  *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = 7;
-                              } else {
-                                  AssertFatal (0,
-                                      "Failed to parse eNB configuration file %s, maxNumPreambleAttemptCE_r13 unknown value !! %d!\n",
-                                      RC.config_file_name, nb_cc++);
-                              }
-                              printf("[DEBUGGING][KOGO][CHAR*]: maxNumPreambleAttemptCE_r13: %s - %d\n", maxNumPreambleAttemptCE_r13, *RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index]);
-                          }
-                          else
-                          {
-                              RRC_CONFIGURATION_REQ (msg_p).maxNumPreambleAttemptCE_r13[j][prach_parameters_index] = NULL;
-                          }
-
-
-
-                          if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n1")) {
-                              RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prach_parameters_index] = 0;
-                          } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n2")) {
-                              RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prach_parameters_index] = 1;
-                          } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n4")) {
-                              RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prach_parameters_index] = 2;
-                          } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n8")) {
-                              RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prach_parameters_index] = 3;
-                          } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n16")) {
-                              RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prach_parameters_index] = 4;
-                          } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n32")) {
-                              RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prach_parameters_index] = 5;
-                          } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n64")) {
-                              RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prach_parameters_index] = 6;
-                          } else if (!strcmp(numRepetitionPerPreambleAttempt_r13, "n128")) {
-                              RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prach_parameters_index] = 7;
-                          } else {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, numRepetitionPerPreambleAttempt_r13 unknown value !! %d!\n",
-                                           RC.config_file_name, nb_cc++);
-                          }
-                          printf("[DEBUGGING][KOGO][CHAR*]: numRepetitionPerPreambleAttempt_r13: %s - %d\n", numRepetitionPerPreambleAttempt_r13, RRC_CONFIGURATION_REQ (msg_p).numRepetitionPerPreambleAttempt_r13[j][prach_parameters_index]);
-
-
-                          if (!strcmp(mpdcch_NumRepetition_RA_r13, "r1")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 0;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r2")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 1;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r4")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 2;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r8")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 3;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r16")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 4;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r32")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 5;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r64")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 6;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r128")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 7;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r256")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 8;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r512")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 9;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r1024")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 10;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "r2048")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 11;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "spare4")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 12;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "spare3")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 13;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "spare2")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 14;
-                          } else if (!strcmp(mpdcch_NumRepetition_RA_r13, "spare1")) {
-                              RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index] = 15;
-                          } else {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, mpdcch_NumRepetition_RA_r13 unknown value !! %d!\n",
-                                           RC.config_file_name, nb_cc++);
-                          }
-
-                          printf("[DEBUGGING][KOGO][CHAR*]: mpdcch_NumRepetition_RA_r13: %s - %d\n", mpdcch_NumRepetition_RA_r13,  RRC_CONFIGURATION_REQ (msg_p).mpdcch_NumRepetition_RA_r13[j][prach_parameters_index]);
-
-                          if (!strcmp(prach_HoppingConfig_r13, "off")) {
-                              RRC_CONFIGURATION_REQ (msg_p).prach_HoppingConfig_r13[j][prach_parameters_index] = 1;
-                          } else if (!strcmp(prach_HoppingConfig_r13, "on")) {
-                              RRC_CONFIGURATION_REQ (msg_p).prach_HoppingConfig_r13[j][prach_parameters_index] = 0;
-                          } else {
-                              AssertFatal (0,
-                                           "Failed to parse eNB configuration file %s, prach_HoppingConfig_r13 unknown value !! %d!\n",
-                                           RC.config_file_name, nb_cc++);
-                          }
-
-                          printf("[DEBUGGING][KOGO][CHAR*]: prach_HoppingConfig_r13: %s - %d\n", prach_HoppingConfig_r13, RRC_CONFIGURATION_REQ (msg_p).prach_HoppingConfig_r13[j][prach_parameters_index]);
-
-                          if (config_setting_lookup_int(prach_parameters_ce_r13, ENB_CONFIG_STRING_PRACH_STARTING_SUBFRAME_R13, &prach_StartingSubframe_r13))
-                          {
-                              RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index] = calloc(1, sizeof(long));
-                              *RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index] = prach_StartingSubframe_r13;
-                          }
-                          else
-                          {
-                              RRC_CONFIGURATION_REQ (msg_p).prach_StartingSubframe_r13[j][prach_parameters_index] = NULL;
-                          }
 
 
                           max_available_narrow_band_list = config_setting_get_member(prach_parameters_ce_r13, ENB_CONFIG_STRING_MAX_AVAILABLE_NARROW_BAND);
@@ -3255,54 +3581,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
 
 
 
-                    if (config_setting_lookup_string(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_INTERVAL_UL_HOPPING_CONFIG_COMMON_MODE_A_R13, &sib2_interval_ULHoppingConfigCommonModeA_r13))
-                    {
-
-                        RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j] = CALLOC(1, sizeof(long));
-                        config_setting_lookup_string(setting_freq_hoppingParameters_r13, ENB_CONFIG_STRING_INTERVAL_UL_HOPPING_CONFIG_COMMON_MODE_A_R13_VAL, &sib2_interval_ULHoppingConfigCommonModeA_r13_val);
-                        if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13, "FDD")) {
-                            *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j] = 0;
-                            if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int1")) {
-                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 0;
-                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int2")) {
-                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 1;
-                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int4")) {
-                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 2;
-                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int8")) {
-                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 3;
-                            } else {
-                                AssertFatal (0,
-                                             "Failed to parse eNB configuration file %s, sib2_interval_ULHoppingConfigCommonModeA_r13_val unknown value !!\n",
-                                             RC.config_file_name);
-                            }
-                        } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13, "TDD")) {
-                            *RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j] = 1;
-                            if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int1")) {
-                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 0;
-                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int5")) {
-                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 1;
-                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int10")) {
-                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 2;
-                            } else if (!strcmp(sib2_interval_ULHoppingConfigCommonModeA_r13_val, "int20")) {
-                                RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j] = 3;
-                            } else {
-                                AssertFatal (0,
-                                             "Failed to parse eNB configuration file %s, sib2_interval_ULHoppingConfigCommonModeA_r13_val unknown value !!\n",
-                                             RC.config_file_name);
-                            }
-                        } else {
-                            AssertFatal (0,
-                                         "Failed to parse eNB configuration file %s, sib2_interval_ULHoppingConfigCommonModeA_r13 unknown value !!\n",
-                                         RC.config_file_name);
-                        }
-
-                        printf("[DEBUGGING][KOGO][CHAR*]: sib2_interval_ULHoppingConfigCommonModeA_r13: %s - %d\n", sib2_interval_ULHoppingConfigCommonModeA_r13, *RRC_CONFIGURATION_REQ (msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j]);
-                    }
-                    else
-                    {
-                         RRC_CONFIGURATION_REQ(msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13[j] = NULL;
-                    }
-                    printf("[DEBUGGING][KOGO][CHAR*]: sib2_interval_ULHoppingConfigCommonModeA_r13_val: %s - %d\n", sib2_interval_ULHoppingConfigCommonModeA_r13_val, RRC_CONFIGURATION_REQ (msg_p).sib2_interval_ULHoppingConfigCommonModeA_r13_val[j]);
 
 
 
@@ -3434,217 +3712,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                     continue; // FIXME this prevents segfaults below, not sure what happens after function exit
                 }
 
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].prach_root =  prach_root;
-
-                if ((prach_root <0) || (prach_root > 1023))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_root choice: 0..1023 !\n",
-                                 RC.config_file_name, i, prach_root);
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].prach_config_index = prach_config_index;
-
-                if ((prach_config_index <0) || (prach_config_index > 63))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_config_index choice: 0..1023 !\n",
-                                 RC.config_file_name, i, prach_config_index);
-
-                if (!prach_high_speed)
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
-                                 RC.config_file_name, i, ENB_CONFIG_STRING_PRACH_HIGH_SPEED);
-                else if (strcmp(prach_high_speed, "ENABLE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_high_speed = TRUE;
-                }
-                else if (strcmp(prach_high_speed, "DISABLE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_high_speed = FALSE;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for prach_config choice: ENABLE,DISABLE !\n",
-                                RC.config_file_name, i, prach_high_speed);
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].prach_zero_correlation =prach_zero_correlation;
-
-                if ((prach_zero_correlation <0) || (prach_zero_correlation > 15))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_zero_correlation choice: 0..15!\n",
-                                 RC.config_file_name, i, prach_zero_correlation);
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].prach_freq_offset = prach_freq_offset;
-
-                if ((prach_freq_offset <0) || (prach_freq_offset > 94))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 0..94!\n",
-                                 RC.config_file_name, i, prach_freq_offset);
-
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pucch_delta_shift = pucch_delta_shift-1;
-
-                if ((pucch_delta_shift <1) || (pucch_delta_shift > 3))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_delta_shift choice: 1..3!\n",
-                                 RC.config_file_name, i, pucch_delta_shift);
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pucch_nRB_CQI = pucch_nRB_CQI;
-
-                if ((pucch_nRB_CQI <0) || (pucch_nRB_CQI > 98))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nRB_CQI choice: 0..98!\n",
-                                 RC.config_file_name, i, pucch_nRB_CQI);
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pucch_nCS_AN = pucch_nCS_AN;
-
-                if ((pucch_nCS_AN <0) || (pucch_nCS_AN > 7))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
-                                 RC.config_file_name, i, pucch_nCS_AN);
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pdsch_referenceSignalPower = pdsch_referenceSignalPower;
-
-                if ((pdsch_referenceSignalPower <-60) || (pdsch_referenceSignalPower > 50))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pdsch_referenceSignalPower choice:-60..50!\n",
-                                 RC.config_file_name, i, pdsch_referenceSignalPower);
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pdsch_p_b = pdsch_p_b;
-
-                if ((pdsch_p_b <0) || (pdsch_p_b > 3))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pdsch_p_b choice: 0..3!\n",
-                                 RC.config_file_name, i, pdsch_p_b);
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pusch_n_SB = pusch_n_SB;
-
-                if ((pusch_n_SB <1) || (pusch_n_SB > 4))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_n_SB choice: 1..4!\n",
-                                 RC.config_file_name, i, pusch_n_SB);
-
-                if (!pusch_hoppingMode)
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d define %s: interSubframe,intraAndInterSubframe!\n",
-                                 RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_HOPPINGMODE);
-                else if (strcmp(pusch_hoppingMode, "interSubFrame") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_hoppingMode = PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_interSubFrame;
-                }
-                else if (strcmp(pusch_hoppingMode, "intraAndInterSubFrame") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_hoppingMode = PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_intraAndInterSubFrame;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_hoppingMode choice: interSubframe,intraAndInterSubframe!\n",
-                                RC.config_file_name, i, pusch_hoppingMode);
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pusch_hoppingOffset = pusch_hoppingOffset;
-
-                if ((pusch_hoppingOffset<0) || (pusch_hoppingOffset>98))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_hoppingOffset choice: 0..98!\n",
-                                 RC.config_file_name, i, pusch_hoppingMode);
-
-                if (!pusch_enable64QAM)
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
-                                 RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_ENABLE64QAM);
-                else if (strcmp(pusch_enable64QAM, "ENABLE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_enable64QAM = TRUE;
-                }
-                else if (strcmp(pusch_enable64QAM, "DISABLE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_enable64QAM = FALSE;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_enable64QAM choice: ENABLE,DISABLE!\n",
-                                RC.config_file_name, i, pusch_enable64QAM);
-
-                if (!pusch_groupHoppingEnabled)
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
-                                RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_GROUP_HOPPING_EN);
-                else if (strcmp(pusch_groupHoppingEnabled, "ENABLE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_groupHoppingEnabled = TRUE;
-                }
-                else if (strcmp(pusch_groupHoppingEnabled, "DISABLE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_groupHoppingEnabled = FALSE;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_groupHoppingEnabled choice: ENABLE,DISABLE!\n",
-                                RC.config_file_name, i, pusch_groupHoppingEnabled);
-
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pusch_groupAssignment = pusch_groupAssignment;
-
-                if ((pusch_groupAssignment<0)||(pusch_groupAssignment>29))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_groupAssignment choice: 0..29!\n",
-                                 RC.config_file_name, i, pusch_groupAssignment);
-
-                if (!pusch_sequenceHoppingEnabled)
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
-                                 RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_SEQUENCE_HOPPING_EN);
-                else if (strcmp(pusch_sequenceHoppingEnabled, "ENABLE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_sequenceHoppingEnabled = TRUE;
-                }
-                else if (strcmp(pusch_sequenceHoppingEnabled, "DISABLE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_sequenceHoppingEnabled = FALSE;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_sequenceHoppingEnabled choice: ENABLE,DISABLE!\n",
-                                RC.config_file_name, i, pusch_sequenceHoppingEnabled);
-
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].pusch_nDMRS1 = pusch_nDMRS1;  //cyclic_shift in RRC!
-
-                if ((pusch_nDMRS1 <0) || (pusch_nDMRS1>7))
-                    AssertFatal (0,
-                                 "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_nDMRS1 choice: 0..7!\n",
-                                 RC.config_file_name, i, pusch_nDMRS1);
-
-                if (strcmp(phich_duration, "NORMAL") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_duration = PHICH_Config__phich_Duration_normal;
-                }
-                else if (strcmp(phich_duration, "EXTENDED") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_duration = PHICH_Config__phich_Duration_extended;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for phich_duration choice: NORMAL,EXTENDED!\n",
-                                RC.config_file_name, i, phich_duration);
-
-                if (strcmp(phich_resource, "ONESIXTH") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_resource = PHICH_Config__phich_Resource_oneSixth;
-                }
-                else if (strcmp(phich_resource, "HALF") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_resource = PHICH_Config__phich_Resource_half;
-                }
-                else if (strcmp(phich_resource, "ONE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_resource = PHICH_Config__phich_Resource_one;
-                }
-                else if (strcmp(phich_resource, "TWO") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_resource = PHICH_Config__phich_Resource_two;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for phich_resource choice: ONESIXTH,HALF,ONE,TWO!\n",
-                                RC.config_file_name, i, phich_resource);
-
-                printf("phich.resource %d (%s), phich.duration %d (%s)\n",
-                       RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_resource, phich_resource,
-                       RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].phich_duration, phich_duration);
-
-                if (strcmp(srs_enable, "ENABLE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].srs_enable = TRUE;
-                }
-                else if (strcmp(srs_enable, "DISABLE") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].srs_enable = FALSE;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
-                                RC.config_file_name, i, srs_enable);
-
                 if (RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].srs_enable == TRUE) {
                     if (!(config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_SRS_BANDWIDTH_CONFIG, &srs_BandwidthConfig)
                           && config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_SRS_SUBFRAME_CONFIG, &srs_SubframeConfig)
@@ -3691,130 +3758,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                                     RC.config_file_name, i, srs_MaxUpPts);
                 }
 
-                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_p0_Nominal = pusch_p0_Nominal;
-
-                if ((pusch_p0_Nominal < -126) || (pusch_p0_Nominal > 24))
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_p0_Nominal choice: -126..24 !\n",
-                                RC.config_file_name, i, pusch_p0_Nominal);
-
-                if (strcmp(pusch_alpha, "AL0") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al0;
-                }
-                else if (strcmp(pusch_alpha, "AL04") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al04;
-                }
-                else if (strcmp(pusch_alpha, "AL05") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al05;
-                }
-                else if (strcmp(pusch_alpha, "AL06") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al06;
-                }
-                else if (strcmp(pusch_alpha, "AL07") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al07;
-                }
-                else if (strcmp(pusch_alpha, "AL08") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al08;
-                }
-                else if (strcmp(pusch_alpha, "AL09") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al09;
-                }
-                else if (strcmp(pusch_alpha, "AL1") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pusch_alpha = Alpha_r12_al1;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_Alpha choice: AL0,AL04,AL05,AL06,AL07,AL08,AL09,AL1!\n",
-                                RC.config_file_name, i, pusch_alpha);
-
-                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_p0_Nominal = pucch_p0_Nominal;
-
-                if ((pucch_p0_Nominal < -127) || (pucch_p0_Nominal > -96))
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_p0_Nominal choice: -127..-96 !\n",
-                                RC.config_file_name, i, pucch_p0_Nominal);
-
-                RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].msg3_delta_Preamble = msg3_delta_Preamble;
-
-                if ((msg3_delta_Preamble < -1) || (msg3_delta_Preamble > 6))
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for msg3_delta_Preamble choice: -1..6 !\n",
-                                RC.config_file_name, i, msg3_delta_Preamble);
-
-
-                if (strcmp(pucch_deltaF_Format1, "deltaF_2") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1 = DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF_2;
-                }
-                else if (strcmp(pucch_deltaF_Format1, "deltaF0") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1= DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF0;
-                }
-                else if (strcmp(pucch_deltaF_Format1, "deltaF2") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1= DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format1 choice: deltaF_2,dltaF0,deltaF2!\n",
-                                RC.config_file_name, i, pucch_deltaF_Format1);
-
-                if (strcmp(pucch_deltaF_Format1b, "deltaF1") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1b= DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF1;
-                }
-                else if (strcmp(pucch_deltaF_Format1b, "deltaF3") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1b= DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
-                }
-                else if (strcmp(pucch_deltaF_Format1b, "deltaF5") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format1b= DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF5;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format1b choice: deltaF1,dltaF3,deltaF5!\n",
-                                RC.config_file_name, i, pucch_deltaF_Format1b);
-
-
-                if (strcmp(pucch_deltaF_Format2, "deltaF_2") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2= DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF_2;
-                }
-                else if (strcmp(pucch_deltaF_Format2, "deltaF0") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2= DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF0;
-                }
-                else if (strcmp(pucch_deltaF_Format2, "deltaF1") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2= DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF1;
-                }
-                else if (strcmp(pucch_deltaF_Format2, "deltaF2") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2= DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF2;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2 choice: deltaF_2,dltaF0,deltaF1,deltaF2!\n",
-                                RC.config_file_name, i, pucch_deltaF_Format2);
-
-                if (strcmp(pucch_deltaF_Format2a, "deltaF_2") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2a= DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF_2;
-                }
-                else if (strcmp(pucch_deltaF_Format2a, "deltaF0") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2a= DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF0;
-                }
-                else if (strcmp(pucch_deltaF_Format2a, "deltaF2") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2a= DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF2;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2a choice: deltaF_2,dltaF0,deltaF2!\n",
-                                RC.config_file_name, i, pucch_deltaF_Format2a);
-
-                if (strcmp(pucch_deltaF_Format2b, "deltaF_2") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2b= DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF_2;
-                }
-                else if (strcmp(pucch_deltaF_Format2b, "deltaF0") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2b= DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF0;
-                }
-                else if (strcmp(pucch_deltaF_Format2b, "deltaF2") == 0) {
-                    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].pucch_deltaF_Format2b= DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF2;
-                }
-                else
-                    AssertFatal(0,
-                                "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2b choice: deltaF_2,dltaF0,deltaF2!\n",
-                                RC.config_file_name, i, pucch_deltaF_Format2b);
 
 
 
@@ -4282,74 +4225,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
 
                 printf("[DEBUGGING][KOGO][CHAR*]: ue_TransmissionMode : %s - %d\n", ue_TransmissionMode, RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[j].ue_TransmissionMode);
 
-                setting_pcch_config_v1310 = config_setting_get_member(setting_br13, ENB_CONFIG_STRING_PCCH_CONFIG_V1310);
-                if (setting_pcch_config_v1310 != NULL)
-                {
-                    RRC_CONFIGURATION_REQ(msg_p).pcch_config_v1310[j] = TRUE;
-                    if (!config_setting_lookup_int(setting_pcch_config_v1310, ENB_CONFIG_STRING_PAGING_NARROWBANDS_R13, &paging_narrowbands_r13)
-                            || !config_setting_lookup_string(setting_pcch_config_v1310, ENB_CONFIG_STRING_MPDCCH_NUMREPETITION_PAGING_R13, &mpdcch_numrepetition_paging_r13)
-                            )
-                        AssertFatal(0,
-                                    "Failed to parse eNB configuration file %s, enb %d pcch_config_v1310!\n",
-                                    RC.config_file_name, i);
 
-                    RRC_CONFIGURATION_REQ(msg_p).paging_narrowbands_r13[j] = paging_narrowbands_r13;
-
-
-                    if (!strcmp(mpdcch_numrepetition_paging_r13, "r1")) {
-                        RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 0;
-                    } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r2")) {
-                        RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 1;
-                    } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r4")) {
-                        RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 2;
-                    } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r8")) {
-                        RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 3;
-                    } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r16")) {
-                        RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 4;
-                    } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r32")) {
-                        RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 5;
-                    } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r64")) {
-                        RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 6;
-                    } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r128")) {
-                        RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 7;
-                    } else if (!strcmp(mpdcch_numrepetition_paging_r13, "r256")) {
-                        RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j] = 8;
-                    } else {
-                        AssertFatal(0,
-                                    "Failed to parse eNB configuration file %s, nb_v1310, unknown value !\n",
-                                    RC.config_file_name);
-                    }
-
-                    printf("[DEBUGGING][KOGO][CHAR*] mpdcch_numrepetition_paging_r13: %s - %d\n", mpdcch_numrepetition_paging_r13,  RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[j]);
-
-                    if (config_setting_lookup_string(setting_pcch_config_v1310, ENB_CONFIG_STRING_NB_V1310, &nb_v1310))
-                    {
-                        RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = CALLOC(1, sizeof(long));
-                        if (!strcmp(nb_v1310, "one64thT")) {
-                            *RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = 0;
-                        } else if (!strcmp(nb_v1310, "one128thT")) {
-                            *RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = 1;
-                        } else if (!strcmp(nb_v1310, "one256thT")) {
-                            *RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = 2;
-                        } else {
-                            AssertFatal(0,
-                                        "Failed to parse eNB configuration file %s, nb_v1310, unknown value !\n",
-                                        RC.config_file_name);
-                        }
-                        printf("[DEBUGGING][KOGO][CHAR*] nb_v1310: %s - %d\n", nb_v1310,  *RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j]);
-
-                    }
-                    else
-                    {
-                        RRC_CONFIGURATION_REQ(msg_p).nb_v1310[j] = NULL;
-                    }
-
-
-                }
-                else
-                {
-                    RRC_CONFIGURATION_REQ(msg_p).pcch_config_v1310[j] = FALSE;
-                }
 
                 if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_HYPERSFN, &hyperSFN_r13))
                 {
@@ -4388,72 +4264,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                 /////SIB2 Parameters
 
 
-                  if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_PRACH_CONFIGCOMMON_V1310, &prach_ConfigCommon_v1310) && !strcmp(prach_ConfigCommon_v1310, "ENABLE"))
-                  {
-                      RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_ConfigCommon_v1310 = TRUE;
-
-                      if (config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_MPDCCH_STARTSF_CSS_RA_R13, &mpdcch_startSF_CSS_RA_r13))
-                      {
-                          if (!config_setting_lookup_string(setting_br13, ENB_CONFIG_STRING_MPDCCH_STARTSF_CSS_RA_R13_VAL, &mpdcch_startSF_CSS_RA_r13_val))
-                          {
-                              AssertFatal(0,
-                                          "Failed to parse eNB configuration file %s, enb %d mpdcch_startSF_CSS_RA_r13_val!\n",
-                                          RC.config_file_name, i);
-
-                          }
-                          RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13 = calloc(1, sizeof(BOOLEAN_t));
-
-                          if (!strcmp(mpdcch_startSF_CSS_RA_r13, "tdd-r13")) {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13 = FALSE;
-                          } else {
-                              *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13 = TRUE;
-                          }
-
-                          if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v1")) {
-                              RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 0;
-                          } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v1dot5")) {
-                              RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 1;
-                          } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v2")) {
-                              RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 2;
-                          } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v2dot5")) {
-                              RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 3;
-                          } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v4")) {
-                              RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 4;
-                          } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v5")) {
-                              RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 5;
-                          } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "v8")) {
-                              RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 6;
-                          } else if (!strcmp(mpdcch_startSF_CSS_RA_r13_val, "10")) {
-                              RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val = 7;
-                          } else {
-                              AssertFatal(0,
-                                          "Failed to parse eNB configuration file %s, enb %d mpdcch_startSF_CSS_RA_r13_val! Unknown Value !!\n",
-                                          RC.config_file_name, i);
-                          }
-                          printf("[DEBUGGING][KOGO][CHAR*] mpdcch_startSF_CSS_RA_r13_val %s - %d\n", mpdcch_startSF_CSS_RA_r13_val, RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13_val);
-
-                      }
-                      else
-                      {
-                          RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].mpdcch_startSF_CSS_RA_r13 = NULL;
-                      }
-
-                      //if (config_setting_lookup_int(setting_br13, ENB_CONFIG_STRING_PRACH_HOPPINGOFFSET_R13, &prach_HoppingOffset_r13))
-                      //{
-                          RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_HoppingOffset_r13 = calloc(1, sizeof(long));
-                          *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_HoppingOffset_r13 = prach_HoppingOffset_r13;
-
-                      //}
-                      //else
-                      //{
-                      //    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_HoppingOffset_r13 = NULL;
-                      //}
-
-                  }
-                  else
-                  {
-                      RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[j].prach_ConfigCommon_v1310 = FALSE;
-                  }
               }
               else
               {

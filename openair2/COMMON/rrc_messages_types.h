@@ -197,7 +197,6 @@ typedef struct RrcConfigurationReq_s {
   long*			  q_QualMinRSRQ_CE_r13                   [MAX_NUM_CCs];
   BOOLEAN_t		  bandwidthReducedAccessRelatedInfo_r13  [MAX_NUM_CCs];
 
-//  +kogo -- FIXME -- size 10 is temporary
   long            si_Narrowband_r13         [MAX_NUM_CCs][32];
   long            si_TBS_r13                [MAX_NUM_CCs][32];
   int             scheduling_info_br_size   [MAX_NUM_CCs];
