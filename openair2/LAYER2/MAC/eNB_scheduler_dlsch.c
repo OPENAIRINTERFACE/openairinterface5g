@@ -1181,8 +1181,9 @@ schedule_ue_spec(
           // this is the normalized RX power
 	  eNB_UE_stats =  &UE_list->eNB_UE_stats[CC_id][UE_id];
 
+          /* TODO: fix how we deal with power, unit is not dBm, it's special from nfapi */
 	  normalized_rx_power = ue_sched_ctl->pucch1_snr[CC_id];
-	  target_rx_power = 20;
+	  target_rx_power = 208;
 	    
           // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -1195,10 +1196,10 @@ schedule_ue_spec(
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame=frameP;
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe=subframeP;
 	      
-	      if (normalized_rx_power>(target_rx_power+1)) {
+	      if (normalized_rx_power>(target_rx_power+4)) {
 		tpc = 0; //-1
 		tpc_accumulated--;
-	      } else if (normalized_rx_power<(target_rx_power-1)) {
+	      } else if (normalized_rx_power<(target_rx_power-4)) {
 		tpc = 2; //+1
 		tpc_accumulated++;
 	      } else {

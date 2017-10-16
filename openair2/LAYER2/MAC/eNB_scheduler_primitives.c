@@ -3606,8 +3606,11 @@ void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, sub_frame_t 
 
     UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
+#if 0
+    /* for the moment don't use ul_cqi from SR, value is too different from harq */
     sched_ctl->pucch1_snr[cc_idP]        = ul_cqi;
     sched_ctl->pucch1_cqi_update[cc_idP] = 1;
+#endif
 
     UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
     UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;

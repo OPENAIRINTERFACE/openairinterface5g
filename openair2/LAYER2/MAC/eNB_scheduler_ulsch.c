@@ -1008,7 +1008,7 @@ abort();
 	  
           // this is the normalized RX power and this should be constant (regardless of mcs
           normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
-          target_rx_power = 200;
+          target_rx_power = 178;
 	  
           // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -1018,10 +1018,10 @@ abort();
 	    {
 	      UE_template->pusch_tpc_tx_frame=frameP;
 	      UE_template->pusch_tpc_tx_subframe=subframeP;
-	      if (normalized_rx_power>(target_rx_power+1)) {
+	      if (normalized_rx_power>(target_rx_power+4)) {
 		tpc = 0; //-1
 		tpc_accumulated--;
-	      } else if (normalized_rx_power<(target_rx_power-1)) {
+	      } else if (normalized_rx_power<(target_rx_power-4)) {
 		tpc = 2; //+1
 		tpc_accumulated++;
 	      } else {
