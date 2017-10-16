@@ -119,6 +119,8 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,i
 */
 void schedule_ue_spec(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 
+void schedule_ue_spec_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
+
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE

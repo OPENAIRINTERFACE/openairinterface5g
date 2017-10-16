@@ -535,7 +535,9 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
   schedule_CSI(module_idP, frameP, subframeP);
 
   // This schedules DLSCH in subframeP
-  schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
+  //schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
+
+  schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
 
   // Allocate CCEs for good after scheduling is done
 
