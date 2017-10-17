@@ -33,47 +33,29 @@ This section deals with basic functions for OFDM Modulation.
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-//static short temp2[2048*4] __attribute__((aligned(16)));
-
 //#define DEBUG_OFDM_MOD
 
 
 void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRAME_PARMS *frame_parms)
 {
 
-  uint8_t i;
-  int short_offset=0;
 
-  if ((2*nsymb) < frame_parms->symbols_per_tti)
-    short_offset = 1;
+  
+  PHY_ofdm_mod(txdataF,        // input
+	       txdata,         // output
+	       frame_parms->ofdm_symbol_size,                
+	       1,                 // number of symbols
+	       frame_parms->nb_prefix_samples0,               // number of prefix samples
+	       CYCLIC_PREFIX);
+  PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size,        // input
+	       txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0,         // output
+	       frame_parms->ofdm_symbol_size,                
+	       nsymb-1,
+	       frame_parms->nb_prefix_samples,               // number of prefix samples
+	       CYCLIC_PREFIX);
+  
 
-  //  printf("nsymb %d\n",nsymb);
-  for (i=0; i<((short_offset)+2*nsymb/frame_parms->symbols_per_tti); i++) {
-
-#ifdef DEBUG_OFDM_MOD
-    printf("slot i %d (txdata offset %d, txoutput %p)\n",i,(i*(frame_parms->samples_per_tti>>1)),
-           txdata+(i*(frame_parms->samples_per_tti>>1)));
-#endif
-
-    PHY_ofdm_mod(txdataF+(i*frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti>>1),        // input
-                 txdata+(i*frame_parms->samples_per_tti>>1),         // output
-                 frame_parms->ofdm_symbol_size,                
-                 1,                 // number of symbols
-                 frame_parms->nb_prefix_samples0,               // number of prefix samples
-                 CYCLIC_PREFIX);
-#ifdef DEBUG_OFDM_MOD
-    printf("slot i %d (txdata offset %d)\n",i,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*frame_parms->samples_per_tti>>1));
-#endif
-
-    PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size+(i*frame_parms->ofdm_symbol_size*(frame_parms->symbols_per_tti>>1)),        // input
-                 txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*(frame_parms->samples_per_tti>>1)),         // output
-                 frame_parms->ofdm_symbol_size,                
-                 (short_offset==1) ? 1 :(frame_parms->symbols_per_tti>>1)-1,//6,                 // number of symbols
-                 frame_parms->nb_prefix_samples,               // number of prefix samples
-                 CYCLIC_PREFIX);
-
-
-  }
+  
 }
 
 void PHY_ofdm_mod(int *input,                       /// pointer to complex input
@@ -85,7 +67,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
                  )
 {
 
-  static short temp[2048*4] __attribute__((aligned(32)));
+  short temp[2048*4] __attribute__((aligned(32)));
   unsigned short i,j;
   short k;
 

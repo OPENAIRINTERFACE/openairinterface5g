@@ -1945,8 +1945,8 @@ void init_RU(char *rf_config_file) {
       }
       else if (ru->function == eNodeB_3GPP) {  
 	ru->do_prach             = 0;                       // no prach processing in RU            
-	ru->feprx                = (get_nprocs()<=4) ? fep_full : ru_fep_full_2thread;                // RX DFTs
-	ru->feptx_ofdm           = (get_nprocs()<=4) ? feptx_ofdm : feptx_ofdm_2thread;              // this is fep with idft and precoding
+	ru->feprx                = (get_nprocs()<=2) ? fep_full : ru_fep_full_2thread;                // RX DFTs
+	ru->feptx_ofdm           = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;              // this is fep with idft and precoding
 	ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
 	ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
 	ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
