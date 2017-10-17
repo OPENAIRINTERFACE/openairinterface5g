@@ -366,6 +366,14 @@ static void dump_dl(Sched_Rsp_t *d)
   A("XXXX up          tpc_bitmap           %d\n", q->tpc_bitmap);
   A("XXXX up          transmission_power   %d\n", q->transmission_power);
           }
+          if (p->pdu_type == NFAPI_HI_DCI0_HI_PDU_TYPE) {
+            nfapi_hi_dci0_hi_pdu_rel8_t *q = &p->hi_pdu.hi_pdu_rel8;
+  A("XXXX up          rb start    %d\n", q->resource_block_start);
+  A("XXXX up          cs2_drms    %d\n", q->cyclic_shift_2_for_drms);
+  A("XXXX up          ack         %d\n", q->hi_value);
+  A("XXXX up          i_phich     %d\n", q->i_phich);
+  A("XXXX up          power       %d\n", q->transmission_power);
+          }
         }
       }
 
