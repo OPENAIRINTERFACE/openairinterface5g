@@ -1833,7 +1833,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
 
 
 
-//#ifdef Rel14
+#ifdef Rel14
                         char brparamspath[MAX_OPTNAME_SIZE*2 + 16];
                         sprintf(brparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_COMPONENT_BR_PARAMETERS);
                         config_get( brParams, sizeof(brParams)/sizeof(paramdef_t), brparamspath);
@@ -1915,10 +1915,10 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
                         // kogo -- recheck
                         RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = CALLOC(1, sizeof(BOOLEAN_t));
                         if (!strcmp(fdd_DownlinkOrTddSubframeBitmapBR_r13, "subframePattern40-r13")) {
-                            *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = TRUE;
+                            *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = FALSE;
                             RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_val_r13[j] = fdd_DownlinkOrTddSubframeBitmapBR_val_r13;
                          } else {
-                            *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = FALSE;
+                            *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[j] = TRUE;
                             RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_val_r13[j] = fdd_DownlinkOrTddSubframeBitmapBR_val_r13;
                         }
                         printf("[DEBUGGING][KOGO] fdd_DownlinkOrTddSubframeBitmapBR_r13 = %s\n", fdd_DownlinkOrTddSubframeBitmapBR_r13);
@@ -4271,7 +4271,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc)
               }*/
 
 
-//#endif
+#endif
                         //sprintf(brpath,"%s.%s.[%i].%s",enbpath,ENB_CONFIG_STRING_COMPONENT_CARRIERS,ENB_CONFIG_STRING_BR_PARAMETERS,j);
                         //config_get( CCsParams,sizeof(CCsParams)/sizeof(paramdef_t),ccspath);
 

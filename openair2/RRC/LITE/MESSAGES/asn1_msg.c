@@ -1501,15 +1501,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
           prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = configuration->mpdcch_NumRepetition_RA_r13[CC_id][prach_parameters_index];
           prach_parametersce_r13->prach_HoppingConfig_r13 = configuration->prach_HoppingConfig_r13[CC_id][prach_parameters_index];
 
-
-          printf("[DEBUGGING][KOGO][SIB23][WTF] : prach_ConfigIndex_r13 = %d\n", prach_parametersce_r13->prach_ConfigIndex_r13);
-          printf("[DEBUGGING][KOGO][SIB23][WTF] : prach_FreqOffset_r13 = %d\n", prach_parametersce_r13->prach_FreqOffset_r13);
-          printf("[DEBUGGING][KOGO][SIB23][WTF] : prach_StartingSubframe_r13 = %d\n", *prach_parametersce_r13->prach_StartingSubframe_r13);
-          printf("[DEBUGGING][KOGO][SIB23][WTF] : maxNumPreambleAttemptCE_r13 = %d\n", *prach_parametersce_r13->maxNumPreambleAttemptCE_r13);
-          printf("[DEBUGGING][KOGO][SIB23][WTF] : numRepetitionPerPreambleAttempt_r13 = %d\n", prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13);
-          printf("[DEBUGGING][KOGO][SIB23][WTF] : mpdcch_NumRepetition_RA_r13 = %d\n", prach_parametersce_r13->mpdcch_NumRepetition_RA_r13);
-          printf("[DEBUGGING][KOGO][SIB23][WTF] : prach_HoppingConfig_r13 = %d\n", prach_parametersce_r13->prach_HoppingConfig_r13);
-
           long *maxavailablenarrowband;
           int num_narrow_bands = configuration->max_available_narrow_band_size[CC_id][prach_parameters_index];
           int narrow_band_index;
@@ -1521,14 +1512,8 @@ uint8_t do_SIB23(uint8_t Mod_id,
           }
 
 
-          printf("[DEBUGGING][KOGO][SIB23][WTF] : maxavailablenarrowband = %d\n", *maxavailablenarrowband);
-
-
           prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = PRACH_ParametersCE_r13__mpdcch_NumRepetition_RA_r13_r1;
           prach_parametersce_r13->prach_HoppingConfig_r13 = PRACH_ParametersCE_r13__prach_HoppingConfig_r13_off;
-
-          printf("[DEBUGGING][KOGO][SIB23][WTF] : mpdcch_NumRepetition_RA_r13 = %d\n", prach_parametersce_r13->mpdcch_NumRepetition_RA_r13);
-          printf("[DEBUGGING][KOGO][SIB23][WTF] : prach_HoppingConfig_r13 = %d\n", prach_parametersce_r13->prach_HoppingConfig_r13);
 
 
           ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_ParametersListCE_r13.list, prach_parametersce_r13);
