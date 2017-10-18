@@ -31,7 +31,10 @@ void reset_ue_ids(void)
   int i;
   printf("resetting known UEs\n");
   for (i = 0; i < 65536; i++) ue_id[i] = -1;
-  next_ue_id = 0;
+  ue_id[65535] = 0;
+  ue_id[65534] = 1;     /* HACK: to be removed */
+  ue_id[2]     = 2;     /* this supposes RA RNTI = 2, very openair specific */
+  next_ue_id = 3;
 }
 
 int ue_id_from_rnti(void *_priv, int rnti)
@@ -228,13 +231,15 @@ static void click(void *private, gui *g,
   enb_data *ed = private;
   enb_gui *e = ed->e;
   int ue = ed->ue;
+  int do_reset = 0;
 
   if (button != 1) return;
   if (w == e->prev_ue_button) { ue--; if (ue < 0) ue = 0; }
   if (w == e->next_ue_button) ue++;
-  if (w == e->current_ue_button) reset_ue_ids();
+  if (w == e->current_ue_button) do_reset = 1;
 
   if (pthread_mutex_lock(&ed->lock)) abort();
+  if (do_reset) reset_ue_ids();
   if (ue != ed->ue) {
     set_current_ue(g, ed, ue);
     ed->ue = ue;
@@ -619,7 +624,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
   container_set_child_growable(g, top_container, text, 1);
   e->legacy = new_view_textlist(10000, 10, g, text);
 
-  set_current_ue(g, ed, 0);
+  set_current_ue(g, ed, ed->ue);
   register_notifier(g, "click", e->current_ue_button, click, ed);
   register_notifier(g, "click", e->prev_ue_button, click, ed);
   register_notifier(g, "click", e->next_ue_button, click, ed);
@@ -735,7 +740,7 @@ int main(int n, char **v)
   g = gui_init();
   new_thread(gui_thread, g);
 
-  enb_data.ue = 0;
+  enb_data.ue = 3;
   enb_data.e = &eg;
   enb_data.database = database;
 
