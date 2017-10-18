@@ -94,6 +94,7 @@ typedef struct {
   enb_gui *e;
   int ue;                /* what UE is displayed in the UE specific views */
   void *database;
+  int nb_rb;
 } enb_data;
 
 void is_on_changed(void *_d)
@@ -119,27 +120,6 @@ connection_dies:
   close(d->socket);
   d->socket = -1;
   if (pthread_mutex_unlock(&d->lock)) abort();
-}
-
-void usage(void)
-{
-  printf(
-"options:\n"
-"    -d <database file>        this option is mandatory\n"
-"    -on <GROUP or ID>         turn log ON for given GROUP or ID\n"
-"    -off <GROUP or ID>        turn log OFF for given GROUP or ID\n"
-"    -ON                       turn all logs ON\n"
-"    -OFF                      turn all logs OFF\n"
-"                              note: you may pass several -on/-off/-ON/-OFF,\n"
-"                                    they will be processed in order\n"
-"                                    by default, all is off\n"
-"    -ip <host>                connect to given IP address (default %s)\n"
-"    -p <port>                 connect to given port (default %d)\n"
-"    -debug-gui                activate GUI debug logs\n",
-  DEFAULT_REMOTE_IP,
-  DEFAULT_REMOTE_PORT
-  );
-  exit(1);
 }
 
 static void *gui_thread(void *_g)
@@ -314,14 +294,14 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
 
   input_signal_plot = new_xy_plot(g, 256, 55, "input signal", 20);
   widget_add_child(g, line, input_signal_plot, -1);
-  xy_plot_set_range(g, input_signal_plot, 0, 7680*10, 20, 70);
+  xy_plot_set_range(g, input_signal_plot, 0, 7680*10 * ed->nb_rb/25, 20, 70);
   input_signal_log = new_framelog(h, database,
       "ENB_PHY_INPUT_SIGNAL", "subframe", "rxdata");
   /* a skip value of 10 means to process 1 frame over 10, that is
    * more or less 10 frames per second
    */
   framelog_set_skip(input_signal_log, 10);
-  input_signal_view = new_view_xy(7680*10, 10,
+  input_signal_view = new_view_xy(7680*10 * ed->nb_rb/25, 10,
       g, input_signal_plot, new_color(g, "#0c0c72"), XY_LOOP_MODE);
   logger_add_view(input_signal_log, input_signal_view);
 
@@ -661,6 +641,28 @@ void view_add_log(view *v, char *log, event_handler *h, void *database,
   on_off(database, log, is_on, 1);
 }
 
+void usage(void)
+{
+  printf(
+"options:\n"
+"    -d   <database file>      this option is mandatory\n"
+"    -rb  <RBs>                setup for this number of RBs (default 25)\n"
+"    -on  <GROUP or ID>        turn log ON for given GROUP or ID\n"
+"    -off <GROUP or ID>        turn log OFF for given GROUP or ID\n"
+"    -ON                       turn all logs ON\n"
+"    -OFF                      turn all logs OFF\n"
+"                              note: you may pass several -on/-off/-ON/-OFF,\n"
+"                                    they will be processed in order\n"
+"                                    by default, all is off\n"
+"    -ip <host>                connect to given IP address (default %s)\n"
+"    -p  <port>                connect to given port (default %d)\n"
+"    -debug-gui                activate GUI debug logs\n",
+  DEFAULT_REMOTE_IP,
+  DEFAULT_REMOTE_PORT
+  );
+  exit(1);
+}
+
 int main(int n, char **v)
 {
   extern int volatile gui_logd;
@@ -681,6 +683,8 @@ int main(int n, char **v)
 
   reset_ue_ids();
 
+  enb_data.nb_rb = 25;
+
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
   if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
 
@@ -691,6 +695,8 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
     if (!strcmp(v[i], "-d"))
       { if (i > n-2) usage(); database_filename = v[++i]; continue; }
+    if (!strcmp(v[i], "-rb"))
+      { if (i > n-2) usage(); enb_data.nb_rb = atoi(v[++i]); continue; }
     if (!strcmp(v[i], "-ip")) { if (i > n-2) usage(); ip = v[++i]; continue; }
     if (!strcmp(v[i], "-p"))
       { if (i > n-2) usage(); port = atoi(v[++i]); continue; }
@@ -704,6 +710,11 @@ int main(int n, char **v)
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=0; continue; }
     if (!strcmp(v[i], "-debug-gui")) { gui_logd = 1; continue; }
     usage();
+  }
+
+  switch (enb_data.nb_rb) {
+  case 25: case 50: case 100: break;
+  default: printf("ERROR, bad value for -rb (%d)\n", enb_data.nb_rb); exit(1);
   }
 
   if (database_filename == NULL) {
