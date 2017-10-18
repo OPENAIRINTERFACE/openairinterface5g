@@ -1102,7 +1102,15 @@ void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
 #endif
 }
 
+int ulsch_power_LUT[750];
 
+void init_ulsch_power_LUT() {
+  
+  int i;
+
+  for (i=0;i<750;i++) ulsch_power_LUT[i] = (int)ceil((pow(2.0,(double)i/100) - 1.0));
+
+}
 
 void rx_ulsch(PHY_VARS_eNB *eNB,
 	      eNB_rxtx_proc_t *proc,
@@ -1166,19 +1174,26 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 
   int correction_factor = 1;
   int deltaMCS=1; 
-  int MPR_times_Ks;
+  int MPR_times_100Ks;
 
   if (deltaMCS==1) {
-// Note we're using TBS instead of sumKr, since didn't run segmentation yet!
-    MPR_times_Ks = 5*ulsch[UE_id]->harq_processes[harq_pid]->TBS/(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*4*ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
-    if (MPR_times_Ks > 0) correction_factor = (1<<MPR_times_Ks) - 1;
+    // Note we're using TBS instead of sumKr, since didn't run segmentation yet!
+
+    MPR_times_100Ks = 500*ulsch[UE_id]->harq_processes[harq_pid]->TBS/(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*4*ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
+
+    AssertFatal(MPR_times_100Ks < 750 && MPR_times_100Ks >= 0,"Impossible value for MPR_times_100Ks %d (TBS %d,Nre %d)\n",
+		MPR_times_100Ks,ulsch[UE_id]->harq_processes[harq_pid]->TBS,
+		(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*4*ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch));
+
+    if (MPR_times_100Ks > 0) correction_factor = ulsch_power_LUT[MPR_times_100Ks];
+			       
   }
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     
     pusch_vars->ulsch_power[i] = signal_energy_nodc(pusch_vars->drs_ch_estimates[i],
 						    ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)/correction_factor;
-//printf("%4.4d.%d power harq_pid %d rb %2.2d TBS %2.2d (MPR_times_Ks %d correction %d)  power %d dBtimes10\n", proc->frame_rx, proc->subframe_rx, harq_pid, ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, ulsch[UE_id]->harq_processes[harq_pid]->TBS,MPR_times_Ks,correction_factor,dB_fixed_times10(pusch_vars->ulsch_power[i])); 
-    
+    /*    printf("%4.4d.%d power harq_pid %d rb %2.2d TBS %2.2d (MPR_times_Ks %d correction %d)  power %d dBtimes10\n", proc->frame_rx, proc->subframe_rx, harq_pid, ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, ulsch[UE_id]->harq_processes[harq_pid]->TBS,MPR_times_100Ks,correction_factor,dB_fixed_times10(pusch_vars->ulsch_power[i])); 
+     */
   }
 
 

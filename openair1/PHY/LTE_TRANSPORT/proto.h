@@ -2109,6 +2109,8 @@ int32_t rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
                       uint8_t *payload);
 
 
+void init_ulsch_power_LUT(void);
+
 /*!
   \brief Check for PRACH TXop in subframe
   @param frame_parms Pointer to LTE_DL_FRAME_PARMS

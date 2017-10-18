@@ -1857,6 +1857,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
   generate_ul_ref_sigs_rx();
   
+  init_ulsch_power_LUT();
+
   // SRS
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     srs_vars[UE_id].srs = (int32_t*)malloc16_clear(2*fp->ofdm_symbol_size*sizeof(int32_t));
