@@ -184,8 +184,8 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     else if (subframe == 1)
       pusch_subframe = (7);
     else {
-      LOG_E(PHY, "phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
-            subframe,frame_parms->tdd_config);
+      AssertFatal(1==0,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+		  subframe,frame_parms->tdd_config);
       pusch_subframe = (0);
     }
 
@@ -201,7 +201,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     else if (subframe == 4)
       pusch_subframe = (8);
     else {
-      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      AssertFatal(1==0,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
       pusch_subframe = (0);
     }
@@ -214,7 +214,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     else if (subframe == 3)
       pusch_subframe = (7);
     else {
-      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      AssertFatal(1==0,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
       pusch_subframe = (0);
     }
@@ -227,7 +227,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     } else if (subframe==0)
       pusch_subframe = (4);
     else {
-      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      AssertFatal(1==0,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
       pusch_subframe = (0);
     }
@@ -238,7 +238,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     if ( (subframe == 8) || (subframe == 9) ) {
       pusch_subframe = (subframe-6);
     } else {
-      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      AssertFatal(1==0,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
       pusch_subframe = (0);
     }
@@ -249,7 +249,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     if (subframe == 8) {
       pusch_subframe = (2);
     } else {
-      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      AssertFatal(1==0,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
       pusch_subframe = (0);
     }
@@ -268,7 +268,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     } else if (subframe == 5) {
       pusch_subframe = (8);
     } else {
-      LOG_E(PHY,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
+      AssertFatal(1==0,"phich.c: phich_subframe2_pusch_subframe, illegal subframe %d for tdd_config %d\n",
             subframe,frame_parms->tdd_config);
       pusch_subframe = (0);
     }
@@ -276,7 +276,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     break;
 
   default:
-    LOG_E(PHY, "no implementation for TDD UL/DL-config = %d!\n", frame_parms->tdd_config);
+    AssertFatal(1==0, "no implementation for TDD UL/DL-config = %d!\n", frame_parms->tdd_config);
     pusch_subframe = (0);
   }
 
@@ -560,7 +560,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
         break;
 
       default:
-        LOG_E(PHY,"phich_coding.c: Illegal PHICH Number\n");
+        AssertFatal(1==0,"phich_coding.c: Illegal PHICH Number\n");
       } // nseq_PHICH
     }
 
@@ -858,7 +858,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       break;
 
     default:
-      LOG_E(PHY,"phich_coding.c: Illegal PHICH Number\n");
+      AssertFatal(1==0,"phich_coding.c: Illegal PHICH Number\n");
     }
 
 
@@ -1255,7 +1255,7 @@ void rx_phich(PHY_VARS_UE *ue,
         break;
 
       default:
-        LOG_E(PHY,"phich_coding.c: Illegal PHICH Number\n");
+        AssertFatal(1==0,"phich_coding.c: Illegal PHICH Number\n");
       } // nseq_PHICH
     }
 
@@ -1342,7 +1342,7 @@ void rx_phich(PHY_VARS_UE *ue,
       break;
 
     default:
-      LOG_E(PHY,"phich_coding.c: Illegal PHICH Number\n");
+      AssertFatal(1==0,"phich_coding.c: Illegal PHICH Number\n");
     }
   }
 
@@ -1527,9 +1527,11 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
   if (frame_parms->Ncp == 1)
     NSF_PHICH = 2;
 
-  pusch_frame = phich_frame2_pusch_frame(frame_parms,proc->frame_tx,subframe);
-  pusch_subframe = phich_subframe2_pusch_subframe(frame_parms,subframe);
-  harq_pid = subframe2harq_pid(frame_parms,pusch_frame,pusch_subframe);
+  if (eNB->phich_vars[subframe&1].num_hi > 0) {
+    pusch_frame = phich_frame2_pusch_frame(frame_parms,proc->frame_tx,subframe);
+    pusch_subframe = phich_subframe2_pusch_subframe(frame_parms,subframe);
+    harq_pid = subframe2harq_pid(frame_parms,pusch_frame,pusch_subframe);
+  }
 
   for (i=0; i<eNB->phich_vars[subframe&1].num_hi; i++) {
 

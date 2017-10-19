@@ -574,14 +574,10 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
     proc->first_tx = 0;
   }
   else {
-    if (subframe_tx != *subframe) {
-      LOG_E(PHY,"subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
-      exit_fun("Exiting");
-    }
-    if (frame_tx != *frame) { 
-      LOG_E(PHY,"frame_tx %d is not what we expect %d\n",frame_tx,*frame);
-      exit_fun("Exiting");
-    }
+    AssertFatal(subframe_tx == *subframe,
+                "subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
+    AssertFatal(frame_tx == *frame, 
+                "frame_tx %d is not what we expect %d\n",frame_tx,*frame);
   }
 }
 
@@ -596,32 +592,26 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
   symbol_number = 0;
   symbol_mask = 0;
-  symbol_mask_full = (1<<fp->symbols_per_tti)-1;
-
+  symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
   do {   
     recv_IF4p5(ru, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
+    LOG_D(PHY,"subframe %d (%d): frame %d, subframe %d, symbol %d\n",
+         *subframe,subframe_select(fp,*subframe),frame_tx,subframe_tx,symbol_number);
     if (proc->first_tx != 0) {
       *frame    = frame_tx;
       *subframe = subframe_tx;
       proc->first_tx = 0;
     }
     else {
-      if (frame_tx != *frame) {
-	LOG_E(PHY,"frame_tx %d is not what we expect %d\n",frame_tx,*frame);
-	exit_fun("Exiting");
-      }
-      if (subframe_tx != *subframe) {
-	LOG_E(PHY,"subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
-	exit_fun("Exiting");
-      }
+      AssertFatal(frame_tx == *frame,
+	          "frame_tx %d is not what we expect %d\n",frame_tx,*frame);
+      AssertFatal(subframe_tx == *subframe,
+		  "subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
     }
     if (packet_type == IF4p5_PDLFFT) {
       symbol_mask = symbol_mask | (1<<symbol_number);
     }
-    else {
-      LOG_E(PHY,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
-      exit_fun("Exiting");
-    }
+    else AssertFatal(1==0,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
   } while (symbol_mask != symbol_mask_full);    
 
   proc->subframe_tx  = subframe_tx;
@@ -703,8 +693,8 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
  
   proc->timestamp_rx = ts-ru->ts_offset;
 
-  if (rxs != fp->samples_per_tti)
-    LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
+  AssertFatal(rxs == fp->samples_per_tti,
+	      "rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
 
   if (proc->first_rx == 1) {
     ru->ts_offset = proc->timestamp_rx;
@@ -823,11 +813,8 @@ void tx_rf(RU_t *ru) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     
     
-    
-    if (txs !=  fp->samples_per_tti) {
-      LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, fp->samples_per_tti);
-      exit_fun( "problem transmitting samples" );
-    }	
+    AssertFatal(txs ==  siglen,"TX : Timeout (sent %d/%d)\n",txs, siglen);
+
   }
 }
 
@@ -1461,7 +1448,6 @@ static void* ru_thread( void* param ) {
     // If this proc is to provide synchronization, do so
     wakeup_slaves(proc);
 
-    LOG_D(PHY,"RU %d/%d frame_tx %d, subframe_tx %d\n",0,ru->idx,proc->frame_tx,proc->subframe_tx);
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
 
@@ -1746,6 +1732,10 @@ void configure_ru(int idx,
 
   AssertFatal((ret=check_capabilities(ru,capabilities)) == 0,
 	      "Cannot configure RRU %d, check_capabilities returned %d\n", idx,ret);
+  // take antenna capabilities of RRU
+  ru->nb_tx                      = capabilities->nb_tx[0];
+  ru->nb_rx                      = capabilities->nb_rx[0];
+
   // Pass configuration to RRU
   LOG_I(PHY, "Using %s fronthaul (%d), band %d \n",ru_if_formats[ru->if_south],ru->if_south,ru->frame_parms.eutra_band);
   // wait for configuration 
@@ -1754,6 +1744,8 @@ void configure_ru(int idx,
   config->band_list[0]           = ru->frame_parms.eutra_band;
   config->tx_freq[0]             = ru->frame_parms.dl_CarrierFreq;      
   config->rx_freq[0]             = ru->frame_parms.ul_CarrierFreq;      
+  config->tdd_config[0]          = ru->frame_parms.tdd_config;
+  config->tdd_config_S[0]        = ru->frame_parms.tdd_config_S;
   config->att_tx[0]              = ru->att_tx;
   config->att_rx[0]              = ru->att_rx;
   config->N_RB_DL[0]             = ru->frame_parms.N_RB_DL;
@@ -1773,10 +1765,6 @@ void configure_ru(int idx,
     }
 #endif
   }
-  // take antenna capabilities of RRU
-  ru->nb_tx                      = capabilities->nb_tx[0];
-  ru->nb_rx                      = capabilities->nb_rx[0];
-
 
   init_frame_parms(&ru->frame_parms,1);
   phy_init_RU(ru);
@@ -1791,6 +1779,13 @@ void configure_rru(int idx,
   ru->frame_parms.eutra_band                                               = config->band_list[0];
   ru->frame_parms.dl_CarrierFreq                                           = config->tx_freq[0];
   ru->frame_parms.ul_CarrierFreq                                           = config->rx_freq[0];
+  if (ru->frame_parms.dl_CarrierFreq == ru->frame_parms.ul_CarrierFreq) {
+     ru->frame_parms.frame_type                                            = TDD;
+     ru->frame_parms.tdd_config                                            = config->tdd_config[0];
+     ru->frame_parms.tdd_config_S                                          = config->tdd_config_S[0]; 
+  }
+  else
+     ru->frame_parms.frame_type                                            = FDD;
   ru->att_tx                                                               = config->att_tx[0];
   ru->att_rx                                                               = config->att_rx[0];
   ru->frame_parms.N_RB_DL                                                  = config->N_RB_DL[0];
@@ -1867,7 +1862,7 @@ void init_RU(char *rf_config_file) {
   // read in configuration file)
   printf("configuring RU from file\n");
   RCconfig_RU();
-  printf("number of L1 instances %d, number of RU %d\n",RC.nb_L1_inst,RC.nb_RU);
+  LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_L1_inst,RC.nb_RU,get_nprocs());
 
   for (i=0;i<RC.nb_L1_inst;i++) 
     for (CC_id=0;CC_id<RC.nb_CC[i];CC_id++) RC.eNB[i][CC_id]->num_RU=0;
@@ -1927,8 +1922,8 @@ void init_RU(char *rf_config_file) {
 	ru->fh_north_out          = fh_if4p5_north_out;       // send_IF4p5 on reception
 	ru->fh_south_out          = tx_rf;                    // send output to RF
 	ru->fh_north_asynch_in    = fh_if4p5_north_asynch_in; // TX packets come asynchronously
-	ru->feprx                 = (get_nprocs()<=4) ? fep_full :ru_fep_full_2thread;                 // RX DFTs
-	ru->feptx_ofdm            = (get_nprocs()<=4) ? feptx_ofdm : feptx_ofdm_2thread;               // this is fep with idft only (no precoding in RRU)
+	ru->feprx                 = (get_nprocs()<=2) ? fep_full :ru_fep_full_2thread;                 // RX DFTs
+	ru->feptx_ofdm            = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;               // this is fep with idft only (no precoding in RRU)
 	ru->feptx_prec            = NULL;
 	ru->start_if              = start_if;                 // need to start the if interface for if4p5
 	ru->ifdevice.host_type    = RRU_HOST;

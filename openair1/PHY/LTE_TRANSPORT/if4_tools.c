@@ -72,6 +72,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
     if (subframe_select(fp,subframe)==SF_S)
       nsym=fp->dl_symbols_in_S_subframe;
 
+
     db_fulllength = 12*fp->N_RB_DL;
     db_halflength = (db_fulllength)>>1;
     slotoffsetF = 1;//(subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;

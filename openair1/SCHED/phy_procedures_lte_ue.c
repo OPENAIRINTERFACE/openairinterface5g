@@ -3583,7 +3583,6 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
       }
     }
     
-    if (abstraction_flag == 0) {
       
       // start turbo decode for CW 0
       dlsch0->harq_processes[harq_pid]->G = get_G(&ue->frame_parms,
@@ -3720,17 +3719,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 	}
       
       LOG_D(PHY," ------ end turbo decoder for AbsSubframe %d.%d ------  \n", frame_rx, subframe_rx);
-    }
     
-    else {
-      LOG_D(PHY,"Calling dlsch_decoding_emul ...\n");
-#ifdef PHY_ABSTRACTION
-      ret = dlsch_decoding_emul(ue,
-				subframe_rx,
-				pdsch,
-				eNB_id);
-#endif
-    }
     
 
     // Check CRC for CW 0

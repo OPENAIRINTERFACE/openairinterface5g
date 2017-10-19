@@ -437,33 +437,33 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
   /* save old HARQ information needed for PHICH generation */
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
-    if (eNB->ulsch[i]) {
-      ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
-
-      /* Store first_rb and n_DMRS for correct PHICH generation below.
-       * For PHICH generation we need "old" values of last scheduling
-       * for this HARQ process. 'generate_eNB_dlsch_params' below will
-       * overwrite first_rb and n_DMRS and 'generate_phich_top', done
-       * after 'generate_eNB_dlsch_params', would use the "new" values
-       * instead of the "old" ones.
-       *
-       * This has been tested for FDD only, may be wrong for TDD.
-       *
-       * TODO: maybe we should restructure the code to be sure it
-       *       is done correctly. The main concern is if the code
-       *       changes and first_rb and n_DMRS are modified before
-       *       we reach here, then the PHICH processing will be wrong,
-       *       using wrong first_rb and n_DMRS values to compute
-       *       ngroup_PHICH and nseq_PHICH.
-       *
-       * TODO: check if that works with TDD.
-       */
-      if ((subframe_select(fp,ul_subframe)==SF_UL) ||
-          (fp->frame_type == FDD)) {
-        ulsch_harq->previous_first_rb = ulsch_harq->first_rb;
-        ulsch_harq->previous_n_DMRS   = ulsch_harq->n_DMRS;
+  if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
+    for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+      harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
+      if (eNB->ulsch[i]) {
+	ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
+	
+	/* Store first_rb and n_DMRS for correct PHICH generation below.
+	 * For PHICH generation we need "old" values of last scheduling
+	 * for this HARQ process. 'generate_eNB_dlsch_params' below will
+	 * overwrite first_rb and n_DMRS and 'generate_phich_top', done
+	 * after 'generate_eNB_dlsch_params', would use the "new" values
+	 * instead of the "old" ones.
+	 *
+	 * This has been tested for FDD only, may be wrong for TDD.
+	 *
+	 * TODO: maybe we should restructure the code to be sure it
+	 *       is done correctly. The main concern is if the code
+	 *       changes and first_rb and n_DMRS are modified before
+	 *       we reach here, then the PHICH processing will be wrong,
+	 *       using wrong first_rb and n_DMRS values to compute
+	 *       ngroup_PHICH and nseq_PHICH.
+	 *
+	 * TODO: check if that works with TDD.
+	 */
+	ulsch_harq->previous_first_rb = ulsch_harq->first_rb;
+	ulsch_harq->previous_n_DMRS   = ulsch_harq->n_DMRS;
+	
       }
     }
   }

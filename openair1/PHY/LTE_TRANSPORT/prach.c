@@ -575,7 +575,7 @@ int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex
          (((subframe>4)&&(t1_ra==1))))) {                // PRACH is in 2nd half-frame
       if ((prach_ConfigIndex<48) &&                          // PRACH only in normal UL subframe
 	  (((subframe%5)-2)==t2_ra)) prach_mask=1;
-      else if ((((subframe%5)-1)==t2_ra)) prach_mask=1;      // PRACH can be in UpPTS
+      else if ((prach_ConfigIndex>47) && (((subframe%5)-1)==t2_ra)) prach_mask=1;      // PRACH can be in UpPTS
     }
   }
 

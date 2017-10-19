@@ -1498,6 +1498,10 @@ typedef struct RRU_config_s {
   uint8_t num_bands;
   /// EUTRA band list configured in RRU
   uint8_t band_list[MAX_BANDS_PER_RRU];
+  /// TDD configuration (0-6)
+  uint8_t tdd_config[MAX_BANDS_PER_RRU];
+  /// TDD special subframe configuration (0-10)
+  uint8_t tdd_config_S[MAX_BANDS_PER_RRU];
   /// TX frequency
   uint32_t tx_freq[MAX_BANDS_PER_RRU];
   /// RX frequency

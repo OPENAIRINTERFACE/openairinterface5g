@@ -571,7 +571,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   frame_t                   frame        = Sched_INFO->frame;
   sub_frame_t               subframe     = Sched_INFO->subframe;
   LTE_DL_FRAME_PARMS        *fp;
-  int                       ul_subframe;
+  uint8_t                   ul_subframe;
   int                       ul_frame;
   int                       harq_pid;
   LTE_UL_eNB_HARQ_t         *ulsch_harq;
@@ -591,7 +591,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
 
   uint8_t number_dl_pdu             = DL_req->dl_config_request_body.number_pdu;
   uint8_t number_hi_dci0_pdu        = HI_DCI0_req->hi_dci0_request_body.number_of_dci+HI_DCI0_req->hi_dci0_request_body.number_of_hi;
-  uint8_t number_ul_pdu             = UL_req->ul_config_request_body.number_of_pdus;
+  uint8_t number_ul_pdu             = UL_req!=NULL ? UL_req->ul_config_request_body.number_of_pdus : 0;
 
   nfapi_dl_config_request_pdu_t *dl_config_pdu;
   nfapi_hi_dci0_request_pdu_t   *hi_dci0_req_pdu;
@@ -603,12 +603,13 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   eNB->pdcch_vars[subframe&1].num_dci           = 0;
   eNB->phich_vars[subframe&1].num_hi            = 0;
 
-  LOG_D(PHY,"NFAPI: Frame %d, Subframe %d: received %d dl_pdu, %d tx_req, %d hi_dci0_config_req, %d UL_config \n",
-        frame,subframe,number_dl_pdu,TX_req->tx_request_body.number_of_pdus,number_hi_dci0_pdu,number_ul_pdu);
+
+  LOG_D(PHY,"NFAPI: Frame %d, Subframe %d (ul_subframe %d): received %d dl_pdu, %d tx_req, %d hi_dci0_config_req, %d UL_config \n",
+        frame,subframe,ul_subframe,number_dl_pdu,TX_req->tx_request_body.number_of_pdus,number_hi_dci0_pdu,number_ul_pdu);
 
 
-  if ((subframe_select(fp,ul_subframe)==SF_UL) ||
-      (fp->frame_type == FDD)) {
+  if (ul_subframe<10) { // This means that there is an ul_subframe that can be configured here
+    LOG_D(PHY,"NFAPI: Clearing dci allocations for potential UL\n");
     harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
 
     // clear DCI allocation maps for new subframe
