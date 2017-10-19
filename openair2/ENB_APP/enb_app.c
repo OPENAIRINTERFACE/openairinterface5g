@@ -211,19 +211,11 @@ static void configure_rrc(uint32_t enb_id)
 static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, const Enb_properties_array_t *enb_properties)
 {
   uint32_t         enb_id;
-  uint32_t         mme_id;
   MessageDef      *msg_p;
   uint32_t         register_enb_pending = 0;
-  char            *str                  = NULL;
-  struct in_addr   addr;
-
-#   if defined(OAI_EMU)
-
-#   endif
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
 #   if defined(OAI_EMU)
-
     if (oai_emulation.info.cli_start_enb[enb_id] == 1)
 #   endif
     {
@@ -307,7 +299,6 @@ void *eNB_app_task(void *args_p)
   const char                      *msg_name        = NULL;
   instance_t                      instance;
   int                             result;
-  int                             j;
   /* for no gcc warnings */
   (void)instance;
 

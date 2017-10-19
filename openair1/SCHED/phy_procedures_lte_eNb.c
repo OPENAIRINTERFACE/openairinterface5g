@@ -555,7 +555,6 @@ void prach_procedures(PHY_VARS_eNB *eNB,
   uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4];
   uint16_t i;
   int frame,subframe;
-  LTE_eNB_PRACH *prach_vars=NULL;
 
 #ifdef Rel14
   if (br_flag==1) {
@@ -618,8 +617,6 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 
 #ifdef Rel14
   if (br_flag==1) {
-
-    prach_vars = &eNB->prach_vars_br;
     int prach_mask;
       
     prach_mask = is_prach_subframe(&eNB->frame_parms,eNB->proc.frame_prach_br,eNB->proc.subframe_prach_br);
@@ -678,9 +675,6 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 	
 	    T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
 	      T_INT(max_preamble[0]), T_INT(max_preamble_energy[0]), T_INT(max_preamble_delay[0]));
-	    
-	    prach_vars = &eNB->prach_vars;
-	    
 	    
 	    pthread_mutex_lock(&eNB->UL_INFO_mutex);
 	    

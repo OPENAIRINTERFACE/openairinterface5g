@@ -89,6 +89,7 @@ extern Packet_OTG_List_t *otg_pdcp_buffer;
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
 #  include "gtpv1u_eNB_task.h"
+#  include "gtpv1u_eNB_defs.h"
 #endif
 
 /* Prevent de-queueing the same PDCP SDU from the queue twice

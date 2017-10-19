@@ -1058,7 +1058,11 @@ int narrowband_to_first_rb(COMMON_channels_t *cc, int nb_index);
 
 int l2_init_eNB(void);
 
-
+void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
+void Msg3_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
+uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn);
+int32_t get_uldl_offset(int eutra_bandP);
+int l2_init_ue(int eMBMS_active, char *uecap_xer,uint8_t cba_group_active, uint8_t HO_active);
 
 #endif
 /** @}*/

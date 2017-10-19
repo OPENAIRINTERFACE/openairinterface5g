@@ -1151,7 +1151,9 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 #ifdef PRACH_DEBUG
   int en0=0;
 #endif
-  int en;
+
+  (void)frame; /* avoid gcc warnings */
+
   if (ru) { 
     fp    = &ru->frame_parms;
     nb_rx = ru->nb_rx;
@@ -1472,8 +1474,8 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     return;
   } else if (eNB!=NULL) {
 
-    en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
 #ifdef PRACH_DEBUG
+    int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
     if ((en > 60)&&(br_flag==1)) LOG_I(PHY,"PRACH (br_flag %d,ce_level %d, n_ra_prb %d, k %d): Frame %d, Subframe %d => %d dB\n",br_flag,ce_level,n_ra_prb,k,eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
 #endif
 

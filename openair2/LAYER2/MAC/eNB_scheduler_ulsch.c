@@ -854,7 +854,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   UE_list_t         *UE_list=&eNB->UE_list;
   UE_TEMPLATE       *UE_template;
   UE_sched_ctrl     *UE_sched_ctrl;
-  int               tmode;
   int               sched_frame=frameP;
   int               rvidx_tab[4] = {0,2,3,1};
 
@@ -863,12 +862,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   nfapi_hi_dci0_request_body_t   *hi_dci0_req = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
 
-  nfapi_ul_config_request_pdu_t  *ul_config_pdu;
-
   nfapi_ul_config_request_body_t *ul_req_tmp       = &eNB->UL_req_tmp[CC_id][sched_subframeP].ul_config_request_body;
-
-  ul_config_pdu                                    = &ul_req_tmp->ul_config_pdu_list[0];
-
 
   LOG_D(MAC,"entering ulsch preprocesor\n");
   ulsch_scheduler_pre_processor(module_idP,

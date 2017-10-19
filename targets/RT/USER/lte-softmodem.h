@@ -259,4 +259,9 @@ extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
 extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
 extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
 
+PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
+                          uint8_t UE_id,
+                          uint8_t abstraction_flag);
+void init_eNB_afterRU(void);
+
 #endif

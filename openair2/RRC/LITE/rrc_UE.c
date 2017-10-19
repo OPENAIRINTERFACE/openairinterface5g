@@ -2604,7 +2604,7 @@ static const char* SIB2mac_ContentionResolutionTimer( long value )
 }
 static const char* SIB2modificationPeriodCoeff( long value )
 {
-  static char temp[4] = {0};
+  static char temp[32] = {0};
 
   if (value < 0 || value > 3)
     return "ERR";
@@ -2614,7 +2614,7 @@ static const char* SIB2modificationPeriodCoeff( long value )
 }
 static const char* SIB2defaultPagingCycle( long value )
 {
-  static char temp[6] = {0};
+  static char temp[32] = {0};
 
   if (value < 0 || value > 3)
     return "ERR";

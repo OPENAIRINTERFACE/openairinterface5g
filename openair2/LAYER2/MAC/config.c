@@ -32,6 +32,7 @@
 
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
+#include "SCHED/defs.h"
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
@@ -710,8 +711,6 @@ rrc_mac_config_req_ue(
 
   int i;
 
-  int UE_id = -1;
- 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
 
   LOG_I(MAC,"[CONFIG][UE %d] Configuring MAC/PHY from eNB %d\n",Mod_idP,eNB_index);

@@ -35,6 +35,7 @@
 #include "proto.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "PHY_INTERFACE/extern.h"
+#include "SCHED/defs.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
