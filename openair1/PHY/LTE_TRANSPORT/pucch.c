@@ -113,7 +113,18 @@ int16_t W3_im[3][6] = {{0    ,0     ,0     },
   {0    ,-28378, 28377}
 };
 
-char pucch_format_string[6][20] = {"format 1\0","format 1a\0","format 1b\0","format 2\0","format 2a\0","format 2b\0"};
+char *pucch_format_string[] = {
+  "format 1",
+  "format 1a",
+  "format 1b",
+  "pucch_format1b_csA2",
+  "pucch_format1b_csA3",
+  "pucch_format1b_csA4",
+  "format 2",
+  "format 2a",
+  "format 2b",
+  "pucch_format3"
+};
 
 /* PUCCH format3 >> */
 #define D_I             0
