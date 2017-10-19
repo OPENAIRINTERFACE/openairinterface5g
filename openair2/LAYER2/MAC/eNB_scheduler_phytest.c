@@ -69,9 +69,9 @@ schedule_ue_spec_phy_test(
 
   unsigned char                  harq_pid  = subframeP%5;
   uint16_t                       rnti      = 0x1235;
-  uint32_t                       rb_alloc  = 0x1FFF;
+  uint32_t                       rb_alloc  = 0x1FFFFFFF;
   int32_t                        tpc       = 1;
-  int32_t                        mcs       = 0;
+  int32_t                        mcs       = 16;
   int32_t                        cqi       = 15;
   int32_t                        ndi       = subframeP/5;
   int32_t                        dai       = 0;
@@ -94,12 +94,18 @@ schedule_ue_spec_phy_test(
     nb_rb = conv_nprb(0,rb_alloc,N_RB_DL);
     TBS = get_TBS_DL(mcs,nb_rb);
 
+    LOG_I(PHY,"schedule_ue_spec_phy_test: subframe %d: nb_rb=%d, TBS=%d, mcs=%d (rb_alloc=%x, N_RB_DL=%d)\n",subframeP,nb_rb,TBS,mcs,rb_alloc,N_RB_DL);
+
     dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
     memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
     dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
     dl_config_pdu->pdu_size                                               = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
     dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1;
     dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = get_aggregation(get_bw_index(module_idP,CC_id),cqi,format1);
+    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_allocation_type    = 0;
+    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = 0;
+    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = rb_alloc;
+
     dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                        = rnti;
     dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type                   = 1;    // CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
     dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power          = 6000; // equal to RS power

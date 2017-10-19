@@ -519,6 +519,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
 
   // This schedules MIB
   if ((subframeP==0) && (frameP&3) == 0) schedule_mib(module_idP,frameP,subframeP);
+  /*
   // This schedules SI for legacy LTE and eMTC starting in subframeP
   schedule_SI(module_idP,frameP,subframeP);
   // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
@@ -533,6 +534,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
   schedule_SR(module_idP,frameP,subframeP);
   // This schedules UCI_CSI in subframeP
   schedule_CSI(module_idP, frameP, subframeP);
+  */
 
   // This schedules DLSCH in subframeP
   //schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
