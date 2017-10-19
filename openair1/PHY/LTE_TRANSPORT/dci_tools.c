@@ -2405,7 +2405,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
     T_INT(mcs), T_INT(-1 /* TODO: remove round? */),
     T_INT(pdu->dci_pdu_rel8.resource_block_start),
     T_INT(pdu->dci_pdu_rel8.number_of_resource_block),
-    T_INT(-1 /* TODO: get TBS */),
+    T_INT(get_TBS_UL(mcs, pdu->dci_pdu_rel8.number_of_resource_block) * 8),
     T_INT(pdu->dci_pdu_rel8.aggregation_level),
     T_INT(pdu->dci_pdu_rel8.cce_index));
 #endif
