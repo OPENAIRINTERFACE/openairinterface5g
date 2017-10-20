@@ -67,7 +67,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
   if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
 
   if (packet_type == IF4p5_PDLFFT) {
-    LOG_D(PHY,"send DL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
+    //LOG_D(PHY,"send DL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
 
     if (subframe_select(fp,subframe)==SF_S)
       nsym=fp->dl_symbols_in_S_subframe;
@@ -138,10 +138,9 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
     if (packet_type == IF4p5_PULFFT) {
 
-      for (symbol_id=fp->symbols_per_tti-nsym; symbol_id<fp->symbols_per_tti; symbol_id++) {	     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF4_SYMBOL, symbol_id );
+      for (symbol_id=fp->symbols_per_tti-nsym; symbol_id<fp->symbols_per_tti; symbol_id++) {	     
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF4_SYMBOL, symbol_id );
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 1 );		
-	LOG_D(PHY,"IF4p5_PULFFT: frame %d, subframe %d, symbol %d: %d dB\n",frame,subframe,symbol_id,
-	      dB_fixed(signal_energy((int32_t*)&rxdataF[0][blockoffsetF],db_halflength)));
 
 	for (element_id=0; element_id<db_halflength; element_id++) {
 	  i = (uint16_t*) &rxdataF[0][blockoffsetF+element_id];
@@ -354,8 +353,8 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
              PRACH_BLOCK_SIZE_BYTES);
     }
 
-    LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
-	  dB_fixed(signal_energy((int*)&prach_rxsigF[0][0],839)));
+    //LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
+	//  dB_fixed(signal_energy((int*)&prach_rxsigF[0][0],839)));
     for (idx=0;idx<ru->num_eNB;idx++) ru->wakeup_prach_eNB(ru->eNB_list[idx],ru,*frame,*subframe);
 
   } else if (*packet_type == IF4p5_PULTICK) {

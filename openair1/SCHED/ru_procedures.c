@@ -175,6 +175,8 @@ void feptx_ofdm_2thread(RU_t *ru) {
 
   if (subframe_select(fp,subframe) == SF_UL) return;
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
+
   if (subframe_select(fp,subframe)==SF_DL) {
     // If this is not an S-subframe
     if (pthread_mutex_timedlock(&proc->mutex_feptx,&wait) != 0) {
@@ -205,6 +207,8 @@ void feptx_ofdm_2thread(RU_t *ru) {
   // call first slot in this thread
   feptx0(ru,0);
   wait_on_busy_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread");  
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
 
   stop_meas(&ru->ofdm_mod_stats);
 
@@ -468,6 +472,13 @@ void ru_fep_full_2thread(RU_t *ru) {
 
   struct timespec wait;
 
+  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+
+  if ((fp->frame_type == TDD) &&
+     (subframe_select(fp,proc->subframe_rx) != SF_UL)) return;
+
+  if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
+
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
@@ -513,8 +524,11 @@ void fep_full(RU_t *ru) {
   int l;
   LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
 
-  start_meas(&ru->ofdm_demod_stats);
+  if ((fp->frame_type == TDD) && 
+     (subframe_select(fp,proc->subframe_rx) != SF_UL)) return;
 
+  start_meas(&ru->ofdm_demod_stats);
+  if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
 
   remove_7_5_kHz(ru,proc->subframe_rx<<1);
   remove_7_5_kHz(ru,1+(proc->subframe_rx<<1));
@@ -530,6 +544,7 @@ void fep_full(RU_t *ru) {
 		0
 		);
   }
+  if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 0 );
   stop_meas(&ru->ofdm_demod_stats);
   
   
