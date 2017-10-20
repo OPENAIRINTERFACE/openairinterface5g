@@ -116,8 +116,8 @@ int trx_eth_start(openair0_device *device) {
     */
 
     /* adjust MTU wrt number of samples per packet */
-    /*if(ethernet_tune (device,MTU_SIZE,UDP_IF4p5_PRACH_SIZE_BYTES)!=0)  return -1;
-     */
+    if(ethernet_tune (device,MTU_SIZE,UDP_IF4p5_PRACH_SIZE_BYTES)!=0)  return -1;
+     
 
 
     
