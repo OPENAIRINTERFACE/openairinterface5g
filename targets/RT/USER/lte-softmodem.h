@@ -198,9 +198,9 @@ extern int T_dont_fork;
 /*   optname                     helpstr                paramflags           XXXptr           defXXXval         type       numelt           */
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_TTRACEPARAMS_DESC {  \
-{"T_port",                     CONFIG_HLP_TPORT,      0,		uptr:&T_port,	     defuintval:0,	TYPE_UINT,   0},	   \
-{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,	uptr:&T_nowait,      defuintval:0,	TYPE_UINT,   0},	   \
-{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,	uptr:&T_dont_fork,   defuintval:1,	TYPE_UINT,   0},	   \
+{"T_port",                     CONFIG_HLP_TPORT,      0,		iptr:&T_port,	     defintval:0,	TYPE_INT,   0},	   \
+{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,	iptr:&T_nowait,      defintval:0,	TYPE_INT,   0},	   \
+{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,	iptr:&T_dont_fork,   defintval:1,	TYPE_INT,   0},	   \
 } 
 
 
