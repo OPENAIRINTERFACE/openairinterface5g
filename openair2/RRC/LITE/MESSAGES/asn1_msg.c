@@ -158,11 +158,11 @@ int xer_sprint (char *string, size_t string_size, asn_TYPE_descriptor_t *td, voi
   er = xer_encode(td, sptr, XER_F_BASIC, xer__print2s, &string_buffer);
 
   if (er.encoded < 0) {
-    LOG_E(RRC, "xer_sprint encoding error (%d)!", er.encoded);
+    LOG_E(RRC, "xer_sprint encoding error (%zd)!", er.encoded);
     er.encoded = string_buffer.string_size;
   } else {
     if (er.encoded > string_buffer.string_size) {
-      LOG_E(RRC, "xer_sprint string buffer too small, got %d need %d!", string_buffer.string_size, er.encoded);
+      LOG_E(RRC, "xer_sprint string buffer too small, got %zd need %zd!", string_buffer.string_size, er.encoded);
       er.encoded = string_buffer.string_size;
     }
   }
@@ -484,7 +484,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"[eNB] SystemInformationBlockType1 Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"[eNB] SystemInformationBlockType1 Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   if (enc_rval.encoded==-1) {
@@ -1014,7 +1014,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"[eNB] SystemInformation Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"[eNB] SystemInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   if (enc_rval.encoded==-1) {
@@ -1103,7 +1103,7 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv)
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %d bits (%d bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+  LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %zd bits (%zd bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -1186,7 +1186,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"RRCConnectionSetupComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"RRCConnectionSetupComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -1248,7 +1248,7 @@ do_RRCConnectionReconfigurationComplete(
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"RRCConnectionReconfigurationComplete Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"RRCConnectionReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   return((enc_rval.encoded+7)/8);
@@ -1468,7 +1468,7 @@ do_RRCConnectionSetup(
       if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
 	  == SoundingRS_UL_ConfigCommon_PR_setup)
 	if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=0) 
-	  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
+	  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %zd. Expect undefined behaviour!\n",
 		carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
       if (ue_context_pP->local_uid >=20) 
 	LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
@@ -1481,7 +1481,7 @@ do_RRCConnectionSetup(
       if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.present
 	  == SoundingRS_UL_ConfigCommon_PR_setup)
 	if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=7) {
-	  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 7 and TDD config 3, but current configs are %d and %d. Expect undefined behaviour!\n",
+	  LOG_W(RRC,"This code has been optimized for SRS Subframe Config 7 and TDD config 3, but current configs are %zd and %zd. Expect undefined behaviour!\n",
 		carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig,
 		carrier->sib1->tdd_Config->subframeAssignment);
 	}
@@ -1491,7 +1491,7 @@ do_RRCConnectionSetup(
       physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex=17+ue_context_pP->local_uid/2;
       physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
     }
-    LOG_W(RRC,"local UID %d, srs ConfigIndex %d, TransmissionComb %d\n",ue_context_pP->local_uid,
+    LOG_W(RRC,"local UID %d, srs ConfigIndex %zd, TransmissionComb %zd\n",ue_context_pP->local_uid,
 	  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex,
 	  physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb);
 
@@ -1637,7 +1637,7 @@ do_RRCConnectionSetup(
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",
+  LOG_D(RRC,"RRCConnectionSetup Encoded %zd bits (%zd bytes), ecause %d\n",
         enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
 #endif
 
@@ -1710,7 +1710,7 @@ do_SecurityModeCommand(
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"[eNB %d] securityModeCommand for UE %x Encoded %d bits (%d bytes)\n",
+  LOG_D(RRC,"[eNB %d] securityModeCommand for UE %x Encoded %zd bits (%zd bytes)\n",
         ctxt_pP->module_id,
         ctxt_pP->rnti,
         enc_rval.encoded,
@@ -1788,7 +1788,7 @@ do_UECapabilityEnquiry(
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"[eNB %d] UECapabilityRequest for UE %x Encoded %d bits (%d bytes)\n",
+  LOG_D(RRC,"[eNB %d] UECapabilityRequest for UE %x Encoded %zd bits (%zd bytes)\n",
         ctxt_pP->module_id,
         ctxt_pP->rnti,
         enc_rval.encoded,
@@ -1927,7 +1927,7 @@ do_RRCConnectionReconfiguration(
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    RRC_BUF_SIZE);
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %l)!\n",
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %zd)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
 
 #ifdef XER_PRINT
@@ -1954,7 +1954,7 @@ do_RRCConnectionReconfiguration(
 #endif
 
   //#ifdef USER_MODE
-  LOG_I(RRC,"RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_I(RRC,"RRCConnectionReconfiguration Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   // for (i=0;i<30;i++)
   //    msg("%x.",buffer[i]);
   // msg("\n");
@@ -2015,7 +2015,7 @@ do_RRCConnectionReestablishmentReject(
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"RRCConnectionReestablishmentReject Encoded %d bits (%d bytes)\n",
+  LOG_D(RRC,"RRCConnectionReestablishmentReject Encoded %zd bits (%zd bytes)\n",
         enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
@@ -2076,7 +2076,7 @@ do_RRCConnectionReject(
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"RRCConnectionReject Encoded %d bits (%d bytes)\n",
+  LOG_D(RRC,"RRCConnectionReject Encoded %zd bits (%zd bytes)\n",
         enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
@@ -2267,7 +2267,7 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
 #endif
 
 #ifdef USER_MODE
-  LOG_D(RRC,"[eNB] MCCH Message Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"[eNB] MCCH Message Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #endif
 
   if (enc_rval.encoded==-1) {
@@ -2490,7 +2490,7 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
   char UE_EUTRA_Capability_xer[8192];
   size_t size;
 
-  LOG_I(RRC,"Allocating %u bytes for UE_EUTRA_Capability\n",sizeof(*UE_EUTRA_Capability));
+  LOG_I(RRC,"Allocating %zu bytes for UE_EUTRA_Capability\n",sizeof(*UE_EUTRA_Capability));
 
   UE_EUTRA_Capability = CALLOC(1, sizeof(*UE_EUTRA_Capability));
 
@@ -2648,7 +2648,7 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
 #endif
 
   UECapability.sdu_size = (enc_rval.encoded + 7) / 8;
-  LOG_I(PHY, "[RRC]UE Capability encoded, %d bytes (%d bits)\n",
+  LOG_I(PHY, "[RRC]UE Capability encoded, %d bytes (%zd bits)\n",
         UECapability.sdu_size, enc_rval.encoded + 7);
   {
     char *sdu;

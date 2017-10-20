@@ -312,11 +312,11 @@ if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${fix_asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
 file(GLOB rrc_source ${RRC_FULL_DIR}/*.c)
-set(rrc_source  ${rrc_source} ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1_msg.c)
 file(GLOB rrc_h ${RRC_FULL_DIR}/*.h)
 set(rrc_h ${rrc_h} ${RRC_FULL_DIR}/asn1_constants.h)
 set_source_files_properties(${rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
-add_library(RRC_LIB ${rrc_h} ${rrc_source})
+add_library(RRC_LIB ${rrc_h} ${rrc_source}
+    ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1_msg.c)
 include_directories ("${RRC_FULL_DIR}")
 
 # add the command to generate the source code
