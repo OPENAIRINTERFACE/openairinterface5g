@@ -44,6 +44,8 @@
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
 
+#include "openair1/PHY/defs.h"
+
 static int latency_target_fd = -1;
 static int32_t latency_target_value = 0;
 /* Latency trick - taken from cyclictest.c

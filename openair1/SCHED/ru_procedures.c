@@ -69,11 +69,9 @@ void feptx0(RU_t *ru,int slot) {
   //int dummy_tx_b[7680*2] __attribute__((aligned(32)));
 
   unsigned int aa,slot_offset;
-  int i,j, tx_offset;
+  int i, tx_offset;
   int slot_sizeF = (fp->ofdm_symbol_size)*
                    ((fp->Ncp==1) ? 6 : 7);
-  int len,len2;
-  int16_t *txdata;
   int subframe = ru->proc.subframe_tx;
 
   slot_offset = subframe*fp->samples_per_tti + (slot*(fp->samples_per_tti>>1));

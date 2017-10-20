@@ -46,6 +46,8 @@
 #else
 #include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
 #endif
+#include "intertask_interface_types.h"
+#include "RRC/LITE/defs.h"
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\
             struct in_addr inp;\
@@ -99,6 +101,9 @@ extern void RCConfig(void);
 
 void                          enb_config_display(void);
 void                          ru_config_display(void);
+
+int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc);
+int RCconfig_S1(MessageDef *msg_p, uint32_t i);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */

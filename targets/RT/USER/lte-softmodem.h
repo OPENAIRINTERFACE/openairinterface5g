@@ -198,9 +198,9 @@ extern int T_dont_fork;
 /*   optname                     helpstr                paramflags           XXXptr           defXXXval         type       numelt           */
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_TTRACEPARAMS_DESC {  \
-{"T_port",                     CONFIG_HLP_TPORT,      0,		uptr:&T_port,	     defuintval:0,	TYPE_UINT,   0},	   \
-{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,	uptr:&T_nowait,      defuintval:0,	TYPE_UINT,   0},	   \
-{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,	uptr:&T_dont_fork,   defuintval:1,	TYPE_UINT,   0},	   \
+{"T_port",                     CONFIG_HLP_TPORT,      0,		iptr:&T_port,	     defintval:0,	TYPE_INT,   0},	   \
+{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,	iptr:&T_nowait,      defintval:0,	TYPE_INT,   0},	   \
+{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,	iptr:&T_dont_fork,   defintval:1,	TYPE_INT,   0},	   \
 } 
 
 
@@ -258,5 +258,10 @@ extern void print_opp_meas(void);
 extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
 extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
 extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
+
+PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
+                          uint8_t UE_id,
+                          uint8_t abstraction_flag);
+void init_eNB_afterRU(void);
 
 #endif
