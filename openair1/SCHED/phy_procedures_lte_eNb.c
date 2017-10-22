@@ -633,7 +633,8 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 	   eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[ce_level])) {
     */ 
     if (eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[0]==1){ 
-      if (max_preamble_energy[0] > 350) {
+      if ((eNB->prach_energy_counter == 100) && 
+          (max_preamble_energy[0] > eNB->measurements.prach_I0 + 100)) {
 	eNB->UL_INFO.rach_ind_br.number_of_preambles++;
 	
 	eNB->preamble_list_br[ind].preamble_rel8.timing_advance        = max_preamble_delay[ind];//
@@ -661,7 +662,8 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 #endif
 
     {
-      if (max_preamble_energy[0] > 350) {
+      if ((eNB->prach_energy_counter == 100) && 
+          (max_preamble_energy[0] > eNB->measurements.prach_I0+100)) {
 
 	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	      eNB->Mod_id,
@@ -694,22 +696,13 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 		  eNB->preamble_list[0].preamble_rel13.rach_resource_type);	    
 	    pthread_mutex_unlock(&eNB->UL_INFO_mutex);
       
-      } // max_preamble_energy > 350
+      } // max_preamble_energy > prach_I0 + 100 
+      else {
+         eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0*900)>>10) + ((max_preamble_energy[0]*124)>>10); 
+         if (frame==0) LOG_I(PHY,"prach_I0 = %d.%d dB\n",eNB->measurements.prach_I0/10,eNB->measurements.prach_I0%10);
+         if (eNB->prach_energy_counter < 100) eNB->prach_energy_counter++;
+      }
     } // else br_flag
-      /*
-	mac_xface->initiate_ra_proc(eNB->Mod_id,
-	eNB->CC_id,
-	frame,
-	preamble_max,
-	preamble_delay_list[preamble_max]*update_TA/update_TA2,
-	0,subframe,0);*/
-      
-    
-    /*  } else {
-    MSC_LOG_EVENT(MSC_PHY_ENB, "0 RA Failed add user, too many");
-    LOG_I(PHY,"[eNB %d][RAPROC] frame %d, subframe %d: Unable to add user, max user count reached\n",
-	  eNB->Mod_id,frame, subframe);
-	  }*/
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,0);
 }
@@ -1952,16 +1945,27 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   // Call SRS first since all others depend on presence of SRS or lack thereof
   srs_procedures(eNB,proc);
 
-  lte_eNB_I0_measurements(eNB,
-			  subframe,
-			  0,
-			  eNB->first_run_I0_measurements);
   eNB->first_run_I0_measurements = 0;
 
   uci_procedures(eNB,proc);
 
   pusch_procedures(eNB,proc);
 
+  lte_eNB_I0_measurements(eNB,
+                          subframe,
+                          0,
+                          eNB->first_run_I0_measurements);
+
+  int min_I0=1000,max_I0=0;
+  if ((frame==0) && (subframe==6)) { 
+    for (int i=0;i<eNB->frame_parms.N_RB_UL;i++) {
+      if (i==(eNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
+ 
+      if (eNB->measurements.n0_subband_power_tot_dB[i]<min_I0) min_I0 = eNB->measurements.n0_subband_power_tot_dB[i];
+      if (eNB->measurements.n0_subband_power_tot_dB[i]>max_I0) max_I0 = eNB->measurements.n0_subband_power_tot_dB[i];
+    }
+    LOG_I(PHY,"max_I0 %d, min_I0 %d\n",max_I0,min_I0);
+  }
 
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );

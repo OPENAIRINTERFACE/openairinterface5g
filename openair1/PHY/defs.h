@@ -919,7 +919,8 @@ typedef struct {
   int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
   /// Total Subband CQI and RB
   int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
-
+  /// PRACH background noise level
+  int            prach_I0;
 } PHY_MEASUREMENTS_eNB;
 
 
@@ -1035,8 +1036,8 @@ typedef struct PHY_VARS_eNB_s {
 
   /// if ==0 enables phy only test mode
   int mac_enabled;
-
-
+  /// counter to average prach energh over first 100 prach opportunities
+  int prach_energy_counter;
 
   // PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_UE_MAX];
