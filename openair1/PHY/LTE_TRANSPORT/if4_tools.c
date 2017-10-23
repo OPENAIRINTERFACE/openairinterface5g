@@ -309,7 +309,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
   *subframe = ((packet_header->frame_status)>>22)&0x000f;
 
   *packet_type = packet_header->sub_type; 
-
+  LOG_D(PHY,"recv_IF4p5: Frame %d, Subframe %d: packet_type %x\n",*frame,*subframe,*packet_type);
   if (*packet_type == IF4p5_PDLFFT) {          
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RECV_IF4_SYMBOL, *symbol_number );
@@ -339,7 +339,6 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
     slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size);
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 1 );  
-    if (ru->idx==0) LOG_D(PHY,"UL_IF4p5: CC_id %d : frame %d, subframe %d, symbol %d\n",ru->idx,*frame,*subframe,*symbol_number);
     for (element_id=0; element_id<db_halflength; element_id++) {
       i = (uint16_t*) &rxdataF[0][blockoffsetF+element_id];
       *i = alaw2lin_if4p5[ (data_block[element_id] & 0xff) ]; 
@@ -379,8 +378,8 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
              PRACH_BLOCK_SIZE_BYTES);
     }
 
-    //LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
-	//  dB_fixed(signal_energy((int*)&prach_rxsigF[0][0],839)));
+    LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
+	  dB_fixed(signal_energy((int*)&prach_rxsigF[0][0],839)));
     for (idx=0;idx<ru->num_eNB;idx++) ru->wakeup_prach_eNB(ru->eNB_list[idx],ru,*frame,*subframe);
 
   } else if (*packet_type == IF4p5_PULTICK) {
