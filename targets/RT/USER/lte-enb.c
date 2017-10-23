@@ -964,14 +964,14 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
 	  (prevSF_type == SF_UL) && 
 	  (nextSF_type == SF_DL)) {
 	flags = 2; // start of burst
-	//sf_extension = eNB->N_TA_offset<<1;
+	sf_extension = eNB->N_TA_offset<<1;
       }
       if ((fp->frame_type == TDD) &&
 	  (SF_type == SF_DL)&&
 	  (prevSF_type == SF_UL) &&
 	  (nextSF_type == SF_UL)) {
 	flags = 4; // start of burst and end of burst (only one DL SF between two UL)
-	//sf_extension = eNB->N_TA_offset<<1;
+	sf_extension = eNB->N_TA_offset<<1;
       }
      
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
