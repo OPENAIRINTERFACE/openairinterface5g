@@ -54,22 +54,32 @@
 /*!\brief opaque ethernet data structure */
 typedef struct {
   
-  /*!\brief socket file desc */ 
-  int sockfd;
+  /*!\brief socket file desc (control)*/ 
+  int sockfdc;
+  /*!\brief socket file desc (user)*/ 
+  int sockfdd;
   /*!\brief interface name */ 
   char *if_name;
   /*!\brief buffer size */ 
   unsigned int buffer_size;
-  /*!\brief destination address for UDP socket*/
-  struct sockaddr_in dest_addr;
-  /*!\brief local address for UDP socket*/
-  struct sockaddr_in local_addr;
+  /*!\brief destination address (control) for UDP socket*/
+  struct sockaddr_in dest_addrc;
+  /*!\brief local address (control) for UDP socket*/
+  struct sockaddr_in local_addrc;
+  /*!\brief destination address (user) for UDP socket*/
+  struct sockaddr_in dest_addrd;
+  /*!\brief local address (user) for UDP socket*/
+  struct sockaddr_in local_addrd;
   /*!\brief address length for both UDP and RAW socket*/
   int addr_len;
-  /*!\brief destination address for RAW socket*/
-  struct sockaddr_ll dest_addr_ll;
-  /*!\brief local address for RAW socket*/
-  struct sockaddr_ll local_addr_ll;
+  /*!\brief destination address (control) for RAW socket*/
+  struct sockaddr_ll dest_addrc_ll;
+  /*!\brief local address (control) for RAW socket*/
+  struct sockaddr_ll local_addrc_ll;
+  /*!\brief destination address (user) for RAW socket*/
+  struct sockaddr_ll dest_addrd_ll;
+  /*!\brief local address (user) for RAW socket*/
+  struct sockaddr_ll local_addrd_ll;
   /*!\brief inteface index for RAW socket*/
   struct ifreq if_index;
   /*!\brief timeout ms */ 
@@ -119,15 +129,16 @@ typedef struct {
   uint64_t tx_count; 
   /*!\brief number of packets received */
   uint64_t rx_count;
-  /*!\brief TX sequence number*/
-  uint16_t pck_seq_num;
-  /*!\brief Current RX sequence number*/
-  uint16_t pck_seq_num_cur;
-  /*!\brief Previous RX sequence number */
+  /*!\brief TX sequence number*/   
+  uint16_t pck_seq_num;   
+  /*!\brief Current RX sequence number*/   
+  uint16_t pck_seq_num_cur;   
+  /*!\brief Previous RX sequence number */   
   uint16_t pck_seq_num_prev;
-
-  struct ether_header eh; 
-
+  /*!\brief precomputed ethernet header (control) */
+  struct ether_header ehc; 
+  /*!\brief precomputed ethernet header (data) */
+  struct ether_header ehd; 
 } eth_state_t;
 
 
@@ -169,6 +180,7 @@ typedef enum {
   KERNEL_SND_BUF_MAX_SIZE,
   MAX_OPT
 } eth_opt_t;
+
 
 /*
 #define SND_BUF_SIZE	1
@@ -224,19 +236,8 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value);
 int eth_socket_init_udp(openair0_device *device);
 int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
-//int trx_eth_write_udp_IF4(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
-//int trx_eth_read_udp_IF4(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
-int eth_get_dev_conf_udp(openair0_device *device);
 
-/*! \fn static int eth_set_dev_conf_udp(openair0_device *device)
-* \brief
-* \param[in] *device openair device
-* \param[out]
-* \return 0 on success, otherwise -1
-* \note
-* @ingroup  _oai
-*/
-int eth_set_dev_conf_udp(openair0_device *device);
+
 int eth_socket_init_raw(openair0_device *device);
 int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
@@ -245,6 +246,9 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
 int trx_eth_read_raw_IF5_mobipass(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
+int trx_eth_ctlsend_udp(openair0_device *device, void *msg, ssize_t msg_len);
+int trx_eth_ctlrecv_udp(openair0_device *device, void *msg, ssize_t msg_len);
+
 int eth_get_dev_conf_raw(openair0_device *device);
 int eth_set_dev_conf_raw(openair0_device *device);
 int eth_get_dev_conf_raw_IF4p5(openair0_device *device);

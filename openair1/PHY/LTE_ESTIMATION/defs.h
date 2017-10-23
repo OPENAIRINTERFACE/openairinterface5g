@@ -205,7 +205,7 @@ void lte_ue_measurements_emul(PHY_VARS_UE *phy_vars_ue,uint8_t last_slot,uint8_t
 @returns Path loss in dB
  */
 int16_t get_PL(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
-uint32_t get_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
+double get_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 uint32_t get_RSRQ(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 uint8_t get_n_adj_cells(module_id_t Mod_id,uint8_t CC_id);
 uint32_t get_rx_total_gain_dB(module_id_t Mod_id,uint8_t CC_id);
@@ -219,23 +219,22 @@ void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
                       unsigned char eNB_id);
 
 int lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
-                  eNB_rxtx_proc_t *proc,
-                              module_id_t eNB_id,
+			      eNB_rxtx_proc_t *proc,
                               module_id_t UE_id,
                               uint8_t l,
-                              uint8_t Ns,
-                              uint8_t cooperation_flag);
+                              uint8_t Ns);
+
 
 int16_t lte_ul_freq_offset_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                                       int32_t *ul_ch_estimates,
                                       uint16_t nb_rb);
 
 int lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
-                               LTE_eNB_COMMON *eNb_common_vars,
-                               LTE_eNB_SRS *eNb_srs_vars,
+                               LTE_eNB_COMMON *eNB_common_vars,
+                               LTE_eNB_SRS *eNB_srs_vars,
                                SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
                                unsigned char sub_frame_number,
-                               unsigned char eNb_id);
+			       unsigned char eNB_id);
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
                            LTE_eNB_SRS *lte_eNb_srs,

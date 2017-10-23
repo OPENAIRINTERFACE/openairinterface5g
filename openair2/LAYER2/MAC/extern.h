@@ -38,11 +38,7 @@
 #endif //USER_MODE
 #include "PHY/defs.h"
 #include "defs.h"
-#include "COMMON/mac_rrc_primitives.h"
-#ifdef PHY_EMUL
-//#include "SIMULATION/simulation_defs.h"
-#endif //PHY_EMUL
-#include "PHY_INTERFACE/defs.h"
+
 #include "RRC/LITE/defs.h"
 
 extern const uint32_t BSR_TABLE[BSR_TABLE_SIZE];
@@ -56,26 +52,16 @@ extern const uint8_t cqi2fmt1x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 
 extern const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
 
-extern UE_MAC_INST *UE_mac_inst;
-extern eNB_MAC_INST *eNB_mac_inst;
-extern eNB_RRC_INST *eNB_rrc_inst;
 extern UE_RRC_INST *UE_rrc_inst;
-extern UE_MAC_INST *ue_mac_inst;
-extern MAC_RLC_XFACE *Mac_rlc_xface;
-extern uint8_t Is_rrc_registered;
+extern UE_MAC_INST *UE_mac_inst;
+
 
 extern eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
 extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
 
 
 
-//#ifndef USER_MODE
-extern MAC_xface *mac_xface;
-extern RRC_XFACE *Rrc_xface;
 
-extern uint8_t Is_rrc_registered;
-
-#ifndef PHY_EMUL
 #ifndef PHYSIM
 #define NB_INST 1
 #else
@@ -85,17 +71,13 @@ extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 extern unsigned char NB_RN_INST;
 extern unsigned short NODE_ID[1];
-extern void* bigphys_malloc(int);
-#else
-extern EMULATION_VARS *Emul_vars;
-#endif //PHY_EMUL
 
 
 extern int cqi_to_mcs[16];
 
 extern uint32_t RRC_CONNECTION_FLAG;
 
-extern uint8_t rb_table[33];
+extern uint8_t rb_table[34];
 
 extern DCI0_5MHz_TDD_1_6_t       UL_alloc_pdu;
 

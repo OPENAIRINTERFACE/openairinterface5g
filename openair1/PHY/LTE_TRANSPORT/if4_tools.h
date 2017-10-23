@@ -30,6 +30,8 @@
 * \warning
 */
 
+#ifndef __IF4_TOOLS_H__
+#define __IF4_TOOLS_H__
 #include "PHY/defs.h"
 
 /// Macro for IF4 packet type
@@ -37,7 +39,11 @@
 #define IF4p5_PULFFT 0x0019 
 #define IF4p5_PDLFFT 0x0020
 #define IF4p5_PRACH 0x0021
-#define IF4p5_PULTICK 0x0022
+#define IF4p5_PRACH_BR_CE0 0x0021
+#define IF4p5_PRACH_BR_CE1 0x0022
+#define IF4p5_PRACH_BR_CE2 0x0023
+#define IF4p5_PRACH_BR_CE3 0x0024
+#define IF4p5_PULTICK 0x0025
 
 struct IF4p5_header {  
   /// Type
@@ -60,8 +66,10 @@ void gen_IF4p5_ul_header(IF4p5_header_t*, uint16_t, int, int);
 
 void gen_IF4p5_prach_header(IF4p5_header_t*, int, int);
 
-void send_IF4p5(PHY_VARS_eNB*, int, int, uint16_t, int);
+void send_IF4p5(RU_t*, int, int, uint16_t);
 
-void recv_IF4p5(PHY_VARS_eNB*, int*, int*, uint16_t*, uint32_t*);
+void recv_IF4p5(RU_t*, int*, int*, uint16_t*, uint32_t*);
 
-void malloc_IF4p5_buffer(PHY_VARS_eNB*);
+void malloc_IF4p5_buffer(RU_t*);
+
+#endif

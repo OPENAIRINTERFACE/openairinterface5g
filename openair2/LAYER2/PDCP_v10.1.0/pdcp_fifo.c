@@ -89,6 +89,7 @@ extern Packet_OTG_List_t *otg_pdcp_buffer;
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
 #  include "gtpv1u_eNB_task.h"
+#  include "gtpv1u_eNB_defs.h"
 #endif
 
 /* Prevent de-queueing the same PDCP SDU from the queue twice
@@ -178,11 +179,12 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
       AssertFatal(0, "Now execution should not go here");
       LOG_D(PDCP,"Sending to GTPV1U %d bytes\n", ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
       gtpv1u_new_data_req(
-        ctxt_pP->module_id, //gtpv1u_data_t *gtpv1u_data_p,
-        ctxt_pP->rnti,//rb_id/maxDRB, TO DO UE ID
-        ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id + 4,
-        &(((uint8_t *) sdu_p->data)[sizeof (pdcp_data_ind_header_t)]),
-        ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
+			  ctxt_pP->module_id, //gtpv1u_data_t *gtpv1u_data_p,
+			  ctxt_pP->rnti,//rb_id/maxDRB, TO DO UE ID
+			  ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id + 4,
+			  &(((uint8_t *) sdu_p->data)[sizeof (pdcp_data_ind_header_t)]),
+			  ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size,
+			  0);
 
       list_remove_head (&pdcp_sdu_list);
       free_mem_block (sdu_p, __func__);
@@ -261,7 +263,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
       	      MSC_AS_TIME_ARGS(ctxt_pP),
       	      ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id,
       	      ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
-           mac_xface->macphy_exit("sendmsg failed for nas_sock_fd\n");
+	    AssertFatal(1==0,"sendmsg failed for nas_sock_fd\n");
             break;
           } else {
         	  MSC_LOG_TX_MESSAGE(

@@ -48,9 +48,10 @@ extern unsigned char NB_UE_INST;
 
 //#include "LAYER2/MAC/extern.h"
 
+#undef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))
+#undef MIN
 #define MIN(x,y) ((x)<(y)?(x):(y))
-
 
 // Check if the packet is well received or not and extract data
 int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buffer_tx, const unsigned int size)

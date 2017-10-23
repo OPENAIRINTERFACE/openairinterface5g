@@ -37,7 +37,6 @@
 #endif //USER_MODE
 #include "PHY/defs.h"
 #include "defs.h"
-#include "PHY_INTERFACE/defs.h"
 #include "COMMON/mac_rrc_primitives.h"
 
 const uint32_t BSR_TABLE[BSR_TABLE_SIZE]= {0,10,12,14,17,19,22,26,31,36,42,49,57,67,78,91,
@@ -87,12 +86,10 @@ const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE]= {
 
 //uint32_t EBSR_Level[63]={0,10,13,16,19,23,29,35,43,53,65,80,98,120,147,181};
 
-MAC_xface *mac_xface;
 
 uint32_t RRC_CONNECTION_FLAG;
 
 UE_MAC_INST *UE_mac_inst; //[NB_MODULE_MAX];
-eNB_MAC_INST *eNB_mac_inst; //[NB_MODULE_MAX];
 MAC_RLC_XFACE *Mac_rlc_xface;
 
 /// Primary component carrier index of eNB
@@ -103,17 +100,6 @@ int pCC_id[NUMBER_OF_eNB_MAX];
 eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
 eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
 
-/*
-#ifndef USER_MODE
-RRC_XFACE *Rrc_xface;
-MAC_xface *mac_xface;
-#else
-#include "PHY_INTERFACE/extern.h"
-#include "RRC/LITE/extern.h"
-#endif
-*/
-
-uint8_t Is_rrc_registered;
 
 #ifdef OPENAIR2
 unsigned char NB_eNB_INST=0;

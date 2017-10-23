@@ -653,13 +653,13 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   llr32 = (uint32_t*)dlsch_llr;
   if (!llr32) {
-    msg("dlsch_qpsk_llr: llr is null, symbol %d, llr32=%p\n",symbol, llr32);
+    LOG_E(PHY,"dlsch_qpsk_llr: llr is null, symbol %d, llr32=%p\n",symbol, llr32);
     return(-1);
   }
 
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
       len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
@@ -739,7 +739,7 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
     pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,2,subframe,symbol);
 
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-      if (frame_parms->mode1_flag==0)
+      if (frame_parms->nb_antenna_ports_eNB!=1)
         len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
       else
         len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
@@ -856,7 +856,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
 #endif
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
       len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
@@ -969,7 +969,7 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
 
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
       amp_tmp=0x1fff;//dlsch0->sqrt_rho_b; already taken into account
-      if (frame_parms->mode1_flag==0)
+      if (frame_parms->nb_antenna_ports_eNB!=1)
         len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
       else
         len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
@@ -1086,7 +1086,7 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   ch_magb = (int16x8_t*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
 #endif
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
       len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
@@ -1249,7 +1249,7 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
       amp_tmp = 0x1fff;//dlsch0->sqrt_rho_b; already taken into account
-      if (frame_parms->mode1_flag==0)
+      if (frame_parms->nb_antenna_ports_eNB!=1)
         len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
       else
         len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
@@ -1408,14 +1408,11 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr16 = (int16_t*)(*llr16p);
   }
 
-  if (!llr16) {
-    msg("dlsch_qpsk_qpsk_llr: llr is null, symbol %d\n",symbol);
-    return -1;
-  }
+  AssertFatal(llr16!=NULL,"dlsch_qpsk_qpsk_llr: llr is null, symbol %d\n",symbol);
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -1660,14 +1657,12 @@ int dlsch_qpsk_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr16 = (int16_t*)(*llr16p);
   }
 
-  if (!llr16) {
-    msg("dlsch_qpsk_qpsk_llr: llr is null, symbol %d\n",symbol);
-    return -1;
-  }
+  AssertFatal(llr16!=NULL,"dlsch_qpsk_qpsk_llr: llr is null, symbol %d\n",symbol);
+
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -1945,14 +1940,11 @@ int dlsch_qpsk_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr16 = (int16_t*)(*llr16p);
   }
 
-  if (!llr16) {
-    msg("dlsch_qpsk_qam64_llr: llr is null, symbol %d\n",symbol);
-    return -1;
-  }
+  AssertFatal(llr16!=NULL,"dlsch_qpsk_qam64_llr: llr is null, symbol %d\n",symbol);
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -2714,14 +2706,11 @@ int dlsch_16qam_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr16 = (int16_t*)(*llr16p);
   }
 
-  if (!llr16) {
-    msg("dlsch_16qam_qpsk_llr: llr is null, symbol %d\n",symbol);
-    return(-1);
-  }
+  AssertFatal(llr16!=NULL,"dlsch_16qam_qpsk_llr: llr is null, symbol %d\n",symbol);
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -3272,14 +3261,11 @@ int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 
-  if (!llr16) {
-    msg("dlsch_16qam_16qam_llr: llr is null, symbol %d\n",symbol);
-    return(-1);
-  }
+  AssertFatal(llr16!=NULL,"dlsch_16qam_16qam_llr: llr is null, symbol %d\n",symbol);
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -3908,14 +3894,12 @@ int dlsch_16qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 
-  if (!llr16) {
-    msg("dlsch_16qam_64qam_llr: llr is null, symbol %d\n",symbol);
-    return(-1);
-  }
+  AssertFatal(llr16!=NULL,"dlsch_16qam_64qam_llr:llr is null, symbol %d\n",symbol);
+
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -5473,14 +5457,11 @@ int dlsch_64qam_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr16 = (int16_t*)(*llr16p);
   }
 
-  if (!llr16) {
-    msg("dlsch_64qam_64qam_llr: llr is null, symbol %d\n",symbol);
-    return(-1);
-  }
+  AssertFatal(llr16!=NULL,"dlsch_16qam_64qam_llr:llr is null, symbol %d\n",symbol);
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -7019,14 +7000,11 @@ int dlsch_64qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr16 = (int16_t*)(*llr16p);
   }
 
-  if (!llr16) {
-    msg("dlsch_64qam_16qam_llr: llr is null, symbol %d\n",symbol);
-    return(-1);
-  }
+  AssertFatal(llr16!=NULL,"dlsch_16qam_64qam_llr:llr is null, symbol %d\n",symbol);
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
@@ -8835,14 +8813,13 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   }*/
 
   llr16 = (int16_t*)dlsch_llr;
-  if (!llr16) {
-    msg("dlsch_64qam_64qam_llr: llr is null, symbol %d\n",symbol);
-    return(-1);
-  }
+
+  AssertFatal(llr16!=NULL,"dlsch_16qam_64qam_llr:llr is null, symbol %d\n",symbol);
+
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     // if symbol has pilots
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->nb_antenna_ports_eNB!=1)
       // in 2 antenna ports we have 8 REs per symbol per RB
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else

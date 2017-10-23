@@ -55,6 +55,8 @@
 #include "mex.h"
 #endif
 
+#include "common/ran_context.h"
+
 #define SHUFFLE16(a,b,c,d,e,f,g,h) _mm_set_epi8(h==-1?-1:h*2+1, \
             h==-1?-1:h*2, \
             g==-1?-1:g*2+1, \
@@ -122,7 +124,7 @@ void log_map8(llr_t* systematic,
 {
 
 #ifdef DEBUG_LOGMAP
-  msg("log_map, frame_length %d\n",frame_length);
+  printf("log_map, frame_length %d\n",frame_length);
 #endif
 
   if (gamma_stats) start_meas(gamma_stats) ;
@@ -158,7 +160,7 @@ void compute_gamma8(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
 #endif
 
 #ifdef DEBUG_LOGMAP
-  msg("compute_gamma, %p,%p,%p,%p,framelength %d\n",m11,m10,systematic,y_parity,frame_length);
+  printf("compute_gamma, %p,%p,%p,%p,framelength %d\n",m11,m10,systematic,y_parity,frame_length);
 #endif
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -708,7 +710,7 @@ void compute_ext8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, l
   //
 
 #ifdef DEBUG_LOGMAP
-  msg("compute_ext, %p, %p, %p, %p, %p, %p ,framelength %d\n",alpha,beta,m_11,m_10,ext,systematic,frame_length);
+  printf("compute_ext, %p, %p, %p, %p, %p, %p ,framelength %d\n",alpha,beta,m_11,m_10,ext,systematic,frame_length);
 #endif
 
   alpha_ptr = alpha128;
@@ -843,6 +845,10 @@ void free_td8(void)
   }
 }
 
+
+
+extern RAN_CONTEXT_t RC;
+
 void init_td8()
 {
 
@@ -879,14 +885,14 @@ void init_td8()
       pi2tab8[ind][i] = j;
       //    printf("pi2[%d] = %d\n",i,j);
     }
-
+    
     for (i=0; i<n2; i++) {
       pi = base_interleaver[i];//(unsigned int)threegpplte_interleaver(f1,f2,n);
       pi3 = pi2tab8[ind][pi];
       pi4tab8[ind][pi2tab8[ind][i]] = pi3;
       pi5tab8[ind][pi3] = pi2tab8[ind][i];
       pi6tab8[ind][pi] = pi2tab8[ind][i];
-    }
+      }
 
   }
 }
@@ -958,7 +964,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   int offset8_flag=0;
 
   if (crc_type > 3) {
-    msg("Illegal crc length!\n");
+    printf("Illegal crc length!\n");
     return 255;
   }
 
@@ -976,7 +982,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   for (iind=0; iind < 188 && f1f2mat[iind].nb_bits != n; iind++);
 
   if ( iind == 188 ) {
-    msg("Illegal frame length!\n");
+    printf("Illegal frame length!\n");
     return 255;
   }
 
@@ -1306,7 +1312,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     yp1[i] = *yp;
     yp++;
 #ifdef DEBUG_LOGMAP
-    msg("Term 1 (%d): %d %d\n",i,s[i],yp1[i]);
+    printf("Term 1 (%d): %d %d\n",i,s[i],yp1[i]);
 #endif //DEBUG_LOGMAP
   }
 
@@ -1318,12 +1324,12 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     yp2[i-16] = *yp;
     yp++;
 #ifdef DEBUG_LOGMAP
-    msg("Term 2 (%d): %d %d\n",i-16,s[i],yp2[i-16]);
+    printf("Term 2 (%d): %d %d\n",i-16,s[i],yp2[i-16]);
 #endif //DEBUG_LOGMAP
   }
 
 #ifdef DEBUG_LOGMAP
-  msg("\n");
+  printf("\n");
 #endif //DEBUG_LOGMAP
 
   if (init_stats) stop_meas(init_stats);

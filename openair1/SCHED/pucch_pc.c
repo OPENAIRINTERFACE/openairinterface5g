@@ -63,6 +63,9 @@ int16_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,u
 
   case pucch_format1a:
   case pucch_format1b:
+  case pucch_format1b_csA2:
+  case pucch_format1b_csA3:
+  case pucch_format1b_csA4:
     Po_PUCCH += (1+(ue->frame_parms.ul_power_control_config_common.deltaF_PUCCH_Format1b<<1));
     break;
 

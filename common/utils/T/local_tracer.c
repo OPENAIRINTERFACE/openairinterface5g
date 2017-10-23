@@ -63,7 +63,7 @@ static int get_connection(char *addr, int port)
   socklen_t alen;
   int s, t;
 
-  printf("waiting for connection on %s:%d\n", addr, port);
+  printf("T tracer: waiting for connection on %s:%d\n", addr, port);
 
   s = socket(AF_INET, SOCK_STREAM, 0);
   if (s == -1) { perror("socket"); exit(1); }
@@ -82,7 +82,7 @@ static int get_connection(char *addr, int port)
   if (t == -1) { perror("accept"); exit(1); }
   close(s);
 
-  printf("connected\n");
+  printf("T tracer: connected\n");
 
   return t;
 }
@@ -150,7 +150,7 @@ process:
   while (size) {
     int l = write(f->socket_remote, b, size);
     if (l <= 0) {
-      printf("forward error\n");
+      printf("T tracer: forward error\n");
       close(f->socket_remote);
       f->socket_remote = -1;
       break;
@@ -268,7 +268,7 @@ static void *forwarder(int port, int s)
   f->memusage = 0;
   f->last_warning_memusage = 0;
 
-  printf("waiting for remote tracer on port %d\n", port);
+  printf("T tracer: waiting for remote tracer on port %d\n", port);
 
   f->remote_port = port;
   f->socket_remote = get_connection("0.0.0.0", port);
@@ -305,7 +305,7 @@ static void forward(void *_forwarder, char *buf, int size)
   if (f->memusage > f->last_warning_memusage &&
       f->memusage - f->last_warning_memusage > 100000000) {
     f->last_warning_memusage += 100000000;
-    printf("WARNING: memory usage is over %"PRIu64"MB\n",
+    printf("T tracer: WARNING: memory usage is over %"PRIu64"MB\n",
            f->last_warning_memusage / 1000000);
   } else
   if (f->memusage < f->last_warning_memusage &&

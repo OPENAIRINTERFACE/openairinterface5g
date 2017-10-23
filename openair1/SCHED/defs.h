@@ -29,7 +29,7 @@
 #define __openair_SCHED_H__
 
 #include "PHY/defs.h"
-
+#include "PHY_INTERFACE/defs.h"
 
 enum THREAD_INDEX { OPENAIR_THREAD_INDEX = 0,
                     TOP_LEVEL_SCHEDULER_THREAD_INDEX,
@@ -170,7 +170,7 @@ void phy_procedures_UE_S_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abst
   @param phy_vars_rn pointer to the RN variables
   @param do_meas Do inline timing measurement
 */
-void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn,int do_meas, int do_pdcch_flag);
+void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn,int do_meas);
 
 /*! \brief Scheduling for eNB RX UE-specific procedures in normal subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
@@ -206,10 +206,13 @@ void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,re
 
 /*! \brief Scheduling for eNB PRACH RX procedures
   @param phy_vars_eNB Pointer to eNB variables on which to act
-  @param proc Pointer to RXn-TXnp4 proc information
+  @param br_flag indicator for eMTC PRACH
 */
-void prach_procedures(PHY_VARS_eNB *eNB);
-
+void prach_procedures(PHY_VARS_eNB *eNB,
+#ifdef Rel14
+		      int br_flag
+#endif
+		      );
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.
   @param frame_parms Pointer to DL frame parameter descriptor
   @param subframe Subframe index
@@ -380,9 +383,11 @@ uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, ui
 uint16_t get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1);
 
 
-int8_t find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
-int32_t add_ue(int16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
-int mac_phy_remove_ue(module_id_t Mod_idP,rnti_t rnti);
+int8_t find_ue_dlsch(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
+int8_t find_ue_ulsch(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
+
+//int32_t add_ue(int16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
+//int mac_phy_remove_ue(module_id_t Mod_idP,rnti_t rnti);
 
 void process_timing_advance(module_id_t Mod_id,uint8_t CC_id,int16_t timing_advance);
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint16_t timing_advance);
@@ -487,17 +492,8 @@ void get_cqipmiri_params(PHY_VARS_UE *ue,uint8_t eNB_id);
 
 int8_t get_PHR(uint8_t Mod_id, uint8_t CC_id, uint8_t eNB_index);
 
-#ifdef LOCALIZATION
-/*! \brief This function collects eNB_UE stats and aggregate them in lists for localization
-    @param phy_vars_ue PHY variables
-    @param UE_id Index of UE
-    @param frame Index of frame
-    @param subframe Index of subframe
-    @param UE_tx_power_dB estimated UE Tx power
-    @returns -1 if updated list, 0 if calculated median
- */
-double aggregate_eNB_UE_localization_stats(PHY_VARS_eNB *phy_vars_eNB, int8_t UE_id, frame_t frameP, sub_frame_t subframeP, int32_t UE_tx_power_dB);
-#endif
+void schedule_response(Sched_Rsp_t *Sched_INFO);
+
 LTE_eNB_UE_stats* get_UE_stats(uint8_t Mod_id, uint8_t CC_id,uint16_t rnti);
 
 

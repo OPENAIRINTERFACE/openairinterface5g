@@ -98,19 +98,13 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
 #   endif
 
     if (enb_nb > 0) {
+      LOG_I(RRC,"Creating RRC eNB Task\n");
+
       if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
         LOG_E(RRC, "Create task for RRC eNB failed\n");
         return -1;
       }
 
-#   if ENABLE_RAL
-
-      if (itti_create_task (TASK_RAL_ENB, eRAL_task, NULL) < 0) {
-        LOG_E(RAL_ENB, "Create task for RAL eNB failed\n");
-        return -1;
-      }
-
-#   endif
     }
 
     if (ue_nb > 0) {

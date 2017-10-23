@@ -60,10 +60,10 @@ rlc_tm_send_sdu (
           PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_pP));
 
     for (index = 0; index < length_in_bytes; index++) {
-      msg ("%c", srcP[index]);
+      LOG_T (RLC,"%c", srcP[index]);
     }
 
-    msg ("\n");
+    LOG_T (RLC,"\n");
 #endif
 
     memcpy (&rlc_pP->output_sdu_in_construction->data[rlc_pP->output_sdu_size_to_write], srcP, length_in_bytes);
@@ -77,7 +77,7 @@ rlc_tm_send_sdu (
       rlc_pP->output_sdu_in_construction);
     rlc_pP->output_sdu_in_construction = NULL;
   } else {
-    msg ("[RLC_TM %p][SEND_SDU] ERROR  OUTPUT SDU IS NULL\n", rlc_pP);
+    LOG_D (RLC,"[RLC_TM %p][SEND_SDU] ERROR  OUTPUT SDU IS NULL\n", rlc_pP);
   }
 }
 //-----------------------------------------------------------------------------

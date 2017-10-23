@@ -17,6 +17,44 @@
 #include "openair_logo.h"
 #include "config.h"
 
+/****************************************************************************/
+/* conversion from rnti to "ue_id" (which does not really exists)           */
+/* the idea is to assign an ue_id to an rnti as soon as we get an event     */
+/* for the rnti                                                             */
+/****************************************************************************/
+
+int ue_id[65536];
+int next_ue_id;
+
+void reset_ue_ids(void)
+{
+  int i;
+  printf("resetting known UEs\n");
+  for (i = 0; i < 65536; i++) ue_id[i] = -1;
+  ue_id[65535] = 0;
+  ue_id[65534] = 1;     /* HACK: to be removed */
+  ue_id[2]     = 2;     /* this supposes RA RNTI = 2, very openair specific */
+  next_ue_id = 3;
+}
+
+int ue_id_from_rnti(void *_priv, int rnti)
+{
+  if (rnti < 0) rnti = 65534; /* HACK, to be removed */
+
+  if (rnti < 0 || rnti > 65535) { printf("bad rnti %d\n", rnti); exit(1); }
+  /* rnti not seen yet? give it a new ue_id */
+  if (ue_id[rnti] == -1) {
+    ue_id[rnti] = next_ue_id;
+    next_ue_id++;
+  }
+  return ue_id[rnti];
+}
+
+/****************************************************************************/
+/* end of rnti->ue_id conversion                                            */
+/****************************************************************************/
+
+
 typedef struct {
   view *phyview;
   view *macview;
@@ -25,6 +63,7 @@ typedef struct {
   view *rrcview;
   view *legacy;
   widget *current_ue_label;
+  widget *current_ue_button;
   widget *prev_ue_button;
   widget *next_ue_button;
   widget *pusch_iq_ue_xy_plot;
@@ -58,6 +97,7 @@ typedef struct {
   enb_gui *e;
   int ue;                /* what UE is displayed in the UE specific views */
   void *database;
+  int nb_rb;
 } enb_data;
 
 void is_on_changed(void *_d)
@@ -85,27 +125,6 @@ connection_dies:
   if (pthread_mutex_unlock(&d->lock)) abort();
 }
 
-void usage(void)
-{
-  printf(
-"options:\n"
-"    -d <database file>        this option is mandatory\n"
-"    -on <GROUP or ID>         turn log ON for given GROUP or ID\n"
-"    -off <GROUP or ID>        turn log OFF for given GROUP or ID\n"
-"    -ON                       turn all logs ON\n"
-"    -OFF                      turn all logs OFF\n"
-"                              note: you may pass several -on/-off/-ON/-OFF,\n"
-"                                    they will be processed in order\n"
-"                                    by default, all is off\n"
-"    -ip <host>                connect to given IP address (default %s)\n"
-"    -p <port>                 connect to given port (default %d)\n"
-"    -debug-gui                activate GUI debug logs\n",
-  DEFAULT_REMOTE_IP,
-  DEFAULT_REMOTE_PORT
-  );
-  exit(1);
-}
-
 static void *gui_thread(void *_g)
 {
   gui *g = _g;
@@ -116,11 +135,15 @@ static void *gui_thread(void *_g)
 static filter *ticktime_filter(void *database, char *event, int i, int ue)
 {
   /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0" */
+  /* we get the UE_id from the rnti */
   return
     filter_and(
       filter_eq(filter_evarg(database, event, "harq_pid"), filter_int(i)),
       filter_and(
-        filter_eq(filter_evarg(database, event, "UE_id"), filter_int(ue)),
+        filter_eq(
+          filter_evfun(database, ue_id_from_rnti, NULL,
+            filter_evarg(database, event, "rnti")),
+          filter_int(ue)),
         filter_eq(filter_evarg(database, event, "eNB_ID"), filter_int(0))));
 }
 
@@ -148,23 +171,28 @@ static void set_current_ue(gui *g, enb_data *e, int ue)
 
   logger_set_filter(e->e->pusch_iq_ue_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_PUSCH_IQ", "UE_ID"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_PUSCH_IQ", "rnti")),
         filter_int(ue)));
   logger_set_filter(e->e->ul_estimate_ue_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "UE_ID"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "rnti")),
         filter_int(ue)));
   logger_set_filter(e->e->pucch1_energy_ue_threshold_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "rnti")),
         filter_int(ue)));
   logger_set_filter(e->e->pucch1_energy_ue_energy_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_PUCCH_1_ENERGY", "rnti")),
         filter_int(ue)));
   logger_set_filter(e->e->pucch_iq_ue_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_PUCCH_1AB_IQ", "UE_ID"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_PUCCH_1AB_IQ", "rnti")),
         filter_int(ue)));
   for (i = 0; i < 8; i++) {
     logger_set_filter(e->e->dl_dci_logger[i],
@@ -185,11 +213,13 @@ static void set_current_ue(gui *g, enb_data *e, int ue)
   }
   logger_set_filter(e->e->dl_mcs_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_DLSCH_UE_DCI", "UE_id"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_DLSCH_UE_DCI", "rnti")),
         filter_int(ue)));
   logger_set_filter(e->e->ul_mcs_logger,
       filter_eq(
-        filter_evarg(e->database, "ENB_PHY_ULSCH_UE_DCI", "UE_id"),
+        filter_evfun(e->database, ue_id_from_rnti, NULL,
+          filter_evarg(e->database, "ENB_PHY_ULSCH_UE_DCI", "rnti")),
         filter_int(ue)));
 }
 
@@ -201,12 +231,15 @@ static void click(void *private, gui *g,
   enb_data *ed = private;
   enb_gui *e = ed->e;
   int ue = ed->ue;
+  int do_reset = 0;
 
   if (button != 1) return;
   if (w == e->prev_ue_button) { ue--; if (ue < 0) ue = 0; }
   if (w == e->next_ue_button) ue++;
+  if (w == e->current_ue_button) do_reset = 1;
 
   if (pthread_mutex_lock(&ed->lock)) abort();
+  if (do_reset) reset_ue_ids();
   if (ue != ed->ue) {
     set_current_ue(g, ed, ue);
     ed->ue = ue;
@@ -248,10 +281,12 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
   widget_add_child(g, col, logo, -1);
   w = new_container(g, HORIZONTAL);
   widget_add_child(g, col, w, -1);
+  /* TODO: use button widget, not label widget */
   w2 = new_label(g, "");
   widget_add_child(g, w, w2, -1);
+  label_set_clickable(g, w2, 1);
+  e->current_ue_button = w2;
   e->current_ue_label = w2;
-  /* TODO: use button widget, not label widget */
   w2 = new_label(g, "  [prev UE]  ");
   widget_add_child(g, w, w2, -1);
   label_set_clickable(g, w2, 1);
@@ -264,14 +299,14 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
 
   input_signal_plot = new_xy_plot(g, 256, 55, "input signal", 20);
   widget_add_child(g, line, input_signal_plot, -1);
-  xy_plot_set_range(g, input_signal_plot, 0, 7680*10, 20, 70);
+  xy_plot_set_range(g, input_signal_plot, 0, 7680*10 * ed->nb_rb/25, 20, 70);
   input_signal_log = new_framelog(h, database,
       "ENB_PHY_INPUT_SIGNAL", "subframe", "rxdata");
   /* a skip value of 10 means to process 1 frame over 10, that is
    * more or less 10 frames per second
    */
   framelog_set_skip(input_signal_log, 10);
-  input_signal_view = new_view_xy(7680*10, 10,
+  input_signal_view = new_view_xy(7680*10 * ed->nb_rb/25, 10,
       g, input_signal_plot, new_color(g, "#0c0c72"), XY_LOOP_MODE);
   logger_add_view(input_signal_log, input_signal_view);
 
@@ -589,7 +624,8 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database,
   container_set_child_growable(g, top_container, text, 1);
   e->legacy = new_view_textlist(10000, 10, g, text);
 
-  set_current_ue(g, ed, 0);
+  set_current_ue(g, ed, ed->ue);
+  register_notifier(g, "click", e->current_ue_button, click, ed);
   register_notifier(g, "click", e->prev_ue_button, click, ed);
   register_notifier(g, "click", e->next_ue_button, click, ed);
 }
@@ -610,6 +646,28 @@ void view_add_log(view *v, char *log, event_handler *h, void *database,
   on_off(database, log, is_on, 1);
 }
 
+void usage(void)
+{
+  printf(
+"options:\n"
+"    -d   <database file>      this option is mandatory\n"
+"    -rb  <RBs>                setup for this number of RBs (default 25)\n"
+"    -on  <GROUP or ID>        turn log ON for given GROUP or ID\n"
+"    -off <GROUP or ID>        turn log OFF for given GROUP or ID\n"
+"    -ON                       turn all logs ON\n"
+"    -OFF                      turn all logs OFF\n"
+"                              note: you may pass several -on/-off/-ON/-OFF,\n"
+"                                    they will be processed in order\n"
+"                                    by default, all is off\n"
+"    -ip <host>                connect to given IP address (default %s)\n"
+"    -p  <port>                connect to given port (default %d)\n"
+"    -debug-gui                activate GUI debug logs\n",
+  DEFAULT_REMOTE_IP,
+  DEFAULT_REMOTE_PORT
+  );
+  exit(1);
+}
+
 int main(int n, char **v)
 {
   extern int volatile gui_logd;
@@ -628,6 +686,10 @@ int main(int n, char **v)
   enb_gui eg;
   enb_data enb_data;
 
+  reset_ue_ids();
+
+  enb_data.nb_rb = 25;
+
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
   if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
 
@@ -638,6 +700,8 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
     if (!strcmp(v[i], "-d"))
       { if (i > n-2) usage(); database_filename = v[++i]; continue; }
+    if (!strcmp(v[i], "-rb"))
+      { if (i > n-2) usage(); enb_data.nb_rb = atoi(v[++i]); continue; }
     if (!strcmp(v[i], "-ip")) { if (i > n-2) usage(); ip = v[++i]; continue; }
     if (!strcmp(v[i], "-p"))
       { if (i > n-2) usage(); port = atoi(v[++i]); continue; }
@@ -651,6 +715,11 @@ int main(int n, char **v)
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=0; continue; }
     if (!strcmp(v[i], "-debug-gui")) { gui_logd = 1; continue; }
     usage();
+  }
+
+  switch (enb_data.nb_rb) {
+  case 25: case 50: case 100: break;
+  default: printf("ERROR, bad value for -rb (%d)\n", enb_data.nb_rb); exit(1);
   }
 
   if (database_filename == NULL) {
@@ -671,7 +740,7 @@ int main(int n, char **v)
   g = gui_init();
   new_thread(gui_thread, g);
 
-  enb_data.ue = 0;
+  enb_data.ue = 3;
   enb_data.e = &eg;
   enb_data.database = database;
 

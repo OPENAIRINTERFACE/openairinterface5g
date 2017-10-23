@@ -378,6 +378,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
     return(-1);
   }
 
+
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
 #if DISABLE_LOG_X
@@ -388,6 +389,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
             ue->high_speed_flag,type,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
+
 
 #if UE_TIMING_TRACE
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
@@ -533,8 +535,8 @@ int rx_pdsch(PHY_VARS_UE *ue,
 #if T_TRACER
     if (type == PDSCH)
     {
-      T(T_UE_PHY_PDSCH_ENERGY, T_INT(eNB_id),  T_INT(0), T_INT(frame%1024), T_INT(subframe),
-                               T_INT(avg[0]), T_INT(avg[1]),    T_INT(avg[2]),             T_INT(avg[3]));
+      T(T_UE_PHY_PDSCH_ENERGY, T_INT(eNB_id), T_INT(frame%1024), T_INT(subframe),
+                               T_INT(avg[0]), T_INT(avg[1]),     T_INT(avg[2]),   T_INT(avg[3]));
     }
 #endif
 
@@ -1230,15 +1232,13 @@ int rx_pdsch(PHY_VARS_UE *ue,
   }
 #endif
 
-#if T_TRACER
-  T(T_UE_PHY_PDSCH_IQ, T_INT(eNB_id), T_INT(ue->Mod_id), T_INT(frame%1024),
+  T(T_UE_PHY_PDSCH_IQ, T_INT(eNB_id), T_INT(frame%1024),
     T_INT(subframe), T_INT(nb_rb),
     T_INT(frame_parms->N_RB_UL), T_INT(frame_parms->symbols_per_tti),
     T_BUFFER(&pdsch_vars[eNB_id]->rxdataF_comp0[eNB_id][0],
              2 * /* ulsch[UE_id]->harq_processes[harq_pid]->nb_rb */ frame_parms->N_RB_UL *12*frame_parms->symbols_per_tti*2));
-#endif
-  return(0);
 
+  return 0;
 }
 
 //==============================================================================================
@@ -1271,7 +1271,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
 
-    if (frame_parms->mode1_flag==1) // 10 out of 12 so don't reduce size
+    if (frame_parms->nb_antenna_ports_eNB==1) // 10 out of 12 so don't reduce size
       nb_rb=1+(5*nb_rb/6);
     else
       pilots=1;
@@ -1529,7 +1529,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==1) { // 10 out of 12 so don't reduce size
+    if (frame_parms->nb_antenna_ports_eNB==1) { // 10 out of 12 so don't reduce size
       nb_rb=1+(5*nb_rb/6);
     }
     else {
@@ -2124,7 +2124,7 @@ void dlsch_channel_compensation_TM56(int **rxdataF_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==1) // 10 out of 12 so don't reduce size
+    if (frame_parms->nb_antenna_ports_eNB==1) // 10 out of 12 so don't reduce size
       { nb_rb=1+(5*nb_rb/6); }
 
     else
@@ -2715,7 +2715,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==1) // 10 out of 12 so don't reduce size
+    if (frame_parms->nb_antenna_ports_eNB==1) // 10 out of 12 so don't reduce size
       { nb_rb=1+(5*nb_rb/6); }
 
     else
@@ -3460,7 +3460,7 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==1) // 10 out of 12 so don't reduce size
+    if (frame_parms->nb_antenna_ports_eNB==1) // 10 out of 12 so don't reduce size
       nb_rb=1+(5*nb_rb/6);
     else
       pilots=1;
@@ -3468,9 +3468,9 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
 
   // Determine scaling amplitude based the symbol
 
-ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
-
-    LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol_mod,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
+  ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
+  
+  LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol_mod,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
    // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
@@ -3522,9 +3522,9 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1))
     nre=8;
-  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB==1))
     nre=10;
   else
     nre=12;
@@ -3551,7 +3551,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
         //avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[0], coeff128),15)));
         //avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[1], coeff128),15)));
 
-        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
+        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
           dl_ch128+=2;
         }
         else {
@@ -3603,7 +3603,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
         avg128D = vqaddq_s32(avg128D,vmull_s16(dl_ch128[2],dl_ch128[2]));
         avg128D = vqaddq_s32(avg128D,vmull_s16(dl_ch128[3],dl_ch128[3]));
 
-        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
+        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
           dl_ch128+=4;
         } else {
           avg128D = vqaddq_s32(avg128D,vmull_s16(dl_ch128[4],dl_ch128[4]));
@@ -3620,9 +3620,10 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
         */
       }
 
-      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+
+      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1))
         nre=8;
-      else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+      else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB==1))
         nre=10;
       else
         nre=12;
@@ -3669,9 +3670,9 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
   avg_1[1] = 0;
   // 5 is always a symbol with no pilots for both normal and extended prefix
 
-  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1))
     nre=8;
-  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB==1))
     nre=10;
   else
     nre=12;
@@ -3720,7 +3721,7 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
 
       avg_1_128D = _mm_add_epi32(avg_1_128D,_mm_madd_epi16(dl_ch1_128_tmp,dl_ch1_128_tmp));
 
-      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
+      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
         dl_ch0_128+=2;
         dl_ch1_128+=2;
       }
@@ -3745,7 +3746,6 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
         dl_ch1_128+=3;
       }
     }
-
 
 
     avg_0[aarx] = (((int*)&avg_0_128D)[0])/(nb_rb*nre) +
@@ -3803,9 +3803,9 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
   avg[1] = 0;
   // 5 is always a symbol with no pilots for both normal and extended prefix
 
-  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1))
     nre=8;
-  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB==1))
     nre=10;
   else
     nre=12;
@@ -3842,7 +3842,7 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
       //      mmtmpD1 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);
       avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
 
-      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
+      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
         dl_ch0_128+=2;
         dl_ch1_128+=2;
       }
@@ -3905,9 +3905,9 @@ void dlsch_channel_level_TM56(int **dl_ch_estimates_ext,
   avg[1] = 0;
   // 5 is always a symbol with no pilots for both normal and extended prefix
 
-  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1))
     nre=8;
-  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB==1))
     nre=10;
   else
     nre=12;
@@ -3932,7 +3932,7 @@ void dlsch_channel_level_TM56(int **dl_ch_estimates_ext,
       //      mmtmpD1 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);
       avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
 
-      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
+      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
         dl_ch0_128+=2;
         dl_ch1_128+=2;
       }
@@ -3997,7 +3997,7 @@ void dlsch_channel_level_TM7(int **dl_bf_ch_estimates_ext,
         avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
         avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
 
-        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
+        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
           dl_ch128+=2;
         } else {
           avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
@@ -5343,7 +5343,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             rxF_ext+=9-frame_parms->Ncp;
 
           } else {
-            msg("dlsch_extract_rbs_TM7(dl_demodulation.c):pilot or ue spec pilot detection error\n");
+            LOG_E(PHY,"dlsch_extract_rbs_TM7(dl_demodulation.c):pilot or ue spec pilot detection error\n");
             exit(-1);
           }
 
@@ -5603,7 +5603,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
       }
 
           } else {
-            msg("dlsch_extract_rbs_TM7(dl_demodulation.c):pilot or ue spec pilot detection error\n");
+            LOG_E(PHY,"dlsch_extract_rbs_TM7(dl_demodulation.c):pilot or ue spec pilot detection error\n");
             exit(-1);
 
           }

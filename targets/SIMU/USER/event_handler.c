@@ -434,6 +434,7 @@ void update_mac(Event_t event)
           UE_list = &eNB_mac_inst->UE_list;
 
           for(i=UE_list->head; i>=0; i=UE_list->next[i]) {
+	    /*
             if(&mac_config[i].DCI_aggregation_min) {
               LOG_I(EMU,"update dci aggregation min\n");
               oai_emulation->mac_config[i].DCI_aggregation_min= mac_config[i].DCI_aggregation_min;
@@ -449,6 +450,7 @@ void update_mac(Event_t event)
               LOG_I(EMU,"DLSCH_dci_size_bits UE %d: \n",i);
               LOG_I(EMU,"%" PRIu8,UE_list->UE_template[0][i].DLSCH_dci_size_bits);
             }
+	    */
 
             if(mac_config[i].priority !=NULL) {
               LOG_I(EMU,"update priority \n");
@@ -546,7 +548,7 @@ void update_mac(Event_t event)
           LOG_I(EMU,"update complete mac params \n");
           i = event.ue;
           int j = event.lcid;
-
+	  /*
           if(&mac_config[i].DCI_aggregation_min) {
             LOG_I(EMU,"update dci aggregation min\n");
             oai_emulation->mac_config[i].DCI_aggregation_min= mac_config[i].DCI_aggregation_min;
@@ -562,7 +564,7 @@ void update_mac(Event_t event)
             LOG_I(EMU,"DLSCH_dci_size_bits UE %d: \n",i);
             LOG_I(EMU,"%" PRIu8,UE_list->UE_template[0][i].DLSCH_dci_size_bits);
           }
-
+	  */
           if(mac_config[i].priority !=NULL) {
             LOG_I(EMU,"update priority \n");
 
@@ -690,18 +692,18 @@ void update_mac(Event_t event)
 
       if(event.ue == -1) {
         UE_list = &eNB_mac_inst->UE_list;
-
+	/*
         for(i=UE_list->head; i>=0; i=UE_list->next[i]) {
           oai_emulation->mac_config[i].DCI_aggregation_min=mac_config[i].DCI_aggregation_min;
           UE_list->UE_template[0][i].DCI_aggregation_min = oai_emulation->mac_config[i].DCI_aggregation_min;
           LOG_I(EMU,"DCI_aggregation_min UE %d : \n", i);
           LOG_I(EMU,"%" PRIu8 "\n",UE_list->UE_template[0][i].DCI_aggregation_min);
-        }
+	  }*/
       } else {
-        oai_emulation->mac_config[event.ue].DCI_aggregation_min=mac_config[event.ue].DCI_aggregation_min;
+	/*        oai_emulation->mac_config[event.ue].DCI_aggregation_min=mac_config[event.ue].DCI_aggregation_min;
         UE_list->UE_template[0][event.ue].DCI_aggregation_min = oai_emulation->mac_config[event.ue].DCI_aggregation_min;
         LOG_I(EMU,"DCI_aggregation_min UE %d : \n", event.ue);
-        LOG_I(EMU,"%" PRIu8 "\n",UE_list->UE_template[0][event.ue].DCI_aggregation_min);
+        LOG_I(EMU,"%" PRIu8 "\n",UE_list->UE_template[0][event.ue].DCI_aggregation_min);*/
       }
     } else if(!strcmp((char *) event.key, "DLSCH_dci_size_bits") && event.value!=NULL && validate_mac(event)) {
       Mac_config* mac_config;// = malloc(sizeof(Mac_config)*16);
@@ -712,18 +714,18 @@ void update_mac(Event_t event)
 
       if(event.ue == -1) {
         UE_list = &eNB_mac_inst->UE_list;
-
+	/*
         for(i=UE_list->head; i>=0; i=UE_list->next[i]) {
           oai_emulation->mac_config[i].DLSCH_dci_size_bits=mac_config[i].DLSCH_dci_size_bits;
           UE_list->UE_template[0][i].DLSCH_dci_size_bits = oai_emulation->mac_config[i].DLSCH_dci_size_bits;
           LOG_I(EMU,"DLSCH_dci_size_bits UE %d: \n", i);
           LOG_I(EMU,"%" PRIu8,UE_list->UE_template[0][i].DLSCH_dci_size_bits);
-        }
+	  }*/
       } else {
-        oai_emulation->mac_config[event.ue].DLSCH_dci_size_bits=mac_config[event.ue].DLSCH_dci_size_bits;
+	/*        oai_emulation->mac_config[event.ue].DLSCH_dci_size_bits=mac_config[event.ue].DLSCH_dci_size_bits;
         UE_list->UE_template[0][event.ue].DLSCH_dci_size_bits = oai_emulation->mac_config[event.ue].DLSCH_dci_size_bits;
         LOG_I(EMU,"DLSCH_dci_size_bits UE %d: \n", event.ue);
-        LOG_I(EMU,"%" PRIu8,UE_list->UE_template[0][event.ue].DLSCH_dci_size_bits);
+        LOG_I(EMU,"%" PRIu8,UE_list->UE_template[0][event.ue].DLSCH_dci_size_bits);*/
       }
 
     } else if(!strcmp((char *) event.key, "ul_bandwidth") && event.value!=NULL) {

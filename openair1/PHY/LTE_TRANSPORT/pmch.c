@@ -81,10 +81,11 @@ void dump_mch(PHY_VARS_UE *ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,in
                &ue->common_vars.rxdata[0][subframe*ue->frame_parms.samples_per_tti],
                ue->frame_parms.samples_per_tti,1,1);
 
+  /*
   if (PHY_vars_eNB_g)
     write_output("txsig_mch.m","txs_mch",
                  &PHY_vars_eNB_g[0][0]->common_vars.txdata[0][0][subframe*ue->frame_parms.samples_per_tti],
-                 ue->frame_parms.samples_per_tti,1,1);
+                 ue->frame_parms.samples_per_tti,1,1);*/
 }
 
 int is_pmch_subframe(uint32_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms)
@@ -195,7 +196,7 @@ void fill_eNB_dlsch_MCH(PHY_VARS_eNB *eNB,int mcs,int ndi,int rvidx)
   dlsch->harq_processes[0]->rvidx = rvidx;
   dlsch->harq_processes[0]->Nl    = 1;
   dlsch->harq_processes[0]->TBS   = TBStable[get_I_TBS(dlsch->harq_processes[0]->mcs)][frame_parms->N_RB_DL-1];
-  dlsch->current_harq_pid = 0;
+  //  dlsch->harq_ids[subframe]       = 0;
   dlsch->harq_processes[0]->nb_rb = frame_parms->N_RB_DL;
 
   switch(frame_parms->N_RB_DL) {
@@ -284,6 +285,7 @@ void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a)
 
   int G;
   int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
 
   if (eNB->abstraction_flag != 0) {
     if (eNB_transport_info_TB_index[eNB->Mod_id][eNB->CC_id]!=0)
@@ -308,11 +310,11 @@ void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a)
               2,proc->frame_tx,subframe,0);
 
     generate_mbsfn_pilot(eNB,proc,
-                         eNB->common_vars.txdataF[0],
+                         eNB->common_vars.txdataF,
                          AMP);
 
 
-    if (dlsch_encoding(eNB,
+    AssertFatal(dlsch_encoding(eNB,
 		       a,
                        1,
                        eNB->dlsch_MCH,
@@ -320,14 +322,13 @@ void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a)
                        subframe,
                        &eNB->dlsch_rate_matching_stats,
                        &eNB->dlsch_turbo_encoding_stats,
-                       &eNB->dlsch_interleaving_stats
-                      )<0)
-      mac_xface->macphy_exit("problem in dlsch_encoding");
+                       &eNB->dlsch_interleaving_stats)==0,
+		"problem in dlsch_encoding");
 
-    dlsch_scrambling(&eNB->frame_parms,1,eNB->dlsch_MCH,G,0,subframe<<1);
+    dlsch_scrambling(&eNB->frame_parms,1,eNB->dlsch_MCH,0,G,0,frame,subframe<<1);
 
 
-    mch_modulation(eNB->common_vars.txdataF[0],
+    mch_modulation(eNB->common_vars.txdataF,
                    AMP,
                    subframe,
                    &eNB->frame_parms,
@@ -661,10 +662,7 @@ int mch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr32 = (uint32_t*)(*llr32p);
   }
 
-  if (!llr32) {
-    msg("dlsch_qpsk_llr: llr is null, symbol %d, llr32=%p\n",symbol, llr32);
-    return(-1);
-  }
+  AssertFatal(llr32!=NULL,"dlsch_qpsk_llr: llr is null, symbol %d, llr32=%p\n",symbol, llr32);
 
 
   if ((symbol==2) || (symbol==6) || (symbol==10)) {

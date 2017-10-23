@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Wed Aug 31 12:37:04 2016
+[*] Tue Jul 25 20:26:12 2017
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Wed Aug 31 11:48:14 2016"
-[dumpfile_size] 411905827
+[dumpfile_mtime] "Tue Jul 25 20:11:55 2017"
+[dumpfile_size] 19201475
 [savefile] "/home/papillon/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
-[timestart] 10621768000
+[timestart] 29023604000
 [size] 1236 578
 [pos] 309 0
-*-19.793451 29026062100 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-20.793451 29026062100 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 262
 [sst_expanded] 1
@@ -23,28 +23,16 @@ variables.trx_tst[63:0]
 @28
 functions.eNB_thread_rxtx0
 @24
-variables.frame_number_RX0_eNB[63:0]
-variables.subframe_number_RX0_eNB[63:0]
-variables.frame_number_TX0_eNB[63:0]
-variables.subframe_number_TX0_eNB[63:0]
+variables.frame_number_RX0_RU[63:0]
+variables.subframe_number_RX0_RU[63:0]
+@25
+variables.frame_number_TX0_RU[63:0]
+@24
+variables.subframe_number_TX0_RU[63:0]
 @28
-functions.phy_procedures_eNb_rx_common0
-functions.phy_procedures_eNb_rx_uespec0
 functions.phy_procedures_eNb_tx0
 functions.eNB_thread_rxtx1
-@24
-variables.frame_number_RX1_eNB[63:0]
-variables.subframe_number_RX1_eNB[63:0]
-variables.frame_number_TX1_eNB[63:0]
-variables.subframe_number_TX1_eNB[63:0]
-@28
-functions.phy_procedures_eNb_rx_common1
-functions.phy_procedures_eNb_rx_uespec1
-@29
-functions.phy_procedures_eNb_tx1
-@28
 functions.phy_enb_sfgen
-functions.phy_eNB_slot_fep
 functions.phy_enb_prach_rx
 @24
 variables.dci_info[63:0]

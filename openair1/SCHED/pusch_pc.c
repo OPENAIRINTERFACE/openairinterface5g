@@ -76,7 +76,7 @@ int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *eNB,uint8_t UE_id,uint8_t h
 //#warning "This condition happens sometimes. Need more investigation" // navid
   //DevAssert( MPR_x100/6 < 100 );
 
-  if (eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled == 1) {
+  if (1==1) { //eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled == 1) {
     // This is the formula from Section 5.1.1.1 in 36.213 10*log10(deltaIF_PUSCH = (2^(MPR*Ks)-1)*beta_offset_pusch)
     if (bw_factor == 1) {
       uint8_t nb_rb = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
@@ -90,14 +90,22 @@ int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *eNB,uint8_t UE_id,uint8_t h
 
 int16_t get_hundred_times_delta_IF_mac(module_id_t module_idP, uint8_t CC_id, rnti_t rnti, uint8_t harq_pid)
 {
-  int8_t UE_id = find_ue( rnti, PHY_vars_eNB_g[module_idP][CC_id] );
+
+  int8_t UE_id;
+
+  if ((RC.eNB == NULL) || (module_idP > RC.nb_inst) || (CC_id > RC.nb_CC[module_idP])) {
+    LOG_E(PHY,"get_UE_stats: No eNB found (or not allocated) for Mod_id %d,CC_id %d\n",module_idP,CC_id);
+    return -1;
+  }
+
+  UE_id = find_ulsch( rnti, RC.eNB[module_idP][CC_id],SEARCH_EXIST);
 
   if (UE_id == -1) {
     // not found
     return 0;
   }
 
-  return get_hundred_times_delta_IF_eNB( PHY_vars_eNB_g[module_idP][CC_id], UE_id, harq_pid, 0 );
+  return get_hundred_times_delta_IF_eNB( RC.eNB[module_idP][CC_id], UE_id, harq_pid, 0 );
 }
 
 int16_t get_hundred_times_delta_IF(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t harq_pid)
@@ -153,11 +161,12 @@ void pusch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_
 
   if(ue->ulsch_Msg3_active[eNB_id] == 1) {  // Msg3 PUSCH
 
-    ue->ulsch[eNB_id]->Po_PUSCH += (mac_xface->get_Po_NOMINAL_PUSCH(ue->Mod_id,0) + PL);
+    ue->ulsch[eNB_id]->Po_PUSCH += (get_Po_NOMINAL_PUSCH(ue->Mod_id,0) + PL);
 
-    LOG_I(PHY,"[UE  %d][RAPROC] AbsSubframe %d.%d: Msg3 (%d PRBs) Po_PUSCH %d dBm (%d,%d,100*PL=%d,%d,%d)\n",
-          ue->Mod_id,proc->frame_tx,proc->subframe_tx,nb_rb,ue->ulsch[eNB_id]->Po_PUSCH,
-          100*mac_xface->get_Po_NOMINAL_PUSCH(ue->Mod_id,0),
+
+    LOG_I(PHY,"[UE  %d][RAPROC] frame %d, subframe %d: Msg3 Po_PUSCH %d dBm (%d,%d,100*PL=%d,%d,%d)\n",
+          ue->Mod_id,proc->frame_tx,proc->subframe_tx,ue->ulsch[eNB_id]->Po_PUSCH,
+          100*get_Po_NOMINAL_PUSCH(ue->Mod_id,0),
           hundred_times_log10_NPRB[nb_rb-1],
           100*PL,
           get_hundred_times_delta_IF(ue,eNB_id,harq_pid),

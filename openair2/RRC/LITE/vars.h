@@ -36,31 +36,8 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/defs.h"
 
-eNB_RRC_INST *eNB_rrc_inst;
 UE_RRC_INST *UE_rrc_inst;
-//RRC_XFACE *Rrc_xface;
-#ifndef USER_MODE
-//MAC_RLC_XFACE *Mac_rlc_xface;
-#ifndef NO_RRM
-int S_rrc= RRC2RRM_FIFO;
-#endif //NO_RRM
-//int R_rrc= RRM2RRC_FIFO;
-#else
 #include "LAYER2/MAC/extern.h"
-#ifndef NO_RRM
-sock_rrm_t S_rrc;
-#endif
-#endif
-
-#ifndef NO_RRM
-#ifndef USER_MODE
-char *Header_buf;
-char *Data;
-unsigned short Header_read_idx,Data_read_idx,Header_size;
-#endif
-unsigned short Data_to_read;
-#endif //NO_RRM
-
 #define MAX_U32 0xFFFFFFFF
 
 uint8_t DRB2LCHAN[8];

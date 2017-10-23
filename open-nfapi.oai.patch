@@ -1,0 +1,40 @@
+diff --git a/nfapi/public_inc/nfapi_interface.h b/nfapi/public_inc/nfapi_interface.h
+index 2d58c2a..45af99a 100644
+--- a/nfapi/public_inc/nfapi_interface.h
++++ b/nfapi/public_inc/nfapi_interface.h
+@@ -34,7 +34,7 @@
+ #define NFAPI_MAX_NUM_ANTENNAS 8
+ #define NFAPI_MAX_NUM_SUBBANDS 13
+ #define NFAPI_MAX_BF_VECTORS 8
+-#define NFAPI_MAX_CC 1
++#define NFAPI_MAX_CC 2
+ #define NFAPI_MAX_NUM_PHYSICAL_ANTENNAS 8
+ #define NFAPI_MAX_RSSI 8
+ #define NFAPI_MAX_PSC_LIST 32
+@@ -1689,7 +1689,7 @@ typedef struct {
+ 	uint16_t number_pdu;
+ 	uint8_t number_pdsch_rnti;
+ 	uint16_t transmission_power_pcfich;
+-	nfapi_dl_config_request_pdu_t* dl_config_pdu_list;
++        nfapi_dl_config_request_pdu_t* dl_config_pdu_list;
+ } nfapi_dl_config_request_body_t;
+ #define NFAPI_DL_CONFIG_REQUEST_BODY_TAG 0x2000
+ 
+@@ -1772,7 +1772,7 @@ typedef struct {
+ 	uint8_t number_of_cc;
+ 	struct {
+ 		uint8_t ri_size;
+-		uint8_t dl_cqi_pmi_size;
++		uint8_t dl_cqi_pmi_size[8];
+ 	} cc[NFAPI_MAX_CC];
+ } nfapi_ul_config_aperiodic_cqi_pmi_ri_report_t;
+ 
+@@ -1962,7 +1962,7 @@ typedef struct {
+ } nfapi_ul_config_harq_information_rel8_fdd_t;
+ #define NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL8_FDD_TAG 0x2019
+ 
+-typedef struct { 
++typedef struct {  
+ 	nfapi_tl_t tl;
+ 	uint8_t harq_size;
+ 	uint8_t ack_nack_mode;

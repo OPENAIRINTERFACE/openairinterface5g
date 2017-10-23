@@ -103,7 +103,7 @@ int prompt (char *arg)
     return 0;
 
   if (!arg || !*arg) { // no arg is provided, run get func
-    snprintf(buffer,200,"%s\n", cli_cfg->prompt);
+    snprintf(buffer,256,"%s\n", cli_cfg->prompt);
     send(cli_cfg->cfd, buffer, strlen(buffer), 0);
     // send(cli_cfg->cfd, cli_cfg->prompt, strlen(cli_cfg->prompt), 0);
   } else {// set func

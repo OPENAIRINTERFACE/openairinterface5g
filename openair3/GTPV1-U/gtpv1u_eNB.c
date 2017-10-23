@@ -48,7 +48,7 @@
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-
+#include "common/ran_context.h"
 
 #undef GTP_DUMP_SOCKET
 
@@ -63,6 +63,7 @@ extern boolean_t pdcp_data_req(
   const pdcp_transmission_mode_t modeP);
 
 extern unsigned char NB_eNB_INST;
+extern RAN_CONTEXT_t RC;
 
 static int
 gtpv1u_eNB_send_init_udp(
@@ -152,7 +153,7 @@ gtpv1u_eNB_init(void);
 void *
 gtpv1u_eNB_task(void *args);
 
-static gtpv1u_data_t gtpv1u_data_g;
+//static gtpv1u_data_t gtpv1u_data_g;
 
 #if defined(GTP_DUMP_SOCKET) && GTP_DUMP_SOCKET > 0
 #include <linux/if.h>
@@ -221,9 +222,9 @@ static int gtpv1u_eNB_send_init_udp(uint16_t port_number)
   UDP_INIT(message_p).port = port_number;
   //LG UDP_INIT(message_p).address = "0.0.0.0"; //ANY address
 
-  addr.s_addr = gtpv1u_data_g.enb_ip_address_for_S1u_S12_S4_up;
+  addr.s_addr = RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up;
   UDP_INIT(message_p).address = inet_ntoa(addr);
-  LOG_D(GTPU, "Tx UDP_INIT IP addr %s\n", UDP_INIT(message_p).address);
+  LOG_I(GTPU, "Tx UDP_INIT IP addr %s (%x)\n", UDP_INIT(message_p).address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
 
   MSC_LOG_EVENT(
 	  MSC_GTPU_ENB,
@@ -314,7 +315,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
     //-----------------------
     // GTPV1U->PDCP mapping
     //-----------------------
-    hash_rc = hashtable_get(gtpv1u_data_g.teid_mapping, teid, (void**)&gtpv1u_teid_data_p);
+    hash_rc = hashtable_get(RC.gtpv1u_data_g->teid_mapping, teid, (void**)&gtpv1u_teid_data_p);
 
     if (hash_rc == HASH_TABLE_OK) {
 #if defined(LOG_GTPU) && LOG_GTPU > 0
@@ -597,7 +598,7 @@ gtpv1u_new_data_req(
   AssertFatal((rab_idP - GTPV1U_BEARER_OFFSET)< GTPV1U_MAX_BEARERS_ID, "Bad parameter rab id %u\n", rab_idP);
   AssertFatal((rab_idP - GTPV1U_BEARER_OFFSET) >= 0 , "Bad parameter rab id %u\n", rab_idP);
 
-  gtpv1u_data_p = &gtpv1u_data_g;
+  gtpv1u_data_p = RC.gtpv1u_data_g;
   /* Check that UE context is present in ue map. */
   hash_rc = hashtable_get(gtpv1u_data_p->ue_mapping, (uint64_t)ue_rntiP, (void**)&ue_inst_p);
 
@@ -716,27 +717,27 @@ gtpv1u_create_s1u_tunnel(
       stack_req.apiInfo.createTunnelEndPointInfo.hUlpSession   = 0;
       stack_req.apiInfo.createTunnelEndPointInfo.hStackSession = 0;
 
-      rc = nwGtpv1uProcessUlpReq(gtpv1u_data_g.gtpv1u_stack, &stack_req);
+      rc = nwGtpv1uProcessUlpReq(RC.gtpv1u_data_g->gtpv1u_stack, &stack_req);
       LOG_D(GTPU, ".\n");
     } while (rc != NW_GTPV1U_OK);
 
     //-----------------------
     // PDCP->GTPV1U mapping
     //-----------------------
-    hash_rc = hashtable_get(gtpv1u_data_g.ue_mapping, create_tunnel_req_pP->rnti, (void **)&gtpv1u_ue_data_p);
+    hash_rc = hashtable_get(RC.gtpv1u_data_g->ue_mapping, create_tunnel_req_pP->rnti, (void **)&gtpv1u_ue_data_p);
 
     if ((hash_rc == HASH_TABLE_KEY_NOT_EXISTS) || (hash_rc == HASH_TABLE_OK)) {
 
       if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
         gtpv1u_ue_data_p = calloc (1, sizeof(gtpv1u_ue_data_t));
-        hash_rc = hashtable_insert(gtpv1u_data_g.ue_mapping, create_tunnel_req_pP->rnti, gtpv1u_ue_data_p);
+        hash_rc = hashtable_insert(RC.gtpv1u_data_g->ue_mapping, create_tunnel_req_pP->rnti, gtpv1u_ue_data_p);
         AssertFatal(hash_rc == HASH_TABLE_OK, "Error inserting ue_mapping in GTPV1U hashtable");
       }
 
       gtpv1u_ue_data_p->ue_id       = create_tunnel_req_pP->rnti;
       gtpv1u_ue_data_p->instance_id = 0; // TO DO
       memcpy(&create_tunnel_resp_pP->enb_addr.buffer,
-             &gtpv1u_data_g.enb_ip_address_for_S1u_S12_S4_up,
+             &RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up,
              sizeof (in_addr_t));
       create_tunnel_resp_pP->enb_addr.length = sizeof (in_addr_t);
 
@@ -778,14 +779,14 @@ gtpv1u_create_s1u_tunnel(
     //-----------------------
     // GTPV1U->PDCP mapping
     //-----------------------
-    hash_rc = hashtable_get(gtpv1u_data_g.teid_mapping, s1u_teid, (void**)&gtpv1u_teid_data_p);
+    hash_rc = hashtable_get(RC.gtpv1u_data_g->teid_mapping, s1u_teid, (void**)&gtpv1u_teid_data_p);
 
     if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
       gtpv1u_teid_data_p = calloc (1, sizeof(gtpv1u_teid_data_t));
       gtpv1u_teid_data_p->enb_id        = 0; // TO DO
       gtpv1u_teid_data_p->ue_id         = create_tunnel_req_pP->rnti;
       gtpv1u_teid_data_p->eps_bearer_id = eps_bearer_id;
-      hash_rc = hashtable_insert(gtpv1u_data_g.teid_mapping, s1u_teid, gtpv1u_teid_data_p);
+      hash_rc = hashtable_insert(RC.gtpv1u_data_g->teid_mapping, s1u_teid, gtpv1u_teid_data_p);
       AssertFatal(hash_rc == HASH_TABLE_OK, "Error inserting teid mapping in GTPV1U hashtable");
     } else {
       create_tunnel_resp_pP->enb_S1u_teid[i] = 0;
@@ -827,7 +828,7 @@ static int gtpv1u_delete_s1u_tunnel(
   GTPV1U_ENB_DELETE_TUNNEL_RESP(message_p).status       = 0;
 
 
-  hash_rc = hashtable_get(gtpv1u_data_g.ue_mapping, req_pP->rnti, (void**)&gtpv1u_ue_data_p);
+  hash_rc = hashtable_get(RC.gtpv1u_data_g->ue_mapping, req_pP->rnti, (void**)&gtpv1u_ue_data_p);
 
   if (hash_rc == HASH_TABLE_OK) {
 
@@ -844,7 +845,7 @@ static int gtpv1u_delete_s1u_tunnel(
               teid_eNB);
         stack_req.apiInfo.destroyTunnelEndPointInfo.hStackSessionHandle   = gtpv1u_ue_data_p->bearers[req_pP->eps_bearer_id[erab_index] - GTPV1U_BEARER_OFFSET].teid_eNB_stack_session;
 
-        rc = nwGtpv1uProcessUlpReq(gtpv1u_data_g.gtpv1u_stack, &stack_req);
+        rc = nwGtpv1uProcessUlpReq(RC.gtpv1u_data_g->gtpv1u_stack, &stack_req);
         LOG_D(GTPU, ".\n");
       }
 
@@ -863,14 +864,14 @@ static int gtpv1u_delete_s1u_tunnel(
       gtpv1u_ue_data_p->num_bearers -= 1;
 
       if (gtpv1u_ue_data_p->num_bearers == 0) {
-        hash_rc = hashtable_remove(gtpv1u_data_g.ue_mapping, req_pP->rnti);
+        hash_rc = hashtable_remove(RC.gtpv1u_data_g->ue_mapping, req_pP->rnti);
         LOG_D(GTPU, "Removed user rnti %x,no more bearers configured\n", req_pP->rnti);
       }
 
       //-----------------------
       // GTPV1U->PDCP mapping
       //-----------------------
-      hash_rc = hashtable_remove(gtpv1u_data_g.teid_mapping, teid_eNB);
+      hash_rc = hashtable_remove(RC.gtpv1u_data_g->teid_mapping, teid_eNB);
 
       if (hash_rc != HASH_TABLE_OK) {
         LOG_D(GTPU, "Removed user rnti %x , enb S1U teid %u not found\n", req_pP->rnti, teid_eNB);
@@ -895,6 +896,7 @@ static int gtpv1u_delete_s1u_tunnel(
   return itti_send_msg_to_task(TASK_RRC_ENB, instanceP, message_p);
 }
 
+
 //-----------------------------------------------------------------------------
 static int gtpv1u_eNB_init(void)
 {
@@ -904,34 +906,36 @@ static int gtpv1u_eNB_init(void)
   NwGtpv1uUdpEntityT      udp;
   NwGtpv1uLogMgrEntityT   log;
   NwGtpv1uTimerMgrEntityT tmr;
-  Enb_properties_t       *enb_properties_p  = NULL;
-
-  enb_properties_p = enb_config_get()->properties[0];
 
 
-  memset(&gtpv1u_data_g, 0, sizeof(gtpv1u_data_g));
+  //  enb_properties_p = enb_config_get()->properties[0];
+  RC.gtpv1u_data_g = (gtpv1u_data_t*)malloc(sizeof(gtpv1u_data_t));
+  memset(RC.gtpv1u_data_g, 0, sizeof(gtpv1u_data_t));
 
-  LOG_I(GTPU, "Initializing GTPU stack %p\n",&gtpv1u_data_g);
+  RCconfig_gtpu();
+
+
+  LOG_I(GTPU, "Initializing GTPU stack %p\n",&RC.gtpv1u_data_g);
   //gtpv1u_data_g.gtpv1u_stack;
   /* Initialize UE hashtable */
-  gtpv1u_data_g.ue_mapping      = hashtable_create (32, NULL, NULL);
-  AssertFatal(gtpv1u_data_g.ue_mapping != NULL, " ERROR Initializing TASK_GTPV1_U task interface: in hashtable_create returned %p\n", gtpv1u_data_g.ue_mapping);
-  gtpv1u_data_g.teid_mapping    = hashtable_create (256, NULL, NULL);
-  AssertFatal(gtpv1u_data_g.teid_mapping != NULL, " ERROR Initializing TASK_GTPV1_U task interface: in hashtable_create\n");
-  gtpv1u_data_g.enb_ip_address_for_S1u_S12_S4_up         = enb_properties_p->enb_ipv4_address_for_S1U;
-  gtpv1u_data_g.ip_addr         = NULL;
-  gtpv1u_data_g.enb_port_for_S1u_S12_S4_up = enb_properties_p->enb_port_for_S1U;
+  RC.gtpv1u_data_g->ue_mapping      = hashtable_create (32, NULL, NULL);
+  AssertFatal(RC.gtpv1u_data_g->ue_mapping != NULL, " ERROR Initializing TASK_GTPV1_U task interface: in hashtable_create returned %p\n", RC.gtpv1u_data_g->ue_mapping);
+  RC.gtpv1u_data_g->teid_mapping    = hashtable_create (256, NULL, NULL);
+  AssertFatal(RC.gtpv1u_data_g->teid_mapping != NULL, " ERROR Initializing TASK_GTPV1_U task interface: in hashtable_create\n");
+//  RC.gtpv1u_data_g.enb_ip_address_for_S1u_S12_S4_up         = enb_properties_p->enb_ipv4_address_for_S1U;
+  RC.gtpv1u_data_g->ip_addr         = NULL;
+
   //gtpv1u_data_g.udp_data;
-  gtpv1u_data_g.seq_num         = 0;
-  gtpv1u_data_g.restart_counter = 0;
+  RC.gtpv1u_data_g->seq_num         = 0;
+  RC.gtpv1u_data_g->restart_counter = 0;
 
   /* Initializing GTPv1-U stack */
-  if ((rc = nwGtpv1uInitialize(&gtpv1u_data_g.gtpv1u_stack, GTPU_STACK_ENB)) != NW_GTPV1U_OK) {
+  if ((rc = nwGtpv1uInitialize(&RC.gtpv1u_data_g->gtpv1u_stack, GTPU_STACK_ENB)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "Failed to setup nwGtpv1u stack %x\n", rc);
     return -1;
   }
 
-  if ((rc = nwGtpv1uSetLogLevel(gtpv1u_data_g.gtpv1u_stack,
+  if ((rc = nwGtpv1uSetLogLevel(RC.gtpv1u_data_g->gtpv1u_stack,
                                 NW_LOG_LEVEL_DEBG)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "Failed to setup loglevel for stack %x\n", rc);
     return -1;
@@ -943,7 +947,7 @@ static int gtpv1u_eNB_init(void)
    */
   ulp.ulpReqCallback = gtpv1u_eNB_process_stack_req;
 
-  if ((rc = nwGtpv1uSetUlpEntity(gtpv1u_data_g.gtpv1u_stack, &ulp)) != NW_GTPV1U_OK) {
+  if ((rc = nwGtpv1uSetUlpEntity(RC.gtpv1u_data_g->gtpv1u_stack, &ulp)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "nwGtpv1uSetUlpEntity: %x", rc);
     return -1;
   }
@@ -953,14 +957,14 @@ static int gtpv1u_eNB_init(void)
    */
   udp.udpDataReqCallback = gtpv1u_eNB_send_udp_msg;
 
-  if ((rc = nwGtpv1uSetUdpEntity(gtpv1u_data_g.gtpv1u_stack, &udp)) != NW_GTPV1U_OK) {
+  if ((rc = nwGtpv1uSetUdpEntity(RC.gtpv1u_data_g->gtpv1u_stack, &udp)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "nwGtpv1uSetUdpEntity: %x", rc);
     return -1;
   }
 
   log.logReqCallback = gtpv1u_eNB_log_request;
 
-  if ((rc = nwGtpv1uSetLogMgrEntity(gtpv1u_data_g.gtpv1u_stack, &log)) != NW_GTPV1U_OK) {
+  if ((rc = nwGtpv1uSetLogMgrEntity(RC.gtpv1u_data_g->gtpv1u_stack, &log)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "nwGtpv1uSetLogMgrEntity: %x", rc);
     return -1;
   }
@@ -972,7 +976,7 @@ static int gtpv1u_eNB_init(void)
   tmr.tmrStartCallback = gtpv1u_start_timer_wrapper;
   tmr.tmrStopCallback  = gtpv1u_stop_timer_wrapper;
 
-  if ((rc = nwGtpv1uSetTimerMgrEntity(gtpv1u_data_g.gtpv1u_stack, &tmr)) != NW_GTPV1U_OK) {
+  if ((rc = nwGtpv1uSetTimerMgrEntity(RC.gtpv1u_data_g->gtpv1u_stack, &tmr)) != NW_GTPV1U_OK) {
     LOG_E(GTPU, "nwGtpv1uSetTimerMgrEntity: %x", rc);
     return -1;
   }
@@ -984,7 +988,7 @@ static int gtpv1u_eNB_init(void)
   }
 
 #endif
-  ret = gtpv1u_eNB_send_init_udp(gtpv1u_data_g.enb_port_for_S1u_S12_S4_up);
+  ret = gtpv1u_eNB_send_init_udp(RC.gtpv1u_data_g->enb_port_for_S1u_S12_S4_up);
 
   if (ret < 0) {
     return ret;
@@ -1031,7 +1035,7 @@ void *gtpv1u_eNB_task(void *args)
     case UDP_DATA_IND: {
       udp_data_ind_t *udp_data_ind_p;
       udp_data_ind_p = &received_message_p->ittiMsg.udp_data_ind;
-      nwGtpv1uProcessUdpReq(gtpv1u_data_g.gtpv1u_stack,
+      nwGtpv1uProcessUdpReq(RC.gtpv1u_data_g->gtpv1u_stack,
                             udp_data_ind_p->buffer,
                             udp_data_ind_p->buffer_length,
                             udp_data_ind_p->peer_port,
@@ -1059,7 +1063,7 @@ void *gtpv1u_eNB_task(void *args)
 #endif
       memset(&stack_req, 0, sizeof(NwGtpv1uUlpApiT));
 
-      hash_rc = hashtable_get(gtpv1u_data_g.ue_mapping, (uint64_t)data_req_p->rnti, (void**)&gtpv1u_ue_data_p);
+      hash_rc = hashtable_get(RC.gtpv1u_data_g->ue_mapping, (uint64_t)data_req_p->rnti, (void**)&gtpv1u_ue_data_p);
 
       if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
         LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: while getting ue rnti %x in hashtable ue_mapping\n", data_req_p->rnti);
@@ -1072,10 +1076,10 @@ void *gtpv1u_eNB_task(void *args)
           stack_req.apiInfo.sendtoInfo.ipAddr = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].sgw_ip_addr;
 
           rc = nwGtpv1uGpduMsgNew(
-                 gtpv1u_data_g.gtpv1u_stack,
+                 RC.gtpv1u_data_g->gtpv1u_stack,
                  sgw_s1u_teid,
                  NW_FALSE,
-                 gtpv1u_data_g.seq_num++,
+                 RC.gtpv1u_data_g->seq_num++,
                  data_req_p->buffer,
                  data_req_p->length,
                  data_req_p->offset,
@@ -1087,7 +1091,7 @@ void *gtpv1u_eNB_task(void *args)
             		enb_s1u_teid,sgw_s1u_teid,data_req_p->length);
             (void)enb_s1u_teid; /* avoid gcc warning "set but not used" */
           } else {
-            rc = nwGtpv1uProcessUlpReq(gtpv1u_data_g.gtpv1u_stack, &stack_req);
+            rc = nwGtpv1uProcessUlpReq(RC.gtpv1u_data_g->gtpv1u_stack, &stack_req);
 
             if (rc != NW_GTPV1U_OK) {
               LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: 0x%x\n", rc);
@@ -1107,7 +1111,7 @@ void *gtpv1u_eNB_task(void *args)
 
             }
 
-            rc = nwGtpv1uMsgDelete(gtpv1u_data_g.gtpv1u_stack,
+            rc = nwGtpv1uMsgDelete(RC.gtpv1u_data_g->gtpv1u_stack,
                                    stack_req.apiInfo.sendtoInfo.hMsg);
 
             if (rc != NW_GTPV1U_OK) {
@@ -1124,12 +1128,12 @@ void *gtpv1u_eNB_task(void *args)
     break;
 
     case TERMINATE_MESSAGE: {
-      if (gtpv1u_data_g.ue_mapping != NULL) {
-        hashtable_destroy (gtpv1u_data_g.ue_mapping);
+      if (RC.gtpv1u_data_g->ue_mapping != NULL) {
+        hashtable_destroy (RC.gtpv1u_data_g->ue_mapping);
       }
 
-      if (gtpv1u_data_g.teid_mapping != NULL) {
-        hashtable_destroy (gtpv1u_data_g.teid_mapping);
+      if (RC.gtpv1u_data_g->teid_mapping != NULL) {
+        hashtable_destroy (RC.gtpv1u_data_g->teid_mapping);
       }
 
       itti_exit_task();

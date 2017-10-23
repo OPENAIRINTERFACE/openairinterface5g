@@ -23,7 +23,6 @@
 #include "PHY/extern.h"
 #include "extern.h"
 #include "kHz_7_5.h"
-#include "prach625Hz.h"
 #ifdef USER_MODE
 #include <math.h>
 #else
@@ -140,12 +139,12 @@ void apply_7_5_kHz(PHY_VARS_UE *ue,int32_t*txdata,uint8_t slot)
 }
 
 
-void remove_7_5_kHz(PHY_VARS_eNB *eNB,uint8_t slot)
+void remove_7_5_kHz(RU_t *ru,uint8_t slot)
 {
 
 
-  int32_t **rxdata=eNB->common_vars.rxdata[0];
-  int32_t **rxdata_7_5kHz=eNB->common_vars.rxdata_7_5kHz[0];
+  int32_t **rxdata=ru->common.rxdata;
+  int32_t **rxdata_7_5kHz=ru->common.rxdata_7_5kHz;
   uint16_t len;
   uint32_t *kHz7_5ptr;
 #if defined(__x86_64__) || defined(__i386__)
@@ -159,7 +158,7 @@ void remove_7_5_kHz(PHY_VARS_eNB *eNB,uint8_t slot)
   uint32_t slot_offset,slot_offset2;
   uint8_t aa;
   uint32_t i;
-  LTE_DL_FRAME_PARMS *frame_parms=&eNB->frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms=&ru->frame_parms;
 
   switch (frame_parms->N_RB_UL) {
 
@@ -193,12 +192,12 @@ void remove_7_5_kHz(PHY_VARS_eNB *eNB,uint8_t slot)
   }
 
 
-  slot_offset = (uint32_t)slot * frame_parms->samples_per_tti/2-eNB->N_TA_offset;
+  slot_offset = (uint32_t)slot * frame_parms->samples_per_tti/2-ru->N_TA_offset;
   slot_offset2 = (uint32_t)(slot&1) * frame_parms->samples_per_tti/2;
 
   len = frame_parms->samples_per_tti/2;
 
-  for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+  for (aa=0; aa<ru->nb_rx; aa++) {
 
 #if defined(__x86_64__) || defined(__i386__)
     rxptr128        = (__m128i *)&rxdata[aa][slot_offset];

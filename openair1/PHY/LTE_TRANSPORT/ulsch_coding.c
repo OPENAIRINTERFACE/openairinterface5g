@@ -568,8 +568,8 @@ uint32_t ulsch_encoding(uint8_t *a,
                                           get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs),
                                           1,
                                           r,
-                                          ulsch->harq_processes[harq_pid]->nb_rb,
-                                          ulsch->harq_processes[harq_pid]->mcs);                       // r
+                                          ulsch->harq_processes[harq_pid]->nb_rb);
+                                          //ulsch->harq_processes[harq_pid]->mcs);                       // r
       stop_meas(rm_stats);
 #ifdef DEBUG_ULSCH_CODING
 

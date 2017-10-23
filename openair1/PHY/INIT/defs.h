@@ -29,6 +29,7 @@
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
+#include "PHICH-Config.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "MobilityControlInfo.h"
 #if defined(Rel10) || defined(Rel14)
@@ -37,6 +38,13 @@
 /** @addtogroup _PHY_STRUCTURES_
  * @{
  */
+
+/*!
+\fn int l1_top_init_eNB(void)
+\brief Initialize north interface for L1
+@returns 0 on success
+ */
+int l1_north_init_eNB(void);
 
 /*!
 \fn int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms)
@@ -48,7 +56,7 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 
 
 /*!
-\brief Allocate and Initialize the PHY variables relevant to the LTE implementation.
+\brief Allocate and Initialize the PHY variables relevant to the LTE ue signal buffers.
 \details Only a subset of phy_vars_ue is initialized.
 @param[out] phy_vars_ue Pointer to UE Variables
 @param nb_connected_eNB Number of eNB that UE can process in one PDSCH demodulation subframe
@@ -57,9 +65,16 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 @returns -1 if any memory allocation failed
 @note The current implementation will never return -1, but segfault.
  */
-int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
-                    int          nb_connected_eNB,
-                    uint8_t         abstraction_flag);
+int init_lte_ue_signal(PHY_VARS_UE *phy_vars_ue,
+			   int          nb_connected_eNB,
+			   uint8_t         abstraction_flag);
+
+/*!
+\brief Allocate and initialize the PHY variables releated to the transport channel buffers (UL/DL)
+@param ue Pointer to UE L1 context
+@param abstraction flag Indicates that abstraction is used in L1
+*/
+void init_lte_ue_transport(PHY_VARS_UE *ue,int absraction_flag);
 
 /*!
 \brief Allocate and initialize the PHY variables relevant to the LTE implementation (eNB).
@@ -81,17 +96,20 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNb,
 @param N_RB_DL Number of DL resource blocks
 @param Nid_cell Cell ID
 @param Ncp Normal/Extended Prefix flag
-@param frame_type FDD/TDD framing
 @param p_eNB Number of eNB TX antennas
 @param phich_config Pointer to PHICH_CONFIG_COMMON
  */
-void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
-                    uint8_t                N_RB_DL,
-                    uint8_t                Nid_cell,
-                    uint8_t                Ncp,
-                    uint8_t                frame_type,
-                    uint8_t                p_eNB,
-                    PHICH_CONFIG_COMMON *phich_config);
+void phy_config_mib_eNB(int                    Mod_id,
+			int                    CC_id,
+			int                    eutra_band,
+			int                    N_RB_DL,
+			PHICH_Config_t         *phich_config,
+			int                    Nid_cell,
+			int                    Ncp,
+			int                    p_eNB,
+			uint32_t               dl_CarrierFreq,
+			uint32_t               ul_CarrierFreq);
+
 
 
 /** \brief Configure LTE_DL_FRAME_PARMS with components derived after reception of SIB1.
@@ -300,7 +318,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB);
 int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb);
 
 
-void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
+void init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 
 //void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
 
@@ -336,6 +354,7 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
 \brief Cleanup the PHY variables*/
 void phy_cleanup(void);
 
+void phy_config_request(PHY_Config_t *phy_config);
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);

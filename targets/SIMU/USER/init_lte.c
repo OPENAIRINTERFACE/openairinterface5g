@@ -37,11 +37,11 @@
 #include "PHY_INTERFACE/extern.h"
 
 
-
+/*
 PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t eNB_id,
                            uint8_t Nid_cell,
-			   eNB_func_t node_function,
+			   node_function_t node_function,
                            uint8_t abstraction_flag)
 {
 
@@ -49,7 +49,6 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   PHY_VARS_eNB* PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
   memset(PHY_vars_eNB,0,sizeof(PHY_VARS_eNB));
   PHY_vars_eNB->Mod_id=eNB_id;
-  PHY_vars_eNB->cooperation_flag=0;//cooperation_flag;
   memcpy(&(PHY_vars_eNB->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   PHY_vars_eNB->frame_parms.Nid_cell = ((Nid_cell/3)*3)+((eNB_id+Nid_cell)%3);
   PHY_vars_eNB->frame_parms.nushift = PHY_vars_eNB->frame_parms.Nid_cell%6;
@@ -81,7 +80,8 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       }
     }
     
-    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n", i);
+
+    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
     PHY_vars_eNB->ulsch[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,frame_parms->N_RB_UL, abstraction_flag);
     
     if (!PHY_vars_eNB->ulsch[1+i]) {
@@ -147,54 +147,11 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
   return (PHY_vars_eNB);
 }
-
-PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
-                         uint8_t UE_id,
-                         uint8_t abstraction_flag)
-
-{
-
-  int i,j;
-  PHY_VARS_UE* PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  memset(PHY_vars_UE,0,sizeof(PHY_VARS_UE));
-  PHY_vars_UE->Mod_id=UE_id;
-  memcpy(&(PHY_vars_UE->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
-  phy_init_lte_ue(PHY_vars_UE,1,abstraction_flag);
-
-  for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
-      for (j=0; j<2; j++) { // 2CWs
-          for (int l=0; l<RX_NB_TH_MAX; l++){ // 2Threads
-              PHY_vars_UE->dlsch[l][i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
-
-              if (!PHY_vars_UE->dlsch[l][i][j]) {
-                  LOG_E(PHY,"Can't get ue dlsch structures\n");
-                  exit(-1);
-              } else
-                  LOG_D(PHY,"dlsch[%d][%d] => %p\n",UE_id,i,PHY_vars_UE->dlsch[l][i][j]);
-          }
-      }
+*/
 
 
+/*
 
-      PHY_vars_UE->ulsch[i]  = new_ue_ulsch(frame_parms->N_RB_UL, abstraction_flag);
-
-      if (!PHY_vars_UE->ulsch[i]) {
-          LOG_E(PHY,"Can't get ue ulsch structures\n");
-          exit(-1);
-      }
-
-      PHY_vars_UE->dlsch_SI[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
-      PHY_vars_UE->dlsch_ra[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
-
-      PHY_vars_UE->transmission_mode[i] = frame_parms->nb_antenna_ports_eNB==1 ? 1 : 2;
-  }
-
-  PHY_vars_UE->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
-
-  PHY_vars_UE->dlsch_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,frame_parms->N_RB_DL,0);
-
-  return (PHY_vars_UE);
-}
 PHY_VARS_RN* init_lte_RN(LTE_DL_FRAME_PARMS *frame_parms,
                          uint8_t RN_id,
                          uint8_t eMBMS_active_state)
@@ -217,6 +174,7 @@ PHY_VARS_RN* init_lte_RN(LTE_DL_FRAME_PARMS *frame_parms,
 
   return (PHY_vars_RN);
 }
+
 void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
                    uint8_t frame_type,
                    uint8_t tdd_config,
@@ -233,7 +191,9 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
 		   uint8_t eMBMS_active_state)
 {
 
-  uint8_t eNB_id,UE_id,RN_id,CC_id;
+  uint8_t eNB_id,UE_id,CC_id;
+  int i;
+
 
   mac_xface = malloc(sizeof(MAC_xface));
 
@@ -273,15 +233,21 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
 
   phy_init_lte_top(frame_parms[0]);
 
-  PHY_vars_eNB_g = (PHY_VARS_eNB***)malloc(NB_eNB_INST*sizeof(PHY_VARS_eNB**));
+  RC.nb_inst = NB_eNB_INST;
+  RC.nb_CC = (int *)malloc(MAX_NUM_CCs*sizeof(int));
+  RC.nb_RU = NB_RU;
+  for (i=0;i<NB_eNB_INST;i++) RC.nb_CC[i] = MAX_NUM_CCs;
+
+  RC.eNB = (PHY_VARS_eNB***)malloc(NB_eNB_INST*sizeof(PHY_VARS_eNB**));
 
   for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
-    PHY_vars_eNB_g[eNB_id] = (PHY_VARS_eNB**) malloc(MAX_NUM_CCs*sizeof(PHY_VARS_eNB*));
+    
+    RC.eNB[eNB_id] = (PHY_VARS_eNB**) malloc(MAX_NUM_CCs*sizeof(PHY_VARS_eNB*));
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_eNB_g[eNB_id][CC_id] = init_lte_eNB(frame_parms[CC_id],eNB_id,Nid_cell,eNodeB_3GPP,abstraction_flag);
-      PHY_vars_eNB_g[eNB_id][CC_id]->Mod_id=eNB_id;
-      PHY_vars_eNB_g[eNB_id][CC_id]->CC_id=CC_id;
+      RC.eNB[eNB_id][CC_id] = init_lte_eNB(frame_parms[CC_id],eNB_id,Nid_cell,eNodeB_3GPP,abstraction_flag);
+      RC.eNB[eNB_id][CC_id]->Mod_id=eNB_id;
+      RC.eNB[eNB_id][CC_id]->CC_id=CC_id;
     }
   }
 
@@ -299,13 +265,14 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
       PHY_vars_UE_g[UE_id][CC_id]->CC_id=CC_id;
     }
   }
+  
+//  if (NB_RN_INST > 0) {
+//    PHY_vars_RN_g = malloc(NB_RN_INST*sizeof(PHY_VARS_RN*));
 
-  if (NB_RN_INST > 0) {
-    PHY_vars_RN_g = malloc(NB_RN_INST*sizeof(PHY_VARS_RN*));
-
-    for (RN_id=0; RN_id<NB_RN_INST; RN_id++) {
-      PHY_vars_RN_g[RN_id] = init_lte_RN(*frame_parms,RN_id,eMBMS_active_state);
-    }
-  }
-
+//    for (RN_id=0; RN_id<NB_RN_INST; RN_id++) {
+//      PHY_vars_RN_g[RN_id] = init_lte_RN(*frame_parms,RN_id,eMBMS_active_state);
+//    }
+//  }
+  
 }
+*/

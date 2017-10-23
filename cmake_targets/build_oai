@@ -345,7 +345,11 @@ function main() {
             BUILD_ECLIPSE=1
             CMAKE_CMD="$CMAKE_CMD"' -DCMAKE_ECLIPSE_GENERATE_SOURCE_PROJECT=TRUE -G"Eclipse CDT4 - Unix Makefiles"'
             echo_info "Enabling build eclipse project support"
-            shift 1;;			
+            shift 1;;
+       --build-telnetsrv)
+            BUILD_TELNETSRV=1
+            echo_info "Build embedded telnet server"
+            shift ;;			
         -h | --help)
             print_help
             exit 1;;
@@ -504,6 +508,9 @@ function main() {
       lte_exec=lte-softmodem
   fi
 
+# configuration module libraries, one currently available, using libconfig 
+  config_libconfig_shlib=params_libconfig
+  
   # first generate the CMakefile in the right directory
   if [ "$eNB" = "1" -o "$UE" = "1" -o "$HW" = "EXMIMO" ] ; then
 
@@ -549,6 +556,11 @@ function main() {
 	  $lte_build_dir $lte_exec \
 	  $lte_exec $dbin/$lte_exec.$REL
 
+# mandatory shared lib
+    compilations \
+	  $lte_build_dir $config_libconfig_shlib \
+	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+	  
     if [ "$NOS1" = "1" ] ; then
 	compilations \
 	    $lte_build_dir nasmesh \
@@ -803,7 +815,22 @@ function main() {
 	 rrh_gw $dbin/rrh_gw
 
   fi
-  
+  # Telnet server compilation
+  #####################
+  if [ "$BUILD_TELNETSRV" = "1" ] ; then
+
+     telnetsrv_build_dir=telnetsrv
+     mkdir -p $DIR/$telnetsrv_build_dir/build
+     cd $DIR/$telnetsrv_build_dir/build   
+     echo_info "Compiling telnet server library ..."
+    
+     [ "$CLEAN" = "1" ] && rm -rf $DIR/$telnetsrv_build_dir 
+     cmake_file=$OPENAIR_DIR/common/utils/$telnetsrv_build_dir/CMakeLists.txt   
+     cd $DIR/$telnetsrv_build_dir/build
+     eval  "$CMAKE_CMD $OPENAIR_DIR/common/utils/$telnetsrv_build_dir/"
+     make
+
+  fi  
   # build RF device and transport protocol libraries
   #####################################
   if [ "$eNB" = "1" -o "$UE" = "1" -o  "$RRH" = "1" ] ; then
@@ -829,11 +856,9 @@ function main() {
 	      ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
-	      if [ -d "/usr/include/uhd" ] ; then
-		  compilations \
-		      $build_dir oai_usrpdevif \
-		      liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
-	      fi
+              compilations \
+                  $build_dir oai_usrpdevif \
+                  liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
 
 	      ln -sf liboai_usrpdevif.so liboai_device.so
 	      ln -sf $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so

@@ -178,6 +178,7 @@ uint32_t generate_dummy_w_cc(uint32_t D, uint8_t *w);
 \param Qm modulation order (2,4,6)
 \param Nl number of layers (1,2)
 \param r segment number
+\param nb_rb Number of PRBs
 \returns \f$E\f$, the number of coded bits per segment */
 
 
@@ -193,8 +194,7 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
                                  uint8_t Qm,
                                  uint8_t Nl,
                                  uint8_t r,
-                                 uint8_t nb_rb,
-                                 uint8_t m);
+                                 uint8_t nb_rb);
 
 /**
 \brief This is the LTE rate matching algorithm for Convolutionally-coded channels (e.g. BCH,DCI,UCI).  It is taken directly from 36-212 (Rel 8 8.6, 2009-03), pages 16-18 )

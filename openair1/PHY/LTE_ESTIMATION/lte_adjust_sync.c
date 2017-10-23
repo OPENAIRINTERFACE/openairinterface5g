@@ -101,7 +101,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
           if (ue->mac_enabled==1) {
               LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
               //mac_resynch();
-              mac_xface->dl_phy_sync_success(ue->Mod_id,ue->proc.proc_rxtx[0].frame_rx,0,1);//ue->common_vars.eNb_id);
+              dl_phy_sync_success(ue->Mod_id,ue->proc.proc_rxtx[0].frame_rx,0,1);//ue->common_vars.eNb_id);
               ue->UE_mode[0] = PRACH;
           }
           else {
@@ -167,23 +167,23 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
       // do ifft of channel estimate
       switch(frame_parms->N_RB_DL) {
       case 6:
-	dft128((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
-	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
+	dft128((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 	       1);
 	break;
       case 25:
-	dft512((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
-	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
+	dft512((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 	       1);
 	break;
       case 50:
-	dft1024((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
-		(int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
+	dft1024((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+		(int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 		1);
 	break;
       case 100:
-	dft2048((int16_t*) &lte_eNB_srs->srs_ch_estimates[ind][aa][0],
-	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[ind][aa],
+	dft2048((int16_t*) &lte_eNB_srs->srs_ch_estimates[aa][0],
+	       (int16_t*) lte_eNB_srs->srs_ch_estimates_time[aa],
 	       1);
 	break;
       }
@@ -191,7 +191,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_PHY
       sprintf(fname,"srs_ch_estimates_time_%d%d.m",ind,aa);
       sprintf(vname,"srs_time_%d%d",ind,aa);
-      write_output(fname,vname,lte_eNB_srs->srs_ch_estimates_time[ind][aa],frame_parms->ofdm_symbol_size*2,2,1);
+      write_output(fname,vname,lte_eNB_srs->srs_ch_estimates_time[aa],frame_parms->ofdm_symbol_size*2,2,1);
 #endif
 #endif
     }
@@ -202,8 +202,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
       temp = 0;
 
       for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-        Re = ((int16_t*)lte_eNB_srs->srs_ch_estimates_time[ind][aa])[(i<<1)];
-        Im = ((int16_t*)lte_eNB_srs->srs_ch_estimates_time[ind][aa])[1+(i<<1)];
+        Re = ((int16_t*)lte_eNB_srs->srs_ch_estimates_time[aa])[(i<<1)];
+        Im = ((int16_t*)lte_eNB_srs->srs_ch_estimates_time[aa])[1+(i<<1)];
         temp += (Re*Re/2) + (Im*Im/2);
       }
 
@@ -221,10 +221,6 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
   else
     max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
 
-#ifdef DEBUG_PHY
-  //LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d\n",mac_xface->frame,max_pos,max_pos_fil2);
-#endif //DEBUG_PHY
-
   return(max_pos_fil2);
 }
 
@@ -239,11 +235,13 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
 
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   LTE_eNB_PUSCH *eNB_pusch_vars = eNB->pusch_vars[UE_id];
-  int32_t **ul_ch_estimates_time=  eNB_pusch_vars->drs_ch_estimates_time[0];
+  int32_t **ul_ch_estimates_time=  eNB_pusch_vars->drs_ch_estimates_time;
   uint8_t cyclic_shift = 0;
   int sync_pos = (frame_parms->ofdm_symbol_size-cyclic_shift*frame_parms->ofdm_symbol_size/12)%(frame_parms->ofdm_symbol_size);
 
-
+  AssertFatal(frame_parms->ofdm_symbol_size > 127,"frame_parms->ofdm_symbol_size %d<128\n",frame_parms->ofdm_symbol_size);
+  AssertFatal(frame_parms->nb_antennas_rx >0 && frame_parms->nb_antennas_rx<3,"frame_parms->nb_antennas_rx %d not in [0,1]\n",
+	      frame_parms->nb_antennas_rx);
   for (i = 0; i < frame_parms->ofdm_symbol_size; i++) {
     temp = 0;
 
@@ -269,9 +267,9 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
   } else
     max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
 
-#ifdef DEBUG_PHY
+  //#ifdef DEBUG_PHY
   LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d, sync_pos=%d\n",eNB->proc.frame_rx,max_pos,max_pos_fil2,sync_pos);
-#endif //DEBUG_PHY
+  //#endif //DEBUG_PHY
 
   return(max_pos_fil2-sync_pos);
 }

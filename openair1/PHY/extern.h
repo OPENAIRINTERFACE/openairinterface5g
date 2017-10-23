@@ -23,7 +23,7 @@
 #define __PHY_EXTERN_H__
 
 #include "PHY/defs.h"
-#include "PHY_INTERFACE/defs.h"
+#include "common/ran_context.h"
 
 extern  char* namepointer_chMag ;
 extern char* namepointer_log2;
@@ -38,11 +38,11 @@ extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 extern unsigned int DAQ_MBOX;
 extern int number_of_cards;
 
-//extern PHY_CONFIG *PHY_config;
-//extern PHY_VARS *PHY_vars;
+
 #ifndef OCP_FRAMEWORK
 extern PHY_VARS_UE ***PHY_vars_UE_g;
-extern PHY_VARS_eNB ***PHY_vars_eNB_g;
+//extern PHY_VARS_eNB ***PHY_vars_eNB_g;
+extern RAN_CONTEXT_t RC;
 extern PHY_VARS_RN **PHY_vars_RN_g;
 extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 #else
@@ -51,9 +51,6 @@ extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 extern PHY_VARS_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs];
 extern PHY_VARS_eNB * PHY_vars_eNB_g[MAX_eNB][MAX_NUM_CCs];
 #endif
-
-extern MAC_xface *mac_xface;
-
 
 extern short primary_synch0[144];
 extern short primary_synch1[144];
@@ -75,6 +72,7 @@ extern char mode_string[4][20];
 
 #include "PHY/LTE_TRANSPORT/extern.h"
 
+extern unsigned char NB_RU;
 
 #ifndef OPENAIR2
 extern unsigned char NB_eNB_INST;
@@ -112,7 +110,7 @@ extern double beta2_dlsch[6][MCS_COUNT];
 
 extern char eNB_functions[6][20];
 extern char eNB_timing[2][20];
-
+extern char ru_if_types[MAX_RU_IF_TYPES][20];
 
 extern int16_t unscrambling_lut[65536*16];
 extern uint8_t scrambling_lut[65536*16];

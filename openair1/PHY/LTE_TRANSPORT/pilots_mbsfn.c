@@ -46,7 +46,7 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *eNB,
 
 
   if (subframe<0 || subframe>= 10) {
-    msg("generate_mbsfn_pilots_subframe: subframe not in range (%d)\n",subframe);
+    LOG_E(PHY,"generate_mbsfn_pilots_subframe: subframe not in range (%d)\n",subframe);
     return(-1);
   }
 

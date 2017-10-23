@@ -40,10 +40,11 @@
 #include "collection/tree.h"
 #include "rrc_types.h"
 #include "PHY/defs.h"
+#include "LAYER2/RLC/rlc.h"
+
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
 
-#include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/defs.h"
 
 //#include "COMMON/openair_defs.h"
@@ -136,6 +137,13 @@
 #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib10 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib10
 #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib11 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib11
 #endif
+
+
+#define NB_SIG_CNX_CH 1
+#define NB_CNX_CH MAX_MOBILES_PER_ENB
+#define NB_SIG_CNX_UE 2 //MAX_MANAGED_RG_PER_MOBILE
+#define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
+
 /*
 #if defined(Rel10) || defined(Rel14)
 #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib12_v920 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib12_v920
@@ -165,10 +173,6 @@
 # include "commonDef.h"
 #endif
 
-#if ENABLE_RAL
-# include "collection/hashtable/obj_hashtable.h"
-#endif
-
 //--------
 typedef unsigned int uid_t;
 #define UID_LINEAR_ALLOCATOR_BITMAP_SIZE (((NUMBER_OF_UE_MAX/8)/sizeof(unsigned int)) + 1)
@@ -190,17 +194,17 @@ typedef struct uid_linear_allocator_s {
  * @{
  */
 
-#if ENABLE_RAL
-typedef struct rrc_ral_threshold_key_s {
-  ral_link_param_type_t   link_param_type;
-  ral_threshold_t         threshold;
-} rrc_ral_threshold_key_t;
-#endif
-
-//#define NUM_PRECONFIGURED_LCHAN (NB_CH_CX*2)  //BCCH, CCCH
 
 #define UE_MODULE_INVALID ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!!
 #define UE_INDEX_INVALID  ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!! used to be -1
+
+typedef enum {
+  RRC_OK=0,
+  RRC_ConnSetup_failed,
+  RRC_PHY_RESYNCH,
+  RRC_Handover_failed,
+  RRC_HO_STARTED
+} RRC_status_t;
 
 typedef enum UE_STATE_e {
   RRC_INACTIVE=0,
@@ -239,6 +243,18 @@ typedef enum HO_STATE_e {
 
 /* TS 36.331: RRC-TransactionIdentifier ::= INTEGER (0..3) */
 #define RRC_TRANSACTION_IDENTIFIER_NUMBER  3
+
+typedef struct {
+  unsigned short transport_block_size;                  /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */
+  unsigned short max_transport_blocks;                  /*!< \brief Maximum PDU size in bytes provided by RLC to MAC layer interface */
+  unsigned long  Guaranteed_bit_rate;           /*!< \brief Guaranteed Bit Rate (average) to be offered by MAC layer scheduling*/
+  unsigned long  Max_bit_rate;                  /*!< \brief Maximum Bit Rate that can be offered by MAC layer scheduling*/
+  uint8_t  Delay_class;                  /*!< \brief Delay class offered by MAC layer scheduling*/
+  uint8_t  Target_bler;                  /*!< \brief Target Average Transport Block Error rate*/
+  uint8_t  Lchan_t;                      /*!< \brief Logical Channel Type (BCCH,CCCH,DCCH,DTCH_B,DTCH,MRBCH)*/
+} __attribute__ ((__packed__))  LCHAN_DESC;
+
+#define LCHAN_DESC_SIZE sizeof(LCHAN_DESC)
 
 typedef struct UE_RRC_INFO_s {
   UE_STATE_t State;
@@ -313,7 +329,7 @@ typedef struct {
 typedef struct RB_INFO_s {
   uint16_t Rb_id;  //=Lchan_id
   LCHAN_DESC Lchan_desc[2];
-  MAC_MEAS_REQ_ENTRY *Meas_entry;
+  //  MAC_MEAS_REQ_ENTRY *Meas_entry;
 } RB_INFO;
 
 typedef struct SRB_INFO_s {
@@ -439,11 +455,24 @@ typedef struct rrc_eNB_ue_context_s {
 } rrc_eNB_ue_context_t;
 
 typedef struct {
+  uint8_t                           *MIB;
+  uint8_t                           sizeof_MIB;
   uint8_t                           *SIB1;
   uint8_t                           sizeof_SIB1;
   uint8_t                           *SIB23;
   uint8_t                           sizeof_SIB23;
-  uint16_t                          physCellId;
+#ifdef Rel14
+  uint8_t                           *SIB1_BR;
+  uint8_t                           sizeof_SIB1_BR;
+  uint8_t                           *SIB23_BR;
+  uint8_t                           sizeof_SIB23_BR;
+#endif
+  int                               physCellId;
+  int                               Ncp;
+  int                               p_eNB;
+  uint32_t                          dl_CarrierFreq;
+  uint32_t                          ul_CarrierFreq;
+  uint32_t                          pbch_repetition;
   BCCH_BCH_Message_t                mib;
   BCCH_DL_SCH_Message_t             siblock1;
   BCCH_DL_SCH_Message_t             systemInformation;
@@ -451,6 +480,11 @@ typedef struct {
   SystemInformationBlockType1_t     *sib1;
   SystemInformationBlockType2_t     *sib2;
   SystemInformationBlockType3_t     *sib3;
+#ifdef Rel14
+  SystemInformationBlockType1_t     *sib1_BR;
+  SystemInformationBlockType2_t     *sib2_BR;
+  SystemInformationBlockType2_t     *sib3_BR;
+#endif
 #if defined(Rel10) || defined(Rel14)
   SystemInformationBlockType13_r9_t *sib13;
   uint8_t                           MBMS_flag;
@@ -461,23 +495,18 @@ typedef struct {
   MBSFNAreaConfiguration_r9_t       *mcch_message;
   SRB_INFO                          MCCH_MESS[8];// MAX_MBSFN_AREA
 #endif
-#ifdef CBA
-  uint8_t                        num_active_cba_groups;
-  uint16_t                       cba_rnti[NUM_MAX_CBA_GROUP];
-#endif
   SRB_INFO                          SI;
   SRB_INFO                          Srb0;
 } rrc_eNB_carrier_data_t;
 
 typedef struct eNB_RRC_INST_s {
+  /// southbound midhaul configuration
+  eth_params_t                    eth_params_s;
   rrc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
   uid_allocator_t                    uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_ue_tree_s, rrc_eNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
   uint8_t                           HO_flag;
   uint8_t                            Nb_ue;
-#if ENABLE_RAL
-  obj_hash_table_t                  *ral_meas_thresholds;
-#endif
   hash_table_t                      *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
   hash_table_t                      *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t
 
@@ -496,6 +525,22 @@ typedef struct eNB_RRC_INST_s {
 #if defined(ENABLE_ITTI)
   RrcConfigurationReq configuration;
 #endif
+  // other PLMN parameters
+  /// Mobile country code
+  int mcc;
+  /// Mobile network code
+  int mnc;
+  /// number of mnc digits
+  int mnc_digit_length;
+
+  // other RAN parameters
+  int srb1_timer_poll_retransmit;
+  int srb1_poll_pdu;
+  int srb1_poll_byte;
+  int srb1_max_retx_threshold;
+  int srb1_timer_reordering;
+  int srb1_timer_status_prohibit;
+  int srs_enable[MAX_NUM_CCs];
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255
@@ -576,10 +621,6 @@ typedef struct UE_RRC_INST_s {
   float                           rsrq_db[7];
   float                           rsrp_db_filtered[7];
   float                           rsrq_db_filtered[7];
-#if ENABLE_RAL
-  obj_hash_table_t               *ral_meas_thresholds;
-  ral_transaction_id_t            scan_transaction_id;
-#endif
 #if defined(ENABLE_SECURITY)
   /* KeNB as computed from parameters within USIM card */
   uint8_t kenb[32];

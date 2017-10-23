@@ -93,27 +93,20 @@ typedef struct RrcConfigurationReq_s {
   uint16_t            mnc;
   uint8_t             mnc_digit_length;
 
-  /*
-    paging_drx_t        default_drx;
-
-    lte_frame_type_t    frame_type;
-    uint8_t             tdd_config;
-    uint8_t             tdd_config_s;
-    int16_t             eutra_band;
-  */
+  
+  paging_drx_t            default_drx;
   int16_t                 nb_cc;
   lte_frame_type_t        frame_type[MAX_NUM_CCs];
   uint8_t                 tdd_config[MAX_NUM_CCs];
   uint8_t                 tdd_config_s[MAX_NUM_CCs];
   lte_prefix_type_t       prefix_type[MAX_NUM_CCs];
+  uint8_t                 pbch_repetition[MAX_NUM_CCs];
   int16_t                 eutra_band[MAX_NUM_CCs];
   uint32_t                downlink_frequency[MAX_NUM_CCs];
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
-
   int16_t                 Nid_cell[MAX_NUM_CCs];// for testing, change later
   int16_t                 N_RB_DL[MAX_NUM_CCs];// for testing, change later
-  int                   nb_antennas_tx[MAX_NUM_CCs];
-  int                     nb_antennas_rx[MAX_NUM_CCs];
+  int                     nb_antenna_ports[MAX_NUM_CCs];
   long                    prach_root[MAX_NUM_CCs];
   long                    prach_config_index[MAX_NUM_CCs];
   BOOLEAN_t               prach_high_speed[MAX_NUM_CCs];

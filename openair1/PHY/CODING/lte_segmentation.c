@@ -106,7 +106,7 @@ int lte_segmentation(unsigned char *input_buffer,
 #endif
     *Kminus = (*Kplus - 64);
   } else {
-    msg("lte_segmentation.c: Illegal codeword size !!!\n");
+    printf("lte_segmentation.c: Illegal codeword size !!!\n");
     return(-1);
   }
 
@@ -123,6 +123,9 @@ int lte_segmentation(unsigned char *input_buffer,
   }
 
 
+  AssertFatal(Bprime <= (*Cplus)*(*Kplus) + (*Cminus)*(*Kminus),
+	      "Bprime %d <  (*Cplus %d)*(*Kplus %d) + (*Cminus %d)*(*Kminus %d)\n",
+	      Bprime,*Cplus,*Kplus,*Cminus,*Kminus);
 
   *F = ((*Cplus)*(*Kplus) + (*Cminus)*(*Kminus) - (Bprime));
 #ifdef DEBUG_SEGMENTATION

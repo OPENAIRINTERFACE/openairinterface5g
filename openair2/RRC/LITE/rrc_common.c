@@ -41,13 +41,14 @@
 #include "pdcp.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "rrc_eNB_UE_context.h"
+#include "common/ran_context.h"
 
 #ifdef LOCALIZATION
 #include <sys/time.h>
 #endif
 
 #define DEBUG_RRC 1
-extern eNB_MAC_INST *eNB_mac_inst;
+extern RAN_CONTEXT_t RC;
 extern UE_MAC_INST *UE_mac_inst;
 
 extern mui_t rrc_eNB_mui;
@@ -67,10 +68,10 @@ openair_rrc_on(
     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" OPENAIR RRC IN....\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      rrc_config_buffer (&eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].SI, BCCH, 1);
-      eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].SI.Active = 1;
-      rrc_config_buffer (&eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0, CCCH, 1);
-      eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Active = 1;
+      rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
+      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
+      rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
+      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
     }
   } else {
     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" OPENAIR RRC IN....\n",
@@ -150,72 +151,9 @@ rrc_init_global_param(
   Rlc_info_am_config.rlc.rlc_am_info.t_poll_retransmit = 15;
   Rlc_info_am_config.rlc.rlc_am_info.t_reordering = 50;
   Rlc_info_am_config.rlc.rlc_am_info.t_status_prohibit = 10;
-#ifndef NO_RRM
-
-  if (L3_xface_init ()) {
-    return (-1);
-  }
-
-#endif
 
   return 0;
 }
-
-#ifndef NO_RRM
-//-----------------------------------------------------------------------------
-int
-L3_xface_init(
-  void
-)
-//-----------------------------------------------------------------------------
-{
-
-  int ret = 0;
-
-#ifdef USER_MODE
-
-  int sock;
-  LOG_D(RRC, "[L3_XFACE] init de l'interface \n");
-
-  if (open_socket (&S_rrc, RRC_RRM_SOCK_PATH, RRM_RRC_SOCK_PATH, 0) == -1) {
-    return (-1);
-  }
-
-  if (S_rrc.s == -1) {
-    return (-1);
-  }
-
-  socket_setnonblocking (S_rrc.s);
-  msg ("Interface Connected... RRM-RRC\n");
-  return 0;
-
-#else
-
-  ret=rtf_create(RRC2RRM_FIFO,32768);
-
-  if (ret < 0) {
-    msg("[openair][MAC][INIT] Cannot create RRC2RRM fifo %d (ERROR %d)\n",RRC2RRM_FIFO,ret);
-    return(-1);
-  } else {
-    msg("[openair][MAC][INIT] Created RRC2RRM fifo %d\n",RRC2RRM_FIFO);
-    rtf_reset(RRC2RRM_FIFO);
-  }
-
-  ret=rtf_create(RRM2RRC_FIFO,32768);
-
-  if (ret < 0) {
-    msg("[openair][MAC][INIT] Cannot create RRM2RRC fifo %d (ERROR %d)\n",RRM2RRC_FIFO,ret);
-    return(-1);
-  } else {
-    msg("[openair][MAC][INIT] Created RRC2RRM fifo %d\n",RRM2RRC_FIFO);
-    rtf_reset(RRM2RRC_FIFO);
-  }
-
-  return(0);
-
-#endif
-}
-#endif
 
 //-----------------------------------------------------------------------------
 void
@@ -229,131 +167,6 @@ rrc_config_buffer(
 
   Srb_info->Rx_buffer.payload_size = 0;
   Srb_info->Tx_buffer.payload_size = 0;
-}
-
-/*------------------------------------------------------------------------------*/
-void
-openair_rrc_top_init(
-  int eMBMS_active,
-  char* uecap_xer,
-  uint8_t cba_group_active,
-  uint8_t HO_active
-)
-//-----------------------------------------------------------------------------
-{
-
-  module_id_t         module_id;
-  OAI_UECapability_t *UECap     = NULL;
-  int                 CC_id;
-
-  /* for no gcc warnings */
-  (void)CC_id;
-
-  LOG_D(RRC, "[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n", NB_UE_INST, NB_eNB_INST);
-
-  if (NB_UE_INST > 0) {
-    UE_rrc_inst = (UE_RRC_INST*) malloc16(NB_UE_INST*sizeof(UE_RRC_INST));
-    memset (UE_rrc_inst, 0, NB_UE_INST * sizeof(UE_RRC_INST));
-    LOG_D(RRC, "ALLOCATE %d Bytes for UE_RRC_INST @ %p\n", (unsigned int)(NB_UE_INST*sizeof(UE_RRC_INST)), UE_rrc_inst);
-
-    // fill UE capability
-    UECap = fill_ue_capability (uecap_xer);
-
-    for (module_id = 0; module_id < NB_UE_INST; module_id++) {
-      UE_rrc_inst[module_id].UECap = UECap;
-      UE_rrc_inst[module_id].UECapability = UECap->sdu;
-      UE_rrc_inst[module_id].UECapability_size = UECap->sdu_size;
-    }
-
-#if defined(Rel10) || defined(Rel14)
-    LOG_I(RRC,"[UE] eMBMS active state is %d \n", eMBMS_active);
-
-    for (module_id=0; module_id<NB_UE_INST; module_id++) {
-      UE_rrc_inst[module_id].MBMS_flag = (uint8_t)eMBMS_active;
-    }
-
-#endif
-  } else {
-    UE_rrc_inst = NULL;
-  }
-
-  if (NB_eNB_INST > 0) {
-    eNB_rrc_inst = (eNB_RRC_INST*) malloc16(NB_eNB_INST*sizeof(eNB_RRC_INST));
-    memset (eNB_rrc_inst, 0, NB_eNB_INST * sizeof(eNB_RRC_INST));
-    LOG_I(RRC,"[eNB] handover active state is %d \n", HO_active);
-
-    for (module_id=0; module_id<NB_eNB_INST; module_id++) {
-      eNB_rrc_inst[module_id].HO_flag   = (uint8_t)HO_active;
-    }
-
-#if defined(Rel10) || defined(Rel14)
-    LOG_I(RRC,"[eNB] eMBMS active state is %d \n", eMBMS_active);
-
-    for (module_id=0; module_id<NB_eNB_INST; module_id++) {
-      for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-        eNB_rrc_inst[module_id].carrier[CC_id].MBMS_flag = (uint8_t)eMBMS_active;
-      }
-    }
-
-#endif
-#ifdef CBA
-
-    for (module_id=0; module_id<NB_eNB_INST; module_id++) {
-      for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-        eNB_rrc_inst[module_id].carrier[CC_id].num_active_cba_groups = cba_group_active;
-      }
-    }
-
-#endif
-#ifdef LOCALIZATION
-    /* later set this from xml or enb.config file*/
-    struct timeval ts; // time struct
-    gettimeofday(&ts, NULL); // get the current epoch timestamp
-
-    for (module_id=0; module_id<NB_eNB_INST; module_id++) {
-      eNB_rrc_inst[module_id].reference_timestamp_ms = ts.tv_sec * 1000 + ts.tv_usec / 1000;
-      initialize(&eNB_rrc_inst[module_id].loc_list);
-      eNB_rrc_inst[module_id].loc_type=0;
-      eNB_rrc_inst[module_id].aggregation_period_ms = 5000;
-    }
-
-#endif
-    LOG_D(RRC,
-          "ALLOCATE %d Bytes for eNB_RRC_INST @ %p\n", (unsigned int)(NB_eNB_INST*sizeof(eNB_RRC_INST)), eNB_rrc_inst);
-  } else {
-    eNB_rrc_inst = NULL;
-  }
-
-#ifndef NO_RRM
-#ifndef USER_MODE
-
-  Header_buf=(char*)malloc16(sizeof(msg_head_t));
-  Data=(char*)malloc16(2400);
-  Header_read_idx=0;
-  Data_read_idx=0;
-  Header_size=sizeof(msg_head_t);
-
-#endif //NO_RRM
-  Data_to_read = 0;
-#endif //USER_MODE
-}
-
-//-----------------------------------------------------------------------------
-void
-rrc_top_cleanup(
-  void
-)
-//-----------------------------------------------------------------------------
-{
-
-  if (NB_UE_INST > 0) {
-    free (UE_rrc_inst);
-  }
-
-  if (NB_eNB_INST > 0) {
-    free (eNB_rrc_inst);
-
-  }
 }
 
 
@@ -517,7 +330,7 @@ rrc_rx_tx(
     // counetr, and get the value and aggregate
 
     // check for UL failure
-    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
+    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
       if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe==0)) {
 	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
 	  LOG_I(RRC,"UE rnti %x:S-TMSI %x failure timer %d/20000\n",
@@ -558,16 +371,16 @@ rrc_rx_tx(
     /* for the localization, only primary CC_id might be relevant*/
     gettimeofday(&ts, NULL);
     current_timestamp_ms = ts.tv_sec * 1000 + ts.tv_usec / 1000;
-    ref_timestamp_ms = eNB_rrc_inst[ctxt_pP->module_id].reference_timestamp_ms;
-    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
+    ref_timestamp_ms = RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms;
+    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
       ctxt = *ctxt_pP;
       ctxt.rnti = ue_context_p->ue_context.rnti;
       estimated_distance = rrc_get_estimated_ue_distance(
                              &ctxt,
                              CC_id,
-                             eNB_rrc_inst[ctxt_pP->module_id].loc_type);
+                             RC.rrc[ctxt_pP->module_id]->loc_type);
 
-      if ((current_timestamp_ms - ref_timestamp_ms > eNB_rrc_inst[ctxt_pP->module_id].aggregation_period_ms) &&
+      if ((current_timestamp_ms - ref_timestamp_ms > RC.rrc[ctxt_pP->module_id]->aggregation_period_ms) &&
           estimated_distance != -1) {
         LOG_D(LOCALIZE, " RRC [UE/id %d -> eNB/id %d] timestamp %d frame %d estimated r = %f\n",
               ctxt.rnti,
@@ -576,9 +389,9 @@ rrc_rx_tx(
               ctxt_pP->frame,
               estimated_distance);
         LOG_D(LOCALIZE, " RRC status %d\n", ue_context_p->ue_context.Status);
-        push_front(&eNB_rrc_inst[ctxt_pP->module_id].loc_list,
+        push_front(&RC.rrc[ctxt_pP->module_id]->loc_list,
                    estimated_distance);
-        eNB_rrc_inst[ctxt_pP->module_id].reference_timestamp_ms = current_timestamp_ms;
+        RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms = current_timestamp_ms;
       }
     }
 

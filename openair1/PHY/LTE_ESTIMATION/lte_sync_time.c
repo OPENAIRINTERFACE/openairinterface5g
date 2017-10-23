@@ -59,31 +59,31 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
 
   if (sync_corr_ue0) {
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue0);
+    LOG_D(PHY,"[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue0);
 #endif
     //common_vars->sync_corr = sync_corr;
   } else {
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue0 not allocated\n");
+    LOG_E(PHY,"[openair][LTE_PHY][SYNC] sync_corr_ue0 not allocated\n");
     return(-1);
   }
 
   if (sync_corr_ue1) {
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue1);
+    LOG_D(PHY,"[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue1);
 #endif
     //common_vars->sync_corr = sync_corr;
   } else {
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue1 not allocated\n");
+    LOG_E(PHY,"[openair][LTE_PHY][SYNC] sync_corr_ue1 not allocated\n");
     return(-1);
   }
 
   if (sync_corr_ue2) {
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue2);
+    LOG_D(PHY,"[openair][LTE_PHY][SYNC] sync_corr_ue allocated at %p\n", sync_corr_ue2);
 #endif
     //common_vars->sync_corr = sync_corr;
   } else {
-    msg("[openair][LTE_PHY][SYNC] sync_corr_ue2 not allocated\n");
+    LOG_E(PHY,"[openair][LTE_PHY][SYNC] sync_corr_ue2 not allocated\n");
     return(-1);
   }
 
@@ -94,10 +94,10 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     //    bzero(primary_synch0_time,(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*sizeof(int));
     bzero(primary_synch0_time,(frame_parms->ofdm_symbol_size)*sizeof(int16_t)*2);
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][SYNC] primary_synch0_time allocated at %p\n", primary_synch0_time);
+    LOG_D(PHY,"[openair][LTE_PHY][SYNC] primary_synch0_time allocated at %p\n", primary_synch0_time);
 #endif
   } else {
-    msg("[openair][LTE_PHY][SYNC] primary_synch0_time not allocated\n");
+    LOG_E(PHY,"[openair][LTE_PHY][SYNC] primary_synch0_time not allocated\n");
     return(-1);
   }
 
@@ -108,10 +108,10 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     //    bzero(primary_synch1_time,(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*sizeof(int));
     bzero(primary_synch1_time,(frame_parms->ofdm_symbol_size)*sizeof(int16_t)*2);
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][SYNC] primary_synch1_time allocated at %p\n", primary_synch1_time);
+    LOG_D(PHY,"[openair][LTE_PHY][SYNC] primary_synch1_time allocated at %p\n", primary_synch1_time);
 #endif
   } else {
-    msg("[openair][LTE_PHY][SYNC] primary_synch1_time not allocated\n");
+    LOG_E(PHY,"[openair][LTE_PHY][SYNC] primary_synch1_time not allocated\n");
     return(-1);
   }
 
@@ -122,10 +122,10 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     //    bzero(primary_synch2_time,(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*sizeof(int));
     bzero(primary_synch2_time,(frame_parms->ofdm_symbol_size)*sizeof(int16_t)*2);
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][SYNC] primary_synch2_time allocated at %p\n", primary_synch2_time);
+    LOG_D(PHY,"[openair][LTE_PHY][SYNC] primary_synch2_time allocated at %p\n", primary_synch2_time);
 #endif
   } else {
-    msg("[openair][LTE_PHY][SYNC] primary_synch2_time not allocated\n");
+    LOG_E(PHY,"[openair][LTE_PHY][SYNC] primary_synch2_time not allocated\n");
     return(-1);
   }
 
@@ -292,32 +292,32 @@ void lte_sync_time_free(void)
 
 
   if (sync_corr_ue0) {
-    msg("Freeing sync_corr_ue (%p)...\n",sync_corr_ue0);
+    LOG_D(PHY,"Freeing sync_corr_ue (%p)...\n",sync_corr_ue0);
     free(sync_corr_ue0);
   }
 
   if (sync_corr_ue1) {
-    msg("Freeing sync_corr_ue (%p)...\n",sync_corr_ue1);
+    LOG_D(PHY,"Freeing sync_corr_ue (%p)...\n",sync_corr_ue1);
     free(sync_corr_ue1);
   }
 
   if (sync_corr_ue2) {
-    msg("Freeing sync_corr_ue (%p)...\n",sync_corr_ue2);
+    LOG_D(PHY,"Freeing sync_corr_ue (%p)...\n",sync_corr_ue2);
     free(sync_corr_ue2);
   }
 
   if (primary_synch0_time) {
-    msg("Freeing primary_sync0_time ...\n");
+    LOG_D(PHY,"Freeing primary_sync0_time ...\n");
     free(primary_synch0_time);
   }
 
   if (primary_synch1_time) {
-    msg("Freeing primary_sync1_time ...\n");
+    LOG_D(PHY,"Freeing primary_sync1_time ...\n");
     free(primary_synch1_time);
   }
 
   if (primary_synch2_time) {
-    msg("Freeing primary_sync2_time ...\n");
+    LOG_D(PHY,"Freeing primary_sync2_time ...\n");
     free(primary_synch2_time);
   }
 
@@ -355,19 +355,19 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   int tmp[3] = {0,0,0};
   int length =   LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti>>1;
 
-  //msg("[SYNC TIME] Calling sync_time.\n");
+  //LOG_D(PHY,"[SYNC TIME] Calling sync_time.\n");
   if (sync_corr_ue0 == NULL) {
-    msg("[SYNC TIME] sync_corr_ue0 not yet allocated! Exiting.\n");
+    LOG_E(PHY,"[SYNC TIME] sync_corr_ue0 not yet allocated! Exiting.\n");
     return(-1);
   }
 
   if (sync_corr_ue1 == NULL) {
-    msg("[SYNC TIME] sync_corr_ue1 not yet allocated! Exiting.\n");
+    LOG_E(PHY,"[SYNC TIME] sync_corr_ue1 not yet allocated! Exiting.\n");
     return(-1);
   }
 
   if (sync_corr_ue2 == NULL) {
-    msg("[SYNC TIME] sync_corr_ue2 not yet allocated! Exiting.\n");
+    LOG_E(PHY,"[SYNC TIME] sync_corr_ue2 not yet allocated! Exiting.\n");
     return(-1);
   }
 
@@ -377,18 +377,6 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
 
   for (n=0; n<length; n+=4) {
-
-#ifdef RTAI_ENABLED
-
-    // This is necessary since the sync takes a long time and it seems to block all other threads thus screwing up RTAI. If we pause it for a little while during its execution we give RTAI a chance to catch up with its other tasks.
-    if ((n%frame_parms->samples_per_tti == 0) && (n>0) && (openair_daq_vars.sync_state==0)) {
-#ifdef DEBUG_PHY
-      msg("[SYNC TIME] pausing for 1000ns, n=%d\n",n);
-#endif
-      rt_sleep(nano2count(1000));
-    }
-
-#endif
 
     sync_corr_ue0[n] = 0;
     sync_corr_ue0[n+length] = 0;
@@ -516,7 +504,7 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
   short *primary_synch_time;
   int eNB_id = frame_parms->Nid_cell%3;
 
-  // msg("[SYNC TIME] Calling sync_time_eNB(%p,%p,%d,%d)\n",rxdata,frame_parms,eNB_id,length);
+  // LOG_E(PHY,"[SYNC TIME] Calling sync_time_eNB(%p,%p,%d,%d)\n",rxdata,frame_parms,eNB_id,length);
   if (sync_corr_eNB == NULL) {
     LOG_E(PHY,"[SYNC TIME] sync_corr_eNB not yet allocated! Exiting.\n");
     return(-1);
@@ -603,11 +591,11 @@ int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNB,
   uint8_t UE_id;
   uint8_t CC_id = phy_vars_eNB->CC_id;
 
-  msg("[PHY] EMUL lte_sync_time_eNB_emul eNB %d, sect_id %d\n",phy_vars_eNB->Mod_id,sect_id);
+  LOG_E(PHY,"[PHY] EMUL lte_sync_time_eNB_emul eNB %d, sect_id %d\n",phy_vars_eNB->Mod_id,sect_id);
   *sync_val = 0;
 
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-    //msg("[PHY] EMUL : eNB %d checking UE %d (PRACH %d) PL %d dB\n",phy_vars_eNB->Mod_id,UE_id,PHY_vars_UE_g[UE_id]->generate_prach,UE2eNB[UE_id][phy_vars_eNB->Mod_id]->path_loss_dB);
+    //LOG_E(PHY,"[PHY] EMUL : eNB %d checking UE %d (PRACH %d) PL %d dB\n",phy_vars_eNB->Mod_id,UE_id,PHY_vars_UE_g[UE_id]->generate_prach,UE2eNB[UE_id][phy_vars_eNB->Mod_id]->path_loss_dB);
     if ((PHY_vars_UE_g[UE_id][CC_id]->generate_prach == 1) && (phy_vars_eNB->Mod_id == (UE_id % NB_eNB_INST))) {
       *sync_val = 1;
       return(0);

@@ -83,9 +83,8 @@ void print_meas(time_stats_t *ts, const char* name, time_stats_t * total_exec_ti
       //printf("%20s: total: %10.3f ms, average: %10.3f us (%10d trials)\n", name, ts->diff/cpu_freq_GHz/1000000.0, ts->diff/ts->trials/cpu_freq_GHz/1000.0, ts->trials);
 
       if ((total_exec_time == NULL) || (sf_exec_time== NULL)) {
-        fprintf(stderr, "%25s:  %15.3f ms ;  %15.3f us; %15d;\n",
+        fprintf(stderr, "%25s:  %15.3f us; %15d;\n",
                 name,
-                (ts->diff/cpu_freq_GHz/1000000.0),
                 (ts->diff/ts->trials/cpu_freq_GHz/1000.0),
                 ts->trials);
       } else {

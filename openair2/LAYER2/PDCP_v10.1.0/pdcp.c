@@ -118,13 +118,8 @@ boolean_t pdcp_data_req(
   /*
    * XXX MAX_IP_PACKET_SIZE is 4096, shouldn't this be MAX SDU size, which is 8188 bytes?
    */
-
-  if (sdu_buffer_sizeP > MAX_IP_PACKET_SIZE) {
-    LOG_E(PDCP, "Requested SDU size (%d) is bigger than that can be handled by PDCP (%u)!\n",
+  AssertFatal(sdu_buffer_sizeP<= MAX_IP_PACKET_SIZE,"Requested SDU size (%d) is bigger than that can be handled by PDCP (%u)!\n",
           sdu_buffer_sizeP, MAX_IP_PACKET_SIZE);
-    // XXX What does following call do?
-    mac_xface->macphy_exit("PDCP sdu buffer size > MAX_IP_PACKET_SIZE");
-  }
   
   if (modeP == PDCP_TRANSMISSION_MODE_TRANSPARENT) {
     AssertError (rb_idP < NB_RB_MBMS_MAX, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, NB_RB_MBMS_MAX, ctxt_pP->module_id, ctxt_pP->rnti);

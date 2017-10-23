@@ -215,7 +215,7 @@ int cli_login(const char *username, int maxnodes, int maxcmds)
 
 char *cli_prompt(void)
 {
-  static char promptstr[200];
+  static char promptstr[256];
   promptstr[0]='\0';
   snprintf(promptstr, 200,"%s@%s",username, cli_cfg->prompt);
   return promptstr;
