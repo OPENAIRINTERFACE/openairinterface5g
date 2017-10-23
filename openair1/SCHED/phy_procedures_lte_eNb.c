@@ -663,7 +663,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 
     {
       if ((eNB->prach_energy_counter == 100) && 
-          (max_preamble_energy[0] > eNB->measurements.prach_I0+100)) {
+          (max_preamble_energy[0] > eNB->measurements.prach_I0+200)) {
 
 	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	      eNB->Mod_id,
