@@ -97,21 +97,21 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
   if (flag == RAU_LOCAL_RADIO_HEAD) {
       lib_handle = dlopen(OAI_RF_LIBNAME, RTLD_LAZY);
       if (!lib_handle) {
-	fprintf(stderr,"Unable to locate %s: HW device set to NONE_DEV.\n", OAI_RF_LIBNAME);
-	fprintf(stderr,"%s\n",dlerror());
-	return -1;
+		fprintf(stderr,"Unable to locate %s: HW device set to NONE_DEV.\n", OAI_RF_LIBNAME);
+		fprintf(stderr,"%s\n",dlerror());
+		return -1;
       } 
       
       dp = dlsym(lib_handle,"device_init");
       
       if (dp != NULL ) {
-	ret = dp(device,openair0_cfg);
-	if (ret<0) {
-	  fprintf(stderr, "%s %d:oai device intialization failed %s\n", __FILE__, __LINE__, dlerror());
-	}
+		ret = dp(device,openair0_cfg);
+		if (ret<0) {
+			fprintf(stderr, "%s %d:oai device intialization failed %s\n", __FILE__, __LINE__, dlerror());
+		}
       } else {
-	fprintf(stderr, "%s %d:oai device intializing function not found %s\n", __FILE__, __LINE__, dlerror());
-	return -1;
+		fprintf(stderr, "%s %d:oai device intializing function not found %s\n", __FILE__, __LINE__, dlerror());
+		return -1;
       }
     } else {
       lib_handle = dlopen(OAI_TP_LIBNAME, RTLD_LAZY);
@@ -142,7 +142,7 @@ int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cf
   rc=load_lib(device, openair0_cfg, NULL,RAU_LOCAL_RADIO_HEAD );
 
   if ( rc >= 0) {       
-    if ( set_device(device) < 0) {
+	if ( set_device(device) < 0) {
       fprintf(stderr, "%s %d:Unsupported radio head\n",__FILE__, __LINE__);
       return -1;		   
     }   

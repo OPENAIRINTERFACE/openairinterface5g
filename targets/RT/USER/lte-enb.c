@@ -577,9 +577,27 @@ static void* eNB_thread_prach_br( void* param ) {
 #endif
 
 
-extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
+
 extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
 extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
+//////////////////////////////////////need to modified////////////////*****
+
+static void* coding_stats_thread(void* param) {
+
+  PHY_VARS_eNB     *eNB      = (PHY_VARS_eNB*)param;
+
+  wait_sync("coding_stats_thread");
+
+  while (!oai_exit) {
+     sleep(1);
+     if (opp_enabled == 1) {
+       if (eNB->td) print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
+       if (eNB->te) print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
+     }
+  }
+  return(NULL);
+}
+
 
 void init_eNB_proc(int inst) {
   
@@ -588,8 +606,7 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL;
-    //*attr_td=NULL,*attr_te=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL,*attr_td=NULL,*attr_te=NULL;
 #ifdef Rel14
   pthread_attr_t *attr_prach_br=NULL;
 #endif
@@ -629,8 +646,8 @@ void init_eNB_proc(int inst) {
 
     pthread_attr_init( &proc->attr_prach);
     pthread_attr_init( &proc->attr_asynch_rxtx);
-    //    pthread_attr_init( &proc->attr_td);
-    //    pthread_attr_init( &proc->attr_te);
+    pthread_attr_init( &proc->attr_td);
+    pthread_attr_init( &proc->attr_te);
     pthread_attr_init( &proc_rxtx[0].attr_rxtx);
     pthread_attr_init( &proc_rxtx[1].attr_rxtx);
 #ifdef Rel14
@@ -652,7 +669,8 @@ void init_eNB_proc(int inst) {
     //    attr_td     = &proc->attr_td;
     //    attr_te     = &proc->attr_te; 
 #endif
-
+	attr_td     = &proc->attr_td;
+	attr_te     = &proc->attr_te;
     if (eNB->single_thread_flag==0) {
       pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
       pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
@@ -670,6 +688,12 @@ void init_eNB_proc(int inst) {
     }
 
     AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
+	
+	
+	//////////////////////////////////////need to modified////////////////*****
+	init_te_thread(eNB,attr_te);
+	//init_td_thread(eNB,attr_td);
+	if (opp_enabled == 1) pthread_create(&proc->coding_stats_thread,NULL,coding_stats_thread,(void*)eNB);
 
     
   }
@@ -695,6 +719,8 @@ void init_eNB_proc(int inst) {
   pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
   pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);
   sync_phy_proc.phy_proc_CC_id = 0;
+  
+  
 }
 
 
@@ -927,8 +953,8 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
 #endif
 
 
-      eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-      eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+      eNB->td                   = ulsch_decoding_data;//(get_nprocs()<=4) ? ulsch_decoding_data : ulsch_decoding_data_2thread;
+      eNB->te                   = dlsch_encoding_all;//(get_nprocs()<=4) ? dlsch_encoding : dlsch_encoding_2threads;
 
       
       LOG_I(PHY,"Registering with MAC interface module\n");

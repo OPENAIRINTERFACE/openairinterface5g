@@ -856,11 +856,9 @@ function main() {
 	      ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
-	      if [ -d "/usr/include/uhd" ] ; then
 		  compilations \
 		      $build_dir oai_usrpdevif \
 		      liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
-	      fi
 
 	      ln -sf liboai_usrpdevif.so liboai_device.so
 	      ln -sf $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so

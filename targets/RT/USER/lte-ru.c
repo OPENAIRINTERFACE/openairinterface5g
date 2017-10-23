@@ -111,6 +111,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "T.h"
 
 extern volatile int                    oai_exit;
+extern int numerology;
 
 
 extern void  phy_init_RU(RU_t*);
@@ -1193,20 +1194,39 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
 
   LTE_DL_FRAME_PARMS *fp   = &ru->frame_parms;
   openair0_config_t *cfg   = &ru->openair0_cfg;
+  //printf("////////////////numerology in config = %d\n",numerology);
 
   if(fp->N_RB_DL == 100) {
-    if (fp->threequarter_fs) {
-      cfg->sample_rate=23.04e6;
-      cfg->samples_per_frame = 230400; 
-      cfg->tx_bw = 10e6;
-      cfg->rx_bw = 10e6;
-    }
-    else {
-      cfg->sample_rate=30.72e6;
+    if(numerology == 0){
+      if (fp->threequarter_fs) {
+        cfg->sample_rate=23.04e6;
+        cfg->samples_per_frame = 230400; 
+        cfg->tx_bw = 10e6;
+        cfg->rx_bw = 10e6;
+      }
+      else {
+        cfg->sample_rate=30.72e6;
+        cfg->samples_per_frame = 307200; 
+        cfg->tx_bw = 10e6;
+        cfg->rx_bw = 10e6;
+      }
+	}else if(numerology == 1){
+	  cfg->sample_rate=61.44e6;
+      cfg->samples_per_frame = 307200; 
+      cfg->tx_bw = 20e6;
+      cfg->rx_bw = 20e6;
+	}else if(numerology == 2){
+	  cfg->sample_rate=122.88e6;
+      cfg->samples_per_frame = 307200; 
+      cfg->tx_bw = 40e6;
+      cfg->rx_bw = 40e6;
+	}else{
+	  printf("Wrong input for numerology %d\n setting to 20MHz normal CP configuration",numerology);
+	  cfg->sample_rate=30.72e6;
       cfg->samples_per_frame = 307200; 
       cfg->tx_bw = 10e6;
       cfg->rx_bw = 10e6;
-    }
+	}
   } else if(fp->N_RB_DL == 50) {
     cfg->sample_rate=15.36e6;
     cfg->samples_per_frame = 153600;
@@ -1895,7 +1915,7 @@ void init_RU(char *rf_config_file) {
 	eNB0->RU_list[eNB0->num_RU++] = ru;
       }
     }
-    //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
+        LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
 
     
     switch (ru->if_south) {
@@ -1945,8 +1965,8 @@ void init_RU(char *rf_config_file) {
       }
       else if (ru->function == eNodeB_3GPP) {  
 	ru->do_prach             = 0;                       // no prach processing in RU            
-	ru->feprx                = (get_nprocs()<=2) ? fep_full : ru_fep_full_2thread;                // RX DFTs
-	ru->feptx_ofdm           = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;              // this is fep with idft and precoding
+	ru->feprx                = (get_nprocs()<=4) ? fep_full : ru_fep_full_2thread;                // RX DFTs
+	ru->feptx_ofdm           = (get_nprocs()<=4) ? feptx_ofdm : feptx_ofdm_2thread;              // this is fep with idft and precoding
 	ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
 	ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
 	ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north

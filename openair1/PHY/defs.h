@@ -556,6 +556,8 @@ typedef struct eNB_proc_t_s {
   te_params tep;
   /// set of scheduling variables RXn-TXnp4 threads
   eNB_rxtx_proc_t proc_rxtx[2];
+  /// stats thread pthread descriptor
+  pthread_t coding_stats_thread;
 } eNB_proc_t;
 
 

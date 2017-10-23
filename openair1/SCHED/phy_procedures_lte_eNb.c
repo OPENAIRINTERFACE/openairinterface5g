@@ -1517,6 +1517,7 @@ void init_te_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_te) {
 
 }
 
+
 void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe)
 {
   nfapi_rx_indication_pdu_t *pdu;

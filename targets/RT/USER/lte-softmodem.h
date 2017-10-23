@@ -83,6 +83,7 @@
 #define CONFIG_HLP_TPORT         "tracer port\n"
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
+#define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
 
 
 /***************************************************************************************************************************************/
@@ -137,36 +138,37 @@ extern int16_t dlsch_demod_shift;
 /*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC {  \
-{"rf-config-file",        	 CONFIG_HLP_RFCFGF,	0,		  strptr:(char **)&rf_config_file,	defstrval:NULL, 		   TYPE_STRING,   sizeof(rf_config_file)}, \
-{"ulsch-max-errors",      	 CONFIG_HLP_ULMAXE,	0,		  uptr:&ULSCH_max_consecutive_errors,	defuintval:0,			   TYPE_UINT,	  0},			   \
-{"phy-test",              	 CONFIG_HLP_PHYTST,	PARAMFLAG_BOOL,   iptr:&phy_test,			defintval:0,			   TYPE_INT,	  0},			   \
-{"usim-test",             	 CONFIG_HLP_USIM,	PARAMFLAG_BOOL,   u8ptr:&usim_test,			defintval:0,			   TYPE_UINT8,    0},			   \
-{"mmapped-dma",           	 CONFIG_HLP_DMAMAP,	PARAMFLAG_BOOL,   uptr:&mmapped_dma,			defintval:0,			   TYPE_INT,	  0},			   \
-{"external-clock",        	 CONFIG_HLP_EXCCLK,	PARAMFLAG_BOOL,   uptr:&clock_source,			defintval:0,			   TYPE_INT,	  0},			   \
-{"wait-for-sync",         	 NULL,  		PARAMFLAG_BOOL,   iptr:&wait_for_sync,  		defintval:0,			   TYPE_INT,	  0},			   \
-{"single-thread-disable", 	 CONFIG_HLP_NOSNGLT,	PARAMFLAG_BOOL,   iptr:&single_thread_flag,		defintval:1,			   TYPE_INT,	  0},			   \
-{"threadIQ",              	 NULL,  		0,		  iptr:&(threads.iq),			defintval:1,			   TYPE_INT,	  0},			   \
-{"threadOneSubframe",     	 NULL,  		0,		  iptr:&(threads.one),  		defintval:1,			   TYPE_INT,	  0},			   \
-{"threadTwoSubframe",    	 NULL,  		0,		  iptr:&(threads.two),  		defintval:1,			   TYPE_INT,	  0},			   \
-{"threadThreeSubframe",    	 NULL,  		0,		  iptr:&(threads.three),  		defintval:1,			   TYPE_INT,	  0},			   \
-{"threadSlot1ProcOne",     	 NULL,  		0,		  iptr:&(threads.slot1_proc_one),      	defintval:1,			   TYPE_INT,	  0},			   \
-{"threadSlot1ProcTwo",    	 NULL,  		0,		  iptr:&(threads.slot1_proc_two),      	defintval:1,			   TYPE_INT,	  0},			   \
-{"dlsch-demod-shift",     	 CONFIG_HLP_DLSHIFT,	0,		  iptr:(int32_t *)&dlsch_demod_shift,	defintval:0,			   TYPE_INT,	  0},			   \
-{"A" ,  		  	 CONFIG_HLP_TADV,	0,		  uptr:&timing_advance, 		defintval:0,			   TYPE_UINT,	  0},			   \
-{"C" ,  		  	 CONFIG_HLP_DLF,	0,		  uptr:&(downlink_frequency[0][0]),	defuintval:2680000000,  	   TYPE_UINT,	  0},			   \
-{"a" ,  		  	 CONFIG_HLP_CHOFF,	0,		  iptr:&chain_offset,			defintval:0,			   TYPE_INT,	  0},			   \
-{"d" ,  		  	 CONFIG_HLP_SOFTS,	PARAMFLAG_BOOL,	  uptr:(uint32_t *)&do_forms,		defintval:0,			   TYPE_INT8,	  0},			   \
-{"E" ,  		  	 CONFIG_HLP_TQFS,	PARAMFLAG_BOOL,   i8ptr:&threequarter_fs,		defintval:0,			   TYPE_INT8,	  0},			   \
-{"K" ,  		  	 CONFIG_HLP_ITTIL,	PARAMFLAG_NOFREE, strptr:&itti_dump_file,		defstrval:"/tmp/itti.dump",	   TYPE_STRING,   0},			   \
-{"U" ,  		  	 CONFIG_HLP_UE, 	PARAMFLAG_BOOL,   i8ptr:&UE_flag,			defintval:0,			   TYPE_INT8,	  0},			   \
-{"m" ,  		  	 CONFIG_HLP_DLMCS,	0,		  uptr:&target_dl_mcs,  		defintval:0,			   TYPE_UINT,	  0},			   \
-{"t" ,  		  	 CONFIG_HLP_ULMCS,	0,		  uptr:&target_ul_mcs,  		defintval:0,			   TYPE_UINT,	  0},			   \
-{"W" ,  		  	 CONFIG_HLP_L2MONW,	0,		  strptr:(char **)&in_ip,		defstrval:"127.0.0.1",  	   TYPE_STRING,   sizeof(in_ip)},	   \
-{"P" ,  		  	 CONFIG_HLP_L2MONP,	0,		  strptr:(char **)&in_path,		defstrval:"/tmp/oai_opt.pcap",     TYPE_STRING,   sizeof(in_path)},	   \
-{"V" ,  		  	 CONFIG_HLP_VCD,	PARAMFLAG_BOOL,   iptr:&ouput_vcd,			defintval:0,			   TYPE_INT,	  0},			   \
-{"q" ,  		  	 CONFIG_HLP_STMON,	PARAMFLAG_BOOL,   iptr:&opp_enabled,			defintval:0,			   TYPE_INT,	  0},			   \
-{"S" ,  		  	 CONFIG_HLP_MSLOTS,	PARAMFLAG_BOOL,   u8ptr:&exit_missed_slots,		defintval:1,			   TYPE_UINT8,    0},			   \
-{"T" ,  		  	 CONFIG_HLP_TDD,	PARAMFLAG_BOOL,   iptr:&tddflag,			defintval:0,			   TYPE_INT,	  0}			   \
+{"rf-config-file",        	 CONFIG_HLP_RFCFGF,	      0,		            strptr:(char **)&rf_config_file,	defstrval:NULL, 		       TYPE_STRING,   sizeof(rf_config_file)}, \
+{"ulsch-max-errors",      	 CONFIG_HLP_ULMAXE,	      0,		            uptr:&ULSCH_max_consecutive_errors,	defuintval:0,			       TYPE_UINT,	  0},			   \
+{"phy-test",              	 CONFIG_HLP_PHYTST,	      PARAMFLAG_BOOL,       iptr:&phy_test,			            defintval:0,			       TYPE_INT,	  0},			   \
+{"usim-test",             	 CONFIG_HLP_USIM,	      PARAMFLAG_BOOL,       u8ptr:&usim_test,			        defintval:0,			       TYPE_UINT8,    0},			   \
+{"mmapped-dma",           	 CONFIG_HLP_DMAMAP,	      PARAMFLAG_BOOL,       uptr:&mmapped_dma,			        defintval:0,			       TYPE_INT,	  0},			   \
+{"external-clock",        	 CONFIG_HLP_EXCCLK,	      PARAMFLAG_BOOL,       uptr:&clock_source,			        defintval:0,			       TYPE_INT,	  0},			   \
+{"wait-for-sync",         	 NULL,  		          PARAMFLAG_BOOL,       iptr:&wait_for_sync,  		        defintval:0,			       TYPE_INT,	  0},			   \
+{"single-thread-disable", 	 CONFIG_HLP_NOSNGLT,	  PARAMFLAG_BOOL,       iptr:&single_thread_flag,		    defintval:1,			       TYPE_INT,	  0},			   \
+{"threadIQ",              	 NULL,  		          0,		            iptr:&(threads.iq),			        defintval:1,			       TYPE_INT,	  0},			   \
+{"threadOneSubframe",     	 NULL,  		          0,		            iptr:&(threads.one),  		        defintval:1,			       TYPE_INT,	  0},			   \
+{"threadTwoSubframe",    	 NULL,  		          0,		            iptr:&(threads.two),  		        defintval:1,			       TYPE_INT,	  0},			   \
+{"threadThreeSubframe",    	 NULL,  		          0,		            iptr:&(threads.three),  		    defintval:1,			       TYPE_INT,	  0},			   \
+{"threadSlot1ProcOne",     	 NULL,  		          0,		            iptr:&(threads.slot1_proc_one),     defintval:1,			       TYPE_INT,	  0},			   \
+{"threadSlot1ProcTwo",    	 NULL,  		          0,		            iptr:&(threads.slot1_proc_two),     defintval:1,			       TYPE_INT,	  0},			   \
+{"dlsch-demod-shift",     	 CONFIG_HLP_DLSHIFT,	  0,		            iptr:(int32_t *)&dlsch_demod_shift,	defintval:0,			       TYPE_INT,	  0},			   \
+{"A" ,  		  	         CONFIG_HLP_TADV,	      0,		            uptr:&timing_advance, 		        defintval:0,			       TYPE_UINT,	  0},			   \
+{"C" ,  		  	         CONFIG_HLP_DLF,	      0,		            uptr:&(downlink_frequency[0][0]),	defuintval:2680000000,  	   TYPE_UINT,	  0},			   \
+{"a" ,  		  	         CONFIG_HLP_CHOFF,	      0,		            iptr:&chain_offset,			        defintval:0,			       TYPE_INT,	  0},			   \
+{"d" ,  		  	         CONFIG_HLP_SOFTS,	      PARAMFLAG_BOOL,	    uptr:(uint32_t *)&do_forms,		    defintval:0,			       TYPE_INT8,	  0},			   \
+{"E" ,  		  	         CONFIG_HLP_TQFS,	      PARAMFLAG_BOOL,       i8ptr:&threequarter_fs,		        defintval:0,			       TYPE_INT8,	  0},			   \
+{"K" ,  		  	         CONFIG_HLP_ITTIL,	      PARAMFLAG_NOFREE,     strptr:&itti_dump_file,		        defstrval:"/tmp/itti.dump",	   TYPE_STRING,   0},			   \
+{"U" ,  		  	         CONFIG_HLP_UE, 	      PARAMFLAG_BOOL,       i8ptr:&UE_flag,			            defintval:0,			       TYPE_INT8,	  0},			   \
+{"m" ,  		  	         CONFIG_HLP_DLMCS,	      0,		            uptr:&target_dl_mcs,  		        defintval:0,			       TYPE_UINT,	  0},			   \
+{"t" ,  		  	         CONFIG_HLP_ULMCS,	      0,		            uptr:&target_ul_mcs,  		        defintval:0,			       TYPE_UINT,	  0},			   \
+{"W" ,  		  	         CONFIG_HLP_L2MONW,	      0,		            strptr:(char **)&in_ip,		        defstrval:"127.0.0.1",  	   TYPE_STRING,   sizeof(in_ip)},	   \
+{"P" ,  		  	         CONFIG_HLP_L2MONP,	      0,		            strptr:(char **)&in_path,		    defstrval:"/tmp/oai_opt.pcap", TYPE_STRING,   sizeof(in_path)},	   \
+{"V" ,  		  	         CONFIG_HLP_VCD,	      PARAMFLAG_BOOL,       iptr:&ouput_vcd,			        defintval:0,			       TYPE_INT,	  0},			   \
+{"q" ,  		  	         CONFIG_HLP_STMON,	      PARAMFLAG_BOOL,       iptr:&opp_enabled,			        defintval:0,			       TYPE_INT,	  0},			   \
+{"S" ,  		  	         CONFIG_HLP_MSLOTS,	      PARAMFLAG_BOOL,       u8ptr:&exit_missed_slots,		    defintval:1,			       TYPE_UINT8,    0},			   \
+{"T" ,  		  	         CONFIG_HLP_TDD,	      PARAMFLAG_BOOL,       iptr:&tddflag,			            defintval:0,			       TYPE_INT,	  0},			   \
+{"n" ,  		  	         CONFIG_HLP_NUMEROLOGY,	  0,                    iptr:&numerology,			        defintval:1,			       TYPE_INT,	  0}			   \
 }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"

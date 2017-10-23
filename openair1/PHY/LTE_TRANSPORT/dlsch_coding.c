@@ -268,6 +268,8 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch)
 }
 
 
+
+
 int dlsch_encoding_2threads0(te_params *tep) {
 
   LTE_eNB_DLSCH_t *dlsch          = tep->dlsch;
@@ -560,6 +562,62 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
   return(0);
 }
+int dlsch_encoding_all(PHY_VARS_eNB *eNB,
+		   unsigned char *a,
+                   uint8_t num_pdcch_symbols,
+                   LTE_eNB_DLSCH_t *dlsch,
+                   int frame,
+                   uint8_t subframe,
+                   time_stats_t *rm_stats,
+                   time_stats_t *te_stats,
+                   time_stats_t *i_stats)
+{
+	int encoding_return = 0;
+	unsigned int L,C,B;
+	B = dlsch->harq_processes[dlsch->harq_ids[subframe]]->B;
+	if(B<=6144)
+	{
+		L=0;
+		C=1;
+	}
+	else
+	{
+		L=24;
+		C = B/(6144-L);
+		if((6144-L)*C < B)
+		{
+			C = C+1;
+		}
+	}
+	if(C >= 5)
+		{
+		encoding_return =
+		dlsch_encoding_2threads(eNB,
+				   a,
+                   num_pdcch_symbols,
+                   dlsch,
+                   frame,
+                   subframe,
+                   rm_stats,
+                   te_stats,
+                   i_stats);
+		}
+	else
+		{
+		encoding_return =
+		dlsch_encoding(eNB,
+				   a,
+                   num_pdcch_symbols,
+                   dlsch,
+                   frame,
+                   subframe,
+                   rm_stats,
+                   te_stats,
+                   i_stats);
+		}
+	return encoding_return;
+}
+
 
 int dlsch_encoding(PHY_VARS_eNB *eNB,
 		   unsigned char *a,

@@ -207,6 +207,8 @@ extern void print_opp_meas(void);
 
 int transmission_mode=1;
 
+int numerology = 1;
+
 
 
 /* struct for ethernet specific parameters given in eNB conf file */
@@ -751,6 +753,8 @@ void init_openair0() {
     openair0_cfg[card].configFilename = NULL;
 
     if(frame_parms[0]->N_RB_DL == 100) {
+	  if(numerology == 0)
+	  {
       if (frame_parms[0]->threequarter_fs) {
 	openair0_cfg[card].sample_rate=23.04e6;
 	openair0_cfg[card].samples_per_frame = 230400;
@@ -762,6 +766,22 @@ void init_openair0() {
 	openair0_cfg[card].tx_bw = 10e6;
 	openair0_cfg[card].rx_bw = 10e6;
       }
+	  }else if(numerology == 1)
+	  {
+		openair0_cfg[card].sample_rate=61.44e6;
+		openair0_cfg[card].samples_per_frame = 307200;
+		openair0_cfg[card].tx_bw = 20e6;
+		openair0_cfg[card].rx_bw = 20e6;
+	  }else if(numerology == 2)
+	  {
+		openair0_cfg[card].sample_rate=122.88e6;
+		openair0_cfg[card].samples_per_frame = 307200;
+		openair0_cfg[card].tx_bw = 20e6;
+		openair0_cfg[card].rx_bw = 20e6;
+	  }else
+	  {
+	    printf("Un supported numerology\n");
+	  }
     } else if(frame_parms[0]->N_RB_DL == 50) {
       openair0_cfg[card].sample_rate=15.36e6;
       openair0_cfg[card].samples_per_frame = 153600;
