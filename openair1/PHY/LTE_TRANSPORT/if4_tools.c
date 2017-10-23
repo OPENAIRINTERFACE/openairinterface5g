@@ -58,7 +58,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
   uint16_t db_fulllength, db_halflength; 
   int slotoffsetF=0, blockoffsetF=0; 
 
-  uint16_t *data_block=NULL, *i=NULL;
+  uint16_t *data_block=NULL, *i=NULL, *d=NULL;
 
   IF4p5_header_t *packet_header=NULL;
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
@@ -138,23 +138,48 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
     if (packet_type == IF4p5_PULFFT) {
 
+      uint16_t *rx0 = (uint16_t*) &rxdataF[0][blockoffsetF];
+      uint16_t *rx1 = (uint16_t*) &rxdataF[0][slotoffsetF];
+
+
       for (symbol_id=fp->symbols_per_tti-nsym; symbol_id<fp->symbols_per_tti; symbol_id++) {	     
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF4_SYMBOL, symbol_id );
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 1 );		
 
-	for (element_id=0; element_id<db_halflength; element_id++) {
-	  i = (uint16_t*) &rxdataF[0][blockoffsetF+element_id];
-	  data_block[element_id] = ((uint16_t) lin2alaw_if4p5[*i]) | ((uint16_t)(lin2alaw_if4p5[*(i+1)]<<8));
-	  
-	  i = (uint16_t*) &rxdataF[0][slotoffsetF+element_id];
-	  data_block[element_id+db_halflength] = ((uint16_t) lin2alaw_if4p5[*i]) | ((uint16_t)(lin2alaw_if4p5[*(i+1)]<<8));
-	  //if (element_id==0) LOG_I(PHY,"send_if4p5: symbol %d rxdata0 = (%d,%d)\n",symbol_id,*i,*(i+1));
-		
-	}
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );   	
-	packet_header->frame_status &= ~(0x000f<<26);
-	packet_header->frame_status |= (symbol_id&0x000f)<<26; 
+
+	start_meas(&ru->compression);
+
+       for (element_id=0; element_id<db_halflength; element_id+=8) {
+         i = (uint16_t*) &rx0[element_id];
+          d = (uint16_t*) &data_block[element_id];
+          d[0] = ((uint16_t) lin2alaw_if4p5[i[0]])  | ((uint16_t)(lin2alaw_if4p5[i[1]]<<8));
+          d[1] = ((uint16_t) lin2alaw_if4p5[i[2]])  | ((uint16_t)(lin2alaw_if4p5[i[3]]<<8));
+          d[2] = ((uint16_t) lin2alaw_if4p5[i[4]])  | ((uint16_t)(lin2alaw_if4p5[i[5]]<<8));
+          d[3] = ((uint16_t) lin2alaw_if4p5[i[6]])  | ((uint16_t)(lin2alaw_if4p5[i[7]]<<8));
+          d[4] = ((uint16_t) lin2alaw_if4p5[i[8]])  | ((uint16_t)(lin2alaw_if4p5[i[9]]<<8));
+          d[5] = ((uint16_t) lin2alaw_if4p5[i[10]]) | ((uint16_t)(lin2alaw_if4p5[i[11]]<<8));
+          d[6] = ((uint16_t) lin2alaw_if4p5[i[12]]) | ((uint16_t)(lin2alaw_if4p5[i[13]]<<8));
+          d[7] = ((uint16_t) lin2alaw_if4p5[i[14]]) | ((uint16_t)(lin2alaw_if4p5[i[15]]<<8));
+
+          i = (uint16_t*) &rx1[element_id];
+          d = (uint16_t*) &data_block[element_id+db_halflength];
+          d[0] = ((uint16_t) lin2alaw_if4p5[i[0]])  | ((uint16_t)(lin2alaw_if4p5[i[1]]<<8));
+          d[1] = ((uint16_t) lin2alaw_if4p5[i[2]])  | ((uint16_t)(lin2alaw_if4p5[i[3]]<<8));
+          d[2] = ((uint16_t) lin2alaw_if4p5[i[4]])  | ((uint16_t)(lin2alaw_if4p5[i[5]]<<8));
+          d[3] = ((uint16_t) lin2alaw_if4p5[i[6]])  | ((uint16_t)(lin2alaw_if4p5[i[7]]<<8));
+          d[4] = ((uint16_t) lin2alaw_if4p5[i[8]])  | ((uint16_t)(lin2alaw_if4p5[i[9]]<<8));
+          d[5] = ((uint16_t) lin2alaw_if4p5[i[10]]) | ((uint16_t)(lin2alaw_if4p5[i[11]]<<8));
+          d[6] = ((uint16_t) lin2alaw_if4p5[i[12]]) | ((uint16_t)(lin2alaw_if4p5[i[13]]<<8));
+          d[7] = ((uint16_t) lin2alaw_if4p5[i[14]]) | ((uint16_t)(lin2alaw_if4p5[i[15]]<<8));
+
+        }
+
+        stop_meas(&ru->compression);
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );   	
+	    packet_header->frame_status &= ~(0x000f<<26);
+	    packet_header->frame_status |= (symbol_id&0x000f)<<26; 
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );  
+    start_meas(&ru->transport);
 	if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
 					 symbol_id,
 					 &tx_buffer,
@@ -163,6 +188,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 					 IF4p5_PULFFT)) < 0) {
 	  perror("ETHERNET write for IF4p5_PULFFT\n");
 	}
+    stop_meas(&ru->transport);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );
 	slotoffsetF  += fp->ofdm_symbol_size;
 	blockoffsetF += fp->ofdm_symbol_size;

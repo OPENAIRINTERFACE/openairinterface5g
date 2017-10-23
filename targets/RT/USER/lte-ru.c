@@ -1322,8 +1322,11 @@ static void* ru_stats_thread(void* param) {
        if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
        if (ru->feptx_ofdm) print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
        if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
-       if (ru->fh_north_out) print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
-
+       if (ru->fh_north_out) {
+          print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
+          print_meas(&ru->compression,"compression",NULL,NULL);
+          print_meas(&ru->transport,"transport",NULL,NULL);
+       }
      }
   }
   return(NULL);
@@ -1911,6 +1914,8 @@ void init_RU(char *rf_config_file) {
 	ru->ifdevice.eth_params   = &ru->eth_params;
     reset_meas(&ru->rx_fhaul);
     reset_meas(&ru->tx_fhaul);
+    reset_meas(&ru->compression);
+    reset_meas(&ru->transport);
 
 	ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
 	printf("openair0_transport_init returns %d for ru_id %d\n",ret,ru_id);
@@ -1934,6 +1939,8 @@ void init_RU(char *rf_config_file) {
 	ru->ifdevice.eth_params   = &ru->eth_params;
     reset_meas(&ru->rx_fhaul);
     reset_meas(&ru->tx_fhaul);
+    reset_meas(&ru->compression);
+    reset_meas(&ru->transport);
 
 	ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
 	printf("openair0_transport_init returns %d for ru_id %d\n",ret,ru_id);
