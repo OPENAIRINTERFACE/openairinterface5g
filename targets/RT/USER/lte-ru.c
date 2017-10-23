@@ -596,13 +596,14 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
   do {   
     recv_IF4p5(ru, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
-    if ((subframe_select(fp,*subframe) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
+    if ((subframe_select(fp,subframe_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
     LOG_D(PHY,"subframe %d (%d): frame %d, subframe %d, symbol %d\n",
          *subframe,subframe_select(fp,*subframe),frame_tx,subframe_tx,symbol_number);
     if (proc->first_tx != 0) {
       *frame    = frame_tx;
       *subframe = subframe_tx;
       proc->first_tx = 0;
+      symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
     }
     else {
       AssertFatal(frame_tx == *frame,
@@ -616,7 +617,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
     else AssertFatal(1==0,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
   } while (symbol_mask != symbol_mask_full);    
 
-  if (subframe_select(fp,*subframe) == SF_DL) stop_meas(&ru->rx_fhaul);
+  if (subframe_select(fp,subframe_tx) == SF_DL) stop_meas(&ru->rx_fhaul);
 
   proc->subframe_tx  = subframe_tx;
   proc->frame_tx     = frame_tx;
@@ -871,7 +872,10 @@ static void* ru_thread_asynch_rxtx( void* param ) {
     // asynchronous receive from south (Mobipass)
     if (ru->fh_south_asynch_in) ru->fh_south_asynch_in(ru,&frame,&subframe);
     // asynchronous receive from north (RRU IF4/IF5)
-    else if (ru->fh_north_asynch_in) ru->fh_north_asynch_in(ru,&frame,&subframe);
+    else if (ru->fh_north_asynch_in) {
+       if (subframe_select(&ru->frame_parms,subframe)!=SF_UL)
+         ru->fh_north_asynch_in(ru,&frame,&subframe);
+    }
     else AssertFatal(1==0,"Unknown function in ru_thread_asynch_rxtx\n");
   }
 

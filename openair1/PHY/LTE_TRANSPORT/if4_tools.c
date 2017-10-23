@@ -207,7 +207,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
   } else if (packet_type >= IF4p5_PRACH && 
 	     packet_type <= IF4p5_PRACH+4) {
     // FIX: hard coded prach samples length
-    LOG_D(PHY,"IF4p5_PRACH: frame %d, subframe %d\n",frame,subframe);
+    LOG_D(PHY,"IF4p5_PRACH: frame %d, subframe %d,packet type %x\n",frame,subframe,packet_type);
     db_fulllength = PRACH_NUM_SAMPLES;
     
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
@@ -248,6 +248,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 				     packet_type)) < 0) {
       perror("ETHERNET write for IF4p5_PRACH\n");
     }
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );      
   } else {    
     AssertFatal(1==0, "send_IF4p5 - Unknown packet_type %x", packet_type);     
