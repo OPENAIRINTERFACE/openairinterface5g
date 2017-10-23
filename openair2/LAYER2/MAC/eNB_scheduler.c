@@ -517,29 +517,30 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
 
 #endif
 
-  // This schedules MIB
-  if ((subframeP==0) && (frameP&3) == 0) schedule_mib(module_idP,frameP,subframeP);
-  /*
-  // This schedules SI for legacy LTE and eMTC starting in subframeP
-  schedule_SI(module_idP,frameP,subframeP);
-  // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
-  schedule_RA(module_idP,frameP,subframeP);
-  // copy previously scheduled UL resources (ULSCH + HARQ)
-  copy_ulreq(module_idP,frameP,subframeP);
-  // This schedules SRS in subframeP
-  schedule_SRS(module_idP,frameP,subframeP);
-  // This schedules ULSCH in subframeP (dci0)
-  schedule_ulsch(module_idP,frameP,subframeP);
-  // This schedules UCI_SR in subframeP
-  schedule_SR(module_idP,frameP,subframeP);
-  // This schedules UCI_CSI in subframeP
-  schedule_CSI(module_idP, frameP, subframeP);
-  */
-
-  // This schedules DLSCH in subframeP
-  //schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
-
-  schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
+  if (RC.mac[module_idP]->phy_test==0) {
+    // This schedules MIB
+    if ((subframeP==0) && (frameP&3) == 0) schedule_mib(module_idP,frameP,subframeP);
+    // This schedules SI for legacy LTE and eMTC starting in subframeP
+    schedule_SI(module_idP,frameP,subframeP);
+    // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
+    schedule_RA(module_idP,frameP,subframeP);
+    // copy previously scheduled UL resources (ULSCH + HARQ)
+    copy_ulreq(module_idP,frameP,subframeP);
+    // This schedules SRS in subframeP
+    schedule_SRS(module_idP,frameP,subframeP);
+    // This schedules ULSCH in subframeP (dci0)
+    schedule_ulsch(module_idP,frameP,subframeP);
+    // This schedules UCI_SR in subframeP
+    schedule_SR(module_idP,frameP,subframeP);
+    // This schedules UCI_CSI in subframeP
+    schedule_CSI(module_idP, frameP, subframeP);
+    
+    // This schedules DLSCH in subframeP
+    schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
+  }
+  else {
+    schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
+  }
 
   // Allocate CCEs for good after scheduling is done
 
