@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -150,6 +150,9 @@ int chain_offset=0;
 int phy_test = 0;
 uint8_t usim_test = 0;
 
+uint8_t dci_Format = 0;
+uint8_t agregation_Level =0xFF;
+
 uint8_t nb_antenna_tx = 1;
 uint8_t nb_antenna_rx = 1;
 
@@ -222,7 +225,7 @@ double cpuf;
 char uecap_xer[1024],uecap_xer_in=0;
 
 int oaisim_flag=0;
-threads_t threads= {-1,-1,-1};
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -329,6 +332,8 @@ void help (void) {
   printf("  --external-clock tells hardware to use an external clock reference\n");
   printf("  --usim-test use XOR autentication algo in case of test usim mode\n"); 
   printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
+  printf("  --AgregationLevel Choose the agregation level used by tghe eNB for the OAI use 1, it will save some time of processing the pdcch\n");
+  printf("  --DCIformat choose the DCI format, be careful when using this option(for the moment only valid for SISO DCI format 1)\n");
   printf("  -A Set timing_advance\n");
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
@@ -603,9 +608,6 @@ static void get_options (int argc, char **argv) {
     //  char                          line[1000];
     //  int                           l;
     int k,i;//,j,k;
-#if defined(OAI_USRP) || defined(CPRIGW)
-    int clock_src;
-#endif
     int CC_id;
 
 
@@ -634,11 +636,18 @@ static void get_options (int argc, char **argv) {
         LONG_OPTION_USIMTEST,
         LONG_OPTION_MMAPPED_DMA,
         LONG_OPTION_EXTERNAL_CLOCK,
+        LONG_OPTION_GPSDO_CLOCK,
         LONG_OPTION_WAIT_FOR_SYNC,
         LONG_OPTION_SINGLE_THREAD_DISABLE,
         LONG_OPTION_THREADIQ,
-        LONG_OPTION_THREADODDSUBFRAME,
-        LONG_OPTION_THREADEVENSUBFRAME,
+        LONG_OPTION_THREADONESUBFRAME,
+        LONG_OPTION_THREADTWOSUBFRAME,
+        LONG_OPTION_THREADTHREESUBFRAME,
+        LONG_OPTION_THREADSLOT1PROCONE,
+        LONG_OPTION_THREADSLOT1PROCTWO,
+        LONG_OPTION_THREADSLOT1PROCTHREE,
+        LONG_OPTION_DCIFORMAT,
+        LONG_OPTION_AGREGATIONLEVEL,
         LONG_OPTION_DEMOD_SHIFT,
 #if T_TRACER
         LONG_OPTION_T_PORT,
@@ -670,11 +679,18 @@ static void get_options (int argc, char **argv) {
         {"usim-test", no_argument, NULL, LONG_OPTION_USIMTEST},
         {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
         {"external-clock", no_argument, NULL, LONG_OPTION_EXTERNAL_CLOCK},
+        {"gpsdo-clock", no_argument, NULL, LONG_OPTION_GPSDO_CLOCK},
         {"wait-for-sync", no_argument, NULL, LONG_OPTION_WAIT_FOR_SYNC},
         {"single-thread-disable", no_argument, NULL, LONG_OPTION_SINGLE_THREAD_DISABLE},
         {"threadIQ",  required_argument, NULL, LONG_OPTION_THREADIQ},
-        {"threadOddSubframe",  required_argument, NULL, LONG_OPTION_THREADODDSUBFRAME},
-        {"threadEvenSubframe",  required_argument, NULL, LONG_OPTION_THREADEVENSUBFRAME},
+        {"threadOneSubframe",  required_argument, NULL, LONG_OPTION_THREADONESUBFRAME},
+        {"threadTwoSubframe",  required_argument, NULL, LONG_OPTION_THREADTWOSUBFRAME},
+        {"threadThreeSubframe",  required_argument, NULL, LONG_OPTION_THREADTHREESUBFRAME},
+        {"threadSlot1ProcOne",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCONE},
+        {"threadSlot1ProcTwo",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCTWO},
+        {"threadSlot1ProcThree",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCTHREE},
+        {"DCIformat",  required_argument, NULL, LONG_OPTION_DCIFORMAT},
+        {"AgregationLevel",  required_argument, NULL, LONG_OPTION_AGREGATIONLEVEL},
         {"dlsch-demod-shift", required_argument,  NULL, LONG_OPTION_DEMOD_SHIFT},
 #if T_TRACER
         {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
@@ -793,6 +809,10 @@ static void get_options (int argc, char **argv) {
       clock_source = external;
       break;
 
+    case LONG_OPTION_GPSDO_CLOCK:
+      clock_source = gpsdo;
+      break;
+
     case LONG_OPTION_WAIT_FOR_SYNC:
       wait_for_sync = 1;
       break;
@@ -800,12 +820,30 @@ static void get_options (int argc, char **argv) {
     case LONG_OPTION_THREADIQ:
        threads.iq=atoi(optarg);
        break;
-    case LONG_OPTION_THREADODDSUBFRAME:
-       threads.odd=atoi(optarg);
+    case LONG_OPTION_THREADONESUBFRAME:
+       threads.one=atoi(optarg);
        break;
-    case LONG_OPTION_THREADEVENSUBFRAME:
-       threads.even=atoi(optarg);
+    case LONG_OPTION_THREADTWOSUBFRAME:
+       threads.two=atoi(optarg);
        break;
+    case LONG_OPTION_THREADTHREESUBFRAME:
+       threads.three=atoi(optarg);
+    break;
+    case LONG_OPTION_THREADSLOT1PROCONE:
+       threads.slot1_proc_one=atoi(optarg);
+       break;
+    case LONG_OPTION_THREADSLOT1PROCTWO:
+       threads.slot1_proc_two=atoi(optarg);
+       break;
+    case LONG_OPTION_THREADSLOT1PROCTHREE:
+       threads.slot1_proc_three=atoi(optarg);
+       break;
+    case LONG_OPTION_DCIFORMAT:
+        dci_Format = atoi(optarg);
+       break;
+    case LONG_OPTION_AGREGATIONLEVEL:
+        agregation_Level = atoi(optarg);
+        break;
     case LONG_OPTION_DEMOD_SHIFT: {
         extern int16_t dlsch_demod_shift;
         dlsch_demod_shift = atof(optarg);
@@ -965,24 +1003,6 @@ static void get_options (int argc, char **argv) {
                 }
             }
 
-            break;
-
-        case 's':
-#if defined(OAI_USRP) || defined(CPRIGW)
-
-            clock_src = atoi(optarg);
-
-            if (clock_src == 0) {
-                //  char ref[128] = "internal";
-                //strncpy(uhd_ref, ref, strlen(ref)+1);
-            } else if (clock_src == 1) {
-                //char ref[128] = "external";
-                //strncpy(uhd_ref, ref, strlen(ref)+1);
-            }
-
-#else
-            printf("Note: -s not defined for ExpressMIMO2\n");
-#endif
             break;
 
         case 'S':
@@ -1555,6 +1575,7 @@ int main( int argc, char **argv ) {
         NB_UE_INST=1;
         NB_INST=1;
 
+
         PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE**));
         PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_UE*)*MAX_NUM_CCs);
 
@@ -1585,6 +1606,11 @@ int main( int argc, char **argv ) {
             UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
             UE[CC_id]->mode    = mode;
             printf("UE[%d]->mode = %d\n",CC_id,mode);
+
+            for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
+                UE[CC_id]->pdcch_vars[i][0]->agregationLevel = agregation_Level;
+                UE[CC_id]->pdcch_vars[i][0]->dciFormat     = dci_Format;
+            }
 
             compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
                               UE[CC_id]->frame_parms.frame_type,

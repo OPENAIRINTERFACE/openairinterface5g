@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -672,9 +672,12 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
     for (ii=0; ii<UE_num_active_CC(UE_list,i); ii++) {
       CC_id = UE_list->ordered_CCids[ii][i];
+      ue_sched_ctl = &UE_list->UE_sched_ctrl[i];
+      round    = ue_sched_ctl->round[CC_id];
 
-      // control channel
-      if (mac_eNB_get_rrc_status(Mod_id,rnti) < RRC_RECONFIGURED) {
+      // control channel or retransmission
+      /* TODO: do we have to check for retransmission? */
+      if (mac_eNB_get_rrc_status(Mod_id,rnti) < RRC_RECONFIGURED || round > 0) {
         nb_rbs_required_remaining_1[CC_id][i] = nb_rbs_required[CC_id][i];
       } else {
         nb_rbs_required_remaining_1[CC_id][i] = cmin(average_rbs_per_user[CC_id],nb_rbs_required[CC_id][i]);
@@ -696,6 +699,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
           nb_rbs_required_remaining[CC_id][i] = nb_rbs_required_remaining_1[CC_id][i];
         } else { // rb required based only on the buffer - rb allloctaed in the 1st round + extra reaming rb form the 1st round
           nb_rbs_required_remaining[CC_id][i] = nb_rbs_required[CC_id][i]-nb_rbs_required_remaining_1[CC_id][i]+nb_rbs_required_remaining[CC_id][i];
+if (nb_rbs_required_remaining[CC_id][i]<0) abort();
         }
 
         if (nb_rbs_required[CC_id][i]> 0 )
@@ -901,7 +905,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   }
 }
 
-#define SF05_LIMIT 1
+#define SF0_LIMIT 1
 
 void dlsch_scheduler_pre_processor_reset (int module_idP,
 					  int UE_id,
@@ -920,10 +924,10 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(module_idP,UE_id);
   uint8_t *vrb_map = eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
-  int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL/N_RBG;
-#ifdef SF05_LIMIT
-  //int subframe05_limit=0;
-  int sf05_upper=-1,sf05_lower=-1;
+  int RBGsize;
+  int RBGsize_last;
+#ifdef SF0_LIMIT
+  int sf0_upper=-1,sf0_lower=-1;
 #endif
   LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
   if (eNB_UE_stats == NULL) return;
@@ -986,44 +990,60 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   ue_sched_ctl->dl_pow_off[CC_id] = 2;
   nb_rbs_required_remaining[CC_id][UE_id] = 0;
 
-#ifdef SF05_LIMIT  
+  switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
+  case 6:   RBGsize = 1; RBGsize_last = 1; break;
+  case 15:  RBGsize = 2; RBGsize_last = 1; break;
+  case 25:  RBGsize = 2; RBGsize_last = 1; break;
+  case 50:  RBGsize = 3; RBGsize_last = 2; break;
+  case 75:  RBGsize = 4; RBGsize_last = 3; break;
+  case 100: RBGsize = 4; RBGsize_last = 4; break;
+  default: printf("unsupported RBs (%d)\n", PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL); fflush(stdout); abort();
+  }
+
+#ifdef SF0_LIMIT
   switch (N_RBG) {
   case 6:
-    sf05_lower=0;
-    sf05_upper=5;
+    sf0_lower=0;
+    sf0_upper=5;
     break;
   case 8:
-    sf05_lower=2;
-    sf05_upper=5;
+    sf0_lower=2;
+    sf0_upper=5;
     break;
   case 13:
-    sf05_lower=4;
-    sf05_upper=7;
+    sf0_lower=4;
+    sf0_upper=7;
     break;
   case 17:
-    sf05_lower=7;
-    sf05_upper=9;
+    sf0_lower=7;
+    sf0_upper=9;
     break;
   case 25:
-    sf05_lower=11;
-    sf05_upper=13;
+    sf0_lower=11;
+    sf0_upper=13;
     break;
+  default: printf("unsupported RBs (%d)\n", PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL); fflush(stdout); abort();
   }
 #endif
   // Initialize Subbands according to VRB map
   for (i=0; i<N_RBG; i++) {
+    int rb_size = i==N_RBG-1 ? RBGsize_last : RBGsize;
+
     ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 0;
     rballoc_sub[CC_id][i] = 0;
-#ifdef SF05_LIMIT
-    // for avoiding 6+ PRBs around DC in subframe 0-5 (avoid excessive errors)
-
-    if ((subframeP==0 || subframeP==5) && 
-	(i>=sf05_lower && i<=sf05_upper))
+#ifdef SF0_LIMIT
+    // for avoiding 6+ PRBs around DC in subframe 0 (avoid excessive errors)
+    /* TODO: make it proper - allocate those RBs, do not "protect" them, but
+     * compute number of available REs and limit MCS according to the
+     * TBS table 36.213 7.1.7.2.1-1 (can be done after pre-processor)
+     */
+    if (subframeP==0 &&
+	i >= sf0_lower && i <= sf0_upper)
       rballoc_sub[CC_id][i]=1;
 #endif
     // for SI-RNTI,RA-RNTI and P-RNTI allocations
-    for (j=0;j<RBGsize;j++) {
-      if (vrb_map[j+(i*RBGsize)]!=0)  {
+    for (j = 0; j < rb_size; j++) {
+      if (vrb_map[j+(i*RBGsize)] != 0)  {
 	rballoc_sub[CC_id][i] = 1;
 	LOG_D(MAC,"Frame %d, subframe %d : vrb %d allocated\n",frameP,subframeP,j+(i*RBGsize));
 	break;
@@ -1063,14 +1083,16 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
       if (ue_sched_ctl->dl_pow_off[CC_id] != 0 )  {
 
 	if ((i == N_RBG-1) && ((N_RB_DL == 25) || (N_RB_DL == 50))) {
-	  rballoc_sub[CC_id][i] = 1;
-	  ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 1;
-	  MIMO_mode_indicator[CC_id][i] = 1;
-	  if (transmission_mode == 5 ) {
-	    ue_sched_ctl->dl_pow_off[CC_id] = 1;
-	  }   
-	  nb_rbs_required_remaining[CC_id][UE_id] = nb_rbs_required_remaining[CC_id][UE_id] - min_rb_unit+1;
-          ue_sched_ctl->pre_nb_available_rbs[CC_id] = ue_sched_ctl->pre_nb_available_rbs[CC_id] + min_rb_unit - 1;
+	  if (nb_rbs_required_remaining[CC_id][UE_id] >=  min_rb_unit-1){
+            rballoc_sub[CC_id][i] = 1;
+            ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 1;
+            MIMO_mode_indicator[CC_id][i] = 1;
+            if (transmission_mode == 5 ) {
+              ue_sched_ctl->dl_pow_off[CC_id] = 1;
+            }
+            nb_rbs_required_remaining[CC_id][UE_id] = nb_rbs_required_remaining[CC_id][UE_id] - min_rb_unit+1;
+            ue_sched_ctl->pre_nb_available_rbs[CC_id] = ue_sched_ctl->pre_nb_available_rbs[CC_id] + min_rb_unit - 1;
+          }
         } else {
 	  if (nb_rbs_required_remaining[CC_id][UE_id] >=  min_rb_unit){
 	    rballoc_sub[CC_id][i] = 1;
@@ -1086,7 +1108,6 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
       } // dl_pow_off[CC_id][UE_id] ! = 0
     }
   }
-
 }
 
 
@@ -1335,6 +1356,8 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
       // if this UE has UL traffic
       if (UE_template->ul_total_buffer > 0 ) {
 
+        /* start with 3 RB => rb_table_index = 2 */
+        rb_table_index = 2;
         tbs = mac_xface->get_TBS_UL(mcs,3);  // 1 or 2 PRB with cqi enabled does not work well!
         // fixme: set use_srs flag
         tx_power= mac_xface->estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
@@ -1378,8 +1401,15 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
               UE_template->pre_allocated_nb_rb_ul,
               UE_template->phr_info,tx_power);
       } else {
-        UE_template->pre_allocated_rb_table_index_ul=-1;
-        UE_template->pre_allocated_nb_rb_ul=0;
+        /* if UE has pending scheduling request then pre-allocate 3 RBs */
+        //if (UE_template->ul_active == 1 && UE_template->ul_SR == 1) {
+        if (UE_is_to_be_scheduled(module_idP, CC_id, i)) {
+          UE_template->pre_allocated_rb_table_index_ul = 2;
+          UE_template->pre_allocated_nb_rb_ul          = 3;
+        } else {
+          UE_template->pre_allocated_rb_table_index_ul=-1;
+          UE_template->pre_allocated_nb_rb_ul=0;
+        }
       }
     }
   }

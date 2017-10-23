@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -570,7 +570,6 @@ int main(int argc, char **argv)
 
     /*
     num_pdcch_symbols = generate_dci_top(1,
-           0,
            dci_alloc,
            0,
            1024,
@@ -936,6 +935,7 @@ int main(int argc, char **argv)
             lte_ue_measurements(UE,
                                 0,
                                 1,
+                                0,
                                 0,
                                 0);
             /*

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -87,7 +87,7 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
-    printf("generate_drs_pusch: index for Msc_RS=%d not found\n",Msc_RS);
+    LOG_I(PHY,"generate_drs_pusch: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
 

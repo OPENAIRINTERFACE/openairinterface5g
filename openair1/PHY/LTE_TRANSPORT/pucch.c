@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -2074,11 +2074,11 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       rxptr = (int16_t *)&common_vars->rxdataF[0][aa][symbol_offset];
 
       for (i=0; i<12; i++,j+=2,re_offset++) {
-        rxcomp[aa][j]   = (int16_t)((rxptr[re_offset<<1]*(int32_t)zptr[j])>>15)   - ((rxptr[1+(re_offset<<1)]*(int32_t)zptr[1+j])>>15);
-        rxcomp[aa][1+j] = (int16_t)((rxptr[re_offset<<1]*(int32_t)zptr[1+j])>>15) + ((rxptr[1+(re_offset<<1)]*(int32_t)zptr[j])>>15);
-
         if (re_offset==frame_parms->ofdm_symbol_size)
           re_offset = 0;
+
+        rxcomp[aa][j]   = (int16_t)((rxptr[re_offset<<1]*(int32_t)zptr[j])>>15)   - ((rxptr[1+(re_offset<<1)]*(int32_t)zptr[1+j])>>15);
+        rxcomp[aa][1+j] = (int16_t)((rxptr[re_offset<<1]*(int32_t)zptr[1+j])>>15) + ((rxptr[1+(re_offset<<1)]*(int32_t)zptr[j])>>15);
 
 #ifdef DEBUG_PUCCH_RX
         printf("[eNB] PUCCH subframe %d (%d,%d,%d,%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,i,re_offset,m,j,
@@ -2153,8 +2153,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
     } //phase
 
-    stat_max *= nsymb;  // normalize to energy per symbol
-    stat_max /= (frame_parms->N_RB_UL*12); // 
+//    stat_max *= nsymb;  // normalize to energy per symbol
+//    stat_max /= (frame_parms->N_RB_UL*12); // 
+    stat_max /= (nsymb*12);
 #ifdef DEBUG_PUCCH_RX
     printf("[eNB] PUCCH: stat %d, stat_max %d, phase_max %d\n", stat,stat_max,phase_max);
 #endif
@@ -2202,7 +2203,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     LOG_I(PHY,"Doing PUCCH detection for format 1a/1b\n");
 #endif
 
-    for (phase=3;phase<4;phase++){ //phase=0; phase<7; phase++) {
+    for (phase=0; phase<7; phase++) {
       stat=0;
 
       for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
@@ -2339,8 +2340,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
             off=(re<<1) + (24*l);
             tmp_re = ((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15);
             tmp_im = ((rxcomp[aa][off]*(int32_t)cfo[1+(l<<1)])>>15) + ((rxcomp[aa][1+off]*(int32_t)cfo[(l<<1)])>>15);
-            stat_re += (((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15)/4);
-            stat_im += (((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15)/4);
+            stat_re += (((tmp_re*chest_re)>>15) + ((tmp_im*chest_im)>>15))/4;
+            stat_im += (((tmp_re*chest_im)>>15) - ((tmp_im*chest_re)>>15))/4;
             off+=2;
 #ifdef DEBUG_PUCCH_RX
             printf("[eNB] PUCCH subframe %d (%d,%d) => (%d,%d) x (%d,%d) : (%d,%d)\n",subframe,l,re,
@@ -2530,7 +2531,7 @@ int32_t rx_pucch_emul(PHY_VARS_eNB *eNB,
   rnti = eNB->ulsch[UE_index]->rnti;
 
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[subframe & 0x1][0]->crnti)
+    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[PHY_vars_UE_g[UE_id][CC_id]->current_thread_id[subframe]][0]->crnti)
       break;
   }
 

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -452,6 +452,7 @@ schedule_ue_spec(
   static int32_t          tpc_accumulated=0;
   UE_sched_ctrl           *ue_sched_ctl;
   int i;
+  DCI_PDU      saved_DCI_pdu[MAX_NUM_CCs];
 
 #if 0
   if (UE_list->head==-1) {
@@ -461,6 +462,10 @@ schedule_ue_spec(
 
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
+
+  /* save DCI_pdu size */
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+    saved_DCI_pdu[CC_id].Num_dci = eNB->common_channels[CC_id].DCI_pdu.Num_dci;
 
   //weight = get_ue_weight(module_idP,UE_id);
   aggregation = 2; 
@@ -495,7 +500,6 @@ schedule_ue_spec(
                                 mbsfn_flag);
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,VCD_FUNCTION_OUT);
-
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "doing schedule_ue_spec for CC_id %d\n",CC_id);
@@ -571,6 +575,18 @@ schedule_ue_spec(
         continue;
       }
 
+      /* add "fake" DCI to have CCE_allocation_infeasible work properly for next allocations */
+      /* if we don't add it, next allocations may succeed but overall allocations may fail */
+      /* will be removed at the end of this function */
+      add_ue_spec_dci(&eNB->common_channels[CC_id].DCI_pdu,
+                      &(char[]){0},
+                      rnti,
+                      1,
+                      aggregation,
+                      1,
+                      format1,
+                      0);
+
       nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
       harq_pid = ue_sched_ctl->harq_pid[CC_id];
       round = ue_sched_ctl->round[CC_id];
@@ -632,6 +648,7 @@ schedule_ue_spec(
 
             while((nb_rb_temp > 0) && (j<frame_parms[CC_id]->N_RBG)) {
               if(ue_sched_ctl->rballoc_sub_UE[CC_id][j] == 1) {
+                if (UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j]) printf("WARN: rballoc_subband not free for retrans?\n");
                 UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = ue_sched_ctl->rballoc_sub_UE[CC_id][j];
 
                 if((j == frame_parms[CC_id]->N_RBG-1) &&
@@ -798,7 +815,7 @@ schedule_ue_spec(
           UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1=eNB_UE_stats->dlsch_mcs1;
           UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2=eNB_UE_stats->dlsch_mcs1;
         } else {
-          LOG_D(MAC,"[eNB %d] Frame %d CC_id %d : don't schedule UE %d, its retransmission takes more resources than we have\n",
+          LOG_E(MAC,"[eNB %d] Frame %d CC_id %d : don't schedule UE %d, its retransmission takes more resources than we have\n",
                 module_idP, frameP, CC_id, UE_id);
         }
       } else { /* This is a potentially new SDU opportunity */
@@ -1645,6 +1662,10 @@ schedule_ue_spec(
     } // UE_id loop
   }  // CC_id loop
 
+  /* restore DCI_pdu size */
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
+    eNB->common_channels[CC_id].DCI_pdu.Num_dci = saved_DCI_pdu[CC_id].Num_dci;
+
 
   stop_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_OUT);
@@ -2016,7 +2037,7 @@ update_ul_dci(
   DCI0_5MHz_TDD_1_6_t *ULSCH_dci = NULL;;
 
   if (mac_xface->frame_parms->frame_type == TDD) {
-    for (i=0; i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci; i++) {
+    for (i=0; i<DCI_pdu->Num_dci; i++) {
       ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)DCI_pdu->dci_alloc[i].dci_pdu;
 
       if ((DCI_pdu->dci_alloc[i].format == format0) && (DCI_pdu->dci_alloc[i].rnti == rnti)) {

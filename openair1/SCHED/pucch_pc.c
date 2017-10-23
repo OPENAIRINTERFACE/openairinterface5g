@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -52,7 +52,7 @@ int16_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,u
 
   Po_PUCCH = get_PL(ue->Mod_id,ue->CC_id,eNB_id)+
     ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH+
-    ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->g_pucch;
+    ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->g_pucch;
 
   switch (pucch_fmt) {
   case pucch_format1:
@@ -95,19 +95,19 @@ int16_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,u
   if (pucch_fmt!=pucch_format1) {
     LOG_D(PHY,"[UE  %d][PDSCH %x] AbsSubframe %d.%d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB, g_pucch %d dB\n",
           ue->Mod_id,
-          ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->rnti,proc->frame_tx%1024,subframe,
+          ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti,proc->frame_tx%1024,subframe,
           Po_PUCCH,
           ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
           get_PL(ue->Mod_id,ue->CC_id,eNB_id),
-          ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->g_pucch);
+          ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->g_pucch);
   } else {
     LOG_D(PHY,"[UE  %d][SR %x] AbsSubframe %d.%d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB g_pucch %d dB\n",
           ue->Mod_id,
-          ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->rnti,proc->frame_tx%1024,subframe,
+          ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->rnti,proc->frame_tx%1024,subframe,
           Po_PUCCH,
           ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
           get_PL(ue->Mod_id,ue->CC_id,eNB_id),
-          ue->dlsch[proc->subframe_rx&0x1][eNB_id][0]->g_pucch);
+          ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->g_pucch);
   }
 
   return(Po_PUCCH);

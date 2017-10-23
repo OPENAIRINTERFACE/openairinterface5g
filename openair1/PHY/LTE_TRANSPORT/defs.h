@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -781,6 +781,10 @@ typedef enum {
   pucch_format3    // PUCCH format3
 } PUCCH_FMT_t;
 
+typedef enum {
+  DCI_COMMON_SPACE,
+  DCI_UE_SPACE
+} dci_space_t;
 
 typedef struct {
   /// Length of DCI in bits
@@ -795,6 +799,8 @@ typedef struct {
   rnti_t rnti;
   /// Format
   DCI_format_t format;
+  /// search space
+  dci_space_t search_space;
   /// DCI pdu
   uint8_t dci_pdu[8];
 } DCI_ALLOC_t;

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
 
   int aarx,aatx;
   double channelx,channely;
-  double sigma2, sigma2_dB=10,SNR,SNR2,snr0=-2.0,snr1,SNRmeas,rate,saving_bler=0;
+  double sigma2, sigma2_dB=10,SNR,SNR2=0,snr0=-2.0,snr1,SNRmeas,rate,saving_bler=0;
   double input_snr_step=.2,snr_int=30;
   double blerr;
 

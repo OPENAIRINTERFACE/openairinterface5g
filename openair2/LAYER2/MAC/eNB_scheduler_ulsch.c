@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -670,12 +670,86 @@ void schedule_ulsch(module_id_t module_idP,
       }
     }
 
+    /* TODO: this is a hack to disable scheduling in the PRACH.
+     * We need to get the information from config/phy/wherever
+     * as done in the commented code below.
+     * For the moment, we hardcode for the config used by default.
+     * Only deals with FDD, PRACH config 0.
+     */
+    LTE_DL_FRAME_PARMS *frame_parms;
+    frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
+    if (frame_parms->frame_type == FDD &&
+        frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex == 0) {
+      int frame_ul = (frameP + (subframeP >= 6)) & 1023;
+      int subframe_ul = (subframeP + 4) % 10;
+      if ((frame_ul & 1) == 0 && subframe_ul == 1) first_rb[CC_id] = 8;
+    }
+
     /*
     if (mac_xface->is_prach_subframe(&(mac_xface->lte_frame_parms),frameP,subframeP)) {
       first_rb[CC_id] = (mac_xface->get_prach_prb_offset(&(mac_xface->lte_frame_parms),
     */
 
   }
+
+  /* TODO: remove this hack which is to avoid scheduling new uplink where there is a
+   * retransmission. It increases first_rb to move after the retransmission RBs,
+   * which can skip a lot of free RBs (say the UE 2 has a retransmission
+   * in RBs 45..47, we would skip RBs 1..47, but RBs 1..44 are free and
+   * won't be used for scheduling)
+   */
+  int UE_id;
+  int rnti;
+  UE_list_t         *UE_list=&eNB->UE_list;
+  LTE_eNB_UE_stats  *eNB_UE_stats   = NULL;
+  int drop_ue=0;
+  uint8_t            harq_pid       = 0;
+  uint8_t            round          = 0;
+  int n;
+  // loop over all UEs
+  for (UE_id=0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+    rnti = UE_RNTI(module_idP,UE_id);
+    if (rnti==NOT_A_RNTI) continue;
+    if (UE_list->UE_template[UE_PCCID(module_idP,UE_id)][UE_id].configured==FALSE) continue;
+    drop_ue = 0;
+    for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
+      CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      if (mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti) == NULL) {
+        drop_ue = 1;
+        break;
+      }
+    }
+    if (drop_ue == 1) continue;
+
+    for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
+      // This is the actual CC_id in the list
+      CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
+
+      if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
+        int start_rb;
+        int nb_rb;
+
+        //DCI_pdu = &eNB->common_channels[CC_id].DCI_pdu;
+        //UE_template   = &UE_list->UE_template[CC_id][UE_id];
+        //UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+
+        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL) == -1 ) continue;
+        int get_ue_rbs(int module_idP, int CC_id, int rnti, int frameP, int subframeP, int *start_rb, int *nb_rb);
+        if (get_ue_rbs(module_idP,CC_id,rnti,frameP,subframeP,&start_rb,&nb_rb) == -1 ) continue;
+
+        if (round > 0)
+        {
+          if (start_rb < first_rb[CC_id]) {
+            LOG_E(MAC, "scheduled retransmission in forbidden RBs\n");
+//            printf("scheduled retransmission in forbidden RBs\n");
+          }
+          if (first_rb[CC_id] < start_rb + nb_rb)
+            first_rb[CC_id] = start_rb + nb_rb;
+        }
+      } // UE is in PUSCH
+    } // loop over CC
+  } // loop over UE
 
   schedule_ulsch_rnti(module_idP, cooperation_flag, frameP, subframeP, sched_subframe,first_rb);
 
@@ -802,6 +876,13 @@ abort();
 	      module_idP,frameP,subframeP,UE_id,rnti,CC_id, mode_string[eNB_UE_stats->mode], 1<<aggregation);
       }
 
+      /* be sure that there are some free RBs */
+      if (first_rb[CC_id] >= frame_parms->N_RB_UL-1) {
+	LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d mode %s: dropping, not enough RBs\n",
+	      module_idP,frameP,subframeP,UE_id,rnti,CC_id, mode_string[eNB_UE_stats->mode]);
+        continue;
+      }
+
 
       if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
 
@@ -891,9 +972,11 @@ abort();
             UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2=mcs;
 	    //            buffer_occupancy = UE_template->ul_total_buffer;
 
-            while (((rb_table[rb_table_index]>(frame_parms->N_RB_UL-1-first_rb[CC_id])) ||
-		    (rb_table[rb_table_index]>45)) &&
-                   (rb_table_index>0)) {
+            while (rb_table_index > 0 &&
+                   (rb_table[rb_table_index] > frame_parms->N_RB_UL-1-first_rb[CC_id] ||
+                    rb_table[rb_table_index]>45 ||
+                    (UE_template->pre_allocated_rb_table_index_ul >= 0 &&
+                     rb_table[rb_table_index] > UE_template->pre_allocated_nb_rb_ul))) {
               rb_table_index--;
             }
 
@@ -1142,7 +1225,7 @@ abort();
 	    
 	    LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP,CC_id,frameP,subframeP,UE_id);
 #ifdef DEBUG
-	    dump_dci(frame_parms, &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
+	    dump_dci(frame_parms, &DCI_pdu->dci_alloc[DCI_pdu->Num_dci-1]);
 #endif
 	    
           }

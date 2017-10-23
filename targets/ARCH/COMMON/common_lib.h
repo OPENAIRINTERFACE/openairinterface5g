@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -140,7 +140,9 @@ typedef enum {
   //! This tells the underlying hardware to use the internal reference
   internal=0,
   //! This tells the underlying hardware to use the external reference
-  external=1
+  external=1,
+  //! This tells the underlying hardware to use the gpsdo reference
+  gpsdo=2
 } clock_source_t;
 
 /*! \brief RF frontend parameters set by application */

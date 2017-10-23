@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -318,7 +318,7 @@ rlc_am_receive_process_control_pdu(
     {
       if (rlc_pP->control_pdu_info.num_nack == 0) {
         while (sn_cursor != ack_sn) {
-          rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor);
+          rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor,TRUE);
           sn_cursor = RLC_AM_NEXT_SN(sn_cursor);
         }
 
@@ -330,7 +330,7 @@ rlc_am_receive_process_control_pdu(
         prev_nack_sn = 0x3FFF;
 
         while (sn_cursor != nack_sn) {
-            rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor);
+            rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor,TRUE);
             sn_cursor = RLC_AM_NEXT_SN(sn_cursor);
         }
 
@@ -354,7 +354,8 @@ rlc_am_receive_process_control_pdu(
           if (sn_cursor != nack_sn) {
             rlc_am_ack_pdu(ctxt_pP,
                            rlc_pP,
-                           sn_cursor);
+                           sn_cursor,
+						   FALSE);
           } else {
         	status = rlc_am_nack_pdu (ctxt_pP,
                              rlc_pP,

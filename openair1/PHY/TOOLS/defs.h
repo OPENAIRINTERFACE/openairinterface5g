@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -337,6 +337,9 @@ uint8_t log2_approx(uint32_t);
 uint8_t log2_approx64(unsigned long long int x);
 int16_t invSqrt(int16_t x);
 uint32_t angle(struct complex16 perrror);
+
+/// computes the number of factors 2 in x
+unsigned char factor2(unsigned int x);
 
 /*!\fn int32_t phy_phase_compensation_top (uint32_t pilot_type, uint32_t initial_pilot,
         uint32_t last_pilot, int32_t ignore_prefix);

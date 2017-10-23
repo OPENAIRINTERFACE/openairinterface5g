@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -72,6 +72,10 @@
 #define bigmalloc16 malloc16
 #define openair_free(y,x) free((y))
 #define PAGE_SIZE 4096
+
+#define RX_NB_TH_MAX 2
+#define RX_NB_TH 2
+
 
 //#ifdef SHRLIBDEV
 //extern int rxrescale;
@@ -161,8 +165,9 @@ typedef enum  {
 } eNB_func_t;
 
 typedef enum {
-  synch_to_ext_device=0,  // synch to RF or Ethernet device
-  synch_to_other          // synch to another source (timer, other CC_id)
+  synch_to_ext_device=0,        // synch to RF or Ethernet device
+  synch_to_other,               // synch to another source (timer, other CC_id)
+  synch_to_mobipass_standalone  // special case for mobipass in standalone mode
 } eNB_timing_t;
 #endif
 
@@ -392,6 +397,32 @@ typedef struct {
   pthread_mutex_t mutex_rxtx;
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
+
+  /// internal This variable is protected by ref mutex_fep_slot1.
+  //int instance_cnt_slot0_dl_processing;
+  int instance_cnt_slot1_dl_processing;
+  /// pthread descriptor fep_slot1 thread
+  //pthread_t pthread_slot0_dl_processing;
+  pthread_t pthread_slot1_dl_processing;
+  /// pthread attributes for fep_slot1 processing thread
+ // pthread_attr_t attr_slot0_dl_processing;
+  pthread_attr_t attr_slot1_dl_processing;
+  /// condition variable for UE fep_slot1 thread;
+  //pthread_cond_t cond_slot0_dl_processing;
+  pthread_cond_t cond_slot1_dl_processing;
+  /// mutex for UE synch thread
+  //pthread_mutex_t mutex_slot0_dl_processing;
+  pthread_mutex_t mutex_slot1_dl_processing;
+  //
+  uint8_t chan_est_pilot0_slot1_available;
+  uint8_t chan_est_slot1_available;
+  uint8_t llr_slot1_available;
+  uint8_t dci_slot0_available;
+  uint8_t first_symbol_available;
+  //uint8_t channel_level;
+  /// scheduling parameters for fep_slot1 thread
+  struct sched_param sched_param_fep_slot1;
+
   int sub_frame_start;
   int sub_frame_step;
   unsigned long long gotIQs;
@@ -423,7 +454,7 @@ typedef struct {
   /// mutex for UE synch thread
   pthread_mutex_t mutex_synch;
   /// set of scheduling variables RXn-TXnp4 threads
-  UE_rxtx_proc_t proc_rxtx[2];
+  UE_rxtx_proc_t proc_rxtx[RX_NB_TH];
 } UE_proc_t;
 
 /// Top-level PHY Data Structure for eNB
@@ -706,16 +737,19 @@ typedef struct {
   LTE_DL_FRAME_PARMS  frame_parms_before_ho;
   LTE_UE_COMMON    common_vars;
 
-  LTE_UE_PDSCH     *pdsch_vars[2][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
+  // point to the current rxTx thread index
+  uint8_t current_thread_id[10];
+
+  LTE_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
   LTE_UE_PDSCH_FLP *pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_p[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_PDCCH     *pdcch_vars[2][NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch[2][NUMBER_OF_CONNECTED_eNB_MAX][2]; // two RxTx Threads
+  LTE_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX][2]; // two RxTx Threads
   LTE_UE_ULSCH_t   *ulsch[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_eNB_MAX];
   LTE_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -806,6 +840,7 @@ typedef struct {
   uint8_t               decode_MIB;
   int              rx_offset; /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
+  int              time_sync_cell;
   int              timing_advance; ///timing advance signalled from eNB
   int              hw_timing_advance;
   int              N_TA_offset; ///timing offset used in TDD
@@ -872,9 +907,9 @@ typedef struct {
   /// Transmission mode per eNB
   uint8_t transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  time_stats_t phy_proc;
+  time_stats_t phy_proc[RX_NB_TH];
   time_stats_t phy_proc_tx;
-  time_stats_t phy_proc_rx[2];
+  time_stats_t phy_proc_rx[RX_NB_TH];
 
   uint32_t use_ia_receiver;
 
@@ -888,8 +923,13 @@ typedef struct {
   time_stats_t ulsch_multiplexing_stats;
 
   time_stats_t generic_stat;
-  time_stats_t pdsch_procedures_stat;
-  time_stats_t dlsch_procedures_stat;
+  time_stats_t generic_stat_bis[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
+  time_stats_t ue_front_end_stat[RX_NB_TH];
+  time_stats_t ue_front_end_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
+  time_stats_t pdcch_procedures_stat[RX_NB_TH];
+  time_stats_t pdsch_procedures_stat[RX_NB_TH];
+  time_stats_t pdsch_procedures_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
+  time_stats_t dlsch_procedures_stat[RX_NB_TH];
 
   time_stats_t ofdm_demod_stats;
   time_stats_t dlsch_rx_pdcch_stats;
@@ -902,6 +942,7 @@ typedef struct {
   time_stats_t dlsch_turbo_decoding_stats;
   time_stats_t dlsch_deinterleaving_stats;
   time_stats_t dlsch_llr_stats;
+  time_stats_t dlsch_llr_stats_parallelization[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t dlsch_unscrambling_stats;
   time_stats_t dlsch_rate_matching_stats;
   time_stats_t dlsch_turbo_encoding_stats;
@@ -930,6 +971,14 @@ typedef struct {
 #endif
 
 } PHY_VARS_UE;
+
+/* this structure is used to pass both UE phy vars and
+ * proc to the function UE_thread_rxn_txnp4
+ */
+struct rx_tx_thread_data {
+  PHY_VARS_UE    *UE;
+  UE_rxtx_proc_t *proc;
+};
 
 void exit_fun(const char* s);
 

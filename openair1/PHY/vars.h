@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -78,6 +78,7 @@ unsigned char NB_INST=0;
 unsigned int ULSCH_max_consecutive_errors = 20;
 
 int number_of_cards;
+
 
 int flag_LA=0;
 int flagMag;

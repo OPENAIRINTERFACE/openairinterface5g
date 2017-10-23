@@ -43,3 +43,4 @@ v0.5.2 -> Last version with old code for oaisim (abstraction mode works)
 v0.6 -> RRH functionality, UE greatly improved, better TDD support,
         a lot of bugs fixed. WARNING: oaisim in PHY abstraction mode does not
         work, you need to use v0.5.2 for that.
+v0.6.1 -> Mostly bugfixes. This is the last version without NFAPI.

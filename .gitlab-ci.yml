@@ -2,8 +2,6 @@ job1:
   script:
     - date
     - pwd
-    - echo $OAI_USER
-    - echo $OAI_PASS
     - echo $OAI_TEST_CASE_GROUP
     - echo $MACHINELIST
     - echo $MACHINELISTGENERIC

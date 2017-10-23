@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -155,8 +155,8 @@ void pusch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_
 
     ue->ulsch[eNB_id]->Po_PUSCH += (mac_xface->get_Po_NOMINAL_PUSCH(ue->Mod_id,0) + PL);
 
-    LOG_I(PHY,"[UE  %d][RAPROC] frame %d, subframe %d: Msg3 Po_PUSCH %d dBm (%d,%d,100*PL=%d,%d,%d)\n",
-          ue->Mod_id,proc->frame_tx,proc->subframe_tx,ue->ulsch[eNB_id]->Po_PUSCH,
+    LOG_I(PHY,"[UE  %d][RAPROC] AbsSubframe %d.%d: Msg3 (%d PRBs) Po_PUSCH %d dBm (%d,%d,100*PL=%d,%d,%d)\n",
+          ue->Mod_id,proc->frame_tx,proc->subframe_tx,nb_rb,ue->ulsch[eNB_id]->Po_PUSCH,
           100*mac_xface->get_Po_NOMINAL_PUSCH(ue->Mod_id,0),
           hundred_times_log10_NPRB[nb_rb-1],
           100*PL,

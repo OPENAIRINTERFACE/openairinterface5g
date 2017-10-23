@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -36,6 +36,26 @@ unsigned char log2_approx(unsigned int x)
   //  printf("log2_approx = %d\n",l2);
   return(l2);
 }
+
+unsigned char factor2(unsigned int x)
+{
+
+  int i;
+  unsigned char l2;
+
+  l2=0;
+
+  for (i=0; i<31; i++)
+    if ((x&(1<<i)) != 0)
+      break;
+
+  l2 = i;
+
+  //printf("factor2(%d) = %d\n",x,l2);
+  return(l2);
+}
+
+
 
 unsigned char log2_approx64(unsigned long long int x)
 {

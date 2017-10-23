@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -77,6 +77,17 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
                 unsigned char Ns,
                 unsigned char eNb_id,
                 int no_prefix);
+
+int front_end_fft(PHY_VARS_UE *ue,
+             unsigned char l,
+             unsigned char Ns,
+             int sample_offset,
+             int no_prefix);
+
+int front_end_chanEst(PHY_VARS_UE *ue,
+             unsigned char l,
+             unsigned char Ns,
+            int reset_freq_est);
 
 void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRAME_PARMS *frame_parms);
 

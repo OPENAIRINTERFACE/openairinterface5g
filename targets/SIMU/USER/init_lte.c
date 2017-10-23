@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -163,7 +163,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
       for (j=0; j<2; j++) { // 2CWs
-          for (int l=0; l<2; l++){ // 2Threads
+          for (int l=0; l<RX_NB_TH_MAX; l++){ // 2Threads
               PHY_vars_UE->dlsch[l][i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
 
               if (!PHY_vars_UE->dlsch[l][i][j]) {

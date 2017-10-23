@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -55,6 +55,8 @@
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
 #endif
+
+#include "T.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
@@ -645,30 +647,34 @@ void add_common_dci(DCI_PDU *DCI_pdu,
                     unsigned char dci_fmt,
                     uint8_t ra_flag)
 {
+  if (DCI_pdu->Num_dci == NUM_DCI_MAX) { printf("%s: DCI FULL, fatal!\n", __FUNCTION__); abort(); }
 
-  memcpy(&DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci].dci_pdu[0],pdu,dci_size_bytes);
-  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci].dci_length = dci_size_bits;
-  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci].L          = aggregation;
-  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci].rnti       = rnti;
-  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci].format     = dci_fmt;
-  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci].ra_flag    = ra_flag;
+  memcpy(&DCI_pdu->dci_alloc[DCI_pdu->Num_dci].dci_pdu[0],pdu,dci_size_bytes);
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].dci_length   = dci_size_bits;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].L            = aggregation;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].rnti         = rnti;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].format       = dci_fmt;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].ra_flag      = ra_flag;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].search_space = DCI_COMMON_SPACE;
 
 
-  DCI_pdu->Num_common_dci++;
+  DCI_pdu->Num_dci++;
   LOG_D(MAC,"add common dci format %d for rnti %x \n",dci_fmt,rnti);
 }
 
 void add_ue_spec_dci(DCI_PDU *DCI_pdu,void *pdu,rnti_t rnti,unsigned char dci_size_bytes,unsigned char aggregation,unsigned char dci_size_bits,unsigned char dci_fmt,uint8_t ra_flag)
 {
+  if (DCI_pdu->Num_dci == NUM_DCI_MAX) { printf("%s: DCI FULL, fatal!\n", __FUNCTION__); abort(); }
 
-  memcpy(&DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].dci_pdu[0],pdu,dci_size_bytes);
-  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].dci_length = dci_size_bits;
-  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].L          = aggregation;
-  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].rnti       = rnti;
-  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].format     = dci_fmt;
-  DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci].ra_flag    = ra_flag;
+  memcpy(&DCI_pdu->dci_alloc[DCI_pdu->Num_dci].dci_pdu[0],pdu,dci_size_bytes);
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].dci_length   = dci_size_bits;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].L            = aggregation;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].rnti         = rnti;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].format       = dci_fmt;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].ra_flag      = ra_flag;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].search_space = DCI_UE_SPACE;
 
-  DCI_pdu->Num_ue_spec_dci++;
+  DCI_pdu->Num_dci++;
 
   LOG_D(MAC,"add ue specific dci format %d for rnti %x \n",dci_fmt,rnti);
 }
@@ -990,7 +996,8 @@ int get_nCCE_offset(int *CCE_table,
       search_space_free = 1;
 
       for (l=0; l<L; l++) {
-        if (CCE_table[(((Yk+m)%(nCCE/L))*L) + l] == 1) {
+        int cce = (((Yk+m)%(nCCE/L))*L) + l;
+        if (cce >= nCCE || CCE_table[cce] == 1) {
           search_space_free = 0;
           break;
         }
@@ -1064,50 +1071,45 @@ int allocate_CCEs(int module_idP,
   DCI_ALLOC_t *dci_alloc;
   int nCCE=0;
 
-  LOG_D(MAC,"Allocate CCEs subframe %d, test %d : (common %d,uspec %d)\n",subframeP,test_onlyP,DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
+  LOG_D(MAC,"Allocate CCEs subframe %d, test %d : (Num_dci %d)\n",subframeP,test_onlyP,DCI_pdu->Num_dci);
   DCI_pdu->num_pdcch_symbols=1;
 
 try_again:
   init_CCE_table(module_idP,CC_idP);
   nCCE=0;
 
-  for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci;i++) {
+  for (i=0;i<DCI_pdu->Num_dci;i++) {
     dci_alloc = &DCI_pdu->dci_alloc[i];
-    LOG_D(MAC,"Trying to allocate DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
-          i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
-          DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
+    LOG_D(MAC,"Trying to allocate DCI %d/%d : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
+          i,DCI_pdu->Num_dci,
           dci_alloc->rnti,1<<dci_alloc->L,
           nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
 
-    if (nCCE + (1<<dci_alloc->L) > nCCE_max) {
-      if (DCI_pdu->num_pdcch_symbols == 3)
-        goto failed;
-      DCI_pdu->num_pdcch_symbols++;
-      nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
-      goto try_again;
-    }
+    if (nCCE + (1<<dci_alloc->L) > nCCE_max)
+      goto failed;
 
     // number of CCEs left can potentially hold this allocation
     fCCE = get_nCCE_offset(CCE_table,
                            1<<(dci_alloc->L),
                            nCCE_max,
-                           (i<DCI_pdu->Num_common_dci) ? 1 : 0,
+                           dci_alloc->search_space == DCI_COMMON_SPACE ? 1 : 0,
                            dci_alloc->rnti,
                            subframeP);
     if (fCCE == -1) {
+failed:
       if (DCI_pdu->num_pdcch_symbols == 3) {
-        LOG_I(MAC,"subframe %d: Dropping Allocation for RNTI %x\n",
-              subframeP,dci_alloc->rnti);
+        LOG_I(MAC,"subframe %d: Dropping Allocation for RNTI %x (DCI %d/%d)\n",
+              subframeP,dci_alloc->rnti,
+              i, DCI_pdu->Num_dci);
         for (j=0;j<=i;j++){
-          LOG_I(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
-                j,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
-                DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
+          LOG_I(MAC,"DCI %d/%d : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
+                j,DCI_pdu->Num_dci,
                 DCI_pdu->dci_alloc[j].rnti,DCI_pdu->dci_alloc[j].format,
                 1<<DCI_pdu->dci_alloc[j].L,
                 nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
         }
 	//dump_CCE_table(CCE_table,nCCE_max,subframeP,dci_alloc->rnti,1<<dci_alloc->L);
-        goto failed;
+        goto fatal;
       }
       DCI_pdu->num_pdcch_symbols++;
       nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
@@ -1125,46 +1127,39 @@ try_again:
 
   return 0;
 
-failed:
+fatal:
   return -1;
 }
 
 boolean_t CCE_allocation_infeasible(int module_idP,
-				    int CC_idP,
-				    int common_flag,
-				    int subframe,
-				    int aggregation,
-				    int rnti) {
-
-
+                                    int CC_idP,
+                                    int common_flag,
+                                    int subframe,
+                                    int aggregation,
+                                    int rnti)
+{
   DCI_PDU *DCI_pdu = &eNB_mac_inst[module_idP].common_channels[CC_idP].DCI_pdu;
   //DCI_ALLOC_t *dci_alloc;
   int ret;
   boolean_t res=FALSE;
 
-  if (common_flag==1) {
-    DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci].rnti = rnti;
-    DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci].L = aggregation;
-    DCI_pdu->Num_common_dci++;
-    ret = allocate_CCEs(module_idP,CC_idP,subframe,1);
-    if (ret==-1)
-      res = TRUE;
-    DCI_pdu->Num_common_dci--;
-  }
-  else {
-    DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci].rnti = rnti;
-    DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci].L = aggregation;
-    DCI_pdu->Num_ue_spec_dci++;
-    ret = allocate_CCEs(module_idP,CC_idP,subframe,1);
-    if (ret==-1)
-      res = TRUE;
-    DCI_pdu->Num_ue_spec_dci--;
-  }
-  return(res);
+  if (DCI_pdu->Num_dci == NUM_DCI_MAX) return TRUE;
+
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].rnti = rnti;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].L = aggregation;
+  DCI_pdu->dci_alloc[DCI_pdu->Num_dci].search_space = common_flag == 1 ? DCI_COMMON_SPACE : DCI_UE_SPACE;
+  DCI_pdu->Num_dci++;
+  ret = allocate_CCEs(module_idP,CC_idP,subframe,1);
+  if (ret==-1)
+    res = TRUE;
+  DCI_pdu->Num_dci--;
+
+  return res;
 }
 
 void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP, sub_frame_t subframeP)
 {
+  T(T_ENB_MAC_SCHEDULING_REQUEST, T_INT(mod_idP), T_INT(cc_idP), T_INT(frameP), T_INT(subframeP), T_INT(rntiP));
  
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;

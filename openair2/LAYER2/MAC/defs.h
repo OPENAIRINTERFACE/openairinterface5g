@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -257,8 +257,7 @@ typedef struct {
 
 /*!\brief  DCI PDU filled by MAC for the PHY  */
 typedef struct {
-  uint8_t Num_ue_spec_dci ;
-  uint8_t Num_common_dci  ;
+  int Num_dci;
   //  uint32_t nCCE;
   uint32_t num_pdcch_symbols;
   DCI_ALLOC_t dci_alloc[NUM_DCI_MAX] ;
