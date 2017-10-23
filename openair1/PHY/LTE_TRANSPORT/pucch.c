@@ -1802,7 +1802,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   LTE_DL_FRAME_PARMS *frame_parms                    = &eNB->frame_parms;
   //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &eNB->pucch_config_dedicated[UE_id];
 
-  int8_t sigma2_dB                                   = 20;//eNB->measurements.n0_subband_power_tot_dB[0]-10;
+  int8_t sigma2_dB                                   = max(eNB->measurements.n0_subband_power_tot_dB[0],
+                                                           eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]);
 
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
@@ -2153,7 +2154,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
 //    stat_max *= nsymb;  // normalize to energy per symbol
 //    stat_max /= (frame_parms->N_RB_UL*12); // 
-    stat_max /= (nsymb*12);
+    stat_max /= 12;
 #ifdef DEBUG_PUCCH_RX
     printf("[eNB] PUCCH: stat %d, stat_max %d, phase_max %d\n", stat,stat_max,phase_max);
 #endif

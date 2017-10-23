@@ -634,7 +634,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     */ 
     if (eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[0]==1){ 
       if ((eNB->prach_energy_counter == 100) && 
-          (max_preamble_energy[0] > eNB->measurements.prach_I0 + 100)) {
+          (max_preamble_energy[0] > eNB->measurements.prach_I0 + 200)) {
 	eNB->UL_INFO.rach_ind_br.number_of_preambles++;
 	
 	eNB->preamble_list_br[ind].preamble_rel8.timing_advance        = max_preamble_delay[ind];//
@@ -663,7 +663,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 
     {
       if ((eNB->prach_energy_counter == 100) && 
-          (max_preamble_energy[0] > eNB->measurements.prach_I0+100)) {
+          (max_preamble_energy[0] > eNB->measurements.prach_I0+200)) {
 
 	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	      eNB->Mod_id,
@@ -748,8 +748,8 @@ void fill_sr_indication(PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe,u
   //  pdu->rx_ue_information.handle                       = handle;
   pdu->rx_ue_information.rnti                         = rnti;
 
-  int SNRtimes10 = dB_fixed_times10(stat) - 200;//(10*eNB->measurements.n0_power_dB[0]);
-
+  int SNRtimes10 = dB_fixed_times10(stat) - 10*max(eNB->measurements.n0_subband_power_tot_dB[0],
+                                                   eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]);
 
   if      (SNRtimes10 < -640) pdu->ul_cqi_information.ul_cqi=0;
   else if (SNRtimes10 >  635) pdu->ul_cqi_information.ul_cqi=255;
@@ -1544,7 +1544,9 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe)
   pdu->rx_indication_rel8.timing_advance = timing_advance_update;
 
   // estimate UL_CQI for MAC (from antenna port 0 only)
-  int SNRtimes10 = dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[0]) - 200;//(10*eNB->measurements.n0_power_dB[0]);
+  int SNRtimes10 = dB_fixed_times10(eNB->pusch_vars[UE_id]->ulsch_power[0]) - 
+                   10*max(eNB->measurements.n0_subband_power_tot_dB[0],
+                          eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]);
 
   if      (SNRtimes10 < -640) pdu->rx_indication_rel8.ul_cqi=0;
   else if (SNRtimes10 >  635) pdu->rx_indication_rel8.ul_cqi=255;
@@ -1755,7 +1757,8 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
   pdu->rx_ue_information.rnti                         = uci->rnti;
 
   // estimate UL_CQI for MAC (from antenna port 0 only)
-  int SNRtimes10 = dB_fixed_times10(uci->stat) - 200;//(10*eNB->measurements.n0_power_dB[0]);
+  int SNRtimes10 = dB_fixed_times10(uci->stat) - 10*max(eNB->measurements.n0_subband_power_tot_dB[0],
+                                                        eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]);
 
   if (SNRtimes10 < -100) LOG_I(PHY,"uci->stat %d \n",uci->stat);
 
@@ -1957,7 +1960,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
                           eNB->first_run_I0_measurements);
 
   int min_I0=1000,max_I0=0;
-  if ((frame==0) && (subframe==6)) { 
+  if ((frame==0) && (subframe==2)) { 
     for (int i=0;i<eNB->frame_parms.N_RB_UL;i++) {
       if (i==(eNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
  
