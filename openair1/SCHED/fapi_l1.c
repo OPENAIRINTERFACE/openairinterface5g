@@ -189,6 +189,8 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   dlsch0->sib1_br_flag=0;
 
   if ((rel13->pdsch_payload_type <2) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR/SI-BR
+    LOG_I(PHY,"NFAPI: frame %d, subframe %d: Programming SI-BR \n",proc->frame_tx,proc->subframe_tx);
+
     dlsch0->rnti             = 0xFFFF;
     dlsch0->Kmimo            = 1;
     dlsch0->Mdlharq          = 4; 

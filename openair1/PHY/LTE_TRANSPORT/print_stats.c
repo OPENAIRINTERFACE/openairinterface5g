@@ -37,8 +37,8 @@
 #include "SCHED/extern.h"
 
 #ifdef OPENAIR2
-#include "../openair2/LAYER2/MAC/proto.h"
-#include "../openair2/RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+#include "openair2/LAYER2/MAC/proto.h"
+#include "openair2/RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #endif
 
 extern int mac_get_rrc_status(uint8_t Mod_id,uint8_t eNB_flag,uint8_t index);
