@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -588,7 +588,7 @@ static void get_options(void) {
       set_glog(-1, glog_verbosity);
   }
   if (start_telnetsrv) {
-     load_module_shlib("telnetsrv");
+     load_module_shlib("telnetsrv",NULL,0);
   }
 
   
@@ -673,7 +673,7 @@ static void get_options(void) {
       RCConfig();
       NB_eNB_INST = RC.nb_inst;
       NB_RU	  = RC.nb_RU;
-      printf("Configuration: nb_inst %d, nb_ru %d\n",NB_eNB_INST,NB_RU);
+      printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,NB_RU);
     }
   } else if (UE_flag == 1 && (CONFIG_GETCONFFILE != NULL)) {
     // Here the configuration file is the XER encoded UE capabilities

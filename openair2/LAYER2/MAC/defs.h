@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -805,7 +805,7 @@ typedef struct {
   unsigned char rballoc_sub_UE[MAX_NUM_CCs][N_RBG_MAX];
   uint16_t      ta_timer;
   int16_t       ta_update;
-  uint8_t       ul_cqi;
+  uint16_t      ul_consecutive_errors;
   int32_t       context_active_timer;
   int32_t       cqi_req_timer;
   int32_t       ul_inactivity_timer;

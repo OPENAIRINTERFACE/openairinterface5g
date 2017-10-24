@@ -4,7 +4,7 @@
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
 # * The OpenAirInterface Software Alliance licenses this file to You under
-# * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
 # * except in compliance with the License.
 # * You may obtain a copy of the License at
 # *
@@ -856,11 +856,9 @@ function main() {
 	      ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
-	      if [ -d "/usr/include/uhd" ] ; then
-		  compilations \
-		      $build_dir oai_usrpdevif \
-		      liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
-	      fi
+              compilations \
+                  $build_dir oai_usrpdevif \
+                  liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
 
 	      ln -sf liboai_usrpdevif.so liboai_device.so
 	      ln -sf $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so

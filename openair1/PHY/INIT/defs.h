@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -65,7 +65,7 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 @returns -1 if any memory allocation failed
 @note The current implementation will never return -1, but segfault.
  */
-int phy_init_lte_ue_signal(PHY_VARS_UE *phy_vars_ue,
+int init_lte_ue_signal(PHY_VARS_UE *phy_vars_ue,
 			   int          nb_connected_eNB,
 			   uint8_t         abstraction_flag);
 

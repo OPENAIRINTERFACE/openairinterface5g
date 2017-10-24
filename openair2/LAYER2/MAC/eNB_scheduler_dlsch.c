@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -169,7 +169,7 @@ generate_dlsch_header(
     last_size=1;
   }
 
-  if (timing_advance_cmd != 0) {
+  if (timing_advance_cmd != 31) {
     if (first_element>0) {
       mac_header_ptr->E = 1;
       mac_header_ptr++;
@@ -1551,6 +1551,7 @@ schedule_ue_spec(
   nfapi_dl_config_request_body_t *dl_req;
   nfapi_dl_config_request_pdu_t  *dl_config_pdu;
   int                            tdd_sfa;
+  int                            ta_update;
 
 #if 0
   if (UE_list->head==-1) {
@@ -1729,6 +1730,9 @@ schedule_ue_spec(
       UE_list->eNB_UE_stats[CC_id][UE_id].harq_pid = harq_pid; 
       UE_list->eNB_UE_stats[CC_id][UE_id].harq_round = round;
 
+
+      if (UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status < RRC_CONNECTED) continue;
+
       sdu_length_total=0;
       num_sdus=0;
 
@@ -1839,7 +1843,7 @@ schedule_ue_spec(
 		    UE_list->UE_template[CC_id][UE_id].oldmcs1[harq_pid]);
 	      
 	    }
-	    if (!CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,
+	    if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,
 					   dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level,
 					   rnti)) {
 	      dl_req->number_dci++;
@@ -1847,7 +1851,7 @@ schedule_ue_spec(
 
 	      fill_nfapi_dlsch_config(eNB,dl_req,
 				      TBS,
-				      eNB->pdu_index[CC_id],
+				      -1            /* retransmission, no pdu_index */,
 				      rnti,
 				      0, // type 0 allocation from 7.1.6 in 36.213
 				      0, // virtual_resource_block_assignment_flag, unused here
@@ -1872,7 +1876,6 @@ schedule_ue_spec(
 
 	      LOG_D(MAC,"Filled NFAPI configuration for DCI/DLSCH %d, retransmission round %d\n",eNB->pdu_index[CC_id],round);
 
-	      eNB->pdu_index[CC_id]++;
 	      program_dlsch_acknak(module_idP,CC_id,UE_id,frameP,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
 	      // No TX request for retransmission (check if null request for FAPI)
 	    }
@@ -1908,7 +1911,18 @@ schedule_ue_spec(
         // check first for RLC data on DCCH
         // add the length for  all the control elements (timing adv, drx, etc) : header + payload
 
-        ta_len = (ue_sched_ctl->ta_update!=0) ? 2 : 0;
+        if (ue_sched_ctl->ta_timer == 0) {
+          ta_update = ue_sched_ctl->ta_update;
+          /* if we send TA then set timer to not send it for a while */
+          if (ta_update != 31)
+            ue_sched_ctl->ta_timer = 20;
+          /* reset ta_update */
+          ue_sched_ctl->ta_update = 31;
+        } else {
+          ta_update = 31;
+        }
+
+        ta_len = (ta_update != 31) ? 2 : 0;
 
         header_len_dcch = 2; // 2 bytes DCCH SDU subheader
 
@@ -2186,17 +2200,17 @@ schedule_ue_spec(
                                          sdu_lengths,  //
                                          sdu_lcids,
                                          255,                                   // no drx
-                                         ue_sched_ctl->ta_update, // timing advance
+                                         ta_update, // timing advance
                                          NULL,                                  // contention res id
                                          padding,
                                          post_padding);
 
           //#ifdef DEBUG_eNB_SCHEDULER
-          if (ue_sched_ctl->ta_update) {
+          if (ta_update != 31) {
             LOG_D(MAC,
                   "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
                   module_idP,frameP, UE_id, CC_id, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
-                  ue_sched_ctl->ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
+                  ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
 	  }
           //#endif
 #ifdef DEBUG_eNB_SCHEDULER
@@ -2208,6 +2222,7 @@ schedule_ue_spec(
 
           LOG_T(MAC,"\n");
 #endif
+
           // cycle through SDUs and place in dlsch_buffer
           memcpy(&UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset],dlsch_buffer,sdu_length_total);
           // memcpy(RC.mac[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
@@ -2260,8 +2275,9 @@ schedule_ue_spec(
           // this is the normalized RX power
 	  eNB_UE_stats =  &UE_list->eNB_UE_stats[CC_id][UE_id];
 
+          /* TODO: fix how we deal with power, unit is not dBm, it's special from nfapi */
 	  normalized_rx_power = ue_sched_ctl->pucch1_snr[CC_id];
-	  target_rx_power = 20;
+	  target_rx_power = 208;
 	    
           // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -2274,10 +2290,10 @@ schedule_ue_spec(
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame=frameP;
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe=subframeP;
 	      
-	      if (normalized_rx_power>(target_rx_power+1)) {
+	      if (normalized_rx_power>(target_rx_power+4)) {
 		tpc = 0; //-1
 		tpc_accumulated--;
-	      } else if (normalized_rx_power<(target_rx_power-1)) {
+	      } else if (normalized_rx_power<(target_rx_power-4)) {
 		tpc = 2; //+1
 		tpc_accumulated++;
 	      } else {
@@ -2371,7 +2387,7 @@ schedule_ue_spec(
 	    eNB->TX_req[CC_id].sfn_sf = fill_nfapi_tx_req(&eNB->TX_req[CC_id].tx_request_body,
 							  (frameP*10)+subframeP,
 							  TBS,
-							  &eNB->pdu_index[CC_id],
+							  eNB->pdu_index[CC_id],
 							  eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char)UE_id].payload[0]);
 	    
 	    LOG_D(MAC,"Filled NFAPI configuration for DCI/DLSCH/TXREQ %d, new SDU\n",eNB->pdu_index[CC_id]);
@@ -2473,14 +2489,15 @@ fill_DLSCH_dci(
 	for (i=0;i<DL_req[CC_id].dl_config_request_body.number_pdu;i++) {
 	  dl_config_pdu                    = &DL_req[CC_id].dl_config_request_body.dl_config_pdu_list[i];
 	  if ((dl_config_pdu->pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)&&
-	      (dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti == rnti)) {
+	      (dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti == rnti) &&
+          (dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format != 1)) {
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding    = allocate_prbs_sub(nb_rb,N_RB_DL,N_RBG,rballoc_sub);
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_allocation_type = 0;
 	  }
 	  else if ((dl_config_pdu->pdu_type == NFAPI_DL_CONFIG_DLSCH_PDU_TYPE)&&
-		   (dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti == rnti)) {
+		       (dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti == rnti) &&
+               (dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type==0)) {
 	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding    = allocate_prbs_sub(nb_rb,N_RB_DL,N_RBG,rballoc_sub);
-	    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type = 0;
 	  }
 	}
       }

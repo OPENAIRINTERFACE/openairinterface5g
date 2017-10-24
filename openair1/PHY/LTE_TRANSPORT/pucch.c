@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -113,7 +113,18 @@ int16_t W3_im[3][6] = {{0    ,0     ,0     },
   {0    ,-28378, 28377}
 };
 
-char pucch_format_string[6][20] = {"format 1\0","format 1a\0","format 1b\0","format 2\0","format 2a\0","format 2b\0"};
+char *pucch_format_string[] = {
+  "format 1",
+  "format 1a",
+  "format 1b",
+  "pucch_format1b_csA2",
+  "pucch_format1b_csA3",
+  "pucch_format1b_csA4",
+  "format 2",
+  "format 2a",
+  "format 2b",
+  "pucch_format3"
+};
 
 /* PUCCH format3 >> */
 #define D_I             0
@@ -1791,7 +1802,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   LTE_DL_FRAME_PARMS *frame_parms                    = &eNB->frame_parms;
   //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &eNB->pucch_config_dedicated[UE_id];
 
-  int8_t sigma2_dB                                   = 20;//eNB->measurements.n0_subband_power_tot_dB[0]-10;
+  int8_t sigma2_dB                                   = max(eNB->measurements.n0_subband_power_tot_dB[0],
+                                                           eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]);
 
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
@@ -2142,13 +2154,13 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
 //    stat_max *= nsymb;  // normalize to energy per symbol
 //    stat_max /= (frame_parms->N_RB_UL*12); // 
-    stat_max /= (nsymb*12);
+    stat_max /= 12;
 #ifdef DEBUG_PUCCH_RX
     printf("[eNB] PUCCH: stat %d, stat_max %d, phase_max %d\n", stat,stat_max,phase_max);
 #endif
 
 #ifdef DEBUG_PUCCH_RX
-    LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements.n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
+    LOG_D(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements.n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
 #endif
 
     
@@ -2183,7 +2195,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   } else if ((fmt == pucch_format1a)||(fmt == pucch_format1b)) {
     stat_max = 0;
 #ifdef DEBUG_PUCCH_RX
-    LOG_I(PHY,"Doing PUCCH detection for format 1a/1b\n");
+    LOG_D(PHY,"Doing PUCCH detection for format 1a/1b\n");
 #endif
 
     for (phase=0; phase<7; phase++) {
@@ -2261,7 +2273,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       } // aa
 
 #ifdef DEBUG_PUCCH_RX
-      LOG_I(PHY,"Format 1A: phase %d : stat %d\n",phase,stat);
+      LOG_D(PHY,"Format 1A: phase %d : stat %d\n",phase,stat);
 #endif
       if (stat>stat_max) {
         stat_max = stat;
@@ -2404,9 +2416,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       } // aa
 
 
-      LOG_I(PHY,"PUCCH 1a/b: subframe %d : stat %d,%d (pos %d)\n",subframe,stat_re,stat_im,
+      LOG_D(PHY,"PUCCH 1a/b: subframe %d : stat %d,%d (pos %d)\n",subframe,stat_re,stat_im,
 	    (subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe]));
-      LOG_I(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);      
+      LOG_D(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);      
       
       eNB->pucch1ab_stats[UE_id][(subframe<<11) + 2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_re);
       eNB->pucch1ab_stats[UE_id][(subframe<<11) + 1+2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_im);
@@ -2420,7 +2432,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       if (fmt==pucch_format1b)
         *(1+payload) = (stat_im<0) ? 1 : 2;
     } else { // insufficient energy on PUCCH so NAK
-      LOG_D(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
+      LOG_I(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
       *payload = 4;  // DTX
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);

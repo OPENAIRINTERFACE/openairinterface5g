@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -48,9 +48,10 @@ extern unsigned char NB_UE_INST;
 
 //#include "LAYER2/MAC/extern.h"
 
+#undef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))
+#undef MIN
 #define MIN(x,y) ((x)<(y)?(x):(y))
-
 
 // Check if the packet is well received or not and extract data
 int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buffer_tx, const unsigned int size)

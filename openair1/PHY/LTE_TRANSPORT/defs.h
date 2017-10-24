@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -93,7 +93,8 @@
 #define PMI_2A_R1_1j 2
 
 typedef enum { SEARCH_EXIST=0,
-	       SEARCH_EXIST_OR_FREE} find_type_t;
+	       SEARCH_EXIST_OR_FREE,
+           SEARCH_FREE} find_type_t;
 
 typedef enum {
   SCH_IDLE=0,
@@ -400,6 +401,8 @@ typedef struct {
   uint8_t subframe;
   /// Frame for reception
   uint32_t frame;
+  /// Flag to indicate that the UL configuration has been handled. Used to remove a stale ULSCH when frame wraps around
+  uint8_t handled;
   /// PHICH active flag
   uint8_t phich_active;
   /// PHICH ACK

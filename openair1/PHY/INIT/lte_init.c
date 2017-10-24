@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -1678,7 +1678,7 @@ int phy_init_RU(RU_t *ru) {
   int p;
   int re;
 
-  LOG_I(PHY,"Initializing RU signal buffers (if_south %s)\n",ru_if_types[ru->if_south]);
+  LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d\n",ru_if_types[ru->if_south],ru->nb_tx);
 
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so allocate memory for time-domain signals 
     // Time-domain signals
@@ -1705,6 +1705,7 @@ int phy_init_RU(RU_t *ru) {
 
   }
   if (ru->function != NGFI_RRU_IF5) { // we need to do RX/TX RU processing
+    LOG_I(PHY,"nb_tx %d\n",ru->nb_tx);
     ru->common.rxdata_7_5kHz = (int32_t**)malloc16(ru->nb_rx*sizeof(int32_t*) );
     for (i=0;i<ru->nb_rx;i++) {
       ru->common.rxdata_7_5kHz[i] = (int32_t*)malloc16_clear( 2*fp->samples_per_tti*2*sizeof(int32_t) );
@@ -1858,6 +1859,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
   generate_ul_ref_sigs_rx();
   
+  init_ulsch_power_LUT();
+
   // SRS
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     srs_vars[UE_id].srs = (int32_t*)malloc16_clear(2*fp->ofdm_symbol_size*sizeof(int32_t));

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -871,7 +871,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   int16_t y[6*14*1200] __attribute__((aligned(32)));
   uint8_t ytag[14*1200];
   //  uint8_t ytag2[6*14*1200],*ytag2_ptr;
-  int16_t cseq[6*14*1200];
+  int16_t cseq[6*14*1200] __attribute__((aligned(32)));
   int off;
 
   int subframe = proc->subframe_rx;
@@ -887,17 +887,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   x2 = ((uint32_t)ulsch->rnti<<14) + ((uint32_t)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   ulsch_harq = ulsch->harq_processes[harq_pid];
 
-  if (harq_pid==255) {
-    LOG_E(PHY, "FATAL ERROR: illegal harq_pid, returning\n");
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0);
-    return -1;
-  }
+  AssertFatal(harq_pid!=255,
+              "FATAL ERROR: illegal harq_pid, returning\n");
 
-  if (ulsch_harq->Nsymb_pusch == 0) {
-      LOG_E(PHY, "FATAL ERROR: harq_pid %d, Nsymb 0!\n",harq_pid);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0); 
-      return 1+ulsch->max_turbo_iterations;
-  }
+  AssertFatal(ulsch_harq->Nsymb_pusch != 0,
+              "FATAL ERROR: harq_pid %d, Nsymb 0!\n",harq_pid);
 
 
   nb_rb = ulsch_harq->nb_rb;
@@ -910,7 +904,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
 
   //#ifdef DEBUG_ULSCH_DECODING
-  LOG_I(PHY,"Frame %d, Subframe %d: ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): A %d, round %d, RV %d, O_r1 %d, O_RI %d, O_ACK %d, G %d\n",
+  LOG_D(PHY,"Frame %d, Subframe %d: ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): A %d, round %d, RV %d, O_r1 %d, O_RI %d, O_ACK %d, G %d\n",
 	proc->frame_rx,subframe,
 	frame_parms->Nid_cell,ulsch->rnti,x2,
 	A,
@@ -1032,10 +1026,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   G = G - Q_RI - Q_CQI;
   ulsch_harq->G = G;
 
-  if ((int)G < 0) {
-    LOG_E(PHY,"FATAL: ulsch_decoding.c G < 0 (%d) : Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
-    return(-1);
-  }
+  AssertFatal((int)G > 0,
+              "FATAL: ulsch_decoding.c G < 0 (%d) : Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
 
   H = G + Q_CQI;
   Hprime = H/Q_m;

@@ -3,7 +3,7 @@
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
 # * The OpenAirInterface Software Alliance licenses this file to You under
-# * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
 # * except in compliance with the License.
 # * You may obtain a copy of the License at
 # *
@@ -27,7 +27,8 @@ cmake_minimum_required (VERSION 2.8)
 # Base directories, compatible with legacy OAI building
 ################################################
 set (OPENAIR_DIR     $ENV{OPENAIR_DIR})
-set (NFAPI_DIR       $ENV{NFAPI_DIR})
+#set (NFAPI_DIR       $ENV{NFAPI_DIR})
+set (NFAPI_DIR       ${OPENAIR_DIR}/nfapi)
 set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
 set (OPENAIR2_DIR    ${OPENAIR_DIR}/openair2)
 set (OPENAIR3_DIR    ${OPENAIR_DIR}/openair3)
@@ -311,11 +312,11 @@ if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${fix_asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
 file(GLOB rrc_source ${RRC_FULL_DIR}/*.c)
-set(rrc_source  ${rrc_source} ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1_msg.c)
 file(GLOB rrc_h ${RRC_FULL_DIR}/*.h)
 set(rrc_h ${rrc_h} ${RRC_FULL_DIR}/asn1_constants.h)
 set_source_files_properties(${rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
-add_library(RRC_LIB ${rrc_h} ${rrc_source})
+add_library(RRC_LIB ${rrc_h} ${rrc_source}
+    ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1_msg.c)
 include_directories ("${RRC_FULL_DIR}")
 
 # add the command to generate the source code
@@ -562,6 +563,15 @@ add_library(oai_mobipass MODULE ${TPLIB_MOBIPASS_SOURCE} )
 # in the source code to unhide a function/variable.
 get_target_property(mobipas_cflags oai_mobipass COMPILE_FLAGS)
 set_target_properties(oai_mobipass PROPERTIES COMPILE_FLAGS "${mobipass_cflags} -fvisibility=hidden")
+
+set(HWLIB_TCP_BRIDGE_SOURCE
+  ${OPENAIR_TARGETS}/ARCH/tcp_bridge/tcp_bridge.c
+  )
+add_library(oai_tcp_bridge MODULE ${HWLIB_TCP_BRIDGE_SOURCE} )
+
+#get_target_property(tcp_bridge_cflags oai_tcp_bridge COMPILE_FLAGS)
+#set_target_properties(oai_tcp_bridge PROPERTIES COMPILE_FLAGS "${tcp_bridge_cflags} -fvisibility=hidden")
+set_target_properties(oai_tcp_bridge PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
 
 ##########################################################
 

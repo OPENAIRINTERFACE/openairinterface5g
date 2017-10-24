@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -2604,7 +2604,7 @@ static const char* SIB2mac_ContentionResolutionTimer( long value )
 }
 static const char* SIB2modificationPeriodCoeff( long value )
 {
-  static char temp[4] = {0};
+  static char temp[32] = {0};
 
   if (value < 0 || value > 3)
     return "ERR";
@@ -2614,7 +2614,7 @@ static const char* SIB2modificationPeriodCoeff( long value )
 }
 static const char* SIB2defaultPagingCycle( long value )
 {
-  static char temp[6] = {0};
+  static char temp[32] = {0};
 
   if (value < 0 || value > 3)
     return "ERR";

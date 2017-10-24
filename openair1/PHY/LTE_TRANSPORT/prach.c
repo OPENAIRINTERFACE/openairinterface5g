@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -575,7 +575,7 @@ int is_prach_subframe0(LTE_DL_FRAME_PARMS *frame_parms,uint8_t prach_ConfigIndex
          (((subframe>4)&&(t1_ra==1))))) {                // PRACH is in 2nd half-frame
       if ((prach_ConfigIndex<48) &&                          // PRACH only in normal UL subframe
 	  (((subframe%5)-2)==t2_ra)) prach_mask=1;
-      else if ((((subframe%5)-1)==t2_ra)) prach_mask=1;      // PRACH can be in UpPTS
+      else if ((prach_ConfigIndex>47) && (((subframe%5)-1)==t2_ra)) prach_mask=1;      // PRACH can be in UpPTS
     }
   }
 
@@ -640,7 +640,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 #if defined(EXMIMO) || defined(OAI_USRP)
   prach_start =  (ue->rx_offset+subframe*ue->frame_parms.samples_per_tti-ue->hw_timing_advance-ue->N_TA_offset);
 #ifdef PRACH_DEBUG
-    LOG_I(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
+    LOG_D(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
         prach_start,
         ue->rx_offset,
         ue->hw_timing_advance,
@@ -1151,7 +1151,9 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 #ifdef PRACH_DEBUG
   int en0=0;
 #endif
-  int en;
+
+  (void)frame; /* avoid gcc warnings */
+
   if (ru) { 
     fp    = &ru->frame_parms;
     nb_rx = ru->nb_rx;
@@ -1472,8 +1474,8 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     return;
   } else if (eNB!=NULL) {
 
-    en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
 #ifdef PRACH_DEBUG
+    int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
     if ((en > 60)&&(br_flag==1)) LOG_I(PHY,"PRACH (br_flag %d,ce_level %d, n_ra_prb %d, k %d): Frame %d, Subframe %d => %d dB\n",br_flag,ce_level,n_ra_prb,k,eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
 #endif
 
@@ -1646,13 +1648,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	  idft1024(prachF,prach_ifft_tmp,1);
 	  // compute energy and accumulate over receive antennas and repetitions for BR
 	  for (i=0;i<2048;i++)
-	    prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[i<<1] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>15;
+	    prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[i<<1] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>10;
 	} else {
 	  idft256(prachF,prach_ifft_tmp,1);
 	  log2_ifft_size = 8;
 	  // compute energy and accumulate over receive antennas and repetitions for BR
 	  for (i=0;i<256;i++)
-	    prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[(i<<1)] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>15;
+	    prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[(i<<1)] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>10;
 	}
 	
 #ifdef PRACH_DEBUG

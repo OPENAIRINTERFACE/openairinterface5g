@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -1950,7 +1950,7 @@ uint8_t phich_subframe2_pusch_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t s
     @param subframe Subframe of received/transmitted PHICH
     @returns frame of PUSCH transmission
 */
-uint8_t phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);
+int phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms, int frame, int subframe);
 
 void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id,int N_RB_DL);
 
@@ -2108,6 +2108,8 @@ int32_t rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
                       uint8_t n1_pucch_sel,
                       uint8_t *payload);
 
+
+void init_ulsch_power_LUT(void);
 
 /*!
   \brief Check for PRACH TXop in subframe

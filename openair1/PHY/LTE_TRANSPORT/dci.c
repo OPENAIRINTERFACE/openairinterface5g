@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -2257,11 +2257,18 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
   y[0] = &yseq0[0];
   y[1] = &yseq1[0];
 
+#if 0
   // reset all bits to <NIL>, here we set <NIL> elements as 2
   // memset(e, 2, DCI_BITS_MAX);
   // here we interpret NIL as a random QPSK sequence. That makes power estimation easier.
   for (i=0; i<DCI_BITS_MAX; i++)
     e[i]=taus()&1;
+#endif
+
+  /* clear all bits, the above code may generate too much false detections
+   * (not sure about this, to be checked somehow)
+   */
+  memset(e, 0, DCI_BITS_MAX);
 
   e_ptr = e;
 
@@ -2273,13 +2280,13 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
 
       if (dci_alloc[i].L == (uint8_t)L) {
 
-	//#ifdef DEBUG_DCI_ENCODING
-	if (dci_alloc[i].rnti!=0xFFFF)
+	#ifdef DEBUG_DCI_ENCODING
+	if (dci_alloc[i].rnti==0x02)
 	  LOG_I(PHY,"Generating DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x), rnti %x\n",i,num_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,dci_alloc[i].L,
 		*(unsigned int*)dci_alloc[i].dci_pdu,
 		dci_alloc[i].rnti);
-        //dump_dci(frame_parms,&dci_alloc[i]);
-	//#endif
+       //dump_dci(frame_parms,&dci_alloc[i]);
+	#endif
 
         if (dci_alloc[i].firstCCE>=0) {
           e_ptr = generate_dci0(dci_alloc[i].dci_pdu,

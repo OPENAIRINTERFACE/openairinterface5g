@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -89,7 +89,7 @@ unsigned short fill_rar(
   RA_template->timing_offset /= 16; //T_A = N_TA/16, where N_TA should be on a 30.72Msps
   rar[0] = (uint8_t)(RA_template->timing_offset>>(2+4)); // 7 MSBs of timing advance + divide by 4
   rar[1] = (uint8_t)(RA_template->timing_offset<<(4-2))&0xf0; // 4 LSBs of timing advance + divide by 4
-  RA_template->msg3_first_rb=1;
+  RA_template->msg3_first_rb=6;
   RA_template->msg3_nb_rb=1;
   uint16_t rballoc = mac_computeRIV(N_RB_UL,RA_template->msg3_first_rb,RA_template->msg3_nb_rb); // first PRB only for UL Grant
   rar[1] |= (rballoc>>7)&7; // Hopping = 0 (bit 3), 3 MSBs of rballoc

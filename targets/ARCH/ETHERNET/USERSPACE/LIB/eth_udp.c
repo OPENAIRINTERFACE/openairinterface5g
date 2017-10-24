@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -235,7 +235,8 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
     packet_size = UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks); 
   } else if (flags == IF4p5_PULTICK) {
     packet_size = UDP_IF4p5_PULTICK_SIZE_BYTES; 
-  } else if (flags == IF4p5_PRACH) {  
+  } else if ((flags >= IF4p5_PRACH)&&
+             (flags <= (IF4p5_PRACH+4))) {  
     packet_size = UDP_IF4p5_PRACH_SIZE_BYTES;   
   } else {
     printf("trx_eth_write_udp_IF4p5: unknown flags %d\n",flags);
@@ -243,7 +244,6 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
   }
    
   eth->tx_nsamps = nblocks;
-  //  printf("Sending %d bytes to %s:%d\n",packet_size,str,ntohs(eth->local_addrd.sin_port));
 
   bytes_sent = sendto(eth->sockfdd,
 		      buff[0], 

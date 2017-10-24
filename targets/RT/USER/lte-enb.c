@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -391,7 +391,7 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
     pthread_mutex_lock(&proc->mutex_RU_PRACH);
     for (i=0;i<eNB->num_RU;i++) {
       if (ru == eNB->RU_list[i]) {
-	LOG_D(PHY,"frame %d, subframe %d: RU %d for eNB %d signals PRACH (mask %x, num_RU %d)\n",frame,subframe,i,eNB->Mod_id,proc->RU_mask_prach,eNB->num_RU);
+	LOG_I(PHY,"frame %d, subframe %d (%d): RU %d for eNB %d signals PRACH (mask %x, num_RU %d)\n",frame,subframe,is_prach_subframe(fp,frame,subframe),i,eNB->Mod_id,proc->RU_mask_prach,eNB->num_RU);
 	if ((proc->RU_mask_prach&(1<<i)) > 0)
 	  LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information (PRACH) from RU %d (num_RU %d, mask %x) has not been served yet!\n",
 		eNB->Mod_id,frame,subframe,ru->idx,eNB->num_RU,proc->RU_mask_prach);
@@ -582,7 +582,6 @@ static void* eNB_thread_prach_br( void* param ) {
 #endif
 
 
-extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
 extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
 extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
 
@@ -949,6 +948,7 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
       eNB->UL_INFO.harq_ind.harq_pdu_list = eNB->harq_pdu_list;
       eNB->UL_INFO.cqi_ind.cqi_pdu_list = eNB->cqi_pdu_list;
       eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
+      eNB->prach_energy_counter = 0;
     }
 
   }

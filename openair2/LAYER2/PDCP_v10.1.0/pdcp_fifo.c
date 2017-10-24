@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -89,6 +89,7 @@ extern Packet_OTG_List_t *otg_pdcp_buffer;
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
 #  include "gtpv1u_eNB_task.h"
+#  include "gtpv1u_eNB_defs.h"
 #endif
 
 /* Prevent de-queueing the same PDCP SDU from the queue twice

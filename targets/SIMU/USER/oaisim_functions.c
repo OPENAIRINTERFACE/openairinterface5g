@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -785,7 +785,7 @@ void get_simulation_options(int argc, char *argv[])
   
   if (RC.config_file_name != NULL) {
     /* Read eNB configuration file */
-    RCConfig(RC.config_file_name);
+    RCConfig();
     printf("returned with %d eNBs, %d rus\n",RC.nb_inst,RC.nb_RU);
     oai_emulation.info.nb_enb_local = RC.nb_inst;
     oai_emulation.info.nb_ru_local = RC.nb_RU;

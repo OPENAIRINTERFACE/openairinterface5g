@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -465,4 +465,12 @@ long binary_search_int(int elements[], long numElem, int value);
 long binary_search_float(float elements[], long numElem, float value);
 
 void openair_rrc_top_init_eNB(int eMBMS_active,uint8_t HO_active);
+
+void openair_rrc_top_init_ue(
+                        int eMBMS_active,
+                        char* uecap_xer,
+                        uint8_t cba_group_active,
+                        uint8_t HO_active
+);
+
 /** @}*/

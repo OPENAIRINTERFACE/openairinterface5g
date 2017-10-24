@@ -1,0 +1,4 @@
+This is sort of a "TCP driver" to ease debugging. This is mostly internal
+to EURECOM. You probably don't want to use it.
+
+Same license as the rest.

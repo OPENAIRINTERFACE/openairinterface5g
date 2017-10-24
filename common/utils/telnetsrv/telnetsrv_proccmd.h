@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/telnetsrv_proccmd.h
+/*! \file common/utils/telnetsrv/telnetsrv_proccmd.h
  * \brief: Include file defining telnet commands related to this linux process
  * \author Francois TABURET
  * \date 2017
@@ -34,9 +34,7 @@
 
 
 #ifdef TELNETSRV_PROCCMD_MAIN
-/* global variable from log.c */
-extern mapping *log_level_names;
-extern mapping *log_verbosity_names;
+
 
 extern int proccmd_show(char *buf, int debug, telnet_printfunc_t prnt);
 extern int proccmd_thread(char *buf, int debug, telnet_printfunc_t prnt);

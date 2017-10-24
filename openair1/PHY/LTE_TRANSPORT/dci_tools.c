@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -811,13 +811,16 @@ int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
     AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d] is null\n",i);
     AssertFatal(eNB->dlsch[i]!=NULL,"eNB->dlsch[%d][0] is null\n",i);
     LOG_D(PHY,"searching for rnti %x : UE index %d=> harq_mask %x, rnti %x, first_free_index %d\n",
-	  rnti,i,eNB->dlsch[i][0]->harq_mask,eNB->dlsch[i][0]->rnti,first_free_index);
+          rnti,i,eNB->dlsch[i][0]->harq_mask,eNB->dlsch[i][0]->rnti,first_free_index);
     if ((eNB->dlsch[i][0]->harq_mask >0) &&
-	(eNB->dlsch[i][0]->rnti==rnti))       return(i); 
+        (eNB->dlsch[i][0]->rnti==rnti)   &&
+        (type!=SEARCH_FREE))       return i;
     else if ((eNB->dlsch[i][0]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
   }
-  if (type == SEARCH_EXIST) return(-1);
-  else return(first_free_index);
+  if (type == SEARCH_EXIST) return -1;
+  if (first_free_index != -1)
+    eNB->dlsch[first_free_index][0]->rnti = 0;
+  return first_free_index;
 }
 
 int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
@@ -827,13 +830,15 @@ int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
 
   AssertFatal(eNB!=NULL,"eNB is null\n");
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    AssertFatal(eNB->ulsch[i]!=NULL,"eNB->dlsch[%d] is null\n",i);
+    AssertFatal(eNB->ulsch[i]!=NULL,"eNB->ulsch[%d] is null\n",i);
     if ((eNB->ulsch[i]->harq_mask >0) &&
-	(eNB->ulsch[i]->rnti==rnti))       return(i); 
+        (eNB->ulsch[i]->rnti==rnti))       return i;
     else if ((eNB->ulsch[i]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
   }
-  if (type == SEARCH_EXIST) return(-1);
-  else return(first_free_index);
+  if (type == SEARCH_EXIST) return -1;
+  if (first_free_index != -1)
+    eNB->ulsch[first_free_index]->rnti = 0;
+  return first_free_index;
 }
 
 
@@ -857,12 +862,151 @@ uint8_t get_transmission_mode(module_id_t Mod_id, uint8_t CC_id, rnti_t rnti)
 }
 */
 
-void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,nfapi_dl_config_dci_dl_pdu *pdu) {
+void fill_pdcch_order(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,nfapi_dl_config_dci_dl_pdu *pdu)
+{
+  LTE_DL_FRAME_PARMS                *fp      = &eNB->frame_parms;
+  uint8_t                           *dci_pdu = &dci_alloc->dci_pdu[0];
+  nfapi_dl_config_dci_dl_pdu_rel8_t *rel8    = &pdu->dci_dl_pdu_rel8;
 
+  dci_alloc->firstCCE = rel8->cce_idx;
+  dci_alloc->L        = rel8->aggregation_level;
+  dci_alloc->rnti     = rel8->rnti;
+  dci_alloc->harq_pid = rel8->harq_process;
+  dci_alloc->ra_flag  = 0;
+  dci_alloc->format   = format1A;
+
+  LOG_D(PHY,"NFAPI: DCI format %d, nCCE %d, L %d, rnti %x,harq_pid %d\n",
+        rel8->dci_format,rel8->cce_idx,rel8->aggregation_level,rel8->rnti,rel8->harq_process);
+
+  switch (fp->N_RB_DL) {
+  case 6:
+    if (fp->frame_type == TDD) {
+      dci_alloc->dci_length                         = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
+      ((DCI1A_1_5MHz_TDD_1_6_t *)dci_pdu)->type     = 1;
+      ((DCI1A_1_5MHz_TDD_1_6_t *)dci_pdu)->vrb_type = rel8->virtual_resource_block_assignment_flag;
+      ((DCI1A_1_5MHz_TDD_1_6_t *)dci_pdu)->mcs      = rel8->mcs_1;
+      ((DCI1A_1_5MHz_TDD_1_6_t *)dci_pdu)->ndi      = rel8->new_data_indicator_1;
+      ((DCI1A_1_5MHz_TDD_1_6_t *)dci_pdu)->rballoc  = rel8->resource_block_coding;
+      ((DCI1A_1_5MHz_TDD_1_6_t *)dci_pdu)->rv       = rel8->redundancy_version_1;
+      ((DCI1A_1_5MHz_TDD_1_6_t *)dci_pdu)->TPC      = rel8->tpc;
+      ((DCI1A_1_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid = rel8->harq_process;
+      ((DCI1A_1_5MHz_TDD_1_6_t *)dci_pdu)->dai      = rel8->downlink_assignment_index;
+    } else {
+      dci_alloc->dci_length                         = sizeof_DCI1A_1_5MHz_FDD_t;
+      ((DCI1A_1_5MHz_FDD_t *)dci_pdu)->type         = 1;
+      ((DCI1A_1_5MHz_FDD_t *)dci_pdu)->vrb_type     = rel8->virtual_resource_block_assignment_flag;
+      ((DCI1A_1_5MHz_FDD_t *)dci_pdu)->mcs          = rel8->mcs_1;
+      ((DCI1A_1_5MHz_FDD_t *)dci_pdu)->ndi          = rel8->new_data_indicator_1;
+      ((DCI1A_1_5MHz_FDD_t *)dci_pdu)->rballoc      = rel8->resource_block_coding;
+      ((DCI1A_1_5MHz_FDD_t *)dci_pdu)->rv           = rel8->redundancy_version_1;
+      ((DCI1A_1_5MHz_FDD_t *)dci_pdu)->TPC          = rel8->tpc;
+      ((DCI1A_1_5MHz_FDD_t *)dci_pdu)->harq_pid     = rel8->harq_process;
+      //      printf("FDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
+    }
+    break;
+  case 25:
+    if (fp->frame_type == TDD) {
+      dci_alloc->dci_length                         = sizeof_DCI1A_5MHz_TDD_1_6_t;
+      ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->type       = 1;
+      ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->vrb_type   = rel8->virtual_resource_block_assignment_flag;
+      ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->mcs        = rel8->mcs_1;
+      ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->ndi        = rel8->new_data_indicator_1;
+      ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rballoc    = rel8->resource_block_coding;
+      ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->rv         = rel8->redundancy_version_1;
+      ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->TPC        = rel8->tpc;
+      ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->harq_pid   = rel8->harq_process;
+      ((DCI1A_5MHz_TDD_1_6_t *)dci_pdu)->dai      = rel8->downlink_assignment_index;
+       //        printf("TDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
+    } else {
+      dci_alloc->dci_length                         = sizeof_DCI1A_5MHz_FDD_t;
+      ((DCI1A_5MHz_FDD_t *)dci_pdu)->type           = 1;
+      ((DCI1A_5MHz_FDD_t *)dci_pdu)->vrb_type       = rel8->virtual_resource_block_assignment_flag;
+      ((DCI1A_5MHz_FDD_t *)dci_pdu)->mcs            = rel8->mcs_1;
+      ((DCI1A_5MHz_FDD_t *)dci_pdu)->ndi            = rel8->new_data_indicator_1;
+      ((DCI1A_5MHz_FDD_t *)dci_pdu)->rballoc        = rel8->resource_block_coding;
+      ((DCI1A_5MHz_FDD_t *)dci_pdu)->rv             = rel8->redundancy_version_1;
+      ((DCI1A_5MHz_FDD_t *)dci_pdu)->TPC            = rel8->tpc;
+      ((DCI1A_5MHz_FDD_t *)dci_pdu)->harq_pid       = rel8->harq_process;
+      //      printf("FDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
+    }
+    break;
+  case 50:
+    if (fp->frame_type == TDD) {
+      dci_alloc->dci_length                         = sizeof_DCI1A_10MHz_TDD_1_6_t;
+      ((DCI1A_10MHz_TDD_1_6_t *)dci_pdu)->type      = 1;
+      ((DCI1A_10MHz_TDD_1_6_t *)dci_pdu)->vrb_type  = rel8->virtual_resource_block_assignment_flag;
+      ((DCI1A_10MHz_TDD_1_6_t *)dci_pdu)->mcs       = rel8->mcs_1;
+      ((DCI1A_10MHz_TDD_1_6_t *)dci_pdu)->ndi       = rel8->new_data_indicator_1;
+      ((DCI1A_10MHz_TDD_1_6_t *)dci_pdu)->rballoc   = rel8->resource_block_coding;
+      ((DCI1A_10MHz_TDD_1_6_t *)dci_pdu)->rv        = rel8->redundancy_version_1;
+      ((DCI1A_10MHz_TDD_1_6_t *)dci_pdu)->TPC       = rel8->tpc;
+      ((DCI1A_10MHz_TDD_1_6_t *)dci_pdu)->harq_pid  = rel8->harq_process;
+      ((DCI1A_10MHz_TDD_1_6_t *)dci_pdu)->dai       = rel8->downlink_assignment_index;
+      //        printf("TDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
+    } else {
+      dci_alloc->dci_length                         = sizeof_DCI1A_10MHz_FDD_t;
+      ((DCI1A_10MHz_FDD_t *)dci_pdu)->type          = 1;
+      ((DCI1A_10MHz_FDD_t *)dci_pdu)->vrb_type      = rel8->virtual_resource_block_assignment_flag;
+      ((DCI1A_10MHz_FDD_t *)dci_pdu)->mcs           = rel8->mcs_1;
+      ((DCI1A_10MHz_FDD_t *)dci_pdu)->ndi           = rel8->new_data_indicator_1;
+      ((DCI1A_10MHz_FDD_t *)dci_pdu)->rballoc       = rel8->resource_block_coding;
+      ((DCI1A_10MHz_FDD_t *)dci_pdu)->rv            = rel8->redundancy_version_1;
+      ((DCI1A_10MHz_FDD_t *)dci_pdu)->TPC           = rel8->tpc;
+      ((DCI1A_10MHz_FDD_t *)dci_pdu)->harq_pid      = rel8->harq_process;
+      //      printf("FDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
+    }
+    break;
+  case 100:
+    if (fp->frame_type == TDD) {
+      dci_alloc->dci_length                         = sizeof_DCI1A_20MHz_TDD_1_6_t;
+      ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->type      = 1;
+      ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->vrb_type  = rel8->virtual_resource_block_assignment_flag;
+      ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->mcs       = rel8->mcs_1;
+      ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->ndi       = rel8->new_data_indicator_1;
+      ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->rballoc   = rel8->resource_block_coding;
+      ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->rv        = rel8->redundancy_version_1;
+      ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->TPC       = rel8->tpc;
+      ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->harq_pid  = rel8->harq_process;
+      ((DCI1A_20MHz_TDD_1_6_t *)dci_pdu)->dai       = rel8->downlink_assignment_index;
+      //        printf("TDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
+    } else {
+      dci_alloc->dci_length                         = sizeof_DCI1A_20MHz_FDD_t;
+      ((DCI1A_20MHz_FDD_t *)dci_pdu)->type          = 1;
+      ((DCI1A_20MHz_FDD_t *)dci_pdu)->vrb_type      = rel8->virtual_resource_block_assignment_flag;
+      ((DCI1A_20MHz_FDD_t *)dci_pdu)->mcs           = rel8->mcs_1;
+      ((DCI1A_20MHz_FDD_t *)dci_pdu)->ndi           = rel8->new_data_indicator_1;
+      ((DCI1A_20MHz_FDD_t *)dci_pdu)->rballoc       = rel8->resource_block_coding;
+      ((DCI1A_20MHz_FDD_t *)dci_pdu)->rv            = rel8->redundancy_version_1;
+      ((DCI1A_20MHz_FDD_t *)dci_pdu)->TPC           = rel8->tpc;
+      ((DCI1A_20MHz_FDD_t *)dci_pdu)->harq_pid      = rel8->harq_process;
+      //      printf("FDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
+    }
+    break;
+  }
+
+  LOG_I(PHY,"%d.%d: DCI 1A: rnti %x, PDCCH order to do PRACH\n",
+        proc->frame_tx, proc->subframe_tx, rel8->rnti);
+}
+
+void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,nfapi_dl_config_dci_dl_pdu *pdu)
+{
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-
   uint8_t *dci_pdu = &dci_alloc->dci_pdu[0];
   nfapi_dl_config_dci_dl_pdu_rel8_t *rel8 = &pdu->dci_dl_pdu_rel8;
+
+  /* check if this is a DCI 1A PDCCH order for RAPROC */
+  if (rel8->dci_format == NFAPI_DL_DCI_FORMAT_1A && rel8->rnti_type == 1) {
+    int full_rb;
+    switch (fp->N_RB_DL) {
+    case 6:   full_rb = 63;   break;
+    case 25:  full_rb = 511;  break;
+    case 50:  full_rb = 2047; break;
+    case 100: full_rb = 8191; break;
+    default:  abort();
+    }
+    if (rel8->resource_block_coding == full_rb)
+      return fill_pdcch_order(eNB, proc, dci_alloc, pdu);
+  }
 
   LTE_eNB_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
   LTE_DL_eNB_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
@@ -874,14 +1018,14 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   int TB1_active;
   uint16_t DL_pmi_single=0; // This should be taken from DLSCH parameters for PUSCH precoding
   uint8_t I_mcs = 0;
-  
+ 
   dci_alloc->firstCCE = rel8->cce_idx;
   dci_alloc->L        = rel8->aggregation_level;
   dci_alloc->rnti     = rel8->rnti;
   dci_alloc->harq_pid = rel8->harq_process;
   dci_alloc->ra_flag  = 0;
 
-  LOG_I(PHY,"NFAPI: DCI format %d, nCCE %d, L %d, rnti %x,harq_pid %d\n",
+  LOG_D(PHY,"NFAPI: DCI format %d, nCCE %d, L %d, rnti %x,harq_pid %d\n",
 	rel8->dci_format,rel8->cce_idx,rel8->aggregation_level,rel8->rnti,rel8->harq_process);
   if ((rel8->rnti_type == 2 ) && (rel8->rnti != SI_RNTI) && (rel8->rnti != P_RNTI)) dci_alloc->ra_flag = 1;
 
@@ -898,26 +1042,35 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   dlsch1_harq                               = dlsch1->harq_processes[rel8->harq_process];
   dlsch1_harq->codeword                     = 1;
   dlsch0->subframe_tx[subframe]             = 1;
+  if (dlsch0->rnti != rel8->rnti) { // if rnti of dlsch is not the same as in the config, this is a new entry
+    dlsch0_harq->round=0;
+    dlsch0->harq_mask=0;
+  }
   if ((dlsch0->harq_mask & (1<<rel8->harq_process)) > 0 ) {
     if (rel8->new_data_indicator_1 != dlsch0_harq->ndi)
       dlsch0_harq->round=0;
   }
   else  { // process is inactive, so activate and set round to 0
-    dlsch0->harq_mask                         |= (1<<rel8->harq_process);
     dlsch0_harq->round=0;
   }
   dlsch0_harq->ndi = rel8->new_data_indicator_1;
 
-  LOG_I(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) \n",rel8->harq_process,dlsch0->harq_mask,dlsch0_harq->round,
-	dlsch0_harq->ndi,rel8->new_data_indicator_1);
+  dlsch0->active        = 1;
+  if (rel8->rnti_type == 2)
+      dlsch0_harq->round    = 0;
+LOG_D(PHY,"NFAPI: harq_pid %d harq_mask %x, round %d ndi (%d,%d) rnti type %d\n",rel8->harq_process,dlsch0->harq_mask,dlsch0_harq->round,
+	dlsch0_harq->ndi,rel8->new_data_indicator_1, rel8->rnti_type);
 
   switch (rel8->dci_format) {
 
   case NFAPI_DL_DCI_FORMAT_1A:
+
+      AssertFatal(rel8->resource_block_coding < 8192, "Frame %d, Subframe %d: rel8->resource_block_coding (%p) %u >= 8192 (rnti %x, rnti_type %d, format %d, harq_id %d\n",
+                proc->frame_tx,subframe,
+                &rel8->resource_block_coding,rel8->resource_block_coding,rel8->rnti,rel8->rnti_type,rel8->dci_format,rel8->harq_process);
+  
+
     dci_alloc->format     = format1A;
-    dlsch0->active        = 1;
-    if (rel8->rnti == SI_RNTI)
-      dlsch0_harq->round    = 0;
 
     switch (fp->N_RB_DL) {
     case 6:
@@ -945,7 +1098,6 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
         ((DCI1A_1_5MHz_FDD_t *)dci_pdu)->harq_pid     = rel8->harq_process;
         //      printf("FDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
       }
-
       AssertFatal(rel8->virtual_resource_block_assignment_flag==LOCALIZED,"Distributed RB allocation not done yet\n");
       dlsch0_harq->rb_alloc[0]    = localRIV2alloc_LUT6[rel8->resource_block_coding];
       dlsch0_harq->vrb_type           =  rel8->virtual_resource_block_assignment_flag;
@@ -1057,7 +1209,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
       NPRB      = dlsch0_harq->nb_rb;
       I_mcs     = get_I_TBS(rel8->mcs_1);
     }
-    AssertFatal(NPRB>0,"DCI 1A: NPRB == 0\n");
+    AssertFatal(NPRB>0,"DCI 1A: NPRB = 0 (rnti %x, rnti type %d, tpc %d, round %d, resource_block_coding %d)\n",rel8->rnti,rel8->rnti_type,rel8->tpc,dlsch0_harq->round,rel8->resource_block_coding);
     dlsch0_harq->rvidx         = rel8->redundancy_version_1;
     dlsch0_harq->Nl            = 1;
     dlsch0_harq->mimo_mode     = (fp->nb_antenna_ports_eNB == 1) ? SISO : ALAMOUTI;
@@ -1068,6 +1220,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
     dlsch0_harq->mcs             = rel8->mcs_1;
     dlsch0_harq->Qm              = 2;
     dlsch0_harq->TBS             = TBStable[I_mcs][NPRB-1];
+    LOG_D(PHY,"DCI_1A: I_mcs %d, NPRB %d, TBS %d\n",I_mcs,NPRB,dlsch0_harq->TBS);
     dlsch0->harq_ids[subframe]   = rel8->harq_process;
     dlsch0->active               = 1;
     dlsch0->rnti                 = rel8->rnti;
@@ -1075,7 +1228,9 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
     if (dlsch0_harq->round == 0)
       dlsch0_harq->status = ACTIVE;
 
-    LOG_D(PHY,"DCI 1A: mcs %d, rballoc %x,rv %d, rnti %x\n",rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti);
+    dlsch0->harq_mask            |= (1<<rel8->harq_process);
+
+    if (rel8->rnti_type == 1) LOG_D(PHY,"DCI 1A: round %d, mcs %d, rballoc %x,rv %d, rnti %x\n",dlsch0_harq->round,rel8->mcs_1,rel8->resource_block_coding,rel8->redundancy_version_1,rel8->rnti);
 
     break;
   case NFAPI_DL_DCI_FORMAT_1:
@@ -1236,6 +1391,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
     LOG_D(PHY,"DCI: Set harq_ids[%d] to %d (%p)\n",subframe,rel8->harq_process,dlsch0);
     dlsch0->harq_ids[subframe] = rel8->harq_process;
 
+    dlsch0->harq_mask          |= (1<<rel8->harq_process);
 
 
     dlsch0->rnti = rel8->rnti;
@@ -2231,11 +2387,6 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
 void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
                nfapi_hi_dci0_dci_pdu *pdu)
 {
-  uint8_t UE_id;
-
-  AssertFatal((UE_id=find_ulsch(pdu->dci_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
-	      "No existing UE ULSCH for rnti %x\n",pdu->dci_pdu_rel8.rnti);
-
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
 
   uint32_t cqi_req = pdu->dci_pdu_rel8.cqi_csi_request;
@@ -2256,14 +2407,14 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
     T_INT(mcs), T_INT(-1 /* TODO: remove round? */),
     T_INT(pdu->dci_pdu_rel8.resource_block_start),
     T_INT(pdu->dci_pdu_rel8.number_of_resource_block),
-    T_INT(-1 /* TODO: get TBS */),
+    T_INT(get_TBS_UL(mcs, pdu->dci_pdu_rel8.number_of_resource_block) * 8),
     T_INT(pdu->dci_pdu_rel8.aggregation_level),
     T_INT(pdu->dci_pdu_rel8.cce_index));
 #endif
 
   void *dci_pdu = (void*)dci_alloc->dci_pdu;
 
-  LOG_I(PHY,"Filling DCI0 with cqi %d, mcs %d, hopping %d, rballoc %x (%d,%d) ndi %d TPC %d cshift %d\n",cqi_req,
+  LOG_D(PHY,"Filling DCI0 with cqi %d, mcs %d, hopping %d, rballoc %x (%d,%d) ndi %d TPC %d cshift %d\n",cqi_req,
 	mcs,hopping,rballoc,pdu->dci_pdu_rel8.resource_block_start,pdu->dci_pdu_rel8.number_of_resource_block,
 	ndi,TPC,cshift);
 
@@ -2285,6 +2436,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->rballoc = rballoc;
       ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->hopping = hopping;
       ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->type    = 0;
+      ((DCI0_1_5MHz_TDD_1_6_t *)dci_pdu)->padding = 0;
       dci_alloc->dci_length                       = sizeof_DCI0_1_5MHz_TDD_1_6_t; 
     } else {
       ((DCI0_1_5MHz_FDD_t *)dci_pdu)->cqi_req     = cqi_req;
@@ -2295,6 +2447,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_1_5MHz_FDD_t *)dci_pdu)->rballoc     = rballoc;
       ((DCI0_1_5MHz_FDD_t *)dci_pdu)->hopping     = hopping;
       ((DCI0_1_5MHz_FDD_t *)dci_pdu)->type        = 0;
+      ((DCI0_1_5MHz_FDD_t *)dci_pdu)->padding     = 0;
       dci_alloc->dci_length                       = sizeof_DCI0_1_5MHz_FDD_t; 
     }
     
@@ -2311,6 +2464,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc = rballoc;
       ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->hopping = hopping;
       ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->type    = 0;
+      ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->padding = 0;
       dci_alloc->dci_length                     = sizeof_DCI0_5MHz_TDD_1_6_t; 
     } else {
       ((DCI0_5MHz_FDD_t *)dci_pdu)->cqi_req     = cqi_req;
@@ -2321,6 +2475,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_5MHz_FDD_t *)dci_pdu)->rballoc     = rballoc;
       ((DCI0_5MHz_FDD_t *)dci_pdu)->hopping     = hopping;
       ((DCI0_5MHz_FDD_t *)dci_pdu)->type        = 0;
+      ((DCI0_5MHz_FDD_t *)dci_pdu)->padding     = 0;
       dci_alloc->dci_length                     = sizeof_DCI0_5MHz_FDD_t; 
     }
     
@@ -2337,6 +2492,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->rballoc = rballoc;
       ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->hopping = hopping;
       ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->type    = 0;
+      ((DCI0_10MHz_TDD_1_6_t *)dci_pdu)->padding = 0;
       dci_alloc->dci_length                      = sizeof_DCI0_10MHz_TDD_1_6_t; 
     } else {
       ((DCI0_10MHz_FDD_t *)dci_pdu)->cqi_req     = cqi_req;
@@ -2347,6 +2503,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_10MHz_FDD_t *)dci_pdu)->rballoc     = rballoc;
       ((DCI0_10MHz_FDD_t *)dci_pdu)->hopping     = hopping;
       ((DCI0_10MHz_FDD_t *)dci_pdu)->type        = 0;
+      ((DCI0_10MHz_FDD_t *)dci_pdu)->padding     = 0;
       dci_alloc->dci_length                      = sizeof_DCI0_10MHz_FDD_t; 
     }
     
@@ -2363,6 +2520,8 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->rballoc = rballoc;
       ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->hopping = hopping;
       ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->type    = 0;
+      ((DCI0_20MHz_TDD_1_6_t *)dci_pdu)->padding = 0;
+
       dci_alloc->dci_length                      = sizeof_DCI0_20MHz_TDD_1_6_t; 
     } else {
       ((DCI0_20MHz_FDD_t *)dci_pdu)->cqi_req     = cqi_req;
@@ -2373,6 +2532,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
       ((DCI0_20MHz_FDD_t *)dci_pdu)->rballoc     = rballoc;
       ((DCI0_20MHz_FDD_t *)dci_pdu)->hopping     = hopping;
       ((DCI0_20MHz_FDD_t *)dci_pdu)->type        = 0;
+      ((DCI0_20MHz_FDD_t *)dci_pdu)->padding     = 0;
       dci_alloc->dci_length                      = sizeof_DCI0_20MHz_FDD_t; 
     }
     
@@ -2386,14 +2546,14 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
   }
 }
 
-void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe) {
-
+void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe)
+{
   uint8_t harq_pid;
-
   uint8_t UE_id;
+  boolean_t new_ulsch = (find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST)==-1) ? TRUE : FALSE;
 
   AssertFatal((UE_id=find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
-	      "No existing UE ULSCH for rnti %x\n",ulsch_pdu->ulsch_pdu_rel8.rnti);
+	      "No existing/free UE ULSCH for rnti %x\n",ulsch_pdu->ulsch_pdu_rel8.rnti);
 
   LTE_eNB_ULSCH_t *ulsch=eNB->ulsch[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
@@ -2402,9 +2562,11 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
 
   harq_pid = ulsch_pdu->ulsch_pdu_rel8.harq_process_number;
 
+  ulsch->harq_mask |= 1 << harq_pid;
 
   ulsch->harq_processes[harq_pid]->frame                                 = frame;
   ulsch->harq_processes[harq_pid]->subframe                              = subframe;
+  ulsch->harq_processes[harq_pid]->handled                               = 0;
 
   ulsch->harq_processes[harq_pid]->first_rb                              = ulsch_pdu->ulsch_pdu_rel8.resource_block_start;
   ulsch->harq_processes[harq_pid]->nb_rb                                 = ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
@@ -2414,10 +2576,10 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
   ulsch->harq_processes[harq_pid]->dci_alloc                             = 1;
   ulsch->harq_processes[harq_pid]->rar_alloc                             = 0;
   ulsch->harq_processes[harq_pid]->n_DMRS                                = ulsch_pdu->ulsch_pdu_rel8.cyclic_shift_2_for_drms;
-  
+
   ulsch->harq_processes[harq_pid]->Nsymb_pusch                           = 12-(frame_parms->Ncp<<1)-(use_srs==0?0:1);
   ulsch->harq_processes[harq_pid]->srs_active                            = use_srs;
-  
+
   //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
   if(ulsch->harq_processes[harq_pid]->n_DMRS == 0)
     ulsch->harq_processes[harq_pid]->n_DMRS2 = 0;
@@ -2435,24 +2597,23 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
     ulsch->harq_processes[harq_pid]->n_DMRS2 = 10;
   else if(ulsch->harq_processes[harq_pid]->n_DMRS == 7)
     ulsch->harq_processes[harq_pid]->n_DMRS2 = 9;
-  
-   
+
   LOG_D(PHY,"[eNB %d][PUSCH %d] Programming PUSCH with n_DMRS2 %d (cshift %d) for Frame %d, Subframe %d\n",
 	eNB->Mod_id,harq_pid,ulsch->harq_processes[harq_pid]->n_DMRS2,ulsch->harq_processes[harq_pid]->n_DMRS,
 	frame,subframe);
-  
-  
+
   ulsch->harq_processes[harq_pid]->rvidx = ulsch_pdu->ulsch_pdu_rel8.redundancy_version;
   ulsch->harq_processes[harq_pid]->Qm    = ulsch_pdu->ulsch_pdu_rel8.modulation_type;
-  // Set O_ACK to 0 by default, will be set of DLSCH is scheduled and needs to be 
+  // Set O_ACK to 0 by default, will be set of DLSCH is scheduled and needs to be
   ulsch->harq_processes[harq_pid]->O_ACK         = 0;
 
   if ((ulsch->harq_processes[harq_pid]->status == SCH_IDLE) ||
-      (ulsch->harq_processes[harq_pid]->ndi    != ulsch_pdu->ulsch_pdu_rel8.new_data_indication)){
+      (ulsch->harq_processes[harq_pid]->ndi    != ulsch_pdu->ulsch_pdu_rel8.new_data_indication) ||
+	  (new_ulsch == TRUE)){
     ulsch->harq_processes[harq_pid]->status        = ACTIVE;
-    
+
     ulsch->harq_processes[harq_pid]->TBS           = ulsch_pdu->ulsch_pdu_rel8.size<<3;
-    
+
     ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
     ulsch->harq_processes[harq_pid]->Nsymb_initial = ulsch->harq_processes[harq_pid]->Nsymb_pusch;
     ulsch->harq_processes[harq_pid]->round         = 0;
@@ -2462,12 +2623,14 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
     // will be set if MAC has activated ULSCH_CQI_RI_PDU or ULSCH_CQI_HARQ_RI_PDU
     ulsch->harq_processes[harq_pid]->Or1           = 0;
     ulsch->harq_processes[harq_pid]->Or2           = 0;
-  } 
+  }
   else  ulsch->harq_processes[harq_pid]->round++;
 
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;
-  LOG_I(PHY,"Filling ULSCH %x for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
+  LOG_D(PHY,"Filling ULSCH %x (UE_id %d) (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
 	ulsch->rnti,
+        UE_id,
+        new_ulsch,
 	frame,
 	subframe,
 	harq_pid,
@@ -2476,12 +2639,8 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
 	ulsch->harq_processes[harq_pid]->rvidx,
 	ulsch->harq_processes[harq_pid]->Qm,
 	ulsch->harq_processes[harq_pid]->TBS,
-	ulsch->harq_processes[harq_pid]->round);  
-  
-  
+	ulsch->harq_processes[harq_pid]->round);
 }
-
-
 
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
 {
@@ -6335,6 +6494,8 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n)
   else
     ul_subframe = ((n+4)%10);
 
+  if (subframe_select(frame_parms,ul_subframe) != SF_UL) return(255);
+
   LOG_D(PHY, "subframe %d: PUSCH subframe = %d\n", n, ul_subframe);
   return ul_subframe;
 }
@@ -6355,12 +6516,11 @@ uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
     return(9);
   else
     return((n+6)%10);
-
 }
 
 uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n)
 {
-  uint32_t ul_frame = 255;
+  uint32_t ul_frame;
 
   if ((frame_parms->frame_type == TDD) &&
       (frame_parms->tdd_config == 1) &&
@@ -6378,8 +6538,7 @@ uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, ui
     ul_frame = (frame+(n>=6 ? 1 : 0));
 
   LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, n, ul_frame);
-  return ul_frame;
-
+  return ul_frame % 1024;
 }
 
 int32_t pmi_convert_rank1_from_rank2(uint16_t pmi_alloc, int tpmi, int nb_rb)

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -330,6 +330,8 @@ typedef struct RU_proc_t_s {
   int instance_cnt_asynch_rxtx;
   /// \internal This variable is protected by \ref mutex_fep
   int instance_cnt_fep;
+  /// \internal This variable is protected by \ref mutex_fep
+  int instance_cnt_feptx;
   /// pthread structure for RU FH processing thread
   pthread_t pthread_FH;
   /// pthread structure for RU prach processing thread
@@ -340,8 +342,10 @@ typedef struct RU_proc_t_s {
 #endif
   /// pthread struct for RU synch thread
   pthread_t pthread_synch;
-  /// pthread struct for RU RX FEP thread
+  /// pthread struct for RU RX FEP worker thread
   pthread_t pthread_fep;
+  /// pthread struct for RU RX FEPTX worker thread
+  pthread_t pthread_feptx;
   /// pthread structure for asychronous RX/TX processing thread
   pthread_t pthread_asynch_rxtx;
   /// flag to indicate first RX acquisition
@@ -360,8 +364,10 @@ typedef struct RU_proc_t_s {
   pthread_attr_t attr_synch;
   /// pthread attributes for asynchronous RX thread
   pthread_attr_t attr_asynch_rxtx;
-  /// pthread attributes for parallel fep thread
+  /// pthread attributes for worker fep thread
   pthread_attr_t attr_fep;
+  /// pthread attributes for worker feptx thread
+  pthread_attr_t attr_feptx;
   /// scheduling parameters for RU FH thread
   struct sched_param sched_param_FH;
   /// scheduling parameters for RU prach thread
@@ -388,6 +394,8 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_asynch_rxtx;
   /// condition varaible for RU RX FEP thread
   pthread_cond_t cond_fep;
+  /// condition varaible for RU RX FEPTX thread
+  pthread_cond_t cond_feptx;
   /// condition variable for eNB signal
   pthread_cond_t cond_eNBs;
   /// mutex for RU FH
@@ -404,8 +412,10 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_eNBs;
   /// mutex for asynch RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
-  /// mutex for fep RX
+  /// mutex for fep RX worker thread
   pthread_mutex_t mutex_fep;
+  /// mutex for fep TX worker thread
+  pthread_mutex_t mutex_feptx;
   /// symbol mask for IF4p5 reception per subframe
   uint32_t symbol_mask[10];
   /// number of slave threads
@@ -740,6 +750,16 @@ typedef struct RU_t_s{
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string);
   /// Timing statistics
   time_stats_t ofdm_demod_stats;
+  /// Timing statistics (TX)
+  time_stats_t ofdm_mod_stats;
+  /// Timing statistics (RX Fronthaul + Compression)
+  time_stats_t rx_fhaul;
+  /// Timing statistics (TX Fronthaul + Compression)
+  time_stats_t tx_fhaul; 
+  /// Timong statistics (Compression)
+  time_stats_t compression;
+  /// Timing statistics (Fronthaul transport)
+  time_stats_t transport;
   /// RX and TX buffers for precoder output
   RU_COMMON            common;
   /// beamforming weight vectors per eNB
@@ -755,6 +775,8 @@ typedef struct RU_t_s{
   openair0_timestamp   ts_offset;
   /// process scheduling variables
   RU_proc_t            proc;
+  /// stats thread pthread descriptor
+  pthread_t            ru_stats_thread;
 } RU_t;
 
 
@@ -901,7 +923,8 @@ typedef struct {
   int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
   /// Total Subband CQI and RB
   int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
-
+  /// PRACH background noise level
+  int            prach_I0;
 } PHY_MEASUREMENTS_eNB;
 
 
@@ -1017,8 +1040,8 @@ typedef struct PHY_VARS_eNB_s {
 
   /// if ==0 enables phy only test mode
   int mac_enabled;
-
-
+  /// counter to average prach energh over first 100 prach opportunities
+  int prach_energy_counter;
 
   // PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_UE_MAX];
@@ -1484,6 +1507,10 @@ typedef struct RRU_config_s {
   uint8_t num_bands;
   /// EUTRA band list configured in RRU
   uint8_t band_list[MAX_BANDS_PER_RRU];
+  /// TDD configuration (0-6)
+  uint8_t tdd_config[MAX_BANDS_PER_RRU];
+  /// TDD special subframe configuration (0-10)
+  uint8_t tdd_config_S[MAX_BANDS_PER_RRU];
   /// TX frequency
   uint32_t tx_freq[MAX_BANDS_PER_RRU];
   /// RX frequency

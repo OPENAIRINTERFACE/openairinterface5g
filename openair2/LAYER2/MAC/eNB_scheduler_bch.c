@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -196,7 +196,7 @@ schedule_SIB1_BR(
 
     AssertFatal(bcch_sdu_length <= TBS, "length returned by RRC %d is not compatible with the TBS %d from MIB\n",bcch_sdu_length,TBS);
 
-    if ((frameP&1023) < 200) LOG_I(MAC,"[eNB %d] Frame %d Subframe %d: SIB1_BR->DLSCH CC_id %d, Received %d bytes, scheduling on NB %d (i %d,m %d,N_S_NB %d)  rvidx %d\n",module_idP,frameP,subframeP,CC_id,bcch_sdu_length,n_NB,i,m,N_S_NB,rvidx);
+    if ((frameP&1023) < 200) LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SIB1_BR->DLSCH CC_id %d, Received %d bytes, scheduling on NB %d (i %d,m %d,N_S_NB %d)  rvidx %d\n",module_idP,frameP,subframeP,CC_id,bcch_sdu_length,n_NB,i,m,N_S_NB,rvidx);
     
     // allocate all 6 PRBs in narrowband for SIB1_BR
 
@@ -315,7 +315,6 @@ schedule_SI_BR(
   int                                     rvidx;
   int                                     absSF = (frameP*10)+subframeP;
 
-  return;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -401,7 +400,7 @@ schedule_SI_BR(
 	    vrb_map[first_rb+4] = 1;
 	    vrb_map[first_rb+5] = 1;
 
-	    if ((frameP&1023) < 200) LOG_I(MAC,"[eNB %d] Frame %d Subframe %d: SI_BR->DLSCH CC_id %d, Narrowband %d rvidx %d (sf_mod_period %d : si_WindowLength_BR_r13 %d : si_RepetitionPattern_r13 %d) bcch_sdu_length %d\n",
+	    if ((frameP&1023) < 200) LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SI_BR->DLSCH CC_id %d, Narrowband %d rvidx %d (sf_mod_period %d : si_WindowLength_BR_r13 %d : si_RepetitionPattern_r13 %d) bcch_sdu_length %d\n",
 					   module_idP,frameP,subframeP,CC_id,(int)si_Narrowband_r13-1,rvidx,
 					   sf_mod_period,(int)si_WindowLength_BR_r13,(int)si_RepetitionPattern_r13,
 					   bcch_sdu_length);	    
@@ -652,9 +651,13 @@ schedule_SI(
 	  mcs=7;
 	} else if (bcch_sdu_length <= 49) {
 	  mcs=8;
-	}
+	} else if (bcch_sdu_length <= 57) {
+      mcs=9;
+    } 
+    
 	
-	
+    AssertFatal(mcs!=-1,"larger mcs required for RRC SDU of size %d\n",bcch_sdu_length);
+
 	dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
 	memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
 	dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE; 
