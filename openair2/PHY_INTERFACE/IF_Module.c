@@ -156,6 +156,9 @@ void handle_ulsch(UL_IND_t *UL_info) {
 #define C do { size = 0; put(0); } while (0)
 #define A(...) do { char t[4096]; sprintf(t, __VA_ARGS__); append_string(t); } while (0)
 
+#if 0
+
+/* eats lots of ms at startup, disrupts realtime */
 static char *s;
 static int size;
 static int maxsize;
@@ -168,6 +171,22 @@ static void put(char x)
   }
   s[size++] = x;
 }
+
+#else
+
+/* eats nothing at startup, but fixed size */
+#define SMAX 65536
+static char s[SMAX];
+static int size;
+static int maxsize = SMAX;
+
+static void put(char x)
+{
+  if (size == maxsize) { printf("incrase SMAX\n"); exit(1); }
+  s[size++] = x;
+}
+
+#endif
 
 static void append_string(char *t)
 {

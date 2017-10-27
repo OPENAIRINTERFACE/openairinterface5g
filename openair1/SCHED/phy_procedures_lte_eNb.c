@@ -663,7 +663,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 
     {
       if ((eNB->prach_energy_counter == 100) && 
-          (max_preamble_energy[0] > eNB->measurements.prach_I0+200)) {
+          (max_preamble_energy[0] > eNB->measurements.prach_I0+100)) {
 
 	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	      eNB->Mod_id,
@@ -1524,7 +1524,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe)
   pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->b;
   // estimate timing advance for MAC
   sync_pos                               = lte_est_timing_advance_pusch(eNB,UE_id);
-  timing_advance_update                  = sync_pos - eNB->frame_parms.nb_prefix_samples/4; //to check
+  timing_advance_update                  = sync_pos; // - eNB->frame_parms.nb_prefix_samples/4; //to check
 
   //  if (timing_advance_update > 10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}
   //  if (timing_advance_update < -10) { dump_ulsch(eNB,frame,subframe,UE_id); exit(-1);}
