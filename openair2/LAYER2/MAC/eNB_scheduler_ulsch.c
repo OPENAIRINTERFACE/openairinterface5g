@@ -113,9 +113,13 @@ void rx_sdu(const module_id_t enb_mod_idP,
        UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer   = 0;
        UE_list->UE_sched_ctrl[UE_id].ul_failure_timer      = 0;
        UE_list->UE_sched_ctrl[UE_id].ul_scheduled         &= (~(1<<harq_pid));
-       /* don't take into account TA if timer is running */
-       if (UE_list->UE_sched_ctrl[UE_id].ta_timer == 0)
-         UE_list->UE_sched_ctrl[UE_id].ta_update             = timing_advance;
+       /* Update with smoothing: 3/4 of old value and 1/4 of new.
+        * This is the logic that was done in the function
+        * lte_est_timing_advance_pusch, maybe it's not necessary?
+        * maybe it's even not correct at all?
+        */
+       UE_list->UE_sched_ctrl[UE_id].ta_update             =
+           (UE_list->UE_sched_ctrl[UE_id].ta_update * 3 + timing_advance)/4;
        UE_list->UE_sched_ctrl[UE_id].pusch_snr[CC_idP]       = ul_cqi;
        UE_list->UE_sched_ctrl[UE_id].ul_consecutive_errors = 0;
        first_rb =  UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
