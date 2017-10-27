@@ -315,6 +315,7 @@ typedef struct RU_proc_t_s {
   /// \brief Instance count for FH processing thread.
   /// \internal This variable is protected by \ref mutex_FH.
   int instance_cnt_FH;
+  int instance_cnt_FH1;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
 #ifdef Rel14
@@ -334,6 +335,7 @@ typedef struct RU_proc_t_s {
   int instance_cnt_feptx;
   /// pthread structure for RU FH processing thread
   pthread_t pthread_FH;
+  pthread_t pthread_FH1;
   /// pthread structure for RU prach processing thread
   pthread_t pthread_prach;
 #ifdef Rel14
@@ -354,6 +356,7 @@ typedef struct RU_proc_t_s {
   int first_tx;
   /// pthread attributes for RU FH processing thread
   pthread_attr_t attr_FH;
+  pthread_attr_t attr_FH1;
   /// pthread attributes for RU prach
   pthread_attr_t attr_prach;
 #ifdef Rel14
@@ -370,6 +373,7 @@ typedef struct RU_proc_t_s {
   pthread_attr_t attr_feptx;
   /// scheduling parameters for RU FH thread
   struct sched_param sched_param_FH;
+  struct sched_param sched_param_FH1;
   /// scheduling parameters for RU prach thread
   struct sched_param sched_param_prach;
 #ifdef Rel14
@@ -382,6 +386,7 @@ typedef struct RU_proc_t_s {
   struct sched_param sched_param_asynch_rxtx;
   /// condition variable for RU FH thread
   pthread_cond_t cond_FH;
+  pthread_cond_t cond_FH1;
   /// condition variable for RU prach thread
   pthread_cond_t cond_prach;
 #ifdef Rel14
@@ -400,6 +405,7 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_eNBs;
   /// mutex for RU FH
   pthread_mutex_t mutex_FH;
+  pthread_mutex_t mutex_FH1;
   /// mutex for RU prach
   pthread_mutex_t mutex_prach;
 #ifdef Rel14
@@ -749,7 +755,7 @@ typedef struct RU_t_s{
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
   /// function pointer to eNB entry routine
-  void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string);
+  void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string,struct RU_t_s *ru);
   /// Timing statistics
   time_stats_t ofdm_demod_stats;
   /// Timing statistics (TX)

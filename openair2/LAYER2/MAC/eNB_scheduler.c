@@ -67,6 +67,7 @@
 #define DEBUG_eNB_SCHEDULER 1
 
 extern RAN_CONTEXT_t RC;
+extern int phy_test;
 
 uint16_t pdcch_order_table[6] = {31,31,511,2047,2047,8191};
 
@@ -517,9 +518,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
 
 #endif
 
-  if (RC.mac[module_idP]->phy_test==0) {
+  
     // This schedules MIB
-    if ((subframeP==0) && (frameP&3) == 0) schedule_mib(module_idP,frameP,subframeP);
+  if ((subframeP==0) && (frameP&3) == 0) schedule_mib(module_idP,frameP,subframeP);
+  if (phy_test==0) {
     // This schedules SI for legacy LTE and eMTC starting in subframeP
     schedule_SI(module_idP,frameP,subframeP);
     // This schedules Random-Access for legacy LTE and eMTC starting in subframeP

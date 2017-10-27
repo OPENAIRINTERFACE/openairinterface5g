@@ -112,6 +112,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 extern volatile int                    oai_exit;
 extern int numerology;
+extern int fh_two_thread;
 
 
 extern void  phy_init_RU(RU_t*);
@@ -876,7 +877,7 @@ static void* ru_thread_asynch_rxtx( void* param ) {
       subframe++;
     }      
     LOG_D(PHY,"ru_thread_asynch_rxtx: Waiting on incoming fronthaul\n");
-    // asynchronous receive from south (Mobipass)
+	// asynchronous receive from south (Mobipass)
     if (ru->fh_south_asynch_in) ru->fh_south_asynch_in(ru,&frame,&subframe);
     // asynchronous receive from north (RRU IF4/IF5)
     else if (ru->fh_north_asynch_in) ru->fh_north_asynch_in(ru,&frame,&subframe);
@@ -1121,7 +1122,7 @@ void wakeup_eNBs(RU_t *ru) {
     char string[20];
     sprintf(string,"Incoming RU %d",ru->idx);
     LOG_D(PHY,"RU %d Waking up eNB\n",ru->idx);
-    ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
+    ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string,ru);
   }
   else {
 
@@ -1359,6 +1360,48 @@ static void* ru_stats_thread(void* param) {
   return(NULL);
 }
 
+static void* ru_thread_tx( void* param ) {
+  RU_t *ru         = (RU_t*)param;
+  RU_proc_t *proc  = &ru->proc;
+  int subframe=0, frame=0; 
+
+  thread_top_init("ru_thread_tx",1,870000L,1000000L,1000000L);
+
+  wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
+
+  printf( "ru_thread_tx ready\n");
+  while (!oai_exit) { 
+   
+    if (oai_exit) break;   
+
+    if (subframe==9) { 
+      subframe=0;
+      frame++;
+      frame&=1023;
+    } else {
+      subframe++;
+    }
+	LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
+	// wait until eNBs are finished subframe RX n and TX n+4
+    wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
+  	    
+  	    
+    // do TX front-end processing if needed (precoding and/or IDFTs)
+    if (ru->feptx_prec) ru->feptx_prec(ru);
+  	    
+    // do OFDM if needed
+    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+    // do outgoing fronthaul (south) if needed
+    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+  	    
+    if (ru->fh_north_out) ru->fh_north_out(ru);
+
+    release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
+  }
+
+  return 0;
+}
+
 static void* ru_thread( void* param ) {
 
   static int ru_thread_status;
@@ -1431,9 +1474,14 @@ static void* ru_thread( void* param ) {
     pthread_cond_signal(&proc->cond_asynch_rxtx);
   }
   else LOG_I(PHY,"RU %d no asynch_south interface\n",ru->idx);
-
+  
   // if this is a slave RRU, try to synchronize on the DL frequency
   if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
+
+  pthread_mutex_lock(&proc->mutex_FH1);
+  proc->instance_cnt_FH1=0;
+  pthread_mutex_unlock(&proc->mutex_FH1);
+  pthread_cond_signal(&proc->cond_FH1);
 
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
@@ -1485,19 +1533,22 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
 
-    // wait until eNBs are finished subframe RX n and TX n+4
-    wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
-
-
-    // do TX front-end processing if needed (precoding and/or IDFTs)
-    if (ru->feptx_prec) ru->feptx_prec(ru);
-   
-    // do OFDM if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-    // do outgoing fronthaul (south) if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
- 
-    if (ru->fh_north_out) ru->fh_north_out(ru);
+	if(fh_two_thread == 0)
+	{
+		// wait until eNBs are finished subframe RX n and TX n+4
+		wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
+	
+	
+		// do TX front-end processing if needed (precoding and/or IDFTs)
+		if (ru->feptx_prec) ru->feptx_prec(ru);
+	
+		// do OFDM if needed
+		if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+		// do outgoing fronthaul (south) if needed
+		if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+	
+		if (ru->fh_north_out) ru->fh_north_out(ru);
+	}
 
   }
   
@@ -1611,7 +1662,7 @@ void init_RU_proc(RU_t *ru) {
    
   int i=0;
   RU_proc_t *proc;
-  pthread_attr_t *attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_synch=NULL;
+  pthread_attr_t *attr_FH=NULL,*attr_FH1=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_synch=NULL;
   //pthread_attr_t *attr_fep=NULL;
 #ifdef Rel14
   pthread_attr_t *attr_prach_br=NULL;
@@ -1626,9 +1677,11 @@ void init_RU_proc(RU_t *ru) {
 
   proc->ru = ru;
   proc->instance_cnt_prach       = -1;
-  proc->instance_cnt_synch       = -1;     ;
+  proc->instance_cnt_synch       = -1;
   proc->instance_cnt_FH          = -1;
+  proc->instance_cnt_FH1         = -1;
   proc->instance_cnt_asynch_rxtx = -1;
+  proc->instance_cnt_eNBs        = -1;
   proc->first_rx                 = 1;
   proc->first_tx                 = 1;
   proc->frame_offset             = 0;
@@ -1641,13 +1694,16 @@ void init_RU_proc(RU_t *ru) {
   pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
   pthread_mutex_init( &proc->mutex_synch,NULL);
   pthread_mutex_init( &proc->mutex_FH,NULL);
+  pthread_mutex_init( &proc->mutex_FH1,NULL);
   
   pthread_cond_init( &proc->cond_prach, NULL);
   pthread_cond_init( &proc->cond_FH, NULL);
+  pthread_cond_init( &proc->cond_FH1, NULL);
   pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
   pthread_cond_init( &proc->cond_synch,NULL);
   
   pthread_attr_init( &proc->attr_FH);
+  pthread_attr_init( &proc->attr_FH1);
   pthread_attr_init( &proc->attr_prach);
   pthread_attr_init( &proc->attr_synch);
   pthread_attr_init( &proc->attr_asynch_rxtx);
@@ -1662,6 +1718,7 @@ void init_RU_proc(RU_t *ru) {
   
 #ifndef DEADLINE_SCHEDULER
   attr_FH        = &proc->attr_FH;
+  attr_FH1       = &proc->attr_FH1;
   attr_prach     = &proc->attr_prach;
   attr_synch     = &proc->attr_synch;
   attr_asynch    = &proc->attr_asynch_rxtx;
@@ -1670,7 +1727,10 @@ void init_RU_proc(RU_t *ru) {
 #endif
 #endif
   
-  pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
+  pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );\
+
+  if (fh_two_thread==1)
+    pthread_create( &proc->pthread_FH1, attr_FH1, ru_thread_tx, (void*)ru );
 
   if (ru->function == NGFI_RRU_IF4p5) {
     pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void*)ru );
@@ -1682,7 +1742,10 @@ void init_RU_proc(RU_t *ru) {
     
     if ((ru->if_timing == synch_to_other) ||
 	(ru->function == NGFI_RRU_IF5) ||
-	(ru->function == NGFI_RRU_IF4p5)) pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, ru_thread_asynch_rxtx, (void*)ru );
+	(ru->function == NGFI_RRU_IF4p5)) 
+	{
+		pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, ru_thread_asynch_rxtx, (void*)ru );
+	}
     
     snprintf( name, sizeof(name), "ru_thread_FH %d", ru->idx );
     pthread_setname_np( proc->pthread_FH, name );
@@ -1963,7 +2026,7 @@ void init_RU(char *rf_config_file) {
 	}
 	malloc_IF4p5_buffer(ru);
       }
-      else if (ru->function == eNodeB_3GPP) {  
+      else if (ru->function == eNodeB_3GPP) {   
 	ru->do_prach             = 0;                       // no prach processing in RU            
 	ru->feprx                = (get_nprocs()<=4) ? fep_full : ru_fep_full_2thread;                // RX DFTs
 	ru->feptx_ofdm           = (get_nprocs()<=4) ? feptx_ofdm : feptx_ofdm_2thread;              // this is fep with idft and precoding

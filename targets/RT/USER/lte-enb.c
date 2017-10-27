@@ -269,8 +269,9 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
 
 
 
-void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string)
+void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t *ru)
 {
+  RU_proc_t *ru_proc         = &ru->proc;
   eNB_proc_t *proc           = &eNB->proc;
   eNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[0];
 
@@ -293,6 +294,11 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string)
     if (rxtx(eNB,proc_rxtx,string) < 0) LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
     LOG_D(PHY,"eNB_top out %p (proc %p, CC_id %d), frame %d, subframe %d, instance_cnt_prach %d\n",
 	  (void*)pthread_self(), proc, eNB->CC_id, proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
+
+    pthread_mutex_lock(&ru_proc->mutex_eNBs);
+    ++ru_proc->instance_cnt_eNBs;
+    pthread_mutex_unlock(&ru_proc->mutex_eNBs);
+    pthread_cond_signal(&ru_proc->cond_eNBs);
   }
 }
 

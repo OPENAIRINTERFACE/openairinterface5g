@@ -575,6 +575,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
 	int encoding_return = 0;
 	unsigned int L,C,B;
 	B = dlsch->harq_processes[dlsch->harq_ids[subframe]]->B;
+	//printf("total bit length is %d\n",B);///////////*******
 	if(B<=6144)
 	{
 		L=0;
@@ -601,6 +602,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    rm_stats,
                    te_stats,
                    i_stats);
+		//printf("having more then 5 segmentation\n");///////////*******
 		}
 	else
 		{

@@ -121,7 +121,7 @@ int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
                        time_stats_t *rm_stats,
                        time_stats_t *te_stats,
                        time_stats_t *i_stats);
-
+					   
 int32_t dlsch_encoding_all(PHY_VARS_eNB *eNB,
                        uint8_t *a,
                        uint8_t num_pdcch_symbols,
@@ -131,7 +131,6 @@ int32_t dlsch_encoding_all(PHY_VARS_eNB *eNB,
                        time_stats_t *rm_stats,
                        time_stats_t *te_stats,
                        time_stats_t *i_stats);
-
 
 int32_t dlsch_encoding_SIC(PHY_VARS_UE *ue,
                        uint8_t *a,
@@ -1900,6 +1899,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
                              uint8_t Nbundled,
                              uint8_t llr8_flag);
 
+int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,
+                        int UE_id,
+                        int harq_pid,
+                        int llr8_flag);
+							 
 /*!
   \brief Decoding of ULSCH data component from 36-212. This one spawns 1 worker thread in parallel,half of the segments in each thread.
   @param phy_vars_eNB Pointer to eNB top-level descriptor

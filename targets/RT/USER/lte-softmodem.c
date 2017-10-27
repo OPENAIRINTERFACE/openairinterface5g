@@ -171,7 +171,7 @@ static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 char   rf_config_file[1024];
 
 int chain_offset=0;
-int phy_test = 0;
+int phy_test = 1;
 uint8_t usim_test = 0;
 
 uint8_t dci_Format = 0;
@@ -206,8 +206,8 @@ extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
 int transmission_mode=1;
-
-int numerology = 1;
+int numerology = 0;
+int fh_two_thread = 1;
 
 
 
@@ -746,6 +746,7 @@ void init_openair0() {
 
   int card;
   int i;
+  
 
   for (card=0; card<MAX_CARDS; card++) {
 

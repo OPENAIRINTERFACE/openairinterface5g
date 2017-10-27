@@ -207,7 +207,19 @@ uint8_t extract_cqi_crc(uint8_t *cqi,uint8_t CQI_LENGTH)
 
 
 
-
+/*int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
+{
+	int value = 0;
+	if()
+	{
+		value = ulsch_decoding_data_2thread(eNB,UE_id,harq_pid,llr8_flag);
+	}
+	else
+	{
+		value = ulsch_decoding_data(eNB,UE_id,harq_pid,llr8_flag);
+	}
+	return value;
+}*/
 
 
 int ulsch_decoding_data_2thread0(td_params* tdp) {
