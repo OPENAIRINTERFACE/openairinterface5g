@@ -39,6 +39,7 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 //#define DEBUG_DLSCH_MODULATION
+#define NEW_ALLOC_RE
 
 //#define is_not_pilot(pilots,re,nushift,use2ndpilots) ((pilots==0) || ((re!=nushift) && (re!=nushift+6)&&((re!=nushift+3)||(use2ndpilots==1))&&((re!=nushift+9)||(use2ndpilots==1)))?1:0)
 
@@ -2015,7 +2016,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   int16_t qam16_table_a1[4],qam64_table_a1[8],qam16_table_b1[4],qam64_table_b1[8];
 
   int16_t *qam_table_s0=NULL,*qam_table_s1=NULL;
-#if 0
+#ifdef NEW_ALLOC_RE
   /* TODO: variable to be removed? */
   int (*allocate_REs)(PHY_VARS_eNB*,
                       int **,
@@ -2257,7 +2258,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     re_offset = frame_parms->first_carrier_offset;
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe_offset*nsymb));
 
-#if 0
+#ifdef NEW_ALLOC_RE
     /* TODO: remove this code? */
     allocate_REs = allocate_REs_in_RB;
 #endif
@@ -2269,7 +2270,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     case 4:
       if (pilots) {
         qam_table_s0 = qam16_table_b0;
-#if 0
+#ifdef NEW_ALLOC_RE
         /* TODO: remove this code? */
         allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
           allocate_REs_in_RB_pilots_16QAM_siso :
@@ -2278,7 +2279,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       }
       else {
         qam_table_s0 = qam16_table_a0;
-#if 0
+#ifdef NEW_ALLOC_RE
         /* TODO: remove this code? */
         allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
           allocate_REs_in_RB_no_pilots_16QAM_siso :
@@ -2291,7 +2292,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     case 6:
       if (pilots) {
         qam_table_s0 = qam64_table_b0;
-#if 0
+#ifdef NEW_ALLOC_RE
         /* TODO: remove this code? */
         allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
           allocate_REs_in_RB_pilots_64QAM_siso :
@@ -2300,7 +2301,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       }
       else {
         qam_table_s0 = qam64_table_a0;
-#if 0
+#ifdef NEW_ALLOC_RE
         /* TODO: remove this code? */
         allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
           allocate_REs_in_RB_no_pilots_64QAM_siso :
@@ -2314,7 +2315,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     switch (mod_order1) {
     case 2:
       qam_table_s1 = NULL;
-#if 0
+#ifdef NEW_ALLOC_RE
         /* TODO: remove this code? */
       allocate_REs = allocate_REs_in_RB;
 #endif
@@ -2393,7 +2394,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
                                rb);
 
 
-      allocate_REs_in_RB(phy_vars_eNB,
+      allocate_REs(phy_vars_eNB,
                          txdataF,
                          &jj,
                          &jj2,

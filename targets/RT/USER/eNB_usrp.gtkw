@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Tue Oct 24 08:41:51 2017
+[*] Fri Oct 27 14:01:34 2017
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Tue Oct 24 08:27:56 2017"
-[dumpfile_size] 4053651
-[savefile] "/homes/wangts/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
+[dumpfile_mtime] "Fri Oct 27 11:38:57 2017"
+[dumpfile_size] 13854600
+[savefile] "/homes/kaltenbe/Devel/openair/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
 [timestart] 15494750000
 [size] 1855 1056
-[pos] 65 -10
-*-19.872988 15497443000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 65 0
+*-19.872988 15495913242 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 302
 [sst_expanded] 1
@@ -32,15 +32,13 @@ functions.mac_schedule_dlsch
 functions.macxface_eNB_dlsch_ulsch_scheduler
 functions.macxface_ue_scheduler
 functions.phy_eNB_ofdm_mod_l
+functions.phy_eNB_dlsch_encoding
 functions.phy_eNB_dlsch_scrambling
 functions.phy_eNB_dlsch_modulation
-functions.phy_eNB_dlsch_scrambling
 functions.phy_eNB_beam_precoding
 functions.phy_enb_pdcch_tx
 functions.phy_enb_prach_rx
-@29
 functions.phy_procedures_ru_feprx0
-@28
 functions.phy_procedures_eNb_rx_uespec0
 functions.phy_procedures_eNb_rx_uespec1
 functions.phy_enb_sfgen
