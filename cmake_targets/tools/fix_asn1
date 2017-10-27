@@ -4,7 +4,7 @@
 #   <file> <sha1sum of file (without line 4 which changes depending on the location of the files)> <patch to apply to file>
 
 RRC_Rel14=(
-  "SystemInformation-r8-IEs.h" 562e3c3aeb7c6d76d722f31bf24488a26e627f33 "fix_asn1.data/RRC.rel14/SystemInformation-r8-IEs.h.diff"
+  "SystemInformation-r8-IEs.h" 4df485c5ddf2540eca271876cdc512caa19b0890 "fix_asn1.data/RRC.rel14/SystemInformation-r8-IEs.h.diff"
 )
 
 RRC_Rel10=(
