@@ -650,6 +650,7 @@ static int DEFENBS[] = {0};
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTC                "remote_s_portc"
 #define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
+#define CONFIG_STRING_MACRLC_PHY_TEST_MODE                 "phy_test_mode"
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -674,6 +675,7 @@ static int DEFENBS[] = {0};
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTC,                    NULL,     0,          uptr:NULL,           defintval:50020,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_LOCAL_S_PORTD,                     NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_PHY_TEST_MODE,                     NULL,     0,          uptr:NULL,           defintval:1,               TYPE_UINT,     0}   \
 }
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -692,4 +694,5 @@ static int DEFENBS[] = {0};
 #define MACRLC_REMOTE_S_PORTC_IDX                              14
 #define MACRLC_LOCAL_S_PORTD_IDX                               15
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
+#define MACRLC_PHY_TEST_IDX                                    17
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/

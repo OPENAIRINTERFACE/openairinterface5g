@@ -171,7 +171,7 @@ static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 char   rf_config_file[1024];
 
 int chain_offset=0;
-int phy_test = 1;
+int phy_test = 0;
 uint8_t usim_test = 0;
 
 uint8_t dci_Format = 0;

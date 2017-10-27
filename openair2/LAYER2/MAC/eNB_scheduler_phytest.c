@@ -168,7 +168,7 @@ schedule_ue_spec_phy_test(
 			      1, // number of subbands
 			      //			     uint8_t codebook_index,
 			      4, // UE category capacity
-			      0, /*UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->pdsch_ConfigDedicated->p_a,*/ 
+			      PDSCH_ConfigDedicated__p_a_dB0, 
 			      0, // delta_power_offset for TM5
 			      0, // ngap
 			      0, // nprb
