@@ -323,7 +323,12 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	  AssertFatal(1==0,"TDD case not done yet\n");
 	}
       }// mpdcch_repetition_count == reps
-      RA_template->msg2_mpdcch_repetition_cnt++;	      
+      else {
+	LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, MPDCCH repetition %d\n",
+	      module_idP,frameP,subframeP,RA_template->msg2_mpdcch_repetition_cnt);
+	RA_template->msg2_mpdcch_repetition_cnt++;	      
+      }
+
 
       if ((RA_template->Msg2_frame == frameP) && (RA_template->Msg2_subframe == subframeP)) {
 	// Program PDSCH
