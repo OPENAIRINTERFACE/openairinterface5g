@@ -336,6 +336,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   // 36-212 
   start_meas(&eNB->dlsch_encoding_stats);
   AssertFatal(dlsch_harq->pdu!=NULL,"dlsch_harq->pdu == NULL (rnti %x)\n",dlsch->rnti);
+
   eNB->te(eNB,
 	  dlsch_harq->pdu,
 	  dlsch_harq->pdsch_start,
@@ -486,7 +487,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (num_dci %"PRIu8")\n",eNB->Mod_id,frame, subframe,
 	  num_dci);
 
-    
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);    
   generate_dci_top(num_pdcch_symbols,
 		   num_dci,
 		   &eNB->pdcch_vars[subframe&1].dci_alloc[0],

@@ -900,6 +900,7 @@ void wakeup_slaves(RU_proc_t *proc) {
   wait.tv_nsec=5000000L;
   
   for (i=0;i<proc->num_slaves;i++) {
+    //printf("////////////////////calling for slave thrads\n");////////////////////////********
     RU_proc_t *slave_proc = proc->slave_proc[i];
     // wake up slave FH thread
     // lock the FH mutex and make sure the thread is ready
@@ -1116,9 +1117,9 @@ void wakeup_eNBs(RU_t *ru) {
 
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d\n",ru->num_eNB,ru->idx);
 
-  if (ru->num_eNB==1) {
+  if (0){//(ru->num_eNB==1) {
     // call eNB function directly
-
+  
     char string[20];
     sprintf(string,"Incoming RU %d",ru->idx);
     LOG_D(PHY,"RU %d Waking up eNB\n",ru->idx);
@@ -1127,8 +1128,10 @@ void wakeup_eNBs(RU_t *ru) {
   else {
 
     for (i=0;i<ru->num_eNB;i++)
+	{
       if (ru->wakeup_rxtx(eNB_list[i],ru) < 0)
-	LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
+	    LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
+	}
   }
 }
 
@@ -1384,6 +1387,7 @@ static void* ru_thread_tx( void* param ) {
 	LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
 	// wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
+	//printf("//////////////////instance_cnt_eNBs = %d\n",proc->instance_cnt_eNBs);//////////////////*********
   	    
   	    
     // do TX front-end processing if needed (precoding and/or IDFTs)

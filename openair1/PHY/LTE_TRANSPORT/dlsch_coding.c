@@ -408,7 +408,6 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   mod_order = dlsch->harq_processes[harq_pid]->Qm;
   G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe,dlsch->harq_processes[harq_pid]->mimo_mode==TM7?7:0);
 
-
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 
     // Add 24-bit crc (polynomial A) to payload
@@ -441,7 +440,6 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
       return(-1);
     }
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
     ++proc->instance_cnt_te;
 
     proc->tep.eNB               = eNB;
@@ -458,7 +456,6 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
     pthread_mutex_unlock( &proc->mutex_te );
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
     for (r=dlsch->harq_processes[harq_pid]->C>>1; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
       if (r<dlsch->harq_processes[harq_pid]->Cminus)
@@ -590,6 +587,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
 			C = C+1;
 		}
 	}
+
 	if(C >= 5)
 		{
 		encoding_return =

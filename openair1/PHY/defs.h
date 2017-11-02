@@ -564,6 +564,8 @@ typedef struct eNB_proc_t_s {
   eNB_rxtx_proc_t proc_rxtx[2];
   /// stats thread pthread descriptor
   pthread_t coding_stats_thread;
+  /// for waking up tx procedure
+  RU_proc_t *ru_proc;
 } eNB_proc_t;
 
 
