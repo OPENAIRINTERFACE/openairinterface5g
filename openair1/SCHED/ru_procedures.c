@@ -140,6 +140,12 @@ static void *feptx_thread(void *param) {
 
   RU_t *ru = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+
+  CPU_SET(6, &cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+
 
   thread_top_init("feptx_thread",0,870000,1000000,1000000);
 
@@ -417,6 +423,11 @@ static void *fep_thread(void *param) {
   RU_proc_t *proc  = &ru->proc;
 
   thread_top_init("fep_thread",0,870000,1000000,1000000);
+
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(2, &cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   while (!oai_exit) {
 

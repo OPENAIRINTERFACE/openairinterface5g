@@ -219,6 +219,8 @@ static void* eNB_thread_rxtx( void* param ) {
 
   char thread_name[100];
 
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
 
   // set default return value
   eNB_thread_rxtx_status = 0;
@@ -227,11 +229,15 @@ static void* eNB_thread_rxtx( void* param ) {
   sprintf(thread_name,"RXn_TXnp4_%d\n",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
   thread_top_init(thread_name,1,850000L,1000000L,2000000L);
 
+  CPU_SET(3, &cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
 
     if (wait_on_condition(&proc->mutex_rxtx,&proc->cond_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
 
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_ENB_THREAD_RXTX,sched_getcpu());
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 1 );
     //ru_proc = eNB_proc->ru_proc;
    
@@ -356,12 +362,9 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   wait.tv_nsec=5000000L;
 
   /* accept some delay in processing - up to 5ms */
-  for (i = 0; i < 10 && proc_rxtx->instance_cnt_rxtx == 0; i++) {
-    LOG_W( PHY,"[eNB] Frame %d, eNB RXn-TXnp4 thread busy!! (cnt_rxtx %i)\n", proc_rxtx->frame_tx, proc_rxtx->instance_cnt_rxtx);
-    usleep(500);
-  }
+
   if (proc_rxtx->instance_cnt_rxtx == 0) {
-    exit_fun( "TX thread busy" );
+    LOG_E(PHY,"Frame %d, subframe %d: RXTX thread busy, dropping",proc_rxtx->frame_rx,proc_rxtx->subframe_rx);
     return(-1);
   }
 

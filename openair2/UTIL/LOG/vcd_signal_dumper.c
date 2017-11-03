@@ -195,6 +195,9 @@ const char* eurecomVariablesNames[] = {
   "ue0_trx_write_ns",
   "ue0_trx_read_ns_missing",
   "ue0_trx_write_ns_missing",
+  "enb_thread_rxtx_CPUID",
+  "ru_thread_CPUID",
+  "ru_thread_tx_CPUID"
 };
 
 const char* eurecomFunctionsNames[] = {

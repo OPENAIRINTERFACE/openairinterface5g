@@ -354,8 +354,14 @@ int dlsch_encoding_2threads0(te_params *tep) {
 
 extern int oai_exit;
 void *te_thread(void *param) {
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+
   pthread_setname_np( pthread_self(),"te processing");
   LOG_I(PHY,"thread te created id=%ld", syscall(__NR_gettid));
+
+  CPU_SET(4, &cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   eNB_proc_t *proc = &((te_params *)param)->eNB->proc;
   while (!oai_exit) {

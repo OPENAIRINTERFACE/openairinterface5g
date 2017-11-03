@@ -1126,12 +1126,12 @@ void wakeup_eNBs(RU_t *ru) {
     ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string,ru);
   }
   else {
-
+    
     for (i=0;i<ru->num_eNB;i++)
-	{
-      if (ru->wakeup_rxtx(eNB_list[i],ru) < 0)
-	    LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
-	}
+      {
+	if (ru->wakeup_rxtx(eNB_list[i],ru) < 0)
+	  LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
+      }
   }
 }
 
@@ -1367,14 +1367,21 @@ static void* ru_thread_tx( void* param ) {
   RU_t *ru         = (RU_t*)param;
   RU_proc_t *proc  = &ru->proc;
   int subframe=0, frame=0; 
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+
 
   thread_top_init("ru_thread_tx",1,870000L,1000000L,1000000L);
+
+  CPU_SET(5, &cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
 
   printf( "ru_thread_tx ready\n");
   while (!oai_exit) { 
-   
+
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_RU_THREAD_TX,sched_getcpu());   
     if (oai_exit) break;   
 
     if (subframe==9) { 
@@ -1416,6 +1423,9 @@ static void* ru_thread( void* param ) {
   int                ret;
   int                subframe =9;
   int                frame    =1023; 
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+
 
   // set default return value
   ru_thread_status = 0;
@@ -1423,6 +1433,9 @@ static void* ru_thread( void* param ) {
 
   // set default return value
   thread_top_init("ru_thread",0,870000,1000000,1000000);
+
+  CPU_SET(1, &cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
 
@@ -1491,6 +1504,8 @@ static void* ru_thread( void* param ) {
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
 
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_RU_THREAD,sched_getcpu());
+
     // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
     // They are set on the first rx/tx in the underly FH routines.
     if (subframe==9) { 
@@ -1537,6 +1552,7 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
 
+    /*
 	if(fh_two_thread == 0)
 	{
 		// wait until eNBs are finished subframe RX n and TX n+4
@@ -1553,7 +1569,7 @@ static void* ru_thread( void* param ) {
 	
 		if (ru->fh_north_out) ru->fh_north_out(ru);
 	}
-
+    */
   }
   
 
