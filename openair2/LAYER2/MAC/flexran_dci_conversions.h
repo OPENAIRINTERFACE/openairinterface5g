@@ -17,7 +17,7 @@
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
- */ 
+ */
 
 /*! \file flexran_dci_conversions.h
  * \brief Conversion helpers from flexran messages to OAI formats DCI  
@@ -47,5 +47,5 @@
   ((TYPE*)DCI)->mcs = FLEXRAN_DCI->mcs[0]; \
   ((TYPE*)DCI)->TPC = FLEXRAN_DCI->tpc; \
   ((TYPE*)DCI)->ndi = FLEXRAN_DCI->ndi[0];
-  
+
 #endif
