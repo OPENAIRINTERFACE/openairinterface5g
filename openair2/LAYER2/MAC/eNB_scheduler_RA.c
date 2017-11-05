@@ -304,13 +304,8 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_tx_antenna_ports                    = 1;
       RA_template->msg2_mpdcch_repetition_cnt++;
       dl_req->number_pdu++;
-      RA_template->Msg2_subframe = (RA_template->Msg2_subframe+9)%10;
-
     } //repetition_count==0 && SF condition met
     if (RA_template->msg2_mpdcch_repetition_cnt>0) { // we're in a stream of repetitions
-
-      LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, MPDCCH repetition %d\n",
-	    module_idP,frameP,subframeP,RA_template->msg2_mpdcch_repetition_cnt);
 
       if (RA_template->msg2_mpdcch_repetition_cnt==reps) { // this is the last mpdcch repetition
 	if (cc[CC_idP].tdd_Config==NULL) { // FDD case
@@ -318,6 +313,7 @@ void generate_Msg2(module_id_t module_idP,int CC_idP,frame_t frameP,sub_frame_t 
 	  if (subframeP>7) RA_template->Msg2_frame = (frameP+1)&1023;
 	  else             RA_template->Msg2_frame = frameP;
 	  RA_template->Msg2_subframe               = (subframeP+2)%10; // +2 is the "n+x" from Section 7.1.11  in 36.213
+	  LOG_I(MAC,"[eNB %d][RAPROC] SFN %d.%d : Set Msg2 in %d.%d\n",frameP,subframeP,RA_template->Msg2_frame,RA_template->Msg2_subframe); 
 	}
 	else {
 	  AssertFatal(1==0,"TDD case not done yet\n");

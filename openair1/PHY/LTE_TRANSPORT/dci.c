@@ -210,6 +210,7 @@ uint8_t *generate_dci0(uint8_t *dci,
                        uint8_t *e,
                        uint8_t DCI_LENGTH,
                        uint8_t aggregation_level,
+		       uint8_r bitsperCCE,
                        uint16_t rnti)
 {
 
@@ -230,7 +231,7 @@ uint8_t *generate_dci0(uint8_t *dci,
 	      "generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
   
 
-  coded_bits = 72 * aggregation_level;
+  coded_bits = bitsperCCE * aggregation_level;
 
   /*
 
@@ -2293,6 +2294,7 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
                                 e+(72*dci_alloc[i].firstCCE),
                                 dci_alloc[i].dci_length,
                                 dci_alloc[i].L,
+				72,
                                 dci_alloc[i].rnti);
         }
       }
