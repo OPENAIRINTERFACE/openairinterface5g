@@ -1678,7 +1678,7 @@ void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
 int init_ue_paging_info(PHY_VARS_UE *ue, long defaultPagingCycle, long nB);
 
 #ifdef Rel14
-void init_mpdcch5tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB *eNB,int l_MPDCCH_start);
+void init_mpdcch(PHY_VARS_eNB *eNB);
 #endif
 
 int32_t compareints (const void * a, const void * b);

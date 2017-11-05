@@ -210,7 +210,7 @@ uint8_t *generate_dci0(uint8_t *dci,
                        uint8_t *e,
                        uint8_t DCI_LENGTH,
                        uint8_t aggregation_level,
-		       uint8_r bitsperCCE,
+		       uint8_t bitsperCCE,
                        uint16_t rnti)
 {
 

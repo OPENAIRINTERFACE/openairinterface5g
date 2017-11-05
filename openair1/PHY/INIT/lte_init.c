@@ -229,7 +229,7 @@ phy_config_request (PHY_Config_t * phy_config)
                          fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[3],
                          fp->prach_emtc_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
                          fp->prach_emtc_config_common.prach_ConfigInfo.highSpeedFlag, fp->frame_type, RC.eNB[Mod_id][CC_id]->X_u_br[0]);
-      init_mpdcch5tab_normal_regular_subframe_evenNRBDL (RC.eNB[Mod_id][CC_id],3);
+      init_mpdcch(RC.eNB[Mod_id][CC_id]);
     }
   }
 #endif

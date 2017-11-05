@@ -102,18 +102,22 @@ mpdcch_scrambling (LTE_DL_FRAME_PARMS * frame_parms, mDCI_ALLOC_t * mdci, uint16
 // 9 symbols without DMRS = 9*12*6 REs = 648 REs
 // 4 symbols with DMRS (3 REs stolen per symbol = 4*9*6 REs = 216 REs
 // Total = 648+216 = 864 REs = 1728 bits
-static uint16_t mpdcch5ss1tab[864];
+static uint16_t mpdcch5ss1p107108tab[864];
+static uint16_t mpdcch5ss1p109110tab[864];
 
-void init_mpdcch5ss1p107108tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB *eNB) {
+void init_mpdcch5ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB *eNB) {
   int l,k,kmod,re;
 
-  LOG_I(PHY,"Inititalizing mpdcch5tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_I(PHY,"Inititalizing mpdcchss15tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l=1,re=0;l<14;l++) {
     for (k=0;k<72;k++){
       kmod = k % 12; 
       if (((l!=5) && (l!=6) && (l!=12) && (l!=13)) ||
-	  (((l==5)||(l==6)||(l==12)||(l==13))&&(kmod!=0)&&(kmod!=5)&&(kmod!=10)))
-	mpdcch5tab[re++]=(l*eNB->frame_parms.ofdm_symbol_size)+k;
+	  (((l==5)||(l==6)||(l==12)||(l==13))&&(kmod!=0)&&(kmod!=5)&&(kmod!=10))) {
+	mpdcch5ss1p109110tab[re]=(l*eNB->frame_parms.ofdm_symbol_size)+k;
+	mpdcch5ss1p107108tab[re]=1+mpdcch5ss1p109110tab[re];
+	re++;
+      }
     }
   }
   AssertFatal(re==864,"RE count not equal to 864\n");
@@ -121,44 +125,78 @@ void init_mpdcch5ss1p107108tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB *e
 
 // this table is the allocation of modulated MPDCCH format 5 symbols to REs, antenna ports 107,108
 // start symbol is symbol 2 and L'=24 => all 6 PRBs in the set
-// 8 symbols without DMRS = 9*12*6 REs = 576 REs
+// 8 symbols without DMRS = 8*12*6 REs = 576 REs
 // 4 symbols with DMRS (3 REs stolen per symbol = 4*9*6 REs = 216 REs
 // Total = 576+216 = 792 REs = 1584 bits
-static uint16_t mpdcch5ss2tab[864];
-
-void init_mpdcch5ss2p107108tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB *eNB) {
+static uint16_t mpdcch5ss2p107108tab[792];
+static uint16_t mpdcch5ss2p109110tab[792];
+void init_mpdcch5ss2tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB *eNB) {
   int l,k,kmod,re;
 
-  LOG_I(PHY,"Inititalizing mpdcch5tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_I(PHY,"Inititalizing mpdcch5ss2tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l=2,re=0;l<14;l++) {
     for (k=0;k<72;k++){
       kmod = k % 12; 
       if (((l!=5) && (l!=6) && (l!=12) && (l!=13)) ||
-	  (((l==5)||(l==6)||(l==12)||(l==13))&&(kmod!=0)&&(kmod!=5)&&(kmod!=10)))
-	mpdcch5tab[re++]=(l*eNB->frame_parms.ofdm_symbol_size)+k;
+	  (((l==5)||(l==6)||(l==12)||(l==13))&&(kmod!=0)&&(kmod!=5)&&(kmod!=10))) {
+	mpdcch5ss2p109110tab[re]=(l*eNB->frame_parms.ofdm_symbol_size)+k;
+	mpdcch5ss2p107108tab[re]=1+mpdcch5ss2p109110tab[re];
+	re++;
+      }
     }
   }
+  AssertFatal(re==792,"RE count not equal to 792\n");
 }
+
+// this table is the allocation of modulated MPDCCH format 5 symbols to REs, antenna ports 107,108
+// start symbol is symbol 3 and L'=24 => all 6 PRBs in the set
+// 7 symbols without DMRS = 7*12*6 REs = 504 REs
+// 4 symbols with DMRS (3 REs stolen per symbol = 4*9*6 REs = 216 REs
+// Total = 504+216 = 720 REs = 1440 bits
+static uint16_t mpdcch5ss3p107108tab[720];
+static uint16_t mpdcch5ss3p109110tab[720];
+void init_mpdcch5ss3tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB *eNB) {
+  int l,k,kmod,re;
+
+  LOG_I(PHY,"Inititalizing mpdcch5ss3tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  for (l=3,re=0;l<14;l++) {
+    for (k=0;k<72;k++){
+      kmod = k % 12; 
+      if (((l!=5) && (l!=6) && (l!=12) && (l!=13)) ||
+	  (((l==5)||(l==6)||(l==12)||(l==13))&&(kmod!=0)&&(kmod!=5)&&(kmod!=10))) {
+	mpdcch5ss3p109110tab[re]=(l*eNB->frame_parms.ofdm_symbol_size)+k;
+	mpdcch5ss3p107108tab[re]=1+mpdcch5ss3p109110tab[re];
+	re++;
+      }
+    }
+  }
+  AssertFatal(re==720,"RE count not equal to 792\n");
+}
+
 // this table is the allocation of modulated MPDCCH format 3 symbols to REs, antenna ports 107,108
 // with start symbol 1, using L'=16 => first 4 PRBs in the set
 // 8 symbols without DMRS = 9*12*4 REs = 432 REs
 // 4 symbols with DMRS (3 REs stolen per symbol = 4*9*4 REs = 144 REs
 // Total = 432+144 = 576 = 16CCE*36RE/CCE
-static uint16_t mpdcch3ss1tab[864];
+static uint16_t mpdcch3ss1p107108tab[576];
+static uint16_t mpdcch3ss1p109110tab[576];
 
 void init_mpdcch3ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB *eNB) {
   int l,k,kmod,re;
 
-  LOG_I(PHY,"Inititalizing mpdcch3ss2tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_I(PHY,"Inititalizing mpdcch3ss1tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l=1,re=0;l<14;l++) {
     for (k=0;k<48;k++){
       kmod = k % 12; 
       if (((l!=5) && (l!=6) && (l!=12) && (l!=13)) ||
-	  (((l==5)||(l==6)||(l==12)||(l==13))&&(kmod!=0)&&(kmod!=5)&&(kmod!=10)))
-	mpdcch5tab[re++]=(l*eNB->frame_parms.ofdm_symbol_size)+k;
+	  (((l==5)||(l==6)||(l==12)||(l==13))&&(kmod!=0)&&(kmod!=5)&&(kmod!=10))) {
+	mpdcch3ss1p109110tab[re]=(l*eNB->frame_parms.ofdm_symbol_size)+k;
+	mpdcch3ss1p107108tab[re]=1+mpdcch3ss1p109110tab[re];
+	re++;
+      }
     }
   }
-  AssertFatal(re==864,"RE count not equal to 864\n");
+  AssertFatal(re==576,"RE count not equal to 864\n");
 }
 
 // this table is the allocation of modulated MPDCCH format 2 symbols to REs, antenna ports 107,108
@@ -166,22 +204,28 @@ void init_mpdcch3ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB *eNB) {
 // 8 symbols without DMRS = 9*12*2 REs = 216 REs
 // 4 symbols with DMRS (3 REs stolen per symbol = 4*9*2 REs = 72 REs
 // Total = 216+72 = 288 = 8CCE*36RE/CCE
-static uint16_t mpdcch2ss1tab[864];
-
+static uint16_t mpdcch2ss1p107108tab[288];
+static uint16_t mpdcch2ss1p109110tab[288];
 void init_mpdcch2ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB *eNB) {
   int l,k,kmod,re;
 
-  LOG_I(PHY,"Inititalizing mpdcch3ss2tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_I(PHY,"Inititalizing mpdcch2ss1tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l=1,re=0;l<14;l++) {
     for (k=0;k<48;k++){
       kmod = k % 12; 
       if (((l!=5) && (l!=6) && (l!=12) && (l!=13)) ||
-	  (((l==5)||(l==6)||(l==12)||(l==13))&&(kmod!=0)&&(kmod!=5)&&(kmod!=10)))
-	mpdcch5tab[re++]=(l*eNB->frame_parms.ofdm_symbol_size)+k;
+	  (((l==5)||(l==6)||(l==12)||(l==13))&&(kmod!=0)&&(kmod!=5)&&(kmod!=10))) {
+	mpdcch2ss1p109110tab[re]=(l*eNB->frame_parms.ofdm_symbol_size)+k;
+	mpdcch2ss1p107108tab[re]=1+mpdcch2ss1p109110tab[re];
+	re++;
+      }
     }
   }
-  AssertFatal(re==864,"RE count not equal to 864\n");
+  AssertFatal(re==288,"RE count not equal to 288\n");
 }
+
+
+
 
 extern uint8_t *generate_dci0(uint8_t *dci,
 			      uint8_t *e,
@@ -190,6 +234,27 @@ extern uint8_t *generate_dci0(uint8_t *dci,
 			      uint8_t aggregation_level,
 			      uint16_t rnti);
 
+
+uint16_t mpdcch_dmrs_tab[12*6];
+
+void init_mpdcch_dmrs_tab(uint16_t oss) {
+
+  int re = 5*oss;
+  int pos = 0;
+
+  for (int symb=0;symb<4;symb++) {
+    for (int prb=0;prb<6;prb++,re+=12) {
+      mpdcch_dmrs_tab[pos++] = re;
+      mpdcch_dmrs_tab[pos++] = re+5;
+      mpdcch_dmrs_tab[pos++] = re+10;
+    }
+    if (symb == 0) re=6*oss;
+    else if (symb == 1) re=12*oss;
+    else if (symb == 2) re=13*oss;
+  } 
+  
+}
+		      
 void
 generate_mdci_top (PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp, int32_t ** txdataF)
 {
@@ -201,17 +266,19 @@ generate_mdci_top (PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp, int
   int i;
   int gain_lin_QPSK;
   uint8_t bitsperCCE;
+  uint16_t *mpdcchtab;
 
-  if (mpdcch->start_symbol == 1) 
-    bitsperCCE = 72;
-  else if (mpdcch->start_symbol == 2)
-    bitsperCCE = 66;
-  else if (mpdcch->start_symbol == 3)
-    bitsperCCE = 60;
-      
+  uint32_t        x1, x2, s = 0;
+  uint8_t         Nacc = 4;
+  uint16_t        j0, j, idelta;
+  uint16_t        i0;
+
+  int off;
+
+  // Assumption: only handle a single MPDCCH per narrowband
+
   for (i=0;i<mpdcch->num_dci;i++) {
     mdci = &mpdcch->mdci_alloc[i];
-
 
     AssertFatal (fp->frame_type == FDD, "TDD is not yet supported for MPDCCH\n");
     AssertFatal (fp->Ncp == NORMAL, "Extended Prefix not yet supported for MPDCCH\n");
@@ -221,12 +288,47 @@ generate_mdci_top (PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp, int
     AssertFatal (mdci->number_of_prb_pairs == 6, "2 or 4 PRB pairs not support yet for MPDCCH\n");
     AssertFatal (mdci->reps > 0, "mdci->reps==0\n");
 
-    // 9 REs/EREG * 4 EREG/ECCE => 36 REs/ECCE => 72 bits/ECCE, so same as regular PDCCH channel encoding
+    // These are to avoid unimplemented things
+    AssertFatal (mdci->reps == 1, "number of repetitions (%d) must be one for now\n",mdci->reps);
+    AssertFatal (mdci->ce_mode != 1, "CE mode B not activataed yet\n");
+    AssertFatal (mdci->L != 24, "Only 2+4 and aggregation 24 for now\n");
 
+    i0 = mdci->i0;
+    // antenna index
+    int a_index = mdci->rnti & 3;
+
+    if ((mdci->start_symbol == 1) && (a_index<2)) {
+      mpdcchtab = mpdcch5ss1p107108tab; 
+      bitsperCCE = 72;
+    }
+    else if ((mdci->start_symbol == 1) && (a_index>1)) {
+      mpdcchtab = mpdcch5ss1p109110tab; 
+      bitsperCCE = 72;
+    }
+    else if ((mdci->start_symbol == 2) && (a_index<2)) {
+      mpdcchtab = mpdcch5ss2p107108tab; 
+      bitsperCCE = 66;
+    }
+    else if ((mdci->start_symbol == 2) && (a_index>1)) {
+      mpdcchtab = mpdcch5ss2p109110tab; 
+      bitsperCCE = 66;
+    }
+    else if ((mdci->start_symbol == 3) && (a_index<2)) {
+      mpdcchtab = mpdcch5ss2p107108tab; 
+      bitsperCCE = 60;
+    }
+    else if ((mdci->start_symbol == 3) && (a_index<2)) {
+      mpdcchtab = mpdcch5ss2p109110tab; 
+      bitsperCCE = 60;
+    }
+    else
+      AssertFatal(1==0,"Illegal combination start_symbol %d, a_index %d\n",mdci->start_symbol,a_index);
+      
+      
     // Note: We only have to run this every Nacc subframes during repetitions, data and scrambling are constant, but we do it for now to simplify during testing
 
     generate_dci0(mdci->dci_pdu,
-		  mpdcch->e+(72*mdci->firstCCE),
+		  mpdcch->e+(bitsperCCE*mdci->firstCCE),
 		  mdci->dci_length,
 		  bitsperCCE,
 		  mdci->L,
@@ -261,8 +363,27 @@ generate_mdci_top (PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp, int
     // first RE of narrowband
     // mpdcchtab5 below contains the mapping from each coded symbol to relative RE avoiding the DMRS
 
+    int             nb_i0;
+    switch (fp->N_RB_DL) {
 
-    int             re_offset = fp->first_carrier_offset + 1 + ((fp->N_RB_DL == 100) ? 1 : 0) + mdci->narrowband * 12 * 6;
+    case 6:
+    case 25:
+      nb_i0=0;
+      break;
+    case 15:
+    case 50:
+    case 75:
+      nb_i0=1;
+      break;
+    case 100:
+      nb_i0=2;
+      break;
+    default:
+      AssertFatal(1==0,"Illegal N_RB_DL %d\n",fp->N_RB_DL);
+      break;
+    }
+
+    int             re_offset = fp->first_carrier_offset + (12*nb_i0) + mdci->narrowband * 12 * 6;
     if (re_offset > fp->ofdm_symbol_size)
       re_offset -= (fp->ofdm_symbol_size - 1);
     int32_t        *txF = &txdataF[0][re_offset];
@@ -274,10 +395,64 @@ generate_mdci_top (PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp, int
       e_ptr++;
       ((int16_t *) & yIQ)[1] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
-      txF[mpdcch5tab[i + (36 * mdci->firstCCE)]] = yIQ;
+      txF[mpdcchtab[i + ((bitsperCCE>>1) * mdci->firstCCE)]] = yIQ;
+      LOG_I(PHY,"mpdcch pos %d: %d => (%d,%d)\n",i,mpdcchtab[i + ((bitsperCCE>>2) * mdci->firstCCE)],((int16_t *) & yIQ)[0],((int16_t *) & yIQ)[1]);
     }
 
+    if (a_index>1) off=0;
+    else off=1;
+
+    // pilot scrambling initiatlization (note: this is for a single repetition)
+
+    // x1 is set in lte_gold_generic
+
+    // rule for BL/CE UEs from Section 6.10.3A.1 in 36.211
+    
+    if ((mdci->rnti == 0xFFFE) || (mdci->ce_mode == 2))   // CEModeB Note: also for mdci->rnti==SC_RNTI
+      Nacc = fp->frame_type == FDD ? 4 : 10;
+    else
+      Nacc = 1;
+    
+    if (fp->frame_type == FDD || Nacc == 1)
+      idelta = 0;
+    else
+      idelta = Nacc - 2;
+    
+    j0 = (i0 + idelta) / Nacc;
+    j = (i - i0) / Nacc;
+    
+    
+
+    uint32_t a = ((((j0 + j) * Nacc) % 10)+1);
+    uint32_t b = ((mdci->dmrs_scrambling_init<<1)+1) << 16; 
+    x2 = a*b;
+    LOG_I(PHY,"mpdcch_dmrs cinit %d\n",x2);
+
+    // add MPDCCH pilots
+    int reset = 1;
+    for (i=0; i < (24*6) ; i+=2) {
+      if ((i & 0x1f) == 0) {
+	s = lte_gold_generic (&x1, &x2, reset);
+	reset = 0;
+      }
+      ((int16_t *) & yIQ)[0] = (((s>>(i & 0x1f))&1) == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      ((int16_t *) & yIQ)[1] = (((s>>((i+1) & 0x1f))&1) == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+      txF[off+mpdcch_dmrs_tab[(i>>1)]] = yIQ;
+      LOG_I(PHY,"mpdcch_dmrs pos %d: %d => (%d,%d)\n",i,mpdcch_dmrs_tab[(i>>1)],((int16_t *) & yIQ)[0],((int16_t *) & yIQ)[1]);
+    }
   }
+
+
+}
+
+void init_mpdcch(PHY_VARS_eNB *eNB) {
+
+  init_mpdcch5ss1tab_normal_regular_subframe_evenNRBDL(eNB);
+  init_mpdcch5ss2tab_normal_regular_subframe_evenNRBDL(eNB);
+  init_mpdcch5ss3tab_normal_regular_subframe_evenNRBDL(eNB);
+  init_mpdcch3ss1tab_normal_regular_subframe_evenNRBDL(eNB);
+  init_mpdcch2ss1tab_normal_regular_subframe_evenNRBDL(eNB);
+  init_mpdcch_dmrs_tab(eNB->frame_parms.ofdm_symbol_size);
 }
 
 #endif
