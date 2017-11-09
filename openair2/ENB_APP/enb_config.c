@@ -438,6 +438,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   int32_t     ue_TimersAndConstants_n311    = 0;
   int32_t     ue_TransmissionMode           = 0;
 
+  int32_t     ue_multiple_max               = 0;
 
   int32_t     srb1_timer_poll_retransmit    = 0;
   int32_t     srb1_timer_reordering         = 0;
@@ -1717,6 +1718,36 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       RC.config_file_name, i, ue_TransmissionMode);
 		  break;
 		}
+
+#ifdef UE_EXPANSION
+        RRC_CONFIGURATION_REQ (msg_p).ue_multiple_max[j] = ue_multiple_max;
+
+        switch (N_RB_DL) {
+        case 25:
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 5))
+            AssertFatal (0,
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..5!\n",
+                     RC.config_file_name, i, ue_multiple_max);
+          break;
+        case 50:
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 10))
+            AssertFatal (0,
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..10!\n",
+                     RC.config_file_name, i, ue_multiple_max);
+          break;
+        case 100:
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 20))
+            AssertFatal (0,
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..20!\n",
+                     RC.config_file_name, i, ue_multiple_max);
+          break;
+        default:
+          AssertFatal (0,
+                   "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 25,50,100 !\n",
+                   RC.config_file_name, i, N_RB_DL);
+          break;
+        }
+#endif
 	      }
 	    }
 	    char srb1path[MAX_OPTNAME_SIZE*2 + 8];

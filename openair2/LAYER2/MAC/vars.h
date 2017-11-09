@@ -136,6 +136,10 @@ DCI2_5MHz_2A_TDD_t DLSCH_alloc_pdu2;
 
 DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
 
+#ifdef UE_EXPANSION
+int last_dlsch_ue_id[MAX_NUM_CCs] = {-1};
+int last_ulsch_ue_id[MAX_NUM_CCs] = {-1};
+#endif
 #endif
 
 

@@ -504,6 +504,10 @@ schedule_ue_spec(
     }
   }
 
+#ifdef UE_EXPANSION
+    DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs];
+    memset(dlsch_ue_select, 0, sizeof(dlsch_ue_select));
+#endif
   //weight = get_ue_weight(module_idP,UE_id);
   aggregation = 2; 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -533,7 +537,11 @@ schedule_ue_spec(
                                 frameP,
                                 subframeP,
                                 N_RBG,
-                                mbsfn_flag);
+                                mbsfn_flag
+#ifdef UE_EXPANSION
+                                , dlsch_ue_select
+#endif
+);
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,VCD_FUNCTION_OUT);
 
@@ -545,7 +553,14 @@ schedule_ue_spec(
     if (mbsfn_flag[CC_id]>0)
       continue;
 
+#ifdef UE_EXPANSION
+    for (i = 0; i < dlsch_ue_select[CC_id].ue_num; i++) {
+      UE_id = dlsch_ue_select[CC_id].list[i].UE_id;
+
+#else
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+#endif
+
       continue_flag=0; // reset the flag to allow allocation for the remaining UEs
       rnti = UE_RNTI(module_idP,UE_id);
       eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
@@ -1319,9 +1334,11 @@ schedule_ue_spec(
   }  // CC_id loop
 
 
-     
+#ifndef UE_EXPANSION
   fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_flag);
-
+#else
+  fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_flag,dlsch_ue_select);
+#endif
   stop_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_OUT);
 
@@ -1334,6 +1351,9 @@ fill_DLSCH_dci(
 	       frame_t frameP,
 	       sub_frame_t subframeP,
 	       int* mbsfn_flagP
+#ifdef UE_EXPANSION
+	       , DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]
+#endif  
 	       )
 //------------------------------------------------------------------------------
 {
@@ -1370,7 +1390,12 @@ fill_DLSCH_dci(
     N_RB_DL         = to_prb(cc->mib->message.dl_Bandwidth);
 
     // UE specific DCIs
+#ifdef UE_EXPANSION
+    for (i = 0; i < dlsch_ue_select[CC_id].ue_num; i++) {
+      UE_id = dlsch_ue_select[CC_id].list[i].UE_id;
+#else
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
+#endif
       LOG_T(MAC,"CC_id %d, UE_id: %d => status %d\n",CC_id,UE_id,eNB_dlsch_info[module_idP][CC_id][UE_id].status);
 
       if (eNB_dlsch_info[module_idP][CC_id][UE_id].status == S_DL_SCHEDULED) {

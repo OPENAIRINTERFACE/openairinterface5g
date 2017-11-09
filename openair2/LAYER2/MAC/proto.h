@@ -100,7 +100,11 @@ void schedule_ulsch(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 */
+#ifndef UE_EXPANSION
 void schedule_ulsch_rnti(module_id_t module_idP, frame_t frameP, sub_frame_t subframe, unsigned char sched_subframe, uint16_t *first_rb);
+#else
+void schedule_ulsch_rnti(module_id_t module_idP, frame_t frameP, sub_frame_t subframe, unsigned char sched_subframe, ULSCH_UE_SELECT ulsch_ue_select[MAX_NUM_CCs]);
+#endif
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4.
 @param Mod_id Instance of eNB
@@ -108,7 +112,11 @@ void schedule_ulsch_rnti(module_id_t module_idP, frame_t frameP, sub_frame_t sub
 @param subframe Index of subframe
 @param mbsfn_flag Indicates that this subframe is for MCH/MCCH
 */
+#ifndef UE_EXPANSION
 void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
+#else
+void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag, DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]);
+#endif
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies
 @param Mod_id Instance ID of eNB
@@ -188,7 +196,11 @@ void dlsch_scheduler_pre_processor (module_id_t module_idP,
                                     frame_t frameP,
                                     sub_frame_t subframe,
                                     int N_RBG[MAX_NUM_CCs],
-                                    int *mbsfn_flag);
+                                    int *mbsfn_flag
+#ifdef UE_EXPANSION
+                                    , DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]
+#endif
+);
 
 
 void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
@@ -579,9 +591,22 @@ void dump_ue_list(UE_list_t *listP, int ul_flag);
 int UE_num_active_CC(UE_list_t *listP,int ue_idP);
 int UE_PCCID(module_id_t mod_idP,int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
+uint8_t find_rb_table_index(uint8_t average_rbs);
 
-
+#ifndef UE_EXPANSION
 void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP, sub_frame_t subframeP, uint16_t *first_rb);
+#else
+void ulsch_scheduler_pre_processor(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, ULSCH_UE_SELECT ulsch_ue_select[MAX_NUM_CCs]);
+void ulsch_scheduler_pre_ue_select(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP,ULSCH_UE_SELECT ulsch_ue_select[MAX_NUM_CCs]);
+#endif
+void
+set_ul_DAI(
+  int module_idP,
+  int UE_idP,
+  int CC_idP,
+  int frameP,
+  int subframeP
+); 
 void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframeP);
 void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP);
 void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP,uint16_t *first_rb);

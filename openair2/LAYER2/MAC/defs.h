@@ -1327,6 +1327,48 @@ typedef struct {
   uint8_t n_adj_cells;
 } neigh_cell_id_t;
 
+#ifdef UE_EXPANSION
+enum SCH_UE_PRIORITY {
+  SCH_PRIORITY_NONE,
+  SCH_DL_SI,
+  SCH_DL_PAGING,
+  SCH_DL_MSG2,
+  SCH_DL_MSG4,
+  SCH_UL_PRACH,
+  SCH_UL_MSG3,
+  SCH_DL_RETRANS,
+  SCH_UL_RETRANS,
+  SCH_DL_FIRST,
+  SCH_UL_FIRST,
+  SCH_UL_INACTIVE
+};
+
+typedef struct {
+  int UE_id;
+  enum SCH_UE_PRIORITY ue_priority;
+  rnti_t rnti;
+  uint16_t nb_rb;
+} DLSCH_UE_INFO;
+
+typedef struct {
+  uint16_t    ue_num;
+  DLSCH_UE_INFO list[20];
+} DLSCH_UE_SELECT;
+
+typedef struct {
+  int     UE_id;
+  enum SCH_UE_PRIORITY ue_priority;
+  uint8_t start_rb;
+  uint8_t nb_rb;
+  uint16_t ul_total_buffer;
+} ULSCH_UE_INFO;
+
+typedef struct {
+  uint8_t ue_num;
+  ULSCH_UE_INFO list[20];
+} ULSCH_UE_SELECT;
+#endif
+
 #include "proto.h"
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

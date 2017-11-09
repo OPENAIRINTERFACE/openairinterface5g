@@ -605,6 +605,7 @@ add_boolean_option(MESSAGE_CHART_GENERATOR_RLC_MAC False "trace RLC-MAC exchange
 add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchanges in sequence diagrams")
 
 add_boolean_option(FLEXRAN_AGENT_SB_IF             False         "enable FlexRAN agent to inteface with a SDN controller")
+add_boolean_option(UE_EXPANSION             False         "enable UE_EXPANSION with max 256 UE")
 
 ########################
 # Include order

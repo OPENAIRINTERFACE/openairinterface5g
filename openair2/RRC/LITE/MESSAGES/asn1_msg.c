@@ -1555,7 +1555,11 @@ do_RRCConnectionSetup(
   // SchedulingRequestConfig
 
   physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
+#ifdef UE_EXPANSION
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 31 - ue_context_pP->local_uid/10;//ue_context_pP->local_uid;
+#else
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 71 - ue_context_pP->local_uid/10;//ue_context_pP->local_uid;
+#endif
 
   if (carrier->sib1->tdd_Config == NULL) { // FDD
     physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5+(ue_context_pP->local_uid%10);  // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
