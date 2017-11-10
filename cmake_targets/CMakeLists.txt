@@ -1803,6 +1803,7 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
