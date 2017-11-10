@@ -71,7 +71,7 @@ schedule_ue_spec_phy_test(
   uint16_t                       rnti      = 0x1235;
   uint32_t                       rb_alloc  = 0x1FFFFFFF;
   int32_t                        tpc       = 1;
-  int32_t                        mcs       = 28;
+  int32_t                        mcs       = 22;
   int32_t                        cqi       = 15;
   int32_t                        ndi       = subframeP/5;
   int32_t                        dai       = 0;
@@ -94,7 +94,7 @@ schedule_ue_spec_phy_test(
     nb_rb = conv_nprb(0,rb_alloc,N_RB_DL);
     TBS = get_TBS_DL(mcs,nb_rb);
 
-    LOG_D(PHY,"schedule_ue_spec_phy_test: subframe %d: nb_rb=%d, TBS=%d, mcs=%d (rb_alloc=%x, N_RB_DL=%d)\n",subframeP,nb_rb,TBS,mcs,rb_alloc,N_RB_DL);
+    LOG_D(PHY,"schedule_ue_spec_phy_test: subframe %d/%d: nb_rb=%d, TBS=%d, mcs=%d (rb_alloc=%x, N_RB_DL=%d)\n",frameP,subframeP,nb_rb,TBS,mcs,rb_alloc,N_RB_DL);
 
     dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
     memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
@@ -182,6 +182,9 @@ schedule_ue_spec_phy_test(
 						    TBS,
 						    eNB->pdu_index[CC_id],
 						    eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char)UE_id].payload[0]);
+    }
+    else {
+      LOG_W(MAC,"[eNB_scheduler_phytest] DCI allocation infeasible!\n");
     }
   }
 }

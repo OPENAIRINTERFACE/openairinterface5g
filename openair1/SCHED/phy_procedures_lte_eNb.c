@@ -1502,19 +1502,30 @@ void init_td_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_td) {
 }
 
 extern void *te_thread(void*);
+extern void *te_thread1(void*);
 
-void init_te_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_te) {
+void init_te_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_te,pthread_attr_t *attr_te1) {
 
   eNB_proc_t *proc = &eNB->proc;
 
-  proc->tep.eNB = eNB;
-  proc->instance_cnt_te         = -1;
+  proc->tep[0].eNB = eNB;
+  proc->instance_cnt_te[0]         = -1;
     
-  pthread_mutex_init( &proc->mutex_te, NULL);
-  pthread_cond_init( &proc->cond_te, NULL);
+  pthread_mutex_init( &proc->mutex_te[0], NULL);
+  pthread_cond_init( &proc->cond_te[0], NULL);
 
   printf("Creating te_thread\n");
-  pthread_create(&proc->pthread_te, attr_te, te_thread, (void*)&proc->tep);
+  pthread_create(&proc->pthread_te[0], attr_te, te_thread, (void*)&proc->tep[0]);
+
+  /////////////////////////////////////////////////////////////////////////
+  proc->tep[1].eNB = eNB;
+  proc->instance_cnt_te[1]         = -1;
+    
+  pthread_mutex_init( &proc->mutex_te[1], NULL);
+  pthread_cond_init( &proc->cond_te[1], NULL);
+
+  printf("Creating te_thread1\n");
+  pthread_create(&proc->pthread_te[1], attr_te1, te_thread1, (void*)&proc->tep[1]);
 
 }
 

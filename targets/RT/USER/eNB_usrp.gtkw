@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Thu Nov  2 14:19:21 2017
+[*] Fri Nov  3 16:03:52 2017
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Thu Nov  2 14:15:28 2017"
-[dumpfile_size] 1636821
+[dumpfile_mtime] "Fri Nov  3 16:00:30 2017"
+[dumpfile_size] 56765827
 [savefile] "/homes/wangts/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
-[timestart] 14181427000
-[size] 1855 1056
-[pos] 65 0
-*-19.872988 15497443000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 15220241000
+[size] 1920 1018
+[pos] 0 22
+*-19.666586 15221741584 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
 [signals_width] 302
 [sst_expanded] 1
-[sst_vpaned_height] 317
+[sst_vpaned_height] 303
 @28
 functions.trx_read
 functions.trx_write
@@ -34,8 +34,11 @@ functions.macxface_ue_scheduler
 functions.phy_eNB_ofdm_mod_l
 @24
 variables.frame_number_RX0_eNB[63:0]
-@25
 variables.frame_number_TX0_eNB[63:0]
+@25
+variables.frame_number_RX1_eNB[63:0]
+@24
+variables.frame_number_TX1_eNB[63:0]
 @28
 functions.phy_eNB_dlsch_modulation
 functions.phy_eNB_dlsch_encoding
