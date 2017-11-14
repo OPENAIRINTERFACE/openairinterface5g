@@ -1244,7 +1244,25 @@ void initiate_ra_proc(module_id_t module_idP,
       RA_template[i].Msg2_subframe      = (subframeP+4)%10;
       /* TODO: find better procedure to allocate RNTI */
       do {
+#if defined(USRP_REC_PLAY) // deterministic rnti in usrp record/playback mode
+	static int drnti[NUMBER_OF_UE_MAX] = { 0xbda7, 0x71da, 0x9c40, 0xc350, 0x2710, 0x4e20, 0x7530, 0x1388, 0x3a98, 0x61a8, 0x88b8, 0xafc8, 0xd6d8, 0x1b58, 0x4268, 0x6978 };
+	int j = 0;
+	int nb_ue = 0;
+	for (j = 0; j < NUMBER_OF_UE_MAX; j++) {
+	  if (UE_RNTI(module_idP, j) > 0) {
+	    nb_ue++;
+	  } else {
+	    break;
+	  }
+	}
+	if (nb_ue >= NUMBER_OF_UE_MAX) {
+	  printf("No more free RNTI available, increase NUMBER_OF_UE_MAX\n");
+	  abort();
+	}
+	RA_template[i].rnti = drnti[nb_ue];
+#else	
         RA_template[i].rnti = taus();
+#endif
         loop++;
       } while (loop != 100 &&
                /* TODO: this is not correct, the rnti may be in use without
