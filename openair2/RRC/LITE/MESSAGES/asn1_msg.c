@@ -230,7 +230,7 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 
   AssertFatal(phich_Resource <= PHICH_Config__phich_Resource_two,"Illegal phich_Resource\n");
   mib->message.phich_Config.phich_Resource = phich_Resource;
-  AssertFatal(phich_Resource <= PHICH_Config__phich_Duration_extended,"Illegal phich_Duration\n");
+  AssertFatal(phich_duration <= PHICH_Config__phich_Duration_extended,"Illegal phich_Duration\n");
   mib->message.phich_Config.phich_Duration = phich_duration;
   LOG_I(RRC,"[MIB] systemBandwidth %x, phich_duration %x, phich_resource %x,sfn %x\n",
          (uint32_t)mib->message.dl_Bandwidth,

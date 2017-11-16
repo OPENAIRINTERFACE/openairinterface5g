@@ -2029,7 +2029,7 @@ void ulsch_scheduler_pre_ue_select(
   UE_list_t *UE_list= &eNB->UE_list;
 
 
-  uint8_t                        aggregation = 4;
+  uint8_t                        aggregation = 2;
   int                            format_flag;
   nfapi_hi_dci0_request_body_t   *HI_DCI0_req;
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
@@ -2137,7 +2137,7 @@ void ulsch_scheduler_pre_ue_select(
 
       hi_dci0_pdu   = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi];
       format_flag = 2;
-      rnti = UE_RNTI(module_idP,UE_id);
+      rnti = UE_RNTI(module_idP,first_ue_id[CC_id][temp]);
       if (CCE_allocation_infeasible(module_idP,CC_id,format_flag,subframeP,aggregation,rnti) == 1) {
     	  cc_id_flag[CC_id] = 1;
           break;
@@ -2220,7 +2220,7 @@ void ulsch_scheduler_pre_ue_select(
 
   for ( CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++ ) {
     HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
-    for ( int temp = 0; temp < ue_first_num[CC_id]; temp++ ) {
+    for ( int temp = 0; temp < ul_inactivity_num[CC_id]; temp++ ) {
       if ( (ulsch_ue_select[CC_id].ue_num >= ulsch_ue_max_num[CC_id]) || (cc_id_flag[CC_id] == 1) ) {
         HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
         cc_id_flag[CC_id] = 1;
@@ -2229,7 +2229,7 @@ void ulsch_scheduler_pre_ue_select(
 
       hi_dci0_pdu   = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi];
       format_flag = 2;
-      rnti = UE_RNTI(module_idP,UE_id);
+      rnti = UE_RNTI(module_idP,ul_inactivity_id[CC_id][temp]);
       if (CCE_allocation_infeasible(module_idP,CC_id,format_flag,subframeP,aggregation,rnti) == 1) {
           cc_id_flag[CC_id] = 1;
           return;
