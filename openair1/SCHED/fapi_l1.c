@@ -238,13 +238,13 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
       AssertFatal(sdu!=NULL,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
                   proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
                   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
-      if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
+      if (rel8->rnti != 0xFFFF) LOG_I(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
                                     proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
       if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;
       else                     dlsch1_harq->pdu                    = sdu;
     }
     else {
-      if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round %d, rnti %x, UE_id %d, harq_pid %d\n",
+      if (rel8->rnti != 0xFFFF) LOG_I(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round %d, rnti %x, UE_id %d, harq_pid %d\n",
                                       proc->frame_tx,proc->subframe_tx,dlsch0_harq->round,
                                     rel8->rnti,UE_id,harq_pid);
     }
@@ -616,7 +616,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   eNB->phich_vars[subframe&1].num_hi            = 0;
 
 
-  LOG_D(PHY,"NFAPI: Frame %d, Subframe %d (ul_subframe %d): received %d dl_pdu, %d tx_req, %d hi_dci0_config_req, %d UL_config \n",
+  LOG_I(PHY,"NFAPI: Frame %d, Subframe %d (ul_subframe %d): received %d dl_pdu, %d tx_req, %d hi_dci0_config_req, %d UL_config \n",
         frame,subframe,ul_subframe,number_dl_pdu,TX_req->tx_request_body.number_of_pdus,number_hi_dci0_pdu,number_ul_pdu);
 
 
@@ -636,7 +636,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   }
   for (i=0;i<number_dl_pdu;i++) {
     dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
-    LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
+    LOG_I(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
     switch (dl_config_pdu->pdu_type) {
     case NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE:
       handle_nfapi_dci_dl_pdu(eNB,proc,dl_config_pdu);

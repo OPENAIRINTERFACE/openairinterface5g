@@ -252,7 +252,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
 
     if ((RA_template->msg2_mpdcch_repetition_cnt == 0) && (mpdcch_sf_condition (eNB, CC_idP, frameP, subframeP, rmax, TYPE2, -1) > 0)) {
       // MPDCCH configuration for RAR
-      LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming MPDCCH %d repetitions\n", module_idP, frameP, subframeP, reps);
+      LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2 for CE Level %d, Programming MPDCCH %d repetitions\n", module_idP, frameP, subframeP, RA_template->rach_resource_type-1,reps);
 
 
       memset ((void *) dl_config_pdu, 0, sizeof (nfapi_dl_config_request_pdu_t));
@@ -266,14 +266,14 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       AssertFatal (cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL, "cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;        // Note: this should be dynamic
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 16;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 24;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 2; // RA-RNTI
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti = RA_template->RA_rnti;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ce_mode = (RA_template->rach_resource_type < 3) ? 1 : 2;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_idP].physCellId;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000;     // 0dB
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6);      // Note: still to be checked if it should not be (getRIV(N_RB_DL,first_rb,6)) : Check nFAPI specifications and what is done L1 with this parameter
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6) | (RA_template->msg2_narrowband<<5);      
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = 4;       // adjust according to size of RAR, 208 bits with N1A_PRB=3
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels = 4;    // fix to 4 for now
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.redundancy_version = 0;
@@ -616,7 +616,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       AssertFatal (cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL, "cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;        // Note: this should be dynamic
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 16;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 24;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 0; // t-C-RNTI
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti = RA_template->RA_rnti;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ce_mode = (RA_template->rach_resource_type < 3) ? 1 : 2;
@@ -1155,7 +1155,7 @@ initiate_ra_proc (module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t
   }
   LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, subframeP, preamble_index);
 #ifdef Rel14
-  LOG_D (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n", module_idP, CC_id, frameP, subframeP, rach_resource_type);
+  LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n", module_idP, CC_id, frameP, subframeP, rach_resource_type);
 #endif
 
   if (prach_ParametersListCE_r13 && prach_ParametersListCE_r13->list.count < rach_resource_type) {

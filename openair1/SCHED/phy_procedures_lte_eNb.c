@@ -299,6 +299,9 @@ phy_procedures_eNB_TX (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, relaying_type
   int8_t          UE_id = 0;
   uint8_t         num_pdcch_symbols = 0;
   uint8_t         num_dci = 0;
+#ifdef Rel14
+  uint8_t         num_mdci = 0;
+#endif
   uint8_t         ul_subframe;
   uint32_t        ul_frame;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
@@ -391,7 +394,14 @@ phy_procedures_eNB_TX (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, relaying_type
 
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME (VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX, 0);
-
+#ifdef Rel14
+  num_mdci = eNB->mpdcch_vars[subframe &1].num_dci;
+  if (num_mdci > 0) {
+     LOG_I (PHY, "[eNB %" PRIu8 "] Frame %d, subframe %d: Calling generate_mdci_top (mpdcch) (num_dci %" PRIu8 ")\n", eNB->Mod_id, frame, subframe, num_mdci);
+  
+     generate_mdci_top (eNB, frame, subframe, AMP, eNB->common_vars.txdataF);
+  }
+#endif
   // Now scan UE specific DLSCH
   LTE_eNB_DLSCH_t *dlsch0, *dlsch1;
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
@@ -404,6 +414,13 @@ phy_procedures_eNB_TX (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, relaying_type
       harq_pid = dlsch0->harq_ids[subframe];
       AssertFatal (harq_pid >= 0, "harq_pid is negative\n");
       // generate pdsch
+      LOG_I(PHY,"SFN %d.%d: DLSCH for rnti %x is active, harq_pid %d => SFN %d.%d\n",
+	    frame,
+	    subframe,
+	    dlsch0->rnti,
+	    harq_pid,
+	    dlsch0->harq_processes[harq_pid]->frame,
+	    dlsch0->harq_processes[harq_pid]->subframe);
       if ((dlsch0->harq_processes[harq_pid]->status == ACTIVE) && (dlsch0->harq_processes[harq_pid]->frame == frame) && (dlsch0->harq_processes[harq_pid]->subframe == subframe))
          pdsch_procedures (eNB, proc, harq_pid, dlsch0, dlsch1, &eNB->UE_stats[(uint32_t) UE_id], 0);
 

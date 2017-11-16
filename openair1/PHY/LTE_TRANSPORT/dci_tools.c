@@ -2193,14 +2193,14 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
       ((DCI6_1A_5MHz_t *) dci_pdu)->hopping = rel13->frequency_hopping_enabled_flag;
       ((DCI6_1A_5MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
       ((DCI6_1A_5MHz_t *) dci_pdu)->mcs = rel13->mcs;
-      ((DCI6_1A_5MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels - 1);
+      ((DCI6_1A_5MHz_t *) dci_pdu)->rep = rel13->pdsch_reptition_levels;
       ((DCI6_1A_5MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
       ((DCI6_1A_5MHz_t *) dci_pdu)->ndi = rel13->new_data_indicator;
       ((DCI6_1A_5MHz_t *) dci_pdu)->rv = rel13->redundancy_version;
       ((DCI6_1A_5MHz_t *) dci_pdu)->TPC = rel13->tpc;
       ((DCI6_1A_5MHz_t *) dci_pdu)->srs_req = rel13->srs_request;
       ((DCI6_1A_5MHz_t *) dci_pdu)->harq_ack_off = rel13->harq_resource_offset;
-      ((DCI6_1A_5MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number - 1;
+      ((DCI6_1A_5MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
 
       break;
     case 50:
@@ -2209,14 +2209,17 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
       ((DCI6_1A_10MHz_t *) dci_pdu)->hopping = rel13->frequency_hopping_enabled_flag;
       ((DCI6_1A_10MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
       ((DCI6_1A_10MHz_t *) dci_pdu)->mcs = rel13->mcs;
-      ((DCI6_1A_10MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels - 1);
+      ((DCI6_1A_10MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels);
       ((DCI6_1A_10MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
       ((DCI6_1A_10MHz_t *) dci_pdu)->ndi = rel13->new_data_indicator;
       ((DCI6_1A_10MHz_t *) dci_pdu)->rv = rel13->redundancy_version;
       ((DCI6_1A_10MHz_t *) dci_pdu)->TPC = rel13->tpc;
       ((DCI6_1A_10MHz_t *) dci_pdu)->srs_req = rel13->srs_request;
       ((DCI6_1A_10MHz_t *) dci_pdu)->harq_ack_off = rel13->harq_resource_offset;
-      ((DCI6_1A_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number - 1;
+      ((DCI6_1A_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
+
+	  LOG_I(PHY,"Frame %d, Subframe %d : Programming Format 6-1A DCI, mcs %d, rballoc %x, dci_rep r%d, L %d, narrowband %d, start_symbol %d\n",
+		frame,subframe,rel13->mcs,rel13->resource_block_coding,1+rel13->dci_subframe_repetition_number,rel13->aggregation_level,rel13->mpdcch_narrow_band,dci_alloc->start_symbol);
       break;
     case 100:
       dci_alloc->dci_length = sizeof_DCI6_1A_20MHz_t;
@@ -2224,14 +2227,14 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
       ((DCI6_1A_20MHz_t *) dci_pdu)->hopping = rel13->frequency_hopping_enabled_flag;
       ((DCI6_1A_20MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
       ((DCI6_1A_20MHz_t *) dci_pdu)->mcs = rel13->mcs;
-      ((DCI6_1A_20MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels - 1);
+      ((DCI6_1A_20MHz_t *) dci_pdu)->rep = rel13->pdsch_reptition_levels;
       ((DCI6_1A_20MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
       ((DCI6_1A_20MHz_t *) dci_pdu)->ndi = rel13->new_data_indicator;
       ((DCI6_1A_20MHz_t *) dci_pdu)->rv = rel13->redundancy_version;
       ((DCI6_1A_20MHz_t *) dci_pdu)->TPC = rel13->tpc;
       ((DCI6_1A_20MHz_t *) dci_pdu)->srs_req = rel13->srs_request;
       ((DCI6_1A_20MHz_t *) dci_pdu)->harq_ack_off = rel13->harq_resource_offset;
-      ((DCI6_1A_20MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number - 1;
+      ((DCI6_1A_20MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
       break;
     }
     break;
@@ -2245,11 +2248,11 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
       ((DCI6_1B_5MHz_t *) dci_pdu)->type = 1;
       ((DCI6_1B_5MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
       ((DCI6_1B_5MHz_t *) dci_pdu)->mcs = rel13->mcs;
-      ((DCI6_1B_5MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels - 1);
+      ((DCI6_1B_5MHz_t *) dci_pdu)->rep = rel13->pdsch_reptition_levels;
       ((DCI6_1B_5MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
       ((DCI6_1B_5MHz_t *) dci_pdu)->ndi = rel13->new_data_indicator;
       ((DCI6_1B_5MHz_t *) dci_pdu)->harq_ack_off = rel13->harq_resource_offset;
-      ((DCI6_1B_5MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number - 1;
+      ((DCI6_1B_5MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
 
       break;
     case 50:
@@ -2257,22 +2260,22 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
       ((DCI6_1B_10MHz_t *) dci_pdu)->type = 1;
       ((DCI6_1B_10MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
       ((DCI6_1B_10MHz_t *) dci_pdu)->mcs = rel13->mcs;
-      ((DCI6_1B_10MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels - 1);
+      ((DCI6_1B_10MHz_t *) dci_pdu)->rep = rel13->pdsch_reptition_levels;
       ((DCI6_1B_10MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
       ((DCI6_1B_10MHz_t *) dci_pdu)->ndi = rel13->new_data_indicator;
       ((DCI6_1B_10MHz_t *) dci_pdu)->harq_ack_off = rel13->harq_resource_offset;
-      ((DCI6_1B_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number - 1;
+      ((DCI6_1B_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
       break;
     case 100:
       dci_alloc->dci_length = sizeof_DCI6_1B_20MHz_t;
       ((DCI6_1B_20MHz_t *) dci_pdu)->type = 1;
       ((DCI6_1B_20MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
       ((DCI6_1B_20MHz_t *) dci_pdu)->mcs = rel13->mcs;
-      ((DCI6_1B_20MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels - 1);
+      ((DCI6_1B_20MHz_t *) dci_pdu)->rep = rel13->pdsch_reptition_levels;
       ((DCI6_1B_20MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
       ((DCI6_1B_20MHz_t *) dci_pdu)->ndi = rel13->new_data_indicator;
       ((DCI6_1B_20MHz_t *) dci_pdu)->harq_ack_off = rel13->harq_resource_offset;
-      ((DCI6_1B_20MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number - 1;
+      ((DCI6_1B_20MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
       break;
     }
   case 12:                     // Format 6-2
@@ -2288,8 +2291,8 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
         ((DCI6_2_paging_5MHz_t *) dci_pdu)->type = 1;
         ((DCI6_2_paging_5MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
         ((DCI6_2_paging_5MHz_t *) dci_pdu)->mcs = rel13->mcs;
-        ((DCI6_2_paging_5MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels - 1);
-        ((DCI6_2_paging_5MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number - 1;
+        ((DCI6_2_paging_5MHz_t *) dci_pdu)->rep = rel13->pdsch_reptition_levels;
+        ((DCI6_2_paging_5MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
       }
 
       break;
@@ -2302,8 +2305,8 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
         ((DCI6_2_paging_10MHz_t *) dci_pdu)->type = 1;
         ((DCI6_2_paging_10MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
         ((DCI6_2_paging_10MHz_t *) dci_pdu)->mcs = rel13->mcs;
-        ((DCI6_2_paging_10MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels - 1);
-        ((DCI6_2_paging_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number - 1;
+        ((DCI6_2_paging_10MHz_t *) dci_pdu)->rep = rel13->pdsch_reptition_levels;
+        ((DCI6_2_paging_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
       }
 
       break;
@@ -2316,8 +2319,8 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
         ((DCI6_2_paging_20MHz_t *) dci_pdu)->type = 1;
         ((DCI6_2_paging_20MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
         ((DCI6_2_paging_20MHz_t *) dci_pdu)->mcs = rel13->mcs;
-        ((DCI6_2_paging_20MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels - 1);
-        ((DCI6_2_paging_20MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number - 1;
+        ((DCI6_2_paging_20MHz_t *) dci_pdu)->rep = rel13->pdsch_reptition_levels;
+        ((DCI6_2_paging_20MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
       }
 
       break;
@@ -2330,6 +2333,7 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
 
   // printf("DCI: Setting subframe_tx for subframe %d\n",subframe);
   dlsch0->subframe_tx[(subframe + 2) % 10] = 1;
+  LOG_I(PHY,"PDSCH : resource_block_coding %x",rel13->resource_block_coding);
 
   conv_eMTC_rballoc (rel13->resource_block_coding, fp->N_RB_DL, dlsch0_harq->rb_alloc);
 
@@ -2366,7 +2370,9 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
   dlsch0_harq->frame    = (subframe >= 8) ? ((frame + 1) & 1023) : frame;
   dlsch0_harq->subframe = (subframe + 2) % 10;
 
+  dlsch0_harq->pdsch_start = rel13->start_symbol;
 
+  LOG_I(PHY,"Setting DLSCH harq %d to active for %d.%d\n",rel13->harq_process,dlsch0_harq->frame,dlsch0_harq->subframe);
 
   dlsch0->rnti = rel13->rnti;
 
