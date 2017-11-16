@@ -290,7 +290,7 @@ void
 generate_mdci_top (PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp, int32_t ** txdataF)
 {
 
-  LTE_eNB_MPDCCH *mpdcch= &eNB->mpdcch_vars[subframe&2];
+  LTE_eNB_MPDCCH *mpdcch= &eNB->mpdcch_vars[subframe&1];
   mDCI_ALLOC_t *mdci;
   int coded_bits;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;

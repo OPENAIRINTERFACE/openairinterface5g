@@ -917,6 +917,7 @@ typedef struct {
 #ifdef Rel14
   uint8_t rach_resource_type;
   uint8_t msg2_mpdcch_repetition_cnt;
+  uint8_t msg2_mpdcch_done;
   uint8_t msg4_mpdcch_repetition_cnt;
   uint8_t msg2_narrowband;
   uint8_t msg34_narrowband;

@@ -251,6 +251,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
     first_rb = narrowband_to_first_rb (&cc[CC_idP], RA_template->msg2_narrowband);
 
     if ((RA_template->msg2_mpdcch_repetition_cnt == 0) && (mpdcch_sf_condition (eNB, CC_idP, frameP, subframeP, rmax, TYPE2, -1) > 0)) {
+      RA_template->msg2_mpdcch_done = 0;
       // MPDCCH configuration for RAR
       LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2 for CE Level %d, Programming MPDCCH %d repetitions\n", module_idP, frameP, subframeP, RA_template->rach_resource_type-1,reps);
 
@@ -308,7 +309,9 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
     if (RA_template->msg2_mpdcch_repetition_cnt > 0) {  // we're in a stream of repetitions
 
 
-      if (RA_template->msg2_mpdcch_repetition_cnt == reps) {    // this is the last mpdcch repetition
+      if ((RA_template->msg2_mpdcch_repetition_cnt == reps)&&
+	  (RA_template->msg2_mpdcch_done == 0)){    // this is the last mpdcch repetition
+	RA_template->msg2_mpdcch_done = 1;
         if (cc[CC_idP].tdd_Config == NULL) {    // FDD case
           // wait 2 subframes for PDSCH transmission
           if (subframeP > 7)
@@ -329,7 +332,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
 
       if ((RA_template->Msg2_frame == frameP) && (RA_template->Msg2_subframe == subframeP)) {
         // Program PDSCH
-        LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming PDSCH %d\n", module_idP, frameP, subframeP);
+        LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming PDSCH\n", module_idP, frameP, subframeP);
         RA_template->generate_rar = 0;
 
         dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
@@ -373,6 +376,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
         add_msg3 (module_idP, CC_idP, RA_template, frameP, subframeP);
         fill_rar_br (eNB, CC_idP, RA_template, frameP, subframeP, cc[CC_idP].RAR_pdu.payload, RA_template->rach_resource_type - 1);
         // DL request
+        LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming TX Req %d\n", module_idP, frameP, subframeP);
         eNB->TX_req[CC_idP].sfn_sf = (frameP << 4) + subframeP;
         TX_req = &eNB->TX_req[CC_idP].tx_request_body.tx_pdu_list[eNB->TX_req[CC_idP].tx_request_body.number_of_pdus];
         TX_req->pdu_length = 7; // This should be changed if we have more than 1 preamble 
