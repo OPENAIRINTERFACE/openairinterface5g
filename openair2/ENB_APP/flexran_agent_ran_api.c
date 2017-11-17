@@ -21,7 +21,7 @@
 
 /*! \file flexran_agent_ran_api.c
  * \brief FlexRAN RAN API abstraction 
- * \author shahab SHARIAT BAGHERI
+ * \author N. Nikaein, X. Foukas and S. SHARIAT BAGHERI
  * \date 2017
  * \version 0.1
  */
@@ -30,7 +30,7 @@
 
 
 /*
- * get generic info from RAN
+ *  generic info from RAN
  */
 
 
@@ -43,9 +43,15 @@ void flexran_set_enb_vars(mid_t mod_id, ran_name_t ran){
 
   switch (ran){
   case RAN_LTE_OAI :
-    enb[mod_id] =  (void *)&eNB_mac_inst[mod_id];
-    enb_ue[mod_id] = (void *)&eNB_mac_inst[mod_id].UE_list;
-    enb_rrc[mod_id] = (void *)&eNB_rrc_inst[mod_id];
+    if(eNB_mac_inst == NULL){
+      enb[mod_id] = NULL;
+      enb_ue[mod_id] = NULL;
+      enb_rrc[mod_id] = NULL;
+    }else{
+      enb[mod_id] =  (void *)&eNB_mac_inst[mod_id];
+      enb_ue[mod_id] = (void *)&eNB_mac_inst[mod_id].UE_list;
+      enb_rrc[mod_id] = (void *)&eNB_rrc_inst[mod_id];
+    }
     break;
   default :
     goto error;
@@ -56,9 +62,20 @@ void flexran_set_enb_vars(mid_t mod_id, ran_name_t ran){
  error:
   LOG_E(FLEXRAN_AGENT, "unknown RAN name %d\n", ran);
 }
+static int mac_xface_not_ready(void);
+
+static int mac_xface_not_ready(void){
+  if (mac_xface == NULL)
+    return 1;
+  else {
+    //printf("max_xface %p %d \n", mac_xface, mac_xface->active);
+    return 0;// !mac_xface->active;
+  }
+}
+  
 
 int flexran_get_current_time_ms (mid_t mod_id, int subframe_flag){
-
+  if (enb[mod_id] == NULL) return 0;
   if (subframe_flag == 1){
     return ((eNB_MAC_INST *)enb[mod_id])->frame*10 + ((eNB_MAC_INST *)enb[mod_id])->subframe;
   }else {
@@ -68,7 +85,7 @@ int flexran_get_current_time_ms (mid_t mod_id, int subframe_flag){
 }
 
 unsigned int flexran_get_current_frame (mid_t mod_id) {
-
+  if (enb[mod_id] == NULL) return 0;
   //  #warning "SFN will not be in [0-1023] when oaisim is used"
   return ((eNB_MAC_INST *)enb[mod_id])->frame;
   
@@ -79,7 +96,7 @@ unsigned int flexran_get_current_system_frame_num(mid_t mod_id) {
 }
 
 unsigned int flexran_get_current_subframe (mid_t mod_id) {
-
+  if (enb[mod_id] == NULL) return 0;
   return ((eNB_MAC_INST *)enb[mod_id])->subframe;
   
 }
@@ -125,7 +142,7 @@ uint16_t flexran_get_future_sfn_sf (mid_t mod_id, int ahead_of_time) {
 }
 
 int flexran_get_num_ues (mid_t mod_id){
-
+  if (enb_ue[mod_id] == NULL) return 0;
   return  ((UE_list_t *)enb_ue[mod_id])->num_UEs;
 }
 
@@ -135,17 +152,19 @@ int flexran_get_ue_crnti (mid_t mod_id, mid_t ue_id) {
 }
 
 int flexran_get_ue_bsr (mid_t mod_id, mid_t ue_id, lcid_t lcid) {
-
+  if (enb_ue[mod_id] == NULL) return 0;
   return ((UE_list_t *)enb_ue[mod_id])->UE_template[UE_PCCID(mod_id,ue_id)][ue_id].bsr_info[lcid];
 }
 
 int flexran_get_ue_phr (mid_t mod_id, mid_t ue_id) {
-
+  if (enb_ue[mod_id] == NULL) return 0;
   return ((UE_list_t *)enb_ue[mod_id])->UE_template[UE_PCCID(mod_id,ue_id)][ue_id].phr_info;
 }
 
 int flexran_get_ue_wcqi (mid_t mod_id, mid_t ue_id) {
   LTE_eNB_UE_stats     *eNB_UE_stats     = NULL;
+  if (mac_xface_not_ready()) return 0 ;
+
   eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id, 0, UE_RNTI(mod_id, ue_id));
   return eNB_UE_stats->DL_cqi[0];
 
@@ -174,10 +193,11 @@ short flexran_get_TA(mid_t mod_id, mid_t ue_id, int CC_id) {
   int rnti;
 
   rnti = flexran_get_ue_crnti(mod_id, ue_id);
+  if (mac_xface_not_ready()) return 0 ;
 
   LTE_eNB_UE_stats		*eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
   //ue_sched_ctl->ta_timer		      = 20;	// wait 20 subframes before taking TA measurement from PHY                                         
-  switch (PHY_vars_eNB_g[mod_id][CC_id]->frame_parms.N_RB_DL) {
+  switch (flexran_get_N_RB_DL(mod_id, CC_id)) {
   case 6:
     return eNB_UE_stats->timing_advance_update;
   case 15:
@@ -189,7 +209,7 @@ short flexran_get_TA(mid_t mod_id, mid_t ue_id, int CC_id) {
   case 75:
     return eNB_UE_stats->timing_advance_update/12;
   case 100:
-    if (PHY_vars_eNB_g[mod_id][CC_id]->frame_parms.threequarter_fs == 0) {
+    if (flexran_get_threequarter_fs(mod_id, CC_id) == 0) {
       return eNB_UE_stats->timing_advance_update/16;
     } else {
       return eNB_UE_stats->timing_advance_update/12;
@@ -232,6 +252,8 @@ int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id,int CC_id) {
   // UE_list_t			*UE_list      = &eNB_mac_inst[mod_id].UE_list;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  if (mac_xface_not_ready()) return 0 ;
+
   LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
   
   if (eNB_UE_stats == NULL) {
@@ -247,11 +269,13 @@ int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id,int CC_id) {
 }
 
 int flexran_get_active_CC(mid_t mod_id, mid_t ue_id) {
+  if (enb_ue[mod_id] == NULL) return 0;
 	return ((UE_list_t *)enb_ue[mod_id])->numactiveCCs[ue_id];
 }
 
 int flexran_get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id) {
 	LTE_eNB_UE_stats	*eNB_UE_stats = NULL;
+	if (mac_xface_not_ready()) return 0 ;
 
 	rnti_t			 rnti	      = flexran_get_ue_crnti(mod_id,ue_id);
 
@@ -271,6 +295,7 @@ int flexran_get_tpc(mid_t mod_id, mid_t ue_id) {
 
 	int			 pCCid	      = UE_PCCID(mod_id,ue_id);
 	rnti_t			 rnti	      = flexran_get_ue_crnti(mod_id,ue_id);
+	if (mac_xface_not_ready()) return 0 ;
 
 	eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id, pCCid, rnti);
 
@@ -309,6 +334,7 @@ int flexran_get_harq(const mid_t mod_id,
   uint8_t harq_pid;
   uint8_t harq_round;
   
+  if (mac_xface_not_ready()) return 0 ;
 
   uint16_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   if (harq_flag == openair_harq_DL){
@@ -340,7 +366,8 @@ int flexran_get_harq(const mid_t mod_id,
 int flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id) {
   LTE_eNB_UE_stats *eNB_UE_stats = NULL;
   uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  
+  if (mac_xface_not_ready()) return 0 ;
+
   eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
   
   if (eNB_UE_stats == NULL) {
@@ -355,11 +382,15 @@ int flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id) {
 }
 
 int flexran_get_p0_nominal_pucch(mid_t mod_id, int CC_id) {
+  if (mac_xface_not_ready()) return 0 ;
+
   int32_t pucch_rx_received = mac_xface->get_target_pucch_rx_power(mod_id, CC_id);
   return pucch_rx_received;
 }
 
 int flexran_get_p0_pucch_status(mid_t mod_id, mid_t ue_id, int CC_id) {
+  if (mac_xface_not_ready()) return 0 ;
+
   LTE_eNB_UE_stats *eNB_UE_stats = NULL;
   uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   
@@ -368,6 +399,8 @@ int flexran_get_p0_pucch_status(mid_t mod_id, mid_t ue_id, int CC_id) {
 }
 
 int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, int CC_id) {
+  if (mac_xface_not_ready()) return 0 ;
+
   LTE_eNB_UE_stats *eNB_UE_stats = NULL;
   uint32_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   
@@ -383,9 +416,18 @@ int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, int CC_id) {
  * Get Messages for eNB Configuration Reply
  * ************************************
  */
+int flexran_get_threequarter_fs(mid_t mod_id, int CC_id) {
+	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
+
+	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
+	return frame_parms->threequarter_fs;
+}
+
 
 int flexran_get_hopping_offset(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pusch_config_common.pusch_HoppingOffset;
@@ -393,6 +435,7 @@ int flexran_get_hopping_offset(mid_t mod_id, int CC_id) {
 
 int flexran_get_hopping_mode(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pusch_config_common.hoppingMode;
@@ -400,6 +443,7 @@ int flexran_get_hopping_mode(mid_t mod_id, int CC_id) {
 
 int flexran_get_n_SB(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pusch_config_common.n_SB;
@@ -407,6 +451,7 @@ int flexran_get_n_SB(mid_t mod_id, int CC_id) {
 
 int flexran_get_enable64QAM(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pusch_config_common.enable64QAM;
@@ -414,6 +459,7 @@ int flexran_get_enable64QAM(mid_t mod_id, int CC_id) {
 
 int flexran_get_phich_duration(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->phich_config_common.phich_duration;
@@ -421,6 +467,7 @@ int flexran_get_phich_duration(mid_t mod_id, int CC_id) {
 
 int flexran_get_phich_resource(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	if(frame_parms->phich_config_common.phich_resource == oneSixth)
@@ -437,6 +484,7 @@ int flexran_get_phich_resource(mid_t mod_id, int CC_id) {
 
 int flexran_get_n1pucch_an(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pucch_config_common.n1PUCCH_AN;
@@ -444,6 +492,7 @@ int flexran_get_n1pucch_an(mid_t mod_id, int CC_id) {
 
 int flexran_get_nRB_CQI(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pucch_config_common.nRB_CQI;
@@ -451,6 +500,7 @@ int flexran_get_nRB_CQI(mid_t mod_id, int CC_id) {
 
 int flexran_get_deltaPUCCH_Shift(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->pucch_config_common.deltaPUCCH_Shift;
@@ -458,6 +508,7 @@ int flexran_get_deltaPUCCH_Shift(mid_t mod_id, int CC_id) {
 
 int flexran_get_prach_ConfigIndex(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
@@ -465,6 +516,7 @@ int flexran_get_prach_ConfigIndex(mid_t mod_id, int CC_id) {
 
 int flexran_get_prach_FreqOffset(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset;
@@ -472,6 +524,7 @@ int flexran_get_prach_FreqOffset(mid_t mod_id, int CC_id) {
 
 int flexran_get_maxHARQ_Msg3Tx(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->maxHARQ_Msg3Tx;
@@ -479,6 +532,7 @@ int flexran_get_maxHARQ_Msg3Tx(mid_t mod_id, int CC_id) {
 
 int flexran_get_ul_cyclic_prefix_length(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->Ncp_UL;
@@ -486,7 +540,8 @@ int flexran_get_ul_cyclic_prefix_length(mid_t mod_id, int CC_id) {
 
 int flexran_get_dl_cyclic_prefix_length(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
-
+	if (mac_xface_not_ready()) return 0 ;
+	
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->Ncp;
 }
@@ -494,19 +549,23 @@ int flexran_get_dl_cyclic_prefix_length(mid_t mod_id, int CC_id) {
 int flexran_get_cell_id(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
 
+	if (mac_xface_not_ready()) return 0;
+
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->Nid_cell;
 }
 
 int flexran_get_srs_BandwidthConfig(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
-
+	if (mac_xface_not_ready()) return 0 ;	
+	
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
 }
 
 int flexran_get_srs_SubframeConfig(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
@@ -514,6 +573,7 @@ int flexran_get_srs_SubframeConfig(mid_t mod_id, int CC_id) {
 
 int flexran_get_srs_MaxUpPts(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->soundingrs_ul_config_common.srs_MaxUpPts;
@@ -521,6 +581,7 @@ int flexran_get_srs_MaxUpPts(mid_t mod_id, int CC_id) {
 
 int flexran_get_N_RB_DL(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->N_RB_DL;
@@ -528,6 +589,7 @@ int flexran_get_N_RB_DL(mid_t mod_id, int CC_id) {
 
 int flexran_get_N_RB_UL(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->N_RB_UL;
@@ -535,6 +597,7 @@ int flexran_get_N_RB_UL(mid_t mod_id, int CC_id) {
 
 int flexran_get_N_RBG(mid_t mod_id, int CC_id) {
   	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->N_RBG;
@@ -542,6 +605,7 @@ int flexran_get_N_RBG(mid_t mod_id, int CC_id) {
 
 int flexran_get_subframe_assignment(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
 	return frame_parms->tdd_config;
@@ -549,9 +613,10 @@ int flexran_get_subframe_assignment(mid_t mod_id, int CC_id) {
 
 int flexran_get_special_subframe_assignment(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
-	return frame_parms->tdd_config_S;
+	return  (frame_parms == NULL)? 0:frame_parms->tdd_config_S;
 }
 
 int flexran_get_ra_ResponseWindowSize(mid_t mod_id, int CC_id) {
@@ -564,8 +629,10 @@ int flexran_get_mac_ContentionResolutionTimer(mid_t mod_id, int CC_id) {
 
 int flexran_get_duplex_mode(mid_t mod_id, int CC_id) {
 	LTE_DL_FRAME_PARMS   *frame_parms;
+	if (mac_xface_not_ready()) return 0 ;
 
 	frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
+	if (frame_parms == NULL) return -1;
 	if(frame_parms->frame_type == TDD)
 		return PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD;
 	else if (frame_parms->frame_type == FDD)
@@ -671,10 +738,12 @@ int flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP){
 }
 
 int flexran_get_ue_aggregated_max_bitrate_dl (mid_t mod_id, mid_t ue_id) {
+  if (enb_ue[mod_id] == NULL) return 0;
 	return ((UE_list_t *)enb_ue[mod_id])->UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateDL;
 }
 
 int flexran_get_ue_aggregated_max_bitrate_ul (mid_t mod_id, mid_t ue_id) {
+  if (enb_ue[mod_id] == NULL) return 0;
 	return ((UE_list_t *)enb_ue[mod_id])->UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateUL;
 }
 
@@ -953,19 +1022,19 @@ int flexran_get_antenna_ports(mid_t mod_id, int CC_id){
   LTE_DL_FRAME_PARMS   *frame_parms;
 
   frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
-  return frame_parms->nb_antenna_ports_eNB;
+  return (frame_parms == NULL)? 0:frame_parms->nb_antenna_ports_eNB;
 
 }
 
 
-float flexran_agent_get_operating_dl_freq (mid_t mod_id, int cc_id) {
+uint32_t flexran_agent_get_operating_dl_freq (mid_t mod_id, int cc_id) {
         const Enb_properties_array_t* enb_properties = enb_config_get();
         return (enb_properties->properties[mod_id]->downlink_frequency[cc_id] / 1000000);
 }
 
-float flexran_agent_get_operating_ul_freq (mid_t mod_id, int cc_id) {
+uint32_t flexran_agent_get_operating_ul_freq (mid_t mod_id, int cc_id) {
         const Enb_properties_array_t* enb_properties = enb_config_get();
-        return ((enb_properties->properties[mod_id] ->downlink_frequency[cc_id] + enb_properties->properties[0]->uplink_frequency_offset[cc_id]) / 1000000);
+        return ((enb_properties->properties[mod_id]->downlink_frequency[cc_id] + enb_properties->properties[0]->uplink_frequency_offset[cc_id]) / 1000000);
 }
 
 int flexran_agent_get_operating_eutra_band (mid_t mod_id, int cc_id) {
@@ -980,6 +1049,34 @@ int flexran_agent_get_operating_pusch_p0 (mid_t mod_id, int cc_id) {
         const Enb_properties_array_t* enb_properties = enb_config_get();
         return enb_properties->properties[mod_id]->pusch_p0_Nominal[cc_id];
 }
+
+void flexran_agent_set_operating_dl_freq (mid_t mod_id, int cc_id, uint32_t dl_freq_mhz) {
+
+        Enb_properties_array_t* enb_properties = enb_config_get();
+        enb_properties->properties[mod_id]->downlink_frequency[cc_id]=dl_freq_mhz * 1000000;
+        /*printf("[ENB_APP] mod id %d ccid %d dl freq %d/%d\n", mod_id, cc_id, dl_freq_mhz, enb_properties->properties[mod_id]->downlink_frequency[cc_id]); */   
+}
+
+void flexran_agent_set_operating_ul_freq (mid_t mod_id, int cc_id, int32_t ul_freq_offset_mhz) {
+        Enb_properties_array_t* enb_properties = enb_config_get();
+        enb_properties->properties[mod_id]->uplink_frequency_offset[cc_id]=ul_freq_offset_mhz * 1000000;
+}
+//TBD
+void flexran_agent_set_operating_eutra_band (mid_t mod_id, int cc_id) {
+        Enb_properties_array_t* enb_properties = enb_config_get();
+        enb_properties->properties[mod_id]->eutra_band[cc_id]=7;
+}
+
+void flexran_agent_set_operating_bandwidth (mid_t mod_id, int cc_id, int bandwidth) {
+        Enb_properties_array_t* enb_properties = enb_config_get();
+        enb_properties->properties[mod_id]->N_RB_DL[cc_id]=bandwidth;
+}
+
+void flexran_agent_set_operating_frame_type (mid_t mod_id, int cc_id, int frame_type) {
+        Enb_properties_array_t* enb_properties = enb_config_get();
+        enb_properties->properties[mod_id]->frame_type[cc_id]=frame_type;
+}
+
 
 
 

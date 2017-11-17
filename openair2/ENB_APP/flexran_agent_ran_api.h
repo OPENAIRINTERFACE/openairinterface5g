@@ -21,7 +21,7 @@
 
 /*! \file flexran_agent_ran_api.h
  * \brief FlexRAN RAN API abstraction header 
- * \author shahab SHARIAT BAGHERI
+ * \author N. Nikaein, X. Foukas and S. SHARIAT BAGHERI
  * \date 2017
  * \version 0.1
  */
@@ -198,6 +198,8 @@ int flexran_get_p0_pucch_status(mid_t mod_id, mid_t ue_id, int CC_id);
 
 int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, int CC_id);
 
+int flexran_get_threequarter_fs(mid_t mod_id, int CC_id);
+
 int flexran_get_hopping_mode(mid_t mod_id, int CC_id);
 
 int flexran_get_hopping_offset(mid_t mod_id, int CC_id);
@@ -301,10 +303,10 @@ int flexran_get_lcg(mid_t ue_id, mid_t lc_id);
 int flexran_get_direction(mid_t ue_id, mid_t lc_id);
 
 /*Get downlink frequency*/
-float flexran_agent_get_operating_dl_freq (mid_t mod_id, int cc_id);
+uint32_t flexran_agent_get_operating_dl_freq (mid_t mod_id, int cc_id);
 
 /*Get uplink frequency*/
-float flexran_agent_get_operating_ul_freq (mid_t mod_id, int cc_id);
+uint32_t flexran_agent_get_operating_ul_freq (mid_t mod_id, int cc_id);
 
 /*Get eutra band*/
 int flexran_agent_get_operating_eutra_band (mid_t mod_id, int cc_id);
@@ -314,6 +316,21 @@ int flexran_agent_get_operating_pdsch_refpower (mid_t mod_id, int cc_id);
 
 /*Get uplink power*/
 int flexran_agent_get_operating_pusch_p0 (mid_t mod_id, int cc_id);
+
+/*set the dl freq */
+void flexran_agent_set_operating_dl_freq (mid_t mod_id, int cc_id, uint32_t dl_freq_mhz);
+
+/* set the ul freq */
+void flexran_agent_set_operating_ul_freq (mid_t mod_id, int cc_id, int32_t ul_freq_offset_mhz);
+
+/*set the the band */
+void flexran_agent_set_operating_eutra_band (mid_t mod_id, int cc_id);
+
+/* set the bandwidth */
+void flexran_agent_set_operating_bandwidth (mid_t mod_id, int cc_id, int bandwidth);
+
+/*set frame type*/
+void flexran_agent_set_operating_frame_type (mid_t mod_id, int cc_id, int frame_type);
 
 /*RRC status flexRAN*/
 int flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP);
