@@ -17,7 +17,7 @@
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
- */ 
+ */
 
 /*! \file flexran_agent_scheduler_dlsch_ue_remote.h
  * \brief Local stub for remote scheduler used by the controller
@@ -46,8 +46,8 @@
 #define SCHED_AHEAD_SUBFRAMES 20
 
 typedef struct dl_mac_config_element_s {
-  Protocol__FlexranMessage *dl_info;
-  TAILQ_ENTRY(dl_mac_config_element_s) configs;
+    Protocol__FlexranMessage *dl_info;
+     TAILQ_ENTRY(dl_mac_config_element_s) configs;
 } dl_mac_config_element_t;
 
 TAILQ_HEAD(DlMacConfigHead, dl_mac_config_element_s);
@@ -55,8 +55,9 @@ TAILQ_HEAD(DlMacConfigHead, dl_mac_config_element_s);
 /*
  * Default scheduler used by the eNB agent
  */
-void flexran_schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
-			     int *mbsfn_flag, Protocol__FlexranMessage **dl_info);
+void flexran_schedule_ue_spec_remote(mid_t mod_id, uint32_t frame,
+				     uint32_t subframe, int *mbsfn_flag,
+				     Protocol__FlexranMessage ** dl_info);
 
 
 // Find the difference in subframes from the given subframe
