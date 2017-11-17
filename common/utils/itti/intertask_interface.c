@@ -99,6 +99,10 @@ const int itti_debug = (ITTI_DEBUG_ISSUES | ITTI_DEBUG_MP_STATISTICS);
 # define ITTI_MEM_SIZE      (16 * 1024 * 1024)
 #endif
 
+#ifndef EMULATE_RF
+#define EMULATE_RF
+#endif
+
 typedef enum task_state_s {
   TASK_STATE_NOT_CONFIGURED, TASK_STATE_STARTING, TASK_STATE_READY, TASK_STATE_ENDED, TASK_STATE_MAX,
 } task_state_t;
@@ -436,6 +440,8 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
                  destination_task_id,
                  itti_get_task_name(destination_task_id));
     } else {
+      #ifdef EMULATE_RF
+      #else
       /* We cannot send a message if the task is not running */
       AssertFatal (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_READY,
                    "Task %s Cannot send message %s (%d) to thread %d, it is not in ready state (%d)!\n",
@@ -444,6 +450,7 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
                    message_id,
                    destination_thread_id,
                    itti_desc.threads[destination_thread_id].task_state);
+      #endif
 
       /* Allocate new list element */
       new = (message_list_t *) itti_malloc (origin_task_id, destination_task_id, sizeof(struct message_list_s));

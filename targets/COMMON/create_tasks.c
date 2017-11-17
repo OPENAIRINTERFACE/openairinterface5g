@@ -40,6 +40,10 @@
 # endif
 # include "enb_app.h"
 
+#ifndef EMULATE_RF
+#define EMULATE_RF
+#endif
+
 int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
 {
   itti_wait_ready(1);
@@ -71,11 +75,13 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
           LOG_E(S1AP, "Create task for S1AP failed\n");
           return -1;
         }
-
+        #ifdef EMULATE_RF
+        #else
         if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
           LOG_E(UDP_, "Create task for UDP failed\n");
           return -1;
         }
+        #endif
 
         if (itti_create_task (TASK_GTPV1_U, &gtpv1u_eNB_task, NULL) < 0) {
           LOG_E(GTPU, "Create task for GTPV1U failed\n");

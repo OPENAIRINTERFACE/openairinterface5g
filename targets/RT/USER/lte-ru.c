@@ -715,7 +715,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
  
-  proc->timestamp_rx = ts-ru->ts_offset;
+  proc->timestamp_rx = -ru->ts_offset;//ts-ru->ts_offset;
 
   if (rxs != fp->samples_per_tti)
     LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
@@ -728,7 +728,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
     if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
       //LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,ru->ts_offset);
       ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
-      proc->timestamp_rx = ts-ru->ts_offset;
+      proc->timestamp_rx = -ru->ts_offset;//ts-ru->ts_offset;
     }
 
   }
