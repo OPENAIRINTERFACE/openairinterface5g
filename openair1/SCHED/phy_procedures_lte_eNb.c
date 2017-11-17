@@ -341,9 +341,11 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 	  dlsch_harq->pdu,
 	  dlsch_harq->pdsch_start,
 	  dlsch,
-	  frame,subframe,
+	  frame,
+	  subframe,
 	  &eNB->dlsch_rate_matching_stats,
 	  &eNB->dlsch_turbo_encoding_stats,
+	  &eNB->dlsch_turbo_encoding_waiting_stats,
 	  &eNB->dlsch_interleaving_stats);
   stop_meas(&eNB->dlsch_encoding_stats);
   // 36-211

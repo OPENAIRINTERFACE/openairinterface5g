@@ -52,7 +52,11 @@
   ((pilots==1)&&(first_pilot==0)&&(((re<3))||((re>5)&&(re<9)))) \
 */
 #define is_not_pilot(pilots,first_pilot,re) (1)
-
+/*extern void thread_top_init(char *thread_name,
+		     int affinity,
+		     uint64_t runtime,
+		     uint64_t deadline,
+		     uint64_t period);*/
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
 {
@@ -452,6 +456,7 @@ void *te_thread(void *param) {
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   
+  //thread_top_init("te_thread",1,870000,1000000,1000000);
   pthread_setname_np( pthread_self(),"te processing");
   LOG_I(PHY,"thread te created id=%ld\n", syscall(__NR_gettid));
   
@@ -482,6 +487,7 @@ void *te_thread1(void *param) {
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   
+  //thread_top_init("te_thread1",1,870000,1000000,1000000);
   pthread_setname_np( pthread_self(),"te processing 1");
   LOG_I(PHY,"thread te 1 created id=%ld\n", syscall(__NR_gettid));
   
@@ -517,6 +523,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 			    uint8_t subframe,
 			    time_stats_t *rm_stats,
 			    time_stats_t *te_stats,
+				time_stats_t *te_wait_stats,
 			    time_stats_t *i_stats)
 {
 
@@ -714,9 +721,14 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   }
 
   // wait for worker to finish
-
+  start_meas(te_wait_stats);
   wait_on_busy_condition(&proc->mutex_te[0],&proc->cond_te[0],&proc->instance_cnt_te[0],"te thread");
   wait_on_busy_condition(&proc->mutex_te[1],&proc->cond_te[1],&proc->instance_cnt_te[1],"te thread1");
+  stop_meas(te_wait_stats);
+  if(opp_enabled == 1 && te_wait_stats->diff_now>50*3000){
+    print_meas_now(te_wait_stats,"coding_wait",stderr);
+	printf("frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
+  }
 
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
@@ -731,6 +743,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    uint8_t subframe,
                    time_stats_t *rm_stats,
                    time_stats_t *te_stats,
+				   time_stats_t *te_wait_stats,
                    time_stats_t *i_stats)
 {
 	int encoding_return = 0;
@@ -763,8 +776,8 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    subframe,
                    rm_stats,
                    te_stats,
+				   te_wait_stats,
                    i_stats);
-		//printf("having more then 5 segmentation\n");///////////*******
 		}
 	else
 		{

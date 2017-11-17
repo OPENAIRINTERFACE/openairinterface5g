@@ -130,6 +130,7 @@ int32_t dlsch_encoding_all(PHY_VARS_eNB *eNB,
                        uint8_t subframe,
                        time_stats_t *rm_stats,
                        time_stats_t *te_stats,
+					   time_stats_t *te_wait_stats,
                        time_stats_t *i_stats);
 
 int32_t dlsch_encoding_SIC(PHY_VARS_UE *ue,
@@ -175,6 +176,7 @@ int32_t dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
                                 uint8_t subframe,
                                 time_stats_t *rm_stats,
                                 time_stats_t *te_stats,
+								time_stats_t *te_wait_stats,
                                 time_stats_t *i_stats);
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,

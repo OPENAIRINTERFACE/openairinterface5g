@@ -381,8 +381,6 @@ int wakeup_tx(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc) {
   proc_rxtx->frame_rx    = ru_proc->frame_rx;
   proc_rxtx->subframe_tx = (ru_proc->subframe_rx+4)%10;
   proc_rxtx->frame_tx    = (ru_proc->subframe_rx>5) ? (1+ru_proc->frame_rx)&1023 : ru_proc->frame_rx;
-  proc->frame_tx         = proc_rxtx->frame_tx;
-  proc->frame_rx         = proc_rxtx->frame_rx;
   proc_rxtx->timestamp_tx = ru_proc->timestamp_tx;
   
   // the thread can now be woken up

@@ -110,6 +110,10 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "T.h"
 
+#ifndef EMULATE_RF
+#define EMULATE_RF
+#endif
+
 extern volatile int                    oai_exit;
 extern int numerology;
 extern int fh_two_thread;
@@ -694,12 +698,20 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 
   old_ts = proc->timestamp_rx;
-
+  #ifdef EMULATE_RF
+  int microsec = 450; // length of time to sleep, in miliseconds
+  struct timespec req = {0};
+  req.tv_sec = 0;
+  req.tv_nsec = microsec * 1000L;
+  nanosleep(&req, (struct timespec *)NULL);
+  rxs = fp->samples_per_tti;
+  #else
   rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
 				   &ts,
 				   rxp,
 				   fp->samples_per_tti,
 				   ru->nb_rx);
+  #endif
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
  
@@ -714,7 +726,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   }
   else {
     if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
-      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,ru->ts_offset);
+      //LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,ru->ts_offset);
       ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
       proc->timestamp_rx = ts-ru->ts_offset;
     }
@@ -1396,7 +1408,8 @@ static void* ru_thread_tx( void* param ) {
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
 	//printf("//////////////////instance_cnt_eNBs = %d\n",proc->instance_cnt_eNBs);//////////////////*********
   	    
-  	    
+  	#ifdef EMULATE_RF
+    #else    
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);
   	    
@@ -1406,6 +1419,7 @@ static void* ru_thread_tx( void* param ) {
     if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
   	    
     if (ru->fh_north_out) ru->fh_north_out(ru);
+	#endif
 
     release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
   }
@@ -1439,7 +1453,15 @@ static void* ru_thread( void* param ) {
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
 
-
+  #ifdef EMULATE_RF
+  fill_rf_config(ru,ru->rf_config_file);
+  init_frame_parms(&ru->frame_parms,1);
+  phy_init_RU(ru);
+  if (setup_RU_buffers(ru)!=0) {
+        printf("Exiting, cannot initialize RU Buffers\n");
+        exit(-1);
+  }
+  #else
   // Start IF device if any
   if (ru->start_if) {
     LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
@@ -1460,6 +1482,7 @@ static void* ru_thread( void* param ) {
         printf("Exiting, cannot initialize RU Buffers\n");
         exit(-1);
   }
+  #endif
 
   LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
   pthread_mutex_lock(&RC.ru_mutex);
@@ -1471,7 +1494,8 @@ static void* ru_thread( void* param ) {
   
 
 
-
+  #ifdef EMULATE_RF
+  #else
   // Start RF device if any
   if (ru->start_rf) {
     if (ru->start_rf(ru) != 0)
@@ -1479,7 +1503,6 @@ static void* ru_thread( void* param ) {
     else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
   }
   else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
-
 
   // if an asnych_rxtx thread exists
   // wakeup the thread because the devices are ready at this point
@@ -1499,6 +1522,7 @@ static void* ru_thread( void* param ) {
   proc->instance_cnt_FH1=0;
   pthread_mutex_unlock(&proc->mutex_FH1);
   pthread_cond_signal(&proc->cond_FH1);
+  #endif
 
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices

@@ -666,7 +666,8 @@ typedef enum {
   REMOTE_MBP_IF5  =2,
   REMOTE_IF4p5    =3,
   REMOTE_IF1pp    =4,
-  MAX_RU_IF_TYPES =5
+  MAX_RU_IF_TYPES =5,
+  EMULATE_RF      =6
 } RU_if_south_t;
 
 typedef struct RU_t_s{
@@ -946,7 +947,7 @@ typedef struct PHY_VARS_eNB_s {
   eth_params_t         eth_params;
   int                  rx_total_gain_dB;
   int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
-  int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *);
+  int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *);
   int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB);
   uint8_t              local_flag;
   LTE_DL_FRAME_PARMS   frame_parms;
@@ -1125,6 +1126,7 @@ typedef struct PHY_VARS_eNB_s {
   time_stats_t dlsch_scrambling_stats;
   time_stats_t dlsch_rate_matching_stats;
   time_stats_t dlsch_turbo_encoding_stats;
+  time_stats_t dlsch_turbo_encoding_waiting_stats;
   time_stats_t dlsch_interleaving_stats;
 
   time_stats_t rx_dft_stats;
