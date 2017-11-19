@@ -85,9 +85,9 @@ add_msg3 (module_id_t module_idP, int CC_id, RA_TEMPLATE * RA_template, frame_t 
 
 #ifdef Rel14
   if (RA_template->rach_resource_type > 0) {
-    LOG_D (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d CE level %d is active, Msg3 in (%d,%d)\n",
+    LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d CE level %d is active, Msg3 in (%d,%d)\n",
            module_idP, frameP, subframeP, CC_id, RA_template->rach_resource_type - 1, RA_template->Msg3_frame, RA_template->Msg3_subframe);
-    LOG_D (MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d)\n",
+    LOG_I (MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d)\n",
            frameP, subframeP, RA_template->Msg3_frame, RA_template->Msg3_subframe, RA_template->msg3_nb_rb, RA_template->msg3_round);
 
     ul_config_pdu = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus];
@@ -371,10 +371,10 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.drms_table_flag = 0;
         dl_req->number_pdu++;
 
-        // Program UL processing for Msg3, same as regular LTE
+       fill_rar_br (eNB, CC_idP, RA_template, frameP, subframeP, cc[CC_idP].RAR_pdu.payload, RA_template->rach_resource_type - 1)     ; 
+// Program UL processing for Msg3, same as regular LTE
         get_Msg3alloc (&cc[CC_idP], subframeP, frameP, &RA_template->Msg3_frame, &RA_template->Msg3_subframe);
         add_msg3 (module_idP, CC_idP, RA_template, frameP, subframeP);
-        fill_rar_br (eNB, CC_idP, RA_template, frameP, subframeP, cc[CC_idP].RAR_pdu.payload, RA_template->rach_resource_type - 1);
         // DL request
         LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming TX Req %d\n", module_idP, frameP, subframeP);
         eNB->TX_req[CC_idP].sfn_sf = (frameP << 4) + subframeP;

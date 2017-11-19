@@ -1065,7 +1065,7 @@ fill_dci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, DCI_ALLOC_t * dc
   dlsch0->subframe_tx[subframe] = 1;
   if (dlsch0->rnti != rel8->rnti) {     // if rnti of dlsch is not the same as in the config, this is a new entry
     dlsch0_harq->round = 0;
-    dlsch0->harq_mask = 0;
+    dlsch0->harq_mask =0;
   }
   if ((dlsch0->harq_mask & (1 << rel8->harq_process)) > 0) {
     if (rel8->new_data_indicator_1 != dlsch0_harq->ndi)
@@ -2353,30 +2353,42 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
 
   dlsch0_harq->dl_power_off = 1;
 
-  dlsch0->active = 1;
-  dlsch0->harq_mask |= (1 << rel13->harq_process);
 
+  dlsch0->subframe_tx[subframe] = 1;
+  if (dlsch0->rnti != rel13->rnti) {     // if rnti of dlsch is not the same as in the config, this is a new entry
+    dlsch0_harq->round = 0;
+    dlsch0->harq_mask =0;
+  }
+  if ((dlsch0->harq_mask & (1 << rel13->harq_process)) > 0) {
+    if (rel13->new_data_indicator != dlsch0_harq->ndi)
+      dlsch0_harq->round = 0;
+  } else {                      // process is inactive, so activate and set round to 0
+    dlsch0_harq->round = 0;
+  }
+  dlsch0_harq->ndi = rel13->new_data_indicator;
 
   if (dlsch0_harq->round == 0) {
     dlsch0_harq->status = ACTIVE;
-    //            printf("Setting DLSCH process %d to ACTIVE\n",rel8->harq_process);
+
     // MCS and TBS don't change across HARQ rounds
-    dlsch0_harq->mcs = rel13->mcs;
     dlsch0_harq->TBS = TBStable[get_I_TBS (dlsch0_harq->mcs)][dlsch0_harq->nb_rb - 1];
 
   }
+  dlsch0->active = 1;
+  dlsch0->harq_mask |= (1 << rel13->harq_process);
 
   dlsch0->harq_ids[(subframe + 2) % 10] = rel13->harq_process;
   dlsch0_harq->frame    = (subframe >= 8) ? ((frame + 1) & 1023) : frame;
   dlsch0_harq->subframe = (subframe + 2) % 10;
 
+  dlsch0->harq_ids[dlsch0_harq->subframe] = rel13->harq_process;
   dlsch0_harq->pdsch_start = rel13->start_symbol;
 
   LOG_I(PHY,"Setting DLSCH harq %d to active for %d.%d\n",rel13->harq_process,dlsch0_harq->frame,dlsch0_harq->subframe);
 
   dlsch0->rnti = rel13->rnti;
 
-
+  dlsch0_harq->Qm = get_Qm(rel13->mcs);
 
 
 

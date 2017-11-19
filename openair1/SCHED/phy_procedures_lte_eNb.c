@@ -407,26 +407,29 @@ phy_procedures_eNB_TX (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, relaying_type
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
     dlsch0 = eNB->dlsch[(uint8_t) UE_id][0];
     dlsch1 = eNB->dlsch[(uint8_t) UE_id][1];
-
+    //if (dlsch0 && (dlsch0->rnti > 0)  && (dlsch0->rnti!=0xFFFF)) 
     if ((dlsch0) && (dlsch0->rnti > 0) && (dlsch0->active == 1)) {
 
       // get harq_pid
       harq_pid = dlsch0->harq_ids[subframe];
-      AssertFatal (harq_pid >= 0, "harq_pid is negative\n");
+      if (harq_pid >=0 &&  harq_pid < 8) { 
       // generate pdsch
-      LOG_I(PHY,"SFN %d.%d: DLSCH for rnti %x is active, harq_pid %d => SFN %d.%d\n",
-	    frame,
-	    subframe,
-	    dlsch0->rnti,
-	    harq_pid,
-	    dlsch0->harq_processes[harq_pid]->frame,
-	    dlsch0->harq_processes[harq_pid]->subframe);
-      if ((dlsch0->harq_processes[harq_pid]->status == ACTIVE) && (dlsch0->harq_processes[harq_pid]->frame == frame) && (dlsch0->harq_processes[harq_pid]->subframe == subframe))
-         pdsch_procedures (eNB, proc, harq_pid, dlsch0, dlsch1, &eNB->UE_stats[(uint32_t) UE_id], 0);
+        if ((dlsch0->rnti !=0xFFFF)) {   
+          LOG_I(PHY,"SFN %d.%d: DLSCH %d for rnti %x is active, harq_pid %d => SFN %d.%d\n",
+	      frame,
+	      subframe,
+          UE_id,
+	      dlsch0->rnti,
+	      harq_pid,
+	      dlsch0->harq_processes[harq_pid]->frame,
+	      dlsch0->harq_processes[harq_pid]->subframe);
+        }
+        if ((dlsch0->harq_processes[harq_pid]->status == ACTIVE) && (dlsch0->harq_processes[harq_pid]->frame == frame) && (dlsch0->harq_processes[harq_pid]->subframe == subframe))
+           pdsch_procedures (eNB, proc, harq_pid, dlsch0, dlsch1, &eNB->UE_stats[(uint32_t) UE_id], 0);
 
 
+      }
     }
-
 
     else if ((dlsch0) && (dlsch0->rnti > 0) && (dlsch0->active == 0)) {
 
@@ -1078,7 +1081,7 @@ pusch_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
 
       ulsch->cyclicShift = (ulsch_harq->n_DMRS2 + fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift + nPRS) % 12;
 
-      LOG_D (PHY,
+      LOG_I (PHY,
              "[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, first_rb %d, nb_rb %d, Qm %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d, beta_cqi %d \n",
              eNB->Mod_id, harq_pid, frame, subframe,
              ulsch_harq->dci_alloc,
@@ -1103,7 +1106,7 @@ pusch_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
 
       stop_meas (&eNB->ulsch_decoding_stats);
 
-      LOG_D (PHY, "[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n", eNB->Mod_id, harq_pid, frame, subframe, ulsch->rnti, dB_fixed (eNB->pusch_vars[i]->ulsch_power[0]), dB_fixed (eNB->pusch_vars[i]->ulsch_power[1]), 20,      //eNB->measurements.n0_power_dB[0],
+      LOG_I (PHY, "[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n", eNB->Mod_id, harq_pid, frame, subframe, ulsch->rnti, dB_fixed (eNB->pusch_vars[i]->ulsch_power[0]), dB_fixed (eNB->pusch_vars[i]->ulsch_power[1]), 20,      //eNB->measurements.n0_power_dB[0],
              20,                //eNB->measurements.n0_power_dB[1],
              ulsch_harq->o_ACK[0], ulsch_harq->o_ACK[1], ret);
 

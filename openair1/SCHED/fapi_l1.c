@@ -214,7 +214,10 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     dlsch0->i0               = 0xFFFF;
 #endif
 
+    dlsch0->active = 1;
     harq_pid        = dlsch0->harq_ids[proc->subframe_tx];
+    dlsch0->harq_mask |= (1<<harq_pid);
+
     AssertFatal((harq_pid>=0) && (harq_pid<8),"harq_pid %d not in 0...7\n",harq_pid);
     dlsch0_harq     = dlsch0->harq_processes[harq_pid];
     dlsch1_harq     = dlsch1->harq_processes[harq_pid];
@@ -232,8 +235,11 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
       computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
     }
 
+#ifndef Rel14
     dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
-
+#else
+    dlsch0_harq->pdsch_start = rel10->pdsch_start;
+#endif
     if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
       AssertFatal(sdu!=NULL,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
                   proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
@@ -618,7 +624,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   eNB->mpdcch_vars[subframe&1].num_dci           = 0;
 #endif
 
-  LOG_I(PHY,"NFAPI: Frame %d, Subframe %d (ul_subframe %d): received %d dl_pdu, %d tx_req, %d hi_dci0_config_req, %d UL_config \n",
+  LOG_D(PHY,"NFAPI: Frame %d, Subframe %d (ul_subframe %d): received %d dl_pdu, %d tx_req, %d hi_dci0_config_req, %d UL_config \n",
         frame,subframe,ul_subframe,number_dl_pdu,TX_req->tx_request_body.number_of_pdus,number_hi_dci0_pdu,number_ul_pdu);
 
 
@@ -638,7 +644,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   }
   for (i=0;i<number_dl_pdu;i++) {
     dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
-    LOG_I(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
+    LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
     switch (dl_config_pdu->pdu_type) {
     case NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE:
       handle_nfapi_dci_dl_pdu(eNB,proc,dl_config_pdu);
