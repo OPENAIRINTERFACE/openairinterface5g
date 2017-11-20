@@ -2169,8 +2169,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     } //phase
 
 //    stat_max *= nsymb;  // normalize to energy per symbol
-//    stat_max /= (frame_parms->N_RB_UL*12); // 
+//    stat_max /= (frame_parms->N_RB_UL*12); //
     stat_max /= (nsymb*12);
+    
 #ifdef DEBUG_PUCCH_RX
     printf("[eNB] PUCCH: stat %d, stat_max %d, phase_max %d\n", stat,stat_max,phase_max);
 #endif
@@ -2308,7 +2309,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     // Do detection now
 #if defined(USRP_REC_PLAY)
     // It looks like the value is a bit messy when RF is replayed.
-    if (sigma2_dB<=(dB_fixed(stat_max)-pucch1_thres+2))  {//
+    // For instance i assume to skip pucch1_thres from the test below.
+    if (sigma2_dB<(dB_fixed(stat_max)))  {//
 #else
     if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {//
 #endif

@@ -235,7 +235,8 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
     packet_size = UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks); 
   } else if (flags == IF4p5_PULTICK) {
     packet_size = UDP_IF4p5_PULTICK_SIZE_BYTES; 
-  } else if (flags == IF4p5_PRACH) {  
+  } else if ((flags >= IF4p5_PRACH)&&
+             (flags <= (IF4p5_PRACH+4))) {  
     packet_size = UDP_IF4p5_PRACH_SIZE_BYTES;   
   } else {
     printf("trx_eth_write_udp_IF4p5: unknown flags %d\n",flags);
