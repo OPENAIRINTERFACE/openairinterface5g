@@ -2218,8 +2218,8 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
       ((DCI6_1A_10MHz_t *) dci_pdu)->harq_ack_off = rel13->harq_resource_offset;
       ((DCI6_1A_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
 
-	  LOG_I(PHY,"Frame %d, Subframe %d : Programming Format 6-1A DCI, mcs %d, rballoc %x, dci_rep r%d, L %d, narrowband %d, start_symbol %d\n",
-		frame,subframe,rel13->mcs,rel13->resource_block_coding,1+rel13->dci_subframe_repetition_number,rel13->aggregation_level,rel13->mpdcch_narrow_band,dci_alloc->start_symbol);
+	  LOG_I(PHY,"Frame %d, Subframe %d : Programming Format 6-1A DCI, mcs %d, rballoc %x, dci_rep r%d, L %d, narrowband %d, start_symbol %d, TPC %d, ra_flag %d, dci_type %d\n",
+		frame,subframe,rel13->mcs,rel13->resource_block_coding,1+rel13->dci_subframe_repetition_number,rel13->aggregation_level,rel13->mpdcch_narrow_band,dci_alloc->start_symbol,rel13->tpc,dci_alloc->ra_flag,rel13->rnti_type);
       break;
     case 100:
       dci_alloc->dci_length = sizeof_DCI6_1A_20MHz_t;
@@ -2333,7 +2333,7 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
 
   // printf("DCI: Setting subframe_tx for subframe %d\n",subframe);
   dlsch0->subframe_tx[(subframe + 2) % 10] = 1;
-  LOG_I(PHY,"PDSCH : resource_block_coding %x",rel13->resource_block_coding);
+  LOG_I(PHY,"PDSCH : resource_block_coding %x\n",rel13->resource_block_coding);
 
   conv_eMTC_rballoc (rel13->resource_block_coding, fp->N_RB_DL, dlsch0_harq->rb_alloc);
 
@@ -2360,7 +2360,7 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
     dlsch0->harq_mask =0;
   }
   if ((dlsch0->harq_mask & (1 << rel13->harq_process)) > 0) {
-    if (rel13->new_data_indicator != dlsch0_harq->ndi)
+    if ((rel13->new_data_indicator != dlsch0_harq->ndi)||(dci_alloc->ra_flag==1))
       dlsch0_harq->round = 0;
   } else {                      // process is inactive, so activate and set round to 0
     dlsch0_harq->round = 0;
@@ -2369,10 +2369,15 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
 
   if (dlsch0_harq->round == 0) {
     dlsch0_harq->status = ACTIVE;
-
-    // MCS and TBS don't change across HARQ rounds
-    dlsch0_harq->TBS = TBStable[get_I_TBS (dlsch0_harq->mcs)][dlsch0_harq->nb_rb - 1];
-
+    dlsch0_harq->mcs = rel13->mcs;
+    if (dci_alloc->ra_flag == 0) // get TBS from table using mcs and nb_rb
+      dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
+    else if (rel13->tpc == 0)  //N1A_PRB=2, get TBS from table using mcs and nb_rb=2
+      dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][1];
+    else if (rel13->tpc == 1)  //N1A_PRB=3, get TBS from table using mcs and nb_rb=3
+      dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][2];      
+  
+    LOG_I(PHY,"TBS = %d(%d)\n",dlsch0_harq->TBS,dlsch0_harq->mcs);
   }
   dlsch0->active = 1;
   dlsch0->harq_mask |= (1 << rel13->harq_process);
@@ -2384,7 +2389,7 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
   dlsch0->harq_ids[dlsch0_harq->subframe] = rel13->harq_process;
   dlsch0_harq->pdsch_start = rel13->start_symbol;
 
-  LOG_I(PHY,"Setting DLSCH harq %d to active for %d.%d\n",rel13->harq_process,dlsch0_harq->frame,dlsch0_harq->subframe);
+  LOG_I(PHY,"Setting DLSCH harq %d round %d to active for %d.%d\n",rel13->harq_process,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe);
 
   dlsch0->rnti = rel13->rnti;
 

@@ -84,7 +84,8 @@ void mpdcch_scrambling(LTE_DL_FRAME_PARMS * frame_parms, mDCI_ALLOC_t * mdci, ui
 
     // rule for BL/CE UEs from Section 6.8.B2 in 36.211
     x2 = ((((j0 + j) * Nacc) % 10) << 9) + mdci->dmrs_scrambling_init;
-
+    LOG_I(PHY,"MPDCCH cinit = %x (mdci->dmrs_scrambling_init = %d)\n",
+          x2,mdci->dmrs_scrambling_init);
     for (n = 0; n < length; n++) {
         if ((i & 0x1f) == 0) {
             s = lte_gold_generic(&x1, &x2, reset);
@@ -139,26 +140,33 @@ static uint16_t mpdcch5ss2p109110tab[792];
 void init_mpdcch5ss2tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
 {
     int             l, k, kmod, re107108 = 0, re109110 = 0;
-
+    int nushift = eNB->frame_parms.Nid_cell % 6;
+    int nushiftp3 = (eNB->frame_parms.Nid_cell+3) % 6;
+    // NOTE : THIS IS FOR TM1 ONLY FOR NOW!!!!!!!
     LOG_I(PHY, "Inititalizing mpdcch5ss2tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
     for (l = 2; l < 14; l++) {
         for (k = 0; k < 72; k++) {
             kmod = k % 12;
-            if (((l != 5) && (l != 6) && (l != 12) && (l != 13)) || (kmod == 2) || (kmod == 3) || (kmod == 4) || (kmod == 7) || (kmod == 8) || (kmod == 9)) {
+            if ((((l == 4)||(l==11)) && (kmod != nushiftp3) && (kmod != (nushiftp3+6))) || 
+                ((l == 7) && (kmod != nushift) &&(kmod != (nushift+6)))) {  // CS RS
+               mpdcch5ss2p109110tab[re109110] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
+                 mpdcch5ss2p107108tab[re107108] = mpdcch5ss2p109110tab[re109110];
+                 re107108++;
+                 re109110++;
+                 printf("CSRS: l %d, k %d (kmod %d) => re %d\n", l, k, kmod, re107108);
+
+            }
+            if (((l!=4)&&(l!=7)&&(l!=11)) && 
+                (((l != 5) && (l != 6) && (l != 12) && (l != 13)) || (kmod == 2) || (kmod == 3) || (kmod == 4) || (kmod == 7) || (kmod == 8) || (kmod == 9))) {
                 mpdcch5ss2p109110tab[re109110] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
                 mpdcch5ss2p107108tab[re107108] = mpdcch5ss2p109110tab[re109110];
                 re107108++;
                 re109110++;
                 printf("l %d, k %d (kmod %d) => re %d\n", l, k, kmod, re107108);
-            } else if ((kmod == 0) || (kmod == 5) || (kmod == 10)) {
-                mpdcch5ss2p109110tab[re109110++] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
-            } else if ((kmod == 1) || (kmod == 6) || (kmod == 11)) {
-                mpdcch5ss2p107108tab[re107108++] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
-                printf("l %d, k %d (kmod %d) => re %d\n", l, k, kmod, re107108);
             }
         }
     }
-    AssertFatal(re107108 == 792, "RE count not equal to 792\n");
+    AssertFatal(re107108 == 684, "RE count not equal to 684\n");
 }
 
 // this table is the allocation of modulated MPDCCH format 5 symbols to REs, antenna ports 107,108
@@ -295,6 +303,10 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
 
     // Assumption: only handle a single MPDCCH per narrowband
 
+    int nsymb = (fp->Ncp==0) ? 14:12;
+
+    int symbol_offset = (uint32_t)fp->ofdm_symbol_size*(subframe*nsymb);
+
     LOG_I(PHY, "generate_mdci_top: num_dci %d\n", mpdcch->num_dci);
 
     for (i = 0; i < mpdcch->num_dci; i++) {
@@ -310,11 +322,10 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
         // These are to avoid unimplemented things
         AssertFatal(mdci->ce_mode == 1, "CE mode (%d) B not activated yet\n", mdci->ce_mode);
         AssertFatal(mdci->L == 24, "Only 2+4 and aggregation 24 for now\n");
-
-        LOG_I(PHY, "mdci %d: rnti %x, L %d, prb_pairs %d, ce_mode %d, i0 %d, ss %d \n", i, mdci->rnti, mdci->L, mdci->number_of_prb_pairs, mdci->ce_mode, mdci->i0, mdci->start_symbol);
+        int             a_index = mdci->rnti & 3;
+        LOG_I(PHY, "mdci %d, length %d: rnti %x, L %d, prb_pairs %d, ce_mode %d, i0 %d, ss %d Ant %d\n", i, mdci->dci_length,mdci->rnti, mdci->L, mdci->number_of_prb_pairs, mdci->ce_mode, mdci->i0, mdci->start_symbol,(a_index<2)?107:109);
         i0 = mdci->i0;
         // antenna index
-        int             a_index = mdci->rnti & 3;
 
         if ((mdci->start_symbol == 1) && (a_index < 2)) {
             mpdcchtab = mpdcch5ss1p107108tab;
@@ -390,7 +401,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
         int             re_offset = fp->first_carrier_offset + (12 * nb_i0) + mdci->narrowband * 12 * 6;
         if (re_offset > fp->ofdm_symbol_size)
             re_offset -= (fp->ofdm_symbol_size - 1);
-        int32_t        *txF = &txdataF[0][re_offset];
+        int32_t        *txF = &txdataF[0][symbol_offset+re_offset];
         int32_t         yIQ;
 
         for (i = 0; i < (coded_bits >> 1); i++) {
@@ -426,17 +437,19 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
             idelta = Nacc - 2;
 
         j0 = (i0 + idelta) / Nacc;
-        j = (i - i0) / Nacc;
+        j = (absSF - i0) / Nacc;
 
 
 
         uint32_t        a = ((((j0 + j) * Nacc) % 10) + 1);
         uint32_t        b = ((mdci->dmrs_scrambling_init << 1) + 1) << 16;
         x2 = a * b;
-        LOG_I(PHY, "mpdcch_dmrs cinit %d\n", x2);
+        x2 = x2 + 2;
+        LOG_I(PHY, "mpdcch_dmrs cinit %x (a=%d,b=%d,i0=%d,j0=%d)\n", x2,a,b,i0,j0);
 
         // add MPDCCH pilots
         int             reset = 1;
+	    //gain_lin_QPSK*=2;
         for (i = 0; i < (24 * 6); i += 2) {
             if ((i & 0x1f) == 0) {
                 s = lte_gold_generic(&x1, &x2, reset);
@@ -444,7 +457,9 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
             }
             ((int16_t *) & yIQ)[0] = (((s >> (i & 0x1f)) & 1) == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
             ((int16_t *) & yIQ)[1] = (((s >> ((i + 1) & 0x1f)) & 1) == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
-            txF[off + mpdcch_dmrs_tab[(i >> 1)]] = yIQ;
+            txF[mpdcch_dmrs_tab[(i >> 1)]] = yIQ;
+            txF[mpdcch_dmrs_tab[1+(i >> 1)]] = yIQ;
+
             LOG_D(PHY, "mpdcch_dmrs pos %d: %d => (%d,%d)\n", i, off + mpdcch_dmrs_tab[(i >> 1)], ((int16_t *) & yIQ)[0], ((int16_t *) & yIQ)[1]);
         }
     }

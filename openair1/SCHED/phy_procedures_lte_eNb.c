@@ -535,7 +535,7 @@ prach_procedures (PHY_VARS_eNB * eNB,
         eNB->preamble_list_br[ind].preamble_rel8.timing_advance = max_preamble_delay[ind];      //
         eNB->preamble_list_br[ind].preamble_rel8.preamble = max_preamble[ind];
         // note: fid is implicitly 0 here, this is the rule for eMTC RA-RNTI from 36.321, Section 5.1.4
-        eNB->preamble_list_br[ind].preamble_rel8.rnti = 1 + subframe + (eNB->prach_vars_br.first_frame[ce_level] % 40);
+        eNB->preamble_list_br[ind].preamble_rel8.rnti = 1 + subframe + (60*(eNB->prach_vars_br.first_frame[ce_level] % 40));
         eNB->preamble_list_br[ind].instance_length = 0; //don't know exactly what this is
         eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type = 1 + ce_level;    // CE Level
         LOG_D (PHY, "Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
