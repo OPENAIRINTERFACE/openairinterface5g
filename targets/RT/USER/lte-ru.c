@@ -683,6 +683,24 @@ void fh_if4p5_north_out(RU_t *ru) {
 
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 0 );
 }
+
+static void* emulatedRF_thread(void* param) {
+  RU_proc_t *proc = (RU_proc_t *) param;
+  int microsec = 500; // length of time to sleep, in miliseconds
+  struct timespec req = {0};
+  req.tv_sec = 0;
+  req.tv_nsec = microsec * 1000L;
+  wait_sync("emulatedRF_thread");
+  while(!oai_exit){
+    nanosleep(&req, (struct timespec *)NULL);
+    pthread_mutex_lock(&proc->mutex_emulateRF);
+    ++proc->instance_cnt_emulateRF;
+    pthread_mutex_unlock(&proc->mutex_emulateRF);
+    pthread_cond_signal(&proc->cond_emulateRF);
+  }
+  return 0;
+}
+
 void rx_rf(RU_t *ru,int *frame,int *subframe) {
 
   RU_proc_t *proc = &ru->proc;
@@ -699,11 +717,8 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
 
   old_ts = proc->timestamp_rx;
   #ifdef EMULATE_RF
-  int microsec = 450; // length of time to sleep, in miliseconds
-  struct timespec req = {0};
-  req.tv_sec = 0;
-  req.tv_nsec = microsec * 1000L;
-  nanosleep(&req, (struct timespec *)NULL);
+  wait_on_condition(&proc->mutex_emulateRF,&proc->cond_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
+  release_thread(&proc->mutex_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
   rxs = fp->samples_per_tti;
   #else
   rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
@@ -715,7 +730,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
  
-  proc->timestamp_rx = -ru->ts_offset;//ts-ru->ts_offset;
+  proc->timestamp_rx = ts-ru->ts_offset;
 
   if (rxs != fp->samples_per_tti)
     LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
@@ -728,7 +743,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
     if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
       //LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,ru->ts_offset);
       ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
-      proc->timestamp_rx = -ru->ts_offset;//ts-ru->ts_offset;
+      proc->timestamp_rx = ts-ru->ts_offset;
     }
 
   }
@@ -1405,7 +1420,7 @@ static void* ru_thread_tx( void* param ) {
     }
 	LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
 	// wait until eNBs are finished subframe RX n and TX n+4
-    wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
+    wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
 	//printf("//////////////////instance_cnt_eNBs = %d\n",proc->instance_cnt_eNBs);//////////////////*********
   	    
   	#ifdef EMULATE_RF
@@ -1421,7 +1436,7 @@ static void* ru_thread_tx( void* param ) {
     if (ru->fh_north_out) ru->fh_north_out(ru);
 	#endif
 
-    release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
+    release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
   }
 
   return 0;
@@ -1706,7 +1721,7 @@ void init_RU_proc(RU_t *ru) {
    
   int i=0;
   RU_proc_t *proc;
-  pthread_attr_t *attr_FH=NULL,*attr_FH1=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_synch=NULL;
+  pthread_attr_t *attr_FH=NULL,*attr_FH1=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_synch=NULL,*attr_emulateRF=NULL;
   //pthread_attr_t *attr_fep=NULL;
 #ifdef Rel14
   pthread_attr_t *attr_prach_br=NULL;
@@ -1724,6 +1739,7 @@ void init_RU_proc(RU_t *ru) {
   proc->instance_cnt_synch       = -1;
   proc->instance_cnt_FH          = -1;
   proc->instance_cnt_FH1         = -1;
+  proc->instance_cnt_emulateRF   = -1;
   proc->instance_cnt_asynch_rxtx = -1;
   proc->instance_cnt_eNBs        = -1;
   proc->first_rx                 = 1;
@@ -1739,15 +1755,18 @@ void init_RU_proc(RU_t *ru) {
   pthread_mutex_init( &proc->mutex_synch,NULL);
   pthread_mutex_init( &proc->mutex_FH,NULL);
   pthread_mutex_init( &proc->mutex_FH1,NULL);
+  pthread_mutex_init( &proc->mutex_emulateRF,NULL);
   
   pthread_cond_init( &proc->cond_prach, NULL);
   pthread_cond_init( &proc->cond_FH, NULL);
   pthread_cond_init( &proc->cond_FH1, NULL);
+  pthread_cond_init( &proc->cond_emulateRF, NULL);
   pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
   pthread_cond_init( &proc->cond_synch,NULL);
   
   pthread_attr_init( &proc->attr_FH);
   pthread_attr_init( &proc->attr_FH1);
+  pthread_attr_init( &proc->attr_emulateRF);
   pthread_attr_init( &proc->attr_prach);
   pthread_attr_init( &proc->attr_synch);
   pthread_attr_init( &proc->attr_asynch_rxtx);
@@ -1766,12 +1785,16 @@ void init_RU_proc(RU_t *ru) {
   attr_prach     = &proc->attr_prach;
   attr_synch     = &proc->attr_synch;
   attr_asynch    = &proc->attr_asynch_rxtx;
+  attr_emulateRF = &proc->attr_emulateRF;
 #ifdef Rel14
   attr_prach_br  = &proc->attr_prach_br;
 #endif
 #endif
   
-  pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );\
+  pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
+#ifdef EMULATE_RF
+  pthread_create( &proc->pthread_emulateRF, attr_emulateRF, emulatedRF_thread, (void*)proc );
+#endif
 
   if (fh_two_thread==1)
     pthread_create( &proc->pthread_FH1, attr_FH1, ru_thread_tx, (void*)ru );

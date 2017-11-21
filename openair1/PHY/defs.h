@@ -331,8 +331,10 @@ typedef struct RU_proc_t_s {
   int instance_cnt_asynch_rxtx;
   /// \internal This variable is protected by \ref mutex_fep
   int instance_cnt_fep;
-  /// \internal This variable is protected by \ref mutex_fep
+  /// \internal This variable is protected by \ref mutex_feptx
   int instance_cnt_feptx;
+  /// This varible is protected by \ref mutex_emulatedRF
+  int instance_cnt_emulateRF;
   /// pthread structure for RU FH processing thread
   pthread_t pthread_FH;
   pthread_t pthread_FH1;
@@ -346,8 +348,10 @@ typedef struct RU_proc_t_s {
   pthread_t pthread_synch;
   /// pthread struct for RU RX FEP worker thread
   pthread_t pthread_fep;
-  /// pthread struct for RU RX FEPTX worker thread
+  /// pthread struct for RU TX FEP worker thread
   pthread_t pthread_feptx;
+  /// pthread struct for emulated RF
+  pthread_t pthread_emulateRF;
   /// pthread structure for asychronous RX/TX processing thread
   pthread_t pthread_asynch_rxtx;
   /// flag to indicate first RX acquisition
@@ -371,6 +375,8 @@ typedef struct RU_proc_t_s {
   pthread_attr_t attr_fep;
   /// pthread attributes for worker feptx thread
   pthread_attr_t attr_feptx;
+  /// pthread attributes for emulated RF
+  pthread_attr_t attr_emulateRF;
   /// scheduling parameters for RU FH thread
   struct sched_param sched_param_FH;
   struct sched_param sched_param_FH1;
@@ -397,10 +403,12 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_synch;
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
-  /// condition varaible for RU RX FEP thread
+  /// condition varible for RU RX FEP thread
   pthread_cond_t cond_fep;
-  /// condition varaible for RU RX FEPTX thread
+  /// condition varible for RU TX FEP thread
   pthread_cond_t cond_feptx;
+  /// condition varible for emulated RF
+  pthread_cond_t cond_emulateRF;
   /// condition variable for eNB signal
   pthread_cond_t cond_eNBs;
   /// mutex for RU FH
@@ -422,6 +430,8 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_fep;
   /// mutex for fep TX worker thread
   pthread_mutex_t mutex_feptx;
+  /// mutex for emulated RF thread
+  pthread_mutex_t mutex_emulateRF;
   /// symbol mask for IF4p5 reception per subframe
   uint32_t symbol_mask[10];
   /// number of slave threads
