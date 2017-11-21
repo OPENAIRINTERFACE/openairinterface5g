@@ -449,7 +449,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
 
         // add MPDCCH pilots
         int             reset = 1;
-	    //gain_lin_QPSK*=2;
+	    gain_lin_QPSK*=2;
         for (i = 0; i < (24 * 6); i += 2) {
             if ((i & 0x1f) == 0) {
                 s = lte_gold_generic(&x1, &x2, reset);
@@ -458,7 +458,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
             ((int16_t *) & yIQ)[0] = (((s >> (i & 0x1f)) & 1) == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
             ((int16_t *) & yIQ)[1] = (((s >> ((i + 1) & 0x1f)) & 1) == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
             txF[mpdcch_dmrs_tab[(i >> 1)]] = yIQ;
-            txF[mpdcch_dmrs_tab[1+(i >> 1)]] = yIQ;
+            txF[1+mpdcch_dmrs_tab[(i >> 1)]] = yIQ;
 
             LOG_D(PHY, "mpdcch_dmrs pos %d: %d => (%d,%d)\n", i, off + mpdcch_dmrs_tab[(i >> 1)], ((int16_t *) & yIQ)[0], ((int16_t *) & yIQ)[1]);
         }

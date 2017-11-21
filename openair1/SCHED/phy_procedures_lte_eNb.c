@@ -399,7 +399,9 @@ phy_procedures_eNB_TX (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, relaying_type
   if (num_mdci > 0) {
      LOG_I (PHY, "[eNB %" PRIu8 "] Frame %d, subframe %d: Calling generate_mdci_top (mpdcch) (num_dci %" PRIu8 ")\n", eNB->Mod_id, frame, subframe, num_mdci);
   
-     generate_mdci_top (eNB, frame, subframe, AMP, eNB->common_vars.txdataF);
+     generate_mdci_top (eNB, frame, subframe, AMP*3/4, eNB->common_vars.txdataF);
+     //write_output("/tmp/mpdcch.m","mpdcch_txF",(void*)&eNB->common_vars.txdataF[0][subframe*14*1024],14*1024,1,1);
+	 //exit(-1);
   }
 #endif
   // Now scan UE specific DLSCH
