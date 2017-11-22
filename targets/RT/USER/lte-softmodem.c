@@ -1133,8 +1133,6 @@ int main( int argc, char **argv )
   
   
 #if defined(ENABLE_ITTI)
-  
-  
   if ((UE_flag == 1)||
       (RC.nb_inst > 0))  {
     
@@ -1151,16 +1149,6 @@ int main( int argc, char **argv )
     RCconfig_L1();
   }
 #endif
-  
-  if (phy_test==0) {
-    if (UE_flag==1) {
-      printf("Filling UE band info\n");
-      fill_ue_band_info();
-      dl_phy_sync_success (0, 0, 0, 1);
-    } 
-  }
-  
-  
   
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -1228,14 +1216,18 @@ int main( int argc, char **argv )
   rt_sleep_ns(10*100000000ULL);
   
   
-  
-  
   // start the main threads
   if (UE_flag == 1) {
     int eMBMS_active = 0;
     init_UE(1,eMBMS_active,uecap_xer_in);
+
+    if (phy_test==0) {
+      printf("Filling UE band info\n");
+      fill_ue_band_info();
+      dl_phy_sync_success (0, 0, 0, 1);
+    }
+
     number_of_cards = 1;
-    
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
       PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
