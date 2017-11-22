@@ -678,7 +678,7 @@ static void get_options(void) {
       NB_RU	  = RC.nb_RU;
       printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,NB_RU);
     }
-  } else if (UE_flag == 1 && (CONFIG_GETCONFFILE != NULL)) {
+  } else if (UE_flag == 1 && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
     // Here the configuration file is the XER encoded UE capabilities
     // Read it in and store in asn1c data structures
     strcpy(uecap_xer,CONFIG_GETCONFFILE);
@@ -731,12 +731,12 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
     frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
-    downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
-    downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-    downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
+//    downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
+//    downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
+//    downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
+//    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
     //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
-
+    frame_parms[CC_id]->dl_CarrierFreq=downlink_frequency[CC_id][0];
   }
 
 }
@@ -1083,8 +1083,9 @@ int main( int argc, char **argv )
 	else if (frame_parms[CC_id]->N_RB_DL == 25)
 	  UE[CC_id]->N_TA_offset = 624/4;
       }
-      
+    init_openair0();      
     }
+
   }
 
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);

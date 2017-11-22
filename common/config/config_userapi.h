@@ -38,6 +38,9 @@
 extern "C"
 {
 #endif
+#define DEFAULT_CFGFILENAME "oaisoftmodem.conf"
+#define DEFAULT_CFGMODE     "libconfig"
+
 #define CONFIG_GETSOURCE    ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgmode       )
 #define CONFIG_GETNUMP      ( (config_get_if()==NULL) ? 0    : config_get_if()->num_cfgP      )
 #define CONFIG_GETP(P)      ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgP[P]       )
