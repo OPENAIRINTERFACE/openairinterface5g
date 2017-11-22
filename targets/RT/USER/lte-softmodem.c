@@ -227,6 +227,9 @@ threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
  */
 uint8_t abstraction_flag=0;
 
+/* forward declarations */
+void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+
 /*---------------------BMC: timespec helpers -----------------------------*/
 
 struct timespec min_diff_time = { .tv_sec = 0, .tv_nsec = 0 };
@@ -609,9 +612,9 @@ static void get_options(void) {
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
-      if ( *(cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr) > 0) mode = debug_prach;
-      if ( *(cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr) > 0)  mode = no_L2_connect;
-      if ( *(cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr) > 0) mode = calib_prach_tx; 
+      if ( (cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = debug_prach;
+      if ( (cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0)  mode = no_L2_connect;
+      if ( (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = calib_prach_tx; 
       if (dumpframe  > 0)  mode = rx_dump_frame;
       
       if ( downlink_frequency[0][0] > 0) {
@@ -628,7 +631,7 @@ static void get_options(void) {
          for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
 	     frame_parms[CC_id]->frame_type = TDD;
       }
-
+      set_default_frame_parms(frame_parms);
       if (frame_parms[0]->N_RB_DL !=0) {
   	  if ( frame_parms[0]->N_RB_DL < 6 ) {
   	     frame_parms[0]->N_RB_DL = 6;
@@ -691,7 +694,7 @@ int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
 
-void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
   int CC_id;
@@ -905,14 +908,14 @@ int main( int argc, char **argv )
 
 
   // set default parameters
-  if (UE_flag == 1) set_default_frame_parms(frame_parms);
+//  if (UE_flag == 1) set_default_frame_parms(frame_parms);
 
   logInit();
 
   printf("Reading in command-line options\n");
 
   get_options (); 
-  if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
+  if (CONFIG_ISFLAGSET(CONFIG_ABORT) && UE_flag == 0) {
       fprintf(stderr,"Getting configuration failed\n");
       exit(-1);
   }
