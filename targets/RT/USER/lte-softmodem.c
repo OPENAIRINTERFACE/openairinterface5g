@@ -599,7 +599,7 @@ static void get_options(void) {
      paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
      paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
 
-
+     set_default_frame_parms(frame_parms);
 
      config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
      config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
@@ -618,20 +618,18 @@ static void get_options(void) {
       if (dumpframe  > 0)  mode = rx_dump_frame;
       
       if ( downlink_frequency[0][0] > 0) {
-  	  for (CC_id=1; CC_id<MAX_NUM_CCs; CC_id++) {
-  	    downlink_frequency[CC_id][1] = downlink_frequency[0][0];
-  	    downlink_frequency[CC_id][2] = downlink_frequency[0][0];
-  	    downlink_frequency[CC_id][3] = downlink_frequency[0][0];
-  	    printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
-  	  }
-      UE_scan=0;
+	printf("Downlink frequency set to %u\n", downlink_frequency[0][0]);
+	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+	}
+	UE_scan=0;
       } 
 
       if (tddflag > 0) {
          for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
 	     frame_parms[CC_id]->frame_type = TDD;
       }
-      set_default_frame_parms(frame_parms);
+
       if (frame_parms[0]->N_RB_DL !=0) {
   	  if ( frame_parms[0]->N_RB_DL < 6 ) {
   	     frame_parms[0]->N_RB_DL = 6;
@@ -681,8 +679,9 @@ static void get_options(void) {
   } else if (UE_flag == 1 && (CONFIG_GETCONFFILE != NULL)) {
     // Here the configuration file is the XER encoded UE capabilities
     // Read it in and store in asn1c data structures
-    strcpy(uecap_xer,CONFIG_GETCONFFILE);
-    uecap_xer_in=1;
+    sprintf(uecap_xer,"%stargets/PROJECTS/GENERIC-LTE-EPC/CONF/UE_config.xml",getenv("OPENAIR_HOME"));
+    printf("%s\n",uecap_xer);
+    uecap_xer_in=0;
   } /* UE with config file  */
 }
 
@@ -731,12 +730,7 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
     frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
-    downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
-    downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-    downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
-    //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
-
+    frame_parms[CC_id]->dl_CarrierFreq = 2680000000; 
   }
 
 }
@@ -908,7 +902,7 @@ int main( int argc, char **argv )
 
 
   // set default parameters
-//  if (UE_flag == 1) set_default_frame_parms(frame_parms);
+  //if (UE_flag == 1) set_default_frame_parms(frame_parms);
 
   logInit();
 
