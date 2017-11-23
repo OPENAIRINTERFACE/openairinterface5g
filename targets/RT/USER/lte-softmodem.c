@@ -632,38 +632,38 @@ static void get_options(void) {
 	     frame_parms[CC_id]->frame_type = TDD;
       }
 
-      if (frame_parms[0]->N_RB_DL !=0) {
-  	  if ( frame_parms[0]->N_RB_DL < 6 ) {
-  	     frame_parms[0]->N_RB_DL = 6;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  if ( frame_parms[0]->N_RB_DL > 100 ) {
-  	     frame_parms[0]->N_RB_DL = 100;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  if ( frame_parms[0]->N_RB_DL > 50 && frame_parms[0]->N_RB_DL < 100 ) {
-  	     frame_parms[0]->N_RB_DL = 50;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  if ( frame_parms[0]->N_RB_DL > 25 && frame_parms[0]->N_RB_DL < 50 ) {
-  	     frame_parms[0]->N_RB_DL = 25;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  UE_scan = 0;
-  	  frame_parms[0]->N_RB_UL=frame_parms[0]->N_RB_DL;
-  	  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-  	      frame_parms[CC_id]->N_RB_DL=n_rb_dl;
-  	      frame_parms[CC_id]->N_RB_UL=n_rb_dl;
-  	  }
+      if (n_rb_dl !=0) {
+	printf("NB_RB set to %d\n",frame_parms[0]->N_RB_DL);
+	if ( n_rb_dl < 6 ) {
+	  n_rb_dl = 6;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",n_rb_dl);
+	}
+	if ( n_rb_dl > 100 ) {
+	  n_rb_dl = 100;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",n_rb_dl);
+	}
+	if ( n_rb_dl > 50 && n_rb_dl < 100 ) {
+	  n_rb_dl = 50;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",n_rb_dl);
+	}
+	if ( n_rb_dl > 25 && n_rb_dl < 50 ) {
+	  n_rb_dl = 25;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",n_rb_dl);
+	}
+	UE_scan = 0;
+	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  frame_parms[CC_id]->N_RB_DL=n_rb_dl;
+	  frame_parms[CC_id]->N_RB_UL=n_rb_dl;
+	}
       }
 
-
-      for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++) {
-  	    tx_max_power[CC_id]=tx_max_power[0];
-	    rx_gain[0][CC_id] = rx_gain[0][0];
-	    tx_gain[0][CC_id] = tx_gain[0][0];
+      for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+	tx_max_power[CC_id]=tx_max_power[0];
+	rx_gain[0][CC_id] = rx_gain[0][0];
+	tx_gain[0][CC_id] = tx_gain[0][0];
       }
   } /* UE_flag > 0 */
+
 #if T_TRACER
   paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
   config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);   
