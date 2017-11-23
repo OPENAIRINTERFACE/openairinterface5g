@@ -2075,7 +2075,7 @@ void ulsch_scheduler_pre_ue_select(
 
       cc = &eNB->common_channels[CC_id];
       //harq_pid
-      harq_pid = subframe2harqpid(cc,frameP,subframeP);
+      harq_pid = subframe2harqpid(cc,(frameP+(subframeP>=6 ? 1 : 0)),((subframeP+4)%10));
       //round
       round = UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid];
 
