@@ -463,11 +463,14 @@ void *te_thread(void *param) {
   CPU_SET(4, &cpuset);
   pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-  eNB_proc_t *proc = &((te_params *)param)->eNB->proc;
+  PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
+  eNB_proc_t *proc               = &eNB->proc;
+  time_stats_t *te_wakeup_stats0 = &eNB->dlsch_turbo_encoding_wakeup_stats0;
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_te[0],&proc->cond_te[0],&proc->instance_cnt_te[0],"te thread")<0) break;
 
+    stop_meas(te_wakeup_stats0);
     dlsch_encoding_2threads0((te_params*)param);
 
 
@@ -477,6 +480,10 @@ void *te_thread(void *param) {
       printf("[eNB] ERROR pthread_cond_signal for te thread exit\n");
       exit_fun( "ERROR pthread_cond_signal" );
       return(NULL);
+    }
+    if(opp_enabled == 1 && te_wakeup_stats0->diff_now>50*3000){
+      print_meas_now(te_wakeup_stats0,"coding_wakeup",stderr);
+      printf("frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
     }
   }
 
@@ -494,12 +501,15 @@ void *te_thread1(void *param) {
   CPU_SET(7, &cpuset);
   pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-  eNB_proc_t *proc = &((te_params *)param)->eNB->proc;
+  PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
+  eNB_proc_t *proc               = &eNB->proc;
+  time_stats_t *te_wakeup_stats1 = &eNB->dlsch_turbo_encoding_wakeup_stats1;
   while (!oai_exit) {
 
 
     if (wait_on_condition(&proc->mutex_te[1],&proc->cond_te[1],&proc->instance_cnt_te[1],"te thread 1")<0) break;
 
+    stop_meas(te_wakeup_stats1);
     dlsch_encoding_2threads1((te_params*)param);
 
 
@@ -509,6 +519,10 @@ void *te_thread1(void *param) {
       printf("[eNB] ERROR pthread_cond_signal for te thread 1 exit\n");
       exit_fun( "ERROR pthread_cond_signal" );
       return(NULL);
+    }
+    if(opp_enabled == 1 && te_wakeup_stats1->diff_now>50*3000){
+      print_meas_now(te_wakeup_stats1,"coding_wakeup",stderr);
+      printf("delay for waking up in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
     }
   }
 
@@ -524,6 +538,8 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 			    time_stats_t *rm_stats,
 			    time_stats_t *te_stats,
 				time_stats_t *te_wait_stats,
+                time_stats_t *te_wakeup_stats0,
+                time_stats_t *te_wakeup_stats1,
 			    time_stats_t *i_stats)
 {
 
@@ -591,6 +607,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
       exit_fun( "ERROR pthread_cond_signal" );
       return (-1);
     }
+	start_meas(te_wakeup_stats0);
 
     pthread_mutex_unlock( &proc->mutex_te[0] );
 ////////////////////////////////////////////////////////////////
@@ -614,6 +631,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
       exit_fun( "ERROR pthread_cond_signal" );
       return (-1);
     }
+    start_meas(te_wakeup_stats1);
 
     pthread_mutex_unlock( &proc->mutex_te[1] );
 
@@ -727,7 +745,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   stop_meas(te_wait_stats);
   if(opp_enabled == 1 && te_wait_stats->diff_now>50*3000){
     print_meas_now(te_wait_stats,"coding_wait",stderr);
-	printf("frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
+	printf("delay in wait on codition in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
   }
 
 
@@ -744,6 +762,8 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    time_stats_t *rm_stats,
                    time_stats_t *te_stats,
 				   time_stats_t *te_wait_stats,
+                   time_stats_t *te_wakeup_stats0,
+                   time_stats_t *te_wakeup_stats1,
                    time_stats_t *i_stats)
 {
 	int encoding_return = 0;
@@ -776,7 +796,9 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    subframe,
                    rm_stats,
                    te_stats,
-				   te_wait_stats,
+                   te_wait_stats,
+                   te_wakeup_stats0,
+                   te_wakeup_stats1,
                    i_stats);
 		}
 	else
