@@ -76,11 +76,11 @@ pmch_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, PHY_VARS_RN * rn, r
   // if mcch is active, send regardless of the node type: eNB or RN
   // when mcch is active, MAC sched does not allow MCCH and MTCH multiplexing
   /*
-     mch_pduP = mac_xface->get_mch_sdu(eNB->Mod_id,
-     eNB->CC_id,
-     proc->frame_tx,
-     subframe);
-   */
+    mch_pduP = mac_xface->get_mch_sdu(eNB->Mod_id,
+    eNB->CC_id,
+    proc->frame_tx,
+    subframe);
+  */
   switch (r_type) {
   case no_relay:
     if ((mch_pduP->Pdu_size > 0) && (mch_pduP->sync_area == 0)) // TEST: only transmit mcch for sync area 0
@@ -212,23 +212,7 @@ pdsch_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, int harq_pid, LTE_
 
     LOG_I (PHY,
            "[eNB %" PRIu8 "][PDSCH %" PRIx16 "/%" PRIu8 "] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %" PRIu16 ", pdsch_start %d, G %d, nb_rb %" PRIu16 ", rb0 %x, rb1 %x, TBS %"
-           PRIu16 ", pmi_alloc %" PRIx64 ", rv %" PRIu8 " (round %" PRIu8 ")\n", eNB->Mod_id, dlsch->rnti, harq_pid, frame, subframe, input_buffer_length, dlsch_harq->pdsch_start, get_G (fp,
-                                                                                                                                                                                           dlsch_harq->
-                                                                                                                                                                                           nb_rb,
-                                                                                                                                                                                           dlsch_harq->
-                                                                                                                                                                                           rb_alloc,
-                                                                                                                                                                                           dlsch_harq->
-                                                                                                                                                                                           Qm,
-                                                                                                                                                                                           dlsch_harq->
-                                                                                                                                                                                           Nl,
-                                                                                                                                                                                           dlsch_harq->
-                                                                                                                                                                                           pdsch_start,
-                                                                                                                                                                                           frame,
-                                                                                                                                                                                           subframe,
-                                                                                                                                                                                           dlsch_harq->
-                                                                                                                                                                                           mimo_mode ==
-                                                                                                                                                                                           TM7 ? 7 : 0),
-           dlsch_harq->nb_rb, dlsch_harq->rb_alloc[0], dlsch_harq->rb_alloc[1], dlsch_harq->TBS, pmi2hex_2Ar1 (dlsch_harq->pmi_alloc), dlsch_harq->rvidx, dlsch_harq->round);
+           PRIu16 ", pmi_alloc %" PRIx64 ", rv %" PRIu8 " (round %" PRIu8 ")\n", eNB->Mod_id, dlsch->rnti, harq_pid, frame, subframe, input_buffer_length, dlsch_harq->pdsch_start, get_G(fp,dlsch_harq->nb_rb,dlsch_harq->rb_alloc,dlsch_harq->Qm,dlsch_harq->Nl,dlsch_harq->pdsch_start,frame,subframe,dlsch_harq->mimo_mode == TM7 ? 7 : 0),dlsch_harq->nb_rb, dlsch_harq->rb_alloc[0], dlsch_harq->rb_alloc[1], dlsch_harq->TBS, pmi2hex_2Ar1 (dlsch_harq->pmi_alloc), dlsch_harq->rvidx, dlsch_harq->round);
   }
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
   MSC_LOG_TX_MESSAGE (MSC_PHY_ENB, MSC_PHY_UE,
@@ -397,11 +381,12 @@ phy_procedures_eNB_TX (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, relaying_type
 #ifdef Rel14
   num_mdci = eNB->mpdcch_vars[subframe &1].num_dci;
   if (num_mdci > 0) {
-     LOG_I (PHY, "[eNB %" PRIu8 "] Frame %d, subframe %d: Calling generate_mdci_top (mpdcch) (num_dci %" PRIu8 ")\n", eNB->Mod_id, frame, subframe, num_mdci);
+    LOG_I (PHY, "[eNB %" PRIu8 "] Frame %d, subframe %d: Calling generate_mdci_top (mpdcch) (num_dci %" PRIu8 ")\n", eNB->Mod_id, frame, subframe, num_mdci);
   
-     generate_mdci_top (eNB, frame, subframe, AMP*3/4, eNB->common_vars.txdataF);
-     //write_output("/tmp/mpdcch.m","mpdcch_txF",(void*)&eNB->common_vars.txdataF[0][subframe*14*1024],14*1024,1,1);
-	 //exit(-1);
+    generate_mdci_top (eNB, frame, subframe, AMP, eNB->common_vars.txdataF);
+    
+    /*    write_output("/tmp/mpdcch.m","mpdcch_txF",(void*)&eNB->common_vars.txdataF[0][subframe*14*1024],14*1024,1,1);
+	  exit(-1);*/
   }
 #endif
   // Now scan UE specific DLSCH
@@ -415,19 +400,19 @@ phy_procedures_eNB_TX (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, relaying_type
       // get harq_pid
       harq_pid = dlsch0->harq_ids[subframe];
       if (harq_pid >=0 &&  harq_pid < 8) { 
-      // generate pdsch
+	// generate pdsch
         if ((dlsch0->rnti !=0xFFFF)) {   
           LOG_I(PHY,"SFN %d.%d: DLSCH %d for rnti %x is active, harq_pid %d => SFN %d.%d\n",
-	      frame,
-	      subframe,
-          UE_id,
-	      dlsch0->rnti,
-	      harq_pid,
-	      dlsch0->harq_processes[harq_pid]->frame,
-	      dlsch0->harq_processes[harq_pid]->subframe);
+		frame,
+		subframe,
+		UE_id,
+		dlsch0->rnti,
+		harq_pid,
+		dlsch0->harq_processes[harq_pid]->frame,
+		dlsch0->harq_processes[harq_pid]->subframe);
         }
         if ((dlsch0->harq_processes[harq_pid]->status == ACTIVE) && (dlsch0->harq_processes[harq_pid]->frame == frame) && (dlsch0->harq_processes[harq_pid]->subframe == subframe))
-           pdsch_procedures (eNB, proc, harq_pid, dlsch0, dlsch1, &eNB->UE_stats[(uint32_t) UE_id], 0);
+	  pdsch_procedures (eNB, proc, harq_pid, dlsch0, dlsch1, &eNB->UE_stats[(uint32_t) UE_id], 0);
 
 
       }
@@ -456,7 +441,7 @@ prach_procedures (PHY_VARS_eNB * eNB,
 #ifdef Rel14
                   int br_flag
 #endif
-  )
+		  )
 {
   uint16_t        max_preamble[4], max_preamble_energy[4], max_preamble_delay[4];
   uint16_t        i;
@@ -471,13 +456,13 @@ prach_procedures (PHY_VARS_eNB * eNB,
     pthread_mutex_unlock (&eNB->UL_INFO_mutex);
   } else
 #endif
-  {
-    pthread_mutex_lock (&eNB->UL_INFO_mutex);
-    eNB->UL_INFO.rach_ind.number_of_preambles = 0;
-    pthread_mutex_unlock (&eNB->UL_INFO_mutex);
-    subframe = eNB->proc.subframe_prach;
-    frame = eNB->proc.frame_prach;
-  }
+    {
+      pthread_mutex_lock (&eNB->UL_INFO_mutex);
+      eNB->UL_INFO.rach_ind.number_of_preambles = 0;
+      pthread_mutex_unlock (&eNB->UL_INFO_mutex);
+      subframe = eNB->proc.subframe_prach;
+      frame = eNB->proc.frame_prach;
+    }
   RU_t           *ru;
   int             aa = 0;
   int             ru_aa;
@@ -505,7 +490,7 @@ prach_procedures (PHY_VARS_eNB * eNB,
 #ifdef Rel14
             , br_flag
 #endif
-    );
+	    );
 
 #ifdef DEBUG_PHY_PROC
   LOG_I (PHY, "[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n", frame, subframe, max_preamble[0], max_preamble_energy[0] / 10, max_preamble_delay[0]);
@@ -528,7 +513,7 @@ prach_procedures (PHY_VARS_eNB * eNB,
        (eNB->prach_vars_br.repetition_number[ce_level]==
        eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[ce_level])) {
 
-     */
+    */
 
     if (eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[0] == 1) {
       if ((eNB->prach_energy_counter == 100) && (max_preamble_energy[0] > eNB->measurements.prach_I0 + 200)) {
@@ -548,46 +533,46 @@ prach_procedures (PHY_VARS_eNB * eNB,
                eNB->preamble_list_br[ind].preamble_rel8.preamble, eNB->preamble_list_br[ind].preamble_rel8.rnti, eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type);
       }
       /*
-         ind++;
-         }
-         } */// ce_level
+	ind++;
+	}
+	} */// ce_level
     }
   } else
 #endif
 
-  {
-    if ((eNB->prach_energy_counter == 100) && (max_preamble_energy[0] > eNB->measurements.prach_I0 + 200)) {
+    {
+      if ((eNB->prach_energy_counter == 100) && (max_preamble_energy[0] > eNB->measurements.prach_I0 + 200)) {
 
-      LOG_D (PHY, "[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
-             eNB->Mod_id, eNB->CC_id, frame, subframe, max_preamble[0], max_preamble_energy[0] / 10, max_preamble_energy[0] % 10, max_preamble_delay[0]);
+	LOG_D (PHY, "[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
+	       eNB->Mod_id, eNB->CC_id, frame, subframe, max_preamble[0], max_preamble_energy[0] / 10, max_preamble_energy[0] % 10, max_preamble_delay[0]);
 
-      T (T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT (eNB->Mod_id), T_INT (frame), T_INT (subframe), T_INT (max_preamble[0]), T_INT (max_preamble_energy[0]), T_INT (max_preamble_delay[0]));
+	T (T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT (eNB->Mod_id), T_INT (frame), T_INT (subframe), T_INT (max_preamble[0]), T_INT (max_preamble_energy[0]), T_INT (max_preamble_delay[0]));
 
-      pthread_mutex_lock (&eNB->UL_INFO_mutex);
+	pthread_mutex_lock (&eNB->UL_INFO_mutex);
 
-      eNB->UL_INFO.rach_ind.number_of_preambles = 1;
-      eNB->UL_INFO.rach_ind.preamble_list = eNB->preamble_list;
+	eNB->UL_INFO.rach_ind.number_of_preambles = 1;
+	eNB->UL_INFO.rach_ind.preamble_list = eNB->preamble_list;
 
-      eNB->preamble_list[0].preamble_rel8.timing_advance = max_preamble_delay[0];
-      eNB->preamble_list[0].preamble_rel8.preamble = max_preamble[0];
-      eNB->preamble_list[0].preamble_rel8.rnti = 1 + subframe;  // note: fid is implicitly 0 here
-      eNB->preamble_list[0].preamble_rel13.rach_resource_type = 0;
-      eNB->preamble_list[0].instance_length = 0;        //don't know exactly what this is
+	eNB->preamble_list[0].preamble_rel8.timing_advance = max_preamble_delay[0];
+	eNB->preamble_list[0].preamble_rel8.preamble = max_preamble[0];
+	eNB->preamble_list[0].preamble_rel8.rnti = 1 + subframe;  // note: fid is implicitly 0 here
+	eNB->preamble_list[0].preamble_rel13.rach_resource_type = 0;
+	eNB->preamble_list[0].instance_length = 0;        //don't know exactly what this is
 
-      LOG_D (PHY, "Filling NFAPI indication for RACH : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
-             eNB->preamble_list[0].preamble_rel8.timing_advance,
-             eNB->preamble_list[0].preamble_rel8.preamble, eNB->preamble_list[0].preamble_rel8.rnti, eNB->preamble_list[0].preamble_rel13.rach_resource_type);
-      pthread_mutex_unlock (&eNB->UL_INFO_mutex);
+	LOG_D (PHY, "Filling NFAPI indication for RACH : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+	       eNB->preamble_list[0].preamble_rel8.timing_advance,
+	       eNB->preamble_list[0].preamble_rel8.preamble, eNB->preamble_list[0].preamble_rel8.rnti, eNB->preamble_list[0].preamble_rel13.rach_resource_type);
+	pthread_mutex_unlock (&eNB->UL_INFO_mutex);
 
-    }                           // max_preamble_energy > prach_I0 + 100 
-    else {
-      eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0 * 900) >> 10) + ((max_preamble_energy[0] * 124) >> 10);
-      if (frame == 0)
-        LOG_I (PHY, "prach_I0 = %d.%d dB\n", eNB->measurements.prach_I0 / 10, eNB->measurements.prach_I0 % 10);
-      if (eNB->prach_energy_counter < 100)
-        eNB->prach_energy_counter++;
-    }
-  }                             // else br_flag
+      }                           // max_preamble_energy > prach_I0 + 100 
+      else {
+	eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0 * 900) >> 10) + ((max_preamble_energy[0] * 124) >> 10);
+	if (frame == 0)
+	  LOG_I (PHY, "prach_I0 = %d.%d dB\n", eNB->measurements.prach_I0 / 10, eNB->measurements.prach_I0 % 10);
+	if (eNB->prach_energy_counter < 100)
+	  eNB->prach_energy_counter++;
+      }
+    }                             // else br_flag
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME (VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX, 0);
 }
@@ -652,7 +637,7 @@ uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
 {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   uint8_t         SR_payload = 0, pucch_b0b1[4][2] = { {0, 0}, {0, 0}, {0, 0}, {0, 0} }, harq_ack[4] = {
-  0, 0, 0, 0};
+    0, 0, 0, 0};
   int32_t         metric[4] = { 0, 0, 0, 0 }, metric_SR = 0, max_metric;
   const int       subframe = proc->subframe_rx;
   const int       frame = proc->frame_rx;
@@ -1130,8 +1115,11 @@ pusch_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
         fill_crc_indication (eNB, i, frame, subframe, 1);       // indicate NAK to MAC
         fill_rx_indication (eNB, i, frame, subframe);   // indicate SDU to MAC
 
-        LOG_D (PHY, "[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
+        LOG_I (PHY, "[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
                eNB->Mod_id, harq_pid, frame, subframe, i, ulsch_harq->round - 1, ulsch->Mlimit, ulsch_harq->o_ACK[0], ulsch_harq->o_ACK[1]);
+	dump_ulsch(eNB,frame,subframe,i);
+	exit(-1);
+
         if (ulsch_harq->round >= 3) {
           ulsch_harq->status = SCH_IDLE;
           ulsch_harq->handled = 0;
@@ -1329,8 +1317,8 @@ release_harq (PHY_VARS_eNB * eNB, int UE_id, int tb, uint16_t frame, uint8_t sub
 
     dlsch0_harq->status = SCH_IDLE;
     /*if ((dlsch1_harq == NULL)||
-       ((dlsch1_harq!=NULL)&&
-       (dlsch1_harq->status == SCH_IDLE))) */
+      ((dlsch1_harq!=NULL)&&
+      (dlsch1_harq->status == SCH_IDLE))) */
     dlsch0->harq_mask &= ~(1 << harq_pid);
     LOG_D (PHY, "Frame %d, subframe %d: Releasing harq %d for UE %x\n", frame, subframe, harq_pid, dlsch0->rnti);
 

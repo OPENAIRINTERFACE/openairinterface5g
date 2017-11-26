@@ -247,7 +247,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
     reps = (rmax <= 8) ? (1 << rep) : (rmax >> (3 - rep));
     // get narrowband according to higher-layer config 
     num_nb = p[RA_template->rach_resource_type - 1]->mpdcch_NarrowbandsToMonitor_r13.list.count;
-    RA_template->msg2_narrowband = *p[RA_template->rach_resource_type - 1]->mpdcch_NarrowbandsToMonitor_r13.list.array[RA_template->preamble_index % num_nb];
+    RA_template->msg2_narrowband = *p[RA_template->rach_resource_type - 1]->mpdcch_NarrowbandsToMonitor_r13.list.array[RA_template->preamble_index % num_nb]-1;
     first_rb = narrowband_to_first_rb (&cc[CC_idP], RA_template->msg2_narrowband);
 
     if ((RA_template->msg2_mpdcch_repetition_cnt == 0) && (mpdcch_sf_condition (eNB, CC_idP, frameP, subframeP, rmax, TYPE2, -1) > 0)) {
@@ -274,8 +274,9 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_idP].physCellId;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000;     // 0dB
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6) | (RA_template->msg2_narrowband<<5);      
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = 1;       // adjust according to size of RAR, 208 bits with N1A_PRB=3
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = RA_template->msg2_narrowband;      
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6);      
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = 0;       // adjust according to size of RAR, 208 bits with N1A_PRB=3
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels = 4;    // fix to 4 for now
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.redundancy_version = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.new_data_indicator = 0;
@@ -286,7 +287,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pmi = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_resource_offset = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_subframe_repetition_number = rep;
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpc = 0;       // N1A_PRB=2 (36.212);
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpc = 1;       // N1A_PRB=3 (36.212) => 56 bits
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.downlink_assignment_index_length = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.downlink_assignment_index = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.allocate_prach_flag = 0;
@@ -371,7 +372,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.drms_table_flag = 0;
         dl_req->number_pdu++;
 
-       fill_rar_br (eNB, CC_idP, RA_template, frameP, subframeP, cc[CC_idP].RAR_pdu.payload, RA_template->rach_resource_type - 1)     ; 
+	fill_rar_br (eNB, CC_idP, RA_template, frameP, subframeP, cc[CC_idP].RAR_pdu.payload, RA_template->rach_resource_type - 1)     ; 
 // Program UL processing for Msg3, same as regular LTE
         get_Msg3alloc (&cc[CC_idP], subframeP, frameP, &RA_template->Msg3_frame, &RA_template->Msg3_subframe);
         add_msg3 (module_idP, CC_idP, RA_template, frameP, subframeP);
@@ -628,7 +629,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000;     // 0dB
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6);      // check if not getRIV(N_RB_DL,first_rb,6);
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = 4;       // adjust according to size of Msg4, 208 bits with N1A_PRB=3
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = 0;       // adjust according to size of Msg4, 208 bits with N1A_PRB=3
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels = 4;    // fix to 4 for now
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.redundancy_version = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.new_data_indicator = 0;
@@ -639,7 +640,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pmi = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_resource_offset = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_subframe_repetition_number = rep;
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpc = 1;       // N1A_PRB=3; => 208 bits
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpc = 1;       // N1A_PRB=3; => 
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.downlink_assignment_index_length = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.downlink_assignment_index = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.allocate_prach_flag = 0;
@@ -1160,13 +1161,14 @@ initiate_ra_proc (module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t
   LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, subframeP, preamble_index);
 #ifdef Rel14
   LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n", module_idP, CC_id, frameP, subframeP, rach_resource_type);
-#endif
+
 
   if (prach_ParametersListCE_r13 && prach_ParametersListCE_r13->list.count < rach_resource_type) {
     LOG_E (MAC, "[eNB %d][RAPROC] CC_id %d Received impossible PRACH resource type %d, only %d CE levels configured\n",
            module_idP, CC_id, rach_resource_type, (int) prach_ParametersListCE_r13->list.count);
     return;
   }
+#endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME (VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME (VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);

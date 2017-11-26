@@ -139,7 +139,7 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
   uint8_t *rar = (uint8_t *)(dlsch_buffer+1);
 
   int i;
-  uint8_t nb,rballoc,reps;
+  uint8_t rballoc,reps;
   uint8_t mcs,TPC,ULdelay,cqireq,mpdcch_nb_index;
   int input_buffer_length;
 
@@ -158,7 +158,7 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
 
   // Copy the Msg2 narrowband
   RA_template->msg34_narrowband = RA_template->msg2_narrowband;
-  RA_template->msg3_first_rb    = ce_level;
+  RA_template->msg3_first_rb    = 0;
   RA_template->msg3_nb_rb       = 2;
 
   if (ce_level<2) { //CE Level 0,1, CEmodeA
@@ -170,24 +170,24 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
     rar[5] = (uint8_t)(RA_template->rnti&0xff);
     //cc->RA_template[ra_idx].timing_offset = 0;
 
-    nb      = 0;
     reps = 0;
-    mcs = 7;
+    RA_template->msg3_mcs = 7;
     TPC = 3; // no power increase
     ULdelay = 0;
     cqireq = 0;
     mpdcch_nb_index = 0;
-    rballoc = mac_computeRIV(6,RA_template->msg3_first_rb,RA_template->msg3_nb_rb); // one PRB only for UL Grant in position 1+ce_level within Narrowband
+    rballoc = mac_computeRIV(6,RA_template->msg3_first_rb,RA_template->msg3_nb_rb);
+
     unsigned int buffer = 0;
-    buffer |= N_NB_index << (16 + (4 - N_NB_index));
+    buffer |= RA_template->msg34_narrowband << (16 + (4 - N_NB_index));
     buffer |= ((rballoc & 0xFF) << (12 + (4 - N_NB_index)));
     buffer |= ((reps & 0x03) << (10 + (4 - N_NB_index)));
-    buffer |= ((mcs & 0x07) << (7 + (4 - N_NB_index)));
+    buffer |= ((RA_template->msg3_mcs & 0x07) << (7 + (4 - N_NB_index)));
     buffer |= ((TPC & 0x07) << (4 + (4 - N_NB_index)));
     buffer |= ((cqireq & 0x01) << (3 + (4 - N_NB_index)));
     buffer |= ((ULdelay & 0x01) << (2 + (4 - N_NB_index)));
-    buffer |= ((ULdelay & 0x01) << (4 - N_NB_index));
-    rar[1] = (buffer>>12) & 0x0F;
+    buffer |= (mpdcch_nb_index << (4 - N_NB_index));
+    rar[1] = (buffer>>16) & 0x0F;
     rar[2] = (buffer>>8) & 0xFF;
     rar[3] = buffer&0xFF;
   }

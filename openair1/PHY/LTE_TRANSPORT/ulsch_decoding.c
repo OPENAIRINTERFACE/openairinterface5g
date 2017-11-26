@@ -904,7 +904,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
 
   //#ifdef DEBUG_ULSCH_DECODING
-  LOG_D(PHY,"Frame %d, Subframe %d: ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): A %d, round %d, RV %d, O_r1 %d, O_RI %d, O_ACK %d, G %d\n",
+  LOG_I(PHY,"Frame %d, Subframe %d: ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): A %d, round %d, RV %d, O_r1 %d, O_RI %d, O_ACK %d, G %d\n",
 	proc->frame_rx,subframe,
 	frame_parms->Nid_cell,ulsch->rnti,x2,
 	A,

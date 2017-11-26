@@ -164,18 +164,19 @@ int8_t          delta_PUSCH_acc[4] = { -1, 0, 1, 3 };
 int8_t         *delta_PUCCH_lut = delta_PUSCH_acc;
 
 void
-conv_eMTC_rballoc (uint16_t resource_block_coding, uint32_t N_RB_DL, uint32_t * rb_alloc)
+conv_eMTC_rballoc (uint8_t narrowband,uint16_t resource_block_coding, uint32_t N_RB_DL, uint32_t * rb_alloc)
 {
 
 
-  int             narrowband = resource_block_coding >> 5;
-  int             RIV = resource_block_coding & 31;
+  int             RIV = resource_block_coding;
   int             N_NB_DL = N_RB_DL / 6;
   int             i0 = (N_RB_DL >> 1) - (3 * N_NB_DL);
   int             first_rb = (6 * narrowband) + i0;
   int             alloc = localRIV2alloc_LUT6[RIV];
   int             ind = first_rb >> 5;
   int             ind_mod = first_rb & 31;
+
+  AssertFatal(RIV<32,"RIV is %d > 31\n");
 
   if (((N_RB_DL & 1) > 0) && (narrowband >= (N_NB_DL >> 1)))
     first_rb++;
@@ -2208,6 +2209,7 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
       ((DCI6_1A_10MHz_t *) dci_pdu)->type = 1;
       ((DCI6_1A_10MHz_t *) dci_pdu)->hopping = rel13->frequency_hopping_enabled_flag;
       ((DCI6_1A_10MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
+      ((DCI6_1A_10MHz_t *) dci_pdu)->narrowband = rel13->mpdcch_narrow_band;
       ((DCI6_1A_10MHz_t *) dci_pdu)->mcs = rel13->mcs;
       ((DCI6_1A_10MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels);
       ((DCI6_1A_10MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
@@ -2218,8 +2220,22 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
       ((DCI6_1A_10MHz_t *) dci_pdu)->harq_ack_off = rel13->harq_resource_offset;
       ((DCI6_1A_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
 
-	  LOG_I(PHY,"Frame %d, Subframe %d : Programming Format 6-1A DCI, mcs %d, rballoc %x, dci_rep r%d, L %d, narrowband %d, start_symbol %d, TPC %d, ra_flag %d, dci_type %d\n",
-		frame,subframe,rel13->mcs,rel13->resource_block_coding,1+rel13->dci_subframe_repetition_number,rel13->aggregation_level,rel13->mpdcch_narrow_band,dci_alloc->start_symbol,rel13->tpc,dci_alloc->ra_flag,rel13->rnti_type);
+      LOG_I(PHY,"Frame %d, Subframe %d : Programming Format 6-1A DCI, type %d, hopping %d, narrowband %d, rballoc %x, mcs %d, rep %d, harq_pid %d, ndi %d, rv %d, TPC %d, srs_req %d, harq_ack_off %d, dci_rep r%d => %x\n",
+	    frame,subframe,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->type,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->hopping,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->narrowband,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->rballoc,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->mcs,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->rep,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->harq_pid,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->ndi,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->rv,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->TPC,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->srs_req,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->harq_ack_off,
+	    ((DCI6_1A_10MHz_t *) dci_pdu)->dci_rep,
+	    ((uint32_t*)dci_pdu)[0]);
       break;
     case 100:
       dci_alloc->dci_length = sizeof_DCI6_1A_20MHz_t;
@@ -2335,7 +2351,9 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
   dlsch0->subframe_tx[(subframe + 2) % 10] = 1;
   LOG_I(PHY,"PDSCH : resource_block_coding %x\n",rel13->resource_block_coding);
 
-  conv_eMTC_rballoc (rel13->resource_block_coding, fp->N_RB_DL, dlsch0_harq->rb_alloc);
+  conv_eMTC_rballoc (rel13->mpdcch_narrow_band,rel13->resource_block_coding, 
+		     fp->N_RB_DL, 
+		     dlsch0_harq->rb_alloc);
 
   dlsch0_harq->nb_rb = RIV2nb_rb_LUT6[rel13->resource_block_coding & 31];       // this is the 6PRB RIV
 
