@@ -773,6 +773,14 @@ typedef struct RU_t_s{
   time_stats_t ofdm_demod_stats;
   /// Timing statistics (TX)
   time_stats_t ofdm_mod_stats;
+  /// Timing wait statistics
+  time_stats_t ofdm_demod_wait_stats;
+  /// Timing wakeup statistics
+  time_stats_t ofdm_demod_wakeup_stats;
+  /// Timing wait statistics (TX)
+  time_stats_t ofdm_mod_wait_stats;
+  /// Timing wakeup statistics (TX)
+  time_stats_t ofdm_mod_wakeup_stats;
   /// RX and TX buffers for precoder output
   RU_COMMON            common;
   /// beamforming weight vectors per eNB

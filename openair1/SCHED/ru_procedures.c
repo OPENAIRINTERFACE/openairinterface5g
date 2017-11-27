@@ -152,6 +152,7 @@ static void *feptx_thread(void *param) {
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread")<0) break;  
+    //stop_meas(&ru->ofdm_mod_wakeup_stats);
     feptx0(ru,1);
     if (release_thread(&proc->mutex_feptx,&proc->instance_cnt_feptx,"feptx thread")<0) break;
 
@@ -160,6 +161,10 @@ static void *feptx_thread(void *param) {
       exit_fun( "ERROR pthread_cond_signal" );
       return NULL;
     }
+	/*if(opp_enabled == 1 && ru->ofdm_mod_wakeup_stats.diff_now>30*3000){
+      print_meas_now(&ru->ofdm_mod_wakeup_stats,"fep wakeup",stderr);
+      printf("delay in fep wakeup in frame_tx: %d  subframe_rx: %d \n",proc->frame_tx,proc->subframe_tx);
+    }*/
   }
 
 
@@ -204,13 +209,20 @@ void feptx_ofdm_2thread(RU_t *ru) {
       exit_fun( "ERROR pthread_cond_signal" );
       return;
     }
+	//start_meas(&ru->ofdm_mod_wakeup_stats);
     
     pthread_mutex_unlock( &proc->mutex_feptx );
   }
 
   // call first slot in this thread
   feptx0(ru,0);
+  start_meas(&ru->ofdm_mod_wait_stats);
   wait_on_busy_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread");  
+  stop_meas(&ru->ofdm_mod_wait_stats);
+  if(opp_enabled == 1 && ru->ofdm_mod_wait_stats.diff_now>30*3000){
+    print_meas_now(&ru->ofdm_mod_wait_stats,"fep wakeup",stderr);
+    printf("delay in feptx wait on codition in frame_rx: %d  subframe_rx: %d \n",proc->frame_tx,proc->subframe_tx);
+  }
 
   stop_meas(&ru->ofdm_mod_stats);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
@@ -432,6 +444,7 @@ static void *fep_thread(void *param) {
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread")<0) break; 
+	//stop_meas(&ru->ofdm_demod_wakeup_stats);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX1, 1 ); 
     fep0(ru,0);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX1, 0 ); 
@@ -442,6 +455,10 @@ static void *fep_thread(void *param) {
       exit_fun( "ERROR pthread_cond_signal" );
       return NULL;
     }
+    /*if(opp_enabled == 1 && ru->ofdm_demod_wakeup_stats.diff_now>30*3000){
+      print_meas_now(&ru->ofdm_demod_wakeup_stats,"fep wakeup",stderr);
+      printf("delay in fep wakeup in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
+    }*/
   }
 
 
@@ -509,13 +526,20 @@ void ru_fep_full_2thread(RU_t *ru) {
     exit_fun( "ERROR pthread_cond_signal" );
     return;
   }
+  //start_meas(&ru->ofdm_demod_wakeup_stats);
   
   pthread_mutex_unlock( &proc->mutex_fep );
 
   // call second slot in this symbol
   fep0(ru,1);
 
+  start_meas(&ru->ofdm_demod_wait_stats);
   wait_on_busy_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread");  
+  stop_meas(&ru->ofdm_demod_wait_stats);
+  if(opp_enabled == 1 && ru->ofdm_demod_wakeup_stats.diff_now>30*3000){
+    print_meas_now(&ru->ofdm_demod_wakeup_stats,"fep wakeup",stderr);
+    printf("delay in fep wait on codition in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
+  }
 
   stop_meas(&ru->ofdm_demod_stats);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 0 );

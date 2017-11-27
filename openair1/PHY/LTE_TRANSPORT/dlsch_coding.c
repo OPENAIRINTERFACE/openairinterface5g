@@ -470,7 +470,7 @@ void *te_thread(void *param) {
 
     if (wait_on_condition(&proc->mutex_te[0],&proc->cond_te[0],&proc->instance_cnt_te[0],"te thread")<0) break;
 
-    stop_meas(te_wakeup_stats0);
+    //stop_meas(te_wakeup_stats0);
     dlsch_encoding_2threads0((te_params*)param);
 
 
@@ -481,10 +481,10 @@ void *te_thread(void *param) {
       exit_fun( "ERROR pthread_cond_signal" );
       return(NULL);
     }
-    if(opp_enabled == 1 && te_wakeup_stats0->diff_now>50*3000){
+    /*if(opp_enabled == 1 && te_wakeup_stats0->diff_now>50*3000){
       print_meas_now(te_wakeup_stats0,"coding_wakeup",stderr);
-      printf("frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
-    }
+      printf("te_thread0 delay for waking up in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
+    }*/
   }
 
   return(NULL);
@@ -509,7 +509,7 @@ void *te_thread1(void *param) {
 
     if (wait_on_condition(&proc->mutex_te[1],&proc->cond_te[1],&proc->instance_cnt_te[1],"te thread 1")<0) break;
 
-    stop_meas(te_wakeup_stats1);
+    //stop_meas(te_wakeup_stats1);
     dlsch_encoding_2threads1((te_params*)param);
 
 
@@ -520,10 +520,10 @@ void *te_thread1(void *param) {
       exit_fun( "ERROR pthread_cond_signal" );
       return(NULL);
     }
-    if(opp_enabled == 1 && te_wakeup_stats1->diff_now>50*3000){
+    /*if(opp_enabled == 1 && te_wakeup_stats1->diff_now>50*3000){
       print_meas_now(te_wakeup_stats1,"coding_wakeup",stderr);
-      printf("delay for waking up in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
-    }
+      printf("te_thread1 delay for waking up in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
+    }*/
   }
 
   return(NULL);
@@ -607,7 +607,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
       exit_fun( "ERROR pthread_cond_signal" );
       return (-1);
     }
-	start_meas(te_wakeup_stats0);
+	//start_meas(te_wakeup_stats0);
 
     pthread_mutex_unlock( &proc->mutex_te[0] );
 ////////////////////////////////////////////////////////////////
@@ -631,7 +631,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
       exit_fun( "ERROR pthread_cond_signal" );
       return (-1);
     }
-    start_meas(te_wakeup_stats1);
+    //start_meas(te_wakeup_stats1);
 
     pthread_mutex_unlock( &proc->mutex_te[1] );
 
@@ -743,9 +743,9 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   wait_on_busy_condition(&proc->mutex_te[0],&proc->cond_te[0],&proc->instance_cnt_te[0],"te thread");
   wait_on_busy_condition(&proc->mutex_te[1],&proc->cond_te[1],&proc->instance_cnt_te[1],"te thread1");
   stop_meas(te_wait_stats);
-  if(opp_enabled == 1 && te_wait_stats->diff_now>50*3000){
+  if(opp_enabled == 1 && te_wait_stats->diff_now>100*3000){
     print_meas_now(te_wait_stats,"coding_wait",stderr);
-	printf("delay in wait on codition in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
+	printf("delay in wait on codition in frame_rx: %d \n",proc->frame_rx);
   }
 
 
