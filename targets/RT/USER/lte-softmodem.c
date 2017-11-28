@@ -633,7 +633,7 @@ static void get_options(void) {
       }
 
       if (n_rb_dl !=0) {
-	printf("NB_RB set to %d\n",frame_parms[0]->N_RB_DL);
+	printf("NB_RB set to %d\n",n_rb_dl);
 	if ( n_rb_dl < 6 ) {
 	  n_rb_dl = 6;
 	  printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",n_rb_dl);
@@ -936,7 +936,7 @@ int main( int argc, char **argv )
     printf("configuring for UE\n");
 
     set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
-    set_comp_log(PHY,     LOG_DEBUG,   LOG_HIGH, 1);
+    set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(MAC,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(RLC,     LOG_INFO,   LOG_HIGH | FLAG_THREAD, 1);
     set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);
