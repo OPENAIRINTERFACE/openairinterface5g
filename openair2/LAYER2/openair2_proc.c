@@ -131,6 +131,12 @@ int dump_eNB_l2_stats(char *buffer, int length)
 		     eNB->eNB_stats[CC_id].bcch_buffer,
 		     eNB->eNB_stats[CC_id].total_bcch_buffer,
 		     eNB->eNB_stats[CC_id].bcch_mcs);
+
+      len += sprintf(&buffer[len],"PCCH , NB_TX_MAC = %d, transmitted bytes (TTI %d, total %d) MCS (TTI %d)\n",
+         eNB->eNB_stats[CC_id].total_num_pcch_pdu,
+         eNB->eNB_stats[CC_id].pcch_buffer,
+         eNB->eNB_stats[CC_id].total_pcch_buffer,
+         eNB->eNB_stats[CC_id].pcch_mcs);
       
       eNB->eNB_stats[CC_id].dlsch_bitrate=((eNB->eNB_stats[CC_id].dlsch_bytes_tx*8)/((eNB->frame + 1)*10));
       eNB->eNB_stats[CC_id].total_dlsch_pdus_tx+=eNB->eNB_stats[CC_id].dlsch_pdus_tx;

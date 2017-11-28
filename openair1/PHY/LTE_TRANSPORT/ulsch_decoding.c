@@ -178,9 +178,26 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch)
         //ulsch->harq_processes[i]->phich_active = 0; //this will be done later after transmission of PHICH
         ulsch->harq_processes[i]->phich_ACK = 0;
         ulsch->harq_processes[i]->round = 0;
+        ulsch->harq_processes[i]->rar_alloc = 0;
+        ulsch->harq_processes[i]->first_rb = 0;
+        ulsch->harq_processes[i]->nb_rb = 0;
+        ulsch->harq_processes[i]->TBS = 0;
+        ulsch->harq_processes[i]->Or1 = 0;
+        ulsch->harq_processes[i]->Or2 = 0;
+        for ( int j = 0; j < 2; j++ ) {
+          ulsch->harq_processes[i]->o_RI[j] = 0;
+        }
+        ulsch->harq_processes[i]->O_ACK = 0;
+        ulsch->harq_processes[i]->srs_active = 0;
+        ulsch->harq_processes[i]->rvidx = 0;
+        ulsch->harq_processes[i]->Msc_initial = 0;
+        ulsch->harq_processes[i]->Nsymb_initial = 0;
       }
     }
-
+    ulsch->beta_offset_cqi_times8 = 0;
+    ulsch->beta_offset_ri_times8 = 0;
+    ulsch->beta_offset_harqack_times8 = 0;
+    ulsch->Msg3_active = 0;
   }
 }
 
@@ -2038,3 +2055,4 @@ uint32_t ulsch_decoding_emul(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc,
 
 }
 #endif
+

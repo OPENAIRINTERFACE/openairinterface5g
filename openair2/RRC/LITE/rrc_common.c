@@ -363,9 +363,12 @@ rrc_rx_tx(
 	}
       }
     }
-    if (ue_to_be_removed)
+    if (ue_to_be_removed) {
       rrc_eNB_free_UE(ctxt_pP->module_id,ue_to_be_removed);
-
+      if(ue_to_be_removed->ue_context.ul_failure_timer >= 20000){
+        ue_to_be_removed->ue_context.ul_failure_timer = 0;
+      }
+    }
 #ifdef RRC_LOCALIZATION
 
     /* for the localization, only primary CC_id might be relevant*/

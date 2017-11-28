@@ -250,6 +250,44 @@ mac_rrc_data_req(
       return (Sdu_size);
     }
 
+    if( (Srb_id & RAB_OFFSET ) == PCCH) {
+      LOG_T(RRC,"[eNB %d] Frame %d PCCH request (Srb_id %d)\n",Mod_idP,frameP, Srb_id);
+
+      // check if data is there for MAC
+      if(RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area] > 0) { //Fill buffer
+        LOG_D(RRC,"[eNB %d] PCCH (%p) has %d bytes\n",Mod_idP,&RC.rrc[Mod_idP]->carrier[CC_id].paging[mbsfn_sync_area],
+               RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area]);
+
+#if 0 //defined(ENABLE_ITTI)
+        {
+          MessageDef *message_p;
+          int pcch_size = RC.rrc[Mod_idP]->arrier[CC_id].sizeof_paging[mbsfn_sync_area];
+          int sdu_size = sizeof(RRC_MAC_PCCH_DATA_REQ (message_p).sdu);
+
+          if (pcch_size > sdu_size) {
+            LOG_E(RRC, "SDU larger than PCCH SDU buffer size (%d, %d)", pcch_size, sdu_size);
+            pcch_size = sdu_size;
+          }
+
+          message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_MAC_PCCH_DATA_REQ);
+          RRC_MAC_PCCH_DATA_REQ (message_p).frame = frameP;
+          RRC_MAC_PCCH_DATA_REQ (message_p).sdu_size = pcch_size;
+          memset (RRC_MAC_PCCH_DATA_REQ (message_p).sdu, 0, PCCH_SDU_SIZE);
+          memcpy (RRC_MAC_PCCH_DATA_REQ (message_p).sdu, RC.rrc[Mod_idP]->carrier[CC_id].paging[mbsfn_sync_area], pcch_size);
+          RRC_MAC_PCCH_DATA_REQ (message_p).enb_index = eNB_index;
+
+          itti_send_msg_to_task (TASK_MAC_ENB, ENB_MODULE_ID_TO_INSTANCE(Mod_idP), message_p);
+        }
+#endif
+
+        memcpy(buffer_pP, RC.rrc[Mod_idP]->carrier[CC_id].paging[mbsfn_sync_area], RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area]);
+        Sdu_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area];
+        RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area] = 0;
+      }
+
+      return (Sdu_size);
+    }
+
 #if defined(Rel10) || defined(Rel14)
 
     if((Srb_id & RAB_OFFSET) == MCCH) {
@@ -771,12 +809,34 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
 
   if (ue_context_p != NULL) {
     LOG_I(RRC,"Frame %d, Subframe %d: UE %x UL failure, activating timer\n",frameP,subframeP,rntiP);
-    ue_context_p->ue_context.ul_failure_timer=1;
+    if(ue_context_p->ue_context.ul_failure_timer == 0)
+      ue_context_p->ue_context.ul_failure_timer=1;
   }
   else {
     LOG_W(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
   }
-  rrc_mac_remove_ue(Mod_instP,rntiP);
+//  rrc_mac_remove_ue(Mod_instP,rntiP);
+}
+
+void mac_eNB_rrc_uplane_failure(const module_id_t Mod_instP,
+                const int CC_idP,
+                const frame_t frameP,
+                const sub_frame_t subframeP,
+                const rnti_t rntiP)
+{
+    struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+    ue_context_p = rrc_eNB_get_ue_context(
+                     RC.rrc[Mod_instP],
+                     rntiP);
+    if (ue_context_p != NULL) {
+      LOG_I(RRC,"Frame %d, Subframe %d: UE %x U-Plane failure, activating timer\n",frameP,subframeP,rntiP);
+
+      if(ue_context_p->ue_context.ul_failure_timer == 0)
+          ue_context_p->ue_context.ul_failure_timer=19999;
+    }
+    else {
+      LOG_W(RRC,"Frame %d, Subframe %d: U-Plane failure: UE %x unknown \n",frameP,subframeP,rntiP);
+    }
 }
 
 void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP, 

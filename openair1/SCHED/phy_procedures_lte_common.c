@@ -709,6 +709,26 @@ uint16_t get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1)
     return(Np[0+plus1]);
 }
 
+int subframe_num(LTE_DL_FRAME_PARMS *frame_parms){
+    if (frame_parms->frame_type == FDD)
+        return 10;
+
+    switch (frame_parms->tdd_config) {
+    case 1:
+        return 6;
+    case 3:
+        return 7;
+    case 4:
+        return 8;
+    case 5:
+        return 9;
+    default:
+      LOG_E(PHY,"Unsupported TDD configuration %d\n",frame_parms->tdd_config);
+      AssertFatal(frame_parms->tdd_config==1 || frame_parms->tdd_config==3 || frame_parms->tdd_config==4 || frame_parms->tdd_config==5,"subframe x Unsupported TDD configuration");
+      return(255);
+    }
+}
+
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe)
 {
 

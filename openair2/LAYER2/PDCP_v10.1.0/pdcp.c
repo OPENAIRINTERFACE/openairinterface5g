@@ -68,6 +68,8 @@
 extern int otg_enabled;
 #endif
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
 
 //-----------------------------------------------------------------------------
 /*
@@ -948,6 +950,21 @@ pdcp_run (
         AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
         break;
 
+      case RRC_PCCH_DATA_REQ:
+      {
+        sdu_size_t     sdu_buffer_sizeP;
+        sdu_buffer_sizeP = RRC_PCCH_DATA_REQ(msg_p).sdu_size;
+        uint8_t CC_id = RRC_PCCH_DATA_REQ(msg_p).CC_id;
+        uint8_t ue_index = RRC_PCCH_DATA_REQ(msg_p).ue_index;
+        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_paging[ue_index] = sdu_buffer_sizeP;
+        if (sdu_buffer_sizeP > 0) {
+        	memcpy(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].paging[ue_index], RRC_PCCH_DATA_REQ(msg_p).sdu_p, sdu_buffer_sizeP);
+        }
+        //paging pdcp log
+        LOG_D(PDCP, "PDCP Received RRC_PCCH_DATA_REQ CC_id %d length %d \n", CC_id, sdu_buffer_sizeP);
+      }
+      break;
+
       default:
         LOG_E(PDCP, "Received unexpected message %s\n", msg_name);
         break;
@@ -1036,6 +1053,13 @@ pdcp_remove_UE(
   hashtable_rc_t  h_rc;
 
   // check and remove SRBs first
+
+  for(int i = 0;i<NUMBER_OF_UE_MAX;i++){
+    if(pdcp_eNB_UE_instance_to_rnti[i] == ctxt_pP->rnti){
+      pdcp_eNB_UE_instance_to_rnti[i] = NOT_A_RNTI;
+      break;
+    }
+  }
 
   for (srb_id=0; srb_id<2; srb_id++) {
     key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, srb_id, SRB_FLAG_YES);
@@ -1344,7 +1368,7 @@ rrc_pdcp_config_asn1_req (
     for (cnt=0; cnt<drb2release_list_pP->list.count; cnt++) {
       pdrb_id_p = drb2release_list_pP->list.array[cnt];
       drb_id =  *pdrb_id_p;
-      key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, srb_id, SRB_FLAG_NO);
+      key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, drb_id, SRB_FLAG_NO);
       h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
 
       if (h_rc != HASH_TABLE_OK) {
@@ -1472,7 +1496,17 @@ pdcp_config_req_asn1 (
     if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
       pdcp_pP->is_ue = FALSE;
       //pdcp_eNB_UE_instance_to_rnti[ctxtP->module_id] = ctxt_pP->rnti;
-      pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
+//      pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
+      if( srb_flagP == SRB_FLAG_NO ) {
+          for(int i = 0;i<NUMBER_OF_UE_MAX;i++){
+              if(pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] == NOT_A_RNTI){
+                  break;
+              }
+              pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % NUMBER_OF_UE_MAX;
+          }
+          pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
+          pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % NUMBER_OF_UE_MAX;
+      }
       //pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % NUMBER_OF_UE_MAX;
     } else {
       pdcp_pP->is_ue = TRUE;

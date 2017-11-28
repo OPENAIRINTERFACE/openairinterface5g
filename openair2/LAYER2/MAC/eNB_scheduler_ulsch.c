@@ -552,6 +552,8 @@ void rx_sdu(const module_id_t enb_mod_idP,
 
             UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
             UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
+	    //clear uplane_inactivity_timer
+	    UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
           }
           else { /* rx_length[i] */
             UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx+=1;

@@ -343,6 +343,7 @@ rlc_um_cleanup (
 
   if ((rlc_pP->output_sdu_in_construction)) {
     free_mem_block (rlc_pP->output_sdu_in_construction, __func__);
+    rlc_pP->output_sdu_in_construction = NULL;
   }
 
   if (rlc_pP->dar_buffer) {

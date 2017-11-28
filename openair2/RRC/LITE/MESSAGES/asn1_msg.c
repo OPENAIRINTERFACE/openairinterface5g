@@ -54,6 +54,8 @@
 #include "UL-DCCH-Message.h"
 #include "DL-CCCH-Message.h"
 #include "DL-DCCH-Message.h"
+#include "PCCH-Message.h"
+#include "openair3/UTILS/conversions.h"
 #include "EstablishmentCause.h"
 #include "RRCConnectionSetup.h"
 #include "SRB-ToAddModList.h"
@@ -89,6 +91,7 @@
 #endif
 
 #include "common/ran_context.h"
+#include "secu_defs.h"
 
 //#include "PHY/defs.h"
 #ifndef USER_MODE
@@ -1966,6 +1969,214 @@ do_RRCConnectionReconfiguration(
 
 //------------------------------------------------------------------------------
 uint8_t
+do_RRCConnectionReestablishment(
+  const protocol_ctxt_t*     const ctxt_pP,
+  rrc_eNB_ue_context_t*      const ue_context_pP,
+  int                              CC_id,
+  uint8_t*                   const buffer,
+  const uint8_t                    transmission_mode,
+  const uint8_t                    Transaction_id,
+  SRB_ToAddModList_t               **SRB_configList,
+  struct PhysicalConfigDedicated   **physicalConfigDedicated)
+{
+  asn_enc_rval_t enc_rval;
+
+  long* logicalchannelgroup = NULL;
+  struct SRB_ToAddMod* SRB1_config = NULL;
+  struct SRB_ToAddMod* SRB2_config = NULL;
+  struct SRB_ToAddMod__rlc_Config* SRB1_rlc_config = NULL;
+  struct SRB_ToAddMod__logicalChannelConfig* SRB1_lchan_config = NULL;
+  struct LogicalChannelConfig__ul_SpecificParameters* SRB1_ul_SpecificParameters = NULL;
+  eNB_RRC_INST *rrc               = RC.rrc[ctxt_pP->module_id];
+
+#ifdef CBA
+  struct PUSCH_CBAConfigDedicated_vlola* pusch_CBAConfigDedicated_vlola = NULL;
+  long* betaOffset_CBA_Index = NULL;
+  long* cShift_CBA = NULL;
+#endif
+  PhysicalConfigDedicated_t* physicalConfigDedicated2 = NULL;
+
+  DL_CCCH_Message_t dl_ccch_msg;
+
+  RRCConnectionReestablishment_t* rrcConnectionReestablishment = NULL;
+
+  int i = 0;
+  SRB_ToAddModList_t **SRB_configList2 = NULL;
+  SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[Transaction_id];
+  if (*SRB_configList2) {
+    free(*SRB_configList2);
+  }
+  *SRB_configList2 = CALLOC(1, sizeof(SRB_ToAddModList_t));
+
+  memset((void *)&dl_ccch_msg, 0, sizeof(DL_CCCH_Message_t));
+  dl_ccch_msg.message.present           = DL_CCCH_MessageType_PR_c1;
+  dl_ccch_msg.message.choice.c1.present = DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment;
+  rrcConnectionReestablishment          = &dl_ccch_msg.message.choice.c1.choice.rrcConnectionReestablishment;
+
+  // RRCConnectionReestablishment
+  // Configure SRB1
+
+
+  // get old configuration of SRB2
+  if (*SRB_configList != NULL) {
+    for (i = 0; (i < (*SRB_configList)->list.count) && (i < 3); i++) {
+      LOG_D(RRC, "(*SRB_configList)->list.array[%d]->srb_Identity=%ld\n",
+          i, (*SRB_configList)->list.array[i]->srb_Identity);
+      if ((*SRB_configList)->list.array[i]->srb_Identity == 2 ){
+        SRB2_config = (*SRB_configList)->list.array[i];
+      } else if ((*SRB_configList)->list.array[i]->srb_Identity == 1 ){
+        SRB1_config = (*SRB_configList)->list.array[i];
+      }
+    }
+  }
+
+  if (SRB1_config == NULL) {
+    // default SRB1 configuration
+    LOG_W(RRC,"SRB1 configuration does not exist in SRB configuration list, use default\n");
+    /// SRB1
+    SRB1_config = CALLOC(1, sizeof(*SRB1_config));
+
+    SRB1_config->srb_Identity = 1;
+    SRB1_rlc_config = CALLOC(1, sizeof(*SRB1_rlc_config));
+    SRB1_config->rlc_Config   = SRB1_rlc_config;
+
+    SRB1_rlc_config->present = SRB_ToAddMod__rlc_Config_PR_explicitValue;
+    SRB1_rlc_config->choice.explicitValue.present=RLC_Config_PR_am;
+  #if defined(ENABLE_ITTI)
+    SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = rrc->srb1_timer_poll_retransmit;
+    SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = rrc->srb1_poll_pdu;
+    SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte         = rrc->srb1_poll_byte;
+    SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = rrc->srb1_max_retx_threshold;
+    SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering     = rrc->srb1_timer_reordering;
+    SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = rrc->srb1_timer_status_prohibit;
+  #else
+    SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms20;;
+    SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollPDU          = PollPDU_p4;;
+    SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.pollByte         = PollByte_kBinfinity;
+    SRB1_rlc_config->choice.explicitValue.choice.am.ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t8;
+    SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_Reordering     = T_Reordering_ms35;
+    SRB1_rlc_config->choice.explicitValue.choice.am.dl_AM_RLC.t_StatusProhibit = T_StatusProhibit_ms0;
+  #endif
+
+    SRB1_lchan_config = CALLOC(1, sizeof(*SRB1_lchan_config));
+    SRB1_config->logicalChannelConfig = SRB1_lchan_config;
+
+    SRB1_lchan_config->present = SRB_ToAddMod__logicalChannelConfig_PR_explicitValue;
+    SRB1_ul_SpecificParameters = CALLOC(1, sizeof(*SRB1_ul_SpecificParameters));
+
+    SRB1_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB1_ul_SpecificParameters;
+    SRB1_ul_SpecificParameters->priority = 1;
+
+    //assign_enum(&SRB1_ul_SpecificParameters->prioritisedBitRate,LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity);
+    SRB1_ul_SpecificParameters->prioritisedBitRate=LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+
+    //assign_enum(&SRB1_ul_SpecificParameters->bucketSizeDuration,LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50);
+    SRB1_ul_SpecificParameters->bucketSizeDuration=LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
+
+    logicalchannelgroup = CALLOC(1, sizeof(long));
+    *logicalchannelgroup = 0;
+    SRB1_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
+  }
+
+  if (SRB2_config == NULL) {
+    LOG_W(RRC,"SRB2 configuration does not exist in SRB configuration list\n");
+  } else {
+    ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
+  }
+
+  if (*SRB_configList) {
+    free(*SRB_configList);
+  }
+
+  *SRB_configList = CALLOC(1, sizeof(SRB_ToAddModList_t));
+
+  ASN_SEQUENCE_ADD(&(*SRB_configList)->list,SRB1_config);
+
+  physicalConfigDedicated2 = *physicalConfigDedicated;
+
+  rrcConnectionReestablishment->rrc_TransactionIdentifier = Transaction_id;
+  rrcConnectionReestablishment->criticalExtensions.present = RRCConnectionReestablishment__criticalExtensions_PR_c1;
+  rrcConnectionReestablishment->criticalExtensions.choice.c1.present = RRCConnectionReestablishment__criticalExtensions__c1_PR_rrcConnectionReestablishment_r8;
+  rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.radioResourceConfigDedicated.srb_ToAddModList = *SRB_configList;
+  rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.radioResourceConfigDedicated.drb_ToAddModList = NULL;
+  rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.radioResourceConfigDedicated.drb_ToReleaseList = NULL;
+  rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.radioResourceConfigDedicated.sps_Config = NULL;
+  rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.radioResourceConfigDedicated.physicalConfigDedicated = physicalConfigDedicated2;
+  rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
+
+  uint8_t KeNB_star[32] = { 0 };
+  uint16_t pci = rrc->carrier[CC_id].physCellId;
+  uint32_t earfcn_dl = (uint32_t)freq_to_arfcn10(RC.mac[ctxt_pP->module_id]->common_channels[CC_id].eutra_band,
+                  rrc->carrier[CC_id].dl_CarrierFreq);
+  bool     is_rel8_only = true;
+  if (earfcn_dl > 65535) {
+    is_rel8_only = false;
+  }
+
+  LOG_D(RRC, "pci=%d, eutra_band=%d, downlink_frequency=%d, earfcn_dl=%u, is_rel8_only=%s\n",
+      pci,
+      RC.mac[ctxt_pP->module_id]->common_channels[CC_id].eutra_band,
+      rrc->carrier[CC_id].dl_CarrierFreq,
+      earfcn_dl,
+      is_rel8_only == true ? "true": "false");
+#if defined(ENABLE_SECURITY)
+  if (ue_context_pP->ue_context.nh_ncc >= 0) {
+    derive_keNB_star(ue_context_pP->ue_context.nh, pci, earfcn_dl, is_rel8_only, KeNB_star);
+    rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.nextHopChainingCount = ue_context_pP->ue_context.nh_ncc;
+  } else { // first HO 
+    derive_keNB_star (ue_context_pP->ue_context.kenb, pci, earfcn_dl, is_rel8_only, KeNB_star);
+    // LG: really 1
+    rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.nextHopChainingCount = 0;
+  }
+
+  // copy KeNB_star to ue_context_pP->ue_context.kenb
+  memcpy (ue_context_pP->ue_context.kenb, KeNB_star, 32);
+  ue_context_pP->ue_context.kenb_ncc = 0;
+#else
+  rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.nextHopChainingCount = 0;
+#endif
+
+  rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.nonCriticalExtension = NULL;
+
+#ifdef XER_PRINT
+  xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
+#endif
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message,
+                                   (void*)&dl_ccch_msg,
+                                   buffer,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+#if defined(ENABLE_ITTI)
+# if !defined(DISABLE_XER_SPRINT)
+  {
+    char        message_string[20000];
+    size_t      message_string_size;
+
+    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_DL_CCCH_Message, (void *) &dl_ccch_msg)) > 0) {
+      MessageDef *msg_p;
+
+      msg_p = itti_alloc_new_message_sized (TASK_RRC_ENB, RRC_DL_CCCH, message_string_size + sizeof (IttiMsgText));
+      msg_p->ittiMsg.rrc_dl_ccch.size = message_string_size;
+      memcpy(&msg_p->ittiMsg.rrc_dl_ccch.text, message_string, message_string_size);
+
+      itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
+    }
+  }
+# endif
+#endif
+
+#ifdef USER_MODE
+  LOG_D(RRC,"RRCConnectionReestablishment Encoded %zd bits (%zd bytes)\n",
+        enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
+
+  return((enc_rval.encoded+7)/8);
+}
+
+//------------------------------------------------------------------------------
+uint8_t
 do_RRCConnectionReestablishmentReject(
   uint8_t                    Mod_id,
   uint8_t*                   const buffer)
@@ -2449,6 +2660,73 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
   */
 
   return encoded;
+}
+
+uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain)
+{
+  LOG_D(RRC, "[eNB %d] do_Paging start\n", Mod_id);
+  asn_enc_rval_t enc_rval;
+
+  PCCH_Message_t pcch_msg;
+  PagingRecord_t *paging_record_p;
+  int j;
+
+  pcch_msg.message.present           = PCCH_MessageType_PR_c1;
+  pcch_msg.message.choice.c1.present = PCCH_MessageType__c1_PR_paging;
+
+  pcch_msg.message.choice.c1.choice.paging.pagingRecordList = CALLOC(1,sizeof(*pcch_msg.message.choice.c1.choice.paging.pagingRecordList));
+
+  pcch_msg.message.choice.c1.choice.paging.systemInfoModification = NULL;
+  pcch_msg.message.choice.c1.choice.paging.etws_Indication = NULL;
+  pcch_msg.message.choice.c1.choice.paging.nonCriticalExtension = NULL;
+
+  asn_set_empty(&pcch_msg.message.choice.c1.choice.paging.pagingRecordList->list);
+  pcch_msg.message.choice.c1.choice.paging.pagingRecordList->list.count = 0;
+
+  if ((paging_record_p = calloc(1, sizeof(PagingRecord_t))) == NULL) {
+    /* Possible error on calloc */
+    return (-1);
+  }
+
+  memset(paging_record_p, 0, sizeof(PagingRecord_t));
+
+  /* convert ue_paging_identity_t to PagingUE_Identity_t */
+  if (ue_paging_identity.presenceMask == UE_PAGING_IDENTITY_s_tmsi) {
+    paging_record_p->ue_Identity.present = PagingUE_Identity_PR_s_TMSI;
+    MME_CODE_TO_OCTET_STRING(ue_paging_identity.choice.s_tmsi.mme_code,
+                             &paging_record_p->ue_Identity.choice.s_TMSI.mmec);
+    paging_record_p->ue_Identity.choice.s_TMSI.mmec.bits_unused = 0;
+    M_TMSI_TO_OCTET_STRING(ue_paging_identity.choice.s_tmsi.m_tmsi,
+                             &paging_record_p->ue_Identity.choice.s_TMSI.m_TMSI);
+    paging_record_p->ue_Identity.choice.s_TMSI.m_TMSI.bits_unused = 0;
+  } else if (ue_paging_identity.presenceMask == UE_PAGING_IDENTITY_imsi) {
+    IMSI_Digit_t imsi_digit[21];
+    for (j = 0; j< ue_paging_identity.choice.imsi.length; j++) {  /* IMSI size */
+      imsi_digit[j] = (IMSI_Digit_t)ue_paging_identity.choice.imsi.buffer[j];
+      ASN_SEQUENCE_ADD(&paging_record_p->ue_Identity.choice.imsi.list, &imsi_digit[j]);
+    }
+  }
+
+  /* set cn_domain */
+  if (cn_domain == CN_DOMAIN_PS) {
+    paging_record_p->cn_Domain = PagingRecord__cn_Domain_ps;
+  } else {
+    paging_record_p->cn_Domain = PagingRecord__cn_Domain_cs;
+  }
+  /* add to list */
+  ASN_SEQUENCE_ADD(&pcch_msg.message.choice.c1.choice.paging.pagingRecordList->list, paging_record_p);
+  LOG_D(RRC, "[eNB %d] do_Paging paging_record: cn_Domain %ld, ue_paging_identity.presenceMask %d, PagingRecordList.count %d\n",
+          Mod_id, paging_record_p->cn_Domain, ue_paging_identity.presenceMask, pcch_msg.message.choice.c1.choice.paging.pagingRecordList->list.count);
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_PCCH_Message, (void*)&pcch_msg, buffer, RRC_BUF_SIZE);
+
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+#ifdef XER_PRINT
+  xer_fprint(stdout, &asn_DEF_PCCH_Message, (void*)&pcch_msg);
+#endif
+
+  return((enc_rval.encoded+7)/8);
 }
 
 uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer)

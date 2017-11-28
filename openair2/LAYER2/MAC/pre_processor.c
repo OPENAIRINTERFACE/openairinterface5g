@@ -581,6 +581,9 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
     UE_id = i;
+/* harada */
+int harq_pid_ul      = (((frameP<<1)+subframeP)&7);//subframe2harqpid(&RC.mac[Mod_id]->common_channels[CC_id],frameP,subframeP);
+if( (UE_list->UE_sched_ctrl[UE_id].ul_scheduled & (1<<harq_pid_ul)) != 0 ) continue;
 
     for (ii=0; ii<UE_num_active_CC(UE_list,UE_id); ii++) {
       CC_id = UE_list->ordered_CCids[ii][UE_id];

@@ -1148,6 +1148,10 @@ int main( int argc, char **argv )
     RCconfig_L1();
   }
 #endif
+
+    // init UE_PF_PO and mutex lock
+    pthread_mutex_init(&ue_pf_po_mutex, NULL);
+    memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
   
   if (phy_test==0) {
     if (UE_flag==1) {
@@ -1369,7 +1373,7 @@ int main( int argc, char **argv )
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
 
-
+  pthread_mutex_destroy(&ue_pf_po_mutex);
 
   // *** Handle per CC_id openair0
   if (UE_flag==1) {

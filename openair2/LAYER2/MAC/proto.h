@@ -393,6 +393,14 @@ void set_ue_dai(sub_frame_t   subframeP,
                 uint8_t       tdd_config,
                 UE_list_t     *UE_list);
 
+/** \brief First stage of PCH Scheduling. Gets a PCH SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+@param paging_ue_index
+*/
+void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
+
 uint8_t find_num_active_UEs_in_cbagroup(module_id_t module_idP, unsigned char group_id);
 uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id);
 /** \brief Round-robin scheduler for ULSCH traffic.
