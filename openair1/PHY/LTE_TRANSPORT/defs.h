@@ -273,6 +273,8 @@ typedef struct {
   uint16_t rnti;
   /// Active flag for baseband transmitter processing
   uint8_t active;
+  /// flag to indicate that this DLSCH is for RAR
+  uint8_t ra_flag;
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.

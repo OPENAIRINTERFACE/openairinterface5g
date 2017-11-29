@@ -139,8 +139,8 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
   uint8_t *rar = (uint8_t *)(dlsch_buffer+1);
 
   int i;
-  uint8_t rballoc,reps;
-  uint8_t mcs,TPC,ULdelay,cqireq,mpdcch_nb_index;
+  uint32_t rballoc,reps;
+  uint32_t mcs,TPC,ULdelay,cqireq,mpdcch_nb_index;
   int input_buffer_length;
 
 
@@ -178,7 +178,7 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
     mpdcch_nb_index = 0;
     rballoc = mac_computeRIV(6,RA_template->msg3_first_rb,RA_template->msg3_nb_rb);
 
-    unsigned int buffer = 0;
+    uint32_t buffer = 0;
     buffer |= RA_template->msg34_narrowband << (16 + (4 - N_NB_index));
     buffer |= ((rballoc & 0xFF) << (12 + (4 - N_NB_index)));
     buffer |= ((reps & 0x03) << (10 + (4 - N_NB_index)));

@@ -2168,15 +2168,20 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
   dci_alloc->dmrs_scrambling_init = rel13->drms_scrambling_init;
   dci_alloc->i0 = rel13->initial_transmission_sf_io;
 
-  dci_alloc->ra_flag = 0;
-  if (rel13->rnti_type == 2)
-    dci_alloc->ra_flag = 1;
 
   UE_id = find_dlsch (rel13->rnti, eNB, SEARCH_EXIST_OR_FREE);
   AssertFatal (UE_id != -1, "no free or exiting dlsch_context\n");
   AssertFatal (UE_id < NUMBER_OF_UE_MAX, "returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n", UE_id, NUMBER_OF_UE_MAX);
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch0_harq = dlsch0->harq_processes[rel13->harq_process];
+
+  dci_alloc->ra_flag = 0;
+  dlsch0->ra_flag = 0;
+
+  if (rel13->rnti_type == 2) {
+    dci_alloc->ra_flag = 1;
+    dlsch0->ra_flag = 1;
+  }
 
   AssertFatal (fp->frame_type == FDD, "TDD is not supported yet for eMTC\n");
   AssertFatal (fp->N_RB_DL == 25 || fp->N_RB_DL == 50 || fp->N_RB_DL == 100, "eMTC only with N_RB_DL = 25,50,100\n");
@@ -2400,10 +2405,10 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
   dlsch0->active = 1;
   dlsch0->harq_mask |= (1 << rel13->harq_process);
 
-  dlsch0->harq_ids[(subframe + 2) % 10] = rel13->harq_process;
   dlsch0_harq->frame    = (subframe >= 8) ? ((frame + 1) & 1023) : frame;
   dlsch0_harq->subframe = (subframe + 2) % 10;
 
+  LOG_I(PHY,"Setting DLSCH harq_ids[%d] to %d\n",dlsch0_harq->subframe,dlsch0->harq_ids[dlsch0_harq->subframe]);
   dlsch0->harq_ids[dlsch0_harq->subframe] = rel13->harq_process;
   dlsch0_harq->pdsch_start = rel13->start_symbol;
 

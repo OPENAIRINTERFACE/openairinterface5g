@@ -265,9 +265,9 @@ pdsch_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, int harq_pid, LTE_
   stop_meas (&eNB->dlsch_modulation_stats);
 
   dlsch->active = 0;
-  dlsch_harq->round++;
-  if (dlsch->rnti == 0xFFFF)
-    dlsch->harq_mask = 0;
+
+  if (dlsch->rnti == 0xFFFF || dlsch->ra_flag == 1) dlsch->harq_mask = 0; // clear the harq mask for SI and RA-RNTI
+  else   dlsch_harq->round++; //increment the round index for CRNTI and t-CRNTI
 }
 
 

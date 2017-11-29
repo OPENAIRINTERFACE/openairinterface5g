@@ -388,9 +388,10 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
       ((int16_t *) & yIQ)[1] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
       txF[mpdcchtab[i]] = yIQ;
+      /*
       LOG_D(PHY,"Frame %d, subframe %d: mpdcch pos %d (%d,%d) => (%d,%d)\n",
 	    frame,subframe,i,mpdcchtab[i]+re_offset,mpdcchtab[i]/fp->ofdm_symbol_size,
-	    ((int16_t *) & yIQ)[0],((int16_t *) & yIQ)[1]);
+	    ((int16_t *) & yIQ)[0],((int16_t *) & yIQ)[1]);*/
     }
 
     if (mdci->transmission_type == 1) w=0; // distributed
@@ -461,11 +462,11 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
 	      else
 		txF[off+(5*mprime)] = yIQ*w[3-lprime];
 	    }
-	  
+	    /*
 	    LOG_I(PHY, "mpdcch_dmrs pos (dist %d, l %d,nprb %d,mprime %d) %d  => (%d,%d)\n", 
 		  mdci->transmission_type, soffset[lprime],nprb,mprime,
 		  re_offset + fp->ofdm_symbol_size*soffset[lprime]+(5*mprime), 
-		  ((int16_t *) & yIQ)[0], ((int16_t *) & yIQ)[1]);
+		  ((int16_t *) & yIQ)[0], ((int16_t *) & yIQ)[1]);*/
 	  } // narrowband condition
 	} // RE (m') loop
       } // nprb loop

@@ -914,13 +914,16 @@ typedef struct {
   int msg4_TBsize;
   /// MCS used for Msg4
   int msg4_mcs;
+  /// size off piggybacked RRC SDU
+  uint8_t msg4_rrc_sdu_length;
 #ifdef Rel14
   uint8_t rach_resource_type;
   uint8_t msg2_mpdcch_repetition_cnt;
   uint8_t msg2_mpdcch_done;
   uint8_t msg4_mpdcch_repetition_cnt;
+  uint8_t msg4_mpdcch_done;
   uint8_t msg2_narrowband;
-  uint8_t msg34_narrowband;
+  uint32_t msg34_narrowband;
 #endif
 } RA_TEMPLATE;
 

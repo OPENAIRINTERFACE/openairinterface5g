@@ -218,7 +218,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     harq_pid        = dlsch0->harq_ids[proc->subframe_tx];
     dlsch0->harq_mask |= (1<<harq_pid);
 
-    AssertFatal((harq_pid>=0) && (harq_pid<8),"harq_pid %d not in 0...7\n",harq_pid);
+    AssertFatal((harq_pid>=0) && (harq_pid<8),"subframe %d: harq_pid %d not in 0...7\n",proc->subframe_tx,harq_pid);
     dlsch0_harq     = dlsch0->harq_processes[harq_pid];
     dlsch1_harq     = dlsch1->harq_processes[harq_pid];
     AssertFatal(dlsch0_harq!=NULL,"dlsch_harq is null\n");
@@ -381,7 +381,7 @@ void handle_uci_harq_information(PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci,nfapi_ul_co
       uci->n_pucch_3[0] = harq_information->harq_information_rel9_fdd.n_pucch_1_0;
       uci->n_pucch_3[1] = harq_information->harq_information_rel11.n_pucch_2_0;
     }
-    else AssertFatal(1==0,"unsupported HARQ mode %d\n",harq_information->harq_information_rel9_fdd.ack_nack_mode);
+    else AssertFatal(1==0,"unsupported FDD HARQ mode %d size %d\n",harq_information->harq_information_rel9_fdd.ack_nack_mode,harq_information->harq_information_rel9_fdd.harq_size);
   }
   else { // TDD
     uci->num_pucch_resources = harq_information->harq_information_rel10_tdd.number_of_pucch_resources;

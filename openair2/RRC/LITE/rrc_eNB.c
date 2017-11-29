@@ -3778,6 +3778,7 @@ rrc_eNB_generate_RRCConnectionSetup(
   SRB_configList = &ue_context_pP->ue_context.SRB_configList;
 #ifdef Rel14
   if (is_mtc) {
+    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
       do_RRCConnectionSetup_BR(ctxt_pP,
                             ue_context_pP,
                             CC_id,
