@@ -65,7 +65,7 @@
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n" 
 #define CONFIG_HLP_TADV          "Set timing_advance\n"
 #define CONFIG_HLP_DLF           "Set the downlink frequency for all component carriers\n"
-#define CONFIG_HLP_CHOFF         "Channel id offset"
+#define CONFIG_HLP_CHOFF         "Channel id offset\n"
 #define CONFIG_HLP_SOFTS         "Enable soft scope and L1 and L2 stats (Xforms)\n"
 #define CONFIG_HLP_EXMCAL        "Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n"
 #define CONFIG_HLP_ITTIL         "Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n"

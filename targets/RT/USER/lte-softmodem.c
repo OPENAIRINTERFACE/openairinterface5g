@@ -633,7 +633,7 @@ static void get_options(void) {
       }
 
       if (n_rb_dl !=0) {
-	printf("NB_RB set to %d\n",frame_parms[0]->N_RB_DL);
+	printf("NB_RB set to %d\n",n_rb_dl);
 	if ( n_rb_dl < 6 ) {
 	  n_rb_dl = 6;
 	  printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",n_rb_dl);
