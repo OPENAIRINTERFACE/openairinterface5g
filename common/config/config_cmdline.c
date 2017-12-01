@@ -52,9 +52,12 @@ char defbool[2]="1";
      switch(cfgoptions->type)
        {
        	case TYPE_STRING:
-           config_check_valptr(cfgoptions, (char **)(cfgoptions->strptr), sizeof(char *));
-           config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(tmpval+1));
-           sprintf(*(cfgoptions->strptr), "%s",tmpval);
+           if (cfgoptions->numelt == 0 ) {
+              config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(tmpval)+1);
+              sprintf(*(cfgoptions->strptr), "%s",tmpval);
+            } else {
+              sprintf( (char *)(cfgoptions->strptr), "%s",tmpval);              
+           }
            printf_cmdl("[CONFIG] %s set to  %s from command line\n", cfgoptions->optname, tmpval);
 	   optisset=1;
         break;

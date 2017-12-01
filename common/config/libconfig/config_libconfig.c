@@ -104,17 +104,28 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
                            cfgpath,str,cfgoptions[i].numelt); 
                   str[strlen(str)-1] = 0;
               }
-              config_check_valptr(&(cfgoptions[i]), (char **)(&(cfgoptions[i].strptr)), sizeof(char *));
-              config_check_valptr(&(cfgoptions[i]), cfgoptions[i].strptr, strlen(str)+1);
-              sprintf( *(cfgoptions[i].strptr) , "%s", str);
-              printf_params("[LIBCONFIG] %s: %s\n", cfgpath,*(cfgoptions[i].strptr) );
+              if (cfgoptions[i].numelt == 0 ) {
+                  config_check_valptr(&(cfgoptions[i]), (char **)(&(cfgoptions[i].strptr)), sizeof(char *));
+                  config_check_valptr(&(cfgoptions[i]), cfgoptions[i].strptr, strlen(str)+1);
+                  sprintf( *(cfgoptions[i].strptr) , "%s", str);
+                  printf_params("[LIBCONFIG] %s: %s\n", cfgpath,*(cfgoptions[i].strptr) );
+              } else {
+                 sprintf( (char *)(cfgoptions[i].strptr) , "%s", str);
+                 printf_params("[LIBCONFIG] %s: %s\n", cfgpath,(char *)cfgoptions[i].strptr );
+              }
            } else {
 	      if( cfgoptions[i].defstrval != NULL) {
                  defval=1;
-                 config_check_valptr(&(cfgoptions[i]), (char **)(&(cfgoptions[i].strptr)), sizeof(char *));
-                 config_check_valptr(&(cfgoptions[i]), cfgoptions[i].strptr, strlen(cfgoptions[i].defstrval)+1);
-                 sprintf(*(cfgoptions[i].strptr), "%s",cfgoptions[i].defstrval);
-                 printf_params("[LIBCONFIG] %s set to default value %s\n", cfgpath, *(cfgoptions[i].strptr));
+ 
+                 if (cfgoptions[i].numelt == 0 ) {
+                     config_check_valptr(&(cfgoptions[i]), (char **)(&(cfgoptions[i].strptr)), sizeof(char *));
+                     config_check_valptr(&(cfgoptions[i]), cfgoptions[i].strptr, strlen(cfgoptions[i].defstrval)+1);
+                     sprintf(*(cfgoptions[i].strptr), "%s",cfgoptions[i].defstrval);
+                     printf_params("[LIBCONFIG] %s set to default value %s\n", cfgpath, *(cfgoptions[i].strptr));
+                 } else {
+                    sprintf((char *)(cfgoptions[i].strptr), "%s",cfgoptions[i].defstrval);
+                    printf_params("[LIBCONFIG] %s set to default value %s\n", cfgpath, (char *)cfgoptions[i].strptr);
+                 }
               } else {
 	         notfound=1;
               } 
@@ -183,7 +194,7 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
               read_intarray(&cfgoptions[i],setting,cfgpath);
            } else {
               if( cfgoptions[i].defintarrayval != NULL) {
-                config_check_valptr(&(cfgoptions[i]),(char **)&(cfgoptions[i].iptr), sizeof(int32_t));
+                config_check_valptr(&(cfgoptions[i]),(char **)&(cfgoptions[i].iptr), sizeof(int32_t*));
                 cfgoptions[i].iptr=cfgoptions[i].defintarrayval;
                 defval=1;
                 for (int j=0; j<cfgoptions[i].numelt ; j++) {
