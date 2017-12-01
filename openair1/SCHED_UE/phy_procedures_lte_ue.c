@@ -3128,7 +3128,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
     // LOG_D(PHY,"ue calling pmch subframe ..\n ");
 
     LOG_D(PHY,"[UE %d] Frame %d, subframe %d: Querying for PMCH demodulation\n",
-    ue->Mod_id,(subframe_rx==9?-1:0)+frame_rx,subframe_rx);
+    ue->Mod_id,frame_rx,subframe_rx);
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     pmch_mcs = ue_query_mch(ue->Mod_id,
@@ -3147,9 +3147,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
       LOG_D(PHY,"[UE %d] Frame %d, subframe %d: Programming PMCH demodulation for mcs %d\n",ue->Mod_id,frame_rx,subframe_rx,pmch_mcs);
       fill_UE_dlsch_MCH(ue,pmch_mcs,1,0,0);
 
-      
       for (l=2; l<12; l++) {
-	
 	slot_fep_mbsfn(ue,
 		       l,
 		       subframe_rx,
@@ -3164,6 +3162,8 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
       }
       
       
+      ue->dlsch_MCH[0]->harq_processes[0]->Qm = get_Qm(pmch_mcs);
+
       ue->dlsch_MCH[0]->harq_processes[0]->G = get_G(&ue->frame_parms,
 						     ue->dlsch_MCH[0]->harq_processes[0]->nb_rb,
 						     ue->dlsch_MCH[0]->harq_processes[0]->rb_alloc_even,
@@ -3177,7 +3177,14 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
       dlsch_unscrambling(&ue->frame_parms,1,ue->dlsch_MCH[0],
 			 ue->dlsch_MCH[0]->harq_processes[0]->G,
 			 ue->pdsch_vars_MCH[0]->llr[0],0,subframe_rx<<1);
-      
+
+      LOG_D(PHY,"start turbo decode for MCH %d.%d --> nb_rb %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->nb_rb);
+      LOG_D(PHY,"start turbo decode for MCH %d.%d --> rb_alloc_even %x \n", frame_rx, subframe_rx, (unsigned int)((intptr_t)ue->dlsch_MCH[0]->harq_processes[0]->rb_alloc_even));
+      LOG_D(PHY,"start turbo decode for MCH %d.%d --> Qm %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->Qm);
+      LOG_D(PHY,"start turbo decode for MCH %d.%d --> Nl %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->Nl);
+      LOG_D(PHY,"start turbo decode for MCH %d.%d --> G  %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->harq_processes[0]->G);
+      LOG_D(PHY,"start turbo decode for MCH %d.%d --> Kmimo  %d \n", frame_rx, subframe_rx, ue->dlsch_MCH[0]->Kmimo);
+
       ret = dlsch_decoding(ue,
 			   ue->pdsch_vars_MCH[0]->llr[0],
 			   &ue->frame_parms,
@@ -3206,7 +3213,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
 	      ue->dlsch_MCH[0]->harq_processes[0]->TBS>>3,
 	      ue->dlsch_MCH[0]->max_turbo_iterations,
 	      ue->dlsch_MCH[0]->harq_processes[0]->G);
-	dump_mch(ue,0,ue->dlsch_MCH[0]->harq_processes[0]->G,subframe_rx);
+	// dump_mch(ue,0,ue->dlsch_MCH[0]->harq_processes[0]->G,subframe_rx);
 LOG_DEBUG_BEGIN(DEBUG_UE_PHYPROC)
 	
 	for (int i=0; i<ue->dlsch_MCH[0]->harq_processes[0]->TBS>>3; i++) {
