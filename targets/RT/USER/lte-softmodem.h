@@ -65,7 +65,7 @@
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n" 
 #define CONFIG_HLP_TADV          "Set timing_advance\n"
 #define CONFIG_HLP_DLF           "Set the downlink frequency for all component carriers\n"
-#define CONFIG_HLP_CHOFF         "Channel id offset"
+#define CONFIG_HLP_CHOFF         "Channel id offset\n"
 #define CONFIG_HLP_SOFTS         "Enable soft scope and L1 and L2 stats (Xforms)\n"
 #define CONFIG_HLP_EXMCAL        "Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n"
 #define CONFIG_HLP_ITTIL         "Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n"
@@ -127,7 +127,7 @@
 {"ue-nb-ant-tx",     	       CONFIG_HLP_UENANTT,    0,		u8ptr:&nb_antenna_tx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-scan-carrier",  	       CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL,	iptr:&UE_scan_carrier,  	    defintval:0,    TYPE_INT,	   0},     \
 {"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:90,   TYPE_INT,	   0},     \
-{"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:0,    TYPE_UINT8,    0},     \
+{"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&n_rb_dl,                     defintval:0,    TYPE_UINT8,    0},     \
 }
 
 
