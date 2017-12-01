@@ -390,8 +390,10 @@ rrc_pdcp_config_security(
                      ue_context_pP->ue_context.kenb,
                      &kRRCint);
 
+#if !defined(USRP_REC_PLAY)
 #define DEBUG_SECURITY 1
-
+#endif
+  
 #if defined (DEBUG_SECURITY)
 #undef msg
 #define msg printf

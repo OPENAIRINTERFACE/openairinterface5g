@@ -1871,6 +1871,23 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 	eNB->pucch1ab_stats_cnt[j][i]=0;
       }
     }
+#if defined(USRP_REC_PLAY)
+    // It's probably bad to do this statically only once.
+    // Looks like the above is incomplete.
+    // Such reset needs to be done once a UE PHY structure is being used/re-used
+    // Don't know if this is ever possible in current architecture
+    for (i=0;i<10240;i++) {
+      for (j=0;j<NUMBER_OF_UE_MAX;j++) {
+	eNB->pucch1_stats[j][i]=0;
+	eNB->pucch1_stats_thres[j][i]=0;
+      }
+    }
+    for (i=0;i<20480;i++) {
+      for (j=0;j<NUMBER_OF_UE_MAX;j++) {
+	eNB->pucch1ab_stats[j][i]=0;
+      }
+    }
+#endif    
     first_call=0;
   }
 
@@ -2152,8 +2169,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     } //phase
 
 //    stat_max *= nsymb;  // normalize to energy per symbol
-//    stat_max /= (frame_parms->N_RB_UL*12); // 
+//    stat_max /= (frame_parms->N_RB_UL*12); //
     stat_max /= (nsymb*12);
+    
 #ifdef DEBUG_PUCCH_RX
     printf("[eNB] PUCCH: stat %d, stat_max %d, phase_max %d\n", stat,stat_max,phase_max);
 #endif
@@ -2289,8 +2307,13 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     stat_im=0;
 
     // Do detection now
+#if defined(USRP_REC_PLAY)
+    // It looks like the value is a bit messy when RF is replayed.
+    // For instance i assume to skip pucch1_thres from the test below.
+    if (sigma2_dB<(dB_fixed(stat_max)))  {//
+#else
     if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {//
-
+#endif
       chL = (nsymb>>1)-4;
       chest_mag=0;
       cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase_max] : &cfo_pucch_ep[12*phase_max];
@@ -2431,7 +2454,11 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       if (fmt==pucch_format1b)
         *(1+payload) = (stat_im<0) ? 1 : 2;
     } else { // insufficient energy on PUCCH so NAK
+#if defined(USRP_REC_PLAY)
+      LOG_I(PHY,"PUCCH 1a/b: NAK subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
+#else
       LOG_I(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
+#endif      
       *payload = 4;  // DTX
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);

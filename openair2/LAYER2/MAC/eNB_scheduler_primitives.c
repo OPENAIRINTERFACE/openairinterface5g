@@ -2057,6 +2057,9 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
 	UE_list->ordered_ULCCids[0][UE_id] = cc_idP;
 	UE_list->num_UEs++;
 	UE_list->active[UE_id] = TRUE;
+#if defined(USRP_REC_PLAY) // not specific to record/playback ?
+	UE_list->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
+#endif    
 
 #ifdef Rel14
 	UE_list->UE_template[cc_idP][UE_id].rach_resource_type =
