@@ -74,6 +74,15 @@ void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   fill_dci0(eNB,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci], &hi_dci0_config_pdu->dci_pdu);
 }
 
+void handle_nfapi_hi_dci0_mpdcch_dci_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
+					 nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
+{
+  int idx                         = proc->subframe_tx&1;
+  LTE_eNB_PDCCH *pdcch_vars       = &eNB->mpdcch_vars[idx];
+  // copy dci configuration in to eNB structure
+  fill_mpdcch_dci0(eNB,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci], &hi_dci0_config_pdu->dci_pdu);
+}
+
 void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                                  nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
 {
@@ -244,13 +253,13 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
       AssertFatal(sdu!=NULL,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
                   proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
                   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
-      if (rel8->rnti != 0xFFFF) LOG_I(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
+      if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
                                     proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
       if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;
       else                     dlsch1_harq->pdu                    = sdu;
     }
     else {
-      if (rel8->rnti != 0xFFFF) LOG_I(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round %d, rnti %x, UE_id %d, harq_pid %d\n",
+      if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round %d, rnti %x, UE_id %d, harq_pid %d\n",
                                       proc->frame_tx,proc->subframe_tx,dlsch0_harq->round,
                                     rel8->rnti,UE_id,harq_pid);
     }
@@ -436,7 +445,11 @@ void handle_uci_sr_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu_t
   uci->n_pucch_1_0_sr[0]   = ul_config_pdu->uci_sr_pdu.sr_information.sr_information_rel8.pucch_index;
   uci->srs_active          = srs_active;
   uci->active              = 1;
-
+#ifdef Rel14
+  uci->ue_type                     = ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel13.ue_type;
+  uci->empty_symbols               = ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel13.empty_symbols;
+  uci->total_repetitions = ul_config_pdu->uci_sr_pdu.ue_information.ue_information_rel13.total_number_of_repetitions;
+#endif
   LOG_D(PHY,"Programming UCI SR rnti %x, pucch1_0 %d for (%d,%d)\n",
         uci->rnti,uci->n_pucch_1_0_sr[0],frame,subframe);
 }
@@ -454,7 +467,11 @@ void handle_uci_sr_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_
   uci->n_pucch_1_0_sr[0]   = ul_config_pdu->uci_sr_harq_pdu.sr_information.sr_information_rel8.pucch_index;
   uci->srs_active          = srs_active;
   uci->active              = 1;
-
+#ifdef Rel14
+  uci->ue_type                     = ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel13.ue_type;
+  uci->empty_symbols               = ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel13.empty_symbols;
+  uci->total_repetitions = ul_config_pdu->uci_sr_harq_pdu.ue_information.ue_information_rel13.total_number_of_repetitions;
+#endif
   handle_uci_harq_information(eNB,uci,&ul_config_pdu->uci_sr_harq_pdu.harq_information);
 }
 
@@ -469,7 +486,11 @@ void handle_uci_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu
   uci->type              = HARQ;
   uci->srs_active        = srs_active;
   uci->num_antenna_ports = ul_config_pdu->uci_harq_pdu.harq_information.harq_information_rel11.num_ant_ports;
-
+#ifdef Rel14
+  uci->ue_type                     = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.ue_type;
+  uci->empty_symbols               = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.empty_symbols;
+  uci->total_repetitions           = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel13.total_number_of_repetitions;
+#endif
   handle_uci_harq_information(eNB,uci,&ul_config_pdu->uci_harq_pdu.harq_information);
 
   uci->active=1;
@@ -511,7 +532,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No existing UE ULSCH for rnti %x\n",rel8->rnti);
-    LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d\n",
+    LOG_I(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d\n",
           UE_id,rel8->rnti,frame,subframe);
 
     fill_ulsch(eNB,&ul_config_pdu->ulsch_pdu,frame,subframe);
@@ -547,6 +568,9 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     AssertFatal((UE_id = find_uci(ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,
                                   proc->frame_tx,proc->subframe_tx,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE UCI for rnti %x\n",ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti);
+    LOG_I(PHY,"Applying UL UCI_HARQ config for UE %d, rnti %x for frame %d, subframe %d\n",
+          UE_id,ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,frame,subframe);
+
     handle_uci_harq_pdu(eNB,UE_id,ul_config_pdu,frame,subframe,srs_present);
   }
   else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE) {
@@ -718,6 +742,11 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
     case NFAPI_HI_DCI0_DCI_PDU_TYPE:
       handle_nfapi_hi_dci0_dci_pdu(eNB,proc,hi_dci0_req_pdu);
       eNB->pdcch_vars[subframe&1].num_dci++;
+      break;
+
+    case NFAPI_HI_DCI0_MPDCCH_DCI_PDU_TYPE:
+      handle_nfapi_hi_dci0_mpdcch_dci_pdu(eNB,proc,hi_dci0_req_pdu);
+      eNB->mpdcch_vars[subframe&1].num_dci++;
       break;
 
     case NFAPI_HI_DCI0_HI_PDU_TYPE:

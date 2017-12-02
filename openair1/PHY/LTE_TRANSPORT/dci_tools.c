@@ -2583,6 +2583,155 @@ fill_dci0 (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, DCI_ALLOC_t * dci_alloc, 
   }
 }
 
+#ifdef Rel14
+void
+fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * dci_alloc, nfapi_hi_dci0_mpdcch_dci_pdu * pdu)
+{
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
+  nfapi_hi_dci0_mpdcch_dci_pdu_rel13_t *rel13 = &pdu->mpdcch_dci_pdu_rel13;
+
+  uint32_t        cqi_req = rel13->csi_request;
+  uint32_t        dai = rel13->dl_assignment_index;
+  uint32_t        TPC = rel13->tpc;
+  uint32_t        mcs = rel13->mcs;
+  uint32_t        hopping = rel13->frequency_hopping_flag;
+  uint32_t        rballoc = computeRIV (6,
+                                        rel13->resource_block_start,
+                                        rel13->number_of_resource_blocks);
+
+  uint32_t        ndi = rel13->new_data_indication;
+
+#ifdef T_TRACER
+  T (T_ENB_PHY_ULSCH_UE_DCI, T_INT (eNB->Mod_id), T_INT (proc->frame_tx), T_INT (proc->subframe_tx),
+     T_INT (rel13->rnti), T_INT (((proc->frame_tx * 10 + proc->subframe_tx + 4) % 8) /* TODO: correct harq pid */ ),
+     T_INT (mcs), T_INT (-1 /* TODO: remove round? */ ),
+     T_INT (rel13->resource_block_start),
+     T_INT (rel13->number_of_resource_blocks),
+     T_INT (get_TBS_UL (mcs, rel13->number_of_resource_blocks) * 8), T_INT (rel13->aggregation_level), T_INT (rel13->cce_index));
+#endif
+
+  void           *dci_pdu = (void *) dci_alloc->dci_pdu;
+
+  AssertFatal(rel13->ce_mode == 1 && rel13->dci_format == 4, "dci format 5 (CE_modeB) not supported yet\n");
+
+  LOG_D (PHY, "Filling DCI6-0A with cqi %d, mcs %d, hopping %d, rballoc %x (%d,%d) ndi %d TPC %d\n", cqi_req,
+         mcs, hopping, rballoc, rel13->resource_block_start, rel13->number_of_resource_blocks, ndi, TPC);
+
+  dci_alloc->format = format6_0A;
+  dci_alloc->firstCCE = rel13->ecce_index;
+  dci_alloc->L = rel13->aggreagation_level;
+  dci_alloc->rnti = rel13->rnti;
+  dci_alloc->harq_pid = rel13->harq_process;
+  dci_alloc->narrowband = rel13->mpdcch_narrowband;
+  dci_alloc->number_of_prb_pairs = rel13->number_of_prb_pairs;
+  dci_alloc->resource_block_assignment = rel13->resource_block_assignment;
+  dci_alloc->transmission_type = rel13->mpdcch_transmission_type;
+  dci_alloc->start_symbol = rel13->start_symbol;
+  dci_alloc->ce_mode = rel13->ce_mode;
+  dci_alloc->dmrs_scrambling_init = rel13->drms_scrambling_init;
+  dci_alloc->i0 = rel13->initial_transmission_sf_io;
+
+
+  switch (frame_parms->N_RB_DL) {
+  case 6:
+    if (frame_parms->frame_type == TDD) {
+      AssertFatal(1==0,"TDD not supported for eMTC yet\n");
+    } else {
+      AssertFatal(1==0,"6 PRBS not supported for eMTC\n");
+    }
+
+    break;
+
+  case 25:
+    if (frame_parms->frame_type == TDD) {
+      AssertFatal(1==0,"TDD not supported for eMTC yet\n");
+    } else {
+      dci_alloc->dci_length = sizeof_DCI6_0A_5MHz_t;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->type = 0;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->hopping = hopping;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->rballoc = rballoc;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->mcs = mcs;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->rep = rel13->pusch_repetition_levels;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->ndi = ndi;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->rv_idx = rel13->redudency_version;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->TPC = TPC;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->csi_req = cqi_req;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->srs_req = rel13->srs_request;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
+
+    }
+
+    break;
+
+  case 50:
+    if (frame_parms->frame_type == TDD) {
+      AssertFatal(1==0,"TDD not supported for eMTC yet\n");
+    } else {
+      dci_alloc->dci_length = sizeof_DCI6_0A_10MHz_t;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->type = 0;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->hopping = hopping;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->rballoc = rballoc;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->mcs = mcs;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->rep = rel13->pusch_repetition_levels;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->ndi = ndi;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->rv_idx = rel13->redudency_version;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->TPC = TPC;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->csi_req = cqi_req;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->srs_req = rel13->srs_request;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
+      LOG_I(PHY,"Frame %d, Subframe %d : Programming Format 6-0A DCI, type %d, hopping %d, narrowband %d, rballoc %x, mcs %d, rep %d, harq_pid %d, ndi %d, rv %d, TPC %d, csi_req %d, srs_req %d, dci_rep r%d => %x\n",
+	    proc->frame_tx,proc->subframe_tx,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->type,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->hopping,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->narrowband,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->rballoc,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->mcs,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->rep,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->harq_pid,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->ndi,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->rv_idx,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->TPC,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->csi_req,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->srs_req,
+	    ((DCI6_0A_10MHz_t *) dci_pdu)->dci_rep,
+	    ((uint32_t*)dci_pdu)[0]);
+
+    }
+
+    break;
+
+  case 100:
+    if (frame_parms->frame_type == TDD) {
+      AssertFatal(1==0,"TDD not supported for eMTC yet\n");
+    } else {
+      dci_alloc->dci_length = sizeof_DCI6_0A_20MHz_t;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->type = 0;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->hopping = hopping;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->rballoc = rballoc;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->mcs = rel13->mcs;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->rep = rel13->pusch_repetition_levels;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->ndi = ndi;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->rv_idx = rel13->redudency_version;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->TPC = TPC;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->csi_req = cqi_req;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->srs_req = rel13->srs_request;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
+    }
+
+    //printf("eNB: rb_alloc (20 MHz dci) %d\n",rballoc);
+    break;
+
+  default:
+    LOG_E (PHY, "Invalid N_RB_DL %d\n", frame_parms->N_RB_DL);
+    DevParam (frame_parms->N_RB_DL, 0, 0);
+    break;
+  }
+}
+#endif
+
 void
 fill_ulsch (PHY_VARS_eNB * eNB, nfapi_ul_config_ulsch_pdu * ulsch_pdu, int frame, int subframe)
 {

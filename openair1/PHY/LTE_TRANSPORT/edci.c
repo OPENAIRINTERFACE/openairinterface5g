@@ -339,7 +339,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
     AssertFatal(absSF < 10240, "Absolute subframe %d = %d*10 + %d > 10239\n", absSF, frame, subframe);
 
     mpdcch_scrambling(fp, mdci, absSF, mpdcch->e, coded_bits);
-
+    
     // Modulation for PDCCH
     if (fp->nb_antenna_ports_eNB == 1)
       gain_lin_QPSK = (int16_t) ((amp * ONE_OVER_SQRT2_Q15) >> 15);
@@ -388,15 +388,14 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
       ((int16_t *) & yIQ)[1] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
       txF[mpdcchtab[i]] = yIQ;
-      /*
-      LOG_D(PHY,"Frame %d, subframe %d: mpdcch pos %d (%d,%d) => (%d,%d)\n",
+      /*      
+      LOG_I(PHY,"Frame %d, subframe %d: mpdcch pos %d (%d,%d) => (%d,%d)\n",
 	    frame,subframe,i,mpdcchtab[i]+re_offset,mpdcchtab[i]/fp->ofdm_symbol_size,
 	    ((int16_t *) & yIQ)[0],((int16_t *) & yIQ)[1]);*/
     }
 
     if (mdci->transmission_type == 1) w=0; // distributed
     else w = wp[a_index&1];
-
     // pilot scrambling initiatlization (note: this is for a single repetition)
 
     // x1 is set in lte_gold_generic

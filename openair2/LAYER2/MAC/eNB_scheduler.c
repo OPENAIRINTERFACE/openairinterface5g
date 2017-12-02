@@ -246,7 +246,7 @@ void schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n",UE_id);
 
       // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
-      if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED) continue;
+      //      if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED) continue;
 
       if ((SRconfig = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->schedulingRequestConfig)!=NULL) {
         if (SRconfig->present == SchedulingRequestConfig_PR_setup) {
@@ -294,7 +294,7 @@ void schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       // drop the allocation because ULSCH with handle it with BSR
       if (skip_ue==1) continue;
 
-      LOG_D(MAC,"Frame %d, Subframe %d : Scheduling SR for UE %d/%x\n",frameP,subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].rnti);
+      LOG_I(MAC,"Frame %d, Subframe %d : Scheduling SR for UE %d/%x\n",frameP,subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].rnti);
 
       // check Rel10 or Rel8 SR
 #if defined(Rel10) || defined(Rel14)

@@ -688,8 +688,12 @@ uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
 
         metric_SR = rx_pucch (eNB, uci->pucch_fmt, i, uci->n_pucch_1_0_sr[0], 0,        // n2_pucch
                               uci->srs_active,  // shortened format
-                              &SR_payload, frame, subframe, PUCCH1_THRES);
-        LOG_D (PHY, "[eNB %d][SR %x] Frame %d subframe %d Checking SR is %d (SR n1pucch is %d)\n", eNB->Mod_id, uci->rnti, frame, subframe, SR_payload, uci->n_pucch_1_0_sr[0]);
+                              &SR_payload, frame, subframe, PUCCH1_THRES
+#ifdef Rel14
+			      ,uci->ue_type
+#endif
+			      );
+        LOG_I (PHY, "[eNB %d][SR %x] Frame %d subframe %d Checking SR is %d (SR n1pucch is %d)\n", eNB->Mod_id, uci->rnti, frame, subframe, SR_payload, uci->n_pucch_1_0_sr[0]);
         if (uci->type == SR) {
           if (SR_payload == 1) {
             fill_sr_indication (eNB, uci->rnti, frame, subframe, metric_SR);
@@ -705,8 +709,12 @@ uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
 
           metric[0] = rx_pucch (eNB, uci->pucch_fmt, i, uci->n_pucch_1[0][0], 0,        //n2_pucch
                                 uci->srs_active,        // shortened format
-                                pucch_b0b1[0], frame, subframe, PUCCH1a_THRES);
-
+                                pucch_b0b1[0], frame, subframe, PUCCH1a_THRES
+#ifdef Rel14
+				,uci->ue_type
+#endif
+				);
+				
 
           /* cancel SR detection if reception on n1_pucch0 is better than on SR PUCCH resource index, otherwise send it up to MAC */
           if (uci->type == HARQ_SR && metric[0] > metric_SR)
@@ -717,10 +725,14 @@ uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
           if (uci->type == HARQ_SR && metric[0] <= metric_SR) {
             /* when transmitting ACK/NACK on SR PUCCH resource index, SR payload is always 1 */
             SR_payload = 1;
-
-            metric[0] = rx_pucch (eNB, uci->pucch_fmt, i, uci->n_pucch_1_0_sr[0], 0,    //n2_pucch
-                                  uci->srs_active,      // shortened format
-                                  pucch_b0b1[0], frame, subframe, PUCCH1a_THRES);
+	
+	    metric[0] = rx_pucch(eNB, uci->pucch_fmt, i, uci->n_pucch_1_0_sr[0], 0,    //n2_pucch
+				uci->srs_active,      // shortened format
+				pucch_b0b1[0], frame, subframe, PUCCH1a_THRES
+#ifdef Rel14
+				,uci->ue_type
+#endif
+				);
           }
 
 
@@ -741,7 +753,11 @@ uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
 
             metric[0] = rx_pucch (eNB, pucch_format1b, i, uci->n_pucch_1_0_sr[0], 0,    //n2_pucch
                                   uci->srs_active,      // shortened format
-                                  pucch_b0b1[0], frame, subframe, PUCCH1a_THRES);
+                                  pucch_b0b1[0], frame, subframe, PUCCH1a_THRES
+#ifdef Rel14
+				  ,uci->ue_type
+#endif
+				  );
           } else {              //using assigned pucch resources
 #ifdef DEBUG_PHY_PROC
             LOG_D (PHY, "[eNB %d][PDSCH %x] Frame %d subframe %d Checking ACK/NAK M=%d (%d,%d,%d,%d) format %d\n", eNB->Mod_id,
@@ -751,7 +767,11 @@ uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
             for (res = 0; res < uci->num_pucch_resources; res++)
               metric[res] = rx_pucch (eNB, uci->pucch_fmt, i, uci->n_pucch_1[res][0], 0,        // n2_pucch
                                       uci->srs_active,  // shortened format
-                                      pucch_b0b1[res], frame, subframe, PUCCH1a_THRES);
+                                      pucch_b0b1[res], frame, subframe, PUCCH1a_THRES
+#ifdef Rel14
+	                              ,uci->ue_type
+#endif
+				  );
 
 
 

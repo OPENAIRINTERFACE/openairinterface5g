@@ -2103,7 +2103,11 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
                   uint8_t *payload,
                   int     frame,
                   uint8_t subframe,
-                  uint8_t pucch1_thres);
+                  uint8_t pucch1_thres
+#ifdef Rel14
+		  ,uint8_t br_flag
+		  );
+#endif
 
 int32_t rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
                       eNB_rxtx_proc_t *proc,

@@ -2560,7 +2560,9 @@ do_RRCConnectionSetup_BR(
   epdcch_setconfig_r11->re_MappingQCL_ConfigId_r11 = NULL;
 
   epdcch_setconfig_r11->ext2 = calloc(1, sizeof(struct EPDCCH_SetConfig_r11__ext2));
-  epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 = NULL;
+  epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 = calloc(1,sizeof(struct EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310));
+  epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present =  EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310_PR_setup;
+  epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->choice.setup = EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310__setup_n6;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13 = calloc(1, sizeof(struct EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13));
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->present = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.csi_NumRepetitionCE_r13                = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__csi_NumRepetitionCE_r13_sf1;
@@ -2570,6 +2572,7 @@ do_RRCConnectionSetup_BR(
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13               = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_NumRepetition_r13_r1;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13                  = 2;
   ASN_SEQUENCE_ADD(physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, epdcch_setconfig_r11);
+
 
   // FIXME allocate physicalConfigDedicated2->ext7
   physicalConfigDedicated2->ext7 = CALLOC(1, sizeof(struct PhysicalConfigDedicated__ext7));

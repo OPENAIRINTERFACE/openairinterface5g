@@ -165,7 +165,7 @@ add_msg3 (module_id_t module_idP, int CC_id, RA_TEMPLATE * RA_template, frame_t 
       for (j = 0; j < RA_template->msg3_nb_rb; j++)
         cc->vrb_map_UL[RA_template->msg3_first_rb + j] = 1;
 
-      LOG_D (MAC, "[eNB %d][PUSCH-RA %x] CC_id %d Frame %d subframeP %d Scheduled (PHICH) RA (mcs %d, first rb %d, nb_rb %d,round %d)\n",
+      LOG_I (MAC, "[eNB %d][PUSCH-RA %x] CC_id %d Frame %d subframeP %d Scheduled (PHICH) RA (mcs %d, first rb %d, nb_rb %d,round %d)\n",
              module_idP, RA_template->rnti, CC_id, frameP, subframeP, 10, 1, 1, RA_template->msg3_round - 1);
     }                           //       if (RA_template->msg3_round != 0) { // program HI too
   }                             // non-BL/CE UE case
@@ -560,6 +560,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
 
   dl_req = &eNB->DL_req[CC_idP].dl_config_request_body;
   dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
+
   N_RB_DL = to_prb (cc[CC_idP].mib->message.dl_Bandwidth);
 
   UE_id = find_UE_id (module_idP, RA_template->rnti);
@@ -573,7 +574,10 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
     RA_template->harq_pid = ((frameP * 10) + subframeP) & 7;
 
 
-
+  if (RA_template->msg4_delay < 8) {
+    RA_template->msg4_delay++;
+    return;
+  }
 
 #ifdef Rel14
   if (RA_template->rach_resource_type > 0) {
@@ -606,7 +610,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       AssertFatal (RA_template->msg4_rrc_sdu_length > 0, "[MAC][eNB Scheduler] CCCH not allocated\n");
       
       
-      LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d\n", module_idP, CC_idP, frameP, subframeP, UE_id, RA_template->msg4_rrc_sdu_length);
+      LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d, dl_req->num_pdu %d\n", module_idP, CC_idP, frameP, subframeP, UE_id, RA_template->msg4_rrc_sdu_length,dl_req->number_pdu);
       
       // MPDCCH configuration for Msg4
       RA_template->msg4_mpdcch_done=0;
@@ -614,33 +618,33 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE;
       dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof (nfapi_dl_config_mpdcch_pdu));
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_format = (RA_template->rach_resource_type > 1) ? 11 : 10;
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_narrow_band = RA_template->msg34_narrowband;
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_narrow_band = RA_template->msg2_narrowband;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_prb_pairs = 6;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_assignment = 0; // Note: this can be dynamic
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_tansmission_type = 1;
-      AssertFatal (cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL, "cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_tansmission_type = 1;   // imposed (9.1.5 in 213) for Type 2 Common search space  
+      AssertFatal (cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL, "cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;        // Note: this should be dynamic
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 24;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 0; // t-C-RNTI
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 0; // t-CRNTI
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti = RA_template->rnti;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ce_mode = (RA_template->rach_resource_type < 3) ? 1 : 2;
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_idP].physCellId;  /// Check this is still N_id_cell for type2 common
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_idP].physCellId;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000;     // 0dB
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6);      // check if not getRIV(N_RB_DL,first_rb,6);
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = 4;       // adjust according to size of Msg4
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels = 0;    // fix to 0 for now
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6);      
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = 4;       // adjust according to size of RAR, 208 bits with N1A_PRB=3
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels = 0;    // fix to 4 for now
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.redundancy_version = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.new_data_indicator = 0;
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_process = RA_template->harq_pid;
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_process = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpmi_length = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpmi = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pmi_flag = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pmi = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.harq_resource_offset = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.dci_subframe_repetition_number = rep;
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpc = 3;      
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.tpc = 3;       // N1A_PRB=3 (36.212) => 56 bits
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.downlink_assignment_index_length = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.downlink_assignment_index = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.allocate_prach_flag = 0;
@@ -655,6 +659,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.direct_indication = 0;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.total_dci_length_including_padding = 0;        // this is not needed by OAI L1, but should be filled in
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_tx_antenna_ports = 1;
+
       RA_template->msg4_mpdcch_repetition_cnt++;
       dl_req->number_pdu++;
       RA_template->msg4_TBsize = get_TBS_DL(dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs,
@@ -662,7 +667,9 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
     }                           //repetition_count==0 && SF condition met
     
     if ((RA_template->msg4_mpdcch_repetition_cnt > 0)&&
-	     (RA_template->msg4_mpdcch_done==0)) {     // we're in a stream of repetitions
+	(RA_template->msg4_mpdcch_done==0)) {     // we're in a stream of repetitions
+      LOG_I(MAC,"SFN.SF %d.%d : msg4 mpdcch repetition number %d/%d\n",
+	    frameP,subframeP,RA_template->msg4_mpdcch_repetition_cnt,reps);
       if (RA_template->msg4_mpdcch_repetition_cnt == reps) {    // this is the last mpdcch repetition
         RA_template->msg4_mpdcch_done = 1;
 	if (cc[CC_idP].tdd_Config == NULL) {    // FDD case
@@ -768,9 +775,9 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       eNB->TX_req[CC_idP].tx_request_body.number_of_pdus++;
       
       // Program ACK/NAK for Msg4 PDSCH
-      int             absSF = (RA_template->Msg3_frame * 10) + RA_template->Msg3_subframe;
+      int             absSF = (frameP * 10) + subframeP;
       // see Section 10.2 from 36.213
-      int             ackNAK_absSF = absSF + reps + 4;
+      int             ackNAK_absSF = absSF + reps + 3;
       AssertFatal (reps == 1, "Have to handle programming of ACK when PDSCH repetitions is > 1\n");
       ul_req = &eNB->UL_req_tmp[CC_idP][ackNAK_absSF % 10].ul_config_request_body;
       ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
@@ -1015,7 +1022,7 @@ check_Msg4_retransmission (module_id_t module_idP, int CC_idP, frame_t frameP, s
   dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
   N_RB_DL = to_prb (cc[CC_idP].mib->message.dl_Bandwidth);
 
-  LOG_D (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 for harq_pid %d was acknowledged (round %d)\n", module_idP, CC_idP, frameP, subframeP, RA_template->harq_pid, round);
+  LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 for harq_pid %d was acknowledged (round %d)\n", module_idP, CC_idP, frameP, subframeP, RA_template->harq_pid, round);
 
   if (round != 8) {
 
@@ -1096,7 +1103,7 @@ check_Msg4_retransmission (module_id_t module_idP, int CC_idP, frame_t frameP, s
       }                         // Msg4 frame/subframe
     }                           // regular LTE case
   } else {
-    LOG_D (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n", module_idP, CC_idP, frameP, subframeP);
+    LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n", module_idP, CC_idP, frameP, subframeP);
     RA_template->wait_ack_Msg4 = 0;
     RA_template->RA_active = FALSE;
     UE_id = find_UE_id (module_idP, RA_template->rnti);

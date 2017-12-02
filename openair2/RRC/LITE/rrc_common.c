@@ -329,8 +329,11 @@ rrc_rx_tx(
     check_handovers(ctxt_pP);
     // counetr, and get the value and aggregate
 
+
     // check for UL failure
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
+      LOG_I(RRC,"SFN.SN %d.%d => release timer %d/%d\n",ctxt_pP->frame,ctxt_pP->subframe,
+	    ue_context_p->ue_context.ue_release_timer,ue_context_p->ue_context.ue_release_timer_thres);
       if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe==0)) {
 	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
 	  LOG_I(RRC,"UE rnti %x:S-TMSI %x failure timer %d/20000\n",
@@ -348,7 +351,7 @@ rrc_rx_tx(
 	ue_context_p->ue_context.ul_failure_timer++;
 	if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
 	  // remove UE after 20 seconds after MAC has indicated UL failure
-	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
+	  LOG_I(RRC,"Removing UE %x instance (failure)\n",ue_context_p->ue_context.rnti);
 	  ue_to_be_removed = ue_context_p;
 	  break;
 	}
@@ -357,8 +360,9 @@ rrc_rx_tx(
 	ue_context_p->ue_context.ue_release_timer++;
 	if (ue_context_p->ue_context.ue_release_timer >= 
 	    ue_context_p->ue_context.ue_release_timer_thres) {
-	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
+	  LOG_I(RRC,"Removing UE %x instance (release timer %d)\n",ue_context_p->ue_context.rnti,ue_context_p->ue_context.ue_release_timer);
 	  ue_to_be_removed = ue_context_p;
+	  exit(-1);
 	  break;
 	}
       }

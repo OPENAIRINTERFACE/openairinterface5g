@@ -400,7 +400,8 @@ schedule_SI_BR(
 	    vrb_map[first_rb+4] = 1;
 	    vrb_map[first_rb+5] = 1;
 
-	    if ((frameP&1023) < 200) LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SI_BR->DLSCH CC_id %d, Narrowband %d rvidx %d (sf_mod_period %d : si_WindowLength_BR_r13 %d : si_RepetitionPattern_r13 %d) bcch_sdu_length %d\n",
+	    //if ((frameP&1023) < 200) 
+	      LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SI_BR->DLSCH CC_id %d, Narrowband %d rvidx %d (sf_mod_period %d : si_WindowLength_BR_r13 %d : si_RepetitionPattern_r13 %d) bcch_sdu_length %d\n",
 					   module_idP,frameP,subframeP,CC_id,(int)si_Narrowband_r13-1,rvidx,
 					   sf_mod_period,(int)si_WindowLength_BR_r13,(int)si_RepetitionPattern_r13,
 					   bcch_sdu_length);	    

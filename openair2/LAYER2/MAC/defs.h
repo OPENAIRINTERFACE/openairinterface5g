@@ -916,6 +916,8 @@ typedef struct {
   int msg4_mcs;
   /// size off piggybacked RRC SDU
   uint8_t msg4_rrc_sdu_length;
+  uint32_t msg4_delay;
+
 #ifdef Rel14
   uint8_t rach_resource_type;
   uint8_t msg2_mpdcch_repetition_cnt;

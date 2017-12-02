@@ -873,6 +873,7 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
 #endif
 #endif
 
+    LOG_I(RRC,"Removing ue %x (rrc_eNB_free_UE)\n",rnti);
     rrc_mac_remove_ue(enb_mod_idP,rnti);
     rrc_rlc_remove_ue(&ctxt);
     pdcp_remove_UE(&ctxt);
