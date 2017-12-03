@@ -104,6 +104,9 @@ void rx_sdu(const module_id_t enb_mod_idP,
   }
 
   if (UE_id!=-1) {
+#ifdef Rel14
+    if (UE_list->UE_template[CC_idP][UE_id].rach_resource_type > 0) harq_pid=0;
+#endif
     LOG_D(MAC,"[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",enb_mod_idP,harq_pid,CC_idP, UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
           current_rnti, UE_id,ul_cqi);
 
@@ -142,6 +145,11 @@ void rx_sdu(const module_id_t enb_mod_idP,
     }
   }
   else if ((RA_id = find_RA_id(enb_mod_idP,CC_idP,current_rnti))!=-1) { // Check if this is an RA process for the rnti
+
+#ifdef Rel14
+    if (UE_list->UE_template[CC_idP][UE_id].rach_resource_type > 0) harq_pid=0;
+#endif
+
     AssertFatal(eNB->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx>1,
                 "maxHARQ %d should be greater than 1\n",
                 (int)eNB->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
@@ -838,7 +846,7 @@ void schedule_ulsch(module_id_t module_idP,
     }
   }
 
-  schedule_ulsch_rnti(module_idP, frameP, subframeP, sched_subframe,emtc_active);
+  schedule_ulsch_rnti(module_idP, frameP, subframeP, sched_subframe,first_rb);
 
   stop_meas(&eNB->schedule_ulsch);
 }
@@ -1402,7 +1410,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
             // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
             //store for possible retransmission
             UE_template->nb_rb_ul[harq_pid]    = 6;
-            UE_template->first_rb_ul[harq_pid] = 0;
+            UE_template->first_rb_ul[harq_pid] = narrowband_to_first_rb (cc, 2);
 
             UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
             if (UE_id == UE_list->head)
@@ -1453,7 +1461,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 	    hi_dci0_pdu->pdu_size = (uint8_t) (2 + sizeof (nfapi_dl_config_mpdcch_pdu));
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.dci_format = (UE_template->rach_resource_type > 1) ? 5 : 4;
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.ce_mode = (UE_template->rach_resource_type > 1) ? 2 : 1;
-	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.mpdcch_narrowband = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13; 
+	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.mpdcch_narrowband = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13-1; 
 
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.number_of_prb_pairs = 6;       // checked above that it has to be this
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.resource_block_assignment = 0; // Note: this can be dynamic
@@ -1471,13 +1479,14 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.drms_scrambling_init = epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11;
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.transmission_power = 6000;     // 0dB
-	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.resource_block_start = 0;
+	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.resource_block_start = UE_template->first_rb_ul[harq_pid];
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.number_of_resource_blocks = 6;
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.mcs = 4;       // adjust according to size of RAR, 208 bits with N1A_PRB=3
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.pusch_repetition_levels = 0;
-	    AssertFatal(epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13==0,
-			"epdcch_setconfig_r11->ext2->mpdcch_config_r13->mpdcch_pdsch_HoppingConfig_r13 is not 0\n"); 
-    	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.frequency_hopping_flag  = epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13;
+	    AssertFatal(epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13==
+			EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_pdsch_HoppingConfig_r13_off,
+			"epdcch_setconfig_r11->ext2->mpdcch_config_r13->mpdcch_pdsch_HoppingConfig_r13 is not off\n"); 
+    	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.frequency_hopping_flag  = 1-epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_pdsch_HoppingConfig_r13;
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.redudency_version = 0;
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.new_data_indication = 0;
 	    hi_dci0_pdu->mpdcch_dci_pdu.mpdcch_dci_pdu_rel13.harq_process = 0;
@@ -1544,7 +1553,27 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
               T_INT(subframeP), T_INT(harq_pid), T_INT(UE_template->mcs_UL[harq_pid]), T_INT(0), T_INT(6),
               T_INT(round));
 
-
+            fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp->ul_config_pdu_list[ul_req_tmp->number_of_pdus],
+                                                 cqi_req,
+                                                 cc,
+                                                 UE_template->physicalConfigDedicated,
+                                                 get_tmode(module_idP,CC_id,UE_id),
+                                                 eNB->ul_handle,
+                                                 rnti,
+                                                 UE_template->first_rb_ul[harq_pid], // resource_block_start
+                                                 UE_template->nb_rb_ul[harq_pid], // number_of_resource_blocks
+                                                 UE_template->mcs_UL[harq_pid],
+                                                 cshift, // cyclic_shift_2_for_drms
+                                                 0, // frequency_hopping_enabled_flag
+                                                 0, // frequency_hopping_bits
+                                                 UE_template->oldNDI_UL[harq_pid], // new_data_indication
+                                                 rvidx_tab[round&3], // redundancy_version
+                                                 harq_pid, // harq_process_number
+                                                 0, // ul_tx_mode
+                                                 0, // current_tx_nb
+                                                 0, // n_srs
+                                                 UE_template->TBS_UL[harq_pid]
+                                                 );
 	    fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp->ul_config_pdu_list[ul_req_tmp->number_of_pdus],
 						 UE_template->rach_resource_type>2 ? 2 : 1,
 						 1, //total_number_of_repetitions

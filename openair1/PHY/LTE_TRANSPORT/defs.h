@@ -596,6 +596,8 @@ typedef struct {
 } LTE_eNB_UCI;
 
 typedef struct {
+  /// UE type (normal, CEModeA, CEModeB)
+  uint8_t ue_type;
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// Pointers to 8 HARQ processes for the ULSCH

@@ -1070,6 +1070,8 @@ pusch_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     ulsch = eNB->ulsch[i];
+    if (ulsch->ue_type > 0) harq_pid = 0;
+
     ulsch_harq = ulsch->harq_processes[harq_pid];
     if (ulsch->rnti > 0)
       LOG_D (PHY, "Frame %d, subframe %d: PUSCH procedures, harq_pid %d, UE %d/%x\n", frame, subframe, harq_pid, i, ulsch->rnti);
@@ -1248,8 +1250,16 @@ fill_rx_indication (PHY_VARS_eNB * eNB, int UE_id, int frame, int subframe)
   int             timing_advance_update;
   int             sync_pos;
 
-  uint32_t        harq_pid = subframe2harq_pid (&eNB->frame_parms,
-                                                frame, subframe);
+  uint32_t        harq_pid;
+
+#ifdef Rel14
+  if (eNB->ulsch[UE_id]->ue_type > 0) harq_pid = 0;
+  else
+#endif
+    {
+      harq_pid = subframe2harq_pid (&eNB->frame_parms,
+				    frame, subframe);
+    }
 
   pthread_mutex_lock (&eNB->UL_INFO_mutex);
   pdu = &eNB->UL_INFO.rx_ind.rx_pdu_list[eNB->UL_INFO.rx_ind.number_of_pdus];

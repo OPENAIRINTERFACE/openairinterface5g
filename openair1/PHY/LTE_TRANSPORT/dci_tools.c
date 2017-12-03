@@ -164,11 +164,12 @@ int8_t          delta_PUSCH_acc[4] = { -1, 0, 1, 3 };
 int8_t         *delta_PUCCH_lut = delta_PUSCH_acc;
 
 void
-conv_eMTC_rballoc (uint8_t narrowband,uint16_t resource_block_coding, uint32_t N_RB_DL, uint32_t * rb_alloc)
+conv_eMTC_rballoc (uint16_t resource_block_coding, uint32_t N_RB_DL, uint32_t * rb_alloc)
 {
 
 
-  int             RIV = resource_block_coding;
+  int             RIV = resource_block_coding&31;
+  int             narrowband = resource_block_coding>>5;
   int             N_NB_DL = N_RB_DL / 6;
   int             i0 = (N_RB_DL >> 1) - (3 * N_NB_DL);
   int             first_rb = (6 * narrowband) + i0;
@@ -2213,8 +2214,8 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
       dci_alloc->dci_length = sizeof_DCI6_1A_10MHz_t;
       ((DCI6_1A_10MHz_t *) dci_pdu)->type = 1;
       ((DCI6_1A_10MHz_t *) dci_pdu)->hopping = rel13->frequency_hopping_enabled_flag;
-      ((DCI6_1A_10MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding;
-      ((DCI6_1A_10MHz_t *) dci_pdu)->narrowband = rel13->mpdcch_narrow_band;
+      ((DCI6_1A_10MHz_t *) dci_pdu)->rballoc = rel13->resource_block_coding&31;
+      ((DCI6_1A_10MHz_t *) dci_pdu)->narrowband = rel13->resource_block_coding>>5;
       ((DCI6_1A_10MHz_t *) dci_pdu)->mcs = rel13->mcs;
       ((DCI6_1A_10MHz_t *) dci_pdu)->rep = (rel13->pdsch_reptition_levels);
       ((DCI6_1A_10MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
@@ -2356,7 +2357,7 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
   dlsch0->subframe_tx[(subframe + 2) % 10] = 1;
   LOG_I(PHY,"PDSCH : resource_block_coding %x\n",rel13->resource_block_coding);
 
-  conv_eMTC_rballoc (rel13->mpdcch_narrow_band,rel13->resource_block_coding, 
+  conv_eMTC_rballoc (rel13->resource_block_coding, 
 		     fp->N_RB_DL, 
 		     dlsch0_harq->rb_alloc);
 
@@ -2584,6 +2585,53 @@ fill_dci0 (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, DCI_ALLOC_t * dci_alloc, 
 }
 
 #ifdef Rel14
+int get_narrowband_index(int N_RB_UL,int rb) {
+  
+  switch (N_RB_UL) {
+  case 6: // 6 PRBs, N_NB=1, i_0=0
+  case 25: // 25 PRBs, N_NB=4, i_0=0
+    return(rb/6);
+    break;
+  case 50: // 50 PRBs, N_NB=8, i_0=1
+  case 75: // 75 PRBs, N_NB=12, i_0=1
+  case 15: // 15 PRBs, N_NB=2, i_0=1
+    AssertFatal(rb>=1,"rb %d is not possible for %d PRBs\n",rb,N_RB_UL);
+    return((rb-1)/6);
+    break;
+  case 100: // 100 PRBs, N_NB=16, i_0=2
+    AssertFatal(rb>=2,"rb %d is not possible for %d PRBs\n",rb,N_RB_UL);
+    return(rb-2/6);
+    break;
+  default:
+    AssertFatal(1==0,"Impossible N_RB_UL %d\n",N_RB_UL);
+    break;
+  }
+
+}
+
+int get_first_rb_in_narrowband(int N_RB_UL,int rb) {
+  
+  switch (N_RB_UL) {
+  case 6: // 6 PRBs, N_NB=1, i_0=0
+  case 25: // 25 PRBs, N_NB=4, i_0=0
+    return(rb - 6*(rb/6));
+    break;
+  case 50: // 50 PRBs, N_NB=8, i_0=1
+  case 75: // 75 PRBs, N_NB=12, i_0=1
+  case 15: // 15 PRBs, N_NB=2, i_0=1
+    AssertFatal(rb>=1,"rb %d is not possible for %d PRBs\n",rb,N_RB_UL);
+    return(rb-1-(6*((rb-1)/6)));
+    break;
+  case 100: // 100 PRBs, N_NB=16, i_0=2
+    AssertFatal(rb>=2,"rb %d is not possible for %d PRBs\n",rb,N_RB_UL);
+    return(rb-2-(6*((rb-2)/6)));
+    break;
+  default:
+    AssertFatal(1==0,"Impossible N_RB_UL %d\n",N_RB_UL);
+    break;
+  }
+}
+
 void
 fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * dci_alloc, nfapi_hi_dci0_mpdcch_dci_pdu * pdu)
 {
@@ -2595,8 +2643,9 @@ fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * dci
   uint32_t        TPC = rel13->tpc;
   uint32_t        mcs = rel13->mcs;
   uint32_t        hopping = rel13->frequency_hopping_flag;
+  uint32_t        narrowband = get_narrowband_index(frame_parms->N_RB_UL,rel13->resource_block_start);
   uint32_t        rballoc = computeRIV (6,
-                                        rel13->resource_block_start,
+                                        get_first_rb_in_narrowband(frame_parms->N_RB_UL,rel13->resource_block_start),
                                         rel13->number_of_resource_blocks);
 
   uint32_t        ndi = rel13->new_data_indication;
@@ -2748,6 +2797,17 @@ fill_ulsch (PHY_VARS_eNB * eNB, nfapi_ul_config_ulsch_pdu * ulsch_pdu, int frame
 
   harq_pid = ulsch_pdu->ulsch_pdu_rel8.harq_process_number;
 
+
+#ifdef Rel14
+  ulsch->ue_type = ulsch_pdu->ulsch_pdu_rel13.ue_type;
+  AssertFatal(harq_pid ==0, "Harq PID is not zero for BL/CE UE\n");
+
+
+#else
+  ulsch->ue_type = 0;
+#endif
+
+ 
   ulsch->harq_mask |= 1 << harq_pid;
 
   ulsch->harq_processes[harq_pid]->frame = frame;
@@ -2810,7 +2870,7 @@ fill_ulsch (PHY_VARS_eNB * eNB, nfapi_ul_config_ulsch_pdu * ulsch_pdu, int frame
     ulsch->harq_processes[harq_pid]->round++;
 
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;
-  LOG_D (PHY, "Filling ULSCH %x (UE_id %d) (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
+  LOG_I (PHY, "Filling ULSCH %x (UE_id %d) (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
          ulsch->rnti,
          UE_id,
          new_ulsch,

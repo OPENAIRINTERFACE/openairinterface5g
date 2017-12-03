@@ -2539,7 +2539,8 @@ do_RRCConnectionSetup_BR(
   physicalConfigDedicated2->ext4->epdcch_Config_r11 = calloc(1, sizeof(struct EPDCCH_Config_r11 ));
   physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.present = EPDCCH_Config_r11__config_r11_PR_setup;
   physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.subframePatternConfig_r11 = NULL;
-  physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 = NULL;
+  physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 = calloc(1,sizeof(long));
+  *physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.startSymbol_r11 = 2;
   physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToReleaseList_r11 = NULL;
 
 
@@ -2570,7 +2571,7 @@ do_RRCConnectionSetup_BR(
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.present        = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13_PR_fdd_r13;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_StartSF_UESS_r13.choice.fdd_r13 = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_StartSF_UESS_r13__fdd_r13_v1;
   epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_NumRepetition_r13               = EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13__setup__mpdcch_NumRepetition_r13_r1;
-  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13                  = 2;
+  epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13                  = 3; // note: this is narrowband index 2
   ASN_SEQUENCE_ADD(physicalConfigDedicated2->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11, epdcch_setconfig_r11);
 
 

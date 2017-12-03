@@ -105,7 +105,7 @@ add_msg3 (module_id_t module_idP, int CC_id, RA_TEMPLATE * RA_template, frame_t 
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.frequency_hopping_bits = 0;
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.new_data_indication = 0;
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.redundancy_version = rvseq[RA_template->msg3_round];
-    ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.harq_process_number = ((10 * RA_template->Msg3_frame) + RA_template->Msg3_subframe) & 7;
+    ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.harq_process_number = 0;
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.ul_tx_mode = 0;
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.current_tx_nb = 0;
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.n_srs = 1;
@@ -274,7 +274,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_idP].physCellId;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000;     // 0dB
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6);      
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6) | (RA_template->msg2_narrowband<<5);      
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = 0;       // adjust according to size of RAR, 208 bits with N1A_PRB=3
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels = 0;    // fix to 4 for now
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.redundancy_version = 0;
@@ -632,7 +632,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.drms_scrambling_init = cc[CC_idP].physCellId;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.initial_transmission_sf_io = (frameP * 10) + subframeP;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.transmission_power = 6000;     // 0dB
-      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6);      
+      dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_coding = getRIV (6, 0, 6) | (RA_template->msg2_narrowband<<5);
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs = 4;       // adjust according to size of RAR, 208 bits with N1A_PRB=3
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.pdsch_reptition_levels = 0;    // fix to 4 for now
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.redundancy_version = 0;
