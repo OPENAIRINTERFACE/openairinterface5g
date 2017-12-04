@@ -1336,6 +1336,14 @@ static void* ru_stats_thread(void* param) {
   return(NULL);
 }
 
+static void* ru_thread_control( void* param ) {
+
+//wait`
+
+
+
+}
+
 static void* ru_thread( void* param ) {
 
   static int ru_thread_status;
