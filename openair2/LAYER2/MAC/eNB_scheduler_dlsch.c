@@ -1375,7 +1375,9 @@ fill_DLSCH_dci(
   int               N_RBG;
   int               N_RB_DL;
   COMMON_channels_t *cc;
-
+#ifdef UE_EXPANSION
+  int               j;
+#endif
   start_meas(&eNB->fill_DLSCH_dci);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_FILL_DLSCH_DCI,VCD_FUNCTION_IN);
 
@@ -1391,8 +1393,8 @@ fill_DLSCH_dci(
 
     // UE specific DCIs
 #ifdef UE_EXPANSION
-    for (i = 0; i < dlsch_ue_select[CC_id].ue_num; i++) {
-      UE_id = dlsch_ue_select[CC_id].list[i].UE_id;
+    for (j = 0; j < dlsch_ue_select[CC_id].ue_num; j++) {
+      UE_id = dlsch_ue_select[CC_id].list[j].UE_id;
 #else
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
 #endif
