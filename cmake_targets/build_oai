@@ -67,6 +67,7 @@ UE_AUTOTEST_TRACE="False"
 UE_DEBUG_TRACE="False"
 UE_TIMING_TRACE="False"
 DISABLE_LOG_X="False"
+USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 trap handle_ctrl_c INT
 
@@ -159,6 +160,8 @@ Options
    Disable all LOG_* macros
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
+--usrp-recplay
+   Build for I/Q record-playback modes
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I  --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I  --eNB -x --install-system-files
@@ -355,6 +358,10 @@ function main() {
             BUILD_TELNETSRV=1
             echo_info "Build embedded telnet server"
             shift ;;			
+        --usrp-recplay)
+            USRP_REC_PLAY="True"
+            echo_info "Enabling USRP record playback mode"
+            shift 1;;
         -h | --help)
             print_help
             exit 1;;
@@ -546,6 +553,7 @@ function main() {
     echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"        >>  $cmake_file
     echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"        >>  $cmake_file
     echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"        >>  $cmake_file
+    echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"        >>  $cmake_file
     if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
      echo_info "Compiling UE S1 build : enabling Linux and NETLINK"
      echo "set (LINUX True )"              >>  $cmake_file

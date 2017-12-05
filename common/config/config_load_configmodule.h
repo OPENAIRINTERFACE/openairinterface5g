@@ -46,6 +46,7 @@
 #define CONFIG_DEBUGCMDLINE   4        // print command line processing messages
 #define CONFIG_HELP           8        // print help message
 #define CONFIG_ABORT          16       // config failed,abort execution 
+#define CONFIG_NOOOPT         32       // no -O option found when parsing command line 
 
 
 typedef int(*configmodule_initfunc_t)(char *cfgP[],int numP);

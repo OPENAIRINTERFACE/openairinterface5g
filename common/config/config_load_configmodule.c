@@ -129,20 +129,21 @@ int i;
 
 /* default */
   if (cfgparam == NULL) {
-     cfgparam = "libconfig:oaisoftmodem.conf";
+     tmpflags = tmpflags | CONFIG_NOOOPT;
+     cfgparam = DEFAULT_CFGMODE ":" DEFAULT_CFGFILENAME;
      }
 /* parse the config parameters to set the config source */
    i = sscanf(cfgparam,"%m[^':']:%ms",&cfgmode,&modeparams);
    if (i< 0) {
        fprintf(stderr,"[CONFIG] %s, %d, sscanf error parsing config source  %s: %s\n", __FILE__, __LINE__,cfgparam, strerror(errno));
-       cfgmode=strdup("libconfig");
-       modeparams = strdup("oaisoftmodem.conf");
+       cfgmode=strdup(DEFAULT_CFGMODE);
+       modeparams = strdup(DEFAULT_CFGFILENAME);
    }
    else if ( i == 1 ) {
   /* -O argument doesn't contain ":" separator, assume -O <conf file> option, default cfgmode to libconfig
      with one parameter, the path to the configuration file */
        modeparams=cfgmode;
-       cfgmode=strdup("libconfig");
+       cfgmode=strdup(DEFAULT_CFGMODE);
    }
 
    cfgptr = malloc(sizeof(configmodule_interface_t));
