@@ -616,8 +616,8 @@ static void get_options(void) {
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
       if ( (cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = debug_prach;
       if ( (cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0)  mode = no_L2_connect;
-      if ( (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = calib_prach_tx; 
-      if (dumpframe  > 0)  mode = rx_dump_frame;
+      if ( (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = calib_prach_tx;
+      if ( (cmdline_uemodeparams[CMDLINE_DUMPMEMORY_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_dump_frame;
       
       if ( downlink_frequency[0][0] > 0) {
 	printf("Downlink frequency set to %u\n", downlink_frequency[0][0]);
