@@ -55,6 +55,17 @@
 
 extern unsigned char NB_eNB_INST;
 #endif
+extern volatile int     node_control_state;
+
+static void enb_app_wait_reconfig_cmd (void)
+{
+  LOG_I(ENB_APP, "ENB APP await reconfiguration command\n");
+   
+  while (node_control_state == ENB_WAIT_RECONFIGURATION_CMD) {
+    usleep(200000);
+  }
+  sleep(2); // wait for createing other tasks
+}
 
 #if defined(ENABLE_ITTI)
 
@@ -270,7 +281,7 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, con
 /*------------------------------------------------------------------------------*/
 void *eNB_app_task(void *args_p)
 {
-  const Enb_properties_array_t   *enb_properties_p  = NULL;
+  Enb_properties_array_t   *enb_properties_p  = NULL;
 #if defined(ENABLE_ITTI)
   uint32_t                        enb_nb = 1; /* Default number of eNB is 1 */
   uint32_t                        enb_id_start = 0;
@@ -309,19 +320,28 @@ void *eNB_app_task(void *args_p)
                "Number of eNB is greater than eNB defined in configuration file (%d/%d)!",
                enb_nb, enb_properties_p->number);
 
+#if defined (FLEXRAN_AGENT_SB_IF)
+  
+  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
+    flexran_agent_start(enb_id, enb_properties_p);
+  }
+  // wait for config comd from the controller/network app
+  enb_app_wait_reconfig_cmd();
+  
+  // set again the ran api vars  
+  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
+    printf("\n set again enb vars %d\n", enb_id);
+    flexran_set_enb_vars(enb_id, RAN_LTE_OAI);
+  }
+
+#endif 
+
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     configure_phy(enb_id, enb_properties_p);
     configure_rrc(enb_id, enb_properties_p);
   }
 
-#if defined (FLEXRAN_AGENT_SB_IF)
   
-  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    printf("\n start enb agent %d\n", enb_id);
-    flexran_agent_start(enb_id, enb_properties_p);
-  }
-#endif 
-
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */
   registered_enb = 0;

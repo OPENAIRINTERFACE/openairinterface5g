@@ -237,6 +237,8 @@ typedef struct Enb_properties_s {
   in_addr_t           flexran_agent_ipv4_address;
   tcp_udp_port_t      flexran_agent_port;
   char               *flexran_agent_cache;
+  int                flexran_agent_reconf;
+  
 
   /* Nb of RRH to connect to */
   uint8_t             nb_rrh_gw;
@@ -276,15 +278,20 @@ typedef struct Enb_properties_s {
 #endif
 } Enb_properties_t;
 
+typedef enum {
+  ENB_NORMAL_OPERATION=0x0,
+  ENB_WAIT_RECONFIGURATION_CMD=0x1
+} ENB_MODULE_STATE;
+
 typedef struct Enb_properties_array_s {
   int                  number;
   Enb_properties_t    *properties[MAX_ENB];
 } Enb_properties_array_t;
 
 void                          enb_config_display(void);
-const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP);
+Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP);
 
-const Enb_properties_array_t *enb_config_get(void);
+Enb_properties_array_t *enb_config_get(void);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */

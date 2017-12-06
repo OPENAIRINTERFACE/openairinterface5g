@@ -27,6 +27,7 @@
 extern void *l2l1_task(void *arg);
 
 int create_tasks(uint32_t enb_nb, uint32_t ue_nb);
+int create_enb_app_task(uint32_t enb_nb);
 #endif
 
 #endif /* CREATE_TASKS_H_ */

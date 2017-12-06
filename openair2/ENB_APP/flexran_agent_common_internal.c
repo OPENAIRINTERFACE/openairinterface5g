@@ -31,7 +31,7 @@
 
 #include "flexran_agent_common_internal.h"
 #include "flexran_agent_mac_internal.h"
-extern volatile int             reconfigure_enb;
+extern volatile int    node_control_state;
 
 int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length) {
 
@@ -72,8 +72,8 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
 	if (parse_enb_id(mod_id, &parser) == -1) {
 	  goto error;
 	} else { // succeful parse and setting 
-      LOG_I(ENB_APP, "Successful parsed config for enb system\n");
-      //reconfigure_enb=RECONF_FREQ;
+	  node_control_state= ENB_NORMAL_OPERATION;
+	  LOG_I(ENB_APP, "Successful parsed config for enb system, entering normal state\n");
 	}
       } else if (strcmp((char *) event.data.scalar.value, "mac") == 0) {
 	LOG_D(ENB_APP, "This is intended for the mac system\n");
@@ -257,6 +257,9 @@ int parse_enb_config_parameters(mid_t mod_id, yaml_parser_t *parser) {
     done = (event.type == YAML_MAPPING_END_EVENT);
     yaml_event_delete(&event);
   }
+
+  /* reflect in RAN API */
+  flexran_set_enb_vars(mod_id, RAN_LTE_OAI);
 
   return 0;
   

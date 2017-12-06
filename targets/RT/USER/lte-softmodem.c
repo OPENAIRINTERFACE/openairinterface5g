@@ -174,6 +174,8 @@ eNB_func_t node_function[MAX_NUM_CCs];
 eNB_timing_t node_timing[MAX_NUM_CCs];
 int16_t   node_synch_ref[MAX_NUM_CCs];
 
+volatile int16_t   node_control_state;
+
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
@@ -231,6 +233,12 @@ threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
  * this is very hackish - find a proper solution
  */
 uint8_t abstraction_flag=0;
+
+/*  */
+
+/* overrid the enb configuration params*/ 
+static void reconfigure_enb_params(int enb_id);
+
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -1080,11 +1088,20 @@ static void get_options (int argc, char **argv) {
                      "Number of eNB is greater than eNB defined in configuration file %s (%d/%d)!",
                      conf_config_file_name, NB_eNB_INST, enb_properties->number);
 
+	NB_eNB_INST=enb_properties->number;
+
         /* Update some simulation parameters */
         for (i=0; i < enb_properties->number; i++) {
             AssertFatal (MAX_NUM_CCs == enb_properties->properties[i]->nb_cc,
                          "lte-softmodem compiled with MAX_NUM_CCs=%d, but only %d CCs configured for eNB %d!",
                          MAX_NUM_CCs, enb_properties->properties[i]->nb_cc, i);
+
+	    if (enb_properties->properties[i]->flexran_agent_reconf == 1) {
+	      node_control_state  = ENB_WAIT_RECONFIGURATION_CMD;
+	    } else {
+	      node_control_state  = ENB_NORMAL_OPERATION;
+	    }
+		
             eth_params = (eth_params_t*)malloc(enb_properties->properties[i]->nb_rrh_gw * sizeof(eth_params_t));
             memset(eth_params, 0, enb_properties->properties[i]->nb_rrh_gw * sizeof(eth_params_t));
 
@@ -1133,37 +1150,9 @@ static void get_options (int argc, char **argv) {
 
             }
 
-            for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	    reconfigure_enb_params(i);
 
-
-                node_function[CC_id]  = enb_properties->properties[i]->cc_node_function[CC_id];
-                node_timing[CC_id]    = enb_properties->properties[i]->cc_node_timing[CC_id];
-                node_synch_ref[CC_id] = enb_properties->properties[i]->cc_node_synch_ref[CC_id];
-
-                frame_parms[CC_id]->frame_type =       enb_properties->properties[i]->frame_type[CC_id];
-                frame_parms[CC_id]->tdd_config =       enb_properties->properties[i]->tdd_config[CC_id];
-                frame_parms[CC_id]->tdd_config_S =     enb_properties->properties[i]->tdd_config_s[CC_id];
-                frame_parms[CC_id]->Ncp =              enb_properties->properties[i]->prefix_type[CC_id];
-
-                //for (j=0; j < enb_properties->properties[i]->nb_cc; j++ ){
-                frame_parms[CC_id]->Nid_cell            =  enb_properties->properties[i]->Nid_cell[CC_id];
-                frame_parms[CC_id]->N_RB_DL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
-                frame_parms[CC_id]->N_RB_UL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
-                frame_parms[CC_id]->nb_antennas_tx      =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
-                frame_parms[CC_id]->nb_antenna_ports_eNB  =  enb_properties->properties[i]->nb_antenna_ports[CC_id];
-                frame_parms[CC_id]->nb_antennas_rx      =  enb_properties->properties[i]->nb_antennas_rx[CC_id];
-
-                frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = enb_properties->properties[i]->prach_config_index[CC_id];
-                frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = enb_properties->properties[i]->prach_freq_offset[CC_id];
-
-                frame_parms[CC_id]->mode1_flag         = (frame_parms[CC_id]->nb_antenna_ports_eNB == 1) ? 1 : 0;
-                frame_parms[CC_id]->threequarter_fs    = threequarter_fs;
-
-                //} // j
-            }
-
-
-            init_all_otg(0);
+	    init_all_otg(0);
             g_otg->seed = 0;
             init_seeds(g_otg->seed);
 
@@ -1206,20 +1195,7 @@ static void get_options (int argc, char **argv) {
             osa_log_verbosity              = enb_properties->properties[i]->osa_log_verbosity;
 #endif
 
-            // adjust the log
-            for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-                for (k = 0 ; k < 4; k++) {
-                    downlink_frequency[CC_id][k]      =       enb_properties->properties[i]->downlink_frequency[CC_id];
-                    uplink_frequency_offset[CC_id][k] =  enb_properties->properties[i]->uplink_frequency_offset[CC_id];
-                    rx_gain[CC_id][k]                 =  (double)enb_properties->properties[i]->rx_gain[CC_id];
-                    tx_gain[CC_id][k]                 =  (double)enb_properties->properties[i]->tx_gain[CC_id];
-                }
-
-                printf("Downlink frequency/ uplink offset of CC_id %d set to %ju/%d\n", CC_id,
-                       enb_properties->properties[i]->downlink_frequency[CC_id],
-                       enb_properties->properties[i]->uplink_frequency_offset[CC_id]);
-
-            } // CC_id
+           
         }// i
 
         //this is needed for phy-test option
@@ -1234,6 +1210,57 @@ static void get_options (int argc, char **argv) {
             uecap_xer_in=1;
         }
     }
+}
+
+
+static void reconfigure_enb_params(int enb_id)
+{
+  int CC_id, k;
+  const Enb_properties_array_t *enb_properties=enb_config_get();
+
+  
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+        
+    node_function[CC_id]  = enb_properties->properties[enb_id]->cc_node_function[CC_id];
+    node_timing[CC_id]    = enb_properties->properties[enb_id]->cc_node_timing[CC_id];
+    node_synch_ref[CC_id] = enb_properties->properties[enb_id]->cc_node_synch_ref[CC_id];
+    
+    frame_parms[CC_id]->frame_type   = enb_properties->properties[enb_id]->frame_type[CC_id];
+    frame_parms[CC_id]->tdd_config   = enb_properties->properties[enb_id]->tdd_config[CC_id];
+    frame_parms[CC_id]->tdd_config_S = enb_properties->properties[enb_id]->tdd_config_s[CC_id];
+    frame_parms[CC_id]->Ncp          = enb_properties->properties[enb_id]->prefix_type[CC_id];
+    
+                //for (j=0; j < enb_properties->properties[i]->nb_cc; j++ ){
+    frame_parms[CC_id]->Nid_cell             = enb_properties->properties[enb_id]->Nid_cell[CC_id];
+    frame_parms[CC_id]->N_RB_DL              = enb_properties->properties[enb_id]->N_RB_DL[CC_id];
+    frame_parms[CC_id]->N_RB_UL              = enb_properties->properties[enb_id]->N_RB_DL[CC_id];
+    frame_parms[CC_id]->nb_antennas_tx       = enb_properties->properties[enb_id]->nb_antennas_tx[CC_id];
+    frame_parms[CC_id]->nb_antenna_ports_eNB = enb_properties->properties[enb_id]->nb_antenna_ports[CC_id];
+    frame_parms[CC_id]->nb_antennas_rx       = enb_properties->properties[enb_id]->nb_antennas_rx[CC_id];
+    
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = enb_properties->properties[enb_id]->prach_config_index[CC_id];
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = enb_properties->properties[enb_id]->prach_freq_offset[CC_id];
+    
+    frame_parms[CC_id]->mode1_flag      = (frame_parms[CC_id]->nb_antenna_ports_eNB == 1) ? 1 : 0;
+    frame_parms[CC_id]->threequarter_fs = threequarter_fs;
+
+
+    for (k = 0 ; k < 4; k++) {
+      downlink_frequency[CC_id][k]      =  enb_properties->properties[enb_id]->downlink_frequency[CC_id];
+      uplink_frequency_offset[CC_id][k] =  enb_properties->properties[enb_id]->uplink_frequency_offset[CC_id];
+      rx_gain[CC_id][k]                 =  (double)enb_properties->properties[enb_id]->rx_gain[CC_id];
+      tx_gain[CC_id][k]                 =  (double)enb_properties->properties[enb_id]->tx_gain[CC_id];
+    }
+    
+    printf("Downlink frequency/ uplink offset of CC_id %d set to %ju/%d\n", CC_id,
+           enb_properties->properties[enb_id]->downlink_frequency[CC_id],
+           enb_properties->properties[enb_id]->uplink_frequency_offset[CC_id]);
+    
+    init_ul_hopping(frame_parms[CC_id]);
+    init_frame_parms(frame_parms[CC_id],1);
+    //   phy_init_top(frame_parms[CC_id]);
+    phy_init_lte_top(frame_parms[CC_id]);
+  } // CC_id
 }
 
 #if T_TRACER
@@ -1395,6 +1422,19 @@ void init_openair0() {
   }
 }
 
+/* check the state : either continue or wait for a command to start/stop the eNB
+ * if needed override the current configuration parameters, such as 
+ * frequencies, bands, power, bandwidth
+ */
+static void ltesm_wait_reconfig_cmd(void)
+{
+  LOG_I(ENB_APP, "LTE Softmodem wait reconfiguration command\n");
+
+  while (node_control_state ==  ENB_WAIT_RECONFIGURATION_CMD) {
+    usleep(200000);
+  }
+}
+
 int main( int argc, char **argv ) {
     int i,j,k,aa,re;
 #if defined (XFORMS)
@@ -1405,6 +1445,8 @@ int main( int argc, char **argv ) {
     uint8_t  abstraction_flag=0;
     uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
 
+    PHY_vars_eNB_g=NULL;
+    
 #if defined (XFORMS)
     int ret;
 #endif
@@ -1570,11 +1612,6 @@ int main( int argc, char **argv ) {
 
       LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
     }
-
-    init_ul_hopping(frame_parms[CC_id]);
-    init_frame_parms(frame_parms[CC_id],1);
-    //   phy_init_top(frame_parms[CC_id]);
-    phy_init_lte_top(frame_parms[CC_id]);
   }
 
 
@@ -1586,6 +1623,14 @@ int main( int argc, char **argv ) {
         // N_ZC = (prach_fmt <4)?839:139;
     }
 
+    create_enb_app_task(UE_flag ? 0 : 1);
+    ltesm_wait_reconfig_cmd ();
+    // reconfigure_enb: 0 for wait, 1 for skip, and other values to reconfigure
+    for (i=0; (i < NB_eNB_INST && node_control_state == ENB_NORMAL_OPERATION ) ; i++){
+      reconfigure_enb_params(i);
+      printf("[ENB_APP] Reconfigured eNB module %d - continue\n", i);
+    }
+    
     if (UE_flag==1) {
         NB_UE_INST=1;
         NB_INST=1;

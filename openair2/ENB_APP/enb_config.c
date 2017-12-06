@@ -197,6 +197,7 @@
 #define ENB_CONFIG_STRING_FLEXRAN_AGENT_IPV4_ADDRESS        "FLEXRAN_AGENT_IPV4_ADDRESS"
 #define ENB_CONFIG_STRING_FLEXRAN_AGENT_PORT                "FLEXRAN_AGENT_PORT"
 #define ENB_CONFIG_STRING_FLEXRAN_AGENT_CACHE               "FLEXRAN_AGENT_CACHE"
+#define ENB_CONFIG_STRING_FLEXRAN_AGENT_AWAIT_RECONF        "FLEXRAN_AGENT_AWAIT_RECONF"
 
 #define ENB_CONFIG_STRING_RRH_GW_CONFIG                   "rrh_gw_config"
 #define ENB_CONFIG_STRING_RRH_GW_LOCAL_IF_NAME            "local_if_name"
@@ -351,6 +352,8 @@ void enb_config_display(void)
     //    printf( "\tInterface IP Address:     \t%s:\n",enb_properties.properties[i]->flexran_agent_ipv4_address);
     printf( "\tInterface PORT:           \t%d:\n\n",enb_properties.properties[i]->flexran_agent_port);
     printf( "\tCache directory:          \t%s:\n",enb_properties.properties[i]->flexran_agent_cache);
+    printf( "\teNB Control State:        \t%s:\n",(enb_properties.properties[i]->flexran_agent_reconf==0)? "ENB_NORMAL_OPERATION":"ENB_WAIT_RECONFIGURATION_CMD");
+    
     
 #endif 
 
@@ -536,7 +539,7 @@ extern int asn1_xer_print;
 #else
 #define libconfig_int int
 #endif
-const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
+Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 {
   config_t          cfg;
   config_setting_t *setting                       = NULL;
@@ -689,6 +692,8 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   char*             flexran_agent_ipv4_address        = NULL;
   libconfig_int     flexran_agent_port                = 0;
   char*             flexran_agent_cache               = NULL;
+  char*             flexran_agent_reconf              = NULL;
+  
   libconfig_int     otg_ue_id                     = 0;
   char*             otg_app_type                  = NULL;
   char*             otg_bg_traffic                = NULL;
@@ -2580,6 +2585,9 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                                                 &flexran_agent_port)
 		   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_CACHE,
 						    (const char **)&flexran_agent_cache)
+		   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_AWAIT_RECONF,
+						    (const char **)&flexran_agent_reconf)
+		   
                  )
               ) {
               enb_properties.properties[enb_properties_index]->flexran_agent_interface_name = strdup(flexran_agent_interface_name);
@@ -2590,8 +2598,14 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                 IPV4_STR_ADDR_TO_INT_NWBO (address, enb_properties.properties[enb_properties_index]->flexran_agent_ipv4_address, "BAD IP ADDRESS FORMAT FOR eNB Agent !\n" );
 	      }
 
-              enb_properties.properties[enb_properties_index]->flexran_agent_port = flexran_agent_port;
-	      enb_properties.properties[enb_properties_index]->flexran_agent_cache = strdup(flexran_agent_cache);
+              enb_properties.properties[enb_properties_index]->flexran_agent_port   = flexran_agent_port;
+	      enb_properties.properties[enb_properties_index]->flexran_agent_cache  = strdup(flexran_agent_cache);
+	      if ((strcmp(flexran_agent_reconf, "yes") == 0) || (strcmp(flexran_agent_reconf, "YES") == 0)){
+		enb_properties.properties[enb_properties_index]->flexran_agent_reconf = 1;
+	      } else {
+		enb_properties.properties[enb_properties_index]->flexran_agent_reconf = 0;
+	      }
+	      
             }
           }
 	  
@@ -2885,7 +2899,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
 }
 
-const Enb_properties_array_t *enb_config_get(void)
+Enb_properties_array_t *enb_config_get(void)
 {
   return &enb_properties;
 }
