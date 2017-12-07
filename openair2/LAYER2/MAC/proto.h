@@ -1040,7 +1040,7 @@ void extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 
 uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t * tx_req_body,
 			   uint16_t absSF, uint16_t pdu_length,
-			   uint16_t pdu_index, uint8_t * pdu);
+			   int16_t pdu_index, uint8_t * pdu);
 
 void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *
 					  ul_config_pdu, uint8_t cqi_req,
@@ -1080,7 +1080,7 @@ void program_dlsch_acknak(module_id_t module_idP, int CC_idP, int UE_idP,
 
 void fill_nfapi_dlsch_config(eNB_MAC_INST * eNB,
 			     nfapi_dl_config_request_body_t * dl_req,
-			     uint16_t length, uint16_t pdu_index,
+			     uint16_t length, int16_t pdu_index,
 			     uint16_t rnti,
 			     uint8_t resource_allocation_type,
 			     uint8_t

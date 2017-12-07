@@ -1482,7 +1482,7 @@ void
 fill_nfapi_dlsch_config(eNB_MAC_INST * eNB,
 			nfapi_dl_config_request_body_t * dl_req,
 			uint16_t length,
-			uint16_t pdu_index,
+			int16_t pdu_index,
 			uint16_t rnti,
 			uint8_t resource_allocation_type,
 			uint8_t
@@ -1556,7 +1556,7 @@ fill_nfapi_dlsch_config(eNB_MAC_INST * eNB,
 uint16_t
 fill_nfapi_tx_req(nfapi_tx_request_body_t * tx_req_body,
 		  uint16_t absSF, uint16_t pdu_length,
-		  uint16_t pdu_index, uint8_t * pdu)
+		  int16_t pdu_index, uint8_t * pdu)
 {
     nfapi_tx_request_pdu_t *TX_req =
 	&tx_req_body->tx_pdu_list[tx_req_body->number_of_pdus];
