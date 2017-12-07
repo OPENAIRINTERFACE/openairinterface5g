@@ -788,11 +788,18 @@ void print_CQI(void *o,UCI_format_t uci_format,unsigned char eNB_id,int N_RB_DL)
 
 }
 
-
+#ifndef UE_EXPANSION
 int8_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type) {
+#else
+int16_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type) {
+#endif
+#ifndef UE_EXPANSION
   uint8_t i;
   int8_t first_free_index=-1;
-
+#else
+  uint16_t i;
+  int16_t first_free_index=-1;
+#endif
   AssertFatal(eNB!=NULL,"eNB is null\n");
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     if ((eNB->uci_vars[i].active >0) &&

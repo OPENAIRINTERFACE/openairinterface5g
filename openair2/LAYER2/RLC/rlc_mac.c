@@ -222,7 +222,7 @@ tbs_size_t mac_rlc_data_req(
 void mac_rlc_data_ind     (
   const module_id_t         module_idP,
   const rnti_t              rntiP,
-  const module_id_t         eNB_index,
+  const eNB_index_t         eNB_index,
   const frame_t             frameP,
   const eNB_flag_t          enb_flagP,
   const MBMS_flag_t         MBMS_flagP,

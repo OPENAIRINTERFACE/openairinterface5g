@@ -394,7 +394,11 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   int subframe=proc->subframe_tx;
   uint32_t i,aa;
   uint8_t harq_pid;
+#ifndef UE_EXPANSION
   int8_t UE_id=0;
+#else
+  int16_t UE_id=0;
+#endif
   uint8_t num_pdcch_symbols=0;
   uint8_t num_dci=0;
   uint8_t ul_subframe;

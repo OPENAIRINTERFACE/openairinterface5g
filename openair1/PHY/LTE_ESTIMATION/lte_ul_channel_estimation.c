@@ -36,7 +36,7 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 
 int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
 				  eNB_rxtx_proc_t *proc,
-                                  uint8_t UE_id,
+                                  module_id_t UE_id,
                                   unsigned char l,
                                   unsigned char Ns) {
 

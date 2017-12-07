@@ -251,7 +251,7 @@ void dump_dlsch_ra(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t s
   write_output("dlsch_mag2.m","dlschmag2",ue->pdsch_vars_ra[0]->dl_ch_magb0,300*nsymb,1,1);
 }
 
-void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
+void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
 
   // This flushes ALL DLSCH and ULSCH harq buffers of ALL connected eNBs...add the eNB_index later
@@ -351,7 +351,7 @@ void process_timing_advance_rar(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint16_t ti
 
 }
 
-void process_timing_advance(uint8_t Mod_id,uint8_t CC_id,int16_t timing_advance)
+void process_timing_advance(module_id_t Mod_id,uint8_t CC_id,int16_t timing_advance)
 {
 
   //  uint32_t frame = PHY_vars_UE_g[Mod_id]->frame;

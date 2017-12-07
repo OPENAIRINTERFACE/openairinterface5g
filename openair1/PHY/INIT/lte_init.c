@@ -297,7 +297,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
   LOG_I(PHY,"eNB %d/%d configured\n",Mod_id,CC_id);
 }
 
-void phy_config_sib1_ue(uint8_t Mod_id,int CC_id,
+void phy_config_sib1_ue(module_id_t Mod_id,int CC_id,
                         uint8_t eNB_id,
                         TDD_Config_t *tdd_Config,
                         uint8_t SIwindowsize,
@@ -458,7 +458,7 @@ void phy_config_sib1_ue(uint8_t Mod_id,int CC_id,
   }
 */
 
-void phy_config_sib2_ue(uint8_t Mod_id,int CC_id,
+void phy_config_sib2_ue(module_id_t Mod_id,int CC_id,
                         uint8_t eNB_id,
                         RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
                         ARFCN_ValueEUTRA_t *ul_CarrierFreq,
@@ -582,7 +582,7 @@ void phy_config_sib2_ue(uint8_t Mod_id,int CC_id,
 
 }
 
-void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_idx,
+void phy_config_sib13_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_idx,
                          long mbsfn_AreaId_r9)
 {
 
@@ -601,7 +601,7 @@ void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_
 }
 
 
-void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
+void phy_config_sib13_eNB(module_id_t Mod_id,int CC_id,int mbsfn_Area_idx,
                           long mbsfn_AreaId_r9)
 {
 
@@ -621,8 +621,11 @@ void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
 
 void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
 {
-
+#ifndef UE_EXPANSION
   uint8_t UE_id;
+#else
+  uint16_t UE_id;
+#endif
   struct PhysicalConfigDedicated *physicalConfigDedicated;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
@@ -742,7 +745,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
 /*
  * Configures UE MAC and PHY with radioResourceCommon received in mobilityControlInfo IE during Handover
  */
-void phy_config_afterHO_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_id, MobilityControlInfo_t *mobilityControlInfo, uint8_t ho_failed)
+void phy_config_afterHO_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_id, MobilityControlInfo_t *mobilityControlInfo, uint8_t ho_failed)
 {
 
   if(mobilityControlInfo!=NULL) {
@@ -865,7 +868,7 @@ void phy_config_afterHO_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_id, Mobility
   }
 }
 
-void phy_config_meas_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n_adj_cells,unsigned int *adj_cell_id)
+void phy_config_meas_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n_adj_cells,unsigned int *adj_cell_id)
 {
 
   PHY_MEASUREMENTS *phy_meas = &PHY_vars_UE_g[Mod_id][CC_id]->measurements;
@@ -1007,7 +1010,7 @@ void phy_config_dedicated_scell_ue(uint8_t Mod_id,
 #endif
 
 
-void phy_config_harq_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
+void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
                         uint16_t max_harq_tx )
 {
 
@@ -1017,7 +1020,7 @@ void phy_config_harq_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
 
 extern uint16_t beta_cqi[16];
 
-void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
+void phy_config_dedicated_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
                              struct PhysicalConfigDedicated *physicalConfigDedicated )
 {
 

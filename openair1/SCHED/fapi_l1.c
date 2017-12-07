@@ -485,8 +485,11 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                          uint16_t frame,uint8_t subframe,uint8_t srs_present)
 {
   nfapi_ul_config_ulsch_pdu_rel8_t *rel8 = &ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8;
-
+#ifndef UE_EXPANSION
   int8_t UE_id;
+#else
+  int16_t UE_id;
+#endif
 
   // check if we have received a dci for this ue and ulsch descriptor is configured
 
@@ -496,14 +499,14 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d\n",
           UE_id,rel8->rnti,frame,subframe);
 
-    fill_ulsch(eNB,&ul_config_pdu->ulsch_pdu,frame,subframe);
+    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_pdu,frame,subframe);
 
   }
   else if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE) {
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE ULSCH for rnti %x\n",ul_config_pdu->ulsch_harq_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti);
 
-    fill_ulsch(eNB,&ul_config_pdu->ulsch_harq_pdu.ulsch_pdu,frame,subframe);
+    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_harq_pdu.ulsch_pdu,frame,subframe);
     handle_ulsch_harq_pdu(eNB, UE_id, ul_config_pdu,
         &ul_config_pdu->ulsch_harq_pdu.harq_information, frame, subframe);
 
@@ -512,7 +515,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti,
                                     eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE ULSCH for rnti %x\n",ul_config_pdu->ulsch_cqi_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti);
-    fill_ulsch(eNB,&ul_config_pdu->ulsch_cqi_ri_pdu.ulsch_pdu,frame,subframe);
+    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_cqi_ri_pdu.ulsch_pdu,frame,subframe);
     handle_ulsch_cqi_ri_pdu(eNB,UE_id,ul_config_pdu,frame,subframe);
 
   }
@@ -520,7 +523,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti,
                                     eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE ULSCH for rnti %x\n",ul_config_pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu.ulsch_pdu_rel8.rnti);
-    fill_ulsch(eNB,&ul_config_pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu,frame,subframe);
+    fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_cqi_harq_ri_pdu.ulsch_pdu,frame,subframe);
     handle_ulsch_cqi_harq_ri_pdu(eNB,UE_id,ul_config_pdu,frame,subframe);
     handle_ulsch_harq_pdu(eNB, UE_id, ul_config_pdu,
         &ul_config_pdu->ulsch_cqi_harq_ri_pdu.harq_information, frame, subframe);

@@ -800,11 +800,19 @@ void generate_RIV_tables()
 //       n_tilde_PRB(2,3) = (3,5)
 //       n_tilde_PRB(0,1) = (0,2)
 
-
+#ifndef UE_EXPANSION
 int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
+#else
+int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
+#endif
 {
+#ifndef UE_EXPANSION
   uint8_t i;
   int8_t first_free_index=-1;
+#else
+  uint16_t i;
+  int16_t first_free_index=-1;
+#endif
 
   AssertFatal(eNB!=NULL,"eNB is null\n");
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
@@ -822,10 +830,19 @@ int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
   return first_free_index;
 }
 
+#ifndef UE_EXPANSION
 int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
+#else
+int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
+#endif
 {
+#ifndef UE_EXPANSION
   uint8_t i;
   int8_t first_free_index=-1;
+#else
+  uint16_t i;
+  int16_t first_free_index=-1;
+#endif
 
   AssertFatal(eNB!=NULL,"eNB is null\n");
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
@@ -2544,14 +2561,14 @@ void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
   }
 }
 
-void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe)
+void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe)
 {
   uint8_t harq_pid;
-  uint8_t UE_id;
+  //uint8_t UE_id;
   boolean_t new_ulsch = (find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST)==-1) ? TRUE : FALSE;
 
-  AssertFatal((UE_id=find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
-	      "No existing/free UE ULSCH for rnti %x\n",ulsch_pdu->ulsch_pdu_rel8.rnti);
+  //AssertFatal((UE_id=find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
+  //        "No existing/free UE ULSCH for rnti %x\n",ulsch_pdu->ulsch_pdu_rel8.rnti);
 
   LTE_eNB_ULSCH_t *ulsch=eNB->ulsch[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;

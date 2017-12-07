@@ -28,7 +28,7 @@
 //#define DEBUG_BF_CH
 
 int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
-                                 uint8_t eNB_id,
+                                 module_id_t eNB_id,
                                  uint8_t eNB_offset,
                                  unsigned char Ns,
                                  unsigned char p,

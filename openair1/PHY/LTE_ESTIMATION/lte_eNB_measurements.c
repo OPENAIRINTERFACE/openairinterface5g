@@ -34,7 +34,7 @@ int32_t rx_power_avg_eNB[3];
 
 void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
 			     int subframe,
-                             unsigned char eNB_id,
+                             module_id_t eNB_id,
                              unsigned char clear)
 {
 
@@ -115,8 +115,8 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
 }
 
 void lte_eNB_srs_measurements(PHY_VARS_eNB *eNB,
-                              unsigned char eNB_id,
-                              unsigned char UE_id,
+                              module_id_t eNB_id,
+                              module_id_t UE_id,
                               unsigned char init_averaging)
 {
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
