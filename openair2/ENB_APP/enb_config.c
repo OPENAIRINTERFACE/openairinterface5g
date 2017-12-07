@@ -2623,7 +2623,9 @@ void RCConfig(void) {
 
 
 /* get global parameters, defined outside any section in the config file */
-  
+ 
+  printf("Getting ENBSParams\n");
+ 
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL); 
   RC.nb_inst = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
  

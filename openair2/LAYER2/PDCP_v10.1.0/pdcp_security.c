@@ -220,7 +220,7 @@ pdcp_validate_security(
   stream_decrypt(pdcp_pP->cipheringAlgorithm,
                  &decrypt_params,
                  &buffer_decrypted);
-
+#if !defined(USRP_REC_PLAY)
   if (srb_flagP) {
     /* Now check the integrity of the complete PDU */
     decrypt_params.message    = pdcp_pdu_buffer;
@@ -241,7 +241,7 @@ pdcp_validate_security(
       return -1;
     }
   }
-
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_VALIDATE_SECURITY, VCD_FUNCTION_OUT);
 
   return 0;
