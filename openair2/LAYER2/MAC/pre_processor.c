@@ -2293,18 +2293,20 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
     for ( ulsch_ue_num = 0; ulsch_ue_num < ulsch_ue_select[CC_id].ue_num; ulsch_ue_num++ ) {
 
       UE_id = ulsch_ue_select[CC_id].list[ulsch_ue_num].UE_id;
-      rnti = UE_RNTI(CC_id,UE_id);
+
       if (ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_MSG3) {
         first_rb[CC_id] ++;
         ue_num_temp--;
         continue;
       }
+
       if (ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_PRACH) {
         first_rb[CC_id] = ulsch_ue_select[CC_id].list[ulsch_ue_num].start_rb+ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb;
         ue_num_temp--;
         continue;
       }
 
+      rnti = UE_RNTI(CC_id,UE_id);
       if ( first_rb[CC_id] >= frame_parms->N_RB_UL-1 ) {
           LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
                  module_idP,frameP,subframeP,UE_id,rnti,CC_id);
@@ -2338,8 +2340,8 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
           }
         }
       }else{
-        UE_template = &UE_list->UE_template[CC_id][ulsch_ue_select[CC_id].list[ulsch_ue_num].UE_id];
-        if ( UE_list->UE_sched_ctrl[ulsch_ue_select[CC_id].list[ulsch_ue_num].UE_id].phr_received == 1 ) {
+        UE_template = &UE_list->UE_template[CC_id][UE_id];
+        if ( UE_list->UE_sched_ctrl[UE_id].phr_received == 1 ) {
           mcs = 20;
         } else {
           mcs = 10;
