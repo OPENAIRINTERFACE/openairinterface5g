@@ -558,7 +558,7 @@ void *l2l1_task(void *arg) {
                 break;
 
             case TERMINATE_MESSAGE:
-                printf("received terminate message\n");
+                LOG_W(TASK_L2L1, " *** Exiting L2L1 thread\n");
                 oai_exit=1;
                 itti_exit_task ();
                 break;
@@ -579,6 +579,7 @@ void *l2l1_task(void *arg) {
 
         switch (ITTI_MSG_ID(message_p)) {
         case TERMINATE_MESSAGE:
+            LOG_W(TASK_L2L1, " *** Exiting L2L1 thread\n");
             oai_exit=1;
             itti_exit_task ();
             break;

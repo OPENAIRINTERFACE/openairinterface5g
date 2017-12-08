@@ -643,7 +643,9 @@ static void* eNB_thread_rxtx( void* param ) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
 
-  printf( "Exiting eNB thread RXn_TXnp4\n");
+#ifdef DEBUG_THREADS
+  printf(" *** Exiting eNB thread RXn_TXnp4\n");
+#endif
 
   eNB_thread_rxtx_status = 0;
   return &eNB_thread_rxtx_status;
@@ -906,6 +908,10 @@ static void* eNB_thread_asynch_rxtx( void* param ) {
     else AssertFatal(1==0, "Unknown eNB->node_function %d",eNB->node_function);
     
   }
+
+#ifdef DEBUG_THREADS
+  printf(" *** Exiting eNB asynch rxtx thread\n");
+#endif
 
   eNB_thread_asynch_rxtx_status=0;
   return(&eNB_thread_asynch_rxtx_status);
@@ -1372,6 +1378,10 @@ void *eNB_thread_synch(void *arg) {
 
   lte_sync_time_free();
 
+#ifdef DEBUG_THREADS
+  printf(" *** Exiting eNB synch thread\n");
+#endif
+
   return NULL;
 }
 
@@ -1484,7 +1494,9 @@ static void* eNB_thread_FH( void* param ) {
       rt_sleep_ns(800000LL);
   }
     
-  printf( "Exiting FH thread \n");
+#ifdef DEBUG_THREADS
+  printf(" *** Exiting FH thread \n");
+#endif
  
   eNB_thread_FH_status = 0;
   return &eNB_thread_FH_status;
@@ -1518,7 +1530,9 @@ static void* eNB_thread_prach( void* param ) {
     if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
   }
 
-  printf( "Exiting eNB thread PRACH\n");
+#ifdef DEBUG_THREADS
+  printf(" *** Exiting eNB thread PRACH\n");
+#endif
 
   eNB_thread_prach_status = 0;
   return &eNB_thread_prach_status;
@@ -1688,7 +1702,9 @@ static void* eNB_thread_single( void* param ) {
   }
   
 
-  printf( "Exiting eNB_single thread \n");
+#ifdef DEBUG_THREADS
+  printf(" *** Exiting eNB_single thread\n");
+#endif
  
   eNB_thread_single_status = 0;
   return &eNB_thread_single_status;

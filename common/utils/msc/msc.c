@@ -99,6 +99,7 @@ void *msc_task(void *args_p)
         break;
 
         case TERMINATE_MESSAGE: {
+          fprintf(stderr, " *** Exiting MSC thread\n");
           timer_remove(timer_id);
     	  msc_end();
           itti_exit_task();

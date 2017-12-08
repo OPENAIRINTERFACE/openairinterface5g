@@ -74,6 +74,7 @@ void *flexran_agent_task(void *args){
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
+      LOG_W(FLEXRAN_AGENT, " *** Exiting FLEXRAN thread\n");
       itti_exit_task ();
       break;
 

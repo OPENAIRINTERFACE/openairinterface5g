@@ -361,6 +361,7 @@ void *eNB_app_task(void *args_p)
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
+      LOG_W(TASK_ENB_APP, " *** Exiting ENB_APP thread\n");
       itti_exit_task ();
       break;
 

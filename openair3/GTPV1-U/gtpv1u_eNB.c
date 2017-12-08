@@ -1132,6 +1132,7 @@ void *gtpv1u_eNB_task(void *args)
         hashtable_destroy (gtpv1u_data_g.teid_mapping);
       }
 
+      LOG_W(GTPU, " *** Exiting GTPU thread\n");
       itti_exit_task();
     }
     break;
