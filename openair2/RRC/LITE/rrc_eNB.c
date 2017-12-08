@@ -628,12 +628,12 @@ void rrc_eNB_emulation_notify_ue_module_id(
       return;
     }
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      if (RC.rrc[enb_module_id].carrier[CC_id].sib1 != NULL) {
+      if (&RC.rrc[enb_module_id]->carrier[CC_id].sib1 != NULL) {
         if (
-          (RC.rrc[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[0] == cell_identity_byte0P) &&
-          (RC.rrc[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[1] == cell_identity_byte1P) &&
-          (RC.rrc[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[2] == cell_identity_byte2P) &&
-          (RC.rrc[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[3] == cell_identity_byte3P)
+          (&RC.rrc[enb_module_id]->carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[0] == cell_identity_byte0P) &&
+          (&RC.rrc[enb_module_id]->carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[1] == cell_identity_byte1P) &&
+          (&RC.rrc[enb_module_id]->carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[2] == cell_identity_byte2P) &&
+          (&RC.rrc[enb_module_id]->carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[3] == cell_identity_byte3P)
         ) {
           ue_context_p = rrc_eNB_get_ue_context(
                            RC.rrc[enb_module_id],
