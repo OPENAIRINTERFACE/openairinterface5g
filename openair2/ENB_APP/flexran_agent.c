@@ -267,6 +267,9 @@ int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properti
   AGENT_RRC_xface *rrc_agent_xface = (AGENT_RRC_xface *) malloc(sizeof(AGENT_RRC_xface));
   flexran_agent_register_rrc_xface(mod_id, rrc_agent_xface);
 
+   AGENT_PDCP_xface *pdcp_agent_xface = (AGENT_PDCP_xface *) malloc(sizeof(AGENT_PDCP_xface));
+   flexran_agent_register_pdcp_xface(mod_id, pdcp_agent_xface);
+
   /* 
    * initilize a timer 
    */ 

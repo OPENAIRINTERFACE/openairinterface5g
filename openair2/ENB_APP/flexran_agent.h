@@ -38,6 +38,7 @@
 #include "flexran_agent_ran_api.h"
 #include "flexran_agent_mac.h"
 #include "flexran_agent_rrc.h"
+#include "flexran_agent_pdcp.h"
 #include "log.h"
 #include "assertions.h"
 

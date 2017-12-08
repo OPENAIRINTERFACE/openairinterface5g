@@ -242,3 +242,24 @@ message flex_eutra_ref_signal_meas {
         optional int32 rsrq = 2;
 
 }
+
+message flex_pdcp_stats {
+
+        optional uint32 pkt_tx = 1;
+        optional uint32 pkt_tx_bytes = 2;
+        optional uint32 pkt_tx_sn = 3;
+        optional uint32 pkt_tx_rate_s = 4;
+	optional uint32 pkt_tx_throughput_s = 5;
+        optional uint32 pkt_tx_aiat = 7;
+	optional uint32 pkt_tx_aiat_s = 8;
+	
+	optional uint32 pkt_rx = 9;
+        optional uint32 pkt_rx_bytes = 10;
+        optional uint32 pkt_rx_sn = 11;
+        optional uint32 pkt_rx_rate_s = 12;
+	optional uint32 pkt_rx_goodput_s = 13;
+        optional uint32 pkt_rx_aiat = 14;
+	optional uint32 pkt_rx_aiat_s = 15;
+        optional uint32 pkt_rx_oo = 16;
+ }
+

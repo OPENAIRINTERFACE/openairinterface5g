@@ -33,6 +33,7 @@
 // #include "flexran_agent_defs.h"
 #include "flexran_agent_mac_defs.h"
 #include "flexran_agent_rrc_defs.h"
+#include "flexran_agent_pdcp_defs.h"
 
 //extern msg_context_t shared_ctxt[NUM_MAX_ENB][FLEXRAN_AGENT_MAX];
 
@@ -50,6 +51,12 @@ extern AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB];
 
 /* Flag indicating whether the VSFs for the RRC control module have been registered */
 extern unsigned int rrc_agent_registered[NUM_MAX_ENB];
+
+/* Control module interface for the communication of the RRC Control Module with the agent */
+extern AGENT_PDCP_xface *agent_pdcp_xface[NUM_MAX_ENB];
+
+/* Flag indicating whether the VSFs for the RRC control module have been registered */
+extern unsigned int pdcp_agent_registered[NUM_MAX_ENB];
 
 /* Requried to know which UEs had a harq updated over some subframe */
 extern int harq_pid_updated[NUMBER_OF_UE_MAX][8];

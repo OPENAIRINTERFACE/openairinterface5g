@@ -143,7 +143,7 @@ void * flexran_agent_pack_message(Protocol__FlexranMessage *msg,
   
   DevAssert(buffer !=NULL);
   
-  LOG_D(FLEXRAN_AGENT,"Serilized the enb mac stats reply (size %d)\n", *size);
+  LOG_D(FLEXRAN_AGENT,"Serilized the eNB-UE stats reply (size %d)\n", *size);
   
   return buffer;
   
@@ -457,7 +457,7 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
 
   }
 
-    /*
+      /*
       MAC reply split
      */
 
@@ -467,7 +467,26 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
         goto error;
     }
 
-  
+    /*
+      RRC reply split
+     */
+
+    if (flexran_agent_rrc_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0 ) {
+        err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+        goto error;
+    }
+   
+
+    /*
+      PDCP reply split
+    */
+    
+    if (flexran_agent_pdcp_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0 ) {
+      err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+      goto error;
+    }
+
+       
   stats_reply_msg->cell_report = cell_report;
   stats_reply_msg->ue_report = ue_report;
 

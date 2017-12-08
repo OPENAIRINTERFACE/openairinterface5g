@@ -94,15 +94,41 @@ extern int             pdcp_instance_cnt;
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 
+public_pdcp(frame_t pdcp_frame);
+public_pdcp(sub_frame_t pdcp_subframe);
+public_pdcp(uint16_t pdcp_num_ues);
 
-public_pdcp(unsigned int Pdcp_stats_tx[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_tx_bytes[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_tx_bytes_last[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_tx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx_bytes[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx_bytes_last[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
+
+public_pdcp(uint32_t Pdcp_stats_tx_bytes[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_bytes_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_sn[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_rate_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_throughput_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat_tmp_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_iat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+
+public_pdcp(uint32_t Pdcp_stats_rx[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_bytes[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_bytes_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_sn[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_rate_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_goodput_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat_tmp_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_iat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_outoforder[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+
+
+/*Packet Probing for agent PDCP*/
+//public_pdcp(uint64_t *pdcp_packet_counter);
+//public_pdcp(uint64_t *pdcp_size_packet);
+
 
 typedef struct pdcp_stats_s {
   time_stats_t pdcp_run;
@@ -124,6 +150,10 @@ typedef struct pdcp_s {
    */
   boolean_t is_ue;
   boolean_t is_srb;
+
+ // used for eNB stats generation
+  uint16_t uid[NUMBER_OF_UE_MAX]; // local to pdcp
+  rnti_t rnti[NUMBER_OF_UE_MAX];
 
   /* Configured security algorithms */
   uint8_t cipheringAlgorithm;

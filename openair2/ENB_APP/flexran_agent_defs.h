@@ -32,11 +32,16 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include <stdbool.h>
+#include <time.h>
 
 #include "link_manager.h"
 
 #define NUM_MAX_ENB 2
+#define NUM_MAX_DRB 8
+#define NUM_MAX_SRB 3
 #define NUM_MAX_UE 2048
+#define DEFAULT_DRB 3
 #define DEFAULT_FLEXRAN_AGENT_IPv4_ADDRESS "127.0.0.1"
 #define DEFAULT_FLEXRAN_AGENT_PORT          2210
 #define DEFAULT_FLEXRAN_AGENT_CACHE        "/mnt/oai_agent_cache"

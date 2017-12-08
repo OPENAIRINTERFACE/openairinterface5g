@@ -18,53 +18,46 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */ 
+#ifndef __FLEXRAN_AGENT_PDCP_PRIMITIVES_H__
+#define __FLEXRAN_AGENT_PDCP_PRIMITIVES_H__
 
-
-/*! \file flexran_agent_rrc_defs.h
- * \brief FlexRAN agent - RRC interface primitives
- * \author shahab SHARIAT BAGHERI
- * \date 2017
- * \version 0.1
- * \mail 
- */
-
-#ifndef __FLEXRAN_AGENT_RRC_PRIMITIVES_H__
-#define __FLEXRAN_AGENT_RRC_PRIMITIVES_H__
-
-#include "PHY/extern.h"
 #include "flexran_agent_defs.h"
 #include "flexran.pb-c.h"
 #include "header.pb-c.h"
-#include "MeasResults.h"
 
-#define RINGBUFFER_SIZE 100
+ /*PDCP aggregated Packet stats  */
+/*
+typedef struct  pdcp_aggr_stats_s {
+  int32_t rnti; 
 
+  int32_t pkt_tx;
+  int32_t pkt_tx_bytes;
+  int32_t pkt_tx_sn;
+  int32_t pkt_tx_rate_s;
+  int32_t pkt_tx_throughput_s;
+  int32_t pkt_tx_aiat;
+  int32_t pkt_tx_aiat_s;
 
-typedef struct 
-{
-   int32_t rnti; 
-   int32_t meas_id;
-   int32_t rsrp;
-   int32_t rsrq;
+  int32_t pkt_rx;
+  int32_t pkt_rx_bytes;
+  int32_t pkt_rx_sn;
+  int32_t pkt_rx_rate_s;
+  int32_t pkt_rx_goodput_s;
+  int32_t pkt_rx_aiat;
+  int32_t pkt_rx_aiat_s;
+  int32_t pkt_rx_oo;
 
-   /*To Be Extended*/
-}rrc_meas_stats;
+  
+} pdcp_aggr_stats_t;
+*/
 
-/* RRC CMI statistics */
-rrc_meas_stats * meas_stats;
-
-
-/* FLEXRAN AGENT-RRC Interface */
+/* FLEXRAN AGENT-PDCP Interface */
 typedef struct {
   
   
-   /// Notify the controller for a state change of a particular UE, by sending the proper
-  /// UE state change message (ACTIVATION, DEACTIVATION, HANDOVER)
-  void (*flexran_agent_notify_ue_state_change)(mid_t mod_id, uint32_t rnti,
-                 uint8_t state_change);
-
-  void (*flexran_trigger_rrc_measurements)(mid_t mod_id, MeasResults_t*  measResults);
+  // PDCP statistics
+  void (*flexran_pdcp_stats_measurement)(mid_t mod_id, uint16_t rnti, uint16_t seq_num,  uint32_t size);
   
-} AGENT_RRC_xface;
+} AGENT_PDCP_xface;
 
 #endif

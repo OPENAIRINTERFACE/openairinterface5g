@@ -128,7 +128,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                               rlc_reports[j]->retransmission_queue_hol_delay = 100;
                               rlc_reports[j]->has_retransmission_queue_hol_delay = 0;
                               //TODO DONE:Set current size of the pending message in bytes
-                              rlc_reports[j]->status_pdu_size = flexran_get_tx_queue_size(enb_id, i, j + 1);
+                              rlc_reports[j]->status_pdu_size = flexran_get_num_pdus_buffer(enb_id , i, j + 1);
                               rlc_reports[j]->has_status_pdu_size = 1;
 
                         }

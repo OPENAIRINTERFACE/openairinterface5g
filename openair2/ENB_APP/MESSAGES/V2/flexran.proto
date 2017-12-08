@@ -132,6 +132,7 @@ message flex_enb_config_reply {
 	optional flex_header header = 1;
 	optional uint32 eNB_id = 2;		// Unique id to distinguish the eNB
 	repeated flex_cell_config cell_config = 3;
+        optional uint32 device_spec = 4;
 }
 
 message flex_ue_config_request {

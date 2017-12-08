@@ -33,32 +33,14 @@
 
 #include "log.h"
 
+/*Trigger boolean for RRC measurement*/
+bool triggered_rrc = false;
 
-/*Flags showing if a rrc agent has already been registered*/
+/*Flags showing if an rrc agent has already been registered*/
 unsigned int rrc_agent_registered[NUM_MAX_ENB];
 
 /*Array containing the Agent-RRC interfaces*/
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB];
-
-/* Ringbuffer related structs used for maintaining the dl rrc config messages */
-//message_queue_t *rrc_dl_config_queue;
-struct lfds700_misc_prng_state rrc_ps[NUM_MAX_ENB];
-struct lfds700_ringbuffer_element *rrc_dl_config_array[NUM_MAX_ENB];
-struct lfds700_ringbuffer_state rrc_ringbuffer_state[NUM_MAX_ENB];
-
-
-
-void flexran_agent_init_rrc_agent(mid_t mod_id) {
-  lfds700_misc_library_init_valid_on_current_logical_core();
-  lfds700_misc_prng_init(&rrc_ps[mod_id]);
-  int num_elements = RINGBUFFER_SIZE + 1;
-  //Allow RINGBUFFER_SIZE messages to be stored in the ringbuffer at any time
-  rrc_dl_config_array[mod_id] = malloc( sizeof(struct lfds700_ringbuffer_element) *  num_elements);
-  lfds700_ringbuffer_init_valid_on_current_logical_core( &rrc_ringbuffer_state[mod_id], rrc_dl_config_array[mod_id], num_elements, &rrc_ps[mod_id], NULL );
-}
-
-
-
 
 
 void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change) {
@@ -280,156 +262,26 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
 /* this is called by RRC as a part of rrc xface  . The controller previously requested  this*/ 
 void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults) {
 
-  // int i, m, k;
-  int                   priority = 0; // Warning Preventing
-  void                  *data;
-  int                   size;
-  err_code_t             err_code;
-  Protocol__FlexUeStatsReport **ue_report;
-  Protocol__FlexCellStatsReport **cell_report;
-  Protocol__FlexStatsReply *stats_reply_msg;
-  Protocol__FlexranMessage *msg;
+  int i, m, k;
+  // int                   priority = 0; // Warning Preventing
+  // void                  *data;
+  // int                   size;
+  err_code_t             err_code = -100;
+  triggered_rrc = true;
+  int num;
 
-  Protocol__FlexHeader *header;
-  int xid = 0;
-  int i;
+  num = flexran_get_num_ues (mod_id);
 
-  if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0)
-    goto error;
+  meas_stats = malloc(sizeof(rrc_meas_stats) * num); 
 
-
-
-  stats_reply_msg = malloc(sizeof(Protocol__FlexStatsReply));
-
-  if (stats_reply_msg == NULL)
-    goto error;
-
-  protocol__flex_stats_reply__init(stats_reply_msg);
-  stats_reply_msg->header = header;
-  stats_reply_msg->n_ue_report = 1;
-  stats_reply_msg->n_cell_report = 1;
-
-/****** LOCK ******************************************************************/
-  // pthread_spin_lock(&rrc_meas_t_lock);
-
-  // struct rrc_meas_trigg *ctxt;
-  // ctxt = rrc_meas_get_trigg(p->rnti, p->meas->measId);
-
-  // pthread_spin_unlock(&rrc_meas_t_lock);
-/****** UNLOCK ****************************************************************/
-
-  // if (ctxt == NULL) {
-
-  //   flexran_RRC_meas_reconf(p->rnti, -1, p->meas->measId, NULL, NULL);
-  //    Free the measurement report received from UE. 
-  //   ASN_STRUCT_FREE(asn_DEF_MeasResults, p->meas);
-  //   /* Free the params. */
-  //   free(p);
-  //   return 0;
-  // }
-
-
-  /* Check here whether trigger is registered in agent and then proceed.
-  */
-  // if (em_has_trigger(mod_id, ctxt->t_id, RRC_MEAS_TRIGGER) == 0) {
-
-  //   flexran_RRC_meas_reconf(p->rnti, -1, p->meas->measId, NULL, NULL);
-  //   /* Trigger does not exist in agent so remove from wrapper as well. */
-  //   if (rrc_meas_rem_trigg(ctxt) < 0) {
-  //     goto error;
-  //   }
-  // }
-
-  
-
-
-  /* Set the RNTI of the UE. */
-  // repl->rnti = p->rnti;
-  /* Set the request status. */
-  // if (p->reconfig_success == 0) {
-  //   repl->status = STATS_REQ_STATUS__SREQS_FAILURE;
-  //   goto error;
-  // }
-  /* Successful outcome. */
-  // repl->status = STATS_REQ_STATUS__SREQS_SUCCESS;
-  /* Set the measurement ID of measurement. */
-  // repl->has_measid = 1;
-  // repl->measid = measResults->measId;
-  /* Fill the Primary Cell RSRP and RSRQ. */
-  // repl->has_pcell_rsrp = 1;
-  // repl->has_pcell_rsrq = 1;
-  // #ifdef Rel10
-    // repl->has_pcell_rsrp = 1;
-    // repl->has_pcell_rsrq = 1;
-    // repl->pcell_rsrp = measResults2->measResultPCell.rsrpResult - 140;
-    // repl->pcell_rsrq = (measResults2->measResultPCell.rsrqResult)/2 - 20;
-
-    ue_report = malloc(sizeof(Protocol__FlexUeStatsReport *) * 1);
-          if (ue_report == NULL)
-            goto error;
-
-    for (i = 0; i < 1; i++) {
-
-      ue_report[i] = malloc(sizeof(Protocol__FlexUeStatsReport));
-       if(ue_report[i] == NULL)
-          goto error;
-      protocol__flex_ue_stats_report__init(ue_report[i]);
-      ue_report[i]->rnti = flexran_get_ue_crnti(mod_id, 0);
-      ue_report[i]->has_rnti = 1;
-       ue_report[i]->flags = 65536;
-       ue_report[i]->has_flags = 1;
-  
-    }
-
-    cell_report = malloc(sizeof(Protocol__FlexCellStatsReport *) * 1);
-    if (cell_report == NULL)
-       goto error;
-  
-     for (i = 0; i < 1; i++) {
-
-      cell_report[i] = malloc(sizeof(Protocol__FlexCellStatsReport));
-      if(cell_report[i] == NULL)
-          goto error;
-
-      protocol__flex_cell_stats_report__init(cell_report[i]);
-      cell_report[i]->carrier_index = 0; //report_config->cc_report_type[i].cc_id;
-      cell_report[i]->has_carrier_index = 1;
-      cell_report[i]->flags = 0; // report_config->cc_report_type[i].cc_report_flags;
-      cell_report[i]->has_flags = 1;
-     }
- 
-
-    Protocol__FlexRrcMeasurements *rrc_measurements;
-    rrc_measurements = malloc(sizeof(Protocol__FlexRrcMeasurements));
-    if (rrc_measurements == NULL)
-        goto error;
-    protocol__flex_rrc_measurements__init(rrc_measurements);
-                            
-    rrc_measurements->measid = measResults->measId;
-    rrc_measurements->has_measid = 1;
-
-    rrc_measurements->pcell_rsrp = measResults->measResultPCell.rsrpResult - 140;
-    rrc_measurements->has_pcell_rsrp = 1;
-
-    rrc_measurements->pcell_rsrq = (measResults->measResultPCell.rsrqResult)/2 - 20;                          
-    rrc_measurements->has_pcell_rsrq = 1 ;
-
-    ue_report[0]->rrc_measurements = rrc_measurements;
-
-
-
-   
-
-  // #else
-  //   repl->has_pcell_rsrp = 1;
-  //   repl->has_pcell_rsrq = 1;
-  //   repl->pcell_rsrp = RSRP_meas_mapping[meas->
-  //                       measResultServCell.rsrpResult];
-  //   repl->pcell_rsrq = RSRQ_meas_mapping[meas->
-  //                       measResultServCell.rsrqResult];
-  // #endif
-
-  // repl->neigh_meas = NULL;
+  for (i = 0; i < num; i++){
+    meas_stats[i].rnti = flexran_get_ue_crnti(mod_id, i);
+    meas_stats[i].meas_id = measResults->measId;
+    meas_stats[i].rsrp = measResults->measResultPCell.rsrpResult - 140;
+    meas_stats[i].rsrq = (measResults->measResultPCell.rsrqResult)/2 - 20;                          
+    
+  }
+    // repl->neigh_meas = NULL;
 
   // if (meas->measResultNeighCells != NULL) {
   //   /*
@@ -595,39 +447,131 @@ void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults
   // free(p);
 
 
-  stats_reply_msg->cell_report = cell_report;
+  // stats_reply_msg->cell_report = cell_report;
     
-  stats_reply_msg->ue_report = ue_report;
+  // stats_reply_msg->ue_report = ue_report;
   
-  msg = malloc(sizeof(Protocol__FlexranMessage));
-  if(msg == NULL)
-    goto error;
-  protocol__flexran_message__init(msg);
-  msg->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG;
-  msg->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__SUCCESSFUL_OUTCOME;
-  msg->stats_reply_msg = stats_reply_msg;
+  // msg = malloc(sizeof(Protocol__FlexranMessage));
+  // if(msg == NULL)
+  //   goto error;
+  // protocol__flexran_message__init(msg);
+  // msg->msg_case = PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG;
+  // msg->msg_dir = PROTOCOL__FLEXRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  // msg->stats_reply_msg = stats_reply_msg;
   
-  data = flexran_agent_pack_message(msg, &size);
+  // data = flexran_agent_pack_message(msg, &size);
   
   
-  if (flexran_agent_msg_send(mod_id, FLEXRAN_AGENT_DEFAULT, data, size, priority)) {
+  // if (flexran_agent_msg_send(mod_id, FLEXRAN_AGENT_DEFAULT, data, size, priority)) {
   
-    err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
-    goto error;
-  }
+  //   err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
+  //   goto error;
+  // }
   
-   LOG_I(FLEXRAN_AGENT,"RRC Trigger is done  \n");
+  //  LOG_I(FLEXRAN_AGENT,"RRC Trigger is done  \n");
 
   return;
 
-  error:
+  // error:
 
-    LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d \n",err_code);
+    // LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d \n",err_code);
     /* Free the measurement report received from UE. */
     // ASN_STRUCT_FREE(asn_DEF_MeasResults, p->meas);
     /* Free the params. */
     // free(p);
     // return -1;
+}
+
+
+int flexran_agent_rrc_stats_reply(mid_t mod_id,       
+          const report_config_t *report_config,
+           Protocol__FlexUeStatsReport **ue_report,
+           Protocol__FlexCellStatsReport **cell_report) {
+
+
+  // Protocol__FlexHeader *header;
+  int i, j, k;
+  // int cc_id = 0;
+  int enb_id = mod_id;
+
+  /* Allocate memory for list of UE reports */
+  if (report_config->nr_ue > 0) {
+
+    for (i = 0; i < report_config->nr_ue; i++) {
+      
+      /* Check flag for creation of buffer status report */
+      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RRC_MEASUREMENTS) {
+	
+	Protocol__FlexRrcMeasurements *rrc_measurements;
+	rrc_measurements = malloc(sizeof(Protocol__FlexRrcMeasurements));
+	if (rrc_measurements == NULL)
+	  goto error;
+	protocol__flex_rrc_measurements__init(rrc_measurements);
+        
+	if (triggered_rrc){
+	  rrc_measurements->measid = meas_stats[i].meas_id;
+	  rrc_measurements->has_measid = 1;
+	  
+	  rrc_measurements->pcell_rsrp = meas_stats[i].rsrp;
+	  rrc_measurements->has_pcell_rsrp = 1;
+	  
+	  rrc_measurements->pcell_rsrq = meas_stats[i].rsrq;                          
+	  rrc_measurements->has_pcell_rsrq = 1 ;
+	  
+	  ue_report[i]->rrc_measurements = rrc_measurements;
+	  // triggered_rrc = false; // To be decided later
+	}
+      }
+    }       
+  } 
+
+  /* To be extended for RRC layer */ 
+  // if (report_config->nr_cc > 0) { 
+    
+            
+  //           // Fill in the Cell reports
+  //           for (i = 0; i < report_config->nr_cc; i++) {
+
+
+  //                     /* Check flag for creation of noise and interference report */
+  //                     if(report_config->cc_report_type[i].cc_report_flags & PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE) {
+  //                           // TODO: Fill in the actual noise and interference report for this cell
+  //                           Protocol__FlexNoiseInterferenceReport *ni_report;
+  //                           ni_report = malloc(sizeof(Protocol__FlexNoiseInterferenceReport));
+  //                           if(ni_report == NULL)
+  //                             goto error;
+  //                           protocol__flex_noise_interference_report__init(ni_report);
+  //                           // Current frame and subframe number
+  //                           ni_report->sfn_sf = flexran_get_sfn_sf(enb_id);
+  //                           ni_report->has_sfn_sf = 1;
+  //                           //TODO:Received interference power in dbm
+  //                           ni_report->rip = 0;
+  //                           ni_report->has_rip = 1;
+  //                           //TODO:Thermal noise power in dbm
+  //                           ni_report->tnp = 0;
+  //                           ni_report->has_tnp = 1;
+
+  //                           ni_report->p0_nominal_pucch = flexran_get_p0_nominal_pucch(enb_id, 0);
+  //                           ni_report->has_p0_nominal_pucch = 1;
+  //                           cell_report[i]->noise_inter_report = ni_report;
+  //                     }
+  //           }
+            
+
+      
+            
+  // }
+
+  return 0;
+
+ error:
+
+  if (cell_report != NULL)
+        free(cell_report);
+  if (ue_report != NULL)
+        free(ue_report);
+
+  return -1;
 }
 
 

@@ -39,6 +39,7 @@
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/RLC/rlc.h"
 #include "SCHED/defs.h"
+#include "pdcp.h"
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "RRC/LITE/rrc_eNB_UE_context.h"
@@ -90,6 +91,9 @@ int flexran_get_ue_wcqi (mid_t mod_id, mid_t ue_id);
 
 /* Get the transmission queue size for a UE with a channel_id logical channel id */
 int flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
+
+/*Get number of pdus in RLC buffer*/
+int flexran_get_num_pdus_buffer(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id); 
 
 /* Get the head of line delay for a UE with a channel_id logical channel id */
 int flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
@@ -334,3 +338,54 @@ void flexran_agent_set_operating_frame_type (mid_t mod_id, int cc_id, int frame_
 
 /*RRC status flexRAN*/
 int flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP);
+
+
+/***************************** PDCP ***********************/
+
+/*PDCP num tx pdu status flexRAN*/
+uint32_t flexran_get_pdcp_tx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP num tx bytes status flexRAN*/
+uint32_t flexran_get_pdcp_tx_bytes(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP number of transmit packet / second status flexRAN*/
+uint32_t flexran_get_pdcp_tx_rate_s(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP throughput (bit/s) status flexRAN*/
+uint32_t flexran_get_pdcp_tx_throughput_s(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP tx sequence number flexRAN*/
+uint32_t flexran_get_pdcp_tx_sn(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP tx aggregated packet arrival  flexRAN*/
+uint32_t flexran_get_pdcp_tx_aiat(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP tx aggregated packet arrival per second flexRAN*/
+uint32_t flexran_get_pdcp_tx_aiat_s(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+
+/*PDCP num rx pdu status flexRAN*/
+uint32_t flexran_get_pdcp_rx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP num rx bytes status flexRAN*/
+uint32_t flexran_get_pdcp_rx_bytes(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP number of received packet / second  flexRAN*/
+uint32_t flexran_get_pdcp_rx_rate_s(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP gootput (bit/s) status flexRAN*/
+uint32_t flexran_get_pdcp_rx_goodput_s(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP rx sequence number flexRAN*/
+uint32_t flexran_get_pdcp_rx_sn(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP rx aggregated packet arrival  flexRAN*/
+uint32_t flexran_get_pdcp_rx_aiat(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP rx aggregated packet arrival per second flexRAN*/
+uint32_t flexran_get_pdcp_rx_aiat_s(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+/*PDCP num of received outoforder pdu status flexRAN*/
+uint32_t flexran_get_pdcp_rx_oo(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+
+

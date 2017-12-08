@@ -19,15 +19,15 @@
  *      contact@openairinterface.org
  */ 
 
-/*! \file flexran_agent_rrc.h
- * \brief FlexRAN agent Control Module RRC header
+/*! \file flexran_agent_pdcp.h
+ * \brief FlexRAN agent Control Module PDCP header
  * \author shahab SHARIAT BAGHERI 
  * \date 2017
  * \version 0.1
  */
 
-#ifndef FLEXRAN_AGENT_RRC_H_
-#define FLEXRAN_AGENT_RRC_H_
+#ifndef FLEXRAN_AGENT_PDCP_H_
+#define FLEXRAN_AGENT_PDCP_H_
 
 #include "header.pb-c.h"
 #include "flexran.pb-c.h"
@@ -36,35 +36,29 @@
 
 
 #include "flexran_agent_common.h"
-#include "flexran_agent_rrc_defs.h"
-
-
-/* Initialization function for the agent structures etc */
-void flexran_agent_init_rrc_agent(mid_t mod_id);
-
-/* UE state change message constructor and destructor */
-void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change);
-int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg);
-
+#include "flexran_agent_defs.h"
+#include "flexran_agent_pdcp_defs.h"
+#include "flexran_agent_ran_api.h"
 
 /**********************************
- * FlexRAN agent - technology RRC API
+ * FlexRAN agent - technology PDCP API
  **********************************/
 
-/* Send to the controller all the rrc stat updates that occured during this subframe*/
-// void flexran_agent_send_update_rrc_stats(mid_t mod_id);
+/* Send to the controller all the pdcp stat updates that occured during this subframe*/
+int flexran_agent_pdcp_stats_reply(mid_t mod_id,       
+          const report_config_t *report_config,
+           Protocol__FlexUeStatsReport **ue_report,
+           Protocol__FlexCellStatsReport **cell_report);
 
-/* this is called by RRC as a part of rrc xface  . The controller previously requested  this*/ 
-void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t *);
-
-/* Statistics reply protocol message constructor and destructor */
-int flexran_agent_rrc_stats_reply(mid_t mod_id, const report_config_t *report_config, Protocol__FlexUeStatsReport **ue_report, Protocol__FlexCellStatsReport **cell_report);
-int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexranMessage *msg);
+/* Get the stats from RAN API and aggregate them per USER*/
+void flexran_agent_pdcp_aggregate_stats(const mid_t mod_id,
+					const mid_t ue_id,
+					Protocol__FlexPdcpStats *pdcp_aggr_stats);
 
 /*Register technology specific interface callbacks*/
-int flexran_agent_register_rrc_xface(mid_t mod_id, AGENT_RRC_xface *xface);
+int flexran_agent_register_pdcp_xface(mid_t mod_id, AGENT_PDCP_xface *xface);
 
 /*Unregister technology specific callbacks*/
-int flexran_agent_unregister_rrc_xface(mid_t mod_id, AGENT_RRC_xface*xface);
+int flexran_agent_unregister_pdcp_xface(mid_t mod_id, AGENT_PDCP_xface*xface);
 
 #endif
