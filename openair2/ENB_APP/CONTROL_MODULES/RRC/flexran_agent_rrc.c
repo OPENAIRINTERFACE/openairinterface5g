@@ -262,11 +262,11 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
 /* this is called by RRC as a part of rrc xface  . The controller previously requested  this*/ 
 void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults) {
 
-  int i, m, k;
+  int i;
   // int                   priority = 0; // Warning Preventing
   // void                  *data;
   // int                   size;
-  err_code_t             err_code = -100;
+  // err_code_t             err_code = -100;
   triggered_rrc = true;
   int num;
 
@@ -490,9 +490,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
 
 
   // Protocol__FlexHeader *header;
-  int i, j, k;
-  // int cc_id = 0;
-  int enb_id = mod_id;
+  int i;
 
   /* Allocate memory for list of UE reports */
   if (report_config->nr_ue > 0) {

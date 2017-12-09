@@ -129,10 +129,8 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
 int parse_enb_id(mid_t mod_id, yaml_parser_t *parser) {
   yaml_event_t event;
   
-  void *param;
   char *endptr;
-  int is_array = 0;
-  int i = 0;
+  // int is_array;
   
   int done = 0;
   int mapping_started = 0;
@@ -145,7 +143,7 @@ int parse_enb_id(mid_t mod_id, yaml_parser_t *parser) {
     switch (event.type) {
       // We are expecting a mapping of parameters
     case YAML_SEQUENCE_START_EVENT:
-      is_array = 1;
+      // is_array = 1;
       break;
     case YAML_MAPPING_START_EVENT:
       LOG_D(ENB_APP, "The mapping of the parameters started\n");
@@ -193,7 +191,6 @@ int parse_enb_id(mid_t mod_id, yaml_parser_t *parser) {
 int parse_enb_config_parameters(mid_t mod_id, yaml_parser_t *parser) {
   yaml_event_t event;
   
-  void *param;
   char *endptr;
   
   int done = 0;

@@ -38,6 +38,7 @@
 void * enb[NUM_MAX_ENB];
 void * enb_ue[NUM_MAX_ENB];
 void * enb_rrc[NUM_MAX_ENB];
+Enb_properties_array_t* enb_properties;
 
 void flexran_set_enb_vars(mid_t mod_id, ran_name_t ran){
 
@@ -47,10 +48,12 @@ void flexran_set_enb_vars(mid_t mod_id, ran_name_t ran){
       enb[mod_id] = NULL;
       enb_ue[mod_id] = NULL;
       enb_rrc[mod_id] = NULL;
+      enb_properties = NULL;
     }else{
       enb[mod_id] =  (void *)&eNB_mac_inst[mod_id];
       enb_ue[mod_id] = (void *)&eNB_mac_inst[mod_id].UE_list;
       enb_rrc[mod_id] = (void *)&eNB_rrc_inst[mod_id];
+      enb_properties = (Enb_properties_array_t *) enb_config_get();
     }
     break;
   default :
@@ -1039,52 +1042,43 @@ int flexran_get_antenna_ports(mid_t mod_id, int CC_id){
 
 
 uint32_t flexran_agent_get_operating_dl_freq (mid_t mod_id, int cc_id) {
-        const Enb_properties_array_t* enb_properties = enb_config_get();
+        
         return (enb_properties->properties[mod_id]->downlink_frequency[cc_id] / 1000000);
 }
 
 uint32_t flexran_agent_get_operating_ul_freq (mid_t mod_id, int cc_id) {
-        const Enb_properties_array_t* enb_properties = enb_config_get();
         return ((enb_properties->properties[mod_id]->downlink_frequency[cc_id] + enb_properties->properties[0]->uplink_frequency_offset[cc_id]) / 1000000);
 }
 
 int flexran_agent_get_operating_eutra_band (mid_t mod_id, int cc_id) {
-        const Enb_properties_array_t* enb_properties = enb_config_get();
         return enb_properties->properties[mod_id]->eutra_band[cc_id];
 }
 int flexran_agent_get_operating_pdsch_refpower (mid_t mod_id, int cc_id) {
-        const Enb_properties_array_t* enb_properties = enb_config_get();
         return enb_properties->properties[mod_id]->pdsch_referenceSignalPower[cc_id];
 }
 int flexran_agent_get_operating_pusch_p0 (mid_t mod_id, int cc_id) {
-        const Enb_properties_array_t* enb_properties = enb_config_get();
         return enb_properties->properties[mod_id]->pusch_p0_Nominal[cc_id];
 }
 
 void flexran_agent_set_operating_dl_freq (mid_t mod_id, int cc_id, uint32_t dl_freq_mhz) {
 
-        Enb_properties_array_t* enb_properties = enb_config_get();
         enb_properties->properties[mod_id]->downlink_frequency[cc_id]=dl_freq_mhz * 1000000;
         /*printf("[ENB_APP] mod id %d ccid %d dl freq %d/%d\n", mod_id, cc_id, dl_freq_mhz, enb_properties->properties[mod_id]->downlink_frequency[cc_id]); */   
 }
 
 void flexran_agent_set_operating_ul_freq (mid_t mod_id, int cc_id, int32_t ul_freq_offset_mhz) {
-        Enb_properties_array_t* enb_properties = enb_config_get();
         enb_properties->properties[mod_id]->uplink_frequency_offset[cc_id]=ul_freq_offset_mhz * 1000000;
 }
 //TBD
 void flexran_agent_set_operating_eutra_band (mid_t mod_id, int cc_id) {
-        Enb_properties_array_t* enb_properties = enb_config_get();
         enb_properties->properties[mod_id]->eutra_band[cc_id]=7;
 }
 
 void flexran_agent_set_operating_bandwidth (mid_t mod_id, int cc_id, int bandwidth) {
-        Enb_properties_array_t* enb_properties = enb_config_get();
         enb_properties->properties[mod_id]->N_RB_DL[cc_id]=bandwidth;
 }
 
 void flexran_agent_set_operating_frame_type (mid_t mod_id, int cc_id, int frame_type) {
-        Enb_properties_array_t* enb_properties = enb_config_get();
         enb_properties->properties[mod_id]->frame_type[cc_id]=frame_type;
 }
 

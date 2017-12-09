@@ -77,7 +77,7 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
   
   
   // Protocol__FlexHeader *header;
-  int i, j, k;
+  int i;
   // int cc_id = 0;
  
   

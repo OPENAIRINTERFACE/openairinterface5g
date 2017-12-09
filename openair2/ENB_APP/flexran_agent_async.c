@@ -68,12 +68,12 @@ flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, c
 
  error:
   LOG_I(FLEXRAN_AGENT,"there was an error\n");
-  return 1;
+  return NULL;
 }
 
 int flexran_agent_async_msg_send(void *data, int size, int priority, void *channel_info) {
   flexran_agent_async_channel_t *channel;
-  channel = (flexran_agent_channel_t *)channel_info;
+  channel = (flexran_agent_async_channel_t *)channel_info;
 
   return message_put(channel->send_queue, data, size, priority);
 }

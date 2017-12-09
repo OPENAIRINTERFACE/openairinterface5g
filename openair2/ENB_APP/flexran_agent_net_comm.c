@@ -141,9 +141,9 @@ int flexran_agent_destroy_channel(int channel_id) {
   for (i = 0; i < NUM_MAX_ENB; i++) {
     for (j = 0; j < FLEXRAN_AGENT_MAX; j++) {
       if (agent_channel[i][j] != NULL) {
-	if (agent_channel[i][j]->channel_id == e->channel_id) {
-	  agent_channel[i][j] == NULL;
-	}
+	       if (agent_channel[i][j]->channel_id == e->channel_id) {
+	           free(agent_channel[i][j]);
+	       }
       }
     }
   }
@@ -164,7 +164,7 @@ err_code_t flexran_agent_init_channel_container(void) {
   
   for (i = 0; i < NUM_MAX_ENB; i++) {
     for (j = 0; j < FLEXRAN_AGENT_MAX; j++) {
-    agent_channel[i][j] == NULL;
+    agent_channel[i][j] = malloc(sizeof(flexran_agent_channel_t));
     }
   }
 
