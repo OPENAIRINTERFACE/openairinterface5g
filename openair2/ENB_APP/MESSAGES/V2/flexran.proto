@@ -30,6 +30,7 @@ message flexran_message {
 	      flex_control_delegation control_delegation_msg = 16;
 	      flex_agent_reconfiguration agent_reconfiguration_msg = 17;
 	      flex_rrc_triggering rrc_triggering = 18;
+	      flex_ul_mac_config ul_mac_config_msg = 19;
 	}
 }
 
@@ -164,6 +165,18 @@ message flex_dl_mac_config {
 	repeated flex_dl_rar dl_rar = 4;
 	repeated flex_dl_broadcast dl_broadcast = 5;
 	repeated flex_pdcch_ofdm_sym_count ofdm_sym = 6; // OFDM symbol count for each CC
+}
+
+message flex_ul_mac_config {
+	optional flex_header header = 1;
+ 	optional uint32 sfn_sf = 2;
+	repeated flex_ul_data ul_ue_data = 3;
+}
+
+message flex_rrc_triggering {
+
+	optional flex_header header = 1;
+	optional string rrc_trigger = 2;	
 }
 
 //
