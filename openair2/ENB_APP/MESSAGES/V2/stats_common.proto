@@ -183,83 +183,87 @@ message flex_noise_interference_report {
 }
 
 //
-// RRC Primitives
+// RRC Measurements Primitives
 //
+
+
 message flex_rrc_measurements {
-       // Measurement identifier.
-       optional int32 measid = 1;
-       // Primary Cell Reference Signal Received Power (RSRP).
-        optional int32 pcell_rsrp = 2;
-        // Primary Cell Reference Signal Received Quality (RSRQ).
-        optional int32 pcell_rsrq = 3;
-       // Neighboring cells measurements performed by UE.
-        optional flex_neigh_cells_measurements neigh_meas = 4;
+	// Measurement identifier.
+	optional int32 measid = 1;
+	// Primary Cell Reference Signal Received Power (RSRP).
+	optional int32 pcell_rsrp = 2;
+	// Primary Cell Reference Signal Received Quality (RSRQ).
+	optional int32 pcell_rsrq = 3;
+	// Neighboring cells measurements performed by UE.
+	optional flex_neigh_cells_measurements neigh_meas = 4;
 }
 
 message flex_neigh_cells_measurements {
-        // Neighboring EUTRA cells measurements.
-        repeated flex_eutra_measurements eutra_meas = 1;
+	// Neighboring EUTRA cells measurements.
+	repeated flex_eutra_measurements eutra_meas = 1;
 }
 
 message flex_eutra_measurements {
-        // Physical Cell identifier.
-        optional int32 phys_cell_id = 1;
-        // EUTRA Cell Global Identity (CGI) measurement.
-        optional flex_eutra_cgi_measurements cgi_meas = 2;
-        // EUTRA nearby cell reference signal measurement.
-        optional flex_eutra_ref_signal_meas meas_result = 3;
+	// Physical Cell identifier.
+	optional int32 phys_cell_id = 1;
+	// EUTRA Cell Global Identity (CGI) measurement.
+	optional flex_eutra_cgi_measurements cgi_meas = 2;
+	// EUTRA nearby cell reference signal measurement.
+	optional flex_eutra_ref_signal_meas meas_result = 3;
 }
 
 message flex_eutra_cgi_measurements {
-        // EUTRA Cell Global Identity (CGI).
-        optional flex_cell_global_eutra_id cgi = 1;
-        // Tracking area code of the neighbor cell.
-        optional uint32 tracking_area_code = 2;
-        // Public land mobile network identifiers of neighbor cell.
-        repeated flex_plmn_identity plmn_id = 3;
+	// EUTRA Cell Global Identity (CGI).
+	optional flex_cell_global_eutra_id cgi = 1;
+	// Tracking area code of the neighbor cell.
+	optional uint32 tracking_area_code = 2;
+	// Public land mobile network identifiers of neighbor cell.
+	repeated flex_plmn_identity plmn_id = 3;
 }
 
 message flex_cell_global_eutra_id {
-       // Public land mobile network identifier of neighbor cell.
-        optional flex_plmn_identity plmn_id = 1;
-        // Cell identifier of neighbor cell.
-        optional uint32 cell_id = 2;
+	// Public land mobile network identifier of neighbor cell.
+	optional flex_plmn_identity plmn_id = 1;
+	// Cell identifier of neighbor cell.
+	optional uint32 cell_id = 2;
 }
 
 message flex_plmn_identity {
-        // Mobile Network Code (MNC).
-        repeated uint32 mnc = 1;
-        // Mobile Country Code (MCC).
-        repeated uint32 mcc = 2;
-        // tracking area code        
-        repeated uint32 tac = 3;
-}        
+	// Mobile Network Code (MNC).
+	repeated uint32 mnc = 1;
+	// Mobile Country Code (MCC).
+	repeated uint32 mcc = 2;
+	// tracking area code 
+	repeated uint32 tac = 3;
+}
 
 message flex_eutra_ref_signal_meas {
-        // Neighboring Cell Reference Signal Received Power (RSRP).
-        optional int32 rsrp = 1;
-        // Neighboring Cell Reference Signal Received Quality (RSRQ).
-        optional int32 rsrq = 2;
-
+	// Neighboring Cell RSRP
+	optional int32 rsrp = 1;
+	// Neighboring Cell RSRQ	
+	optional int32 rsrq = 2;
 }
+
+//
+// PDCP Statistics
+//
 
 message flex_pdcp_stats {
 
-        optional uint32 pkt_tx = 1;
-        optional uint32 pkt_tx_bytes = 2;
-        optional uint32 pkt_tx_sn = 3;
-        optional uint32 pkt_tx_rate_s = 4;
+	optional uint32 pkt_tx = 1;
+	optional uint32 pkt_tx_bytes = 2;
+	optional uint32 pkt_tx_sn = 3;
+	optional uint32 pkt_tx_rate_s = 4;
 	optional uint32 pkt_tx_throughput_s = 5;
-        optional uint32 pkt_tx_aiat = 7;
+	optional uint32 pkt_tx_aiat = 7;
 	optional uint32 pkt_tx_aiat_s = 8;
 	
 	optional uint32 pkt_rx = 9;
-        optional uint32 pkt_rx_bytes = 10;
-        optional uint32 pkt_rx_sn = 11;
-        optional uint32 pkt_rx_rate_s = 12;
+	optional uint32 pkt_rx_bytes = 10;
+	optional uint32 pkt_rx_sn = 11;
+	optional uint32 pkt_rx_rate_s = 12;
 	optional uint32 pkt_rx_goodput_s = 13;
-        optional uint32 pkt_rx_aiat = 14;
+	optional uint32 pkt_rx_aiat = 14;
 	optional uint32 pkt_rx_aiat_s = 15;
-        optional uint32 pkt_rx_oo = 16;
- }
-
+	optional uint32 pkt_rx_oo = 16;
+}

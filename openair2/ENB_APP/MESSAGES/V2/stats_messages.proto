@@ -47,8 +47,8 @@ message flex_ue_stats_report {
 	optional flex_dl_cqi_report dl_cqi_report = 7;
 	optional flex_paging_buffer_report pbr = 8;
 	optional flex_ul_cqi_report ul_cqi_report = 9;
-        optional flex_rrc_measurements rrc_measurements = 10;
-        optional flex_pdcp_stats pdcp_stats = 11;
+	optional flex_rrc_measurements rrc_measurements = 10;
+    optional flex_pdcp_stats pdcp_stats = 11;
 }
 
 //
@@ -85,9 +85,9 @@ enum flex_ue_stats_type {
      FLUST_DL_CQI = 16;
      FLUST_PBS = 32;
      FLUST_UL_CQI = 64;
-     
-     FLUST_PDCP_STATS = 1024; // To be changed
-     // To be extended with more types of stats
+
+     FLUST_PDCP_STATS = 1024;     
      FLUST_RRC_MEASUREMENTS = 65536;
-     
+     // To be extended with more types of stats
+    
 }

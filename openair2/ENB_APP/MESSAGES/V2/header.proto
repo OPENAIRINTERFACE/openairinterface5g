@@ -33,7 +33,7 @@ enum flex_type {
 
      //Controller command messages
      FLPT_DL_MAC_CONFIG = 13;
-     
+
      // UE state change messages
      FLPT_UE_STATE_CHANGE = 14;
 
@@ -41,6 +41,5 @@ enum flex_type {
      FLPT_DELEGATE_CONTROL = 15;
      FLPT_RECONFIGURE_AGENT = 16;
      FLPT_RRC_TRIGGERING = 17;
-     FLPT_UL_MAC_CONFIG = 18;
 }
 

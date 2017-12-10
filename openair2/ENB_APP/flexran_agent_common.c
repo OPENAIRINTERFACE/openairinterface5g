@@ -387,7 +387,6 @@ int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol_
   Protocol__FlexControlDelegation *control_delegation_msg = input->control_delegation_msg;
 
   //  struct timespec vartime = timer_start();
-  int status;
   //Write the payload lib into a file in the cache and load the lib
   char lib_name[120];
   char target[512];
@@ -395,13 +394,6 @@ int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol_
   strcpy(target, local_cache);
   strcat(target, lib_name);
   
-  status = mkdir(local_cache, S_IRWXU | S_IRWXG | S_IRWXO);
-
-  if (status < 0){
-
-     LOG_W(ENB_APP, "Couldn't create local cache!");
-  }
-
   FILE *f;
   f = fopen(target, "wb");
   fwrite(control_delegation_msg->payload.data, control_delegation_msg->payload.len, 1, f);
