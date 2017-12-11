@@ -216,35 +216,34 @@ int parse_enb_config_parameters(mid_t mod_id, yaml_parser_t *parser) {
 	goto error;
       }
       // Check what key needs to be set
-      LOG_I(ENB_APP, "Setting parameter %s\n", event.data.scalar.value);
       if (strcmp((char *) event.data.scalar.value, "dl_freq") == 0) {
-    if (!yaml_parser_parse(parser, &event))
-      goto error;
+        if (!yaml_parser_parse(parser, &event))
+          goto error;
 	flexran_agent_set_operating_dl_freq(mod_id,
 					    0,
 					    strtol((char *) event.data.scalar.value, &endptr, 10));
-        LOG_I(ENB_APP, "Setting parameter value %s\n", event.data.scalar.value);
+        LOG_I(ENB_APP, "Setting dl_freq to %s\n", event.data.scalar.value);
       } else if (strcmp((char *) event.data.scalar.value, "ul_freq_offset") == 0) {
-    if (!yaml_parser_parse(parser, &event))
-      goto error;
+        if (!yaml_parser_parse(parser, &event))
+          goto error;
 	flexran_agent_set_operating_ul_freq(mod_id,
 					    0,
 					    strtol((char *) event.data.scalar.value, &endptr, 10));
-        LOG_I(ENB_APP, "Setting parameter value %s\n", event.data.scalar.value);
+        LOG_I(ENB_APP, "Setting ul_freq_offset to %s\n", event.data.scalar.value);
       } else if (strcmp((char *) event.data.scalar.value, "bandwidth") == 0) {
-    if (!yaml_parser_parse(parser, &event))
-      goto error;
+        if (!yaml_parser_parse(parser, &event))
+          goto error;
 	flexran_agent_set_operating_bandwidth(mod_id,
 					    0,
 					    strtol((char *) event.data.scalar.value, &endptr, 10));
-        LOG_I(ENB_APP, "Setting parameter value %s\n", event.data.scalar.value);
+        LOG_I(ENB_APP, "Setting bandwidth to %s\n", event.data.scalar.value);
       } else if (strcmp((char *) event.data.scalar.value, "frame_type") == 0) {
-    if (!yaml_parser_parse(parser, &event))
-      goto error;
+        if (!yaml_parser_parse(parser, &event))
+          goto error;
 	flexran_agent_set_operating_frame_type (mod_id,
 					    0,
 					    strtol((char *) event.data.scalar.value, &endptr, 10));
-        LOG_I(ENB_APP, "Setting parameter value %s\n", event.data.scalar.value);
+        LOG_I(ENB_APP, "Setting frame_type to %s\n", event.data.scalar.value);
       }else { // not supported tag  
 	goto error;
       }

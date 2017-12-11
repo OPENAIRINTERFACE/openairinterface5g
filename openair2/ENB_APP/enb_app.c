@@ -330,7 +330,7 @@ void *eNB_app_task(void *args_p)
   
   // set again the ran api vars  
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    printf("\n set again enb vars %d\n", enb_id);
+    LOG_I(ENB_APP, "set again enb vars %d\n", enb_id);
     flexran_set_enb_vars(enb_id, RAN_LTE_OAI);
   }
 
