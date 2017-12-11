@@ -303,6 +303,7 @@ static void *UE_thread_synch(void *arg)
     } while (ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]));
   
     if (found == 0) {
+      LOG_E(PHY,"Can't find EUTRA band for frequency %d",UE->frame_parms.dl_CarrierFreq);
       exit_fun("Can't find EUTRA band for frequency");
       return &UE_thread_synch_retval;
     }

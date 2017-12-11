@@ -756,6 +756,10 @@ typedef struct RU_t_s{
   time_stats_t rx_fhaul;
   /// Timing statistics (TX Fronthaul + Compression)
   time_stats_t tx_fhaul; 
+  /// Timong statistics (Compression)
+  time_stats_t compression;
+  /// Timing statistics (Fronthaul transport)
+  time_stats_t transport;
   /// RX and TX buffers for precoder output
   RU_COMMON            common;
   /// beamforming weight vectors per eNB

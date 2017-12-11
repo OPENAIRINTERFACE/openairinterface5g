@@ -207,6 +207,15 @@ typedef struct {
   int iq_rxrescale;
   //! Configuration file for LMS7002M
   char *configFilename;
+#if defined(USRP_REC_PLAY)
+  unsigned short sf_mode;           // 1=record, 2=replay
+  char           sf_filename[1024]; // subframes file path
+  unsigned int   sf_max;            // max number of recorded subframes
+  unsigned int   sf_loops;          // number of loops in replay mode
+  unsigned int   sf_read_delay;     // read delay in replay mode
+  unsigned int   sf_write_delay;    // write delay in replay mode
+  unsigned int   eth_mtu;           // ethernet MTU
+#endif  
 } openair0_config_t;
 
 /*! \brief RF mapping */ 
