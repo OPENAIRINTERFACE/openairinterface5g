@@ -323,6 +323,11 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
 #endif
 
+      case TERMINATE_MESSAGE:
+        LOG_W(MAC, "+++ Exiting MAC thread\n");
+        itti_exit_task ();
+        break;
+
       default:
         LOG_E(MAC, "Received unexpected message %s\n", msg_name);
         break;
