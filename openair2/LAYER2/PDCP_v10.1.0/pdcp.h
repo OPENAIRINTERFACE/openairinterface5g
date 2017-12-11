@@ -124,6 +124,8 @@ public_pdcp(uint32_t Pdcp_stats_rx_aiat_tmp_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_
 public_pdcp(uint32_t Pdcp_stats_rx_iat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 public_pdcp(uint32_t Pdcp_stats_rx_outoforder[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 
+public_pdcp(void pdcp_update_perioidical_stats(const protocol_ctxt_t* const  ctxt_pP));
+
 
 /*Packet Probing for agent PDCP*/
 //public_pdcp(uint64_t *pdcp_packet_counter);
