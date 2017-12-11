@@ -43,6 +43,7 @@
 #include <getopt.h>
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
+#include <errno.h>
 
 static int latency_target_fd = -1;
 static int32_t latency_target_value = 0;
@@ -281,6 +282,7 @@ void thread_top_init(char *thread_name,
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB tx thread: sched_setattr failed\n");
+    fprintf(stderr,"sched_setattr Error = %s",strerror(errno));
     exit(1);
   }
 

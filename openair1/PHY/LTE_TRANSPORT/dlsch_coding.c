@@ -456,12 +456,12 @@ void *te_thread(void *param) {
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   
-  //thread_top_init("te_thread",1,870000,1000000,1000000);
+  thread_top_init("te_thread",1,200000,250000,500000);
   pthread_setname_np( pthread_self(),"te processing");
   LOG_I(PHY,"thread te created id=%ld\n", syscall(__NR_gettid));
   
-  CPU_SET(4, &cpuset);
-  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //CPU_SET(4, &cpuset);
+  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;
@@ -494,12 +494,12 @@ void *te_thread1(void *param) {
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   
-  //thread_top_init("te_thread1",1,870000,1000000,1000000);
+  thread_top_init("te_thread1",1,200000,250000,500000);
   pthread_setname_np( pthread_self(),"te processing 1");
   LOG_I(PHY,"thread te 1 created id=%ld\n", syscall(__NR_gettid));
   
-  CPU_SET(7, &cpuset);
-  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //CPU_SET(7, &cpuset);
+  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;

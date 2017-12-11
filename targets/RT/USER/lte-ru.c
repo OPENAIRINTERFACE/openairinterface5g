@@ -690,6 +690,17 @@ static void* emulatedRF_thread(void* param) {
   struct timespec req = {0};
   req.tv_sec = 0;
   req.tv_nsec = microsec * 1000L;
+  cpu_set_t cpuset;
+  CPU_SET(1,&cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  
+  int policy;
+  struct sched_param sparam;
+  memset(&sparam, 0, sizeof(sparam));
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
+  policy = SCHED_FIFO ; 
+  pthread_setschedparam(pthread_self(), policy, &sparam);
+  
   wait_sync("emulatedRF_thread");
   while(!oai_exit){
     nanosleep(&req, (struct timespec *)NULL);
@@ -878,7 +889,7 @@ static void* ru_thread_asynch_rxtx( void* param ) {
 
   int subframe=0, frame=0; 
 
-  thread_top_init("ru_thread_asynch_rxtx",1,870000L,1000000L,1000000L);
+  thread_top_init("ru_thread_asynch_rxtx",1,870000,1000000,1000000);
 
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
 
@@ -975,7 +986,7 @@ static void* ru_thread_prach( void* param ) {
   // set default return value
   ru_thread_prach_status = 0;
 
-  thread_top_init("ru_thread_prach",1,500000L,1000000L,20000000L);
+  thread_top_init("ru_thread_prach",1,500000,1000000,20000000);
 
   while (!oai_exit) {
     
@@ -1014,7 +1025,7 @@ static void* ru_thread_prach_br( void* param ) {
   // set default return value
   ru_thread_prach_status = 0;
 
-  thread_top_init("ru_thread_prach_br",1,500000L,1000000L,20000000L);
+  thread_top_init("ru_thread_prach_br",1,500000,1000000,20000000);
 
   while (!oai_exit) {
     
@@ -1398,10 +1409,10 @@ static void* ru_thread_tx( void* param ) {
   CPU_ZERO(&cpuset);
 
 
-  thread_top_init("ru_thread_tx",1,870000L,1000000L,1000000L);
+  thread_top_init("ru_thread_tx",1,400000,500000,500000);
 
-  CPU_SET(5, &cpuset);
-  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //CPU_SET(5, &cpuset);
+  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
 
@@ -1461,10 +1472,12 @@ static void* ru_thread( void* param ) {
 
 
   // set default return value
-  thread_top_init("ru_thread",0,870000,1000000,1000000);
+  thread_top_init("ru_thread",0,400000,500000,500000);
 
-  CPU_SET(1, &cpuset);
-  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //CPU_SET(1, &cpuset);
+  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  pthread_setname_np( pthread_self(),"ru thread");
+  LOG_I(PHY,"thread ru created id=%ld\n", syscall(__NR_gettid));
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
 

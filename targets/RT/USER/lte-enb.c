@@ -205,7 +205,7 @@ static void* tx_thread(void* param) {
   
   char thread_name[100];
   sprintf(thread_name,"TXnp4_%d\n",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
-  thread_top_init(thread_name,1,850000L,1000000L,2000000L);
+  thread_top_init(thread_name,1,470000,500000,500000);
   
   while (!oai_exit) {
 
@@ -258,10 +258,12 @@ static void* eNB_thread_rxtx( void* param ) {
 
 
   sprintf(thread_name,"RXn_TXnp4_%d\n",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
-  thread_top_init(thread_name,1,850000L,1000000L,2000000L);
+  thread_top_init(thread_name,1,470000,500000,500000);
+  pthread_setname_np( pthread_self(),"rxtx processing");
+  LOG_I(PHY,"thread rxtx created id=%ld\n", syscall(__NR_gettid));
 
-  CPU_SET(3, &cpuset);
-  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //CPU_SET(3, &cpuset);
+  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
@@ -621,7 +623,7 @@ static void* eNB_thread_prach( void* param ) {
   // set default return value
   eNB_thread_prach_status = 0;
 
-  thread_top_init("eNB_thread_prach",1,500000L,1000000L,20000000L);
+  thread_top_init("eNB_thread_prach",1,500000,1000000,20000000);
 
 
   while (!oai_exit) {
@@ -663,7 +665,7 @@ static void* eNB_thread_prach_br( void* param ) {
   // set default return value
   eNB_thread_prach_status = 0;
 
-  thread_top_init("eNB_thread_prach_br",1,500000L,1000000L,20000000L);
+  thread_top_init("eNB_thread_prach_br",1,500000,1000000,20000000);
 
   while (!oai_exit) {
     
