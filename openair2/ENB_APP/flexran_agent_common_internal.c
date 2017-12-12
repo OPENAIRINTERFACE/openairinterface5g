@@ -36,25 +36,34 @@
 #include "targets/RT/USER/lte-softmodem.h"
 #include "assertions.h"
 #include "enb_app.h"
-extern volatile int    node_control_state;
 
 void handle_reconfiguration(mid_t mod_id)
 {
   /* NOTE: this function might be extended by using stop_modem()
    * to halt the modem so that it can later be resumed */
+  int do_restart = 0;
 
+  pthread_mutex_lock(&mutex_node_ctrl);
   if (ENB_NORMAL_OPERATION != node_control_state) {
     node_control_state = ENB_NORMAL_OPERATION;
+    pthread_cond_broadcast(&cond_node_ctrl);
   } else {
+    do_restart = 1;
+  }
+  pthread_mutex_unlock(&mutex_node_ctrl);
+
+  if (do_restart) {
+    clock_t start_ms = 1000 * clock();
+    /* operator || enforces sequence points */
     if (stop_L1L2(mod_id) < 0 || restart_L1L2(mod_id) < 0) {
       LOG_E(ENB_APP, "could not restart, killing lte-softmodem\n");
       /* shutdown the whole lte-softmodem */
       itti_terminate_tasks(TASK_PHY_ENB);
       return;
     }
-
     enb_app_start_phy_rrc(mod_id, mod_id+1);
-    LOG_I(ENB_APP, "lte-softmodem restart succeeded\n");
+    int diff_ms = (1000 * clock() - start_ms) / CLOCKS_PER_SEC;
+    LOG_I(ENB_APP, "lte-softmodem restart succeeded in %d ms\n", diff_ms);
   }
 }
 

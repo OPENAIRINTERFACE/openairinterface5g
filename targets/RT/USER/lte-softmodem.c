@@ -174,8 +174,6 @@ eNB_func_t node_function[MAX_NUM_CCs];
 eNB_timing_t node_timing[MAX_NUM_CCs];
 int16_t   node_synch_ref[MAX_NUM_CCs];
 
-volatile int16_t   node_control_state;
-
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
@@ -234,9 +232,7 @@ threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
  */
 uint8_t abstraction_flag=0;
 
-/*  */
-
-/* overrid the enb configuration params*/ 
+/* override the enb configuration parameters */
 static void reconfigure_enb_params(int enb_id);
 
 
@@ -1097,11 +1093,13 @@ static void get_options (int argc, char **argv) {
                          "lte-softmodem compiled with MAX_NUM_CCs=%d, but only %d CCs configured for eNB %d!",
                          MAX_NUM_CCs, enb_properties->properties[i]->nb_cc, i);
 
+#ifdef FLEXRAN_AGENT_SB_IF
 	    if (enb_properties->properties[i]->flexran_agent_reconf == 1) {
 	      node_control_state  = ENB_WAIT_RECONFIGURATION_CMD;
 	    } else {
 	      node_control_state  = ENB_NORMAL_OPERATION;
 	    }
+#endif
 		
             eth_params = (eth_params_t*)malloc(enb_properties->properties[i]->nb_rrh_gw * sizeof(eth_params_t));
             memset(eth_params, 0, enb_properties->properties[i]->nb_rrh_gw * sizeof(eth_params_t));
@@ -1796,19 +1794,28 @@ int main( int argc, char **argv ) {
         // N_ZC = (prach_fmt <4)?839:139;
     }
 
-    create_enb_app_task(UE_flag ? 0 : 1);
-
 #ifdef FLEXRAN_AGENT_SB_IF
-    /* wait command for flexran agent: only start when configuration received */
-    ltesm_wait_reconfig_cmd ();
+    pthread_mutex_init(&mutex_node_ctrl, NULL);
+    pthread_cond_init(&cond_node_ctrl, NULL);
+
+    for (i = 0; i < NB_eNB_INST; i++) {
+      flexran_agent_start(i, enb_config_get());
+    }
+
+    LOG_I(ENB_APP, " * Waiting for FlexRAN RTController command *\n");
+    pthread_mutex_lock(&mutex_node_ctrl);
+    while (ENB_NORMAL_OPERATION != node_control_state)
+      pthread_cond_wait(&cond_node_ctrl, &mutex_node_ctrl);
+    pthread_mutex_unlock(&mutex_node_ctrl);
+
+    /* reconfigure eNB in case FlexRAN controller applied changes */
+    for (i=0; i < NB_eNB_INST; i++){
+      LOG_I(ENB_APP, "Reconfigure eNB module %d and FlexRAN eNB variables\n", i);
+      reconfigure_enb_params(i);
+      flexran_set_enb_vars(i, RAN_LTE_OAI);
+    }
 #endif
 
-    // reconfigure_enb: 0 for wait, 1 for skip, and other values to reconfigure
-    for (i=0; (i < NB_eNB_INST && node_control_state == ENB_NORMAL_OPERATION ) ; i++){
-      reconfigure_enb_params(i);
-      printf("[ENB_APP] Reconfigured eNB module %d - continue\n", i);
-    }
-    
     if (UE_flag==1) {
         NB_UE_INST=1;
         NB_INST=1;
@@ -2175,6 +2182,10 @@ int main( int argc, char **argv ) {
         stop_eNB(1);
     }
 
+#ifdef FLEXRAN_AGENT_SB_IF
+    pthread_cond_destroy(&cond_node_ctrl);
+    pthread_mutex_destroy(&mutex_node_ctrl);
+#endif
 
     pthread_cond_destroy(&sync_cond);
     pthread_mutex_destroy(&sync_mutex);
@@ -2200,5 +2211,6 @@ int main( int argc, char **argv ) {
 
     logClean();
 
+    printf("Bye.\n");
     return 0;
 }

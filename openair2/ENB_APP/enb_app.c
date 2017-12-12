@@ -50,21 +50,11 @@
 # endif
 
 #if defined(FLEXRAN_AGENT_SB_IF)
-#   include "flexran_agent.h"
+#   include "targets/RT/USER/lte-softmodem.h"
 #endif
 
 extern unsigned char NB_eNB_INST;
 #endif
-extern volatile int     node_control_state;
-
-void ltesm_wait_reconfig_cmd(void)
-{
-  LOG_I(ENB_APP, "LTE Softmodem wait reconfiguration command\n");
-
-  while (node_control_state ==  ENB_WAIT_RECONFIGURATION_CMD) {
-    usleep(200000);
-  }
-}
 
 #if defined(ENABLE_ITTI)
 
@@ -299,7 +289,6 @@ void *eNB_app_task(void *args_p)
   uint32_t                        registered_enb;
   long                            enb_register_retry_timer_id;
 # endif
-  uint32_t                        enb_id;
   MessageDef                     *msg_p           = NULL;
   const char                     *msg_name        = NULL;
   instance_t                      instance;
@@ -327,24 +316,6 @@ void *eNB_app_task(void *args_p)
   AssertFatal (enb_nb <= enb_properties_p->number,
                "Number of eNB is greater than eNB defined in configuration file (%d/%d)!",
                enb_nb, enb_properties_p->number);
-
-#if defined (FLEXRAN_AGENT_SB_IF)
-  
-  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    flexran_agent_start(enb_id, enb_properties_p);
-  }
-  // wait for config comd from the controller/network app plus some time so
-  // that the other Tasks are in place
-  ltesm_wait_reconfig_cmd();
-  sleep(2);
-  
-  // set again the ran api vars  
-  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    LOG_I(ENB_APP, "set again enb vars %d\n", enb_id);
-    flexran_set_enb_vars(enb_id, RAN_LTE_OAI);
-  }
-
-#endif 
 
   enb_app_start_phy_rrc(enb_id_start, enb_id_end);
   
