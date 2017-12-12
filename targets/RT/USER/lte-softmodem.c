@@ -1487,18 +1487,128 @@ void fill_PHY_vars_eNB_g(uint8_t abstraction_flag, uint8_t beta_ACK, uint8_t bet
   }
 }
 
-/* check the state : either continue or wait for a command to start/stop the eNB
- * if needed override the current configuration parameters, such as 
- * frequencies, bands, power, bandwidth
+#if defined(ENABLE_ITTI) && defined(FLEXRAN_AGENT_SB_IF)
+/*
+ * helper function to terminate a certain ITTI task
  */
-static void ltesm_wait_reconfig_cmd(void)
+void terminate_task(task_id_t task_id, mid_t mod_id)
 {
-  LOG_I(ENB_APP, "LTE Softmodem wait reconfiguration command\n");
-
-  while (node_control_state ==  ENB_WAIT_RECONFIGURATION_CMD) {
-    usleep(200000);
-  }
+  LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
+  MessageDef *msg;
+  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
+  itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
+
+int stop_L1L2(int enb_id)
+{
+  int CC_id;
+
+  LOG_W(ENB_APP, "stopping lte-softmodem\n");
+
+  /* stop trx devices */
+  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_stop_func) {
+        LOG_I(ENB_APP, "stopping PHY_vars_eNB_g[0][%d]->rfdevice (via trx_stop_func())\n", CC_id);
+        PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_stop_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);
+    }
+    if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_stop_func) {
+        LOG_I(ENB_APP, "stopping PHY_vars_eNB_g[0][%d]->ifdevice (via trx_stop_func())\n", CC_id);
+        PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_stop_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);
+    }
+  }
+
+  /* these tasks need to pick up new configuration */
+  terminate_task(TASK_RRC_ENB, enb_id);
+  terminate_task(TASK_L2L1, enb_id);
+  oai_exit = 1;
+  LOG_W(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
+  kill_eNB_proc(enb_id);
+  /* give some time for all threads */
+  sleep(1);
+  return 0;
+}
+
+/*
+ * Restart the lte-softmodem.
+ * This function checks whether we are in ENB_NORMAL_OPERATION (defined by
+ * FlexRAN). If yes, first stop L1/L2/L3, then resume.
+ */
+int restart_L1L2(int enb_id)
+{
+  int i, aa, CC_id;
+  /* needed for fill_PHY_vars_eNB_g(), defined locally in main();
+   * abstraction flag is needed too, but defined both globally and in main () */
+  uint8_t beta_ACK = 0, beta_RI = 0, beta_CQI = 2;
+  /* needed for macphy_init() */
+  int eMBMS_active = 0;
+
+  LOG_W(ENB_APP, "restarting lte-softmodem\n");
+
+  /* block threads */
+  sync_var = -1;
+  oai_exit = 0;
+
+  reconfigure_enb_params(enb_id);     /* set frame parameters from configuration */
+
+  /* PHY_vars_eNB_g will be filled by init_lte_eNB(), so free and
+   * let the data structure be filled again */
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    free(PHY_vars_eNB_g[0][CC_id]);
+    fill_PHY_vars_eNB_g(abstraction_flag, beta_ACK, beta_RI, beta_CQI);
+  }
+
+  dump_frame_parms(frame_parms[0]);
+  init_openair0();
+
+  /* give MAC interface current cell information, the rest is the same.
+   * For more info, check l2_init(). Then, initialize it (cf. line 1904). */
+  mac_xface->frame_parms = frame_parms[0];
+  mac_xface->macphy_init(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,0,0);
+
+  LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
+  if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
+    LOG_E(RRC, "Create task for RRC eNB failed\n");
+    return -1;
+  } else {
+    LOG_I(RRC, "Re-created task for RRC eNB successfully\n");
+  }
+  if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
+    LOG_E(PDCP, "Create task for L2L1 failed\n");
+    return -1;
+  } else {
+    LOG_I(PDCP, "Re-created task for L2L1 successfully\n");
+  }
+
+  /* TODO XForms here */
+
+  printf("Initializing eNB threads\n");
+  init_eNB(node_function, node_timing, 1, eth_params, single_thread_flag, wait_for_sync);
+  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_eNB_g[0][CC_id]->rf_map.card=0;
+      PHY_vars_eNB_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+  }
+
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
+  printf("Setting eNB buffer to all-RX\n");
+  // Set LSBs for antenna switch (ExpressMIMO)
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    PHY_vars_eNB_g[0][CC_id]->hw_timing_advance = 0;
+    for (i=0; i<frame_parms[CC_id]->samples_per_tti*10; i++)
+      for (aa=0; aa<frame_parms[CC_id]->nb_antennas_tx; aa++)
+        PHY_vars_eNB_g[0][CC_id]->common_vars.txdata[0][aa][i] = 0x00010001;
+  }
+
+  printf("Sending sync to all threads\n");
+
+  pthread_mutex_lock(&sync_mutex);
+  sync_var=0;
+  pthread_cond_broadcast(&sync_cond);
+  pthread_mutex_unlock(&sync_mutex);
+
+  return 0;
+}
+#endif
 
 int main( int argc, char **argv ) {
     int i,aa;
@@ -1689,7 +1799,12 @@ int main( int argc, char **argv ) {
     }
 
     create_enb_app_task(UE_flag ? 0 : 1);
+
+#ifdef FLEXRAN_AGENT_SB_IF
+    /* wait command for flexran agent: only start when configuration received */
     ltesm_wait_reconfig_cmd ();
+#endif
+
     // reconfigure_enb: 0 for wait, 1 for skip, and other values to reconfigure
     for (i=0; (i < NB_eNB_INST && node_control_state == ENB_NORMAL_OPERATION ) ; i++){
       reconfigure_enb_params(i);

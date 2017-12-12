@@ -31,7 +31,32 @@
 
 #include "flexran_agent_common_internal.h"
 #include "flexran_agent_mac_internal.h"
+
+/* the following is needed to soft-restart the lte-softmodem */
+#include "targets/RT/USER/lte-softmodem.h"
+#include "assertions.h"
+#include "enb_app.h"
 extern volatile int    node_control_state;
+
+void handle_reconfiguration(mid_t mod_id)
+{
+  /* NOTE: this function might be extended by using stop_modem()
+   * to halt the modem so that it can later be resumed */
+
+  if (ENB_NORMAL_OPERATION != node_control_state) {
+    node_control_state = ENB_NORMAL_OPERATION;
+  } else {
+    if (stop_L1L2(mod_id) < 0 || restart_L1L2(mod_id) < 0) {
+      LOG_E(ENB_APP, "could not restart, killing lte-softmodem\n");
+      /* shutdown the whole lte-softmodem */
+      itti_terminate_tasks(TASK_PHY_ENB);
+      return;
+    }
+
+    enb_app_start_phy_rrc(mod_id, mod_id+1);
+    LOG_I(ENB_APP, "lte-softmodem restart succeeded\n");
+  }
+}
 
 int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length) {
 
@@ -72,8 +97,7 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
 	if (parse_enb_id(mod_id, &parser) == -1) {
 	  goto error;
 	} else { // succeful parse and setting 
-	  node_control_state= ENB_NORMAL_OPERATION;
-	  LOG_I(ENB_APP, "Successful parsed config for enb system, entering normal state\n");
+          handle_reconfiguration(mod_id);
 	}
       } else if (strcmp((char *) event.data.scalar.value, "mac") == 0) {
 	LOG_D(ENB_APP, "This is intended for the mac system\n");

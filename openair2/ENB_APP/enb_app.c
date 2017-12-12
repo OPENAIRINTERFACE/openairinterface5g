@@ -57,14 +57,13 @@ extern unsigned char NB_eNB_INST;
 #endif
 extern volatile int     node_control_state;
 
-static void enb_app_wait_reconfig_cmd (void)
+void ltesm_wait_reconfig_cmd(void)
 {
-  LOG_I(ENB_APP, "ENB APP await reconfiguration command\n");
-   
-  while (node_control_state == ENB_WAIT_RECONFIGURATION_CMD) {
+  LOG_I(ENB_APP, "LTE Softmodem wait reconfiguration command\n");
+
+  while (node_control_state ==  ENB_WAIT_RECONFIGURATION_CMD) {
     usleep(200000);
   }
-  sleep(2); // wait for createing other tasks
 }
 
 #if defined(ENABLE_ITTI)
@@ -202,6 +201,15 @@ static void configure_rrc(uint32_t enb_id, const Enb_properties_array_t *enb_pro
   itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 }
 
+void enb_app_start_phy_rrc(uint32_t enb_id_start, uint32_t enb_id_end)
+{
+  Enb_properties_array_t *enb_properties_p = enb_config_get();
+  for (uint32_t enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
+    configure_phy(enb_id, enb_properties_p);
+    configure_rrc(enb_id, enb_properties_p);
+  }
+}
+
 /*------------------------------------------------------------------------------*/
 # if defined(ENABLE_USE_MME)
 static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, const Enb_properties_array_t *enb_properties)
@@ -325,8 +333,10 @@ void *eNB_app_task(void *args_p)
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     flexran_agent_start(enb_id, enb_properties_p);
   }
-  // wait for config comd from the controller/network app
-  enb_app_wait_reconfig_cmd();
+  // wait for config comd from the controller/network app plus some time so
+  // that the other Tasks are in place
+  ltesm_wait_reconfig_cmd();
+  sleep(2);
   
   // set again the ran api vars  
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
@@ -336,11 +346,7 @@ void *eNB_app_task(void *args_p)
 
 #endif 
 
-  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    configure_phy(enb_id, enb_properties_p);
-    configure_rrc(enb_id, enb_properties_p);
-  }
-
+  enb_app_start_phy_rrc(enb_id_start, enb_id_end);
   
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */

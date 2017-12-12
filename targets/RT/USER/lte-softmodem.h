@@ -89,4 +89,7 @@ extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
 extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
 extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
 
+extern int stop_L1L2(int enb_id);
+extern int restart_L1L2(int enb_id);
+
 #endif
