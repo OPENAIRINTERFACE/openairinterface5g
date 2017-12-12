@@ -1504,6 +1504,7 @@ int stop_L1L2(int enb_id)
   int CC_id;
 
   LOG_W(ENB_APP, "stopping lte-softmodem\n");
+  oai_exit = 1;
 
   /* stop trx devices */
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -1520,11 +1521,9 @@ int stop_L1L2(int enb_id)
   /* these tasks need to pick up new configuration */
   terminate_task(TASK_RRC_ENB, enb_id);
   terminate_task(TASK_L2L1, enb_id);
-  oai_exit = 1;
   LOG_W(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
   kill_eNB_proc(enb_id);
-  /* give some time for all threads */
-  sleep(1);
+  oai_exit = 0;
   return 0;
 }
 
@@ -1546,7 +1545,6 @@ int restart_L1L2(int enb_id)
 
   /* block threads */
   sync_var = -1;
-  oai_exit = 0;
 
   reconfigure_enb_params(enb_id);     /* set frame parameters from configuration */
 
