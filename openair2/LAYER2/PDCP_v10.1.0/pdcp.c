@@ -928,7 +928,9 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
 	Pdcp_stats_tx_rate_s[ctxt_pP->module_id][pdcp_uid][rb_id]= Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id];
 	// unit: bit/s
 	Pdcp_stats_tx_throughput_s[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_tx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
-	Pdcp_stats_tx_aiat_s[ctxt_pP->module_id][pdcp_uid][rb_id]=(uint32_t)(Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id]);
+	if (Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id] > 0){
+    Pdcp_stats_tx_aiat_s[ctxt_pP->module_id][pdcp_uid][rb_id]=(Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id]);
+  }
 	
 	Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	Pdcp_stats_tx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
@@ -937,7 +939,10 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
 	// rx stats
 	Pdcp_stats_rx_rate_s[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id];
 	Pdcp_stats_rx_goodput_s[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_rx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
-	Pdcp_stats_rx_aiat_s[ctxt_pP->module_id][pdcp_uid][rb_id]= (uint32_t)(Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id]);
+  
+  if(Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id] > 0){
+	 Pdcp_stats_rx_aiat_s[ctxt_pP->module_id][pdcp_uid][rb_id]= (Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id]);
+  }
 	
 	Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	Pdcp_stats_rx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
