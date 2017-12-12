@@ -21,7 +21,7 @@
 
 /*! \file flexran_agent_pdcp.c
  * \brief FlexRAN agent Control Module PDCP 
- * \author shahab SHARIAT BAGHERI
+ * \author Navid Nikaein and shahab SHARIAT BAGHERI
  * \date 2017
  * \version 0.1
  */
@@ -117,6 +117,9 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
 
 	pdcp_aggr_stats->pkt_rx_sn = flexran_get_pdcp_rx_sn(mod_id, i, DEFAULT_DRB);
 	pdcp_aggr_stats->has_pkt_rx_sn =1;
+
+	pdcp_aggr_stats->sfn = flexran_get_pdcp_sfn(mod_id);
+	pdcp_aggr_stats->has_sfn =1;
 
 	ue_report[i]->pdcp_stats = pdcp_aggr_stats;
 

@@ -266,4 +266,6 @@ message flex_pdcp_stats {
 	optional uint32 pkt_rx_aiat = 14;
 	optional uint32 pkt_rx_aiat_s = 15;
 	optional uint32 pkt_rx_oo = 16;
+
+	optional uint64 sfn=17;
 }

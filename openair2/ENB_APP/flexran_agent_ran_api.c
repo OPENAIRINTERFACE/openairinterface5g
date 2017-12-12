@@ -1083,6 +1083,10 @@ void flexran_agent_set_operating_frame_type (mid_t mod_id, int cc_id, int frame_
 }
 
 /*********** PDCP  *************/
+/*PDCP num tx pdu status flexRAN*/
+uint32_t flexran_get_pdcp_sfn(const mid_t mod_id){
+  return Pdcp_sfn[mod_id];
+}
 
 /*PDCP num tx pdu status flexRAN*/
 uint32_t flexran_get_pdcp_tx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){

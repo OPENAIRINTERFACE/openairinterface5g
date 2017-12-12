@@ -414,20 +414,10 @@ boolean_t pdcp_data_req(
   Pdcp_stats_tx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=sdu_buffer_sizeP;
   Pdcp_stats_tx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=current_sn;
 
-  if (Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset] < pdcp_frame *10 + pdcp_subframe) {
-    Pdcp_stats_tx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_frame *10 + pdcp_subframe - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-    Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_frame *10 + pdcp_subframe - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]); 
-  }
-  else {
-    Pdcp_stats_tx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (1024 + pdcp_frame *10 + pdcp_subframe - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-    Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (1024 + pdcp_frame *10 + pdcp_subframe - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-  }
-  
-  Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=ctxt_pP->frame*10+ctxt_pP->subframe;
-  
-  
- 
-  
+  Pdcp_stats_tx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (Pdcp_sfn[ctxt_pP->module_id] - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
+  Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (Pdcp_sfn[ctxt_pP->module_id] - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]); 
+  Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=Pdcp_sfn[ctxt_pP->module_id];
+    
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_REQ,VCD_FUNCTION_OUT);
   return ret;
 
@@ -813,44 +803,7 @@ pdcp_data_ind(
     GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ctxt_pP->rnti;
     GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
     itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
-    packet_forwarded = TRUE;
-
-     /* Print octets of incoming data in hexadecimal form */
-    LOG_D(PDCP, "Following content has been received from RLC (%d,%d)(PDCP header has already been removed):\n",
-	  sdu_buffer_sizeP  - payload_offset + (int)sizeof(pdcp_data_ind_header_t),
-	  sdu_buffer_sizeP  - payload_offset);
-    //util_print_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
-    //util_flush_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
-    
-    /*
-     * Update PDCP statistics
-     * XXX Following two actions are identical, is there a merge error?
-     */
-    
-    for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
-      if (pdcp_p->rnti[pdcp_uid] == ctxt_pP->rnti )
-	break;
-    }	
-    
-    Pdcp_stats_rx[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
-    Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
-    Pdcp_stats_rx_bytes[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
-    Pdcp_stats_rx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
-    
-    Pdcp_stats_rx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=sequence_number;
-    
-    if (oo_flag == 1 )
-      Pdcp_stats_rx_outoforder[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
-    
-    if (Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset] < pdcp_frame * 10 + pdcp_subframe) {
-      Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_frame *10 + pdcp_subframe - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-      Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(pdcp_frame *10 + pdcp_subframe - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-    } else {
-      Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (1024 +pdcp_frame * 10 + pdcp_subframe - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-      Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(1024 +pdcp_frame * 10 + pdcp_subframe - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-    }
-    Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_frame * 10 +pdcp_subframe;
-    
+    packet_forwarded = TRUE;    
   }
   
 #else
@@ -909,6 +862,38 @@ pdcp_data_ind(
     }
   }
 
+  /* Print octets of incoming data in hexadecimal form */
+  LOG_D(PDCP, "Following content has been received from RLC (%d,%d)(PDCP header has already been removed):\n",
+	sdu_buffer_sizeP  - payload_offset + (int)sizeof(pdcp_data_ind_header_t),
+	sdu_buffer_sizeP  - payload_offset);
+  //util_print_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
+  //util_flush_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
+  
+  /*
+     * Update PDCP statistics
+   * XXX Following two actions are identical, is there a merge error?
+   */
+  
+  for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
+    if (pdcp_p->rnti[pdcp_uid] == ctxt_pP->rnti )
+      break;
+  }	
+  
+  Pdcp_stats_rx[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
+  Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
+  Pdcp_stats_rx_bytes[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
+  Pdcp_stats_rx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
+  
+  Pdcp_stats_rx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=sequence_number;
+  
+  if (oo_flag == 1 )
+    Pdcp_stats_rx_outoforder[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
+  
+  Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (Pdcp_sfn[ctxt_pP->module_id] - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
+  Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(Pdcp_sfn[ctxt_pP->module_id] - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
+  Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=Pdcp_sfn[ctxt_pP->module_id];
+
+  
 #if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
   else {
     AssertFatal(0, PROTOCOL_PDCP_CTXT_FMT" PDCP_DATA_IND SDU DROPPED, OUT OF MEMORY \n",
@@ -934,16 +919,16 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
   uint8_t            pdcp_uid = 0;
   uint8_t            rb_id     = 0;
   
- // these stats can be measured for both eNB and UE 
-  if ((pdcp_frame % 102 == 0) && (pdcp_subframe ==0)) {
+ // these stats are measured for both eNB and UE on per seond basis 
+  if (Pdcp_sfn[ctxt_pP->module_id] % 1000 == 0){
     for (rb_id =0; rb_id < NB_RB_MAX; rb_id ++){
       for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
-	//printf("frame %d and subframe %d \n", pdcp_frame, pdcp_subframe);
+	//printf("frame %d and subframe %d \n", Pdcp_frame[ctxt_pP->module_id], Pdcp_subframe[ctxt_pP->module_id]);
 	// tx stats 
 	Pdcp_stats_tx_rate_s[ctxt_pP->module_id][pdcp_uid][rb_id]= Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id];
 	// unit: bit/s
 	Pdcp_stats_tx_throughput_s[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_tx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
-	Pdcp_stats_tx_aiat_s[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id];
+	Pdcp_stats_tx_aiat_s[ctxt_pP->module_id][pdcp_uid][rb_id]=(uint32_t)(Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id]);
 	
 	Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	Pdcp_stats_tx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
@@ -952,7 +937,7 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
 	// rx stats
 	Pdcp_stats_rx_rate_s[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id];
 	Pdcp_stats_rx_goodput_s[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_rx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
-	Pdcp_stats_rx_aiat_s[ctxt_pP->module_id][pdcp_uid][rb_id]= Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id];
+	Pdcp_stats_rx_aiat_s[ctxt_pP->module_id][pdcp_uid][rb_id]= (uint32_t)(Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id]);
 	
 	Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	Pdcp_stats_rx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
@@ -985,8 +970,9 @@ pdcp_run (
     start_meas(&UE_pdcp_stats[ctxt_pP->module_id].pdcp_run);
   }
 
-  pdcp_frame =ctxt_pP->frame; // 1023 
-  pdcp_subframe= ctxt_pP->subframe;
+  Pdcp_sfn[ctxt_pP->module_id]++; // range: 0 to 18,446,744,073,709,551,615
+  Pdcp_frame[ctxt_pP->module_id]=ctxt_pP->frame; // 1023 
+  Pdcp_subframe[ctxt_pP->module_id]= ctxt_pP->subframe;
   pdcp_update_stats(ctxt_pP);
    
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_IN);
@@ -1564,9 +1550,9 @@ pdcp_config_req_asn1 (
 	if (pdcp_pP->rnti[i] != 0 ) continue ; // skip active ues
         pdcp_pP->rnti[i]=ctxt_pP->rnti;
 	pdcp_pP->uid[i]=i;
-        pdcp_num_ues++;
+        Pdcp_num_ues[ctxt_pP->module_id]++;
         break;
-	}
+      }
       //pdcp_eNB_UE_instance_to_rnti[ctxtP->module_id] = ctxt_pP->rnti;
       pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
       //pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % NUMBER_OF_UE_MAX;
@@ -1669,14 +1655,14 @@ pdcp_config_req_asn1 (
    if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
 	
 	for (i=0; i < NUMBER_OF_UE_MAX; i++) {
-        if (pdcp_pP->rnti[i] == ctxt_pP->rnti ) {
-          pdcp_pP->rnti[i]=0;
-          pdcp_pP->uid[i]=0;
-          pdcp_num_ues--;
-          break;
-        }
+	  if (pdcp_pP->rnti[i] == ctxt_pP->rnti ) {
+	    pdcp_pP->rnti[i]=0;
+	    pdcp_pP->uid[i]=0;
+	    Pdcp_num_ues[ctxt_pP->module_id]--;
+	    break;
+	  }
 	}
-	}
+   }
 
     /* Security keys */
     if (pdcp_pP->kUPenc != NULL) {
@@ -2055,6 +2041,11 @@ void pdcp_layer_init(void)
   pdcp_output_header_bytes_to_write=0;
   pdcp_input_sdu_remaining_size_to_read=0;
 
+  memset(Pdcp_sfn, 0, sizeof(Pdcp_sfn));
+  memset(Pdcp_frame, 0, sizeof(Pdcp_frame));
+  memset(Pdcp_subframe, 0, sizeof(Pdcp_subframe));
+  memset(Pdcp_num_ues, 0, sizeof(Pdcp_num_ues));
+  
   memset(Pdcp_stats_tx, 0, sizeof(Pdcp_stats_tx));
   memset(Pdcp_stats_tx_s, 0, sizeof(Pdcp_stats_tx_s));
   memset(Pdcp_stats_tx_bytes, 0, sizeof(Pdcp_stats_tx_bytes));

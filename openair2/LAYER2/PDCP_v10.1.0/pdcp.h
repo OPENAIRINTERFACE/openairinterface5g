@@ -94,9 +94,10 @@ extern int             pdcp_instance_cnt;
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 
-public_pdcp(frame_t pdcp_frame);
-public_pdcp(sub_frame_t pdcp_subframe);
-public_pdcp(uint16_t pdcp_num_ues);
+public_pdcp(uint64_t Pdcp_sfn[MAX_NUM_CCs]);
+public_pdcp(frame_t Pdcp_frame[MAX_NUM_CCs]);
+public_pdcp(sub_frame_t Pdcp_subframe[MAX_NUM_CCs]);
+public_pdcp(uint16_t Pdcp_num_ues[MAX_NUM_CCs]);
 
 
 public_pdcp(uint32_t Pdcp_stats_tx_bytes[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);

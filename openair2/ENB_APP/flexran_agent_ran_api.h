@@ -342,6 +342,9 @@ int flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP);
 
 /***************************** PDCP ***********************/
 
+/*PDCP superframe numberflexRAN*/
+uint32_t flexran_get_pdcp_sfn(const mid_t mod_id);
+
 /*PDCP num tx pdu status flexRAN*/
 uint32_t flexran_get_pdcp_tx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
 
