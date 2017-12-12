@@ -2009,7 +2009,7 @@ Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
              enb_properties.properties[enb_properties_index]->rrc_report_amount = ReportConfigEUTRA__reportAmount_infinity;
            }else{
                 AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for report_amount choice: r1, r2, r4, r8, r16, r32, r64, infinity !\n",
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for report_amount choice: r1, r2, r4, r8, r16, r32, r64, infinity !\n",
                              lib_config_file_name_pP, i,rrc_report_amount);
            }
 
@@ -2041,7 +2041,7 @@ Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
              enb_properties.properties[enb_properties_index]->rrc_report_interval = ReportInterval_min60;
            } else {
              AssertFatal (0,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for report_interval choice: 120ms, 240ms, 480ms, 640ms, 1024ms, 2048ms, 5120ms, 10240ms, 1min, 6min, 12",
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for report_interval choice: 120ms, 240ms, 480ms, 640ms, 1024ms, 2048ms, 5120ms, 10240ms, 1min, 6min, 12",
                              lib_config_file_name_pP, i,rrc_report_interval);
            }
                    
