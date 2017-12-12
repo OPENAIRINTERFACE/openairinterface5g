@@ -719,7 +719,7 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL,*attr_te=NULL,*attr_te1=NULL;//*attr_td=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL,*attr_te=NULL,*attr_te1=NULL,*attr_td=NULL;
 #ifdef Rel14
   pthread_attr_t *attr_prach_br=NULL;
 #endif
@@ -783,7 +783,7 @@ void init_eNB_proc(int inst) {
     //    attr_td     = &proc->attr_td;
     //    attr_te     = &proc->attr_te; 
 #endif
-	//attr_td     = &proc->attr_td;
+	attr_td     = &proc->attr_td;
 	attr_te     = &proc->attr_te[0];
 	attr_te1    = &proc->attr_te[1];
 	pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
@@ -809,7 +809,7 @@ void init_eNB_proc(int inst) {
 	
 	//////////////////////////////////////need to modified////////////////*****
 	init_te_thread(eNB,attr_te,attr_te1);
-	//init_td_thread(eNB,attr_td);
+	init_td_thread(eNB,attr_td);
 	if (opp_enabled == 1) pthread_create(&proc->process_stats_thread,NULL,process_stats_thread,(void*)eNB);
 
     
@@ -1070,7 +1070,7 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
 #endif
 
 
-      eNB->td                   = ulsch_decoding_data;//(get_nprocs()<=4) ? ulsch_decoding_data : ulsch_decoding_data_2thread;
+      eNB->td                   = ulsch_decoding_data_all;//(get_nprocs()<=4) ? ulsch_decoding_data : ulsch_decoding_data_2thread;
       eNB->te                   = dlsch_encoding_all;//(get_nprocs()<=4) ? dlsch_encoding : dlsch_encoding_2threads;
 
       

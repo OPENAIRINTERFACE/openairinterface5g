@@ -207,20 +207,6 @@ uint8_t extract_cqi_crc(uint8_t *cqi,uint8_t CQI_LENGTH)
 
 
 
-/*int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
-{
-	int value = 0;
-	if()
-	{
-		value = ulsch_decoding_data_2thread(eNB,UE_id,harq_pid,llr8_flag);
-	}
-	else
-	{
-		value = ulsch_decoding_data(eNB,UE_id,harq_pid,llr8_flag);
-	}
-	return value;
-}*/
-
 
 int ulsch_decoding_data_2thread0(td_params* tdp) {
 
@@ -429,6 +415,9 @@ void *td_thread(void *param) {
   pthread_setname_np( pthread_self(), "td processing");
   PHY_VARS_eNB *eNB = ((td_params*)param)->eNB;
   eNB_proc_t *proc  = &eNB->proc;
+  
+  pthread_setname_np( pthread_self(),"td processing");
+  LOG_I(PHY,"thread td created id=%ld\n", syscall(__NR_gettid));
 
   while (!oai_exit) {
 
@@ -818,6 +807,22 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   }
 
   return(ret);
+}
+
+int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
+{
+  int ret = 0;
+  LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
+  LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
+  if(ulsch_harq->C>3)
+  {
+    ret = ulsch_decoding_data_2thread(eNB,UE_id,harq_pid,llr8_flag);
+  }
+  else
+  {
+    ret = ulsch_decoding_data(eNB,UE_id,harq_pid,llr8_flag);
+  }
+  return ret;
 }
 
 static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, unsigned char reset) __attribute__((always_inline));

@@ -689,7 +689,7 @@ static void* emulatedRF_thread(void* param) {
   int microsec = 500; // length of time to sleep, in miliseconds
   struct timespec req = {0};
   req.tv_sec = 0;
-  req.tv_nsec = microsec * 1000L;
+  req.tv_nsec = ((microsec * 1000L)/numerology);
   cpu_set_t cpuset;
   CPU_SET(1,&cpuset);
   pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
