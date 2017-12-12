@@ -1754,6 +1754,7 @@ void init_eNB_proc(int inst) {
     pthread_mutex_init( &proc->mutex_prach, NULL);
     pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
     pthread_mutex_init( &proc->mutex_synch,NULL);
+    pthread_mutex_init( &proc->mutex_FH, NULL);
 
     pthread_cond_init( &proc->cond_prach, NULL);
     pthread_cond_init( &proc->cond_FH, NULL);
@@ -1862,30 +1863,68 @@ void kill_eNB_proc(int inst) {
     printf( "Killing TX CC_id %d thread %d\n", CC_id, i );
 #endif
     
-    proc_rxtx[0].instance_cnt_rxtx = 0; // FIXME data race!
-    proc_rxtx[1].instance_cnt_rxtx = 0; // FIXME data race!
+    pthread_mutex_lock(&proc_rxtx[0].mutex_rxtx);
+    proc_rxtx[0].instance_cnt_rxtx = 0;
+    pthread_mutex_unlock(&proc_rxtx[0].mutex_rxtx);
+    pthread_mutex_lock(&proc_rxtx[1].mutex_rxtx);
+    proc_rxtx[1].instance_cnt_rxtx = 0;
+    pthread_mutex_unlock(&proc_rxtx[1].mutex_rxtx);
+    pthread_mutex_lock(&PHY_vars_eNB_g[0][CC_id]->proc.mutex_synch);
+    PHY_vars_eNB_g[0][CC_id]->proc.instance_cnt_synch = 1;
+    pthread_mutex_unlock(&PHY_vars_eNB_g[0][CC_id]->proc.mutex_synch);
     proc->instance_cnt_prach = 0;
     proc->instance_cnt_FH = 0;
     pthread_cond_signal( &proc_rxtx[0].cond_rxtx );    
     pthread_cond_signal( &proc_rxtx[1].cond_rxtx );
     pthread_cond_signal( &proc->cond_prach );
     pthread_cond_signal( &proc->cond_FH );
+    pthread_cond_signal( &proc->cond_asynch_rxtx );
+    pthread_cond_signal( &proc->cond_synch );
     pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
 
+#ifdef DEBUG_THREADS
+    printf("joining pthread_FH\n");
+#endif
     pthread_join( proc->pthread_FH, (void**)&status ); 
     pthread_mutex_destroy( &proc->mutex_FH );
     pthread_cond_destroy( &proc->cond_FH );
             
+#ifdef DEBUG_THREADS
+    printf("joining pthread_prach\n");
+#endif
     pthread_join( proc->pthread_prach, (void**)&status );    
     pthread_mutex_destroy( &proc->mutex_prach );
     pthread_cond_destroy( &proc->cond_prach );         
 
     int i;
     for (i=0;i<2;i++) {
+#ifdef DEBUG_THREADS
+      printf("joining pthread_rxtx\n");
+#endif
       pthread_join( proc_rxtx[i].pthread_rxtx, (void**)&status );
       pthread_mutex_destroy( &proc_rxtx[i].mutex_rxtx );
       pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
     }
+
+#ifdef DEBUG_THREADS
+    printf("joining pthread_asynch_rxtx\n");
+#endif
+    pthread_join(proc->pthread_asynch_rxtx, (void**)&status );
+    pthread_mutex_destroy(&proc->mutex_asynch_rxtx);
+    pthread_cond_destroy(&proc->cond_asynch_rxtx);
+
+#ifdef DEBUG_THREADS
+    printf("joining pthread_single\n");
+#endif
+    pthread_join(proc->pthread_single, (void**)&status );
+
+#ifdef DEBUG_THREADS
+    printf("joining pthread_synch\n");
+#endif
+    pthread_join(proc->pthread_synch, (void**)&status );
+    pthread_mutex_destroy(&proc->mutex_synch);
+    pthread_cond_destroy(&proc->cond_synch);
+    printf("joined all threads\n");
   }
 }
 
