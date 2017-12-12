@@ -31,7 +31,7 @@
 */
 
 //#include "defs.h"
-
+#include <syscall.h>
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "PHY/CODING/extern.h"
@@ -412,10 +412,12 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 
 extern int oai_exit;
 void *td_thread(void *param) {
-  pthread_setname_np( pthread_self(), "td processing");
   PHY_VARS_eNB *eNB = ((td_params*)param)->eNB;
   eNB_proc_t *proc  = &eNB->proc;
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
   
+  thread_top_init("td_thread",1,200000,250000,500000);
   pthread_setname_np( pthread_self(),"td processing");
   LOG_I(PHY,"thread td created id=%ld\n", syscall(__NR_gettid));
 
