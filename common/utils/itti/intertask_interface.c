@@ -775,15 +775,19 @@ void itti_mark_task_ready(task_id_t task_id)
 
 void itti_exit_task(void)
 {
-#if defined(OAI_EMU) || defined(RTAI)
   task_id_t task_id = itti_get_current_task_id();
+  thread_id_t thread_id = TASK_GET_THREAD_ID(task_id);
 
+#if defined(OAI_EMU) || defined(RTAI)
   if (task_id > TASK_UNKNOWN) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_RECV_MSG,
                                             __sync_and_and_fetch (&itti_desc.vcd_receive_msg, ~(1L << task_id)));
   }
-
 #endif
+
+  itti_desc.threads[thread_id].task_state = TASK_STATE_NOT_CONFIGURED;
+  itti_desc.created_tasks--;
+  ITTI_DEBUG(ITTI_DEBUG_EXIT, "Thread for task %s (%d) exits\n", itti_get_task_name(task_id), task_id);
   pthread_exit (NULL);
 }
 
