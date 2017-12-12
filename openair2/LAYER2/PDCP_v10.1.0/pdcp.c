@@ -69,7 +69,6 @@ extern int otg_enabled;
 #endif
 
 
-
 //-----------------------------------------------------------------------------
 /*
  * If PDCP_UNIT_TEST is set here then data flow between PDCP and RLC is broken
@@ -403,7 +402,7 @@ boolean_t pdcp_data_req(
    */
   
   for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
-    if (pdcp_p->rnti[pdcp_uid] == ctxt_pP->rnti ) 
+    if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti ) 
       break;
   }
 
@@ -414,9 +413,9 @@ boolean_t pdcp_data_req(
   Pdcp_stats_tx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=sdu_buffer_sizeP;
   Pdcp_stats_tx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=current_sn;
 
-  Pdcp_stats_tx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (Pdcp_sfn[ctxt_pP->module_id] - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-  Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (Pdcp_sfn[ctxt_pP->module_id] - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]); 
-  Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=Pdcp_sfn[ctxt_pP->module_id];
+  Pdcp_stats_tx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
+  Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]); 
+  Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_enb[ctxt_pP->module_id].sfn;
     
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_REQ,VCD_FUNCTION_OUT);
   return ret;
@@ -875,8 +874,9 @@ pdcp_data_ind(
    */
   
   for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
-    if (pdcp_p->rnti[pdcp_uid] == ctxt_pP->rnti )
+    if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti ){
       break;
+    }
   }	
   
   Pdcp_stats_rx[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
@@ -889,9 +889,9 @@ pdcp_data_ind(
   if (oo_flag == 1 )
     Pdcp_stats_rx_outoforder[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
   
-  Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (Pdcp_sfn[ctxt_pP->module_id] - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-  Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(Pdcp_sfn[ctxt_pP->module_id] - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-  Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=Pdcp_sfn[ctxt_pP->module_id];
+  Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
+  Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
+  Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_enb[ctxt_pP->module_id].sfn;
 
   
 #if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
@@ -920,10 +920,10 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
   uint8_t            rb_id     = 0;
   
  // these stats are measured for both eNB and UE on per seond basis 
-  if (Pdcp_sfn[ctxt_pP->module_id] % 1000 == 0){
+  if (pdcp_enb[ctxt_pP->module_id].sfn % 1000 == 0){
     for (rb_id =0; rb_id < NB_RB_MAX; rb_id ++){
       for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
-	//printf("frame %d and subframe %d \n", Pdcp_frame[ctxt_pP->module_id], Pdcp_subframe[ctxt_pP->module_id]);
+	//printf("frame %d and subframe %d \n", pdcp_enb[ctxt_pP->module_id].frame, pdcp_enb[ctxt_pP->module_id].subframe);
 	// tx stats 
 	Pdcp_stats_tx_rate_s[ctxt_pP->module_id][pdcp_uid][rb_id]= Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id];
 	// unit: bit/s
@@ -975,9 +975,9 @@ pdcp_run (
     start_meas(&UE_pdcp_stats[ctxt_pP->module_id].pdcp_run);
   }
 
-  Pdcp_sfn[ctxt_pP->module_id]++; // range: 0 to 18,446,744,073,709,551,615
-  Pdcp_frame[ctxt_pP->module_id]=ctxt_pP->frame; // 1023 
-  Pdcp_subframe[ctxt_pP->module_id]= ctxt_pP->subframe;
+  pdcp_enb[ctxt_pP->module_id].sfn++; // range: 0 to 18,446,744,073,709,551,615
+  pdcp_enb[ctxt_pP->module_id].frame=ctxt_pP->frame; // 1023 
+  pdcp_enb[ctxt_pP->module_id].subframe= ctxt_pP->subframe;
   pdcp_update_stats(ctxt_pP);
    
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_IN);
@@ -1102,6 +1102,28 @@ pdcp_run (
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_OUT);
 }
 
+void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP){
+  int i, ue_flag=1, ret=-1;; 
+  for (i=0; i < NUMBER_OF_UE_MAX; i++){
+    if (pdcp_enb[ctxt_pP->module_id].rnti[i] == ctxt_pP->rnti) {
+      ue_flag=-1;
+      break;
+    }
+  }
+  if (ue_flag == 1 ){
+    for (i=0; i < NUMBER_OF_UE_MAX ; i++){
+      if (pdcp_enb[ctxt_pP->module_id].rnti[i] == 0 ){
+	pdcp_enb[ctxt_pP->module_id].rnti[i]=ctxt_pP->rnti;
+	pdcp_enb[ctxt_pP->module_id].uid[i]=i;
+	pdcp_enb[ctxt_pP->module_id].num_ues++;
+	printf("add new uid is %d %x\n\n", i, ctxt_pP->rnti);
+	ret=1;
+	break;
+      }
+    }
+  }
+  //return ret;
+}
 
 //-----------------------------------------------------------------------------
 boolean_t
@@ -1115,7 +1137,7 @@ pdcp_remove_UE(
   hash_key_t      key            = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_rc;
 
-  // check and remove SRBs first
+   // check and remove SRBs first
 
   for (srb_id=0; srb_id<2; srb_id++) {
     key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, srb_id, SRB_FLAG_YES);
@@ -1130,6 +1152,19 @@ pdcp_remove_UE(
 
   (void)h_rc; /* remove gcc warning "set but not used" */
 
+  // remove ue for pdcp enb inst
+   for (i=0; i < NUMBER_OF_UE_MAX; i++) {
+    if (pdcp_enb[ctxt_pP->module_id].rnti[i] == ctxt_pP->rnti ) {
+      LOG_I(PDCP, "remove uid is %d/%d %x\n", i,
+	    pdcp_enb[ctxt_pP->module_id].uid[i],
+	    pdcp_enb[ctxt_pP->module_id].rnti[i]);
+      pdcp_enb[ctxt_pP->module_id].uid[i]=0;
+      pdcp_enb[ctxt_pP->module_id].rnti[i]=0;
+      pdcp_enb[ctxt_pP->module_id].num_ues--;
+      break;
+    }
+  }
+   
   return 1;
 }
 
@@ -1524,7 +1559,6 @@ rrc_pdcp_config_asn1_req (
   return 0;
 }
 
-
 //-----------------------------------------------------------------------------
 boolean_t
 pdcp_config_req_asn1 (
@@ -1545,19 +1579,14 @@ pdcp_config_req_asn1 (
   uint8_t         *const        kUPenc_pP)
 //-----------------------------------------------------------------------------
 {
-  int i; 
+  
   switch (actionP) {
   case CONFIG_ACTION_ADD:
     DevAssert(pdcp_pP != NULL);
     if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
       pdcp_pP->is_ue = FALSE;
-      for (i=0; i < NUMBER_OF_UE_MAX; i++) {
-	if (pdcp_pP->rnti[i] != 0 ) continue ; // skip active ues
-        pdcp_pP->rnti[i]=ctxt_pP->rnti;
-	pdcp_pP->uid[i]=i;
-        Pdcp_num_ues[ctxt_pP->module_id]++;
-        break;
-      }
+      pdcp_add_ue(ctxt_pP);
+      
       //pdcp_eNB_UE_instance_to_rnti[ctxtP->module_id] = ctxt_pP->rnti;
       pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
       //pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % NUMBER_OF_UE_MAX;
@@ -1658,15 +1687,7 @@ pdcp_config_req_asn1 (
           rb_idP);
 
    if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
-	
-	for (i=0; i < NUMBER_OF_UE_MAX; i++) {
-	  if (pdcp_pP->rnti[i] == ctxt_pP->rnti ) {
-	    pdcp_pP->rnti[i]=0;
-	    pdcp_pP->uid[i]=0;
-	    Pdcp_num_ues[ctxt_pP->module_id]--;
-	    break;
-	  }
-	}
+     // pdcp_remove_UE(ctxt_pP);
    }
 
     /* Security keys */
@@ -2046,10 +2067,8 @@ void pdcp_layer_init(void)
   pdcp_output_header_bytes_to_write=0;
   pdcp_input_sdu_remaining_size_to_read=0;
 
-  memset(Pdcp_sfn, 0, sizeof(Pdcp_sfn));
-  memset(Pdcp_frame, 0, sizeof(Pdcp_frame));
-  memset(Pdcp_subframe, 0, sizeof(Pdcp_subframe));
-  memset(Pdcp_num_ues, 0, sizeof(Pdcp_num_ues));
+  memset(pdcp_enb, 0, sizeof(pdcp_enb_t));
+
   
   memset(Pdcp_stats_tx, 0, sizeof(Pdcp_stats_tx));
   memset(Pdcp_stats_tx_s, 0, sizeof(Pdcp_stats_tx_s));

@@ -2840,32 +2840,56 @@ rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
 void
 rrc_eNB_process_MeasurementReport(
   const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
+  rrc_eNB_ue_context_t*         ue_context_pP,
   const MeasResults_t*   const measResults2
 )
 //-----------------------------------------------------------------------------
 {
-  // T(T_ENB_RRC_MEASUREMENT_REPORT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-  //   T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+  int i=0;
+  int neighboring_cells=-1;
+  
+  T(T_ENB_RRC_MEASUREMENT_REPORT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
+  if (measResults2 == NULL )
+    return;
+  
+  if (measResults2->measId > 0 ){
+     if (ue_context_pP->ue_context.measResults == NULL) {
+       ue_context_pP->ue_context.measResults = CALLOC(1, sizeof(MeasResults_t));
+     }
+     ue_context_pP->ue_context.measResults->measId=measResults2->measId; 
+     ue_context_pP->ue_context.measResults->measResultPCell.rsrpResult=measResults2->measResultPCell.rsrpResult;
+     ue_context_pP->ue_context.measResults->measResultPCell.rsrqResult=measResults2->measResultPCell.rsrqResult;
+     LOG_D(RRC, "[eNB %d]Frame %d: UE %x (Measurement Id %d): RSRP of Source %ld\n", ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->rnti, (int)measResults2->measId, ue_context_pP->ue_context.measResults->measResultPCell.rsrpResult-140);
+     LOG_D(RRC, "[eNB %d]Frame %d: UE %x (Measurement Id %d): RSRQ of Source %ld\n", ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->rnti, (int)measResults2->measId, ue_context_pP->ue_context.measResults->measResultPCell.rsrqResult/2 - 20);
+   }
+   if (measResults2->measResultNeighCells == NULL)
+     return;
 
-  // LOG_I(RRC, "[eNB %d] Frame %d: Process Measurement Report From UE %x (Measurement Id %d)\n",
-  //       ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->rnti, (int)measResults2->measId);
-
-  // if (measResults2->measResultNeighCells->choice.measResultListEUTRA.list.count > 0) {
-  //   LOG_I(RRC, "Physical Cell Id %d\n",
-  //         (int)measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->physCellId);
-  //   LOG_I(RRC, "RSRP of Target %d\n",
-  //         (int)*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->
-  //                measResult.rsrpResult));
-  //   LOG_I(RRC, "RSRQ of Target %d\n",
-  //         (int)*(measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[0]->
-  //                measResult.rsrqResult));
-  // }
+   if (measResults2->measResultNeighCells->choice.measResultListEUTRA.list.count > 0) {
+     neighboring_cells=measResults2->measResultNeighCells->choice.measResultListEUTRA.list.count;
+     
+     if (ue_context_pP->ue_context.measResults->measResultNeighCells == NULL) {
+       
+       ue_context_pP->ue_context.measResults->measResultNeighCells = CALLOC(1, sizeof(*measResults2->measResultNeighCells)*neighboring_cells);
+     }
+     ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.count=neighboring_cells;
+     for (i=0; i < neighboring_cells; i++){
+       memcpy (ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i],
+	       measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i],
+	       sizeof(MeasResultListEUTRA_t));
+       
+       LOG_D(RRC, "Physical Cell Id %d\n",
+	     (int)ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->physCellId);
+       LOG_D(RRC, "RSRP of Target %d\n",
+	     (int)*(ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrpResult));
+       LOG_D(RRC, "RSRQ of Target %d\n",
+	     (int)*(ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i]->measResult.rsrqResult));
+     }
+   }
 
 // #if defined(Rel10) || defined(Rel14)
-  LOG_I(RRC, "RSRP of Source %ld\n", measResults2->measResultPCell.rsrpResult);
-  LOG_I(RRC, "RSRQ of Source %ld\n", measResults2->measResultPCell.rsrqResult);
 
   
 // #else
@@ -5109,13 +5133,6 @@ rrc_eNB_decode_dcch(
         ue_context_p,
         &ul_dcch_msg->message.choice.c1.choice.measurementReport.
         criticalExtensions.choice.c1.choice.measurementReport_r8.measResults);
- #if defined(FLEXRAN_AGENT_SB_IF)
-                        
-      if (rrc_agent_registered[ctxt_pP->module_id]) {
-        agent_rrc_xface[ctxt_pP->eNB_index]->flexran_trigger_rrc_measurements (ctxt_pP->module_id, &ul_dcch_msg->message.choice.c1.choice.measurementReport.criticalExtensions.choice.c1.choice.measurementReport_r8.measResults);
-            }
-#endif
-
       break;
 
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:

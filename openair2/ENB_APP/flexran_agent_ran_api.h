@@ -391,4 +391,12 @@ uint32_t flexran_get_pdcp_rx_aiat_s(const mid_t mod_id,  const mid_t ue_id, cons
 /*PDCP num of received outoforder pdu status flexRAN*/
 uint32_t flexran_get_pdcp_rx_oo(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
 
+/*********************RRC**********************/
+/*Get primary cell measuremeant id flexRAN*/
+int flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id);
 
+/*Get primary cell RSRP measurement flexRAN*/  
+int flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id);
+
+/*Get primary cell RSRQ measurement flexRAN*/
+int flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id);

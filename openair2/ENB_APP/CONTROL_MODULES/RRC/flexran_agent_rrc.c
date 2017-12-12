@@ -276,9 +276,11 @@ void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults
 
   for (i = 0; i < num; i++){
     meas_stats[i].rnti = flexran_get_ue_crnti(mod_id, i);
-    meas_stats[i].meas_id = measResults->measId;
-    meas_stats[i].rsrp = measResults->measResultPCell.rsrpResult - 140;
-    meas_stats[i].rsrq = (measResults->measResultPCell.rsrqResult)/2 - 20;                          
+    meas_stats[i].meas_id = flexran_get_rrc_pcell_measid(mod_id,i);
+    meas_stats[i].rsrp =  flexran_get_rrc_pcell_rsrp(mod_id,i) - 140;
+    // measResults->measResultPCell.rsrpResult - 140;
+    meas_stats[i].rsrq =  flexran_get_rrc_pcell_rsrq(mod_id,i)/2 - 20;
+    // (measResults->measResultPCell.rsrqResult)/2 - 20;                          
     
   }
     // repl->neigh_meas = NULL;
@@ -505,23 +507,21 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
 	if (rrc_measurements == NULL)
 	  goto error;
 	protocol__flex_rrc_measurements__init(rrc_measurements);
-        
-	if (triggered_rrc){
-	  rrc_measurements->measid = meas_stats[i].meas_id;
-	  rrc_measurements->has_measid = 1;
-	  
-	  rrc_measurements->pcell_rsrp = meas_stats[i].rsrp;
-	  rrc_measurements->has_pcell_rsrp = 1;
-	  
-	  rrc_measurements->pcell_rsrq = meas_stats[i].rsrq;                          
-	  rrc_measurements->has_pcell_rsrq = 1 ;
-	  
-	  ue_report[i]->rrc_measurements = rrc_measurements;
-	  // triggered_rrc = false; // To be decided later
-	}
+	
+	rrc_measurements->measid = flexran_get_rrc_pcell_measid(mod_id,i);
+	rrc_measurements->has_measid = 1;
+	
+	rrc_measurements->pcell_rsrp = flexran_get_rrc_pcell_rsrp(mod_id,i) - 140;
+	rrc_measurements->has_pcell_rsrp = 1;
+	
+	rrc_measurements->pcell_rsrq = flexran_get_rrc_pcell_rsrq(mod_id,i)/2 - 20;
+	rrc_measurements->has_pcell_rsrq = 1 ;
+	
+	ue_report[i]->rrc_measurements = rrc_measurements;
+	
       }
     }       
-  } 
+  }
 
   /* To be extended for RRC layer */ 
   // if (report_config->nr_cc > 0) { 

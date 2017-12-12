@@ -1083,9 +1083,9 @@ void flexran_agent_set_operating_frame_type (mid_t mod_id, int cc_id, int frame_
 }
 
 /*********** PDCP  *************/
-/*PDCP num tx pdu status flexRAN*/
+/*PDCP super frame counter flexRAN*/
 uint32_t flexran_get_pdcp_sfn(const mid_t mod_id){
-  return Pdcp_sfn[mod_id];
+  return pdcp_enb[mod_id].sfn;
 }
 
 /*PDCP num tx pdu status flexRAN*/
@@ -1166,5 +1166,67 @@ uint32_t flexran_get_pdcp_rx_oo(const mid_t mod_id,  const mid_t ue_id, const lc
   return Pdcp_stats_rx_outoforder[mod_id][ue_id][lcid];
 }
 
+/******************** RRC *****************************/
 
-
+int flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.measResults != NULL) {
+      return ue_context_p->ue_context.measResults->measId;
+    } else {
+      return -1;
+    }
+  } else {
+    return -1;
+  }
+}
+int flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.measResults != NULL) {
+      return ue_context_p->ue_context.measResults->measResultPCell.rsrpResult;
+    } else {
+      return -1;
+    }
+  } else {
+    return -1;
+  }
+}
+int flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.measResults != NULL) {
+      return ue_context_p->ue_context.measResults->measResultPCell.rsrqResult;
+    } else {
+      return -1;
+    }
+  } else {
+    return -1;
+  }
+}
+/*
+void* flexran_get_rrc_ncell_measresult_eutra(mid_t mod_id, mid_t ue_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.measResults != NULL) {
+      return &ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA;
+    } else {
+      return -1;
+    }
+  } else {
+    return -1;
+  }
+}
+*/
