@@ -1445,7 +1445,9 @@ static void* ru_thread_control( void* param ) {
   }
 
 
+  
   ru->state = RU_IDLE;
+  LOG_I(PHY,"Control channel ON for RU %d\n", ru->idx);
 
   while (!oai_exit) // Change the cond
   {
@@ -1454,7 +1456,7 @@ static void* ru_thread_control( void* param ) {
     	if ((len = ru->ifdevice.trx_ctlrecv_func(&ru->ifdevice,
 					     	&rru_config_msg,
 					     	msg_len))<0) {
-      		LOG_I(PHY,"RAU Control channel for RU %d\n", ru->idx);     
+      		LOG_I(PHY,"Waiting msg for RU %d\n", ru->idx);     
     	}
 	else
 	{
@@ -1596,15 +1598,14 @@ static void* ru_thread_control( void* param ) {
 				}
 
 				break;
-		}	
-	}
+		} // switch	
+	} //else
 
 
-  }
-
-
+  }//while
 
 }
+
 
 static void* ru_thread( void* param ) {
 
