@@ -1884,7 +1884,7 @@ void init_RU_proc(RU_t *ru) {
   proc->instance_cnt_synch       = -1;     ;
   proc->instance_cnt_FH          = -1;
   proc->instance_cnt_asynch_rxtx = -1;
-  proc->instance_cnt_ru 	 = 1;
+  proc->instance_cnt_ru 	 = -1;
   proc->first_rx                 = 1;
   proc->first_tx                 = 1;
   proc->frame_offset             = 0;
