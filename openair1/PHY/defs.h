@@ -425,7 +425,7 @@ typedef struct RU_proc_t_s {
   /// mutex for fep TX worker thread
   pthread_mutex_t mutex_feptx;
   /// mutex for ru_thread
-  pthread_mutex_t mutex_ru_thread;
+  pthread_mutex_t mutex_ru;
   /// symbol mask for IF4p5 reception per subframe
   uint32_t symbol_mask[10];
   /// number of slave threads
@@ -673,7 +673,8 @@ typedef enum {
   RU_IDLE=0,
   RU_CONFIG=1,
   RU_READY=2,
-  RU_RUN=3
+  RU_RUN=3,
+  RU_ERROR=4
 } rru_state_t;
 
 typedef struct RU_t_s{
