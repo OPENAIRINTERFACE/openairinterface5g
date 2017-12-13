@@ -669,6 +669,13 @@ typedef enum {
   MAX_RU_IF_TYPES =5
 } RU_if_south_t;
 
+typedef enum {
+  RU_IDLE=0,
+  RU_CONFIG=1,
+  RU_READY=2,
+  RU_RUN=3
+} rru_state_t;
+
 typedef struct RU_t_s{
   /// index of this ru
   uint32_t idx;
@@ -1475,12 +1482,6 @@ typedef enum {
   RRU_stop=6
 } rru_config_msg_type_t;
 
-typedef enum {
-  RU_IDLE=0,
-  RU_CONFIG=1,
-  RU_READY=2,
-  RU_RUN=3
-} rru_state_t;
 
 typedef struct RRU_CONFIG_msg_s {
   rru_config_msg_type_t type;
