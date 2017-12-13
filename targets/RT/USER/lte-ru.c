@@ -1917,8 +1917,8 @@ void init_RU_proc(RU_t *ru) {
 #endif
 #endif
   
-  pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
   pthread_create( &proc->pthread_ctrl, attr_ctrl, ru_thread_control, (void*)ru );
+  pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
   
 
   if (ru->function == NGFI_RRU_IF4p5) {
