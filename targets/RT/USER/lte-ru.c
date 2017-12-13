@@ -1436,6 +1436,7 @@ static void* ru_thread_control( void* param ) {
   int                start_received = 0;
   RRU_capabilities_t *cap;
   int                i;
+  int                ret;
   int                len;
 
 
@@ -1642,7 +1643,6 @@ static void* ru_thread( void* param ) {
   RU_t               *ru      = (RU_t*)param;
   RU_proc_t          *proc    = &ru->proc;
   LTE_DL_FRAME_PARMS *fp      = &ru->frame_parms;
-  int                ret;
   int                subframe =9;
   int                frame    =1023; 
 
