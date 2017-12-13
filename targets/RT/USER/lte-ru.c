@@ -1455,7 +1455,7 @@ static void* ru_thread_control( void* param ) {
   {
 	msg_len  = sizeof(RRU_CONFIG_msg_t); // TODO : check what should be the msg len
 
-	if (ru->state == RU_IDLE)
+	if (ru->state == RU_IDLE && ru->if_south != LOCAL_RF)
 		send_tick(ru);
 
 	
