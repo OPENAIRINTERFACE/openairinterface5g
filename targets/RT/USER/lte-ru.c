@@ -1630,7 +1630,7 @@ static void* ru_thread( void* param ) {
 	
   while (!oai_exit) {
   
-          LOG_I(PHY,"Waiting for thread control. RU %d,\n",ru->idx;
+          LOG_I(PHY,"Waiting for thread control. RU %d\n",ru->idx);
           // wait to be woken up
           if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
 	  
