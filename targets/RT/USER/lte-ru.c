@@ -1450,11 +1450,13 @@ static void* ru_thread_control( void* param ) {
   
   ru->state = RU_IDLE;
   LOG_I(PHY,"Control channel ON for RU %d\n", ru->idx);
+  send_tick(ru);
 
   while (!oai_exit) // Change the cond
   {
 	msg_len  = sizeof(RRU_CONFIG_msg_t); // TODO : check what should be the msg len
 
+	
     	if ((len = ru->ifdevice.trx_ctlrecv_func(&ru->ifdevice,
 					     	&rru_config_msg,
 					     	msg_len))<0) {
