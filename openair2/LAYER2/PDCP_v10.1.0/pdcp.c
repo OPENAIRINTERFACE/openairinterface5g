@@ -1136,7 +1136,7 @@ pdcp_remove_UE(
   DRB_Identity_t  drb_id         = 0;
   hash_key_t      key            = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_rc;
-
+  int i; 
    // check and remove SRBs first
 
   for (srb_id=0; srb_id<2; srb_id++) {
@@ -1585,7 +1585,7 @@ pdcp_config_req_asn1 (
     DevAssert(pdcp_pP != NULL);
     if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
       pdcp_pP->is_ue = FALSE;
-      pdcp_add_ue(ctxt_pP);
+      pdcp_add_UE(ctxt_pP);
       
       //pdcp_eNB_UE_instance_to_rnti[ctxtP->module_id] = ctxt_pP->rnti;
       pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
