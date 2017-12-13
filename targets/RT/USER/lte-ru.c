@@ -1447,15 +1447,6 @@ static void* ru_thread_control( void* param ) {
   }
   if (ru->if_south != LOCAL_RF) wait_eNBs();
 
-
-  LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
-  pthread_mutex_lock(&RC.ru_mutex);
-  RC.ru_mask &= ~(1<<ru->idx);
-  pthread_cond_signal(&RC.ru_cond);
-  pthread_mutex_unlock(&RC.ru_mutex);
-  
-  wait_sync("ru_thread");
-
   
   ru->state = RU_IDLE;
   LOG_I(PHY,"Control channel ON for RU %d\n", ru->idx);
@@ -1576,6 +1567,14 @@ static void* ru_thread_control( void* param ) {
 						exit_fun( "ERROR pthread_cond_signal" );
 						break;
 					}
+
+  					  LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
+					  pthread_mutex_lock(&RC.ru_mutex);
+					  RC.ru_mask &= ~(1<<ru->idx);
+					  pthread_cond_signal(&RC.ru_cond);
+					  pthread_mutex_unlock(&RC.ru_mutex);
+					  
+					  wait_sync("ru_thread");
 				}		
 				break;
 
