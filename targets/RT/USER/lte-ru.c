@@ -150,7 +150,7 @@ int send_tick(RU_t *ru){
   return 0;
 }
 
-int send_config(RU_t *ru, RRU_CONFIG_msg_t *rru_config_msg){
+int send_config(RU_t *ru, RRU_CONFIG_msg_t rru_config_msg){
 
 	ssize_t      msg_len,len;
 
@@ -180,7 +180,7 @@ int send_config(RU_t *ru, RRU_CONFIG_msg_t *rru_config_msg){
 
 int send_capab(RU_t *ru){
 
-	RRU_CONFIG_msg_t *rru_config_msg; 
+	RRU_CONFIG_msg_t rru_config_msg; 
 	RRU_capabilities_t *cap;
 	int i=0;
 
