@@ -1445,7 +1445,7 @@ static void* ru_thread_control( void* param ) {
     LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
     AssertFatal(ru->start_if(ru,NULL) == 0, "Could not start the IF device\n");
   }
-  wait_eNBs();
+  if (ru->if_south != LOCAL_RF) wait_eNBs();
 
 
   LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
