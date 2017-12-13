@@ -332,8 +332,12 @@ typedef struct RU_proc_t_s {
   int instance_cnt_fep;
   /// \internal This variable is protected by \ref mutex_fep
   int instance_cnt_feptx;
+  /// \internal This variable is protected by \ref mutex_ru_thread
+  int instance_cnt_ru;
   /// pthread structure for RU FH processing thread
   pthread_t pthread_FH;
+  /// pthread structure for RU control thread
+  pthread_t pthread_ctrl;
   /// pthread structure for RU prach processing thread
   pthread_t pthread_prach;
 #ifdef Rel14
@@ -354,6 +358,8 @@ typedef struct RU_proc_t_s {
   int first_tx;
   /// pthread attributes for RU FH processing thread
   pthread_attr_t attr_FH;
+  /// pthread attributes for RU control thread
+  pthread_attr_t attr_ctrl;
   /// pthread attributes for RU prach
   pthread_attr_t attr_prach;
 #ifdef Rel14
@@ -398,6 +404,8 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_feptx;
   /// condition variable for eNB signal
   pthread_cond_t cond_eNBs;
+  /// condition variable for ru_thread
+  pthread_cond_t cond_ru_thread;
   /// mutex for RU FH
   pthread_mutex_t mutex_FH;
   /// mutex for RU prach
@@ -416,6 +424,8 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_fep;
   /// mutex for fep TX worker thread
   pthread_mutex_t mutex_feptx;
+  /// mutex for ru_thread
+  pthread_mutex_t mutex_ru_thread;
   /// symbol mask for IF4p5 reception per subframe
   uint32_t symbol_mask[10];
   /// number of slave threads
@@ -773,6 +783,8 @@ typedef struct RU_t_s{
   uint8_t seqno;
   /// initial timestamp used as an offset make first real timestamp 0
   openair0_timestamp   ts_offset;
+  /// Current state of the RU
+  rru_state_t state;
   /// process scheduling variables
   RU_proc_t            proc;
   /// stats thread pthread descriptor
@@ -1457,8 +1469,18 @@ typedef enum {
   RAU_tick=0,
   RRU_capabilities=1,
   RRU_config=2,
-  RRU_MSG_max_num=3
+  RRU_MSG_max_num=3,
+  RRU_config_ok=4,
+  RRU_start=5,
+  RRU_stop=6
 } rru_config_msg_type_t;
+
+typedef enum {
+  RU_IDLE=0,
+  RU_CONFIG=1,
+  RU_READY=2,
+  RU_RUN=3
+} rru_state_t;
 
 typedef struct RRU_CONFIG_msg_s {
   rru_config_msg_type_t type;
