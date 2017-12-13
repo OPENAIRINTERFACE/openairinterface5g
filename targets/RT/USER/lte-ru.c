@@ -1627,36 +1627,33 @@ static void* ru_thread( void* param ) {
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
 
-
-  
-  if (ru->if_south == LOCAL_RF) { // configure RF parameters only 
-        fill_rf_config(ru,ru->rf_config_file);
-        init_frame_parms(&ru->frame_parms,1);
-        phy_init_RU(ru);
- 
-
-        ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-  }
-  if (setup_RU_buffers(ru)!=0) {
-        printf("Exiting, cannot initialize RU Buffers\n");
-        exit(-1);
-  }
-
-  LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
-  pthread_mutex_lock(&RC.ru_mutex);
-  RC.ru_mask &= ~(1<<ru->idx);
-  pthread_cond_signal(&RC.ru_cond);
-  pthread_mutex_unlock(&RC.ru_mutex);
-  
-  wait_sync("ru_thread");
-
 	
   while (!oai_exit) {
   
-
+          LOG_I(PHY,"Waiting for thread control. RU %d,\n",ru->idx;
           // wait to be woken up
           if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
 	  
+	  if (ru->if_south == LOCAL_RF) { // configure RF parameters only 
+		fill_rf_config(ru,ru->rf_config_file);
+		init_frame_parms(&ru->frame_parms,1);
+		phy_init_RU(ru);
+	 
+
+		ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+	  }
+	  if (setup_RU_buffers(ru)!=0) {
+		printf("Exiting, cannot initialize RU Buffers\n");
+		exit(-1);
+	  }
+
+	  LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
+	  pthread_mutex_lock(&RC.ru_mutex);
+	  RC.ru_mask &= ~(1<<ru->idx);
+	  pthread_cond_signal(&RC.ru_cond);
+	  pthread_mutex_unlock(&RC.ru_mutex);
+	  
+	  wait_sync("ru_thread");
 
 	  // Start RF device if any
 	  if (ru->start_rf) {
