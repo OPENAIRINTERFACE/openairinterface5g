@@ -555,7 +555,8 @@ void *l2l1_task(void *arg) {
 
             case TERMINATE_MESSAGE:
                 LOG_W(TASK_L2L1, " *** Exiting L2L1 thread\n");
-                oai_exit=1;
+                oai_exit = 1;
+                start_eNB = 0;
                 itti_exit_task ();
                 break;
 

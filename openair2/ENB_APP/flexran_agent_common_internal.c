@@ -62,6 +62,9 @@ void handle_reconfiguration(mid_t mod_id)
       return;
     }
     enb_app_start_phy_rrc(mod_id, mod_id+1);
+    MessageDef *msg_p = itti_alloc_new_message(TASK_ENB_APP, INITIALIZE_MESSAGE);
+    itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
+
     int diff_ms = (1000 * clock() - start_ms) / CLOCKS_PER_SEC;
     LOG_I(ENB_APP, "lte-softmodem restart succeeded in %d ms\n", diff_ms);
   }
