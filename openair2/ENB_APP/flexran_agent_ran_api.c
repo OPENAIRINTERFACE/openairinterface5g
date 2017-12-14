@@ -65,17 +65,27 @@ void flexran_set_enb_vars(mid_t mod_id, ran_name_t ran){
  error:
   LOG_E(FLEXRAN_AGENT, "unknown RAN name %d\n", ran);
 }
-static int mac_xface_not_ready(void);
 
-static int mac_xface_not_ready(void){
-  if (mac_xface == NULL)
+static int mac_xface_not_ready(void)
+{
+  if (mac_xface == NULL) {
     return 1;
+  }
   else {
     //printf("max_xface %p %d \n", mac_xface, mac_xface->active);
     return 0;// !mac_xface->active;
   }
 }
-  
+
+static int eNB_rrc_inst_not_ready(void)
+{
+  if (NULL == eNB_rrc_inst) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
 
 int flexran_get_current_time_ms (mid_t mod_id, int subframe_flag){
   if (enb[mod_id] == NULL) return 0;
@@ -681,6 +691,8 @@ int flexran_get_num_pdcch_symb(mid_t mod_id, int CC_id) {
 int flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
@@ -697,6 +709,8 @@ int flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id) {
 int flexran_get_meas_gap_config(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
 
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
@@ -719,6 +733,8 @@ int flexran_get_meas_gap_config(mid_t mod_id, mid_t ue_id) {
 int flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   
@@ -740,6 +756,8 @@ int flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id) {
 int flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP){
 
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+
+  if (eNB_rrc_inst_not_ready()) return -1;
 
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
 
@@ -805,6 +823,8 @@ int flexran_get_res_alloc_type1(mid_t ue_id) {
 int flexran_get_ue_transmission_mode(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   
@@ -822,6 +842,8 @@ int flexran_get_ue_transmission_mode(mid_t mod_id, mid_t ue_id) {
 int flexran_get_tti_bundling(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
@@ -839,6 +861,8 @@ int flexran_get_tti_bundling(mid_t mod_id, mid_t ue_id) {
 int flexran_get_maxHARQ_TX(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
@@ -852,6 +876,8 @@ int flexran_get_maxHARQ_TX(mid_t mod_id, mid_t ue_id) {
 int flexran_get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
@@ -868,6 +894,8 @@ int flexran_get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id) {
 int flexran_get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
@@ -884,6 +912,8 @@ int flexran_get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id) {
 int flexran_get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
@@ -901,6 +931,8 @@ int flexran_get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id) {
 int flexran_get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
@@ -914,13 +946,18 @@ int flexran_get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id) {
 }
 
 int flexran_get_ack_nack_simultaneous_trans(mid_t mod_id,mid_t ue_id) {
-	return (&eNB_rrc_inst[mod_id])->carrier[0].sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
+
+  if (eNB_rrc_inst_not_ready()) return -1;
+
+  return (&eNB_rrc_inst[mod_id])->carrier[0].sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
 }
 
 int flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
-  
+
+  if (eNB_rrc_inst_not_ready()) return -1;
+
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   
   if(ue_context_p != NULL) {
@@ -934,6 +971,8 @@ int flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id) {
 int flexran_get_tdd_ack_nack_feedback(mid_t mod_id, mid_t ue_id) {
   // TODO: This needs fixing
   return -1;
+
+  /* if (eNB_rrc_inst_not_ready()) return -1; */
 
   /* struct rrc_eNB_ue_context_s* ue_context_p = NULL; */
   /* uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id); */
@@ -954,6 +993,8 @@ int flexran_get_tdd_ack_nack_feedback(mid_t mod_id, mid_t ue_id) {
 int flexran_get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
@@ -972,6 +1013,8 @@ int flexran_get_extended_bsr_size(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
 
+  if (eNB_rrc_inst_not_ready()) return -1;
+
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
     if(ue_context_p->ue_context.mac_MainConfig != NULL){
@@ -989,7 +1032,9 @@ int flexran_get_extended_bsr_size(mid_t mod_id, mid_t ue_id) {
 int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
-  
+
+  if (eNB_rrc_inst_not_ready()) return -1;
+
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   
   if(ue_context_p != NULL) {
@@ -1034,6 +1079,8 @@ int flexran_get_direction(mid_t ue_id, mid_t lc_id) {
 int flexran_get_antenna_ports(mid_t mod_id, int CC_id){
 
   LTE_DL_FRAME_PARMS   *frame_parms;
+
+  if (mac_xface_not_ready()) return 0;
 
   frame_parms = mac_xface->get_lte_frame_parms(mod_id, CC_id);
   return (frame_parms == NULL)? 0:frame_parms->nb_antenna_ports_eNB;
@@ -1171,6 +1218,8 @@ uint32_t flexran_get_pdcp_rx_oo(const mid_t mod_id,  const mid_t ue_id, const lc
 int flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
@@ -1186,7 +1235,9 @@ int flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id) {
 int flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
-  
+
+  if (eNB_rrc_inst_not_ready()) return -1;
+
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
     if(ue_context_p->ue_context.measResults != NULL) {
@@ -1201,7 +1252,9 @@ int flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id) {
 int flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
-  
+
+  if (eNB_rrc_inst_not_ready()) return -1;
+
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
     if(ue_context_p->ue_context.measResults != NULL) {
@@ -1217,6 +1270,8 @@ int flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id) {
 void* flexran_get_rrc_ncell_measresult_eutra(mid_t mod_id, mid_t ue_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
