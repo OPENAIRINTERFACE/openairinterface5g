@@ -1671,10 +1671,6 @@ static void* ru_thread( void* param ) {
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
 
 
-
-
-  
-
 	
   while (!oai_exit) {
   
@@ -2330,6 +2326,8 @@ void init_RU(char *rf_config_file) {
 
       ret = openair0_transport_load(&ru->ifdevice, &ru->openair0_cfg, &ru->eth_params);
       printf("openair0_transport_init returns %d for ru_id %d\n",ret,ru_id);
+      if (ru->fh_south_asynch_in == fh_if4p5_south_in) printf("**** correct\n");
+      else	printf("NULlLLLLLLL\n");
       if (ret<0) {
 	printf("Exiting, cannot initialize transport protocol\n");
 	exit(-1);
