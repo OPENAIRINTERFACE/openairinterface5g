@@ -560,14 +560,13 @@ void *te_thread(void *param) {
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;
-  time_stats_t *te_wakeup_stats0 = &eNB->dlsch_turbo_encoding_wakeup_stats0;
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_te[0],&proc->cond_te[0],&proc->instance_cnt_te[0],"te thread")<0) break;
 
-    //stop_meas(te_wakeup_stats0);
+    start_meas(&eNB->dlsch_turbo_encoding_wakeup_stats0);
     dlsch_encoding_2threads0((te_params*)param);
-
+    stop_meas(&eNB->dlsch_turbo_encoding_wakeup_stats0);
 
     if (release_thread(&proc->mutex_te[0],&proc->instance_cnt_te[0],"te thread")<0) break;
 
@@ -598,15 +597,14 @@ void *te_thread1(void *param) {
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;
-  time_stats_t *te_wakeup_stats1 = &eNB->dlsch_turbo_encoding_wakeup_stats1;
   while (!oai_exit) {
 
 
     if (wait_on_condition(&proc->mutex_te[1],&proc->cond_te[1],&proc->instance_cnt_te[1],"te thread 1")<0) break;
 
-    //stop_meas(te_wakeup_stats1);
+    start_meas(&eNB->dlsch_turbo_encoding_wakeup_stats1);
     dlsch_encoding_2threads1((te_params*)param);
-
+    stop_meas(&eNB->dlsch_turbo_encoding_wakeup_stats1);
 
     if (release_thread(&proc->mutex_te[1],&proc->instance_cnt_te[1],"te thread 1")<0) break;
 

@@ -704,8 +704,13 @@ static void* process_stats_thread(void* param) {
      sleep(1);
      if (opp_enabled == 1) {
        if (eNB->td) print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
-       if (eNB->te) print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
-	   print_meas(&eNB->dlsch_modulation_stats,"dlsch_modulation",NULL,NULL);
+       if (eNB->te)
+       {
+         print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
+         print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats0,"coding_worker_0",NULL,NULL);
+         print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats1,"coding_worker_1",NULL,NULL);
+	   }
+       print_meas(&eNB->dlsch_modulation_stats,"dlsch_modulation",NULL,NULL);
      }
   }
   return(NULL);
