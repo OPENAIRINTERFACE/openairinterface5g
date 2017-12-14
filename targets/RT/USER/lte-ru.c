@@ -1483,6 +1483,8 @@ static void* ru_thread_control( void* param ) {
 					LOG_I(PHY,"Received RRU_capab msg...Ignoring\n");
 				}
 				else{
+					msg_len  = sizeof(RRU_CONFIG_msg_t)-MAX_RRU_CONFIG_SIZE+sizeof(RRU_capabilities_t);
+
 					AssertFatal(rru_config_msg.len==msg_len,"Received capabilities with incorrect length (%d!=%d)\n",(int)rru_config_msg.len,(int)msg_len);
 	      				LOG_I(PHY,"Received capabilities from RRU %d (len %d/%d, num_bands %d,max_pdschReferenceSignalPower %d, max_rxgain %d, nb_tx %d, nb_rx %d)\n",ru->idx,
 		    			(int)rru_config_msg.len,(int)msg_len,
