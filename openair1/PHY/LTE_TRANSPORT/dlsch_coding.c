@@ -637,14 +637,13 @@ void *te_thread2(void *param) {
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;
-  time_stats_t *te_wakeup_stats1 = &eNB->dlsch_turbo_encoding_wakeup_stats1;
   while (!oai_exit) {
 
 
     if (wait_on_condition(&proc->mutex_te[2],&proc->cond_te[2],&proc->instance_cnt_te[2],"te thread 2")<0) break;
 
     //stop_meas(te_wakeup_stats1);
-    dlsch_encoding_2threads1((te_params*)param);
+    dlsch_encoding_2threads2((te_params*)param);
 
 
     if (release_thread(&proc->mutex_te[2],&proc->instance_cnt_te[2],"te thread 2")<0) break;
