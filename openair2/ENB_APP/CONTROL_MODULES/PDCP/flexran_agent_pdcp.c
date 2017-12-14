@@ -51,18 +51,18 @@ void flexran_agent_pdcp_aggregate_stats(const mid_t mod_id,
     
     pdcp_aggr_stats->pkt_tx += flexran_get_pdcp_tx(mod_id,ue_id,lcid);
     pdcp_aggr_stats->pkt_tx_bytes += flexran_get_pdcp_tx_bytes(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_tx_rate_s += flexran_get_pdcp_tx_rate_s(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_tx_throughput_s += flexran_get_pdcp_tx_throughput_s(mod_id,ue_id,lcid);
+    pdcp_aggr_stats->pkt_tx_w += flexran_get_pdcp_tx_w(mod_id,ue_id,lcid);
+    pdcp_aggr_stats->pkt_tx_bytes_w += flexran_get_pdcp_tx_bytes_w(mod_id,ue_id,lcid);
     pdcp_aggr_stats->pkt_tx_aiat += flexran_get_pdcp_tx_aiat(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_tx_aiat_s += flexran_get_pdcp_tx_aiat_s(mod_id,ue_id,lcid);
+    pdcp_aggr_stats->pkt_tx_aiat_w += flexran_get_pdcp_tx_aiat_w(mod_id,ue_id,lcid);
     
       
     pdcp_aggr_stats->pkt_rx += flexran_get_pdcp_rx(mod_id,ue_id,lcid);
     pdcp_aggr_stats->pkt_rx_bytes += flexran_get_pdcp_rx_bytes(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_rx_rate_s += flexran_get_pdcp_rx_rate_s(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_rx_goodput_s += flexran_get_pdcp_rx_goodput_s(mod_id,ue_id,lcid);
+    pdcp_aggr_stats->pkt_rx_w += flexran_get_pdcp_rx_w(mod_id,ue_id,lcid);
+    pdcp_aggr_stats->pkt_rx_bytes_w += flexran_get_pdcp_rx_bytes_w(mod_id,ue_id,lcid);
     pdcp_aggr_stats->pkt_rx_aiat += flexran_get_pdcp_rx_aiat(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_rx_aiat_s += flexran_get_pdcp_rx_aiat_s(mod_id,ue_id,lcid);
+    pdcp_aggr_stats->pkt_rx_aiat_w += flexran_get_pdcp_rx_aiat_w(mod_id,ue_id,lcid);
     pdcp_aggr_stats->pkt_rx_oo += flexran_get_pdcp_rx_oo(mod_id,ue_id,lcid);
     
   }
@@ -99,20 +99,20 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
 
 	pdcp_aggr_stats->has_pkt_tx=1;
 	pdcp_aggr_stats->has_pkt_tx_bytes =1;
-	pdcp_aggr_stats->has_pkt_tx_rate_s=1; 
-	pdcp_aggr_stats->has_pkt_tx_throughput_s =1;
+	pdcp_aggr_stats->has_pkt_tx_w=1; 
+	pdcp_aggr_stats->has_pkt_tx_bytes_w =1;
 	pdcp_aggr_stats->has_pkt_tx_aiat =1; 
-	pdcp_aggr_stats->has_pkt_tx_aiat_s =1;
+	pdcp_aggr_stats->has_pkt_tx_aiat_w =1;
 
 	pdcp_aggr_stats->pkt_tx_sn = flexran_get_pdcp_tx_sn(mod_id, i, DEFAULT_DRB);
 	pdcp_aggr_stats->has_pkt_tx_sn =1;
 	
 	pdcp_aggr_stats->has_pkt_rx =1;
 	pdcp_aggr_stats->has_pkt_rx_bytes =1; 
-	pdcp_aggr_stats->has_pkt_rx_rate_s =1;
-	pdcp_aggr_stats->has_pkt_rx_goodput_s =1;
+	pdcp_aggr_stats->has_pkt_rx_w =1;
+	pdcp_aggr_stats->has_pkt_rx_bytes_w =1;
 	pdcp_aggr_stats->has_pkt_rx_aiat =1;
-	pdcp_aggr_stats->has_pkt_rx_aiat_s =1;
+	pdcp_aggr_stats->has_pkt_rx_aiat_w =1;
 	pdcp_aggr_stats->has_pkt_rx_oo =1;
 
 	pdcp_aggr_stats->pkt_rx_sn = flexran_get_pdcp_rx_sn(mod_id, i, DEFAULT_DRB);

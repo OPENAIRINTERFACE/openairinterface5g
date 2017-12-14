@@ -94,35 +94,32 @@ extern int             pdcp_instance_cnt;
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 
-/*
-public_pdcp(uint64_t Pdcp_sfn[MAX_NUM_CCs]);
-public_pdcp(frame_t Pdcp_frame[MAX_NUM_CCs]);
-public_pdcp(sub_frame_t Pdcp_subframe[MAX_NUM_CCs]);
-public_pdcp(uint16_t Pdcp_num_ues[MAX_NUM_CCs]);
-*/
-
+public_pdcp(uint32_t Pdcp_stats_tx_window_ms[MAX_NUM_CCs][NUMBER_OF_UE_MAX]);
 public_pdcp(uint32_t Pdcp_stats_tx_bytes[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_tx_bytes_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_bytes_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_bytes_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 public_pdcp(uint32_t Pdcp_stats_tx[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_tx_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 public_pdcp(uint32_t Pdcp_stats_tx_sn[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_tx_rate_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_tx_throughput_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_throughput_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 public_pdcp(uint32_t Pdcp_stats_tx_aiat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_tx_aiat_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_tx_aiat_tmp_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 public_pdcp(uint32_t Pdcp_stats_tx_iat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 
+public_pdcp(uint32_t Pdcp_stats_rx_window_ms[MAX_NUM_CCs][NUMBER_OF_UE_MAX]);
 public_pdcp(uint32_t Pdcp_stats_rx[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_rx_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 public_pdcp(uint32_t Pdcp_stats_rx_bytes[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_rx_bytes_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_bytes_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_bytes_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 public_pdcp(uint32_t Pdcp_stats_rx_sn[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_rx_rate_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_rx_goodput_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_goodput_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 public_pdcp(uint32_t Pdcp_stats_rx_aiat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_rx_aiat_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
-public_pdcp(uint32_t Pdcp_stats_rx_aiat_tmp_s[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 public_pdcp(uint32_t Pdcp_stats_rx_iat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 public_pdcp(uint32_t Pdcp_stats_rx_outoforder[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 

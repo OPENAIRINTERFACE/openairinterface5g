@@ -408,13 +408,13 @@ boolean_t pdcp_data_req(
 
   //LOG_I(PDCP,"ueid %d lcid %d tx seq num %d\n", pdcp_uid, rb_idP+rb_offset, current_sn);
   Pdcp_stats_tx[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
-  Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
+  Pdcp_stats_tx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
   Pdcp_stats_tx_bytes[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=sdu_buffer_sizeP;
-  Pdcp_stats_tx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=sdu_buffer_sizeP;
+  Pdcp_stats_tx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=sdu_buffer_sizeP;
   Pdcp_stats_tx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=current_sn;
 
   Pdcp_stats_tx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-  Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]); 
+  Pdcp_stats_tx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]); 
   Pdcp_stats_tx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_enb[ctxt_pP->module_id].sfn;
     
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_REQ,VCD_FUNCTION_OUT);
@@ -880,9 +880,9 @@ pdcp_data_ind(
   }	
   
   Pdcp_stats_rx[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
-  Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
+  Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
   Pdcp_stats_rx_bytes[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
-  Pdcp_stats_rx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
+  Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
   
   Pdcp_stats_rx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=sequence_number;
   
@@ -890,7 +890,7 @@ pdcp_data_ind(
     Pdcp_stats_rx_outoforder[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
   
   Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-  Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
+  Pdcp_stats_rx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
   Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_enb[ctxt_pP->module_id].sfn;
 
   
@@ -920,36 +920,45 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
   uint8_t            rb_id     = 0;
   
  // these stats are measured for both eNB and UE on per seond basis 
-  if (pdcp_enb[ctxt_pP->module_id].sfn % 1000 == 0){
-    for (rb_id =0; rb_id < NB_RB_MAX; rb_id ++){
-      for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
-	//printf("frame %d and subframe %d \n", pdcp_enb[ctxt_pP->module_id].frame, pdcp_enb[ctxt_pP->module_id].subframe);
-	// tx stats 
-	Pdcp_stats_tx_rate_s[ctxt_pP->module_id][pdcp_uid][rb_id]= Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id];
+  for (rb_id =0; rb_id < NB_RB_MAX; rb_id ++){
+    for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
+      //printf("frame %d and subframe %d \n", pdcp_enb[ctxt_pP->module_id].frame, pdcp_enb[ctxt_pP->module_id].subframe);
+      // tx stats
+      if (pdcp_enb[ctxt_pP->module_id].sfn % Pdcp_stats_tx_window_ms[ctxt_pP->module_id][pdcp_uid] == 0){
 	// unit: bit/s
-	Pdcp_stats_tx_throughput_s[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_tx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
-	if (Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id] > 0){
-    Pdcp_stats_tx_aiat_s[ctxt_pP->module_id][pdcp_uid][rb_id]=(Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id]);
-  }
+	Pdcp_stats_tx_throughput_w[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_tx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
+	Pdcp_stats_tx_w[ctxt_pP->module_id][pdcp_uid][rb_id]= Pdcp_stats_tx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id];
+	Pdcp_stats_tx_bytes_w[ctxt_pP->module_id][pdcp_uid][rb_id]= Pdcp_stats_tx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id];
+	if (Pdcp_stats_tx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id] > 0){
+	  Pdcp_stats_tx_aiat_w[ctxt_pP->module_id][pdcp_uid][rb_id]=(Pdcp_stats_tx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_tx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]);
+	}else {
+	  Pdcp_stats_tx_aiat_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
+	}
+	// reset the tmp vars 
+	Pdcp_stats_tx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
+	Pdcp_stats_tx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
+	Pdcp_stats_tx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	
-	Pdcp_stats_tx_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
-	Pdcp_stats_tx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
-	Pdcp_stats_tx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
-	
+      }
+      if (pdcp_enb[ctxt_pP->module_id].sfn % Pdcp_stats_rx_window_ms[ctxt_pP->module_id][pdcp_uid] == 0){
 	// rx stats
-	Pdcp_stats_rx_rate_s[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id];
-	Pdcp_stats_rx_goodput_s[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_rx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
-  
-  if(Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id] > 0){
-	 Pdcp_stats_rx_aiat_s[ctxt_pP->module_id][pdcp_uid][rb_id]= (Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id]);
-  }
+	Pdcp_stats_rx_goodput_w[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
+	Pdcp_stats_rx_w[ctxt_pP->module_id][pdcp_uid][rb_id]= 	Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id];
+	Pdcp_stats_rx_bytes_w[ctxt_pP->module_id][pdcp_uid][rb_id]= Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id];
 	
-	Pdcp_stats_rx_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
-	Pdcp_stats_rx_bytes_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
-	Pdcp_stats_rx_aiat_tmp_s[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
+	if(Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id] > 0){
+	  Pdcp_stats_rx_aiat_w[ctxt_pP->module_id][pdcp_uid][rb_id]= (Pdcp_stats_rx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]/Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]);
+	} else {
+	  Pdcp_stats_rx_aiat_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
+	}
 	
+	// reset the tmp vars 
+	Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
+	Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
+	Pdcp_stats_rx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
       } 
     }
+    
   }
 }
 //-----------------------------------------------------------------------------
@@ -2024,6 +2033,7 @@ void pdcp_layer_init(void)
 {
 
   module_id_t       instance;
+  int i,j;
 #if defined(Rel10) || defined(Rel14)
   mbms_session_id_t session_id;
   mbms_service_id_t service_id;
@@ -2070,24 +2080,35 @@ void pdcp_layer_init(void)
   memset(pdcp_enb, 0, sizeof(pdcp_enb_t));
 
   
+  memset(Pdcp_stats_tx_window_ms, 0, sizeof(Pdcp_stats_tx_window_ms));
+  memset(Pdcp_stats_rx_window_ms, 0, sizeof(Pdcp_stats_rx_window_ms));
+  for (i =0; i< MAX_NUM_CCs ; i ++){
+    for (j=0; j< NUMBER_OF_UE_MAX;j++){
+      Pdcp_stats_tx_window_ms[i][j]=100;
+      Pdcp_stats_rx_window_ms[i][j]=100;
+    }
+  }
+  
   memset(Pdcp_stats_tx, 0, sizeof(Pdcp_stats_tx));
-  memset(Pdcp_stats_tx_s, 0, sizeof(Pdcp_stats_tx_s));
+  memset(Pdcp_stats_tx_w, 0, sizeof(Pdcp_stats_tx_w));
+  memset(Pdcp_stats_tx_tmp_w, 0, sizeof(Pdcp_stats_tx_tmp_w));
   memset(Pdcp_stats_tx_bytes, 0, sizeof(Pdcp_stats_tx_bytes));
-  memset(Pdcp_stats_tx_bytes_s, 0, sizeof(Pdcp_stats_tx_bytes_s));
-  memset(Pdcp_stats_tx_rate_s, 0, sizeof(Pdcp_stats_tx_rate_s));
+  memset(Pdcp_stats_tx_bytes_w, 0, sizeof(Pdcp_stats_tx_bytes_w));
+  memset(Pdcp_stats_tx_bytes_tmp_w, 0, sizeof(Pdcp_stats_tx_bytes_tmp_w));
   memset(Pdcp_stats_tx_sn, 0, sizeof(Pdcp_stats_tx_sn));
-  memset(Pdcp_stats_tx_throughput_s, 0, sizeof(Pdcp_stats_tx_throughput_s));
+  memset(Pdcp_stats_tx_throughput_w, 0, sizeof(Pdcp_stats_tx_throughput_w));
   memset(Pdcp_stats_tx_aiat, 0, sizeof(Pdcp_stats_tx_aiat));
   memset(Pdcp_stats_tx_iat, 0, sizeof(Pdcp_stats_tx_iat));
   
 
   memset(Pdcp_stats_rx, 0, sizeof(Pdcp_stats_rx));
-  memset(Pdcp_stats_rx_s, 0, sizeof(Pdcp_stats_rx_s));
+  memset(Pdcp_stats_rx_w, 0, sizeof(Pdcp_stats_rx_w));
+  memset(Pdcp_stats_rx_tmp_w, 0, sizeof(Pdcp_stats_rx_tmp_w));
   memset(Pdcp_stats_rx_bytes, 0, sizeof(Pdcp_stats_rx_bytes));
-  memset(Pdcp_stats_rx_bytes_s, 0, sizeof(Pdcp_stats_rx_bytes_s));
-  memset(Pdcp_stats_rx_rate_s, 0, sizeof(Pdcp_stats_rx_rate_s));
+  memset(Pdcp_stats_rx_bytes_w, 0, sizeof(Pdcp_stats_rx_bytes_w));
+  memset(Pdcp_stats_rx_bytes_tmp_w, 0, sizeof(Pdcp_stats_rx_bytes_tmp_w));
   memset(Pdcp_stats_rx_sn, 0, sizeof(Pdcp_stats_rx_sn));
-  memset(Pdcp_stats_rx_goodput_s, 0, sizeof(Pdcp_stats_rx_goodput_s));
+  memset(Pdcp_stats_rx_goodput_w, 0, sizeof(Pdcp_stats_rx_goodput_w));
   memset(Pdcp_stats_rx_aiat, 0, sizeof(Pdcp_stats_rx_aiat));
   memset(Pdcp_stats_rx_iat, 0, sizeof(Pdcp_stats_rx_iat));
   memset(Pdcp_stats_rx_outoforder, 0, sizeof(Pdcp_stats_rx_outoforder));
