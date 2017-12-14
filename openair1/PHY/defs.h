@@ -471,7 +471,7 @@ typedef struct eNB_proc_t_s {
   /// \internal This variable is protected by \ref mutex_td.
   int instance_cnt_td;
   /// \internal This variable is protected by \ref mutex_te.
-  int instance_cnt_te[2];
+  int instance_cnt_te[3];
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
 #ifdef Rel14
@@ -493,7 +493,7 @@ typedef struct eNB_proc_t_s {
   /// pthread attributes for parallel turbo-decoder thread
   pthread_attr_t attr_td;
   /// pthread attributes for parallel turbo-encoder thread
-  pthread_attr_t attr_te[2];
+  pthread_attr_t attr_te[3];
   /// pthread attributes for single eNB processing thread
   pthread_attr_t attr_single;
   /// pthread attributes for prach processing thread
@@ -507,7 +507,7 @@ typedef struct eNB_proc_t_s {
   /// scheduling parameters for parallel turbo-decoder thread
   struct sched_param sched_param_td;
   /// scheduling parameters for parallel turbo-encoder thread
-  struct sched_param sched_param_te[2];
+  struct sched_param sched_param_te[3];
   /// scheduling parameters for single eNB thread
   struct sched_param sched_param_single;
   /// scheduling parameters for prach thread
@@ -521,7 +521,7 @@ typedef struct eNB_proc_t_s {
   /// pthread structure for parallel turbo-decoder thread
   pthread_t pthread_td;
   /// pthread structure for parallel turbo-encoder thread
-  pthread_t pthread_te[2];
+  pthread_t pthread_te[3];
   /// pthread structure for PRACH thread
   pthread_t pthread_prach;
 #ifdef Rel14
@@ -531,7 +531,7 @@ typedef struct eNB_proc_t_s {
   /// condition variable for parallel turbo-decoder thread
   pthread_cond_t cond_td;
   /// condition variable for parallel turbo-encoder thread
-  pthread_cond_t cond_te[2];
+  pthread_cond_t cond_te[3];
   /// condition variable for PRACH processing thread;
   pthread_cond_t cond_prach;
 #ifdef Rel14
@@ -543,7 +543,7 @@ typedef struct eNB_proc_t_s {
   /// mutex for parallel turbo-decoder thread
   pthread_mutex_t mutex_td;
   /// mutex for parallel turbo-encoder thread
-  pthread_mutex_t mutex_te[2];
+  pthread_mutex_t mutex_te[3];
   /// mutex for PRACH thread
   pthread_mutex_t mutex_prach;
 #ifdef Rel14
@@ -569,7 +569,7 @@ typedef struct eNB_proc_t_s {
   /// parameters for turbo-decoding worker thread
   td_params tdp;
   /// parameters for turbo-encoding worker thread
-  te_params tep[2];
+  te_params tep[3];
   /// set of scheduling variables RXn-TXnp4 threads
   eNB_rxtx_proc_t proc_rxtx[2];
   /// stats thread pthread descriptor

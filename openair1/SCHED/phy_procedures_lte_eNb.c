@@ -1507,6 +1507,7 @@ void init_td_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_td) {
 
 extern void *te_thread(void*);
 extern void *te_thread1(void*);
+extern void *te_thread2(void*);
 
 void init_te_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_te,pthread_attr_t *attr_te1) {
 
@@ -1530,7 +1531,16 @@ void init_te_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_te,pthread_attr_t *at
 
   printf("Creating te_thread1\n");
   pthread_create(&proc->pthread_te[1], attr_te1, te_thread1, (void*)&proc->tep[1]);
+  
+  /////////////////////////////////////////////////////////////////////////
+  proc->tep[2].eNB = eNB;
+  proc->instance_cnt_te[2]         = -1;
+    
+  pthread_mutex_init( &proc->mutex_te[2], NULL);
+  pthread_cond_init( &proc->cond_te[2], NULL);
 
+  printf("Creating te_thread2\n");
+  pthread_create(&proc->pthread_te[2], attr_te1, te_thread2, (void*)&proc->tep[2]);
 }
 
 

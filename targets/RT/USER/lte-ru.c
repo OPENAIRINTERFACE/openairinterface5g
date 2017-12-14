@@ -1472,7 +1472,7 @@ static void* ru_thread( void* param ) {
 
 
   // set default return value
-  thread_top_init("ru_thread",0,400000,500000,500000);
+  thread_top_init("ru_thread",1,400000,500000,500000);
 
   //CPU_SET(1, &cpuset);
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
