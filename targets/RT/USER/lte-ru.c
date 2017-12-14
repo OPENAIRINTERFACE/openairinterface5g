@@ -1566,13 +1566,6 @@ static void* ru_thread_control( void* param ) {
 
 					ru->state = RU_RUN;
 					
-					// TODO: Start ru_thread
-					proc->instance_cnt_ru = 1;
-					if (pthread_cond_signal(&proc->cond_ru_thread) != 0) {
-						LOG_E( PHY, "ERROR pthread_cond_signal for RU %d\n",ru->idx);
-						exit_fun( "ERROR pthread_cond_signal" );
-						break;
-					}
 
   					  LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
 					  pthread_mutex_lock(&RC.ru_mutex);
@@ -1581,6 +1574,14 @@ static void* ru_thread_control( void* param ) {
 					  pthread_mutex_unlock(&RC.ru_mutex);
 					  
 					  wait_sync("ru_thread");
+
+					  // TODO: Start ru_thread
+					proc->instance_cnt_ru = 1;
+					if (pthread_cond_signal(&proc->cond_ru_thread) != 0) {
+						LOG_E( PHY, "ERROR pthread_cond_signal for RU %d\n",ru->idx);
+						exit_fun( "ERROR pthread_cond_signal" );
+						break;
+					}
 				}		
 				break;
 
@@ -1589,14 +1590,6 @@ static void* ru_thread_control( void* param ) {
 					LOG_I(PHY,"Start received from RAU\n");
 				
 					if (ru->state == RU_READY){
-						// TODO: Start ru_thread
-						ru->state = RU_RUN;	
-						proc->instance_cnt_ru = 1;
-						if (pthread_cond_signal(&proc->cond_ru_thread) != 0) {
-							LOG_E( PHY, "ERROR pthread_cond_signal for RU %d\n",ru->idx);
-							exit_fun( "ERROR pthread_cond_signal" );
-							break;
-						}
 
 						LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
 						  pthread_mutex_lock(&RC.ru_mutex);
@@ -1605,6 +1598,14 @@ static void* ru_thread_control( void* param ) {
 						  pthread_mutex_unlock(&RC.ru_mutex);
 						  
 						  wait_sync("ru_thread");
+						  // TODO: Start ru_thread
+						ru->state = RU_RUN;	
+						proc->instance_cnt_ru = 1;
+						if (pthread_cond_signal(&proc->cond_ru_thread) != 0) {
+							LOG_E( PHY, "ERROR pthread_cond_signal for RU %d\n",ru->idx);
+							exit_fun( "ERROR pthread_cond_signal" );
+							break;
+						}
 					}
 					else{
 						LOG_I(PHY,"RRU not ready, cannot start\n"); 
