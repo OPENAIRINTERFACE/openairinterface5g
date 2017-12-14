@@ -1444,8 +1444,9 @@ static void* ru_thread_control( void* param ) {
   if (ru->start_if) {
     LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
     AssertFatal(ru->start_if(ru,NULL) == 0, "Could not start the IF device\n");
+
+    if (ru->if_south != LOCAL_RF) wait_eNBs();
   }
-  if (ru->if_south != LOCAL_RF) wait_eNBs();
 
   
   ru->state = RU_IDLE;
@@ -2326,8 +2327,7 @@ void init_RU(char *rf_config_file) {
 
       ret = openair0_transport_load(&ru->ifdevice, &ru->openair0_cfg, &ru->eth_params);
       printf("openair0_transport_init returns %d for ru_id %d\n",ret,ru_id);
-      if (ru->fh_south_asynch_in == fh_if4p5_south_in) printf("**** correct\n");
-      else	printf("NULlLLLLLLL\n");
+      
       if (ret<0) {
 	printf("Exiting, cannot initialize transport protocol\n");
 	exit(-1);
