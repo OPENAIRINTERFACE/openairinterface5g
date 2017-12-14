@@ -48,6 +48,7 @@
 /* Initiation and termination of the eNodeB agent */
 int flexran_agent_start(mid_t mod_id);
 int flexran_agent_stop(mid_t mod_id);
+void flexran_agent_reconfigure(mid_t mod_id);
 
 /* 
  * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 

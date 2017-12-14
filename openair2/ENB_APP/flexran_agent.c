@@ -186,15 +186,9 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
   return t;
 }
 
-int channel_container_init = 0;
-int flexran_agent_start(mid_t mod_id)
-{
-  int channel_id;
+void flexran_agent_reconfigure(mid_t mod_id){
   Enb_properties_array_t *enb_properties = enb_config_get();
-  
-  flexran_set_enb_vars(mod_id, RAN_LTE_OAI);
-  flexran_agent[mod_id].enb_id = mod_id;
-  
+
   /* 
    * check the configuration
    */ 
@@ -204,7 +198,7 @@ int flexran_agent_start(mid_t mod_id)
   } else {
     strcpy(local_cache, DEFAULT_FLEXRAN_AGENT_CACHE);
   }
-  
+
   if (enb_properties->properties[mod_id]->flexran_agent_ipv4_address != 0) {
     inet_ntop(AF_INET, &(enb_properties->properties[mod_id]->flexran_agent_ipv4_address), in_ip, INET_ADDRSTRLEN);
   } else {
@@ -220,6 +214,18 @@ int flexran_agent_start(mid_t mod_id)
 	flexran_agent[mod_id].enb_id,
 	in_ip,
 	in_port);
+  
+}
+
+int channel_container_init = 0;
+int flexran_agent_start(mid_t mod_id)
+{
+  int channel_id;
+  
+  flexran_set_enb_vars(mod_id, RAN_LTE_OAI);
+  flexran_agent[mod_id].enb_id = mod_id;
+  
+  flexran_agent_reconfigure(mod_id);
 
   /*
    * Initialize the channel container

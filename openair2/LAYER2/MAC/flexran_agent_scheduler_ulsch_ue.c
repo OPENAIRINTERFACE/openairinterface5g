@@ -21,7 +21,7 @@
 
 /*! \file eNB_scheduler_ulsch.c
  * \brief FlexRAN eNB procedures for the ULSCH transport channel
- * \author shahab SHARIAT BAGHERI
+ * \author Navid Nikaein and shahab SHARIAT BAGHERI
  * \date 2017
  * \version 1.0
  * @ingroup _mac
@@ -67,19 +67,21 @@
 
 /* number of active slices for  past and current time*/
 int n_active_slices_uplink = 1;
-int n_active_slices_uplink_current = 1;
+int n_active_slices_current_uplink = 1;
 
 /* RB share for each slice for past and current time*/
-float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 1.0, 0.0, 0.0};
-float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 1.0, 0.0, 0.0};
+float avg_slice_percentage_uplink=0.25;
+float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
+float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 float total_slice_percentage_uplink = 0;
+float total_slice_percentage_current_uplink = 0;
 
 // MAX MCS for each slice for past and current time
 int slice_maxmcs_uplink[MAX_NUM_SLICES] = {16, 16, 16, 16};
-int slice_maxmcs_current_uplink[MAX_NUM_SLICES] = {28, 28, 28, 28};
+int slice_maxmcs_current_uplink[MAX_NUM_SLICES] = {16,16,16,16};
 
 /*resource blocks allowed*/
-uint16_t                nb_rbs_allowed_slice_uplink[MAX_NUM_CCs][MAX_NUM_SLICES];      
+uint16_t         nb_rbs_allowed_slice_uplink[MAX_NUM_CCs][MAX_NUM_SLICES];      
 /*Slice Update */
 int update_ul_scheduler[MAX_NUM_SLICES] = {1, 1, 1, 1};
 int update_ul_scheduler_current[MAX_NUM_SLICES] = {1, 1, 1, 1};
@@ -89,9 +91,9 @@ slice_scheduler_ul slice_sched_ul[MAX_NUM_SLICES] = {0};
 
 /* name of available scheduler*/
 char *ul_scheduler_type[MAX_NUM_SLICES] = {"flexran_schedule_ue_ul_spec_embb",
-					   "flexran_schedule_ue_ul_spec_urllc",
-					   "flexran_schedule_ue_ul_spec_mmtc",
-					   "flexran_schedule_ue_ul_spec_be"      // best effort 
+					   "flexran_schedule_ue_ul_spec_embb",
+					   "flexran_schedule_ue_ul_spec_embb",
+					   "flexran_schedule_ue_ul_spec_embb"      // best effort 
 };
 
 
@@ -418,6 +420,22 @@ flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
   
   flexran_agent_mac_create_empty_ul_config(mod_id, ul_info);
    
+  total_slice_percentage_uplink=0;
+  avg_slice_percentage_uplink=1.0/n_active_slices_uplink;
+  
+  // reset the slice percentage for inactive slices
+  for (i = n_active_slices_uplink; i< MAX_NUM_SLICES; i++) {
+    slice_percentage_uplink[i]=0;
+  }
+  for (i = 0; i < n_active_slices_uplink; i++) {
+    if (slice_percentage_uplink[i] < 0 ){
+      LOG_W(MAC, "[eNB %d] frame %d subframe %d:invalid slice %d percentage %d. resetting to zero",
+	    mod_id, frame, subframe, i, slice_percentage_uplink[i]);
+      slice_percentage_uplink[i]=0;
+    }
+    total_slice_percentage_uplink+=slice_percentage_uplink[i];
+  }
+ 
   for (i = 0; i < n_active_slices_uplink; i++) {
     
     // Load any updated functions
@@ -425,89 +443,100 @@ flexran_schedule_ue_ul_spec_default(mid_t   mod_id,
       slice_sched_ul[i] = dlsym(NULL, ul_scheduler_type[i]); 
       update_ul_scheduler[i] = 0;
       update_ul_scheduler_current[i] = 0;
-      slice_percentage_current_uplink[i]= slice_percentage_uplink[i];
-      total_slice_percentage_uplink+=slice_percentage_uplink[i];
+      //slice_percentage_current_uplink[i]= slice_percentage_uplink[i];
+      //total_slice_percentage_current_uplink+=slice_percentage_uplink[i];
+      //if (total_slice_percentage_current_uplink> 1) 
+      //	total_slice_percentage_current_uplink=1;
       LOG_N(MAC,"update ul scheduler slice %d\n", i);
     }
- 
-    // check if the number of slices has changed, and log 
-    if (n_active_slices_uplink_current != n_active_slices_uplink ){
-      if ((n_active_slices_uplink > 0) && (n_active_slices_uplink <= MAX_NUM_SLICES)) {
-	LOG_N(MAC,"[eNB %d]frame %d subframe %d: number of active slices has changed: %d-->%d\n",
-	      mod_id, frame, subframe, n_active_slices_uplink_current, n_active_slices_uplink);
+    // the new total RB share is within the range
+    if (total_slice_percentage_uplink <= 1.0){
 
-	n_active_slices_uplink_current = n_active_slices_uplink;
-
-      } else {
-	LOG_W(MAC,"invalid number of slices %d, revert to the previous value %d\n",n_active_slices_uplink, n_active_slices_uplink_current);
-	n_active_slices_uplink = n_active_slices_uplink_current;
+      // check if the number of slices has changed, and log 
+      if (n_active_slices_current_uplink != n_active_slices_uplink ){
+	if ((n_active_slices_uplink > 0) && (n_active_slices_uplink <= MAX_NUM_SLICES)) {
+	  LOG_N(MAC,"[eNB %d]frame %d subframe %d: number of active UL slices has changed: %d-->%d\n",
+		mod_id, frame, subframe, n_active_slices_current_uplink, n_active_slices_uplink);
+	  
+	  n_active_slices_current_uplink = n_active_slices_uplink;
+	  
+	} else {
+	  LOG_W(MAC,"invalid number of UL slices %d, revert to the previous value %d\n",n_active_slices_uplink, n_active_slices_current_uplink);
+	  n_active_slices_uplink = n_active_slices_current_uplink;
+	}
       }
-    }
     
     // check if the slice rb share has changed, and log the console
-    if (slice_percentage_current_uplink[i] != slice_percentage_uplink[i]){
- //      if ((slice_percentage_uplink[i] >= 0.0) && (slice_percentage_uplink[i] <= 1.0)){
-	// if ((total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i]) <= 1.0) {
-	//   total_slice_percentage_uplink=total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i];
-	  LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: total percentage %f, slice RB percentage has changed: %f-->%f\n",
-		mod_id, i, frame, subframe, total_slice_percentage_uplink, slice_percentage_current_uplink[i], slice_percentage_uplink[i]);
-
-	  slice_percentage_current_uplink[i] = slice_percentage_uplink[i];
-
-	// } else {
-	//   LOG_W(MAC,"[eNB %d][SLICE %d] invalid total RB share (%f->%f), revert the previous value (%f->%f)\n",
-	// 	mod_id,i,  
-	// 	total_slice_percentage_uplink,
-	// 	total_slice_percentage_uplink - slice_percentage_current_uplink[i]  + slice_percentage_uplink[i],
-	// 	slice_percentage_uplink[i],slice_percentage_current_uplink[i]);
-
-	//   slice_percentage_uplink[i]= slice_percentage_current_uplink[i];
-
-	// }
- //      } else {
-	// LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice RB share, revert the previous value (%f->%f)\n",mod_id, i,  slice_percentage_uplink[i],slice_percentage_current_uplink[i]);
-
-	// slice_percentage_uplink[i]= slice_percentage_current_uplink[i];
-
-      // }
-    }
-  
-    // check if a new scheduler, and log the console
-    if (update_ul_scheduler_current[i] != update_ul_scheduler[i]){
-      LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: DL scheduler for this slice is updated: %s \n",
-	    mod_id, i, frame, subframe, ul_scheduler_type[i]);
-
-      update_ul_scheduler_current[i] = update_ul_scheduler[i];
+      if (slice_percentage_current_uplink[i] != slice_percentage_uplink[i]){ 
+      LOG_N(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
+	      mod_id, i, frame, subframe, total_slice_percentage_current_uplink, total_slice_percentage_uplink, slice_percentage_current_uplink[i], slice_percentage_uplink[i]);
+	total_slice_percentage_current_uplink= total_slice_percentage_uplink;
+	slice_percentage_current_uplink[i] = slice_percentage_uplink[i];	
+	
+      } 
       
+      // check if the slice max MCS, and log the console
+      if (slice_maxmcs_current_uplink[i] != slice_maxmcs_uplink[i]){
+	if ((slice_maxmcs_uplink[i] >= 0) && (slice_maxmcs_uplink[i] <= 16)){
+	  LOG_N(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
+		mod_id, i, frame, subframe, slice_maxmcs_current_uplink[i], slice_maxmcs_uplink[i]);
+	  slice_maxmcs_current_uplink[i] = slice_maxmcs_uplink[i];
+	} else {
+	  LOG_W(MAC,"[eNB %d][SLICE %d][UL] invalid slice max mcs %d, revert the previous value %d\n",mod_id, i, slice_maxmcs_uplink[i],slice_maxmcs_current_uplink[i]);
+	  slice_maxmcs_uplink[i]= slice_maxmcs_current_uplink[i];
+	  
+	}
+      }
+      
+      // check if a new scheduler, and log the console
+      if (update_ul_scheduler_current[i] != update_ul_scheduler[i]){
+	LOG_N(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: UL scheduler for this slice is updated: %s \n",
+	      mod_id, i, frame, subframe, ul_scheduler_type[i]);
+	
+	update_ul_scheduler_current[i] = update_ul_scheduler[i];
+      }
     }
-
+      else {
+	
+	if (n_active_slices_uplink == n_active_slices_current_uplink){
+	  LOG_W(MAC,"[eNB %d][SLICE %d][UL] invalid total RB share (%f->%f), reduce proportionally the RB share by 0.1\n",
+		mod_id,i,  
+		total_slice_percentage_current_uplink, total_slice_percentage_uplink);
+	  if (slice_percentage_uplink[i] > avg_slice_percentage_uplink){
+	    slice_percentage_uplink[i]-=0.1;
+	    total_slice_percentage_uplink-=0.1;
+	  }
+	} else {
+	  // here we can correct the values, e.g. reduce proportionally 
+	  LOG_W(MAC,"[eNB %d][SLICE %d][UL] invalid total RB share (%f->%f), revert the  number of slice to its previous value (%d->%d)\n",
+		mod_id,i,  
+		total_slice_percentage_current_uplink, total_slice_percentage_uplink,
+		n_active_slices_uplink, n_active_slices_current_uplink);
+	  n_active_slices_uplink = n_active_slices_current_uplink;
+	  slice_percentage_uplink[i] = slice_percentage_current_uplink[i];
+	}
+      }
+     
     // Run each enabled slice-specific schedulers one by one
-    //LOG_N(MAC,"[eNB %d]frame %d subframe %d slice %d: calling the scheduler\n", mod_id, frame, subframe,i);
-    
-
     slice_sched_ul[i](mod_id, frame, cooperation_flag, subframe, sched_subframe,ul_info);
-
   }
-
-    
-  
 }
 
 void
 flexran_schedule_ue_ul_spec_embb(mid_t  mod_id,
-			                    frame_t frame, 
-			                    unsigned char cooperation_flag,
-                		        uint32_t      subframe,
-			                    unsigned char sched_subframe,
-			                    Protocol__FlexranMessage **ul_info)
-
+				 frame_t frame, 
+				 unsigned char cooperation_flag,
+				 uint32_t      subframe,
+				 unsigned char sched_subframe,
+				 Protocol__FlexranMessage **ul_info)
+  
 {
   flexran_agent_schedule_ulsch_ue_spec(mod_id,
-				                      frame,
-				                      cooperation_flag,
-				                      subframe,
-				                      sched_subframe,
-				                      ul_info);
+				       frame,
+				       cooperation_flag,
+				       subframe,
+				       sched_subframe,
+				       ul_info);
   
 }
 

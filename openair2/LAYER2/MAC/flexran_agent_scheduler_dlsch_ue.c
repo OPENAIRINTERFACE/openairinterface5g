@@ -96,9 +96,11 @@ int slicing_strategy = UEID_TO_SLICEID;
 int slicing_strategy_current = UEID_TO_SLICEID;
 
 // RB share for each slice for past and current time
-float slice_percentage[MAX_NUM_SLICES] = {1.0, 1.0, 0.0, 0.0};
-float slice_percentage_current[MAX_NUM_SLICES] = {1.0, 1.0, 0.0, 0.0};
+float avg_slice_percentage=0.25;
+float slice_percentage[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
+float slice_percentage_current[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 float total_slice_percentage = 0;
+float total_slice_percentage_current = 0;
 
 // MAX MCS for each slice for past and current time
 int slice_maxmcs[MAX_NUM_SLICES] = {28, 28, 28, 28};
@@ -724,7 +726,23 @@ flexran_schedule_ue_dl_spec_default(mid_t   mod_id,
   int i=0;
   
   flexran_agent_mac_create_empty_dl_config(mod_id, dl_info);
-   
+ 
+  total_slice_percentage=0;
+  avg_slice_percentage=1.0/n_active_slices;
+  
+  // reset the slice percentage for inactive slices 
+  for (i = n_active_slices; i< MAX_NUM_SLICES; i++) {
+    slice_percentage[i]=0;
+  }
+  for (i = 0; i < n_active_slices; i++) {
+    if (slice_percentage[i] < 0 ){
+      LOG_W(MAC, "[eNB %d] frame %d subframe %d:invalid slice %d percentage %d. resetting to zero",
+	    mod_id, frame, subframe, i, slice_percentage[i]);
+      slice_percentage[i]=0;
+    }
+    total_slice_percentage+=slice_percentage[i];
+  }
+
   for (i = 0; i < n_active_slices; i++) {
     
     // Load any updated functions
@@ -732,84 +750,77 @@ flexran_schedule_ue_dl_spec_default(mid_t   mod_id,
       slice_sched_dl[i] = dlsym(NULL, dl_scheduler_type[i]); 
       update_dl_scheduler[i] = 0;
       update_dl_scheduler_current[i] = 0;
-      slice_percentage_current[i]= slice_percentage[i];
-      total_slice_percentage+=slice_percentage[i];
       LOG_N(MAC,"update dl scheduler slice %d\n", i);
     }
- 
-    // check if the number of slices has changed, and log 
-    if (n_active_slices_current != n_active_slices ){
-      if ((n_active_slices > 0) && (n_active_slices <= MAX_NUM_SLICES)) {
-	LOG_N(MAC,"[eNB %d]frame %d subframe %d: number of active slices has changed: %d-->%d\n",
-	      mod_id, frame, subframe, n_active_slices_current, n_active_slices);
 
-	n_active_slices_current = n_active_slices;
+    if (total_slice_percentage <= 1.0){ // the new total RB share is within the range
 
-      } else {
-	LOG_W(MAC,"invalid number of slices %d, revert to the previous value %d\n",n_active_slices, n_active_slices_current);
-	n_active_slices = n_active_slices_current;
+      // check if the number of slices has changed, and log 
+      if (n_active_slices_current != n_active_slices ){
+	if ((n_active_slices > 0) && (n_active_slices <= MAX_NUM_SLICES)) {
+	  LOG_N(MAC,"[eNB %d]frame %d subframe %d: number of active DL slices has changed: %d-->%d\n",
+		mod_id, frame, subframe, n_active_slices_current, n_active_slices);
+	  
+	  n_active_slices_current = n_active_slices;
+	  
+	} else {
+	  LOG_W(MAC,"invalid number of DL slices %d, revert to the previous value %d\n",n_active_slices, n_active_slices_current);
+	  n_active_slices = n_active_slices_current;
+	}
       }
-    }
-    
-    // check if the slice rb share has changed, and log the console
-    if (slice_percentage_current[i] != slice_percentage[i]){
- //      if ((slice_percentage[i] >= 0.0) && (slice_percentage[i] <= 1.0)){
-	// if ((total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i]) <= 1.0) {
-	//   total_slice_percentage=total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i];
-	  LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: total percentage %f, slice RB percentage has changed: %f-->%f\n",
-		mod_id, i, frame, subframe, total_slice_percentage, slice_percentage_current[i], slice_percentage[i]);
-
-	  slice_percentage_current[i] = slice_percentage[i];
-
-	// } else {
-	//   LOG_W(MAC,"[eNB %d][SLICE %d] invalid total RB share (%f->%f), revert the previous value (%f->%f)\n",
-	// 	mod_id,i,  
-	// 	total_slice_percentage,
-	// 	total_slice_percentage - slice_percentage_current[i]  + slice_percentage[i],
-	// 	slice_percentage[i],slice_percentage_current[i]);
-
-	//   slice_percentage[i]= slice_percentage_current[i];
-
-	// }
- //      } else {
-	// LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice RB share, revert the previous value (%f->%f)\n",mod_id, i,  slice_percentage[i],slice_percentage_current[i]);
-
-	// slice_percentage[i]= slice_percentage_current[i];
-
-      // }
-    }
-  
-    // check if the slice max MCS, and log the console
-    if (slice_maxmcs_current[i] != slice_maxmcs[i]){
-      if ((slice_maxmcs[i] >= 0) && (slice_maxmcs[i] < 29)){
-	LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
-	      mod_id, i, frame, subframe, slice_maxmcs_current[i], slice_maxmcs[i]);
-
-	slice_maxmcs_current[i] = slice_maxmcs[i];
-
-      } else {
-	// LOG_W(MAC,"[eNB %d][SLICE %d] invalid slice max mcs %d, revert the previous value %d\n",mod_id, i, slice_maxmcs[i],slice_percentage[i]);
-
-	slice_maxmcs[i]= slice_maxmcs_current[i];
-
-      }
-    }
-    
-    // check if a new scheduler, and log the console
-    if (update_dl_scheduler_current[i] != update_dl_scheduler[i]){
-      LOG_N(MAC,"[eNB %d][SLICE %d] frame %d subframe %d: DL scheduler for this slice is updated: %s \n",
-	    mod_id, i, frame, subframe, dl_scheduler_type[i]);
-
-      update_dl_scheduler_current[i] = update_dl_scheduler[i];
       
+      // check if the slice rb share has changed, and log the console
+      if (slice_percentage_current[i] != slice_percentage[i]){ // new slice percentage
+	LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
+	      mod_id, i, frame, subframe, total_slice_percentage_current, total_slice_percentage, slice_percentage_current[i], slice_percentage[i]);
+	total_slice_percentage_current= total_slice_percentage;
+	slice_percentage_current[i] = slice_percentage[i];
+	
+      } 
+ 
+      // check if the slice max MCS, and log the console
+      if (slice_maxmcs_current[i] != slice_maxmcs[i]){
+	if ((slice_maxmcs[i] >= 0) && (slice_maxmcs[i] < 29)){
+	  LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
+		mod_id, i, frame, subframe, slice_maxmcs_current[i], slice_maxmcs[i]);
+	  slice_maxmcs_current[i] = slice_maxmcs[i];
+	} else {
+	  LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid slice max mcs %d, revert the previous value %d\n",mod_id, i, slice_maxmcs[i],slice_maxmcs_current[i]);
+	  slice_maxmcs[i]= slice_maxmcs_current[i];
+	}
+      }
+      
+      // check if a new scheduler, and log the console
+      if (update_dl_scheduler_current[i] != update_dl_scheduler[i]){
+	LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: DL scheduler for this slice is updated: %s \n",
+	      mod_id, i, frame, subframe, dl_scheduler_type[i]);
+	update_dl_scheduler_current[i] = update_dl_scheduler[i];
+      } 
+    
+    } else {
+      // here we can correct the values, e.g. reduce proportionally 
+      
+      if (n_active_slices == n_active_slices_current){
+	LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid total RB share (%f->%f), reduce proportionally the RB share by 0.1\n",
+	      mod_id,i,  
+	      total_slice_percentage_current, total_slice_percentage);
+	if (slice_percentage[i] >= avg_slice_percentage){
+	  slice_percentage[i]-=0.1;
+	  total_slice_percentage-=0.1;
+	}
+      } else {
+	LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid total RB share (%f->%f), revert the number of slice to its previous value (%d->%d)\n",
+	      mod_id,i,  
+	      total_slice_percentage_current, total_slice_percentage,
+	      n_active_slices, n_active_slices_current );
+	n_active_slices = n_active_slices_current;
+	slice_percentage[i] = slice_percentage_current[i];
+      }
     }
-
+    
     // Run each enabled slice-specific schedulers one by one
-    //LOG_N(MAC,"[eNB %d]frame %d subframe %d slice %d: calling the scheduler\n", mod_id, frame, subframe,i);
     slice_sched_dl[i](mod_id, i, frame, subframe, mbsfn_flag,dl_info);
-
   }
-  
 }
 
 uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs){

@@ -283,6 +283,7 @@ void *eNB_app_task(void *args_p)
 #if defined(ENABLE_ITTI)
   uint32_t                        enb_nb = 1; /* Default number of eNB is 1 */
   uint32_t                        enb_id_start = 0;
+  uint32_t                        enb_i;
   uint32_t                        enb_id_end = enb_id_start + enb_nb;
 # if defined(ENABLE_USE_MME)
   uint32_t                        register_enb_pending;
@@ -318,7 +319,12 @@ void *eNB_app_task(void *args_p)
                enb_nb, enb_properties_p->number);
 
   enb_app_start_phy_rrc(enb_id_start, enb_id_end);
-  
+
+#ifdef FLEXRAN_AGENT_SB_IF 
+  for (enb_i = 0; enb_i <1; enb_i ++){ // To be handled for all of current eNB
+    flexran_set_enb_vars(enb_i, RAN_LTE_OAI);
+  }
+#endif 
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */
   registered_enb = 0;
