@@ -46,7 +46,7 @@
 
 
 /* Initiation and termination of the eNodeB agent */
-int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
+int flexran_agent_start(mid_t mod_id);
 int flexran_agent_stop(mid_t mod_id);
 
 /* 

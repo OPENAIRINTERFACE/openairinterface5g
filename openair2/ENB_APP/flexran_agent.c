@@ -187,9 +187,10 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
 }
 
 int channel_container_init = 0;
-int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
-  
+int flexran_agent_start(mid_t mod_id)
+{
   int channel_id;
+  Enb_properties_array_t *enb_properties = enb_config_get();
   
   flexran_set_enb_vars(mod_id, RAN_LTE_OAI);
   flexran_agent[mod_id].enb_id = mod_id;

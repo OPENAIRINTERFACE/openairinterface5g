@@ -1800,7 +1800,7 @@ int main( int argc, char **argv ) {
     pthread_cond_init(&cond_node_ctrl, NULL);
 
     for (i = 0; i < NB_eNB_INST; i++) {
-      flexran_agent_start(i, enb_config_get());
+      flexran_agent_start(i);
     }
 
     LOG_I(ENB_APP, " * Waiting for FlexRAN RTController command *\n");

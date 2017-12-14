@@ -44,16 +44,15 @@ void flexran_set_enb_vars(mid_t mod_id, ran_name_t ran){
 
   switch (ran){
   case RAN_LTE_OAI :
+    enb_properties = enb_config_get();
     if(eNB_mac_inst == NULL){
       enb[mod_id] = NULL;
       enb_ue[mod_id] = NULL;
       enb_rrc[mod_id] = NULL;
-      enb_properties = NULL;
     }else{
       enb[mod_id] =  (void *)&eNB_mac_inst[mod_id];
       enb_ue[mod_id] = (void *)&eNB_mac_inst[mod_id].UE_list;
       enb_rrc[mod_id] = (void *)&eNB_rrc_inst[mod_id];
-      enb_properties = (Enb_properties_array_t *) enb_config_get();
     }
     break;
   default :
