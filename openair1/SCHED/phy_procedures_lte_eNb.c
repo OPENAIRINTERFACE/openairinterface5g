@@ -1957,7 +1957,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
                           eNB->first_run_I0_measurements);
 
   int min_I0=1000,max_I0=0;
-  if ((frame==0) && (subframe==6)) { 
+  if ((frame==0) && (subframe==2)) { 
     for (int i=0;i<eNB->frame_parms.N_RB_UL;i++) {
       if (i==(eNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
  
