@@ -152,7 +152,7 @@ typedef enum {
 #define CONFIG_STRING_RU_MAX_RS_EPRE              "max_pdschReferenceSignalPower"
 #define CONFIG_STRING_RU_MAX_RXGAIN               "max_rxgain"
 #define CONFIG_STRING_RU_IF_COMPRESSION           "if_compression"
-
+#define CONFIG_STRING_RU_IS_SLAVE                 "is_slave"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -171,6 +171,7 @@ typedef enum {
 #define RU_ENB_LIST_IDX               14
 #define RU_ATT_TX_IDX                 15
 #define RU_ATT_RX_IDX                 16
+#define RU_IS_SLAVE_IDX               17
 
 
 
@@ -200,7 +201,8 @@ static int DEFENBS[] = {0};
 {CONFIG_STRING_RU_BAND_LIST,                	 NULL,       0,       uptr:NULL,       defintarrayval:DEFBANDS, TYPE_INTARRAY,    1}, \
 {CONFIG_STRING_RU_ENB_LIST,                 	 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
 {CONFIG_STRING_RU_ATT_TX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
-{CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}  \
+{CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
+{CONFIG_STRING_RU_IS_SLAVE,                      NULL,       0,       strptr:NULL,     defstrval:"yes",         TYPE_STRING,      0}, \
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/

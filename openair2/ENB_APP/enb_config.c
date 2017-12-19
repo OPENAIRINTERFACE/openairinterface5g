@@ -162,6 +162,12 @@ void RCconfig_RU(void) {
           RC.ru[j]->eth_params.my_portd                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
           RC.ru[j]->eth_params.remote_portd             = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
 
+          if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) {
+            RC.ru[j]->is_slave = 1;
+          }else {
+            RC.ru[j]->is_slave = 0;
+          }
+
 	  if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
 	    RC.ru[j]->if_south                        = LOCAL_RF;
 	    RC.ru[j]->function                        = NGFI_RRU_IF5;
