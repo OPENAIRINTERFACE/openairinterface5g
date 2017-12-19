@@ -1141,6 +1141,8 @@ void do_ru_synch(RU_t *ru) {
   }
   ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
   
+  LOG_I(PHY,"Entering synch routine\n");
+  
   while ((ru->in_synch ==0)&&(!oai_exit)) {
     // read in frame
     rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
@@ -1185,6 +1187,7 @@ void do_ru_synch(RU_t *ru) {
 
   ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
 
+  LOG_I(PHY,"Exiting synch routine\n");
 }
 
 
