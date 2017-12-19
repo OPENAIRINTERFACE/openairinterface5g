@@ -1693,7 +1693,7 @@ static void* ru_thread( void* param ) {
   // set default return value
   thread_top_init("ru_thread",0,870000,1000000,1000000);
 
-  LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
+  LOG_I(PHY,"Starting RU %d (%s,%s),slave:%d\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing], ru->is_slave);
 
 
 	
