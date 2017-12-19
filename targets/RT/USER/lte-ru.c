@@ -2200,6 +2200,7 @@ void init_RU(char *rf_config_file) {
     ru->idx          = ru_id;              
     ru->ts_offset    = 0;
     ru->is_slave     = (ru_id == 0) ? 0 : 1;
+    ru->in_synch     = (ru->is_slave == 1) ? 0 : 1;
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
 
