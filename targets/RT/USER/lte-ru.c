@@ -1722,7 +1722,7 @@ static void* ru_thread( void* param ) {
 	  else LOG_I(PHY,"RU %d no asynch_south interface\n",ru->idx);
 
 	  // if this is a slave RRU, try to synchronize on the DL frequency
-	  if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
+	  if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
 
 	  // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
