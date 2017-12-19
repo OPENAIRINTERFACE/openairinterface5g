@@ -1193,6 +1193,8 @@ void wakeup_eNBs(RU_t *ru) {
 
   int i;
   PHY_VARS_eNB **eNB_list = ru->eNB_list;
+  PHY_VARS_eNB *eNB=eNB_list[0];
+  eNB_proc_t *proc = &eNB->proc;
 
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d\n",ru->num_eNB,ru->idx);
 
@@ -1201,7 +1203,26 @@ void wakeup_eNBs(RU_t *ru) {
 
     char string[20];
     sprintf(string,"Incoming RU %d",ru->idx);
-    LOG_D(PHY,"RU %d Waking up eNB\n",ru->idx);
+    LOG_D(PHY,"Frame %d, Subframe %d: RU %d Waking up eNB,RU_mask %x\n",ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,proc->RU_mask);
+    
+    pthread_mutex_lock(&proc->mutex_RU);
+    for (i=0;i<eNB->num_RU;i++) {
+      if (ru == eNB->RU_list[i]) {
+        //AssertFatal(((proc->RU_mask&(1<<i)) == 0) ,
+        if ((proc->RU_mask&(1<<i)) > 0)            
+		LOG_E(PHY, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",eNB->Mod_id,ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
+        proc->RU_mask |= (1<<i);
+      }
+    }
+    if (proc->RU_mask != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
+      pthread_mutex_unlock(&proc->mutex_RU);
+      return(0);
+    }
+    else { // all RUs have provided their information so continue on and wakeup eNB processing
+      proc->RU_mask = 0;
+      pthread_mutex_unlock(&proc->mutex_RU);
+    }
+
     ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
   }
   else {
@@ -1463,7 +1484,7 @@ static void* ru_thread_control( void* param ) {
     	if ((len = ru->ifdevice.trx_ctlrecv_func(&ru->ifdevice,
 					     	&rru_config_msg,
 					     	msg_len))<0) {
-      		LOG_I(PHY,"Waiting msg for RU %d\n", ru->idx);     
+      		LOG_D(PHY,"Waiting msg for RU %d\n", ru->idx);     
     	}
 	else
 	{
@@ -1552,13 +1573,6 @@ static void* ru_thread_control( void* param ) {
 				if (ru->if_south == LOCAL_RF){
 					LOG_I(PHY,"Received RRU_config_ok msg...Ignoring\n");
 				}else{
-					// send start
-					rru_config_msg.type = RRU_start; 
-				  	rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
-
-				  	LOG_I(PHY,"Sending Start to RRU\n", ru->idx);
-				  	AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RU %d\n",ru->idx);
-
 
 					if (setup_RU_buffers(ru)!=0) {
 						printf("Exiting, cannot initialize RU Buffers\n");
@@ -1575,6 +1589,13 @@ static void* ru_thread_control( void* param ) {
 					  pthread_mutex_unlock(&RC.ru_mutex);
 					  
 					  wait_sync("ru_thread");
+
+					// send start
+                                        rru_config_msg.type = RRU_start;
+                                        rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
+ 
+                                        LOG_I(PHY,"Sending Start to RRU\n", ru->idx);
+                                        AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1)     ,"Failed to send msg to RU %d\n",ru->idx);
 
 					  // TODO: Start ru_thread
 					proc->instance_cnt_ru = 1;
@@ -1717,8 +1738,8 @@ static void* ru_thread( void* param ) {
 	      subframe++;
 	    }      
 
-	    LOG_D(PHY,"RU thread (proc %p), frame %d (%p), subframe %d (%p)\n",
-		  proc, frame,&frame,subframe,&subframe);
+	    LOG_D(PHY,"RU thread %d, frame %d (%p), subframe %d (%p)\n",
+		  ru->idx, frame,&frame,subframe,&subframe);
 
 
 	    // synchronization on input FH interface, acquire signals/data and block
@@ -1726,8 +1747,8 @@ static void* ru_thread( void* param ) {
 	    else AssertFatal(1==0, "No fronthaul interface at south port");
 
 
-	    LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
-		  ru->do_prach,
+	    LOG_D(PHY,"RU thread %d (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
+		  ru->idx,ru->do_prach,
 		  is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
 		  proc->frame_rx,proc->subframe_rx);
 	 
