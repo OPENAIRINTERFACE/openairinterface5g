@@ -1210,6 +1210,10 @@ void wakeup_eNBs(RU_t *ru) {
     
     pthread_mutex_lock(&proc->mutex_RU);
     for (i=0;i<eNB->num_RU;i++) {
+      if (ru->state == RU_SYNC){
+	proc->RU_mask |= (1<<i);
+	break;
+      }
       if (ru == eNB->RU_list[i]) {
         //AssertFatal(((proc->RU_mask&(1<<i)) == 0) ,
         if ((proc->RU_mask&(1<<i)) > 0)            
@@ -1582,25 +1586,26 @@ static void* ru_thread_control( void* param ) {
 						exit(-1);
 					}
 
-					ru->state = RU_RUN;
+					// Set state to RUN for Master RU, Others on SYNC
+					ru->state = (ru->is_slave == 1) ? RU_SYNC : RU_RUN ;
 					
 
-  					  LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
-					  pthread_mutex_lock(&RC.ru_mutex);
-					  RC.ru_mask &= ~(1<<ru->idx);
-					  pthread_cond_signal(&RC.ru_cond);
-					  pthread_mutex_unlock(&RC.ru_mutex);
+  					LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
+					pthread_mutex_lock(&RC.ru_mutex);
+					RC.ru_mask &= ~(1<<ru->idx);
+					pthread_cond_signal(&RC.ru_cond);
+					pthread_mutex_unlock(&RC.ru_mutex);
 					  
-					  wait_sync("ru_thread");
+					wait_sync("ru_thread");
 
 					// send start
                                         rru_config_msg.type = RRU_start;
                                         rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
  
                                         LOG_I(PHY,"Sending Start to RRU\n", ru->idx);
-                                        AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1)     ,"Failed to send msg to RU %d\n",ru->idx);
+                                        AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RU %d\n",ru->idx);
 
-					  // TODO: Start ru_thread
+					
 					proc->instance_cnt_ru = 1;
 					if (pthread_cond_signal(&proc->cond_ru_thread) != 0) {
 						LOG_E( PHY, "ERROR pthread_cond_signal for RU %d\n",ru->idx);
@@ -1617,14 +1622,15 @@ static void* ru_thread_control( void* param ) {
 					if (ru->state == RU_READY){
 
 						LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
-						  pthread_mutex_lock(&RC.ru_mutex);
-						  RC.ru_mask &= ~(1<<ru->idx);
-						  pthread_cond_signal(&RC.ru_cond);
-						  pthread_mutex_unlock(&RC.ru_mutex);
+						pthread_mutex_lock(&RC.ru_mutex);
+						RC.ru_mask &= ~(1<<ru->idx);
+						pthread_cond_signal(&RC.ru_cond);
+						pthread_mutex_unlock(&RC.ru_mutex);
 						  
-						  wait_sync("ru_thread");
-						  // TODO: Start ru_thread
-						ru->state = RU_RUN;	
+						wait_sync("ru_thread");
+						
+						ru->state = (ru->is_slave == 1) ? RU_SYNC : RU_RUN ;
+	
 						proc->instance_cnt_ru = 1;
 						if (pthread_cond_signal(&proc->cond_ru_thread) != 0) {
 							LOG_E( PHY, "ERROR pthread_cond_signal for RU %d\n",ru->idx);
@@ -1866,7 +1872,8 @@ void *ru_thread_synch(void *arg) {
 	exit(-1);
 	}
 	*/
-	ru->in_synch=1;
+	ru->in_synch = 1;
+	ru->state    = RU_SYNC;
       } // symc_pos > 0
       else {
         write_output("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
