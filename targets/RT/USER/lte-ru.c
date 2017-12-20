@@ -1230,6 +1230,7 @@ void wakeup_eNBs(RU_t *ru) {
       pthread_mutex_unlock(&proc->mutex_RU);
     }
 
+    LOG_I(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
     ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
   }
   else {
