@@ -1874,7 +1874,7 @@ void *ru_thread_synch(void *arg) {
 	}
 	*/
 	ru->in_synch = 1;
-	ru->state    = RU_SYNC;
+	ru->state    = RU_RUN;
       } // symc_pos > 0
       else {
         write_output("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
