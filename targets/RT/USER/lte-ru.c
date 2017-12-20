@@ -1210,15 +1210,17 @@ void wakeup_eNBs(RU_t *ru) {
     
     pthread_mutex_lock(&proc->mutex_RU);
     for (i=0;i<eNB->num_RU;i++) {
-      if (ru->state == RU_SYNC){
-	proc->RU_mask |= (1<<i);
-	break;
-      }
+     // if (ru->state == RU_SYNC){
+	//proc->RU_mask |= (1<<i);
+	//break;
+      //}
       if (ru == eNB->RU_list[i]) {
         //AssertFatal(((proc->RU_mask&(1<<i)) == 0) ,
         if ((proc->RU_mask&(1<<i)) > 0)            
 		LOG_E(PHY, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",eNB->Mod_id,ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
         proc->RU_mask |= (1<<i);
+      }else if (eNB->RU_list[i]->state == RU_SYNC){
+      	proc->RU_mask |= (1<<i);
       }
     }
     if (proc->RU_mask != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
@@ -1729,7 +1731,7 @@ static void* ru_thread( void* param ) {
 	    pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
 	    pthread_cond_signal(&proc->cond_asynch_rxtx);
 	  }
-	  else LOG_I(PHY,"RU %d no asynch_south interface\n",ru->idx);
+	  else LOG_D(PHY,"RU %d no asynch_south interface\n",ru->idx);
 
 	  // if this is a slave RRU, try to synchronize on the DL frequency
 	  if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
