@@ -1199,7 +1199,7 @@ void wakeup_eNBs(RU_t *ru) {
   PHY_VARS_eNB *eNB=eNB_list[0];
   eNB_proc_t *proc = &eNB->proc;
 
-  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d\n",ru->num_eNB,ru->idx);
+  LOG_I(PHY,"wakeup_eNBs (num %d) for RU %d\n",ru->num_eNB,ru->idx);
 
   if (ru->num_eNB==1) {
     // call eNB function directly
