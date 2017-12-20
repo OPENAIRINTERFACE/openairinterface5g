@@ -356,20 +356,12 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   int length =   LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti>>1;
 
   //LOG_D(PHY,"[SYNC TIME] Calling sync_time.\n");
-  if (sync_corr_ue0 == NULL) {
-    LOG_E(PHY,"[SYNC TIME] sync_corr_ue0 not yet allocated! Exiting.\n");
-    return(-1);
-  }
-
-  if (sync_corr_ue1 == NULL) {
-    LOG_E(PHY,"[SYNC TIME] sync_corr_ue1 not yet allocated! Exiting.\n");
-    return(-1);
-  }
-
-  if (sync_corr_ue2 == NULL) {
-    LOG_E(PHY,"[SYNC TIME] sync_corr_ue2 not yet allocated! Exiting.\n");
-    return(-1);
-  }
+  AssertFatal(sync_corr_ue0 != NULL,
+             "sync_corr_ue0 not yet allocated! Exiting.\n");
+  AssertFatal(sync_corr_ue1 != NULL,
+             "sync_corr_ue0 not yet allocated! Exiting.\n");
+  AssertFatal(sync_corr_ue2 != NULL,
+             "sync_corr_ue0 not yet allocated! Exiting.\n");
 
   peak_val = 0;
   peak_pos = 0;
