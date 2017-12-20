@@ -670,11 +670,12 @@ typedef enum {
 } RU_if_south_t;
 
 typedef enum {
-  RU_IDLE=0,
-  RU_CONFIG=1,
-  RU_READY=2,
-  RU_RUN=3,
-  RU_ERROR=4
+  RU_IDLE   = 0,
+  RU_CONFIG = 1,
+  RU_READY  = 2,
+  RU_RUN    = 3,
+  RU_ERROR  = 4,
+  RU_SYNC   = 5
 } rru_state_t;
 
 typedef struct RU_t_s{
