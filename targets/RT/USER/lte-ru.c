@@ -1818,8 +1818,8 @@ void *ru_thread_synch(void *arg) {
   int32_t sync_pos,sync_pos2;
   uint32_t peak_val;
   uint32_t sync_corr[307200] __attribute__((aligned(32)));
-  static int ru_thread_synch_status;
-
+  static int ru_thread_synch_status=0;
+  int cnt=0;
 
   thread_top_init("ru_thread_synch",0,5000000,10000000,10000000);
 
@@ -1843,8 +1843,8 @@ void *ru_thread_synch(void *arg) {
 				   fp->samples_per_tti*5,
 				   &peak_val,
 				   sync_corr);
-      LOG_I(PHY,"RU synch: %d, val %d\n",sync_pos,peak_val);
-
+      LOG_I(PHY,"RU synch cnt %d: %d, val %d\n",cnt,sync_pos,peak_val);
+      cnt++;
       if (sync_pos >= 0) {
 	if (sync_pos >= fp->nb_prefix_samples)
 	  sync_pos2 = sync_pos - fp->nb_prefix_samples;
@@ -1879,9 +1879,11 @@ void *ru_thread_synch(void *arg) {
 	ru->state    = RU_RUN;
       } // symc_pos > 0
       else {
-        write_output("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
-        write_output("ru_rx.m","rxs",(void*)ru->common.rxdata[0],fp->samples_per_tti*10,1,1);
-        exit(1); 
+	if (cnt>9) {
+           write_output("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
+           write_output("ru_rx.m","rxs",(void*)ru->common.rxdata[0],fp->samples_per_tti*10,1,1);
+          exit(1);
+        } 
      }
     } // ru->in_synch==0
 
