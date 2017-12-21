@@ -2868,13 +2868,13 @@ rrc_eNB_process_MeasurementReport(
      return;
 
    if (measResults2->measResultNeighCells->choice.measResultListEUTRA.list.count > 0) {
-     neighboring_cells=measResults2->measResultNeighCells->choice.measResultListEUTRA.list.count;
+     neighboring_cells = measResults2->measResultNeighCells->choice.measResultListEUTRA.list.count;
      
      if (ue_context_pP->ue_context.measResults->measResultNeighCells == NULL) {
        
        ue_context_pP->ue_context.measResults->measResultNeighCells = CALLOC(1, sizeof(*measResults2->measResultNeighCells)*neighboring_cells);
      }
-     ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.count=neighboring_cells;
+     ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.count = neighboring_cells;
      for (i=0; i < neighboring_cells; i++){
        memcpy (ue_context_pP->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[i],
 	       measResults2->measResultNeighCells->choice.measResultListEUTRA.list.array[i],

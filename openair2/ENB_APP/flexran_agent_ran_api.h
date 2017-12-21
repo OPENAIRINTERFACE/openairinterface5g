@@ -346,10 +346,10 @@ int flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP);
 uint32_t flexran_get_pdcp_sfn(const mid_t mod_id);
 
 /*PDCP pdcp tx stats window*/
-uint32_t flexran_set_pdcp_tx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window);
+void flexran_set_pdcp_tx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window);
 
 /*PDCP pdcp rx stats window*/
-uint32_t flexran_set_pdcp_rx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window);
+void flexran_set_pdcp_rx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window);
 
 /*PDCP num tx pdu status flexRAN*/
 uint32_t flexran_get_pdcp_tx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
@@ -406,3 +406,21 @@ int flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id);
 
 /*Get primary cell RSRQ measurement flexRAN*/
 int flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id);
+
+/* Get RRC neighbouring measurement */
+int flexran_get_rrc_num_ncell(mid_t mod_id, mid_t ue_id);
+
+/*Get physical cell id*/
+int flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int cell_id);
+
+/*Get RSRP of neighbouring Cell*/
+int flexran_get_rrc_neigh_rsrp(mid_t mod_id, mid_t ue_id, int cell_id);
+
+/*Get RSRQ of neighbouring Cell*/
+int flexran_get_rrc_neigh_rsrq(mid_t mod_id, mid_t ue_id, int cell_id);
+
+/*Get MCC PLMN identity neighbouring Cell*/
+int flexran_get_rrc_neigh_plmn_mcc(mid_t mod_id, mid_t ue_id, int cell_id);
+
+/*Get MNC PLMN identity neighbouring Cell*/
+int flexran_get_rrc_neigh_plmn_mnc(mid_t mod_id, mid_t ue_id, int cell_id);

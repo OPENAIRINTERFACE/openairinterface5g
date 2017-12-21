@@ -1135,19 +1135,23 @@ uint32_t flexran_get_pdcp_sfn(const mid_t mod_id){
 }
 
 /*PDCP super frame counter flexRAN*/
-uint32_t flexran_set_pdcp_tx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window){
-  if (obs_window > 0 )
+void flexran_set_pdcp_tx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window){
+  if (obs_window > 0 ){
     Pdcp_stats_tx_window_ms[mod_id][ue_id]=obs_window;
-  else
+  }
+  else{
     Pdcp_stats_tx_window_ms[mod_id][ue_id]=1000;
+  }
 }
 
 /*PDCP super frame counter flexRAN*/
-uint32_t flexran_set_pdcp_rx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window){
-  if (obs_window > 0 )
+void flexran_set_pdcp_rx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window){
+  if (obs_window > 0 ){
     Pdcp_stats_rx_window_ms[mod_id][ue_id]=obs_window;
-  else
+  }
+  else{
     Pdcp_stats_rx_window_ms[mod_id][ue_id]=1000;
+  }
 }
 
 /*PDCP num tx pdu status flexRAN*/
@@ -1256,7 +1260,7 @@ int flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id) {
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
     if(ue_context_p->ue_context.measResults != NULL) {
-      return ue_context_p->ue_context.measResults->measResultPCell.rsrpResult;
+      return RSRP_meas_mapping[ue_context_p->ue_context.measResults->measResultPCell.rsrpResult];
     } else {
       return -1;
     }
@@ -1273,7 +1277,7 @@ int flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id) {
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
     if(ue_context_p->ue_context.measResults != NULL) {
-      return ue_context_p->ue_context.measResults->measResultPCell.rsrqResult;
+      return RSRQ_meas_mapping[ue_context_p->ue_context.measResults->measResultPCell.rsrqResult];
     } else {
       return -1;
     }
@@ -1281,8 +1285,48 @@ int flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id) {
     return -1;
   }
 }
-/*
-void* flexran_get_rrc_ncell_measresult_eutra(mid_t mod_id, mid_t ue_id) {
+
+/*Number of neighbouring cells for specific UE*/
+int flexran_get_rrc_num_ncell(mid_t mod_id, mid_t ue_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return 0;
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+
+    if (ue_context_p->ue_context.measResults != NULL){
+
+      if(ue_context_p->ue_context.measResults->measResultNeighCells != NULL) {
+
+       if (ue_context_p->ue_context.measResults->measResultNeighCells->present == MeasResults__measResultNeighCells_PR_measResultListEUTRA) {
+
+        return ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.count;
+       }
+       else{
+
+        return 0;
+       }
+
+      } else {
+
+        return 0;
+      }
+
+    } else {
+
+      return 0;
+
+    }
+      
+  } else {
+    return 0;
+  }
+    
+}
+
+int flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int cell_id) {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
 
@@ -1290,8 +1334,17 @@ void* flexran_get_rrc_ncell_measresult_eutra(mid_t mod_id, mid_t ue_id) {
   
   ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
   if(ue_context_p != NULL) {
-    if(ue_context_p->ue_context.measResults != NULL) {
-      return &ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA;
+    if(ue_context_p->ue_context.measResults->measResultNeighCells != NULL) {
+
+      if (ue_context_p->ue_context.measResults->measResultNeighCells->present == MeasResults__measResultNeighCells_PR_measResultListEUTRA) {
+
+      return ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->physCellId; 
+
+      }
+      else {
+
+        return -1;
+      }      
     } else {
       return -1;
     }
@@ -1299,4 +1352,74 @@ void* flexran_get_rrc_ncell_measresult_eutra(mid_t mod_id, mid_t ue_id) {
     return -1;
   }
 }
-*/
+
+int flexran_get_rrc_neigh_rsrp(mid_t mod_id, mid_t ue_id, int cell_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+
+    if(ue_context_p->ue_context.measResults->measResultNeighCells != NULL) {
+
+      if (ue_context_p->ue_context.measResults->measResultNeighCells->present == MeasResults__measResultNeighCells_PR_measResultListEUTRA) {
+
+          if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrpResult){
+              return RSRP_meas_mapping[*(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrpResult)]; 
+
+          }
+          else {
+
+              return 0;
+          }
+
+    }
+      else {
+
+          return -1;
+      }
+
+    } 
+    else {
+      return -1;
+    }
+  
+  }
+   else {
+    return -1;
+  }
+}
+
+int flexran_get_rrc_neigh_rsrq(mid_t mod_id, mid_t ue_id, int cell_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = flexran_get_ue_crnti(mod_id,ue_id);
+
+  if (eNB_rrc_inst_not_ready()) return -1;
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.measResults->measResultNeighCells != NULL) {
+      if (ue_context_p->ue_context.measResults->measResultNeighCells->present == MeasResults__measResultNeighCells_PR_measResultListEUTRA) {
+
+         if (ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrqResult){
+           return RSRQ_meas_mapping[*(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrqResult)]; 
+
+         } 
+         else {
+
+           return 0;
+         }
+      }
+      else {
+
+        return -1;
+      }
+    } else {
+      return -1;
+    }
+  } else {
+    return -1;
+  }
+}
