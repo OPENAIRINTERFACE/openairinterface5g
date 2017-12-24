@@ -1112,7 +1112,7 @@ pdcp_run (
 }
 
 void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP){
-  int i, ue_flag=1, ret=-1;; 
+  int i, ue_flag=1; //, ret=-1; to be decied later
   for (i=0; i < NUMBER_OF_UE_MAX; i++){
     if (pdcp_enb[ctxt_pP->module_id].rnti[i] == ctxt_pP->rnti) {
       ue_flag=-1;
@@ -1126,7 +1126,7 @@ void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP){
 	pdcp_enb[ctxt_pP->module_id].uid[i]=i;
 	pdcp_enb[ctxt_pP->module_id].num_ues++;
 	printf("add new uid is %d %x\n\n", i, ctxt_pP->rnti);
-	ret=1;
+	// ret=1;
 	break;
       }
     }

@@ -736,7 +736,7 @@ flexran_schedule_ue_dl_spec_default(mid_t   mod_id,
   }
   for (i = 0; i < n_active_slices; i++) {
     if (slice_percentage[i] < 0 ){
-      LOG_W(MAC, "[eNB %d] frame %d subframe %d:invalid slice %d percentage %d. resetting to zero",
+      LOG_W(MAC, "[eNB %d] frame %d subframe %d:invalid slice %d percentage %f. resetting to zero",
 	    mod_id, frame, subframe, i, slice_percentage[i]);
       slice_percentage[i]=0;
     }
