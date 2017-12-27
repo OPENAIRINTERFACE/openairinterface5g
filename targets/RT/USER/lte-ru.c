@@ -667,6 +667,20 @@ void fh_if4p5_north_out(RU_t *ru) {
   stop_meas(&ru->tx_fhaul);
 
 }
+
+/* add fail safe for late command */
+typedef enum {
+	STATE_BURST_NORMAL = 0,
+	STATE_BURST_TERMINATE = 1,
+	STATE_BURST_STOP_1 = 2,
+	STATE_BURST_STOP_2 = 3,
+	STATE_BURST_RESTART = 4,
+} late_control_e;
+
+volatile late_control_e late_control=STATE_BURST_NORMAL;
+
+/* add fail safe for late command end */
+
 void rx_rf(RU_t *ru,int *frame,int *subframe) {
 
   RU_proc_t *proc = &ru->proc;
@@ -693,8 +707,12 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
  
   proc->timestamp_rx = ts-ru->ts_offset;
 
-  AssertFatal(rxs == fp->samples_per_tti,
-	      "rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
+//  AssertFatal(rxs == fp->samples_per_tti,
+//	      "rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
+  if(rxs != fp->samples_per_tti){
+    LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
+    late_control=STATE_BURST_TERMINATE;
+  }
 
   if (proc->first_rx == 1) {
     ru->ts_offset = proc->timestamp_rx;
@@ -750,8 +768,8 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   
-  if (rxs != fp->samples_per_tti)
-    exit_fun( "problem receiving samples" );
+//  if (rxs != fp->samples_per_tti)
+//    exit_fun( "problem receiving samples" );
   
 
   
@@ -802,7 +820,33 @@ void tx_rf(RU_t *ru) {
 
     for (i=0; i<ru->nb_tx; i++)
       txp[i] = (void*)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_tti)-sf_extension];
-
+    /* add fail safe for late command */
+    if(late_control!=STATE_BURST_NORMAL){//stop burst
+      switch (late_control) {
+      case STATE_BURST_TERMINATE:
+        flags=10; // end of burst and no time spec
+        late_control=STATE_BURST_STOP_1;
+        break;
+      
+      case STATE_BURST_STOP_1:
+        flags=0; // no send
+        late_control=STATE_BURST_STOP_2;
+        return;//no send
+       break;
+      
+      case STATE_BURST_STOP_2:
+        flags=0; // no send
+        late_control=STATE_BURST_RESTART;
+        return;//no send
+        break;
+      
+      case STATE_BURST_RESTART:
+        flags=2; // start burst
+        late_control=STATE_BURST_NORMAL;
+        break;
+      }
+    }
+    /* add fail safe for late command end */
     
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
@@ -820,8 +864,11 @@ void tx_rf(RU_t *ru) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     
     
-    AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %d/%d)\n",txs, siglen);
-
+//    AssertFatal(txs ==  siglen+sf_extension,"TX : Timeout (sent %d/%d)\n",txs, siglen);
+    if( (txs !=  siglen+sf_extension) && (late_control==STATE_BURST_NORMAL) ){ /* add fail safe for late command */
+      late_control=STATE_BURST_TERMINATE;
+      LOG_E(PHY,"TX : Timeout (sent %d/%d) state =%d\n",txs, siglen,late_control);
+    }
   }
 }
 

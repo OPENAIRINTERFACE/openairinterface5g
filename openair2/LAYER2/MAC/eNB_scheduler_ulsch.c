@@ -933,10 +933,12 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
   int CC_id;
   eNB_MAC_INST *mac = RC.mac[module_idP];
   COMMON_channels_t *cc;
+  int sched_frame=frameP;
 
   start_meas(&mac->schedule_ulsch);
 
   int sched_subframe = (subframeP+4)%10;
+  if (sched_subframe < subframeP) sched_frame++;
 
   cc = &mac->common_channels[0];
   int tdd_sfa;
@@ -1051,7 +1053,7 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
     }
 
     //PRACH
-    if (is_prach_subframe(frame_parms,frameP,subframeP)==1) {
+    if (is_prach_subframe(frame_parms,sched_frame,sched_subframe)==1) {
       ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].ue_priority = SCH_UL_PRACH;
       ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].start_rb = get_prach_prb_offset(
     		                                                                 frame_parms,

@@ -507,6 +507,13 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 		TX_req->segments[0].segment_data =
 		    cc[CC_idP].RAR_pdu.payload;
 		mac->TX_req[CC_idP].tx_request_body.number_of_pdus++;
+#ifdef UE_EXPANSION
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG2;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = 4;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = -1;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = ra->rnti;
+        dlsch_ue_select[CC_idP].ue_num++;
+#endif
 	    }
 	}
 
@@ -634,6 +641,13 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 		TX_req->segments[0].segment_data =
 		    cc[CC_idP].RAR_pdu.payload;
 		mac->TX_req[CC_idP].tx_request_body.number_of_pdus++;
+#ifdef UE_EXPANSION
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG2;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = 4;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = -1;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = ra->rnti;
+        dlsch_ue_select[CC_idP].ue_num++;
+#endif
 	    }			// PDCCH CCE allocation is feasible
 	}			// Msg2 frame/subframe condition
     }				// else BL/CE
@@ -1092,6 +1106,13 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 							      UE_id),
 			  rrc_sdu_length);
 		}
+#ifdef UE_EXPANSION
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG4;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = 4;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = UE_id;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = ra->rnti;
+        dlsch_ue_select[CC_idP].ue_num++;
+#endif
 	    }			// Msg4 frame/subframe
 	}			// msg4_mpdcch_repetition_count
     }				// rach_resource_type > 0 
@@ -1293,7 +1314,13 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 							      UE_id),
 			  rrc_sdu_length);
 		}
-
+#ifdef UE_EXPANSION
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG4;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = 4;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = UE_id;
+        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = ra->rnti;
+        dlsch_ue_select[CC_idP].ue_num++;
+#endif
 	    }			// CCE Allocation feasible
 	}			// msg4 frame/subframe
     }				// else rach_resource_type
@@ -1431,6 +1458,13 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 					    (cc->p_eNB == 1) ? 1 : 2,	// transmission mode
 					    1,	// num_bf_prb_per_subband
 					    1);	// num_bf_vector
+#ifdef UE_EXPANSION
+          dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG4;
+          dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = 4;
+          dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = UE_id;
+          dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = ra->rnti;
+          dlsch_ue_select[CC_idP].ue_num++;
+#endif
 		} else
 		    LOG_D(MAC,
 			  "msg4 retransmission for rnti %x (round %d) fsf %d/%d CCE allocation failed!\n",

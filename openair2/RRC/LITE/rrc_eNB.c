@@ -571,6 +571,7 @@ rrc_eNB_get_next_free_ue_context(
 					ctxt_pP->rnti);
 
   if (ue_context_p == NULL) {
+#ifndef UE_EXPANSION
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
       if (ue_context_p->ue_context.random_ue_identity == ue_identityP) {
         LOG_D(RRC,
@@ -581,6 +582,7 @@ rrc_eNB_get_next_free_ue_context(
         return NULL;
       }
     }
+#endif
     ue_context_p = rrc_eNB_allocate_new_UE_context(RC.rrc[ctxt_pP->module_id]);
 
     if (ue_context_p == NULL) {
@@ -778,7 +780,11 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
   (void)ue_module_id;
 #endif
   rnti_t rnti = ue_context_pP->ue_context.rnti;
-
+  int i, j , CC_id, pdu_number;
+  LTE_eNB_ULSCH_t *ulsch = NULL;
+  nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
+  PHY_VARS_eNB *eNB_PHY = NULL;
+  eNB_MAC_INST *eNB_MAC = RC.mac[enb_mod_idP];
 
   AssertFatal(enb_mod_idP < NB_eNB_INST, "eNB inst invalid (%d/%d) for UE %x!", enb_mod_idP, NB_eNB_INST, rnti);
   /*  ue_context_p = rrc_eNB_get_ue_context(
@@ -807,7 +813,33 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
     oai_emulation.info.eNB_ue_module_id_to_rnti[enb_mod_idP][ue_module_id] = NOT_A_RNTI;
 #endif
 #endif
+    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+      eNB_PHY = RC.eNB[enb_mod_idP][CC_id];
+      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+        ulsch = eNB_PHY->ulsch[i];
+        if((ulsch != NULL) && (ulsch->rnti == rnti)){
+          LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
+          clean_eNb_ulsch(ulsch);
+          break;
+        }
+      }
 
+      for(j = 0; j < 10; j++){
+        ul_req_tmp = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
+        if(ul_req_tmp){
+          pdu_number = ul_req_tmp->number_of_pdus;
+          for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
+            if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti){
+              LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
+              if(pdu_index < pdu_number -1){
+                memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+              }
+              ul_req_tmp->number_of_pdus--;
+            }
+          }
+        }
+      }
+    }
     rrc_mac_remove_ue(enb_mod_idP,rnti);
     rrc_rlc_remove_ue(&ctxt);
     pdcp_remove_UE(&ctxt);
@@ -1085,10 +1117,20 @@ rrc_eNB_generate_RRCConnectionRelease(
   memset(buffer, 0, RRC_BUF_SIZE);
 
   size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
+#ifdef UE_EXPANSION
+  // set release timer
+  ue_context_pP->ue_context.ue_release_timer_rrc = 1;
+  // remove UE after 10 frames after RRCConnectionRelease is triggered
+  ue_context_pP->ue_context.ue_release_timer_thres_rrc = 100;
+  ue_context_pP->ue_context.ue_reestablishment_timer = 0;
+  ue_context_pP->ue_context.ue_release_timer = 0;
+  ue_context_pP->ue_context.ue_release_timer_s1 = 0;
+#else
   // set release timer
   ue_context_pP->ue_context.ue_release_timer=1;
   // remove UE after 10 frames after RRCConnectionRelease is triggered
   ue_context_pP->ue_context.ue_release_timer_thres=100;
+#endif
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -3805,10 +3847,17 @@ rrc_eNB_generate_RRCConnectionSetup(
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
 
+#ifdef UE_EXPANSION
+   // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
+   ue_context_pP->ue_context.ue_release_timer=1;
+   // remove UE after 10 frames after RRCConnectionRelease is triggered
+   ue_context_pP->ue_context.ue_release_timer_thres=1000;
+#else
   // activate release timer, if RRCSetupComplete not received after 10 frames, remove UE
   ue_context_pP->ue_context.ue_release_timer=1;
   // remove UE after 10 frames after RRCConnectionRelease is triggered
   ue_context_pP->ue_context.ue_release_timer_thres=100;
+#endif
 }
 
 
@@ -4156,6 +4205,7 @@ rrc_eNB_decode_ccch(
             /* if there is already a registered UE (with another RNTI) with this random_value,
              * the current one must be removed from MAC/PHY (zombie UE)
              */
+#ifndef UE_EXPANSION
             if ((ue_context_p = rrc_eNB_ue_context_random_exist(ctxt_pP, random_value))) {
               LOG_W(RRC, "new UE rnti %x (coming with random value) is already there as UE %x, removing %x from MAC/PHY\n",
                     ctxt_pP->rnti, ue_context_p->ue_context.rnti, ctxt_pP->rnti);
@@ -4165,6 +4215,14 @@ rrc_eNB_decode_ccch(
             } else {
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
             }
+#else
+            if ((ue_context_p = rrc_eNB_ue_context_random_exist(ctxt_pP, random_value))) {
+              LOG_W(RRC, "new UE rnti %x (coming with random value) is already there as UE %x, removing %x from MAC/PHY\n",
+                    ctxt_pP->rnti, ue_context_p->ue_context.rnti, ue_context_p->ue_context.rnti);
+              ue_context_p->ue_context.ul_failure_timer = 20000;
+            }
+            ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
+#endif
           } else if (InitialUE_Identity_PR_s_TMSI == rrcConnectionRequest->ue_Identity.present) {
             /* Save s-TMSI */
             S_TMSI_t   s_TMSI = rrcConnectionRequest->ue_Identity.choice.s_TMSI;
@@ -4185,6 +4243,11 @@ rrc_eNB_decode_ccch(
               /* reset timers */
               ue_context_p->ue_context.ul_failure_timer = 0;
               ue_context_p->ue_context.ue_release_timer = 0;
+#ifdef UE_EXPANSION
+              ue_context_p->ue_context.ue_reestablishment_timer = 0;
+              ue_context_p->ue_context.ue_release_timer_s1 = 0;
+              ue_context_p->ue_context.ue_release_timer_rrc = 0;
+#endif
             } else {
 	      LOG_I(RRC," S-TMSI doesn't exist, setting Initialue_identity_s_TMSI.m_tmsi to %p => %x\n",ue_context_p,m_tmsi);
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);
@@ -4451,6 +4514,11 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_measurementReport:
+      // to avoid segmentation fault
+      if(!ue_context_p){
+        LOG_I(RRC, "Processing measurementReport UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+        break;
+      }
       LOG_D(RRC,
             PROTOCOL_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND "
             "%d bytes (measurementReport) ---> RRC_eNB\n",
@@ -4465,6 +4533,11 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
+      // to avoid segmentation fault
+      if(!ue_context_p){
+        LOG_I(RRC, "Processing RRCConnectionReconfigurationComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+        break;
+      }
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Connection Reconfiguration Complete\n");
 
@@ -4573,9 +4646,19 @@ rrc_eNB_decode_dcch(
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             DCCH,
             sdu_sizeP);
+#ifdef UE_EXPANSION
+        ue_context_p->ue_context.ue_reestablishment_timer = 0;
+#else
+         ue_context_p->ue_context.ue_release_timer = 0;
+#endif
       break;
 
     case UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
+      // to avoid segmentation fault
+      if(!ue_context_p){
+        LOG_I(RRC, "Processing RRCConnectionSetupComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+        break;
+      }
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Connection SetupComplete\n");
 
@@ -4633,7 +4716,11 @@ rrc_eNB_decode_dcch(
     case UL_DCCH_MessageType__c1_PR_securityModeComplete:
       T(T_ENB_RRC_SECURITY_MODE_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-
+      // to avoid segmentation fault
+      if(!ue_context_p){
+        LOG_I(RRC, "Processing securityModeComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+        break;
+      }
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Security Mode Complete\n");
 
@@ -4718,7 +4805,11 @@ rrc_eNB_decode_dcch(
     case UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
       T(T_ENB_RRC_UE_CAPABILITY_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-
+      // to avoid segmentation fault
+      if(!ue_context_p){
+          LOG_I(RRC, "Processing ueCapabilityInformation UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+          break;
+      }
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC UECapablility Information \n");
 
@@ -4797,7 +4888,11 @@ rrc_eNB_decode_dcch(
     case UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
       T(T_ENB_RRC_UL_INFORMATION_TRANSFER, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-
+      // to avoid segmentation fault
+      if(!ue_context_p){
+          LOG_I(RRC, "Processing ulInformationTransfer UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+          break;
+      }
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC UL Information Transfer \n");
 
@@ -5044,6 +5139,12 @@ rrc_enb_task(
       /* Nothing to do. Apparently everything is done in S1AP processing */
       //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
       //instance, msg_name_p);
+#ifdef UE_EXPANSION
+    	if (rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)) {
+    	  rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc =
+    	  rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_thres_rrc;
+    	}
+#endif
       break;
 
 #   endif

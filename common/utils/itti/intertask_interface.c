@@ -63,6 +63,9 @@
 
 #include "signals.h"
 #include "timer.h"
+#ifdef UE_EXPANSION
+#include "log.h"
+#endif
 
 #ifdef RTAI
 # include <rtai.h>
@@ -455,7 +458,21 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
 
       /* Enqueue message in destination task queue */
       if (lfds611_queue_enqueue(itti_desc.tasks[destination_task_id].message_queue, new) == 0) {
+#ifdef UE_EXPANSION
+        LOG_I(UDP_, " Assertion Message %s(id:%d), number %lu with priority %d can not be sent from (%u:%s) to queue (%u:%s). discarding...\n",
+                      itti_desc.messages_info[message_id].name,
+                      message_id,
+                      message_number,
+                      priority,
+                      origin_task_id,
+                      itti_get_task_name(origin_task_id),
+                      destination_task_id,
+                      itti_get_task_name(destination_task_id));
+        int result = itti_free(origin_task_id, message);
+        AssertFatal( result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+#else
         AssertFatal(0, "Error: lfds611_queue_enqueue returns 0, queue is full, exiting\n");
+#endif
       }
 
 #if defined(OAI_EMU) || defined(RTAI)
@@ -625,7 +642,14 @@ static inline void itti_receive_msg_internal_event_fd(task_id_t task_id, uint8_t
 
       if (lfds611_queue_dequeue (itti_desc.tasks[task_id].message_queue, (void **) &message) == 0) {
         /* No element in list -> this should not happen */
+#ifdef UE_EXPANSION
+        LOG_I(UDP_, "Assertion No message in queue for task %d while there are %d events and some for the messages queue!\n", task_id, epoll_ret);
+        /* Mark that the event has been processed */
+        itti_desc.threads[thread_id].events[i].events &= ~EPOLLIN;
+        return;
+#else
         AssertFatal (0, "No message in queue for task %d while there are %d events and some for the messages queue!\n", task_id, epoll_ret);
+#endif
       }
 
       AssertFatal(message != NULL, "Message from message queue is NULL!\n");

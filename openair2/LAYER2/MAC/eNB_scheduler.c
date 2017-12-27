@@ -549,7 +549,7 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
 
 	UE_list->UE_sched_ctrl[UE_id].ul_failure_timer++;
 	// check threshold
-	if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 200) {
+	if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 20000) {
 	    // inform RRC of failure and clear timer
 	    LOG_I(MAC,
 		  "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",
@@ -724,7 +724,9 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     }
 
 #endif
-
+#ifdef UE_EXPANSION
+  memset(dlsch_ue_select, 0, sizeof(dlsch_ue_select));
+#endif
     // This schedules MIB
     if ((subframeP == 0) && (frameP & 3) == 0)
 	schedule_mib(module_idP, frameP, subframeP);

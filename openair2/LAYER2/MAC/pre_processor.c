@@ -117,13 +117,6 @@ store_dlsch_buffer(module_id_t Mod_id, frame_t frameP,
 	UE_template->dl_buffer_total = 0;
 	UE_template->dl_pdus_total = 0;
 
-	for (i = 0; i < MAX_NUM_LCID; i++) {
-	    UE_template->dl_buffer_info[i] = 0;
-	    UE_template->dl_pdus_in_buffer[i] = 0;
-	    UE_template->dl_buffer_head_sdu_creation_time[i] = 0;
-	    UE_template->dl_buffer_head_sdu_remaining_size_to_send[i] = 0;
-	}
-
 	rnti = UE_RNTI(Mod_id, UE_id);
 
 	for (i = 0; i < MAX_NUM_LCID; i++) {	// loop over all the logical channels
@@ -551,6 +544,18 @@ void sort_UEs(module_id_t Mod_idP, int frameP, sub_frame_t subframeP)
 }
 
 #ifdef UE_EXPANSION
+int cc_id_end(uint8_t *cc_id_flag )
+{
+  int end_flag = 1;
+  for (int CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+    if (cc_id_flag[CC_id]==0) {
+      end_flag = 0;
+      break;
+    }
+  }
+  return end_flag;
+}
+
 void dlsch_scheduler_pre_ue_select(
     module_id_t     module_idP,
     frame_t         frameP,
@@ -559,43 +564,31 @@ void dlsch_scheduler_pre_ue_select(
     uint16_t        nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs])
 {
-  uint8_t                        CC_id;
-  int                            UE_id;
-//  uint16_t                       nb_rb;
-  unsigned char                  round             = 0;
-  unsigned char                  harq_pid          = 0;
   eNB_MAC_INST                   *eNB      = RC.mac[module_idP];
   COMMON_channels_t              *cc       = eNB->common_channels;
   UE_list_t                      *UE_list  = &eNB->UE_list;
   UE_sched_ctrl                  *ue_sched_ctl;
+  uint8_t                        CC_id;
+  int                            UE_id;
+  unsigned char                  round             = 0;
+  unsigned char                  harq_pid          = 0;
   rnti_t                         rnti;
+  uint16_t                       i;
   unsigned char                  aggregation;
- // int                            i;
- // int                            N_RB_DL[MAX_NUM_CCs];
-  uint16_t                       used_dlsch_rbs_num[MAX_NUM_CCs] = {0};
-  uint16_t                       available_dlsch_rbs_num[MAX_NUM_CCs] = {0};
-  uint16_t                       dl_ue_max_num[MAX_NUM_CCs] = {0};
-  uint16_t                       dlsch_ue_max_num[MAX_NUM_CCs] = {0};
   int                            format_flag;
   nfapi_dl_config_request_body_t *DL_req;
   nfapi_dl_config_request_pdu_t  *dl_config_pdu;
+  uint16_t                       dlsch_ue_max_num[MAX_NUM_CCs] = {0};
   uint16_t                       saved_dlsch_dci[MAX_NUM_CCs] = {0};
-  int                            continue_flag = 0;
-  int                            old_last_dlsch_ue_id[MAX_NUM_CCs];
+  uint8_t                        end_flag[MAX_NUM_CCs] = {0};
+
   // Initialization
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    // get maximum UE number of DLSCH
-    dl_ue_max_num[CC_id] = NUMBER_OF_UE_MAX;
     dlsch_ue_max_num[CC_id] = (uint16_t)RC.rrc[module_idP]->configuration.ue_multiple_max[CC_id];
 
     // save origin DL PDU number
     DL_req          = &eNB->DL_req[CC_id].dl_config_request_body;
     saved_dlsch_dci[CC_id] = DL_req->number_pdu;
-    // set available_dlsch_rbs
-    available_dlsch_rbs_num[CC_id] = eNB->eNB_stats[CC_id].available_prbs;
-
-    // get last DLSCH ue_id
-    old_last_dlsch_ue_id[CC_id] = last_dlsch_ue_id[CC_id];
   }
 
   // Insert DLSCH(retransmission) UE into selected UE list
@@ -605,7 +598,7 @@ void dlsch_scheduler_pre_ue_select(
     }
 
     DL_req          = &eNB->DL_req[CC_id].dl_config_request_body;
-    for (UE_id = 0; UE_id < dl_ue_max_num[CC_id]  /*NUMBER_OF_UE_MAX*/; UE_id++) {
+    for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
       if (UE_list->active[UE_id] == FALSE) {
         continue;
       }
@@ -620,15 +613,14 @@ void dlsch_scheduler_pre_ue_select(
         continue;
       }
 
-      if (nb_rbs_required[CC_id][UE_id] == 0) {
-        continue;
-      }
-
       if (cc[CC_id].tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
       else harq_pid = ((frameP*10)+subframeP)&7;
 
       round = ue_sched_ctl->round[CC_id][harq_pid];
       if (round != 8) {  // retransmission
+        if(UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid] == 0){
+          continue;
+        }
         switch (get_tmode(module_idP, CC_id, UE_id)) {
           case 1:
           case 2:
@@ -667,12 +659,8 @@ void dlsch_scheduler_pre_ue_select(
           dlsch_ue_select[CC_id].list[dlsch_ue_select[CC_id].ue_num].rnti = rnti;
           dlsch_ue_select[CC_id].list[dlsch_ue_select[CC_id].ue_num].nb_rb = nb_rbs_required[CC_id][UE_id];
           dlsch_ue_select[CC_id].ue_num++;
-          used_dlsch_rbs_num[CC_id] += nb_rbs_required[CC_id][UE_id];
           if (dlsch_ue_select[CC_id].ue_num == dlsch_ue_max_num[CC_id]) {
-            break;
-          }
-          if (used_dlsch_rbs_num[CC_id] > available_dlsch_rbs_num[CC_id]) {
-            dlsch_ue_select[CC_id].ue_num--;  // roll back
+            end_flag[CC_id] = 1;
             break;
           }
         } else {
@@ -691,22 +679,29 @@ void dlsch_scheduler_pre_ue_select(
                             UE_id,
                             subframeP,
                             S_DL_NONE);
+          end_flag[CC_id] = 1;
+          break;
         }
       }
     }
+  }
+  if(cc_id_end(end_flag) == 1){
+    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+      DL_req          = &eNB->DL_req[CC_id].dl_config_request_body;
+      DL_req->number_pdu = saved_dlsch_dci[CC_id];
+    }
+    return;
   }
 
   // Insert DLSCH(first transmission) UE into selected UE list (UE_id > last_dlsch_ue_id[CC_id])
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    if (mbsfn_flag[CC_id]>0) {
-      continue;
-    }
+      if (mbsfn_flag[CC_id]>0) {
+        continue;
+      }
 
-    if (dlsch_ue_select[CC_id].ue_num < dlsch_ue_max_num[CC_id] &&
-        used_dlsch_rbs_num[CC_id] < available_dlsch_rbs_num[CC_id]) {
       DL_req          = &eNB->DL_req[CC_id].dl_config_request_body;
-      for (UE_id = (old_last_dlsch_ue_id[CC_id]+1); UE_id < dl_ue_max_num[CC_id]; UE_id++) {
-        if (dlsch_ue_select[CC_id].ue_num >= dlsch_ue_max_num[CC_id]) {
+      for (UE_id = (last_dlsch_ue_id[CC_id]+1); UE_id <NUMBER_OF_UE_MAX; UE_id++) {
+        if(end_flag[CC_id] == 1){
           break;
         }
 
@@ -723,16 +718,22 @@ void dlsch_scheduler_pre_ue_select(
           continue;
         }
 
-        continue_flag = 0;
-        if (nb_rbs_required[CC_id][UE_id] == 0) {
-          continue_flag = 1;
-        } else {
-          if (cc[CC_id].tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
-          else harq_pid = ((frameP*10)+subframeP)&7;
+       for(i = 0;i<dlsch_ue_select[CC_id].ue_num;i++){
+          if(dlsch_ue_select[CC_id].list[i].UE_id == UE_id){
+           break;
+          }
+        }
+        if(i < dlsch_ue_select[CC_id].ue_num)
+          continue;
 
-          round = ue_sched_ctl->round[CC_id][harq_pid];
-          if (round == 8) {
-            ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+        if (cc[CC_id].tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
+        else harq_pid = ((frameP*10)+subframeP)&7;
+
+        round = ue_sched_ctl->round[CC_id][harq_pid];
+        if (round == 8) {
+            if (nb_rbs_required[CC_id][UE_id] == 0) {
+              continue;
+            }
             switch (get_tmode(module_idP, CC_id, UE_id)) {
               case 1:
               case 2:
@@ -749,6 +750,7 @@ void dlsch_scheduler_pre_ue_select(
               default:
                 LOG_W(MAC,"Unsupported transmission mode %d\n", get_tmode(module_idP,CC_id,UE_id));
                 aggregation = 2;
+                break;
             }
             format_flag = 1;
             if (!CCE_allocation_infeasible(module_idP,
@@ -770,45 +772,49 @@ void dlsch_scheduler_pre_ue_select(
               dlsch_ue_select[CC_id].list[dlsch_ue_select[CC_id].ue_num].UE_id = UE_id;
               dlsch_ue_select[CC_id].list[dlsch_ue_select[CC_id].ue_num].rnti = rnti;
               dlsch_ue_select[CC_id].ue_num++;
-              last_dlsch_ue_id[CC_id] = UE_id;
-            } else {
-              continue_flag = 1;
+
+          if (dlsch_ue_select[CC_id].ue_num == dlsch_ue_max_num[CC_id]) {
+                  end_flag[CC_id] = 1;
+                  break;
+              }
+          }else {
+            if (cc[CC_id].tdd_Config != NULL) { //TDD
+              set_ue_dai (subframeP,
+                           UE_id,
+                           CC_id,
+              cc[CC_id].tdd_Config->subframeAssignment,
+                           UE_list);
+              // update UL DAI after DLSCH scheduling
+              set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP);
             }
-          }
-        }
-
-        if (continue_flag == 1) {
-          if (cc[CC_id].tdd_Config != NULL) { //TDD
-            set_ue_dai (subframeP,
-                         UE_id,
-                         CC_id,
-            cc[CC_id].tdd_Config->subframeAssignment,
-                         UE_list);
-            // update UL DAI after DLSCH scheduling
-            set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP);
-          }
-
-          add_ue_dlsch_info(module_idP,
+           add_ue_dlsch_info(module_idP,
                             CC_id,
                             UE_id,
                             subframeP,
                             S_DL_NONE);
-        }
+            end_flag[CC_id] = 1;
+            break;
+          }
       }
     }
+  }
+  if(cc_id_end(end_flag) == 1){
+    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+      DL_req          = &eNB->DL_req[CC_id].dl_config_request_body;
+      DL_req->number_pdu = saved_dlsch_dci[CC_id];
+    }
+    return;
   }
 
   // Insert DLSCH(first transmission) UE into selected UE list (UE_id <= last_dlsch_ue_id[CC_id])
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    if (mbsfn_flag[CC_id]>0) {
-      continue;
-    }
+      if (mbsfn_flag[CC_id]>0) {
+        continue;
+      }
 
-    if (dlsch_ue_select[CC_id].ue_num < dlsch_ue_max_num[CC_id] &&
-        used_dlsch_rbs_num[CC_id] < available_dlsch_rbs_num[CC_id]) {
       DL_req          = &eNB->DL_req[CC_id].dl_config_request_body;
-      for (UE_id = 0; UE_id <= old_last_dlsch_ue_id[CC_id]; UE_id++) {
-        if (dlsch_ue_select[CC_id].ue_num >= dlsch_ue_max_num[CC_id]) {
+      for (UE_id = 0; UE_id <= last_dlsch_ue_id[CC_id]; UE_id++) {
+        if(end_flag[CC_id] == 1){
           break;
         }
 
@@ -825,16 +831,22 @@ void dlsch_scheduler_pre_ue_select(
           continue;
         }
 
-        continue_flag = 0;
-        if (nb_rbs_required[CC_id][UE_id] == 0) {
-          continue_flag = 1;
-        } else {
-          if (cc[CC_id].tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
-          else harq_pid = ((frameP*10)+subframeP)&7;
+        for(i = 0;i<dlsch_ue_select[CC_id].ue_num;i++){
+          if(dlsch_ue_select[CC_id].list[i].UE_id == UE_id){
+           break;
+          }
+        }
+        if(i < dlsch_ue_select[CC_id].ue_num)
+          continue;
 
-          round = ue_sched_ctl->round[CC_id][harq_pid];
-          if (round == 8) {
-            ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+        if (cc[CC_id].tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
+        else harq_pid = ((frameP*10)+subframeP)&7;
+
+        round = ue_sched_ctl->round[CC_id][harq_pid];
+        if (round == 8) {
+            if (nb_rbs_required[CC_id][UE_id] == 0) {
+                continue;
+             }
             switch (get_tmode(module_idP, CC_id, UE_id)) {
               case 1:
               case 2:
@@ -851,6 +863,7 @@ void dlsch_scheduler_pre_ue_select(
               default:
                 LOG_W(MAC,"Unsupported transmission mode %d\n", get_tmode(module_idP,CC_id,UE_id));
                 aggregation = 2;
+                break;
             }
             format_flag = 1;
             if (!CCE_allocation_infeasible(module_idP,
@@ -872,30 +885,29 @@ void dlsch_scheduler_pre_ue_select(
               dlsch_ue_select[CC_id].list[dlsch_ue_select[CC_id].ue_num].UE_id = UE_id;
               dlsch_ue_select[CC_id].list[dlsch_ue_select[CC_id].ue_num].rnti = rnti;
               dlsch_ue_select[CC_id].ue_num++;
-              last_dlsch_ue_id[CC_id] = UE_id;
+
+              if (dlsch_ue_select[CC_id].ue_num == dlsch_ue_max_num[CC_id]) {
+                end_flag[CC_id] = 1;
+                break;
+              }
             } else {
-              continue_flag = 1;
-            }
-          }
-        }
-
-        if (continue_flag == 1) {
-          if (cc[CC_id].tdd_Config != NULL) { //TDD
-            set_ue_dai (subframeP,
-                         UE_id,
-                         CC_id,
-            cc[CC_id].tdd_Config->subframeAssignment,
-                         UE_list);
-            // update UL DAI after DLSCH scheduling
-            set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP);
-          }
-
+              if (cc[CC_id].tdd_Config != NULL) { //TDD
+                set_ue_dai (subframeP,
+                            UE_id,
+                            CC_id,
+                            cc[CC_id].tdd_Config->subframeAssignment,
+                            UE_list);
+              // update UL DAI after DLSCH scheduling
+                set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP);
+              }
           add_ue_dlsch_info(module_idP,
                             CC_id,
                             UE_id,
                             subframeP,
                             S_DL_NONE);
-        }
+              end_flag[CC_id] = 1;
+              break;
+            }
       }
     }
   }
@@ -904,6 +916,7 @@ void dlsch_scheduler_pre_ue_select(
     DL_req          = &eNB->DL_req[CC_id].dl_config_request_body;
     DL_req->number_pdu = saved_dlsch_dci[CC_id];
   }
+  return;
 }
 
 
@@ -916,11 +929,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
                                     frame_t       frameP,
                                     sub_frame_t   subframeP,
                                     int           N_RBG[MAX_NUM_CCs],
-                                    int           *mbsfn_flag
-#ifdef UE_EXPANSION
-                                    , DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]
-#endif
-)
+                                    int           *mbsfn_flag)
 {
 
 #ifndef UE_EXPANSION
@@ -931,6 +940,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 //  int rrc_status           = RRC_IDLE;
 #else
   unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],harq_pid=0,Round=0;
+  uint16_t                temp_total_rbs_count;
+  unsigned char           temp_total_ue_count;
 #endif 
   unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX];
   int                     UE_id, i; 
@@ -960,11 +971,6 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
     LTE_eNB_UE_stats *eNB_UE_stats1 = NULL;
     LTE_eNB_UE_stats *eNB_UE_stats2 = NULL;
     UE_sched_ctrl *ue_sched_ctl1, *ue_sched_ctl2;
-#endif
-
-#ifdef UE_EXPANSION
-  uint16_t                temp_total_rbs_count;
-  unsigned char           temp_total_ue_count;
 #endif
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -1031,14 +1037,23 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
     temp_total_ue_count = dlsch_ue_select[CC_id].ue_num;
 
     for (i = 0; i < dlsch_ue_select[CC_id].ue_num; i++) {
+      if(dlsch_ue_select[CC_id].list[i].ue_priority == SCH_DL_MSG2){
+          temp_total_ue_count--;
+          continue;
+      }
+      if(dlsch_ue_select[CC_id].list[i].ue_priority == SCH_DL_MSG4){
+          temp_total_ue_count--;
+          continue;
+      }
       UE_id = dlsch_ue_select[CC_id].list[i].UE_id;
       nb_rbs_required[CC_id][UE_id] = dlsch_ue_select[CC_id].list[i].nb_rb;
 
-      if( (min_rb_unit[CC_id] * temp_total_ue_count) <= temp_total_rbs_count ) {
-        //average_rbs_per_user[CC_id] = ((uint16_t)round((double)temp_total_rbs_count/(double)(temp_total_ue_count*min_rb_unit[CC_id])))*min_rb_unit[CC_id];
-        average_rbs_per_user[CC_id] = (uint16_t)round((double)temp_total_rbs_count/(double)temp_total_ue_count);
-      } else {
-        average_rbs_per_user[CC_id] = min_rb_unit[CC_id]; // consider the total number of use that can be scheduled UE
+      average_rbs_per_user[CC_id] = (uint16_t)round((double)temp_total_rbs_count/(double)temp_total_ue_count);
+      if( average_rbs_per_user[CC_id] < min_rb_unit[CC_id] ){
+        temp_total_ue_count--;
+        dlsch_ue_select[CC_id].ue_num--;
+        i--;
+        continue;
       }
 
       rnti = dlsch_ue_select[CC_id].list[i].rnti;
@@ -1069,17 +1084,15 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
                                               nb_rbs_required_remaining,
                                               rballoc_sub,
                                               MIMO_mode_indicator);
+      temp_total_rbs_count -= ue_sched_ctl->pre_nb_available_rbs[CC_id];
+      temp_total_ue_count--;
+
       if (ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) {
-        last_dlsch_ue_id[CC_id] = dlsch_ue_select[CC_id].list[i-1].UE_id;
         dlsch_ue_select[CC_id].ue_num = i;
         break;
       }
 
-      temp_total_rbs_count -= ue_sched_ctl->pre_nb_available_rbs[CC_id];
-      temp_total_ue_count--;
-
       if (temp_total_rbs_count == 0) {
-        last_dlsch_ue_id[CC_id] = UE_id;
         dlsch_ue_select[CC_id].ue_num = i+1;
         break;
       }
@@ -1466,6 +1479,12 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 #ifdef UE_EXPANSION
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       for (i = 0; i < dlsch_ue_select[CC_id].ue_num; i++) {
+        if(dlsch_ue_select[CC_id].list[i].ue_priority == SCH_DL_MSG2){
+            continue;
+        }
+        if(dlsch_ue_select[CC_id].list[i].ue_priority == SCH_DL_MSG4){
+            continue;
+        }
         UE_id = dlsch_ue_select[CC_id].list[i].UE_id;
         ue_sched_ctl = &RC.mac[Mod_id]->UE_list.UE_sched_ctrl[UE_id];
 #else
@@ -2299,20 +2318,7 @@ void sort_ue_ul(module_id_t module_idP, int frameP, sub_frame_t subframeP)
     }
 #endif
 }
-
 #ifdef UE_EXPANSION
-int ulsch_cc_id_end(uint8_t *cc_id_flag )
-{
-  int end_flag = 1;
-  for (int CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
-    if (cc_id_flag[CC_id]==0) {
-      end_flag = 0;
-      break;
-    }
-  }
-  return end_flag;
-}
-
 void ulsch_scheduler_pre_ue_select(
     module_id_t       module_idP,
     frame_t           frameP,
@@ -2323,6 +2329,7 @@ void ulsch_scheduler_pre_ue_select(
   COMMON_channels_t *cc;
   int CC_id,UE_id;
   int ret;
+  uint16_t i;
   uint8_t ue_first_num[MAX_NUM_CCs];
   uint8_t first_ue_total[MAX_NUM_CCs][20];
   uint8_t first_ue_id[MAX_NUM_CCs][20];
@@ -2373,7 +2380,7 @@ void ulsch_scheduler_pre_ue_select(
       if ( (ulsch_ue_select[CC_id].ue_num >= ulsch_ue_max_num[CC_id]) || (cc_id_flag[CC_id] == 1) ) {
         cc_id_flag[CC_id] = 1;
         HI_DCI0_req->number_of_dci = saved_ulsch_dci[CC_id];
-        ret = ulsch_cc_id_end(cc_id_flag);
+        ret = cc_id_end(cc_id_flag);
         if ( ret == 0 ) {
             continue;
         }
@@ -2479,7 +2486,7 @@ void ulsch_scheduler_pre_ue_select(
     if ( (ulsch_ue_select[CC_id].ue_num >= ulsch_ue_max_num[CC_id]) || (cc_id_flag[CC_id] == 1) ) {
         cc_id_flag[CC_id] = 1;
         HI_DCI0_req->number_of_dci = saved_ulsch_dci[CC_id];
-        ret = ulsch_cc_id_end(cc_id_flag);
+        ret = cc_id_end(cc_id_flag);
         if ( ret == 0 ) {
             continue;
         }
@@ -2490,6 +2497,14 @@ void ulsch_scheduler_pre_ue_select(
 
     if (UE_id > last_ulsch_ue_id[CC_id])
         continue;
+
+    for(i = 0;i<ulsch_ue_select[CC_id].ue_num;i++){
+      if(ulsch_ue_select[CC_id].list[i].UE_id == UE_id){
+       break;
+      }
+    }
+    if(i < ulsch_ue_select[CC_id].ue_num)
+      continue;
 
     HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
     //SR BSR

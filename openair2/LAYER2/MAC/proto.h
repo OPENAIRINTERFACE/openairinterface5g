@@ -118,11 +118,7 @@ void schedule_ulsch_rnti(module_id_t module_idP, frame_t frameP, sub_frame_t sub
 @param subframe Index of subframe
 @param mbsfn_flag Indicates that this subframe is for MCH/MCCH
 */
-#ifndef UE_EXPANSION
 void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
-#else
-void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag, DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]);
-#endif
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies
 @param Mod_id Instance ID of eNB
@@ -216,11 +212,7 @@ void dlsch_scheduler_pre_processor (module_id_t module_idP,
                                     frame_t frameP,
                                     sub_frame_t subframe,
                                     int N_RBG[MAX_NUM_CCs],
-                                    int *mbsfn_flag
-#ifdef UE_EXPANSION
-                                    , DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]
-#endif
-);
+                                    int *mbsfn_flag);
 
 
 void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,

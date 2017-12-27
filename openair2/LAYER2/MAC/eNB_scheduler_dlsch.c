@@ -511,10 +511,6 @@ schedule_ue_spec(module_id_t module_idP,
 	  }
     }
 
-#ifdef UE_EXPANSION
-    DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs];
-    memset(dlsch_ue_select, 0, sizeof(dlsch_ue_select));
-#endif
     //weight = get_ue_weight(module_idP,UE_id);
     aggregation = 2;
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
@@ -546,11 +542,7 @@ schedule_ue_spec(module_id_t module_idP,
                                 frameP,
                                 subframeP,
                                 N_RBG,
-                                mbsfn_flag
-#ifdef UE_EXPANSION
-                                , dlsch_ue_select
-#endif
-);
+                                mbsfn_flag);
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,VCD_FUNCTION_OUT);
 
@@ -564,11 +556,52 @@ schedule_ue_spec(module_id_t module_idP,
 
 #ifdef UE_EXPANSION
     for (i = 0; i < dlsch_ue_select[CC_id].ue_num; i++) {
+      if(dlsch_ue_select[CC_id].list[i].ue_priority == SCH_DL_MSG2){
+        continue;
+      }
+      if(dlsch_ue_select[CC_id].list[i].ue_priority == SCH_DL_MSG4){
+        continue;
+      }
       UE_id = dlsch_ue_select[CC_id].list[i].UE_id;
+      rnti = UE_RNTI(module_idP,UE_id);
+      if (rnti==NOT_A_RNTI) {
+        LOG_E(MAC,"Cannot find rnti for UE_id %d (num_UEs %d)\n",UE_id,UE_list->num_UEs);
+        continue;
+      }
 
+      eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
+      ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+
+      switch(get_tmode(module_idP,CC_id,UE_id)){
+      case 1:
+      case 2:
+      case 7:
+        aggregation = get_aggregation(get_bw_index(module_idP,CC_id),
+                                      ue_sched_ctl->dl_cqi[CC_id],
+                                      format1);
+        break;
+      case 3:
+        aggregation = get_aggregation(get_bw_index(module_idP,CC_id),
+                                      ue_sched_ctl->dl_cqi[CC_id],
+                                      format2A);
+        break;
+      default:
+        LOG_W(MAC,"Unsupported transmission mode %d\n", get_tmode(module_idP,CC_id,UE_id));
+        aggregation = 2;
+        break;
+      }
+
+      if (cc[CC_id].tdd_Config != NULL) { //TDD
+        set_ue_dai (subframeP,
+                    UE_id,
+                    CC_id,
+  		    cc[CC_id].tdd_Config->subframeAssignment,
+                    UE_list);
+        // update UL DAI after DLSCH scheduling
+        set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP);
+      }
 #else
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
-#endif
 
       continue_flag=0; // reset the flag to allow allocation for the remaining UEs
       rnti = UE_RNTI(module_idP,UE_id);
@@ -632,6 +665,7 @@ schedule_ue_spec(module_id_t module_idP,
 				  CC_id, UE_id, subframeP, S_DL_NONE);
 		continue;
 	    }
+#endif
 #warning RK->CR This old API call has to be revisited for FAPI, or logic must be changed
 #if 0
 	    /* add "fake" DCI to have CCE_allocation_infeasible work properly for next allocations */
@@ -1415,7 +1449,9 @@ schedule_ue_spec(module_id_t module_idP,
 
 	    eNB->pdu_index[CC_id]++;
 	    program_dlsch_acknak(module_idP,CC_id,UE_id,frameP,subframeP,dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
-
+#ifdef UE_EXPANSION
+        last_dlsch_ue_id[CC_id] = UE_id;
+#endif
 	  }
 	  else {
 	    LOG_W(MAC,"Frame %d, Subframe %d: Dropping DLSCH allocation for UE %d/%x, infeasible CCE allocations\n",
@@ -1434,11 +1470,7 @@ schedule_ue_spec(module_id_t module_idP,
   }  // CC_id loop
 
 
-#ifndef UE_EXPANSION
   fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_flag);
-#else
-  fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_flag,dlsch_ue_select);
-#endif
   stop_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_OUT);
 
@@ -1451,11 +1483,7 @@ fill_DLSCH_dci(
 	       module_id_t module_idP,
 	       frame_t frameP,
 	       sub_frame_t subframeP,
-	       int* mbsfn_flagP
-#ifdef UE_EXPANSION
-	       , DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]
-#endif  
-	       )
+	       int* mbsfn_flagP)
 //------------------------------------------------------------------------------
 {
 
@@ -1495,7 +1523,13 @@ fill_DLSCH_dci(
     // UE specific DCIs
 #ifdef UE_EXPANSION
     for (j = 0; j < dlsch_ue_select[CC_id].ue_num; j++) {
-      UE_id = dlsch_ue_select[CC_id].list[j].UE_id;
+        if(dlsch_ue_select[CC_id].list[j].ue_priority == SCH_DL_MSG2){
+          continue;
+        }
+        if(dlsch_ue_select[CC_id].list[j].ue_priority == SCH_DL_MSG4){
+          continue;
+        }
+        UE_id = dlsch_ue_select[CC_id].list[j].UE_id;
 #else
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
 #endif
