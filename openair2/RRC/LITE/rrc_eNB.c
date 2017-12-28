@@ -820,7 +820,8 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
     LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", enb_mod_idP, rnti);
 
 #if defined(ENABLE_USE_MME)
-   if( ue_context_pP->ue_context.ul_failure_timer >= 20000 ) {
+   if( ue_context_pP->ue_context.ul_failure_timer >= 8 ) {
+    LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ RNTI %x\n", enb_mod_idP, rnti);
     rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); // send cause 21: connection with ue lost
     /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
      * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
@@ -1092,8 +1093,6 @@ rrc_eNB_generate_RRCConnectionReestablishment(
   SRB_ToAddModList_t                 **SRB_configList;
   SRB_ToAddMod_t                     *SRB1_config;
   int                                 cnt;
-  uint8_t                             buffer[RRC_BUF_SIZE];
-  uint16_t                            size;
 
   T(T_ENB_RRC_CONNECTION_REESTABLISHMENT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
@@ -1185,31 +1184,22 @@ rrc_eNB_generate_RRCConnectionReestablishment(
                      ue_context_pP->ue_context.rnti,
                      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
 
-
-  size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
-#ifdef UE_EXPANSION
-  // set release timer
-  ue_context_pP->ue_context.ue_release_timer_rrc = 1;
-  // remove UE after 10 frames after RRCConnectionRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres_rrc = 100;
-  ue_context_pP->ue_context.ue_reestablishment_timer = 0;
-  ue_context_pP->ue_context.ue_release_timer = 0;
-  ue_context_pP->ue_context.ue_release_timer_s1 = 0;
-#else
-  // set release timer
-  ue_context_pP->ue_context.ue_release_timer=1;
-  // remove UE after 10 frames after RRCConnectionRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres=100;
-#endif
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCConnectionReestablishment (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
 
+#ifdef UE_EXPANSION
+  // activate release timer, if RRCComplete not received after 100 frames, remove UE
+  ue_context_pP->ue_context.ue_reestablishment_timer = 1;
+  // remove UE after 10 frames after RRCConnectionReestablishmentRelease is triggered
+  ue_context_pP->ue_context.ue_reestablishment_timer_thres = 1000;
+#else
   // activate release timer, if RRCComplete not received after 10 frames, remove UE
   ue_context_pP->ue_context.ue_release_timer = 1;
   // remove UE after 10 frames after RRCConnectionReestablishmentRelease is triggered
   ue_context_pP->ue_context.ue_release_timer_thres = 100;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1858,12 +1848,21 @@ rrc_eNB_generate_RRCConnectionRelease(
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   memset(buffer, 0, RRC_BUF_SIZE);
-
   size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
+#ifdef UE_EXPANSION
+  // set release timer
+  ue_context_pP->ue_context.ue_release_timer_rrc = 1;
+  // remove UE after 10 frames after RRCConnectionRelease is triggered
+  ue_context_pP->ue_context.ue_release_timer_thres_rrc = 100;
+  ue_context_pP->ue_context.ue_reestablishment_timer = 0;
+  ue_context_pP->ue_context.ue_release_timer = 0;
+  ue_context_pP->ue_context.ue_release_timer_s1 = 0;
+#else
   // set release timer
   ue_context_pP->ue_context.ue_release_timer=1;
   // remove UE after 10 frames after RRCConnectionRelease is triggered
   ue_context_pP->ue_context.ue_release_timer_thres=100;
+#endif
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -5460,6 +5459,14 @@ rrc_eNB_decode_ccch(
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             ue_context_p);
 
+       /* reset timers */
+       ue_context_p->ue_context.ul_failure_timer = 0;
+       ue_context_p->ue_context.ue_release_timer = 0;
+#ifdef UE_EXPANSION
+      ue_context_p->ue_context.ue_reestablishment_timer = 0;
+      ue_context_p->ue_context.ue_release_timer_s1 = 0;
+      ue_context_p->ue_context.ue_release_timer_rrc = 0;
+#endif
       // insert C-RNTI to map
       for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
         if (reestablish_rnti_map[i][0] == 0) {
@@ -6084,11 +6091,6 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             DCCH,
             sdu_sizeP);
-#ifdef UE_EXPANSION
-        ue_context_p->ue_context.ue_reestablishment_timer = 0;
-#else
-         ue_context_p->ue_context.ue_release_timer = 0;
-#endif
        {
         rnti_t reestablish_rnti = 0;
         // select C-RNTI from map
@@ -6129,7 +6131,11 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
           }
 #endif
         }
+#ifdef UE_EXPANSION
+        ue_context_p->ue_context.ue_reestablishment_timer = 1;
+#else
         ue_context_p->ue_context.ue_release_timer = 0;
+#endif
       }
       break;
 

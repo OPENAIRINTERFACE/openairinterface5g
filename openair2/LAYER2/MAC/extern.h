@@ -106,6 +106,5 @@ extern DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs];
 extern int last_dlsch_ue_id[MAX_NUM_CCs];
 extern int last_ulsch_ue_id[MAX_NUM_CCs];
 #endif
-extern uint16_t reestablish_rnti_map[NUMBER_OF_UE_MAX][2];
 
 #endif //DEF_H
