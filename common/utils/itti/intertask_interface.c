@@ -470,6 +470,7 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
                       itti_get_task_name(destination_task_id));
         int result = itti_free(origin_task_id, message);
         AssertFatal( result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+        return 0;
 #else
         AssertFatal(0, "Error: lfds611_queue_enqueue returns 0, queue is full, exiting\n");
 #endif
