@@ -766,6 +766,7 @@ gtpv1u_create_s1u_tunnel(
       gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_eNB               = s1u_teid;
       gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_eNB_stack_session = stack_req.apiInfo.createTunnelEndPointInfo.hStackSession;
       gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_sgw               = create_tunnel_req_pP->sgw_S1u_teid[i];
+      gtpv1u_ue_data_p->num_bearers++;
       create_tunnel_resp_pP->enb_S1u_teid[i] = s1u_teid;
 
     } else {
@@ -807,7 +808,47 @@ gtpv1u_create_s1u_tunnel(
   return 0;
 }
 
+int gtpv1u_update_s1u_tunnel(
+    const instance_t                              instanceP,
+    const gtpv1u_enb_create_tunnel_req_t * const  create_tunnel_req_pP,
+    const rnti_t                                  prior_rnti
+    )
+{
+  /* Local tunnel end-point identifier */
+  teid_t                   s1u_teid             = 0;
+  gtpv1u_teid_data_t      *gtpv1u_teid_data_p   = NULL;
+  gtpv1u_ue_data_t        *gtpv1u_ue_data_p     = NULL;
+  //MessageDef              *message_p            = NULL;
+  hashtable_rc_t           hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
+  int                      i;
+  ebi_t                    eps_bearer_id        = 0;
 
+  //-----------------------
+  // PDCP->GTPV1U mapping
+  //-----------------------
+  hash_rc = hashtable_get(RC.gtpv1u_data_g->ue_mapping, prior_rnti, (void **)&gtpv1u_ue_data_p);
+  AssertFatal(hash_rc == HASH_TABLE_OK, "Error get ue_mapping(rnti=%x) from GTPV1U hashtable error\n", prior_rnti);
+
+  gtpv1u_ue_data_p->ue_id       = create_tunnel_req_pP->rnti;
+  hash_rc = hashtable_insert(RC.gtpv1u_data_g->ue_mapping, create_tunnel_req_pP->rnti, gtpv1u_ue_data_p);
+  AssertFatal(hash_rc == HASH_TABLE_OK, "Error inserting ue_mapping in GTPV1U hashtable");
+  LOG_I(GTPU, "inserting ue_mapping(rnti=%x) in GTPV1U hashtable\n",
+      create_tunnel_req_pP->rnti);
+
+  //-----------------------
+  // GTPV1U->PDCP mapping
+  //-----------------------
+  for (i = 0; i < create_tunnel_req_pP->num_tunnels; i++) {
+    eps_bearer_id = create_tunnel_req_pP->eps_bearer_id[i];
+    s1u_teid = gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_eNB;
+    hash_rc = hashtable_get(RC.gtpv1u_data_g->teid_mapping, s1u_teid, (void**)&gtpv1u_teid_data_p);
+    AssertFatal(hash_rc == HASH_TABLE_OK, "Error get teid mapping(s1u_teid=%u) from GTPV1U hashtable", s1u_teid);
+
+    gtpv1u_teid_data_p->ue_id         = create_tunnel_req_pP->rnti;
+    gtpv1u_teid_data_p->eps_bearer_id = eps_bearer_id;
+  }
+  return 0;
+}
 
 //-----------------------------------------------------------------------------
 static int gtpv1u_delete_s1u_tunnel(

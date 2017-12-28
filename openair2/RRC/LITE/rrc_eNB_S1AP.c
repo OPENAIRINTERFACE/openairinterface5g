@@ -342,6 +342,8 @@ static void process_eNB_security_key (
 
   /* Saves the security key */
   memcpy (ue_context_pP->ue_context.kenb, security_key_pP, SECURITY_KEY_LENGTH);
+  memset (ue_context_pP->ue_context.nh, 0, SECURITY_KEY_LENGTH);
+  ue_context_pP->ue_context.nh_ncc = -1;
 
   for (i = 0; i < 32; i++) {
     sprintf(&ascii_buffer[2 * i], "%02X", ue_context_pP->ue_context.kenb[i]);
@@ -355,7 +357,7 @@ static void process_eNB_security_key (
 
 
 //------------------------------------------------------------------------------
-static void
+void
 rrc_pdcp_config_security(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
@@ -892,6 +894,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
   //MessageDef                     *message_gtpv1u_p = NULL;
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
+  uint8_t                         inde_list[NB_RB_MAX - 3]={0};
 
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   protocol_ctxt_t              ctxt;
@@ -937,10 +940,12 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
         memcpy(&create_tunnel_req.sgw_addr[i],
                &S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].sgw_addr,
                sizeof(transport_layer_addr_t));
+        inde_list[create_tunnel_req.num_tunnels]= i;
+        create_tunnel_req.num_tunnels++;
       }
     
       create_tunnel_req.rnti       = ue_context_p->ue_context.rnti; // warning put zero above
-      create_tunnel_req.num_tunnels    = i;
+//      create_tunnel_req.num_tunnels    = i;
 
       gtpv1u_create_s1u_tunnel(
         instance,
@@ -949,7 +954,8 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
 
       rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
           &ctxt,
-          &create_tunnel_resp); 
+          &create_tunnel_resp,
+          &inde_list[0]); 
       ue_context_p->ue_context.setup_e_rabs=ue_context_p->ue_context.nb_of_e_rabs;
     }
 
@@ -1268,9 +1274,12 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
   uint32_t                        eNB_ue_s1ap_id;
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
+  uint8_t                         inde_list[NB_RB_MAX - 3]={0};
 
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   protocol_ctxt_t              ctxt;
+  uint8_t                      e_rab_done;
+
   ue_initial_id  = S1AP_E_RAB_SETUP_REQ (msg_p).ue_initial_id;
   eNB_ue_s1ap_id = S1AP_E_RAB_SETUP_REQ (msg_p).eNB_ue_s1ap_id;
   ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
@@ -1301,35 +1310,46 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
 
       memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
       uint8_t nb_e_rabs_tosetup = S1AP_E_RAB_SETUP_REQ  (msg_p).nb_e_rabs_tosetup;
+      e_rab_done = 0;
 
       // keep the previous bearer
       // the index for the rec
       for (i = 0; 
-	   i < nb_e_rabs_tosetup; 
+	  // i < nb_e_rabs_tosetup; 
+           i < NB_RB_MAX - 3;  // loop all e-rabs in e_rab[] 
 	   i++) {
-	if (ue_context_p->ue_context.e_rab[i+ue_context_p->ue_context.setup_e_rabs].status == E_RAB_STATUS_DONE) 
-	  LOG_W(RRC,"E-RAB already configured, reconfiguring\n");
-        ue_context_p->ue_context.e_rab[i+ue_context_p->ue_context.setup_e_rabs].status = E_RAB_STATUS_NEW;
-        ue_context_p->ue_context.e_rab[i+ue_context_p->ue_context.setup_e_rabs].param = S1AP_E_RAB_SETUP_REQ  (msg_p).e_rab_setup_params[i];
+	//if (ue_context_p->ue_context.e_rab[i+ue_context_p->ue_context.setup_e_rabs].status == E_RAB_STATUS_DONE) 
+	//  LOG_W(RRC,"E-RAB already configured, reconfiguring\n");
+        // check e-rab status, if e rab status is greater than E_RAB_STATUS_DONE, don't not config this one
+        if(ue_context_p->ue_context.e_rab[i].status >= E_RAB_STATUS_DONE)
+            continue;
+        //ue_context_p->ue_context.e_rab[i+ue_context_p->ue_context.setup_e_rabs].status = E_RAB_STATUS_NEW;
+        //ue_context_p->ue_context.e_rab[i+ue_context_p->ue_context.setup_e_rabs].param = S1AP_E_RAB_SETUP_REQ  (msg_p).e_rab_setup_params[i];
+        ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_NEW;
+        ue_context_p->ue_context.e_rab[i].param = S1AP_E_RAB_SETUP_REQ  (msg_p).e_rab_setup_params[e_rab_done];
 
+        create_tunnel_req.eps_bearer_id[e_rab_done]       = S1AP_E_RAB_SETUP_REQ  (msg_p).e_rab_setup_params[e_rab_done].e_rab_id;
+        create_tunnel_req.sgw_S1u_teid[e_rab_done]        = S1AP_E_RAB_SETUP_REQ  (msg_p).e_rab_setup_params[e_rab_done].gtp_teid;
 
-        create_tunnel_req.eps_bearer_id[i]       = S1AP_E_RAB_SETUP_REQ  (msg_p).e_rab_setup_params[i].e_rab_id;
-        create_tunnel_req.sgw_S1u_teid[i]        = S1AP_E_RAB_SETUP_REQ  (msg_p).e_rab_setup_params[i].gtp_teid;
-
-        memcpy(&create_tunnel_req.sgw_addr[i],
-               & S1AP_E_RAB_SETUP_REQ (msg_p).e_rab_setup_params[i].sgw_addr,
+        memcpy(&create_tunnel_req.sgw_addr[e_rab_done],
+               & S1AP_E_RAB_SETUP_REQ (msg_p).e_rab_setup_params[e_rab_done].sgw_addr,
                sizeof(transport_layer_addr_t));
 	
 	LOG_I(RRC,"E_RAB setup REQ: local index %d teid %u, eps id %d \n", 
-	      i+ue_context_p->ue_context.setup_e_rabs,
-	      create_tunnel_req.sgw_S1u_teid[i],
+	      i,
+	      create_tunnel_req.sgw_S1u_teid[e_rab_done],
 	       create_tunnel_req.eps_bearer_id[i] );
+        inde_list[e_rab_done] = i;
+        e_rab_done++;        
+        if(e_rab_done >= nb_e_rabs_tosetup){
+            break;
+        }
       }
       ue_context_p->ue_context.nb_of_e_rabs=nb_e_rabs_tosetup;
      
      
       create_tunnel_req.rnti       = ue_context_p->ue_context.rnti; // warning put zero above
-      create_tunnel_req.num_tunnels    = i;
+      create_tunnel_req.num_tunnels    = e_rab_done;
       
       // NN: not sure if we should create a new tunnel: need to check teid, etc.
       gtpv1u_create_s1u_tunnel(
@@ -1339,7 +1359,8 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
 
       rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
           &ctxt,
-          &create_tunnel_resp);
+          &create_tunnel_resp,
+          &inde_list[0]);
 
       ue_context_p->ue_context.setup_e_rabs+=nb_e_rabs_tosetup;
 
@@ -1403,12 +1424,17 @@ int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP,
 	S1AP_E_RAB_SETUP_RESP  (msg_p).e_rabs_failed[e_rabs_failed].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
 	e_rabs_failed++;
 	// TODO add cause when it will be integrated
-      }
-      
+      } 
       
       S1AP_E_RAB_SETUP_RESP (msg_p).nb_of_e_rabs = e_rabs_done;
       S1AP_E_RAB_SETUP_RESP (msg_p).nb_of_e_rabs_failed = e_rabs_failed;
       // NN: add conditions for e_rabs_failed 
+    } else {
+      /*debug info for the xid */ 
+      LOG_D(RRC,"xid does not corresponds  (context e_rab index %d, status %d, xid %d/%d) \n ",
+      	     e_rab, ue_context_pP->ue_context.e_rab[e_rab].status, xid, ue_context_pP->ue_context.e_rab[e_rab].xid);
+    } 
+  }
       if ((e_rabs_done > 0) ){  
 
 	LOG_I(RRC,"S1AP_E_RAB_SETUP_RESP: sending the message: nb_of_erabs %d, total e_rabs %d, index %d\n",
@@ -1427,16 +1453,527 @@ int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP,
 	
 	itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
       }
-
-    } else {
-      /*debug info for the xid */ 
-      LOG_D(RRC,"xid does not corresponds  (context e_rab index %d, status %d, xid %d/%d) \n ",
-      	     e_rab, ue_context_pP->ue_context.e_rab[e_rab].status, xid, ue_context_pP->ue_context.e_rab[e_rab].xid);
-    }
-    
+  for(int i = 0; i < NB_RB_MAX; i++) {
+      ue_context_pP->ue_context.e_rab[i].xid = -1;
   }
   
   return 0;
+}
+
+int rrc_eNB_process_S1AP_E_RAB_MODIFY_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance)
+{
+  int                             i;
+  uint16_t                        ue_initial_id;
+  uint32_t                        eNB_ue_s1ap_id;
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  protocol_ctxt_t              ctxt;
+
+  ue_initial_id  = S1AP_E_RAB_MODIFY_REQ (msg_p).ue_initial_id;
+  eNB_ue_s1ap_id = S1AP_E_RAB_MODIFY_REQ (msg_p).eNB_ue_s1ap_id;
+  ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
+  LOG_D(RRC, "[eNB %d] Received %s: ue_initial_id %d, eNB_ue_s1ap_id %d, nb_of_e_rabs %d\n",
+        instance, msg_name, ue_initial_id, eNB_ue_s1ap_id, S1AP_E_RAB_MODIFY_REQ (msg_p).nb_e_rabs_tomodify);
+
+  if (ue_context_p == NULL) {
+    /* Can not associate this message to an UE index, send a failure to S1AP and discard it! */
+    LOG_W(RRC, "[eNB %d] In S1AP_E_RAB_MODIFY_REQ: unknown UE from S1AP ids (%d, %d)\n", instance, ue_initial_id, eNB_ue_s1ap_id);
+    int nb_of_e_rabs_failed = 0;
+    MessageDef *msg_fail_p = NULL;
+
+    msg_fail_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_E_RAB_MODIFY_RESP);
+
+    S1AP_E_RAB_MODIFY_RESP (msg_fail_p).eNB_ue_s1ap_id = S1AP_E_RAB_MODIFY_REQ (msg_p).eNB_ue_s1ap_id;
+    S1AP_E_RAB_MODIFY_RESP (msg_fail_p).nb_of_e_rabs = 0;
+
+    for (nb_of_e_rabs_failed = 0; nb_of_e_rabs_failed < S1AP_E_RAB_MODIFY_REQ (msg_p).nb_e_rabs_tomodify; nb_of_e_rabs_failed++) {
+      S1AP_E_RAB_MODIFY_RESP (msg_fail_p).e_rabs_failed[nb_of_e_rabs_failed].e_rab_id =
+              S1AP_E_RAB_MODIFY_REQ (msg_p).e_rab_modify_params[nb_of_e_rabs_failed].e_rab_id;
+      S1AP_E_RAB_MODIFY_RESP (msg_fail_p).e_rabs_failed[nb_of_e_rabs_failed].cause = S1AP_CAUSE_RADIO_NETWORK;
+      S1AP_E_RAB_MODIFY_RESP (msg_fail_p).e_rabs_failed[nb_of_e_rabs_failed].cause_value = 31;//S1ap_CauseRadioNetwork_multiple_E_RAB_ID_instances;
+    }
+    S1AP_E_RAB_MODIFY_RESP (msg_fail_p).nb_of_e_rabs_failed = nb_of_e_rabs_failed;
+
+    itti_send_msg_to_task(TASK_S1AP, instance, msg_fail_p);
+    return (-1);
+
+  } else {
+    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+    ue_context_p->ue_context.eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+
+    /* Save e RAB information for later */
+    {
+      int j;
+      boolean_t is_treated[S1AP_MAX_E_RAB] = {FALSE};
+      uint8_t nb_of_failed_e_rabs = 0;
+
+      // keep the previous bearer
+      // the index for the rec
+      for (i = 0; i < S1AP_E_RAB_MODIFY_REQ (msg_p).nb_e_rabs_tomodify; i++) {
+        if (is_treated[i] == TRUE) {
+          // already treated
+          continue;
+        }
+        for (j = i+1; j < S1AP_E_RAB_MODIFY_REQ (msg_p).nb_e_rabs_tomodify; j++) {
+          if (is_treated[j] == FALSE &&
+            S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[j].e_rab_id == S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].e_rab_id) {
+            // handle multiple E-RAB ID
+            ue_context_p->ue_context.modify_e_rab[j].status = E_RAB_STATUS_NEW;
+            ue_context_p->ue_context.modify_e_rab[j].param.e_rab_id = S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[j].e_rab_id;
+            ue_context_p->ue_context.modify_e_rab[j].cause = S1AP_CAUSE_RADIO_NETWORK;
+            ue_context_p->ue_context.modify_e_rab[j].cause_value = 31;//S1ap_CauseRadioNetwork_multiple_E_RAB_ID_instances;
+            nb_of_failed_e_rabs++;
+            is_treated[i] = TRUE;
+            is_treated[j] = TRUE;
+          }
+        }
+        if (is_treated[i] == TRUE) {
+          // handle multiple E-RAB ID
+          ue_context_p->ue_context.modify_e_rab[i].status = E_RAB_STATUS_NEW;
+          ue_context_p->ue_context.modify_e_rab[i].param.e_rab_id = S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].e_rab_id;
+          ue_context_p->ue_context.modify_e_rab[i].cause = S1AP_CAUSE_RADIO_NETWORK;
+          ue_context_p->ue_context.modify_e_rab[i].cause_value = 31;//S1ap_CauseRadioNetwork_multiple_E_RAB_ID_instances;
+          nb_of_failed_e_rabs++;
+          continue;
+        }
+
+        if (S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].nas_pdu.length == 0) {
+          // nas_pdu.length == 0
+          ue_context_p->ue_context.modify_e_rab[i].status = E_RAB_STATUS_NEW;
+          ue_context_p->ue_context.modify_e_rab[i].param.e_rab_id = S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].e_rab_id;
+          ue_context_p->ue_context.modify_e_rab[i].cause = S1AP_CAUSE_NAS;
+          ue_context_p->ue_context.modify_e_rab[i].cause_value = 3;//S1ap_CauseNas_unspecified;
+          nb_of_failed_e_rabs++;
+          is_treated[i] = TRUE;
+          continue;
+        }
+
+        for (j = 0; j < NB_RB_MAX-3; j++) {
+          if (ue_context_p->ue_context.e_rab[j].param.e_rab_id == S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].e_rab_id) {
+            if(ue_context_p->ue_context.e_rab[j].status == E_RAB_STATUS_TORELEASE || ue_context_p->ue_context.e_rab[j].status == E_RAB_STATUS_DONE){
+              break;
+            }
+            ue_context_p->ue_context.modify_e_rab[i].status = E_RAB_STATUS_NEW;
+            ue_context_p->ue_context.modify_e_rab[i].cause = S1AP_CAUSE_NOTHING;
+            ue_context_p->ue_context.modify_e_rab[i].param.e_rab_id = S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].e_rab_id;
+            ue_context_p->ue_context.modify_e_rab[i].param.qos =  S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].qos;
+            ue_context_p->ue_context.modify_e_rab[i].param.nas_pdu.length = S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].nas_pdu.length;
+            ue_context_p->ue_context.modify_e_rab[i].param.nas_pdu.buffer = S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].nas_pdu.buffer;
+            ue_context_p->ue_context.modify_e_rab[i].param.sgw_addr = ue_context_p->ue_context.e_rab[j].param.sgw_addr;
+            ue_context_p->ue_context.modify_e_rab[i].param.gtp_teid = ue_context_p->ue_context.e_rab[j].param.gtp_teid;
+
+            is_treated[i] = TRUE;
+            break;
+          }
+        }
+
+        if (is_treated[i] == FALSE) {
+          // handle Unknown E-RAB ID
+          ue_context_p->ue_context.modify_e_rab[i].status = E_RAB_STATUS_NEW;
+          ue_context_p->ue_context.modify_e_rab[i].param.e_rab_id = S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].e_rab_id;
+          ue_context_p->ue_context.modify_e_rab[i].cause = S1AP_CAUSE_RADIO_NETWORK;
+          ue_context_p->ue_context.modify_e_rab[i].cause_value = 30;//S1ap_CauseRadioNetwork_unknown_E_RAB_ID;
+          nb_of_failed_e_rabs++;
+          is_treated[i] = TRUE;
+        }
+      }
+
+      ue_context_p->ue_context.nb_of_modify_e_rabs = S1AP_E_RAB_MODIFY_REQ  (msg_p).nb_e_rabs_tomodify;
+      ue_context_p->ue_context.nb_of_failed_e_rabs = nb_of_failed_e_rabs;
+    }
+
+    /* TODO parameters yet to process ... */
+    {
+      //      S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).ue_ambr;
+    }
+
+    if (ue_context_p->ue_context.nb_of_failed_e_rabs < ue_context_p->ue_context.nb_of_modify_e_rabs) {
+      if (0 == rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(&ctxt, ue_context_p, 0)) {
+        return (0);
+      }
+    }
+
+    {
+      int nb_of_e_rabs_failed = 0;
+      MessageDef *msg_fail_p = NULL;
+
+      msg_fail_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_E_RAB_MODIFY_RESP);
+
+      S1AP_E_RAB_MODIFY_RESP (msg_fail_p).eNB_ue_s1ap_id = S1AP_E_RAB_MODIFY_REQ (msg_p).eNB_ue_s1ap_id;
+//      S1AP_E_RAB_MODIFY_RESP (msg_fail_p).e_rabs[S1AP_MAX_E_RAB];
+      S1AP_E_RAB_MODIFY_RESP (msg_fail_p).nb_of_e_rabs = 0;
+
+      for(nb_of_e_rabs_failed = 0; nb_of_e_rabs_failed < ue_context_p->ue_context.nb_of_failed_e_rabs; nb_of_e_rabs_failed++) {
+        S1AP_E_RAB_MODIFY_RESP (msg_fail_p).e_rabs_failed[nb_of_e_rabs_failed].e_rab_id =
+                ue_context_p->ue_context.modify_e_rab[nb_of_e_rabs_failed].param.e_rab_id;
+        S1AP_E_RAB_MODIFY_RESP (msg_fail_p).e_rabs_failed[nb_of_e_rabs_failed].cause = ue_context_p->ue_context.modify_e_rab[nb_of_e_rabs_failed].cause;
+      }
+      S1AP_E_RAB_MODIFY_RESP (msg_fail_p).nb_of_e_rabs_failed = nb_of_e_rabs_failed;
+
+      itti_send_msg_to_task (TASK_S1AP, instance, msg_fail_p);
+
+      ue_context_p->ue_context.nb_of_modify_e_rabs = 0;
+      ue_context_p->ue_context.nb_of_failed_e_rabs = 0;
+      memset(ue_context_p->ue_context.modify_e_rab, 0, sizeof(ue_context_p->ue_context.modify_e_rab));
+
+      return (0);
+    }
+  }  // end of ue_context_p != NULL
+}
+
+/*NN: careful about the typcast of xid (long -> uint8_t*/
+int rrc_eNB_send_S1AP_E_RAB_MODIFY_RESP(const protocol_ctxt_t* const ctxt_pP,
+           rrc_eNB_ue_context_t*          const ue_context_pP,
+           uint8_t xid ) {
+
+  MessageDef      *msg_p         = NULL;
+  int i;
+  int e_rab;
+  int e_rabs_done = 0;
+  int e_rabs_failed = 0;
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_E_RAB_MODIFY_RESP);
+  S1AP_E_RAB_MODIFY_RESP (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
+
+  for (e_rab = 0; e_rab < ue_context_pP->ue_context.nb_of_modify_e_rabs; e_rab++) {
+
+    /* only respond to the corresponding transaction */
+    if (xid == ue_context_pP->ue_context.modify_e_rab[e_rab].xid) {
+      if (ue_context_pP->ue_context.modify_e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+        for (i = 0; i < ue_context_pP->ue_context.setup_e_rabs; i++) {
+          if (ue_context_pP->ue_context.modify_e_rab[e_rab].param.e_rab_id == ue_context_pP->ue_context.e_rab[i].param.e_rab_id) {
+            // Update ue_context_pP->ue_context.e_rab
+            ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_ESTABLISHED;
+            ue_context_pP->ue_context.e_rab[i].param.qos = ue_context_pP->ue_context.modify_e_rab[e_rab].param.qos;
+            ue_context_pP->ue_context.e_rab[i].cause = S1AP_CAUSE_NOTHING;
+            break;
+          }
+        }
+        if (i < ue_context_pP->ue_context.setup_e_rabs) {
+          S1AP_E_RAB_MODIFY_RESP (msg_p).e_rabs[e_rabs_done].e_rab_id = ue_context_pP->ue_context.modify_e_rab[e_rab].param.e_rab_id;
+              // TODO add other information from S1-U when it will be integrated
+
+          LOG_D (RRC,"enb_gtp_addr (msg index %d, e_rab index %d, status %d, xid %d): nb_of_modify_e_rabs %d,  e_rab_id %d \n ",
+              e_rabs_done,  e_rab, ue_context_pP->ue_context.modify_e_rab[e_rab].status, xid,
+              ue_context_pP->ue_context.nb_of_modify_e_rabs,
+              S1AP_E_RAB_MODIFY_RESP (msg_p).e_rabs[e_rabs_done].e_rab_id);
+
+          e_rabs_done++;
+        } else {
+          // unexpected
+          S1AP_E_RAB_MODIFY_RESP (msg_p).e_rabs_failed[e_rabs_failed].e_rab_id = ue_context_pP->ue_context.modify_e_rab[e_rab].param.e_rab_id;
+
+          S1AP_E_RAB_MODIFY_RESP (msg_p).e_rabs_failed[e_rabs_failed].cause = S1AP_CAUSE_RADIO_NETWORK;
+          S1AP_E_RAB_MODIFY_RESP (msg_p).e_rabs_failed[e_rabs_failed].cause_value = 30;//S1ap_CauseRadioNetwork_unknown_E_RAB_ID;
+
+          e_rabs_failed++;
+        }
+      } else if ((ue_context_pP->ue_context.modify_e_rab[e_rab].status == E_RAB_STATUS_NEW) ||
+          (ue_context_pP->ue_context.modify_e_rab[e_rab].status == E_RAB_STATUS_ESTABLISHED)){
+        LOG_D (RRC,"E-RAB is NEW or already ESTABLISHED\n");
+      } else {  /* status == E_RAB_STATUS_FAILED; */
+        S1AP_E_RAB_MODIFY_RESP (msg_p).e_rabs_failed[e_rabs_failed].e_rab_id = ue_context_pP->ue_context.modify_e_rab[e_rab].param.e_rab_id;
+        // add failure cause when defined
+        S1AP_E_RAB_MODIFY_RESP (msg_p).e_rabs_failed[e_rabs_failed].cause = ue_context_pP->ue_context.modify_e_rab[e_rab].cause;
+
+        e_rabs_failed++;
+      }
+    } else {
+      /*debug info for the xid */
+      LOG_D(RRC,"xid does not corresponds  (context e_rab index %d, status %d, xid %d/%d) \n ",
+             e_rab, ue_context_pP->ue_context.modify_e_rab[e_rab].status, xid, ue_context_pP->ue_context.modify_e_rab[e_rab].xid);
+    }
+  }
+
+
+  S1AP_E_RAB_MODIFY_RESP (msg_p).nb_of_e_rabs = e_rabs_done;
+  S1AP_E_RAB_MODIFY_RESP (msg_p).nb_of_e_rabs_failed = e_rabs_failed;
+  // NN: add conditions for e_rabs_failed
+  if (e_rabs_done > 0 || e_rabs_failed > 0) {
+    LOG_D(RRC,"S1AP_E_RAB_MODIFY_RESP: sending the message: nb_of_modify_e_rabs %d, total e_rabs %d, index %d\n",
+    ue_context_pP->ue_context.nb_of_modify_e_rabs, ue_context_pP->ue_context.setup_e_rabs, e_rab);
+MSC_LOG_TX_MESSAGE(
+     MSC_RRC_ENB,
+     MSC_S1AP_ENB,
+     (const char *)&S1AP_E_RAB_SETUP_RESP (msg_p),
+     sizeof(s1ap_e_rab_setup_resp_t),
+     MSC_AS_TIME_FMT" E_RAB_MODIFY_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
+     MSC_AS_TIME_ARGS(ctxt_pP),
+     ue_context_pP->ue_id_rnti,
+     S1AP_E_RAB_MODIFY_RESP (msg_p).eNB_ue_s1ap_id,
+     e_rabs_done, e_rabs_failed);
+
+    itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+  }
+
+  return 0;
+}
+int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *msg_name, instance_t instance){
+    uint16_t                        mme_ue_s1ap_id;
+    uint32_t                        eNB_ue_s1ap_id;
+    struct rrc_eNB_ue_context_s*    ue_context_p = NULL;
+    protocol_ctxt_t                 ctxt;
+    e_rab_release_t e_rab_release_params[S1AP_MAX_E_RAB];
+    uint8_t nb_e_rabs_torelease;
+    int erab;
+    int i;
+    uint8_t b_existed,is_existed;
+    uint8_t xid;
+    uint8_t e_rab_release_drb;
+    MessageDef *                    msg_delete_tunnels_p = NULL;
+    e_rab_release_drb = 0;
+    memcpy(&e_rab_release_params[0], &(S1AP_E_RAB_RELEASE_COMMAND (msg_p).e_rab_release_params[0]), sizeof(e_rab_release_t)*S1AP_MAX_E_RAB);
+
+    mme_ue_s1ap_id  = S1AP_E_RAB_RELEASE_COMMAND (msg_p).mme_ue_s1ap_id;
+    eNB_ue_s1ap_id = S1AP_E_RAB_RELEASE_COMMAND (msg_p).eNB_ue_s1ap_id;
+    nb_e_rabs_torelease = S1AP_E_RAB_RELEASE_COMMAND (msg_p).nb_e_rabs_torelease;
+    ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
+    if(ue_context_p != NULL){
+        PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+
+        xid = rrc_eNB_get_next_transaction_identifier(ctxt.module_id);
+
+        LOG_D(RRC,"S1AP-E-RAB Release Command: MME_UE_S1AP_ID %d  ENB_UE_S1AP_ID %d release_e_rabs %d \n",
+            mme_ue_s1ap_id, eNB_ue_s1ap_id,nb_e_rabs_torelease);
+        for(erab = 0; erab < nb_e_rabs_torelease; erab++){
+            b_existed = 0;
+            is_existed = 0;
+            for ( i = erab-1;  i>= 0; i--){
+                if (e_rab_release_params[erab].e_rab_id == e_rab_release_params[i].e_rab_id){
+                    is_existed = 1;
+                    break;
+                }
+            }
+            if(is_existed == 1){
+                //e_rab_id is existed
+                continue;
+            }
+            for ( i = 0;  i < NB_RB_MAX; i++){
+                if (e_rab_release_params[erab].e_rab_id == ue_context_p->ue_context.e_rab[i].param.e_rab_id){
+                    b_existed = 1;
+                    break;
+                }
+            }
+            if(b_existed == 0) {
+                //no e_rab_id
+                ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
+                ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
+                ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 30;
+                ue_context_p->ue_context.nb_release_of_e_rabs++;
+            } else {
+                if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_FAILED){
+                    ue_context_p->ue_context.e_rab[i].xid = xid;
+                    continue;
+                } else if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED){
+                    ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_TORELEASE;
+                    ue_context_p->ue_context.e_rab[i].xid = xid;
+                    e_rab_release_drb++;
+                }else{
+                    //e_rab_id status NG
+                    ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
+                    ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
+                    ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 0;
+                    ue_context_p->ue_context.nb_release_of_e_rabs++;
+                }
+            }
+        }
+        if(e_rab_release_drb > 0) {
+            //RRCConnectionReconfiguration To UE
+            rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(&ctxt, ue_context_p, xid, S1AP_E_RAB_RELEASE_COMMAND (msg_p).nas_pdu.length, S1AP_E_RAB_RELEASE_COMMAND (msg_p).nas_pdu.buffer);
+        } else {
+            //gtp tunnel delete
+            msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+            memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
+            GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+            for(i = 0; i < NB_RB_MAX; i++){
+               if(xid == ue_context_p->ue_context.e_rab[i].xid){
+                 GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] = ue_context_p->ue_context.enb_gtp_ebi[i];
+                 ue_context_p->ue_context.enb_gtp_teid[i] = 0;
+                 memset(&ue_context_p->ue_context.enb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[i]));
+                 ue_context_p->ue_context.enb_gtp_ebi[i]  = 0;
+               }
+            }
+
+            itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
+
+            //S1AP_E_RAB_RELEASE_RESPONSE
+            rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(&ctxt, ue_context_p, xid);
+        }
+    } else {
+        LOG_E(RRC,"S1AP-E-RAB Release Command: MME_UE_S1AP_ID %d  ENB_UE_S1AP_ID %d  Error ue_context_p NULL \n",
+            S1AP_E_RAB_RELEASE_COMMAND (msg_p).mme_ue_s1ap_id, S1AP_E_RAB_RELEASE_COMMAND (msg_p).eNB_ue_s1ap_id);
+         return -1;
+    }
+
+    return 0;
+}
+
+
+int rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t* const ue_context_pP, uint8_t xid){
+    int e_rabs_released = 0;
+    MessageDef   *msg_p;
+
+    msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_E_RAB_RELEASE_RESPONSE);
+    S1AP_E_RAB_RELEASE_RESPONSE (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
+    
+    for (int i = 0;  i < NB_RB_MAX; i++){
+        if (xid == ue_context_pP->ue_context.e_rab[i].xid){
+            S1AP_E_RAB_RELEASE_RESPONSE (msg_p).e_rab_release[e_rabs_released].e_rab_id = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
+            e_rabs_released++;
+            //clear
+            memset(&ue_context_pP->ue_context.e_rab[i],0,sizeof(e_rab_param_t));
+        }
+    }
+    S1AP_E_RAB_RELEASE_RESPONSE (msg_p).nb_of_e_rabs_released = e_rabs_released;
+    S1AP_E_RAB_RELEASE_RESPONSE (msg_p).nb_of_e_rabs_failed = ue_context_pP->ue_context.nb_release_of_e_rabs;
+    memcpy(&(S1AP_E_RAB_RELEASE_RESPONSE (msg_p).e_rabs_failed[0]),&ue_context_pP->ue_context.e_rabs_release_failed[0],sizeof(e_rab_failed_t)*ue_context_pP->ue_context.nb_release_of_e_rabs);
+
+    ue_context_pP->ue_context.setup_e_rabs -= e_rabs_released;
+    LOG_I(RRC,"S1AP-E-RAB RELEASE RESPONSE: ENB_UE_S1AP_ID %d release_e_rabs %d setup_e_rabs %d \n",
+              S1AP_E_RAB_RELEASE_RESPONSE (msg_p).eNB_ue_s1ap_id,
+              e_rabs_released, ue_context_pP->ue_context.setup_e_rabs);
+    
+    itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+    //clear xid
+    for(int i = 0; i < NB_RB_MAX; i++) {
+        ue_context_pP->ue_context.e_rab[i].xid = -1;
+    }
+    //clear release e_rabs
+    ue_context_pP->ue_context.nb_release_of_e_rabs = 0;
+    memset(&ue_context_pP->ue_context.e_rabs_release_failed[0],0,sizeof(e_rab_failed_t)*S1AP_MAX_E_RAB);
+    return 0;
+}
+
+/*------------------------------------------------------------------------------*/
+int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance_t instance)
+{
+  const unsigned int Ttab[4] = {32,64,128,256};
+  uint8_t Tc,Tue;  /* DRX cycle of UE */
+  uint32_t pcch_nB;  /* 4T, 2T, T, T/2, T/4, T/8, T/16, T/32 */
+  uint32_t N;  /* N: min(T,nB). total count of PF in one DRX cycle */
+  uint32_t Ns = 0;  /* Ns: max(1,nB/T) */
+  uint8_t i_s;  /* i_s = floor(UE_ID/N) mod Ns */
+  uint32_t T;  /* DRX cycle */
+  for (uint16_t tai_size = 0; tai_size < S1AP_PAGING_IND(msg_p).tai_size; tai_size++) {
+       LOG_D(RRC,"[eNB %d] In S1AP_PAGING_IND: MCC %d, MNC %d, TAC %d\n", instance, S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mcc,
+             S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mnc, S1AP_PAGING_IND(msg_p).tac[tai_size]);
+      if (RC.rrc[instance]->configuration.mcc == S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mcc
+          && RC.rrc[instance]->configuration.mnc == S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mnc
+          && RC.rrc[instance]->configuration.tac == S1AP_PAGING_IND(msg_p).tac[tai_size]) {
+          for (uint8_t CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+              lte_frame_type_t frame_type = RC.eNB[instance][CC_id]->frame_parms.frame_type;
+              /* get nB from configuration */
+              /* get default DRX cycle from configuration */
+              Tc = (uint8_t)RC.rrc[instance]->configuration.pcch_defaultPagingCycle[CC_id];
+              if (Tc < PCCH_Config__defaultPagingCycle_rf32 || Tc > PCCH_Config__defaultPagingCycle_rf256) {
+                  continue;
+              }
+              Tue = (uint8_t)S1AP_PAGING_IND(msg_p).paging_drx;
+              /* set T = min(Tc,Tue) */
+              T = Tc < Tue ? Ttab[Tc] : Ttab[Tue];
+              /* set pcch_nB = PCCH-Config->nB */
+              pcch_nB = (uint32_t)RC.rrc[instance]->configuration.pcch_nB[CC_id];
+              switch (pcch_nB) {
+                case PCCH_Config__nB_fourT:
+                    Ns = 4;
+                    break;
+                case PCCH_Config__nB_twoT:
+                    Ns = 2;
+                    break;
+                default:
+                    Ns = 1;
+                    break;
+              }
+              /* set N = min(T,nB) */
+              if (pcch_nB > PCCH_Config__nB_oneT) {
+                switch (pcch_nB) {
+                case PCCH_Config__nB_halfT:
+                  N = T/2;
+                  break;
+                case PCCH_Config__nB_quarterT:
+                  N = T/4;
+                  break;
+                case PCCH_Config__nB_oneEighthT:
+                  N = T/8;
+                  break;
+                case PCCH_Config__nB_oneSixteenthT:
+                  N = T/16;
+                  break;
+                case PCCH_Config__nB_oneThirtySecondT:
+                  N = T/32;
+                  break;
+                default:
+                  /* pcch_nB error */
+                  LOG_E(RRC, "[eNB %d] In S1AP_PAGING_IND:  pcch_nB error (pcch_nB %d) \n",
+                      instance, pcch_nB);
+                  return (-1);
+                }
+              } else {
+                N = T;
+              }
+
+              /* insert data to UE_PF_PO or update data in UE_PF_PO */
+              pthread_mutex_lock(&ue_pf_po_mutex);
+              uint8_t i = 0;
+              for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+                if ((UE_PF_PO[CC_id][i].enable_flag == TRUE && UE_PF_PO[CC_id][i].ue_index_value == (uint16_t)(S1AP_PAGING_IND(msg_p).ue_index_value))
+                    || (UE_PF_PO[CC_id][i].enable_flag != TRUE)) {
+                    /* set T = min(Tc,Tue) */
+                    UE_PF_PO[CC_id][i].T = T;
+                    /* set UE_ID */
+                    UE_PF_PO[CC_id][i].ue_index_value = (uint16_t)S1AP_PAGING_IND(msg_p).ue_index_value;
+                    /* calculate PF and PO */
+                    /* set PF_min : SFN mod T = (T div N)*(UE_ID mod N) */
+                    UE_PF_PO[CC_id][i].PF_min = (T / N) * (UE_PF_PO[CC_id][i].ue_index_value % N);
+                    /* set PO */
+                    /* i_s = floor(UE_ID/N) mod Ns */
+                    i_s = (uint8_t)((UE_PF_PO[CC_id][i].ue_index_value / N) % Ns);
+                    if (Ns == 1) {
+                        UE_PF_PO[CC_id][i].PO = (frame_type==FDD) ? 9 : 0;
+                    } else if (Ns==2) {
+                        UE_PF_PO[CC_id][i].PO = (frame_type==FDD) ? (4+(5*i_s)) : (5*i_s);
+                    } else if (Ns==4) {
+                        UE_PF_PO[CC_id][i].PO = (frame_type==FDD) ? (4*(i_s&1)+(5*(i_s>>1))) : ((i_s&1)+(5*(i_s>>1)));
+                    }
+                    if (UE_PF_PO[CC_id][i].enable_flag == TRUE) {
+                        //paging exist UE log
+                        LOG_D(RRC,"[eNB %d] CC_id %d In S1AP_PAGING_IND: Update exist UE %d, T %d, PF %d, PO %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value, T, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].PO);
+                    } else {
+                        /* set enable_flag */
+                        UE_PF_PO[CC_id][i].enable_flag = TRUE;
+                        //paging new UE log
+                        LOG_D(RRC,"[eNB %d] CC_id %d In S1AP_PAGING_IND: Insert a new UE %d, T %d, PF %d, PO %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value, T, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].PO);
+                    }
+                    break;
+                }
+              }
+              pthread_mutex_unlock(&ue_pf_po_mutex);
+
+              uint32_t length;
+              uint8_t buffer[RRC_BUF_SIZE];
+              uint8_t *message_buffer;
+              /* Transfer data to PDCP */
+              MessageDef *message_p;
+              message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_PCCH_DATA_REQ);
+              /* Create message for PDCP (DLInformationTransfer_t) */
+              length = do_Paging (instance,
+                                  buffer,
+                                  S1AP_PAGING_IND(msg_p).ue_paging_identity,
+                                  S1AP_PAGING_IND(msg_p).cn_domain);
+              message_buffer = itti_malloc (TASK_RRC_ENB, TASK_PDCP_ENB, length);
+              /* Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling). */
+              memcpy (message_buffer, buffer, length);
+              RRC_PCCH_DATA_REQ (message_p).sdu_size  = length;
+              RRC_PCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
+              RRC_PCCH_DATA_REQ (message_p).mode      = PDCP_TRANSMISSION_MODE_TRANSPARENT;  /* not used */
+              RRC_PCCH_DATA_REQ (message_p).rnti      = P_RNTI;
+              RRC_PCCH_DATA_REQ (message_p).ue_index  = i;
+              RRC_PCCH_DATA_REQ (message_p).CC_id  = CC_id;
+              LOG_D(RRC, "[eNB %d] CC_id %d In S1AP_PAGING_IND: send encdoed buffer to PDCP buffer_size %d\n", instance, CC_id, length);
+              itti_send_msg_to_task (TASK_PDCP_ENB, instance, message_p);
+          }
+      }
+  }
+
+  return (0);
 }
 
 # endif /* defined(ENABLE_ITTI) */

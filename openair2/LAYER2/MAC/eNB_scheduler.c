@@ -561,6 +561,12 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
 	}
     }				// ul_failure_timer>0
 
+    UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer++;
+    if(UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer > (U_PLANE_INACTIVITY_VALUE*subframe_num(&RC.eNB[module_idP][CC_id]->frame_parms))){
+       LOG_D(MAC,"UE %d rnti %x: U-Plane Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti); 
+       mac_eNB_rrc_uplane_failure(module_idP,CC_id,frameP,subframeP,rnti);
+       UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer  = 0;
+    }// time > 60s
 }
 
 void
@@ -732,6 +738,8 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 	schedule_mib(module_idP, frameP, subframeP);
     // This schedules SI for legacy LTE and eMTC starting in subframeP
     schedule_SI(module_idP, frameP, subframeP);
+    // This schedules Paging in subframeP
+    schedule_PCH(module_idP,frameP,subframeP);
     // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
     schedule_RA(module_idP, frameP, subframeP);
     // copy previously scheduled UL resources (ULSCH + HARQ)

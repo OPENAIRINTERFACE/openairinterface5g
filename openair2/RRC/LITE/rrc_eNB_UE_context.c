@@ -136,6 +136,10 @@ rrc_eNB_allocate_new_UE_context(
 
   memset(new_p, 0, sizeof(struct rrc_eNB_ue_context_s));
   new_p->local_uid = uid_linear_allocator_new(rrc_instance_pP);
+  for(int i = 0; i < NB_RB_MAX; i++) {
+      new_p->ue_context.e_rab[i].xid = -1;
+      new_p->ue_context.modify_e_rab[i].xid = -1;
+  }
   return new_p;
 }
 
@@ -184,6 +188,7 @@ void rrc_eNB_remove_ue_context(
   rrc_eNB_free_mem_UE_context(ctxt_pP, ue_context_pP);
   uid_linear_allocator_free(rrc_instance_pP, ue_context_pP->local_uid);
   free(ue_context_pP);
+  rrc_instance_pP->Nb_ue --;
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Removed UE context\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
