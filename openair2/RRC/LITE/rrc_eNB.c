@@ -608,7 +608,7 @@ rrc_eNB_get_next_free_ue_context(
   }
 }
 
-#if !defined(ENABLE_USE_MME)
+#if 0 //!defined(ENABLE_USE_MME)
 void rrc_eNB_emulation_notify_ue_module_id(
   const module_id_t ue_module_idP,
   const rnti_t      rntiP,
