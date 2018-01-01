@@ -1099,62 +1099,68 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   int UE_id = device->Mod_id;
   int CC_id  = device->CC_id;
 
-  int subframe,new_subframe;
+  int subframe;
   int sample_count=0;
   int read_size;
+  int sptti = PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti;
 
   *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
 
-  LOG_D(EMU,"[TXPATH]UE_trx_read nsamps %d TS %llu (%llu) antenna %d\n",nsamps,
+  LOG_D(EMU,"DL simulation 0: UE_trx_read nsamps %d TS %llu (%llu, offset %d) antenna %d\n",nsamps,
         (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
         (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
+        (int)(last_UE_rx_timestamp[UE_id][CC_id]%sptti),
 	cc);
 
 
-  if (nsamps < PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)
+  if (nsamps < sptti)
     read_size = nsamps;
   else
-    read_size = PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti;
+    read_size = sptti;
 
   while (sample_count<nsamps) {
+    LOG_D(EMU,"DL simulation 1: UE_trx_read : current TS now %llu, last TS %llu\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
     while (current_UE_rx_timestamp[UE_id][CC_id] < 
 	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
-      LOG_D(EMU,"[TXPATH]UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+      LOG_D(EMU,"DL simulation 2: UE_trx_read : current TS %llu, last TS %llu, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
       usleep(500);
     }
-
-    //    LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+    LOG_D(EMU,"DL simulation 3: UE_trx_read : current TS now %llu, last TS %llu\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
 
     // if we cross a subframe-boundary
-    subframe = (last_UE_rx_timestamp[UE_id][CC_id]/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
-    new_subframe = ((last_UE_rx_timestamp[UE_id][CC_id]+read_size)/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
-    if (new_subframe!=subframe) {
-      // tell top-level we are busy 
-      pthread_mutex_lock(&subframe_mutex);
-      subframe_UE_mask|=(1<<UE_id);
-      LOG_D(EMU,"Setting UE_id %d mask to busy (%d)\n",UE_id,subframe_UE_mask);
-      pthread_mutex_unlock(&subframe_mutex);
+    subframe = (last_UE_rx_timestamp[UE_id][CC_id]/sptti)%10;
 
-    }
+    // tell top-level we are busy 
+    pthread_mutex_lock(&subframe_mutex);
+    subframe_UE_mask|=(1<<UE_id);
+    LOG_D(EMU,"Setting UE_id %d mask to busy (%d)\n",UE_id,subframe_UE_mask);
+    pthread_mutex_unlock(&subframe_mutex);
+    
+    
 
-    LOG_D(PHY,"UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu)\n",
+    LOG_D(PHY,"DL simulation 4: UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu,nsamps %d)\n",
 	  subframe,(unsigned long long)*ptimestamp,
-	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id]);    
+	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
+	  nsamps);
+
+    LOG_D(EMU,"DL simulation 5: Doing DL simulation for %d samples starting in subframe %d at offset %d\n",
+	  nsamps,subframe,
+	  (int)(last_UE_rx_timestamp[UE_id][CC_id]%sptti));
+
     do_DL_sig(RU2UE,
 	      enb_data,
 	      ue_data,
 	      subframe,
-	      last_UE_rx_timestamp[UE_id][CC_id]%PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti,
-	      nsamps,
+	      last_UE_rx_timestamp[UE_id][CC_id]%sptti,
+	      sptti,
 	      0, //abstraction_flag,
 	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
 	      UE_id,
 	      CC_id);
-
-    LOG_D(EMU,"[TXPATH]UE_trx_read @ TS %llu (%llu)=> frame %d, subframe %d\n",
+    LOG_D(EMU,"DL simulation 6: UE_trx_read @ TS %llu (%llu)=> frame %d, subframe %d\n",
 	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
 	  (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
-	  ((unsigned long long)last_UE_rx_timestamp[UE_id][CC_id]/(PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti*10))&1023,
+	  ((unsigned long long)last_UE_rx_timestamp[UE_id][CC_id]/(sptti*10))&1023,
 	  subframe);
 
     last_UE_rx_timestamp[UE_id][CC_id] += read_size;
@@ -1329,7 +1335,9 @@ void init_devices(void){
 	PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_set_freq_func    = UE_trx_set_freq;
 	PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_set_gains_func   = UE_trx_set_gains;
 	last_UE_rx_timestamp[UE_id][CC_id] = 0;
-	
+
+
+
       }
     }
   }
@@ -1399,7 +1407,7 @@ void init_ocm(void)
   for (ru_id = 0; ru_id < RC.nb_RU; ru_id++) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        LOG_D(OCM,"Initializing channel (%s, %d) from eNB %d to UE %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
+        LOG_I(OCM,"Initializing channel (%s, %d) from RU %d to UE %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
               map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option), ru_id, UE_id);
 
 
@@ -1542,7 +1550,7 @@ void update_ocm()
 	  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
 	    AssertFatal(RU2UE[ru_id][UE_id][CC_id]!=NULL,"RU2UE[%d][%d][%d] is null\n",ru_id,UE_id,CC_id);
-	    AssertFatal(UE2RU[ru_id][UE_id][CC_id]!=NULL,"RU2UE[%d][%d][%d] is null\n",ru_id,UE_id,CC_id);
+	    AssertFatal(UE2RU[UE_id][ru_id][CC_id]!=NULL,"UE2RU[%d][%d][%d] is null\n",UE_id,ru_id,CC_id);
 	    //pathloss: -132.24 dBm/15kHz RE + target SNR - eNB TX power per RE
 	    if (ru_id == (UE_id % RC.nb_RU)) {
 	      RU2UE[ru_id][UE_id][CC_id]->path_loss_dB = -132.24 + snr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower;

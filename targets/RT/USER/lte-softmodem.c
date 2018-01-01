@@ -227,6 +227,9 @@ threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
  */
 uint8_t abstraction_flag=0;
 
+/* forward declarations */
+void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+
 /*---------------------BMC: timespec helpers -----------------------------*/
 
 struct timespec min_diff_time = { .tv_sec = 0, .tv_nsec = 0 };
@@ -593,10 +596,11 @@ static void get_options(void) {
 
   
   if (UE_flag > 0) {
+     uint8_t n_rb_dl;
      paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
      paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
 
-
+     set_default_frame_parms(frame_parms);
 
      config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
      config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
@@ -606,22 +610,21 @@ static void get_options(void) {
   	  input_fd = fopen(loopfile,"r");
   	  AssertFatal(input_fd != NULL,"Please provide a valid input file\n");
       }
+
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
-      if ( *(cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr) > 0) mode = debug_prach;
-      if ( *(cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr) > 0)  mode = no_L2_connect;
-      if ( *(cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr) > 0) mode = calib_prach_tx; 
+      if ( (cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = debug_prach;
+      if ( (cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0)  mode = no_L2_connect;
+      if ( (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = calib_prach_tx; 
       if (dumpframe  > 0)  mode = rx_dump_frame;
       
       if ( downlink_frequency[0][0] > 0) {
-  	  for (CC_id=1; CC_id<MAX_NUM_CCs; CC_id++) {
-  	    downlink_frequency[CC_id][1] = downlink_frequency[0][0];
-  	    downlink_frequency[CC_id][2] = downlink_frequency[0][0];
-  	    downlink_frequency[CC_id][3] = downlink_frequency[0][0];
-  	    printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
-  	  }
-      UE_scan=0;
+	printf("Downlink frequency set to %u\n", downlink_frequency[0][0]);
+	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+	}
+	UE_scan=0;
       } 
 
       if (tddflag > 0) {
@@ -629,38 +632,38 @@ static void get_options(void) {
 	     frame_parms[CC_id]->frame_type = TDD;
       }
 
-      if (frame_parms[0]->N_RB_DL !=0) {
-  	  if ( frame_parms[0]->N_RB_DL < 6 ) {
-  	     frame_parms[0]->N_RB_DL = 6;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  if ( frame_parms[0]->N_RB_DL > 100 ) {
-  	     frame_parms[0]->N_RB_DL = 100;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  if ( frame_parms[0]->N_RB_DL > 50 && frame_parms[0]->N_RB_DL < 100 ) {
-  	     frame_parms[0]->N_RB_DL = 50;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  if ( frame_parms[0]->N_RB_DL > 25 && frame_parms[0]->N_RB_DL < 50 ) {
-  	     frame_parms[0]->N_RB_DL = 25;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  UE_scan = 0;
-  	  frame_parms[0]->N_RB_UL=frame_parms[0]->N_RB_DL;
-  	  for (CC_id=1; CC_id<MAX_NUM_CCs; CC_id++) {
-  	      frame_parms[CC_id]->N_RB_DL=frame_parms[0]->N_RB_DL;
-  	      frame_parms[CC_id]->N_RB_UL=frame_parms[0]->N_RB_UL;
-  	  }
+      if (n_rb_dl !=0) {
+	printf("NB_RB set to %d\n",n_rb_dl);
+	if ( n_rb_dl < 6 ) {
+	  n_rb_dl = 6;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",n_rb_dl);
+	}
+	if ( n_rb_dl > 100 ) {
+	  n_rb_dl = 100;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",n_rb_dl);
+	}
+	if ( n_rb_dl > 50 && n_rb_dl < 100 ) {
+	  n_rb_dl = 50;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",n_rb_dl);
+	}
+	if ( n_rb_dl > 25 && n_rb_dl < 50 ) {
+	  n_rb_dl = 25;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",n_rb_dl);
+	}
+	UE_scan = 0;
+	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  frame_parms[CC_id]->N_RB_DL=n_rb_dl;
+	  frame_parms[CC_id]->N_RB_UL=n_rb_dl;
+	}
       }
 
-
-      for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++) {
-  	    tx_max_power[CC_id]=tx_max_power[0];
-	    rx_gain[0][CC_id] = rx_gain[0][0];
-	    tx_gain[0][CC_id] = tx_gain[0][0];
+      for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+	tx_max_power[CC_id]=tx_max_power[0];
+	rx_gain[0][CC_id] = rx_gain[0][0];
+	tx_gain[0][CC_id] = tx_gain[0][0];
       }
   } /* UE_flag > 0 */
+
 #if T_TRACER
   paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
   config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);   
@@ -675,10 +678,11 @@ static void get_options(void) {
       NB_RU	  = RC.nb_RU;
       printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,NB_RU);
     }
-  } else if (UE_flag == 1 && (CONFIG_GETCONFFILE != NULL)) {
+  } else if (UE_flag == 1 && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
     // Here the configuration file is the XER encoded UE capabilities
     // Read it in and store in asn1c data structures
-    strcpy(uecap_xer,CONFIG_GETCONFFILE);
+    sprintf(uecap_xer,"%stargets/PROJECTS/GENERIC-LTE-EPC/CONF/UE_config.xml",getenv("OPENAIR_HOME"));
+    printf("%s\n",uecap_xer);
     uecap_xer_in=1;
   } /* UE with config file  */
 }
@@ -691,7 +695,7 @@ int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
 
-void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
   int CC_id;
@@ -728,11 +732,12 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
     frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
-    downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
-    downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-    downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
+//    downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
+//    downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
+//    downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
+//    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
     //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
+    frame_parms[CC_id]->dl_CarrierFreq=downlink_frequency[CC_id][0];
 
   }
 
@@ -905,14 +910,14 @@ int main( int argc, char **argv )
 
 
   // set default parameters
-  if (UE_flag == 1) set_default_frame_parms(frame_parms);
+  //if (UE_flag == 1) set_default_frame_parms(frame_parms);
 
   logInit();
 
   printf("Reading in command-line options\n");
 
   get_options (); 
-  if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
+  if (CONFIG_ISFLAGSET(CONFIG_ABORT) && UE_flag == 0) {
       fprintf(stderr,"Getting configuration failed\n");
       exit(-1);
   }
@@ -931,7 +936,7 @@ int main( int argc, char **argv )
     printf("configuring for UE\n");
 
     set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
-    set_comp_log(PHY,     LOG_DEBUG,   LOG_HIGH, 1);
+    set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(MAC,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(RLC,     LOG_INFO,   LOG_HIGH | FLAG_THREAD, 1);
     set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);
@@ -1080,8 +1085,9 @@ int main( int argc, char **argv )
 	else if (frame_parms[CC_id]->N_RB_DL == 25)
 	  UE[CC_id]->N_TA_offset = 624/4;
       }
-      
+    init_openair0();      
     }
+
   }
 
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
@@ -1130,8 +1136,6 @@ int main( int argc, char **argv )
   
   
 #if defined(ENABLE_ITTI)
-  
-  
   if ((UE_flag == 1)||
       (RC.nb_inst > 0))  {
     
@@ -1148,16 +1152,6 @@ int main( int argc, char **argv )
     RCconfig_L1();
   }
 #endif
-  
-  if (phy_test==0) {
-    if (UE_flag==1) {
-      printf("Filling UE band info\n");
-      fill_ue_band_info();
-      dl_phy_sync_success (0, 0, 0, 1);
-    } 
-  }
-  
-  
   
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -1225,14 +1219,18 @@ int main( int argc, char **argv )
   rt_sleep_ns(10*100000000ULL);
   
   
-  
-  
   // start the main threads
   if (UE_flag == 1) {
     int eMBMS_active = 0;
-    init_UE(1,eMBMS_active,uecap_xer_in);
+    init_UE(1,eMBMS_active,uecap_xer_in,0);
+
+    if (phy_test==0) {
+      printf("Filling UE band info\n");
+      fill_ue_band_info();
+      dl_phy_sync_success (0, 0, 0, 1);
+    }
+
     number_of_cards = 1;
-    
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
       PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;

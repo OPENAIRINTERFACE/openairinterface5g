@@ -807,7 +807,10 @@ mac_UE_get_rrc_status(
 )
 //------------------------------------------------------------------------------
 {
-  return(UE_rrc_inst[Mod_idP].Info[indexP].State);
+  if (UE_rrc_inst)
+    return(UE_rrc_inst[Mod_idP].Info[indexP].State);
+  else
+    return(-1);
 }
 
 //-------------------------------------------------------------------------------------------//

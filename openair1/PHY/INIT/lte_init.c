@@ -1228,6 +1228,7 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
   LOG_I(PHY,"C-RNTI %x %x \n", phy_vars_ue->pdcch_vars[0][eNB_id]->crnti,
 	phy_vars_ue->pdcch_vars[1][eNB_id]->crnti);
 
+
 }
 
 void  phy_config_cba_rnti (module_id_t Mod_id,int CC_id,eNB_flag_t eNB_flag, uint8_t index, rnti_t cba_rnti, uint8_t cba_group_id, uint8_t num_active_cba_groups)

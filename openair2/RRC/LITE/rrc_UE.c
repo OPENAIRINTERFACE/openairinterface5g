@@ -1691,64 +1691,68 @@ rrc_ue_process_securityModeCommand(
 #endif //#if defined(ENABLE_SECURITY)
 
   if (securityModeCommand->criticalExtensions.present == SecurityModeCommand__criticalExtensions_PR_c1) {
-    if (securityModeCommand->criticalExtensions.choice.c1.present == SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8) {
-
-      ul_dcch_msg.message.choice.c1.choice.securityModeComplete.rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
-      ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.present = SecurityModeCommand__criticalExtensions_PR_c1;
-      ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.choice.securityModeComplete_r8.nonCriticalExtension =NULL;
-
-      LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (eNB %d)\n",
-            ctxt_pP->module_id,ctxt_pP->frame,eNB_index);
-
-      enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
-                                       (void*)&ul_dcch_msg,
-                                       buffer,
-                                       100);
-      AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-                   enc_rval.failed_type->name, enc_rval.encoded);
-
+    if (securityModeCommand->criticalExtensions.choice.c1.present != SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8)
+      LOG_W(RRC,"securityModeCommand->criticalExtensions.choice.c1.present (%d) != SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8\n",
+	    securityModeCommand->criticalExtensions.choice.c1.present);
+    
+    
+    ul_dcch_msg.message.choice.c1.choice.securityModeComplete.rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
+    ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.present = SecurityModeCommand__criticalExtensions_PR_c1;
+    ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.choice.securityModeComplete_r8.nonCriticalExtension =NULL;
+    
+    LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (eNB %d)\n",
+	  ctxt_pP->module_id,ctxt_pP->frame,eNB_index);
+    
+    enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+				     (void*)&ul_dcch_msg,
+				     buffer,
+				     100);
+    AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+		 enc_rval.failed_type->name, enc_rval.encoded);
+    
 #ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+    xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
 #endif
-
+    
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
-      {
-        char        message_string[20000];
-        size_t      message_string_size;
-
-        if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_DCCH_Message, (void *) &ul_dcch_msg)) > 0) {
-          MessageDef *msg_p;
-
-          msg_p = itti_alloc_new_message_sized (TASK_RRC_UE, RRC_UL_DCCH, message_string_size + sizeof (IttiMsgText));
-          msg_p->ittiMsg.rrc_ul_dcch.size = message_string_size;
-          memcpy(&msg_p->ittiMsg.rrc_ul_dcch.text, message_string, message_string_size);
-
-          itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
-        }
+    {
+      char        message_string[20000];
+      size_t      message_string_size;
+      
+      if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_DCCH_Message, (void *) &ul_dcch_msg)) > 0) {
+	MessageDef *msg_p;
+	
+	msg_p = itti_alloc_new_message_sized (TASK_RRC_UE, RRC_UL_DCCH, message_string_size + sizeof (IttiMsgText));
+	msg_p->ittiMsg.rrc_ul_dcch.size = message_string_size;
+	memcpy(&msg_p->ittiMsg.rrc_ul_dcch.text, message_string, message_string_size);
+	
+	itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
       }
+    }
 # endif
 #endif
-
+    
 #ifdef USER_MODE
-      LOG_D(RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+    LOG_D(RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
 #endif
-
-      for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
-        LOG_T(RRC, "%02x.", buffer[i]);
-      }
-
-      LOG_T(RRC, "\n");
-      rrc_data_req (
-		    ctxt_pP,
-		    DCCH,
-		    rrc_mui++,
-		    SDU_CONFIRM_NO,
-		    (enc_rval.encoded + 7) / 8,
-		    buffer,
-		    PDCP_TRANSMISSION_MODE_CONTROL);
+    
+    for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
+      LOG_T(RRC, "%02x.", buffer[i]);
     }
+    
+    LOG_T(RRC, "\n");
+    rrc_data_req (
+		  ctxt_pP,
+		  DCCH,
+		  rrc_mui++,
+		  SDU_CONFIRM_NO,
+		  (enc_rval.encoded + 7) / 8,
+		  buffer,
+		  PDCP_TRANSMISSION_MODE_CONTROL);
   }
+  else LOG_W(RRC,"securityModeCommand->criticalExtensions.present (%d) != SecurityModeCommand__criticalExtensions_PR_c1\n",
+	     securityModeCommand->criticalExtensions.present);
 }
 
 //-----------------------------------------------------------------------------
@@ -1792,68 +1796,72 @@ rrc_ue_process_ueCapabilityEnquiry(
   // ue_CapabilityRAT_Container.ueCapabilityRAT_Container.size = UE_rrc_inst[ue_mod_idP].UECapability_size;
 
 
-  if (UECapabilityEnquiry->criticalExtensions.present == UECapabilityEnquiry__criticalExtensions_PR_c1) {
-    if (UECapabilityEnquiry->criticalExtensions.choice.c1.present == UECapabilityEnquiry__criticalExtensions__c1_PR_ueCapabilityEnquiry_r8) {
-      ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.present           = UECapabilityInformation__criticalExtensions_PR_c1;
-      ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.present =
-        UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8;
-      ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count
-        =0;
+  AssertFatal(UECapabilityEnquiry->criticalExtensions.present == UECapabilityEnquiry__criticalExtensions_PR_c1,
+	      "UECapabilityEnquiry->criticalExtensions.present (%d) != UECapabilityEnquiry__criticalExtensions_PR_c1 (%d)\n",
+	      UECapabilityEnquiry->criticalExtensions.present,UECapabilityEnquiry__criticalExtensions_PR_c1);
 
-      for (i=0; i<UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count; i++) {
-
-        if (*UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.array[i]
-            == RAT_Type_eutra) {
-          ASN_SEQUENCE_ADD(
-            &ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
-            &ue_CapabilityRAT_Container);
-
-          enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, (void*) &ul_dcch_msg, buffer, 100);
-          AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-                       enc_rval.failed_type->name, enc_rval.encoded);
-
+  if (UECapabilityEnquiry->criticalExtensions.choice.c1.present != UECapabilityEnquiry__criticalExtensions__c1_PR_ueCapabilityEnquiry_r8)
+    LOG_W(RRC,"UECapabilityEnquiry->criticalExtensions.choice.c1.present (%d) != UECapabilityEnquiry__criticalExtensions__c1_PR_ueCapabilityEnquiry_r8)\n",
+	  UECapabilityEnquiry->criticalExtensions.choice.c1.present);
+  
+  ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.present           = UECapabilityInformation__criticalExtensions_PR_c1;
+  ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.present =
+    UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8;
+  ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count
+    =0;
+  
+  for (i=0; i<UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count; i++) {
+    
+    if (*UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.array[i]
+	== RAT_Type_eutra) {
+      ASN_SEQUENCE_ADD(
+		       &ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
+		       &ue_CapabilityRAT_Container);
+      
+      enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, (void*) &ul_dcch_msg, buffer, 100);
+      AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+		   enc_rval.failed_type->name, enc_rval.encoded);
+      
 #ifdef XER_PRINT
-          xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
 #endif
-
+      
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
-          {
-            char        message_string[20000];
-            size_t      message_string_size;
-
-            if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_DCCH_Message, (void *) &ul_dcch_msg)) > 0) {
-              MessageDef *msg_p;
-
-              msg_p = itti_alloc_new_message_sized (TASK_RRC_UE, RRC_UL_DCCH, message_string_size + sizeof (IttiMsgText));
-              msg_p->ittiMsg.rrc_ul_dcch.size = message_string_size;
-              memcpy(&msg_p->ittiMsg.rrc_ul_dcch.text, message_string, message_string_size);
-
-              itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
-            }
-          }
+      {
+	char        message_string[20000];
+	size_t      message_string_size;
+	
+	if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_DCCH_Message, (void *) &ul_dcch_msg)) > 0) {
+	  MessageDef *msg_p;
+	  
+	  msg_p = itti_alloc_new_message_sized (TASK_RRC_UE, RRC_UL_DCCH, message_string_size + sizeof (IttiMsgText));
+	  msg_p->ittiMsg.rrc_ul_dcch.size = message_string_size;
+	  memcpy(&msg_p->ittiMsg.rrc_ul_dcch.text, message_string, message_string_size);
+	  
+	  itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
+	}
+      }
 # endif
 #endif
+	
 
-#ifdef USER_MODE
-          LOG_D(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
+      LOG_I(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 
-          for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
-            LOG_T(RRC, "%02x.", buffer[i]);
-          }
-
-          LOG_T(RRC, "\n");
-          rrc_data_req (
-			ctxt_pP,
-			DCCH,
-			rrc_mui++,
-			SDU_CONFIRM_NO,
-			(enc_rval.encoded + 7) / 8,
-			buffer,
-			PDCP_TRANSMISSION_MODE_CONTROL);
-        }
+      
+      for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
+	LOG_T(RRC, "%02x.", buffer[i]);
       }
+      
+      LOG_T(RRC, "\n");
+      rrc_data_req (
+		    ctxt_pP,
+		    DCCH,
+		    rrc_mui++,
+		    SDU_CONFIRM_NO,
+		    (enc_rval.encoded + 7) / 8,
+		    buffer,
+		    PDCP_TRANSMISSION_MODE_CONTROL);
     }
   }
 }

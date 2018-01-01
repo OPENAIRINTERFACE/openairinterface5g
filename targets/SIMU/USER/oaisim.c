@@ -524,11 +524,6 @@ l2l1_task (void *args_p)
 	}
 	
       }
-      // UL scope at eNB 0
-      form_enb[UE_inst] = create_lte_phy_scope_enb();
-      sprintf (title, "LTE UL SCOPE UE %d to eNB %d", UE_inst, eNB_inst);
-      fl_show_form (form_enb[UE_inst]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-      
     }
   }
 
@@ -1237,8 +1232,21 @@ void wait_RUs() {
   printf("RUs are ready, let's go\n");
 }
 
-void init_UE(int,int,int);
+void init_UE(int,int,int,int);
 void init_RU(const char*);
+
+void set_UE_defaults(int nb_ue) {
+
+  for (int UE_id = 0;UE_id<nb_ue;UE_id++) {
+    for (int CC_id = 0;CC_id<MAX_NUM_CCs;CC_id++) {
+      for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
+	PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[i][0]->dciFormat      = 0;
+	PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[i][0]->agregationLevel      = 0xFF;
+      }
+      PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
+    }
+  }
+}
 
 
 static void print_current_directory(void)
@@ -1372,7 +1380,10 @@ main (int argc, char **argv)
   printf("Waiting for RUs to get set up\n"); 
   wait_RUs();
 
-  init_UE(NB_UE_INST,0,0);
+  init_UE(NB_UE_INST,0,0,1);
+
+  set_UE_defaults(NB_UE_INST);
+
 
   init_ocm ();
   printf("Sending sync to all threads\n");
@@ -1493,6 +1504,8 @@ reset_opp_meas_oaisim (void)
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ulsch_turbo_encoding_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ulsch_interleaving_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ulsch_multiplexing_stats);
+
+
     /*
      * L2 functions
      */
@@ -1513,6 +1526,7 @@ reset_opp_meas_oaisim (void)
     reset_meas (&UE_pdcp_stats[UE_id].pdcp_ip);
     reset_meas (&UE_pdcp_stats[UE_id].ip_pdcp);
 
+    
   }
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
