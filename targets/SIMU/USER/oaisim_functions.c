@@ -1106,7 +1106,9 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
   *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
 
-  LOG_D(EMU,"DL simulation 0: UE_trx_read nsamps %d TS %llu (%llu, offset %d) antenna %d\n",nsamps,
+  LOG_D(EMU,"UE %d DL simulation 0: UE_trx_read nsamps %d TS %llu (%llu, offset %d) antenna %d\n",
+        UE_id,
+        nsamps,
         (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
         (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
         (int)(last_UE_rx_timestamp[UE_id][CC_id]%sptti),
@@ -1119,13 +1121,13 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
     read_size = sptti;
 
   while (sample_count<nsamps) {
-    LOG_D(EMU,"DL simulation 1: UE_trx_read : current TS now %llu, last TS %llu\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+    LOG_D(EMU,"UE %d: DL simulation 1: UE_trx_read : current TS now %llu, last TS %llu\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
     while (current_UE_rx_timestamp[UE_id][CC_id] < 
 	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
-      LOG_D(EMU,"DL simulation 2: UE_trx_read : current TS %llu, last TS %llu, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+      LOG_D(EMU,"UE %d: DL simulation 2: UE_trx_read : current TS %llu, last TS %llu, sleeping\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
       usleep(500);
     }
-    LOG_D(EMU,"DL simulation 3: UE_trx_read : current TS now %llu, last TS %llu\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+    LOG_D(EMU,"UE %d: DL simulation 3: UE_trx_read : current TS now %llu, last TS %llu\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
 
     // if we cross a subframe-boundary
     subframe = (last_UE_rx_timestamp[UE_id][CC_id]/sptti)%10;
@@ -1138,13 +1140,13 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
     
     
 
-    LOG_D(PHY,"DL simulation 4: UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu,nsamps %d)\n",
-	  subframe,(unsigned long long)*ptimestamp,
+    LOG_D(PHY,"UE %d: DL simulation 4: UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu,nsamps %d)\n",
+	  UE_id,subframe,(unsigned long long)*ptimestamp,
 	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
 	  nsamps);
 
-    LOG_D(EMU,"DL simulation 5: Doing DL simulation for %d samples starting in subframe %d at offset %d\n",
-	  nsamps,subframe,
+    LOG_D(EMU,"UE %d: DL simulation 5: Doing DL simulation for %d samples starting in subframe %d at offset %d\n",
+	  UE_id,nsamps,subframe,
 	  (int)(last_UE_rx_timestamp[UE_id][CC_id]%sptti));
 
     do_DL_sig(RU2UE,
@@ -1157,8 +1159,8 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
 	      UE_id,
 	      CC_id);
-    LOG_D(EMU,"DL simulation 6: UE_trx_read @ TS %llu (%llu)=> frame %d, subframe %d\n",
-	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
+    LOG_D(EMU,"UE %d: DL simulation 6: UE_trx_read @ TS %llu (%llu)=> frame %d, subframe %d\n",
+	  UE_id,(unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
 	  (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
 	  ((unsigned long long)last_UE_rx_timestamp[UE_id][CC_id]/(sptti*10))&1023,
 	  subframe);
