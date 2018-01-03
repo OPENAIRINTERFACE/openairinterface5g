@@ -555,8 +555,8 @@ void *te_thread(void *param) {
   pthread_setname_np( pthread_self(),"te processing");
   LOG_I(PHY,"thread te created id=%ld\n", syscall(__NR_gettid));
   
-  //CPU_SET(4, &cpuset);
-  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  CPU_SET(4, &cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;
@@ -592,8 +592,8 @@ void *te_thread1(void *param) {
   pthread_setname_np( pthread_self(),"te processing 1");
   LOG_I(PHY,"thread te 1 created id=%ld\n", syscall(__NR_gettid));
   
-  //CPU_SET(7, &cpuset);
-  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  CPU_SET(7, &cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;
@@ -630,8 +630,8 @@ void *te_thread2(void *param) {
   pthread_setname_np( pthread_self(),"te processing 2");
   LOG_I(PHY,"thread te 2 created id=%ld\n", syscall(__NR_gettid));
   
-  //CPU_SET(7, &cpuset);
-  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  CPU_SET(8, &cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;
@@ -665,6 +665,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 			    time_stats_t *rm_stats,
 			    time_stats_t *te_stats,
 				time_stats_t *te_wait_stats,
+                time_stats_t *te_main_stats,
                 time_stats_t *te_wakeup_stats0,
                 time_stats_t *te_wakeup_stats1,
 			    time_stats_t *i_stats)
@@ -787,6 +788,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
     pthread_mutex_unlock( &proc->mutex_te[2] );
 ////////////////////////////////////////////////////////////////
 
+    start_meas(te_main_stats);
     for (r=(dlsch->harq_processes[harq_pid]->C>>2)*3; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
       if (r<dlsch->harq_processes[harq_pid]->Cminus)
@@ -839,6 +841,10 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 	proc->tep[1].eNB          = eNB;
     proc->tep[1].dlsch        = dlsch;
     proc->tep[1].G            = G;
+    
+    proc->tep[2].eNB          = eNB;
+    proc->tep[2].dlsch        = dlsch;
+    proc->tep[2].G            = G;
 
     // wakeup worker to do second half segments
     if (pthread_cond_signal(&proc->cond_te[0]) != 0) {
@@ -847,6 +853,11 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
       return (-1);
     }
 	if (pthread_cond_signal(&proc->cond_te[1]) != 0) {
+      printf("[eNB] ERROR pthread_cond_signal for te thread exit\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+      return (-1);
+    }
+    if (pthread_cond_signal(&proc->cond_te[2]) != 0) {
       printf("[eNB] ERROR pthread_cond_signal for te thread exit\n");
       exit_fun( "ERROR pthread_cond_signal" );
       return (-1);
@@ -889,6 +900,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
       stop_meas(rm_stats);
     }
   }
+  stop_meas(te_main_stats);
 
   // wait for worker to finish
   start_meas(te_wait_stats);
@@ -915,6 +927,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    time_stats_t *rm_stats,
                    time_stats_t *te_stats,
 				   time_stats_t *te_wait_stats,
+                   time_stats_t *te_main_stats,
                    time_stats_t *te_wakeup_stats0,
                    time_stats_t *te_wakeup_stats1,
                    time_stats_t *i_stats)
@@ -950,6 +963,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    rm_stats,
                    te_stats,
                    te_wait_stats,
+                   te_main_stats,
                    te_wakeup_stats0,
                    te_wakeup_stats1,
                    i_stats);

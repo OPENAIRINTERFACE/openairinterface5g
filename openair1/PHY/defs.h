@@ -965,7 +965,7 @@ typedef struct PHY_VARS_eNB_s {
   eth_params_t         eth_params;
   int                  rx_total_gain_dB;
   int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
-  int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *);
+  int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *);
   int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB);
   uint8_t              local_flag;
   LTE_DL_FRAME_PARMS   frame_parms;
@@ -1145,6 +1145,7 @@ typedef struct PHY_VARS_eNB_s {
   time_stats_t dlsch_rate_matching_stats;
   time_stats_t dlsch_turbo_encoding_stats;
   time_stats_t dlsch_turbo_encoding_waiting_stats;
+  time_stats_t dlsch_turbo_encoding_main_stats;
   time_stats_t dlsch_turbo_encoding_wakeup_stats0;
   time_stats_t dlsch_turbo_encoding_wakeup_stats1;
   time_stats_t dlsch_interleaving_stats;

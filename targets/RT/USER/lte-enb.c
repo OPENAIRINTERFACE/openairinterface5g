@@ -182,14 +182,14 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 0 );
   
- // wakeup_tx(eNB,eNB->proc.ru_proc);
-  if(oai_exit) return(-1);
-  phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
-
-  pthread_mutex_lock(&eNB->proc.ru_proc->mutex_eNBs);
-  ++eNB->proc.ru_proc->instance_cnt_eNBs;
-  pthread_cond_signal(&eNB->proc.ru_proc->cond_eNBs);
-  pthread_mutex_unlock(&eNB->proc.ru_proc->mutex_eNBs);
+  wakeup_tx(eNB,eNB->proc.ru_proc);
+  //if(oai_exit) return(-1);
+  //phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
+  //
+  //pthread_mutex_lock(&eNB->proc.ru_proc->mutex_eNBs);
+  //++eNB->proc.ru_proc->instance_cnt_eNBs;
+  //pthread_cond_signal(&eNB->proc.ru_proc->cond_eNBs);
+  //pthread_mutex_unlock(&eNB->proc.ru_proc->mutex_eNBs);
 
   stop_meas( &softmodem_stats_rxtx_sf );
   
@@ -707,6 +707,8 @@ static void* process_stats_thread(void* param) {
        if (eNB->te)
        {
          print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
+         print_meas(&eNB->dlsch_turbo_encoding_main_stats,"coding_main",NULL,NULL);
+         print_meas(&eNB->dlsch_turbo_encoding_waiting_stats,"coding_wait",NULL,NULL);
          print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats0,"coding_worker_0",NULL,NULL);
          print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats1,"coding_worker_1",NULL,NULL);
 	   }

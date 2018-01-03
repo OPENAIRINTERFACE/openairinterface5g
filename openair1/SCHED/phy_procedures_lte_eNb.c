@@ -346,6 +346,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 	  &eNB->dlsch_rate_matching_stats,
 	  &eNB->dlsch_turbo_encoding_stats,
 	  &eNB->dlsch_turbo_encoding_waiting_stats,
+      &eNB->dlsch_turbo_encoding_main_stats,
       &eNB->dlsch_turbo_encoding_wakeup_stats0,
       &eNB->dlsch_turbo_encoding_wakeup_stats1,
 	  &eNB->dlsch_interleaving_stats);
