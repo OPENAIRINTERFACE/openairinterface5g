@@ -420,6 +420,7 @@ void *td_thread(void *param) {
   thread_top_init("td_thread",1,200000,250000,500000);
   pthread_setname_np( pthread_self(),"td processing");
   LOG_I(PHY,"thread td created id=%ld\n", syscall(__NR_gettid));
+  wait_sync("td_thread");
 
   while (!oai_exit) {
 

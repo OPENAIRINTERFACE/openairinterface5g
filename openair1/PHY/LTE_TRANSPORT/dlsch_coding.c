@@ -560,6 +560,9 @@ void *te_thread(void *param) {
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;
+  
+  wait_sync("te_thread");
+  
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_te[0],&proc->cond_te[0],&proc->instance_cnt_te[0],"te thread")<0) break;
@@ -597,6 +600,9 @@ void *te_thread1(void *param) {
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;
+  
+  wait_sync("te_thread1");
+  
   while (!oai_exit) {
 
 
@@ -635,6 +641,9 @@ void *te_thread2(void *param) {
 
   PHY_VARS_eNB *eNB              = ((te_params *)param)->eNB;
   eNB_proc_t *proc               = &eNB->proc;
+  
+  wait_sync("te_thread2");
+  
   while (!oai_exit) {
 
 

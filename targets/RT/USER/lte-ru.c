@@ -987,6 +987,7 @@ static void* ru_thread_prach( void* param ) {
   ru_thread_prach_status = 0;
 
   thread_top_init("ru_thread_prach",1,500000,1000000,20000000);
+  wait_sync("ru_thread_prach");
 
   while (!oai_exit) {
     
@@ -1026,6 +1027,7 @@ static void* ru_thread_prach_br( void* param ) {
   ru_thread_prach_status = 0;
 
   thread_top_init("ru_thread_prach_br",1,500000,1000000,20000000);
+  wait_sync(ru_thread_prach_br);
 
   while (!oai_exit) {
     
@@ -1413,6 +1415,7 @@ static void* ru_thread_tx( void* param ) {
 
   //CPU_SET(5, &cpuset);
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  wait_sync("ru_thread_tx");
 
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
 

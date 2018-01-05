@@ -207,6 +207,8 @@ static void* tx_thread(void* param) {
   sprintf(thread_name,"TXnp4_%d\n",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
   thread_top_init(thread_name,1,470000,500000,500000);
   
+  wait_sync("tx_thread");
+  
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_rxtx,&proc->cond_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
@@ -264,6 +266,8 @@ static void* eNB_thread_rxtx( void* param ) {
 
   //CPU_SET(3, &cpuset);
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  
+  wait_sync("eNB_thread_rxtx");
 
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
@@ -625,6 +629,7 @@ static void* eNB_thread_prach( void* param ) {
 
   thread_top_init("eNB_thread_prach",1,500000,1000000,20000000);
 
+  wait_sync("eNB_thread_prach");
 
   while (!oai_exit) {
     
@@ -743,6 +748,7 @@ void init_eNB_proc(int inst) {
     proc_rxtx[1].instance_cnt_rxtx = -1;
     proc->instance_cnt_prach       = -1;
     proc->instance_cnt_asynch_rxtx = -1;
+    proc->instance_cnt_synch       = -1;
     proc->CC_id                    = CC_id;    
 
     proc->first_rx=1;
