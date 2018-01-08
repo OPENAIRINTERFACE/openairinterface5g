@@ -637,6 +637,7 @@ void dlsch_scheduler_pre_ue_select(
           default:
             LOG_W(MAC,"Unsupported transmission mode %d\n", get_tmode(module_idP,CC_id,UE_id));
             aggregation = 2;
+            break;
         }
         format_flag = 1;
         if (!CCE_allocation_infeasible(module_idP,
@@ -2364,11 +2365,14 @@ void ulsch_scheduler_pre_ue_select(
   }
   // UE round >0
   for ( UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++ ) {
+      if (UE_list->active[UE_id] == FALSE)
+          continue;
+
       rnti = UE_RNTI(module_idP,UE_id);
-      CC_id = UE_PCCID(module_idP,UE_id);
       if (rnti ==NOT_A_RNTI)
         continue;
 
+      CC_id = UE_PCCID(module_idP,UE_id);
       if (UE_list->UE_template[CC_id][UE_id].configured == FALSE)
         continue;
 
@@ -2472,9 +2476,16 @@ void ulsch_scheduler_pre_ue_select(
   }
 
   for ( UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++ ) {
+    if (UE_list->active[UE_id] == FALSE)
+        continue;
+
     rnti = UE_RNTI(module_idP,UE_id);
-    CC_id = UE_PCCID(module_idP,UE_id);
     if (rnti ==NOT_A_RNTI)
+        continue;
+
+    CC_id = UE_PCCID(module_idP,UE_id);
+
+    if (UE_id > last_ulsch_ue_id[CC_id])
         continue;
 
     if (UE_list->UE_template[CC_id][UE_id].configured == FALSE)
@@ -2494,9 +2505,6 @@ void ulsch_scheduler_pre_ue_select(
             return;
         }
     }
-
-    if (UE_id > last_ulsch_ue_id[CC_id])
-        continue;
 
     for(i = 0;i<ulsch_ue_select[CC_id].ue_num;i++){
       if(ulsch_ue_select[CC_id].list[i].UE_id == UE_id){
