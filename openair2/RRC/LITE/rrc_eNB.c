@@ -1195,9 +1195,10 @@ rrc_eNB_generate_RRCConnectionReestablishment(
   // remove UE after 10 frames after RRCConnectionReestablishmentRelease is triggered
   //ue_context_pP->ue_context.ue_release_timer_thres = 100;
     // activate release timer, if RRCComplete not received after 100 frames, remove UE
-  ue_context_pP->ue_context.ue_reestablishment_timer = 1;
+  int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+  RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
   // remove UE after 100 frames after RRCConnectionReestablishmentRelease is triggered
-  ue_context_pP->ue_context.ue_reestablishment_timer_thres = 1000;
+  RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 1000;
 }
 
 //-----------------------------------------------------------------------------
@@ -5482,12 +5483,12 @@ rrc_eNB_decode_ccch(
         rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
         break;
       }
-      if(ue_context_p->ue_context.ue_reestablishment_timer > 0){
+      int UE_id = find_UE_id(ctxt_pP->module_id, c_rnti);
+      if(ue_context_p->ue_context.ue_reestablishment_timer > 0 || RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0){
           LOG_I(RRC,
                 PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReestablishment(Previous) don't complete, let's reject the UE\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
           rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
-          ue_context_p->ue_context.ue_reestablishment_timer_thres = 1000;
           break;
       }
       LOG_D(RRC,
@@ -6123,6 +6124,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
             DCCH,
             sdu_sizeP);
        {
+        int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+        RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
         rnti_t reestablish_rnti = 0;
         // select C-RNTI from map
         for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
@@ -6163,7 +6166,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
 #endif
         }
         //ue_context_p->ue_context.ue_release_timer = 0;
-		ue_context_p->ue_context.ue_reestablishment_timer = 1;
+        ue_context_p->ue_context.ue_reestablishment_timer = 1;
+        // remove UE after 100 frames after RRCConnectionReestablishmentRelease is triggered
+        ue_context_p->ue_context.ue_reestablishment_timer_thres = 1000;
       }
       break;
 

@@ -712,7 +712,16 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
          RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer++;
          if(RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer >=
             RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer_thres) {
-             RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer = 0;
+            RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer = 0;
+            for (int ue_id_l = 0; ue_id_l < NUMBER_OF_UE_MAX; ue_id_l++) {
+              if (reestablish_rnti_map[ue_id_l][0] == rnti) {
+                // clear currentC-RNTI from map
+                reestablish_rnti_map[ue_id_l][0] = 0;
+                reestablish_rnti_map[ue_id_l][1] = 0;
+                break;
+              }
+            }
+
              for (int ii=0; ii<NUMBER_OF_UE_MAX; ii++) {
                  LTE_eNB_ULSCH_t *ulsch = NULL;
                  ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
