@@ -2075,6 +2075,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
 	       sizeof(UE_sched_ctrl));
 	memset((void *) &UE_list->eNB_UE_stats[cc_idP][UE_id], 0,
 	       sizeof(eNB_UE_STATS));
+    UE_list->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
 
 	UE_list->UE_sched_ctrl[UE_id].ta_update = 31;
 

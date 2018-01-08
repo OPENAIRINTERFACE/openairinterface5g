@@ -163,7 +163,7 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 						   (nfapi_ul_config_srs_pdu));
 				ul_config_pdu->srs_pdu.srs_pdu_rel8.size =
 				    (uint8_t)
-				    sizeof(nfapi_ul_config_srs_pdu);;
+				    sizeof(nfapi_ul_config_srs_pdu);
 				ul_config_pdu->srs_pdu.srs_pdu_rel8.rnti =
 				    UE_list->UE_template[CC_id][UE_id].
 				    rnti;
@@ -707,6 +707,50 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 	      ul_inactivity_timer,
 	      RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer);
 	check_ul_failure(module_idP, CC_id, i, frameP, subframeP);
+ 
+      if (RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0) {
+         RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer++;
+         if(RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer >=
+            RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer_thres) {
+            RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer = 0;
+            for (int ue_id_l = 0; ue_id_l < NUMBER_OF_UE_MAX; ue_id_l++) {
+              if (reestablish_rnti_map[ue_id_l][0] == rnti) {
+                // clear currentC-RNTI from map
+                reestablish_rnti_map[ue_id_l][0] = 0;
+                reestablish_rnti_map[ue_id_l][1] = 0;
+                break;
+              }
+            }
+
+             for (int ii=0; ii<NUMBER_OF_UE_MAX; ii++) {
+                 LTE_eNB_ULSCH_t *ulsch = NULL;
+                 ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
+                 if((ulsch != NULL) && (ulsch->rnti == rnti)){
+                     LOG_I(MAC, "clean_eNb_ulsch UE %x \n", rnti);
+                     clean_eNb_ulsch(ulsch);
+                     break;
+                 }
+             }
+
+             for(int j = 0; j < 10; j++){
+                 nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
+                 ul_req_tmp = &RC.mac[module_idP]->UL_req_tmp[CC_id][j].ul_config_request_body;
+                 if(ul_req_tmp){
+                     int pdu_number = ul_req_tmp->number_of_pdus;
+                     for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
+                         if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti){
+                             LOG_I(MAC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
+                             if(pdu_index < pdu_number -1){
+                                 memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+                             }
+                             ul_req_tmp->number_of_pdus--;
+                         }
+                     }
+                 }
+             }
+             rrc_mac_remove_ue(module_idP,rnti);
+         }
+      }
 
     }
 
