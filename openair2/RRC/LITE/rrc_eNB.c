@@ -1196,7 +1196,7 @@ rrc_eNB_generate_RRCConnectionReestablishment(
   ue_context_pP->ue_context.ue_reestablishment_timer_thres = 1000;
 #else
   // activate release timer, if RRCComplete not received after 10 frames, remove UE
-  //ue_context_pP->ue_context.ue_release_timer = 1;
+  ue_context_pP->ue_context.ue_release_timer = 1;
   // remove UE after 10 frames after RRCConnectionReestablishmentRelease is triggered
   ue_context_pP->ue_context.ue_release_timer_thres = 100;
 #endif
@@ -1894,7 +1894,7 @@ rrc_eNB_generate_RRCConnectionRelease(
   ue_context_pP->ue_context.ue_release_timer_s1 = 0;
 #else
   // set release timer
-  //ue_context_pP->ue_context.ue_release_timer=1;
+  ue_context_pP->ue_context.ue_release_timer=1;
   // remove UE after 10 frames after RRCConnectionRelease is triggered
   ue_context_pP->ue_context.ue_release_timer_thres=100;
 #endif
@@ -5142,7 +5142,7 @@ rrc_eNB_generate_RRCConnectionSetup(
    ue_context_pP->ue_context.ue_release_timer_thres=1000;
 #else
   // activate release timer, if RRCSetupComplete not received after 10 frames, remove UE
-  //ue_context_pP->ue_context.ue_release_timer=1;
+  ue_context_pP->ue_context.ue_release_timer=1;
   // remove UE after 10 frames after RRCConnectionRelease is triggered
   ue_context_pP->ue_context.ue_release_timer_thres=100;
 #endif
