@@ -680,6 +680,8 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 			    time_stats_t *i_stats)
 {
 
+  //start_meas(&eNB->dlsch_turbo_encoding_preperation_stats);
+
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   eNB_proc_t *proc = &eNB->proc;
   unsigned int G;
@@ -701,6 +703,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 
+    start_meas(&eNB->dlsch_turbo_encoding_preperation_stats);
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,
                  A)>>8;
@@ -710,7 +713,9 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
     dlsch->harq_processes[harq_pid]->B = A+24;
     memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
+    stop_meas(&eNB->dlsch_turbo_encoding_preperation_stats);
 
+    start_meas(&eNB->dlsch_turbo_encoding_segmentation_stats);
     if (lte_segmentation(dlsch->harq_processes[harq_pid]->b,
                          dlsch->harq_processes[harq_pid]->c,
                          dlsch->harq_processes[harq_pid]->B,
@@ -722,8 +727,26 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
                          &dlsch->harq_processes[harq_pid]->F)<0)
       return(-1);
 
+    stop_meas(&eNB->dlsch_turbo_encoding_segmentation_stats);
 
-
+    proc->tep[0].eNB               = eNB;
+    proc->tep[0].dlsch             = dlsch;
+    proc->tep[0].G                 = G;
+    proc->tep[0].harq_pid          = harq_pid;
+    
+    proc->tep[1].eNB               = eNB;
+    proc->tep[1].dlsch             = dlsch;
+    proc->tep[1].G                 = G;
+    proc->tep[1].harq_pid          = harq_pid;
+    
+    proc->tep[2].eNB               = eNB;
+    proc->tep[2].dlsch             = dlsch;
+    proc->tep[2].G                 = G;
+    proc->tep[2].harq_pid          = harq_pid;
+    
+    start_meas(&eNB->dlsch_turbo_encoding_signal_stats);
+      
+    pthread_mutex_lock( &proc->mutex_te[0] );
     if (proc->instance_cnt_te[0]==0) {
       printf("[eNB] TE thread busy\n");
       exit_fun("TE thread busy");
@@ -732,11 +755,6 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
     }
 
     ++proc->instance_cnt_te[0];
-
-    proc->tep[0].eNB               = eNB;
-    proc->tep[0].dlsch             = dlsch;
-    proc->tep[0].G                 = G;
-    proc->tep[0].harq_pid          = harq_pid;
 
     // wakeup worker to do second half segments
     if (pthread_cond_signal(&proc->cond_te[0]) != 0) {
@@ -748,6 +766,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
     pthread_mutex_unlock( &proc->mutex_te[0] );
 ////////////////////////////////////////////////////////////////
+    pthread_mutex_lock( &proc->mutex_te[1] );
     if (proc->instance_cnt_te[1]==0) {
       printf("[eNB] TE thread busy\n");
       exit_fun("TE thread busy");
@@ -756,11 +775,6 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
     }
 
     ++proc->instance_cnt_te[1];
-
-    proc->tep[1].eNB               = eNB;
-    proc->tep[1].dlsch             = dlsch;
-    proc->tep[1].G                 = G;
-    proc->tep[1].harq_pid          = harq_pid;
 
     // wakeup worker to do second half segments
     if (pthread_cond_signal(&proc->cond_te[1]) != 0) {
@@ -773,6 +787,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
     pthread_mutex_unlock( &proc->mutex_te[1] );
 
 ////////////////////////////////////////////////////////////////
+    pthread_mutex_lock( &proc->mutex_te[2] );
     if (proc->instance_cnt_te[2]==0) {
       printf("[eNB] TE thread busy\n");
       exit_fun("TE thread busy");
@@ -781,11 +796,6 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
     }
 
     ++proc->instance_cnt_te[2];
-
-    proc->tep[2].eNB               = eNB;
-    proc->tep[2].dlsch             = dlsch;
-    proc->tep[2].G                 = G;
-    proc->tep[2].harq_pid          = harq_pid;
 
     // wakeup worker to do second half segments
     if (pthread_cond_signal(&proc->cond_te[2]) != 0) {
@@ -797,6 +807,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
     pthread_mutex_unlock( &proc->mutex_te[2] );
 ////////////////////////////////////////////////////////////////
 
+    stop_meas(&eNB->dlsch_turbo_encoding_signal_stats);
     start_meas(te_main_stats);
     for (r=(dlsch->harq_processes[harq_pid]->C>>2)*3; r<dlsch->harq_processes[harq_pid]->C; r++) {
 

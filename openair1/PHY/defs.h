@@ -1143,8 +1143,11 @@ typedef struct PHY_VARS_eNB_s {
   time_stats_t dlsch_modulation_stats;
   time_stats_t dlsch_scrambling_stats;
   time_stats_t dlsch_rate_matching_stats;
+  time_stats_t dlsch_turbo_encoding_preperation_stats;
+  time_stats_t dlsch_turbo_encoding_segmentation_stats;
   time_stats_t dlsch_turbo_encoding_stats;
   time_stats_t dlsch_turbo_encoding_waiting_stats;
+  time_stats_t dlsch_turbo_encoding_signal_stats;
   time_stats_t dlsch_turbo_encoding_main_stats;
   time_stats_t dlsch_turbo_encoding_wakeup_stats0;
   time_stats_t dlsch_turbo_encoding_wakeup_stats1;
