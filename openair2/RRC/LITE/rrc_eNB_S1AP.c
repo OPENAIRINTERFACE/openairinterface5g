@@ -1197,6 +1197,7 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const ch
     }
     return (-1);
   } else {
+    ue_context_p->ue_context.ue_release_timer_s1 = 0;
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
     rrc_eNB_generate_RRCConnectionRelease(&ctxt, ue_context_p);
     /*

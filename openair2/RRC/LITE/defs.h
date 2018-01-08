@@ -451,6 +451,12 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;
+  uint32_t                           ue_release_timer_s1;
+  uint32_t                           ue_release_timer_thres_s1;
+  uint32_t                           ue_release_timer_rrc;
+  uint32_t                           ue_release_timer_thres_rrc;
+  uint32_t                           ue_reestablishment_timer;
+  uint32_t                           ue_reestablishment_timer_thres;
   uint8_t                            e_rab_release_command_flag;
 } eNB_RRC_UE_t;
 
