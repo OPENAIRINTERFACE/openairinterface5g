@@ -153,5 +153,5 @@ int config_isparamset(paramdef_t *params,int paramidx)
 }
 
 int config_getparamval_fromparamdefidx(paramdef_t *cfgoptions,int paramidx) {
-    
+    return -1;
 }

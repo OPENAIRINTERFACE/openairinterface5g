@@ -270,10 +270,52 @@ static int sync_to_gps(openair0_device *device)
     return EXIT_SUCCESS;
 }
 
+#if defined(USRP_REC_PLAY)
+#include "usrp_lib.h"
+static FILE    *pFile = NULL;
+int             mmapfd = 0;
+struct stat     sb;
+iqrec_t        *ms_sample = NULL;                      // memory for all subframes
+unsigned int    nb_samples = 0;
+unsigned int    cur_samples = 0;
+int64_t         wrap_count = 0;
+int64_t         wrap_ts = 0;
+unsigned int    u_sf_mode = 0;                         // 1=record, 2=replay
+unsigned int    u_sf_record = 0;                       // record mode
+unsigned int    u_sf_replay = 0;                       // replay mode
+char            u_sf_filename[1024];                   // subframes file path
+unsigned int    u_sf_max = DEF_NB_SF;                  // max number of recorded subframes
+unsigned int    u_sf_loops = DEF_SF_NB_LOOP;           // number of loops in replay mode
+unsigned int    u_sf_read_delay = DEF_SF_DELAY_READ;   // read delay in replay mode
+unsigned int    u_sf_write_delay = DEF_SF_DELAY_WRITE; // write delay in replay mode
+char           *tmp_filename[1];                       // use an array of pointer (libconfig does not seems to work with char array yet)
+
+char config_opt_sf_file[] = CONFIG_OPT_SF_FILE;
+char config_def_sf_file[] = DEF_SF_FILE;
+char config_hlp_sf_file[] = CONFIG_HLP_SF_FILE;
+char config_opt_sf_rec[] = CONFIG_OPT_SF_REC;
+char config_hlp_sf_rec[] = CONFIG_HLP_SF_REC;
+char config_opt_sf_rep[] = CONFIG_OPT_SF_REP;
+char config_hlp_sf_rep[] = CONFIG_HLP_SF_REP;
+char config_opt_sf_max[] = CONFIG_OPT_SF_MAX;
+char config_hlp_sf_max[] = CONFIG_HLP_SF_MAX;
+char config_opt_sf_loops[] = CONFIG_OPT_SF_LOOPS;
+char config_hlp_sf_loops[] = CONFIG_HLP_SF_LOOPS;
+char config_opt_sf_rdelay[] = CONFIG_OPT_SF_RDELAY;
+char config_hlp_sf_rdelay[] = CONFIG_HLP_SF_RDELAY;
+char config_opt_sf_wdelay[] = CONFIG_OPT_SF_WDELAY;
+char config_hlp_sf_wdelay[] = CONFIG_HLP_SF_WDELAY;
+
+#endif
+
 /*! \brief Called to start the USRP transceiver. Return 0 if OK, < 0 if error
     @param device pointer to the device structure specific to the RF hardware target
 */
 static int trx_usrp_start(openair0_device *device) {
+
+#if defined(USRP_REC_PLAY)
+    if (u_sf_mode != 2) { // not replay mode
+#endif      
 
     usrp_state_t *s = (usrp_state_t*)device->priv;
 
@@ -313,12 +355,21 @@ static int trx_usrp_start(openair0_device *device) {
     s->rx_count = 0;
     s->tx_count = 0;
     s->rx_timestamp = 0;
+#if defined(USRP_REC_PLAY)
+    }
+#endif      
     return 0;
 }
 /*! \brief Terminate operation of the USRP transceiver -- free all associated resources
  * \param device the hardware to use
  */
 static void trx_usrp_end(openair0_device *device) {
+#if defined(USRP_REC_PLAY) // For some ugly reason, this can be called several times...
+  static int done = 0;
+  if (done == 1) return;
+  done = 1;
+  if (u_sf_mode != 2) { // not subframes replay
+#endif  
     usrp_state_t *s = (usrp_state_t*)device->priv;
 
     s->rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
@@ -326,7 +377,45 @@ static void trx_usrp_end(openair0_device *device) {
     s->tx_md.end_of_burst = true;
     s->tx_stream->send("", 0, s->tx_md);
     s->tx_md.end_of_burst = false;
-
+#if defined(USRP_REC_PLAY)
+    }
+#endif
+#if defined(USRP_REC_PLAY)
+    if (u_sf_mode == 1) { // subframes store
+      pFile = fopen (u_sf_filename,"wb+");
+      if (pFile == NULL) {
+	std::cerr << "Cannot open " << u_sf_filename << std::endl;
+      } else {
+	unsigned int i = 0;
+	unsigned int modu = 0;
+	if ((modu = nb_samples % 10) != 0) {
+	  nb_samples -= modu; // store entire number of frames
+	}
+	std::cerr << "Writing " << nb_samples << " subframes to " << u_sf_filename << " ..." << std::endl;
+	for (i = 0; i < nb_samples; i++) {
+	  fwrite(ms_sample+i, sizeof(unsigned char), sizeof(iqrec_t), pFile);
+	}
+	fclose (pFile);
+	std::cerr << "File " << u_sf_filename << " closed." << std::endl;
+      }
+    }
+    if (u_sf_mode == 1) { // record
+      if (ms_sample != NULL) {
+	free((void*)ms_sample);
+	ms_sample = NULL;
+      }
+    }
+    if (u_sf_mode == 2) { // replay
+      if (ms_sample != MAP_FAILED) {
+	munmap(ms_sample, sb.st_size);
+	ms_sample = NULL;
+      }
+      if (mmapfd != 0) {
+	close(mmapfd);
+	mmapfd = 0;
+      }
+    }
+#endif    
 }
 
 /*! \brief Called to send samples to the USRP RF target
@@ -339,6 +428,9 @@ static void trx_usrp_end(openair0_device *device) {
 */
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
   int ret=0;
+#if defined(USRP_REC_PLAY)
+  if (u_sf_mode != 2) { // not replay mode
+#endif    
   usrp_state_t *s = (usrp_state_t*)device->priv;
   
   int nsamps2;  // aligned to upper 32 or 16 byte boundary
@@ -405,6 +497,15 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   
   if (ret != nsamps)
     LOG_E(PHY,"[xmit] tx samples %d != %d\n",ret,nsamps);
+#if defined(USRP_REC_PLAY)
+  } else {
+    struct timespec req;
+    req.tv_sec = 0;
+    req.tv_nsec = u_sf_write_delay * 1000;
+    nanosleep(&req, NULL);
+    ret = nsamps;
+  }
+#endif    
 
   return ret;
 }
@@ -421,9 +522,12 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
  * \returns the number of sample read
 */
 static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
-    usrp_state_t *s = (usrp_state_t*)device->priv;
-    int samples_received=0,i,j;
-    int nsamps2;  // aligned to upper 32 or 16 byte boundary
+  usrp_state_t *s = (usrp_state_t*)device->priv;
+  int samples_received=0,i,j;
+  int nsamps2;  // aligned to upper 32 or 16 byte boundary
+#if defined(USRP_REC_PLAY)
+  if (u_sf_mode != 2) { // not replay mode
+#endif    
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
     nsamps2 = (nsamps+7)>>3;
@@ -490,7 +594,45 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
     s->rx_count += nsamps;
     s->rx_timestamp = s->rx_md.time_spec.to_ticks(s->sample_rate);
     *ptimestamp = s->rx_timestamp;
-    return samples_received;
+#if defined (USRP_REC_PLAY)
+  }
+#endif    
+#if defined(USRP_REC_PLAY)
+  if (u_sf_mode == 1) { // record mode
+    // Copy subframes to memory (later dump on a file)
+    if (nb_samples < u_sf_max) {
+      (ms_sample+nb_samples)->header = BELL_LABS_IQ_HEADER; 
+      (ms_sample+nb_samples)->ts = *ptimestamp;
+      memcpy((ms_sample+nb_samples)->samples, buff[0], nsamps*4);
+      nb_samples++;
+    }
+  } else if (u_sf_mode == 2) { // replay mode
+    if (cur_samples == nb_samples) {
+      cur_samples = 0;
+      wrap_count++;
+      if (wrap_count == u_sf_loops) {
+	std::cerr << "USRP device terminating subframes replay mode after " << u_sf_loops << " loops." << std::endl;
+	return 0; // should make calling process exit
+      }
+      wrap_ts = wrap_count * (nb_samples * (((int)(device->openair0_cfg[0].sample_rate)) / 1000));
+    }
+    if (cur_samples < nb_samples) {
+      *ptimestamp = (ms_sample[0].ts + (cur_samples * (((int)(device->openair0_cfg[0].sample_rate)) / 1000))) + wrap_ts;
+      if (cur_samples == 0) {
+	std::cerr << "starting subframes file with wrap_count=" << wrap_count << " wrap_ts=" << wrap_ts
+		  << " ts=" << *ptimestamp << std::endl;
+      }
+      memcpy(buff[0], &ms_sample[cur_samples].samples[0], nsamps*4);
+      cur_samples++;
+    }
+    struct timespec req;
+    req.tv_sec = 0;
+    req.tv_nsec = u_sf_read_delay * 1000;
+    nanosleep(&req, NULL);
+    return nsamps;
+  }
+#endif
+  return samples_received;
 }
 
 /*! \brief Compares two variables within precision
@@ -684,12 +826,135 @@ int trx_usrp_reset_stats(openair0_device* device) {
     return(0);
 }
 
+#if defined(USRP_REC_PLAY)
+extern "C" {
+/*! \brief Initializer for USRP record/playback config
+ * \param parameter array description
+ * \returns  0 on success
+ */
+int trx_usrp_recplay_config_init(paramdef_t *usrp_recplay_params) {
+    // --subframes-file
+    memcpy(usrp_recplay_params[0].optname, config_opt_sf_file, strlen(config_opt_sf_file));
+    usrp_recplay_params[0].helpstr = config_hlp_sf_file;
+    usrp_recplay_params[0].paramflags=PARAMFLAG_NOFREE;
+    usrp_recplay_params[0].strptr=(char **)&tmp_filename[0];
+    usrp_recplay_params[0].defstrval = NULL;
+    usrp_recplay_params[0].type=TYPE_STRING;
+    usrp_recplay_params[0].numelt=sizeof(u_sf_filename);
+    // --subframes-record
+    memcpy(usrp_recplay_params[1].optname, config_opt_sf_rec, strlen(config_opt_sf_rec));
+    usrp_recplay_params[1].helpstr = config_hlp_sf_rec;
+    usrp_recplay_params[1].paramflags=PARAMFLAG_BOOL;
+    usrp_recplay_params[1].uptr=&u_sf_record;
+    usrp_recplay_params[1].defuintval=0;
+    usrp_recplay_params[1].type=TYPE_UINT;
+    usrp_recplay_params[1].numelt=0;
+    // --subframes-replay
+    memcpy(usrp_recplay_params[2].optname, config_opt_sf_rep, strlen(config_opt_sf_rep));
+    usrp_recplay_params[2].helpstr = config_hlp_sf_rep;
+    usrp_recplay_params[2].paramflags=PARAMFLAG_BOOL;
+    usrp_recplay_params[2].uptr=&u_sf_replay;
+    usrp_recplay_params[2].defuintval=0;
+    usrp_recplay_params[2].type=TYPE_UINT;
+    usrp_recplay_params[2].numelt=0;
+    // --subframes-max
+    memcpy(usrp_recplay_params[3].optname, config_opt_sf_max, strlen(config_opt_sf_max));
+    usrp_recplay_params[3].helpstr = config_hlp_sf_max;
+    usrp_recplay_params[3].paramflags=0;
+    usrp_recplay_params[3].uptr=&u_sf_max;
+    usrp_recplay_params[3].defuintval=DEF_NB_SF;
+    usrp_recplay_params[3].type=TYPE_UINT;
+    usrp_recplay_params[3].numelt=0;
+    // --subframes-loops
+    memcpy(usrp_recplay_params[4].optname, config_opt_sf_loops, strlen(config_opt_sf_loops));
+    usrp_recplay_params[4].helpstr = config_hlp_sf_loops;
+    usrp_recplay_params[4].paramflags=0;
+    usrp_recplay_params[4].uptr=&u_sf_loops;
+    usrp_recplay_params[4].defuintval=DEF_SF_NB_LOOP;
+    usrp_recplay_params[4].type=TYPE_UINT;
+    usrp_recplay_params[4].numelt=0;
+    // --subframes-read-delay
+    memcpy(usrp_recplay_params[5].optname, config_opt_sf_rdelay, strlen(config_opt_sf_rdelay));
+    usrp_recplay_params[5].helpstr = config_hlp_sf_rdelay;
+    usrp_recplay_params[5].paramflags=0;
+    usrp_recplay_params[5].uptr=&u_sf_read_delay;
+    usrp_recplay_params[5].defuintval=DEF_SF_DELAY_READ;
+    usrp_recplay_params[5].type=TYPE_UINT;
+    usrp_recplay_params[5].numelt=0;
+    // --subframes-write-delay
+    memcpy(usrp_recplay_params[6].optname, config_opt_sf_wdelay, strlen(config_opt_sf_wdelay));
+    usrp_recplay_params[6].helpstr = config_hlp_sf_wdelay;
+    usrp_recplay_params[6].paramflags=0;
+    usrp_recplay_params[6].uptr=&u_sf_write_delay;
+    usrp_recplay_params[6].defuintval=DEF_SF_DELAY_WRITE;
+    usrp_recplay_params[6].type=TYPE_UINT;
+    usrp_recplay_params[6].numelt=0;
+
+    return 0; // always ok
+}
+}
+#endif
+
 extern "C" {
     /*! \brief Initialize Openair USRP target. It returns 0 if OK
     * \param device the hardware to use
          * \param openair0_cfg RF frontend parameters set by application
          */
     int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
+#if defined(USRP_REC_PLAY)
+      paramdef_t usrp_recplay_params[7];
+      // to check
+      static int done = 0;
+      if (done == 1) {
+	return 0;
+      } // prevent from multiple init
+      done = 1;
+      // end to check
+      memset(usrp_recplay_params, 0, 7*sizeof(paramdef_t));
+      memset(&u_sf_filename[0], 0, 1024);
+      tmp_filename[0] = u_sf_filename;
+      if (trx_usrp_recplay_config_init(usrp_recplay_params) != 0) {
+	std::cerr << "USRP device record/replay mode configuration error exiting" << std::endl;
+	return -1;
+      }
+      config_process_cmdline(usrp_recplay_params,sizeof(usrp_recplay_params)/sizeof(paramdef_t),NULL);
+
+      if (strlen(tmp_filename[0]) != 0) {
+	(void) strcpy(u_sf_filename, tmp_filename[0]);
+      } else {
+	(void) strcpy(u_sf_filename, DEF_SF_FILE);
+      }
+
+      if (u_sf_replay == 1) u_sf_mode = 2;
+      if (u_sf_record == 1) u_sf_mode = 1;
+      
+      if (u_sf_mode == 2) {
+	// Replay subframes from from file
+        int bw_gain_adjust=0;
+        device->openair0_cfg = openair0_cfg;
+	device->type = USRP_B200_DEV;
+	openair0_cfg[0].rx_gain_calib_table = calib_table_b210_38;
+	bw_gain_adjust=1;
+	openair0_cfg[0].tx_sample_advance     = 80;
+	openair0_cfg[0].tx_bw                 = 20e6;
+	openair0_cfg[0].rx_bw                 = 20e6;
+        openair0_cfg[0].iq_txshift = 4;//shift
+        openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
+	set_rx_gain_offset(&openair0_cfg[0],0,bw_gain_adjust);
+        device->priv = NULL;
+        device->trx_start_func = trx_usrp_start;
+        device->trx_write_func = trx_usrp_write;
+        device->trx_read_func  = trx_usrp_read;
+        device->trx_get_stats_func = trx_usrp_get_stats;
+        device->trx_reset_stats_func = trx_usrp_reset_stats;
+        device->trx_end_func   = trx_usrp_end;
+        device->trx_stop_func  = trx_usrp_stop;
+        device->trx_set_freq_func = trx_usrp_set_freq;
+        device->trx_set_gains_func   = trx_usrp_set_gains;
+        device->openair0_cfg = openair0_cfg;
+	std::cerr << "USRP device initialized in subframes replay mode for " << u_sf_loops << " loops." << std::endl;
+      } else {
+#endif
         uhd::set_thread_priority_safe(1.0);
         usrp_state_t *s = (usrp_state_t*)calloc(sizeof(usrp_state_t),1);
         
@@ -705,6 +970,11 @@ extern "C" {
         int vers=0,subvers=0,subsubvers=0;
         int bw_gain_adjust=0;
 
+#if defined(USRP_REC_PLAY)
+	if (u_sf_mode == 1) {
+	  std::cerr << "USRP device initialized in subframes record mode" << std::endl;
+	}
+#endif	
         sscanf(uhd::get_version_string().c_str(),"%d.%d.%d",&vers,&subvers,&subsubvers);
         LOG_I(PHY,"Checking for USRPs : UHD %s (%d.%d.%d)\n",
               uhd::get_version_string().c_str(),vers,subvers,subsubvers);
@@ -742,7 +1012,9 @@ extern "C" {
             //s->usrp->set_master_clock_rate(usrp_master_clock);
 
             openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
-
+#if defined(USRP_REC_PLAY)
+	    std::cerr << "-- Using calibration table: calib_table_x310" << std::endl; // Bell Labs info
+#endif	    
             switch ((int)openair0_cfg[0].sample_rate) {
             case 30720000:
                 // from usrp_time_offset
@@ -801,9 +1073,15 @@ extern "C" {
             if ((vers == 3) && (subvers == 9) && (subsubvers>=2)) {
                 openair0_cfg[0].rx_gain_calib_table = calib_table_b210;
                 bw_gain_adjust=0;
+#if defined(USRP_REC_PLAY)
+		std::cerr << "-- Using calibration table: calib_table_b210" << std::endl; // Bell Labs info
+#endif		
             } else {
                 openair0_cfg[0].rx_gain_calib_table = calib_table_b210_38;
                 bw_gain_adjust=1;
+#if defined(USRP_REC_PLAY)
+		std::cerr << "-- Using calibration table: calib_table_b210_38" << std::endl; // Bell Labs info
+#endif		
             }
 
             switch ((int)openair0_cfg[0].sample_rate) {
@@ -965,6 +1243,45 @@ extern "C" {
            } 
         }
  
+#if defined(USRP_REC_PLAY)
+      }
+#endif
+#if defined(USRP_REC_PLAY)
+      if (u_sf_mode == 1) { // record mode	
+	ms_sample = (iqrec_t*) malloc(u_sf_max * sizeof(iqrec_t));
+	if (ms_sample == NULL) {
+	  std::cerr<< "Memory allocation failed for subframe record or replay mode." << std::endl;
+	  exit(-1);
+	}
+	memset(ms_sample, 0, u_sf_max * BELL_LABS_IQ_BYTES_PER_SF);
+      }
+      if (u_sf_mode == 2) {
+	// use mmap
+	mmapfd = open(u_sf_filename, O_RDONLY | O_LARGEFILE);
+	if (mmapfd != 0) {
+	  fstat(mmapfd, &sb);
+	  std::cerr << "Loading subframes using mmap() from " << u_sf_filename << " size=" << (uint64_t)sb.st_size << " bytes ..." << std::endl;
+	  ms_sample = (iqrec_t*) mmap(NULL, sb.st_size, PROT_WRITE, MAP_PRIVATE, mmapfd, 0);
+	  if (ms_sample != MAP_FAILED) {
+	    nb_samples = (sb.st_size / sizeof(iqrec_t));
+	    int aligned = (((unsigned long)ms_sample & 31) == 0)? 1:0;
+	    std::cerr<< "Loaded "<< nb_samples << " subframes." << std::endl;
+	    if (aligned == 0) {
+	      std::cerr<< "mmap address is not 32 bytes aligned, exiting." << std::endl;
+	      close(mmapfd);
+	      exit(-1);
+	    }
+	  } else {
+	    std::cerr << "Cannot mmap file, exiting." << std::endl;
+	    close(mmapfd);
+	    exit(-1);
+	  }
+	} else {
+	    std::cerr << "Cannot open " << u_sf_filename << " , exiting." << std::endl;
+	    exit(-1);
+	}
+      }
+#endif	
         return 0;
     }
 }

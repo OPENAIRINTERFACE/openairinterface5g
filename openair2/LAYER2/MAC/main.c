@@ -210,7 +210,7 @@ void mac_init_cell_params(int Mod_idP, int CC_idP)
     UE_TEMPLATE *UE_template;
 
     LOG_D(MAC, "[MSC_NEW][FRAME 00000][MAC_eNB][MOD %02d][]\n", Mod_idP);
-    COMMON_channels_t *cc = &RC.mac[Mod_idP]->common_channels[CC_idP];
+    //COMMON_channels_t *cc = &RC.mac[Mod_idP]->common_channels[CC_idP];
 
     memset(&RC.mac[Mod_idP]->eNB_stats, 0, sizeof(eNB_STATS));
     UE_template =
