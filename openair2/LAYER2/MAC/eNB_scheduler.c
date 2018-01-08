@@ -163,7 +163,7 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 						   (nfapi_ul_config_srs_pdu));
 				ul_config_pdu->srs_pdu.srs_pdu_rel8.size =
 				    (uint8_t)
-				    sizeof(nfapi_ul_config_srs_pdu);;
+				    sizeof(nfapi_ul_config_srs_pdu);
 				ul_config_pdu->srs_pdu.srs_pdu_rel8.rnti =
 				    UE_list->UE_template[CC_id][UE_id].
 				    rnti;

@@ -637,6 +637,7 @@ void dlsch_scheduler_pre_ue_select(
           default:
             LOG_W(MAC,"Unsupported transmission mode %d\n", get_tmode(module_idP,CC_id,UE_id));
             aggregation = 2;
+            break;
         }
         format_flag = 1;
         if (!CCE_allocation_infeasible(module_idP,
