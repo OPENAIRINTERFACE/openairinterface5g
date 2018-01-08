@@ -1278,6 +1278,8 @@ void init_eNB_proc(int inst) {
   eNB_rxtx_proc_t *proc_rxtx;
   pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL,*attr_td=NULL,*attr_te;
 
+  printf("%s()\n", __FUNCTION__);
+
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
     LOG_I(PHY,"Initializing eNB %d CC_id %d (%s,%s),\n",inst,CC_id,eNB_functions[eNB->node_function],eNB_timing[eNB->node_timing]);
@@ -1673,10 +1675,15 @@ void init_RAN(RAN_CONTEXT *rc,eNB_func_t node_function[], eNB_timing_t node_timi
   PHY_VARS_eNB *eNB;
   int ret;
 
+  printf("%s() rc->nb_inst:%d\n", __FUNCTION__, rc->nb_inst);
+
   for (inst=0;inst<rc->nb_inst;inst++) {
+    printf("%s() rc->nb_inst:%d rc->nb_CC:%d\n", __FUNCTION__, rc->nb_inst, rc->nb_CC);
     for (CC_id=0;CC_id<rc->nb_CC;CC_id++) {
       eNB = rc->eNB[inst][CC_id]; 
+      printf("%s() rc->nb_inst:%d rc->nb_CC:%d eNB:%p rc->eNB[%d][%d]:%p\n", __FUNCTION__, rc->nb_inst, rc->nb_CC, eNB, inst, CC_id, rc->eNB[inst][CC_id]);
       if (eNB) {
+
 	eNB->node_function      = node_function[CC_id];
 	eNB->node_timing        = node_timing[CC_id];
 	eNB->abstraction_flag   = 0;

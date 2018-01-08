@@ -304,9 +304,13 @@ void *eNB_app_task(void *args_p)
 
   itti_mark_task_ready (TASK_ENB_APP);
 
+  LOG_I(PHY, "%s() Task ready initialise structures\n", __FUNCTION__);
+
   RCconfig_L1();
 
   RCconfig_macrlc();
+
+  LOG_I(PHY, "%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_L1_inst);
 
   if (RC.nb_L1_inst>0) AssertFatal(l1_north_init_eNB()==0,"could not initialize L1 north interface\n");
 
@@ -330,9 +334,11 @@ void *eNB_app_task(void *args_p)
   LOG_I(ENB_APP,"Allocating eNB_RRC_INST for %d instances\n",RC.nb_inst);
 
   RC.rrc = (eNB_RRC_INST **)malloc(RC.nb_inst*sizeof(eNB_RRC_INST *));
+  LOG_I(PHY, "%s() RC.nb_inst:%d RC.rrc:%p\n", __FUNCTION__, RC.nb_inst, RC.rrc);
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     RC.rrc[enb_id] = (eNB_RRC_INST*)malloc(sizeof(eNB_RRC_INST));
+    LOG_I(PHY, "%s() Creating RRC instance RC.rrc[%d]:%p (%d of %d)\n", __FUNCTION__, enb_id, RC.rrc[enb_id], enb_id+1, enb_id_end);
     memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
     configure_rrc(enb_id);
   }

@@ -874,12 +874,13 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   int16_t cseq[6*14*1200] __attribute__((aligned(32)));
   int off;
 
+  int frame = proc->frame_rx;
   int subframe = proc->subframe_rx;
   LTE_UL_eNB_HARQ_t *ulsch_harq;
 
 
 
-  harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
+  harq_pid = subframe2harq_pid(frame_parms,frame,subframe);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,1);
 
@@ -904,7 +905,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
 
   //#ifdef DEBUG_ULSCH_DECODING
-  LOG_D(PHY,"Frame %d, Subframe %d: ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): A %d, round %d, RV %d, O_r1 %d, O_RI %d, O_ACK %d, G %d\n",
+  LOG_D(PHY,"[PUSCH %d] Frame %d, Subframe %d: ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): A %d, round %d, RV %d, O_r1 %d, O_RI %d, O_ACK %d, G %d, Q_m %d Nsymb_pusch %d nb_rb %d\n",
+      harq_pid,
 	proc->frame_rx,subframe,
 	frame_parms->Nid_cell,ulsch->rnti,x2,
 	A,
@@ -913,7 +915,10 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 	ulsch_harq->Or1,
 	ulsch_harq->O_RI,
 	ulsch_harq->O_ACK,
-	G);
+	G,
+        ulsch_harq->Qm,
+        ulsch_harq->Nsymb_pusch,
+        nb_rb);
 	
   //#endif
 
@@ -1260,7 +1265,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   }
 
   if (ulsch_harq->O_ACK > 2) {
-    LOG_E(PHY,"ulsch_decoding: FATAL, ACK cannot be more than 2 bits yet\n");
+    LOG_E(PHY,"ulsch_decoding: FATAL, ACK cannot be more than 2 bits yet O_ACK:%d SFN/SF:%04d%d UE_id:%d rnti:%x\n",ulsch_harq->O_ACK,proc->frame_rx,proc->subframe_rx,UE_id,ulsch->rnti);
     return(-1);
   }
 
@@ -1572,6 +1577,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 #endif
   }
 
+  LOG_I(PHY,"frame %d subframe %d O_ACK:%d o_ACK[]=%d:%d:%d:%d\n",frame,subframe,ulsch_harq->O_ACK,ulsch_harq->o_ACK[0],ulsch_harq->o_ACK[1],ulsch_harq->o_ACK[2],ulsch_harq->o_ACK[3]);
 
   // Do ULSCH Decoding for data portion
 

@@ -17,3 +17,14 @@ alias oait='cd $OPENAIR_TARGETS'
 alias oailte='cd $OPENAIR_TARGETS/RT/USER'
 alias oais='cd $OPENAIR_TARGETS/SIMU/USER'
 alias oaiex='cd $OPENAIR_TARGETS/SIMU/EXAMPLES'
+
+export NFAPI_DIR=${HOME}/open-nFAPI
+
+alias bld='cd $OPENAIR_HOME/cmake_targets ; ./build_oai --eNB -w USRP'
+alias b='cd $OPENAIR_HOME/cmake_targets ; ./build_oai --eNB -w USRP'
+alias run='cd $OPENAIR_HOME/cmake_targets/lte_build_oai/build'
+alias nf='cd $OPENAIR_HOME/nfapi'
+alias conf='cd $OPENAIR_HOME/targets/PROJECTS/GENERIC-LTE-EPC/CONF'
+
+alias ttracer='cd $OPENAIR_HOME/cmake_targets ; ./build_oai --eNB -x -w USRP --T-tracer'
+alias rec='cd $OPENAIR_HOME/common/utils/T/tracer ; ./record -d ../T_messages.txt -o record.raw -ON -off VCD -off HEAVY -off LEGACY_GROUP_TRACE -off LEGACY_GROUP_DEBUG'

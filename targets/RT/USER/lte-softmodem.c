@@ -101,7 +101,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 #include "lte-softmodem.h"
 
-
 #ifdef XFORMS
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 // at eNB 0, an UL scope for every UE
@@ -113,9 +112,16 @@ unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
 #endif //XFORMS
 
+pthread_cond_t nfapi_sync_cond;
+pthread_mutex_t nfapi_sync_mutex;
+int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
+
+uint8_t nfapi_mode = 0; // Default to monolithic mode
+
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
+int config_sync_var=-1;
 
 uint16_t runtime_phy_rx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
@@ -204,6 +210,12 @@ uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
+
+extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
+			  uint8_t UE_id,
+			  uint8_t abstraction_flag);
+
+extern void init_eNB_afterRU(void);
 
 int transmission_mode=1;
 
@@ -839,7 +851,7 @@ void init_openair0() {
 
 void wait_RUs(void) {
 
-  LOG_I(PHY,"Waiting for RUs to be configured ...\n");
+  LOG_I(PHY,"Waiting for RUs to be configured ... RC.ru_mask:%02lx\n", RC.ru_mask);
 
   // wait for all RUs to be configured over fronthaul
   pthread_mutex_lock(&RC.ru_mutex);
@@ -848,6 +860,7 @@ void wait_RUs(void) {
 
   while (RC.ru_mask>0) {
     pthread_cond_wait(&RC.ru_cond,&RC.ru_mutex);
+    printf("RC.ru_mask:%02lx\n", RC.ru_mask);
   }
 
   LOG_I(PHY,"RUs configured\n");
@@ -861,16 +874,34 @@ void wait_eNBs(void) {
 
   while (waiting==1) {
     printf("Waiting for eNB L1 instances to all get configured ... sleeping 500ms (nb_L1_inst %d)\n",RC.nb_L1_inst);
-    usleep(500000);
+    usleep(5000000);
     waiting=0;
-    for (i=0;i<RC.nb_L1_inst;i++)
-      for (j=0;j<RC.nb_L1_CC[i];j++)
+    for (i=0;i<RC.nb_L1_inst;i++) {
+
+      printf("RC.nb_L1_CC[%d]:%d\n", i, RC.nb_L1_CC[i]);
+
+      for (j=0;j<RC.nb_L1_CC[i];j++) {
 	if (RC.eNB[i][j]->configured==0) {
 	  waiting=1;
 	  break;
-	}
+        } 
+      }
+    }
   }
   printf("eNB L1 are configured\n");
+}
+
+static inline void wait_nfapi_init(char *thread_name) {
+
+  printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
+  pthread_mutex_lock( &nfapi_sync_mutex );
+  
+  while (nfapi_sync_var<0)
+    pthread_cond_wait( &nfapi_sync_cond, &nfapi_sync_mutex );
+  
+  pthread_mutex_unlock(&nfapi_sync_mutex);
+  
+  printf( "NFAPI: got sync (%s)\n", thread_name);
 }
 
 int main( int argc, char **argv )
@@ -974,6 +1005,7 @@ int main( int argc, char **argv )
     log_set_instance_type (LOG_INSTANCE_ENB);
   }
 
+  printf("ITTI init\n");
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
 
   // initialize mscgen log after ITTI
@@ -993,6 +1025,7 @@ int main( int argc, char **argv )
   }
 
 #ifdef PDCP_USE_NETLINK
+  printf("PDCP netlink\n");
   netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
   pdcp_netlink_init();
@@ -1026,6 +1059,7 @@ int main( int argc, char **argv )
 
 
 
+  printf("Before CC \n");
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -1090,6 +1124,7 @@ int main( int argc, char **argv )
 
   }
 
+  printf("Runtime table\n");
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
   cpuf=get_cpu_freq_GHz();
   
@@ -1097,6 +1132,7 @@ int main( int argc, char **argv )
   
 #ifndef DEADLINE_SCHEDULER
   
+  printf("NO deadline scheduler\n");
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
   
   cpu_set_t cpuset;
@@ -1162,6 +1198,8 @@ int main( int argc, char **argv )
 #ifdef XFORMS
   int UE_id;
   
+  printf("XFORMS\n");
+
   if (do_forms==1) {
     fl_initialize (&argc, argv, NULL, 0, 0);
     
@@ -1218,6 +1256,35 @@ int main( int argc, char **argv )
   
   rt_sleep_ns(10*100000000ULL);
   
+  if (nfapi_mode) {
+
+    printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
+    pthread_cond_init(&sync_cond,NULL);
+    pthread_mutex_init(&sync_mutex, NULL);
+  }
+  
+  const char *nfapi_mode_str = "<UNKNOWN>";
+
+  switch(nfapi_mode) {
+    case 0:
+      nfapi_mode_str = "MONOLITHIC";
+      break;
+    case 1:
+      nfapi_mode_str = "PNF";
+      break;
+    case 2:
+      nfapi_mode_str = "VNF";
+      break;
+    default:
+      nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
+      break;
+  }
+  printf("NFAPI MODE:%s\n", nfapi_mode_str);
+
+  if (nfapi_mode==2) // VNF
+    wait_nfapi_init("main?");
+
+  printf("START MAIN THREADS\n");
   
   // start the main threads
   if (UE_flag == 1) {
@@ -1238,15 +1305,18 @@ int main( int argc, char **argv )
   }
   else { 
     number_of_cards = 1;    
+    printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
     if (RC.nb_L1_inst > 0) {
-      printf("Initializing eNB threads\n");
+      printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", single_thread_flag,wait_for_sync);
       init_eNB(single_thread_flag,wait_for_sync);
       //      for (inst=0;inst<RC.nb_L1_inst;inst++)
       //	for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
 
+    printf("wait_eNBs()\n");
     wait_eNBs();
 
+    printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
     if (RC.nb_RU >0) {
       printf("Initializing RU threads\n");
       init_RU(rf_config_file);
@@ -1256,10 +1326,30 @@ int main( int argc, char **argv )
       }
     }
 
+    config_sync_var=0;
+
+    if (nfapi_mode==1) { // PNF
+      wait_nfapi_init("main?");
+    }
+
+    printf("wait RUs\n");
     wait_RUs();
+    printf("ALL RUs READY!\n");
+    printf("RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
-    init_eNB_afterRU();
+    printf("ALL RUs ready - init eNBs\n");
+
+    if (nfapi_mode != 1 && nfapi_mode != 2)
+    {
+      printf("Not NFAPI mode - call init_eNB_afterRU()\n");
+      init_eNB_afterRU();
+    }
+    else
+    {
+      printf("NFAPI mode - DO NOT call init_eNB_afterRU()\n");
+    }
     
+    printf("ALL RUs ready - ALL eNBs ready\n");
   }
   
   
@@ -1293,38 +1383,35 @@ int main( int argc, char **argv )
     //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
   } else {
     
-    
-    
-    
+    printf("eNB mode\n");
     
   }
   
-  
-  
-  
   printf("Sending sync to all threads\n");
-  
-  
   
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);
   pthread_mutex_unlock(&sync_mutex);
+  printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   end_configmodule();
+  printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
 
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
 
-
 #if defined(ENABLE_ITTI)
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();
+  printf("Returned from ITTI signal handler\n");
   oai_exit=1;
+  printf("oai_exit=%d\n",oai_exit);
 #else
 
   while (oai_exit==0)
     rt_sleep_ns(100000000ULL);
+  printf("Terminating application - oai_exit=%d\n",oai_exit);
 
 #endif
 
@@ -1366,6 +1453,9 @@ int main( int argc, char **argv )
 
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
+
+  pthread_cond_destroy(&nfapi_sync_cond);
+  pthread_mutex_destroy(&nfapi_sync_mutex);
 
 
 

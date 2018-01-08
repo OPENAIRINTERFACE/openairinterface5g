@@ -345,6 +345,8 @@ void thread_top_init(char *thread_name,
     exit_fun("Error getting thread priority");
   }
 
+  pthread_setname_np(pthread_self(), thread_name);
+
   LOG_I(HW, "[SCHED][eNB] %s started on CPU %d, sched_policy = %s , priority = %d, CPU Affinity=%s \n",thread_name,sched_getcpu(),
                    (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
                    (policy == SCHED_RR)    ? "SCHED_RR" :

@@ -240,6 +240,7 @@ typedef struct LOG_params {
     const char *file;
     const char *func;
     int line;
+    pthread_t thread_id;
     int comp;
     int level;
     const char *format;
@@ -262,8 +263,8 @@ void log_set_instance_type (log_instance_type_t instance);
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
-void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
-void logRecord(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
+void logRecord_mt(const char *file, const char *func, int line,pthread_t thread_id, int comp, int level, const char *format, ...) __attribute__ ((format (printf, 7, 8)));
+void logRecord(const char *file, const char *func, int line, pthread_t thread_id, int comp, int level, const char *format, ...) __attribute__ ((format (printf, 7, 8)));
 int  set_comp_log(int component, int level, int verbosity, int interval);
 int  set_log(int component, int level, int interval);
 void set_glog(int level, int verbosity);
@@ -285,15 +286,15 @@ void *log_thread_function(void * list);
 #ifdef USER_MODE
 //#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
 #ifdef LOG_NO_THREAD
-#define logIt(component, level, format, args...) logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args)
+#define logIt(component, level, format, args...) logRecord_mt(__FILE__, __FUNCTION__, __LINE__, pthread_self(), component, level, format, ##args)
 #else //default
-#define logIt(component, level, format, args...) logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args)
+#define logIt(component, level, format, args...) logRecord(__FILE__, __FUNCTION__, __LINE__, pthread_self(), component, level, format, ##args)
 #endif
 #else
 #ifdef LOG_NO_THREAD
-#define logIt(component, level, format, args...) logRecord_mt(NULL, __FUNCTION__, __LINE__, component, level, format, ##args)
+#define logIt(component, level, format, args...) logRecord_mt(NULL, __FUNCTION__, __LINE__, pthread_self(), component, level, format, ##args)
 #else // default
-#define logIt(component, level, format, args...) logRecord(NULL, __FUNCTION__, __LINE__, component, level, format, ##args)
+#define logIt(component, level, format, args...) logRecord(NULL, __FUNCTION__, __LINE__, pthread_self(), component, level, format, ##args)
 #endif
 #endif
 /* @}*/
@@ -352,6 +353,19 @@ void *log_thread_function(void * list);
 #        define LOG_N(c, x...) /* */
 #        define LOG_F(c, x...) /* */
 #    else  /*DISABLE_LOG_X*/
+#if      0
+         extern log_t *g_log;
+#        define LOG_G(c, x...) do { if (g_log->log_component[c].level > g_log->level || LOG_EMERG   > g_log->log_component[c].level || LOG_EMERG   > g_log->level) logIt(c, LOG_EMERG, x); } while(0)
+#        define LOG_A(c, x...) do { if (g_log->log_component[c].level > g_log->level || LOG_ALERT   > g_log->log_component[c].level || LOG_ALERT   > g_log->level) logIt(c, LOG_ALERT, x); } while(0)
+#        define LOG_C(c, x...) do { if (g_log->log_component[c].level > g_log->level || LOG_CRIT    > g_log->log_component[c].level || LOG_CRIT    > g_log->level) logIt(c, LOG_CRIT, x); } while(0)
+#        define LOG_E(c, x...) do { if (g_log->log_component[c].level > g_log->level || LOG_ERR     > g_log->log_component[c].level || LOG_ERR     > g_log->level) logIt(c, LOG_ERR, x); } while(0)
+#        define LOG_W(c, x...) do { if (g_log->log_component[c].level > g_log->level || LOG_WARNING > g_log->log_component[c].level || LOG_WARNING > g_log->level) logIt(c, LOG_WARNING, x); } while(0)
+#        define LOG_N(c, x...) do { if (g_log->log_component[c].level > g_log->level || LOG_NOTICE  > g_log->log_component[c].level || LOG_NOTICE  > g_log->level) logIt(c, LOG_NOTICE, x); } while(0)
+#        define LOG_I(c, x...) do { if (g_log->log_component[c].level > g_log->level || LOG_INFO    > g_log->log_component[c].level || LOG_INFO    > g_log->level) logIt(c, LOG_INFO, x); } while(0)
+#        define LOG_D(c, x...) do { if (g_log->log_component[c].level > g_log->level || LOG_DEBUG   > g_log->log_component[c].level || LOG_DEBUG   > g_log->level) logIt(c, LOG_DEBUG, x); } while(0)
+#        define LOG_F(c, x...) do { if (g_log->log_component[c].level > g_log->level || LOG_FILE    > g_log->log_component[c].level || LOG_FILE    > g_log->level) logIt(c, LOG_FILE, x); } while(0)
+#        define LOG_T(c, x...) do { if (g_log->log_component[c].level > g_log->level || LOG_TRACE   > g_log->log_component[c].level || LOG_TRACE   > g_log->level) logIt(c, LOG_TRACE, x); } while(0)
+#else
 #        define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
 #        define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
 #        define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
@@ -362,6 +376,7 @@ void *log_thread_function(void * list);
 #        define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
 #        define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
 #        define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
+#        endif /* 0 */
 #    endif /*DISABLE_LOG_X*/
 #  endif /* T_TRACER */
 #else /* USER_MODE */
