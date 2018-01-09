@@ -1189,17 +1189,15 @@ rrc_eNB_generate_RRCConnectionReestablishment(
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
 
-#ifdef UE_EXPANSION
-  // activate release timer, if RRCComplete not received after 100 frames, remove UE
-  ue_context_pP->ue_context.ue_reestablishment_timer = 1;
-  // remove UE after 10 frames after RRCConnectionReestablishmentRelease is triggered
-  ue_context_pP->ue_context.ue_reestablishment_timer_thres = 1000;
-#else
   // activate release timer, if RRCComplete not received after 10 frames, remove UE
-  ue_context_pP->ue_context.ue_release_timer = 1;
+  //ue_context_pP->ue_context.ue_release_timer = 1;
   // remove UE after 10 frames after RRCConnectionReestablishmentRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres = 100;
-#endif
+  //ue_context_pP->ue_context.ue_release_timer_thres = 100;
+    // activate release timer, if RRCComplete not received after 100 frames, remove UE
+  int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+  RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
+  // remove UE after 100 frames after RRCConnectionReestablishmentRelease is triggered
+  RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 1000;
 }
 
 //-----------------------------------------------------------------------------
@@ -1884,20 +1882,17 @@ rrc_eNB_generate_RRCConnectionRelease(
 
   memset(buffer, 0, RRC_BUF_SIZE);
   size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
-#ifdef UE_EXPANSION
   // set release timer
+  //ue_context_pP->ue_context.ue_release_timer=1;
+  // remove UE after 10 frames after RRCConnectionRelease is triggered
+  //ue_context_pP->ue_context.ue_release_timer_thres=100;
+    // set release timer
   ue_context_pP->ue_context.ue_release_timer_rrc = 1;
   // remove UE after 10 frames after RRCConnectionRelease is triggered
   ue_context_pP->ue_context.ue_release_timer_thres_rrc = 100;
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
   ue_context_pP->ue_context.ue_release_timer_s1 = 0;
-#else
-  // set release timer
-  ue_context_pP->ue_context.ue_release_timer=1;
-  // remove UE after 10 frames after RRCConnectionRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres=100;
-#endif
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -5135,17 +5130,11 @@ rrc_eNB_generate_RRCConnectionSetup(
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
 
-#ifdef UE_EXPANSION
-   // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
+  //ue_context_pP->ue_context.ue_release_timer_thres=100;
+     // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
    ue_context_pP->ue_context.ue_release_timer=1;
    // remove UE after 10 frames after RRCConnectionRelease is triggered
    ue_context_pP->ue_context.ue_release_timer_thres=1000;
-#else
-  // activate release timer, if RRCSetupComplete not received after 10 frames, remove UE
-  ue_context_pP->ue_context.ue_release_timer=1;
-  // remove UE after 10 frames after RRCConnectionRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres=100;
-#endif
 }
 
 
@@ -5501,24 +5490,14 @@ rrc_eNB_decode_ccch(
             PROTOCOL_RRC_CTXT_UE_FMT" UE context: %p\n",
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             ue_context_p);
-      ue_context_p->ue_context.ul_failure_timer = 0;
-      ue_context_p->ue_context.ue_release_timer = 0;
-      ue_context_p->ue_context.ue_reestablishment_timer = 0;
-      ue_context_p->ue_context.ue_release_timer_s1 = 0;
-      ue_context_p->ue_context.ue_release_timer_rrc = 0;
-
-      /* reset timers */
-      ue_context_p->ue_context.ul_failure_timer = 0;
-      ue_context_p->ue_context.ue_release_timer = 0;
 
        /* reset timers */
        ue_context_p->ue_context.ul_failure_timer = 0;
        ue_context_p->ue_context.ue_release_timer = 0;
-#ifdef UE_EXPANSION
       ue_context_p->ue_context.ue_reestablishment_timer = 0;
       ue_context_p->ue_context.ue_release_timer_s1 = 0;
       ue_context_p->ue_context.ue_release_timer_rrc = 0;
-#endif
+
       // insert C-RNTI to map
       for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
         if (reestablish_rnti_map[i][0] == 0) {
@@ -5691,11 +5670,9 @@ rrc_eNB_decode_ccch(
               /* reset timers */
               ue_context_p->ue_context.ul_failure_timer = 0;
               ue_context_p->ue_context.ue_release_timer = 0;
-#ifdef UE_EXPANSION
               ue_context_p->ue_context.ue_reestablishment_timer = 0;
               ue_context_p->ue_context.ue_release_timer_s1 = 0;
               ue_context_p->ue_context.ue_release_timer_rrc = 0;
-#endif
             } else {
 	      LOG_I(RRC," S-TMSI doesn't exist, setting Initialue_identity_s_TMSI.m_tmsi to %p => %x\n",ue_context_p,m_tmsi);
 //              ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);
@@ -6192,11 +6169,10 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
           }
 #endif
         }
-#ifdef UE_EXPANSION
+        //ue_context_p->ue_context.ue_release_timer = 0;
         ue_context_p->ue_context.ue_reestablishment_timer = 1;
-#else
-        ue_context_p->ue_context.ue_release_timer = 0;
-#endif
+        // remove UE after 100 frames after RRCConnectionReestablishmentRelease is triggered
+        ue_context_p->ue_context.ue_reestablishment_timer_thres = 1000;
       }
       break;
 
@@ -6695,12 +6671,11 @@ rrc_enb_task(
       /* Nothing to do. Apparently everything is done in S1AP processing */
       //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
       //instance, msg_name_p);
-#ifdef UE_EXPANSION
-    	if (rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)) {
+    	if (rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)
+		    && rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc > 0) {
     	  rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc =
     	  rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_thres_rrc;
     	}
-#endif
       break;
 
 #   endif
