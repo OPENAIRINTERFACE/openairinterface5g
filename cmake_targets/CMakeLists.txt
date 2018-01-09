@@ -803,6 +803,8 @@ include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
+include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC")
+include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP")
 include_directories("${OPENAIR2_DIR}/UTIL/OSA")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/inc")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
@@ -888,8 +890,12 @@ if (FLEXRAN_AGENT_SB_IF)
  add_library(FLEXRAN_AGENT
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent_handler.c
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_ran_api.c
+    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_timer.c
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common_internal.c
     ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.c
+    ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc.c
+    ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP/flexran_agent_pdcp.c
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent.c
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent_task_manager.c
     ${OPENAIR2_DIR}/ENB_APP/flexran_agent_net_comm.c
@@ -1189,6 +1195,7 @@ if (FLEXRAN_AGENT_SB_IF)
 
 set (MAC_SRC ${MAC_SRC}
   ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c
+  ${MAC_DIR}/flexran_agent_scheduler_ulsch_ue.c
   ${MAC_DIR}/flexran_agent_scheduler_dataplane.c
   ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c
 )
@@ -1211,6 +1218,9 @@ if (FLEXRAN_AGENT_SB_IF)
 #Test for adding a shared library
 add_library(default_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c)
 add_library(remote_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c)
+
+add_library(default_ul_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_ulsch_ue.c)
+
 
 endif()
 
@@ -1915,12 +1925,12 @@ add_executable(oaisim
 target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim
   -Wl,-ldl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   -Wl,--end-group )
 
 target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
 target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp 
-  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
+  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim forms)
 target_link_libraries (oaisim ${T_LIB})

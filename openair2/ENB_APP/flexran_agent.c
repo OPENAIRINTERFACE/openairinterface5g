@@ -21,26 +21,15 @@
 
 /*! \file flexran_agent.h
  * \brief top level flexran agent receive thread and itti task
- * \author Xenofon Foukas and Navid Nikaein
- * \date 2016
+ * \author Xenofon Foukas and Navid Nikaein and shahab SHARIAT BAGHERI
+ * \date 2017
  * \version 0.1
  */
 
-#include "flexran_agent_common.h"
-#include "log.h"
 #include "flexran_agent.h"
-#include "flexran_agent_mac_defs.h"
-#include "flexran_agent_mac.h"
-#include "flexran_agent_mac_internal.h"
-
-#include "flexran_agent_extern.h"
-
-#include "assertions.h"
-
-#include "flexran_agent_net_comm.h"
-#include "flexran_agent_async.h"
 
 #include <arpa/inet.h>
+
 
 //#define TEST_TIMER
 
@@ -85,6 +74,7 @@ void *flexran_agent_task(void *args){
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
+      LOG_W(FLEXRAN_AGENT, " *** Exiting FLEXRAN thread\n");
       itti_exit_task ();
       break;
 
@@ -196,14 +186,9 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
   return t;
 }
 
-int channel_container_init = 0;
-int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
-  
-  int channel_id;
-  
-  flexran_set_enb_vars(mod_id, RAN_LTE_OAI);
-  flexran_agent[mod_id].enb_id = mod_id;
-  
+void flexran_agent_reconfigure(mid_t mod_id){
+  Enb_properties_array_t *enb_properties = enb_config_get();
+
   /* 
    * check the configuration
    */ 
@@ -213,7 +198,7 @@ int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properti
   } else {
     strcpy(local_cache, DEFAULT_FLEXRAN_AGENT_CACHE);
   }
-  
+
   if (enb_properties->properties[mod_id]->flexran_agent_ipv4_address != 0) {
     inet_ntop(AF_INET, &(enb_properties->properties[mod_id]->flexran_agent_ipv4_address), in_ip, INET_ADDRSTRLEN);
   } else {
@@ -229,6 +214,18 @@ int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properti
 	flexran_agent[mod_id].enb_id,
 	in_ip,
 	in_port);
+  
+}
+
+int channel_container_init = 0;
+int flexran_agent_start(mid_t mod_id)
+{
+  int channel_id;
+  
+  flexran_set_enb_vars(mod_id, RAN_LTE_OAI);
+  flexran_agent[mod_id].enb_id = mod_id;
+  
+  flexran_agent_reconfigure(mod_id);
 
   /*
    * Initialize the channel container
@@ -264,8 +261,8 @@ int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properti
    *flexran_agent_register_channel(mod_id, channel, FLEXRAN_AGENT_MAC);
    */
 
-  /*Initialize the continuous MAC stats update mechanism*/
-  flexran_agent_init_cont_mac_stats_update(mod_id);
+  /*Initialize the continuous stats update mechanism*/
+  flexran_agent_init_cont_stats_update(mod_id);
   
   new_thread(receive_thread, &flexran_agent[mod_id]);
 
@@ -275,6 +272,12 @@ int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properti
   AGENT_MAC_xface *mac_agent_xface = (AGENT_MAC_xface *) malloc(sizeof(AGENT_MAC_xface));
   flexran_agent_register_mac_xface(mod_id, mac_agent_xface);
   
+  AGENT_RRC_xface *rrc_agent_xface = (AGENT_RRC_xface *) malloc(sizeof(AGENT_RRC_xface));
+  flexran_agent_register_rrc_xface(mod_id, rrc_agent_xface);
+
+   AGENT_PDCP_xface *pdcp_agent_xface = (AGENT_PDCP_xface *) malloc(sizeof(AGENT_PDCP_xface));
+   flexran_agent_register_pdcp_xface(mod_id, pdcp_agent_xface);
+
   /* 
    * initilize a timer 
    */ 

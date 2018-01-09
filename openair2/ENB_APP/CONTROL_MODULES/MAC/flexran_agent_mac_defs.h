@@ -48,7 +48,7 @@ typedef struct {
 
   /// Send to the controller all the mac stat updates that occured during this subframe
   /// based on the stats request configuration
-  void (*flexran_agent_send_update_mac_stats)(mid_t mod_id);
+  // void (*flexran_agent_send_update_mac_stats)(mid_t mod_id);
 
   /// Provide to the scheduler a pending dl_mac_config message
   void (*flexran_agent_get_pending_dl_mac_config)(mid_t mod_id,
@@ -60,14 +60,19 @@ typedef struct {
   void (*flexran_agent_schedule_ue_spec)(mid_t mod_id, uint32_t frame, uint32_t subframe,
 					 int *mbsfn_flag, Protocol__FlexranMessage **dl_info);
   
+  /// Run the UE UL scheduler and fill the Protocol__FlexranMessage. Assumes that
+  
+ void (*flexran_agent_schedule_ul_spec)(mid_t module_idP,  uint32_t frameP, uint32_t cooperation_flag,
+        int subframeP, unsigned char sched_subframe, Protocol__FlexranMessage **ul_info);
 
   /// Notify the controller for a state change of a particular UE, by sending the proper
   /// UE state change message (ACTIVATION, DEACTIVATION, HANDOVER)
-  int (*flexran_agent_notify_ue_state_change)(mid_t mod_id, uint32_t rnti,
-					       uint8_t state_change);
+  // int (*flexran_agent_notify_ue_state_change)(mid_t mod_id, uint32_t rnti,
+		// 			       uint8_t state_change);
   
   
   void *dl_scheduler_loaded_lib;
+  void *ul_scheduler_loaded_lib;
   /*TODO: Fill in with the rest of the MAC layer technology specific callbacks (UL/DL scheduling, RACH info etc)*/
 
 } AGENT_MAC_xface;

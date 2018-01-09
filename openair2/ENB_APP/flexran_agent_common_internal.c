@@ -21,8 +21,8 @@
 
 /*! \file flexran_agent_common_internal.c
  * \brief internal functions for common message primitves and utilities 
- * \author Xenofon Foukas
- * \date 2016
+ * \author Xenofon Foukas and N. Nikaein
+ * \date 2017
  * \version 0.1
  */
 
@@ -31,6 +31,44 @@
 
 #include "flexran_agent_common_internal.h"
 #include "flexran_agent_mac_internal.h"
+
+/* the following is needed to soft-restart the lte-softmodem */
+#include "targets/RT/USER/lte-softmodem.h"
+#include "assertions.h"
+#include "enb_app.h"
+
+void handle_reconfiguration(mid_t mod_id)
+{
+  /* NOTE: this function might be extended by using stop_modem()
+   * to halt the modem so that it can later be resumed */
+  int do_restart = 0;
+
+  pthread_mutex_lock(&mutex_node_ctrl);
+  if (ENB_NORMAL_OPERATION != node_control_state) {
+    node_control_state = ENB_NORMAL_OPERATION;
+    pthread_cond_broadcast(&cond_node_ctrl);
+  } else {
+    do_restart = 1;
+  }
+  pthread_mutex_unlock(&mutex_node_ctrl);
+
+  if (do_restart) {
+    clock_t start_ms = 1000 * clock();
+    /* operator || enforces sequence points */
+    if (stop_L1L2(mod_id) < 0 || restart_L1L2(mod_id) < 0) {
+      LOG_E(ENB_APP, "could not restart, killing lte-softmodem\n");
+      /* shutdown the whole lte-softmodem */
+      itti_terminate_tasks(TASK_PHY_ENB);
+      return;
+    }
+    enb_app_start_phy_rrc(mod_id, mod_id+1);
+    MessageDef *msg_p = itti_alloc_new_message(TASK_ENB_APP, INITIALIZE_MESSAGE);
+    itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
+
+    int diff_ms = (1000 * clock() - start_ms) / CLOCKS_PER_SEC;
+    LOG_I(ENB_APP, "lte-softmodem restart succeeded in %d ms\n", diff_ms);
+  }
+}
 
 int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length) {
 
@@ -64,7 +102,16 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
       break;
     case YAML_SCALAR_EVENT:
       // Check the system name and call the proper handler
-      if (strcmp((char *) event.data.scalar.value, "mac") == 0) {
+      // Check the system name and call the proper handler
+      if (strcmp((char *) event.data.scalar.value, "enb") == 0) {
+	LOG_I(ENB_APP, "This is intended for the enb system\n");
+	// Call the enb handler
+	if (parse_enb_id(mod_id, &parser) == -1) {
+	  goto error;
+	} else { // succeful parse and setting 
+          handle_reconfiguration(mod_id);
+	}
+      } else if (strcmp((char *) event.data.scalar.value, "mac") == 0) {
 	LOG_D(ENB_APP, "This is intended for the mac system\n");
 	// Call the mac handler
 	if (parse_mac_config(mod_id, &parser) == -1) {
@@ -90,8 +137,8 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
 	// TODO : Just skip it for now
 	if (skip_system_section(&parser) == -1) {
 	  goto error;
-	}
-      } else {
+	} 
+      } else { 
 	goto error;
       }
       break;
@@ -113,6 +160,147 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
   yaml_parser_delete(&parser);
   return -1;
 
+}
+
+int parse_enb_id(mid_t mod_id, yaml_parser_t *parser) {
+  yaml_event_t event;
+  
+  char *endptr;
+  // int is_array;
+  
+  int done = 0;
+  int mapping_started = 0;
+
+  while (!done) {
+    
+    if (!yaml_parser_parse(parser, &event))
+      goto error;
+
+    switch (event.type) {
+      // We are expecting a mapping of parameters
+    case YAML_SEQUENCE_START_EVENT:
+      // is_array = 1;
+      break;
+    case YAML_MAPPING_START_EVENT:
+      LOG_D(ENB_APP, "The mapping of the parameters started\n");
+      mapping_started = 1;
+      break;
+    case YAML_MAPPING_END_EVENT:
+      LOG_D(ENB_APP, "The mapping of the parameters ended\n");
+      mapping_started = 0;
+      break;
+    case YAML_SCALAR_EVENT:
+      if (!mapping_started) {
+	goto error;
+      }
+      // Check what key needs to be set
+      // use eNB egistered
+      if (mac_agent_registered[mod_id]) {
+	LOG_I(ENB_APP, "Setting parameter for eNB %s\n", event.data.scalar.value);
+	if (strcmp((char *) event.data.scalar.tag, YAML_INT_TAG) == 0) { // if int 
+	  if ((strtol((char *) event.data.scalar.value, &endptr, 10))== mod_id ) { // enb_id == mod_id: right enb instance to be configured
+	    if (parse_enb_config_parameters(mod_id, parser) == -1) {
+	      goto error;
+	    } 
+	  }
+	  else{
+	    goto error; // not the expected type
+	  }
+	}
+      }
+      break;
+    default:
+      goto error;
+    }
+
+    done = (event.type == YAML_MAPPING_END_EVENT);
+    yaml_event_delete(&event);
+  }
+
+  return 0;
+  
+ error:
+  yaml_event_delete(&event);
+  return -1;
+}
+
+int parse_enb_config_parameters(mid_t mod_id, yaml_parser_t *parser) {
+  yaml_event_t event;
+  
+  char *endptr;
+  
+  int done = 0;
+  int mapping_started = 0;
+
+  while (!done) {
+    
+    if (!yaml_parser_parse(parser, &event))
+      goto error;
+
+    switch (event.type) {
+      // We are expecting a mapping of parameters
+    case YAML_MAPPING_START_EVENT:
+      LOG_D(ENB_APP, "The mapping of the parameters started\n");
+      mapping_started = 1;
+      break;
+    case YAML_MAPPING_END_EVENT:
+      LOG_D(ENB_APP, "The mapping of the parameters ended\n");
+      mapping_started = 0;
+      break;
+    case YAML_SCALAR_EVENT:
+      if (!mapping_started) {
+	goto error;
+      }
+      // Check what key needs to be set
+      if (strcmp((char *) event.data.scalar.value, "dl_freq") == 0) {
+        if (!yaml_parser_parse(parser, &event))
+          goto error;
+	flexran_agent_set_operating_dl_freq(mod_id,
+					    0,
+					    strtol((char *) event.data.scalar.value, &endptr, 10));
+        LOG_I(ENB_APP, "Setting dl_freq to %s\n", event.data.scalar.value);
+      } else if (strcmp((char *) event.data.scalar.value, "ul_freq_offset") == 0) {
+        if (!yaml_parser_parse(parser, &event))
+          goto error;
+	flexran_agent_set_operating_ul_freq(mod_id,
+					    0,
+					    strtol((char *) event.data.scalar.value, &endptr, 10));
+        LOG_I(ENB_APP, "Setting ul_freq_offset to %s\n", event.data.scalar.value);
+      } else if (strcmp((char *) event.data.scalar.value, "bandwidth") == 0) {
+        if (!yaml_parser_parse(parser, &event))
+          goto error;
+	flexran_agent_set_operating_bandwidth(mod_id,
+					    0,
+					    strtol((char *) event.data.scalar.value, &endptr, 10));
+        LOG_I(ENB_APP, "Setting bandwidth to %s\n", event.data.scalar.value);
+      } else if (strcmp((char *) event.data.scalar.value, "frame_type") == 0) {
+        if (!yaml_parser_parse(parser, &event))
+          goto error;
+	flexran_agent_set_operating_frame_type (mod_id,
+					    0,
+					    strtol((char *) event.data.scalar.value, &endptr, 10));
+        LOG_I(ENB_APP, "Setting frame_type to %s\n", event.data.scalar.value);
+      }else { // not supported tag  
+	goto error;
+      }
+      
+      break;
+    default:
+      goto error;
+    }
+
+    done = (event.type == YAML_MAPPING_END_EVENT);
+    yaml_event_delete(&event);
+  }
+
+  /* reflect in RAN API */
+  flexran_set_enb_vars(mod_id, RAN_LTE_OAI);
+
+  return 0;
+  
+ error:
+  yaml_event_delete(&event);
+  return -1;
 }
 
 int skip_system_section(yaml_parser_t *parser) {

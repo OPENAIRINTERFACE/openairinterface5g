@@ -180,10 +180,12 @@ Protocol__FlexUeStatsReport * copy_ue_stats_report(Protocol__FlexUeStatsReport *
     }
   }
 
-  if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PRH) {
-    copy->has_phr = original->has_phr;
-    copy->phr = original->phr;
-  }
+  
+
+   if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR) { 
+     copy->has_phr = original->has_phr;
+     copy->phr = original->phr;
+   }
 
   if (copy->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RLC_BS) {
     copy->n_rlc_report = original->n_rlc_report; 
@@ -605,7 +607,10 @@ int parse_mac_config(mid_t mod_id, yaml_parser_t *parser) {
       } else if (strcmp((char *) event.data.scalar.value, "ul_scheduler") == 0) {
 	// Call the proper handler
 	LOG_D(ENB_APP, "This is for the ul_scheduler subsystem\n");
-	goto error;
+	if (parse_ul_scheduler_config(mod_id, parser) == -1) {
+    LOG_D(ENB_APP, "An error occured\n");
+    goto error;
+  }
 	// TODO
       } else if (strcmp((char *) event.data.scalar.value, "ra_scheduler") == 0) {
 	// Call the proper handler
@@ -698,6 +703,56 @@ int parse_dl_scheduler_config(mid_t mod_id, yaml_parser_t *parser) {
   return -1;
 }
 
+int parse_ul_scheduler_config(mid_t mod_id, yaml_parser_t *parser) {
+  
+  yaml_event_t event;
+
+  int done = 0;
+  int mapping_started = 0;
+
+  while (!done) {
+    
+    if (!yaml_parser_parse(parser, &event))
+      goto error;
+
+    switch (event.type) {
+      // We are expecting a mapping (behavior and parameters)
+    case YAML_MAPPING_START_EVENT:
+      LOG_D(ENB_APP, "The mapping of the subsystem started\n");
+      mapping_started = 1;
+      break;
+    case YAML_MAPPING_END_EVENT:
+      LOG_D(ENB_APP, "The mapping of the subsystem ended\n");
+      mapping_started = 0;
+      break;
+    case YAML_SCALAR_EVENT:
+      if (!mapping_started) {
+  goto error;
+      }
+      // Check what key needs to be set
+      if (strcmp((char *) event.data.scalar.value, "parameters") == 0) {
+  LOG_D(ENB_APP, "Now it is time to set the parameters for this subsystem\n");
+  if (parse_ul_scheduler_parameters(mod_id, parser) == -1) {
+    goto error;
+  }
+      }
+      break;
+    default:
+      goto error;
+    }
+
+    done = (event.type == YAML_MAPPING_END_EVENT);
+    yaml_event_delete(&event);
+  }
+
+  return 0;
+
+ error:
+  yaml_event_delete(&event);
+  return -1;
+}
+
+
 int parse_dl_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser) {
   yaml_event_t event;
   
@@ -736,6 +791,61 @@ int parse_dl_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser) {
 	apply_parameter_modification(param, parser);
       } else {
 	goto error;
+      }
+      break;
+    default:
+      goto error;
+    }
+
+    done = (event.type == YAML_MAPPING_END_EVENT);
+    yaml_event_delete(&event);
+  }
+
+  return 0;
+  
+ error:
+  yaml_event_delete(&event);
+  return -1;
+}
+
+int parse_ul_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser) {
+  yaml_event_t event;
+  
+  void *param;
+  
+  int done = 0;
+  int mapping_started = 0;
+
+  while (!done) {
+    
+    if (!yaml_parser_parse(parser, &event))
+      goto error;
+
+    switch (event.type) {
+      // We are expecting a mapping of parameters
+    case YAML_MAPPING_START_EVENT:
+      LOG_D(ENB_APP, "The mapping of the parameters started\n");
+      mapping_started = 1;
+      break;
+    case YAML_MAPPING_END_EVENT:
+      LOG_D(ENB_APP, "The mapping of the parameters ended\n");
+      mapping_started = 0;
+      break;
+    case YAML_SCALAR_EVENT:
+      if (!mapping_started) {
+  goto error;
+      }
+      // Check what key needs to be set
+      if (mac_agent_registered[mod_id]) {
+  LOG_D(ENB_APP, "Setting parameter %s\n", event.data.scalar.value);
+  param = dlsym(agent_mac_xface[mod_id]->ul_scheduler_loaded_lib,
+          (char *) event.data.scalar.value);
+  if (param == NULL) {
+    goto error;
+  }
+  apply_parameter_modification(param, parser);
+      } else {
+  goto error;
       }
       break;
     default:

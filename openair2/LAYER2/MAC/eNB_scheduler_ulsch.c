@@ -1115,6 +1115,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	   for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
 	   CC_id = UE_list->ordered_ULCCids[n][UE_id];
 
+<<<<<<< HEAD
 	   if (mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti) == NULL) {
 	   LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: no PHY context\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
 	   drop_ue = 1;
@@ -1141,6 +1142,111 @@ schedule_ulsch_rnti(module_id_t module_idP,
 				       subframeP, rnti);
 		UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
 		UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 1;
+=======
+    // loop over all active UL CC_ids for this UE
+    for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
+      // This is the actual CC_id in the list
+      CC_id = UE_list->ordered_ULCCids[n][UE_id];
+      frame_parms = mac_xface->get_lte_frame_parms(module_idP,CC_id);
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
+
+      aggregation=get_aggregation(get_bw_index(module_idP,CC_id), 
+				  eNB_UE_stats->DL_cqi[0],
+				  format0);
+      
+      if (CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)) {
+        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: not enough nCCE\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+        continue; // break;
+      } else{
+	LOG_D(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d mode %s: aggregation level %d\n", 
+	      module_idP,frameP,subframeP,UE_id,rnti,CC_id, mode_string[eNB_UE_stats->mode], 1<<aggregation);
+      }
+
+
+      if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
+
+        DCI_pdu = &eNB->common_channels[CC_id].DCI_pdu;
+        UE_template   = &UE_list->UE_template[CC_id][UE_id];
+        UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+
+        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL) == -1 ) {
+          LOG_W(MAC,"[eNB %d] Scheduler Frame %d, subframeP %d: candidate harq_pid from PHY for UE %d CC %d RNTI %x\n",
+                module_idP,frameP,subframeP, UE_id, CC_id, rnti);
+          continue;
+        } else
+          LOG_T(MAC,"[eNB %d] Frame %d, subframeP %d, UE %d CC %d : got harq pid %d  round %d (rnti %x,mode %s)\n",
+                module_idP,frameP,subframeP,UE_id,CC_id, harq_pid, round,rnti,mode_string[eNB_UE_stats->mode]);
+
+	PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO,PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP]);	
+        if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0)) || (round>0))// || ((frameP%10)==0))
+          // if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames
+        {
+	  LOG_D(MAC,"[eNB %d][PUSCH] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d)\n",
+		module_idP,frameP,subframeP,UE_id,rnti,round,UE_template->ul_SR,
+		UE_sched_ctrl->ul_inactivity_timer,
+		UE_sched_ctrl->ul_failure_timer);
+          // reset the scheduling request
+          UE_template->ul_SR = 0;
+          status = mac_eNB_get_rrc_status(module_idP,rnti);
+	  if (status < RRC_CONNECTED)
+	    cqi_req = 0;
+	  else if (UE_sched_ctrl->cqi_req_timer>30) {
+	    cqi_req = 1;
+	    UE_sched_ctrl->cqi_req_timer=0;
+	  }
+	  else
+	    cqi_req = 0;
+
+          //power control
+          //compute the expected ULSCH RX power (for the stats)
+
+          // this is the normalized RX power and this should be constant (regardless of mcs
+          normalized_rx_power = eNB_UE_stats->UL_rssi[0];
+          target_rx_power = mac_xface->get_target_pusch_rx_power(module_idP,CC_id);
+
+          // this assumes accumulated tpc
+	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
+	  int32_t framex10psubframe = UE_template->pusch_tpc_tx_frame*10+UE_template->pusch_tpc_tx_subframe;
+          if (((framex10psubframe+10)<=(frameP*10+subframeP)) || //normal case
+	      ((framex10psubframe>(frameP*10+subframeP)) && (((10240-framex10psubframe+frameP*10+subframeP)>=10)))) //frame wrap-around
+	    {
+	    UE_template->pusch_tpc_tx_frame=frameP;
+	    UE_template->pusch_tpc_tx_subframe=subframeP;
+            if (normalized_rx_power>(target_rx_power+1)) {
+              tpc = 0; //-1
+              tpc_accumulated--;
+            } else if (normalized_rx_power<(target_rx_power-1)) {
+              tpc = 2; //+1
+              tpc_accumulated++;
+            } else {
+              tpc = 1; //0
+            }
+          } else {
+            tpc = 1; //0
+          }
+
+	  if (tpc!=1) {
+	    LOG_D(MAC,"[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
+		  module_idP,frameP,subframeP,harq_pid,tpc,
+		  tpc_accumulated,normalized_rx_power,target_rx_power);
+	  }
+
+          // new transmission
+          if (round==0) {
+
+            ndi = 1-UE_template->oldNDI_UL[harq_pid];
+            UE_template->oldNDI_UL[harq_pid]=ndi;
+	    UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power=normalized_rx_power;
+	    UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
+	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1=UE_template->pre_assigned_mcs_ul;
+            mcs = UE_template->pre_assigned_mcs_ul;//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
+            if (UE_template->pre_allocated_rb_table_index_ul >=0) {
+              rb_table_index=UE_template->pre_allocated_rb_table_index_ul;
+            } else {
+	      mcs=10;//cmin (10, openair_daq_vars.target_ue_ul_mcs);
+              rb_table_index=13; // for PHR
+>>>>>>> feature-68-enb-agent
 	    }
 	    continue;
 	}

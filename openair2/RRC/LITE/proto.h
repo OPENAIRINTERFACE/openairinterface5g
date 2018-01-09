@@ -33,6 +33,10 @@
 
 #include "RRC/LITE/defs.h"
 
+#if defined(FLEXRAN_AGENT_SB_IF)
+#include "flexran_agent_extern.h"
+#endif
+
 //main.c
 int rrc_init_global_param(void);
 int L3_xface_init(void);
@@ -254,6 +258,19 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   const uint8_t                ho_state
 );
 
+
+#if defined(FLEXRAN_AGENT_SB_IF)
+
+void
+flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(
+							     const protocol_ctxt_t* const ctxt_pP,
+							     rrc_eNB_ue_context_t* const ue_context_pP,
+							     const uint8_t ho_state,
+							     agent_reconf_rrc * trig_param
+							     );
+
+#endif
+
 void
 rrc_eNB_generate_dedeicatedRRCConnectionReconfiguration(
   const protocol_ctxt_t* const ctxt_pP,
@@ -408,7 +425,7 @@ rrc_eNB_generate_SecurityModeCommand(
 void
 rrc_eNB_process_MeasurementReport(
   const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
+  rrc_eNB_ue_context_t*        ue_context_pP,
   const MeasResults_t*   const measResults2
 );
 

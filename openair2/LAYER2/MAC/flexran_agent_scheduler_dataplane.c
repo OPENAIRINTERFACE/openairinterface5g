@@ -90,7 +90,6 @@ flexran_apply_dl_scheduling_decisions(mid_t mod_id,
 
 }
 
-
 void
 flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 					   uint32_t frame,
@@ -287,10 +286,6 @@ flexran_apply_ue_spec_scheduling_decisions(mid_t mod_id,
 					       ta_update,	// timing advance
 					       NULL,	// contention res id
 					       padding, post_padding);
-
-
-
-
 
 #ifdef DEBUG_eNB_SCHEDULER
 		LOG_T(MAC, "[eNB %d] First 16 bytes of DLSCH : \n");

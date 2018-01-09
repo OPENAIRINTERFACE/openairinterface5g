@@ -53,6 +53,10 @@ extern UE_MAC_INST *UE_mac_inst;
 # include "intertask_interface.h"
 #endif
 
+#if defined(FLEXRAN_AGENT_SB_IF)
+#include "flexran_agent_extern.h"
+#endif
+
 //#define RRC_DATA_REQ_DEBUG
 //#define DEBUG_RRC 1
 
@@ -635,10 +639,10 @@ rrc_data_ind(
   rb_id_t    DCCH_index = Srb_id;
 
   if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-    LOG_N(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
+    LOG_D(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
           ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
   } else {
-    LOG_N(RRC, "[eNB %d] Frame %d: received a DCCH %d message on SRB %d with Size %d from UE %x\n",
+    LOG_D(RRC, "[eNB %d] Frame %d: received a DCCH %d message on SRB %d with Size %d from UE %x\n",
           ctxt_pP->module_id,
           ctxt_pP->frame,
           DCCH_index,
@@ -776,6 +780,13 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
   else {
     LOG_W(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
   }
+#if defined(FLEXRAN_AGENT_SB_IF)
+  if (rrc_agent_registered[Mod_instP]) {
+    agent_rrc_xface[Mod_instP]->flexran_agent_notify_ue_state_change(Mod_instP,
+								     rntiP,
+								     PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
+  }
+#endif
   rrc_mac_remove_ue(Mod_instP,rntiP);
 }
 

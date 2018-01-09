@@ -36,6 +36,39 @@ message flex_dl_dci {
 	optional uint32 cif = 27;     		// CIF for cross-carrier scheduling
 }
 
+message flex_ul_dci {
+        optional uint32 rnti = 1;
+        optional uint32 rb_start = 2;           // The start RB allocated to the UE 
+        optional uint32 rb_len = 3;             // The number of RBs allocated to the UE
+        optional uint32 mcs = 4;                // Modulation and coding scheme
+        optional uint32 cyclic_shift2 = 5;      //  match DCI format 0/4 PDU 
+        optional uint32 freq_hop_flag = 6;      // 0 no hopping, 1 hoppping
+        optional uint32 freq_hop_map = 7;       // Frequency hopping bits (0..4) 
+        optional uint32 ndi = 8;                // New data indicator
+        optional uint32 rv = 9;                 // Redundancy version
+        optional uint32 harq_pid = 10;          //  The harq process id
+        optional uint32 ultx_mode = 11;         //  A FLULM_* value
+        optional uint32 tbs_size = 12;          // The size of each TBS
+        optional uint32 n_srs = 13;             // Overlap indication with srs
+        optional uint32 res_alloc = 14;         // Type of resource allocation
+        optional uint32 size = 15;    // Size of the ULSCH PDU in bytes for UL Grant.
+
+        optional uint32 dai = 16;               // TDD only
+
+//      optional uint32 tb_swap = 17;           // Boolean. TB to codeword swap flag
+
+//      optional uint32 pdcch_order = 19;
+//      optional uint32 preamble_index = 20;    // Only valid if pdcch_order = 1
+//      optional uint32 prach_mask_index = 21;  // Only valid if pdcch_order = 1
+
+//      optional uint32 tbs_idx = 23;           // The TBS index for Format 1A
+
+
+
+
+}
+
+
 //
 // Messages related to the creation of RLC PDUs
 //

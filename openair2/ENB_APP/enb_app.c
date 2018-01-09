@@ -51,7 +51,7 @@
 # endif
 
 #if defined(FLEXRAN_AGENT_SB_IF)
-#   include "flexran_agent.h"
+#   include "targets/RT/USER/lte-softmodem.h"
 #endif
 
 extern unsigned char NB_eNB_INST;
@@ -206,6 +206,15 @@ static void configure_rrc(uint32_t enb_id)
   else AssertFatal(0,"RRC context for eNB %d not allocated\n",enb_id);
 }
 
+void enb_app_start_phy_rrc(uint32_t enb_id_start, uint32_t enb_id_end)
+{
+  Enb_properties_array_t *enb_properties_p = enb_config_get();
+  for (uint32_t enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
+    configure_phy(enb_id, enb_properties_p);
+    configure_rrc(enb_id, enb_properties_p);
+  }
+}
+
 /*------------------------------------------------------------------------------*/
 # if defined(ENABLE_USE_MME)
 static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, const Enb_properties_array_t *enb_properties)
@@ -288,15 +297,15 @@ void *eNB_app_task(void *args_p)
 #if defined(ENABLE_ITTI)
   uint32_t                        enb_nb = RC.nb_inst; 
   uint32_t                        enb_id_start = 0;
+  uint32_t                        enb_i;
   uint32_t                        enb_id_end = enb_id_start + enb_nb;
 # if defined(ENABLE_USE_MME)
   uint32_t                        register_enb_pending;
   uint32_t                        registered_enb;
   long                            enb_register_retry_timer_id;
 # endif
-  uint32_t                        enb_id;
-  MessageDef                      *msg_p           = NULL;
-  const char                      *msg_name        = NULL;
+  MessageDef                     *msg_p           = NULL;
+  const char                     *msg_name        = NULL;
   instance_t                      instance;
   int                             result;
   /* for no gcc warnings */
@@ -331,21 +340,13 @@ void *eNB_app_task(void *args_p)
 
   RC.rrc = (eNB_RRC_INST **)malloc(RC.nb_inst*sizeof(eNB_RRC_INST *));
 
-  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    RC.rrc[enb_id] = (eNB_RRC_INST*)malloc(sizeof(eNB_RRC_INST));
-    memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
-    configure_rrc(enb_id);
-  }
-  
-#if defined (FLEXRAN_AGENT_SB_IF)
-  
-  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    printf("\n start enb agent %d\n", enb_id);
-    flexran_agent_start(enb_id, enb_properties_p);
+  enb_app_start_phy_rrc(enb_id_start, enb_id_end);
+
+#ifdef FLEXRAN_AGENT_SB_IF 
+  for (enb_i = 0; enb_i <1; enb_i ++){ // To be handled for all of current eNB
+    flexran_set_enb_vars(enb_i, RAN_LTE_OAI);
   }
 #endif 
-  
-
 
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */
@@ -366,6 +367,7 @@ void *eNB_app_task(void *args_p)
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
+      LOG_W(TASK_ENB_APP, " *** Exiting ENB_APP thread\n");
       itti_exit_task ();
       break;
 

@@ -1927,16 +1927,18 @@ int UE_num_active_CC(UE_list_t * listP, int ue_idP)
 int UE_PCCID(module_id_t mod_idP, int ue_idP)
 //------------------------------------------------------------------------------
 {
-    return (RC.mac[mod_idP]->UE_list.pCC_id[ue_idP]);
+  if (RC.mac[mod_idP] == NULL) return 0;
+  return (RC.mac[mod_idP]->UE_list.pCC_id[ue_idP]);
 }
 
 //------------------------------------------------------------------------------
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP)
 //------------------------------------------------------------------------------
 {
-    rnti_t rnti =
-	RC.mac[mod_idP]->
-	UE_list.UE_template[UE_PCCID(mod_idP, ue_idP)][ue_idP].rnti;
+  if (RC.mac[mod_idP] == NULL) return 0;
+  rnti_t rnti =
+    RC.mac[mod_idP]->
+    UE_list.UE_template[UE_PCCID(mod_idP, ue_idP)][ue_idP].rnti;
 
     if (rnti > 0) {
 	return (rnti);
@@ -1951,7 +1953,8 @@ rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP)
 boolean_t is_UE_active(module_id_t mod_idP, int ue_idP)
 //------------------------------------------------------------------------------
 {
-    return (RC.mac[mod_idP]->UE_list.active[ue_idP]);
+  if (RC.mac[mod_idP] == NULL) return 0;
+  return (RC.mac[mod_idP]->UE_list.active[ue_idP]);
 }
 
 /*
@@ -1977,6 +1980,11 @@ uint8_t find_active_UEs(module_id_t module_idP,int CC_id){
 }
 */
 
+int UE_BSR (uint8_t mod_id, uint8_t ue_id, uint8_t lcid) {
+
+  if (eNB_mac_inst == NULL) return 0;
+  return eNB_mac_inst[mod_id].UE_list.UE_template[UE_PCCID(mod_id,ue_id)][ue_id].bsr_info[lcid];
+}
 
 // get aggregation (L) form phy for a give UE
 unsigned char
@@ -2099,6 +2107,12 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
     dump_ue_list(UE_list, 0);
     return (-1);
 }
+
+int  CC_id_rnti_downlink (uint8_t mod_id, int CC_index, uint16_t ue_rnti) {
+
+  return eNB_mac_inst[mod_id].UE_list.ordered_CCids[CC_index][ue_rnti];
+}
+
 
 //------------------------------------------------------------------------------
 int rrc_mac_remove_ue(module_id_t mod_idP, rnti_t rntiP)

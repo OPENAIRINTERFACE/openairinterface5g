@@ -264,4 +264,14 @@ PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t abstraction_flag);
 void init_eNB_afterRU(void);
 
+extern int stop_L1L2(int enb_id);
+extern int restart_L1L2(int enb_id);
+
+#ifdef FLEXRAN_AGENT_SB_IF
+#include "flexran_agent.h" // for locking
+volatile ENB_MODULE_STATE node_control_state;
+pthread_cond_t cond_node_ctrl;
+pthread_mutex_t mutex_node_ctrl;
+#endif
+
 #endif
