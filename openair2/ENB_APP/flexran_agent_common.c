@@ -391,7 +391,7 @@ int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol_
   char lib_name[120];
   char target[512];
   snprintf(lib_name, sizeof(lib_name), "/%s.so", control_delegation_msg->name);
-  strcpy(target, local_cache);
+  strcpy(target, RC.flexran[mod_id]->cache_name);
   strcat(target, lib_name);
   
   FILE *f;
@@ -1075,7 +1075,7 @@ int flexran_agent_rrc_measurement(mid_t mod_id, const void *params, Protocol__Fl
 
   struct rrc_eNB_ue_context_s   *ue_context_p = NULL;
 
-  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[mod_id].rrc_ue_head)){
+  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[mod_id]->rrc_ue_head)){
 
 
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, ue_context_p->ue_context.rnti, flexran_get_current_frame(mod_id), flexran_get_current_subframe (mod_id), mod_id);

@@ -40,6 +40,9 @@
 #include "PHY/impl_defs_top.h"
 #include "PHY/impl_defs_lte.h"
 #include "RRC/LITE/defs.h"
+#ifdef FLEXRAN_AGENT_SB_IF
+#include "flexran_agent_defs.h"
+#endif
 
 #include "gtpv1u.h"
 #include "NwGtpv1u.h"
@@ -64,6 +67,10 @@ typedef struct {
   int *nb_L1_CC;
   /// Number of RU instances in this node
   int nb_RU;
+#ifdef FLEXRAN_AGENT_SB_IF
+  /// FlexRAN context variables
+  flexran_agent_info_t **flexran;
+#endif
   /// eNB context variables
   struct PHY_VARS_eNB_s ***eNB;
   /// RRC context variables

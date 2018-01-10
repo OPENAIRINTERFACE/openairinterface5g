@@ -94,6 +94,9 @@ typedef struct ru_config_s {
 } ru_config_t;
 
 extern void RCconfig_RU(void);
+#ifdef FLEXRAN_AGENT_SB_IF
+extern void RCconfig_flexran(void);
+#endif
 extern void RCconfig_L1(void);
 extern void RCconfig_macrlc(void);
 extern int  RCconfig_gtpu(void );

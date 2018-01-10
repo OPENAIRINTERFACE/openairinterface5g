@@ -869,7 +869,7 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
   char lib_name[120];
   char target[512];
   snprintf(lib_name, sizeof(lib_name), "/%s.so", function_name);
-  strcpy(target, local_cache);
+  strcpy(target, RC.flexran[mod_id]->cache_name);
   strcat(target, lib_name);
   
   LOG_I(FLEXRAN_AGENT, "Opening pushed code: %s\n", target);

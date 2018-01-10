@@ -34,11 +34,7 @@
 #include "flexran_agent_mac_defs.h"
 #include "flexran_agent_rrc_defs.h"
 #include "flexran_agent_pdcp_defs.h"
-
-//extern msg_context_t shared_ctxt[NUM_MAX_ENB][FLEXRAN_AGENT_MAX];
-
-/* full path of the local cache for storing VSFs */
-extern char local_cache[40];
+#include "common/ran_context.h"
 
 /* Control module interface for the communication of the MAC Control Module with the agent */
 extern AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];

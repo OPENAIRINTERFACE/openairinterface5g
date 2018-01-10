@@ -138,11 +138,24 @@ typedef enum {
   FLEXRAN_AGENT_TIMER_STATE_MAX,
 } flexran_agent_timer_state_t;
 
-
+#define FLEXRAN_CAP_LOL1 0x1
+#define FLEXRAN_CAP_HIL1 0x2
+#define FLEXRAN_CAP_LOL2 0x4   // is: MAC
+#define FLEXRAN_CAP_HIL2 0x8   // is: RLC
+#define FLEXRAN_CAP_PDCP 0x16
+#define FLEXRAN_CAP_RRC  0x32
 
 typedef struct {
   /* general info */ 
- 
+  char    *interface_name;
+  char    *remote_ipv4_addr;
+  uint16_t remote_port;
+  char    *cache_name;
+  uint8_t  await_reconf;
+
+  int      enb_id;
+  uint8_t  capability_mask;
+
   /* stats */
 
   uint32_t total_rx_msg;
@@ -199,11 +212,5 @@ typedef struct stats_request_config_s{
   uint16_t period; /*In number of subframes*/
   report_config_t *config;
 } stats_request_config_t;
-
-typedef struct {
-  mid_t enb_id;
-  flexran_agent_info_t agent_info;
-  
-} flexran_agent_instance_t;
 
 #endif 

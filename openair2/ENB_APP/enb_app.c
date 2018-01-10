@@ -343,8 +343,8 @@ void *eNB_app_task(void *args_p)
   enb_app_start_phy_rrc(enb_id_start, enb_id_end);
 
 #ifdef FLEXRAN_AGENT_SB_IF 
-  for (enb_i = 0; enb_i <1; enb_i ++){ // To be handled for all of current eNB
-    flexran_set_enb_vars(enb_i, RAN_LTE_OAI);
+  for (uint32_t enb_i = 0; enb_i <1; enb_i ++){ // To be handled for all of current eNB
+    flexran_set_RC_vars(enb_i, RAN_LTE_OAI);
   }
 #endif 
 
