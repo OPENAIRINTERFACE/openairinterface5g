@@ -404,6 +404,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   int offset = eNB->CC_id;//proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
+  
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
@@ -437,7 +438,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
   /* save old HARQ information needed for PHICH generation */
-  if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
+  if ((ul_subframe < 10)&&
+      (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is a potential UL subframe that will be scheduled here
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
       harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
       if (eNB->ulsch[i]) {
@@ -1959,7 +1961,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
                           eNB->first_run_I0_measurements);
 
   int min_I0=1000,max_I0=0;
-  if ((frame==0) && (subframe==6)) { 
+  if ((frame==0) && (subframe==4)) { 
     for (int i=0;i<eNB->frame_parms.N_RB_UL;i++) {
       if (i==(eNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
  

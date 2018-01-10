@@ -580,9 +580,14 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   AssertFatal(RC.eNB[Mod_id]!=NULL,"RC.eNB[%d] is null\n",Mod_id);
   AssertFatal(RC.eNB[Mod_id][CC_id]!=NULL,"RC.eNB[%d][%d] is null\n",Mod_id,CC_id);
 
+
+
   eNB         = RC.eNB[Mod_id][CC_id];
   fp          = &eNB->frame_parms;
   proc        = &eNB->proc.proc_rxtx[0];
+
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
+
   ul_subframe = pdcch_alloc2ul_subframe(fp,subframe);
   ul_frame    = pdcch_alloc2ul_frame(fp,frame,subframe);
 
@@ -608,8 +613,9 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
         frame,subframe,ul_subframe,number_dl_pdu,TX_req->tx_request_body.number_of_pdus,number_hi_dci0_pdu,number_ul_pdu);
 
 
-  if (ul_subframe<10) { // This means that there is an ul_subframe that can be configured here
-    LOG_D(PHY,"NFAPI: Clearing dci allocations for potential UL\n");
+  if ((ul_subframe<10)&&
+      (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is an ul_subframe that can be configured here
+    LOG_D(PHY,"NFAPI: Clearing dci allocations for potential UL subframe %d\n",ul_subframe);
     harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
 
     // clear DCI allocation maps for new subframe
