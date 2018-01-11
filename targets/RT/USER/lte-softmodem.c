@@ -1268,7 +1268,9 @@ int main( int argc, char **argv )
     pthread_mutex_init(&mutex_node_ctrl, NULL);
     pthread_cond_init(&cond_node_ctrl, NULL);
 
-    for (i = 0; i < NB_eNB_INST; i++) {
+    /* create RC.flexran data structure */
+    RCconfig_flexran();
+    for (i = 0; i < RC.nb_L1_inst; i++) {
       flexran_agent_start(i);
     }
 
@@ -1279,11 +1281,12 @@ int main( int argc, char **argv )
     pthread_mutex_unlock(&mutex_node_ctrl);
 
     /* reconfigure eNB in case FlexRAN controller applied changes */
-    for (i=0; i < NB_eNB_INST; i++){
-      LOG_I(ENB_APP, "Reconfigure eNB module %d and FlexRAN eNB variables\n", i);
-      reconfigure_enb_params(i);
-      flexran_set_enb_vars(i, RAN_LTE_OAI);
-    }
+    /* TODO needs to be done? */
+    //for (i=0; i < NB_eNB_INST; i++){
+    //  LOG_I(ENB_APP, "Reconfigure eNB module %d and FlexRAN eNB variables\n", i);
+    //  reconfigure_enb_params(i);
+    //  flexran_set_enb_vars(i, RAN_LTE_OAI);
+    //}
 #endif
 
     if (UE_flag==1) {     
