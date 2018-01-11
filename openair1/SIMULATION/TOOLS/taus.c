@@ -19,13 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifdef USER_MODE
 #include <time.h>
 #include <stdlib.h>
-#else
-#include <asm/io.h>
-#include <asm/rtai.h>
-#endif
 #ifdef RTAI_ENABLED
 #include <rtai.h>
 #include <rtai_sched.h>
@@ -55,21 +50,14 @@ unsigned int taus(void)
 void set_taus_seed(unsigned int seed_init)
 {
 
-#ifdef USER_MODE
   struct drand48_data buffer;
   unsigned long result = 0;
-#endif
 
   if (seed_init == 0) {
     s0 = (unsigned int)time(NULL);
     s1 = (unsigned int)time(NULL);
     s2 = (unsigned int)time(NULL);
   } else {
-#ifndef USER_MODE
-    s0 = (unsigned int)0x1e23d852;
-    s1 = (unsigned int)0x81f38a1c;
-    s2 = (unsigned int)0xfe1a133e;
-#else
     /* Use reentrant version of rand48 to ensure that no conflicts with other generators occur */
     srand48_r((long int)seed_init, &buffer);
     mrand48_r(&buffer, (long int *)&result);
@@ -78,7 +66,6 @@ void set_taus_seed(unsigned int seed_init)
     s1 = result;
     mrand48_r(&buffer, (long int *)&result);
     s2 = result;
-#endif
   }
 }
 #endif
@@ -87,10 +74,8 @@ void set_taus_seed(unsigned int seed_init)
  void set_taus_seed(unsigned int seed_init)
 {
 
-#ifdef USER_MODE
   struct drand48_data buffer;
   unsigned long result = 0;
-#endif
     s0 = (unsigned int)0x1e23d852;
     s1 = (unsigned int)0x81f38a1c;
     s2 = (unsigned int)0xfe1a133e;
@@ -102,11 +87,6 @@ void set_taus_seed(unsigned int seed_init)
     s1 = (unsigned int)time(NULL);
     s2 = (unsigned int)time(NULL);
   } else {
-#ifndef USER_MODE
-    s0 = (unsigned int)0x1e23d852;
-    s1 = (unsigned int)0x81f38a1c;
-    s2 = (unsigned int)0xfe1a133e;
-#else
    // Use reentrant version of rand48 to ensure that no conflicts with other generators occur */
     srand48_r((long int)seed_init, &buffer);
     mrand48_r(&buffer, (long int *)&result);
@@ -115,7 +95,6 @@ void set_taus_seed(unsigned int seed_init)
     s1 = result;
     mrand48_r(&buffer, (long int *)&result);
     s2 = result;
-#endif
   }
 }
 #endif

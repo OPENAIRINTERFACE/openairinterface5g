@@ -801,8 +801,6 @@ int dlsch_abstraction_EESM(double* sinr_dB, uint8_t TM, uint32_t rb_alloc[4], ui
 
   bler = interp(sinr_eff,&sinr_bler_map[mcs][0][0],&sinr_bler_map[mcs][1][0],table_length[mcs]);
 
-#ifdef USER_MODE // need to be adapted for the emulation in the kernel space
-
   if (uniformrandom() < bler) {
     LOG_I(OCM,"abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f, TM %d)\n",mcs,sinr_eff,bler, TM);
     return(1);
@@ -810,8 +808,6 @@ int dlsch_abstraction_EESM(double* sinr_dB, uint8_t TM, uint32_t rb_alloc[4], ui
     LOG_I(OCM,"abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f, TM %d)\n",mcs,sinr_eff,bler, TM);
     return(1);
   }
-
-#endif
 }
 
 int dlsch_abstraction_MIESM(double* sinr_dB,uint8_t TM, uint32_t rb_alloc[4], uint8_t mcs,uint8_t dl_power_off)
@@ -884,8 +880,6 @@ int dlsch_abstraction_MIESM(double* sinr_dB,uint8_t TM, uint32_t rb_alloc[4], ui
 
   bler = interp(sinr_eff,&sinr_bler_map[mcs][0][0],&sinr_bler_map[mcs][1][0],table_length[mcs]);
 
-#ifdef USER_MODE // need to be adapted for the emulation in the kernel space
-
   if (uniformrandom() < bler) {
     LOG_N(OCM,"abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
     return(0);
@@ -893,8 +887,6 @@ int dlsch_abstraction_MIESM(double* sinr_dB,uint8_t TM, uint32_t rb_alloc[4], ui
     LOG_I(OCM,"abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
     return(1);
   }
-
-#endif
 }
 
 /*

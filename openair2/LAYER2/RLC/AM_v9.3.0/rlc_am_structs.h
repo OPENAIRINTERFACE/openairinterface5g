@@ -36,9 +36,7 @@
 #        include "list.h"
 #        include "mem_block.h"
 #        include "rlc_am_constants.h"
-//#ifdef USER_MODE
 #        include "mac_rlc_primitives.h"
-//#endif //USER_MODE
 #        include "mac_primitives.h"
 #        include "rlc_primitives.h"
 /**

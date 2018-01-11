@@ -97,9 +97,7 @@ rrc_init_global_param(
 //-----------------------------------------------------------------------------
 {
 
-  //#ifdef USER_MODE
   //  Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
-  //#endif //USRE_MODE
 
   //  Rrc_xface->openair_rrc_top_init = openair_rrc_top_init;
   //  Rrc_xface->openair_rrc_eNB_init = openair_rrc_eNB_init;

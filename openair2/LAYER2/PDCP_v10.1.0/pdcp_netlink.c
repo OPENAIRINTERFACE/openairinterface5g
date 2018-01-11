@@ -101,7 +101,7 @@ pdcp_netlink_init(
   struct sched_param sched_param;
 
   reset_meas(&ip_pdcp_stats_tmp);
-#if defined(USER_MODE) && defined(OAI_EMU)
+#if defined(OAI_EMU)
   nb_inst_enb = oai_emulation.info.nb_enb_local;
   nb_inst_ue  = oai_emulation.info.nb_ue_local;
 #else

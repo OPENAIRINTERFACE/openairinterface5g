@@ -30,9 +30,6 @@
 #define PDCP_C
 //#define DEBUG_PDCP_FIFO_FLUSH_SDU
 
-#ifndef USER_MODE
-#include <rtai_fifos.h>
-#endif
 #include "assertions.h"
 #include "hashtable.h"
 #include "pdcp.h"
@@ -691,7 +688,7 @@ pdcp_data_ind(
     payload_offset=0;
   }
 
-#if defined(USER_MODE) && defined(OAI_EMU)
+#if defined(OAI_EMU)
 
   if (oai_emulation.info.otg_enabled == 1) {
     //unsigned int dst_instance;
@@ -983,7 +980,7 @@ pdcp_run (
 # endif
 #endif
 
-#if defined(USER_MODE) && defined(OAI_EMU)
+#if defined(OAI_EMU)
     pdcp_fifo_read_input_sdus_from_otg(ctxt_pP);
 
 #endif

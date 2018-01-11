@@ -29,11 +29,9 @@
 * \note
 * \warning
 */
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#endif
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "SCHED/defs.h"

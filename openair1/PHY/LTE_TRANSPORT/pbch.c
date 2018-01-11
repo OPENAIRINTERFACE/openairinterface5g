@@ -258,13 +258,11 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
       #endif
 
       #ifdef DEBUG_PBCH
-      #ifdef USER_MODE
       write_output("pbch_encoded_output2.m","pbch_encoded_out2",
       pbch_coded_data2,
       pbch_coded_bits,
       1,
       4);
-      #endif //USER_MODE
       #endif //DEBUG_PBCH
     */
 #ifdef DEBUG_PBCH_ENCODING
@@ -286,8 +284,6 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
 
 #ifdef DEBUG_PBCH
-#ifdef USER_MODE
-
     if (frame_mod4==0) {
       write_output("pbch_e.m","pbch_e",
                    eNB_pbch->pbch_e,
@@ -298,8 +294,6 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
       for (i=0; i<16; i++)
         printf("e[%d] %d\n",i,eNB_pbch->pbch_e[i]);
     }
-
-#endif //USER_MODE
 #endif //DEBUG_PBCH
     // scrambling
 
@@ -307,8 +301,6 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
                     eNB_pbch->pbch_e,
                     pbch_E);
 #ifdef DEBUG_PBCH
-#ifdef USER_MODE
-
     if (frame_mod4==0) {
       write_output("pbch_e_s.m","pbch_e_s",
                    eNB_pbch->pbch_e,
@@ -319,8 +311,6 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
       for (i=0; i<16; i++)
         printf("e_s[%d] %d\n",i,eNB_pbch->pbch_e[i]);
     }
-
-#endif //USER_MODE
 #endif //DEBUG_PBCH 
   } // frame_mod4==0
 

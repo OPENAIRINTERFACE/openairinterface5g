@@ -40,7 +40,6 @@ extern int otg_enabled;
 #include "pdcp.h"
 #include "pdcp_primitives.h"
 
-#ifdef USER_MODE
 #include <pthread.h>
 #include <errno.h>
 #include <stdio.h>
@@ -48,9 +47,6 @@ extern int otg_enabled;
 #include <unistd.h>
 #define rtf_put write
 #define rtf_get read
-#else
-#include <rtai_fifos.h>
-#endif //USER_MODE
 
 #include "../MAC/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -808,7 +804,7 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
   module_id_t          dst_id; // dst for otg
   rb_id_t              rb_id;
   unsigned int         pkt_size=0;
-#if defined(USER_MODE) && defined(OAI_EMU)
+#if defined(OAI_EMU)
   module_id_t          src_id;
   static unsigned int  pkt_cnt_enb=0, pkt_cnt_ue=0;
 
@@ -818,7 +814,7 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
 #endif
   protocol_ctxt_t      ctxt;
   // we need to add conditions to avoid transmitting data when the UE is not RRC connected.
-#if defined(USER_MODE) && defined(OAI_EMU)
+#if defined(OAI_EMU)
 
   if (oai_emulation.info.otg_enabled ==1 ) {
     // module_id is source id

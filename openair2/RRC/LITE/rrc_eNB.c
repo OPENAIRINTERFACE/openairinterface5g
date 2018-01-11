@@ -63,12 +63,10 @@
 #include "MeasResults.h"
 //#endif
 
-#ifdef USER_MODE
-#   include "RRC/NAS/nas_config.h"
-#   include "RRC/NAS/rb_config.h"
-#   include "OCG.h"
-#   include "OCG_extern.h"
-#endif
+#include "RRC/NAS/nas_config.h"
+#include "RRC/NAS/rb_config.h"
+#include "OCG.h"
+#include "OCG_extern.h"
 
 #if defined(ENABLE_SECURITY)
 #   include "UTIL/OSA/osa_defs.h"

@@ -54,9 +54,7 @@
 #include "socket.h"
 #include "multicast_link.h"
 
-#ifdef USER_MODE
-# include "UTIL/LOG/log.h"
-#endif //USER_MODE
+#include "UTIL/LOG/log.h"
 
 extern unsigned short Master_id;
 

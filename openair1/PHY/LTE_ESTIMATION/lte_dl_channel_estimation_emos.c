@@ -19,9 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#ifdef USER_MODE
 #include <string.h>
-#endif
 #include "defs.h"
 #include "PHY/defs.h"
 #include "SCHED/phy_procedures_emos.h"

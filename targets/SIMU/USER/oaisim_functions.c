@@ -1566,7 +1566,7 @@ void update_ocm()
 void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 {
 
-#if defined(USER_MODE) && defined(OAI_EMU)
+#if defined(OAI_EMU)
 
   //int rrc_state=0;
 
@@ -1710,7 +1710,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 
 void update_otg_UE(module_id_t ue_mod_idP, unsigned int ctime)
 {
-#if defined(USER_MODE) && defined(OAI_EMU)
+#if defined(OAI_EMU)
 
   int app_id;
   if (oai_emulation.info.otg_enabled ==1 ) {

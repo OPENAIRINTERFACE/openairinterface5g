@@ -80,6 +80,5 @@ set (  TEST_S1C_MME True )
 
 set (  USE_3GPP_ADDR_AS_LINK_ADDR False )
 set (  USE_MME "R10" )
-set (  USER_MODE True )
 set (  XER_PRINT False )
 set (  XFORMS False )

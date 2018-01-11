@@ -29,7 +29,7 @@ endif
 
 
 CFLAGS += -Wpointer-sign
-CFLAGS += -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
+CFLAGS += -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
 
 ASN1_MSG_INC = $(OPENAIR2_DIR)/RRC/LITE/MESSAGES
 

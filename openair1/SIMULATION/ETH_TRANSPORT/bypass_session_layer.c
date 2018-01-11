@@ -38,10 +38,8 @@
 #include "UTIL/OCG/OCG_extern.h"
 #include "UTIL/LOG/log.h"
 
-#ifdef USER_MODE
-# include "multicast_link.h"
-# include "pgm_link.h"
-#endif
+#include "multicast_link.h"
+#include "pgm_link.h"
 
 char rx_bufferP[BYPASS_RX_BUFFER_SIZE];
 unsigned int num_bytesP = 0;
@@ -90,10 +88,8 @@ void init_bypass (void)
 void bypass_init (tx_handler_t tx_handlerP, rx_handler_t rx_handlerP)
 {
   /***************************************************************************/
-#if defined(USER_MODE)
   multicast_link_start (bypass_rx_handler, oai_emulation.info.multicast_group,
                         oai_emulation.info.multicast_ifname);
-#endif //USER_MODE
   tx_handler = tx_handlerP;
   rx_handler = rx_handlerP;
   Master_list_rx=0;
@@ -449,35 +445,6 @@ return bytes_read;
 }
 
 /******************************************************************************************************/
-#ifndef USER_MODE
-int bypass_rx_handler(unsigned int fifo, int rw)
-{
-  /******************************************************************************************************/
-  int bytes_read;
-  int bytes_processed=0;
-  int header_bytes; //, elapsed_time;
-  //printk("[BYPASS] BYPASS_RX_HANDLER IN...\n");
-  header_bytes= rtf_get(fifo_bypass_phy_user2kern, rx_bufferP,
-                        sizeof(bypass_proto2multicast_header_t) );
-
-  if (header_bytes> 0) {
-    bytes_read = rtf_get(fifo_bypass_phy_user2kern, &rx_bufferP[header_bytes],
-                         ((bypass_proto2multicast_header_t *) (&rx_bufferP[0]))->size);
-
-    // printk("BYTES_READ=%d\n",bytes_read);
-    if (bytes_read > 0) {
-      num_bytesP=header_bytes+bytes_read;
-      emul_low_mutex_var=0;
-      //printk("BYPASS_PHY SIGNAL MAC_LOW...\n");
-      pthread_cond_signal(&emul_low_cond);
-    }
-  }
-
-  // }
-  return 0;
-}
-#else //USER_MODE
-/******************************************************************************************************/
 void bypass_rx_handler(unsigned int Num_bytes,char *Rx_buffer)
 {
   /******************************************************************************************************/
@@ -503,7 +470,6 @@ void bypass_rx_handler(unsigned int Num_bytes,char *Rx_buffer)
 #endif
   }
 }
-#endif //USER_MODE
 
 /******************************************************************************************************/
 void  bypass_signal_mac_phy(unsigned int frame, unsigned int last_slot,
@@ -511,49 +477,11 @@ void  bypass_signal_mac_phy(unsigned int frame, unsigned int last_slot,
 {
   /******************************************************************************************************/
   if (Master_list_rx != oai_emulation.info.master_list) {
-#ifndef USER_MODE
-    rtf_put(fifo_mac_bypass, &tt, 1);
-    /* the Rx window is still opened  (Re)signal bypass_phy (emulate MAC signal) */
-#endif
     bypass_rx_data(frame, last_slot, next_slot, is_master);
   } else {
     Master_list_rx = 0;
   }
 }
-
-#ifndef USER_MODE
-/***************************************************************************/
-int multicast_link_write_sock (int groupP, char *dataP, unsigned int sizeP)
-{
-  /***************************************************************************/
-  int             tx_bytes=0;
-
-  pthread_mutex_lock(&Tx_mutex);
-
-  while(!Tx_mutex_var) {
-    pthread_cond_wait(&Tx_cond,&Tx_mutex);
-  }
-
-  Tx_mutex_var=0;
-  N_P=(int)((sizeP-sizeof (bypass_proto2multicast_header_t))/1000)+2;
-  tx_bytes += rtf_put (fifo_bypass_phy_kern2user, &dataP[tx_bytes],
-                       sizeof (bypass_proto2multicast_header_t));
-
-  while(tx_bytes<sizeP) {
-    if(sizeP-tx_bytes<=1000) {
-      tx_bytes += rtf_put (fifo_bypass_phy_kern2user, &dataP[tx_bytes],
-                           sizeP-tx_bytes);
-    } else {
-      tx_bytes += rtf_put (fifo_bypass_phy_kern2user, &dataP[tx_bytes],1000);
-    }
-  }
-
-  //RG_tx_mutex_var=0;
-  pthread_mutex_unlock(&Tx_mutex);
-
-  return tx_bytes;
-}
-#endif
 
 #if defined(ENABLE_PGM_TRANSPORT)
 void bypass_tx_nack(unsigned int frame, unsigned int next_slot)
@@ -714,20 +642,4 @@ void bypass_tx_data(emu_transport_info_t Type, unsigned int frame, unsigned int 
         frame, next_slot>>1, next_slot,byte_tx_count, map_int_to_str(transport_names, Type),
         messg->master_id, messg->seq_num);
 }
-
-#ifndef USER_MODE
-/*********************************************************************************************************************/
-int bypass_tx_handler(unsigned int fifo, int rw)
-{
-  /***************************************************************************/
-  if(++N_R==N_P) {
-    rtf_reset(fifo_bypass_phy_kern2user);
-
-    Tx_mutex_var=1;
-    N_R=0;
-
-    pthread_cond_signal(&Tx_cond);
-  }
-}
-#endif
 

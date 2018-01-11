@@ -31,11 +31,9 @@
 #ifndef __OPENAIR_RRC_DEFS_H__
 #define __OPENAIR_RRC_DEFS_H__
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#endif
 
 #include "collection/tree.h"
 #include "rrc_types.h"
@@ -46,11 +44,6 @@
 #include "COMMON/platform_types.h"
 
 #include "LAYER2/MAC/defs.h"
-
-//#include "COMMON/openair_defs.h"
-#ifndef USER_MODE
-#include <rtai.h>
-#endif
 
 #include "SystemInformationBlockType1.h"
 #include "SystemInformation.h"

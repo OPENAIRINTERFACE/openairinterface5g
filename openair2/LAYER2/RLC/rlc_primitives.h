@@ -31,10 +31,8 @@
 #ifndef __RLC_PRIMITIVES_H__
 #    define __RLC_PRIMITIVES_H__
 
-#    ifdef USER_MODE
-#        include <stdio.h>
-#        include <stdlib.h>
-#    endif
+#    include <stdio.h>
+#    include <stdlib.h>
 #    include "platform_types.h"
 #    include "platform_constants.h"
 #    include "mem_block.h"

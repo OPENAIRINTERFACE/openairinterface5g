@@ -32,9 +32,6 @@
 
 #ifndef __MAC_VARS_H__
 #define __MAC_VARS_H__
-#ifdef USER_MODE
-//#include "stdio.h"
-#endif				//USER_MODE
 #include "PHY/defs.h"
 #include "defs.h"
 #include "COMMON/mac_rrc_primitives.h"

@@ -30,9 +30,7 @@
 #ifndef __PLATFORM_TYPES_H__
 #    define __PLATFORM_TYPES_H__
 
-#ifdef USER_MODE
 #include <stdint.h>
-#endif
 
 #if defined(ENABLE_ITTI)
 #include "itti_types.h"

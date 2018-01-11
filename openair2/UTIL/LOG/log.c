@@ -42,10 +42,8 @@
 # include "intertask_interface.h"
 #endif
 
-#ifdef USER_MODE
 # include <pthread.h>
 # include <string.h>
-#endif
 #ifdef RTAI
 # include <rtai.h>
 # include <rtai_fifos.h>
@@ -164,24 +162,14 @@ void  log_getconfig(log_t *g_log) {
 
 int logInit (void)
 {
-#ifdef USER_MODE
 #ifndef RTAI
   int i;
 #endif
   g_log = calloc(1, sizeof(log_t));
 
-#else
-  g_log = kmalloc(sizeof(log_t), GFP_KERNEL);
-#endif
-
   if (g_log == NULL) {
-#ifdef USER_MODE
     perror ("cannot allocated memory for log generation module \n");
     exit(EXIT_FAILURE);
-#else
-    printk("cannot allocated memory for log generation module \n");
-    return(-1);
-#endif
   }
 
 
@@ -519,11 +507,7 @@ int logInit (void)
   rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
 #endif
 
-#ifdef USER_MODE
   printf("log init done\n");
-#else
-  printk("log init done\n");
-#endif
 
   return 0;
 }

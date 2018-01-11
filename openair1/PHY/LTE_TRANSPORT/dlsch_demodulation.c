@@ -37,11 +37,7 @@
 #include "PHY/sse_intrin.h"
 #include "T.h"
 
-#ifndef USER_MODE
-#define NOCYGWIN_STATIC static
-#else
 #define NOCYGWIN_STATIC
-#endif
 
 /* dynamic shift for LLR computation for TM3/4
  * set as command line argument, see lte-softmodem.c
@@ -6027,9 +6023,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 
 //==============================================================================================
 
-#ifdef USER_MODE
-
-
 void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,unsigned int *coded_bits_per_codeword,int round,  unsigned char harq_pid)
 {
   unsigned int nsymb = (ue->frame_parms.Ncp == 0) ? 14 : 12;
@@ -6119,7 +6112,6 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,unsigned int *c
 
   //  printf("log2_maxh = %d\n",ue->pdsch_vars[eNB_id]->log2_maxh);
 }
-#endif
 
 #ifdef DEBUG_DLSCH_DEMOD
 /*

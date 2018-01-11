@@ -66,10 +66,8 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 #endif
-#ifdef USER_MODE
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
-#endif
 #if ENABLE_RAL
 #include "rrc_UE_ral.h"
 #endif
@@ -1730,9 +1728,7 @@ rrc_ue_process_securityModeCommand(
 # endif
 #endif
 
-#ifdef USER_MODE
       LOG_D(RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
-#endif
 
       for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
         LOG_T(RRC, "%02x.", buffer[i]);
@@ -1835,9 +1831,7 @@ rrc_ue_process_ueCapabilityEnquiry(
 # endif
 #endif
 
-#ifdef USER_MODE
           LOG_D(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
           for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
             LOG_T(RRC, "%02x.", buffer[i]);
@@ -4245,10 +4239,6 @@ static void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_i
 }
 
 #endif // rel10
-
-#ifndef USER_MODE
-EXPORT_SYMBOL(Rlc_info_am_config);
-#endif
 
 #if defined(ENABLE_ITTI)
 //-----------------------------------------------------------------------------
