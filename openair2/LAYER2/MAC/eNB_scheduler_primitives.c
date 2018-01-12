@@ -4472,3 +4472,28 @@ harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 	sched_ctl->pucch1_cqi_update[CC_idP] = 1;
     }
 }
+
+// Flexran Slicing functions
+
+uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs)
+{
+    return (uint16_t) floor(rb_percentage * total_rbs);
+}
+
+int flexran_slice_maxmcs(int slice_id)
+{
+    return slice_maxmcs[slice_id];
+}
+
+int flexran_slice_member(int UE_id, int slice_id)
+{
+
+  if ((slice_id < 0) || (slice_id > n_active_slices))
+    LOG_W(MAC, "out of range slice id %d\n", slice_id);
+
+
+  if ((UE_id % n_active_slices) == slice_id) {
+    return 1;	// this ue is a member of this slice
+  }
+  return 0;
+}

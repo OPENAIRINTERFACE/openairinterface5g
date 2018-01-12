@@ -800,7 +800,7 @@ typedef struct {
     ///Contention resolution timer used during random access
     uint8_t mac_ContentionResolutionTimer;
 
-    uint16_t max_allowed_rbs[MAX_NUM_LCID];
+    uint16_t max_rbs_allowed_slice[MAX_NUM_LCID][MAX_NUM_SLICES];
 
     uint8_t max_mcs[MAX_NUM_LCID];
 

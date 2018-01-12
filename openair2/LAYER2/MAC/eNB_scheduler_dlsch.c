@@ -57,12 +57,51 @@
 #include "intertask_interface.h"
 #endif
 
+#if defined FLEXRAN_AGENT_SB_IF
+#include "ENB_APP/flexran_agent_defs.h"
+#include "flexran_agent_ran_api.h"
+#include "header.pb-c.h"
+#include "flexran.pb-c.h"
+#include "flexran_agent_mac.h"
+#include <dlfcn.h>
+#endif
+
 #include "T.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 //#define DEBUG_eNB_SCHEDULER 1
 
 extern RAN_CONTEXT_t RC;
+
+
+// number of active slices for  past and current time
+int n_active_slices = 1;
+int n_active_slices_current = 1;
+
+// RB share for each slice for past and current time
+float avg_slice_percentage=0.25;
+float slice_percentage[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
+float slice_percentage_current[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
+float total_slice_percentage = 0;
+float total_slice_percentage_current = 0;
+
+// MAX MCS for each slice for past and current time
+int slice_maxmcs[MAX_NUM_SLICES] = { 28, 28, 28, 28 };
+int slice_maxmcs_current[MAX_NUM_SLICES] = { 28, 28, 28, 28 };
+
+int update_dl_scheduler[MAX_NUM_SLICES] = { 1, 1, 1, 1 };
+int update_dl_scheduler_current[MAX_NUM_SLICES] = { 1, 1, 1, 1 };
+
+// name of available scheduler
+char *dl_scheduler_type[MAX_NUM_SLICES] =
+  { "schedule_ue_spec",
+    "schedule_ue_spec",
+    "schedule_ue_spec",
+    "schedule_ue_spec"
+  };
+
+// pointer to the slice specific scheduler
+slice_scheduler_dl slice_sched_dl[MAX_NUM_SLICES] = {0};
 
 //------------------------------------------------------------------------------
 void
@@ -408,12 +447,117 @@ set_ul_DAI(int module_idP, int UE_idP, int CC_idP, int frameP,
     }
 }
 
+//------------------------------------------------------------------------------
+void
+schedule_dlsch(module_id_ module_idP,
+	        frame_t frameP, sub_frame_t subframeP, int *mbsfn_flag)
+//------------------------------------------------------------------------------{
+{
+
+  int i=0;
+
+  total_slice_percentage=0;
+  avg_slice_percentage=1.0/n_active_slices;
+
+  // reset the slice percentage for inactive slices
+  for (i = n_active_slices; i< MAX_NUM_SLICES; i++) {
+    slice_percentage[i]=0;
+  }
+  for (i = 0; i < n_active_slices; i++) {
+    if (slice_percentage[i] < 0 ){
+      LOG_W(MAC, "[eNB %d] frame %d subframe %d:invalid slice %d percentage %f. resetting to zero",
+	    mod_id, frame, subframe, i, slice_percentage[i]);
+      slice_percentage[i]=0;
+    }
+    total_slice_percentage+=slice_percentage[i];
+  }
+
+  for (i = 0; i < n_active_slices; i++) {
+
+    // Load any updated functions
+    if (update_dl_scheduler[i] > 0 ) {
+      slice_sched_dl[i] = dlsym(NULL, dl_scheduler_type[i]);
+      update_dl_scheduler[i] = 0;
+      update_dl_scheduler_current[i] = 0;
+      LOG_N(MAC,"update dl scheduler slice %d\n", i);
+    }
+
+    if (total_slice_percentage <= 1.0){ // the new total RB share is within the range
+
+      // check if the number of slices has changed, and log
+      if (n_active_slices_current != n_active_slices ){
+	if ((n_active_slices > 0) && (n_active_slices <= MAX_NUM_SLICES)) {
+	  LOG_N(MAC,"[eNB %d]frame %d subframe %d: number of active DL slices has changed: %d-->%d\n",
+		mod_id, frame, subframe, n_active_slices_current, n_active_slices);
+
+	  n_active_slices_current = n_active_slices;
+
+	} else {
+	  LOG_W(MAC,"invalid number of DL slices %d, revert to the previous value %d\n",n_active_slices, n_active_slices_current);
+	  n_active_slices = n_active_slices_current;
+	}
+      }
+
+      // check if the slice rb share has changed, and log the console
+      if (slice_percentage_current[i] != slice_percentage[i]){ // new slice percentage
+	LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
+	      mod_id, i, frame, subframe, total_slice_percentage_current, total_slice_percentage, slice_percentage_current[i], slice_percentage[i]);
+	total_slice_percentage_current= total_slice_percentage;
+	slice_percentage_current[i] = slice_percentage[i];
+
+      }
+
+      // check if the slice max MCS, and log the console
+      if (slice_maxmcs_current[i] != slice_maxmcs[i]){
+	if ((slice_maxmcs[i] >= 0) && (slice_maxmcs[i] < 29)){
+	  LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
+		mod_id, i, frame, subframe, slice_maxmcs_current[i], slice_maxmcs[i]);
+	  slice_maxmcs_current[i] = slice_maxmcs[i];
+	} else {
+	  LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid slice max mcs %d, revert the previous value %d\n",mod_id, i, slice_maxmcs[i],slice_maxmcs_current[i]);
+	  slice_maxmcs[i]= slice_maxmcs_current[i];
+	}
+      }
+
+      // check if a new scheduler, and log the console
+      if (update_dl_scheduler_current[i] != update_dl_scheduler[i]){
+	LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: DL scheduler for this slice is updated: %s \n",
+	      mod_id, i, frame, subframe, dl_scheduler_type[i]);
+	update_dl_scheduler_current[i] = update_dl_scheduler[i];
+      }
+
+    } else {
+      // here we can correct the values, e.g. reduce proportionally
+
+      if (n_active_slices == n_active_slices_current){
+	LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid total RB share (%f->%f), reduce proportionally the RB share by 0.1\n",
+	      mod_id,i,
+	      total_slice_percentage_current, total_slice_percentage);
+	if (slice_percentage[i] >= avg_slice_percentage){
+	  slice_percentage[i]-=0.1;
+	  total_slice_percentage-=0.1;
+	}
+      } else {
+	LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid total RB share (%f->%f), revert the number of slice to its previous value (%d->%d)\n",
+	      mod_id,i,
+	      total_slice_percentage_current, total_slice_percentage,
+	      n_active_slices, n_active_slices_current );
+	n_active_slices = n_active_slices_current;
+	slice_percentage[i] = slice_percentage_current[i];
+      }
+    }
+
+    // Run each enabled slice-specific schedulers one by one
+    slice_sched_dl[i](mod_id, i, frame, subframe, mbsfn_flag,dl_info);
+  }
+
+}
 
 // changes to pre-processor for eMTC
 
 //------------------------------------------------------------------------------
 void
-schedule_ue_spec(module_id_t module_idP,
+schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 		 frame_t frameP, sub_frame_t subframeP, int *mbsfn_flag)
 //------------------------------------------------------------------------------
 {
@@ -539,7 +683,11 @@ schedule_ue_spec(module_id_t module_idP,
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR, VCD_FUNCTION_IN);
     start_meas(&eNB->schedule_dlsch_preprocessor);
     dlsch_scheduler_pre_processor(module_idP,
-				  frameP, subframeP, N_RBG, mbsfn_flag);
+				  slice_idP,
+				  frameP,
+				  subframeP,
+				  N_RBG,
+				  mbsfn_flag);
     stop_meas(&eNB->schedule_dlsch_preprocessor);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR, VCD_FUNCTION_OUT);
@@ -570,6 +718,8 @@ schedule_ue_spec(module_id_t module_idP,
 		LOG_D(MAC, "[eNB] Cannot find eNB_UE_stats\n");
 		continue_flag = 1;
 	    }
+	    if (flexran_slice_member(UE_id, slice_idP) == 0)
+			continue;
 
 	    if (continue_flag != 1) {
 		switch (get_tmode(module_idP, CC_id, UE_id)) {
@@ -656,7 +806,7 @@ schedule_ue_spec(module_id_t module_idP,
 	     */
 	    eNB_UE_stats->dlsch_mcs1 =
 		cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
-	    eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1;	//cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
+	    eNB_UE_stats->dlsch_mcs1 =cmin(eNB_UE_stats->dlsch_mcs1, flexran_slice_maxmcs(slice_idP));//openair_daq_vars.target_ue_dl_mcs);
 
 
 	    // store stats

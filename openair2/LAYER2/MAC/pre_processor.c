@@ -96,7 +96,7 @@ int phy_stats_exist(module_id_t Mod_id, int rnti)
 
 // This function stores the downlink buffer for all the logical channels
 void
-store_dlsch_buffer(module_id_t Mod_id, frame_t frameP,
+store_dlsch_buffer(module_id_t Mod_id, slice_id_t slice_id, frame_t frameP,
 		   sub_frame_t subframeP)
 {
 
@@ -108,6 +108,9 @@ store_dlsch_buffer(module_id_t Mod_id, frame_t frameP,
 
     for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
 	if (UE_list->active[UE_id] != TRUE)
+	    continue;
+
+	if (flexran_slice_member(UE_id, slice_id) == 0)
 	    continue;
 
 	UE_template =
@@ -153,8 +156,8 @@ store_dlsch_buffer(module_id_t Mod_id, frame_t frameP,
 	     */
 	    if (UE_template->dl_buffer_info[i] > 0)
 		LOG_D(MAC,
-		      "[eNB %d] Frame %d Subframe %d : RLC status for UE %d in LCID%d: total of %d pdus and size %d, head sdu queuing time %d, remaining size %d, is segmeneted %d \n",
-		      Mod_id, frameP, subframeP, UE_id,
+		      "[eNB %d][SLICE %d] Frame %d Subframe %d : RLC status for UE %d in LCID%d: total of %d pdus and size %d, head sdu queuing time %d, remaining size %d, is segmeneted %d \n",
+		      Mod_id, slice_id, frameP, subframeP, UE_id,
 		      i, UE_template->dl_pdus_in_buffer[i],
 		      UE_template->dl_buffer_info[i],
 		      UE_template->dl_buffer_head_sdu_creation_time[i],
@@ -182,6 +185,7 @@ store_dlsch_buffer(module_id_t Mod_id, frame_t frameP,
 // This function returns the estimated number of RBs required by each UE for downlink scheduling
 void
 assign_rbs_required(module_id_t Mod_id,
+			slice_id_t slice_id,
 		    frame_t frameP,
 		    sub_frame_t subframe,
 		    uint16_t
@@ -200,7 +204,8 @@ assign_rbs_required(module_id_t Mod_id,
     for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
 	if (UE_list->active[UE_id] != TRUE)
 	    continue;
-
+	if (flexran_slice_member(UE_id, slice_id) == 0)
+	    continue;
 	pCCid = UE_PCCID(Mod_id, UE_id);
 
 	//update CQI information across component carriers
@@ -262,16 +267,18 @@ assign_rbs_required(module_id_t Mod_id,
 		    to_prb(RC.mac[Mod_id]->common_channels[CC_id].
 			   mib->message.dl_Bandwidth);
 
+		UE_list->ue_sched_ctl.max_allowed_rbs[CC_id][slice_id]= flexran_nb_rbs_allowed_slice(slice_percentage[slice_id],N_RB_DL);
+
 		/* calculating required number of RBs for each UE */
 		while (TBS <
 		       UE_list->UE_template[pCCid][UE_id].
 		       dl_buffer_total) {
 		    nb_rbs_required[CC_id][UE_id] += min_rb_unit[CC_id];
 
-		    if (nb_rbs_required[CC_id][UE_id] > N_RB_DL) {
+		    if (nb_rbs_required[CC_id][UE_id] > UE_list->ue_sched_ctl.max_allowed_rbs[CC_id][slice_id]) {
 			TBS =
-			    get_TBS_DL(eNB_UE_stats->dlsch_mcs1, N_RB_DL);
-			nb_rbs_required[CC_id][UE_id] = N_RB_DL;
+			    get_TBS_DL(eNB_UE_stats->dlsch_mcs1, UE_list->ue_sched_ctl.max_allowed_rbs[CC_id][slice_id]);
+			nb_rbs_required[CC_id][UE_id] = UE_list->ue_sched_ctl.max_allowed_rbs[CC_id][slice_id];
 			break;
 		    }
 
@@ -556,13 +563,14 @@ void sort_UEs(module_id_t Mod_idP, int frameP, sub_frame_t subframeP)
 // This function assigns pre-available RBS to each UE in specified sub-bands before scheduling is done
 void
 dlsch_scheduler_pre_processor(module_id_t Mod_id,
+				  slice_id_t slice_id,
 			      frame_t frameP,
 			      sub_frame_t subframeP,
 			      int N_RBG[MAX_NUM_CCs], int *mbsfn_flag)
 {
 
     unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX], harq_pid =
-	0, round = 0, total_ue_count;
+		0, round = 0, total_ue_count[MAX_NUM_CCs], total_rbs_used[MAX_NUM_CCs];
     unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX];
     int UE_id, i;
     uint16_t ii, j;
@@ -619,6 +627,8 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 						N_RBG[CC_id],
 						nb_rbs_required,
 						nb_rbs_required_remaining,
+						total_ue_count,
+						total_rbs_used,
 						rballoc_sub,
 						MIMO_mode_indicator);
 
@@ -627,12 +637,12 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 
 
     // Store the DLSCH buffer for each logical channel
-    store_dlsch_buffer(Mod_id, frameP, subframeP);
+    store_dlsch_buffer(Mod_id, slice_id,frameP, subframeP);
 
 
 
     // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
-    assign_rbs_required(Mod_id, frameP, subframeP, nb_rbs_required,
+    assign_rbs_required(Mod_id, slice_id, frameP, subframeP, nb_rbs_required,
 			min_rb_unit);
 
 
@@ -641,64 +651,88 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
     sort_UEs(Mod_id, frameP, subframeP);
 
 
-
-    total_ue_count = 0;
-
     // loop over all active UEs
     for (i = UE_list->head; i >= 0; i = UE_list->next[i]) {
-	rnti = UE_RNTI(Mod_id, i);
+		rnti = UE_RNTI(Mod_id, i);
 
-	if (rnti == NOT_A_RNTI)
-	    continue;
-	if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
-	    continue;
-	UE_id = i;
+		if (rnti == NOT_A_RNTI)
+			continue;
+		if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+			continue;
+		UE_id = i;
+		if (flexran_slice_member(UE_id, slice_id) == 0)
+			continue;
 
-	for (ii = 0; ii < UE_num_active_CC(UE_list, UE_id); ii++) {
-	    CC_id = UE_list->ordered_CCids[ii][UE_id];
-	    ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-	    cc = &RC.mac[Mod_id]->common_channels[ii];
-	    if (cc->tdd_Config)
-		harq_pid = ((frameP * 10) + subframeP) % 10;
-	    else
-		harq_pid = ((frameP * 10) + subframeP) & 7;
-	    round = ue_sched_ctl->round[CC_id][harq_pid];
+		for (ii = 0; ii < UE_num_active_CC(UE_list, UE_id); ii++) {
+			CC_id = UE_list->ordered_CCids[ii][UE_id];
+			ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+			cc = &RC.mac[Mod_id]->common_channels[ii];
+			if (cc->tdd_Config)
+				harq_pid = ((frameP * 10) + subframeP) % 10;
+			else
+				harq_pid = ((frameP * 10) + subframeP) & 7;
+			round = ue_sched_ctl->round[CC_id][harq_pid];
 
-	    average_rbs_per_user[CC_id] = 0;
+			average_rbs_per_user[CC_id] = 0;
 
 
-	    if (round != 8) {
-		nb_rbs_required[CC_id][UE_id] =
-		    UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
-	    }
-	    //nb_rbs_required_remaining[UE_id] = nb_rbs_required[UE_id];
-	    if (nb_rbs_required[CC_id][UE_id] > 0) {
-		total_ue_count = total_ue_count + 1;
-	    }
-	    // hypothetical assignment
-	    /*
-	     * If schedule is enabled and if the priority of the UEs is modified
-	     * The average rbs per logical channel per user will depend on the level of
-	     * priority. Concerning the hypothetical assignement, we should assign more
-	     * rbs to prioritized users. Maybe, we can do a mapping between the
-	     * average rbs per user and the level of priority or multiply the average rbs
-	     * per user by a coefficient which represents the degree of priority.
-	     */
+			if (round != 8) {
+				nb_rbs_required[CC_id][UE_id] =
+					UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+				total_rbs_used[CC_id]+=nb_rbs_required[CC_id][UE_id];
+			}
 
-	    N_RB_DL =
-		to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->
-		       message.dl_Bandwidth);
+			//nb_rbs_required_remaining[UE_id] = nb_rbs_required[UE_id];
+			if (nb_rbs_required[CC_id][UE_id] > 0) {
+				total_ue_count[CC_id] = total_ue_count[CC_id] + 1;
+			}
 
-	    if (total_ue_count == 0) {
-		average_rbs_per_user[CC_id] = 0;
-	    } else if ((min_rb_unit[CC_id] * total_ue_count) <= (N_RB_DL)) {
-		average_rbs_per_user[CC_id] =
-		    (uint16_t) floor(N_RB_DL / total_ue_count);
-	    } else {
-		average_rbs_per_user[CC_id] = min_rb_unit[CC_id];	// consider the total number of use that can be scheduled UE
-	    }
-	}
+		}
     }
+
+ // loop over all active UEs and calculate avg rb per user based on total active UEs
+    for (i = UE_list->head; i >= 0; i = UE_list->next[i]) {
+		rnti = UE_RNTI(Mod_id, i);
+
+		if (rnti == NOT_A_RNTI)
+			continue;
+		if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+			continue;
+		UE_id = i;
+		if (flexran_slice_member(UE_id, slice_id) == 0)
+			continue;
+
+		for (ii = 0; ii < UE_num_active_CC(UE_list, UE_id); ii++) {
+			CC_id = UE_list->ordered_CCids[ii][UE_id];
+
+			// hypothetical assignment
+			/*
+			 * If schedule is enabled and if the priority of the UEs is modified
+			 * The average rbs per logical channel per user will depend on the level of
+			 * priority. Concerning the hypothetical assignement, we should assign more
+			 * rbs to prioritized users. Maybe, we can do a mapping between the
+			 * average rbs per user and the level of priority or multiply the average rbs
+			 * per user by a coefficient which represents the degree of priority.
+			 */
+
+
+			N_RB_DL =
+				to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->
+					   message.dl_Bandwidth) - total_rbs_used[CC_id];
+
+			//recalcualte based on the what is left after retransmission
+			ue_sched_ctl.max_allowed_rbs[CC_id][slice_id]= flexran_nb_rbs_allowed_slice(slice_percentage[slice_id],N_RB_DL);
+
+			if (total_ue_count[CC_id] == 0) {
+				average_rbs_per_user[CC_id] = 0;
+			} else if ((min_rb_unit[CC_id] * total_ue_count[CC_id]) <= (ue_sched_ctl.max_allowed_rbs[CC_id][slice_id])) {
+				average_rbs_per_user[CC_id] =
+					(uint16_t) floor(ue_sched_ctl.max_allowed_rbs[CC_id][slice_id] / total_ue_count[CC_id]);
+			} else {
+				average_rbs_per_user[CC_id] = min_rb_unit[CC_id];	// consider the total number of use that can be scheduled UE
+			}
+		}
+	}
 
     // note: nb_rbs_required is assigned according to total_buffer_dl
     // extend nb_rbs_required to capture per LCID RB required
@@ -709,6 +743,8 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 	    continue;
 	if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
 	    continue;
+	if (flexran_slice_member(i, slice_id) == 0)
+		continue;
 
 	for (ii = 0; ii < UE_num_active_CC(UE_list, i); ii++) {
 	    CC_id = UE_list->ordered_CCids[ii][i];
@@ -765,11 +801,14 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 	    }
 	}
 
-	if (total_ue_count > 0) {
-	    for (i = UE_list->head; i >= 0; i = UE_list->next[i]) {
+
+	for (i = UE_list->head; i >= 0; i = UE_list->next[i]) {
 		UE_id = i;
 
 		for (ii = 0; ii < UE_num_active_CC(UE_list, UE_id); ii++) {
+
+			// if there are UEs with traffic
+			if (total_ue_count [CC_id] > 0) {
 		    CC_id = UE_list->ordered_CCids[ii][UE_id];
 		    ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 		    round = ue_sched_ctl->round[CC_id][harq_pid];
@@ -969,9 +1008,9 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 			}
 		    }
 #endif
-		}
+		}	// total_ue_count
 	    }
-	}			// total_ue_count
+	}
     }				// end of for for r1 and r2
 
 #ifdef TM5
@@ -1044,7 +1083,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 		}
 
 		//PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = pre_nb_available_rbs[CC_id][UE_id];
-		LOG_D(MAC, "Total RBs allocated for UE%d = %d\n", UE_id,
+		LOG_D(MAC, "[eNB %d][SLICE %d]Total RBs allocated for UE%d = %d\n",  Mod_id, slice_id, UE_id,
 		      ue_sched_ctl->pre_nb_available_rbs[CC_id]);
 	    }
 	}
@@ -1065,9 +1104,12 @@ dlsch_scheduler_pre_processor_reset(int module_idP,
 				    uint16_t
 				    nb_rbs_required_remaining
 				    [MAX_NUM_CCs][NUMBER_OF_UE_MAX],
+					unsigned char total_ue_count[MAX_NUM_CCs],
+					unsigned char total_rbs_used[MAX_NUM_CCs],
 				    unsigned char
 				    rballoc_sub[MAX_NUM_CCs]
-				    [N_RBG_MAX], unsigned char
+				    [N_RBG_MAX],
+				unsigned char
 				    MIMO_mode_indicator[MAX_NUM_CCs]
 				    [N_RBG_MAX])
 {
@@ -1154,7 +1196,8 @@ dlsch_scheduler_pre_processor_reset(int module_idP,
     ue_sched_ctl->pre_nb_available_rbs[CC_id] = 0;
     ue_sched_ctl->dl_pow_off[CC_id] = 2;
     nb_rbs_required_remaining[CC_id][UE_id] = 0;
-
+	total_ue_count[CC_id]=0;
+	total_rbs_used[CC_id]=0;
     switch (N_RB_DL) {
     case 6:
 	RBGsize = 1;
@@ -1322,7 +1365,7 @@ dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
 
 void
 ulsch_scheduler_pre_processor(module_id_t module_idP,
-			      int frameP,
+			      slice_id_t slice_id, int frameP,
 			      sub_frame_t subframeP, uint16_t * first_rb)
 {
 
@@ -1538,7 +1581,7 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
 
 
 void
-assign_max_mcs_min_rb(module_id_t module_idP, int frameP,
+assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 		      sub_frame_t subframeP, uint16_t * first_rb)
 {
 

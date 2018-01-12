@@ -102,11 +102,12 @@ void schedule_ulsch(module_id_t module_idP, frame_t frameP,
 
 /** \brief ULSCH Scheduling per RNTI
 @param Mod_id Instance ID of eNB
+@param slice_id Instance slice for this eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 */
-void schedule_ulsch_rnti(module_id_t module_idP, frame_t frameP,
+void schedule_ulsch_rnti(module_id_t module_idP, slice_id_t slice_idP, frame_t frameP,
 			 sub_frame_t subframe,
 			 unsigned char sched_subframe,
 			 uint16_t * first_rb);
@@ -127,8 +128,11 @@ void fill_DLSCH_dci(module_id_t module_idP, frame_t frameP,
 
 @param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
 */
-void schedule_ue_spec(module_id_t module_idP, frame_t frameP,
+void schedule_dlsch(module_id_t module_idP, frame_t frameP,
 		      sub_frame_t subframe, int *mbsfn_flag);
+
+void schedule_ue_spec(module_id_t module_idP, slice_id_t slice_idP,
+		      frame_t frameP,sub_frame_t subframe, int *mbsfn_flag);
 
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
@@ -209,6 +213,7 @@ void dlsch_scheduler_pre_processor_reset(int module_idP, int UE_id,
 
 
 void dlsch_scheduler_pre_processor(module_id_t module_idP,
+				   slice_id_t slice_idP,
 				   frame_t frameP,
 				   sub_frame_t subframe,
 				   int N_RBG[MAX_NUM_CCs],
@@ -633,7 +638,7 @@ int UE_PCCID(module_id_t mod_idP, int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 
 
-void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP,
+void ulsch_scheduler_pre_processor(module_id_t module_idP, slice_id_t slice_id, int frameP,
 				   sub_frame_t subframeP,
 				   uint16_t * first_rb);
 void store_ulsch_buffer(module_id_t module_idP, int frameP,
@@ -1157,6 +1162,13 @@ uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn);
 int32_t get_uldl_offset(int eutra_bandP);
 int l2_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
 	       uint8_t HO_active);
+
+/*Slice related functions */
+uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
+
+int flexran_slice_member(int UE_id, int slice_id);
+
+int flexran_slice_maxmcs(int slice_id;)
 
 #endif
 /** @}*/

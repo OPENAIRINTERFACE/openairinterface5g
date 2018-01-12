@@ -578,7 +578,7 @@ _dlsch_scheduler_pre_processor(module_id_t Mod_id,
       if (!phy_stats_exist(Mod_id, rnti))
 	continue;
       
-      for (ii=0; ii < UE_num_active_CC(UE_list,UE_id); ii++) {
+    for (ii=0; ii < UE_num_active_CC(UE_list,UE_id); ii++) {
 	CC_id = UE_list->ordered_CCids[ii][UE_id];
 	ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 	ue_sched_ctl->max_allowed_rbs[CC_id]=nb_rbs_allowed_slice[CC_id][slice_id];
