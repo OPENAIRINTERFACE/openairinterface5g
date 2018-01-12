@@ -50,23 +50,23 @@
  * get generic info from RAN
  ****************************/
 
-void flexran_set_enb_vars(mid_t mod_id, ran_name_t ran);
+void flexran_set_RC_vars(mid_t mod_id, ran_name_t ran);
 
-int flexran_get_current_time_ms (mid_t mod_id, int subframe_flag);
+uint32_t flexran_get_current_time_ms(mid_t mod_id, int subframe_flag);
 
 /*Return the current frame number
  *Could be using implementation specific numbering of frames
  */
-unsigned int flexran_get_current_frame(mid_t mod_id);
+frame_t flexran_get_current_frame(mid_t mod_id);
 
 /*Return the current SFN (0-1023)*/ 
-unsigned int flexran_get_current_system_frame_num(mid_t mod_id);
+frame_t flexran_get_current_system_frame_num(mid_t mod_id);
 
-unsigned int flexran_get_current_subframe(mid_t mod_id);
+sub_frame_t flexran_get_current_subframe(mid_t mod_id);
 
 /*Return the frame and subframe number in compact 16-bit format.
   Bits 0-3 subframe, rest for frame. Required by FlexRAN protocol*/
-uint16_t flexran_get_sfn_sf (mid_t mod_id);
+uint16_t flexran_get_sfn_sf(mid_t mod_id);
 
 /* Return a future frame and subframe number that is ahead_of_time
    subframes later in compact 16-bit format. Bits 0-3 subframe,
@@ -77,144 +77,151 @@ uint16_t flexran_get_future_sfn_sf(mid_t mod_id, int ahead_of_time);
 int flexran_get_num_ues(mid_t mod_id);
 
 /* Get the rnti of a UE with id ue_id */
-int flexran_get_ue_crnti (mid_t mod_id, mid_t ue_id);
+rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id);
 
 /* Get the RLC buffer status report of a ue for a designated
    logical channel id */
-int flexran_get_ue_bsr (mid_t mod_id, mid_t ue_id, lcid_t lcid);
+uint8_t flexran_get_ue_bsr(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /* Get power headroom of UE with id ue_id */
-int flexran_get_ue_phr (mid_t mod_id, mid_t ue_id);
+int8_t flexran_get_ue_phr(mid_t mod_id, mid_t ue_id);
 
 /* Get the UE wideband CQI */
-int flexran_get_ue_wcqi (mid_t mod_id, mid_t ue_id);
+uint8_t flexran_get_ue_wcqi(mid_t mod_id, mid_t ue_id);
 
 /* Get the transmission queue size for a UE with a channel_id logical channel id */
-int flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
+rlc_buffer_occupancy_t flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
 
 /*Get number of pdus in RLC buffer*/
-int flexran_get_num_pdus_buffer(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id); 
+rlc_buffer_occupancy_t flexran_get_num_pdus_buffer(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
 
 /* Get the head of line delay for a UE with a channel_id logical channel id */
-int flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
+frame_t flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
 
 /* Check the status of the timing advance for a UE */
-short flexran_get_TA(mid_t mod_id, mid_t ue_id, int CC_id);
+int32_t flexran_get_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
-/* Update the timing advance status (find out whether a timing advance command is required) */
-void flexran_update_TA(mid_t mod_id, mid_t ue_id, int CC_id);
+/* Update the timing advance status(find out whether a timing advance command is required) */
+/* currently broken
+void flexran_update_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id); */
 
 /* Return timing advance MAC control element for a designated cell and UE */
-int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id, int CC_id);
+/* this function is broken */
+int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
 /* Get the number of active component carriers for a specific UE */
 int flexran_get_active_CC(mid_t mod_id, mid_t ue_id);
 
 /* Get the rank indicator for a designated cell and UE */
-int flexran_get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id);
+uint8_t flexran_get_current_RI(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
 /* See TS 36.213, section 10.1 */
-int flexran_get_n1pucch_an(mid_t mod_id, int CC_id);
+uint16_t flexran_get_n1pucch_an(mid_t mod_id, uint8_t cc_id);
 
 /* See TS 36.211, section 5.4 */
-int flexran_get_nRB_CQI(mid_t mod_id, int CC_id);
+uint8_t flexran_get_nRB_CQI(mid_t mod_id, uint8_t cc_id);
 
 /* See TS 36.211, section 5.4 */
-int flexran_get_deltaPUCCH_Shift(mid_t mod_id, int CC_id);
+uint8_t flexran_get_deltaPUCCH_Shift(mid_t mod_id, uint8_t cc_id);
 
 /* See TS 36.211, section 5.7.1 */
-int flexran_get_prach_ConfigIndex(mid_t mod_id, int CC_id);
+uint8_t flexran_get_prach_ConfigIndex(mid_t mod_id, uint8_t cc_id);
 
 /* See TS 36.211, section 5.7.1 */
-int flexran_get_prach_FreqOffset(mid_t mod_id, int CC_id);
+uint8_t flexran_get_prach_FreqOffset(mid_t mod_id, uint8_t cc_id);
 
 /* See TS 36.321 */
-int flexran_get_maxHARQ_Msg3Tx(mid_t mod_id, int CC_id);
+uint8_t flexran_get_maxHARQ_Msg3Tx(mid_t mod_id, uint8_t cc_id);
 
 /* Get the length of the UL cyclic prefix */
-int flexran_get_ul_cyclic_prefix_length(mid_t mod_id, int CC_id);
+lte_prefix_type_t flexran_get_ul_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id);
 
 /* Get the length of the DL cyclic prefix */
-int flexran_get_dl_cyclic_prefix_length(mid_t mod_id, int CC_id);
+lte_prefix_type_t flexran_get_dl_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id);
 
 /* Get the physical cell id of a cell */
-int flexran_get_cell_id(mid_t mod_id, int CC_id);
+uint16_t flexran_get_cell_id(mid_t mod_id, uint8_t cc_id);
 
 /* See TS 36.211, section 5.5.3.2 */
-int flexran_get_srs_BandwidthConfig(mid_t mod_id, int CC_id);
+uint8_t flexran_get_srs_BandwidthConfig(mid_t mod_id, uint8_t cc_id);
 
 /* See TS 36.211, table 5.5.3.3-1 and 2 */
-int flexran_get_srs_SubframeConfig(mid_t mod_id, int CC_id);
+uint8_t flexran_get_srs_SubframeConfig(mid_t mod_id, uint8_t cc_id);
 
 /* Boolean value. See TS 36.211,
    section 5.5.3.2. TDD only */
-int flexran_get_srs_MaxUpPts(mid_t mod_id, int CC_id);
+uint8_t flexran_get_srs_MaxUpPts(mid_t mod_id, uint8_t cc_id);
 
 /* Get number of DL resource blocks */
-int flexran_get_N_RB_DL(mid_t mod_id, int CC_id);
+uint8_t flexran_get_N_RB_DL(mid_t mod_id, uint8_t cc_id);
 
 /* Get number of UL resource blocks */
-int flexran_get_N_RB_UL(mid_t mod_id, int CC_id);
+uint8_t flexran_get_N_RB_UL(mid_t mod_id, uint8_t cc_id);
 
 /* Get number of resource block groups */
-int flexran_get_N_RBG(mid_t mod_id, int CC_id);
+uint8_t flexran_get_N_RBG(mid_t mod_id, uint8_t cc_id);
 
 /* Get DL/UL subframe assignment. TDD only */
-int flexran_get_subframe_assignment(mid_t mod_id, int CC_id);
+uint8_t flexran_get_subframe_assignment(mid_t mod_id, uint8_t cc_id);
 
 /* TDD only. See TS 36.211, table 4.2.1 */
-int flexran_get_special_subframe_assignment(mid_t mod_id, int CC_id);
+uint8_t flexran_get_special_subframe_assignment(mid_t mod_id, uint8_t cc_id);
 
 /* Get the duration of the random access response window in subframes */
-int flexran_get_ra_ResponseWindowSize(mid_t mod_id, int CC_id);
+long flexran_get_ra_ResponseWindowSize(mid_t mod_id, uint8_t cc_id);
 
 /* Get timer used for random access */
-int flexran_get_mac_ContentionResolutionTimer(mid_t mod_id, int CC_id);
+long flexran_get_mac_ContentionResolutionTimer(mid_t mod_id, uint8_t cc_id);
 
-/* Get type of duplex mode (FDD/TDD) */
-int flexran_get_duplex_mode(mid_t mod_id, int CC_id);
+/* Get type of duplex mode(FDD/TDD) */
+Protocol__FlexDuplexMode flexran_get_duplex_mode(mid_t mod_id, uint8_t cc_id);
 
 /* Get the SI window length */
-long flexran_get_si_window_length(mid_t mod_id, int CC_id);
+long flexran_get_si_window_length(mid_t mod_id, uint8_t cc_id);
+
+/* Get length of SystemInformationBlock1 */
+uint8_t flexran_get_sib1_length(mid_t mod_id, uint8_t cc_id);
 
 /* Get the number of PDCCH symbols configured for the cell */
-int flexran_get_num_pdcch_symb(mid_t mod_id, int CC_id);
+uint8_t flexran_get_num_pdcch_symb(mid_t mod_id, uint8_t cc_id);
 
-int flexran_get_antenna_ports(mid_t mod_id, int CC_id);
+uint8_t flexran_get_antenna_ports(mid_t mod_id, uint8_t cc_id);
 
 /* See TS 36.213, sec 5.1.1.1 */
-int flexran_get_tpc(mid_t mod_id, mid_t ue_id);
+int flexran_get_tpc(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
-int flexran_get_ue_pmi(mid_t mod_id);
+uint8_t flexran_get_ue_wpmi(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
 /* Get the first available HARQ process for a specific cell and UE during 
    a designated frame and subframe. Returns 0 for success. The id and the 
    status of the HARQ process are stored in id and status respectively */
-int flexran_get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id,
-		     const int frame, const uint8_t subframe, unsigned char *id, unsigned char *round,const uint8_t harq_flag);
+/* currently broken
+int flexran_get_harq(mid_t mod_id, uint8_t cc_id, mid_t ue_id, frame_t frame,
+                     sub_frame_t subframe, unsigned char *id, unsigned char *round,
+                     uint8_t harq_flag); */
 
 /* Uplink power control management*/
-int flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id);
+int32_t flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
-int flexran_get_p0_nominal_pucch(mid_t mod_id, int CC_id);
+int8_t flexran_get_p0_nominal_pucch(mid_t mod_id, uint8_t cc_id);
 
-int flexran_get_p0_pucch_status(mid_t mod_id, mid_t ue_id, int CC_id);
+int32_t flexran_get_p0_pucch_status(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
-int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, int CC_id);
+int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
-int flexran_get_threequarter_fs(mid_t mod_id, int CC_id);
+uint8_t flexran_get_threequarter_fs(mid_t mod_id, uint8_t cc_id);
 
-int flexran_get_hopping_mode(mid_t mod_id, int CC_id);
+PUSCH_HOPPING_t flexran_get_hopping_mode(mid_t mod_id, uint8_t cc_id);
 
-int flexran_get_hopping_offset(mid_t mod_id, int CC_id);
+uint8_t flexran_get_hopping_offset(mid_t mod_id, uint8_t cc_id);
 
-int flexran_get_n_SB(mid_t mod_id, int CC_id);
+uint8_t flexran_get_n_SB(mid_t mod_id, uint8_t cc_id);
 
-int flexran_get_phich_resource(mid_t mod_id, int CC_id);
+int flexran_get_phich_resource(mid_t mod_id, uint8_t cc_id);
 
-int flexran_get_enable64QAM(mid_t mod_id, int CC_id);
+uint8_t flexran_get_enable64QAM(mid_t mod_id, uint8_t cc_id);
 
-int flexran_get_phich_duration(mid_t mod_id, int CC_id);
+PHICH_DURATION_t flexran_get_phich_duration(mid_t mod_id, uint8_t cc_id);
 
 /*
  * ************************************
@@ -225,119 +232,124 @@ int flexran_get_phich_duration(mid_t mod_id, int CC_id);
 /* Get timer in subframes. Controls the synchronization
    status of the UE, not the actual timing 
    advance procedure. See TS 36.321 */
-int flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id);
+TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id);
 
 /* Get measurement gap configuration. See TS 36.133 */
-int flexran_get_meas_gap_config(mid_t mod_id, mid_t ue_id);
+Protocol__FlexMeasGapConfigPattern flexran_get_meas_gap_config(mid_t mod_id, mid_t ue_id);
 
 /* Get measurement gap configuration offset if applicable */
-int flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id);
+long flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id);
 
 /* DL aggregated bit-rate of non-gbr bearer
    per UE. See TS 36.413 */
-int flexran_get_ue_aggregated_max_bitrate_dl (mid_t mod_id, mid_t ue_id);
+uint64_t flexran_get_ue_aggregated_max_bitrate_dl(mid_t mod_id, mid_t ue_id);
 
 /* UL aggregated bit-rate of non-gbr bearer
    per UE. See TS 36.413 */
-int flexran_get_ue_aggregated_max_bitrate_ul (mid_t mod_id, mid_t ue_id);
+uint64_t flexran_get_ue_aggregated_max_bitrate_ul(mid_t mod_id, mid_t ue_id);
 
 /* Only half-duplex support. FDD
    operation. Boolean value */
-int flexran_get_half_duplex(mid_t ue_id);
+/* currently broken
+int flexran_get_half_duplex(mid_t ue_id); */
 
 /* Support of intra-subframe hopping.
    Boolean value */
-int flexran_get_intra_sf_hopping(mid_t ue_id);
+/* currently broken
+int flexran_get_intra_sf_hopping(mid_t ue_id); */
 
 /* UE support for type 2 hopping with
    n_sb>1 */
-int flexran_get_type2_sb_1(mid_t ue_id);
+/* currently broken
+int flexran_get_type2_sb_1(mid_t ue_id); */
 
 /* Get the UE category */
-int flexran_get_ue_category(mid_t ue_id);
+/* currently broken
+int flexran_get_ue_category(mid_t ue_id); */
 
 /* UE support for resource allocation
    type 1 */
-int flexran_get_res_alloc_type1(mid_t ue_id);
+/* currently broken
+int flexran_get_res_alloc_type1(mid_t ue_id); */
 
 /* Get UE transmission mode */
-int flexran_get_ue_transmission_mode(mid_t mod_id, mid_t ue_id);
+long flexran_get_ue_transmission_mode(mid_t mod_id, mid_t ue_id);
 
 /* Boolean value. See TS 36.321 */
-int flexran_get_tti_bundling(mid_t mod_id, mid_t ue_id);
+BOOLEAN_t flexran_get_tti_bundling(mid_t mod_id, mid_t ue_id);
 
 /* The max HARQ retransmission for UL.
    See TS 36.321 */
-int flexran_get_maxHARQ_TX(mid_t mod_id, mid_t ue_id);
+long flexran_get_maxHARQ_TX(mid_t mod_id, mid_t ue_id);
 
 /* See TS 36.213 */
-int flexran_get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id);
+long flexran_get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id);
 
 /* See TS 36.213 */
-int flexran_get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id);
+long flexran_get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id);
 
 /* See TS 36.213 */
-int flexran_get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id);
+long flexran_get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id);
 
 /* Boolean. See TS36.213, Section 10.1 */
-int flexran_get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id);
+BOOLEAN_t flexran_get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id);
 
 /* Boolean. See TS 36.213, Section 8.2 */
-int flexran_get_ack_nack_simultaneous_trans(mid_t mod_id,mid_t ue_id);
+BOOLEAN_t flexran_get_ack_nack_simultaneous_trans(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
 /* Get aperiodic CQI report mode */
-int flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id);
+CQI_ReportModeAperiodic_t flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id);
 
 /* Get ACK/NACK feedback mode. TDD only */
-int flexran_get_tdd_ack_nack_feedback(mid_t mod_id, mid_t ue_id);
+long flexran_get_tdd_ack_nack_feedback_mode(mid_t mod_id, mid_t ue_id);
 
 /* See TS36.213, section 10.1 */
-int flexran_get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id);
+long flexran_get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id);
 
 /* Boolean. Extended buffer status report size */
-int flexran_get_extended_bsr_size(mid_t mod_id, mid_t ue_id);
+long flexran_get_extended_bsr_size(mid_t mod_id, mid_t ue_id);
 
 /* Get number of UE transmission antennas */
 int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id);
 
 /* Get logical channel group of a channel with id lc_id */
-int flexran_get_lcg(mid_t ue_id, mid_t lc_id);
+long flexran_get_lcg(mid_t ue_id, mid_t lc_id);
 
 /* Get direction of logical channel with id lc_id */
 int flexran_get_direction(mid_t ue_id, mid_t lc_id);
 
 /*Get downlink frequency*/
-uint32_t flexran_agent_get_operating_dl_freq (mid_t mod_id, int cc_id);
+uint32_t flexran_agent_get_operating_dl_freq(mid_t mod_id, uint8_t cc_id);
 
 /*Get uplink frequency*/
-uint32_t flexran_agent_get_operating_ul_freq (mid_t mod_id, int cc_id);
+uint32_t flexran_agent_get_operating_ul_freq(mid_t mod_id, uint8_t cc_id);
 
 /*Get eutra band*/
-int flexran_agent_get_operating_eutra_band (mid_t mod_id, int cc_id);
+uint8_t flexran_agent_get_operating_eutra_band(mid_t mod_id, uint8_t cc_id);
 
 /*Get downlink ref signal power*/
-int flexran_agent_get_operating_pdsch_refpower (mid_t mod_id, int cc_id);
+int8_t flexran_agent_get_operating_pdsch_refpower(mid_t mod_id, uint8_t cc_id);
 
 /*Get uplink power*/
-int flexran_agent_get_operating_pusch_p0 (mid_t mod_id, int cc_id);
+long flexran_agent_get_operating_pusch_p0(mid_t mod_id, uint8_t cc_id);
 
 /*set the dl freq */
-void flexran_agent_set_operating_dl_freq (mid_t mod_id, int cc_id, uint32_t dl_freq_mhz);
+void flexran_agent_set_operating_dl_freq(mid_t mod_id, uint8_t cc_id, uint32_t dl_freq_mhz);
 
 /* set the ul freq */
-void flexran_agent_set_operating_ul_freq (mid_t mod_id, int cc_id, int32_t ul_freq_offset_mhz);
+void flexran_agent_set_operating_ul_freq(mid_t mod_id, uint8_t cc_id, int32_t ul_freq_mhz_offset);
 
 /*set the the band */
-void flexran_agent_set_operating_eutra_band (mid_t mod_id, int cc_id);
+void flexran_agent_set_operating_eutra_band(mid_t mod_id, uint8_t cc_id, uint8_t eutra_band);
 
-/* set the bandwidth */
-void flexran_agent_set_operating_bandwidth (mid_t mod_id, int cc_id, int bandwidth);
+/* set the bandwidth (in RB) */
+void flexran_agent_set_operating_bandwidth(mid_t mod_id, uint8_t cc_id, uint8_t N_RB);
 
 /*set frame type*/
-void flexran_agent_set_operating_frame_type (mid_t mod_id, int cc_id, int frame_type);
+void flexran_agent_set_operating_frame_type(mid_t mod_id, uint8_t cc_id, lte_frame_type_t frame_type);
 
 /*RRC status flexRAN*/
-int flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP);
+uint8_t flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP);
 
 
 /***************************** PDCP ***********************/
@@ -399,28 +411,30 @@ uint32_t flexran_get_pdcp_rx_oo(const mid_t mod_id,  const mid_t ue_id, const lc
 
 /*********************RRC**********************/
 /*Get primary cell measuremeant id flexRAN*/
-int flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id);
+MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id);
 
 /*Get primary cell RSRP measurement flexRAN*/  
-int flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id);
+float flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id);
 
 /*Get primary cell RSRQ measurement flexRAN*/
-int flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id);
+float flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id);
 
 /* Get RRC neighbouring measurement */
 int flexran_get_rrc_num_ncell(mid_t mod_id, mid_t ue_id);
 
 /*Get physical cell id*/
-int flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int cell_id);
+PhysCellId_t flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int cell_id);
 
 /*Get RSRP of neighbouring Cell*/
-int flexran_get_rrc_neigh_rsrp(mid_t mod_id, mid_t ue_id, int cell_id);
+float flexran_get_rrc_neigh_rsrp(mid_t mod_id, mid_t ue_id, int cell_id);
 
 /*Get RSRQ of neighbouring Cell*/
-int flexran_get_rrc_neigh_rsrq(mid_t mod_id, mid_t ue_id, int cell_id);
+float flexran_get_rrc_neigh_rsrq(mid_t mod_id, mid_t ue_id, int cell_id);
 
 /*Get MCC PLMN identity neighbouring Cell*/
-int flexran_get_rrc_neigh_plmn_mcc(mid_t mod_id, mid_t ue_id, int cell_id);
+/* currently not implemented
+int flexran_get_rrc_neigh_plmn_mcc(mid_t mod_id, mid_t ue_id, int cell_id); */
 
 /*Get MNC PLMN identity neighbouring Cell*/
-int flexran_get_rrc_neigh_plmn_mnc(mid_t mod_id, mid_t ue_id, int cell_id);
+/* currently not implemented
+int flexran_get_rrc_neigh_plmn_mnc(mid_t mod_id, mid_t ue_id, int cell_id); */
