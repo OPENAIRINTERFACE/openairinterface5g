@@ -458,6 +458,7 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           ue_reestablishment_timer;
   uint32_t                           ue_reestablishment_timer_thres;
   uint8_t                            e_rab_release_command_flag;
+  int8_t                             reestablishment_xid;
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;

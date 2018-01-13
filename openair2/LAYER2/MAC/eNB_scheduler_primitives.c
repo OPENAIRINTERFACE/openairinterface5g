@@ -3402,7 +3402,8 @@ allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP,
                 if(((ul_req->ul_config_pdu_list[ack_int].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE) ||
                     (ul_req->ul_config_pdu_list[ack_int].pdu_type == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE)) &&
                    (ul_req->ul_config_pdu_list[ack_int].uci_harq_pdu.ue_information.ue_information_rel8.rnti == dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.rnti)){
-                  ul_req->ul_config_pdu_list[ack_int].uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0 = fCCE;
+                  ul_req->ul_config_pdu_list[ack_int].uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0 =
+                        cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + fCCE;
                 }
               }
             }

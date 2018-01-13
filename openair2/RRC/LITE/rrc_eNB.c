@@ -1189,15 +1189,21 @@ rrc_eNB_generate_RRCConnectionReestablishment(
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
 
-  // activate release timer, if RRCComplete not received after 10 frames, remove UE
-  //ue_context_pP->ue_context.ue_release_timer = 1;
-  // remove UE after 10 frames after RRCConnectionReestablishmentRelease is triggered
-  //ue_context_pP->ue_context.ue_release_timer_thres = 100;
-    // activate release timer, if RRCComplete not received after 100 frames, remove UE
   int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
-  RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
+  if(UE_id != -1){
+    // activate release timer, if RRCComplete not received after 100 frames, remove UE
+    RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
+    // remove UE after 100 frames after RRCConnectionReestablishmentRelease is triggered
+    RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 1000;
+  }else{
+    LOG_E(RRC,
+             PROTOCOL_RRC_CTXT_UE_FMT" Generating RRCConnectionReestablishment without UE_id(MAC) rnti %x\n",
+            PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
+  }
+  // activate release timer, if RRCComplete not received after 100 frames, remove UE
+  ue_context_pP->ue_context.ue_reestablishment_timer = 1;
   // remove UE after 100 frames after RRCConnectionReestablishmentRelease is triggered
-  RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 1000;
+  ue_context_pP->ue_context.ue_reestablishment_timer_thres = 1000;
 }
 
 //-----------------------------------------------------------------------------
@@ -1251,6 +1257,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   uint8_t next_xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);
 
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
+  ue_context_pP->ue_context.reestablishment_xid = next_xid;
 
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
   // get old configuration of SRB2
@@ -1829,8 +1836,14 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
   int                                 cnt;
 #endif
   int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
-  RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
-  RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 20;
+  if(UE_id != -1){
+    RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
+    RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 20;
+  }else{
+    LOG_E(RRC,
+            PROTOCOL_RRC_CTXT_UE_FMT" Generating RRCConnectionReestablishmentReject without UE_id(MAC) rnti %x\n",
+            PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
+  }
 
   T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
@@ -5479,24 +5492,57 @@ rrc_eNB_decode_ccch(
         break;
       }
       int UE_id = find_UE_id(ctxt_pP->module_id, c_rnti);
-      if(ue_context_p->ue_context.ue_reestablishment_timer > 0 || RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0){
-          LOG_I(RRC,
-                PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReestablishment(Previous) don't complete, let's reject the UE\n",
-                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+      if(UE_id == -1){
+          LOG_E(RRC,
+                PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReestablishmentRequest without UE_id(MAC) rnti %x, let's reject the UE\n",
+                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
           rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
           break;
+      }
+
+      if((RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0) &&
+         (RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres > 20)){
+    	  LOG_E(RRC,
+                PROTOCOL_RRC_CTXT_UE_FMT" RCConnectionReestablishmentComplete(Previous) don't receive, delete the Previous UE\n",
+                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+          RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
+          ue_context_p->ue_context.ue_reestablishment_timer = 0;
+      }
+
+      if(ue_context_p->ue_context.ue_reestablishment_timer > 0){
+    	  LOG_E(RRC,
+                PROTOCOL_RRC_CTXT_UE_FMT" RRRCConnectionReconfigurationComplete(Previous) don't receive, delete the Previous UE\n",
+                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+          ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+          protocol_ctxt_t  ctxt_old_p;
+          PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt_old_p,
+                                        ctxt_pP->instance,
+                                        ENB_FLAG_YES,
+                                        c_rnti,
+                                        ctxt_pP->frame,
+                                        ctxt_pP->subframe);
+          rrc_eNB_process_RRCConnectionReconfigurationComplete(&ctxt_old_p,
+                                                                ue_context_p,
+                                                                ue_context_p->ue_context.reestablishment_xid);
+          for (uint8_t e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+            if (ue_context_p->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+              ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
+            } else {
+              ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
+            }
+          }
       }
       LOG_D(RRC,
             PROTOCOL_RRC_CTXT_UE_FMT" UE context: %p\n",
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             ue_context_p);
-
-       /* reset timers */
-       ue_context_p->ue_context.ul_failure_timer = 0;
-       ue_context_p->ue_context.ue_release_timer = 0;
+      /* reset timers */
+      ue_context_p->ue_context.ul_failure_timer = 0;
+      ue_context_p->ue_context.ue_release_timer = 0;
       ue_context_p->ue_context.ue_reestablishment_timer = 0;
       ue_context_p->ue_context.ue_release_timer_s1 = 0;
       ue_context_p->ue_context.ue_release_timer_rrc = 0;
+      ue_context_p->ue_context.reestablishment_xid = -1;
 
       // insert C-RNTI to map
       for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
@@ -5673,6 +5719,7 @@ rrc_eNB_decode_ccch(
               ue_context_p->ue_context.ue_reestablishment_timer = 0;
               ue_context_p->ue_context.ue_release_timer_s1 = 0;
               ue_context_p->ue_context.ue_release_timer_rrc = 0;
+              ue_context_p->ue_context.reestablishment_xid = -1;
             } else {
 	      LOG_I(RRC," S-TMSI doesn't exist, setting Initialue_identity_s_TMSI.m_tmsi to %p => %x\n",ue_context_p,m_tmsi);
 //              ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);
@@ -6013,6 +6060,7 @@ rrc_eNB_decode_dcch(
 		PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
 		PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
 	}
+        ue_context_p->ue_context.reestablishment_xid = -1;
 	rrc_eNB_process_RRCConnectionReconfigurationComplete(
           ctxt_pP,
           ue_context_p,
@@ -6128,8 +6176,6 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
             DCCH,
             sdu_sizeP);
        {
-        int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
-        RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
         rnti_t reestablish_rnti = 0;
         // select C-RNTI from map
         for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
@@ -6153,6 +6199,16 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
           break;
         }
+        //clear
+        int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+        if(UE_id == -1){
+          LOG_E(RRC,
+                PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReestablishmentComplete without UE_id(MAC) rnti %x, fault\n",
+                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
+          break;
+        }
+        RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
+        ue_context_p->ue_context.ue_reestablishment_timer = 0;
 
         if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReestablishmentComplete.criticalExtensions.present ==
             RRCConnectionReestablishmentComplete__criticalExtensions_PR_rrcConnectionReestablishmentComplete_r8) {
@@ -6671,11 +6727,11 @@ rrc_enb_task(
       /* Nothing to do. Apparently everything is done in S1AP processing */
       //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
       //instance, msg_name_p);
-    	if (rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)
-		    && rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc > 0) {
-    	  rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc =
-    	  rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_thres_rrc;
-    	}
+      if (rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)
+          && rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc > 0) {
+        rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc =
+        rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_thres_rrc;
+      }
       break;
 
 #   endif
