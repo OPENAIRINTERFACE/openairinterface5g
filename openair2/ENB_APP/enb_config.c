@@ -828,12 +828,21 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			     RC.config_file_name, i, prach_zero_correlation);
 	      
 	      RRC_CONFIGURATION_REQ (msg_p).prach_freq_offset[j] = prach_freq_offset;
-	      
+#ifndef UE_EXPANSION
 	      if ((prach_freq_offset <0) || (prach_freq_offset > 94))
 		AssertFatal (0,
 			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 0..94!\n",
 			     RC.config_file_name, i, prach_freq_offset);
-	      
+#else
+        if ((N_RB_DL == 25) && (prach_freq_offset != 2))
+          AssertFatal (0,
+              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 2(N_RB_DL %d)!\n",
+              RC.config_file_name, i, prach_freq_offset,N_RB_DL);
+        if (((N_RB_DL == 50) || (N_RB_DL == 100)) && (prach_freq_offset != 3))
+          AssertFatal (0,
+              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 3(N_RB_DL %d)!\n",
+              RC.config_file_name, i, prach_freq_offset,N_RB_DL);
+#endif
 	      
 	      RRC_CONFIGURATION_REQ (msg_p).pucch_delta_shift[j] = pucch_delta_shift-1;
 	      
