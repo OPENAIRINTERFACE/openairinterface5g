@@ -635,9 +635,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 {
 
     int mbsfn_status[MAX_NUM_CCs];
-#if (!defined(UE_EXPANSION_SIM2)) &&(!defined(UE_EXPANSION))
     protocol_ctxt_t ctxt;
-#endif
 
     int CC_id, i;		//,next_i;
     UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
