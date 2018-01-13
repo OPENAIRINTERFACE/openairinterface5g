@@ -1733,21 +1733,21 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
         switch (N_RB_DL) {
         case 25:
-          if ((ue_multiple_max < 1) || (ue_multiple_max > 5))
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 4))
             AssertFatal (0,
-                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..5!\n",
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..4!\n",
                      RC.config_file_name, i, ue_multiple_max);
           break;
         case 50:
-          if ((ue_multiple_max < 1) || (ue_multiple_max > 10))
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 6))
             AssertFatal (0,
-                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..10!\n",
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..6!\n",
                      RC.config_file_name, i, ue_multiple_max);
           break;
         case 100:
-          if ((ue_multiple_max < 1) || (ue_multiple_max > 20))
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 10))
             AssertFatal (0,
-                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..20!\n",
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..10!\n",
                      RC.config_file_name, i, ue_multiple_max);
           break;
         default:
