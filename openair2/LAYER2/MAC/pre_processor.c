@@ -2620,7 +2620,11 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   // MCS and RB assgin
   for ( CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++ ) {
     frame_parms = &(RC.eNB[module_idP][CC_id]->frame_parms);
-    first_rb[CC_id] = 1;
+    if(frame_parms->N_RB_UL == 25){
+      first_rb[CC_id] = 1;
+    }else{
+      first_rb[CC_id] = 2;
+    } 
     ue_num_temp       = ulsch_ue_select[CC_id].ue_num;
     for ( ulsch_ue_num = 0; ulsch_ue_num < ulsch_ue_select[CC_id].ue_num; ulsch_ue_num++ ) {
 
@@ -2639,13 +2643,23 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       }
 
       rnti = UE_RNTI(CC_id,UE_id);
-      if ( first_rb[CC_id] >= frame_parms->N_RB_UL-1 ) {
-          LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-                 module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-        break;
+      if(frame_parms->N_RB_UL == 25){
+        if ( first_rb[CC_id] >= frame_parms->N_RB_UL-1 ){
+            LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+                   module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+          break;
+        }
+        // calculate the average rb ( remain UE)
+        total_rbs = frame_parms->N_RB_UL-1-first_rb[CC_id];
+      }else{
+        if ( first_rb[CC_id] >= frame_parms->N_RB_UL-2 ){
+            LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+                   module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+          break;
+        }
+        // calculate the average rb ( remain UE)
+        total_rbs = frame_parms->N_RB_UL-2-first_rb[CC_id];
       }
-      // calculate the average rb ( remain UE)
-      total_rbs = frame_parms->N_RB_UL-1-first_rb[CC_id];
       average_rbs = (int)round((double)total_rbs/(double)ue_num_temp);
       if ( average_rbs < 3 ) {
         ue_num_temp--;
@@ -2667,8 +2681,12 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
           } else {
               // assigne RBS(remain rbs)
               ulsch_ue_select[CC_id].list[ulsch_ue_num].start_rb = first_rb[CC_id];
-              first_rb[CC_id] = first_rb[CC_id] + total_rbs;
-              ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb = first_rb[CC_id]-ulsch_ue_select[CC_id].list[ulsch_ue_num].start_rb;
+              rb_table_index = 2;
+              while(rb_table[rb_table_index] <= total_rbs){
+                rb_table_index++;
+              }
+              ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb = rb_table[rb_table_index-1];
+              first_rb[CC_id] = first_rb[CC_id] + rb_table[rb_table_index-1];
           }
         }
       }else{
@@ -2683,16 +2701,27 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
             rb_table_index = 2;
             tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
             tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
+
             while ( (((UE_template->phr_info - tx_power) < 0 ) || (tbs > UE_template->ul_total_buffer)) && (mcs > 3) ) {
               mcs--;
               tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
               tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
             }
-            while ( (tbs < UE_template->ul_total_buffer) && (rb_table[rb_table_index]<(frame_parms->N_RB_UL-first_rb[CC_id])) &&
-                   ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
-              rb_table_index++;
-              tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
-              tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
+
+            if(frame_parms->N_RB_UL == 25){
+              while ( (tbs < UE_template->ul_total_buffer) && (rb_table[rb_table_index]<(frame_parms->N_RB_UL-1-first_rb[CC_id])) &&
+                     ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
+                rb_table_index++;
+                tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
+                tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
+              }
+            }else{
+                while ( (tbs < UE_template->ul_total_buffer) && (rb_table[rb_table_index]<(frame_parms->N_RB_UL-2-first_rb[CC_id])) &&
+                       ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
+                  rb_table_index++;
+                  tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
+                  tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
+                }
             }
             if ( rb_table[rb_table_index]<3 ) {
               rb_table_index=2;

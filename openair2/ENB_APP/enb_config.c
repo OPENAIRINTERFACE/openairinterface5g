@@ -856,7 +856,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
 			       RC.config_file_name, i, pucch_nCS_AN);
 
-#if !defined(Rel10) && !defined(Rel14)
+//#if !defined(Rel10) && !defined(Rel14)
 		RRC_CONFIGURATION_REQ (msg_p).pucch_n1_AN[j] = pucch_n1_AN;
 
 		if ((pucch_n1_AN <0) || (pucch_n1_AN > 2047))
@@ -864,7 +864,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_n1_AN choice: 0..2047!\n",
 			       RC.config_file_name, i, pucch_n1_AN);
 
-#endif
+//#endif
 		RRC_CONFIGURATION_REQ (msg_p).pdsch_referenceSignalPower[j] = pdsch_referenceSignalPower;
 
 		if ((pdsch_referenceSignalPower <-60) || (pdsch_referenceSignalPower > 50))

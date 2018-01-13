@@ -1044,7 +1044,11 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
     for (i=0; i<NB_RA_PROC_MAX; i++) {
       if ((cc->ra[i].state == WAITMSG3) &&(cc->ra[i].Msg3_subframe == sched_subframe)) {  
         ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].ue_priority = SCH_UL_MSG3;
-        ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].start_rb = 1;
+        if(frame_parms->N_RB_UL == 25){
+          ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].start_rb = 1;
+        }else{
+          ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].start_rb = 2;
+        }
         ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].nb_rb = 1;
         ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].UE_id = -1;
         ulsch_ue_select[CC_id].ue_num++;
@@ -1608,19 +1612,31 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 
   // loop over all active UEs
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    //leave out first RB for PUCCH
-    first_rb[CC_id] = 1;
     ULSCH_first_end = 0;
     cc  = &eNB->common_channels[CC_id];
+    // This is the actual CC_id in the list
+    N_RB_UL      = to_prb(cc->mib->message.dl_Bandwidth);
+    //leave out first RB for PUCCH
+    if(N_RB_UL == 25){
+      first_rb[CC_id] = 1;
+    }else{
+      first_rb[CC_id] = 2;
+    }
     for ( ulsch_ue_num = 0; ulsch_ue_num < ulsch_ue_select[CC_id].ue_num; ulsch_ue_num++ ) {
-      // This is the actual CC_id in the list
-      N_RB_UL      = to_prb(cc->ul_Bandwidth);
       UE_id = ulsch_ue_select[CC_id].list[ulsch_ue_num].UE_id;
       /* be sure that there are some free RBs */
-      if (first_rb[CC_id] >= N_RB_UL-1) {
-        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-               module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-        break;
+      if(N_RB_UL == 25){
+        if (first_rb[CC_id] >= N_RB_UL-1) {
+          LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+                 module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+          break;
+        }
+      }else{
+          if (first_rb[CC_id] >= N_RB_UL-2) {
+            LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+                   module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+            break;
+          }
       }
       //MSG3
       if (ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_MSG3) {

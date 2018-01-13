@@ -838,10 +838,10 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	if (uci->type == SR) {
 	  if (SR_payload == 1) {
 	    fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
-	    continue;
+	    break;
 	  }
 	  else {
-	    continue;
+	    break;
 	  }
 	}
       case HARQ:
