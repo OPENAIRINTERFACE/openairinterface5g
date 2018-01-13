@@ -1396,6 +1396,9 @@ static void* ru_thread( void* param ) {
 
   // set default return value
   ru_thread_status = 0;
+#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+  dlsch_ue_select_tbl_in_use = 1;
+#endif
 
 
   // set default return value
@@ -1502,6 +1505,36 @@ static void* ru_thread( void* param ) {
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
     wakeup_slaves(proc);
+
+#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+    new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
+    dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
+    memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+    memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+    memcpy(&pre_scd_ordered_CCids, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.ordered_CCids, sizeof(int)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+    memcpy(&pre_scd_numactiveCCs, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.numactiveCCs, sizeof(int)*NUMBER_OF_UE_MAX);
+    if (pthread_mutex_lock(&ru->eNB_list[0]->proc.mutex_pre_scd)!= 0) {
+        LOG_E( MAC, "[eNB] error locking MAC proc mutex for eNB pre scd\n");
+        exit_fun("error locking mutex_time");
+    }
+
+    ru->eNB_list[0]->proc.instance_pre_scd++;
+
+    if (ru->eNB_list[0]->proc.instance_pre_scd == 0) {
+        if (pthread_cond_signal(&ru->eNB_list[0]->proc.cond_pre_scd) != 0) {
+            LOG_E( MAC, "[eNB] ERROR pthread_cond_signal for eNB time sync\n" );
+            exit_fun( "ERROR pthread_cond_signal cond_pre_scd" );
+        }
+    }else{
+        LOG_E( MAC, "[eNB] frame %d subframe %d rxtx busy instance_pre_scd %d\n",
+               frame,subframe,ru->eNB_list[0]->proc.instance_pre_scd );
+    }
+
+    if (pthread_mutex_unlock(&ru->eNB_list[0]->proc.mutex_pre_scd)!= 0) {
+        LOG_E( MAC, "[eNB] error unlocking mutex_pre_scd mutex for eNB pre scd\n");
+        exit_fun("error unlocking mutex_pre_scd");
+    }
+#endif
 
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);

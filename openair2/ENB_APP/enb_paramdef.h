@@ -446,7 +446,7 @@ static int DEFENBS[] = {0};
 {ENB_CONFIG_STRING_UETIMERS_N310,                                NULL,   0,           iptr:&ue_TimersAndConstants_n310,               defintval:20,              TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ue_TimersAndConstants_n311,               defintval:1,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ue_multiple_max,                          defintval:5,               TYPE_UINT,       0}   \
+{ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ue_multiple_max,                          defintval:4,               TYPE_UINT,       0}   \
 }
 
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
