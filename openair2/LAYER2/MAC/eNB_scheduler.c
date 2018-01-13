@@ -713,15 +713,21 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
          if(RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer >=
             RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer_thres) {
             RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer = 0;
-            for (int ue_id_l = 0; ue_id_l < NUMBER_OF_UE_MAX; ue_id_l++) {
-              if (reestablish_rnti_map[ue_id_l][0] == rnti) {
-                // clear currentC-RNTI from map
-                reestablish_rnti_map[ue_id_l][0] = 0;
-                reestablish_rnti_map[ue_id_l][1] = 0;
-                break;
-              }
-            }
+             //clear reestablish_rnti_map
+             if(RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer_thres >20){
+               for (int ue_id_l = 0; ue_id_l < NUMBER_OF_UE_MAX; ue_id_l++) {
+                 if (reestablish_rnti_map[ue_id_l][0] == rnti) {
+                   // clear currentC-RNTI from map
+                   reestablish_rnti_map[ue_id_l][0] = 0;
+                   reestablish_rnti_map[ue_id_l][1] = 0;
+                   break;
+                 }
+               }
 
+               PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, rnti, 0, 0,module_idP);
+               rrc_rlc_remove_ue(&ctxt);
+               pdcp_remove_UE(&ctxt);
+             }
              for (int ii=0; ii<NUMBER_OF_UE_MAX; ii++) {
                  LTE_eNB_ULSCH_t *ulsch = NULL;
                  ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
@@ -801,7 +807,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     // Allocate CCEs for good after scheduling is done
 
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
-	allocate_CCEs(module_idP, CC_id, subframeP, 0);
+	allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
 
 
     stop_meas(&RC.mac[module_idP]->eNB_scheduler);

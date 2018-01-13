@@ -414,7 +414,7 @@ int get_nCCE_offset(int *CCE_table,
 		    const unsigned short rnti,
 		    const unsigned char subframe);
 
-int allocate_CCEs(int module_idP, int CC_idP, int subframe, int test_only);
+int allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP, int test_only);
 
 boolean_t CCE_allocation_infeasible(int module_idP,
 				    int CC_idP,
