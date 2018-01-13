@@ -227,6 +227,13 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
     unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
     unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX]);
 
+#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+void pre_scd_nb_rbs_required(module_id_t     module_idP,
+    frame_t         frameP,
+    sub_frame_t     subframeP,
+    int             min_rb_unit[MAX_NUM_CCs],
+    uint16_t        nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX]);
+#endif
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
    and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f. 
 @param Mod_id Instance ID of eNB

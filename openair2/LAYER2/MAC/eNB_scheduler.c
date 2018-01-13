@@ -629,7 +629,9 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 {
 
     int mbsfn_status[MAX_NUM_CCs];
+#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
     protocol_ctxt_t ctxt;
+#endif
 
     int CC_id, i;		//,next_i;
     UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
@@ -704,6 +706,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 
     }
 
+#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,
 				   NOT_A_RNTI, frameP, subframeP,
 				   module_idP);
@@ -711,6 +714,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 
     rrc_rx_tx(&ctxt, 0,		// eNB index, unused in eNB
 	      CC_id);
+#endif
 
 #if defined(Rel10) || defined(Rel14)
 
