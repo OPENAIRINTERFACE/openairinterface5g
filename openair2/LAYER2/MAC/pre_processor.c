@@ -119,7 +119,11 @@ store_dlsch_buffer(module_id_t Mod_id, frame_t frameP,
 
 	rnti = UE_RNTI(Mod_id, UE_id);
 
-	for (i = 0; i < MAX_NUM_LCID; i++) {	// loop over all the logical channels
+#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+	for (i = DCCH; i <=DTCH; i++) {	// loop over DCCH, DCCH1 and DTCH
+#else
+    for (i = 0; i < MAX_NUM_LCID; i++) {    // loop over all the logical channels
+#endif
 
 	    rlc_status =
 		mac_rlc_status_ind(Mod_id, rnti, Mod_id, frameP, subframeP,
