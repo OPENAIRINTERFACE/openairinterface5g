@@ -659,10 +659,10 @@ uint8_t do_SIB23(uint8_t Mod_id,
     = configuration->pucch_nRB_CQI[CC_id];
   (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.nCS_AN
     = configuration->pucch_nCS_AN[CC_id];
-#if !defined(Rel10) && !defined(Rel14)
+//#if !defined(Rel10) && !defined(Rel14)
   (*sib2)->radioResourceConfigCommon.pucch_ConfigCommon.n1PUCCH_AN
     = configuration->pucch_n1_AN[CC_id];
-#endif
+//#endif
 
   // SRS Config
   if (configuration->srs_enable[CC_id]==1) {
