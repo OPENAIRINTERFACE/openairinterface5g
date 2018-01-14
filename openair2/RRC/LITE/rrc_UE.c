@@ -730,13 +730,8 @@ rrc_ue_establish_drb(
    */
 #ifdef PDCP_USE_NETLINK
 #   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
-#    ifdef OAI_EMU
-  ip_addr_offset3 = oai_emulation.info.nb_enb_local;
-  ip_addr_offset4 = NB_eNB_INST;
-#    else
   ip_addr_offset3 = 0;
-  ip_addr_offset4 = 8;
-#    endif
+  ip_addr_offset4 = 1;
   LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", ue_mod_idP, ip_addr_offset3+ue_mod_idP,
         ip_addr_offset3+ue_mod_idP+1,ip_addr_offset4+ue_mod_idP+1);
   oip_ifup=nas_config(ip_addr_offset3+ue_mod_idP,   // interface_id
