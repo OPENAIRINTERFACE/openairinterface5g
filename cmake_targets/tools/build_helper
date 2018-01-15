@@ -95,6 +95,8 @@ get_distribution_release() {
 check_supported_distribution() {
     local distribution=$(get_distribution_release)
     case "$distribution" in
+        "ubuntu17.10") return 0 ;;
+        "ubuntu17.04") return 0 ;;
         "ubuntu16.04") return 0 ;;
         "ubuntu14.04") return 0 ;;
         "fedora24")    return 0 ;;
@@ -480,16 +482,26 @@ check_install_oai_software() {
     fi
     $SUDO $INSTALLER update -y
   if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+    local LAPACK_LIBNAME="liblapack.so"
+    local LAPACK_TARGET="/usr/lib/atlas-base/atlas/liblapack.so"
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
         "ubuntu14.04")
-            specific_packages="libtasn1-3-dev"
+            specific_packages="libtasn1-3-dev gccxml libgnutls-dev libatlas-dev"
             # For iperf3
             $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
             $SUDO apt-get update
             ;;
         "ubuntu16.04")
-            specific_packages="libtasn1-6-dev"
+            specific_packages="libtasn1-6-dev gccxml libgnutls-dev libatlas-dev"
+            ;;
+        "ubuntu17.04")
+            specific_packages="libtasn1-6-dev castxml libgnutls28-dev libatlas-dev"
+            ;;
+        "ubuntu17.10")
+            specific_packages="libtasn1-6-dev castxml libgnutls28-dev"
+            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
     esac
     $SUDO apt-get install -y \
@@ -505,7 +517,6 @@ check_install_oai_software() {
 	texlive-latex-base \
 	ethtool \
 	flex  \
-	gccxml \
 	gdb  \
 	git \
 	graphviz \
@@ -516,7 +527,6 @@ check_install_oai_software() {
 	iptables \
 	iptables-dev \
 	libatlas-base-dev \
-	libatlas-dev \
 	libblas-dev \
 	libconfig8-dev \
 	libffi-dev \
@@ -554,11 +564,9 @@ check_install_oai_software() {
 	wget \
 	libxpm-dev
 
-    $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
-    
-    $SUDO apt-get install -y nettle-dev nettle-bin
+    $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"
 
-    $SUDO apt-get install -y libgnutls-dev
+    $SUDO apt-get install -y nettle-dev nettle-bin
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
       if rpm -q epel-release > /dev/null; then
