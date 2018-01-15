@@ -268,6 +268,9 @@ rx_sdu(const module_id_t enb_mod_idP,
 		      "[eNB %d] Frame %d, Subframe %d CC_id %d MAC CE_LCID %d (ce %d/%d): CRNTI %x (UE_id %d) in Msg3\n",
 		      enb_mod_idP, frameP, subframeP, CC_idP, rx_ces[i], i,
 		      num_ce, old_rnti, old_UE_id);
+		/* receiving CRNTI means that the current rnti has to go away */
+		cancel_ra_proc(enb_mod_idP, CC_idP, frameP,
+			       current_rnti);
 		if (old_UE_id != -1) {
 		    /* TODO: if the UE did random access (followed by a MAC uplink with
 		     * CRNTI) because none of its scheduling request was granted, then
@@ -288,9 +291,6 @@ rx_sdu(const module_id_t enb_mod_idP,
 			mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP,
 					       subframeP, old_rnti);
 		    }
-		    /* receiving CRNTI means that the current rnti has to go away */
-		    cancel_ra_proc(enb_mod_idP, CC_idP, frameP,
-				   current_rnti);
 		    current_rnti = old_rnti;
 		}
 		crnti_rx = 1;
@@ -1181,8 +1181,8 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	    AssertFatal(round < 8, "round %d > 7 for UE %d/%x\n", round,
 			UE_id, rnti);
 	    LOG_D(MAC,
-		  "[eNB %d] frame %d subframe %d,Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d, N_RB_UL %d\n",
-		  module_idP, frameP, subframeP, harq_pid, UE_id, rnti,
+		  "[eNB %d] frame %d subframe %d (sched_frame %d, sched_subframe %d), Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d, N_RB_UL %d\n",
+		  module_idP, frameP, subframeP, sched_frame, sched_subframeP, harq_pid, UE_id, rnti,
 		  CC_id, aggregation, N_RB_UL);
 
 	    RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP *

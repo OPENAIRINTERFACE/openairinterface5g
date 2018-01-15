@@ -1349,9 +1349,14 @@ fill_nfapi_harq_information(module_id_t module_idP,
 
     AssertFatal(UE_id >= 0, "UE_id cannot be found, impossible\n");
     AssertFatal(UE_list != NULL, "UE_list is null\n");
+#if 0
+    /* TODO: revisit, don't use Assert, it's perfectly possible to
+     * have physicalConfigDedicated NULL here
+     */
     AssertFatal(UE_list->UE_template[CC_idP][UE_id].
 		physicalConfigDedicated != NULL,
 		"physicalConfigDedicated for rnti %x is null\n", rntiP);
+#endif
 
     harq_information->harq_information_rel11.num_ant_ports = 1;
 
@@ -2057,6 +2062,9 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
 	UE_list->ordered_ULCCids[0][UE_id] = cc_idP;
 	UE_list->num_UEs++;
 	UE_list->active[UE_id] = TRUE;
+#if defined(USRP_REC_PLAY) // not specific to record/playback ?
+	UE_list->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
+#endif    
 
 #ifdef Rel14
 	UE_list->UE_template[cc_idP][UE_id].rach_resource_type =
@@ -3585,11 +3593,9 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
     uint8_t *pdu;
 
 #ifdef Rel14
-    AssertFatal(UE_list->
-		UE_template[pCCid][UE_id].physicalConfigDedicated->
-		pucch_ConfigDedicated != NULL,
-		"pucch_ConfigDedicated is null!\n");
-    if ((UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7)
+    if (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated != NULL &&
+        UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL &&
+        (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7)
 	&& (UE_list->UE_template[pCCid][UE_id].
 	    physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13)
 	&&

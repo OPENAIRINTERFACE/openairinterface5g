@@ -128,7 +128,11 @@
 /*!\brief Maximum number od control elemenets */
 #define MAX_NUM_CE 5
 /*!\brief Maximum number of random access process */
+#if defined(USRP_REC_PLAY)
+#define NB_RA_PROC_MAX 1
+#else
 #define NB_RA_PROC_MAX 4
+#endif
 /*!\brief size of buffer status report table */
 #define BSR_TABLE_SIZE 64
 /*!\brief The power headroom reporting range is from -23 ...+40 dB and beyond, with step 1 */

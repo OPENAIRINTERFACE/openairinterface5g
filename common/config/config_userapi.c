@@ -50,7 +50,11 @@ configmodule_interface_t *config_get_if(void)
 char * config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) 
 {
 
-     printf_ptrs("-- %s 0x%08lx %i\n",cfgoptions->optname,(uintptr_t)(*ptr),length);
+     printf_ptrs("[CONFIG] %s ptr: 0x%08lx requested size: %i\n",cfgoptions->optname,(uintptr_t)(ptr),length);
+     if(cfgoptions->numelt > 0) { /* already allocated */
+          return *ptr;
+     }
+
      if (*ptr == NULL) {
         *ptr = malloc(length);
         if ( *ptr != NULL) {
@@ -146,4 +150,8 @@ int config_isparamset(paramdef_t *params,int paramidx)
   } else {
       return 0;
   }
+}
+
+int config_getparamval_fromparamdefidx(paramdef_t *cfgoptions,int paramidx) {
+    return -1;
 }

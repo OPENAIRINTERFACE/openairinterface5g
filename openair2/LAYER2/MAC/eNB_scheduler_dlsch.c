@@ -912,8 +912,8 @@ schedule_ue_spec(module_id_t module_idP,
 
 		    if (rlc_status.bytes_in_buffer > 0) {	// There is DCCH to transmit
 			LOG_D(MAC,
-			      "[eNB %d] Frame %d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
-			      module_idP, frameP, CC_id,
+			      "[eNB %d] SFN/SF %d.%d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+			      module_idP, frameP, subframeP, CC_id,
 			      TBS - header_len_dcch);
 			sdu_lengths[0] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, TBS,	//not used
 							  (char *)

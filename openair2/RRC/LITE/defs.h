@@ -242,7 +242,11 @@ typedef enum HO_STATE_e {
 // #define NUM_MAX_CBA_GROUP 4 // in the platform_constants
 
 /* TS 36.331: RRC-TransactionIdentifier ::= INTEGER (0..3) */
+#if defined(USRP_REC_PLAY)
+#define RRC_TRANSACTION_IDENTIFIER_NUMBER  1
+#else
 #define RRC_TRANSACTION_IDENTIFIER_NUMBER  3
+#endif
 
 typedef struct {
   unsigned short transport_block_size;                  /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */

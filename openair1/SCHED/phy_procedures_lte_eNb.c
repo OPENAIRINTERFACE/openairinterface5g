@@ -404,6 +404,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   int offset = eNB->CC_id;//proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
+  
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
@@ -437,7 +438,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
   /* save old HARQ information needed for PHICH generation */
-  if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
+  if ((ul_subframe < 10)&&
+      (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is a potential UL subframe that will be scheduled here
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
       harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
       if (eNB->ulsch[i]) {
@@ -607,13 +609,14 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 #endif
 	   );
 
-  //#ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
+ #ifdef DEBUG_PHY_PROC
+  LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d (prach_energy counter %d)\n",
         frame,subframe,
 	max_preamble[0],
         max_preamble_energy[0]/10,
-        max_preamble_delay[0]);
-  //q#endif
+        max_preamble_delay[0],
+	eNB->prach_energy_counter);
+ #endif
 
 #ifdef Rel14
   if (br_flag==1) {
@@ -665,7 +668,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
       if ((eNB->prach_energy_counter == 100) && 
           (max_preamble_energy[0] > eNB->measurements.prach_I0+100)) {
 
-	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
+	LOG_I(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	      eNB->Mod_id,
 	      eNB->CC_id,
 	      frame,
@@ -1374,13 +1377,14 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
         fill_crc_indication(eNB,i,frame,subframe,1); // indicate NAK to MAC
         fill_rx_indication(eNB,i,frame,subframe);  // indicate SDU to MAC
 
-        LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
+        LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
               eNB->Mod_id,harq_pid,
               frame,subframe, i,
               ulsch_harq->round-1,
               ulsch->Mlimit,
               ulsch_harq->o_ACK[0],
               ulsch_harq->o_ACK[1]);
+
         if (ulsch_harq->round >= 3)  {
            ulsch_harq->status  = SCH_IDLE;
            ulsch_harq->handled = 0;

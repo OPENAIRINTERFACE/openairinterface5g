@@ -608,7 +608,7 @@ rrc_eNB_get_next_free_ue_context(
   }
 }
 
-#if !defined(ENABLE_USE_MME)
+#if 0 //!defined(ENABLE_USE_MME)
 void rrc_eNB_emulation_notify_ue_module_id(
   const module_id_t ue_module_idP,
   const rnti_t      rntiP,
@@ -627,12 +627,12 @@ void rrc_eNB_emulation_notify_ue_module_id(
       return;
     }
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      if (RC.rrc[enb_module_id].carrier[CC_id].sib1 != NULL) {
+      if (&RC.rrc[enb_module_id]->carrier[CC_id].sib1 != NULL) {
         if (
-          (RC.rrc[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[0] == cell_identity_byte0P) &&
-          (RC.rrc[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[1] == cell_identity_byte1P) &&
-          (RC.rrc[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[2] == cell_identity_byte2P) &&
-          (RC.rrc[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[3] == cell_identity_byte3P)
+          (&RC.rrc[enb_module_id]->carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[0] == cell_identity_byte0P) &&
+          (&RC.rrc[enb_module_id]->carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[1] == cell_identity_byte1P) &&
+          (&RC.rrc[enb_module_id]->carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[2] == cell_identity_byte2P) &&
+          (&RC.rrc[enb_module_id]->carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[3] == cell_identity_byte3P)
         ) {
           ue_context_p = rrc_eNB_get_ue_context(
                            RC.rrc[enb_module_id],
@@ -3561,12 +3561,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                        ctxt_pP->module_id + 1);  // fourth octet
 
           if (oip_ifup == 0) {    // interface is up --> send a config the DRB
-#      ifdef OAI_EMU
-            oai_emulation.info.oai_ifup[ctxt_pP->module_id] = 1;
-            dest_ip_offset = NB_eNB_INST;
-#      else
             dest_ip_offset = 8;
-#      endif
             LOG_I(OIP,
                   "[eNB %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
                   ctxt_pP->module_id, ctxt_pP->module_id,

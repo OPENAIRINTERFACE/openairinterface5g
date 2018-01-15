@@ -709,7 +709,8 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
   if ((frame_tx == 0)&&(subframe_tx == 0)) proc->frame_tx_unwrap += 1024;
 
-  proc->timestamp_tx = (((frame_tx + proc->frame_tx_unwrap) * 10) + subframe_tx) * fp->samples_per_tti;
+  proc->timestamp_tx = ((((uint64_t)frame_tx + (uint64_t)proc->frame_tx_unwrap) * 10) + (uint64_t)subframe_tx) * (uint64_t)fp->samples_per_tti;
+
   LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,(long long unsigned int)proc->timestamp_tx,frame_tx,subframe_tx);
     // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
@@ -2140,8 +2141,11 @@ void configure_rru(int idx,
   ru->frame_parms.threequarter_fs                                          = config->threequarter_fs[0];
   ru->frame_parms.pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
   if (ru->function==NGFI_RRU_IF4p5) {
-    LOG_I(PHY,"Setting ru->function to NGFI_RRU_IF4p5, prach_FrequOffset %d, prach_ConfigIndex %d\n",
-	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
+  ru->frame_parms.att_rx = ru->att_rx;
+  ru->frame_parms.att_tx = ru->att_tx;
+
+    LOG_I(PHY,"Setting ru->function to NGFI_RRU_IF4p5, prach_FrequOffset %d, prach_ConfigIndex %d, att (%d,%d)\n",
+	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0],ru->att_tx,ru->att_rx);
     ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset  = config->prach_FreqOffset[0]; 
     ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0]; 
 #ifdef Rel14
@@ -2154,6 +2158,8 @@ void configure_rru(int idx,
   }
   
   init_frame_parms(&ru->frame_parms,1);
+
+  fill_rf_config(ru,ru->rf_config_file);
 
 
   phy_init_RU(ru);

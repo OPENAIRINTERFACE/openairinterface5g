@@ -4988,10 +4988,10 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
         if(symbol < (frame_parms->symbols_per_tti-1))
           pdsch_vars->llr_offset[symbol+1] = pdsch_vars->llr_offset[symbol] + llr_offset;
 
-        //LOG_I(PHY,"Granted Re subframe %d / symbol %d => %d (%d RBs)\n", subframe, symbol_mod, granted_re,dlsch0_harq->nb_rb);
-        //LOG_I(PHY,"Pbch/PSS/SSS Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, pbch_pss_sss_re);
-        //LOG_I(PHY,"CRS Re Per PRB subframe %d / symbol %d => %d \n", subframe, symbol_mod, crs_re);
-        //LOG_I(PHY,"Data Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, data_re);
+	//        LOG_I(PHY,"Granted Re subframe %d / symbol %d => %d (%d RBs)\n", subframe, symbol_mod, granted_re,dlsch0_harq->nb_rb);
+	//        LOG_I(PHY,"Pbch/PSS/SSS Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, pbch_pss_sss_re);
+	//        LOG_I(PHY,"CRS Re Per PRB subframe %d / symbol %d => %d \n", subframe, symbol_mod, crs_re);
+	//        LOG_I(PHY,"Data Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, data_re);
 
 
 
@@ -5028,7 +5028,6 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
 
     uint8_t  NPRB      = 0;
     uint8_t  NPRB4TBS  = 0;
-    uint8_t  nb_rb_alloc = 0;
 
     if(dci_format == format1A)
     {
@@ -5070,14 +5069,12 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
             }
 
 	  */
-	  nb_rb_alloc = NPRB;
         }
     }
     else // format1
     {
         NPRB = conv_nprb(rah, rballoc, N_RB_DL);
 	NPRB4TBS=NPRB;
-	nb_rb_alloc = NPRB;
     }
 
     pdlsch0->current_harq_pid = harq_pid;
@@ -5178,7 +5175,6 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
                 pdlsch0_harq->rb_alloc_even[1] = localRIV2alloc_LUT50_1[rballoc];
                 pdlsch0_harq->rb_alloc_odd[0]  = localRIV2alloc_LUT50_0[rballoc];
                 pdlsch0_harq->rb_alloc_odd[1]  = localRIV2alloc_LUT50_1[rballoc];
-                      printf("rballoc: %08x.%08x\n",pdlsch0_harq->rb_alloc_even[0],pdlsch0_harq->rb_alloc_even[1]);
             } else { // DISTRIBUTED
                 if ((rballoc&(1<<10)) == 0) {
                     rballoc = rballoc&(~(1<<10));
@@ -5260,7 +5256,7 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
                        pdcch_vars,
                        pdsch_vars,
                        pdlsch0_harq,
-                       nb_rb_alloc,
+                       NPRB,
                        subframe);
 }
 
@@ -6492,7 +6488,7 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n)
   else
     ul_subframe = ((n+4)%10);
 
-  if (subframe_select(frame_parms,ul_subframe) != SF_UL) return(255);
+  //  AssertFatal(frame_parms->frame_type == FDD || subframe_select(frame_parms,ul_subframe) == SF_UL,"illegal ul_subframe %d (n %d)\n",ul_subframe,n);
 
   LOG_D(PHY, "subframe %d: PUSCH subframe = %d\n", n, ul_subframe);
   return ul_subframe;
@@ -7193,6 +7189,10 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       harq_pid = subframe2harq_pid(frame_parms,
                                    pdcch_alloc2ul_frame(frame_parms,proc->frame_rx,subframe),
                                    pdcch_alloc2ul_subframe(frame_parms,subframe));
+    LOG_D(PHY,"Frame %d, Subframe %d: Programming ULSCH for (%d.%d) => harq_pid %d\n",
+	  proc->frame_rx,subframe,
+	  pdcch_alloc2ul_frame(frame_parms,proc->frame_rx,subframe),
+	  pdcch_alloc2ul_subframe(frame_parms,subframe), harq_pid);
 
     if (harq_pid == 255) {
       LOG_E(PHY, "frame %d, subframe %d, rnti %x, format %d: illegal harq_pid!\n",
@@ -7985,7 +7985,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     dlsch[0]->harq_ack[subframe].vDAI_UL = dai+1;
 
 
-    /*LOG_I(PHY, "[PUSCH %d] Format0 DCI %s, CQI_req=%d, cshift=%d, TPC=%d, DAI=%d, vDAI_UL[sf#%d]=%d, NDI=%d, MCS=%d, RBalloc=%d, first_rb=%d, harq_pid=%d, nb_rb=%d, subframe_scheduling_flag=%d"
+    LOG_D(PHY, "[PUSCH %d] Format0 DCI %s, CQI_req=%d, cshift=%d, TPC=%d, DAI=%d, vDAI_UL[sf#%d]=%d, NDI=%d, MCS=%d, RBalloc=%d, first_rb=%d, harq_pid=%d, nb_rb=%d, subframe_scheduling_flag=%d"
             "   ulsch->bundling %d, O_ACK %d \n",
         harq_pid,
         (frame_parms->frame_type == TDD? "TDD" : "FDD"),
@@ -7993,7 +7993,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
         ulsch->harq_processes[harq_pid]->first_rb, harq_pid, ulsch->harq_processes[harq_pid]->nb_rb,
         ulsch->harq_processes[harq_pid]->subframe_scheduling_flag,
         ulsch->bundling,
-        ulsch->harq_processes[harq_pid]->O_ACK);*/
+        ulsch->harq_processes[harq_pid]->O_ACK);
+
     LOG_D(PHY,"Setting beta_offset_cqi_times8 to %d, index %d\n",
 	  beta_cqi[ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index],
 	  ue->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index);
@@ -8050,7 +8051,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 #ifdef UE_DEBUG_TRACE
 
-    LOG_I(PHY,"Format 0 DCI : ulsch (ue): AbsSubframe %d.%d\n",proc->frame_rx%1024,subframe);
+    LOG_D(PHY,"Format 0 DCI : ulsch (ue): AbsSubframe %d.%d\n",proc->frame_rx%1024,subframe);
     LOG_D(PHY,"Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
     LOG_D(PHY,"Format 0 DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
     LOG_D(PHY,"Format 0 DCI :ulsch (ue): rballoc     %d\n",rballoc);
