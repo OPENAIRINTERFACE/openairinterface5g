@@ -420,10 +420,10 @@ static void trx_usrp_end(openair0_device *device) {
 
 /*! \brief Called to send samples to the USRP RF target
       @param device pointer to the device structure specific to the RF hardware target
-      @param timestamp The timestamp at whicch the first sample MUST be sent
+      @param timestamp The timestamp at which the first sample MUST be sent
       @param buff Buffer which holds the samples
       @param nsamps number of samples to be sent
-      @param antenna_id index of the antenna if the device has multiple anteannas
+      @param antenna_id index of the antenna if the device has multiple antennas
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
 */
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
@@ -1012,9 +1012,13 @@ extern "C" {
             //s->usrp->set_master_clock_rate(usrp_master_clock);
 
             openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
+
 #if defined(USRP_REC_PLAY)
 	    std::cerr << "-- Using calibration table: calib_table_x310" << std::endl; // Bell Labs info
-#endif	    
+#endif
+
+            LOG_I(PHY,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
+
             switch ((int)openair0_cfg[0].sample_rate) {
             case 30720000:
                 // from usrp_time_offset
@@ -1157,6 +1161,8 @@ extern "C" {
                 s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
                 s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
                 s->usrp->set_tx_gain(gain_range_tx.stop()-openair0_cfg[0].tx_gain[i],i);
+
+                LOG_I(PHY,"USRP TX_GAIN:%3.2lf gain_range:%3.2lf tx_gain:%3.2lf\n", gain_range_tx.stop()-openair0_cfg[0].tx_gain[i], gain_range_tx.stop(), openair0_cfg[0].tx_gain[i]);
             }
         }
 

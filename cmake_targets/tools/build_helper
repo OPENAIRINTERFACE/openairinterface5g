@@ -230,6 +230,7 @@ install_protobuf_c_from_source(){
     rm -rf /tmp/protobuf-c
     git clone https://github.com/protobuf-c/protobuf-c.git
     cd protobuf-c
+	git checkout 2a46af42784abf86804d536f6e0122d47cfeea45
     ./autogen.sh
     ./configure
     echo "Compiling protobuf-c"
