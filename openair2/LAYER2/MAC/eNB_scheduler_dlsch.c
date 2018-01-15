@@ -62,7 +62,7 @@
 #include "flexran_agent_ran_api.h"
 #include "header.pb-c.h"
 #include "flexran.pb-c.h"
-#include "flexran_agent_mac.h"
+#endif
 #include <dlfcn.h>
 #endif
 

@@ -35,8 +35,6 @@
 #include "flexran_agent_ran_api.h"
 
 #include "LAYER2/MAC/proto.h"
-#include "LAYER2/MAC/flexran_agent_mac_proto.h"
-#include "LAYER2/MAC/flexran_agent_scheduler_dlsch_ue_remote.h"
 
 #include "liblfds700.h"
 

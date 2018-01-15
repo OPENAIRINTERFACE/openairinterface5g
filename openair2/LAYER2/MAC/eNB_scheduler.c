@@ -56,7 +56,6 @@
 //Agent-related headers
 #include "flexran_agent_extern.h"
 #include "flexran_agent_mac.h"
-#include "flexran_agent_mac_proto.h"
 #endif
 
 #if defined(ENABLE_ITTI)
