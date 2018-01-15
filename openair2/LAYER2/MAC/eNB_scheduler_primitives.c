@@ -1980,11 +1980,6 @@ uint8_t find_active_UEs(module_id_t module_idP,int CC_id){
 }
 */
 
-int UE_BSR (uint8_t mod_id, uint8_t ue_id, uint8_t lcid) {
-
-  if (eNB_mac_inst == NULL) return 0;
-  return eNB_mac_inst[mod_id].UE_list.UE_template[UE_PCCID(mod_id,ue_id)][ue_id].bsr_info[lcid];
-}
 
 // get aggregation (L) form phy for a give UE
 unsigned char
@@ -2107,12 +2102,6 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
     dump_ue_list(UE_list, 0);
     return (-1);
 }
-
-int  CC_id_rnti_downlink (uint8_t mod_id, int CC_index, uint16_t ue_rnti) {
-
-  return eNB_mac_inst[mod_id].UE_list.ordered_CCids[CC_index][ue_rnti];
-}
-
 
 //------------------------------------------------------------------------------
 int rrc_mac_remove_ue(module_id_t mod_idP, rnti_t rntiP)
@@ -4480,14 +4469,8 @@ uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs)
     return (uint16_t) floor(rb_percentage * total_rbs);
 }
 
-int flexran_slice_maxmcs(int slice_id)
-{
-    return slice_maxmcs[slice_id];
-}
-
 int flexran_slice_member(int UE_id, int slice_id)
 {
-
   if ((slice_id < 0) || (slice_id > n_active_slices))
     LOG_W(MAC, "out of range slice id %d\n", slice_id);
 

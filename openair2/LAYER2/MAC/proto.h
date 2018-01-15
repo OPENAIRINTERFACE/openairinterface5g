@@ -1168,7 +1168,5 @@ uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
 
 int flexran_slice_member(int UE_id, int slice_id);
 
-int flexran_slice_maxmcs(int slice_id;)
-
 #endif
 /** @}*/
