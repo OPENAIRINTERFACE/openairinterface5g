@@ -1234,7 +1234,8 @@ dlsch_scheduler_pre_processor_reset(int module_idP,
 		break;
 	    }
 	}
-	//LOG_D(MAC, "Frame %d Subframe %d CC_id %d RBG %i : rb_alloc %d\n", frameP, subframeP, CC_id, i, rballoc_sub[CC_id][i]);
+	LOG_D(MAC, "Frame %d Subframe %d CC_id %d RBG %i : rb_alloc %d\n",
+	      frameP, subframeP, CC_id, i, rballoc_sub[CC_id][i]);
 	MIMO_mode_indicator[CC_id][i] = 2;
     }
 }
@@ -1339,11 +1340,11 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
     UE_TEMPLATE *UE_template = 0;
     int N_RB_DL;
     int N_RB_UL;
-    //LOG_D(MAC, "In ulsch_preprocessor: assign max mcs min rb\n");
+    LOG_D(MAC, "In ulsch_preprocessor: assign max mcs min rb\n");
     // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
     assign_max_mcs_min_rb(module_idP, frameP, subframeP, first_rb);
 
-    //LOG_D(MAC, "In ulsch_preprocessor: sort ue \n");
+    LOG_D(MAC, "In ulsch_preprocessor: sort ue \n");
     // sort ues
     sort_ue_ul(module_idP, frameP, subframeP);
 
@@ -1366,7 +1367,7 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
 	}
     }
 
-    //LOG_D(MAC, "In ulsch_preprocessor: step2 \n");
+    LOG_D(MAC, "In ulsch_preprocessor: step2 \n");
     // step 2: calculate the average rb per UE
     total_ue_count = 0;
     max_num_ue_to_be_scheduled = 0;
@@ -1384,11 +1385,12 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
 
 	UE_id = i;
 
-	//LOG_D(MAC, "In ulsch_preprocessor: handling UE %d/%x\n", UE_id, rnti);
+	LOG_D(MAC, "In ulsch_preprocessor: handling UE %d/%x\n", UE_id,
+	      rnti);
 	for (n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
 	    // This is the actual CC_id in the list
 	    CC_id = UE_list->ordered_ULCCids[n][UE_id];
-	    if(0)LOG_D(MAC,
+	    LOG_D(MAC,
 		  "In ulsch_preprocessor: handling UE %d/%x CCid %d\n",
 		  UE_id, rnti, CC_id);
 	    UE_template = &UE_list->UE_template[CC_id][UE_id];
@@ -1468,7 +1470,7 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
 	    }
 
 	    total_allocated_rbs[CC_id] += nb_allocated_rbs[CC_id][UE_id];
-	    if(0)LOG_D(MAC,
+	    LOG_D(MAC,
 		  "In ulsch_preprocessor: assigning %d RBs for UE %d/%x CCid %d, harq_pid %d\n",
 		  nb_allocated_rbs[CC_id][UE_id], UE_id, rnti, CC_id,
 		  harq_pid);

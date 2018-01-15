@@ -547,7 +547,7 @@ schedule_ue_spec(module_id_t module_idP,
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR, VCD_FUNCTION_OUT);
 
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-	//LOG_D(MAC, "doing schedule_ue_spec for CC_id %d\n", CC_id);
+	LOG_D(MAC, "doing schedule_ue_spec for CC_id %d\n", CC_id);
 
 	dl_req = &eNB->DL_req[CC_id].dl_config_request_body;
 
@@ -675,7 +675,7 @@ schedule_ue_spec(module_id_t module_idP,
 		    = 0;
 	    }
 
-	    LOG_I(MAC,
+	    LOG_D(MAC,
 		  "[eNB %d] Frame %d: Scheduling UE %d on CC_id %d (rnti %x, harq_pid %d, round %d, rb %d, cqi %d, mcs %d, rrc %d)\n",
 		  module_idP, frameP, UE_id, CC_id, rnti, harq_pid, round,
 		  nb_available_rb, ue_sched_ctl->dl_cqi[CC_id],
@@ -761,7 +761,7 @@ schedule_ue_spec(module_id_t module_idP,
 		    case 2:
 		    case 7:
 		    default:
-                      LOG_I(MAC,"retransmission DL_REQ: rnti:%x\n",rnti);
+                      LOG_D(MAC,"retransmission DL_REQ: rnti:%x\n",rnti);
 
 			dl_config_pdu =
 			    &dl_req->dl_config_pdu_list[dl_req->
@@ -1223,8 +1223,8 @@ schedule_ue_spec(module_id_t module_idP,
 						   padding, post_padding);
 
 		    //#ifdef DEBUG_eNB_SCHEDULER
-		    if (1 || ta_update != 31) {
-			LOG_I(MAC,
+		    if (ta_update != 31) {
+			LOG_D(MAC,
 			      "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
 			      module_idP, frameP, UE_id, CC_id,
 			      sdu_length_total, num_sdus, sdu_lengths[0],
@@ -1553,7 +1553,7 @@ fill_DLSCH_dci(module_id_t module_idP,
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_FILL_DLSCH_DCI, VCD_FUNCTION_IN);
 
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-	//LOG_D(MAC, "Doing fill DCI for CC_id %d\n", CC_id);
+	LOG_D(MAC, "Doing fill DCI for CC_id %d\n", CC_id);
 
 	if (mbsfn_flagP[CC_id] > 0)
 	    continue;

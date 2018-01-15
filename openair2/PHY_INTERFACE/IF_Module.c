@@ -75,7 +75,7 @@ void handle_sr(UL_IND_t *UL_info) {
   }
   else
   {
-    for (i=0;i<UL_info->sr_ind.sr_indication_body.number_of_srs;i++) 
+    for (i=0;i<UL_info->sr_ind.sr_indication_body.number_of_srs;i++)
       SR_indication(UL_info->module_id,
           UL_info->CC_id,
           UL_info->frame,
@@ -127,8 +127,6 @@ void handle_harq(UL_IND_t *UL_info) {
 
   int i;
 
-  //if (UL_info->harq_ind.number_of_harqs>0)
-
   if (nfapi_mode == 1 && UL_info->harq_ind.harq_indication_body.number_of_harqs>0) // PNF
   {
     //LOG_D(PHY, "UL_info->harq_ind.harq_indication_body.number_of_harqs:%d Send to VNF\n", UL_info->harq_ind.harq_indication_body.number_of_harqs);
@@ -144,7 +142,7 @@ void handle_harq(UL_IND_t *UL_info) {
   }
   else
   {
-    for (i=0;i<UL_info->harq_ind.harq_indication_body.number_of_harqs;i++) 
+    for (i=0;i<UL_info->harq_ind.harq_indication_body.number_of_harqs;i++)
       harq_indication(UL_info->module_id,
           UL_info->CC_id,
           NFAPI_SFNSF2SFN(UL_info->harq_ind.sfn_sf),
@@ -303,7 +301,7 @@ static void dump_ul(UL_IND_t *u)
 
   A("XXXX     crc_ind  %d\n", u->crc_ind.crc_indication_body.number_of_crcs);
 
-  A("XXXX     sr_ind   %d\n", u->sr_ind.number_of_srs);
+  A("XXXX     sr_ind   %d\n", u->sr_ind.sr_indication_body.number_of_srs);
 
   A("XXXX     cqi_ind  %d\n", u->cqi_ind.number_of_cqis);
       for (i = 0; i < u->cqi_ind.number_of_cqis; i++) {
@@ -544,17 +542,10 @@ void UL_indication(UL_IND_t *UL_info)
   IF_Module_t  *ifi        = if_inst[module_id];
   eNB_MAC_INST *mac        = RC.mac[module_id];
 
-  if (UL_info->rx_ind.rx_indication_body.number_of_pdus || 
-      UL_info->harq_ind.harq_indication_body.number_of_harqs ||
-      UL_info->crc_ind.crc_indication_body.number_of_crcs ||
-      UL_info->cqi_ind.number_of_cqis ||
-      UL_info->rach_ind.rach_indication_body.number_of_preambles ||
-      UL_info->sr_ind.sr_indication_body.number_of_srs) {
-    LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d harqs:%d crcs:%d cqis:%d preambles:%d sr_ind:%d]\n", 
+  LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d harqs:%d crcs:%d cqis:%d preambles:%d sr_ind:%d]\n",
         UL_info->frame,UL_info->subframe,
         module_id,CC_id,
         UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->harq_ind.harq_indication_body.number_of_harqs, UL_info->crc_ind.crc_indication_body.number_of_crcs, UL_info->cqi_ind.number_of_cqis, UL_info->rach_ind.rach_indication_body.number_of_preambles, UL_info->sr_ind.sr_indication_body.number_of_srs);
-  }
 
   if (nfapi_mode != 1)
   {
@@ -570,12 +561,9 @@ void UL_indication(UL_IND_t *UL_info)
   }
 
 
-  //LOG_D(PHY,"%s() SFN_SF:%d%d About to call clear_nfapi_information()\n", __FUNCTION__, UL_info->frame, UL_info->subframe);
-
   // clear DL/UL info for new scheduling round
   clear_nfapi_information(RC.mac[module_id],CC_id,
 			  UL_info->frame,UL_info->subframe);
-  //LOG_D(PHY,"%s() SFN_SF:%d%d Returned from call clear_nfapi_information()\n", __FUNCTION__, UL_info->frame, UL_info->subframe);
 
   handle_rach(UL_info);
 
@@ -607,7 +595,7 @@ void UL_indication(UL_IND_t *UL_info)
       sched_info->DL_req      = &mac->DL_req[CC_id];
       sched_info->HI_DCI0_req = &mac->HI_DCI0_req[CC_id];
       if ((mac->common_channels[CC_id].tdd_Config==NULL) ||
-          (is_UL_sf(&mac->common_channels[CC_id],(sched_info->subframe+sf_ahead)%10)>0)) 
+          (is_UL_sf(&mac->common_channels[CC_id],(sched_info->subframe+sf_ahead)%10)>0))
         sched_info->UL_req      = &mac->UL_req[CC_id];
       else
         sched_info->UL_req      = NULL;
@@ -627,9 +615,8 @@ void UL_indication(UL_IND_t *UL_info)
         ifi->schedule_response(sched_info);
       }
 
-      if (sched_info->DL_req->dl_config_request_body.number_pdu)
-        LOG_D(PHY,"Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",sched_info->frame,sched_info->subframe,sched_info->DL_req->dl_config_request_body.number_pdu);
-    }						 
+      LOG_D(PHY,"Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",sched_info->frame,sched_info->subframe,sched_info->DL_req->dl_config_request_body.number_pdu);
+    }
   }
 }
 

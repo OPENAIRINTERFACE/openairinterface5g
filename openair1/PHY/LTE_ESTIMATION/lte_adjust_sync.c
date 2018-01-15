@@ -258,7 +258,7 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
     max_pos = max_pos-frame_parms->ofdm_symbol_size;
 
   //#ifdef DEBUG_PHY
-  //LOG_D(PHY,"frame %d: max_pos = %d, sync_pos=%d\n",eNB->proc.frame_rx,max_pos,sync_pos);
+  LOG_D(PHY,"frame %d: max_pos = %d, sync_pos=%d\n",eNB->proc.frame_rx,max_pos,sync_pos);
   //#endif //DEBUG_PHY
 
   return max_pos - sync_pos;

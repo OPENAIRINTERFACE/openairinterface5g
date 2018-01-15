@@ -42,7 +42,7 @@
 
 int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
 {
-  LOG_E(ENB_APP, "%s(enb_nb:%d ue_nb:%d)\n", __FUNCTION__, enb_nb, ue_nb);
+  LOG_D(ENB_APP, "%s(enb_nb:%d ue_nb:%d)\n", __FUNCTION__, enb_nb, ue_nb);
 
   itti_wait_ready(1);
   if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {

@@ -1,0 +1,15 @@
+This directory contains the NFAPI code.
+
+It comes in two parts:
+
+1 - open-nFAPI
+
+    This is a clone of the github repository
+    (https://github.com/cisco/open-nFAPI,
+     commit b3bc579b1697eab829d5d8a2de59c93a61b88fa4).
+    The patch open-nfapi.oai.patch has then been applied.
+
+2 - oai_integration
+
+    This is code written by David Price from Cisco to integrate
+    open-nFAPI into OpenAirInterface.

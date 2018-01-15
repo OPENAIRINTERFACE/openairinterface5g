@@ -48,7 +48,7 @@ void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_r
 				  nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu);
 void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
 				 nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu);
-void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,  
+void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
 			    nfapi_dl_config_request_pdu_t *dl_config_pdu,
 			    uint8_t codeword_index,
 			    uint8_t *sdu);

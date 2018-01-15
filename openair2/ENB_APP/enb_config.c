@@ -241,22 +241,22 @@ void RCconfig_L1(void) {
 
 
   if (RC.eNB == NULL) {
-    RC.eNB                       = (PHY_VARS_eNB ***)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB**));
+    RC.eNB                       = (PHY_VARS_eNB ***)malloc((1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB**));
     LOG_I(PHY,"RC.eNB = %p\n",RC.eNB);
-    memset(RC.eNB,0,(1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
+    memset(RC.eNB,0,(1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB**));
     RC.nb_L1_CC = malloc((1+RC.nb_L1_inst)*sizeof(int));
   }
 
-  config_getlist( &L1_ParamList,L1_Params,sizeof(L1_Params)/sizeof(paramdef_t), NULL);    
+  config_getlist( &L1_ParamList,L1_Params,sizeof(L1_Params)/sizeof(paramdef_t), NULL);
   if (L1_ParamList.numelt > 0) {
 
     for (j = 0; j < RC.nb_L1_inst; j++) {
       RC.nb_L1_CC[j] = *(L1_ParamList.paramarray[j][L1_CC_IDX].uptr);
 
       if (RC.eNB[j] == NULL) {
-	RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB**));
+	RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB*));
 	LOG_I(PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
-	memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB***));
+	memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB*));
       }
 
       for (i=0;i<RC.nb_L1_CC[j];i++) {

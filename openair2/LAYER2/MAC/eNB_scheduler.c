@@ -589,19 +589,6 @@ clear_nfapi_information(eNB_MAC_INST * eNB, int CC_idP,
 
       TX_req[CC_idP].tx_request_body.number_of_pdus                 = 0;
 
-      if (0) LOG_D(MAC,"%s() SFN_SF:%d%d ZERO PDUs of TX_req:(SFN_SF:%d):%d UL_req:(SFN_SF:%d):%d HI_DCI0_req:(SFN_SF:%d):dci:%d hi:%d DL:(SFN_SF:%d):dci:%d DL:pdu:%d\n", 
-          __FUNCTION__,
-          frameP, subframeP,
-          NFAPI_SFNSF2DEC(TX_req[CC_idP].sfn_sf),
-          TX_req[CC_idP].tx_request_body.number_of_pdus,
-          NFAPI_SFNSF2DEC(UL_req[CC_idP].sfn_sf),
-          UL_req[CC_idP].ul_config_request_body.number_of_pdus,
-          NFAPI_SFNSF2DEC(HI_DCI0_req[CC_idP].sfn_sf),
-          HI_DCI0_req[CC_idP].hi_dci0_request_body.number_of_dci,
-          HI_DCI0_req[CC_idP].hi_dci0_request_body.number_of_hi,
-          NFAPI_SFNSF2DEC(DL_req[CC_idP].sfn_sf),
-          DL_req[CC_idP].dl_config_request_body.number_dci,
-          DL_req[CC_idP].dl_config_request_body.number_pdu);
     }
 }
 

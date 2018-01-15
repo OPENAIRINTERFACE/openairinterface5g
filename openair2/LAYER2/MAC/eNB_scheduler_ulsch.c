@@ -185,7 +185,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 		    maxHARQ_Msg3Tx);
 
 	LOG_D(MAC,
-	      "[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",
+	      "[eNB %d][PUSCH %d] CC_id %d [RAPROC Msg3] Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",
 	      enb_mod_idP, harq_pid, CC_idP, ra[RA_id].msg3_round,
 	      current_rnti, RA_id, ul_cqi);
 
@@ -211,10 +211,8 @@ rx_sdu(const module_id_t enb_mod_idP,
 		    first_rb_ul[harq_pid];
 		ra[RA_id].msg3_round++;
 		// prepare handling of retransmission
-		ra[RA_id].Msg3_frame +=
-		    ((ra[RA_id].Msg3_subframe > 1) ? 1 : 0);
-		ra[RA_id].Msg3_subframe =
-		    (ra[RA_id].Msg3_subframe + 8) % 10;
+		ra[RA_id].Msg3_frame    = (ra[RA_id].Msg3_frame + ((ra[RA_id].Msg3_subframe > 1) ? 1 : 0)) % 1024;
+		ra[RA_id].Msg3_subframe = (ra[RA_id].Msg3_subframe + 8) % 10;
 		add_msg3(enb_mod_idP, CC_idP, &ra[RA_id], frameP,
 			 subframeP);
 	    }
@@ -1235,7 +1233,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 
 		// this is the normalized RX power and this should be constant (regardless of mcs
 		normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
-		target_rx_power = 204;
+		target_rx_power = 178;
 
 		// this assumes accumulated tpc
 		// make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out

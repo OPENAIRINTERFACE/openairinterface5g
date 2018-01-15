@@ -70,7 +70,7 @@ extern int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req);
 
 void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset)
 {
-    *frameP    = *frameP + ((*subframeP + offset) / 10);
+    *frameP    = (*frameP + ((*subframeP + offset) / 10)) % 1024;
 
     *subframeP = ((*subframeP + offset) % 10);
 }
@@ -487,7 +487,7 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 		      "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming PDSCH\n",
 		      module_idP, frameP, subframeP);
 		ra->state = WAITMSG3;
-                LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG3\n", module_idP, frameP, subframeP);
+                LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG3\n", module_idP, frameP, subframeP);
 
 		dl_config_pdu =
 		    &dl_req->dl_config_pdu_list[dl_req->number_pdu];
@@ -553,7 +553,7 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
                 mac->DL_req[CC_idP].sfn_sf = (frameP<<4)+subframeP;
                 mac->DL_req[CC_idP].header.message_id = NFAPI_DL_CONFIG_REQUEST;
 
-                LOG_E(MAC,"DL_CONFIG SFN/SF:%d/%d MESSAGE2\n", frameP, subframeP);
+                LOG_D(MAC,"DL_CONFIG SFN/SF:%d/%d MESSAGE2\n", frameP, subframeP);
 
 		// Program UL processing for Msg3, same as regular LTE
 		get_Msg3alloc(&cc[CC_idP], subframeP, frameP,
@@ -693,7 +693,7 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 			 cc[CC_idP].RAR_pdu.payload, N_RB_DL, 7);
 		add_msg3(module_idP, CC_idP, ra, frameP, subframeP);
 		ra->state = WAITMSG3;
-                LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG3\n", module_idP, frameP, subframeP);
+                LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG3\n", module_idP, frameP, subframeP);
 
 		// DL request
 		mac->TX_req[CC_idP].sfn_sf = (frameP << 4) + subframeP;
@@ -828,7 +828,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 
     dl_req        = &mac->DL_req[CC_idP];
     dl_req_body   = &dl_req->dl_config_request_body;
-    dl_config_pdu = &dl_req_body->dl_config_pdu_list[dl_req_body->number_pdu]; 
+    dl_config_pdu = &dl_req_body->dl_config_pdu_list[dl_req_body->number_pdu];
     N_RB_DL = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
 
     UE_id = find_UE_id(module_idP, ra->rnti);
@@ -1058,7 +1058,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
                 mac->DL_req[CC_idP].header.message_id = NFAPI_DL_CONFIG_REQUEST;
 	
 		ra->state = WAITMSG4ACK;
-                LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG4ACK\n", module_idP, frameP, subframeP);
+                LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG4ACK\n", module_idP, frameP, subframeP);
 
 		lcid = 0;
 
@@ -1270,7 +1270,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 		dl_req_body->number_pdu++;
 
 		ra->state = WAITMSG4ACK;
-                LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG4ACK\n", module_idP, frameP, subframeP);
+                LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG4ACK\n", module_idP, frameP, subframeP);
 
 		// increment Absolute subframe by 8 for Msg4 retransmission
 		LOG_D(MAC,
@@ -1575,7 +1575,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 	      "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",
 	      module_idP, CC_idP, frameP, subframeP);
 	ra->state = IDLE;
-        LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:IDLE\n", module_idP, frameP, subframeP);
+        LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:IDLE\n", module_idP, frameP, subframeP);
 	UE_id = find_UE_id(module_idP, ra->rnti);
 	DevAssert(UE_id != -1);
 	mac->UE_list.UE_template[UE_PCCID(module_idP, UE_id)][UE_id].
@@ -1653,7 +1653,7 @@ initiate_ra_proc(module_id_t module_idP,
 	prach_ParametersListCE_r13 =
 	    &ext4_prach->prach_ParametersListCE_r13;
     }
-    LOG_I(MAC,
+    LOG_D(MAC,
 	  "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",
 	  module_idP, CC_id, frameP, subframeP, preamble_index);
 #ifdef Rel14

@@ -801,28 +801,6 @@ void generate_RIV_tables()
 //       n_tilde_PRB(0,1) = (0,2)
 
 
-void check_dlsch(char *file, int line)
-{
-  PHY_VARS_eNB *eNB = RC.eNB[0][0];
-  static char oldbuf[13*NUMBER_OF_UE_MAX+100]="";
-  char buf[13*NUMBER_OF_UE_MAX+100];
-  char *pbuf=buf;
-
-  for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
-    pbuf+=sprintf(pbuf, "[%02d]:%02x:%04x ", i, eNB->dlsch[i][0]->harq_mask, eNB->dlsch[i][0]->rnti);
-  }
-
-  int diff_size = memcmp(oldbuf, buf, strlen(buf));
-  
-  if (diff_size!=0)
-  {
-    LOG_I(PHY,"check_dlsch:%s:%d:%s\n", file, line, buf);
-    LOG_I(PHY,"check_dlsch:%s:%d:%s\n", file, line, oldbuf);
-  }
-
-  memcpy(oldbuf, buf, sizeof(buf));
-}
-
 int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
 {
   uint8_t i;
@@ -2444,8 +2422,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
 
   void *dci_pdu = (void*)dci_alloc->dci_pdu;
 
-  if (cqi_req)
-    LOG_W(PHY,"SFN/SF:%04d%d DCI0[rnti %x cqi %d mcs %d hopping %d rballoc %x (%d,%d) ndi %d TPC %d cshift %d]\n",
+  LOG_D(PHY,"SFN/SF:%04d%d DCI0[rnti %x cqi %d mcs %d hopping %d rballoc %x (%d,%d) ndi %d TPC %d cshift %d]\n",
         frame,subframe,
         pdu->dci_pdu_rel8.rnti,cqi_req, mcs,hopping,rballoc,
         pdu->dci_pdu_rel8.resource_block_start,
@@ -2764,7 +2741,7 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
         break;
 
       case 25:
-        LOG_I(PHY,"DCI format0 (FDD, 5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, cqi_req %d\n",
+        LOG_D(PHY,"DCI format0 (FDD, 5MHz), rnti %x (%x): hopping %d, rb_alloc %x, mcs %d, ndi %d, TPC %d, cshift %d, cqi_req %d\n",
               dci->rnti,
               ((uint32_t*)&dci->dci_pdu[0])[0],
               ((DCI0_5MHz_FDD_t *)&dci->dci_pdu[0])->hopping,
@@ -6574,7 +6551,7 @@ uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, ui
   else
     ul_frame = (frame+(n>=6 ? 1 : 0));
 
-  //LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, n, ul_frame);
+  LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, n, ul_frame);
   return ul_frame % 1024;
 }
 

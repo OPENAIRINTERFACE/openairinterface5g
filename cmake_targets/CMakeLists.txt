@@ -27,8 +27,8 @@ cmake_minimum_required (VERSION 2.8)
 # Base directories, compatible with legacy OAI building
 ################################################
 set (OPENAIR_DIR     $ENV{OPENAIR_DIR})
-set (NFAPI_DIR       $ENV{NFAPI_DIR})
-set (NFAPI_USER_DIR  ${OPENAIR_DIR}/nfapi)
+set (NFAPI_DIR       ${OPENAIR_DIR}/nfapi/open-nFAPI)
+set (NFAPI_USER_DIR  ${OPENAIR_DIR}/nfapi/oai_integration)
 set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
 set (OPENAIR2_DIR    ${OPENAIR_DIR}/openair2)
 set (OPENAIR3_DIR    ${OPENAIR_DIR}/openair3)
@@ -1061,9 +1061,9 @@ include_directories(${NFAPI_DIR}/vnf/inc)
 # nFAPI user defined code
 #############################
 set(NFAPI_USER_SRC
-${NFAPI_USER_DIR}/nfapi.c
-${NFAPI_USER_DIR}/nfapi_pnf.c
-${NFAPI_USER_DIR}/nfapi_vnf.c
+  ${NFAPI_USER_DIR}/nfapi.c
+  ${NFAPI_USER_DIR}/nfapi_pnf.c
+  ${NFAPI_USER_DIR}/nfapi_vnf.c
 )
 add_library(NFAPI_USER_LIB ${NFAPI_USER_SRC})
 include_directories(${NFAPI_USER_DIR})
@@ -1740,26 +1740,6 @@ endif()
 add_definitions("-DNETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
 add_definitions("-DNETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
 
-#pkg_search_module(NFAPI nfapi)
-#if(NOT ${NFAPI_FOUND})
-  #message( FATAL_ERROR "PACKAGE nfapi not found: some targets will fail. Run build_oai -I again!")
-#else()
-  #include_directories(${NFAPI_INCLUDE_DIRS})
-  #message( "PACKAGE nfapi!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-  #message( "${NFAPI_INCLUDE_DIR}")
-  #message( "${NFAPI_COMMON_INCLUDE_DIR}")
-  #message( "${NFAPI_VNF_INCLUDE_DIR}")
-  #message( "${NFAPI_PNF_INCLUDE_DIR}")
-  #message( "XXX")
-  #message( "${NFAPI_LIBRARY}")
-  #message( "${NFAPI_COMMON_LIBRARY}")
-  #message( "${NFAPI_PNF_LIBRARY}")
-  #message( "XXX")
-  #message( "${NFAPI_LIBRARIES}")
-  #message( "XXX")
-#endif()
-
-
 pkg_search_module(XPM xpm)
 if(NOT ${XPM_FOUND})
   message("PACKAGE xpm not found: some targets will fail")
@@ -1815,12 +1795,6 @@ if (${T_TRACER})
   set (T_LIB "rt")
 endif (${T_TRACER})
 
-#if (${NFAPI_DIR})
-#set (NFAPI_PNF_LIB "nfapi_pnf")
-#set (NFAPI_LIB "nfapi")
-#set (NFAPI_COMMON_LIB "nfapi_common")
-#endif (${NFAPI_DIR})
-#
 #Some files in the T directory are generated.
 #This rule and the following deal with it.
 add_custom_command (
@@ -2004,27 +1978,6 @@ add_executable(oaisim
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
 )
-
-#add_library( imp_nfapi STATIC IMPORTED)
-#set_property(TARGET imp_nfapi PROPERTY IMPORTED_LOCATION ${NFAPI_DIR}/libnfapi.a)
-#set_property(TARGET imp_nfapi PROPERTY IMPORTED_IMPLIB ${NFAPI_DIR}/libnfapi.a)
-#target_link_libraries(oaisim imp_nfapi)
-
-#add_library( imp_nfapi_common STATIC IMPORTED)
-#set_property(TARGET imp_nfapi_common PROPERTY IMPORTED_LOCATION ${NFAPI_DIR}/common/libnfapi_common.a)
-#set_property(TARGET imp_nfapi_common PROPERTY IMPORTED_IMPLIB ${NFAPI_DIR}/common/libnfapi_common.a)
-#target_link_libraries(oaisim imp_nfapi_common)
-
-#add_library( imp_nfapi_pnf STATIC IMPORTED)
-#set_property(TARGET imp_nfapi_pnf PROPERTY IMPORTED_LOCATION ${NFAPI_DIR}/pnf/libnfapi_pnf.a)
-#set_property(TARGET imp_nfapi_pnf PROPERTY IMPORTED_IMPLIB ${NFAPI_DIR}/pnf/libnfapi_pnf.a)
-#target_link_libraries(oaisim imp_nfapi_pnf)
-
-#
-#add_library (imp_nfapi_common STATIC IMPORTED)
-#set_target_properties(imp_nfapi_common PROPERTIES IMPORTED_LOCATION ${NFAPI_DIR}/common/libnfapi_common.a
-#set_target_properties(oaisim PROPERTIES LINK_FLAGS ${NFAPI_DIR}/nfapi/libnfapi.a ${NFAPI_DIR}/pnf/libnfapi_pnf.a ${NFAPI_DIR}/common/libnfapi_common.a)
-
 
 
 target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)

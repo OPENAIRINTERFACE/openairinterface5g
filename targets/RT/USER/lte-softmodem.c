@@ -873,8 +873,8 @@ void wait_eNBs(void) {
 
 
   while (waiting==1) {
-    printf("Waiting for eNB L1 instances to all get configured ... sleeping 500ms (nb_L1_inst %d)\n",RC.nb_L1_inst);
-    usleep(5000000);
+    printf("Waiting for eNB L1 instances to all get configured ... sleeping 50ms (nb_L1_inst %d)\n",RC.nb_L1_inst);
+    usleep(50*1000);
     waiting=0;
     for (i=0;i<RC.nb_L1_inst;i++) {
 
@@ -1255,7 +1255,7 @@ int main( int argc, char **argv )
 #endif
   
   rt_sleep_ns(10*100000000ULL);
-  
+
   if (nfapi_mode) {
 
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");

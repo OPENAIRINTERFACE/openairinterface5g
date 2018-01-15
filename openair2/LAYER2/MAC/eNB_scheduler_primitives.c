@@ -1036,7 +1036,7 @@ fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t * dl_config_pdu,
     dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
     dl_config_pdu->pdu_size =
 	(uint8_t) (2 + sizeof(nfapi_dl_config_dci_dl_pdu));
-    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag = 
+    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag =
       NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
     dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format =
 	NFAPI_DL_DCI_FORMAT_1A;
@@ -2030,7 +2030,7 @@ get_aggregation(uint8_t bw_index, uint8_t cqi, uint8_t dci_fmt)
 	LOG_W(MAC, "unsupported DCI format %d\n", dci_fmt);
     }
 
-    //LOG_D(MAC, "Aggregation level %d (cqi %d, bw_index %d, format %d)\n", 1 << aggregation, cqi, bw_index, dci_fmt);
+    LOG_D(MAC, "Aggregation level %d (cqi %d, bw_index %d, format %d)\n", 1 << aggregation, cqi, bw_index, dci_fmt);
 
     return 1 << aggregation;
 }
@@ -3100,8 +3100,7 @@ allocate_CCEs(int module_idP, int CC_idP, int subframeP, int test_onlyP)
     int i, j, idci;
     int nCCE = 0;
 
-    if (0 && (DL_req->number_pdu || DL_req->number_dci || HI_DCI0_req->number_of_dci))
-      LOG_D(MAC,
+    LOG_D(MAC,
           "Allocate CCEs subframe %d, test %d : (DL PDU %d, DL DCI %d, UL %d)\n",
           subframeP, test_onlyP, DL_req->number_pdu, DL_req->number_dci,
           HI_DCI0_req->number_of_dci);
@@ -3116,7 +3115,6 @@ allocate_CCEs(int module_idP, int CC_idP, int subframeP, int test_onlyP)
 	if ((dl_config_pdu[i].pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
 	    && (dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.rnti_type ==
 		2)) {
-#if 0
 	    LOG_D(MAC,
 		  "Trying to allocate COMMON DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
 		  idci, DL_req->number_dci + HI_DCI0_req->number_of_dci,
@@ -3125,7 +3123,6 @@ allocate_CCEs(int module_idP, int CC_idP, int subframeP, int test_onlyP)
 		  dl_config_pdu[i].dci_dl_pdu.
 		  dci_dl_pdu_rel8.aggregation_level, nCCE, nCCE_max,
 		  DL_req->number_pdcch_ofdm_symbols);
-#endif
 
 	    if (nCCE +
 		(dl_config_pdu[i].dci_dl_pdu.
@@ -3197,16 +3194,14 @@ allocate_CCEs(int module_idP, int CC_idP, int subframeP, int test_onlyP)
 	    nCCE +=
 		dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.
 		aggregation_level;
-	    //LOG_D(MAC, "Allocating at nCCE %d\n", fCCE);
+	    LOG_D(MAC, "Allocating at nCCE %d\n", fCCE);
 	    if (test_onlyP == 0) {
 		dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.cce_idx = fCCE;
-#if 0
 		LOG_D(MAC,
 		      "Allocate COMMON DCI CCEs subframe %d, test %d => L %d fCCE %d\n",
 		      subframeP, test_onlyP,
 		      dl_config_pdu[i].dci_dl_pdu.
 		      dci_dl_pdu_rel8.aggregation_level, fCCE);
-#endif
 	    }
 	    idci++;
 	}
@@ -3293,7 +3288,7 @@ allocate_CCEs(int module_idP, int CC_idP, int subframeP, int test_onlyP)
 
 	    // the allocation is feasible, rnti rule passes
 	    nCCE += hi_dci0_pdu[i].dci_pdu.dci_pdu_rel8.aggregation_level;
-	    //LOG_D(MAC, "Allocating at nCCE %d\n", fCCE);
+	    LOG_D(MAC, "Allocating at nCCE %d\n", fCCE);
 	    if (test_onlyP == 0) {
 		hi_dci0_pdu[i].dci_pdu.dci_pdu_rel8.cce_index = fCCE;
 		LOG_D(MAC, "Allocate CCEs subframe %d, test %d\n",
@@ -3308,7 +3303,6 @@ allocate_CCEs(int module_idP, int CC_idP, int subframeP, int test_onlyP)
 	if ((dl_config_pdu[i].pdu_type == NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
 	    && (dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.rnti_type ==
 		1)) {
-#if 0
 	    LOG_D(MAC,
 		  "Trying to allocate DL UE-SPECIFIC DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
 		  idci, DL_req->number_dci + HI_DCI0_req->number_of_dci,
@@ -3317,7 +3311,6 @@ allocate_CCEs(int module_idP, int CC_idP, int subframeP, int test_onlyP)
 		  dl_config_pdu[i].dci_dl_pdu.
 		  dci_dl_pdu_rel8.aggregation_level, nCCE, nCCE_max,
 		  DL_req->number_pdcch_ofdm_symbols);
-#endif
 
 	    if (nCCE +
 		(dl_config_pdu[i].dci_dl_pdu.
@@ -3390,7 +3383,7 @@ allocate_CCEs(int module_idP, int CC_idP, int subframeP, int test_onlyP)
 	    nCCE +=
 		dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.
 		aggregation_level;
-	    //LOG_D(MAC, "Allocating at nCCE %d\n", fCCE);
+	    LOG_D(MAC, "Allocating at nCCE %d\n", fCCE);
 	    if (test_onlyP == 0) {
 		dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.cce_idx = fCCE;
 		LOG_D(MAC, "Allocate CCEs subframe %d, test %d\n",
@@ -3566,7 +3559,6 @@ CCE_allocation_infeasible(int module_idP,
 	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level =
 		aggregation;
 	    DL_req->number_pdu++;
-#if 0
 	    LOG_D(MAC,
 		  "Subframe %d: Checking CCE feasibility format %d : (%x,%d) (%x,%d,%d)\n",
 		  subframe, format_flag, rnti, aggregation,
@@ -3574,7 +3566,6 @@ CCE_allocation_infeasible(int module_idP,
 		  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.
 		  aggregation_level,
 		  dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type);
-#endif
 	    ret = allocate_CCEs(module_idP, CC_idP, subframe, 0);
 	    if (ret == -1)
 		res = TRUE;
@@ -3674,7 +3665,7 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 
 	uint8_t harq_pid = ((10 * frameP) + subframeP + 10236) & 7;
 
-        LOG_I(MAC,"frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",frameP,subframeP,harq_pid,harq_indication_fdd->mode,tmode[0],num_ack_nak,sched_ctl->round[CC_idP][harq_pid]);
+        LOG_D(MAC,"frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",frameP,subframeP,harq_pid,harq_indication_fdd->mode,tmode[0],num_ack_nak,sched_ctl->round[CC_idP][harq_pid]);
 
 	switch (harq_indication_fdd->mode) {
 	case 0:		// Format 1a/b (10.1.2.1)
@@ -4368,7 +4359,7 @@ cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 
     if (UE_id >= 0) {
 
-        LOG_E(MAC,"%s() UE_id:%d channel:%d cqi:%d\n", __FUNCTION__, UE_id, ul_cqi_information->channel, ul_cqi_information->ul_cqi);
+        LOG_D(MAC,"%s() UE_id:%d channel:%d cqi:%d\n", __FUNCTION__, UE_id, ul_cqi_information->channel, ul_cqi_information->ul_cqi);
 
 	if (ul_cqi_information->channel == 0) {	// PUCCH
 
@@ -4476,7 +4467,7 @@ harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
     UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
     COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
     // extract HARQ Information
-    LOG_I(MAC,
+    LOG_D(MAC,
 	  "Frame %d, subframe %d: Received harq indication (%d) from UE %d/%x, ul_cqi %d\n",
 	  frameP, subframeP, channel, UE_id, rnti, ul_cqi);
     if (cc->tdd_Config)

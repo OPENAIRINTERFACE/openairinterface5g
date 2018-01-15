@@ -314,7 +314,7 @@ void handle_ulsch_cqi_ri_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request
   if (ulsch_harq->O_RI>1) ulsch_harq->Or2 = rel9->aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[1];
   ulsch->beta_offset_ri_times8            = to_beta_offset_ri[rel9->delta_offset_ri];
   ulsch->beta_offset_cqi_times8           = to_beta_offset_cqi[rel9->delta_offset_cqi];
-  LOG_E(PHY,"Filling ulsch_cqi_ri information for frame %d, subframe %d : O_RI %d, Or1 %d, beta_offset_cqi_times8 %d (%d)\n",
+  LOG_D(PHY,"Filling ulsch_cqi_ri information for frame %d, subframe %d : O_RI %d, Or1 %d, beta_offset_cqi_times8 %d (%d)\n",
         frame,subframe,ulsch_harq->O_RI,ulsch_harq->Or1,ulsch->beta_offset_cqi_times8,
         rel9->delta_offset_cqi);
 }
@@ -622,7 +622,6 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   // DJP - AssertFatal(proc->subframe_tx == subframe, "Current subframe %d != NFAPI subframe %d\n",proc->subframe_tx,subframe);
   // DJP - AssertFatal(proc->subframe_tx == subframe, "Current frame %d != NFAPI frame %d\n",proc->frame_tx,frame);
 
-  uint8_t number_dci                = DL_req->dl_config_request_body.number_dci;
   uint8_t number_pdcch_ofdm_symbols = DL_req->dl_config_request_body.number_pdcch_ofdm_symbols;
 
   uint8_t number_dl_pdu             = DL_req->dl_config_request_body.number_pdu;
@@ -636,18 +635,16 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   int i;
 
   eNB->pdcch_vars[subframe&1].num_pdcch_symbols = number_pdcch_ofdm_symbols;
-  eNB->pdcch_vars[subframe&1].num_dci           = number_dci;
+  eNB->pdcch_vars[subframe&1].num_dci           = 0;
   eNB->phich_vars[subframe&1].num_hi            = 0;
 
-  if (number_dl_pdu || TX_req->tx_request_body.number_of_pdus || number_hi_dci0_pdu || number_ul_pdu) {
-    LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SF:%04d%d DL_req:SFN/SF:%04d%d:dl_pdu:%d tx_req:SFN/SF:%04d%d:pdus:%d hi_dci0:SFN/SF:%04d%d:pdus:%d ul_cfg:SFN/SF:%04d%d:pdus:%d num_pdcch_symbols:%d\n",
+  LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SF:%04d%d DL_req:SFN/SF:%04d%d:dl_pdu:%d tx_req:SFN/SF:%04d%d:pdus:%d hi_dci0:SFN/SF:%04d%d:pdus:%d ul_cfg:SFN/SF:%04d%d:pdus:%d num_pdcch_symbols:%d\n",
         frame,subframe,
         NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),number_dl_pdu,
         NFAPI_SFNSF2SFN(TX_req->sfn_sf),NFAPI_SFNSF2SF(TX_req->sfn_sf),TX_req->tx_request_body.number_of_pdus,
         NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),number_hi_dci0_pdu,
         NFAPI_SFNSF2SFN(UL_req->sfn_sf),NFAPI_SFNSF2SF(UL_req->sfn_sf),number_ul_pdu, 
         eNB->pdcch_vars[subframe&1].num_pdcch_symbols);
-  }
 
   int do_oai =0;
   int dont_send =0;

@@ -1013,6 +1013,10 @@ extern "C" {
 
             openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
 
+#if defined(USRP_REC_PLAY)
+	    std::cerr << "-- Using calibration table: calib_table_x310" << std::endl; // Bell Labs info
+#endif
+
             LOG_I(PHY,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
 
             switch ((int)openair0_cfg[0].sample_rate) {
