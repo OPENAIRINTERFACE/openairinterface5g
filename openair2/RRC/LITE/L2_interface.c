@@ -81,7 +81,6 @@ mac_rrc_data_req(
   uint8_t sfn                     = (uint8_t)((frameP>>2)&0xff);
 
 
-  
 #ifdef DEBUG_RRC
   int i;
   LOG_I(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
