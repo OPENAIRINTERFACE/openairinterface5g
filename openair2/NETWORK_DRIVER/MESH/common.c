@@ -28,12 +28,8 @@
 * \email: navid.nikaein@eurecom.fr, lionel.gauthier@eurecom.fr
 */
 
-//#include "nas_common.h"
 #include "local.h"
 #include "proto_extern.h"
-#ifdef RTAI
-#include "rtai_fifos.h"
-#endif
 
 //#define NAS_DEBUG_RECEIVE 1
 //#define NAS_DEBUG_SEND 1

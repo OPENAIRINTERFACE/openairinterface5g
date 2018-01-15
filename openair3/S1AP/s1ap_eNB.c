@@ -65,10 +65,7 @@
 #include "oaisim_mme_test_s1c.h"
 #endif
 
-
-#if !defined(OAI_EMU)
 s1ap_eNB_config_t s1ap_config;
-#endif
 
 static int s1ap_eNB_generate_s1_setup_request(
   s1ap_eNB_instance_t *instance_p, s1ap_eNB_mme_data_t *s1ap_mme_data_p);

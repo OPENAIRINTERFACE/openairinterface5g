@@ -22,8 +22,6 @@ ifdef PDCP_USE_NETLINK
 CFLAGS += -DPDCP_USE_NETLINK -DLINUX -DDEBUG_CONTROL
 endif
 
-CFLAGS += -DPHY_ABSTRACTION
-
 #ifdef OCG
 CFLAGS += -I/usr/include/libxml2 -lxml2
 #endif

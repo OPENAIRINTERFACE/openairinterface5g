@@ -34,13 +34,10 @@
 #include "PHY/sse_intrin.h"
 
 
-//defined in rtai_math.h
-#ifndef _RTAI_MATH_H
 struct complex {
   double x;
   double y;
 };
-#endif
 
 struct complexf {
   float r;
@@ -358,17 +355,6 @@ int16_t dB_fixed_times10(uint32_t x);
 
 int32_t phy_phase_compensation_top (uint32_t pilot_type, uint32_t initial_pilot,
                                     uint32_t last_pilot, int32_t ignore_prefix);
-
-/*!\fn void phy_phase_compensation (int16_t *ref_sch, int16_t *tgt_sch, int16_t *out_sym, int32_t ignore_prefix, int32_t aa, struct complex16 *perror_out);
-This function is used by the EMOS to compensate the phase rotation of the RF. It has been designed for symbols of type CHSCH or SCH, but cannot be used for the data channels.
-@param ref_sch reference symbol
-@param tgt_sch target symbol
-@param out_sym output of the operation
-@param ignore_prefix  set to 1 if cyclic prefix has not been removed (by the hardware)
-@param aa antenna index
-@param perror_out phase error (output parameter)
-*/
-void phy_phase_compensation (int16_t *ref_sch, int16_t *tgt_sch, int16_t *out_sym, int32_t ignore_prefix, int32_t aa, struct complex16 *perror_out );
 
 int32_t dot_product(int16_t *x,
                     int16_t *y,

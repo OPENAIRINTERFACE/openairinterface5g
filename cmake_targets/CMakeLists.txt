@@ -262,9 +262,6 @@ if (${ENABLE_ITTI})
   set(GTPU_need_ITTI ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_eNB.c)
 endif (${ENABLE_ITTI})
 
-add_boolean_option(RTAI False "Use RTAI")
-
-
 #############################
 # ASN.1 grammar C code generation & dependancies
 ################################
@@ -594,7 +591,7 @@ add_boolean_option(DISABLE_USE_NAS False "???")
 add_boolean_option(DEADLINE_SCHEDULER True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
 add_boolean_option(CPU_AFFINITY False "Enable CPU Affinity of threads (only valid without deadline scheduler). It is enabled only with >2 CPUs")
 add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
-add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
+add_boolean_option(NAS_NETLINK False "useless ??? Must be True to compile nasmesh driver without rtai ????")
 add_boolean_option(OAISIM False "specific to oaisim")
 add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????")
 
@@ -616,9 +613,6 @@ add_boolean_option(ENB_MODE True "Swap the include directories between openair2 
 ##########################
 add_boolean_option(ENABLE_PGM_TRANSPORT    False "specific to oaisim, emulation through ethernet, reliable multicast")
 add_boolean_option(ADDR_CONF               False "specific to oaisim, IP autoconf of user-plane IP interface")
-add_boolean_option(OPENAIR_EMU             False "specific to oaisim")
-add_boolean_option(OAI_EMU                 False "specific to oaisim")
-add_boolean_option(PHY_ABSTRACTION         False "specific to oaisim")
 
 ##########################
 # SCHEDULING/REAL-TIME/PERF options
@@ -733,16 +727,7 @@ add_boolean_option(RRC_DEFAULT_RAB_IS_AM       False  "Otherwise it is UM, confi
 add_boolean_option(SPECTRA False "???")
 add_boolean_option(MIH_C_MEDIEVAL_EXTENSIONS False "EXTENSIONS TO MIH 802.21 IN CONTEXT OF IST PROJECT CALLED MEDIEVAL")
 
-
-
-add_boolean_option(EMOS False "????")
-if(${EMOS})
-  add_definitions("-D_FILE_OFFSET_BITS=64")
-  set(EMOS_LIB gps)
-endif(${EMOS})
-
-
- # add the binary tree to the search path for include files
+# add the binary tree to the search path for include files
 #######################################################
 # We will find ConfigOAI.h after generation in target directory
 include_directories("${OPENAIR_BIN_DIR}")
@@ -770,7 +755,6 @@ else()
 endif()
 include_directories("${NFAPI_DIR}")
 include_directories("${OPENAIR1_DIR}")
-include_directories("${OPENAIR2_DIR}/NAS")
 include_directories("${OPENAIR2_DIR}")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC/AM_v9.3.0")
@@ -1776,7 +1760,6 @@ add_executable(lte-softmodem
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
-  ${RTAI_SOURCE}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
@@ -1813,7 +1796,6 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${RTAI_SOURCE}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
@@ -2166,15 +2148,7 @@ endfunction(make_driver name dir src)
 # nashmesh module
 ################
 list(APPEND nasmesh_src device.c common.c ioctl.c classifier.c tool.c mesh.c)
-# Actually nasty stuff to be FIXED: the hereafter flag is for RTAI compilation in the driver,
-# but has different meaning in the other parts of the code
-# We should change the constant name to xxx_RTAI or likely
-if(NOT ${module_cc_opt} MATCHES "DRTAI")
-  set(module_cc_opt "${module_cc_opt} -DNAS_NETLINK")
-else()
-  string(REPLACE "-DNAS_NETLINK" "" tmp "${module_cc_opt}")
-  set(module_cc_opt ${tmp})
-endif()
+set(module_cc_opt "${module_cc_opt} -DNAS_NETLINK -DPDCP_USE_NETLINK")
 # legacy Makefile was using NAS_NETLINK flag, but other drivers the hereafter flag
 # so, this cmake use OAI_NW_DRIVER_USE_NETLINK everywhere
 if (OAI_NW_DRIVER_USE_NETLINK)

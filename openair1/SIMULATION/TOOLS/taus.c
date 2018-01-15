@@ -21,11 +21,6 @@
 
 #include <time.h>
 #include <stdlib.h>
-#ifdef RTAI_ENABLED
-#include <rtai.h>
-#include <rtai_sched.h>
-#define time(x) (unsigned int)(rt_get_time_ns())
-#endif
 
 unsigned int s0, s1, s2, b;
 

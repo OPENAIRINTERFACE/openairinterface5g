@@ -20,13 +20,13 @@
  */
 
 #ifndef _RTOS_HEADER_H_
-#    define _RTOS_HEADER_H_
-#    include <stdio.h>
-#    include <stdlib.h>
-#    include <string.h>
-#    include <math.h>
-#    include <pthread.h>
-#    include <assert.h>
-#    define rtf_get    read
-#    define rtf_put    write
+#define _RTOS_HEADER_H_
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <pthread.h>
+#include <assert.h>
+#define rtf_get    read
+#define rtf_put    write
 #endif

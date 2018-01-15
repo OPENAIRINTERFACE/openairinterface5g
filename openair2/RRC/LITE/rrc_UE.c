@@ -62,10 +62,6 @@
 #include "TDD-Config.h"
 #include "UECapabilityEnquiry.h"
 #include "UE-CapabilityRequest.h"
-#ifdef PHY_ABSTRACTION
-#include "OCG.h"
-#include "OCG_extern.h"
-#endif
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
 #if ENABLE_RAL
@@ -728,13 +724,8 @@ rrc_ue_establish_drb(
    */
 #ifdef PDCP_USE_NETLINK
 #   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
-#    ifdef OAI_EMU
-  ip_addr_offset3 = oai_emulation.info.nb_enb_local;
-  ip_addr_offset4 = NB_eNB_INST;
-#    else
   ip_addr_offset3 = 0;
   ip_addr_offset4 = 8;
-#    endif
   LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", ue_mod_idP, ip_addr_offset3+ue_mod_idP,
         ip_addr_offset3+ue_mod_idP+1,ip_addr_offset4+ue_mod_idP+1);
   oip_ifup=nas_config(ip_addr_offset3+ue_mod_idP,   // interface_id
@@ -742,9 +733,6 @@ rrc_ue_establish_drb(
                       ip_addr_offset4+ue_mod_idP+1); // fourth_octet
 
   if (oip_ifup == 0 ) { // interface is up --> send a config the DRB
-#        ifdef OAI_EMU
-    oai_emulation.info.oai_ifup[ue_mod_idP]=1;
-#        endif
     LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
           ue_mod_idP,
           ip_addr_offset3+ue_mod_idP,
@@ -760,10 +748,6 @@ rrc_ue_establish_drb(
     LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",ue_mod_idP,eNB_index);
   }
 
-#    else
-#        ifdef OAI_EMU
-  oai_emulation.info.oai_ifup[ue_mod_idP]=1;
-#        endif
 #    endif
 #endif
 
@@ -1538,17 +1522,6 @@ rrc_ue_process_radioResourceConfigDedicated(
   
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State = RRC_CONNECTED;
   LOG_I(RRC,"[UE %d] State = RRC_CONNECTED (eNB %d)\n",ctxt_pP->module_id,eNB_index);
-#if !defined(ENABLE_USE_MME) && defined(OAI_EMU)
-#    ifdef OAI_EMU
-  rrc_eNB_emulation_notify_ue_module_id(
-    ctxt_pP->module_id,
-    ctxt_pP->rnti,
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[0],
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[1],
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[2],
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[3]);
-#    endif /* OAI_EMU */
-#endif
 }
 
 

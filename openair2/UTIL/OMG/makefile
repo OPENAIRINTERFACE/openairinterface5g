@@ -75,8 +75,6 @@ ifdef PDCP_USE_NETLINK
 CFLAGS += -DPDCP_USE_NETLINK -DLINUX -DDEBUG_CONTROL
 endif
 
-CFLAGS += -DPHY_ABSTRACTION
-
 include $(OPENAIR1_DIR)/PHY/Makefile.inc
 include $(OPENAIR1_DIR)/SCHED/Makefile.inc
 include $(OPENAIR2_DIR)/LAYER2/Makefile.inc

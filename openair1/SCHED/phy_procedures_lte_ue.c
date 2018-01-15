@@ -51,10 +51,6 @@
 #include "LAYER2/MAC/defs.h"
 #include "UTIL/LOG/log.h"
 
-#ifdef EMOS
-fifo_dump_emos_UE emos_dump_UE;
-#endif
-
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 
@@ -1194,38 +1190,6 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
 }
 
 
-#ifdef EMOS
-/*
-  void phy_procedures_emos_UE_TX(uint8_t next_slot,uint8_t eNB_id) {
-  uint8_t harq_pid;
-
-
-  if (next_slot%2==0) {
-  // get harq_pid from subframe relationship
-  harq_pid = subframe2harq_pid(&ue->frame_parms,ue->frame,(next_slot>>1));
-  if (harq_pid==255) {
-  LOG_E(PHY,"[UE%d] Frame %d : FATAL ERROR: illegal harq_pid, returning\n",
-  0,ue->frame);
-  return;
-  }
-
-  if (ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag == 1) {
-  emos_dump_UE.uci_cnt[next_slot>>1] = 1;
-  memcpy(emos_dump_UE.UCI_data[0][next_slot>>1].o,ulsch[eNB_id]->o,MAX_CQI_BITS*sizeof(char));
-  emos_dump_UE.UCI_data[0][next_slot>>1].O = ulsch[eNB_id]->O;
-  memcpy(emos_dump_UE.UCI_data[0][next_slot>>1].o_RI,ulsch[eNB_id]->o_RI,2*sizeof(char));
-  emos_dump_UE.UCI_data[0][next_slot>>1].O_RI = ulsch[eNB_id]->O_RI;
-  memcpy(emos_dump_UE.UCI_data[0][next_slot>>1].o_ACK,ulsch[eNB_id]->o_ACK,4*sizeof(char));
-  emos_dump_UE.UCI_data[0][next_slot>>1].O_ACK = ulsch[eNB_id]->harq_processes[harq_pid]->O_ACK;
-  }
-  else {
-  emos_dump_UE.uci_cnt[next_slot>>1] = 0;
-  }
-  }
-  }
-*/
-#endif
-
 void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empty_subframe) {
 
   int aa;
@@ -1425,9 +1389,6 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     ue->prach_cnt=0;
 #ifdef SMBV
     ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;
-#endif
-#ifdef OAI_EMU
-    ue->prach_PreambleIndex=ue->prach_resources[eNB_id]->ra_PreambleIndex;
 #endif
     LOG_I(PHY,"mode %d\n",mode);
     
@@ -1835,12 +1796,6 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
 	}
       }
       
-#ifdef PHY_ABSTRACTION
-      else {
-        ulsch_encoding_emul(ulsch_input_buffer,ue,eNB_id,proc->subframe_rx,harq_pid,0);
-      }
-      
-#endif
 #if UE_TIMING_TRACE
       stop_meas(&ue->ulsch_encoding_stats);
 #endif
@@ -2391,10 +2346,6 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   start_meas(&ue->phy_proc_tx);
 #endif
 
-#ifdef EMOS
-  //phy_procedures_emos_UE_TX(next_slot);
-#endif
-
   ue->tx_power_dBm[subframe_tx]=-127;
 
       
@@ -2674,11 +2625,6 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
       dl_phy_sync_success(ue->Mod_id,frame_rx,eNB_id,
 			  ue->UE_mode[eNB_id]==NOT_SYNCHED ? 1 : 0);
     }
-
-#ifdef EMOS
-    //emos_dump_UE.frame_tx = frame_tx;
-    //emos_dump_UE.mimo_mode = ue->pbch_vars[eNB_id]->decoded_output[1];
-#endif
 
     if (first_run) {
       first_run = 0;
@@ -4677,11 +4623,6 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *pr
 
     }
 
-#ifdef EMOS
-    phy_procedures_emos_UE_RX(ue,slot,eNB_id);
-#endif
-
-
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
 
 #if UE_TIMING_TRACE
@@ -5160,11 +5101,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
   stop_meas(&ue->generic_stat);
   printf("after tubo until end of Rx %5.2f \n",ue->generic_stat.p_time/(cpuf*1000.0));
 #endif
-
-#ifdef EMOS
-  phy_procedures_emos_UE_RX(ue,slot,eNB_id);
-#endif
-
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
 

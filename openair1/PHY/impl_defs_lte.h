@@ -153,7 +153,9 @@ typedef struct {
   /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
   uint8_t prach_Config_enabled;
   /// PRACH Configuration Information
+#ifdef Rel14
   PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
+#endif  
 } PRACH_eMTC_CONFIG_COMMON;
 
 /// Enumeration for parameter \f$N_\text{ANRep}\f$ \ref PUCCH_CONFIG_DEDICATED::repetitionFactor.
