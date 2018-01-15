@@ -1233,6 +1233,9 @@ schedule_ulsch_rnti(module_id_t module_idP,
     for (UE_id = UE_list->head_ul; UE_id >= 0;
 	 UE_id = UE_list->next_ul[UE_id]) {
 
+        if (flexran_slice_member(UE_id, slice_id) == 0)
+            continue;
+
 	// don't schedule if Msg4 is not received yet
 	if (UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].
 	    configured == FALSE) {

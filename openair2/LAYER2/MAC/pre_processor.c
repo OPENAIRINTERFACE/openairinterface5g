@@ -614,6 +614,9 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 	    if (UE_list->active[i] != TRUE)
 		continue;
 
+            if (!flexran_slice_member(UE_id, slice_id))
+                continue;
+
 	    UE_id = i;
 	    // Initialize scheduling information for all active UEs
 
@@ -820,6 +823,8 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 			continue;
 		    if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
 			continue;
+                    if (flexran_slice_member(i, slice_id) == 0)
+                        continue;
 
 		    transmission_mode = get_tmode(Mod_id, CC_id, UE_id);
 		    //          mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
