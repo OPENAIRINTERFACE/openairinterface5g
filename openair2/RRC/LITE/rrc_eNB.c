@@ -2156,7 +2156,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   int                                 i;
  
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
-  eNB_RRC_INST*                       rrc_inst = &eNB_rrc_inst[ctxt_pP->module_id];
+  eNB_RRC_INST*                       rrc_inst = RC.rrc[ctxt_pP->module_id];
   struct PhysicalConfigDedicated**    physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
 
   struct SRB_ToAddMod                *SRB2_config                      = NULL;

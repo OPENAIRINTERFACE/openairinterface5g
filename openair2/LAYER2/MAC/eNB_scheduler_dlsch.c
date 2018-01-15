@@ -64,7 +64,6 @@
 #include "flexran.pb-c.h"
 #endif
 #include <dlfcn.h>
-#endif
 
 #include "T.h"
 
@@ -449,7 +448,7 @@ set_ul_DAI(int module_idP, int UE_idP, int CC_idP, int frameP,
 
 //------------------------------------------------------------------------------
 void
-schedule_dlsch(module_id_ module_idP,
+schedule_dlsch(module_id_t module_idP,
 	        frame_t frameP, sub_frame_t subframeP, int *mbsfn_flag)
 //------------------------------------------------------------------------------{
 {
@@ -466,7 +465,7 @@ schedule_dlsch(module_id_ module_idP,
   for (i = 0; i < n_active_slices; i++) {
     if (slice_percentage[i] < 0 ){
       LOG_W(MAC, "[eNB %d] frame %d subframe %d:invalid slice %d percentage %f. resetting to zero",
-	    mod_id, frame, subframe, i, slice_percentage[i]);
+	    module_idP, frameP, subframeP, i, slice_percentage[i]);
       slice_percentage[i]=0;
     }
     total_slice_percentage+=slice_percentage[i];
@@ -488,7 +487,7 @@ schedule_dlsch(module_id_ module_idP,
       if (n_active_slices_current != n_active_slices ){
 	if ((n_active_slices > 0) && (n_active_slices <= MAX_NUM_SLICES)) {
 	  LOG_N(MAC,"[eNB %d]frame %d subframe %d: number of active DL slices has changed: %d-->%d\n",
-		mod_id, frame, subframe, n_active_slices_current, n_active_slices);
+		module_idP, frameP, subframeP, n_active_slices_current, n_active_slices);
 
 	  n_active_slices_current = n_active_slices;
 
@@ -501,7 +500,7 @@ schedule_dlsch(module_id_ module_idP,
       // check if the slice rb share has changed, and log the console
       if (slice_percentage_current[i] != slice_percentage[i]){ // new slice percentage
 	LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
-	      mod_id, i, frame, subframe, total_slice_percentage_current, total_slice_percentage, slice_percentage_current[i], slice_percentage[i]);
+	      module_idP, i, frameP, subframeP, total_slice_percentage_current, total_slice_percentage, slice_percentage_current[i], slice_percentage[i]);
 	total_slice_percentage_current= total_slice_percentage;
 	slice_percentage_current[i] = slice_percentage[i];
 
@@ -511,10 +510,10 @@ schedule_dlsch(module_id_ module_idP,
       if (slice_maxmcs_current[i] != slice_maxmcs[i]){
 	if ((slice_maxmcs[i] >= 0) && (slice_maxmcs[i] < 29)){
 	  LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
-		mod_id, i, frame, subframe, slice_maxmcs_current[i], slice_maxmcs[i]);
+		module_idP, i, frameP, subframeP, slice_maxmcs_current[i], slice_maxmcs[i]);
 	  slice_maxmcs_current[i] = slice_maxmcs[i];
 	} else {
-	  LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid slice max mcs %d, revert the previous value %d\n",mod_id, i, slice_maxmcs[i],slice_maxmcs_current[i]);
+	  LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid slice max mcs %d, revert the previous value %d\n",module_idP, i, slice_maxmcs[i],slice_maxmcs_current[i]);
 	  slice_maxmcs[i]= slice_maxmcs_current[i];
 	}
       }
@@ -522,7 +521,7 @@ schedule_dlsch(module_id_ module_idP,
       // check if a new scheduler, and log the console
       if (update_dl_scheduler_current[i] != update_dl_scheduler[i]){
 	LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: DL scheduler for this slice is updated: %s \n",
-	      mod_id, i, frame, subframe, dl_scheduler_type[i]);
+	      module_idP, i, frameP, subframeP, dl_scheduler_type[i]);
 	update_dl_scheduler_current[i] = update_dl_scheduler[i];
       }
 
@@ -531,16 +530,14 @@ schedule_dlsch(module_id_ module_idP,
 
       if (n_active_slices == n_active_slices_current){
 	LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid total RB share (%f->%f), reduce proportionally the RB share by 0.1\n",
-	      mod_id,i,
-	      total_slice_percentage_current, total_slice_percentage);
+	      module_idP, i, total_slice_percentage_current, total_slice_percentage);
 	if (slice_percentage[i] >= avg_slice_percentage){
 	  slice_percentage[i]-=0.1;
 	  total_slice_percentage-=0.1;
 	}
       } else {
 	LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid total RB share (%f->%f), revert the number of slice to its previous value (%d->%d)\n",
-	      mod_id,i,
-	      total_slice_percentage_current, total_slice_percentage,
+	      module_idP, i, total_slice_percentage_current, total_slice_percentage,
 	      n_active_slices, n_active_slices_current );
 	n_active_slices = n_active_slices_current;
 	slice_percentage[i] = slice_percentage_current[i];
@@ -548,7 +545,8 @@ schedule_dlsch(module_id_ module_idP,
     }
 
     // Run each enabled slice-specific schedulers one by one
-    slice_sched_dl[i](mod_id, i, frame, subframe, mbsfn_flag,dl_info);
+    /* TODO Navid took out the dl_info additional information */
+    slice_sched_dl[i](module_idP, i, frameP, subframeP, mbsfn_flag/*, dl_info*/);
   }
 
 }
@@ -806,7 +804,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	     */
 	    eNB_UE_stats->dlsch_mcs1 =
 		cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
-	    eNB_UE_stats->dlsch_mcs1 =cmin(eNB_UE_stats->dlsch_mcs1, flexran_slice_maxmcs(slice_idP));//openair_daq_vars.target_ue_dl_mcs);
+	    eNB_UE_stats->dlsch_mcs1 =cmin(eNB_UE_stats->dlsch_mcs1, slice_maxmcs[slice_idP]);//openair_daq_vars.target_ue_dl_mcs);
 
 
 	    // store stats

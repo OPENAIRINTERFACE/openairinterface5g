@@ -229,8 +229,6 @@ uint8_t abstraction_flag=0;
 
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
-/* override the enb configuration parameters */
-static void reconfigure_enb_params(int enb_id);
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -691,54 +689,6 @@ static void get_options(void) {
 }
 
 
-static void reconfigure_enb_params(int enb_id)
-{
-  int CC_id, k;
-  const Enb_properties_array_t *enb_properties=enb_config_get();
-
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
-    node_function[CC_id]  = enb_properties->properties[enb_id]->cc_node_function[CC_id];
-    node_timing[CC_id]    = enb_properties->properties[enb_id]->cc_node_timing[CC_id];
-    node_synch_ref[CC_id] = enb_properties->properties[enb_id]->cc_node_synch_ref[CC_id];
-
-    frame_parms[CC_id]->frame_type   = enb_properties->properties[enb_id]->frame_type[CC_id];
-    frame_parms[CC_id]->tdd_config   = enb_properties->properties[enb_id]->tdd_config[CC_id];
-    frame_parms[CC_id]->tdd_config_S = enb_properties->properties[enb_id]->tdd_config_s[CC_id];
-    frame_parms[CC_id]->Ncp          = enb_properties->properties[enb_id]->prefix_type[CC_id];
-
-                //for (j=0; j < enb_properties->properties[i]->nb_cc; j++ ){
-    frame_parms[CC_id]->Nid_cell             = enb_properties->properties[enb_id]->Nid_cell[CC_id];
-    frame_parms[CC_id]->N_RB_DL              = enb_properties->properties[enb_id]->N_RB_DL[CC_id];
-    frame_parms[CC_id]->N_RB_UL              = enb_properties->properties[enb_id]->N_RB_DL[CC_id];
-    frame_parms[CC_id]->nb_antennas_tx       = enb_properties->properties[enb_id]->nb_antennas_tx[CC_id];
-    frame_parms[CC_id]->nb_antenna_ports_eNB = enb_properties->properties[enb_id]->nb_antenna_ports[CC_id];
-    frame_parms[CC_id]->nb_antennas_rx       = enb_properties->properties[enb_id]->nb_antennas_rx[CC_id];
-
-    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = enb_properties->properties[enb_id]->prach_config_index[CC_id];
-    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = enb_properties->properties[enb_id]->prach_freq_offset[CC_id];
-
-    frame_parms[CC_id]->mode1_flag      = (frame_parms[CC_id]->nb_antenna_ports_eNB == 1) ? 1 : 0;
-    frame_parms[CC_id]->threequarter_fs = threequarter_fs;
-
-    for (k = 0 ; k < 4; k++) {
-      downlink_frequency[CC_id][k]      =  enb_properties->properties[enb_id]->downlink_frequency[CC_id];
-      uplink_frequency_offset[CC_id][k] =  enb_properties->properties[enb_id]->uplink_frequency_offset[CC_id];
-      rx_gain[CC_id][k]                 =  (double)enb_properties->properties[enb_id]->rx_gain[CC_id];
-      tx_gain[CC_id][k]                 =  (double)enb_properties->properties[enb_id]->tx_gain[CC_id];
-    }
-
-    printf("Downlink frequency/ uplink offset of CC_id %d set to %ju/%d\n", CC_id,
-           enb_properties->properties[enb_id]->downlink_frequency[CC_id],
-           enb_properties->properties[enb_id]->uplink_frequency_offset[CC_id]);
-
-    init_ul_hopping(frame_parms[CC_id]);
-    init_frame_parms(frame_parms[CC_id],1);
-    //   phy_init_top(frame_parms[CC_id]);
-    phy_init_lte_top(frame_parms[CC_id]);
-  } // CC_id
-}
-
 #if T_TRACER
 int T_nowait = 0;     /* by default we wait for the tracer */
 int T_port = 2021;    /* default port to listen to to wait for the tracer */
@@ -887,6 +837,7 @@ void init_openair0() {
   }
 }
 
+
 void wait_RUs(void) {
 
   LOG_I(PHY,"Waiting for RUs to be configured ...\n");
@@ -923,70 +874,6 @@ void wait_eNBs(void) {
   printf("eNB L1 are configured\n");
 }
 
-void fill_PHY_vars_eNB_g(uint8_t abstraction_flag, uint8_t beta_ACK, uint8_t beta_RI, uint8_t beta_CQI)
-{
-  int CC_id, i, j, k, re;
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],
-                                            0,
-                                            frame_parms[CC_id]->Nid_cell,
-                                            node_function[CC_id],
-                                            abstraction_flag);
-    PHY_vars_eNB_g[0][CC_id]->ue_dl_rb_alloc = 0x1fff;
-    PHY_vars_eNB_g[0][CC_id]->target_ue_dl_mcs = target_dl_mcs;
-    PHY_vars_eNB_g[0][CC_id]->ue_ul_nb_rb = 6;
-    PHY_vars_eNB_g[0][CC_id]->target_ue_ul_mcs = target_ul_mcs;
-    // initialization for phy-test
-    for (k = 0; k < NUMBER_OF_UE_MAX; k++) {
-      PHY_vars_eNB_g[0][CC_id]->transmission_mode[k] = transmission_mode;
-      if (transmission_mode == 7)
-        lte_gold_ue_spec_port5(PHY_vars_eNB_g[0][CC_id]->lte_gold_uespec_port5_table[k],
-                               frame_parms[CC_id]->Nid_cell,
-                               0x1235+k);
-    }
-    if ((transmission_mode == 1) || (transmission_mode == 7)) {
-      for (j = 0; j < frame_parms[CC_id]->nb_antennas_tx; j++)
-        for (re = 0; re < frame_parms[CC_id]->ofdm_symbol_size; re++)
-          PHY_vars_eNB_g[0][CC_id]->common_vars.beam_weights[0][0][j][re] = 0x00007fff / frame_parms[CC_id]->nb_antennas_tx;
-    }
-
-    if (phy_test==1)
-      PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
-    else
-      PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
-
-    if (PHY_vars_eNB_g[0][CC_id]->mac_enabled == 0) { //set default parameters for testing mode
-      for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
-        PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-        PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-        PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
-
-        PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
-        PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
-        PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
-      }
-    }
-
-    compute_prach_seq(&PHY_vars_eNB_g[0][CC_id]->frame_parms.prach_config_common,
-                      PHY_vars_eNB_g[0][CC_id]->frame_parms.frame_type,
-                      PHY_vars_eNB_g[0][CC_id]->X_u);
-
-
-    PHY_vars_eNB_g[0][CC_id]->rx_total_gain_dB = (int)rx_gain[CC_id][0];
-
-    if (frame_parms[CC_id]->frame_type == FDD) {
-        PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
-    } else {
-        if (frame_parms[CC_id]->N_RB_DL == 100)
-            PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624;
-        else if (frame_parms[CC_id]->N_RB_DL == 50)
-            PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624/2;
-        else if (frame_parms[CC_id]->N_RB_DL == 25)
-            PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 624/4;
-    }
-  }
-}
-
 #if defined(ENABLE_ITTI) && defined(FLEXRAN_AGENT_SB_IF)
 /*
  * helper function to terminate a certain ITTI task
@@ -999,6 +886,7 @@ void terminate_task(task_id_t task_id, mid_t mod_id)
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
+#if 0
 int stop_L1L2(int enb_id)
 {
   int CC_id;
@@ -1106,6 +994,7 @@ int restart_L1L2(int enb_id)
 
   return 0;
 }
+#endif
 #endif
 
 int main( int argc, char **argv )
@@ -1274,19 +1163,14 @@ int main( int argc, char **argv )
       flexran_agent_start(i);
     }
 
-    LOG_I(ENB_APP, " * Waiting for FlexRAN RTController command *\n");
-    pthread_mutex_lock(&mutex_node_ctrl);
-    while (ENB_NORMAL_OPERATION != node_control_state)
-      pthread_cond_wait(&cond_node_ctrl, &mutex_node_ctrl);
-    pthread_mutex_unlock(&mutex_node_ctrl);
+    /* TODO handle restart/initial blocking */
+    //LOG_I(ENB_APP, " * Waiting for FlexRAN RTController command *\n");
+    //pthread_mutex_lock(&mutex_node_ctrl);
+    //while (ENB_NORMAL_OPERATION != node_control_state)
+    //  pthread_cond_wait(&cond_node_ctrl, &mutex_node_ctrl);
+    //pthread_mutex_unlock(&mutex_node_ctrl);
 
-    /* reconfigure eNB in case FlexRAN controller applied changes */
-    /* TODO needs to be done? */
-    //for (i=0; i < NB_eNB_INST; i++){
-    //  LOG_I(ENB_APP, "Reconfigure eNB module %d and FlexRAN eNB variables\n", i);
-    //  reconfigure_enb_params(i);
-    //  flexran_set_enb_vars(i, RAN_LTE_OAI);
-    //}
+    /* TODO do eNB reconfiguration (handled implicitly?) */
 #endif
 
     if (UE_flag==1) {     
@@ -1611,6 +1495,7 @@ int main( int argc, char **argv )
       }
     }
   }
+
 #endif
 
   printf("stopping MODEM threads\n");

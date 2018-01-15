@@ -217,6 +217,8 @@ void dlsch_scheduler_pre_processor_reset(int module_idP, int UE_id,
 					 uint16_t
 					 nb_rbs_required_remaining
 					 [MAX_NUM_CCs][NUMBER_OF_UE_MAX],
+					 unsigned char total_ue_count[MAX_NUM_CCs],
+					 unsigned char total_rbs_used[MAX_NUM_CCs],
 					 unsigned char
 					 rballoc_sub[MAX_NUM_CCs]
 					 [N_RBG_MAX],
@@ -665,7 +667,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP, slice_id_t slice_id, 
 void store_ulsch_buffer(module_id_t module_idP, int frameP,
 			sub_frame_t subframeP);
 void sort_ue_ul(module_id_t module_idP, int frameP, sub_frame_t subframeP);
-void assign_max_mcs_min_rb(module_id_t module_idP, int frameP,
+void assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 			   sub_frame_t subframeP, uint16_t * first_rb);
 void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,
 		     UE_TEMPLATE * UE_template);

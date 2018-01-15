@@ -37,6 +37,7 @@
 #include "assertions.h"
 #include "enb_app.h"
 
+#if 0
 void handle_reconfiguration(mid_t mod_id)
 {
   /* NOTE: this function might be extended by using stop_modem()
@@ -69,6 +70,7 @@ void handle_reconfiguration(mid_t mod_id)
     LOG_I(ENB_APP, "lte-softmodem restart succeeded in %d ms\n", diff_ms);
   }
 }
+#endif
 
 int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length) {
 
@@ -109,7 +111,8 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
 	if (parse_enb_id(mod_id, &parser) == -1) {
 	  goto error;
 	} else { // succeful parse and setting 
-          handle_reconfiguration(mod_id);
+          /* TODO implement */
+          //handle_reconfiguration(mod_id);
 	}
       } else if (strcmp((char *) event.data.scalar.value, "mac") == 0) {
 	LOG_D(ENB_APP, "This is intended for the mac system\n");
@@ -293,8 +296,7 @@ int parse_enb_config_parameters(mid_t mod_id, yaml_parser_t *parser) {
     yaml_event_delete(&event);
   }
 
-  /* reflect in RAN API */
-  flexran_set_enb_vars(mod_id, RAN_LTE_OAI);
+  /* TODO: reflect in RAN API */
 
   return 0;
   

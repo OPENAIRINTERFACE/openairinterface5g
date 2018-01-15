@@ -57,6 +57,8 @@
 #define DEBUG_HEADER_PARSING 1
 //#define DEBUG_PACKET_TRACE 1
 
+extern float slice_percentage[MAX_NUM_SLICES];
+
 //#define ICIC 0
 
 /*
@@ -267,7 +269,8 @@ assign_rbs_required(module_id_t Mod_id,
 		    to_prb(RC.mac[Mod_id]->common_channels[CC_id].
 			   mib->message.dl_Bandwidth);
 
-		UE_list->ue_sched_ctl.max_allowed_rbs[CC_id][slice_id]= flexran_nb_rbs_allowed_slice(slice_percentage[slice_id],N_RB_DL);
+                /* TODO Navid: field max_rbs_allowed_slice is [MAX_NUM_LCID][MAX_NUM_SLICES] -> Why CC_id? or bug in definition? */
+		UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_id]= flexran_nb_rbs_allowed_slice(slice_percentage[slice_id],N_RB_DL);
 
 		/* calculating required number of RBs for each UE */
 		while (TBS <
@@ -275,10 +278,13 @@ assign_rbs_required(module_id_t Mod_id,
 		       dl_buffer_total) {
 		    nb_rbs_required[CC_id][UE_id] += min_rb_unit[CC_id];
 
-		    if (nb_rbs_required[CC_id][UE_id] > UE_list->ue_sched_ctl.max_allowed_rbs[CC_id][slice_id]) {
+                    /* TODO Navid: field max_rbs_allowed_slice is [MAX_NUM_LCID][MAX_NUM_SLICES] -> Why CC_id? or bug in definition? */
+		    if (nb_rbs_required[CC_id][UE_id] > UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_id]) {
 			TBS =
-			    get_TBS_DL(eNB_UE_stats->dlsch_mcs1, UE_list->ue_sched_ctl.max_allowed_rbs[CC_id][slice_id]);
-			nb_rbs_required[CC_id][UE_id] = UE_list->ue_sched_ctl.max_allowed_rbs[CC_id][slice_id];
+                            /* TODO Navid: field max_rbs_allowed_slice is [MAX_NUM_LCID][MAX_NUM_SLICES] -> Why CC_id? or bug in definition? */
+			    get_TBS_DL(eNB_UE_stats->dlsch_mcs1, UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_id]);
+                        /* TODO Navid: field max_rbs_allowed_slice is [MAX_NUM_LCID][MAX_NUM_SLICES] -> Why CC_id? */
+			nb_rbs_required[CC_id][UE_id] = UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_id];
 			break;
 		    }
 
@@ -614,7 +620,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 	    if (UE_list->active[i] != TRUE)
 		continue;
 
-            if (!flexran_slice_member(UE_id, slice_id))
+            if (!flexran_slice_member(i, slice_id))
                 continue;
 
 	    UE_id = i;
@@ -724,13 +730,15 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 					   message.dl_Bandwidth) - total_rbs_used[CC_id];
 
 			//recalcualte based on the what is left after retransmission
-			ue_sched_ctl.max_allowed_rbs[CC_id][slice_id]= flexran_nb_rbs_allowed_slice(slice_percentage[slice_id],N_RB_DL);
+			ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+                        /* TODO Navid: as above */
+			ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id]= flexran_nb_rbs_allowed_slice(slice_percentage[slice_id],N_RB_DL);
 
 			if (total_ue_count[CC_id] == 0) {
 				average_rbs_per_user[CC_id] = 0;
-			} else if ((min_rb_unit[CC_id] * total_ue_count[CC_id]) <= (ue_sched_ctl.max_allowed_rbs[CC_id][slice_id])) {
+			} else if ((min_rb_unit[CC_id] * total_ue_count[CC_id]) <= (ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id])) {
 				average_rbs_per_user[CC_id] =
-					(uint16_t) floor(ue_sched_ctl.max_allowed_rbs[CC_id][slice_id] / total_ue_count[CC_id]);
+					(uint16_t) floor(ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id] / total_ue_count[CC_id]);
 			} else {
 				average_rbs_per_user[CC_id] = min_rb_unit[CC_id];	// consider the total number of use that can be scheduled UE
 			}
@@ -1390,7 +1398,7 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
     int N_RB_UL;
     LOG_D(MAC, "In ulsch_preprocessor: assign max mcs min rb\n");
     // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
-    assign_max_mcs_min_rb(module_idP, frameP, subframeP, first_rb);
+    assign_max_mcs_min_rb(module_idP, slice_id, frameP, subframeP, first_rb);
 
     LOG_D(MAC, "In ulsch_preprocessor: sort ue \n");
     // sort ues

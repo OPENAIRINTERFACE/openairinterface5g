@@ -239,9 +239,7 @@ static void* eNB_thread_rxtx( void* param ) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
 
-#ifdef DEBUG_THREADS
-  printf(" *** Exiting eNB thread RXn_TXnp4\n");
-#endif
+  LOG_D(PHY, " *** Exiting eNB thread RXn_TXnp4\n");
 
   eNB_thread_rxtx_status = 0;
   return &eNB_thread_rxtx_status;
@@ -624,8 +622,6 @@ void init_eNB_proc(int inst) {
     pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
     pthread_mutex_init( &proc->mutex_RU,NULL);
     pthread_mutex_init( &proc->mutex_RU_PRACH,NULL);
-    pthread_mutex_init( &proc->mutex_synch,NULL);
-    pthread_mutex_init( &proc->mutex_FH, NULL);
 
     pthread_cond_init( &proc->cond_prach, NULL);
     pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
@@ -727,22 +723,12 @@ void kill_eNB_proc(int inst) {
       proc_rxtx[1].instance_cnt_rxtx = 0;
       pthread_mutex_unlock(&proc_rxtx[1].mutex_rxtx);
     }
-    pthread_mutex_lock(&PHY_vars_eNB_g[0][CC_id]->proc.mutex_synch);
-    PHY_vars_eNB_g[0][CC_id]->proc.instance_cnt_synch = 1;
-    pthread_mutex_unlock(&PHY_vars_eNB_g[0][CC_id]->proc.mutex_synch);
     proc->instance_cnt_prach = 0;
     pthread_cond_signal( &proc->cond_prach );
 
-    pthread_cond_signal( &proc->cond_FH );
     pthread_cond_signal( &proc->cond_asynch_rxtx );
-    pthread_cond_signal( &proc->cond_synch );
     pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
 
-    LOG_D(PHY, "joining pthread_FH\n");
-    pthread_join( proc->pthread_FH, (void**)&status ); 
-    pthread_mutex_destroy( &proc->mutex_FH );
-    pthread_cond_destroy( &proc->cond_FH );
-            
     LOG_D(PHY, "joining pthread_prach\n");
     pthread_join( proc->pthread_prach, (void**)&status );    
 
@@ -776,12 +762,7 @@ void kill_eNB_proc(int inst) {
 
     LOG_D(PHY, "joining pthread_single\n");
     pthread_join(proc->pthread_single, (void**)&status );
-
-    LOG_D(PHY, "joining pthread_synch\n");
-    pthread_join(proc->pthread_synch, (void**)&status );
-    pthread_mutex_destroy(&proc->mutex_synch);
-    pthread_cond_destroy(&proc->cond_synch);
-    LOG_D(PHY, "joined all threads\n");
+    LOG_D(PHY, "joined all eNB threads\n");
   }
 }
 
