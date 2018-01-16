@@ -31,7 +31,6 @@
 #ifndef __FLEXRAN_AGENT_RRC_PRIMITIVES_H__
 #define __FLEXRAN_AGENT_RRC_PRIMITIVES_H__
 
-#include "PHY/extern.h"
 #include "flexran_agent_defs.h"
 #include "flexran.pb-c.h"
 #include "header.pb-c.h"

@@ -30,11 +30,10 @@
 #ifndef __FLEXRAN_AGENT_EXTERN_H__
 #define __FLEXRAN_AGENT_EXTERN_H__
 
-// #include "flexran_agent_defs.h"
+#include "flexran_agent_defs.h"
 #include "flexran_agent_mac_defs.h"
 #include "flexran_agent_rrc_defs.h"
 #include "flexran_agent_pdcp_defs.h"
-#include "common/ran_context.h"
 
 /* Control module interface for the communication of the MAC Control Module with the agent */
 extern AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
@@ -55,7 +54,7 @@ extern AGENT_PDCP_xface *agent_pdcp_xface[NUM_MAX_ENB];
 extern unsigned int pdcp_agent_registered[NUM_MAX_ENB];
 
 /* Requried to know which UEs had a harq updated over some subframe */
-extern int harq_pid_updated[NUMBER_OF_UE_MAX][8];
-extern int harq_pid_round[NUMBER_OF_UE_MAX][8];
+extern int harq_pid_updated[NUM_MAX_UE][8];
+extern int harq_pid_round[NUM_MAX_UE][8];
 
 #endif
