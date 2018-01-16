@@ -39,7 +39,6 @@
 #include "UTIL/LOG/log.h"
 
 #include "multicast_link.h"
-#include "pgm_link.h"
 
 char rx_bufferP[BYPASS_RX_BUFFER_SIZE];
 unsigned int num_bytesP = 0;
@@ -49,10 +48,6 @@ static unsigned int byte_tx_count;
 unsigned int Master_list_rx;
 static uint64_t seq_num_tx = 0;
 
-#if defined(ENABLE_PGM_TRANSPORT)
-extern unsigned int pgm_would_block;
-#endif
-
 mapping transport_names[] = {
   {"WAIT PM TRANSPORT INFO", EMU_TRANSPORT_INFO_WAIT_PM},
   {"WAIT SM TRANSPORT INFO", EMU_TRANSPORT_INFO_WAIT_SM},
@@ -60,9 +55,6 @@ mapping transport_names[] = {
   {"ENB_TRANSPORT INFO", EMU_TRANSPORT_INFO_ENB},
   {"UE TRANSPORT INFO", EMU_TRANSPORT_INFO_UE},
   {"RELEASE TRANSPORT INFO", EMU_TRANSPORT_INFO_RELEASE},
-#if defined(ENABLE_PGM_TRANSPORT)
-  {"NACK TRANSPORT INFO", EMU_TRANSPORT_NACK},
-#endif
   {NULL, -1}
 };
 
@@ -77,9 +69,6 @@ void init_bypass (void)
   pthread_mutex_init (&emul_low_mutex, NULL);
   pthread_cond_init (&emul_low_cond, NULL);
   emul_low_mutex_var = 1;
-#endif
-#if defined(ENABLE_PGM_TRANSPORT)
-  pgm_oai_init(oai_emulation.info.multicast_ifname);
 #endif
   bypass_init (emul_tx_handler, emul_rx_handler);
 }
@@ -318,20 +307,12 @@ int bypass_rx_data(unsigned int frame, unsigned int last_slot,
         frame, next_slot, is_master);
 
 #if defined(ENABLE_NEW_MULTICAST)
-# if defined(ENABLE_PGM_TRANSPORT)
-  num_bytesP = pgm_recv_msg(oai_emulation.info.multicast_group,
-                            (uint8_t *)&rx_bufferP[0], sizeof(rx_bufferP),
-                            frame, next_slot);
-
-  DevCheck(num_bytesP > 0, num_bytesP, 0, 0);
-# else
 
   if (multicast_link_read_data_from_sock(is_master) == 1) {
     /* We got a timeout */
     return -1;
   }
 
-# endif
 #else
   pthread_mutex_lock(&emul_low_mutex);
 
@@ -359,10 +340,6 @@ int bypass_rx_data(unsigned int frame, unsigned int last_slot,
           num_bytesP, map_int_to_str(transport_names, messg->Message_type),
           messg->master_id,
           messg->seq_num);
-#if defined(ENABLE_PGM_TRANSPORT)
-
-    if (messg->Message_type != EMU_TRANSPORT_NACK)
-#endif
       DevCheck4((messg->frame == frame) && (messg->subframe == (next_slot>>1)),
                 messg->frame, frame, messg->subframe, next_slot>>1);
 
@@ -405,20 +382,6 @@ int bypass_rx_data(unsigned int frame, unsigned int last_slot,
       Master_list_rx = oai_emulation.info.master_list;
       LOG_E(EMU, "RX EMU_TRANSPORT_INFO_RELEASE\n");
       break;
-#if defined(ENABLE_PGM_TRANSPORT)
-
-    case EMU_TRANSPORT_NACK:
-      if (messg->failing_master_id == oai_emulation.info.master_id) {
-        /* We simply re-send the last message */
-        pgm_link_send_msg(oai_emulation.info.multicast_group,
-                          (uint8_t *)bypass_tx_buffer, byte_tx_count);
-      } else {
-        /* Sleep awhile till other peers have recovered data */
-        usleep(500);
-      }
-
-      break;
-#endif
 
     default:
       LOG_E(EMU, "[MAC][BYPASS] ERROR RX UNKNOWN MESSAGE\n");
@@ -483,13 +446,6 @@ void  bypass_signal_mac_phy(unsigned int frame, unsigned int last_slot,
   }
 }
 
-#if defined(ENABLE_PGM_TRANSPORT)
-void bypass_tx_nack(unsigned int frame, unsigned int next_slot)
-{
-  bypass_tx_data(NACK_TRANSPORT, frame, next_slot);
-}
-#endif
-
 /***************************************************************************/
 void bypass_tx_data(emu_transport_info_t Type, unsigned int frame, unsigned int next_slot)
 {
@@ -519,26 +475,6 @@ void bypass_tx_data(emu_transport_info_t Type, unsigned int frame, unsigned int 
   byte_tx_count = sizeof (bypass_msg_header_t) + sizeof (
                     bypass_proto2multicast_header_t);
 
-#if defined(ENABLE_PGM_TRANSPORT)
-
-  if (Type == NACK_TRANSPORT) {
-    int i;
-    messg->Message_type = EMU_TRANSPORT_NACK;
-
-    for (i = 0; i < oai_emulation.info.nb_master; i++) {
-      /* Skip our id */
-      if (i == oai_emulation.info.master_id)
-        continue;
-
-      if ((Master_list_rx & (1 << i)) == 0) {
-        messg->failing_master_id = i;
-        break;
-      }
-    }
-
-    LOG_T(EMU,"[TX_DATA] NACK TRANSPORT\n");
-  } else
-#endif
     if (Type == WAIT_PM_TRANSPORT) {
       messg->Message_type = EMU_TRANSPORT_INFO_WAIT_PM;
       LOG_T(EMU,"[TX_DATA] WAIT SYNC PM TRANSPORT\n");
@@ -630,13 +566,8 @@ void bypass_tx_data(emu_transport_info_t Type, unsigned int frame, unsigned int 
   ((bypass_proto2multicast_header_t *) bypass_tx_buffer)->size = byte_tx_count -
       sizeof (bypass_proto2multicast_header_t);
 
-#if defined(ENABLE_PGM_TRANSPORT)
-  pgm_link_send_msg(oai_emulation.info.multicast_group,
-                    (uint8_t *)bypass_tx_buffer, byte_tx_count);
-#else
   multicast_link_write_sock(oai_emulation.info.multicast_group,
                             bypass_tx_buffer, byte_tx_count);
-#endif
 
   LOG_D(EMU, "Frame %d, subframe %d (%d): Sent %d bytes [%s] with master_id %d and seq %"PRIuMAX"\n",
         frame, next_slot>>1, next_slot,byte_tx_count, map_int_to_str(transport_names, Type),

@@ -609,12 +609,6 @@ add_boolean_option(FLEXRAN_AGENT_SB_IF             False         "enable FlexRAN
 add_boolean_option(ENB_MODE True "Swap the include directories between openair2 and openair3" )
 
 ##########################
-# Emulation options
-##########################
-add_boolean_option(ENABLE_PGM_TRANSPORT    False "specific to oaisim, emulation through ethernet, reliable multicast")
-add_boolean_option(ADDR_CONF               False "specific to oaisim, IP autoconf of user-plane IP interface")
-
-##########################
 # SCHEDULING/REAL-TIME/PERF options
 ##########################
 add_boolean_option(ENABLE_USE_CPU_EXECUTION_TIME True "Add data in vcd traces: disable it if perf issues")
@@ -1595,7 +1589,6 @@ ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/bypass_session_layer.c
 #${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/emu_transport.c
-${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/pgm_link.c
 )
 
 add_library(OPENAIR0_LIB
@@ -1812,27 +1805,6 @@ target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 
-# rrh
-################################
-#Note: only one RF type (USRP) is currently supported for RRH
-add_executable(rrh_gw
-  ${OPENAIR_TARGETS}/RT/USER/rrh_gw.c
-  ${OPENAIR_TARGETS}/RT/USER/eNB_transport_IQ.c
-  ${OPENAIR_TARGETS}/RT/USER/UE_transport_IQ.c
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  ${T_SOURCE}
-  )
-target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti)
-target_link_libraries(rrh_gw
-  -Wl,--start-group
-  UTIL LFDS -ldl
-  -Wl,--end-group )
-target_link_libraries (rrh_gw rt pthread m )
-target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
-target_link_libraries (rrh_gw ${T_LIB})
-
-
 # USIM process
 #################
 #add_executable(usim
@@ -2047,7 +2019,7 @@ endforeach(myExe)
 if (${T_TRACER})
   foreach(i
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
-        lte-softmodem lte-softmodem-nos1 rrh_gw oaisim oaisim_nos1
+        lte-softmodem lte-softmodem-nos1 oaisim oaisim_nos1
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
         pdcchsim pucchsim prachsim syncsim
         #all "add_library" definitions

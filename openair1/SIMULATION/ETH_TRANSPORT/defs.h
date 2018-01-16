@@ -41,9 +41,6 @@ typedef enum emu_transport_info_e {
   EMU_TRANSPORT_INFO_ENB,
   EMU_TRANSPORT_INFO_UE,
   EMU_TRANSPORT_INFO_RELEASE
-#if defined(ENABLE_PGM_TRANSPORT)
-  ,EMU_TRANSPORT_NACK
-#endif
 } emu_transport_info_t;
 
 #define WAIT_PM_TRANSPORT 1
@@ -52,9 +49,6 @@ typedef enum emu_transport_info_e {
 #define ENB_TRANSPORT 4
 #define UE_TRANSPORT 5
 #define RELEASE_TRANSPORT 6
-#if defined(ENABLE_PGM_TRANSPORT)
-# define NACK_TRANSPORT 7
-#endif
 
 #define WAIT_SYNC_TRANSPORT 1
 #define SYNCED_TRANSPORT 2

@@ -263,7 +263,7 @@ endif
 # Check if libpgm is installed and use it if found instead of the unreliable
 # multicast
 ifeq ($(PGM_FOUND), 1)
-CFLAGS		+= $(PGM_CFLAGS) -DENABLE_PGM_TRANSPORT
+CFLAGS		+= $(PGM_CFLAGS)
 LIBS		+= $(PGM_LIBS)
 endif
 
