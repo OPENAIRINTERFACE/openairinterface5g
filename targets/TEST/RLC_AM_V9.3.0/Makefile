@@ -106,7 +106,7 @@ endif
 
 CFLAGS += $(shell if [ `uname -o` = "Cygwin" ] ; then echo "-DCYGWIN" ;fi)
 
-CFLAGS += -DENABLE_FXP -DENABLE_USE_CPU_EXECUTION_TIME
+CFLAGS += -DENABLE_USE_CPU_EXECUTION_TIME
 
 ifneq ($(USE_MME), R8)
 UPDATE_RELEASE_9=1
