@@ -101,7 +101,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 #include "lte-softmodem.h"
 
-
 #ifdef XFORMS
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 // at eNB 0, an UL scope for every UE
@@ -113,9 +112,16 @@ unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
 #endif //XFORMS
 
+pthread_cond_t nfapi_sync_cond;
+pthread_mutex_t nfapi_sync_mutex;
+int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
+
+uint8_t nfapi_mode = 0; // Default to monolithic mode
+
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
+int config_sync_var=-1;
 
 uint16_t runtime_phy_rx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
@@ -205,6 +211,12 @@ uint64_t num_missed_slots=0; // counter for the number of missed slots
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
+extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
+			  uint8_t UE_id,
+			  uint8_t abstraction_flag);
+
+extern void init_eNB_afterRU(void);
+
 int transmission_mode=1;
 
 
@@ -226,6 +238,9 @@ threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
  * this is very hackish - find a proper solution
  */
 uint8_t abstraction_flag=0;
+
+/* forward declarations */
+void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -593,10 +608,11 @@ static void get_options(void) {
 
   
   if (UE_flag > 0) {
+     uint8_t n_rb_dl;
      paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
      paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
 
-
+     set_default_frame_parms(frame_parms);
 
      config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
      config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
@@ -606,22 +622,21 @@ static void get_options(void) {
   	  input_fd = fopen(loopfile,"r");
   	  AssertFatal(input_fd != NULL,"Please provide a valid input file\n");
       }
+
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
-      if ( *(cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr) > 0) mode = debug_prach;
-      if ( *(cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr) > 0)  mode = no_L2_connect;
-      if ( *(cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr) > 0) mode = calib_prach_tx; 
+      if ( (cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = debug_prach;
+      if ( (cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0)  mode = no_L2_connect;
+      if ( (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = calib_prach_tx; 
       if (dumpframe  > 0)  mode = rx_dump_frame;
       
       if ( downlink_frequency[0][0] > 0) {
-  	  for (CC_id=1; CC_id<MAX_NUM_CCs; CC_id++) {
-  	    downlink_frequency[CC_id][1] = downlink_frequency[0][0];
-  	    downlink_frequency[CC_id][2] = downlink_frequency[0][0];
-  	    downlink_frequency[CC_id][3] = downlink_frequency[0][0];
-  	    printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
-  	  }
-      UE_scan=0;
+	printf("Downlink frequency set to %u\n", downlink_frequency[0][0]);
+	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+	}
+	UE_scan=0;
       } 
 
       if (tddflag > 0) {
@@ -629,38 +644,38 @@ static void get_options(void) {
 	     frame_parms[CC_id]->frame_type = TDD;
       }
 
-      if (frame_parms[0]->N_RB_DL !=0) {
-  	  if ( frame_parms[0]->N_RB_DL < 6 ) {
-  	     frame_parms[0]->N_RB_DL = 6;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  if ( frame_parms[0]->N_RB_DL > 100 ) {
-  	     frame_parms[0]->N_RB_DL = 100;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  if ( frame_parms[0]->N_RB_DL > 50 && frame_parms[0]->N_RB_DL < 100 ) {
-  	     frame_parms[0]->N_RB_DL = 50;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  if ( frame_parms[0]->N_RB_DL > 25 && frame_parms[0]->N_RB_DL < 50 ) {
-  	     frame_parms[0]->N_RB_DL = 25;
-  	     printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
-  	  }
-  	  UE_scan = 0;
-  	  frame_parms[0]->N_RB_UL=frame_parms[0]->N_RB_DL;
-  	  for (CC_id=1; CC_id<MAX_NUM_CCs; CC_id++) {
-  	      frame_parms[CC_id]->N_RB_DL=frame_parms[0]->N_RB_DL;
-  	      frame_parms[CC_id]->N_RB_UL=frame_parms[0]->N_RB_UL;
-  	  }
+      if (n_rb_dl !=0) {
+	printf("NB_RB set to %d\n",n_rb_dl);
+	if ( n_rb_dl < 6 ) {
+	  n_rb_dl = 6;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",n_rb_dl);
+	}
+	if ( n_rb_dl > 100 ) {
+	  n_rb_dl = 100;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",n_rb_dl);
+	}
+	if ( n_rb_dl > 50 && n_rb_dl < 100 ) {
+	  n_rb_dl = 50;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",n_rb_dl);
+	}
+	if ( n_rb_dl > 25 && n_rb_dl < 50 ) {
+	  n_rb_dl = 25;
+	  printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",n_rb_dl);
+	}
+	UE_scan = 0;
+	for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  frame_parms[CC_id]->N_RB_DL=n_rb_dl;
+	  frame_parms[CC_id]->N_RB_UL=n_rb_dl;
+	}
       }
 
-
-      for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++) {
-  	    tx_max_power[CC_id]=tx_max_power[0];
-	    rx_gain[0][CC_id] = rx_gain[0][0];
-	    tx_gain[0][CC_id] = tx_gain[0][0];
+      for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+	tx_max_power[CC_id]=tx_max_power[0];
+	rx_gain[0][CC_id] = rx_gain[0][0];
+	tx_gain[0][CC_id] = tx_gain[0][0];
       }
   } /* UE_flag > 0 */
+
 #if T_TRACER
   paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
   config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);   
@@ -675,10 +690,11 @@ static void get_options(void) {
       NB_RU	  = RC.nb_RU;
       printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,NB_RU);
     }
-  } else if (UE_flag == 1 && (CONFIG_GETCONFFILE != NULL)) {
+  } else if (UE_flag == 1 && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
     // Here the configuration file is the XER encoded UE capabilities
     // Read it in and store in asn1c data structures
-    strcpy(uecap_xer,CONFIG_GETCONFFILE);
+    sprintf(uecap_xer,"%stargets/PROJECTS/GENERIC-LTE-EPC/CONF/UE_config.xml",getenv("OPENAIR_HOME"));
+    printf("%s\n",uecap_xer);
     uecap_xer_in=1;
   } /* UE with config file  */
 }
@@ -691,7 +707,7 @@ int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
 
-void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
   int CC_id;
@@ -728,11 +744,12 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
     frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
     frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
-    downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
-    downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-    downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
+//    downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
+//    downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
+//    downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
+//    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
     //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
+    frame_parms[CC_id]->dl_CarrierFreq=downlink_frequency[CC_id][0];
 
   }
 
@@ -834,7 +851,7 @@ void init_openair0() {
 
 void wait_RUs(void) {
 
-  LOG_I(PHY,"Waiting for RUs to be configured ...\n");
+  LOG_I(PHY,"Waiting for RUs to be configured ... RC.ru_mask:%02lx\n", RC.ru_mask);
 
   // wait for all RUs to be configured over fronthaul
   pthread_mutex_lock(&RC.ru_mutex);
@@ -843,6 +860,7 @@ void wait_RUs(void) {
 
   while (RC.ru_mask>0) {
     pthread_cond_wait(&RC.ru_cond,&RC.ru_mutex);
+    printf("RC.ru_mask:%02lx\n", RC.ru_mask);
   }
 
   LOG_I(PHY,"RUs configured\n");
@@ -855,17 +873,35 @@ void wait_eNBs(void) {
 
 
   while (waiting==1) {
-    printf("Waiting for eNB L1 instances to all get configured ... sleeping 500ms (nb_L1_inst %d)\n",RC.nb_L1_inst);
-    usleep(500000);
+    printf("Waiting for eNB L1 instances to all get configured ... sleeping 50ms (nb_L1_inst %d)\n",RC.nb_L1_inst);
+    usleep(50*1000);
     waiting=0;
-    for (i=0;i<RC.nb_L1_inst;i++)
-      for (j=0;j<RC.nb_L1_CC[i];j++)
+    for (i=0;i<RC.nb_L1_inst;i++) {
+
+      printf("RC.nb_L1_CC[%d]:%d\n", i, RC.nb_L1_CC[i]);
+
+      for (j=0;j<RC.nb_L1_CC[i];j++) {
 	if (RC.eNB[i][j]->configured==0) {
 	  waiting=1;
 	  break;
-	}
+        } 
+      }
+    }
   }
   printf("eNB L1 are configured\n");
+}
+
+static inline void wait_nfapi_init(char *thread_name) {
+
+  printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
+  pthread_mutex_lock( &nfapi_sync_mutex );
+  
+  while (nfapi_sync_var<0)
+    pthread_cond_wait( &nfapi_sync_cond, &nfapi_sync_mutex );
+  
+  pthread_mutex_unlock(&nfapi_sync_mutex);
+  
+  printf( "NFAPI: got sync (%s)\n", thread_name);
 }
 
 int main( int argc, char **argv )
@@ -905,14 +941,14 @@ int main( int argc, char **argv )
 
 
   // set default parameters
-  if (UE_flag == 1) set_default_frame_parms(frame_parms);
+  //if (UE_flag == 1) set_default_frame_parms(frame_parms);
 
   logInit();
 
   printf("Reading in command-line options\n");
 
   get_options (); 
-  if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
+  if (CONFIG_ISFLAGSET(CONFIG_ABORT) && UE_flag == 0) {
       fprintf(stderr,"Getting configuration failed\n");
       exit(-1);
   }
@@ -931,7 +967,7 @@ int main( int argc, char **argv )
     printf("configuring for UE\n");
 
     set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
-    set_comp_log(PHY,     LOG_DEBUG,   LOG_HIGH, 1);
+    set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(MAC,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(RLC,     LOG_INFO,   LOG_HIGH | FLAG_THREAD, 1);
     set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);
@@ -969,6 +1005,7 @@ int main( int argc, char **argv )
     log_set_instance_type (LOG_INSTANCE_ENB);
   }
 
+  printf("ITTI init\n");
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
 
   // initialize mscgen log after ITTI
@@ -988,6 +1025,7 @@ int main( int argc, char **argv )
   }
 
 #ifdef PDCP_USE_NETLINK
+  printf("PDCP netlink\n");
   netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
   pdcp_netlink_init();
@@ -1021,6 +1059,7 @@ int main( int argc, char **argv )
 
 
 
+  printf("Before CC \n");
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -1080,10 +1119,12 @@ int main( int argc, char **argv )
 	else if (frame_parms[CC_id]->N_RB_DL == 25)
 	  UE[CC_id]->N_TA_offset = 624/4;
       }
-      
+    init_openair0();      
     }
+
   }
 
+  printf("Runtime table\n");
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
   cpuf=get_cpu_freq_GHz();
   
@@ -1091,6 +1132,7 @@ int main( int argc, char **argv )
   
 #ifndef DEADLINE_SCHEDULER
   
+  printf("NO deadline scheduler\n");
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
   
   cpu_set_t cpuset;
@@ -1130,8 +1172,6 @@ int main( int argc, char **argv )
   
   
 #if defined(ENABLE_ITTI)
-  
-  
   if ((UE_flag == 1)||
       (RC.nb_inst > 0))  {
     
@@ -1149,16 +1189,6 @@ int main( int argc, char **argv )
   }
 #endif
   
-  if (phy_test==0) {
-    if (UE_flag==1) {
-      printf("Filling UE band info\n");
-      fill_ue_band_info();
-      dl_phy_sync_success (0, 0, 0, 1);
-    } 
-  }
-  
-  
-  
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   
@@ -1168,6 +1198,8 @@ int main( int argc, char **argv )
 #ifdef XFORMS
   int UE_id;
   
+  printf("XFORMS\n");
+
   if (do_forms==1) {
     fl_initialize (&argc, argv, NULL, 0, 0);
     
@@ -1223,16 +1255,49 @@ int main( int argc, char **argv )
 #endif
   
   rt_sleep_ns(10*100000000ULL);
+
+  if (nfapi_mode) {
+
+    printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
+    pthread_cond_init(&sync_cond,NULL);
+    pthread_mutex_init(&sync_mutex, NULL);
+  }
   
-  
-  
+  const char *nfapi_mode_str = "<UNKNOWN>";
+
+  switch(nfapi_mode) {
+    case 0:
+      nfapi_mode_str = "MONOLITHIC";
+      break;
+    case 1:
+      nfapi_mode_str = "PNF";
+      break;
+    case 2:
+      nfapi_mode_str = "VNF";
+      break;
+    default:
+      nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
+      break;
+  }
+  printf("NFAPI MODE:%s\n", nfapi_mode_str);
+
+  if (nfapi_mode==2) // VNF
+    wait_nfapi_init("main?");
+
+  printf("START MAIN THREADS\n");
   
   // start the main threads
   if (UE_flag == 1) {
     int eMBMS_active = 0;
     init_UE(1,eMBMS_active,uecap_xer_in);
+
+    if (phy_test==0) {
+      printf("Filling UE band info\n");
+      fill_ue_band_info();
+      dl_phy_sync_success (0, 0, 0, 1);
+    }
+
     number_of_cards = 1;
-    
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
       PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
@@ -1240,15 +1305,18 @@ int main( int argc, char **argv )
   }
   else { 
     number_of_cards = 1;    
+    printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
     if (RC.nb_L1_inst > 0) {
-      printf("Initializing eNB threads\n");
+      printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", single_thread_flag,wait_for_sync);
       init_eNB(single_thread_flag,wait_for_sync);
       //      for (inst=0;inst<RC.nb_L1_inst;inst++)
       //	for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
 
+    printf("wait_eNBs()\n");
     wait_eNBs();
 
+    printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
     if (RC.nb_RU >0) {
       printf("Initializing RU threads\n");
       init_RU(rf_config_file);
@@ -1258,10 +1326,30 @@ int main( int argc, char **argv )
       }
     }
 
+    config_sync_var=0;
+
+    if (nfapi_mode==1) { // PNF
+      wait_nfapi_init("main?");
+    }
+
+    printf("wait RUs\n");
     wait_RUs();
+    printf("ALL RUs READY!\n");
+    printf("RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
-    init_eNB_afterRU();
+    printf("ALL RUs ready - init eNBs\n");
+
+    if (nfapi_mode != 1 && nfapi_mode != 2)
+    {
+      printf("Not NFAPI mode - call init_eNB_afterRU()\n");
+      init_eNB_afterRU();
+    }
+    else
+    {
+      printf("NFAPI mode - DO NOT call init_eNB_afterRU()\n");
+    }
     
+    printf("ALL RUs ready - ALL eNBs ready\n");
   }
   
   
@@ -1295,38 +1383,35 @@ int main( int argc, char **argv )
     //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
   } else {
     
-    
-    
-    
+    printf("eNB mode\n");
     
   }
   
-  
-  
-  
   printf("Sending sync to all threads\n");
-  
-  
   
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);
   pthread_mutex_unlock(&sync_mutex);
+  printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   end_configmodule();
+  printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
 
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
 
-
 #if defined(ENABLE_ITTI)
   printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();
+  printf("Returned from ITTI signal handler\n");
   oai_exit=1;
+  printf("oai_exit=%d\n",oai_exit);
 #else
 
   while (oai_exit==0)
     rt_sleep_ns(100000000ULL);
+  printf("Terminating application - oai_exit=%d\n",oai_exit);
 
 #endif
 
@@ -1368,6 +1453,9 @@ int main( int argc, char **argv )
 
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
+
+  pthread_cond_destroy(&nfapi_sync_cond);
+  pthread_mutex_destroy(&nfapi_sync_mutex);
 
 
 

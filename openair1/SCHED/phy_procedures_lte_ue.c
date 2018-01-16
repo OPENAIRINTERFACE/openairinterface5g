@@ -75,7 +75,8 @@ fifo_dump_emos_UE emos_dump_UE;
 
 extern double cpuf;
 
-
+void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
+void Msg3_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
 extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
@@ -2939,12 +2940,12 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 	  
 	  //dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
 	  ue->UE_mode[eNB_id] = PUSCH;
-	  
-	} else {
+	}
+      } else {
 	  LOG_E(PHY,"[UE  %d] Frame %d, subframe %d: Problem in DCI!\n",ue->Mod_id,frame_rx,subframe_rx);
 	  dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
 	}
-      }
+    }
       
       else if ((dci_alloc_rx[i].rnti == SI_RNTI) &&
 	       ((dci_alloc_rx[i].format == format1A) || (dci_alloc_rx[i].format == format1C))) {
@@ -2977,7 +2978,6 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 	
 	}
       }
-    }
 
     else if ((dci_alloc_rx[i].rnti == P_RNTI) &&
        ((dci_alloc_rx[i].format == format1A) || (dci_alloc_rx[i].format == format1C))) {

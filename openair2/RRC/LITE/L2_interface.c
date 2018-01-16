@@ -81,7 +81,6 @@ mac_rrc_data_req(
   uint8_t sfn                     = (uint8_t)((frameP>>2)&0xff);
 
 
-  
 #ifdef DEBUG_RRC
   int i;
   LOG_I(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
@@ -807,7 +806,10 @@ mac_UE_get_rrc_status(
 )
 //------------------------------------------------------------------------------
 {
-  return(UE_rrc_inst[Mod_idP].Info[indexP].State);
+  if (UE_rrc_inst)
+    return(UE_rrc_inst[Mod_idP].Info[indexP].State);
+  else
+    return(-1);
 }
 
 //-------------------------------------------------------------------------------------------//
