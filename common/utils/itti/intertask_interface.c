@@ -99,9 +99,6 @@ const int itti_debug = (ITTI_DEBUG_ISSUES | ITTI_DEBUG_MP_STATISTICS);
 # define ITTI_MEM_SIZE      (16 * 1024 * 1024)
 #endif
 
-#ifndef EMULATE_RF
-#define EMULATE_RF
-#endif
 
 typedef enum task_state_s {
   TASK_STATE_NOT_CONFIGURED, TASK_STATE_STARTING, TASK_STATE_READY, TASK_STATE_ENDED, TASK_STATE_MAX,

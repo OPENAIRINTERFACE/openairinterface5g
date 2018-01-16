@@ -40,9 +40,6 @@
 # endif
 # include "enb_app.h"
 
-#ifndef EMULATE_RF
-#define EMULATE_RF
-#endif
 
 int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
 {

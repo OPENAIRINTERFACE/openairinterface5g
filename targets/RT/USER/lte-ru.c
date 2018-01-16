@@ -110,9 +110,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "T.h"
 
-#ifndef EMULATE_RF
-#define EMULATE_RF
-#endif
 
 extern volatile int                    oai_exit;
 extern int numerology;
