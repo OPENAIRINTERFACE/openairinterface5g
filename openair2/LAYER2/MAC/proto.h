@@ -39,20 +39,22 @@
  * slice specific scheduler
  */
 /* TODO Navid: Protocol__FlexranMessage -> unknown when compiling without
- * FlexRAN, what to do with it? */
+ * FlexRAN, what to do with it? Matches schedule_ue_spec now */
 typedef void (*slice_scheduler_dl)(module_id_t mod_id,
-				int slice_id,
-				uint32_t frame,
-				uint32_t subframe,
-				int *mbsfn_flag/*,
-				Protocol__FlexranMessage **dl_info*/);
+				   slice_id_t  slice_id,
+				   frame_t     frame,
+				   sub_frame_t subframe,
+				   int        *mbsfn_flag
+                                /* Protocol__FlexranMessage **dl_info*/);
 
+/* TODO Navid: the same as above, matches schedule_ulsch_rnti now */
 typedef void (*slice_scheduler_ul)(module_id_t mod_id,
-				frame_t frame,
-				unsigned char cooperation_flag,
-				uint32_t      subframe,
-				unsigned char sched_subframe/*,
-				Protocol__FlexranMessage **ul_info*/);
+                                   slice_id_t  slice_id,
+				   frame_t       frame,
+				   sub_frame_t   subframe,
+				   unsigned char sched_subframe,
+                                   uint16_t     *first_rb
+                                   /* Protocol__FlexranMessage **ul_info*/);
 
 /** \fn void schedule_mib(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 \brief MIB scheduling for PBCH. This function requests the MIB from RRC and provides it to L1.

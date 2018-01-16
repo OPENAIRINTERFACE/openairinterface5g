@@ -1174,8 +1174,8 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
 		}
 
 		// Run each enabled slice-specific schedulers one by one
-		slice_sched_ul[i](module_idP, i,frameP, subframeP, sched_subframe,
-						  first_rb);
+                /* TODO Navid What is the right call for this message? */
+		slice_sched_ul[i](module_idP, i, frameP, subframeP, sched_subframe, first_rb);
 	}
 
 
