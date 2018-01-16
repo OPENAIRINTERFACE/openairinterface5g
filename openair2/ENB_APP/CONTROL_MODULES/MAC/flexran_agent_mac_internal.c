@@ -883,7 +883,6 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
   void *loaded_scheduler = dlsym(lib, function_name);
   if (loaded_scheduler) {
     if (mac_agent_registered[mod_id]) {
-      agent_mac_xface[mod_id]->flexran_agent_schedule_ue_spec = loaded_scheduler;
       if (agent_mac_xface[mod_id]->dl_scheduler_loaded_lib != NULL) {
 	dlclose(agent_mac_xface[mod_id]->dl_scheduler_loaded_lib);
       }

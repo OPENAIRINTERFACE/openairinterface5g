@@ -1249,9 +1249,6 @@ int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->flexran_agent_send_sr_info = flexran_agent_send_sr_info;
   xface->flexran_agent_send_sf_trigger = flexran_agent_send_sf_trigger;
   //xface->flexran_agent_send_update_mac_stats = flexran_agent_send_update_mac_stats;
-  xface->flexran_agent_schedule_ue_spec = flexran_schedule_ue_dl_spec_default;
-  xface->flexran_agent_schedule_ul_spec = flexran_schedule_ue_ul_spec_default;
-  //xface->flexran_agent_schedule_ue_spec = flexran_schedule_ue_spec_remote;
   xface->flexran_agent_get_pending_dl_mac_config = flexran_agent_get_pending_dl_mac_config;
   
   xface->dl_scheduler_loaded_lib = NULL;
@@ -1268,9 +1265,7 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->flexran_agent_send_sr_info = NULL;
   xface->flexran_agent_send_sf_trigger = NULL;
   //xface->flexran_agent_send_update_mac_stats = NULL;
-  xface->flexran_agent_schedule_ue_spec = NULL;
   xface->flexran_agent_get_pending_dl_mac_config = NULL;
-  xface->flexran_agent_schedule_ul_spec = NULL;
 
   xface->dl_scheduler_loaded_lib = NULL;
   xface->ul_scheduler_loaded_lib = NULL;
