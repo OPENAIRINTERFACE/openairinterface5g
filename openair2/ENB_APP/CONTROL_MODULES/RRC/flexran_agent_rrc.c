@@ -165,9 +165,10 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
         config->beta_offset_cqi_index = flexran_get_beta_offset_cqi_index(mod_id,i);
         }
 
-        if(flexran_get_ack_nack_simultaneous_trans(mod_id,i) != -1) {
+        /* assume primary carrier */
+        if(flexran_get_ack_nack_simultaneous_trans(mod_id,i,0) != -1) {
         config->has_ack_nack_simultaneous_trans = 1;
-        config->ack_nack_simultaneous_trans = flexran_get_ack_nack_simultaneous_trans(mod_id,i);
+        config->ack_nack_simultaneous_trans = flexran_get_ack_nack_simultaneous_trans(mod_id,i,0);
         }
 
         if(flexran_get_simultaneous_ack_nack_cqi(mod_id,i) != -1) {
@@ -185,9 +186,9 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
         }
         }
 
-        if(flexran_get_tdd_ack_nack_feedback(mod_id, i) != -1) {
+        if(flexran_get_tdd_ack_nack_feedback_mode(mod_id, i) != -1) {
         config->has_tdd_ack_nack_feedback = 1;
-        config->tdd_ack_nack_feedback = flexran_get_tdd_ack_nack_feedback(mod_id,i);
+        config->tdd_ack_nack_feedback = flexran_get_tdd_ack_nack_feedback_mode(mod_id,i);
         }
 
         if(flexran_get_ack_nack_repetition_factor(mod_id, i) != -1) {

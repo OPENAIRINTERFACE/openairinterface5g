@@ -219,21 +219,21 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                      
                                     if (flexran_get_antenna_ports(enb_id, j) == 2 && csi_reports[j]->ri == 1) {
                                         // TODO PMI
-                                        csi11->wb_pmi = flexran_get_ue_pmi(enb_id);                          
+                                        csi11->wb_pmi = flexran_get_ue_wpmi(enb_id, i, 0);
                                         csi11->has_wb_pmi = 1;
 
                                        }   
 
                                       else if (flexran_get_antenna_ports(enb_id, j) == 2 && csi_reports[j]->ri == 2){
                                         // TODO PMI
-                                        csi11->wb_pmi = flexran_get_ue_pmi(enb_id);                                      
+                                        csi11->wb_pmi = flexran_get_ue_wpmi(enb_id, i, 0);
                                         csi11->has_wb_pmi = 1;
 
                                       }
 
                                       else if (flexran_get_antenna_ports(enb_id, j) == 4 && csi_reports[j]->ri == 2){
                                         // TODO PMI
-                                        csi11->wb_pmi = flexran_get_ue_pmi(enb_id);                                      
+                                        csi11->wb_pmi = flexran_get_ue_wpmi(enb_id, i, 0);
                                         csi11->has_wb_pmi = 1;
 
 
@@ -868,13 +868,16 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       protocol__flex_ul_info__init(ul_info[i]);
       ul_info[i]->rnti = flexran_get_ue_crnti(mod_id, i);
       ul_info[i]->has_rnti = 1;
-      /*Fill in the Tx power control command for this UE (if available)*/
-      if(flexran_get_tpc(mod_id,i) != 1){
-    	  ul_info[i]->tpc = flexran_get_tpc(mod_id,i);
+      /* Fill in the Tx power control command for this UE (if available),
+       * primary carrier */
+      if(flexran_get_tpc(mod_id, i, 0) != 1){
+          /* assume primary carrier */
+          ul_info[i]->tpc = flexran_get_tpc(mod_id, i, 0);
           ul_info[i]->has_tpc = 1;
       }
       else{
-    	  ul_info[i]->tpc = flexran_get_tpc(mod_id,i);
+          /* assume primary carrier */
+          ul_info[i]->tpc = flexran_get_tpc(mod_id, i, 0);
     	  ul_info[i]->has_tpc = 0;
       }
       /*TODO: fill in the amount of data in bytes in the MAC SDU received in this subframe for the
