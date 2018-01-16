@@ -629,7 +629,6 @@ add_boolean_option(LARGE_SCALE             False "specific to oaisim: defines ma
 add_boolean_option(LOCALIZATION            False "???")
 add_integer_option(MAX_NUM_CCs             1     "????")
 add_boolean_option(MU_RECEIVER             False "????")
-add_boolean_option(NEW_FFT                 True "????")
 add_boolean_option(OPENAIR1                True "????")
 add_boolean_option(PERFECT_CE              False "????")
 add_boolean_option(PHYSIM                  True  "for L1 simulators (dlsim, ulsim, ...)")
