@@ -785,7 +785,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
 
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     for (j = 0; j < 8; j++) {
-      if (harq_pid_updated[i][j] == 1) {
+      if (RC.mac && RC.mac[mod_id] && RC.mac[mod_id]->UE_list.eNB_UE_stats[UE_PCCID(mod_id,i)][i].harq_pid == 1) {
 	available_harq[i] = j;
 	sf_trigger_msg->n_dl_info++;
 	break;
@@ -828,14 +828,15 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       
       
       dl_info[i]->harq_process_id = available_harq[UE_id];
-      harq_pid_updated[UE_id][available_harq[UE_id]] = 0;
+      if (RC.mac && RC.mac[mod_id])
+        RC.mac[mod_id]->UE_list.eNB_UE_stats[UE_PCCID(mod_id,i)][UE_id].harq_pid = 0;
       dl_info[i]->has_harq_process_id = 1;
       /* Fill in the status of the HARQ process (2 TBs)*/
       dl_info[i]->n_harq_status = 2;
       dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
       for (j = 0; j < dl_info[i]->n_harq_status; j++) {
-	dl_info[i]->harq_status[j] = harq_pid_round[UE_id][available_harq[UE_id]];
-	// TODO: This should be different per TB
+        dl_info[i]->harq_status[j] = RC.mac[mod_id]->UE_list.UE_sched_ctrl[i].round[UE_PCCID(mod_id,i)][j];
+        // TODO: This should be different per TB
       }
       //      LOG_I(FLEXRAN_AGENT, "Sending subframe trigger for frame %d and subframe %d and harq %d (round %d)\n", flexran_get_current_frame(mod_id), (flexran_get_current_subframe(mod_id) + 1) % 10, dl_info[i]->harq_process_id, dl_info[i]->harq_status[0]);
       if(dl_info[i]->harq_status[0] > 0) {
@@ -1168,7 +1169,8 @@ void flexran_agent_init_mac_agent(mid_t mod_id) {
   lfds700_ringbuffer_init_valid_on_current_logical_core( &ringbuffer_state[mod_id], dl_mac_config_array[mod_id], num_elements, &ps[mod_id], NULL );
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     for (j = 0; j < 8; j++) {
-      harq_pid_updated[i][j] = 0;
+      if (RC.mac && RC.mac[mod_id])
+        RC.mac[mod_id]->UE_list.eNB_UE_stats[UE_PCCID(mod_id,i)][i].harq_pid = 0;
     }
   }
 }
