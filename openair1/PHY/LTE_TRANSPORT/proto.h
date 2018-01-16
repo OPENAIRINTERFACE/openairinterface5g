@@ -1716,13 +1716,15 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       uint16_t tc_rnti);
 
 void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
+                        int frame,
+                        int subframe,
 			eNB_rxtx_proc_t *proc,
 			DCI_ALLOC_t *dci_alloc,
 			nfapi_dl_config_dci_dl_pdu *pdu);
 
 void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *dci_alloc,nfapi_dl_config_mpdcch_pdu *pdu);
 
-void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
+void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
 	      nfapi_hi_dci0_dci_pdu *pdu);
 
 void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe);

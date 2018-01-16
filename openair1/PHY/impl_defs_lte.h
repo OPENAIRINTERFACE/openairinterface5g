@@ -819,7 +819,7 @@ typedef struct {
   uint8_t narrowband;
   /// number of PRB pairs for MPDCCH
   uint8_t number_of_prb_pairs;
-  /// mpdcch resource assignement (combinatorial index r)
+  /// mpdcch resource assignment (combinatorial index r)
   uint8_t resource_block_assignment;
   /// transmission type (0=localized,1=distributed) 
   uint8_t transmission_type;

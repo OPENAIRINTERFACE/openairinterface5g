@@ -128,6 +128,7 @@ int config_get(paramdef_t *params,int numparams, char *prefix)
 {
 int ret= -1;
 
+printf("numparams:%d prefix:%s\n", numparams, prefix);
 if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
     fprintf(stderr,"[CONFIG] config_get skipped, config module not properly initialized\n");
     return ret;
