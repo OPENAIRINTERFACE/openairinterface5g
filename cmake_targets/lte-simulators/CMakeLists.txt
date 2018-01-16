@@ -7,7 +7,6 @@ set(ENABLE_ITTI False)
 set(DEBUG_PHY False)
 set(MU_RECIEVER False)
 set(RANDOM_BF False)
-set(PERFECT_CE True)
 set(NAS_UE False)
 set(MESSAGE_CHART_GENERATOR False)
 
