@@ -95,9 +95,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "T.h"
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-#include "pdcp.h"
-#endif
 
 //#define DEBUG_THREADS 1
 
@@ -500,61 +497,6 @@ void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 }
 #endif
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-void* pre_scd_thread( void* param ){
-    static int              eNB_pre_scd_status;
-    protocol_ctxt_t         ctxt;
-    int                     frame;
-    int                     subframe;
-    int                     min_rb_unit[MAX_NUM_CCs];
-    int                     CC_id;
-    int                     Mod_id;
-    PHY_VARS_eNB *eNB= (PHY_VARS_eNB *)param;
-    eNB_proc_t *proc = &eNB->proc;
-    Mod_id = eNB->Mod_id;
-
-    frame = 0;
-    subframe = 4;
-    thread_top_init("pre_scd_thread",0,870000,1000000,1000000);
-
-    while (!oai_exit) {
-        if(oai_exit){
-            break;
-        }
-        pthread_mutex_lock(&proc->mutex_pre_scd );
-        if (proc->instance_pre_scd < 0) {
-          pthread_cond_wait(&proc->cond_pre_scd, &proc->mutex_pre_scd);
-        }
-        pthread_mutex_unlock(&proc->mutex_pre_scd);
-        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, Mod_id, ENB_FLAG_YES,
-                 NOT_A_RNTI, frame, subframe,
-                 eNB->Mod_id);
-        pdcp_run(&ctxt);
-
-        for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-
-          rrc_rx_tx(&ctxt, 0,     // eNB index, unused in eNB
-              CC_id);
-          min_rb_unit[CC_id] = get_min_rb_unit(Mod_id, CC_id);
-        }
-
-        pre_scd_nb_rbs_required(Mod_id, frame, subframe,min_rb_unit,pre_nb_rbs_required[new_dlsch_ue_select_tbl_in_use]);
-
-        if (subframe==9) {
-          subframe=0;
-          frame++;
-          frame&=1023;
-        } else {
-          subframe++;
-        }
-        pthread_mutex_lock(&proc->mutex_pre_scd );
-        proc->instance_pre_scd--;
-        pthread_mutex_unlock(&proc->mutex_pre_scd);
-    }
-    eNB_pre_scd_status = 0;
-    return &eNB_pre_scd_status;
-}
-#endif
 
 /*!
  * \brief The prach receive thread of eNB.
@@ -712,14 +654,6 @@ void init_eNB_proc(int inst) {
     //    attr_te     = &proc->attr_te; 
 #endif
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-    proc->instance_pre_scd = -1;
-    pthread_mutex_init( &proc->mutex_pre_scd, NULL);
-    pthread_cond_init( &proc->cond_pre_scd, NULL);
-    pthread_create(&proc->pthread_pre_scd, NULL, pre_scd_thread, eNB);
-    pthread_setname_np(proc->pthread_pre_scd, "pre_scd_thread");
-#endif
-
     if (eNB->single_thread_flag==0) {
       pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
       pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
@@ -806,13 +740,7 @@ void kill_eNB_proc(int inst) {
     pthread_mutex_destroy( &proc->mutex_prach_br );
     pthread_cond_destroy( &proc->cond_prach_br );
 #endif         
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-    proc->instance_pre_scd = 0;
-    pthread_cond_signal( &proc->cond_pre_scd );
-    pthread_join( proc->pthread_pre_scd, (void**)&status );
-    pthread_mutex_destroy( &proc->mutex_pre_scd );
-    pthread_cond_destroy( &proc->cond_pre_scd );
-#endif
+
     LOG_I(PHY, "Destroying UL_INFO mutex\n");
     pthread_mutex_destroy(&eNB->UL_INFO_mutex);
     int i;

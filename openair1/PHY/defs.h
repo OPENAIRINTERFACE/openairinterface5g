@@ -556,14 +556,6 @@ typedef struct eNB_proc_t_s {
   te_params tep;
   /// set of scheduling variables RXn-TXnp4 threads
   eNB_rxtx_proc_t proc_rxtx[2];
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-  pthread_t pthread_pre_scd;
-  /// condition variable for time processing thread
-  pthread_cond_t cond_pre_scd;
-  /// mutex for time thread
-  pthread_mutex_t mutex_pre_scd;
-  int instance_pre_scd;
-#endif
 } eNB_proc_t;
 
 

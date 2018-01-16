@@ -1048,12 +1048,8 @@ schedule_ue_spec(module_id_t module_idP,
 		header_len_dtch = 0;
 		header_len_dtch_last = 0;	// the header length of the last mac sdu
 		// lcid has to be sorted before the actual allocation (similar struct as ue_list).
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-		lcid = DTCH;
-		{
-#else
+
 		for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
-#endif
 		    // TBD: check if the lcid is active
 
 		    header_len_dtch += 3;
