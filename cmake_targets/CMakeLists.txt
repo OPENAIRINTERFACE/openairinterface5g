@@ -707,7 +707,6 @@ add_boolean_option(RRC_DEFAULT_RAB_IS_AM       False  "Otherwise it is UM, confi
 # PROJECTS (IST, FRENCH COLL., etc)
 # SPECIFIC OPTIONS
 ##########################
-add_boolean_option(SPECTRA False "???")
 add_boolean_option(MIH_C_MEDIEVAL_EXTENSIONS False "EXTENSIONS TO MIH 802.21 IN CONTEXT OF IST PROJECT CALLED MEDIEVAL")
 
 # add the binary tree to the search path for include files

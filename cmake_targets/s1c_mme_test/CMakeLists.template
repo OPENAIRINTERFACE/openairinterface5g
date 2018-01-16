@@ -58,7 +58,6 @@ set (  RRC_DEFAULT_RAB_IS_AM True)
 set (  RRC_MSG_PRINT False )
 set (  SECU False )
 set (  SMBV False )
-set (  SPECTRA False )
 set (  TEST_OMG False )
 
 set (  TEST_S1C_MME True )
