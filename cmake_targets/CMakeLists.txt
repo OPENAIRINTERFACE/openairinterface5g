@@ -613,7 +613,6 @@ add_boolean_option(ENB_MODE True "Swap the include directories between openair2 
 add_boolean_option(ENABLE_USE_CPU_EXECUTION_TIME True "Add data in vcd traces: disable it if perf issues")
 add_boolean_option(ENABLE_VCD              True  "always true now, time measurements of proc calls and var displays")
 add_boolean_option(ENABLE_VCD_FIFO         True  "time measurements of proc calls and var displays sent to FIFO (one more thread)")
-add_boolean_option(HARD_RT                 False "???")
 add_boolean_option(LINUX                   False "used in weird memcpy() in pdcp.c ???")
 add_boolean_option(LINUX_LIST              False "used only in lists.c: either use OAI implementation of lists or Linux one (should be True, but it is False")
 add_boolean_option(LOG_NO_THREAD           True  "Disable thread for log, seems always set to true")
