@@ -199,7 +199,7 @@ function main() {
             GDB=1
             CMAKE_BUILD_TYPE="Debug"
             echo_info "Will Compile with gdb symbols and disable compiler optimization"
-            CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug"
+            CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug --trace-expand"
             shift;;
        --eNB)
             eNB=1

@@ -92,6 +92,8 @@ extern Packet_OTG_List_t *otg_pdcp_buffer;
 #  include "gtpv1u_eNB_defs.h"
 #endif
 
+extern int gtpv1u_new_data_req( uint8_t  enb_module_idP, rnti_t   ue_rntiP, uint8_t  rab_idP, uint8_t *buffer_pP, uint32_t buf_lenP, uint32_t buf_offsetP);
+
 /* Prevent de-queueing the same PDCP SDU from the queue twice
  * by multiple threads. This has happened in TDD when thread-odd
  * is flushing a PDCP SDU after UE_RX() processing; whereas

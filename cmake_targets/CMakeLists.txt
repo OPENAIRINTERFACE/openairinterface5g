@@ -27,8 +27,8 @@ cmake_minimum_required (VERSION 2.8)
 # Base directories, compatible with legacy OAI building
 ################################################
 set (OPENAIR_DIR     $ENV{OPENAIR_DIR})
-#set (NFAPI_DIR       $ENV{NFAPI_DIR})
-set (NFAPI_DIR       ${OPENAIR_DIR}/nfapi)
+set (NFAPI_DIR       ${OPENAIR_DIR}/nfapi/open-nFAPI)
+set (NFAPI_USER_DIR  ${OPENAIR_DIR}/nfapi/oai_integration)
 set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
 set (OPENAIR2_DIR    ${OPENAIR_DIR}/openair2)
 set (OPENAIR3_DIR    ${OPENAIR_DIR}/openair3)
@@ -769,7 +769,12 @@ else()
   include_directories("${OPENAIR2_DIR}/UTIL")
   include_directories("${OPENAIR2_DIR}/UTIL/LOG")
 endif()
-include_directories("${NFAPI_DIR}")
+include_directories("${NFAPI_DIR}/nfapi/public_inc")
+include_directories("${NFAPI_DIR}/common/public_inc")
+include_directories("${NFAPI_DIR}/pnf/public_inc")
+include_directories("${NFAPI_DIR}/nfapi/inc")
+include_directories("${NFAPI_DIR}/sim_common/inc")
+include_directories("${NFAPI_DIR}/pnf_sim/inc")
 include_directories("${OPENAIR1_DIR}")
 include_directories("${OPENAIR2_DIR}/NAS")
 include_directories("${OPENAIR2_DIR}")
@@ -1011,6 +1016,58 @@ set(SCHED_SRC
 )
 add_library(SCHED_LIB ${SCHED_SRC})
 
+# nFAPI
+#################################
+set(NFAPI_COMMON_SRC
+  ${NFAPI_DIR}/common/src/debug.c
+)
+add_library(NFAPI_COMMON_LIB ${NFAPI_COMMON_SRC})
+
+include_directories(${NFAPI_DIR}/common/public_inc)
+
+set(NFAPI_SRC
+  ${NFAPI_DIR}/nfapi/src/nfapi.c
+  ${NFAPI_DIR}/nfapi/src/nfapi_p4.c
+  ${NFAPI_DIR}/nfapi/src/nfapi_p5.c
+  ${NFAPI_DIR}/nfapi/src/nfapi_p7.c
+)
+add_library(NFAPI_LIB ${NFAPI_SRC})
+
+include_directories(${NFAPI_DIR}/nfapi/public_inc)
+include_directories(${NFAPI_DIR}/nfapi/inc)
+
+set(NFAPI_PNF_SRC
+  ${NFAPI_DIR}/pnf/src/pnf.c
+  ${NFAPI_DIR}/pnf/src/pnf_interface.c
+  ${NFAPI_DIR}/pnf/src/pnf_p7.c
+  ${NFAPI_DIR}/pnf/src/pnf_p7_interface.c
+)
+add_library(NFAPI_PNF_LIB ${NFAPI_PNF_SRC})
+
+include_directories(${NFAPI_DIR}/pnf/public_inc)
+include_directories(${NFAPI_DIR}/pnf/inc)
+
+set(NFAPI_VNF_SRC
+  ${NFAPI_DIR}/vnf/src/vnf.c
+  ${NFAPI_DIR}/vnf/src/vnf_interface.c
+  ${NFAPI_DIR}/vnf/src/vnf_p7.c
+  ${NFAPI_DIR}/vnf/src/vnf_p7_interface.c
+)
+add_library(NFAPI_VNF_LIB ${NFAPI_VNF_SRC})
+
+include_directories(${NFAPI_DIR}/vnf/public_inc)
+include_directories(${NFAPI_DIR}/vnf/inc)
+
+# nFAPI user defined code
+#############################
+set(NFAPI_USER_SRC
+  ${NFAPI_USER_DIR}/nfapi.c
+  ${NFAPI_USER_DIR}/nfapi_pnf.c
+  ${NFAPI_USER_DIR}/nfapi_vnf.c
+)
+add_library(NFAPI_USER_LIB ${NFAPI_USER_SRC})
+include_directories(${NFAPI_USER_DIR})
+
 # Layer 1
 #############################
 set(PHY_SRC
@@ -1205,6 +1262,8 @@ add_library(L2
   ${MAC_SRC}
   ${ENB_APP_SRC})
 #  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
+
+include_directories(${NFAPI_USER_DIR})
 
 if (FLEXRAN_AGENT_SB_IF)
 
@@ -1619,6 +1678,13 @@ add_library(OPENAIR0_LIB
   ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
 )
 
+include_directories("${NFAPI_DIR}/nfapi/public_inc")
+include_directories("${NFAPI_DIR}/common/public_inc")
+include_directories("${NFAPI_DIR}/pnf/public_inc")
+include_directories("${NFAPI_DIR}/nfapi/inc")
+include_directories("${NFAPI_DIR}/sim_common/inc")
+include_directories("${NFAPI_DIR}/pnf_sim/inc")
+
 # System packages that are required
 # We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/
 # or cmake provide a generic interface to pkg-config that widely used
@@ -1785,10 +1851,12 @@ add_executable(lte-softmodem
   ${SHLIB_LOADER_SOURCES}
   )
 
-target_link_libraries (lte-softmodem -ldl 
+target_link_libraries (lte-softmodem
   -Wl,--start-group
   RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
-  -Wl,--end-group )
+  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB
+  NFAPI_USER_LIB
+  -Wl,--end-group z dl)
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
@@ -1916,15 +1984,16 @@ target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim
   -Wl,-ldl,--start-group
   RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB
+  NFAPI_USER_LIB
   -Wl,--end-group )
 
 target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
-target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp 
-  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
+target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp z
+  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} )
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim forms)
 target_link_libraries (oaisim ${T_LIB})
-
 
 
 # A all in one network simulator

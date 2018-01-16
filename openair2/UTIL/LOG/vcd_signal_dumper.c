@@ -399,6 +399,17 @@ const char* eurecomFunctionsNames[] = {
 
   "compress_if",
   "decompress_if",
+
+  "nfapi_subframe",
+  "generate_pcfich",
+  "generate_dci0",
+  "generate_dlsch",
+  "generate_phich",
+  "pdcch_scrambling",
+  "pdcch_modulation",
+  "pdcch_interleaving",
+  "pdcch_tx",
+
 };
 
 struct vcd_module_s vcd_modules[] = {
