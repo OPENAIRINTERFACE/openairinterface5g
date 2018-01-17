@@ -279,6 +279,20 @@ typedef struct {
   LTE_eNB_DLSCH_t *dlsch;
   int G;
   int harq_pid;
+  int total_worker;
+  int current_worker;
+  /// \internal This variable is protected by \ref mutex_te.
+  int instance_cnt_te;
+  /// pthread attributes for parallel turbo-encoder thread
+  pthread_attr_t attr_te;
+  /// scheduling parameters for parallel turbo-encoder thread
+  struct sched_param sched_param_te;
+  /// pthread structure for parallel turbo-encoder thread
+  pthread_t pthread_te;
+  /// condition variable for parallel turbo-encoder thread
+  pthread_cond_t cond_te;
+  /// mutex for parallel turbo-encoder thread
+  pthread_mutex_t mutex_te;
 } te_params;
 
 typedef struct RU_proc_t_s {

@@ -696,7 +696,7 @@ static void* eNB_thread_prach_br( void* param ) {
 
 
 extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
-extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *,pthread_attr_t *);
+extern void init_te_thread(PHY_VARS_eNB *);
 //////////////////////////////////////need to modified////////////////*****
 
 static void* process_stats_thread(void* param) {
@@ -734,7 +734,7 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL,*attr_te=NULL,*attr_te1=NULL,*attr_td=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL,*attr_td=NULL;//,*attr_te=NULL,*attr_te1=NULL;
 #ifdef Rel14
   pthread_attr_t *attr_prach_br=NULL;
 #endif
@@ -776,8 +776,8 @@ void init_eNB_proc(int inst) {
     pthread_attr_init( &proc->attr_prach);
     pthread_attr_init( &proc->attr_asynch_rxtx);
     pthread_attr_init( &proc->attr_td);
-    pthread_attr_init( &proc->attr_te[0]);
-	pthread_attr_init( &proc->attr_te[1]);
+    //pthread_attr_init( &proc->attr_te[0]);
+    //pthread_attr_init( &proc->attr_te[1]);
     pthread_attr_init( &proc_rxtx[0].attr_rxtx);
     pthread_attr_init( &proc_rxtx[1].attr_rxtx);
 #ifdef Rel14
@@ -800,8 +800,8 @@ void init_eNB_proc(int inst) {
     //    attr_te     = &proc->attr_te; 
 #endif
 	attr_td     = &proc->attr_td;
-	attr_te     = &proc->attr_te[0];
-	attr_te1    = &proc->attr_te[1];
+	//attr_te     = &proc->attr_te[0];
+	//attr_te1    = &proc->attr_te[1];
 	pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
 	pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
     if (eNB->single_thread_flag==0) {
@@ -824,7 +824,7 @@ void init_eNB_proc(int inst) {
 	
 	
 	//////////////////////////////////////need to modified////////////////*****
-	init_te_thread(eNB,attr_te,attr_te1);
+	init_te_thread(eNB);
 	init_td_thread(eNB,attr_td);
 	if (opp_enabled == 1) pthread_create(&proc->process_stats_thread,NULL,process_stats_thread,(void*)eNB);
 

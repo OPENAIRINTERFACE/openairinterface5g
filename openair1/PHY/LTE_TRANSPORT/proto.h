@@ -183,7 +183,8 @@ int32_t dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
                                 time_stats_t *te_main_stats,
                                 time_stats_t *te_wakeup_stats0,
                                 time_stats_t *te_wakeup_stats1,
-                                time_stats_t *i_stats);
+                                time_stats_t *i_stats,
+                                int worker_num);
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
                          uint8_t *DLSCH_pdu,
