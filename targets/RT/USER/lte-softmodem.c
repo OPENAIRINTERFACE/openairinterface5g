@@ -1501,7 +1501,8 @@ int main( int argc, char **argv )
   // cleanup
   if (UE_flag == 1) {
   } else {
-    stop_eNB(1);
+    stop_eNB(NB_eNB_INST);
+    stop_RU(NB_RU);
   }
 
 

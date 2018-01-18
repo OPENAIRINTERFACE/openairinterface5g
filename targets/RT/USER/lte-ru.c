@@ -116,7 +116,7 @@ extern volatile int                    oai_exit;
 extern void  phy_init_RU(RU_t*);
 
 void init_RU(char*);
-void stop_RU(RU_t *ru);
+void stop_RU(int nb_ru);
 void do_ru_sync(RU_t *ru);
 
 void configure_ru(int idx,
@@ -1673,9 +1673,115 @@ void init_RU_proc(RU_t *ru) {
   
 }
 
+void kill_RU_proc(int inst)
+{
+  RU_t *ru = RC.ru[inst];
+  RU_proc_t *proc = &ru->proc;
 
+  pthread_mutex_lock(&proc->mutex_FH);
+  proc->instance_cnt_FH = 0;
+  pthread_mutex_unlock(&proc->mutex_FH);
+  pthread_cond_signal(&proc->cond_FH);
 
+  pthread_mutex_lock(&proc->mutex_prach);
+  proc->instance_cnt_prach = 0;
+  pthread_mutex_unlock(&proc->mutex_prach);
+  pthread_cond_signal(&proc->cond_prach);
 
+#ifdef Rel14
+  pthread_mutex_lock(&proc->mutex_prach_br);
+  proc->instance_cnt_prach_br = 0;
+  pthread_mutex_unlock(&proc->mutex_prach_br);
+  pthread_cond_signal(&proc->cond_prach_br);
+#endif
+
+  pthread_mutex_lock(&proc->mutex_synch);
+  proc->instance_cnt_synch = 0;
+  pthread_mutex_unlock(&proc->mutex_synch);
+  pthread_cond_signal(&proc->cond_synch);
+
+  pthread_mutex_lock(&proc->mutex_eNBs);
+  proc->instance_cnt_eNBs = 0;
+  pthread_mutex_unlock(&proc->mutex_eNBs);
+  pthread_cond_signal(&proc->cond_eNBs);
+
+  pthread_mutex_lock(&proc->mutex_asynch_rxtx);
+  proc->instance_cnt_asynch_rxtx = 0;
+  pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
+  pthread_cond_signal(&proc->cond_asynch_rxtx);
+
+  LOG_D(PHY, "Joining pthread_FH\n");
+  pthread_join(proc->pthread_FH, NULL);
+  if (ru->function == NGFI_RRU_IF4p5) {
+    LOG_D(PHY, "Joining pthread_prach\n");
+    pthread_join(proc->pthread_prach, NULL);
+#ifdef Rel14
+    LOG_D(PHY, "Joining pthread_prach_br\n");
+    pthread_join(proc->pthread_prach_br, NULL);
+#endif
+    if (ru->is_slave) {
+      LOG_D(PHY, "Joining pthread_\n");
+      pthread_join(proc->pthread_synch, NULL);
+    }
+
+    if ((ru->if_timing == synch_to_other) ||
+        (ru->function == NGFI_RRU_IF5) ||
+        (ru->function == NGFI_RRU_IF4p5)) {
+      LOG_D(PHY, "Joining pthread_asynch_rxtx\n");
+      pthread_join(proc->pthread_asynch_rxtx, NULL);
+    }
+  }
+  if (get_nprocs() >= 2) {
+    if (ru->feprx) {
+      pthread_mutex_lock(&proc->mutex_fep);
+      proc->instance_cnt_fep = 0;
+      pthread_mutex_unlock(&proc->mutex_fep);
+      pthread_cond_signal(&proc->cond_fep);
+      LOG_D(PHY, "Joining pthread_fep\n");
+      pthread_join(proc->pthread_fep, NULL);
+      pthread_mutex_destroy(&proc->mutex_fep);
+      pthread_cond_destroy(&proc->cond_fep);
+    }
+    if (ru->feptx_ofdm) {
+      pthread_mutex_lock(&proc->mutex_feptx);
+      proc->instance_cnt_feptx = 0;
+      pthread_mutex_unlock(&proc->mutex_feptx);
+      pthread_cond_signal(&proc->cond_feptx);
+      LOG_D(PHY, "Joining pthread_feptx\n");
+      pthread_join(proc->pthread_feptx, NULL);
+      pthread_mutex_destroy(&proc->mutex_feptx);
+      pthread_cond_destroy(&proc->cond_feptx);
+    }
+  }
+  if (opp_enabled) {
+    LOG_D(PHY, "Joining ru_stats_thread\n");
+    pthread_join(ru->ru_stats_thread, NULL);
+  }
+
+  pthread_mutex_destroy(&proc->mutex_prach);
+  pthread_mutex_destroy(&proc->mutex_asynch_rxtx);
+  pthread_mutex_destroy(&proc->mutex_synch);
+  pthread_mutex_destroy(&proc->mutex_FH);
+  pthread_mutex_destroy(&proc->mutex_eNBs);
+
+  pthread_cond_destroy(&proc->cond_prach);
+  pthread_cond_destroy(&proc->cond_FH);
+  pthread_cond_destroy(&proc->cond_asynch_rxtx);
+  pthread_cond_destroy(&proc->cond_synch);
+  pthread_cond_destroy(&proc->cond_eNBs);
+
+  pthread_attr_destroy(&proc->attr_FH);
+  pthread_attr_destroy(&proc->attr_prach);
+  pthread_attr_destroy(&proc->attr_synch);
+  pthread_attr_destroy(&proc->attr_asynch_rxtx);
+  pthread_attr_destroy(&proc->attr_fep);
+
+#ifdef Rel14
+  pthread_mutex_destroy(&proc->mutex_prach_br);
+  pthread_cond_destroy(&proc->cond_prach_br);
+  pthread_attr_destroy(&proc->attr_prach_br);
+#endif
+}
 
 int check_capabilities(RU_t *ru,RRU_capabilities_t *cap) {
 
@@ -2062,9 +2168,10 @@ void init_RU(char *rf_config_file) {
 
 
 
-void stop_ru(RU_t *ru) {
-
-  printf("Stopping RU %p processing threads\n",(void*)ru);
-  
+void stop_RU(int nb_ru)
+{
+  for (int inst = 0; inst < nb_ru; inst++) {
+    LOG_I(PHY, "Stopping RU %d processing threads\n", inst);
+    kill_RU_proc(inst);
+  }
 }
-
