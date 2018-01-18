@@ -844,12 +844,10 @@ void wait_RUs(void) {
 
   // wait for all RUs to be configured over fronthaul
   pthread_mutex_lock(&RC.ru_mutex);
-
-
-
   while (RC.ru_mask>0) {
     pthread_cond_wait(&RC.ru_cond,&RC.ru_mutex);
   }
+  pthread_mutex_unlock(&RC.ru_mutex);
 
   LOG_I(PHY,"RUs configured\n");
 }
