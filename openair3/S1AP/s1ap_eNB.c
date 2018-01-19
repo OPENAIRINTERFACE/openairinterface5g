@@ -364,6 +364,12 @@ void *s1ap_eNB_task(void *arg)
 				&S1AP_E_RAB_SETUP_RESP(received_msg));
     }
     break;
+
+    case S1AP_E_RAB_MODIFY_RESP: {
+      s1ap_eNB_e_rab_modify_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        &S1AP_E_RAB_MODIFY_RESP(received_msg));
+    }
+    break;
       
     case S1AP_NAS_NON_DELIVERY_IND: {
       s1ap_eNB_nas_non_delivery_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
@@ -394,6 +400,12 @@ void *s1ap_eNB_task(void *arg)
         S1AP_ERROR("Failed to find ue context associated with eNB ue s1ap id: %u\n",
                    S1AP_UE_CONTEXT_RELEASE_REQ(received_msg).eNB_ue_s1ap_id); // test
       }  // test
+    }
+    break;
+
+   case S1AP_E_RAB_RELEASE_RESPONSE: {
+        s1ap_eNB_e_rab_release_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                    &S1AP_E_RAB_RELEASE_RESPONSE(received_msg));
     }
     break;
 

@@ -49,5 +49,9 @@ gtpv1u_create_s1u_tunnel(
   const gtpv1u_enb_create_tunnel_req_t *  const create_tunnel_req_pP,
         gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP);
 
-
+int
+gtpv1u_update_s1u_tunnel(
+    const instance_t                              instanceP,
+    const gtpv1u_enb_create_tunnel_req_t * const  create_tunnel_req_pP,
+    const rnti_t                                  prior_rnti);
 #endif /* GTPV1U_ENB_TASK_H_ */

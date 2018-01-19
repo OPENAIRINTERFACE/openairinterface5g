@@ -213,6 +213,13 @@ void prach_procedures(PHY_VARS_eNB *eNB,
 		      int br_flag
 #endif
 		      );
+
+/*! \brief Function to compute subframe Number(DL and S) as a function of Frame type and TDD Configuration
+  @param frame_parms Pointer to DL frame parameter descriptor
+  @returns Subframe Number (DL,S)
+*/
+int subframe_num(LTE_DL_FRAME_PARMS *frame_parms);
+
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.
   @param frame_parms Pointer to DL frame parameter descriptor
   @param subframe Subframe index

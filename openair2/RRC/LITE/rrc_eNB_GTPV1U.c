@@ -47,7 +47,8 @@ extern RAN_CONTEXT_t RC;
 int
 rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   const protocol_ctxt_t* const ctxt_pP,
-  const gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP
+  const gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP,
+  uint8_t                         *inde_list
 )
 {
   rnti_t                         rnti;
@@ -66,15 +67,18 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
 
     for (i = 0; i < create_tunnel_resp_pP->num_tunnels; i++) {
       
-      ue_context_p->ue_context.enb_gtp_teid[i+ue_context_p->ue_context.setup_e_rabs]  = create_tunnel_resp_pP->enb_S1u_teid[i];
-      ue_context_p->ue_context.enb_gtp_addrs[i+ue_context_p->ue_context.setup_e_rabs] = create_tunnel_resp_pP->enb_addr;
-      ue_context_p->ue_context.enb_gtp_ebi[i+ue_context_p->ue_context.setup_e_rabs]   = create_tunnel_resp_pP->eps_bearer_id[i];
+//      ue_context_p->ue_context.enb_gtp_teid[i+ue_context_p->ue_context.setup_e_rabs]  = create_tunnel_resp_pP->enb_S1u_teid[i];
+//      ue_context_p->ue_context.enb_gtp_addrs[i+ue_context_p->ue_context.setup_e_rabs] = create_tunnel_resp_pP->enb_addr;
+//      ue_context_p->ue_context.enb_gtp_ebi[i+ue_context_p->ue_context.setup_e_rabs]   = create_tunnel_resp_pP->eps_bearer_id[i];
+      ue_context_p->ue_context.enb_gtp_teid[inde_list[i]]  = create_tunnel_resp_pP->enb_S1u_teid[i];
+      ue_context_p->ue_context.enb_gtp_addrs[inde_list[i]] = create_tunnel_resp_pP->enb_addr;
+      ue_context_p->ue_context.enb_gtp_ebi[inde_list[i]]   = create_tunnel_resp_pP->eps_bearer_id[i];
       
       LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP tunnel (%u, %u) bearer UE context index %u, msg index %u, id %u, gtp addr len %d \n",
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             create_tunnel_resp_pP->enb_S1u_teid[i],
-	    ue_context_p->ue_context.enb_gtp_teid[i+ue_context_p->ue_context.setup_e_rabs],
-            i+ue_context_p->ue_context.setup_e_rabs, 
+            ue_context_p->ue_context.enb_gtp_teid[inde_list[i]],            
+            inde_list[i],
 	    i,
             create_tunnel_resp_pP->eps_bearer_id[i],
 	    create_tunnel_resp_pP->enb_addr.length);
