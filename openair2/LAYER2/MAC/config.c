@@ -469,50 +469,51 @@ config_sib2(int Mod_idP,
     cfg->srs_config.srs_acknack_srs_simultaneous_transmission.value     = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
     cfg->srs_config.srs_acknack_srs_simultaneous_transmission.tl.tag = NFAPI_SRS_CONFIG_SRS_ACKNACK_SRS_SIMULTANEOUS_TRANSMISSION_TAG;
     cfg->num_tlv++;
-
-
-  nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
-
-  cfg->subframe_config.pb.value               = radioResourceConfigCommonP->pdsch_ConfigCommon.p_b;
-  cfg->rf_config.reference_signal_power.value = radioResourceConfigCommonP->pdsch_ConfigCommon.referenceSignalPower;
-  cfg->nfapi_config.max_transmit_power.value  = cfg->rf_config.reference_signal_power.value + 
-                                                power_off_dB[cfg->rf_config.dl_channel_bandwidth.value];
-
-  cfg->prach_config.configuration_index.value                 = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
-  cfg->prach_config.root_sequence_index.value                 = radioResourceConfigCommonP->prach_Config.rootSequenceIndex;
-  cfg->prach_config.zero_correlation_zone_configuration.value = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
-  cfg->prach_config.high_speed_flag.value                     = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.highSpeedFlag;
-  cfg->prach_config.frequency_offset.value                    = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.prach_FreqOffset;
-
-  cfg->pusch_config.hopping_mode.value       = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
-  cfg->pusch_config.number_of_subbands.value = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
-  cfg->pusch_config.hopping_offset.value     = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
-
-  cfg->pucch_config.delta_pucch_shift.value = radioResourceConfigCommonP->pucch_ConfigCommon.deltaPUCCH_Shift;
-  cfg->pucch_config.n_cqi_rb.value          = radioResourceConfigCommonP->pucch_ConfigCommon.nRB_CQI;
-  cfg->pucch_config.n_an_cs.value           = radioResourceConfigCommonP->pucch_ConfigCommon.nCS_AN;
-  cfg->pucch_config.n1_pucch_an.value       = radioResourceConfigCommonP->pucch_ConfigCommon.n1PUCCH_AN;
-
-  if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == true)
-    cfg->uplink_reference_signal_config.uplink_rs_hopping.value = 1;
-  else if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled == true)
-    cfg->uplink_reference_signal_config.uplink_rs_hopping.value = 2;
-  else			// No hopping
-    cfg->uplink_reference_signal_config.uplink_rs_hopping.value = 0;
-
-  cfg->uplink_reference_signal_config.group_assignment.value        = radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
-  cfg->uplink_reference_signal_config.cyclic_shift_1_for_drms.value = radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
-
-  // how to enable/disable SRS?
-  if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.present == SoundingRS_UL_ConfigCommon_PR_setup) {
-    cfg->srs_config.bandwidth_configuration.value                   = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig;
-    cfg->srs_config.srs_subframe_configuration.value                = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig;
-    cfg->srs_config.srs_acknack_srs_simultaneous_transmission.value = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
-
-    if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts)
-      cfg->srs_config.max_up_pts.value = 1;
-    else
-      cfg->srs_config.max_up_pts.value = 0;
+    
+    
+    nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
+    
+    cfg->subframe_config.pb.value               = radioResourceConfigCommonP->pdsch_ConfigCommon.p_b;
+    cfg->rf_config.reference_signal_power.value = radioResourceConfigCommonP->pdsch_ConfigCommon.referenceSignalPower;
+    cfg->nfapi_config.max_transmit_power.value  = cfg->rf_config.reference_signal_power.value + 
+      power_off_dB[cfg->rf_config.dl_channel_bandwidth.value];
+    
+    cfg->prach_config.configuration_index.value                 = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
+    cfg->prach_config.root_sequence_index.value                 = radioResourceConfigCommonP->prach_Config.rootSequenceIndex;
+    cfg->prach_config.zero_correlation_zone_configuration.value = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
+    cfg->prach_config.high_speed_flag.value                     = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.highSpeedFlag;
+    cfg->prach_config.frequency_offset.value                    = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.prach_FreqOffset;
+    
+    cfg->pusch_config.hopping_mode.value       = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
+    cfg->pusch_config.number_of_subbands.value = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
+    cfg->pusch_config.hopping_offset.value     = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
+    
+    cfg->pucch_config.delta_pucch_shift.value = radioResourceConfigCommonP->pucch_ConfigCommon.deltaPUCCH_Shift;
+    cfg->pucch_config.n_cqi_rb.value          = radioResourceConfigCommonP->pucch_ConfigCommon.nRB_CQI;
+    cfg->pucch_config.n_an_cs.value           = radioResourceConfigCommonP->pucch_ConfigCommon.nCS_AN;
+    cfg->pucch_config.n1_pucch_an.value       = radioResourceConfigCommonP->pucch_ConfigCommon.n1PUCCH_AN;
+    
+    if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == true)
+      cfg->uplink_reference_signal_config.uplink_rs_hopping.value = 1;
+    else if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled == true)
+      cfg->uplink_reference_signal_config.uplink_rs_hopping.value = 2;
+    else			// No hopping
+      cfg->uplink_reference_signal_config.uplink_rs_hopping.value = 0;
+    
+    cfg->uplink_reference_signal_config.group_assignment.value        = radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
+    cfg->uplink_reference_signal_config.cyclic_shift_1_for_drms.value = radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
+    
+    // how to enable/disable SRS?
+    if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.present == SoundingRS_UL_ConfigCommon_PR_setup) {
+      cfg->srs_config.bandwidth_configuration.value                   = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig;
+      cfg->srs_config.srs_subframe_configuration.value                = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig;
+      cfg->srs_config.srs_acknack_srs_simultaneous_transmission.value = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
+      
+      if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts)
+	cfg->srs_config.max_up_pts.value = 1;
+      else
+	cfg->srs_config.max_up_pts.value = 0;
+    }
   }
 #ifdef Rel14
   if (RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.schedulingInfoSIB1_BR_r13 > 0) {
@@ -639,6 +640,7 @@ config_dedicated_scell(int Mod_idP,
 {
 
 }
+
 
 int
 rrc_mac_config_req_eNB(module_id_t Mod_idP,
@@ -898,41 +900,41 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
   } 
 
-    if (pmch_InfoList != NULL) {
-
-	//    LOG_I(MAC,"DUY: lcid when entering rrc_mac config_req is %02d\n",(pmch_InfoList->list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9));
-
-	LOG_I(MAC, "[CONFIG] Number of PMCH in this MBSFN Area %d\n",
-	      pmch_InfoList->list.count);
-
-	for (i = 0; i < pmch_InfoList->list.count; i++) {
-	    RC.mac[Mod_idP]->common_channels[0].pmch_Config[i] =
-		&pmch_InfoList->list.array[i]->pmch_Config_r9;
-
-	    LOG_I(MAC,
-		  "[CONFIG] PMCH[%d]: This PMCH stop (sf_AllocEnd_r9) at subframe  %ldth\n",
-		  i,
-		  RC.mac[Mod_idP]->common_channels[0].
-		  pmch_Config[i]->sf_AllocEnd_r9);
-	    LOG_I(MAC, "[CONFIG] PMCH[%d]: mch_Scheduling_Period = %ld\n",
-		  i,
-		  RC.mac[Mod_idP]->common_channels[0].
-		  pmch_Config[i]->mch_SchedulingPeriod_r9);
-	    LOG_I(MAC, "[CONFIG] PMCH[%d]: dataMCS = %ld\n", i,
-		  RC.mac[Mod_idP]->common_channels[0].
-		  pmch_Config[i]->dataMCS_r9);
-
-	    // MBMS session info list in each MCH
-	    RC.mac[Mod_idP]->common_channels[0].mbms_SessionList[i] =
-		&pmch_InfoList->list.array[i]->mbms_SessionInfoList_r9;
-	    LOG_I(MAC, "PMCH[%d] Number of session (MTCH) is: %d\n", i,
-		  RC.mac[Mod_idP]->common_channels[0].
+  if (pmch_InfoList != NULL) {
+    
+    //    LOG_I(MAC,"DUY: lcid when entering rrc_mac config_req is %02d\n",(pmch_InfoList->list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9));
+    
+    LOG_I(MAC, "[CONFIG] Number of PMCH in this MBSFN Area %d\n",
+	  pmch_InfoList->list.count);
+    
+    for (i = 0; i < pmch_InfoList->list.count; i++) {
+      RC.mac[Mod_idP]->common_channels[0].pmch_Config[i] =
+	&pmch_InfoList->list.array[i]->pmch_Config_r9;
+      
+      LOG_I(MAC,
+	    "[CONFIG] PMCH[%d]: This PMCH stop (sf_AllocEnd_r9) at subframe  %ldth\n",
+	    i,
+	    RC.mac[Mod_idP]->common_channels[0].
+	    pmch_Config[i]->sf_AllocEnd_r9);
+      LOG_I(MAC, "[CONFIG] PMCH[%d]: mch_Scheduling_Period = %ld\n",
+	    i,
+	    RC.mac[Mod_idP]->common_channels[0].
+	    pmch_Config[i]->mch_SchedulingPeriod_r9);
+      LOG_I(MAC, "[CONFIG] PMCH[%d]: dataMCS = %ld\n", i,
+	    RC.mac[Mod_idP]->common_channels[0].
+	    pmch_Config[i]->dataMCS_r9);
+      
+      // MBMS session info list in each MCH
+      RC.mac[Mod_idP]->common_channels[0].mbms_SessionList[i] =
+	&pmch_InfoList->list.array[i]->mbms_SessionInfoList_r9;
+      LOG_I(MAC, "PMCH[%d] Number of session (MTCH) is: %d\n", i,
+	    RC.mac[Mod_idP]->common_channels[0].
 		  mbms_SessionList[i]->list.count);
-	}
     }
   }
-#endif
 
+#endif
+    
     LOG_E(MAC, "%s() %s:%d RC.mac[Mod_idP]->if_inst->PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.mac[Mod_idP]->if_inst->PHY_config_req);
 
     // if in nFAPI mode 
@@ -960,6 +962,7 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 
     return(0);			   
 }
+
 
 int
 rrc_mac_config_req_ue(module_id_t Mod_idP,
