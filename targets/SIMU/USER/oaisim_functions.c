@@ -80,6 +80,9 @@
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
+#include "ENB_APP/enb_paramdef.h"
+#include "common/config/config_userapi.h"
+
 #ifdef SMBV
 extern uint8_t config_smbv;
 extern char smbv_ip[16];
@@ -176,6 +179,18 @@ extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int oaisim_flag=1;
 
+
+void RCConfig_sim(void) {
+
+  paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
+
+
+    // Get num RU instances
+    config_getlist( &RUParamList,NULL,0, NULL);
+    RC.nb_RU     = RUParamList.numelt;
+
+
+}
 
 void get_simulation_options(int argc, char *argv[])
 {
@@ -788,7 +803,7 @@ void get_simulation_options(int argc, char *argv[])
  
   if (RC.config_file_name != NULL) {
     /* Read eNB configuration file */
-    RCConfig();
+    RCConfig_sim();
     printf("returned with %d eNBs, %d rus\n",RC.nb_inst,RC.nb_RU);
     oai_emulation.info.nb_enb_local = RC.nb_inst;
     oai_emulation.info.nb_ru_local = RC.nb_RU;
@@ -1106,7 +1121,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
   *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
 
-  LOG_D(EMU,"UE %d DL simulation 0: UE_trx_read nsamps %d TS %llu (%llu, offset %d) antenna %d\n",
+  LOG_I(EMU,"UE %d DL simulation 0: UE_trx_read nsamps %d TS %llu (%llu, offset %d) antenna %d\n",
         UE_id,
         nsamps,
         (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
@@ -1579,7 +1594,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 #if defined(USER_MODE) && defined(OAI_EMU)
 
   //int rrc_state=0;
-
+/*
   if (oai_emulation.info.otg_enabled ==1 ) {
 
     int dst_id, app_id;
@@ -1589,7 +1604,8 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
       for_times += 1;
 
       // generate traffic if the ue is rrc reconfigured state
-      //if ((rrc_state=mac_eNB_get_rrc_status(enb_module_idP, dst_id)) > 2 /*RRC_CONNECTED*/ ) {
+      //if ((rrc_state=mac_eNB_get_rrc_status(enb_module_idP, dst_id)) > 2 //RRC_CONNECTED
+       {
       if (mac_eNB_get_rrc_status(enb_module_idP, oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_idP][dst_id]) > 2 ){
 	if_times += 1;
 
@@ -1649,7 +1665,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
               otg_pkt=NULL;
             }
 
-
+*/
             // old version
             /*      // MBSM multicast traffic
             #if defined(Rel10) || defined(Rel14)
@@ -1675,13 +1691,14 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
             } // end multicast traffic
             #endif
              */
-
+/*
 
           }
         }
       }
 
     } // end multicast traffic
+*/
 
 #endif
   }
@@ -1714,7 +1731,6 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
     }
   }
 
-#endif
 #endif
 }
 
@@ -1832,6 +1848,13 @@ void init_time()
   td_avg        = 0;
   sleep_time_us = SLEEP_STEP_US;
   td_avg        = TARGET_SF_TIME_NS;
+}
+
+// dummy function
+int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {
+
+   return(0);
+
 }
 
 /*

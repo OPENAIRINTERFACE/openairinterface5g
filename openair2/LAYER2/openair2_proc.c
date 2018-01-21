@@ -236,7 +236,7 @@ int dump_eNB_l2_stats(char *buffer, int length)
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt,
 				     eNB_id,
 				     ENB_FLAG_YES,
-				     UE_list->eNB_UE_stats[UE_PCCID(eNB_id,UE_id)][UE_id].crnti, 
+				     UE_list->eNB_UE_stats[0][UE_id].crnti,//UE_PCCID(eNB_id,UE_id)][UE_id].crnti, 
 				     eNB->frame,
 				     eNB->subframe,
 				     eNB_id);

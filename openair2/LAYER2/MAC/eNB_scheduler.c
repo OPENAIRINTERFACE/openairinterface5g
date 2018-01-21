@@ -710,8 +710,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 				   module_idP);
     pdcp_run(&ctxt);
 
-    rrc_rx_tx(&ctxt, 0,		// eNB index, unused in eNB
-	      CC_id);
+    rrc_rx_tx(&ctxt, CC_id);
 
 #if defined(Rel10) || defined(Rel14)
 

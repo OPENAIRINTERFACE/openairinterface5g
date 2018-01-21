@@ -40,9 +40,9 @@
 # endif
 # include "enb_app.h"
 
-int create_tasks(uint32_t enb_nb)
+int create_tasks_ue(uint32_t ue_nb)
 {
-  LOG_D(ENB_APP, "%s(enb_nb:%d\n", __FUNCTION__, enb_nb);
+  LOG_D(ENB_APP, "%s(ue_nb:%d)\n", __FUNCTION__, ue_nb);
 
   itti_wait_ready(1);
   if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
@@ -50,46 +50,26 @@ int create_tasks(uint32_t enb_nb)
     return -1;
   }
 
-  if (enb_nb > 0) {
-    /* Last task to create, others task must be ready before its start */
-    if (itti_create_task (TASK_ENB_APP, eNB_app_task, NULL) < 0) {
-      LOG_E(ENB_APP, "Create task for eNB APP failed\n");
-      return -1;
-    }
-  }
-
-#   if defined(ENABLE_USE_MME)
-      if (enb_nb > 0) {
-        if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
-          LOG_E(SCTP, "Create task for SCTP failed\n");
-          return -1;
-        }
-
-        if (itti_create_task (TASK_S1AP, s1ap_eNB_task, NULL) < 0) {
-          LOG_E(S1AP, "Create task for S1AP failed\n");
-          return -1;
-        }
-
-        if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
-          LOG_E(UDP_, "Create task for UDP failed\n");
-          return -1;
-        }
-
-        if (itti_create_task (TASK_GTPV1_U, &gtpv1u_eNB_task, NULL) < 0) {
-          LOG_E(GTPU, "Create task for GTPV1U failed\n");
+#      if defined(ENABLE_USE_MME)
+#      if defined(NAS_BUILT_IN_UE)
+      if (ue_nb > 0) {
+        nas_user_container_t *users = calloc(1, sizeof(*users));
+        if (users == NULL) abort();
+        users->count = ue_nb;
+        if (itti_create_task (TASK_NAS_UE, nas_ue_task, users) < 0) {
+          LOG_E(NAS, "Create task for NAS UE failed\n");
           return -1;
         }
       }
-
+#      endif
 #      endif
 
-    if (enb_nb > 0) {
-      LOG_I(RRC,"Creating RRC eNB Task\n");
-
-      if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
-        LOG_E(RRC, "Create task for RRC eNB failed\n");
+    if (ue_nb > 0) {
+      if (itti_create_task (TASK_RRC_UE, rrc_ue_task, NULL) < 0) {
+        LOG_E(RRC, "Create task for RRC UE failed\n");
         return -1;
       }
+
     }
 
 

@@ -54,7 +54,22 @@ void rrc_config_buffer(SRB_INFO *srb_info, uint8_t Lchan_type, uint8_t Role);
 void
 openair_rrc_on(
   const protocol_ctxt_t* const ctxt_pP);
+void
+openair_rrc_on_ue(
+  const protocol_ctxt_t* const ctxt_pP);
+
 void rrc_top_cleanup(void);
+
+/** \brief Function to update eNB timers every subframe.  
+@param ctxt_pP  running context
+@param enb_index
+@param CC_id
+*/
+RRC_status_t
+rrc_rx_tx(
+  protocol_ctxt_t* const ctxt_pP,
+  const int          CC_id
+);
 
 /** \brief Function to update timers every subframe.  For UE it updates T300,T304 and T310.
 @param ctxt_pP  running context
@@ -62,7 +77,7 @@ void rrc_top_cleanup(void);
 @param CC_id
 */
 RRC_status_t
-rrc_rx_tx(
+rrc_rx_tx_ue(
   protocol_ctxt_t* const ctxt_pP,
   const uint8_t      enb_index,
   const int          CC_id
@@ -296,8 +311,6 @@ mac_rrc_data_req(
   const rb_id_t     Srb_id,
   const uint8_t     Nb_tb,
   uint8_t*    const buffer_pP,
-  const eNB_flag_t  enb_flagP,
-  const uint8_t     eNB_index,
   const uint8_t     mbsfn_sync_area
 );
 
@@ -311,7 +324,31 @@ mac_rrc_data_ind(
   const rb_id_t         srb_idP,
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
-  const eNB_flag_t      eNB_flagP,
+  const uint8_t         mbsfn_sync_areaP
+);
+
+int8_t
+mac_rrc_data_req_ue(
+  const module_id_t Mod_idP,
+  const int         CC_id,
+  const frame_t     frameP,
+  const rb_id_t     Srb_id,
+  const uint8_t     Nb_tb,
+  uint8_t*    const buffer_pP,
+  const mac_enb_index_t eNB_indexP,
+  const uint8_t     mbsfn_sync_area
+);
+
+int8_t
+mac_rrc_data_ind_ue(
+  const module_id_t     module_idP,
+  const int         CC_id,
+  const frame_t         frameP,
+  const sub_frame_t     sub_frameP,
+  const rnti_t          rntiP,
+  const rb_id_t         srb_idP,
+  const uint8_t*        sduP,
+  const sdu_size_t      sdu_lenP,
   const mac_enb_index_t eNB_indexP,
   const uint8_t         mbsfn_sync_areaP
 );

@@ -614,7 +614,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 				     CCCH,
 				     (uint8_t *) payload_ptr,
 				     rx_lengths[i],
-				     ENB_FLAG_YES, enb_mod_idP, 0);
+				     0);
 
 
 		    if (num_ce > 0) {	// handle msg3 which is not RRCConnectionRequest

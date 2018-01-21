@@ -56,6 +56,7 @@
 #include "rrc_eNB_UE_context.h"
 #include "platform_types.h"
 #include "msc.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
 
@@ -114,6 +115,25 @@ extern void*                        bigphys_malloc(int);
 extern uint16_t                     two_tier_hexagonal_cellIds[7];
 
 mui_t                               rrc_eNB_mui = 0;
+
+void
+openair_rrc_on(
+  const protocol_ctxt_t* const ctxt_pP
+)
+//-----------------------------------------------------------------------------
+{
+  unsigned short i;
+  int            CC_id;
+
+    LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" ENB:OPENAIR RRC IN....\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
+    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+      rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
+      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
+      rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
+      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
+    }
+}
 
 //-----------------------------------------------------------------------------
 static void
@@ -5121,5 +5141,103 @@ rrc_top_cleanup_eNB(
 
   for (int i=0;i<RC.nb_inst;i++) free (RC.rrc[i]);
   free(RC.rrc);
+}
+
+
+//-----------------------------------------------------------------------------
+RRC_status_t
+rrc_rx_tx(
+  protocol_ctxt_t* const ctxt_pP,
+  const int          CC_id
+)
+//-----------------------------------------------------------------------------
+{
+  //uint8_t        UE_id;
+  int32_t        current_timestamp_ms, ref_timestamp_ms;
+  struct timeval ts;
+  struct rrc_eNB_ue_context_s   *ue_context_p = NULL,*ue_to_be_removed = NULL;
+
+#ifdef LOCALIZATION
+  double                         estimated_distance;
+  protocol_ctxt_t                ctxt;
+#endif
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_IN);
+
+    check_handovers(ctxt_pP);
+    // counetr, and get the value and aggregate
+
+    // check for UL failure
+    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
+      if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe==0)) {
+	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
+	  LOG_I(RRC,"UE rnti %x:S-TMSI %x failure timer %d/20000\n",
+		ue_context_p->ue_context.rnti,
+		ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
+		ue_context_p->ue_context.ul_failure_timer);
+	}
+	else {
+	  LOG_I(RRC,"UE rnti %x failure timer %d/20000\n",
+		ue_context_p->ue_context.rnti,
+		ue_context_p->ue_context.ul_failure_timer);
+	}
+      }
+      if (ue_context_p->ue_context.ul_failure_timer>0) {
+	ue_context_p->ue_context.ul_failure_timer++;
+	if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
+	  // remove UE after 20 seconds after MAC has indicated UL failure
+	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
+	  ue_to_be_removed = ue_context_p;
+	  break;
+	}
+      }
+      if (ue_context_p->ue_context.ue_release_timer>0) {
+	ue_context_p->ue_context.ue_release_timer++;
+	if (ue_context_p->ue_context.ue_release_timer >= 
+	    ue_context_p->ue_context.ue_release_timer_thres) {
+	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
+	  ue_to_be_removed = ue_context_p;
+	  break;
+	}
+      }
+    }
+    if (ue_to_be_removed)
+      rrc_eNB_free_UE(ctxt_pP->module_id,ue_to_be_removed);
+
+#ifdef RRC_LOCALIZATION
+
+    /* for the localization, only primary CC_id might be relevant*/
+    gettimeofday(&ts, NULL);
+    current_timestamp_ms = ts.tv_sec * 1000 + ts.tv_usec / 1000;
+    ref_timestamp_ms = RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms;
+    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
+      ctxt = *ctxt_pP;
+      ctxt.rnti = ue_context_p->ue_context.rnti;
+      estimated_distance = rrc_get_estimated_ue_distance(
+                             &ctxt,
+                             CC_id,
+                             RC.rrc[ctxt_pP->module_id]->loc_type);
+
+      if ((current_timestamp_ms - ref_timestamp_ms > RC.rrc[ctxt_pP->module_id]->aggregation_period_ms) &&
+          estimated_distance != -1) {
+        LOG_D(LOCALIZE, " RRC [UE/id %d -> eNB/id %d] timestamp %d frame %d estimated r = %f\n",
+              ctxt.rnti,
+              ctxt_pP->module_id,
+              current_timestamp_ms,
+              ctxt_pP->frame,
+              estimated_distance);
+        LOG_D(LOCALIZE, " RRC status %d\n", ue_context_p->ue_context.Status);
+        push_front(&RC.rrc[ctxt_pP->module_id]->loc_list,
+                   estimated_distance);
+        RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms = current_timestamp_ms;
+      }
+    }
+
+#endif
+    (void)ts; /* remove gcc warning "unused variable" */
+    (void)ref_timestamp_ms; /* remove gcc warning "unused variable" */
+    (void)current_timestamp_ms; /* remove gcc warning "unused variable" */
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
+  return (RRC_OK);
 }
 
