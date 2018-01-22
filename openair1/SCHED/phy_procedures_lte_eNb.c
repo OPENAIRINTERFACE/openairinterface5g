@@ -376,8 +376,11 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 		   dlsch1);
   
   stop_meas(&eNB->dlsch_modulation_stats);
-
+#ifdef UE_EXPANSION
+  dlsch->active[subframe] = 0;
+#else
   dlsch->active = 0;
+#endif
   dlsch_harq->round++;
 }
 
@@ -512,7 +515,11 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
       if ((dlsch0)&&
 	  (dlsch0->rnti>0)&&
+#ifdef UE_EXPANSION
+	  (dlsch0->active[subframe] == 1)) {
+#else
 	  (dlsch0->active == 1)) {
+#endif
 
 	// get harq_pid
 	harq_pid = dlsch0->harq_ids[subframe];
@@ -532,7 +539,11 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
       else if ((dlsch0)&&
 	       (dlsch0->rnti>0)&&
-	       (dlsch0->active == 0)) {
+#ifdef UE_EXPANSION
+	       (dlsch0->active[subframe] == 0)) {
+#else
+           (dlsch0->active == 0)) {
+#endif
 
 	// clear subframe TX flag since UE is not scheduled for PDSCH in this subframe (so that we don't look for PUCCH later)
 	dlsch0->subframe_tx[subframe]=0;

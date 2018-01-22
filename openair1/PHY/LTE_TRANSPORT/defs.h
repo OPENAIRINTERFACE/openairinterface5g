@@ -102,6 +102,12 @@ typedef enum {
   DISABLED
 } SCH_status_t;
 
+#ifdef Rel14
+typedef enum {
+  CEmodeA = 0,
+  CEmodeB = 1
+} CEmode_t;
+#endif
 
 typedef struct {
   /// Status Flag indicating for this DLSCH (idle,active,disabled)
@@ -178,6 +184,15 @@ typedef struct {
   uint8_t first_layer;
   /// codeword this transport block is mapped to
   uint8_t codeword;
+#ifdef UE_EXPANSION
+#ifdef Rel14
+  /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
+  uint8_t sib1_br_flag;
+  /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
+  uint16_t i0;
+  CEmode_t CEmode;
+#endif
+#endif
 } LTE_DL_eNB_HARQ_t;
 
 typedef struct {
@@ -254,13 +269,6 @@ typedef struct {
   uint8_t decode_phich;
 } LTE_UL_UE_HARQ_t; 
 
-#ifdef Rel14
-typedef enum {
-  CEmodeA = 0,
-  CEmodeB = 1
-} CEmode_t;
-#endif
-
 typedef struct {
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
   int32_t *txdataF[8];
@@ -271,7 +279,11 @@ typedef struct {
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
   uint16_t rnti;
   /// Active flag for baseband transmitter processing
+#ifdef UE_EXPANSION
+  uint8_t active[10];
+#else
   uint8_t active;
+#endif
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
@@ -302,12 +314,14 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
+#ifndef UE_EXPANSION
 #ifdef Rel14
   /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
   uint8_t sib1_br_flag;
   /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
   uint16_t i0;
   CEmode_t CEmode;
+#endif
 #endif
 } LTE_eNB_DLSCH_t;
 

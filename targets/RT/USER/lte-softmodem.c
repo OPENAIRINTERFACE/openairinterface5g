@@ -1364,6 +1364,11 @@ int main( int argc, char **argv )
   // cleanup
   if (UE_flag == 1) {
   } else {
+#ifdef UE_EXPANSION
+      for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+          stop_ru(RC.ru[ru_id]);
+      }
+#endif
     stop_eNB(1);
   }
 

@@ -409,6 +409,10 @@ set_ul_DAI(int module_idP, int UE_idP, int CC_idP, int frameP,
 }
 
 
+#ifdef UE_EXPANSION
+extern volatile int16_t phy_tx_txdataF_end;
+extern int  oai_exit;
+#endif
 // changes to pre-processor for eMTC
 
 //------------------------------------------------------------------------------
@@ -546,6 +550,12 @@ schedule_ue_spec(module_id_t module_idP,
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR,VCD_FUNCTION_OUT);
 
+
+#ifdef UE_EXPANSION
+  struct timespec time_req, time_rem;
+  time_req.tv_sec = 0;
+  time_req.tv_nsec = 10000;
+#endif
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_D(MAC, "doing schedule_ue_spec for CC_id %d\n",CC_id);
 
@@ -1048,8 +1058,12 @@ schedule_ue_spec(module_id_t module_idP,
 		header_len_dtch = 0;
 		header_len_dtch_last = 0;	// the header length of the last mac sdu
 		// lcid has to be sorted before the actual allocation (similar struct as ue_list).
-
+#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+		lcid = DTCH;
+		{
+#else
 		for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
+#endif
 		    // TBD: check if the lcid is active
 
 		    header_len_dtch += 3;
@@ -1251,6 +1265,12 @@ schedule_ue_spec(module_id_t module_idP,
 			post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len;	// 1 is for the postpadding header
 		    }
 
+#ifdef UE_EXPANSION
+		    while((!oai_exit)&&(phy_tx_txdataF_end == 0)){
+		      nanosleep(&time_req,&time_rem);
+		        continue;
+		    }
+#endif
 
 		    offset = generate_dlsch_header((unsigned char *) UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0], num_sdus,	//num_sdus
 						   sdu_lengths,	//

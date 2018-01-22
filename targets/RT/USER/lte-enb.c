@@ -188,9 +188,9 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
   
   if (oai_exit) return(-1);
-  
+#if (!defined(UE_EXPANSION_SIM2)) &&(!defined(UE_EXPANSION))
   phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
-  
+#endif
   if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) return(-1);
 
   stop_meas( &softmodem_stats_rxtx_sf );

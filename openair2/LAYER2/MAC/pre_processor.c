@@ -119,8 +119,11 @@ store_dlsch_buffer(module_id_t Mod_id, frame_t frameP,
 
 	rnti = UE_RNTI(Mod_id, UE_id);
 
-
+#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+	for (i = DCCH; i <=DTCH; i++) {	// loop over DCCH, DCCH1 and DTCH
+#else
     for (i = 0; i < MAX_NUM_LCID; i++) {    // loop over all the logical channels
+#endif
 
 	    rlc_status =
 		mac_rlc_status_ind(Mod_id, rnti, Mod_id, frameP, subframeP,
@@ -543,6 +546,69 @@ void sort_UEs(module_id_t Mod_idP, int frameP, sub_frame_t subframeP)
     }
 #endif
 }
+
+#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+inline uint16_t search_rbs_required(uint16_t mcs, uint16_t TBS,uint16_t NB_RB, uint16_t step_size){
+  uint16_t nb_rb,i_TBS,tmp_TBS;
+  i_TBS=get_I_TBS(mcs);
+  for(nb_rb=step_size;nb_rb<NB_RB;nb_rb+=step_size){
+    tmp_TBS = TBStable[i_TBS][nb_rb-1]>>3;
+    if(TBS<tmp_TBS)return(nb_rb);
+  }
+  return NB_RB;
+}
+void pre_scd_nb_rbs_required(    module_id_t     module_idP,
+                                 frame_t         frameP,
+                                 sub_frame_t     subframeP,
+                                 int             min_rb_unit[MAX_NUM_CCs],
+                                 uint16_t        nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX])
+{
+    int                          CC_id=0,UE_id, lc_id, N_RB_DL;
+    UE_TEMPLATE                  UE_template;
+    eNB_UE_STATS                 *eNB_UE_stats;
+    rnti_t                       rnti;
+    mac_rlc_status_resp_t        rlc_status;
+    uint16_t                     step_size=2;
+    
+    N_RB_DL = to_prb(RC.mac[module_idP]->common_channels[CC_id].mib->message.dl_Bandwidth);
+    if(N_RB_DL==50) step_size=3;
+    if(N_RB_DL==100) step_size=4;
+    memset(nb_rbs_required, 0, sizeof(uint16_t)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+    UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
+
+    for (UE_id = 0; UE_id <NUMBER_OF_UE_MAX; UE_id++) {
+        if (pre_scd_activeUE[UE_id] != TRUE)
+            continue;
+
+        // store dlsch buffer
+
+        // clear logical channel interface variables
+        UE_template.dl_buffer_total = 0;
+
+        rnti = UE_RNTI(module_idP, UE_id);
+
+        for (lc_id = DCCH; lc_id <= DTCH; lc_id++) {
+            rlc_status =
+                    mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP,
+                            ENB_FLAG_YES, MBMS_FLAG_NO, lc_id, 0);
+            UE_template.dl_buffer_total += rlc_status.bytes_in_buffer; //storing the total dlsch buffer
+        }
+         // end of store dlsch buffer
+
+        // assgin rbs required
+        // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
+        //update CQI information across component carriers
+        eNB_UE_stats = &pre_scd_eNB_UE_stats[CC_id][UE_id];
+
+        eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id]];
+
+
+        if (UE_template.dl_buffer_total > 0) {
+          nb_rbs_required[CC_id][UE_id] = search_rbs_required(eNB_UE_stats->dlsch_mcs1, UE_template.dl_buffer_total, N_RB_DL, step_size);
+        }
+    }
+}
+#endif
 
 #ifdef UE_EXPANSION
 int cc_id_end(uint8_t *cc_id_flag )
@@ -1007,6 +1073,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 	}
     }
 
+#if (!defined(UE_EXPANSION_SIM2)) &&(!defined(UE_EXPANSION))
     // Store the DLSCH buffer for each logical channel
     store_dlsch_buffer(Mod_id, frameP, subframeP);
 
@@ -1015,6 +1082,9 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
     // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
     assign_rbs_required(Mod_id, frameP, subframeP, nb_rbs_required,
 			min_rb_unit);
+#else
+    memcpy(nb_rbs_required, pre_nb_rbs_required[dlsch_ue_select_tbl_in_use] , sizeof(uint16_t)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+#endif
 
 #ifdef UE_EXPANSION
   dlsch_scheduler_pre_ue_select(Mod_id,frameP,subframeP, mbsfn_flag,nb_rbs_required,dlsch_ue_select);

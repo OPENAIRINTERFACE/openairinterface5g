@@ -43,6 +43,10 @@
 #include "rrc_eNB_UE_context.h"
 #include "common/ran_context.h"
 
+#if defined(ENABLE_USE_MME)
+# include "rrc_eNB_S1AP.h"
+#endif
+
 #ifdef LOCALIZATION
 #include <sys/time.h>
 #endif
