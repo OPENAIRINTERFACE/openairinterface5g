@@ -518,7 +518,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 	// get harq_pid
 	harq_pid = dlsch0->harq_ids[subframe];
-	AssertFatal(harq_pid>=0,"harq_pid is negative\n");
+	if ((harq_pid>=0) && (harq_pid<8)) {
 	// generate pdsch
 	pdsch_procedures(eNB,
 			 proc,
@@ -527,7 +527,9 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 			 dlsch1,
 			 &eNB->UE_stats[(uint32_t)UE_id],
 			 0);
-
+	} else {
+	LOG_E(PHY,"harq_pid %d is not valid, not generating PDSCH\n",harq_pid);
+	}
 
       }
 
