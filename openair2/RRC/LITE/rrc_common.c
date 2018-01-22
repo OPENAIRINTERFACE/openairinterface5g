@@ -360,6 +360,7 @@ rrc_rx_tx(
           LOG_I(RRC,"Removing UE %x instance Because of UE_CONTEXT_RELEASE_COMMAND not received after %d ms from sending request\n",
         		  ue_context_p->ue_context.rnti, ue_context_p->ue_context.ue_release_timer_thres_s1);
           ue_context_p->ue_context.ue_release_timer_s1 = 0;
+#if defined(ENABLE_USE_MME)
 #if defined(ENABLE_ITTI)
           rrc_eNB_generate_RRCConnectionRelease(ctxt_pP, ue_context_p);
           {
@@ -398,6 +399,7 @@ rrc_rx_tx(
                          rrc_ue_s1ap_ids);
             }
           }
+#endif
 #else
           ue_to_be_removed = ue_context_p;
 #endif
