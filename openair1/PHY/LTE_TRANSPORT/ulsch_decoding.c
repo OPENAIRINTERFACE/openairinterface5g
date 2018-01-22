@@ -170,6 +170,7 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch)
   //ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
   if (ulsch) {
     ulsch->rnti = 0;
+    ulsch->harq_mask = 0;
 
     for (i=0; i<8; i++) {
       if (ulsch->harq_processes[i]) {

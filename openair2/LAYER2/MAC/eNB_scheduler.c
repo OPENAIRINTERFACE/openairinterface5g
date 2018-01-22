@@ -731,12 +731,17 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
                pdcp_remove_UE(&ctxt);
              }
              for (int ii=0; ii<NUMBER_OF_UE_MAX; ii++) {
-                 LTE_eNB_ULSCH_t *ulsch = NULL;
-                 ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
+                 LTE_eNB_ULSCH_t *ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
                  if((ulsch != NULL) && (ulsch->rnti == rnti)){
                      LOG_I(MAC, "clean_eNb_ulsch UE %x \n", rnti);
                      clean_eNb_ulsch(ulsch);
-                     break;
+                 }
+             }
+             for (int ii=0; ii<NUMBER_OF_UE_MAX; ii++) {
+                 LTE_eNB_DLSCH_t *dlsch = RC.eNB[module_idP][CC_id]->dlsch[ii][0];
+                 if((dlsch != NULL) && (dlsch->rnti == rnti)){
+                     LOG_I(MAC, "clean_eNb_dlsch UE %x \n", rnti);
+                     clean_eNb_dlsch(dlsch);
                  }
              }
 

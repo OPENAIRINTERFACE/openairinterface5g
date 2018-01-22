@@ -806,6 +806,7 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
 #ifndef UE_EXPANSION
   int i, j , CC_id, pdu_number;
   LTE_eNB_ULSCH_t *ulsch = NULL;
+  LTE_eNB_DLSCH_t *dlsch = NULL;
   nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
   PHY_VARS_eNB *eNB_PHY = NULL;
   eNB_MAC_INST *eNB_MAC = RC.mac[enb_mod_idP];
@@ -849,19 +850,15 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
         ulsch = eNB_PHY->ulsch[i];
         if((ulsch != NULL) && (ulsch->rnti == rnti)){
           LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
-          //clean_eNb_ulsch(ulsch);
-          ulsch->rnti = 0;
-        }
-        if(eNB_PHY->uci_vars[i].rnti == rnti){
-          LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
-          memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
+          clean_eNb_ulsch(ulsch);
         }
       }
-      ulsch = eNB_PHY->ulsch[i];
-      if((ulsch != NULL) && (ulsch->rnti == rnti)){
-        LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
-        //clean_eNb_ulsch(ulsch);
-        ulsch->rnti = 0;
+      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+        dlsch = eNB_PHY->dlsch[i][0];
+        if((dlsch != NULL) && (dlsch->rnti == rnti)){
+          LOG_I(RRC, "clean_eNb_dlsch UE %x \n", rnti);
+          clean_eNb_dlsch(dlsch);
+        }
       }
 
       for(j = 0; j < 10; j++){
