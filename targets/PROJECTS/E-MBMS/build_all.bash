@@ -61,8 +61,8 @@ echo_success "\n###############################"
 echo_success "# COMPILE oaisim"
 echo_success "###############################"
 cd $OPENAIR_TARGETS/SIMU/USER
-echo_success "Executing: make oaisim NAS=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 USER_MODE=1 OPENAIR2=1  Rel10=1 -j`grep -c ^processor /proc/cpuinfo `"
-make oaisim NAS=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 USER_MODE=1 OPENAIR2=1  Rel10=1 -j`grep -c ^processor /proc/cpuinfo `
+echo_success "Executing: make oaisim NAS=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 OPENAIR2=1  Rel10=1 -j`grep -c ^processor /proc/cpuinfo `"
+make oaisim NAS=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 OPENAIR2=1  Rel10=1 -j`grep -c ^processor /proc/cpuinfo `
 if [[ $? -eq 2 ]] ; then
     exit 1
 fi

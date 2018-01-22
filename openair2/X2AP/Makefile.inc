@@ -28,7 +28,6 @@ CFLAGS =            \
 	-Wall           \
 	-DENB_MODE      \
 	-DENABLE_USE_MME    \
-	-DUSER_MODE     \
 	-I.        \
 	-I$(ASN1MESSAGESDIR)/ASN1/$(ASN1RELDIR) \
 	-I$(ASN1MESSAGESDIR) \

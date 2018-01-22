@@ -39,15 +39,9 @@
 
 
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#endif
-
-//#include "COMMON/openair_defs.h"
-
-
 
 #include "PHY/defs.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
@@ -109,9 +103,7 @@
 //#define MCH_PAYLOAD_SIZE_MAX 16384// this value is using in case mcs and TBS index are high
 #endif
 
-#ifdef USER_MODE
 #define printk printf
-#endif				//USER_MODE
 
 /*!\brief Maximum number of logical channl group IDs */
 #define MAX_NUM_LCGID 4

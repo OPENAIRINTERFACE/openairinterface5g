@@ -71,11 +71,6 @@
 
 extern uint8_t usim_test;
 
-/*
-#ifndef USER_MODE
-#define msg debug_msg
-#endif
- */
 mapping BSR_names[] = {
     {"NONE", 0},
     {"SHORT BSR", 1},

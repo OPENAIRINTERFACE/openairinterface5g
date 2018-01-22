@@ -28,13 +28,6 @@
 */
 /*******************************************************************************/
 
-#ifndef OAI_NW_DRIVER_USE_NETLINK
-#ifdef RTAI
-#include "rtai_posix.h"
-#define RTAI_IRQ 30 //try to get this irq with RTAI
-#endif // RTAI
-#endif // OAI_NW_DRIVER_USE_NETLINK
-
 #include "constant.h"
 #include "local.h"
 #include "proto_extern.h"

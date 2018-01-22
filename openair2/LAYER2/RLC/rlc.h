@@ -662,10 +662,6 @@ public_rlc(rlc_op_status_t rlc_stat_req     (
 public_rlc(int rlc_module_init(void);)
 
 /** @} */
-#ifndef USER_MODE
-#define assert(x) ((x)?msg("rlc assertion fails\n"):0)
-#endif
-
 
 #define RLC_FG_COLOR_BLACK            "\e[0;30m"
 #define RLC_FG_COLOR_RED              "\e[0;31m"

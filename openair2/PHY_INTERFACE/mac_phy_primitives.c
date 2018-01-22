@@ -187,9 +187,6 @@ MACPHY_DATA_REQ *new_macphy_data_req(unsigned char Mod_id)
 
   return((MACPHY_DATA_REQ*)0);
 }
-#ifndef USER_MODE
-EXPORT_SYMBOL(new_macphy_data_req);
-#endif
 
 
 #endif //PHY_CONTEXT
@@ -262,13 +259,7 @@ void macphy_data_ind(unsigned char Mod_id,unsigned char Pdu_type,void *pdu,unsig
     }
   }
   msg("[OPENAIR][MAC][ERROR] No more PHY_RESOURCES !!!!\n");
-#ifdef USER_MODE
   exit(-1);
-#else
-  print_active_indications();
-  print_active_requests();
-  mac_xface->macphy_exit();
-#endif
 }
 */
 

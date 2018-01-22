@@ -208,11 +208,12 @@ void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,re
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param br_flag indicator for eMTC PRACH
 */
-void prach_procedures(PHY_VARS_eNB *eNB,
 #ifdef Rel14
-		      int br_flag
+void prach_procedures(PHY_VARS_eNB *eNB,
+		      int br_flag);
+#else
+void prach_procedures(PHY_VARS_eNB *eNB);
 #endif
-		      );
 
 /*! \brief Function to compute subframe Number(DL and S) as a function of Frame type and TDD Configuration
   @param frame_parms Pointer to DL frame parameter descriptor

@@ -63,12 +63,10 @@
 #include "MeasResults.h"
 //#endif
 
-#ifdef USER_MODE
-#   include "RRC/NAS/nas_config.h"
-#   include "RRC/NAS/rb_config.h"
-#   include "OCG.h"
-#   include "OCG_extern.h"
-#endif
+#include "RRC/NAS/nas_config.h"
+#include "RRC/NAS/rb_config.h"
+#include "OCG.h"
+#include "OCG_extern.h"
 
 #if defined(ENABLE_SECURITY)
 #   include "UTIL/OSA/osa_defs.h"
@@ -835,14 +833,6 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
      */
      return;
     }
-#else
-#if defined(OAI_EMU)
-    AssertFatal(ue_context_pP->local_uid < NUMBER_OF_UE_MAX, "local_uid invalid (%d<%d) for UE %x!", ue_context_pP->local_uid, NUMBER_OF_UE_MAX, rnti);
-    ue_module_id = oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_mod_idP][ue_context_pP->local_uid];
-    AssertFatal(ue_module_id < NUMBER_OF_UE_MAX, "ue_module_id invalid (%d<%d) for UE %x!", ue_module_id, NUMBER_OF_UE_MAX, rnti);
-    oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_mod_idP][ue_context_pP->local_uid] = -1;
-    oai_emulation.info.eNB_ue_module_id_to_rnti[enb_mod_idP][ue_module_id] = NOT_A_RNTI;
-#endif
 #endif
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       eNB_PHY = RC.eNB[enb_mod_idP][CC_id];
@@ -4876,12 +4866,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                        ctxt_pP->module_id + 1);  // fourth octet
 
           if (oip_ifup == 0) {    // interface is up --> send a config the DRB
-#      ifdef OAI_EMU
-            oai_emulation.info.oai_ifup[ctxt_pP->module_id] = 1;
-            dest_ip_offset = NB_eNB_INST;
-#      else
             dest_ip_offset = 8;
-#      endif
             LOG_I(OIP,
                   "[eNB %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
                   ctxt_pP->module_id, ctxt_pP->module_id,
@@ -4898,10 +4883,6 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                   ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ue_module_id);
           }
 
-#   else
-#      ifdef OAI_EMU
-          oai_emulation.info.oai_ifup[ctxt_pP->module_id] = 1;
-#      endif
 #   endif
 #endif
 

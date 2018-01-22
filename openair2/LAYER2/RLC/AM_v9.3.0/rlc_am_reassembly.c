@@ -268,11 +268,9 @@ rlc_am_reassemble_pdu(
       //}
 
       break;
-#if USER_MODE
 
     default:
       assert(0 != 0);
-#endif
     }
   } else {
     switch (pdu_info->fi) {
@@ -382,19 +380,13 @@ rlc_am_reassemble_pdu(
       if (pdu_info->hidden_size > 0) { // normally should always be > 0 but just for help debug
         // data is already ok, done by last loop above
         rlc_am_reassembly (ctxt_pP, rlc_pP, &pdu_info->payload[j], pdu_info->hidden_size);
-      } else {
-#if USER_MODE
-        //assert (5!=5);
-#endif
       }
 
       //rlc_pP->reassembly_missing_sn_detected = 0;
       break;
-#if USER_MODE
 
     default:
       assert(1 != 1);
-#endif
     }
   }
 
