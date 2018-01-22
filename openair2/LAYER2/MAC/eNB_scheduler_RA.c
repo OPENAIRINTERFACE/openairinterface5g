@@ -1468,6 +1468,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 	DevAssert(UE_id != -1);
 	mac->UE_list.UE_template[UE_PCCID(module_idP, UE_id)][UE_id].
 	    configured = TRUE;
+        cancel_ra_proc(module_idP, CC_idP, frameP, ra->rnti);
     }
 }
 
