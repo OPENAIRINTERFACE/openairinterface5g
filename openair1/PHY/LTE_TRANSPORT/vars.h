@@ -62,7 +62,7 @@ unsigned char ue_power_offsets[25] = {14,11,9,8,7,6,6,5,4,4,4,3,3,3,2,2,2,1,1,1,
 short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
 short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
-int qam64_table[8],qam16_table[4];
+int qam64_table[8],qam16_table[4],qpsk_table[2];
 
 unsigned char cs_ri_normal[4]    = {1,4,7,10};
 unsigned char cs_ri_extended[4]  = {0,3,5,8};

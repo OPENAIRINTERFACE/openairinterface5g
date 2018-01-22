@@ -71,7 +71,7 @@ schedule_ue_spec_phy_test(
   uint16_t                       rnti      = 0x1235;
   uint32_t                       rb_alloc  = 0x1FFFFFFF;
   int32_t                        tpc       = 1;
-  int32_t                        mcs       = 28;
+  int32_t                        mcs       = 0;
   int32_t                        cqi       = 15;
   int32_t                        ndi       = subframeP/5;
   int32_t                        dai       = 0;
