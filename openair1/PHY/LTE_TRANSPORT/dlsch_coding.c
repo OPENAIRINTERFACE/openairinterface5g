@@ -247,6 +247,7 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch)
     Mdlharq = dlsch->Mdlharq;
     dlsch->rnti = 0;
     dlsch->active = 0;
+    dlsch->harq_mask = 0;
 
     for (i=0; i<10; i++)
       dlsch->harq_ids[i] = Mdlharq;
