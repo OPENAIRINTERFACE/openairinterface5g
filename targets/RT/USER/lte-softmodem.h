@@ -244,6 +244,9 @@ extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
 extern void init_RU(const char*);
+#ifdef UE_EXPANSION
+extern void stop_ru(RU_t *ru);
+#endif
 
 // In lte-ue.c
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);

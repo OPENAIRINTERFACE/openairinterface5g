@@ -156,11 +156,19 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   // compute DL power control parameters
   eNB->pdsch_config_dedicated[UE_id].p_a = rel8->pa;
 
+#ifdef UE_EXPANSION
+  if (dlsch0->active[proc->subframe_tx]){
+# else
   if (dlsch0->active){
+#endif
     computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch0,dlsch0_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
     computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
   }
+#ifdef UE_EXPANSION
+  if (dlsch1->active[proc->subframe_tx]){
+#else
   if (dlsch1->active){
+#endif
     computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch1,dlsch1_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
     computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
   }
@@ -183,17 +191,29 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   }
 
 #ifdef Rel14
+#ifdef UE_EXPANSION
+  dlsch0_harq->sib1_br_flag=0;
+#else
   dlsch0->sib1_br_flag=0;
+#endif
 
   if ((rel13->pdsch_payload_type <2) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR/SI-BR
     dlsch0->rnti             = 0xFFFF;
     dlsch0->Kmimo            = 1;
     dlsch0->Mdlharq          = 4;
     dlsch0->Nsoft            = 25344;
+#ifdef UE_EXPANSION
+    dlsch0_harq->i0               = rel13->initial_transmission_sf_io;
+#else
     dlsch0->i0               = rel13->initial_transmission_sf_io;
+#endif
     dlsch0_harq->pdsch_start = rel10->pdsch_start;
 
+#ifdef UE_EXPANSION
+    if (rel13->pdsch_payload_type == 0) dlsch0_harq->sib1_br_flag=1;
+#else
     if (rel13->pdsch_payload_type == 0) dlsch0->sib1_br_flag=1;
+#endif
 
     // configure PDSCH
     switch (eNB->frame_parms.N_RB_DL) {
@@ -220,7 +240,11 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
       dlsch0_harq->rb_alloc[3]      = localRIV2alloc_LUT100_3[rel8->resource_block_coding];
     }
 
+#ifdef UE_EXPANSION
+    dlsch0->active[proc->subframe_tx]= 1;
+#else
     dlsch0->active                  = 1;
+#endif
 
     dlsch0_harq->nb_rb              = 6;
     dlsch0_harq->vrb_type           = LOCALIZED;
@@ -235,7 +259,11 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     dlsch0_harq->codeword           = 0;
   }
   else {
+#ifdef UE_EXPANSION
+    dlsch0_harq->i0               = 0xFFFF;
+#else
     dlsch0->i0               = 0xFFFF;
+#endif
   }
 #endif
 }

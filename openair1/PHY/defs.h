@@ -422,6 +422,34 @@ typedef struct RU_proc_t_s {
   int                  num_slaves;
   /// array of pointers to slaves
   struct RU_proc_t_s           **slave_proc;
+#ifdef UE_EXPANSION
+  /// pthread structure for PRACH thread
+  pthread_t pthread_phy_tx;
+  pthread_mutex_t mutex_phy_tx;
+  pthread_cond_t cond_phy_tx;
+  /// \internal This variable is protected by \ref mutex_phy_tx.
+  int instance_cnt_phy_tx;
+  /// frame to act upon for transmission
+  int frame_phy_tx;
+  /// subframe to act upon for transmission
+  int subframe_phy_tx;
+  /// timestamp to send to "slave rru"
+  openair0_timestamp timestamp_phy_tx;
+  /// pthread structure for RF TX thread
+  pthread_t pthread_rf_tx;
+  pthread_mutex_t mutex_rf_tx;
+  pthread_cond_t cond_rf_tx;
+  /// \internal This variable is protected by \ref mutex_rf_tx.
+  int instance_cnt_rf_tx;
+#endif
+#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+  pthread_t pthread_pre_scd;
+  /// condition variable for time processing thread
+  pthread_cond_t cond_pre_scd;
+  /// mutex for time thread
+  pthread_mutex_t mutex_pre_scd;
+  int instance_pre_scd;
+#endif
 } RU_proc_t;
 
 /// Context data structure for eNB subframe processing
@@ -556,14 +584,6 @@ typedef struct eNB_proc_t_s {
   te_params tep;
   /// set of scheduling variables RXn-TXnp4 threads
   eNB_rxtx_proc_t proc_rxtx[2];
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-  pthread_t pthread_pre_scd;
-  /// condition variable for time processing thread
-  pthread_cond_t cond_pre_scd;
-  /// mutex for time thread
-  pthread_mutex_t mutex_pre_scd;
-  int instance_pre_scd;
-#endif
 } eNB_proc_t;
 
 

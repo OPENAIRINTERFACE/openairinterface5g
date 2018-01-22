@@ -113,10 +113,6 @@ extern uint8_t dlsch_ue_select_tbl_in_use;
 extern uint8_t new_dlsch_ue_select_tbl_in_use;
 extern boolean_t pre_scd_activeUE[NUMBER_OF_UE_MAX];
 extern eNB_UE_STATS pre_scd_eNB_UE_stats[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-/// sorted downlink component carrier for the scheduler
-extern int pre_scd_ordered_CCids[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-/// number of downlink active component carrier
-extern int pre_scd_numactiveCCs[NUMBER_OF_UE_MAX];
 #endif
 
 #endif //DEF_H

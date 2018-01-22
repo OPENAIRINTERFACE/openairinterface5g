@@ -92,13 +92,27 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   uint8_t Nacc=4;
   uint16_t j0,j,idelta;
   uint16_t i  = (Ns>>1) + (10*frame);
+#ifdef UE_EXPANSION
+  uint16_t i0 = dlsch->harq_processes[harq_pid]->i0;
+#else
   uint16_t i0 = dlsch->i0;
+#endif
 
+#ifdef UE_EXPANSION
+  if (dlsch->harq_processes[harq_pid]->sib1_br_flag==1)                              Nacc=1;
+#else
   if (dlsch->sib1_br_flag==1)                              Nacc=1;
+#endif
   else if (dlsch->rnti == 0xFFFF || dlsch->rnti == 0xFFFE) Nacc = (frame_parms->frame_type == TDD) ? 10 : 4;
+#ifdef UE_EXPANSION
+  // Note: above SC-RNTI will also have to be added when/if implemented
+  else if (dlsch->harq_processes[harq_pid]->CEmode == CEmodeA)                       Nacc=1;
+  else if (dlsch->harq_processes[harq_pid]->CEmode == CEmodeB)                       Nacc = (frame_parms->frame_type == TDD) ? 10 : 4;
+#else
   // Note: above SC-RNTI will also have to be added when/if implemented
   else if (dlsch->CEmode == CEmodeA)                       Nacc=1;
   else if (dlsch->CEmode == CEmodeB)                       Nacc = (frame_parms->frame_type == TDD) ? 10 : 4;
+#endif
 
   if (frame_parms->frame_type == FDD || Nacc == 1) idelta = 0;
   else                                             idelta = Nacc-2;
@@ -111,7 +125,11 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   // x1 is set in lte_gold_generic
   if (mbsfn_flag == 0) {
 #ifdef Rel14
+#ifdef UE_EXPANSION
+    if (dlsch->harq_processes[harq_pid]->i0 != 0xFFFF) {
+#else
     if (dlsch->i0 != 0xFFFF) {
+#endif
       // rule for BL/CE UEs from Section 6.3.1 in 36.211
       x2=  (dlsch->rnti<<14) + (q<<13) + ((((j0+j)*Nacc)%10)<<9) + frame_parms->Nid_cell;
       if ((frame&1023) < 200) LOG_D(PHY,"Scrambling init for (i0 %d, i %d, j0 %d, j %d, Nacc %d) => x2 %d\n",i0,i,j0,j,Nacc,x2);
