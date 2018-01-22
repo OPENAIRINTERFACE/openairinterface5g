@@ -846,7 +846,8 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
         ulsch = eNB_PHY->ulsch[i];
         if((ulsch != NULL) && (ulsch->rnti == rnti)){
           LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
-          clean_eNb_ulsch(ulsch);
+          //clean_eNb_ulsch(ulsch);
+          ulsch->rnti = 0;
           break;
         }
       }
@@ -1797,7 +1798,8 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
       ulsch = eNB_PHY->ulsch[i];
       if((ulsch != NULL) && (ulsch->rnti == ctxt_prior.rnti)){
         LOG_I(RRC, "clean_eNb_ulsch UE %x \n", ctxt_prior.rnti);
-        clean_eNb_ulsch(ulsch);
+        //clean_eNb_ulsch(ulsch);
+        ulsch->rnti = 0;
         break;
       }
     }
