@@ -267,7 +267,7 @@ void RCconfig_flexran()
     RC.flexran[i]->remote_port      = *(flexranParams[FLEXRAN_PORT_IDX].uptr);
     // DEFAULT_FLEXRAN_AGENT_CACHE
     RC.flexran[i]->cache_name       = strdup(*(flexranParams[FLEXRAN_CACHE_IDX].strptr));
-    RC.flexran[i]->await_reconf     = strcmp(*(flexranParams[FLEXRAN_AWAIT_RECONF_IDX].strptr), "yes") == 0;
+    RC.flexran[i]->node_ctrl_state  = strcmp(*(flexranParams[FLEXRAN_AWAIT_RECONF_IDX].strptr), "yes") == 0 ? ENB_WAIT : ENB_NORMAL_OPERATION;
     RC.flexran[i]->enb_id           = i;
   }
 

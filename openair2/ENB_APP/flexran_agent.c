@@ -180,16 +180,17 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
 int channel_container_init = 0;
 int flexran_agent_start(mid_t mod_id)
 {
+  flexran_agent_info_t *flexran = RC.flexran[mod_id];
   int channel_id;
-  char *in_ip = RC.flexran[mod_id]->remote_ipv4_addr;
-  uint16_t in_port = RC.flexran[mod_id]->remote_port;
+  char *in_ip = flexran->remote_ipv4_addr;
+  uint16_t in_port = flexran->remote_port;
   
-  RC.flexran[mod_id]->enb_id = mod_id;
+  flexran->enb_id = mod_id;
   /* assume for the moment the monolithic case, i.e. agent can provide
    * information for all layers */
-  RC.flexran[mod_id]->capability_mask = FLEXRAN_CAP_LOL1 | FLEXRAN_CAP_HIL1
-                                      | FLEXRAN_CAP_LOL2 | FLEXRAN_CAP_HIL2
-                                      | FLEXRAN_CAP_PDCP | FLEXRAN_CAP_RRC;
+  flexran->capability_mask = FLEXRAN_CAP_LOL1 | FLEXRAN_CAP_HIL1
+                           | FLEXRAN_CAP_LOL2 | FLEXRAN_CAP_HIL2
+                           | FLEXRAN_CAP_PDCP | FLEXRAN_CAP_RRC;
 
   /*
    * Initialize the channel container
@@ -228,7 +229,7 @@ int flexran_agent_start(mid_t mod_id)
   /*Initialize the continuous stats update mechanism*/
   flexran_agent_init_cont_stats_update(mod_id);
   
-  new_thread(receive_thread, RC.flexran[mod_id]);
+  new_thread(receive_thread, flexran);
 
   /*Initialize and register the mac xface. Must be modified later
    *for more flexibility in agent management */
@@ -239,8 +240,8 @@ int flexran_agent_start(mid_t mod_id)
   AGENT_RRC_xface *rrc_agent_xface = (AGENT_RRC_xface *) malloc(sizeof(AGENT_RRC_xface));
   flexran_agent_register_rrc_xface(mod_id, rrc_agent_xface);
 
-   AGENT_PDCP_xface *pdcp_agent_xface = (AGENT_PDCP_xface *) malloc(sizeof(AGENT_PDCP_xface));
-   flexran_agent_register_pdcp_xface(mod_id, pdcp_agent_xface);
+  AGENT_PDCP_xface *pdcp_agent_xface = (AGENT_PDCP_xface *) malloc(sizeof(AGENT_PDCP_xface));
+  flexran_agent_register_pdcp_xface(mod_id, pdcp_agent_xface);
 
   /* 
    * initilize a timer 
@@ -257,14 +258,34 @@ int flexran_agent_start(mid_t mod_id)
    * start the enb agent task for tx and interaction with the underlying network function
    */ 
   if (!agent_task_created) {
-    if (itti_create_task (TASK_FLEXRAN_AGENT, flexran_agent_task, (void *) RC.flexran[mod_id]) < 0) {
+    if (itti_create_task (TASK_FLEXRAN_AGENT, flexran_agent_task, flexran) < 0) {
       LOG_E(FLEXRAN_AGENT, "Create task for FlexRAN Agent failed\n");
       return -1;
     }
     agent_task_created = 1;
   }
-  
-  LOG_I(FLEXRAN_AGENT,"client ends\n");
+
+  pthread_mutex_init(&flexran->mutex_node_ctrl, NULL);
+  pthread_cond_init(&flexran->cond_node_ctrl, NULL);
+
+  if (flexran->node_ctrl_state == ENB_WAIT) {
+    /* wait three seconds before showing message and waiting "for real".
+     * This way, the message is (hopefully...) the last one and the user knows
+     * what is happening. If the controller sends a reconfiguration message in
+     * the meantime, the softmodem will never wait */
+    sleep(3);
+    LOG_I(ENB_APP, " * eNB %d: Waiting for FlexRAN RTController command *\n", mod_id);
+    pthread_mutex_lock(&flexran->mutex_node_ctrl);
+    while (ENB_NORMAL_OPERATION != flexran->node_ctrl_state)
+      pthread_cond_wait(&flexran->cond_node_ctrl, &flexran->mutex_node_ctrl);
+    pthread_mutex_unlock(&flexran->mutex_node_ctrl);
+
+    /* reconfigure RRC again, the agent might have changed the configuration */
+    MessageDef *msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+    RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[mod_id]->configuration;
+    itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg_p);
+  }
+
   return 0;
 
 error:

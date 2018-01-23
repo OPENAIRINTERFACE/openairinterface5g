@@ -272,10 +272,7 @@ extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
 
 #ifdef FLEXRAN_AGENT_SB_IF
-#include "flexran_agent.h" // for locking
-//volatile ENB_MODULE_STATE node_control_state;
-pthread_cond_t cond_node_ctrl;
-pthread_mutex_t mutex_node_ctrl;
+#include "flexran_agent.h"
 #endif
 
 #endif

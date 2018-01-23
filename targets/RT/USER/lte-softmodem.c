@@ -1149,26 +1149,6 @@ int main( int argc, char **argv )
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
-#ifdef FLEXRAN_AGENT_SB_IF
-    pthread_mutex_init(&mutex_node_ctrl, NULL);
-    pthread_cond_init(&cond_node_ctrl, NULL);
-
-    /* create RC.flexran data structure */
-    RCconfig_flexran();
-    for (i = 0; i < RC.nb_L1_inst; i++) {
-      flexran_agent_start(i);
-    }
-
-    /* TODO handle restart/initial blocking */
-    //LOG_I(ENB_APP, " * Waiting for FlexRAN RTController command *\n");
-    //pthread_mutex_lock(&mutex_node_ctrl);
-    //while (ENB_NORMAL_OPERATION != node_control_state)
-    //  pthread_cond_wait(&cond_node_ctrl, &mutex_node_ctrl);
-    //pthread_mutex_unlock(&mutex_node_ctrl);
-
-    /* TODO do eNB reconfiguration (handled implicitly?) */
-#endif
-
     if (UE_flag==1) {     
       NB_UE_INST=1;     
       NB_INST=1;     
@@ -1291,7 +1271,13 @@ int main( int argc, char **argv )
     RCconfig_L1();
   }
 #endif
-  
+
+#ifdef FLEXRAN_AGENT_SB_IF
+    RCconfig_flexran();
+    for (i = 0; i < RC.nb_L1_inst; i++) {
+      flexran_agent_start(i);
+    }
+#endif
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   
@@ -1506,11 +1492,6 @@ int main( int argc, char **argv )
 
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
-
-#ifdef FLEXRAN_AGENT_SB_IF
-    pthread_cond_destroy(&cond_node_ctrl);
-    pthread_mutex_destroy(&mutex_node_ctrl);
-#endif
 
   // *** Handle per CC_id openair0
   if (UE_flag==1) {

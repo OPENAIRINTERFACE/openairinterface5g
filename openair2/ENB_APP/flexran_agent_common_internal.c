@@ -39,13 +39,32 @@ void handle_reconfiguration(mid_t mod_id)
 {
   struct timespec start, end;
   clock_gettime(CLOCK_MONOTONIC, &start);
+  flexran_agent_info_t *flexran = RC.flexran[mod_id];
+
+  if (ENB_WAIT == flexran->node_ctrl_state) {
+    /* this is already waiting, just release */
+    pthread_mutex_lock(&flexran->mutex_node_ctrl);
+    flexran->node_ctrl_state = ENB_NORMAL_OPERATION;
+    pthread_mutex_unlock(&flexran->mutex_node_ctrl);
+    pthread_cond_signal(&flexran->cond_node_ctrl);
+    return;
+  }
 
   if (stop_L1L2(mod_id) < 0) {
     LOG_E(ENB_APP, "can not stop lte-softmodem, aborting restart\n");
     return;
   }
 
-  /* TODO wait state could be here IF IT IS NOT EXECUTED BY THE FLEXRAN THREAD */
+  /* node_ctrl_state should have value ENB_MAKE_WAIT only if this method is not
+   * executed by the FlexRAN thread */
+  if (ENB_MAKE_WAIT == flexran->node_ctrl_state) {
+    LOG_I(ENB_APP, " * eNB %d: Waiting for FlexRAN RTController command *\n", mod_id);
+    pthread_mutex_lock(&flexran->mutex_node_ctrl);
+    flexran->node_ctrl_state = ENB_WAIT;
+    while (ENB_NORMAL_OPERATION != flexran->node_ctrl_state)
+      pthread_cond_wait(&flexran->cond_node_ctrl, &flexran->mutex_node_ctrl);
+    pthread_mutex_unlock(&flexran->mutex_node_ctrl);
+  }
 
   if (restart_L1L2(mod_id) < 0) {
     LOG_F(ENB_APP, "can not restart, killing lte-softmodem\n");

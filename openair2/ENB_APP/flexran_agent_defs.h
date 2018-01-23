@@ -145,16 +145,26 @@ typedef enum {
 #define FLEXRAN_CAP_PDCP 0x16
 #define FLEXRAN_CAP_RRC  0x32
 
+typedef enum {
+  ENB_NORMAL_OPERATION = 0x0,
+  ENB_WAIT             = 0x1,
+  ENB_MAKE_WAIT        = 0x2,
+} flexran_enb_state_t;
+
 typedef struct {
   /* general info */ 
   char    *interface_name;
   char    *remote_ipv4_addr;
   uint16_t remote_port;
   char    *cache_name;
-  uint8_t  await_reconf;
 
   int      enb_id;
   uint8_t  capability_mask;
+
+  /* lock for waiting before starting or soft-restart */
+  pthread_cond_t      cond_node_ctrl;
+  pthread_mutex_t     mutex_node_ctrl;
+  flexran_enb_state_t node_ctrl_state;
 
   /* stats */
 
