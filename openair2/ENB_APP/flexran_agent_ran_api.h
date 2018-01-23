@@ -50,8 +50,6 @@
  * get generic info from RAN
  ****************************/
 
-void flexran_set_RC_vars(mid_t mod_id, ran_name_t ran);
-
 uint32_t flexran_get_current_time_ms(mid_t mod_id, int subframe_flag);
 
 /*Return the current frame number

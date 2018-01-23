@@ -28,48 +28,35 @@
 
 #include "flexran_agent_ran_api.h"
 
-/*
- *  generic info from RAN
- */
-
-PHY_VARS_eNB *phy[NUM_MAX_ENB][MAX_NUM_CCs] = { NULL };
-eNB_MAC_INST *mac[NUM_MAX_ENB]     = { NULL };
-eNB_RRC_INST *rrc[NUM_MAX_ENB]     = { NULL };
-UE_list_t    *UE_list[NUM_MAX_ENB] = { NULL };
-
-void flexran_set_RC_vars(mid_t mod_id, ran_name_t ran)
+static inline int phy_is_present(mid_t mod_id, uint8_t cc_id)
 {
-  int i;
-  if (ran == RAN_LTE_OAI) {
-    if (RC.eNB && mod_id < RC.nb_RU && RC.eNB[mod_id] && RC.nb_CC)
-      for (i = 0; i < *RC.nb_CC; i++)
-        phy[mod_id][i]     =  RC.eNB[mod_id][i];
-    if (RC.mac && mod_id < RC.nb_macrlc_inst && RC.mac[mod_id]) {
-      mac[mod_id]     =  RC.mac[mod_id];
-      UE_list[mod_id] = &RC.mac[mod_id]->UE_list;
-    }
-    if (RC.rrc && mod_id < RC.nb_macrlc_inst && RC.rrc[mod_id])
-      rrc[mod_id]     =  RC.rrc[mod_id];
-  }
-  else {
-    LOG_E(FLEXRAN_AGENT, "unknown RAN name %d when setting RAN API variables\n", ran);
-  }
+  return RC.eNB && RC.eNB[mod_id] && RC.eNB[mod_id][cc_id];
+}
+
+static inline int mac_is_present(mid_t mod_id)
+{
+  return RC.mac && RC.mac[mod_id];
+}
+
+static inline int rrc_is_present(mid_t mod_id)
+{
+  return RC.rrc && RC.rrc[mod_id];
 }
 
 uint32_t flexran_get_current_time_ms(mid_t mod_id, int subframe_flag)
 {
-  if (!mac[mod_id]) return 0;
+  if (!mac_is_present(mod_id)) return 0;
   if (subframe_flag == 1)
-    return mac[mod_id]->frame*10 + mac[mod_id]->subframe;
+    return RC.mac[mod_id]->frame*10 + RC.mac[mod_id]->subframe;
   else
-    return mac[mod_id]->frame*10;
+    return RC.mac[mod_id]->frame*10;
 }
 
 frame_t flexran_get_current_frame(mid_t mod_id)
 {
-  if (!mac[mod_id]) return 0;
+  if (!mac_is_present(mod_id)) return 0;
   //  #warning "SFN will not be in [0-1023] when oaisim is used"
-  return mac[mod_id]->frame;
+  return RC.mac[mod_id]->frame;
 }
 
 frame_t flexran_get_current_system_frame_num(mid_t mod_id)
@@ -79,8 +66,8 @@ frame_t flexran_get_current_system_frame_num(mid_t mod_id)
 
 sub_frame_t flexran_get_current_subframe(mid_t mod_id)
 {
-  if (!mac[mod_id]) return 0;
-  return mac[mod_id]->subframe;
+  if (!mac_is_present(mod_id)) return 0;
+  return RC.mac[mod_id]->subframe;
 }
 
 /* Why uint16_t, frame_t and sub_frame_t are defined as uint32_t? */
@@ -121,8 +108,8 @@ uint16_t flexran_get_future_sfn_sf(mid_t mod_id, int ahead_of_time)
 
 int flexran_get_num_ues(mid_t mod_id)
 {
-  if (!UE_list[mod_id]) return 0;
-  return UE_list[mod_id]->num_UEs;
+  if (!mac_is_present(mod_id)) return 0;
+  return RC.mac[mod_id]->UE_list.num_UEs;
 }
 
 rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id)
@@ -132,20 +119,20 @@ rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id)
 
 uint8_t flexran_get_ue_bsr(mid_t mod_id, mid_t ue_id, lcid_t lcid)
 {
-  if (!UE_list[mod_id]) return 0;
-  return UE_list[mod_id]->UE_template[UE_PCCID(mod_id, ue_id)][ue_id].bsr_info[lcid];
+  if (!mac_is_present(mod_id)) return 0;
+  return RC.mac[mod_id]->UE_list.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].bsr_info[lcid];
 }
 
 int8_t flexran_get_ue_phr(mid_t mod_id, mid_t ue_id)
 {
-  if (!UE_list[mod_id]) return 0;
-  return UE_list[mod_id]->UE_template[UE_PCCID(mod_id, ue_id)][ue_id].phr_info;
+  if (!mac_is_present(mod_id)) return 0;
+  return RC.mac[mod_id]->UE_list.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].phr_info;
 }
 
 uint8_t flexran_get_ue_wcqi(mid_t mod_id, mid_t ue_id)
 {
-  if (!phy[mod_id][0]) return 0;
-  return phy[mod_id][0]->UE_stats[ue_id].DL_cqi[0];
+  if (!phy_is_present(mod_id, 0)) return 0;
+  return RC.eNB[mod_id][0]->UE_stats[ue_id].DL_cqi[0];
 }
 
 rlc_buffer_occupancy_t flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
@@ -177,9 +164,9 @@ frame_t flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t chann
 
 int32_t flexran_get_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
 
-  int32_t tau = phy[mod_id][cc_id]->UE_stats[ue_id].timing_advance_update;
+  int32_t tau = RC.eNB[mod_id][cc_id]->UE_stats[ue_id].timing_advance_update;
   switch (flexran_get_N_RB_DL(mod_id, cc_id)) {
   case 6:
     return tau;
@@ -203,8 +190,8 @@ int32_t flexran_get_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 
 uint8_t flexran_get_ue_wpmi(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
-  if (!UE_list[mod_id]) return 0;
-  return UE_list[mod_id]->UE_sched_ctrl[ue_id].periodic_wideband_pmi[cc_id];
+  if (!mac_is_present(mod_id)) return 0;
+  return RC.mac[mod_id]->UE_list.UE_sched_ctrl[ue_id].periodic_wideband_pmi[cc_id];
 }
 
 /* TODO needs to be revised */
@@ -235,7 +222,7 @@ void flexran_update_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
 #warning "Implement flexran_get_MAC_CE_bitmap_TA() in RAN API"
-  if (!phy[mod_id][cc_id]) return 0;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
 
   /* UE_stats can not be null, they are an array in RC
   LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
@@ -254,25 +241,25 @@ int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 
 int flexran_get_active_CC(mid_t mod_id, mid_t ue_id)
 {
-  if (!UE_list[mod_id]) return 0;
-  return UE_list[mod_id]->numactiveCCs[ue_id];
+  if (!mac_is_present(mod_id)) return 0;
+  return RC.mac[mod_id]->UE_list.numactiveCCs[ue_id];
 }
 
 uint8_t flexran_get_current_RI(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->UE_stats[ue_id].rank;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->UE_stats[ue_id].rank;
 }
 
 int flexran_get_tpc(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
 
   /* before: tested that UL_rssi != NULL and set parameter ([0]), but it is a
    * static array -> target_rx_power is useless in old ifs?! */
   int pCCid = UE_PCCID(mod_id,ue_id);
-  int32_t target_rx_power = phy[mod_id][pCCid]->frame_parms.ul_power_control_config_common.p0_NominalPUSCH;
-  int32_t normalized_rx_power = phy[mod_id][cc_id]->UE_stats[ue_id].UL_rssi[0];
+  int32_t target_rx_power = RC.eNB[mod_id][pCCid]->frame_parms.ul_power_control_config_common.p0_NominalPUSCH;
+  int32_t normalized_rx_power = RC.eNB[mod_id][cc_id]->UE_stats[ue_id].UL_rssi[0];
 
   int tpc;
   if (normalized_rx_power > target_rx_power + 1)
@@ -334,26 +321,26 @@ int flexran_get_harq(mid_t       mod_id,
 
 int32_t flexran_get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->UE_stats[ue_id].Po_PUCCH_dBm;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->UE_stats[ue_id].Po_PUCCH_dBm;
 }
 
 int8_t flexran_get_p0_nominal_pucch(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.ul_power_control_config_common.p0_NominalPUCCH;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.ul_power_control_config_common.p0_NominalPUCCH;
 }
 
 int32_t flexran_get_p0_pucch_status(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->UE_stats[ue_id].Po_PUCCH_update;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->UE_stats[ue_id].Po_PUCCH_update;
 }
 
 int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  phy[mod_id][cc_id]->UE_stats[ue_id].Po_PUCCH_update = 0;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  RC.eNB[mod_id][cc_id]->UE_stats[ue_id].Po_PUCCH_update = 0;
   return 0;
 }
 
@@ -365,46 +352,46 @@ int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
  */
 uint8_t flexran_get_threequarter_fs(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.threequarter_fs;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.threequarter_fs;
 }
 
 
 uint8_t flexran_get_hopping_offset(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.pusch_config_common.pusch_HoppingOffset;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.pusch_HoppingOffset;
 }
 
 PUSCH_HOPPING_t flexran_get_hopping_mode(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.pusch_config_common.hoppingMode;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.hoppingMode;
 }
 
 uint8_t flexran_get_n_SB(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.pusch_config_common.n_SB;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.n_SB;
 }
 
 uint8_t flexran_get_enable64QAM(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.pusch_config_common.enable64QAM;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.enable64QAM;
 }
 
 PHICH_DURATION_t flexran_get_phich_duration(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.phich_config_common.phich_duration;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.phich_config_common.phich_duration;
 }
 
 int flexran_get_phich_resource(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
   /* TODO why don't we return phich_resource? */
-  switch (phy[mod_id][cc_id]->frame_parms.phich_config_common.phich_resource) {
+  switch (RC.eNB[mod_id][cc_id]->frame_parms.phich_config_common.phich_resource) {
   case oneSixth:
     return 0;
   case half:
@@ -420,122 +407,122 @@ int flexran_get_phich_resource(mid_t mod_id, uint8_t cc_id)
 
 uint16_t flexran_get_n1pucch_an(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.pucch_config_common.n1PUCCH_AN;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.pucch_config_common.n1PUCCH_AN;
 }
 
 uint8_t flexran_get_nRB_CQI(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.pucch_config_common.nRB_CQI;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.pucch_config_common.nRB_CQI;
 }
 
 uint8_t flexran_get_deltaPUCCH_Shift(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.pucch_config_common.deltaPUCCH_Shift;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.pucch_config_common.deltaPUCCH_Shift;
 }
 
 uint8_t flexran_get_prach_ConfigIndex(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
 }
 
 uint8_t flexran_get_prach_FreqOffset(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset;
 }
 
 uint8_t flexran_get_maxHARQ_Msg3Tx(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.maxHARQ_Msg3Tx;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.maxHARQ_Msg3Tx;
 }
 
 lte_prefix_type_t flexran_get_ul_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.Ncp_UL;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.Ncp_UL;
 }
 
 lte_prefix_type_t flexran_get_dl_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.Ncp;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.Ncp;
 }
 
 uint16_t flexran_get_cell_id(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.Nid_cell;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.Nid_cell;
 }
 
 uint8_t flexran_get_srs_BandwidthConfig(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.soundingrs_ul_config_common.srs_BandwidthConfig;
 }
 
 uint8_t flexran_get_srs_SubframeConfig(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.soundingrs_ul_config_common.srs_SubframeConfig;
 }
 
 uint8_t flexran_get_srs_MaxUpPts(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.soundingrs_ul_config_common.srs_MaxUpPts;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.soundingrs_ul_config_common.srs_MaxUpPts;
 }
 
 uint8_t flexran_get_N_RB_DL(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.N_RB_DL;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.N_RB_DL;
 }
 
 uint8_t flexran_get_N_RB_UL(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.N_RB_UL;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.N_RB_UL;
 }
 
 uint8_t flexran_get_N_RBG(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.N_RBG;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.N_RBG;
 }
 
 uint8_t flexran_get_subframe_assignment(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.tdd_config;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.tdd_config;
 }
 
 uint8_t flexran_get_special_subframe_assignment(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.tdd_config_S;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.tdd_config_S;
 }
 
 long flexran_get_ra_ResponseWindowSize(mid_t mod_id, uint8_t cc_id)
 {
-  if (!rrc[mod_id]) return 0;
-  return rrc[mod_id]->configuration.rach_raResponseWindowSize[cc_id];
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->configuration.rach_raResponseWindowSize[cc_id];
 }
 
 long flexran_get_mac_ContentionResolutionTimer(mid_t mod_id, uint8_t cc_id)
 {
-  if (!rrc[mod_id]) return 0;
-  return rrc[mod_id]->configuration.rach_macContentionResolutionTimer[cc_id];
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->configuration.rach_macContentionResolutionTimer[cc_id];
 }
 
 Protocol__FlexDuplexMode flexran_get_duplex_mode(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  switch (phy[mod_id][cc_id]->frame_parms.frame_type) {
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  switch (RC.eNB[mod_id][cc_id]->frame_parms.frame_type) {
   case TDD:
     return PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD;
   case FDD:
@@ -547,21 +534,21 @@ Protocol__FlexDuplexMode flexran_get_duplex_mode(mid_t mod_id, uint8_t cc_id)
 
 long flexran_get_si_window_length(mid_t mod_id, uint8_t cc_id)
 {
-  if (!rrc[mod_id] || !rrc[mod_id]->carrier[cc_id].sib1) return 0;
-  return rrc[mod_id]->carrier[cc_id].sib1->si_WindowLength;
+  if (!rrc_is_present(mod_id) || !RC.rrc[mod_id]->carrier[cc_id].sib1) return 0;
+  return RC.rrc[mod_id]->carrier[cc_id].sib1->si_WindowLength;
 }
 
 uint8_t flexran_get_sib1_length(mid_t mod_id, uint8_t cc_id)
 {
-  if (!rrc[mod_id]) return 0;
-  return rrc[mod_id]->carrier[cc_id].sizeof_SIB1;
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->carrier[cc_id].sizeof_SIB1;
 }
 
 uint8_t flexran_get_num_pdcch_symb(mid_t mod_id, uint8_t cc_id) {
   /* TODO: This should return the number of PDCCH symbols initially used by the
    * cell cc_id -> is the correction right? */
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->pdcch_vars[0].num_pdcch_symbols;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->pdcch_vars[0].num_pdcch_symbols;
   //(PHY_vars_UE_g[mod_id][cc_id]->lte_ue_pdcch_vars[mod_id]->num_pdcch_symbols);
 }
 
@@ -576,10 +563,10 @@ uint8_t flexran_get_num_pdcch_symb(mid_t mod_id, uint8_t cc_id) {
 
 TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig) return -1;
@@ -588,10 +575,10 @@ TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id)
 
 Protocol__FlexMeasGapConfigPattern flexran_get_meas_gap_config(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measGapConfig) return -1;
@@ -609,10 +596,10 @@ Protocol__FlexMeasGapConfigPattern flexran_get_meas_gap_config(mid_t mod_id, mid
 
 long flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measGapConfig) return -1;
@@ -631,9 +618,9 @@ long flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id)
 /* TODO return type is unsigned, so we cannot return -1 in case of error! */
 uint8_t flexran_get_rrc_status(mid_t mod_id, rnti_t rnti)
 {
-  if (!rrc[mod_id]) return 0;
+  if (!rrc_is_present(mod_id)) return 0;
 
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return RRC_INACTIVE;
   return ue_context_p->ue_context.Status;
@@ -641,14 +628,14 @@ uint8_t flexran_get_rrc_status(mid_t mod_id, rnti_t rnti)
 
 uint64_t flexran_get_ue_aggregated_max_bitrate_dl(mid_t mod_id, mid_t ue_id)
 {
-  if (!UE_list[mod_id]) return 0;
-  return UE_list[mod_id]->UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateDL;
+  if (!mac_is_present(mod_id)) return 0;
+  return RC.mac[mod_id]->UE_list.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateDL;
 }
 
 uint64_t flexran_get_ue_aggregated_max_bitrate_ul(mid_t mod_id, mid_t ue_id)
 {
-  if (!UE_list[mod_id]) return 0;
-  return UE_list[mod_id]->UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateUL;
+  if (!mac_is_present(mod_id)) return 0;
+  return RC.mac[mod_id]->UE_list.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateUL;
 }
 
 int flexran_get_half_duplex(mid_t ue_id)
@@ -704,10 +691,10 @@ int flexran_get_res_alloc_type1(mid_t ue_id)
 
 long flexran_get_ue_transmission_mode(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
@@ -717,10 +704,10 @@ long flexran_get_ue_transmission_mode(mid_t mod_id, mid_t ue_id)
 
 BOOLEAN_t flexran_get_tti_bundling(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig->ul_SCH_Config) return -1;
@@ -729,10 +716,10 @@ BOOLEAN_t flexran_get_tti_bundling(mid_t mod_id, mid_t ue_id)
 
 long flexran_get_maxHARQ_TX(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig) return -1;
@@ -742,10 +729,10 @@ long flexran_get_maxHARQ_TX(mid_t mod_id, mid_t ue_id)
 
 long flexran_get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
@@ -755,10 +742,10 @@ long flexran_get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id)
 
 long flexran_get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
@@ -768,10 +755,10 @@ long flexran_get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id)
 
 long flexran_get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
@@ -781,10 +768,10 @@ long flexran_get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id)
 
 BOOLEAN_t flexran_get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
@@ -795,17 +782,17 @@ BOOLEAN_t flexran_get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id)
 
 BOOLEAN_t flexran_get_ack_nack_simultaneous_trans(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
-  if (!rrc[mod_id]) return -1;
-  if (!rrc[mod_id]->carrier[cc_id].sib2) return -1;
-  return rrc[mod_id]->carrier[cc_id].sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
+  if (!rrc_is_present(mod_id)) return -1;
+  if (!RC.rrc[mod_id]->carrier[cc_id].sib2) return -1;
+  return RC.rrc[mod_id]->carrier[cc_id].sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
 }
 
 CQI_ReportModeAperiodic_t flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
@@ -815,10 +802,10 @@ CQI_ReportModeAperiodic_t flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t 
 
 long flexran_get_tdd_ack_nack_feedback_mode(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
@@ -829,10 +816,10 @@ long flexran_get_tdd_ack_nack_feedback_mode(mid_t mod_id, mid_t ue_id)
 
 long flexran_get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
@@ -842,10 +829,10 @@ long flexran_get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id)
 
 long flexran_get_extended_bsr_size(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig) return -1;
@@ -856,10 +843,10 @@ long flexran_get_extended_bsr_size(mid_t mod_id, mid_t ue_id)
 
 int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
@@ -900,92 +887,112 @@ int flexran_get_direction(mid_t ue_id, mid_t lc_id)
 
 uint8_t flexran_get_antenna_ports(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.nb_antenna_ports_eNB;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.nb_antenna_ports_eNB;
 }
 
 /* TODO better give real value (without division)? */
 uint32_t flexran_agent_get_operating_dl_freq(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.dl_CarrierFreq / 1000000;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.dl_CarrierFreq / 1000000;
 }
 
 /* TODO better give real value (without division)? */
 uint32_t flexran_agent_get_operating_ul_freq(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.ul_CarrierFreq / 1000000;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.ul_CarrierFreq / 1000000;
 }
 
 uint8_t flexran_agent_get_operating_eutra_band(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.eutra_band;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.eutra_band;
 }
 
 int8_t flexran_agent_get_operating_pdsch_refpower(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy[mod_id][cc_id]) return 0;
-  return phy[mod_id][cc_id]->frame_parms.pdsch_config_common.referenceSignalPower;
+  if (!phy_is_present(mod_id, cc_id)) return 0;
+  return RC.eNB[mod_id][cc_id]->frame_parms.pdsch_config_common.referenceSignalPower;
 }
 
 long flexran_agent_get_operating_pusch_p0(mid_t mod_id, uint8_t cc_id)
 {
-  if (!rrc[mod_id]) return 0;
-  return rrc[mod_id]->configuration.pusch_p0_Nominal[cc_id];
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->configuration.pusch_p0_Nominal[cc_id];
 }
 
 void flexran_agent_set_operating_dl_freq(mid_t mod_id, uint8_t cc_id, uint32_t dl_freq_mhz)
 {
-  if (phy[mod_id][cc_id]) {
-    phy[mod_id][cc_id]->frame_parms.dl_CarrierFreq = dl_freq_mhz * 1000000;
+  if (phy_is_present(mod_id, cc_id)) {
+    RC.eNB[mod_id][cc_id]->frame_parms.dl_CarrierFreq = dl_freq_mhz * 1000000;
+  } else {
+    LOG_E(FLEXRAN_AGENT, "can not set dl_CarrierFreq to %d MHz in PHY: PHY is not present\n", dl_freq_mhz);
   }
-  if (rrc[mod_id]) {
-    rrc[mod_id]->configuration.downlink_frequency[cc_id] = dl_freq_mhz * 1000000;
+  if (rrc_is_present(mod_id)) {
+    RC.rrc[mod_id]->configuration.downlink_frequency[cc_id] = dl_freq_mhz * 1000000;
+  } else {
+    LOG_E(FLEXRAN_AGENT, "can not set downlink_frequency to %d MHz in RRC: RRC is not present\n", dl_freq_mhz);
   }
 }
 
 void flexran_agent_set_operating_ul_freq(mid_t mod_id, uint8_t cc_id, int32_t ul_freq_mhz_offset)
 {
-  if (phy[mod_id][cc_id]) {
+  if (phy_is_present(mod_id, cc_id)) {
     uint32_t new_ul_freq_mhz = flexran_agent_get_operating_dl_freq(mod_id, cc_id) + ul_freq_mhz_offset;
-    phy[mod_id][cc_id]->frame_parms.ul_CarrierFreq = new_ul_freq_mhz * 1000000;
+    RC.eNB[mod_id][cc_id]->frame_parms.ul_CarrierFreq = new_ul_freq_mhz * 1000000;
+  } else {
+    LOG_E(FLEXRAN_AGENT, "can not set ul_CarrierFreq using offset %d MHz in PHY: PHY is not present\n", ul_freq_mhz_offset);
   }
-  if (rrc[mod_id]) {
-    rrc[mod_id]->configuration.uplink_frequency_offset[cc_id] = ul_freq_mhz_offset;
+  if (rrc_is_present(mod_id)) {
+    RC.rrc[mod_id]->configuration.uplink_frequency_offset[cc_id] = ul_freq_mhz_offset;
+  } else {
+    LOG_E(FLEXRAN_AGENT, "can not set uplink_frequency_offset to %d MHz in RRC: RRC is not present\n", ul_freq_mhz_offset);
   }
 }
 
 void flexran_agent_set_operating_eutra_band(mid_t mod_id, uint8_t cc_id, uint8_t eutra_band)
 {
-  if (phy[mod_id][cc_id]) {
-    phy[mod_id][cc_id]->frame_parms.eutra_band = eutra_band;
+  if (phy_is_present(mod_id, cc_id)) {
+    RC.eNB[mod_id][cc_id]->frame_parms.eutra_band = eutra_band;
+  } else {
+    LOG_E(FLEXRAN_AGENT, "can not set eutra_band to %d in PHY: PHY is not present\n", eutra_band);
   }
-  if (rrc[mod_id]) {
-    rrc[mod_id]->configuration.eutra_band[cc_id] = eutra_band;
+  if (rrc_is_present(mod_id)) {
+    RC.rrc[mod_id]->configuration.eutra_band[cc_id] = eutra_band;
+  } else {
+    LOG_E(FLEXRAN_AGENT, "can not set eutra_band to %d in RRC: RRC is not present\n", eutra_band);
   }
 }
 
 /* Sets both DL/UL */
 void flexran_agent_set_operating_bandwidth(mid_t mod_id, uint8_t cc_id, uint8_t N_RB)
 {
-  if (phy[mod_id][cc_id]) {
-    phy[mod_id][cc_id]->frame_parms.N_RB_DL = N_RB;
-    phy[mod_id][cc_id]->frame_parms.N_RB_UL = N_RB;
+  if (phy_is_present(mod_id, cc_id)) {
+    RC.eNB[mod_id][cc_id]->frame_parms.N_RB_DL = N_RB;
+    RC.eNB[mod_id][cc_id]->frame_parms.N_RB_UL = N_RB;
+  } else {
+    LOG_E(FLEXRAN_AGENT, "can not set N_RB_DL and N_RB_UL to %d in PHY: PHY is not present\n", N_RB);
   }
-  if (rrc[mod_id]) {
-    rrc[mod_id]->configuration.N_RB_DL[cc_id] = N_RB;
+  if (rrc_is_present(mod_id)) {
+    RC.rrc[mod_id]->configuration.N_RB_DL[cc_id] = N_RB;
+  } else {
+    LOG_E(FLEXRAN_AGENT, "can not set N_RB_DL to %d in RRC: RRC is not present\n", N_RB);
   }
 }
 
 void flexran_agent_set_operating_frame_type(mid_t mod_id, uint8_t cc_id, lte_frame_type_t frame_type)
 {
-  if (phy[mod_id][cc_id]) {
-    phy[mod_id][cc_id]->frame_parms.frame_type = frame_type;
+  if (phy_is_present(mod_id, cc_id)) {
+    RC.eNB[mod_id][cc_id]->frame_parms.frame_type = frame_type;
+  } else {
+    LOG_E(FLEXRAN_AGENT, "can not set frame_type to %d in PHY: PHY is not present\n", frame_type);
   }
-  if (rrc[mod_id]) {
-    rrc[mod_id]->configuration.frame_type[cc_id] = frame_type;
+  if (rrc_is_present(mod_id)) {
+    RC.rrc[mod_id]->configuration.frame_type[cc_id] = frame_type;
+  } else {
+    LOG_E(FLEXRAN_AGENT, "can not set frame_type to %d in RRC: RRC is not present\n", frame_type);
   }
 }
 
@@ -1097,10 +1104,10 @@ uint32_t flexran_get_pdcp_rx_oo(const mid_t mod_id,  const mid_t ue_id, const lc
 
 MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
@@ -1109,10 +1116,10 @@ MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id)
 
 float flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
@@ -1121,10 +1128,10 @@ float flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id)
 
 float flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
@@ -1134,10 +1141,10 @@ float flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id)
 /*Number of neighbouring cells for specific UE*/
 int flexran_get_rrc_num_ncell(mid_t mod_id, mid_t ue_id)
 {
-  if (!rrc[mod_id]) return 0;
+  if (!rrc_is_present(mod_id)) return 0;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return 0;
   if (!ue_context_p->ue_context.measResults) return 0;
@@ -1148,10 +1155,10 @@ int flexran_get_rrc_num_ncell(mid_t mod_id, mid_t ue_id)
 
 PhysCellId_t flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int cell_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
@@ -1163,10 +1170,10 @@ PhysCellId_t flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int ce
 
 float flexran_get_rrc_neigh_rsrp(mid_t mod_id, mid_t ue_id, int cell_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
@@ -1179,10 +1186,10 @@ float flexran_get_rrc_neigh_rsrp(mid_t mod_id, mid_t ue_id, int cell_id)
 
 float flexran_get_rrc_neigh_rsrq(mid_t mod_id, mid_t ue_id, int cell_id)
 {
-  if (!rrc[mod_id]) return -1;
+  if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
-  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(rrc[mod_id], rnti);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
