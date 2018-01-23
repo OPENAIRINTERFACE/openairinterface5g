@@ -872,11 +872,11 @@ void wait_eNBs(void) {
   printf("eNB L1 are configured\n");
 }
 
-#if defined(ENABLE_ITTI) && defined(FLEXRAN_AGENT_SB_IF)
+#if defined(ENABLE_ITTI)
 /*
  * helper function to terminate a certain ITTI task
  */
-void terminate_task(task_id_t task_id, mid_t mod_id)
+void terminate_task(task_id_t task_id, module_id_t mod_id)
 {
   LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
@@ -884,70 +884,71 @@ void terminate_task(task_id_t task_id, mid_t mod_id)
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
-#if 0
-int stop_L1L2(int enb_id)
+int stop_L1L2(module_id_t enb_id)
 {
-  int CC_id;
-
   LOG_W(ENB_APP, "stopping lte-softmodem\n");
   oai_exit = 1;
 
-  /* stop trx devices */
-  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_stop_func) {
-        LOG_I(ENB_APP, "stopping PHY_vars_eNB_g[0][%d]->rfdevice (via trx_stop_func())\n", CC_id);
-        PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_stop_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);
+  if (!RC.ru) {
+    LOG_F(ENB_APP, "no RU configured\n");
+    return -1;
+  }
+
+  /* stop trx devices, multiple carrier currently not supported by RU */
+  if (RC.ru[enb_id]) {
+    if (RC.ru[enb_id]->rfdevice.trx_stop_func) {
+      RC.ru[enb_id]->rfdevice.trx_stop_func(&RC.ru[enb_id]->rfdevice);
+      LOG_I(ENB_APP, "turned off RU rfdevice\n");
+    } else {
+      LOG_W(ENB_APP, "can not turn off rfdevice due to missing trx_stop_func callback, proceding anyway!\n");
     }
-    if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_stop_func) {
-        LOG_I(ENB_APP, "stopping PHY_vars_eNB_g[0][%d]->ifdevice (via trx_stop_func())\n", CC_id);
-        PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_stop_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);
+    if (RC.ru[enb_id]->ifdevice.trx_stop_func) {
+      RC.ru[enb_id]->ifdevice.trx_stop_func(&RC.ru[enb_id]->ifdevice);
+      LOG_I(ENB_APP, "turned off RU ifdevice\n");
+    } else {
+      LOG_W(ENB_APP, "can not turn off ifdevice due to missing trx_stop_func callback, proceding anyway!\n");
     }
+  } else {
+    LOG_W(ENB_APP, "no RU found for index %d\n", enb_id);
+    return -1;
   }
 
   /* these tasks need to pick up new configuration */
   terminate_task(TASK_RRC_ENB, enb_id);
   terminate_task(TASK_L2L1, enb_id);
-  LOG_W(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
+  LOG_I(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
   kill_eNB_proc(enb_id);
+  LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", enb_id);
+  kill_RU_proc(enb_id);
   oai_exit = 0;
   return 0;
 }
 
 /*
- * Restart the lte-softmodem.
- * This function checks whether we are in ENB_NORMAL_OPERATION (defined by
- * FlexRAN). If yes, first stop L1/L2/L3, then resume.
+ * Restart the lte-softmodem after it has been soft-stopped with stop_L1L2()
  */
-int restart_L1L2(int enb_id)
+int restart_L1L2(module_id_t enb_id)
 {
-  int i, aa, CC_id;
-  /* needed for fill_PHY_vars_eNB_g(), defined locally in main();
-   * abstraction flag is needed too, but defined both globally and in main () */
-  uint8_t beta_ACK = 0, beta_RI = 0, beta_CQI = 2;
-  /* needed for macphy_init() */
-  int eMBMS_active = 0;
+  RU_t *ru = RC.ru[enb_id];
+  int cc_id;
+  MessageDef *msg_p = NULL;
 
   LOG_W(ENB_APP, "restarting lte-softmodem\n");
 
   /* block threads */
   sync_var = -1;
 
-  reconfigure_enb_params(enb_id);     /* set frame parameters from configuration */
-
-  /* PHY_vars_eNB_g will be filled by init_lte_eNB(), so free and
-   * let the data structure be filled again */
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    free(PHY_vars_eNB_g[0][CC_id]);
-    fill_PHY_vars_eNB_g(abstraction_flag, beta_ACK, beta_RI, beta_CQI);
+  for (cc_id = 0; cc_id < RC.nb_L1_CC[enb_id]; cc_id++) {
+    RC.eNB[enb_id][cc_id]->configured = 0;
   }
 
-  dump_frame_parms(frame_parms[0]);
-  init_openair0();
 
-  /* give MAC interface current cell information, the rest is the same.
-   * For more info, check l2_init(). Then, initialize it (cf. line 1904). */
-  mac_xface->frame_parms = frame_parms[0];
-  mac_xface->macphy_init(eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,0,0);
+  /* TODO undo malloc_IF4p5_buffer() */
+  RC.ru_mask |= (1 << ru->idx);
+  /* copy the changed frame parameters to the RU */
+  /* TODO this should be done for all RUs associated to this eNB */
+  memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+  set_function_spec_param(RC.ru[enb_id]);
 
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
   if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
@@ -963,28 +964,26 @@ int restart_L1L2(int enb_id)
     LOG_I(PDCP, "Re-created task for L2L1 successfully\n");
   }
 
+  /* pass a reconfiguration request which will configure everything down to
+   * RC.eNB[i][j]->frame_parms, too */
+  msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+  RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
+  itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+
   /* TODO XForms here */
 
-  printf("Initializing eNB threads\n");
-  init_eNB(node_function, node_timing, 1, eth_params, single_thread_flag, wait_for_sync);
-  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_eNB_g[0][CC_id]->rf_map.card=0;
-      PHY_vars_eNB_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
-  }
+  /* TODO check for memory leaks */
+  /* TODO wait_eNBs() would wait for phy_config_request()? */
+  //init_eNB(single_thread_flag,wait_for_sync);
+  wait_eNBs();
+  init_RU_proc(ru);
+  ru->rf_map.card = 0;
+  ru->rf_map.chain = 0; /* CC_id + chain_offset;*/
+  wait_RUs();
+  init_eNB_afterRU();
 
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-
-  printf("Setting eNB buffer to all-RX\n");
-  // Set LSBs for antenna switch (ExpressMIMO)
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_vars_eNB_g[0][CC_id]->hw_timing_advance = 0;
-    for (i=0; i<frame_parms[CC_id]->samples_per_tti*10; i++)
-      for (aa=0; aa<frame_parms[CC_id]->nb_antennas_tx; aa++)
-        PHY_vars_eNB_g[0][CC_id]->common_vars.txdata[0][aa][i] = 0x00010001;
-  }
 
   printf("Sending sync to all threads\n");
-
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);
@@ -992,7 +991,6 @@ int restart_L1L2(int enb_id)
 
   return 0;
 }
-#endif
 #endif
 
 int main( int argc, char **argv )

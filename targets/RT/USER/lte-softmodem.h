@@ -268,8 +268,8 @@ PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t abstraction_flag);
 void init_eNB_afterRU(void);
 
-extern int stop_L1L2(int enb_id);
-extern int restart_L1L2(int enb_id);
+extern int stop_L1L2(module_id_t enb_id);
+extern int restart_L1L2(module_id_t enb_id);
 
 #ifdef FLEXRAN_AGENT_SB_IF
 #include "flexran_agent.h" // for locking

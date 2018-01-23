@@ -32,45 +32,37 @@
 #include "flexran_agent_common_internal.h"
 #include "flexran_agent_mac_internal.h"
 
-/* the following is needed to soft-restart the lte-softmodem */
+/* needed to soft-restart the lte-softmodem */
 #include "targets/RT/USER/lte-softmodem.h"
-#include "assertions.h"
-#include "enb_app.h"
 
-#if 0
 void handle_reconfiguration(mid_t mod_id)
 {
-  /* NOTE: this function might be extended by using stop_modem()
-   * to halt the modem so that it can later be resumed */
-  int do_restart = 0;
+  struct timespec start, end;
+  clock_gettime(CLOCK_MONOTONIC, &start);
 
-  pthread_mutex_lock(&mutex_node_ctrl);
-  if (ENB_NORMAL_OPERATION != node_control_state) {
-    node_control_state = ENB_NORMAL_OPERATION;
-    pthread_cond_broadcast(&cond_node_ctrl);
+  if (stop_L1L2(mod_id) < 0) {
+    LOG_E(ENB_APP, "can not stop lte-softmodem, aborting restart\n");
+    return;
+  }
+
+  /* TODO wait state could be here IF IT IS NOT EXECUTED BY THE FLEXRAN THREAD */
+
+  if (restart_L1L2(mod_id) < 0) {
+    LOG_F(ENB_APP, "can not restart, killing lte-softmodem\n");
+    itti_terminate_tasks(TASK_PHY_ENB);
+    return;
+  }
+
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  end.tv_sec -= start.tv_sec;
+  if (end.tv_nsec >= start.tv_nsec) {
+    end.tv_nsec -= start.tv_nsec;
   } else {
-    do_restart = 1;
+    end.tv_sec -= 1;
+    end.tv_nsec = end.tv_nsec - start.tv_nsec + 1000000000;
   }
-  pthread_mutex_unlock(&mutex_node_ctrl);
-
-  if (do_restart) {
-    clock_t start_ms = 1000 * clock();
-    /* operator || enforces sequence points */
-    if (stop_L1L2(mod_id) < 0 || restart_L1L2(mod_id) < 0) {
-      LOG_E(ENB_APP, "could not restart, killing lte-softmodem\n");
-      /* shutdown the whole lte-softmodem */
-      itti_terminate_tasks(TASK_PHY_ENB);
-      return;
-    }
-    enb_app_start_phy_rrc(mod_id, mod_id+1);
-    MessageDef *msg_p = itti_alloc_new_message(TASK_ENB_APP, INITIALIZE_MESSAGE);
-    itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
-
-    int diff_ms = (1000 * clock() - start_ms) / CLOCKS_PER_SEC;
-    LOG_I(ENB_APP, "lte-softmodem restart succeeded in %d ms\n", diff_ms);
-  }
+  LOG_I(ENB_APP, "lte-softmodem restart succeeded in %ld.%ld s\n", end.tv_sec, end.tv_nsec / 1000000);
 }
-#endif
 
 int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length) {
 
@@ -111,8 +103,7 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
 	if (parse_enb_id(mod_id, &parser) == -1) {
 	  goto error;
 	} else { // succeful parse and setting 
-          /* TODO implement */
-          //handle_reconfiguration(mod_id);
+          handle_reconfiguration(mod_id);
 	}
       } else if (strcmp((char *) event.data.scalar.value, "mac") == 0) {
 	LOG_D(ENB_APP, "This is intended for the mac system\n");
@@ -265,9 +256,9 @@ int parse_enb_config_parameters(mid_t mod_id, yaml_parser_t *parser) {
       } else if (strcmp((char *) event.data.scalar.value, "ul_freq_offset") == 0) {
         if (!yaml_parser_parse(parser, &event))
           goto error;
-	flexran_agent_set_operating_ul_freq(mod_id,
-					    0,
-					    strtol((char *) event.data.scalar.value, &endptr, 10));
+        flexran_agent_set_operating_ul_freq(mod_id,
+                                            0,
+                                            strtol((char *) event.data.scalar.value, &endptr, 10));
         LOG_I(ENB_APP, "Setting ul_freq_offset to %s\n", event.data.scalar.value);
       } else if (strcmp((char *) event.data.scalar.value, "bandwidth") == 0) {
         if (!yaml_parser_parse(parser, &event))
@@ -295,8 +286,6 @@ int parse_enb_config_parameters(mid_t mod_id, yaml_parser_t *parser) {
     done = (event.type == YAML_MAPPING_END_EVENT);
     yaml_event_delete(&event);
   }
-
-  /* TODO: reflect in RAN API */
 
   return 0;
   
