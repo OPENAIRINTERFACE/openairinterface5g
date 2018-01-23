@@ -19,11 +19,9 @@
  *      contact@openairinterface.org
  */
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#endif
 
 #include <stdint.h>
 

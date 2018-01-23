@@ -576,11 +576,12 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 }
 
 
-void prach_procedures(PHY_VARS_eNB *eNB,
 #ifdef Rel14
-		      int br_flag
+void prach_procedures(PHY_VARS_eNB *eNB,
+		      int br_flag) {
+#else
+void prach_procedures(PHY_VARS_eNB *eNB) {
 #endif
-		      ) {
   uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4];
   uint16_t i;
   int frame,subframe;

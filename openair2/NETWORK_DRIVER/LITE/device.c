@@ -28,13 +28,6 @@
 */
 /*******************************************************************************/
 
-#ifndef OAI_NW_DRIVER_USE_NETLINK
-#ifdef RTAI
-#include "rtai_posix.h"
-#define RTAI_IRQ 30 //try to get this irq with RTAI
-#endif // RTAI
-#endif // OAI_NW_DRIVER_USE_NETLINK
-
 #include "constant.h"
 #include "local.h"
 #include "proto_extern.h"
@@ -519,22 +512,11 @@ int init_module (void)
 
 #ifndef OAI_NW_DRIVER_USE_NETLINK
 
-#ifdef RTAI //with RTAI you have to indicate which irq# you want
-
-  pdcp_2_oai_nw_drv_irq=rt_request_srq(0, oai_nw_drv_interrupt, NULL);
-
-#endif
-
   if (pdcp_2_oai_nw_drv_irq == -EBUSY || pdcp_2_oai_nw_drv_irq == -EINVAL) {
     printk("[OAI_IP_DRV][%s] No interrupt resource available\n", __FUNCTION__);
     return -EBUSY;
   } else
     printk("[OAI_IP_DRV][%s] Interrupt %d\n", __FUNCTION__, pdcp_2_oai_nw_drv_irq);
-
-  //rt_startup_irq(RTAI_IRQ);
-
-  //rt_enable_irq(RTAI_IRQ);
-
 
 #endif //NETLINK
 
@@ -601,12 +583,6 @@ void cleanup_module(void)
 
   if (pdcp_2_oai_nw_drv_irq!=-EBUSY) {
     pdcp_2_oai_nw_drv_irq=0;
-#ifdef RTAI
-    // V1
-    //    rt_free_linux_irq(priv->irq, NULL);
-    // END V1
-    rt_free_srq(pdcp_2_oai_nw_drv_irq);
-#endif
     // Start IRQ linux
     //free_irq(priv->irq, NULL);
     // End IRQ linux

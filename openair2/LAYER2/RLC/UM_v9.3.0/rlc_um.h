@@ -64,9 +64,6 @@
 #        include "rlc_um_receiver.h"
 #        include "rlc_um_segment.h"
 #        include "rlc_um_test.h"
-#ifdef USER_MODE
-//#        include "rlc_um_very_simple_test.h"
-#endif
 
 #define PROTOCOL_RLC_UM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u] %s()"
 #define PROTOCOL_RLC_UM_CTXT_ARGS(CTXT_Pp, rLC_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\

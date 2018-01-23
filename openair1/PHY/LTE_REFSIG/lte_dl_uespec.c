@@ -30,10 +30,8 @@
 * \warning
 */
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
-#endif
 
 #include "defs.h"
 #include "PHY/defs.h"

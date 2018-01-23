@@ -31,13 +31,6 @@
 */
 
 
-#ifndef USER_MODE
-#define __NO_VERSION__
-
-#endif
-
-//#include "PHY/types.h"
-
 #include "defs.h"
 
 

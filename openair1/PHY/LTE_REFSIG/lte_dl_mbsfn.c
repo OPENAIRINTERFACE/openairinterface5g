@@ -21,10 +21,8 @@
 
 // 6.10.2.2 MBSFN reference signals Mapping to resource elements
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
-#endif
 
 #include "defs.h"
 #include "PHY/defs.h"

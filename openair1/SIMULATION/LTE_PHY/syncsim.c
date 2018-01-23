@@ -30,11 +30,6 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
-#ifdef RTAI_ENABLED
-#include <rtai_mbx.h>
-#include <rtai_msg.h>
-#endif
-
 #include "SIMULATION/TOOLS/defs.h"
 #include "SIMULATION/RF/defs.h"
 #include "PHY/types.h"
@@ -43,9 +38,6 @@
 #include "MAC_INTERFACE/vars.h"
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"
-#endif
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
 #endif
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
@@ -381,9 +373,6 @@ int main(int argc, char **argv)
   uint8_t extended_prefix_flag=0,frame_type=1;
   int8_t interf1=-21,interf2=-21;
   LTE_DL_FRAME_PARMS *frame_parms;
-#ifdef EMOS
-  fifo_dump_emos emos_dump;
-#endif
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
   char input_val_str[50],input_val_str2[50];
@@ -429,13 +418,6 @@ int main(int argc, char **argv)
   unsigned char i_mod = 2;
 
   int rx_offset_mod;
-
-#ifdef RTAI_ENABLED
-  int period;
-  RTIME expected;
-  RT_TASK *task;
-#define PERIOD 1000000000
-#endif
 
   logInit();
 
@@ -693,23 +675,6 @@ int main(int argc, char **argv)
       break;
     }
   }
-
-#ifdef RTAI_ENABLED
-
-  if (!(task = rt_task_init_schmod(nam2num("SYNCSIM"), 0, 0, 0, SCHED_FIFO, 0xF))) {
-    printf("CANNOT INIT MASTER TASK\n");
-    exit(1);
-  }
-
-  rt_set_periodic_mode();
-
-  period = start_rt_timer(nano2count(PERIOD));
-
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-
-  rt_make_hard_real_time();
-  rt_task_make_periodic(task, expected = rt_get_time() + 10*period, period);
-#endif
 
 #ifdef XFORMS
 
@@ -1374,11 +1339,6 @@ int main(int argc, char **argv)
 
       for (trial=0; trial<n_frames; trial++) {
 
-#ifdef RTAI_ENABLED
-        ret = rt_task_wait_period();
-        printf("rt_task_wait_period() returns %d, time %llu\n",ret, rt_get_time());
-#endif
-
         if (oai_hw_input == 0) {
 
           if (awgn_flag == 0) {
@@ -1751,11 +1711,6 @@ int main(int argc, char **argv)
     ioctl(openair_fd,openair_SET_TX_GAIN,(void *)&temp[0]);
     ioctl(openair_fd,openair_START_TX_SIG,(void *)NULL);
   }
-
-#ifdef RTAI_ENABLED
-  rt_make_soft_real_time();
-  rt_task_delete(task);
-#endif
 
 #ifdef XFORMS
 

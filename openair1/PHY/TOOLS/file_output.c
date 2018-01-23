@@ -19,8 +19,6 @@
  *      contact@openairinterface.org
  */
 
-#ifdef USER_MODE
-
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -180,5 +178,3 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
 
   return 0;
 }
-
-#endif // USER_MODE

@@ -30,9 +30,6 @@
 #define PDCP_C
 //#define DEBUG_PDCP_FIFO_FLUSH_SDU
 
-#ifndef USER_MODE
-#include <rtai_fifos.h>
-#endif
 #include "assertions.h"
 #include "hashtable.h"
 #include "pdcp.h"
@@ -64,9 +61,7 @@
 #  include "gtpv1u.h"
 #endif
 
-#ifndef OAI_EMU
 extern int otg_enabled;
-#endif
 
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
@@ -441,11 +436,6 @@ pdcp_data_ind(
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_IND,VCD_FUNCTION_IN);
 
-#ifdef OAI_EMU
-
-  CHECK_CTXT_ARGS(ctxt_pP);
-
-#endif
 #ifdef PDCP_MSG_PRINT
   int i=0;
   LOG_F(PDCP,"[MSG] PDCP UL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
@@ -693,49 +683,6 @@ pdcp_data_ind(
     payload_offset=0;
   }
 
-#if defined(USER_MODE) && defined(OAI_EMU)
-
-  if (oai_emulation.info.otg_enabled == 1) {
-    //unsigned int dst_instance;
-    int    ctime;
-
-    if ((pdcp_p->rlc_mode == RLC_MODE_AM)&&(MBMS_flagP==0) ) {
-      pdcp_p->last_submitted_pdcp_rx_sn = sequence_number;
-    }
-
-#if defined(DEBUG_PDCP_PAYLOAD)
-    rlc_util_print_hex_octets(PDCP,
-                              (unsigned char*)&sdu_buffer_pP->data[payload_offset],
-                              sdu_buffer_sizeP - payload_offset);
-#endif
-
-    ctime = oai_emulation.info.time_ms; // avg current simulation time in ms : we may get the exact time through OCG?
-    if (MBMS_flagP == 0){
-      LOG_D(PDCP,
-	    PROTOCOL_PDCP_CTXT_FMT"Check received buffer :  (dst %d)\n",
-	    PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
-	    ctxt_pP->instance);
-    }
-    if (otg_rx_pkt(
-          ctxt_pP->instance,
-          ctime,
-          (const char*)(&sdu_buffer_pP->data[payload_offset]),
-                   sdu_buffer_sizeP - payload_offset ) == 0 ) {
-      free_mem_block(sdu_buffer_pP, __func__);
-
-      if (ctxt_pP->enb_flag) {
-        stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_ind);
-      } else {
-        stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].data_ind);
-      }
-
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_IND,VCD_FUNCTION_OUT);
-      return TRUE;
-    }
-  }
-
-#else
-
   if (otg_enabled==1) {
     LOG_D(OTG,"Discarding received packed\n");
     free_mem_block(sdu_buffer_pP, __func__);
@@ -749,9 +696,6 @@ pdcp_data_ind(
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_IND,VCD_FUNCTION_OUT);
     return TRUE;
   }
-
-#endif
-
 
   // XXX Decompression would be done at this point
 
@@ -811,22 +755,15 @@ pdcp_data_ind(
       // set ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst for IP layer here
       if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
         ((pdcp_data_ind_header_t *) new_sdu_p->data)->rb_id = rb_id;
-#if defined(OAI_EMU)
-        ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id + oai_emulation.info.nb_enb_local - oai_emulation.info.first_ue_local;
-#else
-#  if defined(ENABLE_USE_MME)
+#if defined(ENABLE_USE_MME)
         /* for the UE compiled in S1 mode, we need 1 here
          * for the UE compiled in noS1 mode, we need 0
          * TODO: be sure of this
          */
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 1;
-#  endif
 #endif
       } else {
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * maxDRB);
-#if defined(OAI_EMU)
-        ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id - oai_emulation.info.first_enb_local;
-#endif
       }
 #ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
       static uint32_t pdcp_inst = 0;
@@ -998,11 +935,6 @@ pdcp_run (
     itti_send_msg_to_task(TASK_MAC_ENB, 3, msg_resp_p);
   }
 # endif
-#endif
-
-#if defined(USER_MODE) && defined(OAI_EMU)
-    pdcp_fifo_read_input_sdus_from_otg(ctxt_pP);
-
 #endif
 
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer

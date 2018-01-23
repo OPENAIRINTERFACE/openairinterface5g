@@ -28,7 +28,6 @@
 * \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr
 */
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h> /* for atoi(3) */
@@ -36,14 +35,7 @@
 #include <string.h> /* for strerror(3) */
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
-#else
-#include <linux/module.h>  /* Needed by all modules */
-#endif
-#ifdef USER_MODE
-//#include "RRC/LITE/defs.h"
-//#include "COMMON/mac_rrc_primitives.h"
 #include "UTIL/LOG/log.h"
-#endif
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
@@ -93,16 +85,8 @@
 #include "common/ran_context.h"
 #include "secu_defs.h"
 
-//#include "PHY/defs.h"
-#ifndef USER_MODE
-#define msg printk
-#ifndef errno
-int errno;
-#endif
-#else
-# if !defined (msg)
-#   define msg printf
-# endif
+#if !defined (msg)
+#define msg printf
 #endif
 
 //#define XER_PRINT
@@ -486,9 +470,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"[eNB] SystemInformationBlockType1 Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
   if (enc_rval.encoded==-1) {
     return(-1);
@@ -1016,9 +998,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"[eNB] SystemInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
   if (enc_rval.encoded==-1) {
     msg("[RRC] ASN1 : SI encoding failed for SIB23\n");
@@ -1105,9 +1085,7 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv)
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %zd bits (%zd bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
-#endif
 
   return((enc_rval.encoded+7)/8);
 
@@ -1188,9 +1166,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"RRCConnectionSetupComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
   return((enc_rval.encoded+7)/8);
 
@@ -1250,9 +1226,7 @@ do_RRCConnectionReconfigurationComplete(
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"RRCConnectionReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
   return((enc_rval.encoded+7)/8);
 }
@@ -1639,10 +1613,8 @@ do_RRCConnectionSetup(
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"RRCConnectionSetup Encoded %zd bits (%zd bytes), ecause %d\n",
         enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
-#endif
 
   //  FREEMEM(SRB_list);
   //  free(SRB1_config);
@@ -1712,13 +1684,11 @@ do_SecurityModeCommand(
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"[eNB %d] securityModeCommand for UE %x Encoded %zd bits (%zd bytes)\n",
         ctxt_pP->module_id,
         ctxt_pP->rnti,
         enc_rval.encoded,
         (enc_rval.encoded+7)/8);
-#endif
 
   if (enc_rval.encoded==-1) {
     LOG_E(RRC,"[eNB %d] ASN1 : securityModeCommand encoding failed for UE %x\n",
@@ -1790,13 +1760,11 @@ do_UECapabilityEnquiry(
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"[eNB %d] UECapabilityRequest for UE %x Encoded %zd bits (%zd bytes)\n",
         ctxt_pP->module_id,
         ctxt_pP->rnti,
         enc_rval.encoded,
         (enc_rval.encoded+7)/8);
-#endif
 
   if (enc_rval.encoded==-1) {
     LOG_E(RRC,"[eNB %d] ASN1 : UECapabilityRequest encoding failed for UE %x\n",
@@ -1956,13 +1924,11 @@ do_RRCConnectionReconfiguration(
 # endif
 #endif
 
-  //#ifdef USER_MODE
   LOG_I(RRC,"RRCConnectionReconfiguration Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   // for (i=0;i<30;i++)
   //    msg("%x.",buffer[i]);
   // msg("\n");
 
-  //#endif
 
   return((enc_rval.encoded+7)/8);
 }
@@ -2225,10 +2191,8 @@ do_RRCConnectionReestablishmentReject(
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"RRCConnectionReestablishmentReject Encoded %zd bits (%zd bytes)\n",
         enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
   return((enc_rval.encoded+7)/8);
 }
@@ -2286,10 +2250,8 @@ do_RRCConnectionReject(
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"RRCConnectionReject Encoded %zd bits (%zd bytes)\n",
         enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
   return((enc_rval.encoded+7)/8);
 }
@@ -2477,9 +2439,7 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
 # endif
 #endif
 
-#ifdef USER_MODE
   LOG_D(RRC,"[eNB] MCCH Message Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
   if (enc_rval.encoded==-1) {
     msg("[RRC] ASN1 : MCCH  encoding failed for MBSFNAreaConfiguration\n");
@@ -2611,9 +2571,7 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
 # endif
 #endif
 
-#ifdef USER_MODE
   printf("Measurement Report Encoded %zu bits (%zu bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
   return((enc_rval.encoded+7)/8);
 }
