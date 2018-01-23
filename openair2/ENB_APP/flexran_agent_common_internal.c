@@ -120,6 +120,7 @@ int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy
 	LOG_I(ENB_APP, "This is intended for the enb system\n");
 	// Call the enb handler
 	if (parse_enb_id(mod_id, &parser) == -1) {
+          LOG_E(ENB_APP, "cannot parse data for eNB\n");
 	  goto error;
 	} else { // succeful parse and setting 
           handle_reconfiguration(mod_id);
@@ -294,6 +295,7 @@ int parse_enb_config_parameters(mid_t mod_id, yaml_parser_t *parser) {
 					    strtol((char *) event.data.scalar.value, &endptr, 10));
         LOG_I(ENB_APP, "Setting frame_type to %s\n", event.data.scalar.value);
       }else { // not supported tag  
+        LOG_E(FLEXRAN_AGENT, "Unsupported tag %s\n", event.data.scalar.value);
 	goto error;
       }
       
