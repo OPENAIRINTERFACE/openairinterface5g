@@ -19,15 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifdef RTAI
-# include <rtai_shm.h>
-#endif
-
 #include "assertions.h"
 #include "memory_pools.h"
-#if defined(OAI_EMU) || defined(RTAI)
-# include "vcd_signal_dumper.h"
-#endif
 
 #if T_TRACER
 #include <string.h>
@@ -37,18 +30,8 @@
 /*------------------------------------------------------------------------------*/
 const static int mp_debug = 0;
 
-#ifdef RTAI
-# define MP_DEBUG(x, args...) do { if (mp_debug) rt_printk("[MP][D]"x, ##args); } \
-    while(0)
-#else
 # define MP_DEBUG(x, args...) do { if (mp_debug) fprintf(stdout, "[MP][D]"x, ##args); fflush (stdout); } \
     while(0)
-#endif
-
-#if defined(OAI_EMU) || defined(RTAI)
-uint64_t vcd_mp_alloc;
-uint64_t vcd_mp_free;
-#endif
 
 /*------------------------------------------------------------------------------*/
 #ifndef CHARS_TO_UINT32
@@ -414,11 +397,6 @@ memory_pool_item_handle_t memory_pools_allocate (memory_pools_handle_t memory_po
   pool_id_t                   pool;
   items_group_index_t         item_index = ITEMS_GROUP_INDEX_INVALID;
 
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_MP_ALLOC,
-                                          __sync_or_and_fetch (&vcd_mp_alloc, 1L << info_0));
-#endif
-
   /* Recover memory_pools */
   memory_pools = memory_pools_from_handler (memory_pools_handle);
   AssertError (memory_pools != NULL, {}, "Failed to retrieve memory pool for handle %p!\n", memory_pools_handle);
@@ -464,11 +442,6 @@ memory_pool_item_handle_t memory_pools_allocate (memory_pools_handle_t memory_po
     MP_DEBUG(" Alloc [--][------]{------}, %3u %3u, %6u, failed!\n", info_0, info_1, item_size);
   }
 
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_MP_ALLOC,
-                                          __sync_and_and_fetch (&vcd_mp_alloc, ~(1L << info_0)));
-#endif
-
   return memory_pool_item_handle;
 }
 
@@ -492,11 +465,6 @@ int memory_pools_free (memory_pools_handle_t memory_pools_handle, memory_pool_it
   AssertError (memory_pool_item != NULL, return (EXIT_FAILURE), "Failed to retrieve memory pool item for handle %p!\n", memory_pool_item_handle);
 
   info_1 = memory_pool_item->start.info[1];
-
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_MP_FREE,
-                                          __sync_or_and_fetch (&vcd_mp_free, 1L << info_1));
-#endif
 
   /* Recover pool index */
   pool = memory_pool_item->start.pool_id;
@@ -530,11 +498,6 @@ int memory_pools_free (memory_pools_handle_t memory_pools_handle, memory_pool_it
   result = items_group_put_free_item(&memory_pools->pools[pool].items_group_free, item_index);
 
   AssertError (result == EXIT_SUCCESS, {}, "Failed to free memory pool item (pool %u, item %d)!\n", pool, item_index);
-
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_MP_FREE,
-                                          __sync_and_and_fetch (&vcd_mp_free, ~(1L << info_1)));
-#endif
 
   return (result);
 }

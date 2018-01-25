@@ -32,7 +32,6 @@
 #    define __LOG_H__
 
 /*--- INCLUDES ---------------------------------------------------------------*/
-#ifdef USER_MODE
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,9 +52,6 @@
 #define _GNU_SOURCE
 #endif
 #include <pthread.h>
-#else
-#include "rtai_fifos.h"
-#endif
 
 /*----------------------------------------------------------------------------*/
 
@@ -282,19 +278,10 @@ void *log_thread_function(void * list);
  *  @ingroup _macro
  *  @brief Macro used to call tr_log_full_ex with file, function and line information
  * @{*/
-#ifdef USER_MODE
-//#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
 #ifdef LOG_NO_THREAD
 #define logIt(component, level, format, args...) logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args)
 #else //default
 #define logIt(component, level, format, args...) logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args)
-#endif
-#else
-#ifdef LOG_NO_THREAD
-#define logIt(component, level, format, args...) logRecord_mt(NULL, __FUNCTION__, __LINE__, component, level, format, ##args)
-#else // default
-#define logIt(component, level, format, args...) logRecord(NULL, __FUNCTION__, __LINE__, component, level, format, ##args)
-#endif
 #endif
 /* @}*/
 
@@ -326,7 +313,6 @@ void *log_thread_function(void * list);
  * @{*/
 
 // debugging macros
-#ifdef USER_MODE
 #  if T_TRACER
 #    include "T.h"
 #    define LOG_I(c, x...) T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))
@@ -364,17 +350,6 @@ void *log_thread_function(void * list);
 #        define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
 #    endif /*DISABLE_LOG_X*/
 #  endif /* T_TRACER */
-#else /* USER_MODE */
-#  define LOG_G(c, x...) printk(x)
-#  define LOG_A(c, x...) printk(x)
-#  define LOG_C(c, x...) printk(x)
-#  define LOG_E(c, x...) printk(x)
-#  define LOG_W(c, x...) printk(x)
-#  define LOG_N(c, x...) printk(x)
-#  define LOG_I(c, x...) printk(x)
-#  define LOG_D(c, x...) printk(x)
-#  define LOG_T(c, x...) printk(x)
-#endif
 /* @}*/
 
 

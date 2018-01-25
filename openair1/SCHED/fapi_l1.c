@@ -62,6 +62,7 @@ void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
   LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->subframe_tx, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
 }
 
+#ifdef Rel14
 void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
                              eNB_rxtx_proc_t *proc,
                              nfapi_dl_config_request_pdu_t *dl_config_pdu)
@@ -75,6 +76,7 @@ void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
   // copy dci configuration into eNB structure
   fill_mdci_and_dlsch(eNB,proc,&mpdcch_vars->mdci_alloc[mpdcch_vars->num_dci],pdu);
 }
+#endif
 
 void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
                                   nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
@@ -754,10 +756,12 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
     case NFAPI_DL_CONFIG_EPDCCH_DL_PDU_TYPE:
       //      handle_nfapi_epdcch_pdu(eNB,dl_config_pdu);
       break;
+#ifdef Rel14
     case NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE:
       handle_nfapi_mpdcch_pdu(eNB,proc,dl_config_pdu);
       eNB->mpdcch_vars[subframe&1].num_dci++;
       break;
+#endif    
     }
   }
   

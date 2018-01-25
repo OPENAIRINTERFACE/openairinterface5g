@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
+#include <stdint.h>
 
 #include <nfapi_interface.h>
 #include <nfapi.h>

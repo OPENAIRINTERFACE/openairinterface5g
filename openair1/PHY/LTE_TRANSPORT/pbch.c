@@ -37,11 +37,6 @@
 #include "PHY/extern.h"
 #include "PHY/sse_intrin.h"
 
-#ifdef PHY_ABSTRACTION
-#include "SIMULATION/TOOLS/defs.h"
-#endif
-
-
 //#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
 //#define INTERFERENCE_MITIGATION 1
@@ -260,13 +255,11 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
       #endif
 
       #ifdef DEBUG_PBCH
-      #ifdef USER_MODE
       write_output("pbch_encoded_output2.m","pbch_encoded_out2",
       pbch_coded_data2,
       pbch_coded_bits,
       1,
       4);
-      #endif //USER_MODE
       #endif //DEBUG_PBCH
     */
 #ifdef DEBUG_PBCH_ENCODING
@@ -288,8 +281,6 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
 
 #ifdef DEBUG_PBCH
-#ifdef USER_MODE
-
     if (frame_mod4==0) {
       write_output("pbch_e.m","pbch_e",
                    eNB_pbch->pbch_e,
@@ -300,8 +291,6 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
       for (i=0; i<16; i++)
         printf("e[%d] %d\n",i,eNB_pbch->pbch_e[i]);
     }
-
-#endif //USER_MODE
 #endif //DEBUG_PBCH
     // scrambling
 
@@ -309,8 +298,6 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
                     eNB_pbch->pbch_e,
                     pbch_E);
 #ifdef DEBUG_PBCH
-#ifdef USER_MODE
-
     if (frame_mod4==0) {
       write_output("pbch_e_s.m","pbch_e_s",
                    eNB_pbch->pbch_e,
@@ -321,8 +308,6 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
       for (i=0; i<16; i++)
         printf("e_s[%d] %d\n",i,eNB_pbch->pbch_e[i]);
     }
-
-#endif //USER_MODE
 #endif //DEBUG_PBCH 
   } // frame_mod4==0
 
@@ -1028,44 +1013,3 @@ uint16_t rx_pbch(LTE_UE_COMMON *lte_ue_common_vars,
 
 
 }
-
-#ifdef PHY_ABSTRACTION
-uint16_t rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
-                      uint8_t eNB_id,
-                      uint8_t pbch_phase)
-{
-
-  double bler=0.0;//, x=0.0;
-  double sinr=0.0;
-  uint16_t nb_rb = phy_vars_ue->frame_parms.N_RB_DL;
-  int16_t f;
-  uint8_t CC_id=phy_vars_ue->CC_id;
-  int frame_rx = phy_vars_ue->proc.proc_rxtx[0].frame_rx;
-
-  // compute effective sinr
-  // TODO: adapt this to varible bandwidth
-  for (f=(nb_rb*6-3*12); f<(nb_rb*6+3*12); f++) {
-    if (f!=0) //skip DC
-      sinr += pow(10, 0.1*(phy_vars_ue->sinr_dB[f]));
-  }
-
-  sinr = 10*log10(sinr/(6*12));
-
-  bler = pbch_bler(sinr);
-
-  LOG_D(PHY,"EMUL UE rx_pbch_emul: eNB_id %d, pbch_phase %d, sinr %f dB, bler %f \n",
-        eNB_id,
-        pbch_phase,
-        sinr,
-        bler);
-
-  if (pbch_phase == (frame_rx % 4)) {
-    if (uniformrandom() >= bler) {
-      memcpy(phy_vars_ue->pbch_vars[eNB_id]->decoded_output,RC.eNB[eNB_id][CC_id]->pbch_pdu,PBCH_PDU_SIZE);
-      return(RC.eNB[eNB_id][CC_id]->frame_parms.nb_antenna_ports_eNB);
-    } else
-      return(-1);
-  } else
-    return(-1);
-}
-#endif

@@ -2094,6 +2094,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
 	       sizeof(UE_sched_ctrl));
 	memset((void *) &UE_list->eNB_UE_stats[cc_idP][UE_id], 0,
 	       sizeof(eNB_UE_STATS));
+    UE_list->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
 
 	UE_list->UE_sched_ctrl[UE_id].ta_update = 31;
 
@@ -2124,47 +2125,68 @@ int rrc_mac_remove_ue(module_id_t mod_idP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
     int i;
+    int j;
     UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
-    int UE_id = find_UE_id(mod_idP, rntiP);
+    int UE_id = find_UE_id(mod_idP,rntiP);
     int pCC_id;
 
     if (UE_id == -1) {
-	LOG_W(MAC, "rrc_mac_remove_ue: UE %x not found\n", rntiP);
-	return 0;
+      LOG_W(MAC,"rrc_mac_remove_ue: UE %x not found\n", rntiP);
+      return 0;
     }
 
-    pCC_id = UE_PCCID(mod_idP, UE_id);
+    pCC_id = UE_PCCID(mod_idP,UE_id);
 
-    LOG_I(MAC, "Removing UE %d from Primary CC_id %d (rnti %x)\n", UE_id,
-	  pCC_id, rntiP);
-    dump_ue_list(UE_list, 0);
+    LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
+    dump_ue_list(UE_list,0);
 
     UE_list->active[UE_id] = FALSE;
     UE_list->num_UEs--;
 
-    if (UE_list->head == UE_id)
-	UE_list->head = UE_list->next[UE_id];
-    else
-	UE_list->next[prev(UE_list, UE_id, 0)] = UE_list->next[UE_id];
-    if (UE_list->head_ul == UE_id)
-	UE_list->head_ul = UE_list->next_ul[UE_id];
-    else
-	UE_list->next_ul[prev(UE_list, UE_id, 0)] =
-	    UE_list->next_ul[UE_id];
+    if (UE_list->head == UE_id) UE_list->head=UE_list->next[UE_id];
+    else UE_list->next[prev(UE_list,UE_id,0)]=UE_list->next[UE_id];
+    if (UE_list->head_ul == UE_id) UE_list->head_ul=UE_list->next_ul[UE_id];
+    else UE_list->next_ul[prev(UE_list,UE_id,0)]=UE_list->next_ul[UE_id];
 
     // clear all remaining pending transmissions
-    UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID0] = 0;
-    UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID1] = 0;
-    UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID2] = 0;
-    UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID3] = 0;
+    /*  UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID0]  = 0;
+    UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID1]  = 0;
+    UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID2]  = 0;
+    UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID3]  = 0;
 
-    UE_list->UE_template[pCC_id][UE_id].ul_SR = 0;
-    UE_list->UE_template[pCC_id][UE_id].rnti = NOT_A_RNTI;
-    UE_list->UE_template[pCC_id][UE_id].ul_active = FALSE;
-    eNB_ulsch_info[mod_idP][pCC_id][UE_id].rnti = NOT_A_RNTI;
-    eNB_ulsch_info[mod_idP][pCC_id][UE_id].status = S_UL_NONE;
-    eNB_dlsch_info[mod_idP][pCC_id][UE_id].rnti = NOT_A_RNTI;
-    eNB_dlsch_info[mod_idP][pCC_id][UE_id].status = S_DL_NONE;
+    UE_list->UE_template[pCC_id][UE_id].ul_SR             = 0;
+    UE_list->UE_template[pCC_id][UE_id].rnti              = NOT_A_RNTI;
+    UE_list->UE_template[pCC_id][UE_id].ul_active         = FALSE;
+   */
+    memset (&UE_list->UE_template[pCC_id][UE_id],0,sizeof(UE_TEMPLATE));
+
+    UE_list->eNB_UE_stats[pCC_id][UE_id].total_rbs_used = 0;
+    UE_list->eNB_UE_stats[pCC_id][UE_id].total_rbs_used_retx = 0;
+    for ( j = 0; j < NB_RB_MAX; j++ ) {
+      UE_list->eNB_UE_stats[pCC_id][UE_id].num_pdu_tx[j] = 0;
+      UE_list->eNB_UE_stats[pCC_id][UE_id].num_bytes_tx[j] = 0;
+    }
+    UE_list->eNB_UE_stats[pCC_id][UE_id].num_retransmission = 0;
+    UE_list->eNB_UE_stats[pCC_id][UE_id].total_sdu_bytes = 0;
+    UE_list->eNB_UE_stats[pCC_id][UE_id].total_pdu_bytes = 0;
+    UE_list->eNB_UE_stats[pCC_id][UE_id].total_num_pdus = 0;
+    UE_list->eNB_UE_stats[pCC_id][UE_id].total_rbs_used_rx = 0;
+    for ( j = 0; j < NB_RB_MAX; j++ ) {
+      UE_list->eNB_UE_stats[pCC_id][UE_id].num_pdu_rx[j] = 0;
+      UE_list->eNB_UE_stats[pCC_id][UE_id].num_bytes_rx[j] = 0;
+    }
+    UE_list->eNB_UE_stats[pCC_id][UE_id].num_errors_rx = 0;
+    UE_list->eNB_UE_stats[pCC_id][UE_id].total_pdu_bytes_rx = 0;
+    UE_list->eNB_UE_stats[pCC_id][UE_id].total_num_pdus_rx = 0;
+    UE_list->eNB_UE_stats[pCC_id][UE_id].total_num_errors_rx = 0;
+
+    eNB_ulsch_info[mod_idP][pCC_id][UE_id].rnti                        = NOT_A_RNTI;
+    eNB_ulsch_info[mod_idP][pCC_id][UE_id].status                      = S_UL_NONE;
+    eNB_dlsch_info[mod_idP][pCC_id][UE_id].rnti                        = NOT_A_RNTI;
+    eNB_dlsch_info[mod_idP][pCC_id][UE_id].status                      = S_DL_NONE;
+ 
+    eNB_ulsch_info[mod_idP][pCC_id][UE_id].serving_num = 0;
+    eNB_dlsch_info[mod_idP][pCC_id][UE_id].serving_num = 0;
 
     // check if this has an RA process active
     RA_t *ra;

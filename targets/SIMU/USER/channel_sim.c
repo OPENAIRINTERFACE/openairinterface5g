@@ -403,9 +403,6 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 {
 
   int32_t **txdata,**rxdata;
-#ifdef PHY_ABSTRACTION_UL
-  int32_t att_eNB_id=-1;
-#endif
   uint8_t UE_id=0;
 
   uint8_t nb_antennas_rx = UE2RU[0][0][CC_id]->nb_rx; // number of rx antennas at eNB
@@ -418,14 +415,6 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 
   uint8_t hold_channel=0;
 
-#ifdef PHY_ABSTRACTION_UL
-  double min_path_loss=-200;
-  uint16_t ul_nb_rb=0 ;
-  uint16_t ul_fr_rb=0;
-  int ulnbrb2 ;
-  int ulfrrb2 ;
-  uint8_t harq_pid;
-#endif
   double s_re0[30720];
   double s_re1[30720];
   double *s_re[2];
@@ -450,38 +439,6 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
   r_im0[1] = r_im01;
   
   if (abstraction_flag!=0)  {
-#ifdef PHY_ABSTRACTION_UL
-    // wire this to 0 until we figure this out
-    int eNB_id=0;
-
-    for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-      if (!hold_channel) {
-	random_channel(UE2RU[UE_id][eNB_id][CC_id],abstraction_flag);
-	freq_channel(UE2RU[UE_id][eNB_id][CC_id], frame_parms->N_RB_UL,frame_parms->N_RB_UL*12+1);
-	
-	// REceived power at the eNB
-	rx_pwr = signal_energy_fp2(UE2RU[UE_id][eNB_id][CC_id]->ch[0],
-				   UE2RU[UE_id][eNB_id][CC_id]->channel_length)*UE2RU[UE_id][att_eNB_id][CC_id]->channel_length; // calculate the rx power at the eNB
-      }
-      
-      //  write_output("SINRch.m","SINRch",PHY_vars_eNB_g[att_eNB_id]->sinr_dB_eNB,frame_parms->N_RB_UL*12+1,1,1);
-      if(subframe>1 && subframe <5) {
-	harq_pid = subframe2harq_pid(frame_parms,frame,subframe);
-	ul_nb_rb = RC.eNB[att_eNB_id][CC_id].ulsch_eNB[(uint8_t)UE_id]->harq_processes[harq_pid]->nb_rb;
-	ul_fr_rb = RC.eNB[att_eNB_id][CC_id].ulsch_eNB[(uint8_t)UE_id]->harq_processes[harq_pid]->first_rb;
-      }
-      
-      if(ul_nb_rb>1 && (ul_fr_rb < 25 && ul_fr_rb > -1)) {
-	number_rb_ul = ul_nb_rb;
-	first_rbUL = ul_fr_rb;
-	init_snr_up(UE2RU[UE_id][att_eNB_id][CC_id],enb_data[att_eNB_id], ue_data[UE_id],PHY_vars_eNB_g[att_eNB_id][CC_id]->sinr_dB,&PHY_vars_UE_g[att_eNB_id][CC_id]->N0,ul_nb_rb,ul_fr_rb);
-	
-      }
-    } //UE_id
-
-#else
-
-#endif
   } else { //without abstraction
 
     pthread_mutex_lock(&UE_output_mutex[ru_id]);

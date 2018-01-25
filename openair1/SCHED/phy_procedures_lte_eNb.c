@@ -576,11 +576,12 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 }
 
 
-void prach_procedures(PHY_VARS_eNB *eNB,
 #ifdef Rel14
-		      int br_flag
+void prach_procedures(PHY_VARS_eNB *eNB,
+		      int br_flag) {
+#else
+void prach_procedures(PHY_VARS_eNB *eNB) {
 #endif
-		      ) {
   uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4];
   uint16_t i;
   int frame,subframe;
@@ -887,10 +888,10 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	if (uci->type == SR) {
 	  if (SR_payload == 1) {
 	    fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
-	    return;
+        continue;
 	  }
 	  else {
-	    return;
+        continue;
 	  }
 	}
       case HARQ:

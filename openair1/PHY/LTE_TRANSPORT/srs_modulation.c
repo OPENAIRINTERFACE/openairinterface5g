@@ -180,7 +180,6 @@ int32_t generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
     return(-1);
   }
 
-#ifdef USER_MODE
   Msc_idx_ptr = (uint16_t*) bsearch((uint16_t*) &Msc_RS, (uint16_t*) dftsizes, 33, sizeof(uint16_t), compareints);
 
   if (Msc_idx_ptr)
@@ -189,19 +188,6 @@ int32_t generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
     LOG_E(PHY,"generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
-
-#else //stdlib not availiable in RTAI
-
-  if (Msc_RS==216)
-    Msc_RS_idx = 12;
-  else if (Msc_RS==144)
-    Msc_RS_idx = 9;
-  else {
-    LOG_E(PHY,"generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
-    return(-1);
-  }
-
-#endif
 
 #ifdef DEBUG_SRS
   LOG_D(PHY,"generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d, k0 = %d\n",Msc_RS, Msc_RS_idx,k0);
@@ -279,7 +265,6 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
     return(-1);
   }
 
-#ifdef USER_MODE
   Msc_idx_ptr = (uint16_t*) bsearch((uint16_t*) &Msc_RS, (uint16_t*) dftsizes, 33, sizeof(uint16_t), compareints);
 
   if (Msc_idx_ptr)
@@ -288,19 +273,6 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
     LOG_E(PHY,"generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
-
-#else //stdlib not availiable in RTAI
-
-  if (Msc_RS==216)
-    Msc_RS_idx = 12;
-  else if (Msc_RS==144)
-    Msc_RS_idx = 9;
-  else {
-    LOG_E(PHY,"generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
-    return(-1);
-  }
-
-#endif
 
 #ifdef DEBUG_SRS
   LOG_I(PHY,"generate_srs_rx: Msc_RS = %d, Msc_RS_idx = %d, k0=%d\n",Msc_RS, Msc_RS_idx,k0);
