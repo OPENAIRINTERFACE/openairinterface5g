@@ -792,9 +792,9 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
 
     for (dst_id = 0; dst_id<NUMBER_OF_UE_MAX; dst_id++) {
       ctxt.rnti = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id][dst_id];
-
+/*
       if (ctxt.rnti != NOT_A_RNTI) {
-        if (mac_eNB_get_rrc_status(ctxt.module_id, ctxt.rnti ) > 2 /*RRC_SI_RECEIVED*/) {
+        if (mac_eNB_get_rrc_status(ctxt.module_id, ctxt.rnti ) > 2 ) {
         unsigned int temp = 0;
           otg_pkt=packet_gen(
                     ENB_MODULE_ID_TO_INSTANCE(ctxt.module_id),
@@ -821,6 +821,7 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
           }
         }
       }
+*/
     }
   }
 }

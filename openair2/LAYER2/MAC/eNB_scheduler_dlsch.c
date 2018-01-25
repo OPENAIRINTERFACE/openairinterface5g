@@ -1830,8 +1830,6 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
                                            frameP,
                                            PCCH,1,
                                            &cc->PCCH_pdu.payload[0],
-                                           1,
-                                           module_idP,
                                            i); // used for ue index
       if (pcch_sdu_length == 0) {
         LOG_D(MAC,"[eNB %d] Frame %d subframe %d: PCCH not active(size = 0 byte)\n", module_idP,frameP, subframeP);
