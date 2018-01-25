@@ -90,6 +90,13 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNb,
                      unsigned char is_secondary_eNb,
                      unsigned char abstraction_flag);
 
+/*!
+\brief Free the PHY variables relevant to the LTE implementation (eNB).
+\details Only a subset of phy_vars_eNb is freed (those who have been allocated with phy_init_lte_eNB()).
+@param[in] phy_vars_eNb Pointer to eNB Variables
+ */
+void phy_free_lte_eNB(PHY_VARS_eNB *phy_vars_eNb);
+
 /** \brief Configure LTE_DL_FRAME_PARMS with components derived after initial synchronization (MIB decoding + primary/secondary synch).
 \details The basically allows configuration of \f$N_{\mathrm{RB}}^{\mathrm{DL}}\f$, the cell id  \f$N_{\mathrm{ID}}^{\mathrm{cell}}\f$, the normal/extended prefix mode, the frame type (FDD/TDD), \f$N_{\mathrm{cp}}\f$, the number of TX antennas at eNB (\f$p\f$) and the number of PHICH groups, \f$N_{\mathrm{group}}^{\mathrm{PHICH}}\f$
 @param lte_frame_parms pointer to LTE parameter structure

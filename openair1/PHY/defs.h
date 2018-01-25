@@ -79,6 +79,12 @@
 #define bigmalloc16 malloc16
 #define openair_free(y,x) free((y))
 #define PAGE_SIZE 4096
+#define free_and_zero(PtR) do { \
+      if (PtR) {           \
+        free(PtR);         \
+        PtR = NULL;        \
+      }                    \
+    } while (0)
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2

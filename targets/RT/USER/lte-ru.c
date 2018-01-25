@@ -114,6 +114,7 @@ extern volatile int                    oai_exit;
 
 
 extern void  phy_init_RU(RU_t*);
+extern void  phy_free_RU(RU_t*);
 
 void init_RU(char*);
 void stop_RU(int nb_ru);
@@ -2177,5 +2178,7 @@ void stop_RU(int nb_ru)
   for (int inst = 0; inst < nb_ru; inst++) {
     LOG_I(PHY, "Stopping RU %d processing threads\n", inst);
     kill_RU_proc(inst);
+    /* release memory used by these threads (incomplete) */
+    phy_free_RU(RC.ru[inst]);
   }
 }

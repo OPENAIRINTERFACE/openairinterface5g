@@ -1777,7 +1777,55 @@ int phy_init_RU(RU_t *ru) {
 
   return(0);
 }
-  
+
+void phy_free_RU(RU_t *ru)
+{
+  int i,j;
+  int p;
+
+  LOG_I(PHY, "Feeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);
+
+  if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so free memory for time-domain signals
+    for (i = 0; i < ru->nb_tx; i++) free_and_zero(ru->common.txdata[i]);
+    for (i = 0; i < ru->nb_rx; i++) free_and_zero(ru->common.rxdata[i]);
+    free_and_zero(ru->common.txdata);
+    free_and_zero(ru->common.rxdata);
+  } // else: IF5 or local RF -> nothing to free()
+
+  if (ru->function != NGFI_RRU_IF5) { // we need to do RX/TX RU processing
+    for (i = 0; i < ru->nb_rx; i++) free_and_zero(ru->common.rxdata_7_5kHz[i]);
+    free_and_zero(ru->common.rxdata_7_5kHz);
+
+    // free IFFT input buffers (TX)
+    for (i = 0; i < ru->nb_tx; i++) free_and_zero(ru->common.txdataF_BF[i]);
+    free_and_zero(ru->common.txdataF_BF);
+
+    // free FFT output buffers (RX)
+    for (i = 0; i < ru->nb_rx; i++) free_and_zero(ru->common.rxdataF[i]);
+    free_and_zero(ru->common.rxdataF);
+
+    for (i = 0; i < ru->nb_rx; i++) {
+      free_and_zero(ru->prach_rxsigF[i]);
+#ifdef Rel14
+      for (j = 0; j < 4; j++) free_and_zero(ru->prach_rxsigF_br[j][i]);
+#endif
+    }
+    for (j = 0; j < 4; j++) free_and_zero(ru->prach_rxsigF_br[j]);
+    free_and_zero(ru->prach_rxsigF);
+    /* ru->prach_rxsigF_br is not allocated -> don't free */
+
+    for (i = 0; i < RC.nb_L1_inst; i++) {
+      for (p = 0; p < 15; p++) {
+	if (p < ru->eNB_list[i]->frame_parms.nb_antenna_ports_eNB || p == 5) {
+	  for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);
+	  free_and_zero(ru->beam_weights[i][p]);
+	}
+      }
+    }
+  }
+  free_and_zero(ru->common.sync_corr);
+}
+
 int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
                      unsigned char is_secondary_eNB,
                      unsigned char abstraction_flag)
@@ -1911,7 +1959,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     AssertFatal(fp->N_RB_UL > 5, "fp->N_RB_UL %d < 6\n",fp->N_RB_UL);
     for (i=0; i<2; i++) {
       // RK 2 times because of output format of FFT!
-      // FIXME We should get rid of this
+      // FIXME We should get rid of this, consider also phy_free_lte_eNB()
       pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
       pusch_vars[UE_id]->rxdataF_ext2[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
       pusch_vars[UE_id]->drs_ch_estimates[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
@@ -1933,4 +1981,79 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
   return (0);
 
+}
+
+
+void phy_free_lte_eNB(PHY_VARS_eNB *eNB)
+{
+  LTE_DL_FRAME_PARMS* const fp       = &eNB->frame_parms;
+  LTE_eNB_COMMON* const common_vars  = &eNB->common_vars;
+  LTE_eNB_PUSCH** const pusch_vars   = eNB->pusch_vars;
+  LTE_eNB_SRS* const srs_vars        = eNB->srs_vars;
+  LTE_eNB_PRACH* const prach_vars    = &eNB->prach_vars;
+#ifdef Rel14
+  LTE_eNB_PRACH* const prach_vars_br = &eNB->prach_vars_br;
+#endif
+  int i, UE_id;
+
+  for (i = 0; i < NB_ANTENNA_PORTS_ENB; i++) {
+    if (i < fp->nb_antenna_ports_eNB || i == 5) {
+      free_and_zero(common_vars->txdataF[i]);
+      /* rxdataF[i] is not allocated -> don't free */
+    }
+  }
+  free_and_zero(common_vars->txdataF);
+  free_and_zero(common_vars->rxdataF);
+
+  // Channel estimates for SRS
+  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+    for (i=0; i<64; i++) {
+      free_and_zero(srs_vars[UE_id].srs_ch_estimates[i]);
+      free_and_zero(srs_vars[UE_id].srs_ch_estimates_time[i]);
+    }
+    free_and_zero(srs_vars[UE_id].srs_ch_estimates);
+    free_and_zero(srs_vars[UE_id].srs_ch_estimates_time);
+  } //UE_id
+
+  free_ul_ref_sigs();
+
+  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) free_and_zero(srs_vars[UE_id].srs);
+
+  free_and_zero(prach_vars->prachF);
+
+  for (i = 0; i < 64; i++) free_and_zero(prach_vars->prach_ifft[0][i]);
+  free_and_zero(prach_vars->prach_ifft[0]);
+
+#ifdef Rel14
+  for (int ce_level = 0; ce_level < 4; ce_level++) {
+    for (i = 0; i < 64; i++) free_and_zero(prach_vars_br->prach_ifft[ce_level][i]);
+    free_and_zero(prach_vars_br->prach_ifft[ce_level]);
+    free_and_zero(prach_vars->rxsigF[ce_level]);
+  }
+  free_and_zero(prach_vars_br->prachF);
+#endif
+  free_and_zero(prach_vars->rxsigF[0]);
+
+  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+    for (i = 0; i < 2; i++) {
+      free_and_zero(pusch_vars[UE_id]->rxdataF_ext[i]);
+      free_and_zero(pusch_vars[UE_id]->rxdataF_ext2[i]);
+      free_and_zero(pusch_vars[UE_id]->drs_ch_estimates[i]);
+      free_and_zero(pusch_vars[UE_id]->drs_ch_estimates_time[i]);
+      free_and_zero(pusch_vars[UE_id]->rxdataF_comp[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_mag[i]);
+      free_and_zero(pusch_vars[UE_id]->ul_ch_magb[i]);
+    }
+    free_and_zero(pusch_vars[UE_id]->rxdataF_ext);
+    free_and_zero(pusch_vars[UE_id]->rxdataF_ext2);
+    free_and_zero(pusch_vars[UE_id]->drs_ch_estimates);
+    free_and_zero(pusch_vars[UE_id]->drs_ch_estimates_time);
+    free_and_zero(pusch_vars[UE_id]->rxdataF_comp);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_mag);
+    free_and_zero(pusch_vars[UE_id]->ul_ch_magb);
+    free_and_zero(pusch_vars[UE_id]->llr);
+    free_and_zero(pusch_vars[UE_id]);
+  } //UE_id
+
+  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) eNB->UE_stats_ptr[UE_id] = NULL;
 }
