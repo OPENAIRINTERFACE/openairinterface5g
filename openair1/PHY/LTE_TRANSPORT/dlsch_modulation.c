@@ -126,9 +126,10 @@ void generate_qpsk_table(void)
 
   int a,index;
 
-  for (a=-1; a<=1; a+=2)
+  for (a=-1; a<=1; a+=2) {
     index = (1+a)/2;
     qpsk_table[index] = -a*QPSK;  
+  }
 }
 
 
@@ -2511,10 +2512,6 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     switch (mod_order1) {
     case 2:
       qam_table_s1 = NULL;
-#ifdef NEW_ALLOC_RE
-        /* TODO: remove this code? */
-      allocate_REs = allocate_REs_in_RB;
-#endif
       break;
     case 4:
       if (pilots) {
