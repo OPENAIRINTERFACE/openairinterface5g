@@ -1121,7 +1121,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
   *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
 
-  LOG_I(EMU,"UE %d DL simulation 0: UE_trx_read nsamps %d TS %llu (%llu, offset %d) antenna %d\n",
+  LOG_D(EMU,"UE %d DL simulation 0: UE_trx_read nsamps %d TS %llu (%llu, offset %d) antenna %d\n",
         UE_id,
         nsamps,
         (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
