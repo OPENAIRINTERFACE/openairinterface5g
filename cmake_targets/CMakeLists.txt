@@ -262,9 +262,6 @@ if (${ENABLE_ITTI})
   set(GTPU_need_ITTI ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_eNB.c)
 endif (${ENABLE_ITTI})
 
-add_boolean_option(RTAI False "Use RTAI")
-
-
 #############################
 # ASN.1 grammar C code generation & dependancies
 ################################
@@ -485,7 +482,6 @@ include_directories ("${X2AP_DIR}")
 ###################################
 add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
-add_list1_option(NB_ANTENNAS_TXRX "2" "Number of antennas in ????" "1" "2" "4")
 
 add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR")
 
@@ -587,15 +583,13 @@ Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 add_boolean_option(ENABLE_SECURITY         True  "Enable LTE integrity and ciphering between RRC UE and eNB")
 add_boolean_option(ENABLE_USE_MME          True  "eNB connected to MME (INTERFACE S1-C), not standalone eNB")
 add_boolean_option(NO_RRM                  True  "DO WE HAVE A RADIO RESSOURCE MANAGER: NO")
-add_boolean_option(USER_MODE True "????")
 add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the default bearer")
 
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
-add_boolean_option(DISABLE_USE_NAS False "???")
 add_boolean_option(DEADLINE_SCHEDULER True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
 add_boolean_option(CPU_AFFINITY False "Enable CPU Affinity of threads (only valid without deadline scheduler). It is enabled only with >2 CPUs")
 add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
-add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
+add_boolean_option(NAS_NETLINK False "useless ??? Must be True to compile nasmesh driver without rtai ????")
 add_boolean_option(OAISIM False "specific to oaisim")
 add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????")
 
@@ -613,21 +607,11 @@ add_boolean_option(FLEXRAN_AGENT_SB_IF             False         "enable FlexRAN
 add_boolean_option(ENB_MODE True "Swap the include directories between openair2 and openair3" )
 
 ##########################
-# Emulation options
-##########################
-add_boolean_option(ENABLE_PGM_TRANSPORT    False "specific to oaisim, emulation through ethernet, reliable multicast")
-add_boolean_option(ADDR_CONF               False "specific to oaisim, IP autoconf of user-plane IP interface")
-add_boolean_option(OPENAIR_EMU             False "specific to oaisim")
-add_boolean_option(OAI_EMU                 False "specific to oaisim")
-add_boolean_option(PHY_ABSTRACTION         False "specific to oaisim")
-
-##########################
 # SCHEDULING/REAL-TIME/PERF options
 ##########################
 add_boolean_option(ENABLE_USE_CPU_EXECUTION_TIME True "Add data in vcd traces: disable it if perf issues")
 add_boolean_option(ENABLE_VCD              True  "always true now, time measurements of proc calls and var displays")
 add_boolean_option(ENABLE_VCD_FIFO         True  "time measurements of proc calls and var displays sent to FIFO (one more thread)")
-add_boolean_option(HARD_RT                 False "???")
 add_boolean_option(LINUX                   False "used in weird memcpy() in pdcp.c ???")
 add_boolean_option(LINUX_LIST              False "used only in lists.c: either use OAI implementation of lists or Linux one (should be True, but it is False")
 add_boolean_option(LOG_NO_THREAD           True  "Disable thread for log, seems always set to true")
@@ -637,24 +621,15 @@ add_boolean_option(OPENAIR_LTE             True "Seems legacy: keep it to true")
 # PHY options
 ##########################
 add_boolean_option(DRIVER2013              True "only relevant for EXMIMO")
-add_boolean_option(ENABLE_FXP              True "????")
 add_boolean_option(ENABLE_NEW_MULTICAST    False "specific to oaisim")
 add_boolean_option(EXMIMO_IOT              True "????")
 add_boolean_option(LARGE_SCALE             False "specific to oaisim: defines max eNB=2 and max UE=120")
 add_boolean_option(LOCALIZATION            False "???")
 add_integer_option(MAX_NUM_CCs             1     "????")
 add_boolean_option(MU_RECEIVER             False "????")
-add_boolean_option(NEW_FFT                 True "????")
-add_boolean_option(OPENAIR1                True "????")
-add_boolean_option(PBS_SIM                 False "????")
-add_boolean_option(PC_DSP                  True "????")
-add_boolean_option(PC_TARGET               True "????")
-add_boolean_option(PERFECT_CE              False "????")
 add_boolean_option(PHYSIM                  True  "for L1 simulators (dlsim, ulsim, ...)")
 add_boolean_option(PHY_CONTEXT             True "not clear: must remain False for dlsim")
 add_boolean_option(PHY_EMUL                False "not clear: must remain False for dlsim")
-add_boolean_option(PUCCH                   True "????")
-add_boolean_option(RANDOM_BF               False "????")
 add_boolean_option(SMBV                    False "Rohde&Schwarz SMBV100A vector signal generator")
 add_boolean_option(DEBUG_PHY               False "Enable PHY layer debugging options")
 add_boolean_option(DEBUG_PHY_PROC          False "Enable debugging of PHY layer procedures")
@@ -727,23 +702,7 @@ add_boolean_option(RRC_DEFAULT_RAB_IS_AM       False  "Otherwise it is UM, confi
 ##########################
 # none
 
-##########################
-# PROJECTS (IST, FRENCH COLL., etc)
-# SPECIFIC OPTIONS
-##########################
-add_boolean_option(SPECTRA False "???")
-add_boolean_option(MIH_C_MEDIEVAL_EXTENSIONS False "EXTENSIONS TO MIH 802.21 IN CONTEXT OF IST PROJECT CALLED MEDIEVAL")
-
-
-
-add_boolean_option(EMOS False "????")
-if(${EMOS})
-  add_definitions("-D_FILE_OFFSET_BITS=64")
-  set(EMOS_LIB gps)
-endif(${EMOS})
-
-
- # add the binary tree to the search path for include files
+# add the binary tree to the search path for include files
 #######################################################
 # We will find ConfigOAI.h after generation in target directory
 include_directories("${OPENAIR_BIN_DIR}")
@@ -776,7 +735,6 @@ include_directories("${NFAPI_DIR}/nfapi/inc")
 include_directories("${NFAPI_DIR}/sim_common/inc")
 include_directories("${NFAPI_DIR}/pnf_sim/inc")
 include_directories("${OPENAIR1_DIR}")
-include_directories("${OPENAIR2_DIR}/NAS")
 include_directories("${OPENAIR2_DIR}")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC/AM_v9.3.0")
@@ -1302,26 +1260,6 @@ if (${ENABLE_RAL})
   set(RAL_LIB RAL)
 endif()
 
-if(${MIH_C_MEDIEVAL_EXTENSIONS})
-  set(MIH_SRC
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_header_codec.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_msg_codec.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_primitive_codec.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_F1_basic_data_types_codec.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_F2_general_data_types_codec.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_F3_data_types_for_address_codec.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_F4_data_types_for_links_codec.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_F9_data_types_for_qos_codec.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_F13_data_types_for_information_elements_codec.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_L2_type_values_for_tlv_encoding.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_Medieval_extensions.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_bit_buffer.c
-    ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C.c
-    )
-  add_library(MIH ${MIH_SRC})
-  set(MIH_LIB MIH)
-endif()
-
 # CN libs
 ##########################
 
@@ -1671,7 +1609,6 @@ ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/bypass_session_layer.c
 #${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/emu_transport.c
-${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/pgm_link.c
 )
 
 add_library(OPENAIR0_LIB
@@ -1843,7 +1780,6 @@ add_executable(lte-softmodem
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${GTPU_need_ITTI}
-  ${RTAI_SOURCE}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
@@ -1853,7 +1789,7 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB
   -Wl,--end-group z dl)
@@ -1882,7 +1818,6 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${RTAI_SOURCE}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
@@ -1900,27 +1835,6 @@ target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
-
-# rrh
-################################
-#Note: only one RF type (USRP) is currently supported for RRH
-add_executable(rrh_gw
-  ${OPENAIR_TARGETS}/RT/USER/rrh_gw.c
-  ${OPENAIR_TARGETS}/RT/USER/eNB_transport_IQ.c
-  ${OPENAIR_TARGETS}/RT/USER/UE_transport_IQ.c
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  ${T_SOURCE}
-  )
-target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti)
-target_link_libraries(rrh_gw
-  -Wl,--start-group
-  UTIL LFDS -ldl
-  -Wl,--end-group )
-target_link_libraries (rrh_gw rt pthread m )
-target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
-target_link_libraries (rrh_gw ${T_LIB})
-
 
 # USIM process
 #################
@@ -1985,10 +1899,10 @@ add_executable(oaisim
 target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim
   -Wl,-ldl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SECU_OSA ${ITTI_LIB}
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB
-  -Wl,--end-group )
+  -Wl,--end-group z dl )
 
 target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
 target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp z
@@ -2007,6 +1921,7 @@ add_executable(oaisim_nos1
   ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
@@ -2029,8 +1944,10 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
-  -Wl,--end-group )
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SECU_OSA ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
+  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB
+  NFAPI_USER_LIB
+  -Wl,--end-group z dl )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
 target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  
@@ -2137,7 +2054,7 @@ endforeach(myExe)
 if (${T_TRACER})
   foreach(i
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
-        lte-softmodem lte-softmodem-nos1 rrh_gw oaisim oaisim_nos1
+        lte-softmodem lte-softmodem-nos1 oaisim oaisim_nos1
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
         pdcchsim pucchsim prachsim syncsim
         #all "add_library" definitions
@@ -2145,7 +2062,7 @@ if (${T_TRACER})
         oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
         oai_eth_transpro
         FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
-        SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL MIH CN_UTILS
+        SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL CN_UTILS
         GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
@@ -2207,7 +2124,6 @@ get_directory_property(DirDefs COMPILE_DEFINITIONS )
 foreach( d ${DirDefs} )
   set(module_cc_opt_tmp "${module_cc_opt_tmp} -D${d}")
 endforeach()
-string(REPLACE "-DUSER_MODE" "" module_cc_opt ${module_cc_opt_tmp})
 get_directory_property( DirDefs INCLUDE_DIRECTORIES )
 foreach( d ${DirDefs} )
   set(module_cc_opt "${module_cc_opt} -I${d}")
@@ -2239,15 +2155,7 @@ endfunction(make_driver name dir src)
 # nashmesh module
 ################
 list(APPEND nasmesh_src device.c common.c ioctl.c classifier.c tool.c mesh.c)
-# Actually nasty stuff to be FIXED: the hereafter flag is for RTAI compilation in the driver,
-# but has different meaning in the other parts of the code
-# We should change the constant name to xxx_RTAI or likely
-if(NOT ${module_cc_opt} MATCHES "DRTAI")
-  set(module_cc_opt "${module_cc_opt} -DNAS_NETLINK")
-else()
-  string(REPLACE "-DNAS_NETLINK" "" tmp "${module_cc_opt}")
-  set(module_cc_opt ${tmp})
-endif()
+set(module_cc_opt "${module_cc_opt} -DNAS_NETLINK -DPDCP_USE_NETLINK")
 # legacy Makefile was using NAS_NETLINK flag, but other drivers the hereafter flag
 # so, this cmake use OAI_NW_DRIVER_USE_NETLINK everywhere
 if (OAI_NW_DRIVER_USE_NETLINK)

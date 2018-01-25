@@ -41,9 +41,7 @@
 //#include "openair_defs.h"
 #include "socket.h"
 
-#ifdef USER_MODE
 #define msg printf
-#endif
 //------------------------------------------------------------------------------
 void
 socket_setnonblocking (int sockP)

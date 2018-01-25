@@ -244,9 +244,7 @@ typedef struct {
   LCHAN_DESC  Lchan_desc[2];  /*!< \brief Logical Channel QoS Descriptor (MAC component) */
   uint8_t L3_info_type;
   uint8_t L3_info[16];
-  //#ifndef CELLULAR
   unsigned short UE_eNB_index;
-  //#endif
 } __attribute__ ((__packed__))  MAC_CONFIG_REQ;
 #define MAC_CONFIG_REQ_SIZE sizeof(MAC_CONFIG_REQ)
 
@@ -314,18 +312,12 @@ typedef struct {
 
 #ifndef OPENAIR2_IN
 
-#ifndef CELLULAR
-//#include "L3_rrc_defs.h"
-#endif
-
 typedef struct {  //RRC_INTERFACE_FUNCTIONS
   unsigned int Frame_index;
   unsigned short UE_index[NB_MODULES_MAX][NB_SIG_CNX_UE];
   uint8_t  eNB_id[NB_MODULES_MAX][NB_CNX_UE];
-#ifndef CELLULAR
   //  L2_ID UE_id[NB_MODULES_MAX][NB_CNX_CH];
   uint8_t UE_id[NB_MODULES_MAX][NB_CNX_CH][5];
-#endif
   void (*openair_rrc_top_init)(void);
   char (*openair_rrc_eNB_init)(uint8_t );
   char (*openair_rrc_UE_init)(uint8_t, uint8_t);

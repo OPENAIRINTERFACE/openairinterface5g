@@ -233,17 +233,7 @@ typedef struct nas_conn_est_ind_s {
 typedef nas_establish_rsp_t nas_conn_est_rej_t;
 
 
-#if defined(DISABLE_USE_NAS)
-typedef struct nas_conn_est_cnf_s {
-  uint32_t ue_id;
-
-  nas_establish_cnf_t nas_establish_cnf;
-  /* Transparent message from MME_APP to S1AP */
-  s1ap_initial_ctxt_setup_req_t transparent;
-} nas_conn_est_cnf_t;
-#else
 typedef nas_establish_cnf_t nas_conn_est_cnf_t;
-#endif
 
 
 typedef struct nas_conn_rel_ind_s {
@@ -335,11 +325,5 @@ typedef struct nas_auth_param_fail_s {
   nas_cause_t cause;
 } nas_auth_param_fail_t;
 
-
-#if defined(DISABLE_USE_NAS)
-typedef struct nas_attach_accept_s {
-  s1ap_initial_ctxt_setup_req_t transparent;
-} nas_attach_accept_t;
-#endif
 
 #endif /* NAS_MESSAGES_TYPES_H_ */

@@ -27,11 +27,7 @@
 #ifndef _ITTI_TYPES_H_
 #define _ITTI_TYPES_H_
 
-#ifdef USER_MODE
 #include <stdint.h>
-#else
-#include <linux/types.h>
-#endif
 
 #define CHARS_TO_UINT32(c1, c2, c3, c4) (((c4) << 24) | ((c3) << 16) | ((c2) << 8) | (c1))
 

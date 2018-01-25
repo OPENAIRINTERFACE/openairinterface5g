@@ -29,11 +29,9 @@
 * \note
 * \warning
 */
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#endif
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "SCHED/defs.h"
@@ -4240,33 +4238,3 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
 
   return(dci_cnt);
 }
-
-#ifdef PHY_ABSTRACTION
-uint16_t dci_decoding_procedure_emul(LTE_UE_PDCCH **pdcch_vars,
-                                     uint8_t num_ue_spec_dci,
-                                     uint8_t num_common_dci,
-                                     DCI_ALLOC_t *dci_alloc_tx,
-                                     DCI_ALLOC_t *dci_alloc_rx,
-                                     int16_t eNB_id)
-{
-
-  uint8_t  dci_cnt=0,i;
-
-  memcpy(dci_alloc_rx,dci_alloc_tx,num_common_dci*sizeof(DCI_ALLOC_t));
-  dci_cnt = num_common_dci;
-  LOG_D(PHY,"[DCI][EMUL] : num_common_dci %d\n",num_common_dci);
-
-  for (i=num_common_dci; i<(num_ue_spec_dci+num_common_dci); i++) {
-    LOG_D(PHY,"[DCI][EMUL] Checking dci %d => %x format %d (bit 0 %d)\n",i,pdcch_vars[eNB_id]->crnti,dci_alloc_tx[i].format,
-          dci_alloc_tx[i].dci_pdu[0]&0x80);
-
-    if (dci_alloc_tx[i].rnti == pdcch_vars[eNB_id]->crnti) {
-      memcpy(dci_alloc_rx+dci_cnt,dci_alloc_tx+i,sizeof(DCI_ALLOC_t));
-      dci_cnt++;
-    }
-  }
-
-
-  return(dci_cnt);
-}
-#endif

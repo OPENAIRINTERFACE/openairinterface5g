@@ -42,17 +42,8 @@
 # include "intertask_interface.h"
 #endif
 
-#ifdef USER_MODE
 # include <pthread.h>
 # include <string.h>
-#endif
-#ifdef RTAI
-# include <rtai.h>
-# include <rtai_fifos.h>
-#    define FIFO_PRINTF_MAX_STRING_SIZE 1000
-#    define FIFO_PRINTF_NO              62
-#    define FIFO_PRINTF_SIZE            65536
-#endif
 #include "common/config/config_userapi.h"
 // main log variables
 log_t *g_log;
@@ -92,9 +83,7 @@ int log_list_head = 0;
 int log_shutdown;
 #endif
 
-#ifndef RTAI
 static int gfd;
-#endif
 
 static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_ORANGE, LOG_BLUE, "", ""};  /*!< \brief Optional start-format strings for highlighting */
 static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET,LOG_RESET,  "",""};   /*!< \brief Optional end-format strings for highlighting */
@@ -164,24 +153,12 @@ void  log_getconfig(log_t *g_log) {
 
 int logInit (void)
 {
-#ifdef USER_MODE
-#ifndef RTAI
   int i;
-#endif
   g_log = calloc(1, sizeof(log_t));
 
-#else
-  g_log = kmalloc(sizeof(log_t), GFP_KERNEL);
-#endif
-
   if (g_log == NULL) {
-#ifdef USER_MODE
     perror ("cannot allocated memory for log generation module \n");
     exit(EXIT_FAILURE);
-#else
-    printk("cannot allocated memory for log generation module \n");
-    return(-1);
-#endif
   }
 
 
@@ -485,7 +462,6 @@ int logInit (void)
   g_log->level  = LOG_TRACE;
   g_log->flag   = LOG_LOW;
 
-#ifndef RTAI
   g_log->config.remote_ip      = 0;
   g_log->config.remote_level   = LOG_EMERG;
   g_log->config.facility       = LOG_LOCAL7;
@@ -513,17 +489,7 @@ int logInit (void)
     }
   }
 
-#else
-  g_log->syslog = 0;
-  g_log->filelog   = 0;
-  rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
-#endif
-
-#ifdef USER_MODE
   printf("log init done\n");
-#else
-  printk("log init done\n");
-#endif
 
   return 0;
 }
@@ -982,22 +948,8 @@ void logRecord_thread_safe(const char *file, const char *func,
 
   // OAI printf compatibility
   if ((g_log->onlinelog == 1) && (level != LOG_FILE)) {
-#ifdef RTAI
-
-    if (len > MAX_LOG_TOTAL) {
-      rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
-    }
-
-    if (len > 0) {
-      rtf_put (FIFO_PRINTF_NO, log_buffer, len);
-    }
-
-#else
     fprintf(stdout, "%s", log_buffer);
-#endif
   }
-
-#ifndef RTAI
 
   if (g_log->syslog) {
     syslog(g_log->level, "%s", log_buffer);
@@ -1014,8 +966,6 @@ void logRecord_thread_safe(const char *file, const char *func,
       // TODO assert ?
     }
   }
-
-#endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,
                                           VCD_FUNCTION_OUT);
@@ -1166,20 +1116,7 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
 
   // OAI printf compatibility
   if ((g_log->onlinelog == 1) && (level != LOG_FILE))
-#ifdef RTAI
-    if (len > MAX_LOG_TOTAL) {
-      rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
-    }
-
-  if (len > 0) {
-    rtf_put (FIFO_PRINTF_NO, c->log_buffer, len);
-  }
-
-#else
     fwrite(c->log_buffer, len, 1, stdout);
-#endif
-
-#ifndef RTAI
 
   if (g_log->syslog) {
     syslog(g_log->level, "%s", c->log_buffer);
@@ -1196,15 +1133,6 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
       // TODO assert ?
     }
   }
-
-#else
-
-  // online print messges
-  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-    printf(c->log_buffer);
-  }
-
-#endif
 
 #if defined(ENABLE_ITTI)
 
@@ -1464,20 +1392,7 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
 
   // OAI printf compatibility
   if ((g_log->onlinelog == 1) && (level != LOG_FILE))
-#ifdef RTAI
-    if (len > MAX_LOG_TOTAL) {
-      rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
-    }
-
-  if (len > 0) {
-    rtf_put (FIFO_PRINTF_NO, log_buffer, len);
-  }
-
-#else
     fwrite(log_buffer, len, 1, stdout);
-#endif
-
-#ifndef RTAI
 
   if (g_log->syslog) {
     syslog(g_log->level, "%s", log_buffer);
@@ -1494,15 +1409,6 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
       // TODO assert ?
     }
   }
-
-#else
-
-  // online print messges
-  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-    printf(log_buffer);
-  }
-
-#endif
 
 #if defined(ENABLE_ITTI)
 
@@ -1730,16 +1636,11 @@ void set_component_filelog(int comp)
 {
   if (g_log->log_component[comp].filelog ==  0) {
     g_log->log_component[comp].filelog =  1;
-#ifndef RTAI
 
     if (g_log->log_component[comp].fd == 0) {
       g_log->log_component[comp].fd = open(g_log->log_component[comp].filelog_name,
                                            O_WRONLY | O_CREAT | O_TRUNC, 0666);
     }
-
-#else
-
-#endif
   }
 }
 
@@ -1795,9 +1696,6 @@ int is_newline( char *str, int size)
 
 void logClean (void)
 {
-#ifdef RTAI
-  rtf_destroy (FIFO_PRINTF_NO);
-#else
   int i;
 
   if (g_log->syslog) {
@@ -1813,9 +1711,6 @@ void logClean (void)
       close(g_log->log_component[i].fd);
     }
   }
-
-#endif
-
 }
 
 #if defined(ENABLE_ITTI)

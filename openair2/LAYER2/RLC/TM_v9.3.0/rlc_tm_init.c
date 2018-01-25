@@ -125,6 +125,7 @@ rlc_tm_cleanup (
   // RX SIDE
   if ((rlcP->output_sdu_in_construction)) {
     free_mem_block (rlcP->output_sdu_in_construction, __func__);
+    rlcP->output_sdu_in_construction = NULL;
   }
 
   memset(rlcP, 0, sizeof(rlc_tm_entity_t));

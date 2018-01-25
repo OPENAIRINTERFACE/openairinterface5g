@@ -29,11 +29,7 @@
 #include "rtos_header.h"
 #include "platform_types.h"
 
-#ifdef USER_MODE
-#    include <sys/time.h>
-#else
-#include <rtai_sched.h>
-#endif
+#include <sys/time.h>
 
 
 /* Random generators */
@@ -47,7 +43,6 @@ static int      seed;
 void
 init_uniform (void)
 {
-#ifdef USER_MODE
   struct timeval  tv;
   struct timezone tz;
 
@@ -60,9 +55,6 @@ init_uniform (void)
 #ifdef NODE_RG
 #warning TO DO seed = rgId
   //seed += rgId;
-#endif
-#else
-  seed = rt_get_time_ns();
 #endif
 }
 

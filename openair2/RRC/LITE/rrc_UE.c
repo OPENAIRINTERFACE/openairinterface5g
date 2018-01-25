@@ -62,14 +62,8 @@
 #include "TDD-Config.h"
 #include "UECapabilityEnquiry.h"
 #include "UE-CapabilityRequest.h"
-#ifdef PHY_ABSTRACTION
-#include "OCG.h"
-#include "OCG_extern.h"
-#endif
-#ifdef USER_MODE
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
-#endif
 #if ENABLE_RAL
 #include "rrc_UE_ral.h"
 #endif
@@ -739,9 +733,6 @@ rrc_ue_establish_drb(
                       ip_addr_offset4+ue_mod_idP+1); // fourth_octet
 
   if (oip_ifup == 0 ) { // interface is up --> send a config the DRB
-#        ifdef OAI_EMU
-    oai_emulation.info.oai_ifup[ue_mod_idP]=1;
-#        endif
     LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
           ue_mod_idP,
           ip_addr_offset3+ue_mod_idP,
@@ -757,10 +748,6 @@ rrc_ue_establish_drb(
     LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",ue_mod_idP,eNB_index);
   }
 
-#    else
-#        ifdef OAI_EMU
-  oai_emulation.info.oai_ifup[ue_mod_idP]=1;
-#        endif
 #    endif
 #endif
 
@@ -1535,17 +1522,6 @@ rrc_ue_process_radioResourceConfigDedicated(
   
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State = RRC_CONNECTED;
   LOG_I(RRC,"[UE %d] State = RRC_CONNECTED (eNB %d)\n",ctxt_pP->module_id,eNB_index);
-#if 0//!defined(ENABLE_USE_MME) && defined(OAI_EMU)
-#    ifdef OAI_EMU
-  rrc_eNB_emulation_notify_ue_module_id(
-    ctxt_pP->module_id,
-    ctxt_pP->rnti,
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[0],
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[1],
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[2],
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[3]);
-#    endif /* OAI_EMU */
-#endif
 }
 
 
@@ -1727,25 +1703,24 @@ rrc_ue_process_securityModeCommand(
     }
 # endif
 #endif
-    
-#ifdef USER_MODE
-    LOG_D(RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
-#endif
-    
-    for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
-      LOG_T(RRC, "%02x.", buffer[i]);
+
+      LOG_D(RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+
+      for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
+        LOG_T(RRC, "%02x.", buffer[i]);
+      }
+
+      LOG_T(RRC, "\n");
+      rrc_data_req (
+		    ctxt_pP,
+		    DCCH,
+		    rrc_mui++,
+		    SDU_CONFIRM_NO,
+		    (enc_rval.encoded + 7) / 8,
+		    buffer,
+		    PDCP_TRANSMISSION_MODE_CONTROL);
     }
     
-    LOG_T(RRC, "\n");
-    rrc_data_req (
-		  ctxt_pP,
-		  DCCH,
-		  rrc_mui++,
-		  SDU_CONFIRM_NO,
-		  (enc_rval.encoded + 7) / 8,
-		  buffer,
-		  PDCP_TRANSMISSION_MODE_CONTROL);
-  }
   else LOG_W(RRC,"securityModeCommand->criticalExtensions.present (%d) != SecurityModeCommand__criticalExtensions_PR_c1\n",
 	     securityModeCommand->criticalExtensions.present);
 }
@@ -1841,12 +1816,11 @@ rrc_ue_process_ueCapabilityEnquiry(
 #endif
 	
 
-      LOG_I(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+          LOG_D(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 
-      
-      for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
-	LOG_T(RRC, "%02x.", buffer[i]);
-      }
+          for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
+            LOG_T(RRC, "%02x.", buffer[i]);
+          }
       
       LOG_T(RRC, "\n");
       rrc_data_req (
@@ -4248,10 +4222,6 @@ static void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_i
 }
 
 #endif // rel10
-
-#ifndef USER_MODE
-EXPORT_SYMBOL(Rlc_info_am_config);
-#endif
 
 #if defined(ENABLE_ITTI)
 //-----------------------------------------------------------------------------

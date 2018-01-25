@@ -248,10 +248,6 @@ int rlcmac_init_global_param(void)
 void mac_top_cleanup(void)
 {
 
-#ifndef USER_MODE
-    pdcp_module_cleanup();
-#endif
-
     if (NB_UE_INST > 0) {
 	free(UE_mac_inst);
     }

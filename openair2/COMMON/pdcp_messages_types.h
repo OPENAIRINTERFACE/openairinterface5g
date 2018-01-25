@@ -33,6 +33,7 @@
 // Defines to access message fields.
 #define RRC_DCCH_DATA_REQ(mSGpTR)               (mSGpTR)->ittiMsg.rrc_dcch_data_req
 #define RRC_DCCH_DATA_IND(mSGpTR)               (mSGpTR)->ittiMsg.rrc_dcch_data_ind
+#define RRC_PCCH_DATA_REQ(mSGpTR)               (mSGpTR)->ittiMsg.rrc_pcch_data_req
 
 //-------------------------------------------------------------------------------------------//
 // Messages between RRC and PDCP layers
@@ -59,5 +60,14 @@ typedef struct RrcDcchDataInd_s {
   uint8_t      module_id;
   uint8_t      eNB_index; // LG: needed in UE
 } RrcDcchDataInd;
+
+typedef struct RrcPcchDataReq_s {
+  uint32_t     sdu_size;
+  uint8_t      *sdu_p;
+  uint8_t      mode;
+  uint16_t     rnti;
+  uint8_t      ue_index;
+  uint8_t      CC_id;
+} RrcPcchDataReq;
 
 #endif /* PDCP_MESSAGES_TYPES_H_ */
