@@ -36,10 +36,6 @@
 #include "enb_config.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
-#if defined(OAI_EMU)
-# include "OCG.h"
-# include "OCG_extern.h"
-#endif
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
 # if defined(ENABLE_USE_MME)

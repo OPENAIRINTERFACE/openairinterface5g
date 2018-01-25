@@ -32,9 +32,6 @@
 #include "PHY/defs.h"
 #include "PHY/vars.h"
 
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
-#endif
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
@@ -91,9 +88,6 @@ int main(int argc, char **argv)
   uint8_t extended_prefix_flag=0;
   int8_t interf1=-21,interf2=-21;
   LTE_DL_FRAME_PARMS *frame_parms;
-#ifdef EMOS
-  fifo_dump_emos emos_dump;
-#endif
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
   char input_val_str[50],input_val_str2[50];

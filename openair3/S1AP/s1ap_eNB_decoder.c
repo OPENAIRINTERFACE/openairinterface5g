@@ -108,7 +108,15 @@ static int s1ap_eNB_decode_initiating_message(s1ap_message *message,
     ret = s1ap_decode_s1ap_pagingies(
             &message->msg.s1ap_PagingIEs, &initiating_p->value);
     s1ap_xer_print_s1ap_paging(s1ap_xer__print2sp, message_string, message);
-    S1AP_ERROR("TODO Paging initiating message\n");
+    message_id = S1AP_PAGING_LOG;
+    message_string_size = strlen(message_string);
+    message_p           = itti_alloc_new_message_sized(TASK_S1AP,
+                          message_id,
+                          message_string_size + sizeof (IttiMsgText));
+    message_p->ittiMsg.s1ap_paging_log.size = message_string_size;
+    memcpy(&message_p->ittiMsg.s1ap_paging_log.text, message_string, message_string_size);
+    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+    S1AP_INFO("Paging initiating message\n");
     free(message_string);
     break;
 
@@ -128,12 +136,36 @@ static int s1ap_eNB_decode_initiating_message(s1ap_message *message,
     free(message_string);
     S1AP_INFO("E_RABSetup initiating message\n");
     break;
-  case S1ap_ProcedureCode_id_E_RABRelease:
-    ret = s1ap_decode_s1ap_e_rabreleasecommandies(&message->msg.s1ap_E_RABReleaseCommandIEs, 
-						 &initiating_p->value);
-    //s1ap_xer_print_s1ap_e_rabsetuprequest(s1ap_xer__print2sp, message_string, message);
-    S1AP_INFO("TODO  E_RABRelease nitiating message\n");
+
+  case S1ap_ProcedureCode_id_E_RABModify:
+    ret = s1ap_decode_s1ap_e_rabmodifyrequesties(
+            &message->msg.s1ap_E_RABModifyRequestIEs, &initiating_p->value);
+    message_id = S1AP_E_RAB_MODIFY_REQUEST_LOG;
+    message_string_size = strlen(message_string);
+    message_p           = itti_alloc_new_message_sized(TASK_S1AP,
+                          message_id,
+                          message_string_size + sizeof (IttiMsgText));
+    message_p->ittiMsg.s1ap_e_rab_modify_request_log.size = message_string_size;
+    memcpy(&message_p->ittiMsg.s1ap_e_rab_modify_request_log.text, message_string, message_string_size);
+    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
     free(message_string);
+    S1AP_INFO("E_RABModify initiating message\n");
+    break;
+
+  case S1ap_ProcedureCode_id_E_RABRelease:
+    ret = s1ap_decode_s1ap_e_rabreleasecommandies(
+            &message->msg.s1ap_E_RABReleaseCommandIEs, &initiating_p->value);
+    s1ap_xer_print_s1ap_e_rabreleasecommand(s1ap_xer__print2sp, message_string, message);
+    message_id = S1AP_E_RAB_RELEASE_REQUEST_LOG;
+    message_string_size = strlen(message_string);
+    message_p           = itti_alloc_new_message_sized(TASK_S1AP,
+                          message_id,
+                          message_string_size + sizeof (IttiMsgText));
+    message_p->ittiMsg.s1ap_e_rab_release_request_log.size = message_string_size;
+    memcpy(&message_p->ittiMsg.s1ap_e_rab_release_request_log.text, message_string, message_string_size);
+    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+    free(message_string);
+    S1AP_INFO("TODO  E_RABRelease nitiating message\n");    
     break;
 
   default:

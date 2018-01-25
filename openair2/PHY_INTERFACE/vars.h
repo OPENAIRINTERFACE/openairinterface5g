@@ -42,7 +42,3 @@ unsigned int mac_registered;
 
 #endif
 
-#ifndef USER_MODE
-EXPORT_SYMBOL(mac_xface);
-#endif //PHY_EMUL
-

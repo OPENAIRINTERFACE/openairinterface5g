@@ -54,10 +54,6 @@ SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_reassembly.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_receiver.c
 SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_dar.c
 
-ifeq ($(OPENAIR_EMU),1)
-SOURCES_L2 +=  $(RLC_UM_DIR)/rlc_um_very_simple_test.c
-endif
-
 SOURCES_L2 +=  $(RLC_DIR)/rlc_mac.c
 SOURCES_L2 +=  $(RLC_DIR)/rlc.c
 SOURCES_L2 +=  $(RLC_DIR)/rlc_rrc.c

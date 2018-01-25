@@ -31,11 +31,7 @@
 #ifndef __BYPASS_SESSION_LAYER_EXTERN_H__
 #    define __BYPASS_SESSION_LAYER_EXTERN_H__
 
-#ifndef USER_MODE
-#include <rtai_posix.h>
-#else
 #include <pthread.h>
-#endif //RTAI_ENABLED
 
 extern unsigned char Emulation_status;
 extern unsigned char emu_tx_status;

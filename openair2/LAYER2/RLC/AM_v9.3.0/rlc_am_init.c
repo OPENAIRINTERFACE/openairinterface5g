@@ -21,9 +21,7 @@
 
 #define RLC_AM_MODULE 1
 #define RLC_AM_INIT_C 1
-#ifdef USER_MODE
 #include <string.h>
-#endif
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
 #include "LAYER2/MAC/extern.h"

@@ -101,8 +101,6 @@ extern "C" {
 #define START_MSG_PUSU 0xCC
 
 
-#ifdef USER_MODE
-
 #include <sys/socket.h>
 #include <sys/un.h>
 
@@ -128,16 +126,6 @@ char *recv_msg( sock_rrm_t *s ) ;
 }
 #endif
 
-#else //USER_MODE
-#include <rtai_fifos.h>
-
-#define RRC2RRM_FIFO 14
-#define RRM2RRC_FIFO 15
-int send_msg_fifo(int *s ,msg_t *msg ) ;
-#endif //USER_MODE
-
 int send_msg(void *, msg_t *);
-
-
 
 #endif

@@ -20,10 +20,6 @@
  */
 
 /*!\brief Initilization and reconfiguration routines for LTE PHY */
-#ifndef USER_MODE
-#define __NO_VERSION__
-#endif
-
 #include "defs.h"
 #include "PHY/extern.h"
 

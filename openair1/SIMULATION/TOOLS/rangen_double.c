@@ -19,12 +19,10 @@
  *      contact@openairinterface.org
  */
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#endif
 
 #include  "defs.h"
 

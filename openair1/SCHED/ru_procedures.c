@@ -38,10 +38,6 @@
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
-#endif
-
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 #include "UTIL/LOG/log.h"
