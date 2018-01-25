@@ -1176,11 +1176,18 @@ int main( int argc, char **argv )
       (RC.nb_inst > 0))  {
     
     // don't create if node doesn't connect to RRC/S1/GTP
-    if (create_tasks(UE_flag ? 0 : 1, UE_flag ? 1 : 0) < 0) {
-      printf("cannot create ITTI tasks\n");
-      exit(-1); // need a softer mode
+    if (UE_flag == 0) {
+      if (create_tasks(1) < 0) {
+        printf("cannot create ITTI tasks\n");
+        exit(-1); // need a softer mode
+      }
     }
-    
+    else {
+      if (create_tasks_ue(1) < 0) {
+        printf("cannot create ITTI tasks\n");
+        exit(-1); // need a softer mode
+      }
+    }
     printf("ITTI tasks created\n");
   }
   else {
