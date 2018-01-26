@@ -972,6 +972,22 @@ typedef struct {
     boolean_t active[NUMBER_OF_UE_MAX];
 } UE_list_t;
 
+/*! \brief deleting control information*/
+typedef struct {
+    ///rnti of UE
+    rnti_t rnti;
+    ///remove UE context flag
+    boolean_t removeContextFlg;
+} UE_free_ctrl;
+/*! \brief REMOVE UE list used by eNB to order UEs/CC for deleting*/
+typedef struct {
+    /// deleting control info
+    UE_free_ctrl UE_free_ctrl[NUMBER_OF_UE_MAX+1];
+    int num_UEs;
+    int head_freelist; ///the head position of the delete list
+    int tail_freelist; ///the tail position of the delete list
+} UE_free_list_t;
+
 /*! \brief eNB common channels */
 typedef struct {
     int physCellId;
@@ -1122,6 +1138,8 @@ typedef struct eNB_MAC_INST_s {
     time_stats_t rx_ulsch_sdu;	// include rlc_data_ind
     /// processing time of eNB PCH scheduler
     time_stats_t schedule_pch;
+
+    UE_free_list_t UE_free_list;
 } eNB_MAC_INST;
 
 /* 

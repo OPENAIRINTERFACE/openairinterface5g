@@ -167,6 +167,9 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
     wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
 #endif
   }
+
+  release_UE_in_freeList(eNB->Mod_id);
+
   // UE-specific RX processing for subframe n
   phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
 

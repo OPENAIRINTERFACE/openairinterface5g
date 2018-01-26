@@ -878,6 +878,106 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
   }
 }
 
+void remove_UE_from_freelist(module_id_t mod_id, rnti_t rnti)
+{
+
+    eNB_MAC_INST                             *eNB_MAC = RC.mac[mod_id];
+    pthread_mutex_lock(&lock_ue_freelist);
+    UE_free_list_t                           *free_list = &eNB_MAC->UE_free_list;
+    free_list->UE_free_ctrl[free_list->head_freelist].rnti = 0;
+    free_list->head_freelist = (free_list->head_freelist + 1) % (NUMBER_OF_UE_MAX+1);
+    free_list->num_UEs--;
+    pthread_mutex_unlock(&lock_ue_freelist);
+}
+
+void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, boolean_t removeFlag)
+{
+    UE_free_list_t                           *free_list = NULL;
+    eNB_MAC_INST                             *eNB_MAC = RC.mac[mod_id];
+    pthread_mutex_lock(&lock_ue_freelist);
+    free_list = &eNB_MAC->UE_free_list;
+    free_list->UE_free_ctrl[free_list->tail_freelist].rnti = rnti;
+    free_list->UE_free_ctrl[free_list->tail_freelist].removeContextFlg = removeFlag;
+    free_list->num_UEs++;
+    free_list->tail_freelist = (free_list->tail_freelist + 1) % (NUMBER_OF_UE_MAX+1);
+    pthread_mutex_unlock(&lock_ue_freelist);
+}
+
+void release_UE_in_freeList(module_id_t mod_id)
+{
+    int i, j , CC_id, pdu_number;
+    protocol_ctxt_t                           ctxt;
+    LTE_eNB_ULSCH_t                          *ulsch = NULL;
+    nfapi_ul_config_request_body_t           *ul_req_tmp = NULL;
+    PHY_VARS_eNB                             *eNB_PHY = NULL;
+    struct rrc_eNB_ue_context_s              *ue_context_pP = NULL;
+    eNB_MAC_INST                             *eNB_MAC = RC.mac[mod_id];
+    boolean_t                                 remove_UEContext;
+    rnti_t                                    rnti;
+    int                                       head, tail, ue_num;
+
+    pthread_mutex_lock(&lock_ue_freelist);
+    head = eNB_MAC->UE_free_list.head_freelist;
+    tail = eNB_MAC->UE_free_list.tail_freelist;
+    if(head == tail){
+        pthread_mutex_unlock(&lock_ue_freelist);
+        return;
+    }
+    if(tail < head){
+        tail = head + eNB_MAC->UE_free_list.num_UEs;
+    }
+    pthread_mutex_unlock(&lock_ue_freelist);
+
+    for(ue_num = head; ue_num < tail; ue_num++){
+        ue_num = ue_num % (NUMBER_OF_UE_MAX+1);
+        rnti = eNB_MAC->UE_free_list.UE_free_ctrl[ue_num].rnti;
+        if(rnti != 0){
+            remove_UEContext = eNB_MAC->UE_free_list.UE_free_ctrl[ue_num].removeContextFlg;
+            PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, rnti, 0, 0,mod_id);
+            for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+              eNB_PHY = RC.eNB[mod_id][CC_id];
+              for (i=0; i<=NUMBER_OF_UE_MAX; i++) {
+                ulsch = eNB_PHY->ulsch[i];
+                if((ulsch != NULL) && (ulsch->rnti == rnti)){
+                    LOG_I(RRC, "clean_eNb_ulsch ulsch[%d] UE %x\n", i, rnti);
+                    clean_eNb_ulsch(ulsch);
+                 }
+              }
+
+              for(j = 0; j < 10; j++){
+                ul_req_tmp = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
+                if(ul_req_tmp){
+                  pdu_number = ul_req_tmp->number_of_pdus;
+                  for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
+                    if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti){
+                      LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
+                      if(pdu_index < pdu_number -1){
+                        memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+                      }
+                      ul_req_tmp->number_of_pdus--;
+                    }
+                  }
+                }
+              }
+            }
+            rrc_mac_remove_ue(mod_id,rnti);
+            rrc_rlc_remove_ue(&ctxt);
+            pdcp_remove_UE(&ctxt);
+
+            if(remove_UEContext){
+                ue_context_pP = rrc_eNB_get_ue_context(
+                                 RC.rrc[mod_id],rnti);
+                if(ue_context_pP){
+                    rrc_eNB_remove_ue_context(&ctxt,RC.rrc[mod_id],
+                        (struct rrc_eNB_ue_context_s*) ue_context_pP);
+                }
+            }
+            LOG_I(RRC, "[release_UE_in_freeList] remove UE %x from freeList\n", rnti);
+            remove_UE_from_freelist(mod_id, rnti);
+        }
+    }
+}
+
 //-----------------------------------------------------------------------------
 void
 rrc_eNB_process_RRCConnectionSetupComplete(
@@ -1785,43 +1885,46 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
          PDCP_TRANSMISSION_MODE_CONTROL);
 
   // delete UE data of prior RNTI.  UE use current RNTI.
-  protocol_ctxt_t ctxt_prior = *ctxt_pP;
-  ctxt_prior.rnti = reestablish_rnti;
-
-  LTE_eNB_ULSCH_t *ulsch = NULL;
-  nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
-  PHY_VARS_eNB *eNB_PHY = NULL;
-  eNB_MAC_INST *eNB_MAC = RC.mac[ctxt_prior.module_id];
-  for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    eNB_PHY = RC.eNB[ctxt_prior.module_id][CC_id];
-    for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
-      ulsch = eNB_PHY->ulsch[i];
-      if((ulsch != NULL) && (ulsch->rnti == ctxt_prior.rnti)){
-        LOG_I(RRC, "clean_eNb_ulsch UE %x \n", ctxt_prior.rnti);
-        clean_eNb_ulsch(ulsch);
-        break;
-      }
-    }
-
-    for(int j = 0; j < 10; j++){
-      ul_req_tmp = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
-      if(ul_req_tmp){
-        int pdu_number = ul_req_tmp->number_of_pdus;
-        for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
-          if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == ctxt_prior.rnti){
-            LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", ctxt_prior.rnti, pdu_index, pdu_number);
-            if(pdu_index < pdu_number -1){
-               memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
-            }
-            ul_req_tmp->number_of_pdus--;
-          }
-        }
-      }
-    }
-  }
-  rrc_mac_remove_ue(ctxt_prior.module_id, ctxt_prior.rnti);
-  rrc_rlc_remove_ue(&ctxt_prior);
-  pdcp_remove_UE(&ctxt_prior);
+//  protocol_ctxt_t ctxt_prior = *ctxt_pP;
+//  ctxt_prior.rnti = reestablish_rnti;
+//
+//  LTE_eNB_ULSCH_t *ulsch = NULL;
+//  nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
+//  PHY_VARS_eNB *eNB_PHY = NULL;
+//  eNB_MAC_INST *eNB_MAC = RC.mac[ctxt_prior.module_id];
+//  for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+//    eNB_PHY = RC.eNB[ctxt_prior.module_id][CC_id];
+//    for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
+//      ulsch = eNB_PHY->ulsch[i];
+//      if((ulsch != NULL) && (ulsch->rnti == ctxt_prior.rnti)){
+//        LOG_I(RRC, "clean_eNb_ulsch UE %x \n", ctxt_prior.rnti);
+//        clean_eNb_ulsch(ulsch);
+//        break;
+//      }
+//    }
+//
+//    for(int j = 0; j < 10; j++){
+//      ul_req_tmp = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
+//      if(ul_req_tmp){
+//        int pdu_number = ul_req_tmp->number_of_pdus;
+//        for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
+//          if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == ctxt_prior.rnti){
+//            LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", ctxt_prior.rnti, pdu_index, pdu_number);
+//            if(pdu_index < pdu_number -1){
+//               memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+//            }
+//            ul_req_tmp->number_of_pdus--;
+//          }
+//        }
+//      }
+//    }
+//  }
+//  rrc_mac_remove_ue(ctxt_prior.module_id, ctxt_prior.rnti);
+//  rrc_rlc_remove_ue(&ctxt_prior);
+//  pdcp_remove_UE(&ctxt_prior);
+  // add UE info to freeList for RU_thread to remove the UE instead of remove it here
+  LOG_I(RRC, "[RRCConnectionReestablishment]put UE %x into freeList\n", reestablish_rnti);
+  put_UE_in_freelist(ctxt_pP->module_id, reestablish_rnti, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -6590,6 +6693,9 @@ rrc_enb_task(
   int                                 CC_id;
 
   protocol_ctxt_t                     ctxt;
+
+  pthread_mutex_init(&lock_ue_freelist, NULL);
+
   itti_mark_task_ready(TASK_RRC_ENB);
   LOG_I(RRC,"Entering main loop of RRC message task\n");
   while (1) {
