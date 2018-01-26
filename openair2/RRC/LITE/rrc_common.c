@@ -372,6 +372,7 @@ rrc_rx_tx(
           ue_context_p->ue_context.ue_release_timer_thres_rrc) {
           LOG_I(RRC,"Removing UE %x instance After UE_CONTEXT_RELEASE_Complete\n", ue_context_p->ue_context.rnti);
           ue_to_be_removed = ue_context_p;
+          ue_context_p->ue_context.ue_release_timer_rrc = 0;
           break;
         }
       }
@@ -395,6 +396,9 @@ rrc_rx_tx(
 	    ue_context_p->ue_context.ue_release_timer_thres) {
 	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
 	  ue_to_be_removed = ue_context_p;
+#ifdef UE_EXPANSION
+	  ue_context_p->ue_context.ue_release_timer = 0;
+#endif
 	  break;
 	}
       }

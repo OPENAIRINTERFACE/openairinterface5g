@@ -470,4 +470,11 @@ void openair_rrc_top_init_ue(
                         uint8_t HO_active
 );
 
+#ifdef UE_EXPANSION
+pthread_mutex_t      lock_ue_freelist;
+void remove_UE_from_freelist(module_id_t mod_id, rnti_t rnti);
+void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, boolean_t removeFlag);
+void release_UE_in_freeList(module_id_t mod_id);
+#endif
+
 /** @}*/
