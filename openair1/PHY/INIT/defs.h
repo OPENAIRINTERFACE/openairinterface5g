@@ -324,6 +324,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB);
  */
 int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb);
 
+void free_lte_top(void);
 
 void init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 

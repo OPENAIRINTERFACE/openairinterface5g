@@ -884,6 +884,7 @@ void terminate_task(task_id_t task_id, module_id_t mod_id)
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
+extern void  free_transport(PHY_VARS_eNB *);
 extern void  phy_free_RU(RU_t*);
 
 int stop_L1L2(module_id_t enb_id)
@@ -923,8 +924,12 @@ int stop_L1L2(module_id_t enb_id)
   LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", enb_id);
   kill_RU_proc(enb_id);
   oai_exit = 0;
-  for (int cc_id = 0; cc_id < RC.nb_CC[enb_id]; cc_id++) phy_free_lte_eNB(RC.eNB[enb_id][cc_id]);
+  for (int cc_id = 0; cc_id < RC.nb_CC[enb_id]; cc_id++) {
+    free_transport(RC.eNB[enb_id][cc_id]);
+    phy_free_lte_eNB(RC.eNB[enb_id][cc_id]);
+  }
   phy_free_RU(RC.ru[enb_id]);
+  free_lte_top();
   return 0;
 }
 
@@ -1491,6 +1496,7 @@ int main( int argc, char **argv )
   } else {
     stop_eNB(NB_eNB_INST);
     stop_RU(NB_RU);
+    free_lte_top();
   }
 
 

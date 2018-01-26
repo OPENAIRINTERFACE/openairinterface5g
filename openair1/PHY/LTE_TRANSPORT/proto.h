@@ -83,6 +83,12 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
 
 void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
 
+/** \fn free_eNB_ulsch(LTE_eNB_DLSCH_t *dlsch)
+    \brief This function frees memory allocated for a particular ULSCH at eNB
+    @param ulsch Pointer to ULSCH to be removed
+*/
+void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch);
+
 LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
 
 LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);

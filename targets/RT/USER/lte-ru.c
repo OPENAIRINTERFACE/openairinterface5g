@@ -1557,8 +1557,6 @@ void *ru_thread_synch(void *arg) {
     if (release_thread(&ru->proc.mutex_synch,&ru->proc.instance_cnt_synch,"ru_synch_thread") < 0) break;
   } // oai_exit
 
-  lte_sync_time_free();
-
   ru_thread_synch_status = 0;
   return &ru_thread_synch_status;
 

@@ -1247,6 +1247,18 @@ void  phy_config_cba_rnti (module_id_t Mod_id,int CC_id,eNB_flag_t eNB_flag, uin
   }
 }
 
+void free_lte_top(void)
+{
+  free_td8();
+  free_td16();
+#ifdef __AVX2__
+  free_td16avx2();
+#endif
+  lte_sync_time_free();
+
+  /* free_ul_ref_sigs() is called in phy_free_lte_eNB() */
+}
+
 void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 {
 

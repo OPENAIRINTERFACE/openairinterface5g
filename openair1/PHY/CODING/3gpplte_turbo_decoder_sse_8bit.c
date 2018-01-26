@@ -838,10 +838,10 @@ void free_td8(void)
   int ind;
 
   for (ind=0; ind<188; ind++) {
-    free(pi2tab8[ind]);
-    free(pi5tab8[ind]);
-    free(pi4tab8[ind]);
-    free(pi6tab8[ind]);
+    free_and_zero(pi2tab8[ind]);
+    free_and_zero(pi5tab8[ind]);
+    free_and_zero(pi4tab8[ind]);
+    free_and_zero(pi6tab8[ind]);
   }
 }
 
