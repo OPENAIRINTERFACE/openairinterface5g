@@ -115,7 +115,7 @@ extern volatile int                    oai_exit;
 
 extern void  phy_init_RU(RU_t*);
 
-void init_RU(char*);
+void init_RU(char*,clock_source_t,clock_source_t);
 void stop_RU(RU_t *ru);
 void do_ru_sync(RU_t *ru);
 
@@ -1339,6 +1339,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   }
   else AssertFatal(1==0,"Unknown N_RB_DL %d\n",fp->N_RB_DL);
 
+
   if (fp->frame_type==TDD)
     cfg->duplex_mode = duplex_mode_TDD;
   else //FDD
@@ -2198,7 +2199,7 @@ void init_precoding_weights(PHY_VARS_eNB *eNB) {
 
 extern void RCconfig_RU(void);
 
-void init_RU(char *rf_config_file) {
+void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t time_source) {
   
   int ru_id;
   RU_t *ru;
@@ -2228,7 +2229,9 @@ void init_RU(char *rf_config_file) {
     ru->in_synch     = (ru->is_slave == 1) ? 0 : 1;
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
-
+    ru->openair0_cfg.clock_source  = clock_source;
+    ru->openair0_cfg.time_source = time_source;
+;
     
     eNB0             = ru->eNB_list[0];
     if ((ru->function != NGFI_RRU_IF5) && (ru->function != NGFI_RRU_IF4p5))

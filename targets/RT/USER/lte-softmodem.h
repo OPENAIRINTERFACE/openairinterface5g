@@ -243,7 +243,7 @@ extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
-extern void init_RU(const char*);
+extern void init_RU(const char*,clock_source_t,clock_source_t);
 
 // In lte-ue.c
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
