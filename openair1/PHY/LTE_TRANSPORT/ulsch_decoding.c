@@ -52,6 +52,8 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 //#define DEBUG_ULSCH_DECODING
 
+extern int codingw;
+
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch)
 {
 
@@ -817,7 +819,7 @@ int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_fl
   int ret = 0;
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  if(ulsch_harq->C>3)
+  if(ulsch_harq->C>3 && get_nprocs()>=2 && codingw)
   {
     ret = ulsch_decoding_data_2thread(eNB,UE_id,harq_pid,llr8_flag);
   }

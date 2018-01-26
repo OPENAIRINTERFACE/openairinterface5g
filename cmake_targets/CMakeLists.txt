@@ -597,7 +597,7 @@ add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver
 add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
 add_boolean_option(OAISIM False "specific to oaisim")
 add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????")
-add_boolean_option(EMULATE_RF True "allows to run lte-softmodem without HW")
+add_boolean_option(EMULATE_RF False "allows to run lte-softmodem without HW")
 
 add_boolean_option(USE_MME False "this flag is used only one time in lte-softmodem.c")
 add_list_string_option(PACKAGE_NAME "NotDefined" "As per attribute name")

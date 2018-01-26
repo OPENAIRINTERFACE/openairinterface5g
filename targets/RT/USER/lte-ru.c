@@ -113,7 +113,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 extern volatile int                    oai_exit;
 extern int numerology;
-extern int fh_two_thread;
+extern int fepw;
 
 
 extern void  phy_init_RU(RU_t*);
@@ -681,6 +681,7 @@ void fh_if4p5_north_out(RU_t *ru) {
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 0 );
 }
 
+#ifdef EMULATE_RF
 static void* emulatedRF_thread(void* param) {
   RU_proc_t *proc = (RU_proc_t *) param;
   int microsec = 500; // length of time to sleep, in miliseconds
@@ -708,6 +709,7 @@ static void* emulatedRF_thread(void* param) {
   }
   return 0;
 }
+#endif
 
 void rx_rf(RU_t *ru,int *frame,int *subframe) {
 
@@ -716,7 +718,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   void *rxp[ru->nb_rx];
   unsigned int rxs;
   int i;
-  openair0_timestamp ts,old_ts;
+  openair0_timestamp ts=0,old_ts=0;
     
   for (i=0; i<ru->nb_rx; i++)
     rxp[i] = (void*)&ru->common.rxdata[i][*subframe*fp->samples_per_tti];
@@ -1024,7 +1026,7 @@ static void* ru_thread_prach_br( void* param ) {
   ru_thread_prach_status = 0;
 
   thread_top_init("ru_thread_prach_br",1,500000,1000000,20000000);
-  wait_sync(ru_thread_prach_br);
+  wait_sync("ru_thread_prach_br");
 
   while (!oai_exit) {
     
@@ -1154,7 +1156,7 @@ void wakeup_eNBs(RU_t *ru) {
 
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d\n",ru->num_eNB,ru->idx);
 
-  if (0){//(ru->num_eNB==1) {
+  if (get_nprocs() <= 4) {
     // call eNB function directly
   
     char string[20];
@@ -1165,10 +1167,10 @@ void wakeup_eNBs(RU_t *ru) {
   else {
     
     for (i=0;i<ru->num_eNB;i++)
-      {
-	if (ru->wakeup_rxtx(eNB_list[i],ru) < 0)
+    {
+	  if (ru->wakeup_rxtx(eNB_list[i],ru) < 0)
 	  LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
-      }
+    }
   }
 }
 
@@ -1392,7 +1394,7 @@ static void* ru_stats_thread(void* param) {
 
   while (!oai_exit) {
      sleep(1);
-     if (opp_enabled == 1) {
+     if (opp_enabled == 1 && fepw) {
        if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
        if (ru->feptx_ofdm) print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
      }
@@ -1422,17 +1424,10 @@ static void* ru_thread_tx( void* param ) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_RU_THREAD_TX,sched_getcpu());   
     if (oai_exit) break;   
 
-    if (subframe==9) { 
-      subframe=0;
-      frame++;
-      frame&=1023;
-    } else {
-      subframe++;
-    }
+
 	LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
 	// wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
-	//printf("//////////////////instance_cnt_eNBs = %d\n",proc->instance_cnt_eNBs);//////////////////*********
   	    
   	#ifdef EMULATE_RF
     #else    
@@ -1474,8 +1469,8 @@ static void* ru_thread( void* param ) {
   // set default return value
   thread_top_init("ru_thread",1,400000,500000,500000);
 
-  CPU_SET(1, &cpuset);
-  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //CPU_SET(1, &cpuset);
+  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   pthread_setname_np( pthread_self(),"ru thread");
   LOG_I(PHY,"thread ru created id=%ld\n", syscall(__NR_gettid));
 
@@ -1604,24 +1599,23 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
 
-    /*
-	if(fh_two_thread == 0)
+    
+	if(get_nprocs() <=4)
 	{
-		// wait until eNBs are finished subframe RX n and TX n+4
-		wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
-	
-	
-		// do TX front-end processing if needed (precoding and/or IDFTs)
-		if (ru->feptx_prec) ru->feptx_prec(ru);
-	
-		// do OFDM if needed
-		if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-		// do outgoing fronthaul (south) if needed
-		if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-	
-		if (ru->fh_north_out) ru->fh_north_out(ru);
+        #ifdef EMULATE_RF
+        #else
+        // do TX front-end processing if needed (precoding and/or IDFTs)
+        if (ru->feptx_prec) ru->feptx_prec(ru);
+        
+        // do OFDM if needed
+        if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+        // do outgoing fronthaul (south) if needed
+        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+        
+        if (ru->fh_north_out) ru->fh_north_out(ru);
+        #endif
 	}
-    */
+    
   }
   
 
@@ -1809,7 +1803,7 @@ void init_RU_proc(RU_t *ru) {
   pthread_create( &proc->pthread_emulateRF, attr_emulateRF, emulatedRF_thread, (void*)proc );
 #endif
 
-  if (fh_two_thread==1)
+  if (get_nprocs() > 4)
     pthread_create( &proc->pthread_FH1, attr_FH1, ru_thread_tx, (void*)ru );
 
   if (ru->function == NGFI_RRU_IF4p5) {
@@ -1832,7 +1826,7 @@ void init_RU_proc(RU_t *ru) {
     
   }
 
-  if (get_nprocs()>=2) { 
+  if (get_nprocs()> 2 && fepw) { 
     if (ru->feprx) init_fep_thread(ru,NULL); 
     if (ru->feptx_ofdm) init_feptx_thread(ru,NULL);
   } 

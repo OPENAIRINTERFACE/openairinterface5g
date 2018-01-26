@@ -222,10 +222,10 @@ void feptx_ofdm_2thread(RU_t *ru) {
   start_meas(&ru->ofdm_mod_wait_stats);
   wait_on_busy_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread");  
   stop_meas(&ru->ofdm_mod_wait_stats);
-  if(opp_enabled == 1 && ru->ofdm_mod_wait_stats.diff_now>30*3000){
+  /*if(opp_enabled == 1 && ru->ofdm_mod_wait_stats.diff_now>30*3000){
     print_meas_now(&ru->ofdm_mod_wait_stats,"fep wakeup",stderr);
     printf("delay in feptx wait on codition in frame_rx: %d  subframe_rx: %d \n",proc->frame_tx,proc->subframe_tx);
-  }
+  }*/
 
   stop_meas(&ru->ofdm_mod_stats);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );

@@ -206,8 +206,9 @@ extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
 int transmission_mode=1;
-int numerology = 2;
-int fh_two_thread = 1;
+int numerology = 0;
+int codingw = 1;
+int fepw = 1;
 
 
 
