@@ -1880,7 +1880,7 @@ void *ru_thread_synch(void *arg) {
 	ru->state    = RU_RUN;
       } // symc_pos > 0
       else {
-	if (cnt>50) {
+	if (cnt>1000) {
            write_output("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
            write_output("ru_rx.m","rxs",(void*)ru->common.rxdata[0],fp->samples_per_tti*10,1,1);
           exit(1);

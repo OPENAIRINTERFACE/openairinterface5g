@@ -1004,6 +1004,15 @@ extern "C" {
             else
                 s->usrp->set_clock_source("external");
 
+            if (openair0_cfg[0].time_source == internal){
+                LOG_I(PHY,"Setting time source to internal\n");
+                s->usrp->set_time_source("internal");
+            }
+            else{
+                LOG_I(PHY,"Setting time source to external\n");
+                s->usrp->set_time_source("external");
+            }
+
             //Setting device type to USRP X300/X310
             device->type=USRP_X300_DEV;
 
@@ -1062,12 +1071,22 @@ extern "C" {
 
             // lock mboard clocks
             if (openair0_cfg[0].clock_source == internal){
+		LOG_I(PHY,"Setting clock source to internal\n");
 	        s->usrp->set_clock_source("internal");
             }
             else{
+                LOG_I(PHY,"Setting clock source to external\n");		
                 s->usrp->set_clock_source("external");
-		s->usrp->set_time_source("external");
             }	
+            if (openair0_cfg[0].time_source == internal){
+                LOG_I(PHY,"Setting time source to internal\n");
+                s->usrp->set_time_source("internal");
+            }
+            else{
+                LOG_I(PHY,"Setting time source to external\n");
+                s->usrp->set_time_source("external");
+            }
+
 
             device->type = USRP_B200_DEV;
             if ((vers == 3) && (subvers == 9) && (subsubvers>=2)) {
