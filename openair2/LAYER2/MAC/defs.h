@@ -972,7 +972,6 @@ typedef struct {
     boolean_t active[NUMBER_OF_UE_MAX];
 } UE_list_t;
 
-#ifdef UE_EXPANSION
 /*! \brief deleting control information*/
 typedef struct {
     ///rnti of UE
@@ -988,7 +987,6 @@ typedef struct {
     int head_freelist; ///the head position of the delete list
     int tail_freelist; ///the tail position of the delete list
 } UE_free_list_t;
-#endif
 
 /*! \brief eNB common channels */
 typedef struct {
@@ -1140,9 +1138,8 @@ typedef struct eNB_MAC_INST_s {
     time_stats_t rx_ulsch_sdu;	// include rlc_data_ind
     /// processing time of eNB PCH scheduler
     time_stats_t schedule_pch;
-#ifdef UE_EXPANSION
+
     UE_free_list_t UE_free_list;
-#endif
 } eNB_MAC_INST;
 
 /* 

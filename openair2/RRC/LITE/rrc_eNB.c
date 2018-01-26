@@ -887,8 +887,6 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
   }
 }
 
-
-#ifdef UE_EXPANSION
 void remove_UE_from_freelist(module_id_t mod_id, rnti_t rnti)
 {
 
@@ -988,7 +986,7 @@ void release_UE_in_freeList(module_id_t mod_id)
         }
     }
 }
-#endif
+
 //-----------------------------------------------------------------------------
 void
 rrc_eNB_process_RRCConnectionSetupComplete(
@@ -1895,44 +1893,46 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
          PDCP_TRANSMISSION_MODE_CONTROL);
 
   // delete UE data of prior RNTI.  UE use current RNTI.
-  protocol_ctxt_t ctxt_prior = *ctxt_pP;
-  ctxt_prior.rnti = reestablish_rnti;
-
-  LTE_eNB_ULSCH_t *ulsch = NULL;
-  nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
-  PHY_VARS_eNB *eNB_PHY = NULL;
-  eNB_MAC_INST *eNB_MAC = RC.mac[ctxt_prior.module_id];
-  for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    eNB_PHY = RC.eNB[ctxt_prior.module_id][CC_id];
-    for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
-      ulsch = eNB_PHY->ulsch[i];
-      if((ulsch != NULL) && (ulsch->rnti == ctxt_prior.rnti)){
-        LOG_I(RRC, "clean_eNb_ulsch UE %x \n", ctxt_prior.rnti);
-        //clean_eNb_ulsch(ulsch);
-        ulsch->rnti = 0;
-        break;
-      }
-    }
-
-    for(int j = 0; j < 10; j++){
-      ul_req_tmp = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
-      if(ul_req_tmp){
-        int pdu_number = ul_req_tmp->number_of_pdus;
-        for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
-          if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == ctxt_prior.rnti){
-            LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", ctxt_prior.rnti, pdu_index, pdu_number);
-            if(pdu_index < pdu_number -1){
-               memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
-            }
-            ul_req_tmp->number_of_pdus--;
-          }
-        }
-      }
-    }
-  }
-  rrc_mac_remove_ue(ctxt_prior.module_id, ctxt_prior.rnti);
-  rrc_rlc_remove_ue(&ctxt_prior);
-  pdcp_remove_UE(&ctxt_prior);
+//  protocol_ctxt_t ctxt_prior = *ctxt_pP;
+//  ctxt_prior.rnti = reestablish_rnti;
+//
+//  LTE_eNB_ULSCH_t *ulsch = NULL;
+//  nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
+//  PHY_VARS_eNB *eNB_PHY = NULL;
+//  eNB_MAC_INST *eNB_MAC = RC.mac[ctxt_prior.module_id];
+//  for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+//    eNB_PHY = RC.eNB[ctxt_prior.module_id][CC_id];
+//    for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
+//      ulsch = eNB_PHY->ulsch[i];
+//      if((ulsch != NULL) && (ulsch->rnti == ctxt_prior.rnti)){
+//        LOG_I(RRC, "clean_eNb_ulsch UE %x \n", ctxt_prior.rnti);
+//        clean_eNb_ulsch(ulsch);
+//        break;
+//      }
+//    }
+//
+//    for(int j = 0; j < 10; j++){
+//      ul_req_tmp = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
+//      if(ul_req_tmp){
+//        int pdu_number = ul_req_tmp->number_of_pdus;
+//        for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
+//          if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == ctxt_prior.rnti){
+//            LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", ctxt_prior.rnti, pdu_index, pdu_number);
+//            if(pdu_index < pdu_number -1){
+//               memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+//            }
+//            ul_req_tmp->number_of_pdus--;
+//          }
+//        }
+//      }
+//    }
+//  }
+//  rrc_mac_remove_ue(ctxt_prior.module_id, ctxt_prior.rnti);
+//  rrc_rlc_remove_ue(&ctxt_prior);
+//  pdcp_remove_UE(&ctxt_prior);
+  // add UE info to freeList for RU_thread to remove the UE instead of remove it here
+  LOG_I(RRC, "[RRCConnectionReestablishment]put UE %x into freeList\n", reestablish_rnti);
+  put_UE_in_freelist(ctxt_pP->module_id, reestablish_rnti, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -6725,9 +6725,9 @@ rrc_enb_task(
   int                                 CC_id;
 
   protocol_ctxt_t                     ctxt;
-#ifdef UE_EXPANSION
+
   pthread_mutex_init(&lock_ue_freelist, NULL);
-#endif
+
   itti_mark_task_ready(TASK_RRC_ENB);
   LOG_I(RRC,"Entering main loop of RRC message task\n");
   while (1) {
