@@ -533,7 +533,7 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
 		pdcch_order_table[cc[CC_id].mib->message.dl_Bandwidth];
 	    DL_req[CC_id].dl_config_request_body.number_dci++;
 	    DL_req[CC_id].dl_config_request_body.number_pdu++;
-	    LOG_I(MAC,
+	    LOG_D(MAC,
 		  "UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d), resource_block_coding %d \n",
 		  UE_id, rnti,
 		  UE_list->UE_sched_ctrl[UE_id].ul_failure_timer,
