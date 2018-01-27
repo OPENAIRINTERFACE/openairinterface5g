@@ -123,6 +123,10 @@ rx_sdu(const module_id_t enb_mod_idP,
 		    round_UL[CC_idP][harq_pid] < 8, "round >= 8\n");
 	if (sduP != NULL) {
 	    UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer = 0;
+            if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 0) {
+              LOG_I(MAC, "UE %d rnti %x: UL Failure timer %d clear to 0\n", UE_id, rntiP,
+              UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+            }
 	    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
 	    UE_list->UE_sched_ctrl[UE_id].ul_scheduled &=
 		(~(1 << harq_pid));
@@ -285,6 +289,10 @@ rx_sdu(const module_id_t enb_mod_idP,
 		     */
 		    UE_id = old_UE_id;
 		    UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer = 0;
+                    if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 0) {
+                      LOG_I(MAC, "UE %d rnti %x: UL Failure timer %d clear to 0\n", UE_id, old_rnti,
+                      UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+                    }
 		    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
 		    if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
 			UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 0;
@@ -1176,6 +1184,10 @@ schedule_ulsch_rnti(module_id_t module_idP,
 		// inform RRC of failure and clear timer
 		mac_eNB_rrc_ul_failure(module_idP, CC_id, frameP,
 				       subframeP, rnti);
+                if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 0) {
+                  LOG_I(MAC, "UE %d rnti %x: UL Failure timer %d clear to 0\n", UE_id, rnti,
+                  UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+                }
 		UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
 		UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 1;
 	    }
