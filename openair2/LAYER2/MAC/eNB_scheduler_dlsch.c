@@ -977,7 +977,29 @@ schedule_ue_spec(module_id_t module_idP,
 							  (char *)
 							  &dlsch_buffer
 							  [0]);
-
+            pthread_mutex_lock(&rrc_release_freelist);
+            if(rrc_release_info.num_UEs > 0){
+              uint16_t release_total = 0;
+              for(uint16_t release_num = 0;release_num < NUMBER_OF_UE_MAX;release_num++){
+                if(rrc_release_info.RRC_release_ctrl[release_num].flag == 1){
+                 release_total++;
+                  if( (rrc_release_info.RRC_release_ctrl[release_num].rnti == rnti) &&
+                      (rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui == rlc_status.rrc_mui)){
+                      rrc_release_info.RRC_release_ctrl[release_num].flag = 3;
+                  }
+                }
+                if(rrc_release_info.RRC_release_ctrl[release_num].flag == 2){
+                    release_total++;
+                    if( (rrc_release_info.RRC_release_ctrl[release_num].rnti == rnti) &&
+                        (rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui == rlc_status.rrc_mui)){
+                        rrc_release_info.RRC_release_ctrl[release_num].flag = 4;
+                    }
+                }
+                if(release_total >= rrc_release_info.num_UEs)
+                  break;
+              }
+            }
+            pthread_mutex_unlock(&rrc_release_freelist);
 			T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP),
 			  T_INT(CC_id), T_INT(rnti), T_INT(frameP),
 			  T_INT(subframeP), T_INT(harq_pid), T_INT(DCCH),

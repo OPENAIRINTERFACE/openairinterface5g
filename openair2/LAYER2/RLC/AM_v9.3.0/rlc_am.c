@@ -585,7 +585,7 @@ rlc_am_mac_status_indication (
 
     sdu_size            = ((rlc_am_tx_sdu_management_t *) (rlc->input_sdus[rlc->current_sdu_index].mem_block->data))->sdu_size;
     sdu_remaining_size  = ((rlc_am_tx_sdu_management_t *) (rlc->input_sdus[rlc->current_sdu_index].mem_block->data))->sdu_remaining_size;
-
+    status_resp.rrc_mui = rlc->input_sdus[rlc->current_sdu_index].mui;
     status_resp.head_sdu_remaining_size_to_send = sdu_remaining_size;
 
     if (sdu_size == sdu_remaining_size)  {

@@ -2012,9 +2012,9 @@ rrc_eNB_generate_RRCConnectionRelease(
   // remove UE after 10 frames after RRCConnectionRelease is triggered
   //ue_context_pP->ue_context.ue_release_timer_thres=100;
     // set release timer
-  ue_context_pP->ue_context.ue_release_timer_rrc = 1;
+//  ue_context_pP->ue_context.ue_release_timer_rrc = 1;
   // remove UE after 10 frames after RRCConnectionRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres_rrc = 100;
+//  ue_context_pP->ue_context.ue_release_timer_thres_rrc = 100;
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
   ue_context_pP->ue_context.ue_release_timer_s1 = 0;
@@ -2040,7 +2040,21 @@ rrc_eNB_generate_RRCConnectionRelease(
     ue_context_pP->ue_context.rnti,
     rrc_eNB_mui,
     size);
-
+  pthread_mutex_lock(&rrc_release_freelist);
+  for(uint16_t release_num = 0;release_num < NUMBER_OF_UE_MAX;release_num++){
+    if(rrc_release_info.RRC_release_ctrl[release_num].flag == 0){
+      if(ue_context_pP->ue_context.ue_release_timer_s1 > 0){
+        rrc_release_info.RRC_release_ctrl[release_num].flag = 1;
+      }else{
+        rrc_release_info.RRC_release_ctrl[release_num].flag = 2;
+      }
+      rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt_pP->rnti;
+      rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = rrc_eNB_mui;
+      rrc_release_info.num_UEs++;
+      break;
+    }
+  }
+  pthread_mutex_unlock(&rrc_release_freelist);
   rrc_data_req(
 	       ctxt_pP,
 	       DCCH,
@@ -6727,7 +6741,8 @@ rrc_enb_task(
   protocol_ctxt_t                     ctxt;
 
   pthread_mutex_init(&lock_ue_freelist, NULL);
-
+  pthread_mutex_init(&rrc_release_freelist, NULL);
+  memset(&rrc_release_info,0,sizeof(RRC_release_list_t));
   itti_mark_task_ready(TASK_RRC_ENB);
   LOG_I(RRC,"Entering main loop of RRC message task\n");
   while (1) {

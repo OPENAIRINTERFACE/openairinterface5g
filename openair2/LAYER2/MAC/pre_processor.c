@@ -456,9 +456,10 @@ void sort_UEs(module_id_t Mod_idP, int frameP, sub_frame_t subframeP)
 	    continue;
 	if ((rnti = UE_RNTI(Mod_idP, i)) == NOT_A_RNTI)
 	    continue;
+#if 0
 	if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
 	    continue;
-
+#endif
 	list[list_size] = i;
 	list_size++;
     }
@@ -1183,8 +1184,10 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
 	if (rnti == NOT_A_RNTI)
 	    continue;
+#if 0
 	if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
 	    continue;
+#endif
 	UE_id = i;
 
 	for (ii = 0; ii < UE_num_active_CC(UE_list, UE_id); ii++) {
@@ -1240,9 +1243,10 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
 	if (rnti == NOT_A_RNTI)
 	    continue;
+#if 0
 	if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
 	    continue;
-
+#endif
 	for (ii = 0; ii < UE_num_active_CC(UE_list, i); ii++) {
 	    CC_id = UE_list->ordered_CCids[ii][i];
 	    ue_sched_ctl = &UE_list->UE_sched_ctrl[i];
@@ -1312,9 +1316,10 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 		    // LOG_D(MAC,"UE %d rnti 0x\n", UE_id, rnti );
 		    if (rnti == NOT_A_RNTI)
 			continue;
+#if 0
 		    if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
 			continue;
-
+#endif
 		    transmission_mode = get_tmode(Mod_id, CC_id, UE_id);
 		    //          mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
 		    //rrc_status = mac_eNB_get_rrc_status(Mod_id,rnti);
@@ -1370,11 +1375,11 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 				    round2 = ue_sched_ctl2->round[CC_id];
 				    if (rnti2 == NOT_A_RNTI)
 					continue;
-				    if (UE_list->
+#if 0				    if (UE_list->
 					UE_sched_ctrl
 					[UE_id2].ul_out_of_sync == 1)
 					continue;
-
+#endif
 				    eNB_UE_stats2 =
 					UE_list->
 					eNB_UE_stats[CC_id][UE_id2];
