@@ -191,6 +191,7 @@ struct mac_status_resp {
   uint32_t             head_sdu_remaining_size_to_send;
   unsigned char     head_sdu_is_segmented;
   struct rlc_entity_info rlc_info;             /*!< xxx*/
+  mui_t              rrc_mui;
 };
 
 struct mac_tb_ind {

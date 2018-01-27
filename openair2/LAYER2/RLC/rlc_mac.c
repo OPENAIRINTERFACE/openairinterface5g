@@ -406,6 +406,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
     mac_rlc_status_resp.head_sdu_creation_time          = status_resp.head_sdu_creation_time;
     mac_rlc_status_resp.head_sdu_remaining_size_to_send = status_resp.head_sdu_remaining_size_to_send;
     mac_rlc_status_resp.head_sdu_is_segmented           = status_resp.head_sdu_is_segmented;
+    mac_rlc_status_resp.rrc_mui                         = status_resp.rrc_mui;
     //return mac_rlc_status_resp;
     break;
 

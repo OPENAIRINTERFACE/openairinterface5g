@@ -1362,7 +1362,16 @@ typedef struct {
     uint16_t cell_ids[6];
     uint8_t n_adj_cells;
 } neigh_cell_id_t;
-
+typedef struct {
+  volatile uint8_t flag;
+  rnti_t rnti;
+  mui_t  rrc_eNB_mui;
+}RRC_release_ctrl;
+ 
+typedef struct {
+    uint16_t num_UEs;
+    RRC_release_ctrl RRC_release_ctrl[NUMBER_OF_UE_MAX];
+} RRC_release_list_t;
 #include "proto.h"
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

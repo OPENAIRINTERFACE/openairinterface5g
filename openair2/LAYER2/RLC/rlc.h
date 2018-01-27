@@ -151,6 +151,7 @@ typedef  struct {
   frame_t                      head_sdu_creation_time;           /*!< \brief Head SDU creation time. */
   sdu_size_t                   head_sdu_remaining_size_to_send;  /*!< \brief remaining size of sdu: could be the total size or the remaining size of already segmented sdu */
   boolean_t                    head_sdu_is_segmented;     /*!< \brief 0 if head SDU has not been segmented, 1 if already segmented */
+  mui_t                        rrc_mui;
 } mac_rlc_status_resp_t;
 
 
