@@ -676,10 +676,11 @@ void dlsch_scheduler_pre_ue_select(
       }
 
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+#if 0
       if (ue_sched_ctl->ul_out_of_sync == 1) {
         continue;
       }
-
+#endif
       if (cc[CC_id].tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
       else harq_pid = ((frameP*10)+subframeP)&7;
 
@@ -782,10 +783,11 @@ void dlsch_scheduler_pre_ue_select(
           continue;
 
         ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+#if 0
         if (ue_sched_ctl->ul_out_of_sync == 1) {
           continue;
         }
-
+#endif
        for(i = 0;i<dlsch_ue_select[CC_id].ue_num;i++){
           if(dlsch_ue_select[CC_id].list[i].UE_id == UE_id){
            break;
@@ -895,10 +897,11 @@ void dlsch_scheduler_pre_ue_select(
           continue;
 
         ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+#if 0
         if (ue_sched_ctl->ul_out_of_sync == 1) {
           continue;
         }
-
+#endif
         for(i = 0;i<dlsch_ue_select[CC_id].ue_num;i++){
           if(dlsch_ue_select[CC_id].list[i].UE_id == UE_id){
            break;
