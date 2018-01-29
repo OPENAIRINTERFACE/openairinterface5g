@@ -800,8 +800,7 @@ typedef struct {
     ///Contention resolution timer used during random access
     uint8_t mac_ContentionResolutionTimer;
 
-    /* TODO Navid MAX_NUM_LCID -> MAX_NUM_CCs? */
-    uint16_t max_rbs_allowed_slice[MAX_NUM_LCID][MAX_NUM_SLICES];
+    uint16_t max_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];
 
     uint8_t max_mcs[MAX_NUM_LCID];
 
