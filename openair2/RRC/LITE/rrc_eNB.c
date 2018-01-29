@@ -2141,7 +2141,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 }
 
 #if defined(FLEXRAN_AGENT_SB_IF)
-
+/* TODO Navid: does this belong here? */
 //-----------------------------------------------------------------------------
 void
 flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* const ctxt_pP,
