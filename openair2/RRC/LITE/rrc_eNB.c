@@ -4994,7 +4994,6 @@ rrc_eNB_decode_dcch(
   asn_dec_rval_t                      dec_rval;
   //UL_DCCH_Message_t uldcchmsg;
   UL_DCCH_Message_t                  *ul_dcch_msg = NULL; //&uldcchmsg;
-  UE_EUTRA_Capability_t              *UE_EUTRA_Capability = NULL;
   int i;
   struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
 
@@ -5385,18 +5384,33 @@ rrc_eNB_decode_dcch(
       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
 #endif
       LOG_I(RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
+      if (ue_context_p->ue_context.UE_Capability) {
+        LOG_I(RRC, "freeing old UE capabilities for UE %x\n", ctxt_pP->rnti);
+        asn_DEF_UE_EUTRA_Capability.free_struct(&asn_DEF_UE_EUTRA_Capability,
+              ue_context_p->ue_context.UE_Capability, 0);
+        ue_context_p->ue_context.UE_Capability = 0;
+      }
       dec_rval = uper_decode(NULL,
                              &asn_DEF_UE_EUTRA_Capability,
-                             (void **)&UE_EUTRA_Capability,
+                             (void **)&ue_context_p->ue_context.UE_Capability,
                              ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
                              choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
                              array[0]->ueCapabilityRAT_Container.buf,
                              ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
                              choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
                              array[0]->ueCapabilityRAT_Container.size, 0, 0);
-      //#ifdef XER_PRINT
-      //xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, (void *)UE_EUTRA_Capability);
-      //#endif
+#ifdef XER_PRINT
+      xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, ue_context_p->ue_context.UE_Capability);
+#endif
+
+      if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+        LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Failed to decode UE capabilities (%zu bytes)\n",
+              PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+              dec_rval.consumed);
+        asn_DEF_UE_EUTRA_Capability.free_struct(&asn_DEF_UE_EUTRA_Capability,
+              ue_context_p->ue_context.UE_Capability, 0);
+        ue_context_p->ue_context.UE_Capability = 0;
+      }
 
 #if defined(ENABLE_USE_MME)
 
