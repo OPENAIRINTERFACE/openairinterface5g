@@ -246,29 +246,20 @@ uint64_t flexran_get_ue_aggregated_max_bitrate_dl(mid_t mod_id, mid_t ue_id);
    per UE. See TS 36.413 */
 uint64_t flexran_get_ue_aggregated_max_bitrate_ul(mid_t mod_id, mid_t ue_id);
 
-/* Only half-duplex support. FDD
-   operation. Boolean value */
-/* currently broken
-int flexran_get_half_duplex(mid_t ue_id); */
+/* Only half-duplex support. FDD operation. Boolean value */
+int flexran_get_half_duplex(mid_t mod_id, mid_t ue_id);
 
-/* Support of intra-subframe hopping.
-   Boolean value */
-/* currently broken
-int flexran_get_intra_sf_hopping(mid_t ue_id); */
+/* Support of intra-subframe hopping.  Boolean value */
+int flexran_get_intra_sf_hopping(mid_t mod_id, mid_t ue_id);
 
-/* UE support for type 2 hopping with
-   n_sb>1 */
-/* currently broken
-int flexran_get_type2_sb_1(mid_t ue_id); */
+/* UE support for type 2 hopping with n_sb>1 */
+int flexran_get_type2_sb_1(mid_t mod_id, mid_t ue_id);
 
 /* Get the UE category */
-/* currently broken
-int flexran_get_ue_category(mid_t ue_id); */
+long flexran_get_ue_category(mid_t mod_id, mid_t ue_id);
 
-/* UE support for resource allocation
-   type 1 */
-/* currently broken
-int flexran_get_res_alloc_type1(mid_t ue_id); */
+/* UE support for resource allocation type 1 */
+int flexran_get_res_alloc_type1(mid_t mod_id, mid_t ue_id);
 
 /* Get UE transmission mode */
 long flexran_get_ue_transmission_mode(mid_t mod_id, mid_t ue_id);

@@ -638,55 +638,87 @@ uint64_t flexran_get_ue_aggregated_max_bitrate_ul(mid_t mod_id, mid_t ue_id)
   return RC.mac[mod_id]->UE_list.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateUL;
 }
 
-int flexran_get_half_duplex(mid_t ue_id)
+int flexran_get_half_duplex(mid_t mod_id, mid_t ue_id)
 {
-#warning "Implement flexran_get_half_duplex() in RAN API"
-  // TODO
-	//int halfduplex = 0;
-	//int bands_to_scan = ((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list.count;
-	//for (int i =0; i < bands_to_scan; i++){
-		//if(((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list.array[i]->halfDuplex > 0)
-		//	halfduplex = 1;
-	//}
-	//return halfduplex;
+  if (!rrc_is_present(mod_id)) return -1;
+
+  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.UE_Capability) return -1;
+  SupportedBandListEUTRA_t *bands = &ue_context_p->ue_context.UE_Capability->rf_Parameters.supportedBandListEUTRA;
+  for (int i = 0; i < bands->list.count; i++) {
+    if (bands->list.array[i]->halfDuplex > 0) return 1;
+  }
   return 0;
 }
 
-int flexran_get_intra_sf_hopping(mid_t ue_id)
+int flexran_get_intra_sf_hopping(mid_t mod_id, mid_t ue_id)
 {
-#warning "Implement flexran_get_intra_sf_hopping() in RAN API"
-	//TODO:Get proper value
-	//temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
-	//return (0 & ( 1 << (31)));
-  return 0;
+  if (!rrc_is_present(mod_id)) return -1;
+
+  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.UE_Capability) return -1;
+  if (!ue_context_p->ue_context.UE_Capability->featureGroupIndicators) return -1;
+  /* According to TS 36.331 Annex B.1, Intra SF Hopping is bit 1 (leftmost bit)
+   * in this bitmap, i.e. the eighth bit (from right) in the first bye (from
+   * left) */
+  BIT_STRING_t *fgi = ue_context_p->ue_context.UE_Capability->featureGroupIndicators;
+  uint8_t buf = fgi->buf[0];
+  return (buf >> 7) & 1;
 }
 
-int flexran_get_type2_sb_1(mid_t ue_id)
+int flexran_get_type2_sb_1(mid_t mod_id, mid_t ue_id)
 {
-#warning "Implement flexran_get_type2_sb_1() in RAN API"
-	//TODO:Get proper value
-	//uint8_t temp = 0;
-	//temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
-	//return (temp & ( 1 << (11)));
-  return 0;
+  if (!rrc_is_present(mod_id)) return -1;
+
+  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.UE_Capability) return -1;
+  if (!ue_context_p->ue_context.UE_Capability->featureGroupIndicators) return -1;
+  /* According to TS 36.331 Annex B.1, Predefined intra- and inter-sf or
+   * predfined inter-sf frequency hopping for PUSCH with N_sb>1 is bit 21 (bit
+   * 1 is leftmost bit) in this bitmap, i.e. the fourth bit (from right) in the
+   * third byte (from left) */
+  BIT_STRING_t *fgi = ue_context_p->ue_context.UE_Capability->featureGroupIndicators;
+  uint8_t buf = fgi->buf[2];
+  return (buf >> 3) & 1;
 }
 
-int flexran_get_ue_category(mid_t ue_id)
+long flexran_get_ue_category(mid_t mod_id, mid_t ue_id)
 {
-#warning "Implement flexran_get_ue_category() in RAN API"
-	//TODO:Get proper value
-	//return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->ue_Category);
-  return 0;
+  if (!rrc_is_present(mod_id)) return -1;
+
+  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.UE_Capability) return -1;
+  return ue_context_p->ue_context.UE_Capability->ue_Category;
 }
 
-int flexran_get_res_alloc_type1(mid_t ue_id)
+int flexran_get_res_alloc_type1(mid_t mod_id, mid_t ue_id)
 {
-#warning "Implement flexran_get_res_alloc_type1() in RAN API"
-	//TODO:Get proper value
-	//uint8_t temp = 0;
-	//temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
-	//return (temp & ( 1 << (30)));
-  return 0;
+  if (!rrc_is_present(mod_id)) return -1;
+
+  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
+
+  if (!ue_context_p) return -1;
+  if (!ue_context_p->ue_context.UE_Capability) return -1;
+  if (!ue_context_p->ue_context.UE_Capability->featureGroupIndicators) return -1;
+  /* According to TS 36.331 Annex B.1, Resource allocation type 1 for PDSCH is
+   * bit 2 (bit 1 is leftmost bit) in this bitmap, i.e. the seventh bit (from
+   * right) in the first byte (from left) */
+  BIT_STRING_t *fgi = ue_context_p->ue_context.UE_Capability->featureGroupIndicators;
+  uint8_t buf = fgi->buf[0];
+  return (buf >> 6) & 1;
 }
 
 long flexran_get_ue_transmission_mode(mid_t mod_id, mid_t ue_id)
