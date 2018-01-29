@@ -1182,13 +1182,13 @@ void do_ru_synch(RU_t *ru) {
 				   rxp,
 				   ru->rx_offset,
 				   ru->nb_rx);
-  for (i=0;i<4;i++) {
+  /*for (i=0;i<4;i++) {
     ru->rfdevice.openair0_cfg->rx_freq[i] = temp_freq1;
     ru->rfdevice.openair0_cfg->tx_freq[i] = temp_freq2;
   }
 
   ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
-
+*/
   LOG_I(PHY,"Exiting synch routine\n");
 }
 
