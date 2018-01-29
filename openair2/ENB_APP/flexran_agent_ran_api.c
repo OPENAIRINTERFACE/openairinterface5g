@@ -861,6 +861,7 @@ int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
   }
 }
 
+/* TODO Navid: Get the same for eNB */
 long flexran_get_lcg(mid_t ue_id, mid_t lc_id)
 {
   if (!UE_mac_inst) return -1;
@@ -870,10 +871,9 @@ long flexran_get_lcg(mid_t ue_id, mid_t lc_id)
   return *(UE_mac_inst[ue_id].logicalChannelConfig[lc_id]->ul_SpecificParameters->logicalChannelGroup);
 }
 
+/* TODO Navid: needs to be revised */
 int flexran_get_direction(mid_t ue_id, mid_t lc_id)
 {
-  /* TODO: fill with the value for the rest of LCID -> Robert: What does that
-   * mean? */
   switch (lc_id) {
   case DCCH:
   case DCCH1:
