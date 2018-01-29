@@ -467,6 +467,7 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
       //Set this according to the current state of the UE. This is only a temporary fix
       int status = 0;
       status = mac_eNB_get_rrc_status(mod_id, flexran_get_ue_crnti(mod_id, i));
+      /* TODO needs to be revised and appropriate API to be implemented */
       if (status < RRC_CONNECTED) {
 	lc_ue_config[i]->n_lc_config = 0;
       } else if (status == RRC_CONNECTED) {
@@ -505,6 +506,7 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 	  lc_config[j]->has_qci = 1;
 	  lc_config[j]->qci = 1;
 	  if (lc_config[j]->direction == PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_GBR) {
+            /* TODO all of the need to be taken from API */
 	    //TODO: Set the max bitrate (UL)
 	    lc_config[j]->has_e_rab_max_bitrate_ul = 0;
 	    lc_config[j]->e_rab_max_bitrate_ul = 0;
