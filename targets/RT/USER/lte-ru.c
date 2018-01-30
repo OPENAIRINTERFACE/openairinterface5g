@@ -761,9 +761,9 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
 
-  proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
-  proc->subframe_tx  = (proc->subframe_rx+4)%10;
-  proc->frame_tx     = (proc->subframe_rx>5) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+  //proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
+  //proc->subframe_tx  = (proc->subframe_rx+4)%10;
+  //proc->frame_tx     = (proc->subframe_rx>5) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
   
   LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
 	ru->idx, 

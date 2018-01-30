@@ -171,8 +171,6 @@ extern int16_t dlsch_demod_shift;
 {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
 {"T" ,                      CONFIG_HLP_TDD,         PARAMFLAG_BOOL,         iptr:&tddflag,                      defintval:0,                    TYPE_INT,       0},                     \
 {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0}                      \
-//{"coding-worker-disable" ,  CONFIG_HLP_CODINGW,     PARAMFLAG_BOOL,         iptr:&codingw,                      defintval:0,                    TYPE_INT,       0},                     \
-//{"fep-worker-disable" ,     CONFIG_HLP_FEPW,        PARAMFLAG_BOOL,         iptr:&fepw,                         defintval:0,                    TYPE_INT,       0}                      \
 }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
