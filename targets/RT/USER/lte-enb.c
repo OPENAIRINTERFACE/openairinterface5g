@@ -194,6 +194,9 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
     
     pthread_mutex_lock(&eNB->proc.ru_proc->mutex_eNBs);
     ++eNB->proc.ru_proc->instance_cnt_eNBs;
+    eNB->proc.ru_proc->timestamp_tx = proc->timestamp_tx;
+    eNB->proc.ru_proc->subframe_tx  = proc->subframe_tx;
+    eNB->proc.ru_proc->frame_tx     = proc->frame_tx;
     pthread_cond_signal(&eNB->proc.ru_proc->cond_eNBs);
     pthread_mutex_unlock(&eNB->proc.ru_proc->mutex_eNBs);
   }
