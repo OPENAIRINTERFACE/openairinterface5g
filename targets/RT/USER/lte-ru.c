@@ -1168,8 +1168,9 @@ void wakeup_eNBs(RU_t *ru) {
     
     for (i=0;i<ru->num_eNB;i++)
     {
-	  if (ru->wakeup_rxtx(eNB_list[i],ru) < 0)
-	  LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
+      eNB_list[i]->proc.ru_proc = &ru->proc;
+      if (ru->wakeup_rxtx(eNB_list[i],ru) < 0)
+      LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
     }
   }
 }
