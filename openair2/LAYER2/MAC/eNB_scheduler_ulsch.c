@@ -269,7 +269,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 		int old_rnti =
 		    (((uint16_t) payload_ptr[0]) << 8) + payload_ptr[1];
 		int old_UE_id = find_UE_id(enb_mod_idP, old_rnti);
-		LOG_D(MAC,
+		LOG_I(MAC,
 		      "[eNB %d] Frame %d, Subframe %d CC_id %d MAC CE_LCID %d (ce %d/%d): CRNTI %x (UE_id %d) in Msg3\n",
 		      enb_mod_idP, frameP, subframeP, CC_idP, rx_ces[i], i,
 		      num_ce, old_rnti, old_UE_id);
@@ -301,7 +301,7 @@ rx_sdu(const module_id_t enb_mod_idP,
                                 ENB_FLAG_YES, enb_mod_idP, 0);
                 // prepare transmission of Msg4(RRCConnectionReconfiguration)
                 ra->state = MSGCRNTI;
-                LOG_D(MAC,
+                LOG_I(MAC,
                      "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)",
                      enb_mod_idP, frameP, subframeP, CC_idP, old_rnti, old_UE_id);
                 //
