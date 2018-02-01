@@ -265,6 +265,7 @@ mem_block_t* rlc_am_retransmit_get_copy (
   /* We need to allocate a new buffer and copy to it because header content may change for Polling bit */
   int size             = pdu_mngt->header_and_payload_size + sizeof(struct mac_tb_req);
   mem_block_t* mb_copy = get_free_mem_block(size, __func__);
+  if(mb_copy == NULL) return NULL;
   memcpy(mb_copy->data, mb_original_p->data, size);
 
   rlc_am_pdu_sn_10_t *pdu_p                         = (rlc_am_pdu_sn_10_t*) (&mb_copy->data[sizeof(struct mac_tb_req)]);
@@ -339,6 +340,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		*payload_sizeP = retx_so_stop - retx_so_start + 1;
 
 		mem_pdu_segment_p = get_free_mem_block((*payload_sizeP + RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE + sizeof(struct mac_tb_req)), __func__);
+		if(mem_pdu_segment_p == NULL) return NULL;
 		pdu_segment_header_p        = (uint8_t *)&mem_pdu_segment_p->data[sizeof(struct mac_tb_req)];
 		((struct mac_tb_req*)(mem_pdu_segment_p->data))->data_ptr = pdu_segment_header_p;
 		((struct mac_tb_req*)(mem_pdu_segment_p->data))->tb_size = RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE + *payload_sizeP;
@@ -551,6 +553,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		AssertFatal (header_segment_length + *payload_sizeP <= pdu_mngt->header_and_payload_size + 2, "RLC AM PDU Segment Error: Hdr=%d Data=%d Original Hdr+Data =%d sn=%d LcId=%d !\n",
 				header_segment_length,*payload_sizeP,pdu_mngt->header_and_payload_size,sn,rlc_pP->channel_id);
 		mem_pdu_segment_p = get_free_mem_block((*payload_sizeP + header_segment_length + sizeof(struct mac_tb_req)), __func__);
+		if(mem_pdu_segment_p == NULL) return NULL;
 		pdu_segment_header_p        = (uint8_t *)&mem_pdu_segment_p->data[sizeof(struct mac_tb_req)];
 		((struct mac_tb_req*)(mem_pdu_segment_p->data))->data_ptr = pdu_segment_header_p;
 		((struct mac_tb_req*)(mem_pdu_segment_p->data))->tb_size = header_segment_length + *payload_sizeP;
@@ -718,6 +721,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
 
   if (mb_original_p != NULL) {
     mem_block_t*           mb_sub_segment_p  = get_free_mem_block(*sizeP + sizeof(struct mac_tb_req), __func__);
+    if(mb_sub_segment_p == NULL) return NULL;
     rlc_am_pdu_sn_10_t*    pdu_original_p    = (rlc_am_pdu_sn_10_t*) (&mb_original_p->data[sizeof(struct mac_tb_req)]);
     rlc_am_pdu_sn_10_t*    pdu_sub_segment_p = (rlc_am_pdu_sn_10_t*) (&mb_sub_segment_p->data[sizeof(struct mac_tb_req)]);
     rlc_am_pdu_info_t      pdu_info;

@@ -91,7 +91,7 @@ private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
 
 #    define MEM_MNGT_MB5_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*32
 // 2048
-#    define MEM_MNGT_MB5_NB_BLOCKS      1024 * MEM_SCALE // LG WAS 1024
+#    define MEM_MNGT_MB5_NB_BLOCKS      1024 * MEM_SCALE * 50 // LG WAS 1024
 #    define MEM_MNGT_POOL_ID5           5
 
 #    define MEM_MNGT_MB6_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*64

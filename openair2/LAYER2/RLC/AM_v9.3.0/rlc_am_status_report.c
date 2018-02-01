@@ -212,6 +212,9 @@ rlc_am_get_control_pdu_infos(
         if (!pdu_info_pP->nack_list[pdu_info_pP->num_nack - 1].e1) {
           nack_to_read = 0;
           *total_size_pP = *total_size_pP - (sdu_size_t)((uint64_t)byte_pos_p + (uint64_t)((bit_pos + 7)/8) - (uint64_t)header_pP);
+          if (*total_size_pP != 0) {
+            LOG_E(RLC, "[RLC_AM_GET_CONTROL_PDU_INFOS][FIRST]header_pP->b1=%d,header_pP->b2=%d\n",header_pP->b1,header_pP->b2);
+          }
           return 0;
         }
 
@@ -225,7 +228,9 @@ rlc_am_get_control_pdu_infos(
     } else {
       *total_size_pP = *total_size_pP - 2;
     }
-
+    if (*total_size_pP != 0) {
+      LOG_E(RLC, "[RLC_AM_GET_CONTROL_PDU_INFOS][SECOND]header_pP->b1=%d,header_pP->b2=%d\n",header_pP->b1,header_pP->b2);
+    }
     return 0;
   } else {
     return -1;
@@ -388,13 +393,15 @@ rlc_am_receive_process_control_pdu(
 
 
     } else {
-      LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WARNING CONTROL PDU ACK SN %d OUT OF WINDOW vtA=%d vtS=%d\n",
+      LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WARNING CONTROL PDU ACK SN %d OUT OF WINDOW vtA=%d vtS=%d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),ack_sn,rlc_pP->vt_a,rlc_pP->vt_s);
+      *tb_size_in_bytes_pP = 0;
       status = FALSE;
     }
   } else {
-    LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR IN DECODING CONTROL PDU\n",
+    LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR IN DECODING CONTROL PDU\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
+    *tb_size_in_bytes_pP = 0;
     status = FALSE;
   }
 
@@ -807,6 +814,7 @@ rlc_am_send_status_pdu(
         pdu_size);
 #endif
   tb_p = get_free_mem_block(sizeof(struct mac_tb_req) + pdu_size, __func__);
+  if(tb_p == NULL) return;
   memset(tb_p->data, 0, sizeof(struct mac_tb_req) + pdu_size);
   //estimation only ((struct mac_tb_req*)(tb_p->data))->tb_size  = pdu_size;
   ((struct mac_tb_req*)(tb_p->data))->data_ptr         = (uint8_t*)&(tb_p->data[sizeof(struct mac_tb_req)]);
@@ -1151,6 +1159,7 @@ end_push_nack:
         pdu_size);
 #endif
   tb_p = get_free_mem_block(sizeof(struct mac_tb_req) + pdu_size, __func__);
+  if(tb_p == NULL) return;
   memset(tb_p->data, 0, sizeof(struct mac_tb_req) + pdu_size);
   //estimation only ((struct mac_tb_req*)(tb_p->data))->tb_size  = pdu_size;
   ((struct mac_tb_req*)(tb_p->data))->data_ptr         = (uint8_t*)&(tb_p->data[sizeof(struct mac_tb_req)]);
