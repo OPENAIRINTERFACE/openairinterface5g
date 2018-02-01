@@ -67,6 +67,7 @@ uint8_t rb_table[34] =
     { 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24, 25, 27, 30, 32,
     36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80, 81, 90, 96, 100
 };
+extern mui_t    rrc_eNB_mui;
 
 void
 rx_sdu(const module_id_t enb_mod_idP,
@@ -273,8 +274,8 @@ rx_sdu(const module_id_t enb_mod_idP,
 		      enb_mod_idP, frameP, subframeP, CC_idP, rx_ces[i], i,
 		      num_ce, old_rnti, old_UE_id);
 		/* receiving CRNTI means that the current rnti has to go away */
-		cancel_ra_proc(enb_mod_idP, CC_idP, frameP,
-			       current_rnti);
+		//cancel_ra_proc(enb_mod_idP, CC_idP, frameP,
+		//	       current_rnti);
 		if (old_UE_id != -1) {
 		    /* TODO: if the UE did random access (followed by a MAC uplink with
 		     * CRNTI) because none of its scheduling request was granted, then
@@ -287,20 +288,45 @@ rx_sdu(const module_id_t enb_mod_idP,
 		     * We have to take care of this. As the code is, nothing is done and
 		     * the UE state in the eNB is wrong.
 		     */
-		    UE_id = old_UE_id;
-		    UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer = 0;
-                    if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 0) {
-                      LOG_I(MAC, "UE %d rnti %x: UL Failure timer %d clear to 0\n", UE_id, old_rnti,
-                      UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
-                    }
-		    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
-		    if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
-			UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 0;
-			mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP,
-					       subframeP, old_rnti);
-		    }
-		    current_rnti = old_rnti;
-		}
+          for (ii = 0; ii < NB_RA_PROC_MAX; ii++) {
+            ra = &mac->common_channels[CC_idP].ra[ii];
+            if ((ra->rnti == current_rnti) && (ra->state != IDLE)) {
+                mac_rrc_data_ind(enb_mod_idP,
+                                CC_idP,
+                                frameP, subframeP,
+                                old_rnti,
+                                DCCH,
+                                (uint8_t *) payload_ptr,
+                                rx_lengths[i],
+                                ENB_FLAG_YES, enb_mod_idP, 0);
+                // prepare transmission of Msg4(RRCConnectionReconfiguration)
+                ra->state = MSGCRNTI;
+                LOG_D(MAC,
+                     "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)",
+                     enb_mod_idP, frameP, subframeP, CC_idP, old_rnti, old_UE_id);
+                //
+                UE_id = old_UE_id;
+                current_rnti = old_rnti;
+                ra->rnti = old_rnti;
+                ra->crnti_rrc_mui = rrc_eNB_mui-1;
+                ra->crnti_harq_pid = -1;
+                //clear timer
+                UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
+                UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer = 0;
+                UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
+                if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
+                  UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 0;
+                  mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP,
+                                         subframeP, old_rnti);
+                }
+                UE_list->UE_template[CC_idP][UE_id].ul_SR = 1;
+                UE_list->UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 1;
+                break;
+              }
+          }
+        }else{
+          cancel_ra_proc(enb_mod_idP, CC_idP, frameP,current_rnti);
+        }
 		crnti_rx = 1;
 		payload_ptr += 2;
 		break;
@@ -630,7 +656,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 		    // Program Msg4 PDCCH+DLSCH/MPDCCH transmission 4 subframes from now, // Check if this is ok for BL/CE, or if the rule is different
 		    ra->Msg4_frame = frameP + ((subframeP > 5) ? 1 : 0);
 		    ra->Msg4_subframe = (subframeP + 4) % 10;
-
+                    UE_list->UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
 		}		// if process is active
 	    }			// loop on RA processes
 

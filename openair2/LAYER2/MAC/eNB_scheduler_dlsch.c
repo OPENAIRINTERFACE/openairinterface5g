@@ -1000,6 +1000,16 @@ schedule_ue_spec(module_id_t module_idP,
               }
             }
             pthread_mutex_unlock(&rrc_release_freelist);
+
+            RA_t *ra = &eNB->common_channels[CC_id].ra[0];
+            for (uint8_t ra_ii = 0; ra_ii < NB_RA_PROC_MAX; ra_ii++) {
+              if((ra[ra_ii].rnti == rnti) && (ra[ra_ii].state == MSGCRNTI) &&
+                 (ra[ra_ii].crnti_rrc_mui == rlc_status.rrc_mui)){
+                ra[ra_ii].crnti_harq_pid = harq_pid;
+                ra[ra_ii].state = MSGCRNTI_ACK;
+                break;
+              }
+            }
 			T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP),
 			  T_INT(CC_id), T_INT(rnti), T_INT(frameP),
 			  T_INT(subframeP), T_INT(harq_pid), T_INT(DCCH),

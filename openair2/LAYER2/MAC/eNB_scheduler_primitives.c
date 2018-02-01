@@ -3701,6 +3701,22 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 		LOG_D(MAC, "Received %d for harq_pid %d\n", pdu[0],
 		      harq_pid);
 
+        RA_t *ra = &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
+        for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
+          if ((ra[ra_i].rnti == rnti) && (ra[ra_i].state == MSGCRNTI_ACK) &&
+              (ra[ra_i].crnti_harq_pid == harq_pid)) {
+            LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",pdu[0],rnti,sched_ctl->round[CC_idP][harq_pid],frameP,subframeP);
+            if(pdu[0] == 1){
+              cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
+            }else{
+              if(sched_ctl->round[CC_idP][harq_pid] == 7){
+                cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
+              }
+            }
+            break;
+          }
+        }
+
 		if (pdu[0] == 1) {	// ACK
 		    sched_ctl->round[CC_idP][harq_pid] = 8;	// release HARQ process
 		    sched_ctl->tbcnt[CC_idP][harq_pid] = 0;

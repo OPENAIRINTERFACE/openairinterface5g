@@ -408,7 +408,9 @@ typedef enum {
     MSG2,
     WAITMSG3,
     MSG4,
-    WAITMSG4ACK
+    WAITMSG4ACK,
+    MSGCRNTI,
+    MSGCRNTI_ACK
 } RA_state;
 
 /*!\brief  UE ULSCH scheduling states*/
@@ -868,7 +870,8 @@ typedef struct {
     uint8_t aperiodic_wideband_cqi1[NFAPI_CC_MAX];
     uint8_t aperiodic_wideband_pmi1[NFAPI_CC_MAX];
     uint8_t dl_cqi[NFAPI_CC_MAX];
-    int32_t       uplane_inactivity_timer;
+    int32_t uplane_inactivity_timer;
+    uint8_t crnti_reconfigurationcomplete_flag;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {
@@ -927,6 +930,8 @@ typedef struct {
     uint8_t msg2_narrowband;
     uint8_t msg34_narrowband;
 #endif
+    int32_t  crnti_rrc_mui;
+    int8_t   crnti_harq_pid;
 } RA_t;
 
 

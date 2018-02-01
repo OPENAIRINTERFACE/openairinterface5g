@@ -541,6 +541,7 @@ mac_rrc_data_ind(
 #endif // Rel10 || Rel14
 
   } else { // This is an eNB
+    if((srb_idP & RAB_OFFSET) == CCCH) {
     Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
     LOG_D(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",module_idP,Srb_info->Srb_id);
     
@@ -575,7 +576,17 @@ mac_rrc_data_ind(
       Srb_info->Rx_buffer.payload_size = sdu_lenP;
       rrc_eNB_decode_ccch(&ctxt, Srb_info, CC_id);
     }
-
+    }
+    if((srb_idP & RAB_OFFSET) == DCCH) {
+      struct rrc_eNB_ue_context_s*    ue_context_p = NULL;
+      ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.module_id],rntiP);
+      if(ue_context_p){
+        rrc_eNB_generate_defaultRRCConnectionReconfiguration(&ctxt,
+            ue_context_p,
+            0);
+        ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+      }
+    }
 #endif
   }
 
