@@ -613,6 +613,14 @@ rrc_data_req(
 )
 //------------------------------------------------------------------------------
 {
+#ifdef UE_EXPANSION
+  if(sdu_sizeP == 255)
+  {
+    LOG_I(RRC,"sdu_sizeP == 255");
+    return FALSE;
+  }
+#else
+#endif
   MSC_LOG_TX_MESSAGE(
     ctxt_pP->enb_flag ? MSC_RRC_ENB : MSC_RRC_UE,
     ctxt_pP->enb_flag ? MSC_PDCP_ENB : MSC_PDCP_UE,

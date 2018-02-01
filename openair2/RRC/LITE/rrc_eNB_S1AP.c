@@ -1957,6 +1957,14 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
                                   buffer,
                                   S1AP_PAGING_IND(msg_p).ue_paging_identity,
                                   S1AP_PAGING_IND(msg_p).cn_domain);
+              #ifdef UE_EXPANSION
+              if(length == -1)
+              {
+                LOG_I(RRC, "do_Paging error");
+                return -1;
+              }
+              #else
+              #endif
               message_buffer = itti_malloc (TASK_RRC_ENB, TASK_PDCP_ENB, length);
               /* Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling). */
               memcpy (message_buffer, buffer, length);

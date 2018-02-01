@@ -813,8 +813,14 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
   PHY_VARS_eNB *eNB_PHY = NULL;
   eNB_MAC_INST *eNB_MAC = RC.mac[enb_mod_idP];
 #endif
-
+#ifdef UE_EXPANSION
+  if (enb_mod_idP >= NB_eNB_INST) {
+      LOG_I(RRC, "eNB inst invalid (%d/%d) for UE %x!\n",enb_mod_idP, NB_eNB_INST,rnti);
+      return;
+  }
+#else
   AssertFatal(enb_mod_idP < NB_eNB_INST, "eNB inst invalid (%d/%d) for UE %x!", enb_mod_idP, NB_eNB_INST, rnti);
+#endif
   /*  ue_context_p = rrc_eNB_get_ue_context(
                    &RC.rrc[enb_mod_idP],
                    rntiP
@@ -3931,7 +3937,15 @@ check_handovers(
                                ue_context_p->ue_context.handover_info->size,
                                ue_context_p->ue_context.handover_info->buf,
                                PDCP_TRANSMISSION_MODE_CONTROL);
+#ifdef UE_EXPANSION
+        if(result != TRUE)
+        {
+          LOG_I(RRC, "PDCP data request failed!\n");
+          return;
+        }
+#else
         AssertFatal(result == TRUE, "PDCP data request failed!\n");
+#endif
         ue_context_p->ue_context.handover_info->ho_complete = 0xF2;
       }
     }
@@ -5829,9 +5843,18 @@ rrc_eNB_decode_ccch(
         rrcConnectionRequest = &ul_ccch_msg->message.choice.c1.choice.rrcConnectionRequest.criticalExtensions.choice.rrcConnectionRequest_r8;
         {
           if (InitialUE_Identity_PR_randomValue == rrcConnectionRequest->ue_Identity.present) {
+          #ifdef UE_EXPANSION
+          if(rrcConnectionRequest->ue_Identity.choice.randomValue.size != 5)
+          {
+            LOG_I(RRC, "wrong InitialUE-Identity randomValue size, expected 5, provided %d",
+                         rrcConnectionRequest->ue_Identity.choice.randomValue.size);
+            return -1;
+          }
+          #else
             AssertFatal(rrcConnectionRequest->ue_Identity.choice.randomValue.size == 5,
                         "wrong InitialUE-Identity randomValue size, expected 5, provided %d",
                         rrcConnectionRequest->ue_Identity.choice.randomValue.size);
+          #endif
             memcpy(((uint8_t*) & random_value) + 3,
                    rrcConnectionRequest->ue_Identity.choice.randomValue.buf,
                    rrcConnectionRequest->ue_Identity.choice.randomValue.size);
@@ -6838,9 +6861,16 @@ rrc_enb_task(
 
       LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
 	    instance,CC_id,&ctxt, RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
+#ifdef UE_EXPANSION
+      if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
+          LOG_I(RRC, "CCCH message has size %d > %d\n",RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
+          break;
+      }
+#else
       AssertFatal(RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size < RRC_BUFFER_SIZE_MAX,
 		  "CCCH message has size %d > %d\n",
 		  RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
+#endif
       memcpy(srb_info_p->Rx_buffer.Payload,
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
@@ -6868,7 +6898,14 @@ rrc_enb_task(
 
       // Message buffer has been processed, free it now.
       result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), RRC_DCCH_DATA_IND(msg_p).sdu_p);
+#ifdef UE_EXPANSION
+      if (result != EXIT_SUCCESS) {
+          LOG_I(RRC, "Failed to free memory (%d)!\n",result);
+          break;
+      }
+#else
       AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+#endif
       break;
 
 #   if defined(ENABLE_USE_MME)
@@ -6937,7 +6974,14 @@ rrc_enb_task(
     }
 
     result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+#ifdef UE_EXPANSION
+      if (result != EXIT_SUCCESS) {
+          LOG_I(RRC, "Failed to free memory (%d)!\n",result);
+          continue;
+      }
+#else
     AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+#endif
     msg_p = NULL;
   }
 }
