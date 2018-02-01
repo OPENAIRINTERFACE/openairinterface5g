@@ -43,7 +43,6 @@
 #define NL_MAX_PAYLOAD 9000  /* this should cover the max mtu size*/
 #endif
 
-#ifdef USER_MODE
 #ifdef LARGE_SCALE
 #    define NB_MODULES_MAX 128
 #    define NB_NODE_MAX    128
@@ -51,11 +50,6 @@
 #    define NB_MODULES_MAX 32
 #    define NB_NODE_MAX    32
 #endif
-#else
-#    define NB_MODULES_MAX 1
-#    define NB_NODE_MAX    1
-#endif //PHY_EMUL
-
 
 #ifdef JUMBO_FRAME
 #    define MAX_IP_PACKET_SIZE         10000 // 9000
@@ -132,9 +126,7 @@
 #define  UNUSED_PARAM_MBMS_SESSION_ID  0
 #define  UNUSED_PARAM_MBMS_SERVICE_ID  0
 
-#ifdef USER_MODE
 #define printk printf
-#endif
 
 #define UNUSED_VARIABLE(vARIABLE)   (void)(vARIABLE)
 

@@ -157,13 +157,6 @@ tbs_size_t mac_rlc_data_req(
     AssertFatal (channel_idP < NB_RB_MAX,        "channel id is too high (%u/%d)!\n",     channel_idP, NB_RB_MAX);
   }
 
-#ifdef OAI_EMU
-  CHECK_CTXT_ARGS(&ctxt);
-  //printf("MBMS_flagP %d, MBMS_FLAG_NO %d \n",MBMS_flagP, MBMS_FLAG_NO);
-  //  AssertFatal (MBMS_flagP == MBMS_FLAG_NO ," MBMS FLAG SHOULD NOT BE SET IN mac_rlc_data_req in UE\n");
-
-#endif
-
   if (MBMS_flagP) {
     if (enb_flagP) {
       mbms_id_p = &rlc_mbms_lcid2service_session_id_eNB[module_idP][channel_idP];
@@ -256,18 +249,6 @@ void mac_rlc_data_ind     (
   }
 
 #endif // DEBUG_MAC_INTERFACE
-#ifdef OAI_EMU
-
-  if (MBMS_flagP)
-    AssertFatal (channel_idP < RLC_MAX_MBMS_LC,  "channel id is too high (%u/%d)!\n",
-                 channel_idP, RLC_MAX_MBMS_LC);
-  else
-    AssertFatal (channel_idP < NB_RB_MAX,        "channel id is too high (%u/%d)!\n",
-                 channel_idP, NB_RB_MAX);
-
-  CHECK_CTXT_ARGS(&ctxt);
-
-#endif
 
 #if T_TRACER
   if (enb_flagP)
@@ -346,31 +327,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MAC_RLC_STATUS_IND,VCD_FUNCTION_IN);
   memset (&mac_rlc_status_resp, 0, sizeof(mac_rlc_status_resp_t));
   memset (&tx_status          , 0, sizeof(struct mac_status_ind));
-
-#ifdef OAI_EMU
-
-  if (MBMS_flagP)
-    AssertFatal (channel_idP < RLC_MAX_MBMS_LC,
-                 "%s channel id is too high (%u/%d) enb module id %u ue %u!\n",
-                 (enb_flagP) ? "eNB" : "UE",
-                 channel_idP,
-                 RLC_MAX_MBMS_LC,
-                 module_idP,
-                 rntiP);
-  else
-    AssertFatal (channel_idP < NB_RB_MAX,
-                 "%s channel id is too high (%u/%d) enb module id %u ue %u!\n",
-                 (enb_flagP) ? "eNB" : "UE",
-                 channel_idP,
-                 NB_RB_MAX,
-                 module_idP,
-                 rntiP);
-
-  CHECK_CTXT_ARGS(&ctxt);
-
-#endif
-
-
 
   if (MBMS_flagP) {
     if (enb_flagP) {

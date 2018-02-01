@@ -23,9 +23,7 @@
 #define RLC_UM_REASSEMBLY_C 1
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
-#if USER_MODE
 #include <string.h>
-#endif
 #if ENABLE_ITTI
 # include "platform_types.h"
 # include "intertask_interface.h"

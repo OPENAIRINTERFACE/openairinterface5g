@@ -47,6 +47,7 @@
 #include "common/ran_context.h"
 
 extern RAN_CONTEXT_t RC;
+extern void openair_rrc_top_init_ue( int eMBMS_active, char* uecap_xer, uint8_t cba_group_active, uint8_t HO_active);
 
 void dl_phy_sync_success(module_id_t module_idP, frame_t frameP, unsigned char eNB_index, uint8_t first_sync)	//init as MR
 {
@@ -118,7 +119,7 @@ mac_top_init_ue(int eMBMS_active, char *uecap_xer,
 }
 
 
-void mac_top_init_eNB()
+void mac_top_init_eNB(void)
 {
 
     module_id_t i, j;
@@ -247,10 +248,6 @@ int rlcmac_init_global_param(void)
 void mac_top_cleanup(void)
 {
 
-#ifndef USER_MODE
-    pdcp_module_cleanup();
-#endif
-
     if (NB_UE_INST > 0) {
 	free(UE_mac_inst);
     }
@@ -275,7 +272,7 @@ l2_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
     return (1);
 }
 
-int l2_init_eNB()
+int l2_init_eNB(void)
 {
 
 

@@ -31,10 +31,6 @@
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 
-#ifdef RTAI
-# include <rtai_shm.h>
-#endif
-
 #if !defined(TRUE)
 #define TRUE 1
 #endif
@@ -44,11 +40,6 @@
 #include "assertions.h"
 #include "intertask_interface.h"
 #include "intertask_interface_dump.h"
-
-#if defined(OAI_EMU) || defined(RTAI)
-# include "memory_pools.h"
-# include "vcd_signal_dumper.h"
-#endif
 
 #if T_TRACER
 #include "T.h"
@@ -67,14 +58,6 @@
 #include "log.h"
 #endif
 
-#ifdef RTAI
-# include <rtai.h>
-# include <rtai_fifos.h>
-#    define FIFO_PRINTF_MAX_STRING_SIZE 1000
-#    define FIFO_PRINTF_NO              62
-#    define FIFO_PRINTF_SIZE            65536
-#endif
-
 /* ITTI DEBUG groups */
 #define ITTI_DEBUG_POLL             (1<<0)
 #define ITTI_DEBUG_SEND             (1<<1)
@@ -86,21 +69,11 @@
 
 const int itti_debug = (ITTI_DEBUG_ISSUES | ITTI_DEBUG_MP_STATISTICS);
 
-/* Don't flush if using RTAI */
-#ifdef RTAI
-# define ITTI_DEBUG(m, x, args...)  do { if ((m) & itti_debug) rt_log_debug (x, ##args); } while(0);
-#else
 # define ITTI_DEBUG(m, x, args...)  do { if ((m) & itti_debug) {fprintf(stdout, "[ITTI][D]"x, ##args); fflush (stdout);} } while(0);
-#endif
 #define ITTI_ERROR(x, args...)      do { fprintf(stdout, "[ITTI][E]"x, ##args); fflush (stdout); } while(0);
 
 /* Global message size */
 #define MESSAGE_SIZE(mESSAGEiD) (sizeof(MessageHeader) + itti_desc.messages_info[mESSAGEiD].size)
-
-#ifdef RTAI
-# define ITTI_MEM_PAGE_SIZE (1024)
-# define ITTI_MEM_SIZE      (16 * 1024 * 1024)
-#endif
 
 typedef enum task_state_s {
   TASK_STATE_NOT_CONFIGURED, TASK_STATE_STARTING, TASK_STATE_READY, TASK_STATE_ENDED, TASK_STATE_MAX,
@@ -140,13 +113,11 @@ typedef struct thread_desc_s {
 
   int epoll_nb_events;
 
-  //#ifdef RTAI
   /* Flag to mark real time thread */
   unsigned real_time;
 
-  /* Counter to indicate from RTAI threads that messages are pending for the thread */
+  /* Counter to indicate that messages are pending for the thread */
   unsigned messages_pending;
-  //#endif
 } thread_desc_t;
 
 typedef struct task_desc_s {
@@ -178,17 +149,6 @@ typedef struct itti_desc_s {
   volatile uint32_t created_tasks;
   volatile uint32_t ready_tasks;
   volatile int      wait_tasks;
-#ifdef RTAI
-  pthread_t rt_relay_thread;
-#endif
-
-#if defined(OAI_EMU) || defined(RTAI)
-  memory_pools_handle_t memory_pools_handle;
-
-  uint64_t vcd_poll_msg;
-  uint64_t vcd_receive_msg;
-  uint64_t vcd_send_msg;
-#endif
 } itti_desc_t;
 
 static itti_desc_t itti_desc;
@@ -197,20 +157,8 @@ void *itti_malloc(task_id_t origin_task_id, task_id_t destination_task_id, ssize
 {
   void *ptr = NULL;
 
-#if defined(OAI_EMU) || defined(RTAI)
-  ptr = memory_pools_allocate (itti_desc.memory_pools_handle, size, origin_task_id, destination_task_id);
-
-  if (ptr == NULL) {
-    char *statistics = memory_pools_statistics (itti_desc.memory_pools_handle);
-
-    ITTI_ERROR (" Memory pools statistics:\n%s", statistics);
-    free (statistics);
-  }
-
-#else
   ptr = malloc (size);
   if (ptr) memset(ptr,0,size);
-#endif
 
   AssertFatal (ptr != NULL, "Memory allocation of %d bytes failed (%d -> %d)!\n", (int) size, origin_task_id, destination_task_id);
 
@@ -222,13 +170,7 @@ int itti_free(task_id_t task_id, void *ptr)
   int result = EXIT_SUCCESS;
   AssertFatal (ptr != NULL, "Trying to free a NULL pointer (%d)!\n", task_id);
 
-#if defined(OAI_EMU) || defined(RTAI)
-  result = memory_pools_free (itti_desc.memory_pools_handle, ptr, task_id);
-
-  AssertError (result == EXIT_SUCCESS, {}, "Failed to free memory at %p (%d)!\n", ptr, task_id);
-#else
   free (ptr);
-#endif
 
   return (result);
 }
@@ -283,27 +225,6 @@ static task_id_t itti_get_current_task_id(void)
 
   return TASK_UNKNOWN;
 }
-
-#ifdef RTAI
-static void rt_log_debug(char *format, ...)
-{
-  task_id_t   task_id;
-  va_list     args;
-  char        log_buffer[FIFO_PRINTF_MAX_STRING_SIZE];
-  int         len;
-
-  task_id = itti_get_current_task_id ();
-  len = snprintf(log_buffer, FIFO_PRINTF_MAX_STRING_SIZE-1, "[ITTI][D][%s]", itti_get_task_name(task_id));
-  va_start(args, format);
-  len += vsnprintf(&log_buffer[len], FIFO_PRINTF_MAX_STRING_SIZE-1-len, format, args);
-  va_end (args);
-
-  if (task_id != TASK_UNKNOWN)
-    fwrite(log_buffer, len, 1, stdout);
-  else
-    rtf_put (FIFO_PRINTF_NO, log_buffer, len);
-}
-#endif
 
 void itti_update_lte_time(uint32_t frame, uint8_t slot)
 {
@@ -361,10 +282,6 @@ MessageDef *itti_alloc_new_message_sized(task_id_t origin_task_id, MessagesIds m
 
   AssertFatal (message_id < itti_desc.messages_id_max, "Message id (%d) is out of range (%d)!\n", message_id, itti_desc.messages_id_max);
 
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_ALLOC_MSG, size);
-#endif
-
   if (origin_task_id == TASK_UNKNOWN) {
     /* Try to identify real origin task ID */
     origin_task_id = itti_get_current_task_id();
@@ -375,10 +292,6 @@ MessageDef *itti_alloc_new_message_sized(task_id_t origin_task_id, MessagesIds m
   temp->ittiMsgHeader.messageId = message_id;
   temp->ittiMsgHeader.originTaskId = origin_task_id;
   temp->ittiMsgHeader.ittiMsgSize = size;
-
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_ALLOC_MSG, 0);
-#endif
 
   return temp;
 }
@@ -396,11 +309,6 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
   uint32_t priority;
   message_number_t message_number;
   uint32_t message_id;
-
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_SEND_MSG,
-                                          __sync_or_and_fetch (&itti_desc.vcd_send_msg, 1L << destination_task_id));
-#endif
 
   AssertFatal (message != NULL, "Message is NULL!\n");
   AssertFatal (destination_task_id < itti_desc.task_max, "Destination task id (%d) is out of range (%d)\n", destination_task_id, itti_desc.task_max);
@@ -424,11 +332,6 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
                            sizeof(MessageHeader) + message->ittiMsgHeader.ittiMsgSize);
 
   if (destination_task_id != TASK_UNKNOWN) {
-#if defined(OAI_EMU) || defined(RTAI)
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ITTI_ENQUEUE_MESSAGE, VCD_FUNCTION_IN);
-
-    memory_pools_set_info (itti_desc.memory_pools_handle, message, 1, destination_task_id);
-#endif
 
     if (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_ENDED) {
       ITTI_DEBUG(ITTI_DEBUG_ISSUES, " Message %s, number %lu with priority %d can not be sent from %s to queue (%u:%s), ended destination task!\n",
@@ -476,17 +379,6 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
 #endif
       }
 
-#if defined(OAI_EMU) || defined(RTAI)
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ITTI_ENQUEUE_MESSAGE, VCD_FUNCTION_OUT);
-#endif
-
-#ifdef RTAI
-
-      if (itti_desc.threads[TASK_GET_THREAD_ID(origin_task_id)].real_time) {
-        /* This is a RT task, increase destination task messages pending counter */
-        __sync_fetch_and_add (&itti_desc.threads[destination_thread_id].messages_pending, 1);
-      } else
-#endif
       {
         /* Only use event fd for tasks, subtasks will pool the queue */
         if (TASK_GET_PARENT_TASK_ID(destination_task_id) == TASK_UNKNOWN) {
@@ -513,11 +405,6 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
     int result = itti_free(origin_task_id, message);
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
   }
-
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_SEND_MSG,
-                                          __sync_and_and_fetch (&itti_desc.vcd_send_msg, ~(1L << destination_task_id)));
-#endif
 
   return 0;
 }
@@ -670,17 +557,9 @@ static inline void itti_receive_msg_internal_event_fd(task_id_t task_id, uint8_t
 
 void itti_receive_msg(task_id_t task_id, MessageDef **received_msg)
 {
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_RECV_MSG,
-                                          __sync_and_and_fetch (&itti_desc.vcd_receive_msg, ~(1L << task_id)));
-#endif
 
   itti_receive_msg_internal_event_fd(task_id, 0, received_msg);
 
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_RECV_MSG,
-                                          __sync_or_and_fetch (&itti_desc.vcd_receive_msg, 1L << task_id));
-#endif
 }
 
 void itti_poll_msg(task_id_t task_id, MessageDef **received_msg)
@@ -688,11 +567,6 @@ void itti_poll_msg(task_id_t task_id, MessageDef **received_msg)
   AssertFatal (task_id < itti_desc.task_max, "Task id (%d) is out of range (%d)!\n", task_id, itti_desc.task_max);
 
   *received_msg = NULL;
-
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_POLL_MSG,
-                                          __sync_or_and_fetch (&itti_desc.vcd_poll_msg, 1L << task_id));
-#endif
 
   {
     struct message_list_s *message;
@@ -710,10 +584,6 @@ void itti_poll_msg(task_id_t task_id, MessageDef **received_msg)
     ITTI_DEBUG(ITTI_DEBUG_POLL, " No message in queue[(%u:%s)]\n", task_id, itti_get_task_name(task_id));
   }
 
-#if defined(OAI_EMU) || defined(RTAI)
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_POLL_MSG,
-                                          __sync_and_and_fetch (&itti_desc.vcd_poll_msg, ~(1L << task_id)));
-#endif
 }
 
 int itti_create_task(task_id_t task_id, void *(*start_routine)(void *), void *args_p)
@@ -745,7 +615,6 @@ int itti_create_task(task_id_t task_id, void *(*start_routine)(void *), void *ar
   return 0;
 }
 
-//#ifdef RTAI
 void itti_set_task_real_time(task_id_t task_id)
 {
   thread_id_t thread_id = TASK_GET_THREAD_ID(task_id);
@@ -754,7 +623,6 @@ void itti_set_task_real_time(task_id_t task_id)
 
   itti_desc.threads[thread_id].real_time = TRUE;
 }
-//#endif
 
 void itti_wait_ready(int wait_tasks)
 {
@@ -782,15 +650,6 @@ void itti_mark_task_ready(task_id_t task_id)
   /* Mark the thread as using LFDS queue */
   lfds611_queue_use(itti_desc.tasks[task_id].message_queue);
 
-#ifdef RTAI
-  /* Assign low priority to created threads */
-  {
-    struct sched_param sched_param;
-    sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
-    sched_setscheduler(0, SCHED_FIFO, &sched_param);
-  }
-#endif
-
   itti_desc.threads[thread_id].task_state = TASK_STATE_READY;
   itti_desc.ready_tasks ++;
 
@@ -803,15 +662,6 @@ void itti_mark_task_ready(task_id_t task_id)
 
 void itti_exit_task(void)
 {
-#if defined(OAI_EMU) || defined(RTAI)
-  task_id_t task_id = itti_get_current_task_id();
-
-  if (task_id > TASK_UNKNOWN) {
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_RECV_MSG,
-                                            __sync_and_and_fetch (&itti_desc.vcd_receive_msg, ~(1L << task_id)));
-  }
-
-#endif
   pthread_exit (NULL);
 }
 
@@ -826,45 +676,6 @@ void itti_terminate_tasks(task_id_t task_id)
 
   pthread_exit (NULL);
 }
-
-#ifdef RTAI
-static void *itti_rt_relay_thread(void *arg)
-{
-  thread_id_t thread_id;
-  unsigned pending_messages;
-
-  while (itti_desc.running) {
-    usleep (200); // Poll for messages a little more than 2 time by slot to get a small latency between RT and other tasks
-
-#if defined(OAI_EMU) || defined(RTAI)
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ITTI_RELAY_THREAD, VCD_FUNCTION_IN);
-#endif
-
-    /* Checks for all non real time tasks if they have pending messages */
-    for (thread_id = THREAD_FIRST; thread_id < itti_desc.thread_max; thread_id++) {
-      if ((itti_desc.threads[thread_id].task_state == TASK_STATE_READY)
-          && (itti_desc.threads[thread_id].real_time == FALSE)) {
-        pending_messages = __sync_fetch_and_and (&itti_desc.threads[thread_id].messages_pending, 0);
-
-        if (pending_messages > 0) {
-          ssize_t write_ret;
-          eventfd_t sem_counter = pending_messages;
-
-          /* Call to write for an event fd must be of 8 bytes */
-          write_ret = write (itti_desc.threads[thread_id].task_event_fd, &sem_counter, sizeof(sem_counter));
-          DevCheck(write_ret == sizeof(sem_counter), write_ret, sem_counter, thread_id);
-        }
-      }
-    }
-
-#if defined(OAI_EMU) || defined(RTAI)
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ITTI_RELAY_THREAD, VCD_FUNCTION_OUT);
-#endif
-  }
-
-  return NULL;
-}
-#endif
 
 int itti_init(task_id_t task_max, thread_id_t thread_max, MessagesIds messages_id_max, const task_info_t *tasks_info,
               const message_info_t *messages_info, const char * const messages_definition_xml, const char * const dump_file_name)
@@ -946,45 +757,12 @@ int itti_init(task_id_t task_max, thread_id_t thread_max, MessagesIds messages_i
     ITTI_DEBUG(ITTI_DEBUG_EVEN_FD, " Successfully subscribed fd %d for thread %d\n",
                itti_desc.threads[thread_id].task_event_fd, thread_id);
 
-#ifdef RTAI
-    itti_desc.threads[thread_id].real_time = FALSE;
-    itti_desc.threads[thread_id].messages_pending = 0;
-#endif
   }
 
   itti_desc.running = 1;
   itti_desc.wait_tasks = 0;
   itti_desc.created_tasks = 0;
   itti_desc.ready_tasks = 0;
-#ifdef RTAI
-  /* Start RT relay thread */
-  DevAssert(pthread_create (&itti_desc.rt_relay_thread, NULL, itti_rt_relay_thread, NULL) >= 0);
-
-  rt_global_heap_open();
-#endif
-
-#if defined(OAI_EMU) || defined(RTAI)
-  itti_desc.memory_pools_handle = memory_pools_create (5);
-  memory_pools_add_pool (itti_desc.memory_pools_handle, 1000 + ITTI_QUEUE_MAX_ELEMENTS,       50);
-  memory_pools_add_pool (itti_desc.memory_pools_handle, 1000 + (2 * ITTI_QUEUE_MAX_ELEMENTS), 100);
-  memory_pools_add_pool (itti_desc.memory_pools_handle, 10000,                                1000);
-  memory_pools_add_pool (itti_desc.memory_pools_handle,  400,                                 20050);
-  memory_pools_add_pool (itti_desc.memory_pools_handle,  100,                                 30050);
-
-  {
-    char *statistics = memory_pools_statistics (itti_desc.memory_pools_handle);
-
-    ITTI_DEBUG(ITTI_DEBUG_MP_STATISTICS, " Memory pools statistics:\n%s", statistics);
-    free (statistics);
-  }
-#endif
-
-#if defined(OAI_EMU) || defined(RTAI)
-  itti_desc.vcd_poll_msg = 0;
-  itti_desc.vcd_receive_msg = 0;
-  itti_desc.vcd_send_msg = 0;
-#endif
-
   itti_dump_init (messages_definition_xml, dump_file_name);
 
   CHECK_INIT_RETURN(timer_init ());
@@ -1046,15 +824,6 @@ void itti_wait_tasks_end(void)
   printf("ready_tasks %d\n",ready_tasks);
 
   itti_desc.running = 0;
-
-#if defined(OAI_EMU) || defined(RTAI)
-  {
-    char *statistics = memory_pools_statistics (itti_desc.memory_pools_handle);
-
-    ITTI_DEBUG(ITTI_DEBUG_MP_STATISTICS, " Memory pools statistics:\n%s", statistics);
-    free (statistics);
-  }
-#endif
 
   if (ready_tasks > 0) {
     ITTI_DEBUG(ITTI_DEBUG_ISSUES, " Some threads are still running, force exit\n");

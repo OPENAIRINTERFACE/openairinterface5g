@@ -283,12 +283,11 @@ int64_t         wrap_ts = 0;
 unsigned int    u_sf_mode = 0;                         // 1=record, 2=replay
 unsigned int    u_sf_record = 0;                       // record mode
 unsigned int    u_sf_replay = 0;                       // replay mode
-char            u_sf_filename[1024];                   // subframes file path
+char            u_sf_filename[1024] = "";              // subframes file path
 unsigned int    u_sf_max = DEF_NB_SF;                  // max number of recorded subframes
 unsigned int    u_sf_loops = DEF_SF_NB_LOOP;           // number of loops in replay mode
 unsigned int    u_sf_read_delay = DEF_SF_DELAY_READ;   // read delay in replay mode
 unsigned int    u_sf_write_delay = DEF_SF_DELAY_WRITE; // write delay in replay mode
-char           *tmp_filename[1];                       // use an array of pointer (libconfig does not seems to work with char array yet)
 
 char config_opt_sf_file[] = CONFIG_OPT_SF_FILE;
 char config_def_sf_file[] = DEF_SF_FILE;
@@ -420,10 +419,10 @@ static void trx_usrp_end(openair0_device *device) {
 
 /*! \brief Called to send samples to the USRP RF target
       @param device pointer to the device structure specific to the RF hardware target
-      @param timestamp The timestamp at whicch the first sample MUST be sent
+      @param timestamp The timestamp at which the first sample MUST be sent
       @param buff Buffer which holds the samples
       @param nsamps number of samples to be sent
-      @param antenna_id index of the antenna if the device has multiple anteannas
+      @param antenna_id index of the antenna if the device has multiple antennas
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
 */
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
@@ -841,7 +840,7 @@ int trx_usrp_recplay_config_init(paramdef_t *usrp_recplay_params) {
     memcpy(usrp_recplay_params[0].optname, config_opt_sf_file, strlen(config_opt_sf_file));
     usrp_recplay_params[0].helpstr = config_hlp_sf_file;
     usrp_recplay_params[0].paramflags=PARAMFLAG_NOFREE;
-    usrp_recplay_params[0].strptr=(char **)&tmp_filename[0];
+    usrp_recplay_params[0].strptr=(char **)&u_sf_filename;
     usrp_recplay_params[0].defstrval = NULL;
     usrp_recplay_params[0].type=TYPE_STRING;
     usrp_recplay_params[0].numelt=sizeof(u_sf_filename);
@@ -916,16 +915,13 @@ extern "C" {
       // end to check
       memset(usrp_recplay_params, 0, 7*sizeof(paramdef_t));
       memset(&u_sf_filename[0], 0, 1024);
-      tmp_filename[0] = u_sf_filename;
       if (trx_usrp_recplay_config_init(usrp_recplay_params) != 0) {
 	std::cerr << "USRP device record/replay mode configuration error exiting" << std::endl;
 	return -1;
       }
       config_process_cmdline(usrp_recplay_params,sizeof(usrp_recplay_params)/sizeof(paramdef_t),NULL);
 
-      if (strlen(tmp_filename[0]) != 0) {
-	(void) strcpy(u_sf_filename, tmp_filename[0]);
-      } else {
+      if (strlen(u_sf_filename) == 0) {
 	(void) strcpy(u_sf_filename, DEF_SF_FILE);
       }
 
@@ -1016,9 +1012,13 @@ extern "C" {
             //s->usrp->set_master_clock_rate(usrp_master_clock);
 
             openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
+
 #if defined(USRP_REC_PLAY)
 	    std::cerr << "-- Using calibration table: calib_table_x310" << std::endl; // Bell Labs info
-#endif	    
+#endif
+
+            LOG_I(PHY,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
+
             switch ((int)openair0_cfg[0].sample_rate) {
             case 30720000:
                 // from usrp_time_offset
@@ -1161,6 +1161,8 @@ extern "C" {
                 s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
                 s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
                 s->usrp->set_tx_gain(gain_range_tx.stop()-openair0_cfg[0].tx_gain[i],i);
+
+                LOG_I(PHY,"USRP TX_GAIN:%3.2lf gain_range:%3.2lf tx_gain:%3.2lf\n", gain_range_tx.stop()-openair0_cfg[0].tx_gain[i], gain_range_tx.stop(), openair0_cfg[0].tx_gain[i]);
             }
         }
 

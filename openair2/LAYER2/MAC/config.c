@@ -58,6 +58,12 @@
 #endif
 
 extern RAN_CONTEXT_t RC;
+extern int l2_init_eNB(void);
+extern void mac_top_init_eNB(void);
+extern void mac_init_cell_params(int Mod_idP,int CC_idP);
+extern void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
+
+extern uint8_t nfapi_mode;
 
 /* sec 5.9, 36.321: MAC Reset Procedure */
 void ue_mac_reset(module_id_t module_idP, uint8_t eNB_index)
@@ -212,51 +218,115 @@ int32_t get_uldl_offset(int eutra_bandP)
     return (eutra_bandtable[i].dl_min - eutra_bandtable[i].ul_min);
 }
 
-uint32_t bw_table[6] =
-    { 6 * 180, 15 * 180, 25 * 180, 50 * 180, 75 * 180, 100 * 180 };
+uint32_t bw_table[6] = {6*180,15*180,25*180,50*180,75*180,100*180};
 
-void
-config_mib(int Mod_idP,
-	   int CC_idP,
-	   int eutra_bandP,
-	   int dl_BandwidthP,
-	   PHICH_Config_t * phich_configP,
-	   int Nid_cellP,
-	   int NcpP,
-	   int p_eNBP,
-	   uint32_t dl_CarrierFreqP,
-	   uint32_t ul_CarrierFreqP, uint32_t pbch_repetitionP)
-{
+void config_mib(int                 Mod_idP,
+		int                 CC_idP,
+		int                 eutra_bandP,  
+		int                 dl_BandwidthP,
+		PHICH_Config_t      *phich_configP,
+		int                 Nid_cellP,
+		int                 NcpP,
+		int                 p_eNBP,
+		uint32_t            dl_CarrierFreqP,
+		uint32_t            ul_CarrierFreqP,
+		uint32_t            pbch_repetitionP) {
 
-    nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
+  nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
 
-    cfg->subframe_config.pcfich_power_offset.value = 6000;	// 0dB
-    cfg->subframe_config.dl_cyclic_prefix_type.value = NcpP;
-    cfg->subframe_config.ul_cyclic_prefix_type.value = NcpP;
+  cfg->num_tlv=0;
+		
+  cfg->subframe_config.pcfich_power_offset.value   = 6000;  // 0dB
+  cfg->subframe_config.pcfich_power_offset.tl.tag = NFAPI_SUBFRAME_CONFIG_PCFICH_POWER_OFFSET_TAG;
+  cfg->num_tlv++;
 
-    LOG_I(MAC, "Ncp %d,p_eNB %d\n", NcpP, p_eNBP);
+  cfg->subframe_config.dl_cyclic_prefix_type.value = NcpP;
+  cfg->subframe_config.dl_cyclic_prefix_type.tl.tag = NFAPI_SUBFRAME_CONFIG_DL_CYCLIC_PREFIX_TYPE_TAG;
+  cfg->num_tlv++;
 
-    cfg->rf_config.dl_channel_bandwidth.value = dl_BandwidthP;
-    cfg->rf_config.ul_channel_bandwidth.value = dl_BandwidthP;
-    cfg->rf_config.tx_antenna_ports.value = p_eNBP;
-    cfg->rf_config.rx_antenna_ports.value = 2;
+  cfg->subframe_config.ul_cyclic_prefix_type.value = NcpP;
+  cfg->subframe_config.ul_cyclic_prefix_type.tl.tag = NFAPI_SUBFRAME_CONFIG_UL_CYCLIC_PREFIX_TYPE_TAG;
+  cfg->num_tlv++;
+ 
+  cfg->rf_config.dl_channel_bandwidth.value        = to_prb(dl_BandwidthP);
+  cfg->rf_config.dl_channel_bandwidth.tl.tag = NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG;
+  cfg->num_tlv++;
+LOG_E(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, dl_BandwidthP);
 
-    cfg->nfapi_config.earfcn.value =
-	to_earfcn(eutra_bandP, dl_CarrierFreqP,
-		  bw_table[dl_BandwidthP] / 100);
-    cfg->nfapi_config.rf_bands.number_rf_bands = 1;
-    cfg->nfapi_config.rf_bands.rf_band[0] = eutra_bandP;
-    cfg->phich_config.phich_resource.value = phich_configP->phich_Resource;
-    cfg->phich_config.phich_duration.value = phich_configP->phich_Duration;
-    cfg->phich_config.phich_power_offset.value = 6000;	// 0dB
+  cfg->rf_config.ul_channel_bandwidth.value        = to_prb(dl_BandwidthP);
+  cfg->rf_config.ul_channel_bandwidth.tl.tag = NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG;
+  cfg->num_tlv++;
 
-    cfg->sch_config.primary_synchronization_signal_epre_eprers.value = 6000;	// 0dB
-    cfg->sch_config.secondary_synchronization_signal_epre_eprers.value = 6000;	// 0dB
-    cfg->sch_config.physical_cell_id.value = Nid_cellP;
+  cfg->rf_config.tx_antenna_ports.value            = p_eNBP;
+  cfg->rf_config.tx_antenna_ports.tl.tag = NFAPI_RF_CONFIG_TX_ANTENNA_PORTS_TAG;
+  cfg->num_tlv++;
+
+  cfg->rf_config.rx_antenna_ports.value            = 2;
+  cfg->rf_config.rx_antenna_ports.tl.tag = NFAPI_RF_CONFIG_RX_ANTENNA_PORTS_TAG;
+  cfg->num_tlv++;
+
+  cfg->nfapi_config.earfcn.value                   = to_earfcn(eutra_bandP,dl_CarrierFreqP,bw_table[dl_BandwidthP]/100);
+  cfg->nfapi_config.earfcn.tl.tag = NFAPI_NFAPI_EARFCN_TAG;
+  cfg->num_tlv++;
+
+  cfg->nfapi_config.rf_bands.number_rf_bands       = 1;
+  cfg->nfapi_config.rf_bands.rf_band[0]            = eutra_bandP;  
+  cfg->nfapi_config.rf_bands.tl.tag = NFAPI_PHY_RF_BANDS_TAG;
+  cfg->num_tlv++;
+
+  cfg->phich_config.phich_resource.value           = phich_configP->phich_Resource;
+  cfg->phich_config.phich_resource.tl.tag = NFAPI_PHICH_CONFIG_PHICH_RESOURCE_TAG;
+  cfg->num_tlv++;
+
+  cfg->phich_config.phich_duration.value           = phich_configP->phich_Duration;
+  cfg->phich_config.phich_duration.tl.tag = NFAPI_PHICH_CONFIG_PHICH_DURATION_TAG;
+  cfg->num_tlv++;
+
+  cfg->phich_config.phich_power_offset.value       = 6000;  // 0dB
+  cfg->phich_config.phich_power_offset.tl.tag = NFAPI_PHICH_CONFIG_PHICH_POWER_OFFSET_TAG;
+  cfg->num_tlv++;
+
+  cfg->sch_config.primary_synchronization_signal_epre_eprers.value   = 6000; // 0dB
+  cfg->sch_config.primary_synchronization_signal_epre_eprers.tl.tag = NFAPI_SCH_CONFIG_PRIMARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG;
+  cfg->num_tlv++;
+
+  cfg->sch_config.secondary_synchronization_signal_epre_eprers.value = 6000; // 0dB
+  cfg->sch_config.secondary_synchronization_signal_epre_eprers.tl.tag = NFAPI_SCH_CONFIG_SECONDARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG;
+  cfg->num_tlv++;
+
+  cfg->sch_config.physical_cell_id.value                             = Nid_cellP;
+  cfg->sch_config.physical_cell_id.tl.tag = NFAPI_SCH_CONFIG_PHYSICAL_CELL_ID_TAG;
+  cfg->num_tlv++;
 
 #ifdef Rel14
-    cfg->emtc_config.pbch_repetitions_enable_r13.value = pbch_repetitionP;
-#endif
+  cfg->emtc_config.pbch_repetitions_enable_r13.value                 = pbch_repetitionP;
+  cfg->emtc_config.pbch_repetitions_enable_r13.tl.tag = NFAPI_EMTC_CONFIG_PBCH_REPETITIONS_ENABLE_R13_TAG;
+  cfg->num_tlv++;
+#endif  
+
+  LOG_I(MAC,
+      "%s() NFAPI_CONFIG_REQUEST(num_tlv:%u) DL_BW:%u UL_BW:%u Ncp %d,p_eNB %d,earfcn %d,band %d,phich_resource %u phich_duration %u phich_power_offset %u PSS %d SSS %d PCI %d"
+#ifdef Rel14
+      " PBCH repetition %d"
+#endif  
+      "\n"
+      ,__FUNCTION__
+      ,cfg->num_tlv
+      ,cfg->rf_config.dl_channel_bandwidth.value
+      ,cfg->rf_config.ul_channel_bandwidth.value
+      ,NcpP,p_eNBP
+      ,cfg->nfapi_config.earfcn.value
+      ,cfg->nfapi_config.rf_bands.rf_band[0]
+      ,cfg->phich_config.phich_resource.value
+      ,cfg->phich_config.phich_duration.value
+      ,cfg->phich_config.phich_power_offset.value
+      ,cfg->sch_config.primary_synchronization_signal_epre_eprers.value
+      ,cfg->sch_config.secondary_synchronization_signal_epre_eprers.value
+      ,cfg->sch_config.physical_cell_id.value
+#ifdef Rel14
+      ,cfg->emtc_config.pbch_repetitions_enable_r13.value
+#endif  
+      );
 }
 
 void config_sib1(int Mod_idP, int CC_idP, TDD_Config_t * tdd_ConfigP)
@@ -264,18 +334,25 @@ void config_sib1(int Mod_idP, int CC_idP, TDD_Config_t * tdd_ConfigP)
 
     nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
 
-    if (tdd_ConfigP) {		//TDD
-	cfg->subframe_config.duplex_mode.value = 0;
-	cfg->tdd_frame_structure_config.subframe_assignment.value =
-	    tdd_ConfigP->subframeAssignment;
-	cfg->tdd_frame_structure_config.special_subframe_patterns.value =
-	    tdd_ConfigP->specialSubframePatterns;
-    } else {			// FDD
-	cfg->subframe_config.duplex_mode.value = 1;
-	// Note no half-duplex here
-    }
+  if (tdd_ConfigP)   { //TDD
+    cfg->subframe_config.duplex_mode.value                          = 0;
+    cfg->subframe_config.duplex_mode.tl.tag = NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG;
+    cfg->num_tlv++;
 
+    cfg->tdd_frame_structure_config.subframe_assignment.value       = tdd_ConfigP->subframeAssignment;
+    cfg->tdd_frame_structure_config.subframe_assignment.tl.tag = NFAPI_TDD_FRAME_STRUCTURE_SUBFRAME_ASSIGNMENT_TAG;
+    cfg->num_tlv++;
 
+    cfg->tdd_frame_structure_config.special_subframe_patterns.value = tdd_ConfigP->specialSubframePatterns;
+    cfg->tdd_frame_structure_config.special_subframe_patterns.tl.tag = NFAPI_TDD_FRAME_STRUCTURE_SPECIAL_SUBFRAME_PATTERNS_TAG;
+    cfg->num_tlv++;
+  }
+  else { // FDD
+    cfg->subframe_config.duplex_mode.value                          = 1;
+    cfg->subframe_config.duplex_mode.tl.tag = NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG;
+    cfg->num_tlv++;
+    // Note no half-duplex here
+  }
 }
 
 int power_off_dB[6] = { 78, 118, 140, 170, 188, 200 };
@@ -287,248 +364,326 @@ config_sib2(int Mod_idP,
 #ifdef Rel14
 	    RadioResourceConfigCommonSIB_t * radioResourceConfigCommon_BRP,
 #endif
-	    ARFCN_ValueEUTRA_t * ul_CArrierFreqP,
-	    long *ul_BandwidthP,
-	    AdditionalSpectrumEmission_t *
-	    additionalSpectrumEmissionP,
-	    struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigListP)
-{
+            ARFCN_ValueEUTRA_t *ul_CArrierFreqP,
+            long *ul_BandwidthP,
+            AdditionalSpectrumEmission_t *additionalSpectrumEmissionP,
+            struct MBSFN_SubframeConfigList  *mbsfn_SubframeConfigListP) {
 
-    nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
+  nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
 
-    cfg->subframe_config.pb.value =
-	radioResourceConfigCommonP->pdsch_ConfigCommon.p_b;
-    cfg->rf_config.reference_signal_power.value =
-	radioResourceConfigCommonP->pdsch_ConfigCommon.
-	referenceSignalPower;
-    cfg->nfapi_config.max_transmit_power.value =
-	cfg->rf_config.reference_signal_power.value +
-	power_off_dB[cfg->rf_config.dl_channel_bandwidth.value];
+  cfg->subframe_config.pb.value               = radioResourceConfigCommonP->pdsch_ConfigCommon.p_b;
+  cfg->subframe_config.pb.tl.tag = NFAPI_SUBFRAME_CONFIG_PB_TAG;
+  cfg->num_tlv++;
 
-    cfg->prach_config.configuration_index.value =
-	radioResourceConfigCommonP->prach_Config.
-	prach_ConfigInfo.prach_ConfigIndex;
-    cfg->prach_config.root_sequence_index.value =
-	radioResourceConfigCommonP->prach_Config.rootSequenceIndex;
-    cfg->prach_config.zero_correlation_zone_configuration.value =
-	radioResourceConfigCommonP->prach_Config.
-	prach_ConfigInfo.zeroCorrelationZoneConfig;
-    cfg->prach_config.high_speed_flag.value =
-	radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.
-	highSpeedFlag;
-    cfg->prach_config.frequency_offset.value =
-	radioResourceConfigCommonP->prach_Config.
-	prach_ConfigInfo.prach_FreqOffset;
+  cfg->rf_config.reference_signal_power.value = radioResourceConfigCommonP->pdsch_ConfigCommon.referenceSignalPower;
+  cfg->rf_config.reference_signal_power.tl.tag = NFAPI_RF_CONFIG_REFERENCE_SIGNAL_POWER_TAG;
+  cfg->num_tlv++;
 
-    cfg->pusch_config.hopping_mode.value =
-	radioResourceConfigCommonP->pusch_ConfigCommon.
-	pusch_ConfigBasic.hoppingMode;
-    cfg->pusch_config.number_of_subbands.value =
-	radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.
-	n_SB;
-    cfg->pusch_config.hopping_offset.value =
-	radioResourceConfigCommonP->pusch_ConfigCommon.
-	pusch_ConfigBasic.pusch_HoppingOffset;
+  cfg->nfapi_config.max_transmit_power.value  = cfg->rf_config.reference_signal_power.value + power_off_dB[cfg->rf_config.dl_channel_bandwidth.value];
+  cfg->nfapi_config.max_transmit_power.tl.tag = NFAPI_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG;
+  cfg->num_tlv++;
+
+  cfg->prach_config.configuration_index.value                 = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.prach_ConfigIndex;
+  cfg->prach_config.configuration_index.tl.tag = NFAPI_PRACH_CONFIG_CONFIGURATION_INDEX_TAG;
+  cfg->num_tlv++;
+
+  cfg->prach_config.root_sequence_index.value                 = radioResourceConfigCommonP->prach_Config.rootSequenceIndex;
+  cfg->prach_config.root_sequence_index.tl.tag = NFAPI_PRACH_CONFIG_ROOT_SEQUENCE_INDEX_TAG;
+  cfg->num_tlv++;
+
+  cfg->prach_config.zero_correlation_zone_configuration.value = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
+  cfg->prach_config.zero_correlation_zone_configuration.tl.tag = NFAPI_PRACH_CONFIG_ZERO_CORRELATION_ZONE_CONFIGURATION_TAG;
+  cfg->num_tlv++;
+
+  cfg->prach_config.high_speed_flag.value                     = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.highSpeedFlag;
+  cfg->prach_config.high_speed_flag.tl.tag = NFAPI_PRACH_CONFIG_HIGH_SPEED_FLAG_TAG;
+  cfg->num_tlv++;
+
+  cfg->prach_config.frequency_offset.value                    = radioResourceConfigCommonP->prach_Config.prach_ConfigInfo.prach_FreqOffset;
+  cfg->prach_config.frequency_offset.tl.tag = NFAPI_PRACH_CONFIG_FREQUENCY_OFFSET_TAG;
+  cfg->num_tlv++;
 
 
+  cfg->pusch_config.hopping_mode.value                        = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode;
+  cfg->pusch_config.hopping_mode.tl.tag = NFAPI_PUSCH_CONFIG_HOPPING_MODE_TAG;
+  cfg->num_tlv++;
 
-    cfg->pucch_config.delta_pucch_shift.value =
-	radioResourceConfigCommonP->pucch_ConfigCommon.deltaPUCCH_Shift;
-    cfg->pucch_config.n_cqi_rb.value =
-	radioResourceConfigCommonP->pucch_ConfigCommon.nRB_CQI;
-    cfg->pucch_config.n_an_cs.value =
-	radioResourceConfigCommonP->pucch_ConfigCommon.nCS_AN;
-    cfg->pucch_config.n1_pucch_an.value =
-	radioResourceConfigCommonP->pucch_ConfigCommon.n1PUCCH_AN;
+  cfg->pusch_config.number_of_subbands.value                  = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.n_SB;
+  cfg->pusch_config.number_of_subbands.tl.tag = NFAPI_PUSCH_CONFIG_NUMBER_OF_SUBBANDS_TAG;
+  cfg->num_tlv++;
 
-    if (radioResourceConfigCommonP->
-	pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled ==
-	true)
-	cfg->uplink_reference_signal_config.uplink_rs_hopping.value = 1;
-    else if (radioResourceConfigCommonP->
-	     pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.
-	     sequenceHoppingEnabled == true)
-	cfg->uplink_reference_signal_config.uplink_rs_hopping.value = 2;
-    else			// No hopping
-	cfg->uplink_reference_signal_config.uplink_rs_hopping.value = 0;
+  cfg->pusch_config.hopping_offset.value                      = radioResourceConfigCommonP->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset;
+  cfg->pusch_config.hopping_offset.tl.tag = NFAPI_PUSCH_CONFIG_HOPPING_OFFSET_TAG;
+  cfg->num_tlv++;
 
-    cfg->uplink_reference_signal_config.group_assignment.value =
-	radioResourceConfigCommonP->
-	pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
-    cfg->uplink_reference_signal_config.cyclic_shift_1_for_drms.value =
-	radioResourceConfigCommonP->
-	pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
+  cfg->pucch_config.delta_pucch_shift.value                         = radioResourceConfigCommonP->pucch_ConfigCommon.deltaPUCCH_Shift;
+  cfg->pucch_config.delta_pucch_shift.tl.tag = NFAPI_PUCCH_CONFIG_DELTA_PUCCH_SHIFT_TAG;
+  cfg->num_tlv++;
 
-    // how to enable/disable SRS?
-    if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.present ==
-	SoundingRS_UL_ConfigCommon_PR_setup) {
-	cfg->srs_config.bandwidth_configuration.value =
-	    radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.
-	    choice.setup.srs_BandwidthConfig;
-	cfg->srs_config.srs_subframe_configuration.value =
-	    radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.
-	    choice.setup.srs_SubframeConfig;
-	cfg->srs_config.srs_acknack_srs_simultaneous_transmission.value =
-	    radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.
-	    choice.setup.ackNackSRS_SimultaneousTransmission;
+  cfg->pucch_config.n_cqi_rb.value                                  = radioResourceConfigCommonP->pucch_ConfigCommon.nRB_CQI;
+  cfg->pucch_config.n_cqi_rb.tl.tag = NFAPI_PUCCH_CONFIG_N_CQI_RB_TAG;
+  cfg->num_tlv++;
 
-	if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.
-	    choice.setup.srs_MaxUpPts)
-	    cfg->srs_config.max_up_pts.value = 1;
-	else
-	    cfg->srs_config.max_up_pts.value = 0;
+  cfg->pucch_config.n_an_cs.value                                   = radioResourceConfigCommonP->pucch_ConfigCommon.nCS_AN;
+  cfg->pucch_config.n_an_cs.tl.tag = NFAPI_PUCCH_CONFIG_N_AN_CS_TAG;
+  cfg->num_tlv++;
+
+  cfg->pucch_config.n1_pucch_an.value                               = radioResourceConfigCommonP->pucch_ConfigCommon.n1PUCCH_AN;
+  cfg->pucch_config.n1_pucch_an.tl.tag = NFAPI_PUCCH_CONFIG_N1_PUCCH_AN_TAG;
+  cfg->num_tlv++;
+
+  if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == true)
+  {
+    cfg->uplink_reference_signal_config.uplink_rs_hopping.value     = 1;
+  }
+  else if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled == true)
+  {
+    cfg->uplink_reference_signal_config.uplink_rs_hopping.value     = 2;
+  }
+  else // No hopping
+  {
+    cfg->uplink_reference_signal_config.uplink_rs_hopping.value     = 0;
+  }
+  cfg->uplink_reference_signal_config.uplink_rs_hopping.tl.tag = NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_UPLINK_RS_HOPPING_TAG;
+  cfg->num_tlv++;
+
+  cfg->uplink_reference_signal_config.group_assignment.value        = radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
+  cfg->uplink_reference_signal_config.group_assignment.tl.tag = NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_GROUP_ASSIGNMENT_TAG;
+  cfg->num_tlv++;
+
+  cfg->uplink_reference_signal_config.cyclic_shift_1_for_drms.value = radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift;
+  cfg->uplink_reference_signal_config.cyclic_shift_1_for_drms.tl.tag = NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_CYCLIC_SHIFT_1_FOR_DRMS_TAG;
+  cfg->num_tlv++;
+
+
+  // how to enable/disable SRS?
+  if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.present==SoundingRS_UL_ConfigCommon_PR_setup) {
+    cfg->srs_config.bandwidth_configuration.value                       = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_BandwidthConfig;
+    cfg->srs_config.bandwidth_configuration.tl.tag = NFAPI_SRS_CONFIG_BANDWIDTH_CONFIGURATION_TAG;
+    cfg->num_tlv++;
+
+    cfg->srs_config.srs_subframe_configuration.value                    = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig;
+    cfg->srs_config.srs_subframe_configuration.tl.tag = NFAPI_SRS_CONFIG_SRS_SUBFRAME_CONFIGURATION_TAG;
+    cfg->num_tlv++;
+
+    cfg->srs_config.srs_acknack_srs_simultaneous_transmission.value     = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
+    cfg->srs_config.srs_acknack_srs_simultaneous_transmission.tl.tag = NFAPI_SRS_CONFIG_SRS_ACKNACK_SRS_SIMULTANEOUS_TRANSMISSION_TAG;
+    cfg->num_tlv++;
+
+
+    if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts) {
+       cfg->srs_config.max_up_pts.value                                 = 1;
     }
+    else {
+       cfg->srs_config.max_up_pts.value                                 = 0;
+    }
+    cfg->srs_config.max_up_pts.tl.tag = NFAPI_SRS_CONFIG_MAX_UP_PTS_TAG;
+    cfg->num_tlv++;
+  }
+
 #ifdef Rel14
-    if (RC.mac[Mod_idP]->common_channels[CC_idP].mib->
-	message.schedulingInfoSIB1_BR_r13 > 0) {
-	AssertFatal(radioResourceConfigCommon_BRP != NULL,
-		    "radioResource rou is missing\n");
-	AssertFatal(radioResourceConfigCommon_BRP->ext4 != NULL,
-		    "ext4 is missing\n");
-	cfg->emtc_config.prach_catm_root_sequence_index.value =
-	    radioResourceConfigCommon_BRP->prach_Config.rootSequenceIndex;
-	cfg->emtc_config.prach_catm_zero_correlation_zone_configuration.
-	    value =
-	    radioResourceConfigCommon_BRP->prach_Config.
-	    prach_ConfigInfo.zeroCorrelationZoneConfig;
-	cfg->emtc_config.prach_catm_high_speed_flag.value =
-	    radioResourceConfigCommon_BRP->prach_Config.
-	    prach_ConfigInfo.highSpeedFlag;
+  if (RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.schedulingInfoSIB1_BR_r13>0) {
+    AssertFatal(radioResourceConfigCommon_BRP!=NULL,"radioResource rou is missing\n");
+    AssertFatal(radioResourceConfigCommon_BRP->ext4!=NULL,"ext4 is missing\n");
+    cfg->emtc_config.prach_catm_root_sequence_index.value                 = radioResourceConfigCommon_BRP->prach_Config.rootSequenceIndex;
+    cfg->emtc_config.prach_catm_root_sequence_index.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CATM_ROOT_SEQUENCE_INDEX_TAG;
+    cfg->num_tlv++;
 
-	struct PRACH_ConfigSIB_v1310 *ext4_prach =
-	    radioResourceConfigCommon_BRP->ext4->prach_ConfigCommon_v1310;
+    cfg->emtc_config.prach_catm_zero_correlation_zone_configuration.value = radioResourceConfigCommon_BRP->prach_Config.prach_ConfigInfo.zeroCorrelationZoneConfig;
+    cfg->emtc_config.prach_catm_zero_correlation_zone_configuration.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CATM_ZERO_CORRELATION_ZONE_CONFIGURATION_TAG;
+    cfg->num_tlv++;
 
-	PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 =
-	    &ext4_prach->prach_ParametersListCE_r13;
+    cfg->emtc_config.prach_catm_high_speed_flag.value                     = radioResourceConfigCommon_BRP->prach_Config.prach_ConfigInfo.highSpeedFlag;
+    cfg->emtc_config.prach_catm_high_speed_flag.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CATM_HIGH_SPEED_FLAG;
+    cfg->num_tlv++;
+ 
+    struct PRACH_ConfigSIB_v1310 *ext4_prach=radioResourceConfigCommon_BRP->ext4->prach_ConfigCommon_v1310; 
 
-	PRACH_ParametersCE_r13_t *p;
-	cfg->emtc_config.prach_ce_level_0_enable.value = 0;
-	cfg->emtc_config.prach_ce_level_1_enable.value = 0;
-	cfg->emtc_config.prach_ce_level_2_enable.value = 0;
-	cfg->emtc_config.prach_ce_level_3_enable.value = 0;
-	switch (prach_ParametersListCE_r13->list.count) {
-	case 4:
-	    p = prach_ParametersListCE_r13->list.array[3];
-	    cfg->emtc_config.prach_ce_level_3_enable.value = 1;
-	    cfg->emtc_config.prach_ce_level_3_configuration_index.value =
-		p->prach_ConfigIndex_r13;
-	    cfg->emtc_config.prach_ce_level_3_frequency_offset.value =
-		p->prach_FreqOffset_r13;
-	    cfg->
-		emtc_config.prach_ce_level_3_number_of_repetitions_per_attempt.
-		value = p->numRepetitionPerPreambleAttempt_r13;
-	    if (p->prach_StartingSubframe_r13)
-		cfg->
-		    emtc_config.prach_ce_level_3_starting_subframe_periodicity.
-		    value = *p->prach_StartingSubframe_r13;
-	    cfg->emtc_config.prach_ce_level_3_hopping_enable.value =
-		p->prach_HoppingConfig_r13;
-	    cfg->emtc_config.prach_ce_level_3_hopping_offset.value =
-		cfg->rf_config.ul_channel_bandwidth.value - 6;
-	case 3:
-	    p = prach_ParametersListCE_r13->list.array[2];
-	    cfg->emtc_config.prach_ce_level_2_enable.value = 1;
-	    cfg->emtc_config.prach_ce_level_2_configuration_index.value =
-		p->prach_ConfigIndex_r13;
-	    cfg->emtc_config.prach_ce_level_2_frequency_offset.value =
-		p->prach_FreqOffset_r13;
-	    cfg->
-		emtc_config.prach_ce_level_2_number_of_repetitions_per_attempt.
-		value = p->numRepetitionPerPreambleAttempt_r13;
-	    if (p->prach_StartingSubframe_r13)
-		cfg->
-		    emtc_config.prach_ce_level_2_starting_subframe_periodicity.
-		    value = *p->prach_StartingSubframe_r13;
-	    cfg->emtc_config.prach_ce_level_2_hopping_enable.value =
-		p->prach_HoppingConfig_r13;
-	    cfg->emtc_config.prach_ce_level_2_hopping_offset.value =
-		cfg->rf_config.ul_channel_bandwidth.value - 6;
-	case 2:
-	    p = prach_ParametersListCE_r13->list.array[1];
-	    cfg->emtc_config.prach_ce_level_1_enable.value = 1;
-	    cfg->emtc_config.prach_ce_level_1_configuration_index.value =
-		p->prach_ConfigIndex_r13;
-	    cfg->emtc_config.prach_ce_level_1_frequency_offset.value =
-		p->prach_FreqOffset_r13;
-	    cfg->
-		emtc_config.prach_ce_level_1_number_of_repetitions_per_attempt.
-		value = p->numRepetitionPerPreambleAttempt_r13;
-	    if (p->prach_StartingSubframe_r13)
-		cfg->
-		    emtc_config.prach_ce_level_1_starting_subframe_periodicity.
-		    value = *p->prach_StartingSubframe_r13;
-	    cfg->emtc_config.prach_ce_level_1_hopping_enable.value =
-		p->prach_HoppingConfig_r13;
-	    cfg->emtc_config.prach_ce_level_1_hopping_offset.value =
-		cfg->rf_config.ul_channel_bandwidth.value - 6;
-	case 1:
-	    p = prach_ParametersListCE_r13->list.array[0];
-	    cfg->emtc_config.prach_ce_level_0_enable.value = 1;
-	    cfg->emtc_config.prach_ce_level_0_configuration_index.value =
-		p->prach_ConfigIndex_r13;
-	    cfg->emtc_config.prach_ce_level_0_frequency_offset.value =
-		p->prach_FreqOffset_r13;
-	    cfg->
-		emtc_config.prach_ce_level_0_number_of_repetitions_per_attempt.
-		value = p->numRepetitionPerPreambleAttempt_r13;
-	    if (p->prach_StartingSubframe_r13)
-		cfg->
-		    emtc_config.prach_ce_level_0_starting_subframe_periodicity.
-		    value = *p->prach_StartingSubframe_r13;
-	    cfg->emtc_config.prach_ce_level_0_hopping_enable.value =
-		p->prach_HoppingConfig_r13;
-	    cfg->emtc_config.prach_ce_level_0_hopping_offset.value =
-		cfg->rf_config.ul_channel_bandwidth.value - 6;
-	}
+    PRACH_ParametersListCE_r13_t	 *prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
 
-	struct FreqHoppingParameters_r13 *ext4_freqHoppingParameters =
-	    radioResourceConfigCommonP->ext4->freqHoppingParameters_r13;
-	if ((ext4_freqHoppingParameters)
-	    &&
-	    (ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13))
-	{
-	    switch
-		(ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13->
-		 present) {
-	    case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_NOTHING:	/* No components present */
-		break;
-	    case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_interval_FDD_r13:
-		cfg->emtc_config.
-		    pucch_interval_ulhoppingconfigcommonmodea.value =
-		    ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13->
-		    choice.interval_FDD_r13;
-		break;
-	    case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_interval_TDD_r13:
-		cfg->emtc_config.
-		    pucch_interval_ulhoppingconfigcommonmodea.value =
-		    ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13->
-		    choice.interval_TDD_r13;
-		break;
-	    }
-	}
-	if ((ext4_freqHoppingParameters) &&
-	    (ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13))
-	{
-	    switch
-		(ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13->
-		 present) {
-	    case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_NOTHING:	/* No components present */
-		break;
-	    case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_interval_FDD_r13:
-		cfg->emtc_config.
-		    pucch_interval_ulhoppingconfigcommonmodeb.value =
-		    ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13->
-		    choice.interval_FDD_r13;
-		break;
-	    case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_interval_TDD_r13:
-		cfg->emtc_config.
-		    pucch_interval_ulhoppingconfigcommonmodeb.value =
-		    ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13->
-		    choice.interval_TDD_r13;
-		break;
-	    }
-	}
+    PRACH_ParametersCE_r13_t *p;
+    cfg->emtc_config.prach_ce_level_0_enable.value=0;
+    cfg->emtc_config.prach_ce_level_0_enable.tl.tag=NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_ENABLE_TAG;
+    cfg->num_tlv++;
+ 
+    cfg->emtc_config.prach_ce_level_1_enable.value=0;
+    cfg->emtc_config.prach_ce_level_1_enable.tl.tag=NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_ENABLE_TAG;
+    cfg->num_tlv++;
+ 
+    cfg->emtc_config.prach_ce_level_2_enable.value=0;
+    cfg->emtc_config.prach_ce_level_2_enable.tl.tag=NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_ENABLE_TAG;
+    cfg->num_tlv++;
+ 
+    cfg->emtc_config.prach_ce_level_3_enable.value=0;
+    cfg->emtc_config.prach_ce_level_3_enable.tl.tag=NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_ENABLE_TAG;
+    cfg->num_tlv++;
+ 
+    switch (prach_ParametersListCE_r13->list.count) {
+    case 4:
+      p=prach_ParametersListCE_r13->list.array[3];
+      cfg->emtc_config.prach_ce_level_3_enable.value                            = 1;
+      cfg->emtc_config.prach_ce_level_3_enable.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_ENABLE_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_3_configuration_index.value               = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_3_configuration_index.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_CONFIGURATION_INDEX_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_3_frequency_offset.value                  = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_3_frequency_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_FREQUENCY_OFFSET_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_3_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
+      cfg->emtc_config.prach_ce_level_3_number_of_repetitions_per_attempt.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG;
+      cfg->num_tlv++;
+
+      if (p->prach_StartingSubframe_r13) {
+	cfg->emtc_config.prach_ce_level_3_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+	cfg->emtc_config.prach_ce_level_3_starting_subframe_periodicity.tl.tag  = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_STARTING_SUBFRAME_PERIODICITY_TAG;
+        cfg->num_tlv++;
+      }
+
+      cfg->emtc_config.prach_ce_level_3_hopping_enable.value                    = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_3_hopping_enable.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_HOPPING_ENABLE_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_3_hopping_offset.value                    = cfg->rf_config.ul_channel_bandwidth.value-6;
+      cfg->emtc_config.prach_ce_level_3_hopping_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_HOPPING_OFFSET_TAG;
+      cfg->num_tlv++;
+
+    case 3:
+      p=prach_ParametersListCE_r13->list.array[2];
+      cfg->emtc_config.prach_ce_level_2_enable.value                            = 1;
+      cfg->emtc_config.prach_ce_level_2_enable.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_ENABLE_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_2_configuration_index.value               = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_2_configuration_index.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_CONFIGURATION_INDEX_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_2_frequency_offset.value                  = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_2_frequency_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_FREQUENCY_OFFSET_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_2_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
+      cfg->emtc_config.prach_ce_level_2_number_of_repetitions_per_attempt.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG;
+      cfg->num_tlv++;
+
+      if (p->prach_StartingSubframe_r13) {
+	cfg->emtc_config.prach_ce_level_2_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+	cfg->emtc_config.prach_ce_level_2_starting_subframe_periodicity.tl.tag  = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_STARTING_SUBFRAME_PERIODICITY_TAG;
+        cfg->num_tlv++;
+      }
+
+      cfg->emtc_config.prach_ce_level_2_hopping_enable.value                    = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_2_hopping_enable.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_HOPPING_ENABLE_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_2_hopping_offset.value                    = cfg->rf_config.ul_channel_bandwidth.value-6;
+      cfg->emtc_config.prach_ce_level_2_hopping_offset.tl.tag                   = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_HOPPING_OFFSET_TAG;
+      cfg->num_tlv++;
+
+    case 2:
+      p=prach_ParametersListCE_r13->list.array[1];
+      cfg->emtc_config.prach_ce_level_1_enable.value                            = 1;
+      cfg->emtc_config.prach_ce_level_1_enable.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_ENABLE_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_1_configuration_index.value               = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_1_configuration_index.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_CONFIGURATION_INDEX_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_1_frequency_offset.value                  = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_1_frequency_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_FREQUENCY_OFFSET_TAG;
+      cfg->num_tlv++;
+
+      cfg->emtc_config.prach_ce_level_1_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
+      cfg->emtc_config.prach_ce_level_1_number_of_repetitions_per_attempt.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG;
+      cfg->num_tlv++;
+
+      if (p->prach_StartingSubframe_r13) {
+	cfg->emtc_config.prach_ce_level_1_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+	cfg->emtc_config.prach_ce_level_1_starting_subframe_periodicity.tl.tag  = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_STARTING_SUBFRAME_PERIODICITY_TAG;
+        cfg->num_tlv++;
+      }
+ 
+      cfg->emtc_config.prach_ce_level_1_hopping_enable.value                    = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_1_hopping_enable.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_HOPPING_ENABLE_TAG;
+      cfg->num_tlv++;
+ 
+      cfg->emtc_config.prach_ce_level_1_hopping_offset.value                    = cfg->rf_config.ul_channel_bandwidth.value-6;
+      cfg->emtc_config.prach_ce_level_1_hopping_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_HOPPING_OFFSET_TAG;
+      cfg->num_tlv++;
+ 
+    case 1:
+      p=prach_ParametersListCE_r13->list.array[0];
+      cfg->emtc_config.prach_ce_level_0_enable.value                            = 1;
+      cfg->emtc_config.prach_ce_level_0_enable.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_ENABLE_TAG;
+      cfg->num_tlv++;
+ 
+      cfg->emtc_config.prach_ce_level_0_configuration_index.value               = p->prach_ConfigIndex_r13;
+      cfg->emtc_config.prach_ce_level_0_configuration_index.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_CONFIGURATION_INDEX_TAG;
+      cfg->num_tlv++;
+ 
+      cfg->emtc_config.prach_ce_level_0_frequency_offset.value                  = p->prach_FreqOffset_r13;
+      cfg->emtc_config.prach_ce_level_0_frequency_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_FREQUENCY_OFFSET_TAG;
+      cfg->num_tlv++;
+ 
+      cfg->emtc_config.prach_ce_level_0_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
+      cfg->emtc_config.prach_ce_level_0_number_of_repetitions_per_attempt.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG;
+      cfg->num_tlv++;
+ 
+      if (p->prach_StartingSubframe_r13) {
+	cfg->emtc_config.prach_ce_level_0_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+	cfg->emtc_config.prach_ce_level_0_starting_subframe_periodicity.tl.tag  = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_STARTING_SUBFRAME_PERIODICITY_TAG;
+        cfg->num_tlv++;
+      }
+ 
+      cfg->emtc_config.prach_ce_level_0_hopping_enable.value                    = p->prach_HoppingConfig_r13;
+      cfg->emtc_config.prach_ce_level_0_hopping_enable.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_HOPPING_ENABLE_TAG;
+      cfg->num_tlv++;
+ 
+      cfg->emtc_config.prach_ce_level_0_hopping_offset.value                    = cfg->rf_config.ul_channel_bandwidth.value-6;
+      cfg->emtc_config.prach_ce_level_0_hopping_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_HOPPING_OFFSET_TAG;
+      cfg->num_tlv++;
     }
+
+    struct FreqHoppingParameters_r13 *ext4_freqHoppingParameters = radioResourceConfigCommonP->ext4->freqHoppingParameters_r13;
+    if ((ext4_freqHoppingParameters) && 
+	(ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13)){
+      switch(ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13->present) {
+      case 	FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_NOTHING:	/* No components present */
+	break;
+      case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_interval_FDD_r13:
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodea.value = ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13->choice.interval_FDD_r13;
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodea.tl.tag = NFAPI_EMTC_CONFIG_PUCCH_INTERVAL_ULHOPPINGCONFIGCOMMONMODEA_TAG;
+        cfg->num_tlv++;
+	break;
+      case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_interval_TDD_r13:
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodea.value = ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeA_r13->choice.interval_TDD_r13;
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodea.tl.tag = NFAPI_EMTC_CONFIG_PUCCH_INTERVAL_ULHOPPINGCONFIGCOMMONMODEA_TAG;
+        cfg->num_tlv++;
+	break;
+      }
+    }
+    if ((ext4_freqHoppingParameters) && 
+	(ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13)){
+      switch(ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13->present) {
+      case 	FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_NOTHING:	/* No components present */
+	break;
+      case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_interval_FDD_r13:
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodeb.value = ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13->choice.interval_FDD_r13;
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodeb.tl.tag = NFAPI_EMTC_CONFIG_PUCCH_INTERVAL_ULHOPPINGCONFIGCOMMONMODEB_TAG;
+        cfg->num_tlv++;
+	break;
+      case FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeB_r13_PR_interval_TDD_r13:
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodeb.value = ext4_freqHoppingParameters->interval_ULHoppingConfigCommonModeB_r13->choice.interval_TDD_r13;
+	cfg->emtc_config.pucch_interval_ulhoppingconfigcommonmodeb.tl.tag = NFAPI_EMTC_CONFIG_PUCCH_INTERVAL_ULHOPPINGCONFIGCOMMONMODEB_TAG;
+        cfg->num_tlv++;
+	break;
+      }
+    }
+  }
 #endif
 
 }
@@ -597,66 +752,67 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 		       SystemInformationBlockType1_v1310_IEs_t *
 		       sib1_v13ext
 #endif
-    )
-{
+                       ) {
+			   
+  int i;
 
-    int i;
+  int UE_id = -1;
+  eNB_MAC_INST *eNB = RC.mac[Mod_idP];
+  UE_list_t *UE_list= &eNB->UE_list;
 
-    int UE_id = -1;
-    eNB_MAC_INST *eNB = RC.mac[Mod_idP];
-    UE_list_t *UE_list = &eNB->UE_list;
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
-	(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
+  LOG_E(MAC, "RC.mac:%p mib:%p\n", RC.mac, mib);
 
+  if (mib != NULL) {
+    if (RC.mac == NULL)
+      l2_init_eNB();
 
-    if (mib != NULL) {
-	if (RC.mac == NULL)
-	    l2_init_eNB();
+    mac_top_init_eNB();
 
-	mac_top_init_eNB();
+    RC.mac[Mod_idP]->common_channels[CC_idP].mib = mib;
+    RC.mac[Mod_idP]->common_channels[CC_idP].physCellId = physCellId;
+    RC.mac[Mod_idP]->common_channels[CC_idP].p_eNB = p_eNB;
+    RC.mac[Mod_idP]->common_channels[CC_idP].Ncp = Ncp;
+    RC.mac[Mod_idP]->common_channels[CC_idP].eutra_band = eutra_band;
+    RC.mac[Mod_idP]->common_channels[CC_idP].dl_CarrierFreq = dl_CarrierFreq;
 
-	RC.mac[Mod_idP]->common_channels[CC_idP].mib = mib;
-	RC.mac[Mod_idP]->common_channels[CC_idP].physCellId = physCellId;
-	RC.mac[Mod_idP]->common_channels[CC_idP].p_eNB = p_eNB;
-	RC.mac[Mod_idP]->common_channels[CC_idP].Ncp = Ncp;
-	RC.mac[Mod_idP]->common_channels[CC_idP].eutra_band = eutra_band;
-	RC.mac[Mod_idP]->common_channels[CC_idP].dl_CarrierFreq =
-	    dl_CarrierFreq;
+    LOG_I(MAC,
+	  "Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d,Nid_cell %d,p %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
+	  Mod_idP, 
+	  CC_idP, 
+	  eutra_band, 
+	  to_prb((int)mib->message.dl_Bandwidth), 
+	  physCellId, 
+	  p_eNB,
+	  dl_CarrierFreq,
+	  (int)mib->message.phich_Config.phich_Resource,
+	  (int)mib->message.phich_Config.phich_Duration);
 
-	LOG_I(MAC,
-	      "Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d,Nid_cell %d,p %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
-	      Mod_idP,
-	      CC_idP,
-	      eutra_band,
-	      to_prb((int) mib->message.dl_Bandwidth),
-	      physCellId,
-	      p_eNB,
-	      dl_CarrierFreq,
-	      (int) mib->message.phich_Config.phich_Resource,
-	      (int) mib->message.phich_Config.phich_Duration);
-
-	config_mib(Mod_idP, CC_idP,
-		   eutra_band,
-		   mib->message.dl_Bandwidth,
-		   &mib->message.phich_Config,
-		   physCellId, Ncp, p_eNB, dl_CarrierFreq, ul_CarrierFreq
+    config_mib(Mod_idP,CC_idP,
+	       eutra_band,
+	       mib->message.dl_Bandwidth,
+	       &mib->message.phich_Config,
+	       physCellId,
+	       Ncp,
+	       p_eNB,
+	       dl_CarrierFreq,
+	       ul_CarrierFreq
 #ifdef Rel14
 		   , pbch_repetition
 #endif
-	    );
+	       );
 
-	mac_init_cell_params(Mod_idP, CC_idP);
-    }
-    if (schedulingInfoList != NULL) {
-	RC.mac[Mod_idP]->common_channels[CC_idP].tdd_Config = tdd_Config;
-	RC.mac[Mod_idP]->common_channels[CC_idP].schedulingInfoList =
-	    schedulingInfoList;
-	config_sib1(Mod_idP, CC_idP, tdd_Config);
+    mac_init_cell_params(Mod_idP,CC_idP);
+
+    if (schedulingInfoList!=NULL)  {
+      RC.mac[Mod_idP]->common_channels[CC_idP].tdd_Config         = tdd_Config;    
+      RC.mac[Mod_idP]->common_channels[CC_idP].schedulingInfoList = schedulingInfoList;    
+      config_sib1(Mod_idP,CC_idP,tdd_Config);
     }
 #ifdef Rel14
     if (sib1_v13ext != NULL) {
-	RC.mac[Mod_idP]->common_channels[CC_idP].sib1_v13ext = sib1_v13ext;
+      RC.mac[Mod_idP]->common_channels[CC_idP].sib1_v13ext = sib1_v13ext;
     }
 #endif
     if (radioResourceConfigCommon != NULL) {
@@ -719,53 +875,52 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 		    NULL, ul_Bandwidth, additionalSpectrumEmission,
 		    mbsfn_SubframeConfigList);
 
-
     }
-    // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
-    if (logicalChannelConfig != NULL) {	// check for eMTC specific things
-	UE_id = find_UE_id(Mod_idP, rntiP);
+  } // mib != NULL
 
-	if (UE_id == -1) {
-	    LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
-		  __LINE__, __FUNCTION__);
-	} else {
-	    if (logicalChannelConfig)
-		UE_list->
-		    UE_template[CC_idP][UE_id].lcgidmap
-		    [logicalChannelIdentity] =
-		    *logicalChannelConfig->
-		    ul_SpecificParameters->logicalChannelGroup;
-	    else
-		UE_list->
-		    UE_template[CC_idP][UE_id].lcgidmap
-		    [logicalChannelIdentity] = 0;
-	}
+  // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
+  if (logicalChannelConfig != NULL) {	// check for eMTC specific things
+    UE_id = find_UE_id(Mod_idP, rntiP);
+
+    if (UE_id == -1) {
+      LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
+          __LINE__, __FUNCTION__);
+    } else {
+      if (logicalChannelConfig)
+        UE_list->
+          UE_template[CC_idP][UE_id].lcgidmap
+          [logicalChannelIdentity] =
+          *logicalChannelConfig->
+            ul_SpecificParameters->logicalChannelGroup;
+      else
+        UE_list->
+          UE_template[CC_idP][UE_id].lcgidmap
+          [logicalChannelIdentity] = 0;
     }
+  }
 
 
-    if (physicalConfigDedicated != NULL) {
-	UE_id = find_UE_id(Mod_idP, rntiP);
+  if (physicalConfigDedicated != NULL) {
+    UE_id = find_UE_id(Mod_idP, rntiP);
 
-	if (UE_id == -1)
-	    LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
-		  __LINE__, __FUNCTION__);
-	else
-	    UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated =
-		physicalConfigDedicated;
-    }
+    if (UE_id == -1)
+      LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
+    else
+      UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
+  }
 
 
 #if defined(Rel10) || defined(Rel14)
 
-    if (sCellToAddMod_r10 != NULL) {
-	UE_id = find_UE_id(Mod_idP, rntiP);
-	if (UE_id == -1)
-	    LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
-		  __LINE__, __FUNCTION__);
-	else
+  if (sCellToAddMod_r10 != NULL) {
+    UE_id = find_UE_id(Mod_idP, rntiP);
+    if (UE_id == -1)
+      LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
+          __LINE__, __FUNCTION__);
+    else
 	    config_dedicated_scell(Mod_idP, rntiP, sCellToAddMod_r10);
 
-    }
+  }
 #endif
 
 
@@ -795,25 +950,18 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
 #if defined(Rel10) || defined(Rel14)
 
-    if (mbsfn_AreaInfoList != NULL) {
-	// One eNB could be part of multiple mbsfn syc area, this could change over time so reset each time
-	LOG_I(MAC, "[eNB %d][CONFIG] Received %d MBSFN Area Info\n",
-	      Mod_idP, mbsfn_AreaInfoList->list.count);
-	RC.mac[Mod_idP]->common_channels[0].num_active_mbsfn_area =
-	    mbsfn_AreaInfoList->list.count;
-
-	for (i = 0; i < mbsfn_AreaInfoList->list.count; i++) {
-	    RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i] =
-		mbsfn_AreaInfoList->list.array[i];
-	    LOG_I(MAC,
-		  "[eNB %d][CONFIG] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n",
-		  Mod_idP, i,
-		  RC.mac[Mod_idP]->common_channels[0].
-		  mbsfn_AreaInfo[i]->mcch_Config_r9.
-		  mcch_RepetitionPeriod_r9);
-	    //      config_sib13(Mod_idP,0,i,RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
-	}
+  if (mbsfn_AreaInfoList != NULL) {
+      // One eNB could be part of multiple mbsfn syc area, this could change over time so reset each time
+    LOG_I(MAC,"[eNB %d][CONFIG] Received %d MBSFN Area Info\n", Mod_idP, mbsfn_AreaInfoList->list.count);
+    RC.mac[Mod_idP]->common_channels[0].num_active_mbsfn_area = mbsfn_AreaInfoList->list.count;
+    
+    for (i =0; i< mbsfn_AreaInfoList->list.count; i++) {
+      RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
+      LOG_I(MAC,"[eNB %d][CONFIG] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n", Mod_idP,i,
+	    RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
+      //      config_sib13(Mod_idP,0,i,RC.mac[Mod_idP]->common_channels[0].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
     }
+  } 
 
     if (pmch_InfoList != NULL) {
 
@@ -849,21 +997,32 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
 #endif
 
-    if (radioResourceConfigCommon != NULL) {
-	AssertFatal(RC.mac[Mod_idP]->if_inst->PHY_config_req != NULL,
-		    "if_inst->phy_config_request is null\n");
-	PHY_Config_t phycfg;
-	phycfg.Mod_id = Mod_idP;
-	phycfg.CC_id = CC_idP;
-	phycfg.cfg = &RC.mac[Mod_idP]->config[CC_idP];
+    LOG_E(MAC, "%s() %s:%d RC.mac[Mod_idP]->if_inst->PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.mac[Mod_idP]->if_inst->PHY_config_req);
 
-	if (RC.mac[Mod_idP]->if_inst->PHY_config_req)
-	    RC.mac[Mod_idP]->if_inst->PHY_config_req(&phycfg);
+    // if in nFAPI mode 
+    if (
+        (nfapi_mode == 1 || nfapi_mode == 2) &&
+        (RC.mac[Mod_idP]->if_inst->PHY_config_req == NULL)
+       ) {
+      while(RC.mac[Mod_idP]->if_inst->PHY_config_req == NULL) {
+        // DJP AssertFatal(RC.mac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
+        usleep(100 * 1000);
+        printf("Waiting for PHY_config_req\n");
+      }
     }
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
-	(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
 
-    return (0);
+    if (radioResourceConfigCommon != NULL) {
+      PHY_Config_t phycfg;
+      phycfg.Mod_id = Mod_idP;
+      phycfg.CC_id  = CC_idP;
+      phycfg.cfg    = &RC.mac[Mod_idP]->config[CC_idP];
+
+      if (RC.mac[Mod_idP]->if_inst->PHY_config_req) RC.mac[Mod_idP]->if_inst->PHY_config_req(&phycfg); 
+
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
+    }
+
+    return(0);			   
 }
 
 int
