@@ -515,13 +515,13 @@ ue_send_sdu(module_id_t module_idP,
 
 		LOG_T(MAC, "\n");
 #endif
-		mac_rrc_data_ind(module_idP,
+		mac_rrc_data_ind_ue(module_idP,
 				 CC_id,
 				 frameP, subframeP,
 				 UE_mac_inst[module_idP].crnti,
 				 CCCH,
 				 (uint8_t *) payload_ptr,
-				 rx_lengths[i], ENB_FLAG_NO, eNB_index, 0);
+				 rx_lengths[i], eNB_index, 0);
 
 	    } else if ((rx_lcids[i] == DCCH) || (rx_lcids[i] == DCCH1)) {
 		LOG_D(MAC,
@@ -584,9 +584,9 @@ ue_decode_si(module_id_t module_idP, int CC_id, frame_t frameP,
     LOG_D(MAC, "[UE %d] Frame %d Sending SI to RRC (LCID Id %d,len %d)\n",
 	  module_idP, frameP, BCCH, len);
 
-    mac_rrc_data_ind(module_idP, CC_id, frameP, 0,	// unknown subframe
+    mac_rrc_data_ind_ue(module_idP, CC_id, frameP, 0,	// unknown subframe
 		     SI_RNTI,
-		     BCCH, (uint8_t *) pdu, len, ENB_FLAG_NO, eNB_index,
+		     BCCH, (uint8_t *) pdu, len, eNB_index,
 		     0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
@@ -622,9 +622,9 @@ ue_decode_p(module_id_t module_idP, int CC_id, frame_t frameP,
 	  "[UE %d] Frame %d Sending Paging message to RRC (LCID Id %d,len %d)\n",
 	  module_idP, frameP, PCCH, len);
 
-    mac_rrc_data_ind(module_idP, CC_id, frameP, 0,	// unknown subframe
+    mac_rrc_data_ind_ue(module_idP, CC_id, frameP, 0,	// unknown subframe
 		     P_RNTI,
-		     PCCH, (uint8_t *) pdu, len, ENB_FLAG_NO, eNB_index,
+		     PCCH, (uint8_t *) pdu, len, eNB_index,
 		     0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_OUT);
@@ -744,10 +744,10 @@ ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 		  "[UE %d] Frame %d : SDU %d MCH->MCCH for sync area %d (eNB %d, %d bytes)\n",
 		  module_idP, frameP, i, sync_area, eNB_index,
 		  rx_lengths[i]);
-	    mac_rrc_data_ind(module_idP, CC_id, frameP, 0,	// unknown subframe
+	    mac_rrc_data_ind_ue(module_idP, CC_id, frameP, 0,	// unknown subframe
 			     M_RNTI,
 			     MCCH,
-			     payload_ptr, rx_lengths[i], 0, eNB_index,
+			     payload_ptr, rx_lengths[i], eNB_index,
 			     sync_area);
 	} else if (rx_lcids[i] == MTCH) {
 	    if (UE_mac_inst[module_idP].msi_status == 1) {
@@ -2230,10 +2230,10 @@ ue_scheduler(const module_id_t module_idP,
     UE_mac_inst[module_idP].rxSubframe = rxSubframeP;
 
 #ifdef CELLULAR
-    rrc_rx_tx(module_idP, txFrameP, 0, eNB_indexP);
+    rrc_rx_tx_ue(module_idP, txFrameP, 0, eNB_indexP);
 #else
 
-    switch (rrc_rx_tx(&ctxt, eNB_indexP, CC_id)) {
+    switch (rrc_rx_tx_ue(&ctxt, eNB_indexP, CC_id)) {
     case RRC_OK:
 	break;
 

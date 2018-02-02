@@ -925,8 +925,8 @@ schedule_ue_spec(module_id_t module_idP,
 
 		    if (rlc_status.bytes_in_buffer > 0) {	// There is DCCH to transmit
 			LOG_D(MAC,
-			      "[eNB %d] Frame %d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
-			      module_idP, frameP, CC_id,
+			      "[eNB %d] SFN/SF %d.%d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+			      module_idP, frameP, subframeP, CC_id,
 			      TBS - header_len_dcch);
 			sdu_lengths[0] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, TBS,	//not used
 							  (char *)
@@ -1830,8 +1830,6 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
                                            frameP,
                                            PCCH,1,
                                            &cc->PCCH_pdu.payload[0],
-                                           1,
-                                           module_idP,
                                            i); // used for ue index
       if (pcch_sdu_length == 0) {
         LOG_D(MAC,"[eNB %d] Frame %d subframe %d: PCCH not active(size = 0 byte)\n", module_idP,frameP, subframeP);
