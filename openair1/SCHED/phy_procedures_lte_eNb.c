@@ -145,7 +145,7 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   int subframe = proc->subframe_tx;
   int frame = proc->frame_tx;
 
-  LOG_I(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe); 
+  LOG_D(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe); 
 
   // generate Cell-Specific Reference Signals for both slots
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_RS_TX,1);
