@@ -80,6 +80,9 @@
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
+#include "ENB_APP/enb_paramdef.h"
+#include "common/config/config_userapi.h"
+
 #ifdef SMBV
 extern uint8_t config_smbv;
 extern char smbv_ip[16];
@@ -176,6 +179,18 @@ extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int oaisim_flag=1;
 
+
+void RCConfig_sim(void) {
+
+  paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
+
+
+    // Get num RU instances
+    config_getlist( &RUParamList,NULL,0, NULL);
+    RC.nb_RU     = RUParamList.numelt;
+
+
+}
 
 void get_simulation_options(int argc, char *argv[])
 {
@@ -782,13 +797,13 @@ void get_simulation_options(int argc, char *argv[])
     }
   }
 
-  if ( load_configmodule(argc,argv) == NULL) {
+   if ( load_configmodule(argc,argv) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   } 
  
   if (RC.config_file_name != NULL) {
     /* Read eNB configuration file */
-    RCConfig();
+    RCConfig_sim();
     printf("returned with %d eNBs, %d rus\n",RC.nb_inst,RC.nb_RU);
     oai_emulation.info.nb_enb_local = RC.nb_inst;
     oai_emulation.info.nb_ru_local = RC.nb_RU;
@@ -1099,62 +1114,70 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   int UE_id = device->Mod_id;
   int CC_id  = device->CC_id;
 
-  int subframe,new_subframe;
+  int subframe;
   int sample_count=0;
   int read_size;
+  int sptti = PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti;
 
   *ptimestamp = last_UE_rx_timestamp[UE_id][CC_id];
 
-  LOG_D(EMU,"[TXPATH]UE_trx_read nsamps %d TS %llu (%llu) antenna %d\n",nsamps,
+  LOG_D(EMU,"UE %d DL simulation 0: UE_trx_read nsamps %d TS %llu (%llu, offset %d) antenna %d\n",
+        UE_id,
+        nsamps,
         (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
         (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
+        (int)(last_UE_rx_timestamp[UE_id][CC_id]%sptti),
 	cc);
 
 
-  if (nsamps < PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)
+  if (nsamps < sptti)
     read_size = nsamps;
   else
-    read_size = PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti;
+    read_size = sptti;
 
   while (sample_count<nsamps) {
+    LOG_D(EMU,"UE %d: DL simulation 1: UE_trx_read : current TS now %llu, last TS %llu\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
     while (current_UE_rx_timestamp[UE_id][CC_id] < 
 	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
-      LOG_D(EMU,"[TXPATH]UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+      LOG_D(EMU,"UE %d: DL simulation 2: UE_trx_read : current TS %llu, last TS %llu, sleeping\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
       usleep(500);
     }
-
-    //    LOG_D(EMU,"UE_trx_read : current TS %d, last TS %d, sleeping\n",current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+    LOG_D(EMU,"UE %d: DL simulation 3: UE_trx_read : current TS now %llu, last TS %llu\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
 
     // if we cross a subframe-boundary
-    subframe = (last_UE_rx_timestamp[UE_id][CC_id]/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
-    new_subframe = ((last_UE_rx_timestamp[UE_id][CC_id]+read_size)/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
-    if (new_subframe!=subframe) {
-      // tell top-level we are busy 
-      pthread_mutex_lock(&subframe_mutex);
-      subframe_UE_mask|=(1<<UE_id);
-      LOG_D(EMU,"Setting UE_id %d mask to busy (%d)\n",UE_id,subframe_UE_mask);
-      pthread_mutex_unlock(&subframe_mutex);
+    subframe = (last_UE_rx_timestamp[UE_id][CC_id]/sptti)%10;
 
-    }
+    // tell top-level we are busy 
+    pthread_mutex_lock(&subframe_mutex);
+    subframe_UE_mask|=(1<<UE_id);
+    LOG_D(EMU,"Setting UE_id %d mask to busy (%d)\n",UE_id,subframe_UE_mask);
+    pthread_mutex_unlock(&subframe_mutex);
+    
+    
 
-    LOG_D(PHY,"UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu)\n",
-	  subframe,(unsigned long long)*ptimestamp,
-	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id]);    
+    LOG_D(PHY,"UE %d: DL simulation 4: UE_trx_read generating DL subframe %d (Ts %llu, current TS %llu,nsamps %d)\n",
+	  UE_id,subframe,(unsigned long long)*ptimestamp,
+	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
+	  nsamps);
+
+    LOG_D(EMU,"UE %d: DL simulation 5: Doing DL simulation for %d samples starting in subframe %d at offset %d\n",
+	  UE_id,nsamps,subframe,
+	  (int)(last_UE_rx_timestamp[UE_id][CC_id]%sptti));
+
     do_DL_sig(RU2UE,
 	      enb_data,
 	      ue_data,
 	      subframe,
-	      last_UE_rx_timestamp[UE_id][CC_id]%PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti,
-	      nsamps,
+	      last_UE_rx_timestamp[UE_id][CC_id]%sptti,
+	      sptti,
 	      0, //abstraction_flag,
 	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
 	      UE_id,
 	      CC_id);
-
-    LOG_D(EMU,"[TXPATH]UE_trx_read @ TS %llu (%llu)=> frame %d, subframe %d\n",
-	  (unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
+    LOG_D(EMU,"UE %d: DL simulation 6: UE_trx_read @ TS %llu (%llu)=> frame %d, subframe %d\n",
+	  UE_id,(unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
 	  (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
-	  ((unsigned long long)last_UE_rx_timestamp[UE_id][CC_id]/(PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti*10))&1023,
+	  ((unsigned long long)last_UE_rx_timestamp[UE_id][CC_id]/(sptti*10))&1023,
 	  subframe);
 
     last_UE_rx_timestamp[UE_id][CC_id] += read_size;
@@ -1329,7 +1352,9 @@ void init_devices(void){
 	PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_set_freq_func    = UE_trx_set_freq;
 	PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_set_gains_func   = UE_trx_set_gains;
 	last_UE_rx_timestamp[UE_id][CC_id] = 0;
-	
+
+
+
       }
     }
   }
@@ -1396,7 +1421,7 @@ void init_ocm(void)
   for (ru_id = 0; ru_id < RC.nb_RU; ru_id++) {
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
       for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        LOG_D(OCM,"Initializing channel (%s, %d) from eNB %d to UE %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
+        LOG_I(OCM,"Initializing channel (%s, %d) from RU %d to UE %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
               map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option), ru_id, UE_id);
 
 
@@ -1539,7 +1564,7 @@ void update_ocm()
 	  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
 	    AssertFatal(RU2UE[ru_id][UE_id][CC_id]!=NULL,"RU2UE[%d][%d][%d] is null\n",ru_id,UE_id,CC_id);
-	    AssertFatal(UE2RU[ru_id][UE_id][CC_id]!=NULL,"RU2UE[%d][%d][%d] is null\n",ru_id,UE_id,CC_id);
+	    AssertFatal(UE2RU[UE_id][ru_id][CC_id]!=NULL,"UE2RU[%d][%d][%d] is null\n",UE_id,ru_id,CC_id);
 	    //pathloss: -132.24 dBm/15kHz RE + target SNR - eNB TX power per RE
 	    if (ru_id == (UE_id % RC.nb_RU)) {
 	      RU2UE[ru_id][UE_id][CC_id]->path_loss_dB = -132.24 + snr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower;
@@ -1563,6 +1588,119 @@ void update_ocm()
 void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 {
 
+#if defined(USER_MODE) && defined(OAI_EMU)
+
+  //int rrc_state=0;
+/*
+  if (oai_emulation.info.otg_enabled ==1 ) {
+
+    int dst_id, app_id;
+    Packet_otg_elt_t *otg_pkt;
+
+    for (dst_id = 0; dst_id < NUMBER_OF_UE_MAX; dst_id++) {
+      for_times += 1;
+
+      // generate traffic if the ue is rrc reconfigured state
+      //if ((rrc_state=mac_eNB_get_rrc_status(enb_module_idP, dst_id)) > 2 //RRC_CONNECTED
+       {
+      if (mac_eNB_get_rrc_status(enb_module_idP, oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_idP][dst_id]) > 2 ){
+	if_times += 1;
+
+        for (app_id=0; app_id<MAX_NUM_APPLICATION; app_id++) {
+          otg_pkt = malloc (sizeof(Packet_otg_elt_t));
+
+          (otg_pkt->otg_pkt).sdu_buffer = (uint8_t*) packet_gen(enb_module_idP, dst_id + NB_eNB_INST, app_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
+
+          if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
+            otg_times += 1;
+            (otg_pkt->otg_pkt).rb_id = DTCH-2; // app could be binded to a given DRB
+            (otg_pkt->otg_pkt).module_id = enb_module_idP;
+            (otg_pkt->otg_pkt).dst_id = dst_id;
+            (otg_pkt->otg_pkt).is_ue = 0;
+            (otg_pkt->otg_pkt).mode = PDCP_TRANSMISSION_MODE_DATA;
+            //Adding the packet to the OTG-PDCP buffer
+            pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[enb_module_idP]));
+            LOG_D(EMU,"[eNB %d] ADD pkt to OTG buffer with size %d for dst %d on rb_id %d for app id %d \n",
+                  (otg_pkt->otg_pkt).module_id, otg_pkt->otg_pkt.sdu_buffer_size, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id, app_id);
+          } else {
+            free(otg_pkt);
+            otg_pkt=NULL;
+          }
+        }
+      }
+    }
+
+#if defined(Rel10) || defined(Rel14)
+    mbms_service_id_t service_id;
+    mbms_session_id_t session_id;
+    rb_id_t           rb_id;
+
+    // MBSM multicast traffic
+    if (ctime >= 500 ) {// only generate when UE can receive MTCH (need to control this value)
+      for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
+        for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
+          if (pdcp_mbms_array_eNB[enb_module_idP][service_id][session_id].instanciated_instance == TRUE) { // this service/session is configured
+
+            otg_pkt = malloc (sizeof(Packet_otg_elt_t));
+            // LOG_T(OTG,"multicast packet gen for (service/mch %d, session/lcid %d, rb_id %d)\n", service_id, session_id, service_id*maxSessionPerPMCH + session_id);
+            rb_id = pdcp_mbms_array_eNB[enb_module_idP][service_id][session_id].rb_id;
+            (otg_pkt->otg_pkt).sdu_buffer = (uint8_t*) packet_gen_multicast(enb_module_idP, session_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
+
+            if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
+              (otg_pkt->otg_pkt).rb_id      = rb_id;
+              (otg_pkt->otg_pkt).module_id  = enb_module_idP;
+              (otg_pkt->otg_pkt).dst_id     = session_id;
+              (otg_pkt->otg_pkt).is_ue      = FALSE;
+              //Adding the packet to the OTG-PDCP buffer
+              (otg_pkt->otg_pkt).mode       = PDCP_TRANSMISSION_MODE_TRANSPARENT;
+              pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[enb_module_idP]));
+              LOG_D(EMU, "[eNB %d] ADD packet (%p) multicast to OTG buffer for dst %d on rb_id %d\n",
+                    (otg_pkt->otg_pkt).module_id, otg_pkt, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
+            } else {
+              //LOG_I(EMU, "OTG returns null \n");
+              free(otg_pkt);
+              otg_pkt=NULL;
+            }
+
+*/
+            // old version
+            /*      // MBSM multicast traffic
+            #if defined(Rel10) || defined(Rel14)
+            if (frame >= 46) {// only generate when UE can receive MTCH (need to control this value)
+            for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
+            for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
+            //   LOG_I(OTG,"DUY:frame %d, pdcp_mbms_array[module_id][rb_id].instanciated_instance is %d\n",frame,pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].instanciated_instance);
+            if ((pdcp_mbms_array[module_idP][service_id*maxSessionPerPMCH + session_id].instanciated_instance== module_idP + 1) && (eNB_flag == 1)){ // this service/session is configured
+            // LOG_T(OTG,"multicast packet gen for (service/mch %d, session/lcid %d)\n", service_id, session_id);
+            // Duy add
+            LOG_I(OTG, "frame %d, multicast packet gen for (service/mch %d, session/lcid %d, rb_id %d)\n",frame, service_id, session_id,service_id*maxSessionPerPMCH + session_id);
+            // end Duy add
+            rb_id = pdcp_mbms_array[module_id][service_id*maxSessionPerPMCH + session_id].rb_id;
+            otg_pkt=(uint8_t*) packet_gen_multicast(module_idP, session_id, ctime, &pkt_size);
+            if (otg_pkt != NULL) {
+            LOG_D(OTG,"[eNB %d] sending a multicast packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n", eNB_index, module_idP, rb_id, module_idP, session_id, pkt_size);
+            pdcp_data_req(module_id, frame, eNB_flag, rb_id, RLC_MUI_UNDEFINED, RLC_SDU_CONFIRM_NO, pkt_size, otg_pkt,PDCP_TM);
+            free(otg_pkt);
+            }
+            }
+            }
+            }
+            } // end multicast traffic
+            #endif
+             */
+/*
+
+          }
+        }
+      }
+
+    } // end multicast traffic
+*/
+
+#endif
+  }
+
+#else
 #if 0 //  defined(EXMIMO) || defined(OAI_USRP)
   if (otg_enabled==1) {
     ctime = frame * 100;
@@ -1662,6 +1800,13 @@ void init_time()
   td_avg        = 0;
   sleep_time_us = SLEEP_STEP_US;
   td_avg        = TARGET_SF_TIME_NS;
+}
+
+// dummy function
+int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {
+
+   return(0);
+
 }
 
 /*

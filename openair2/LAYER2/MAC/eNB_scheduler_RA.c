@@ -843,7 +843,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 
     // Get RRCConnectionSetup for Piggyback
     rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 1,	// 1 transport block
-				      &cc[CC_idP].CCCH_pdu.payload[0], ENB_FLAG_YES, module_idP, 0);	// not used in this case
+				      &cc[CC_idP].CCCH_pdu.payload[0], 0);	// not used in this case
 
     AssertFatal(rrc_sdu_length > 0,
 		"[MAC][eNB Scheduler] CCCH not allocated\n");
