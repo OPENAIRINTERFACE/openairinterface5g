@@ -1481,7 +1481,8 @@ typedef enum {
   RRU_MSG_max_num=3,
   RRU_config_ok=4,
   RRU_start=5,
-  RRU_stop=6
+  RRU_stop=6,
+  RRU_sync_ok=7
 } rru_config_msg_type_t;
 
 
