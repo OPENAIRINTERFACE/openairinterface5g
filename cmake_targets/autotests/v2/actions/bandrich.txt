@@ -1,0 +1,146 @@
+The configuration for the bandrich in the test setup is a bit hackish.
+
+Here come some notes explaining what we do here.
+
+To get /dev/bandrich.data and /dev/bandrich.control (so that you don't need
+to look for which /dev/ttyUSBx are used by your dongle, and always use
+the same files, no matter what), add a udev file:
+
+    /etc/udev/rules.d/bandrich.rules
+
+containing lines:
+
+    SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="1a8d", ENV{ID_MODEL_ID}=="100d", ENV{ID_SERIAL_SHORT}=="357473040068155", ENV{ID_USB_INTERFACE_NUM}=="00", SYMLINK+="bandrich.data", MODE="0666"
+    SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="1a8d", ENV{ID_MODEL_ID}=="100d", ENV{ID_SERIAL_SHORT}=="357473040068155", ENV{ID_USB_INTERFACE_NUM}=="02", SYMLINK+="bandrich.control", MODE="0666"
+
+To avoid NetworkManager to play with the bandrich, add also the line:
+
+    ENV{ID_VENDOR_ID}=="1a8d", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+Maybe also add; , ENV{ID_MM_DEVICE_IGNORE}="1"
+to the two other lines.
+
+Then run: udevadm control --reload-rules
+And:      service network-manager restart
+
+Change vendor_id/model_id/serial/interface num to match yours.
+Use lsusb -v to find values.
+
+At first we used /dev/ttyUSB2 linked to /dev/bandrich for both data (in
+the wvdial configuration file) and control (in the python code, opening
+/dev/bandrich the standard unix way and read and write into it, with no
+special libusb commands).
+
+But it turned out that using /dev/ttyUSB2 for data gives bad throughput
+results. We tested downlink UDP at 15Mb/s but the maximum throughput for
+a 5MHz cell was around 13, and we had a lot of packets lost at the iperf's
+UDP level. Radio was looking fine (all packets acked correctly), so it was
+not a radio problem. The dongle in a windows machine was working fine,
+15Mbs/s. Using the wvdial configuration file from test setup v1 gave also
+good results. The only difference was the use of /dev/ttyUSB0 instead of
+/dev/ttyUSB2. Using /dev/ttyUSB0 solved the throughput issue.
+
+But using /dev/ttyUSB0 for control in the pyton code did not work. The
+output was incorrect.
+
+So we decided to have /dev/bandrich.data linked to /dev/ttyUSB0 for data
+(wvdial) and /dev/bandrich.control linked to /dev/ttyUSB2 for control
+(in python code).
+
+It may not be the correct way to go, but it seems to do the trick so far.
+
+Your device may need some other solution.
+
+Here, we get, as result of lsusb -v:
+
+    [SNIP]
+    Bus 003 Device 009: ID 1a8d:100d BandRich, Inc. 4G LTE adapter
+    Device Descriptor:
+      bLength                18
+      bDescriptorType         1
+      bcdUSB               2.00
+      bDeviceClass            0 (Defined at Interface level)
+      bDeviceSubClass         0 
+      bDeviceProtocol         0 
+      bMaxPacketSize0        64
+      idVendor           0x1a8d BandRich, Inc.
+      idProduct          0x100d 4G LTE adapter
+      bcdDevice            0.00
+      iManufacturer          10 BandRich, Inc.
+      iProduct                9 BandLuxe HSPA-LTE Adapter
+      iSerial                11 357473040068155
+    [SNIP]
+
+You can also run:
+
+    udevadm monitor
+
+and unplug/replug the dongle. It will print some information.
+
+The command:
+
+    udevadm info --export-db
+
+is also important to get the right identifier to put in ENV{}. (It also
+gives the correct value.)
+
+Here is extracted what we have for our dongle:
+
+    P: /devices/pci0000:00/0000:00:1a.0/usb3/3-1/3-1.2/3-1.2:1.2/ttyUSB2/tty/ttyUSB2
+    N: ttyUSB2
+    S: bandrich
+    S: serial/by-id/usb-BandRich__Inc._BandLuxe_HSPA-LTE_Adapter_357473040068155-if02-port0
+    S: serial/by-path/pci-0000:00:1a.0-usb-0:1.2:1.2-port0
+    E: DEVLINKS=/dev/bandrich /dev/serial/by-id/usb-BandRich__Inc._BandLuxe_HSPA-LTE_Adapter_357473040068155-if02-port0 /dev/serial/by-path/pci-0000:00:1a.0-usb-0:1.2:1.2-port0
+    E: DEVNAME=/dev/ttyUSB2
+    E: DEVPATH=/devices/pci0000:00/0000:00:1a.0/usb3/3-1/3-1.2/3-1.2:1.2/ttyUSB2/tty/ttyUSB2
+    E: ID_BUS=usb
+    E: ID_MM_CANDIDATE=1
+    E: ID_MODEL=BandLuxe_HSPA-LTE_Adapter
+    E: ID_MODEL_ENC=BandLuxe\x20HSPA-LTE\x20Adapter
+    E: ID_MODEL_FROM_DATABASE=4G LTE adapter
+    E: ID_MODEL_ID=100d
+    E: ID_PATH=pci-0000:00:1a.0-usb-0:1.2:1.2
+    E: ID_PATH_TAG=pci-0000_00_1a_0-usb-0_1_2_1_2
+    E: ID_REVISION=0000
+    E: ID_SERIAL=BandRich__Inc._BandLuxe_HSPA-LTE_Adapter_357473040068155
+    E: ID_SERIAL_SHORT=357473040068155
+    E: ID_TYPE=generic
+    E: ID_USB_DRIVER=option
+    E: ID_USB_INTERFACES=:ffffff:020600:0a0000:080650:
+    E: ID_USB_INTERFACE_NUM=02
+    E: ID_VENDOR=BandRich__Inc.
+    E: ID_VENDOR_ENC=BandRich\x2c\x20Inc.
+    E: ID_VENDOR_FROM_DATABASE=BandRich, Inc.
+    E: ID_VENDOR_ID=1a8d
+    E: MAJOR=188
+    E: MINOR=2
+    E: SUBSYSTEM=tty
+    E: USEC_INITIALIZED=672068596
+
+You can also run:
+
+    udevadm info -a -p /sys/bus/usb-serial/devices/ttyUSB0
+    udevadm info -a -p /sys/bus/usb-serial/devices/ttyUSB2
+
+Note: after creating the udev files, you need to unplug/replug your
+dongle for /dev/bandrich.data and /dev/bandrich.control to appear.
+
+Note: the mode 0666 is for everyone to access the dongle (no need for
+      root privileges). If you prefer you can set it to 0600 (only root)
+      or 0660 (root and group).
+
+Then you need to configure pppd, to get correct 'route' information when
+you run wvdial.
+
+The file /etc/ppp/peers/wvdial should have the following content:
+
+    noauth
+    name wvdial
+    usepeerdns
+    defaultroute
+    replacedefaultroute
+
+The file wvdial.bandrich.conf has been created by copying some information
+found on the Internet. Its content may not be fully correct. Adapt to your
+situation. It seems to work here.

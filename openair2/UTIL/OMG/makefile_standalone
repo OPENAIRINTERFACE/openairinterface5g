@@ -8,7 +8,7 @@ OBJsumo = omg.c common.c sumo.c client_traci_OMG.c socket_traci_OMG.c storage_tr
 
 OBJ = omg.c common.c static.c job.c rwp.c rwalk.c trace.c steadystaterwp.c sumo.c grid.c mobility_parser.c hashtable.c client_traci_OMG.c socket_traci_OMG.c storage_traci_OMG.c id_manager.c 
 
-CFLAGS += -DSTANDALONE -DUSER_MODE -g
+CFLAGS += -DSTANDALONE -g
 
 .PHONY: help staticOMG rwpOMG clean
 

@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*
                                 rlc.c
                              -------------------
@@ -44,7 +37,21 @@
 #include "assertions.h"
 
 
+extern boolean_t pdcp_data_ind(
+  const protocol_ctxt_t* const ctxt_pP,
+  const srb_flag_t srb_flagP,
+  const MBMS_flag_t MBMS_flagP,
+  const rb_id_t rb_idP,
+  const sdu_size_t sdu_buffer_sizeP,
+  mem_block_t* const sdu_buffer_pP);
 
+#define DEBUG_RLC_PDCP_INTERFACE 1
+//#define TRACE_RLC_PAYLOAD 1
+#define DEBUG_RLC_DATA_REQ 1
+
+
+
+#include "rlc_proto_agent_primitives.h"
 // PROTO AGENT
 void
 async_server_thread_init (void)
@@ -58,7 +65,6 @@ async_server_thread_init (void)
       || (pthread_cond_init (&async_server_notify, NULL) != 0)) {
     return;
   }
-
   if (pthread_create (&async_server_thread, NULL, proto_server_init, (void*) NULL)
       != 0) {
     async_server_thread_finalize();
@@ -67,8 +73,6 @@ async_server_thread_init (void)
 
 
 }
-
-
 
 int
 async_server_thread_finalize (void)
@@ -108,20 +112,6 @@ async_server_thread_finalize (void)
 
 
 
-
-
-extern boolean_t pdcp_data_ind(
-  const protocol_ctxt_t* const ctxt_pP,
-  const srb_flag_t srb_flagP,
-  const MBMS_flag_t MBMS_flagP,
-  const rb_id_t rb_idP,
-  const sdu_size_t sdu_buffer_sizeP,
-  mem_block_t* const sdu_buffer_pP);
-
-#define DEBUG_RLC_PDCP_INTERFACE 1
-//#define TRACE_RLC_PAYLOAD 1
-#define DEBUG_RLC_DATA_REQ 1
-
 //-----------------------------------------------------------------------------
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, const signed long sizeP)
 //-----------------------------------------------------------------------------
@@ -145,7 +135,7 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, con
         LOG_T(componentP, " |\n");
       }
 
-      LOG_T(componentP, " %04d |", octet_index);
+      LOG_T(componentP, " %04lu |", octet_index);
     }
 
     /*
@@ -209,11 +199,6 @@ rlc_op_status_t rlc_stat_req     (
   hash_key_t             key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
 
-#ifdef OAI_EMU
-
-  CHECK_CTXT_ARGS(ctxt_pP)
-
-#endif
   AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
   key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
@@ -404,7 +389,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
   hash_key_t             key         = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   rlc_mbms_id_t         *mbms_id_p  = NULL;
   logical_chan_id_t      log_ch_id  = 0;
 #endif
@@ -418,14 +403,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
         sdu_sizeP,
         sdu_pP);
 #endif
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 #else
   AssertFatal(MBMS_flagP == 0, "MBMS_flagP %u", MBMS_flagP);
-#endif
-#ifdef OAI_EMU
-
-  CHECK_CTXT_ARGS(ctxt_pP)
-
 #endif
 
 #if T_TRACER
@@ -442,13 +422,13 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
   DevAssert(sdu_pP != NULL);
   DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
 
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
   DevCheck(MBMS_flagP == 0, MBMS_flagP, 0, 0);
 #endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_IN);
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 
   if (MBMS_flagP == TRUE) {
     if (ctxt_pP->enb_flag) {
@@ -489,7 +469,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
     switch (rlc_mode) {
     case RLC_MODE_NONE:
-      free_mem_block(sdu_pP);
+      free_mem_block(sdu_pP, __func__);
       LOG_E(RLC, PROTOCOL_CTXT_FMT" Received RLC_MODE_NONE as rlc_type for rb_id %u\n",
             PROTOCOL_CTXT_ARGS(ctxt_pP),
             rb_idP);
@@ -498,9 +478,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
     case RLC_MODE_AM:
 #ifdef DEBUG_RLC_DATA_REQ
-      msg("RLC_MODE_AM\n");
+      LOG_D(RLC,"RLC_MODE_AM\n");
 #endif
-      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_am_data_req_alloc));
+      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_am_data_req_alloc), __func__);
 
       if (new_sdu_p != NULL) {
         // PROCESS OF COMPRESSION HERE:
@@ -511,7 +491,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
         ((struct rlc_am_data_req *) (new_sdu_p->data))->conf = confirmP;
         ((struct rlc_am_data_req *) (new_sdu_p->data))->mui  = muiP;
         ((struct rlc_am_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_am_data_req_alloc);
-        free_mem_block(sdu_pP);
+        free_mem_block(sdu_pP, __func__);
         rlc_am_data_req(ctxt_pP, &rlc_union_p->rlc.am, new_sdu_p);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
         return RLC_OP_STATUS_OK;
@@ -524,9 +504,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
     case RLC_MODE_UM:
 
-      //proto_server_receive();
-
-      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc));
+      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc), __func__);
 
       if (new_sdu_p != NULL) {
         // PROCESS OF COMPRESSION HERE:
@@ -535,11 +513,11 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
         ((struct rlc_um_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
         ((struct rlc_um_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
-        free_mem_block(sdu_pP);
+        free_mem_block(sdu_pP, __func__);
 
         rlc_um_data_req(ctxt_pP, &rlc_union_p->rlc.um, new_sdu_p);
 
-        //free_mem_block(new_sdu);
+        //free_mem_block(new_sdu, __func__);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
         return RLC_OP_STATUS_OK;
       } else {
@@ -550,7 +528,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
       break;
 
     case RLC_MODE_TM:
-      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_tm_data_req_alloc));
+      new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_tm_data_req_alloc), __func__);
 
       if (new_sdu_p != NULL) {
         // PROCESS OF COMPRESSION HERE:
@@ -559,7 +537,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
         ((struct rlc_tm_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
         ((struct rlc_tm_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_tm_data_req_alloc);
-        free_mem_block(sdu_pP);
+        free_mem_block(sdu_pP, __func__);
         rlc_tm_data_req(ctxt_pP, &rlc_union_p->rlc.tm, new_sdu_p);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
         return RLC_OP_STATUS_OK;
@@ -572,19 +550,19 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
       break;
 
     default:
-      free_mem_block(sdu_pP);
+      free_mem_block(sdu_pP, __func__);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
       return RLC_OP_STATUS_INTERNAL_ERROR;
 
     }
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
   } else { /* MBMS_flag != 0 */
     //  LOG_I(RLC,"DUY rlc_data_req: mbms_rb_id in RLC instant is: %d\n", mbms_rb_id);
     if (sdu_pP != NULL) {
       if (sdu_sizeP > 0) {
         LOG_I(RLC,"received a packet with size %d for MBMS \n", sdu_sizeP);
-        new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc));
+        new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc), __func__);
 
         if (new_sdu_p != NULL) {
           // PROCESS OF COMPRESSION HERE:
@@ -592,10 +570,10 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
           memcpy (&new_sdu_p->data[sizeof (struct rlc_um_data_req_alloc)], &sdu_pP->data[0], sdu_sizeP);
           ((struct rlc_um_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
           ((struct rlc_um_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
-          free_mem_block(sdu_pP);
+          free_mem_block(sdu_pP, __func__);
           rlc_um_data_req(ctxt_pP, &rlc_union_p->rlc.um, new_sdu_p);
 
-          //free_mem_block(new_sdu);
+          //free_mem_block(new_sdu, __func__);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
           return RLC_OP_STATUS_OK;
         } else {
@@ -616,8 +594,8 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
   }
   else  /* MBMS_flag != 0 */
   {
-    free_mem_block(sdu_pP);
-    LOG_E(RLC, "MBMS_flag != 0 while Rel10 is not defined...\n");
+    free_mem_block(sdu_pP, __func__);
+    LOG_E(RLC, "MBMS_flag != 0 while Rel10/Rel14 is not defined...\n");
     //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
     return RLC_OP_STATUS_BAD_PARAMETER;
@@ -653,25 +631,25 @@ void rlc_data_ind     (
     T(T_ENB_RLC_UL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_sizeP));
 #endif
 
-//   if (!srb_flagP)
-//   {
+   if ((!srb_flagP)  && (ctxt_pP->enb_flag == 1))
+   {
     proto_agent_send_pdcp_data_ind(ctxt_pP,
-    srb_flagP,
-    MBMS_flagP,
-    rb_idP,
-    sdu_sizeP,
-    sdu_pP);
-//   }
-//   else
-//   {
-//     pdcp_data_ind (
-//     ctxt_pP,
-//     srb_flagP,
-//     MBMS_flagP,
-//     rb_idP,
-//     sdu_sizeP,
-//     sdu_pP);
-//   }
+     srb_flagP,
+     MBMS_flagP,
+     rb_idP,
+     sdu_sizeP,
+     sdu_pP);
+   }
+   else
+   {
+     pdcp_data_ind (
+     ctxt_pP,
+     srb_flagP,
+     MBMS_flagP,
+     rb_idP,
+     sdu_sizeP,
+     sdu_pP);
+   }
 }
 //-----------------------------------------------------------------------------
 void rlc_data_conf     (const protocol_ctxt_t* const ctxt_pP,
@@ -707,7 +685,7 @@ rlc_module_init (void)
   AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
 
   for (module_id1=0; module_id1 < NUMBER_OF_UE_MAX; module_id1++) {
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 
     for (k=0; k < RLC_MAX_MBMS_LC; k++) {
       rlc_mbms_lcid2service_session_id_ue[module_id1][k].service_id = 0;
@@ -722,7 +700,7 @@ rlc_module_init (void)
   }
 
   for (module_id1=0; module_id1 < NUMBER_OF_eNB_MAX; module_id1++) {
-#if defined(Rel10)
+#if defined(Rel10) || defined(Rel14)
 
     for (k=0; k < RLC_MAX_MBMS_LC; k++) {
       rlc_mbms_lcid2service_session_id_eNB[module_id1][k].service_id = 0;
@@ -741,8 +719,13 @@ rlc_module_init (void)
   /* Launch the RLC listening server
    * as a separate thread
    */
-  async_server_thread_init();
-
+  static int started = 0;
+  if (started == 0)
+  {
+    async_server_thread_init();
+    started = 1;
+  }
+  
 
   return(0);
 }

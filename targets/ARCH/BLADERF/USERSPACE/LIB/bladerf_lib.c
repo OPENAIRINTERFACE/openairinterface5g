@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface 
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-  
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /** bladerf_lib.c
  *
@@ -90,6 +82,48 @@ openair0_timestamp trx_get_timestamp(openair0_device *device, bladerf_module mod
  * \returns 0 on success
  */
 int trx_brf_start(openair0_device *device) {
+  brf_state_t *brf = (brf_state_t*)device->priv;
+  int status;
+
+  brf->meta_tx.flags = 0;
+
+  if ((status = bladerf_sync_config(brf->dev,
+          BLADERF_MODULE_TX,
+          BLADERF_FORMAT_SC16_Q11_META,
+          brf->num_buffers,
+          brf->buffer_size,
+          brf->num_transfers,
+          100/*brf->tx_timeout_ms*/)) != 0 ) {
+    fprintf(stderr,"Failed to configure TX sync interface: %s\n", bladerf_strerror(status));
+    abort();
+  }
+  if ((status = bladerf_sync_config(brf->dev,
+          BLADERF_MODULE_RX,
+          BLADERF_FORMAT_SC16_Q11_META,
+          brf->num_buffers,
+          brf->buffer_size,
+          brf->num_transfers,
+          100/*brf->rx_timeout_ms*/)) != 0 ) {
+    fprintf(stderr,"Failed to configure RX sync interface: %s\n", bladerf_strerror(status));
+    abort();
+  }
+  if ((status=bladerf_enable_module(brf->dev, BLADERF_MODULE_TX, true)) != 0) {
+    fprintf(stderr,"Failed to enable TX module: %s\n", bladerf_strerror(status));
+    abort();
+  }
+  if ((status=bladerf_enable_module(brf->dev, BLADERF_MODULE_RX, true)) != 0) {
+    fprintf(stderr,"Failed to enable RX module: %s\n", bladerf_strerror(status));
+    abort();
+  }
+
+  if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_TX)) != 0) {
+    fprintf(stderr,"Failed to calibrate TX DC: %s\n", bladerf_strerror(status));
+    abort();
+  }
+  if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_RX)) != 0) {
+    fprintf(stderr,"Failed to calibrate RX DC: %s\n", bladerf_strerror(status));
+    abort();
+  }
 
   return 0;
 }
@@ -141,7 +175,7 @@ static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, 
   brf->tx_count++;
   
 
-  return(0);
+  return nsamps; //brf->meta_tx.actual_count;
 }
 
 /*! \brief Receive samples from hardware.
@@ -163,6 +197,7 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
   // BRF has only one rx/tx chain
   int16_t *samples = (int16_t*)buff[0];
   
+  brf->meta_rx.actual_count = 0;
   brf->meta_rx.flags = BLADERF_META_FLAG_RX_NOW;
   status = bladerf_sync_rx(brf->dev, samples, (unsigned int) nsamps, &brf->meta_rx, 2*brf->rx_timeout_ms);
   
@@ -178,6 +213,10 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
 	   brf->num_overflows,brf->meta_rx.timestamp,  brf->meta_rx.actual_count, nsamps);
   } 
 
+  if (brf->meta_rx.actual_count != nsamps) {
+    printf("RX bad samples count, wanted %d, got %d\n", nsamps, brf->meta_rx.actual_count);
+  }
+
   //printf("Current RX timestampe  %u\n",  brf->meta_rx.timestamp);
   //printf("[BRF] (buff %p) ts=0x%"PRIu64" %s\n",samples, brf->meta_rx.timestamp,bladerf_strerror(status));
   brf->rx_current_ts=brf->meta_rx.timestamp;
@@ -188,7 +227,7 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
   
   *ptimestamp = brf->meta_rx.timestamp;
  
-  return brf->meta_rx.actual_count;
+  return nsamps; //brf->meta_rx.actual_count;
 
 }
 
@@ -196,6 +235,7 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
  * \param device the hardware to use
  */
 void trx_brf_end(openair0_device *device) {
+abort();
 
   int status;
   brf_state_t *brf = (brf_state_t*)device->priv;
@@ -233,7 +273,7 @@ int trx_brf_reset_stats(openair0_device* device) {
  * \param card the hardware to use
  * \returns 0 in success 
  */
-int trx_brf_stop(int card) {
+int trx_brf_stop(openair0_device* device) {
 
   return(0);
 
@@ -902,8 +942,8 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   brf_state_t *brf = (brf_state_t*)malloc(sizeof(brf_state_t));
   memset(brf, 0, sizeof(brf_state_t));
   /* device specific */
-  openair0_cfg->txlaunch_wait = 1;//manage when TX processing is triggered
-  openair0_cfg->txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+  //openair0_cfg->txlaunch_wait = 1;//manage when TX processing is triggered
+  //openair0_cfg->txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
   openair0_cfg->iq_txshift = 0;// shift
   openair0_cfg->iq_rxrescale = 15;//rescale iqs
   
@@ -912,22 +952,18 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   case 30720000:
     openair0_cfg->samples_per_packet    = 2048;
     openair0_cfg->tx_sample_advance     = 0;
-    openair0_cfg->tx_scheduling_advance = 8*openair0_cfg->samples_per_packet;
     break;
   case 15360000:
     openair0_cfg->samples_per_packet    = 2048;
     openair0_cfg->tx_sample_advance     = 0;
-    openair0_cfg->tx_scheduling_advance = 4*openair0_cfg->samples_per_packet;
     break;
   case 7680000:
     openair0_cfg->samples_per_packet    = 1024;
     openair0_cfg->tx_sample_advance     = 0;
-    openair0_cfg->tx_scheduling_advance = 4*openair0_cfg->samples_per_packet;
     break;
   case 1920000:
     openair0_cfg->samples_per_packet    = 256;
     openair0_cfg->tx_sample_advance     = 50;
-    openair0_cfg->tx_scheduling_advance = 8*openair0_cfg->samples_per_packet;
     break;
   default:
     printf("Error: unknown sampling rate %f\n",openair0_cfg->sample_rate);
@@ -1092,6 +1128,15 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   calibrate_rf(device);
 
   //  memcpy((void*)&device->openair0_cfg,(void*)&openair0_cfg[0],sizeof(openair0_config_t));
+
+  if ((status=bladerf_enable_module(brf->dev, BLADERF_MODULE_TX, false)) != 0) {
+    fprintf(stderr,"Failed to enable TX module: %s\n", bladerf_strerror(status));
+    abort();
+  }
+  if ((status=bladerf_enable_module(brf->dev, BLADERF_MODULE_RX, false)) != 0) {
+    fprintf(stderr,"Failed to enable RX module: %s\n", bladerf_strerror(status));
+    abort();
+  }
 
   return 0;
 }

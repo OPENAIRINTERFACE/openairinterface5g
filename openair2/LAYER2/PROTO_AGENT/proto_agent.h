@@ -38,18 +38,25 @@
 #ifndef PROTO_AGENT_H_
 #define PROTO_AGENT_H_
 #include "proto_agent_common.h"
-//#include "ENB_APP/enb_config.h" // for enb properties
+#include "ENB_APP/enb_config.h" // for enb properties
 
 
 void * proto_server_init(void *args);
 void * proto_server_receive(void);
-void * proto_client_receive(void);
+void * proto_client_receive(void *args);
 
-int proto_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
-int proto_server_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
+int proto_agent_start(uint8_t enb_id, mid_t mod_id, uint8_t type_id, cudu_params_t *cudu);
+int proto_server_start(mid_t mod_id, const cudu_params_t* cudu);
 
 int proto_agent_stop(mid_t mod_id);
 
 void *proto_agent_task(void *args);
+
+uint8_t select_du(uint8_t max_dus);
+typedef struct 
+{
+  mid_t mod_id;
+  uint8_t type_id;
+}proto_recv_t;
 
 #endif

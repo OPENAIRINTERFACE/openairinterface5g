@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file device.c
 * \brief Networking Device Driver for OpenAirInterface MESH
@@ -35,13 +27,6 @@
 
 */
 /*******************************************************************************/
-
-#ifndef PDCP_USE_NETLINK
-#ifdef RTAI
-#include "rtai_posix.h"
-#define RTAI_IRQ 30 //try to get this irq with RTAI
-#endif // RTAI
-#endif // PDCP_USE_NETLINK
 
 #include "constant.h"
 #include "local.h"
@@ -124,6 +109,7 @@ void *nas_interrupt(void)
   printk("INTERRUPT: end\n");
 #endif
   //  return 0;
+  return NULL;
 }
 #endif //NETLINK
 
@@ -132,11 +118,8 @@ void *nas_interrupt(void)
 int nas_open(struct net_device *dev)
 {
   //---------------------------------------------------------------------------
-  struct nas_priv *priv=netdev_priv(dev);
-
   printk("OPEN: begin\n");
   //  MOD_INC_USE_COUNT;
-
   // Address has already been set at init
 #ifndef PDCP_USE_NETLINK
 
@@ -258,7 +241,11 @@ int nas_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
     // End debug information
     netif_stop_queue(dev);
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+    netif_trans_update(dev);
+#else
     dev->trans_start = jiffies;
+#endif
 #ifdef DEBUG_DEVICE
     printk("HARD_START_XMIT: step 1\n");
 #endif
@@ -319,7 +306,11 @@ void nas_tx_timeout(struct net_device *dev)
   printk("TX_TIMEOUT: begin\n");
   //  (struct nas_priv *)(dev->priv)->stats.tx_errors++;
   (priv->stats).tx_errors++;
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev);
+#else
   dev->trans_start = jiffies;
+#endif
   netif_wake_queue(dev);
   printk("TX_TIMEOUT: transmit timed out %s\n",dev->name);
 }
@@ -414,8 +405,8 @@ void nas_init(struct net_device *dev)
     nas_TOOL_imei2iid(IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
     nas_TOOL_imei2iid(IMEI, (uint8_t *)priv->cx[0].iid6);
 #else
-    nas_TOOL_imei2iid(nas_IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
-    nas_TOOL_imei2iid(nas_IMEI, (uint8_t *)priv->cx[0].iid6);
+    nas_TOOL_imei2iid((uint8_t *)nas_IMEI, dev->dev_addr); // IMEI to device address (for stateless autoconfiguration address)
+    nas_TOOL_imei2iid((uint8_t *)nas_IMEI, (uint8_t *)priv->cx[0].iid6);
 #endif
     // this is more appropriate for user space soft realtime emulation
 #else
@@ -452,22 +443,11 @@ int init_module (void)
 
 #ifndef PDCP_USE_NETLINK
 
-#ifdef RTAI //with RTAI you have to indicate which irq# you want
-
-  pdcp_2_nas_irq=rt_request_srq(0, nas_interrupt, NULL);
-
-#endif
-
   if (pdcp_2_nas_irq == -EBUSY || pdcp_2_nas_irq == -EINVAL) {
     printk("[NAS][INIT] No interrupt resource available\n");
     return -EBUSY;
   } else
     printk("[NAS][INIT]: Interrupt %d\n", pdcp_2_nas_irq);
-
-  //rt_startup_irq(RTAI_IRQ);
-
-  //rt_enable_irq(RTAI_IRQ);
-
 
 #endif //NETLINK
 
@@ -486,8 +466,8 @@ int init_module (void)
     if (nasdev[inst]) {
       nas_mesh_init(inst);
       //memcpy(nasdev[inst]->dev_addr,&nas_IMEI[0],8);
-      nas_TOOL_imei2iid(nas_IMEI, nasdev[inst]->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
-      nas_TOOL_imei2iid(nas_IMEI, (uint8_t *)priv->cx[0].iid6);
+      nas_TOOL_imei2iid((uint8_t *)nas_IMEI, nasdev[inst]->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
+      nas_TOOL_imei2iid((uint8_t *)nas_IMEI, (uint8_t *)priv->cx[0].iid6);
       // TO HAVE DIFFERENT HW @
       ((unsigned char*)nasdev[inst]->dev_addr)[7] = ((unsigned char*)nasdev[inst]->dev_addr)[7] + (unsigned char)inst + 1;
       printk("Setting HW addr for INST %d to : %X%X\n",inst,*((unsigned int *)&nasdev[inst]->dev_addr[0]),*((unsigned int *)&nasdev[inst]->dev_addr[4]));
@@ -532,12 +512,6 @@ void cleanup_module(void)
 
   if (pdcp_2_nas_irq!=-EBUSY) {
     pdcp_2_nas_irq=0;
-#ifdef RTAI
-    // V1
-    //    rt_free_linux_irq(priv->irq, NULL);
-    // END V1
-    rt_free_srq(pdcp_2_nas_irq);
-#endif
     // Start IRQ linux
     //    free_irq(priv->irq, NULL);
     // End IRQ linux

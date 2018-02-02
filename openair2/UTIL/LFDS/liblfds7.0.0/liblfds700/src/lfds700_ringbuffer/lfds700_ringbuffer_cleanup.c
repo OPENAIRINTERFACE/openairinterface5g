@@ -31,8 +31,6 @@ void lfds700_ringbuffer_cleanup( struct lfds700_ringbuffer_state *rs,
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
-
 static void lfds700_ringbuffer_internal_queue_element_cleanup_callback( struct lfds700_queue_state *qs, struct lfds700_queue_element *qe, enum lfds700_misc_flag dummy_element_flag )
 {
   struct lfds700_ringbuffer_element
@@ -54,14 +52,11 @@ static void lfds700_ringbuffer_internal_queue_element_cleanup_callback( struct l
   return;
 }
 
-#pragma warning( default : 4100 )
-
-
-
+//#pragma warning( default : 4100 )
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
+//#pragma warning( disable : 4100 )
 
 static void lfds700_ringbuffer_internal_freelist_element_cleanup_callback( struct lfds700_freelist_state *fs, struct lfds700_freelist_element *fe )
 {
@@ -82,5 +77,5 @@ static void lfds700_ringbuffer_internal_freelist_element_cleanup_callback( struc
   return;
 }
 
-#pragma warning( default : 4100 )
+//#pragma warning( default : 4100 )
 

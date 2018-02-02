@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*
                                 enb_app.c
@@ -41,12 +33,9 @@
 #include "enb_app.h"
 #include "enb_config.h"
 #include "assertions.h"
+#include "common/ran_context.h"
 
 #include "log.h"
-#if defined(OAI_EMU)
-# include "OCG.h"
-# include "OCG_extern.h"
-#endif
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
@@ -58,8 +47,14 @@
 # endif
 
 
+#if defined(FLEXRAN_AGENT_SB_IF)
+#   include "flexran_agent.h"
+#endif
+
 extern unsigned char NB_eNB_INST;
 #endif
+
+extern RAN_CONTEXT_t RC;
 
 #if defined(ENABLE_ITTI)
 
@@ -73,6 +68,8 @@ extern unsigned char NB_eNB_INST;
 # endif
 
 /*------------------------------------------------------------------------------*/
+
+/*
 static void configure_phy(module_id_t enb_id, const Enb_properties_array_t* enb_properties)
 {
   MessageDef *msg_p;
@@ -93,15 +90,20 @@ static void configure_phy(module_id_t enb_id, const Enb_properties_array_t* enb_
 
   itti_send_msg_to_task (TASK_PHY_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 }
+*/
 
 /*------------------------------------------------------------------------------*/
-static void configure_rrc(uint32_t enb_id, const Enb_properties_array_t *enb_properties)
+static void configure_rrc(uint32_t enb_id)
 {
   MessageDef *msg_p = NULL;
-  int CC_id;
+  //  int CC_id;
 
   msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
 
+  if (RC.rrc[enb_id]) {
+    RCconfig_RRC(msg_p,enb_id, RC.rrc[enb_id]);
+    
+  /*
   RRC_CONFIGURATION_REQ (msg_p).cell_identity =   enb_properties->properties[enb_id]->eNB_id;
   RRC_CONFIGURATION_REQ (msg_p).tac =             enb_properties->properties[enb_id]->tac;
   RRC_CONFIGURATION_REQ (msg_p).mcc =             enb_properties->properties[enb_id]->mcc;
@@ -160,7 +162,7 @@ static void configure_rrc(uint32_t enb_id, const Enb_properties_array_t *enb_pro
     RRC_CONFIGURATION_REQ (msg_p).pucch_delta_shift[CC_id]                        = enb_properties->properties[enb_id]->pucch_delta_shift[CC_id];
     RRC_CONFIGURATION_REQ (msg_p).pucch_nRB_CQI[CC_id]                            = enb_properties->properties[enb_id]->pucch_nRB_CQI[CC_id];
     RRC_CONFIGURATION_REQ (msg_p).pucch_nCS_AN[CC_id]                             = enb_properties->properties[enb_id]->pucch_nCS_AN[CC_id];
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
     RRC_CONFIGURATION_REQ (msg_p).pucch_n1_AN[CC_id]                              = enb_properties->properties[enb_id]->pucch_n1_AN[CC_id];
 #endif
 
@@ -192,40 +194,43 @@ static void configure_rrc(uint32_t enb_id, const Enb_properties_array_t *enb_pro
     RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_n310[CC_id];
     RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_t311[CC_id];
     RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_n311[CC_id];
-  }
 
-  itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+    RRC_CONFIGURATION_REQ (msg_p).ue_TransmissionMode[CC_id]                      = enb_properties->properties[enb_id]->ue_TransmissionMode[CC_id];
+
+  }
+  */
+
+    LOG_I(ENB_APP,"Sending configuration message to RRC task\n");
+    itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+
+  }
+  else AssertFatal(0,"RRC context for eNB %d not allocated\n",enb_id);
 }
 
 /*------------------------------------------------------------------------------*/
 # if defined(ENABLE_USE_MME)
-static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, const Enb_properties_array_t *enb_properties)
+static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, const Enb_properties_array_t *enb_properties)
 {
   uint32_t         enb_id;
-  uint32_t         mme_id;
   MessageDef      *msg_p;
   uint32_t         register_enb_pending = 0;
-  char            *str                  = NULL;
-  struct in_addr   addr;
-
-#   if defined(OAI_EMU)
-
-#   endif
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-#   if defined(OAI_EMU)
-
-    if (oai_emulation.info.cli_start_enb[enb_id] == 1)
-#   endif
     {
       s1ap_register_enb_req_t *s1ap_register_eNB;
 
       /* note:  there is an implicit relationship between the data structure and the message name */
       msg_p = itti_alloc_new_message (TASK_ENB_APP, S1AP_REGISTER_ENB_REQ);
 
-      s1ap_register_eNB = &S1AP_REGISTER_ENB_REQ(msg_p);
+      RCconfig_S1(msg_p, enb_id);
 
-      /* Some default/random parameters */
+      if (enb_id == 0) RCconfig_gtpu();
+
+      s1ap_register_eNB = &S1AP_REGISTER_ENB_REQ(msg_p);
+      LOG_I(ENB_APP,"default drx %d\n",s1ap_register_eNB->default_drx);
+
+      /*
+   
       s1ap_register_eNB->eNB_id           = enb_properties->properties[enb_id]->eNB_id;
       s1ap_register_eNB->cell_type        = enb_properties->properties[enb_id]->cell_type;
       s1ap_register_eNB->eNB_name         = enb_properties->properties[enb_id]->eNB_name;
@@ -236,6 +241,7 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, con
       s1ap_register_eNB->default_drx      = enb_properties->properties[enb_id]->pcch_defaultPagingCycle[0];
 
       s1ap_register_eNB->nb_mme =         enb_properties->properties[enb_id]->nb_mme;
+
       AssertFatal (s1ap_register_eNB->nb_mme <= S1AP_MAX_NB_MME_IP_ADDRESS, "Too many MME for eNB %d (%d/%d)!", enb_id, s1ap_register_eNB->nb_mme,
                    S1AP_MAX_NB_MME_IP_ADDRESS);
 
@@ -260,6 +266,9 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, con
       str = inet_ntoa(addr);
       strcpy(s1ap_register_eNB->enb_ip_address.ipv4_address, str);
 
+      */
+      LOG_I(ENB_APP,"[eNB %d] eNB_app_register for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
+
       itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 
       register_enb_pending++;
@@ -274,9 +283,8 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, con
 /*------------------------------------------------------------------------------*/
 void *eNB_app_task(void *args_p)
 {
-  const Enb_properties_array_t   *enb_properties_p  = NULL;
 #if defined(ENABLE_ITTI)
-  uint32_t                        enb_nb = 1; /* Default number of eNB is 1 */
+  uint32_t                        enb_nb = RC.nb_inst; 
   uint32_t                        enb_id_start = 0;
   uint32_t                        enb_id_end = enb_id_start + enb_nb;
 # if defined(ENABLE_USE_MME)
@@ -285,45 +293,55 @@ void *eNB_app_task(void *args_p)
   long                            enb_register_retry_timer_id;
 # endif
   uint32_t                        enb_id;
-  MessageDef                     *msg_p           = NULL;
-  const char                     *msg_name        = NULL;
+  MessageDef                      *msg_p           = NULL;
+  const char                      *msg_name        = NULL;
   instance_t                      instance;
   int                             result;
-
   /* for no gcc warnings */
   (void)instance;
 
   itti_mark_task_ready (TASK_ENB_APP);
 
-# if defined(ENABLE_USE_MME)
-#   if defined(OAI_EMU)
-  enb_nb =        oai_emulation.info.nb_enb_local;
-  enb_id_start =  oai_emulation.info.first_enb_local;
-  enb_id_end =    oai_emulation.info.first_enb_local + enb_nb;
+  LOG_I(PHY, "%s() Task ready initialise structures\n", __FUNCTION__);
 
-  AssertFatal (enb_id_end <= NUMBER_OF_eNB_MAX,
-               "Last eNB index is greater or equal to maximum eNB index (%d/%d)!",
-               enb_id_end, NUMBER_OF_eNB_MAX);
-#   endif
-# endif
+  RCconfig_L1();
 
-  enb_properties_p = enb_config_get();
+  RCconfig_macrlc();
 
-  AssertFatal (enb_nb <= enb_properties_p->number,
+  LOG_I(PHY, "%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_L1_inst);
+
+  if (RC.nb_L1_inst>0) AssertFatal(l1_north_init_eNB()==0,"could not initialize L1 north interface\n");
+
+  AssertFatal (enb_nb <= RC.nb_inst,
                "Number of eNB is greater than eNB defined in configuration file (%d/%d)!",
-               enb_nb, enb_properties_p->number);
+               enb_nb, RC.nb_inst);
+
+  LOG_I(ENB_APP,"Allocating eNB_RRC_INST for %d instances\n",RC.nb_inst);
+
+  RC.rrc = (eNB_RRC_INST **)malloc(RC.nb_inst*sizeof(eNB_RRC_INST *));
+  LOG_I(PHY, "%s() RC.nb_inst:%d RC.rrc:%p\n", __FUNCTION__, RC.nb_inst, RC.rrc);
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    configure_phy(enb_id, enb_properties_p);
-    configure_rrc(enb_id, enb_properties_p);
-    //proto_server_start(enb_id, enb_properties_p);
-    //proto_agent_start(enb_id, enb_properties_p);
+    RC.rrc[enb_id] = (eNB_RRC_INST*)malloc(sizeof(eNB_RRC_INST));
+    LOG_I(PHY, "%s() Creating RRC instance RC.rrc[%d]:%p (%d of %d)\n", __FUNCTION__, enb_id, RC.rrc[enb_id], enb_id+1, enb_id_end);
+    memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
+    configure_rrc(enb_id);
   }
+  
+#if defined (FLEXRAN_AGENT_SB_IF)
+  
+  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
+    printf("\n start enb agent %d\n", enb_id);
+    flexran_agent_start(enb_id, enb_properties_p);
+  }
+#endif 
+  
+
 
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */
   registered_enb = 0;
-  register_enb_pending = eNB_app_register (enb_id_start, enb_id_end, enb_properties_p);
+  register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
 # else
   /* Start L2L1 task */
   msg_p = itti_alloc_new_message(TASK_ENB_APP, INITIALIZE_MESSAGE);
@@ -369,16 +387,6 @@ void *eNB_app_task(void *args_p)
           msg_init_p = itti_alloc_new_message (TASK_ENB_APP, INITIALIZE_MESSAGE);
           itti_send_msg_to_task (TASK_L2L1, INSTANCE_DEFAULT, msg_init_p);
 
-#   if defined(OAI_EMU)
-
-          /* Also inform all NAS UE tasks */
-          for (instance = NB_eNB_INST + oai_emulation.info.first_ue_local;
-               instance < (NB_eNB_INST + oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); instance ++) {
-            msg_init_p = itti_alloc_new_message (TASK_ENB_APP, INITIALIZE_MESSAGE);
-            itti_send_msg_to_task (TASK_NAS_UE, instance, msg_init_p);
-          }
-
-#   endif
         } else {
           uint32_t not_associated = enb_nb - registered_enb;
 
@@ -393,7 +401,7 @@ void *eNB_app_task(void *args_p)
             sleep(ENB_REGISTER_RETRY_DELAY);
             /* Restart the registration process */
             registered_enb = 0;
-            register_enb_pending = eNB_app_register (enb_id_start, enb_id_end, enb_properties_p);
+            register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
           }
         }
       }
@@ -408,12 +416,12 @@ void *eNB_app_task(void *args_p)
       break;
 
     case TIMER_HAS_EXPIRED:
-      LOG_I(ENB_APP, " Received %s: timer_id %d\n", msg_name, TIMER_HAS_EXPIRED(msg_p).timer_id);
+      LOG_I(ENB_APP, " Received %s: timer_id %ld\n", msg_name, TIMER_HAS_EXPIRED(msg_p).timer_id);
 
       if (TIMER_HAS_EXPIRED (msg_p).timer_id == enb_register_retry_timer_id) {
         /* Restart the registration process */
         registered_enb = 0;
-        register_enb_pending = eNB_app_register (enb_id_start, enb_id_end, enb_properties_p);
+        register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
       }
 
       break;
@@ -430,8 +438,6 @@ void *eNB_app_task(void *args_p)
 
 #endif
 
-  /* for no gcc warnings */
-  (void)enb_properties_p;
 
   return NULL;
 }

@@ -1,61 +1,50 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file pdcp_fifo.c
  * \brief pdcp interface with linux IP interface, have a look at http://man7.org/linux/man-pages/man7/netlink.7.html for netlink
- * \author  Lionel GAUTHIER and Navid Nikaein
- * \date 2009
+ * \author  Navid Nikaein and Lionel GAUTHIER
+ * \date 2009 - 2016
  * \version 0.5
+ * \email navid.nikaein@eurecom.fr
  * \warning This component can be runned only in user-space
  * @ingroup pdcp
  */
 
 #define PDCP_FIFO_C
 #define PDCP_DEBUG 1
+//#define DEBUG_PDCP_FIFO_FLUSH_SDU
 
-#ifndef OAI_EMU
 extern int otg_enabled;
-#endif
 
 #include "pdcp.h"
 #include "pdcp_primitives.h"
 
-#ifdef USER_MODE
+#include <pthread.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #define rtf_put write
 #define rtf_get read
-#else
-#include <rtai_fifos.h>
-#endif //USER_MODE
 
 #include "../MAC/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -66,6 +55,7 @@ extern int otg_enabled;
 #include "UTIL/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/FIFO/pad_list.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 #include "platform_constants.h"
 #include "msc.h"
 
@@ -74,6 +64,7 @@ extern int otg_enabled;
 #ifdef PDCP_USE_NETLINK
 #include <sys/socket.h>
 #include <linux/netlink.h>
+#include "NETWORK_DRIVER/UE_IP/constant.h"
 
 extern char nl_rx_buf[NL_MAX_PAYLOAD];
 extern struct sockaddr_nl nas_src_addr, nas_dest_addr;
@@ -92,6 +83,24 @@ extern Packet_OTG_List_t *otg_pdcp_buffer;
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
 #  include "gtpv1u_eNB_task.h"
+#  include "gtpv1u_eNB_defs.h"
+#endif
+
+extern int gtpv1u_new_data_req( uint8_t  enb_module_idP, rnti_t   ue_rntiP, uint8_t  rab_idP, uint8_t *buffer_pP, uint32_t buf_lenP, uint32_t buf_offsetP);
+
+/* Prevent de-queueing the same PDCP SDU from the queue twice
+ * by multiple threads. This has happened in TDD when thread-odd
+ * is flushing a PDCP SDU after UE_RX() processing; whereas
+ * thread-even is at a special-subframe, skips the UE_RX() process
+ * and goes straight to the PDCP SDU flushing. The 2nd flushing
+ * dequeues the same SDU again causing unexpected behavior.
+ *
+ * comment out the MACRO below to disable this protection
+ */
+#define PDCP_SDU_FLUSH_LOCK
+
+#ifdef PDCP_SDU_FLUSH_LOCK
+static pthread_mutex_t mtex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 pdcp_data_req_header_t pdcp_read_header_g;
@@ -101,6 +110,42 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 {
   //-----------------------------------------------------------------------------
 
+//#if defined(PDCP_USE_NETLINK) && defined(LINUX)
+  int ret = 0;
+//#endif
+
+#ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
+#define THREAD_NAME_LEN 16
+  static char threadname[THREAD_NAME_LEN];
+  ret = pthread_getname_np(pthread_self(), threadname, THREAD_NAME_LEN);
+  if (ret != 0)
+  {
+   perror("pthread_getname_np : ");
+   exit_fun("Error getting thread name");
+  }
+#undef THREAD_NAME_LEN
+#endif
+
+#ifdef PDCP_SDU_FLUSH_LOCK
+  ret = pthread_mutex_trylock(&mtex);
+  if (ret == EBUSY) {
+#ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
+    LOG_W(PDCP, "[%s] at SFN/SF=%d/%d wait for PDCP FIFO to be unlocked\n",
+        threadname, ctxt_pP->frame, ctxt_pP->subframe);
+#endif
+    if (pthread_mutex_lock(&mtex)) {
+      exit_fun("PDCP_SDU_FLUSH_LOCK lock error!");
+    }
+#ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
+    LOG_I(PDCP, "[%s] at SFN/SF=%d/%d PDCP FIFO is unlocked\n",
+        threadname, ctxt_pP->frame, ctxt_pP->subframe);
+#endif
+  } else if (ret != 0) {
+    exit_fun("PDCP_SDU_FLUSH_LOCK trylock error!");
+  }
+
+#endif
+
   mem_block_t     *sdu_p            = list_get_head (&pdcp_sdu_list);
   int              bytes_wrote      = 0;
   int              pdcp_nb_sdu_sent = 0;
@@ -109,14 +154,14 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
   //MessageDef      *message_p        = NULL;
 #endif
 
-#if defined(PDCP_USE_NETLINK) && defined(LINUX)
-  int ret = 0;
-#endif
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH, 1 );
   while (sdu_p && cont) {
 
-#if ! defined(OAI_EMU)
-    ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+#ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
+    LOG_D(PDCP, "[%s] SFN/SF=%d/%d inst=%d size=%d\n",
+        threadname, ctxt_pP->frame, ctxt_pP->subframe,
+        ((pdcp_data_ind_header_t*) sdu_p->data)->inst,
+        ((pdcp_data_ind_header_t *) sdu_p->data)->data_size);
 #endif
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
@@ -125,14 +170,15 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
       AssertFatal(0, "Now execution should not go here");
       LOG_D(PDCP,"Sending to GTPV1U %d bytes\n", ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
       gtpv1u_new_data_req(
-        ctxt_pP->module_id, //gtpv1u_data_t *gtpv1u_data_p,
-        ctxt_pP->rnti,//rb_id/maxDRB, TO DO UE ID
-        ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id + 4,
-        &(((uint8_t *) sdu_p->data)[sizeof (pdcp_data_ind_header_t)]),
-        ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
+			  ctxt_pP->module_id, //gtpv1u_data_t *gtpv1u_data_p,
+			  ctxt_pP->rnti,//rb_id/maxDRB, TO DO UE ID
+			  ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id + 4,
+			  &(((uint8_t *) sdu_p->data)[sizeof (pdcp_data_ind_header_t)]),
+			  ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size,
+			  0);
 
       list_remove_head (&pdcp_sdu_list);
-      free_mem_block (sdu_p);
+      free_mem_block (sdu_p, __func__);
       cont = 1;
       pdcp_nb_sdu_sent += 1;
       sdu_p = list_get_head (&pdcp_sdu_list);
@@ -181,6 +227,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 
         if (!pdcp_output_header_bytes_to_write) { // continue with sdu
           pdcp_output_sdu_bytes_to_write = ((pdcp_data_ind_header_t *) sdu_p->data)->data_size;
+          AssertFatal(pdcp_output_sdu_bytes_to_write >= 0, "invalid data_size!");
 
 #ifdef PDCP_USE_RT_FIFO
           bytes_wrote = rtf_put (PDCP2PDCP_USE_RT_FIFO, &(sdu->data[sizeof (pdcp_data_ind_header_t)]), pdcp_output_sdu_bytes_to_write);
@@ -190,10 +237,14 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 #ifdef LINUX
           memcpy(NLMSG_DATA(nas_nlh_tx)+sizeof(pdcp_data_ind_header_t), &(sdu_p->data[sizeof (pdcp_data_ind_header_t)]), pdcp_output_sdu_bytes_to_write);
           nas_nlh_tx->nlmsg_len += pdcp_output_sdu_bytes_to_write;
+          VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE_PDCP_FLUSH_SIZE, pdcp_output_sdu_bytes_to_write);
+          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH_BUFFER, 1 );
           ret = sendmsg(nas_sock_fd,&nas_msg_tx,0);
+          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH_BUFFER, 0 );
+          VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE_PDCP_FLUSH_ERR, ret );
 
           if (ret<0) {
-            LOG_D(PDCP, "[PDCP_FIFOS] sendmsg returns %d (errno: %d)\n", ret, errno);
+            LOG_E(PDCP, "[PDCP_FIFOS] sendmsg returns %d (errno: %d)\n", ret, errno);
       	    MSC_LOG_TX_MESSAGE_FAILED(
       	      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
       	      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
@@ -203,7 +254,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
       	      MSC_AS_TIME_ARGS(ctxt_pP),
       	      ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id,
       	      ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
-           mac_xface->macphy_exit("sendmsg failed for nas_sock_fd\n");
+	    AssertFatal(1==0,"sendmsg failed for nas_sock_fd\n");
             break;
           } else {
         	  MSC_LOG_TX_MESSAGE(
@@ -244,17 +295,22 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
                     ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id);
 
               list_remove_head (&pdcp_sdu_list);
-              free_mem_block (sdu_p);
+              free_mem_block (sdu_p, __func__);
               cont = 1;
               pdcp_nb_sdu_sent += 1;
               sdu_p = list_get_head (&pdcp_sdu_list);
+            } else {
+              LOG_D(PDCP, "1 skip free_mem_block: pdcp_output_sdu_bytes_to_write = %d\n", pdcp_output_sdu_bytes_to_write);
+              AssertFatal(pdcp_output_sdu_bytes_to_write > 0, "pdcp_output_sdu_bytes_to_write cannot be negative!");
             }
           } else {
-            LOG_W(PDCP, "RADIO->IP SEND SDU CONGESTION!\n");
+            LOG_W(PDCP, "2: RADIO->IP SEND SDU CONGESTION!\n");
           }
         } else {
-          LOG_W(PDCP, "RADIO->IP SEND SDU CONGESTION!\n");
+          LOG_W(PDCP, "3: RADIO->IP SEND SDU CONGESTION!\n");
         }
+      } else {
+        LOG_D(PDCP, "4 skip free_mem_block: bytes_wrote = %d\n", bytes_wrote);
       }
     } else {
       // continue writing sdu
@@ -272,15 +328,20 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
         if (!pdcp_output_sdu_bytes_to_write) {     // OK finish with this SDU
           //PRINT_RB_SEND_OUTPUT_SDU ("[PDCP] RADIO->IP SEND SDU\n");
           list_remove_head (&pdcp_sdu_list);
-          free_mem_block (sdu_p);
+          free_mem_block (sdu_p, __func__);
           cont = 1;
           pdcp_nb_sdu_sent += 1;
           sdu_p = list_get_head (&pdcp_sdu_list);
           // LOG_D(PDCP, "rb sent a sdu from rab\n");
+        } else {
+          LOG_D(PDCP, "5 skip free_mem_block: pdcp_output_sdu_bytes_to_write = %d\n", pdcp_output_sdu_bytes_to_write);
         }
+      } else {
+        LOG_D(PDCP, "6 skip free_mem_block: bytes_wrote = %d\n", bytes_wrote);
       }
     }
   }
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH, 0 );
 
 #ifdef PDCP_USE_RT_FIFO
 
@@ -300,6 +361,10 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
   }
 
 #endif  //PDCP_USE_RT_FIFO
+
+#ifdef PDCP_SDU_FLUSH_LOCK
+  if (pthread_mutex_unlock(&mtex)) exit_fun("PDCP_SDU_FLUSH_LOCK unlock error!");
+#endif
 
   return pdcp_nb_sdu_sent;
 }
@@ -359,7 +424,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
       if ((data_p->pdcp_read_header.traffic_type == TRAFFIC_IPV6_TYPE_MULTICAST) /*TRAFFIC_IPV6_TYPE_MULTICAST */ ||
           (data_p->pdcp_read_header.traffic_type == TRAFFIC_IPV4_TYPE_MULTICAST) /*TRAFFIC_IPV4_TYPE_MULTICAST */ ||
           (data_p->pdcp_read_header.traffic_type == TRAFFIC_IPV4_TYPE_BROADCAST) /*TRAFFIC_IPV4_TYPE_BROADCAST */ ) {
-#if defined (Rel10)
+#if defined(Rel10) || defined(Rel14)
           PDCP_TRANSMISSION_MODE_TRANSPARENT;
 #else
           pdcp_mode= PDCP_TRANSMISSION_MODE_DATA;
@@ -430,18 +495,25 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
   return 0;
 # else /* PDCP_USE_NETLINK_QUEUES*/
   int              len = 1;
+  int  msg_len;
   rb_id_t          rab_id  = 0;
-
-  while (len > 0) {
+  int rlc_data_req_flag = 3;
+ 
+  while ((len > 0) && (rlc_data_req_flag !=0))  {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 1 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 1 );
     len = recvmsg(nas_sock_fd, &nas_msg_rx, 0);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 0 );
 
     if (len<=0) {
       // nothing in pdcp NAS socket
       //LOG_D(PDCP, "[PDCP][NETLINK] Nothing in socket, length %d \n", len);
     } else {
+    
+      msg_len = len;
       for (nas_nlh_rx = (struct nlmsghdr *) nl_rx_buf;
-           NLMSG_OK (nas_nlh_rx, len);
-           nas_nlh_rx = NLMSG_NEXT (nas_nlh_rx, len)) {
+           NLMSG_OK (nas_nlh_rx, msg_len);
+           nas_nlh_rx = NLMSG_NEXT (nas_nlh_rx, msg_len)) {
 
         if (nas_nlh_rx->nlmsg_type == NLMSG_DONE) {
           LOG_D(PDCP, "[PDCP][NETLINK] RX NLMSG_DONE\n");
@@ -466,50 +538,29 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
           pdcp_read_state_g = 0;
           // print_active_requests()
 #ifdef PDCP_DEBUG
-          LOG_D(PDCP, "[PDCP][NETLINK] Something in socket, length %d \n",
+          LOG_D(PDCP, "[PDCP][NETLINK] Something in socket, length %zu\n",
                 nas_nlh_rx->nlmsg_len - sizeof(struct nlmsghdr));
 #endif
 
-#ifdef OAI_EMU
-
-          // overwrite function input parameters, because only one netlink socket for all instances
-          if (pdcp_read_header_g.inst < oai_emulation.info.nb_enb_local) {
-            ctxt.frame         = ctxt_cpy.frame;
-            ctxt.enb_flag      = ENB_FLAG_YES;
-            ctxt.module_id     = pdcp_read_header_g.inst  +  oai_emulation.info.first_enb_local;
-            ctxt.rnti          = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id ][pdcp_read_header_g.rb_id / maxDRB + oai_emulation.info.first_ue_local];
-            rab_id    = pdcp_read_header_g.rb_id % maxDRB;
-          } else {
-            ctxt.frame         = ctxt_cpy.frame;
-            ctxt.enb_flag      = ENB_FLAG_NO;
-            ctxt.module_id     = pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local + oai_emulation.info.first_ue_local;
-            ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
-            rab_id    = pdcp_read_header_g.rb_id  % maxDRB;
-          }
-
-          CHECK_CTXT_ARGS(&ctxt);
-          AssertFatal (rab_id    < maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, maxDRB);
-          /*LGpdcp_read_header.inst = (pdcp_read_header_g.inst >= oai_emulation.info.nb_enb_local) ? \
-                  pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local+ NB_eNB_INST + oai_emulation.info.first_ue_local :
-                  pdcp_read_header_g.inst +  oai_emulation.info.first_enb_local;*/
-#else // OAI_EMU
-          pdcp_read_header_g.inst = 0;
+          /* TODO: do we have to reset to 0 or not? not for a scenario with 1 UE at least */
+//          pdcp_read_header_g.inst = 0;
 //#warning "TO DO CORRCT VALUES FOR ue mod id, enb mod id"
           ctxt.frame         = ctxt_cpy.frame;
           ctxt.enb_flag      = ctxt_cpy.enb_flag;
 
+#ifdef PDCP_DEBUG
+          LOG_D(PDCP, "[PDCP][NETLINK] pdcp_read_header_g.rb_id = %d\n", pdcp_read_header_g.rb_id);
+#endif
+
           if (ctxt_cpy.enb_flag) {
             ctxt.module_id = 0;
             rab_id      = pdcp_read_header_g.rb_id % maxDRB;
-            ctxt.rnti          = pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index];
+            ctxt.rnti          = pdcp_eNB_UE_instance_to_rnti[pdcp_read_header_g.rb_id / maxDRB];
           } else {
             ctxt.module_id = 0;
             rab_id      = pdcp_read_header_g.rb_id % maxDRB;
             ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
           }
-
-
-#endif
 
           if (ctxt.enb_flag) {
             if (rab_id != 0) {
@@ -519,7 +570,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
               if (h_rc == HASH_TABLE_OK) {
 #ifdef PDCP_DEBUG
-                LOG_D(PDCP, "[FRAME %5u][eNB][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
+                LOG_D(PDCP, "[FRAME %5u][eNB][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %zu) on Rab %d \n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       len,
@@ -593,13 +644,23 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
             }
           } else { // enb_flag
             if (rab_id != 0) {
-              rab_id = rab_id % maxDRB;
-              key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
-              h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
+              if (rab_id == UE_IP_DEFAULT_RAB_ID) {
+                LOG_D(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
+                    ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
+                key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
+                h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
+              } else {
+                rab_id = rab_id % maxDRB;
+                LOG_D(PDCP, "PDCP_COLL_KEY_VALUE(module_id=%d, rnti=%x, enb_flag=%d, rab_id=%d, SRB_FLAG=%d)\n",
+                    ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
+                key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
+                h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
+              }
 
               if (h_rc == HASH_TABLE_OK) {
+                rab_id = pdcp_p->rb_id;
 #ifdef PDCP_DEBUG
-                LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %d) on Rab %d \n",
+                LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d (nlmsg_len = %zu) on Rab %d \n",
                       ctxt.frame,
                       pdcp_read_header_g.inst,
                       len,
@@ -695,6 +756,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
         }
       }
     }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 0 );
   }
 
   return len;
@@ -711,121 +773,8 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
   module_id_t          dst_id; // dst for otg
   rb_id_t              rb_id;
   unsigned int         pkt_size=0;
-#if defined(USER_MODE) && defined(OAI_EMU)
-  module_id_t          src_id;
-  static unsigned int  pkt_cnt_enb=0, pkt_cnt_ue=0;
-
-  Packet_otg_elt_t    *otg_pkt_info=NULL;
-  int                  result;
-  uint8_t              pdcp_mode, is_ue=0;
-#endif
   protocol_ctxt_t      ctxt;
   // we need to add conditions to avoid transmitting data when the UE is not RRC connected.
-#if defined(USER_MODE) && defined(OAI_EMU)
-
-  if (oai_emulation.info.otg_enabled ==1 ) {
-    // module_id is source id
-    while ((otg_pkt_info = pkt_list_remove_head(&(otg_pdcp_buffer[ctxt_pP->instance]))) != NULL) {
-      LOG_I(OTG,"Mod_id %d Frame %d Got a packet (%p), HEAD of otg_pdcp_buffer[%d] is %p and Nb elements is %d\n",
-            ctxt_pP->module_id,
-            ctxt_pP->frame,
-            otg_pkt_info,
-            ctxt_pP->instance,
-            pkt_list_get_head(&(otg_pdcp_buffer[ctxt_pP->instance])),
-            otg_pdcp_buffer[ctxt_pP->instance].nb_elements);
-      //otg_pkt_info = pkt_list_remove_head(&(otg_pdcp_buffer[module_id]));
-      dst_id    = (otg_pkt_info->otg_pkt).dst_id; // type is module_id_t
-      src_id    = (otg_pkt_info->otg_pkt).module_id; // type is module_id_t
-      rb_id     = (otg_pkt_info->otg_pkt).rb_id;
-      is_ue     = (otg_pkt_info->otg_pkt).is_ue;
-      pdcp_mode = (otg_pkt_info->otg_pkt).mode;
-      //    LOG_I(PDCP,"pdcp_fifo, pdcp mode is= %d\n",pdcp_mode);
-
-      // generate traffic if the ue is rrc reconfigured state
-      // if (mac_get_rrc_status(module_id, ctxt_pP->enb_flag, dst_id ) > 2 /*RRC_CONNECTED*/) { // not needed: this test is already done in update_otg_enb
-      otg_pkt = (unsigned char*) (otg_pkt_info->otg_pkt).sdu_buffer;
-      pkt_size = (otg_pkt_info->otg_pkt).sdu_buffer_size;
-
-      if (otg_pkt != NULL) {
-        if (is_ue == 0 ) {
-          PROTOCOL_CTXT_SET_BY_MODULE_ID(
-            &ctxt,
-            src_id,
-            ENB_FLAG_YES,
-            oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id][dst_id],
-            ctxt_pP->frame,
-            ctxt_pP->subframe,
-	    src_id);
-
-          LOG_D(OTG,"[eNB %d] Frame %d sending packet %d from module %d on rab id %d (src %d, dst %d/%x) pkt size %d for pdcp mode %d\n",
-                ctxt.module_id,
-                ctxt.frame,
-                pkt_cnt_enb++,
-                src_id,
-                rb_id,
-                src_id,
-                dst_id,
-		oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id][dst_id],
-                pkt_size,
-                pdcp_mode);
-          result = pdcp_data_req(&ctxt,
-                                 SRB_FLAG_NO,
-                                 rb_id,
-                                 RLC_MUI_UNDEFINED,
-                                 RLC_SDU_CONFIRM_NO,
-                                 pkt_size,
-                                 otg_pkt,
-                                 pdcp_mode);
-          if (result != TRUE) {
-            LOG_W(OTG,"PDCP data request failed!\n");
-          }
-        } else {
-          //rb_id= eNB_index * MAX_NUM_RB + DTCH;
-
-
-          LOG_D(OTG,"[UE %d] Frame %d: sending packet %d from module %d on rab id %d (src %d/%x, dst %d) pkt size %d\n",
-                ctxt_pP->module_id,
-                ctxt_pP->frame,
-                pkt_cnt_ue++,
-                ctxt_pP->module_id,
-                rb_id,
-                src_id,
-		pdcp_UE_UE_module_id_to_rnti[ctxt_pP->module_id], // [src_id]
-                dst_id,
-                pkt_size);
-          PROTOCOL_CTXT_SET_BY_MODULE_ID(
-            &ctxt,
-            ctxt_pP->module_id, //src_id,
-            ENB_FLAG_NO,
-            pdcp_UE_UE_module_id_to_rnti[ctxt_pP->module_id],// [src_id]
-            ctxt_pP->frame,
-            ctxt_pP->subframe,
-	    dst_id);
-
-          result = pdcp_data_req( &ctxt,
-                                  SRB_FLAG_NO,
-                                  rb_id,
-                                  RLC_MUI_UNDEFINED,
-                                  RLC_SDU_CONFIRM_NO,
-                                  pkt_size,
-                                  otg_pkt,
-                                  PDCP_TRANSMISSION_MODE_DATA);
-          if (result != TRUE) {
-            LOG_W(OTG,"PDCP data request failed!\n");
-          }
-        }
-
-        free(otg_pkt);
-        otg_pkt = NULL;
-      }
-
-      // } //else LOG_D(OTG,"ctxt_pP->frame %d enb %d-> ue %d link not yet established state %d  \n", ctxt_pP->frame, eNB_index,dst_id - NB_eNB_INST, mac_get_rrc_status(module_id, ctxt_pP->enb_flag, dst_id - NB_eNB_INST));
-
-    }
-  }
-
-#else
-
   if ((otg_enabled==1) && (ctxt_pP->enb_flag == ENB_FLAG_YES)) { // generate DL traffic
     unsigned int ctime=0;
     ctime = ctxt_pP->frame * 100;
@@ -843,9 +792,9 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
 
     for (dst_id = 0; dst_id<NUMBER_OF_UE_MAX; dst_id++) {
       ctxt.rnti = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id][dst_id];
-
+/*
       if (ctxt.rnti != NOT_A_RNTI) {
-        if (mac_eNB_get_rrc_status(ctxt.module_id, ctxt.rnti ) > 2 /*RRC_SI_RECEIVED*/) {
+        if (mac_eNB_get_rrc_status(ctxt.module_id, ctxt.rnti ) > 2 ) {
         unsigned int temp = 0;
           otg_pkt=packet_gen(
                     ENB_MODULE_ID_TO_INSTANCE(ctxt.module_id),
@@ -872,8 +821,8 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
           }
         }
       }
+*/
     }
   }
-
-#endif
 }
+

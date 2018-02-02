@@ -184,8 +184,30 @@ extern T_cache_t *T_cache;
   } while (0)
 #endif
 
+/* we have 4 versions of T_HEADER:
+ * - bad quality C++ version with time
+ * - good quality C version with time
+ * - bad quality C++ version without time
+ * - good quality C version without time
+ */
+
 #ifdef T_SEND_TIME
 
+#ifdef __cplusplus
+
+/* C++ version of T_HEADER with time */
+#define T_HEADER(x) \
+  do { \
+    struct timespec T_HEADER_time; \
+    if (clock_gettime(CLOCK_REALTIME, &T_HEADER_time)) abort(); \
+    memcpy(T_LOCAL_buf, &T_HEADER_time, sizeof(struct timespec)); \
+    T_LOCAL_size += sizeof(struct timespec); \
+    T_PUT_int(1, (int)(uintptr_t)(x)); \
+  } while (0)
+
+#else /* #ifdef __cplusplus */
+
+/* C version of T_HEADER with time */
 #define T_HEADER(x) \
   do { \
     if (!__builtin_types_compatible_p(typeof(x), struct T_header *)) { \
@@ -201,8 +223,21 @@ extern T_cache_t *T_cache;
     T_PUT_int(1, (int)(uintptr_t)(x)); \
   } while (0)
 
+#endif /* #ifdef __cplusplus */
+
 #else /* #ifdef T_SEND_TIME */
 
+#ifdef __cplusplus
+
+/* C++ version of T_HEADER without time */
+#define T_HEADER(x) \
+  do { \
+    T_PUT_int(1, (int)(uintptr_t)(x)); \
+  } while (0)
+
+#else /* #ifdef __cplusplus */
+
+/* C version of T_HEADER without time */
 #define T_HEADER(x) \
   do { \
     if (!__builtin_types_compatible_p(typeof(x), struct T_header *)) { \
@@ -213,6 +248,8 @@ extern T_cache_t *T_cache;
     } \
     T_PUT_int(1, (int)(uintptr_t)(x)); \
   } while (0)
+
+#endif /* #ifdef __cplusplus */
 
 #endif /* #ifdef T_SEND_TIME */
 

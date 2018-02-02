@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/impl_defs_lte.h
 * \brief LTE Physical channel configuration and variable structure definitions
@@ -43,7 +35,14 @@
 
 
 #include "types.h"
+#include "nfapi_interface.h"
 //#include "defs.h"
+#include "openair2/COMMON/platform_types.h"
+
+#define RX_NB_TH_MAX 2
+#define RX_NB_TH 2
+
+#define LTE_SLOTS_PER_SUBFRAME 2
 
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
 #define LTE_SLOTS_PER_FRAME  20
@@ -62,7 +61,11 @@
 
 #define MAX_MBSFN_AREA 8
 
+#define NB_RX_ANTENNAS_MAX 64
 
+#ifdef OCP_FRAMEWORK
+#include "enums.h"
+#else
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;
@@ -82,7 +85,7 @@ typedef enum {
   one=6,
   two=12
 } PHICH_RESOURCE_t;
-
+#endif
 /// PHICH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: PHICH-Duration, see TS 36.211 (Table 6.9.3-1).
@@ -103,6 +106,8 @@ typedef struct {
   uint8_t prach_FreqOffset;
 } PRACH_CONFIG_INFO;
 
+
+
 /// PRACH-ConfigSIB or PRACH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
@@ -112,6 +117,46 @@ typedef struct {
   /// PRACH Configuration Information
   PRACH_CONFIG_INFO prach_ConfigInfo;
 } PRACH_CONFIG_COMMON;
+
+#ifdef Rel14
+
+/// PRACH-eMTC-Config from 36.331 RRC spec
+typedef struct {
+  /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). \vr{[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
+  uint8_t highSpeedFlag;
+/// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). \vr{[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to table 5.7.2-3 for preamble format 4.
+  uint8_t zeroCorrelationZoneConfig;
+  /// Parameter: prach-FrequencyOffset, see TS 36.211 (5.7.1). \vr{[0..94]}\n For TDD the value range is dependent on the value of \ref prach_ConfigIndex.
+
+  /// PRACH starting subframe periodicity, expressed in number of subframes available for preamble transmission (PRACH opportunities), see TS 36.211. Value 2 corresponds to 2 subframes, 4 corresponds to 4 subframes and so on. EUTRAN configures the PRACH starting subframe periodicity larger than or equal to the Number of PRACH repetitions per attempt for each CE level (numRepetitionPerPreambleAttempt).
+  uint8_t prach_starting_subframe_periodicity[4];
+  /// number of repetitions per preamble attempt per CE level
+  uint8_t prach_numRepetitionPerPreambleAttempt[4];
+  /// prach configuration index for each CE level
+  uint8_t prach_ConfigIndex[4];
+  /// indicator for CE level activation
+  uint8_t prach_CElevel_enable[4];
+  /// prach frequency offset for each CE level 
+  uint8_t prach_FreqOffset[4];
+  /// indicator for CE level hopping activation
+  uint8_t prach_hopping_enable[4];
+  /// indicator for CE level hopping activation
+  uint8_t prach_hopping_offset[4];
+} PRACH_eMTC_CONFIG_INFO;
+
+#endif
+
+/// PRACH-ConfigSIB or PRACH-Config from 36.331 RRC spec
+typedef struct {
+  /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
+  uint16_t rootSequenceIndex;
+  /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
+  uint8_t prach_Config_enabled;
+  /// PRACH Configuration Information
+#ifdef Rel14
+  PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
+#endif  
+} PRACH_eMTC_CONFIG_COMMON;
 
 /// Enumeration for parameter \f$N_\text{ANRep}\f$ \ref PUCCH_CONFIG_DEDICATED::repetitionFactor.
 typedef enum {
@@ -148,6 +193,11 @@ typedef struct {
   uint8_t nCS_AN;
   /// Parameter: \f$N^{(1)}_\text{PUCCH}\f$ see TS 36.213 (10.1). \vr{[0..2047]}
   uint16_t n1PUCCH_AN;
+
+  /// group hopping sequence for DRS \note not part of offical UL-PUCCH_CONFIG_COMMON ASN1 specification.
+  uint8_t grouphop[20];
+  /// sequence hopping sequence for DRS \note not part of offical UL-PUCCH_CONFIG_COMMON ASN1 specification.
+  uint8_t seqhop[20];
 } PUCCH_CONFIG_COMMON;
 
 /// UL-ReferenceSignalsPUSCH from 36.331 RRC spec
@@ -169,10 +219,12 @@ typedef struct {
 } UL_REFERENCE_SIGNALS_PUSCH_t;
 
 /// Enumeration for parameter Hopping-mode \ref PUSCH_CONFIG_COMMON::hoppingMode.
+#ifndef OCP_FRAMEWORK
 typedef enum {
   interSubFrame=0,
   intraAndInterSubFrame=1
 } PUSCH_HOPPING_t;
+#endif
 
 /// PUSCH-ConfigCommon from 36.331 RRC spec.
 typedef struct {
@@ -305,6 +357,14 @@ typedef struct {
 
 /// SoundingRS-UL-ConfigDedicated Information Element from 36.331 RRC spec
 typedef struct {
+  /// This descriptor is active
+  uint8_t active;
+  /// This descriptor's frame
+  uint16_t frame;
+  /// This descriptor's subframe
+  uint8_t  subframe;
+  /// rnti
+  uint16_t rnti;
   /// Parameter: \f$B_\text{SRS}\f$, see TS 36.211 (table 5.5.3.2-1, 5.5.3.2-2, 5.5.3.2-3 and 5.5.3.2-4). \vr{[0..3]} \note the specification sais it is an enumerated value.
   uint8_t srs_Bandwidth;
   /// Parameter: SRS hopping bandwidth \f$b_\text{hop}\in\{0,1,2,3\}\f$, see TS 36.211 (5.5.3.2) \vr{[0..3]} \note the specification sais it is an enumerated value.
@@ -319,6 +379,12 @@ typedef struct {
   uint16_t srs_ConfigIndex;
   /// Parameter: \f$n^\text{CS}_\text{SRS}\f$. See TS 36.211 (5.5.3.1). \vr{[0..7]} \note the specification sais it is an enumerated value.
   uint8_t cyclicShift;
+  // Parameter: internal implementation: UE SRS configured
+  uint8_t srsConfigDedicatedSetup;
+  // Parameter: cell srs subframe for internal implementation
+  uint8_t srsCellSubframe;
+  // Parameter: ue srs subframe for internal implementation
+  uint8_t srsUeSubframe;
 } SOUNDINGRS_UL_CONFIG_DEDICATED;
 
 /// UplinkPowerControlDedicated Information Element from 36.331 RRC spec
@@ -337,6 +403,7 @@ typedef struct {
   uint8_t filterCoefficient;
 } UL_POWER_CONTROL_DEDICATED;
 
+#ifndef OCP_FRAMEWORK
 /// Enumeration for parameter \f$\alpha\f$ \ref UL_POWER_CONTROL_CONFIG_COMMON::alpha.
 typedef enum {
   al0=0,
@@ -348,6 +415,7 @@ typedef enum {
   al09=6,
   al1=7
 } PUSCH_alpha_t;
+#endif
 
 /// \note UNUSED
 typedef enum {
@@ -420,16 +488,20 @@ typedef struct {
 
 /// CQI-ReportPeriodic
 typedef struct {
-  /// Parameter: \f$n^{(2)}_\text{PUCCH}\f$, see TS 36.213 (7.2). \vr{[0..1185]}
-  uint16_t cqi_PUCCH_ResourceIndex;
+  /// Parameter: \f$n^{(2)}_\text{PUCCH}\f$, see TS 36.213 (7.2). \vr{[0..1185]}, -1 indicates inactivity
+  int16_t cqi_PUCCH_ResourceIndex;
   /// Parameter: CQI/PMI Periodicity and Offset Configuration Index \f$I_\text{CQI/PMI}\f$, see TS 36.213 (tables 7.2.2-1A and 7.2.2-1C). \vr{[0..1023]}
-  uint16_t cqi_PMI_ConfigIndex;
+  int16_t cqi_PMI_ConfigIndex;
   /// Parameter: K, see 36.213 (4.2.2). \vr{[1..4]}
   uint8_t K;
-  /// Parameter: RI Config Index \f$I_\text{RI}\f$, see TS 36.213 (7.2.2-1B). \vr{[0..1023]}
-  uint16_t ri_ConfigIndex;
+  /// Parameter: RI Config Index \f$I_\text{RI}\f$, see TS 36.213 (7.2.2-1B). \vr{[0..1023]}, -1 indicates inactivity
+  int16_t ri_ConfigIndex;
   /// Parameter: Simultaneous-AN-and-CQI, see TS 36.213 (10.1). \vr{[0..1]} 1 indicates that simultaneous transmission of ACK/NACK and CQI is allowed.
   uint8_t simultaneousAckNackAndCQI;
+  /// parameter computed from Tables 7.2.2-1A and 7.2.2-1C
+  uint16_t Npd;
+  /// parameter computed from Tables 7.2.2-1A and 7.2.2-1C
+  uint16_t N_OFFSET_CQI;
 } CQI_REPORTPERIODIC;
 
 /// Enumeration for parameter reporting mode \ref CQI_REPORT_CONFIG::cqi_ReportModeAperiodic.
@@ -471,6 +543,16 @@ typedef struct {
   uint8_t N_RB_DL;
   /// Number of resource blocks (RB) in UL
   uint8_t N_RB_UL;
+  /// EUTRA Band
+  uint8_t eutra_band;
+  /// DL carrier frequency
+  uint32_t dl_CarrierFreq;
+  /// UL carrier frequency
+  uint32_t ul_CarrierFreq;
+  /// TX attenuation
+  uint32_t att_tx;
+  /// RX attenuation
+  uint32_t att_rx;
   ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
   uint8_t N_RBG;
   /// Total Number of Resource Block Groups SubSets: this is P
@@ -491,30 +573,10 @@ typedef struct {
   uint8_t tdd_config;
   /// TDD S-subframe configuration (0-9)
   uint8_t tdd_config_S;
+  /// srs extra symbol flag for TDD
+  uint8_t srsX;
   /// indicates if node is a UE (NODE=2) or eNB (PRIMARY_CH=0).
   uint8_t node_id;
-  /// Frequency index of CBMIMO1 card
-  uint8_t freq_idx;
-  /// RX Frequency for ExpressMIMO/LIME
-  uint32_t carrier_freq[4];
-  /// TX Frequency for ExpressMIMO/LIME
-  uint32_t carrier_freqtx[4];
-  /// RX gain for ExpressMIMO/LIME
-  uint32_t rxgain[4];
-  /// TX gain for ExpressMIMO/LIME
-  uint32_t txgain[4];
-  /// RF mode for ExpressMIMO/LIME
-  uint32_t rfmode[4];
-  /// RF RX DC Calibration for ExpressMIMO/LIME
-  uint32_t rxdc[4];
-  /// RF TX DC Calibration for ExpressMIMO/LIME
-  uint32_t rflocal[4];
-  /// RF VCO calibration for ExpressMIMO/LIME
-  uint32_t rfvcolocal[4];
-  /// Turns on second TX of CBMIMO1 card
-  uint8_t dual_tx;
-  /// flag to indicate SISO transmission
-  uint8_t mode1_flag;
   /// Indicator that 20 MHz channel uses 3/4 sampling frequency
   uint8_t threequarter_fs;
   /// Size of FFT
@@ -529,14 +591,22 @@ typedef struct {
   uint32_t samples_per_tti;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
-  /// Number of Transmit antennas in node
+  /// Number of OFDM symbols in DL portion of S-subframe
+  uint16_t dl_symbols_in_S_subframe;
+  /// Number of SC-FDMA symbols in UL portion of S-subframe
+  uint16_t ul_symbols_in_S_subframe;
+  /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
-  /// Number of Transmit antennas in eNodeB
-  uint8_t nb_antennas_tx_eNB;
+  /// Number of common transmit antenna ports in eNodeB (1 or 2)
+  uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
+#ifdef Rel14
+  /// PRACH_eMTC_CONFIG
+  PRACH_eMTC_CONFIG_COMMON prach_emtc_config_common;
+#endif
   /// PUCCH Config Common (from 36-331 RRC spec)
   PUCCH_CONFIG_COMMON pucch_config_common;
   /// PDSCH Config Common (from 36-331 RRC spec)
@@ -588,155 +658,290 @@ typedef enum {
   DUALSTREAM_UNIFORM_PRECODING1=9,
   DUALSTREAM_UNIFORM_PRECODINGj=10,
   DUALSTREAM_PUSCH_PRECODING=11,
-  TM8=12,
-  TM9_10=13
+  TM7=12,
+  TM8=13,
+  TM9_10=14
 } MIMO_mode_t;
 
+
+typedef enum {
+  /// MRT
+  MRT=0,
+  /// ZF
+  ZF=1,
+  /// MMSE
+  MMSE=2
+} PRECODE_TYPE_t;
+
 typedef struct {
-  /// \brief Holds the transmit data in time domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: tx antenna [0..nb_antennas_tx[
-  /// - third index:
-  int32_t **txdata[3];
+  /// \brief Pointers (dynamic) to the received data in the time domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **rxdata;
+  /// \brief Pointers (dynamic) to the received data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **rxdataF;
   /// \brief holds the transmit data in the frequency domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
+  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
   /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: tx antenna [0..nb_antennas_tx[
+  /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
   /// - third index: sample [0..]
-  int32_t **txdataF[3];
-  /// \brief Holds the received data in time domain.
-  /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna [0..nb_antennas_rx[
-  /// - third index: sample [0..]
-  int32_t **rxdata[3];
-  /// \brief Holds the last subframe of received data in time domain after removal of 7.5kHz frequency offset.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna [0..nb_antennas_rx[
-  /// - third index: sample [0..samples_per_tti[
-  int32_t **rxdata_7_5kHz[3];
-  /// \brief Holds the received data in the frequency domain.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna [0..nb_antennas_rx[
-  /// - third index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
-  int32_t **rxdataF[3];
-  /// \brief Holds output of the sync correlator.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: sample [0..samples_per_tti*10[
-  uint32_t *sync_corr[3];
+  int32_t **txdataF;
 } LTE_eNB_COMMON;
 
 typedef struct {
+  /// \brief Holds the transmit data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **txdata;
+  /// \brief holds the transmit data after beamforming in the frequency domain.
+  /// - first index: tx antenna [0..nb_antennas_tx[
+  /// - second index: sample [0..]
+  int32_t **txdataF_BF;
+  /// \brief holds the transmit data before beamforming for epdcch/mpdcch
+  /// - first index : tx antenna [0..nb_epdcch_antenna_ports[
+  /// - second index: sampl [0..]
+  int32_t **txdataF_epdcch;
+  /// \brief Holds the receive data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **rxdata;
+  /// \brief Holds the last subframe of received data in time domain after removal of 7.5kHz frequency offset.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: sample [0..samples_per_tti[
+  int32_t **rxdata_7_5kHz;
+  /// \brief Holds the received data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **rxdataF;
+  /// \brief Holds output of the sync correlator.
+  /// - first index: sample [0..samples_per_tti*10[
+  uint32_t *sync_corr;
+  /// \brief Holds the tdd reciprocity calibration coefficients 
+  /// - first index: eNB id [0..2] (hard coded) 
+  /// - second index: tx antenna [0..nb_antennas_tx[
+  /// - third index: frequency [0..]
+  int32_t **tdd_calib_coeffs;
+} RU_COMMON;
+
+typedef enum {format0,
+              format1,
+              format1A,
+              format1B,
+              format1C,
+              format1D,
+              format1E_2A_M10PRB,
+              format2,
+              format2A,
+              format2B,
+              format2C,
+              format2D,
+              format3,
+	      format3A,
+	      format4,
+              format5,
+              format6_0A,
+              format6_0B,
+              format6_1A,
+              format6_1B,
+              format6_2
+             } DCI_format_t;
+
+typedef struct {
+  /// Length of DCI in bits
+  uint8_t dci_length;
+  /// Aggregation level
+  uint8_t L;
+  /// Position of first CCE of the dci
+  int firstCCE;
+  /// flag to indicate that this is a RA response
+  boolean_t ra_flag;
+  /// rnti
+  rnti_t rnti;
+  /// harq_pid
+  rnti_t harq_pid;
+  /// Format
+  DCI_format_t format;
+  /// DCI pdu
+  uint8_t dci_pdu[8];
+} DCI_ALLOC_t;
+
+#define MAX_EPDCCH_PRB 8
+
+typedef struct {
+  /// Length of DCI in bits
+  uint8_t dci_length;
+  /// Aggregation level
+  uint8_t L;
+  /// Position of first CCE of the dci
+  int firstCCE;
+  /// flag to indicate that this is a RA response
+  boolean_t ra_flag;
+  /// rnti
+  rnti_t rnti;
+  /// Format
+  DCI_format_t format;
+  /// epdcch resource assignment (0=localized,1=distributed) 
+  uint8_t epdcch_resource_assignment_flag;
+  /// epdcch index
+  uint16_t epdcch_id;
+  /// epdcch start symbol
+  uint8_t epdcch_start_symbol;
+  /// epdcch number of PRBs in set
+  uint8_t epdcch_num_prb;
+  /// vector of prb ids for set
+  uint8_t epdcch_prb_index[MAX_EPDCCH_PRB];  
+  /// LBT parameter for frame configuration
+  uint8_t dwpts_symbols;
+  /// LBT parameter for frame configuration
+  uint8_t initial_lbt_sf;
+  /// DCI pdu
+  uint8_t dci_pdu[8];
+} eDCI_ALLOC_t;
+ 
+typedef struct {
+  /// Length of DCI in bits
+  uint8_t dci_length;
+  /// Aggregation level
+  uint8_t L;
+  /// Position of first CCE of the dci
+  int firstCCE;
+  /// flag to indicate that this is a RA response
+  boolean_t ra_flag;
+  /// rnti
+  rnti_t rnti;
+  /// Format
+  DCI_format_t format;
+  /// harq process index
+  uint8_t harq_pid;
+  /// Narrowband index
+  uint8_t narrowband;
+  /// number of PRB pairs for MPDCCH
+  uint8_t number_of_prb_pairs;
+  /// mpdcch resource assignment (combinatorial index r)
+  uint8_t resource_block_assignment;
+  /// transmission type (0=localized,1=distributed) 
+  uint8_t transmission_type;
+  /// mpdcch start symbol
+  uint8_t start_symbol;
+  /// CE mode (1=ModeA,2=ModeB)
+  uint8_t ce_mode;
+  /// 0-503 n_EPDCCHid_i
+  uint16_t dmrs_scrambling_init;
+  /// Absolute subframe of the initial transmission (0-10239)
+  uint16_t i0;
+  /// number of mdpcch repetitions
+  uint16_t reps;
+  /// current absolute subframe number
+  uint16_t absSF;
+  /// DCI pdu
+  uint8_t dci_pdu[8];
+} mDCI_ALLOC_t;
+
+
+typedef struct {
+  uint8_t     num_dci;
+  uint8_t     num_pdcch_symbols; 
+  DCI_ALLOC_t dci_alloc[32];
+} LTE_eNB_PDCCH;
+
+typedef struct {
+  uint8_t hi;
+  uint8_t first_rb;
+  uint8_t n_DMRS;
+} phich_config_t;
+
+typedef struct {
+  uint8_t num_hi;
+  phich_config_t config[32];
+} LTE_eNB_PHICH;
+
+typedef struct {
+  uint8_t     num_dci;
+  eDCI_ALLOC_t edci_alloc[32];
+} LTE_eNB_EPDCCH;
+
+typedef struct {
+  /// number of active MPDCCH allocations
+  uint8_t     num_dci;
+  /// MPDCCH DCI allocations from MAC
+  mDCI_ALLOC_t mdci_alloc[32];
+  // MAX SIZE of an EPDCCH set is 16EREGs * 9REs/EREG * 8 PRB pairs = 2304 bits 
+  uint8_t e[2304];
+} LTE_eNB_MPDCCH;
+
+
+typedef struct {
   /// \brief Hold the channel estimates in frequency domain based on SRS.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..ofdm_symbol_size[
-  int32_t **srs_ch_estimates[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..ofdm_symbol_size[
+  int32_t **srs_ch_estimates;
   /// \brief Hold the channel estimates in time domain based on SRS.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..2*ofdm_symbol_size[
-  int32_t **srs_ch_estimates_time[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size[
+  int32_t **srs_ch_estimates_time;
   /// \brief Holds the SRS for channel estimation at the RX.
-  /// - first index: ? [0..ofdm_symbol_size[
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..ofdm_symbol_size[
   int32_t *srs;
 } LTE_eNB_SRS;
 
 typedef struct {
   /// \brief Holds the received data in the frequency domain for the allocated RBs in repeated format.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..2*ofdm_symbol_size[
-  /// - third index (definition from phy_init_lte_eNB()): ? [0..24*N_RB_UL*frame_parms->symbols_per_tti[
-  /// \warning inconsistent third index definition
-  int32_t **rxdataF_ext[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size[
+  int32_t **rxdataF_ext;
   /// \brief Holds the received data in the frequency domain for the allocated RBs in normal format.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index (definition from phy_init_lte_eNB()): ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **rxdataF_ext2[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index (definition from phy_init_lte_eNB()): ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **rxdataF_ext2;
   /// \brief Hold the channel estimates in time domain based on DRS.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..4*ofdm_symbol_size[
-  int32_t **drs_ch_estimates_time[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..4*ofdm_symbol_size[
+  int32_t **drs_ch_estimates_time;
   /// \brief Hold the channel estimates in frequency domain based on DRS.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **drs_ch_estimates[3];
-  /// \brief Hold the channel estimates for UE0 in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **drs_ch_estimates_0[3];
-  /// \brief Hold the channel estimates for UE1 in case of Distributed Almouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **drs_ch_estimates_1[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **drs_ch_estimates;
   /// \brief Holds the compensated signal.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **rxdataF_comp[3];
-  /// \brief Hold the compensated data (y)*(h0*) in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **rxdataF_comp_0[3];
-  /// \brief Hold the compensated data (y*)*(h1) in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **rxdataF_comp_1[3];
-  /// \brief ?.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_mag[3];
-  /// \brief ?.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_magb[3];
-  /// \brief Hold the channel mag for UE0 in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_mag_0[3];
-  /// \brief Hold the channel magb for UE0 in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_magb_0[3];
-  /// \brief Hold the channel mag for UE1 in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_mag_1[3];
-  /// \brief Hold the channel magb for UE1 in case of Distributed Alamouti Scheme.
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: rx antenna id [0..nb_antennas_rx[
-  /// - third index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_magb_1[3];
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **rxdataF_comp;
+  /// \brief Magnitude of the UL channel estimates. Used for 2nd-bit level thresholds in LLR computation
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_mag;
+  /// \brief Magnitude of the UL channel estimates scaled for 3rd bit level thresholds in LLR computation
+  /// - first index: rx antenna id [0..nb_antennas_rx[
+  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
+  int32_t **ul_ch_magb;
   /// measured RX power based on DRS
   int ulsch_power[2];
-  /// measured RX power based on DRS for UE0 in case of Distributed Alamouti Scheme
-  int ulsch_power_0[2];
-  /// measured RX power based on DRS for UE0 in case of Distributed Alamouti Scheme
-  int ulsch_power_1[2];
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;
-#ifdef LOCALIZATION
-  /// number of active subcarrier for a specific UE
-  int32_t active_subcarrier;
-  /// subcarrier power in dBm
-  int32_t *subcarrier_power;
-#endif
 } LTE_eNB_PUSCH;
+
+typedef struct {
+
+  /// \brief Holds the received data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: symbol [0..28*ofdm_symbol_size[
+  int32_t **rxdataF;
+  
+  /// \brief Hold the channel estimates in frequency domain.
+  /// - first index: eNB id [0..6] (hard coded)
+  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - third index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_ch_estimates[7];
+  
+  /// \brief Hold the channel estimates in time domain (used for tracking).
+  /// - first index: eNB id [0..6] (hard coded)
+  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - third index: samples? [0..2*ofdm_symbol_size[
+  int32_t **dl_ch_estimates_time[7];
+}LTE_UE_COMMON_PER_THREAD;
 
 typedef struct {
   /// \brief Holds the transmit data in time domain.
@@ -749,29 +954,15 @@ typedef struct {
   /// - first index: tx antenna [0..nb_antennas_tx[
   /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX[
   int32_t **txdataF;
+
   /// \brief Holds the received data in time domain.
   /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES+2048[
   int32_t **rxdata;
-  /// \brief Holds the received data in the frequency domain.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: symbol [0..28*ofdm_symbol_size[
-  int32_t **rxdataF;
-  /// \brief ?.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..20*ofdm_symbol_size*symbols_per_tti[
-  int32_t **rxdataF2;
-  /// \brief Hold the channel estimates in frequency domain.
-  /// - first index: eNB id [0..6] (hard coded)
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
-  int32_t **dl_ch_estimates[7];
-  /// \brief Hold the channel estimates in time domain (used for tracking).
-  /// - first index: eNB id [0..6] (hard coded)
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: samples? [0..2*ofdm_symbol_size[
-  int32_t **dl_ch_estimates_time[7];
+
+  LTE_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[RX_NB_TH_MAX];
+
   /// holds output of the sync correlator
   int32_t *sync_corr;
   /// estimated frequency offset (in radians) for all subcarriers
@@ -785,23 +976,38 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_ext;
+  /// \brief Received frequency-domain ue specific pilots.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..12*N_RB_DL[
+  int32_t **rxdataF_uespec_pilots;
   /// \brief Received frequency-domain signal after extraction and channel compensation.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_comp0;
-  /// \brief Received frequency-domain signal after extraction and channel compensation.
-  /// - first index: ? [0..7] (hard coded) accessed via \c round
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: ? [0..168*N_RB_DL[
-  int32_t **rxdataF_comp1[8];
+  /// \brief Received frequency-domain signal after extraction and channel compensation for the second stream. For the SIC receiver we need to store the history of this for each harq process and round
+  /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
+  /// - second index: ? [0..7] (hard coded) accessed via \c round
+  /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - fourth index: ? [0..168*N_RB_DL[
+  int32_t **rxdataF_comp1[8][8];
   /// \brief Downlink channel estimates extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
-  /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
+  /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS. For the SIC receiver we need to store the history of this for each harq process and round
+  /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
+  /// - second index: ? [0..7] (hard coded) accessed via \c round
+  /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - fourth index: ? [0..168*N_RB_DL[
+  int32_t **dl_ch_rho_ext[8][8];
+  /// \brief Downlink beamforming channel estimates in frequency domain.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_bf_ch_estimates;
+  /// \brief Downlink beamforming channel estimates.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_rho_ext;
+  int32_t **dl_bf_ch_estimates_ext;
   /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -816,7 +1022,7 @@ typedef struct {
   /// \brief Magnitude of Downlink Channel second layer (16QAM level/First 64QAM level).
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_mag1;
+  int32_t **dl_ch_mag1[8][8];
   /// \brief Magnitude of Downlink Channel, first layer (2nd 64QAM level).
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -824,7 +1030,7 @@ typedef struct {
   /// \brief Magnitude of Downlink Channel second layer (2nd 64QAM level).
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_magb1;
+  int32_t **dl_ch_magb1[8][8];
   /// \brief Cross-correlation of two eNB signals.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: symbol [0..]
@@ -837,6 +1043,10 @@ typedef struct {
   int16_t *llr[2];
   /// \f$\log_2(\max|H_i|^2)\f$
   int16_t log2_maxh;
+    /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer1 channel compensation
+  int16_t log2_maxh0;
+    /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer2 channel commpensation
+  int16_t log2_maxh1;
   /// \brief LLR shifts for subband scaling.
   /// - first index: ? [0..168*N_RB_DL[
   uint8_t *llr_shifts;
@@ -854,6 +1064,10 @@ typedef struct {
   //uint32_t *rb_alloc;
   //uint8_t Qm[2];
   //MIMO_mode_t mimo_mode;
+  // llr offset per ofdm symbol
+  uint32_t llr_offset[14];
+  // llr length per ofdm symbol
+  uint32_t llr_length[14];
 } LTE_UE_PDSCH;
 
 typedef struct {
@@ -942,6 +1156,8 @@ typedef struct {
   uint8_t num_pdcch_symbols;
   /// Allocated CRNTI for UE
   uint16_t crnti;
+  /// 1: the allocated crnti is Temporary C-RNTI / 0: otherwise
+  uint8_t crnti_is_temporary;
   /// Total number of PDU errors (diagnostic mode)
   uint32_t dci_errors;
   /// Total number of PDU received
@@ -952,6 +1168,9 @@ typedef struct {
   uint32_t dci_missed;
   /// nCCE for PUCCH per subframe
   uint8_t nCCE[10];
+  //Check for specific DCIFormat and AgregationLevel
+  uint8_t dciFormat;
+  uint8_t agregationLevel;
 } LTE_UE_PDCCH;
 
 #define PBCH_A 24
@@ -996,18 +1215,30 @@ typedef struct {
   int16_t *prach;
 } LTE_UE_PRACH;
 
+#define MAX_NUM_RX_PRACH_PREAMBLES 4
+
 typedef struct {
   /// \brief ?.
   /// first index: ? [0..1023] (hard coded)
   int16_t *prachF;
   /// \brief ?.
-  /// first index: rx antenna [0..3] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
-  /// second index: ? [0..ofdm_symbol_size*12[
-  int16_t *rxsigF[4];
+  /// first index: ce_level [0..3]
+  /// second index: rx antenna [0..63] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
+  /// third index: frequency-domain sample [0..ofdm_symbol_size*12[
+  int16_t **rxsigF[4];
   /// \brief local buffer to compute prach_ifft (necessary in case of multiple CCs)
-  /// first index: rx antenna [0..3] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
-  /// second index: ? [0..2047] (hard coded)
-  int16_t *prach_ifft[4];
+  /// first index: ce_level [0..3] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
+  /// second index: ? [0..63] (hard coded)
+  /// third index: ? [0..63] (hard coded)
+  int32_t **prach_ifft[4];
+
+  /// repetition number
+#ifdef Rel14
+  /// indicator of first frame in a group of PRACH repetitions
+  int first_frame[4];
+  /// current repetition for each CE level
+  int repetition_number[4];
+#endif
 } LTE_eNB_PRACH;
 
 typedef struct {
@@ -1024,6 +1255,7 @@ typedef struct {
   /// Pointer to Msg3 payload for UL-grant
   uint8_t *Msg3;
 } PRACH_RESOURCES_t;
+
 
 typedef struct {
   /// Downlink Power offset field
@@ -1046,6 +1278,14 @@ typedef enum {
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 
+typedef enum {
+  /// do not detect any DCIs in the current subframe
+  NO_DCI = 0x0,
+  /// detect only downlink DCIs in the current subframe
+  UL_DCI = 0x1,
+  /// detect only uplink DCIs in the current subframe
+  DL_DCI = 0x2,
+  /// detect both uplink and downlink DCIs in the current subframe
+  UL_DL_DCI = 0x3} dci_detect_mode_t;
+
 #endif
-
-

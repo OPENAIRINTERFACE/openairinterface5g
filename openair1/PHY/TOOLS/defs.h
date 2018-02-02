@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #ifndef __PHY_TOOLS_DEFS__H__
 #define __PHY_TOOLS_DEFS__H__
 
@@ -41,13 +34,10 @@
 #include "PHY/sse_intrin.h"
 
 
-//defined in rtai_math.h
-#ifndef _RTAI_MATH_H
 struct complex {
   double x;
   double y;
 };
-#endif
 
 struct complexf {
   float r;
@@ -123,13 +113,40 @@ int rotate_cpx_vector(int16_t *x,
   @param y        - output     in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
   @param N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
   @param output_shift  - shift to be applied to generate output
+  @param madd - if not zero result is added to output
 */
 
 int mult_cpx_conj_vector(int16_t *x1,
                          int16_t *x2,
                          int16_t *y,
                          uint32_t N,
-                         int output_shift);
+                         int output_shift,
+			 int madd);
+
+/*!
+  Element-wise multiplication and accumulation of two complex vectors x1 and x2.
+  @param x1       - input 1    in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
+              We assume x1 with a dinamic of 15 bit maximum
+  @param x2       - input 2    in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
+              We assume x2 with a dinamic of 14 bit maximum
+  @param y        - output     in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
+  @param zero_flag Set output (y) to zero prior to accumulation
+  @param N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
+  @param output_shift  - shift to be applied to generate output
+*/
+
+int multadd_cpx_vector(int16_t *x1,
+                    int16_t *x2,
+                    int16_t *y,
+                    uint8_t zero_flag,
+                    uint32_t N,
+		       int output_shift);
+
+int mult_cpx_vector(int16_t *x1,
+                    int16_t  *x2,
+                    int16_t *y,
+                    uint32_t N,
+                    int output_shift);
 
 // lte_dfts.c
 void init_fft(uint16_t size,
@@ -214,6 +231,11 @@ int32_t add_cpx_vector(int16_t *x,
                        int16_t *y,
                        uint32_t N);
 
+int32_t sub_cpx_vector16(int16_t *x,
+			  int16_t *y,
+			  int16_t *z,
+			  uint32_t N);
+
 int32_t add_cpx_vector32(int16_t *x,
                          int16_t *y,
                          int16_t *z,
@@ -261,7 +283,6 @@ void bit8_txmux(int32_t length,int32_t offset);
 
 void bit8_rxdemux(int32_t length,int32_t offset);
 
-#ifdef USER_MODE
 /*!\fn int32_t write_output(const char *fname, const char *vname, void *data, int length, int dec, char format);
 \brief Write output file from signal data
 @param fname output file name
@@ -272,7 +293,6 @@ void bit8_rxdemux(int32_t length,int32_t offset);
 @param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
 */
 int32_t write_output(const char *fname, const char *vname, void *data, int length, int dec, char format);
-#endif
 
 void Zero_Buffer(void *,uint32_t);
 void Zero_Buffer_nommx(void *buf,uint32_t length);
@@ -296,10 +316,10 @@ int32_t subcarrier_energy(int32_t *,uint32_t, int32_t* subcarrier_energy, uint16
 */
 int32_t signal_energy_nodc(int32_t *,uint32_t);
 
-/*!\fn double signal_energy_fp(double **, double **,uint32_t, uint32_t,uint32_t);
+/*!\fn double signal_energy_fp(double *s_re[2], double *s_im[2],uint32_t, uint32_t,uint32_t);
 \brief Computes the signal energy per subcarrier
 */
-double signal_energy_fp(double **s_re, double **s_im, uint32_t nb_antennas, uint32_t length,uint32_t offset);
+double signal_energy_fp(double *s_re[2], double *s_im[2], uint32_t nb_antennas, uint32_t length,uint32_t offset);
 
 /*!\fn double signal_energy_fp2(struct complex *, uint32_t);
 \brief Computes the signal energy per subcarrier
@@ -312,6 +332,9 @@ uint8_t log2_approx(uint32_t);
 uint8_t log2_approx64(unsigned long long int x);
 int16_t invSqrt(int16_t x);
 uint32_t angle(struct complex16 perrror);
+
+/// computes the number of factors 2 in x
+unsigned char factor2(unsigned int x);
 
 /*!\fn int32_t phy_phase_compensation_top (uint32_t pilot_type, uint32_t initial_pilot,
         uint32_t last_pilot, int32_t ignore_prefix);
@@ -332,17 +355,6 @@ int16_t dB_fixed_times10(uint32_t x);
 
 int32_t phy_phase_compensation_top (uint32_t pilot_type, uint32_t initial_pilot,
                                     uint32_t last_pilot, int32_t ignore_prefix);
-
-/*!\fn void phy_phase_compensation (int16_t *ref_sch, int16_t *tgt_sch, int16_t *out_sym, int32_t ignore_prefix, int32_t aa, struct complex16 *perror_out);
-This function is used by the EMOS to compensate the phase rotation of the RF. It has been designed for symbols of type CHSCH or SCH, but cannot be used for the data channels.
-@param ref_sch reference symbol
-@param tgt_sch target symbol
-@param out_sym output of the operation
-@param ignore_prefix  set to 1 if cyclic prefix has not been removed (by the hardware)
-@param aa antenna index
-@param perror_out phase error (output parameter)
-*/
-void phy_phase_compensation (int16_t *ref_sch, int16_t *tgt_sch, int16_t *out_sym, int32_t ignore_prefix, int32_t aa, struct complex16 *perror_out );
 
 int32_t dot_product(int16_t *x,
                     int16_t *y,

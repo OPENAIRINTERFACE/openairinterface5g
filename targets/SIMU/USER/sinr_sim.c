@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-   Contact Information
-   OpenAirInterface Admin: openair_admin@eurecom.fr
-   OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 #include <string.h>
 #include <math.h>
@@ -379,7 +371,7 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
             break;
 
           default:
-            msg("Problem in SINR Calculation for TM5 \n");
+            LOG_E(EMU,"Problem in SINR Calculation for TM5 \n");
             break;
 
           }//switch(q)
@@ -459,7 +451,7 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
             break;
 
           default:
-            msg("Problem in SINR Calculation for TM6 \n");
+            LOG_E(EMU,"Problem in SINR Calculation for TM6 \n");
             break;
 
           }//switch(q)
@@ -478,74 +470,10 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
     break;
 
   default:
-    msg("Problem in SINR Initialization in sinr_sim.c\n");
+    LOG_E(EMU,"Problem in SINR Initialization in sinr_sim.c\n");
     break;
   }//switch
 }//function ends
-
-#ifdef PHY_ABSTRACTION_UL
-void init_snr_up(channel_desc_t* UE2eNB, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0,uint16_t nb_rb,uint16_t fr_rb)
-{
-
-  int return_value;
-  double thermal_noise;
-  int count;
-  int aarx;
-
-  // nb_rb = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
-  /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
-  thermal_noise = -174 + 10*log10(UE2eNB->sampling_rate*1e6); //value in dBm
-  *N0 = thermal_noise + enb_data->rx_noise_level;//? all the element have the same noise level?????
-  double lambda ;
-  double residual;
-  double sinrlin;
-  double residual_db;
-  residual = 0 ;
-  int ccc;
-  /*
-   for (count = (fr_rb*12) ; count < (12 * (fr_rb+nb_rb)); count++)
-        {
-                residual +=  ( 1 / ( pow((UE2eNB -> chF[0][count].x),2) + pow((UE2eNB -> chF[0][count].y),2)));
-        }
-   *///sinreff(nn) = ((sum((1/p).*(snrm(nn,:)./(snrm(nn,:)+1)),2).^(-1) )-1).^-1;
-
-  sinrlin = 0 ;
-  lambda = 0;
-
-  ////First calculate SINRs of subcarriers just like OFDM
-  for (count = (fr_rb*12) ; count < (12 * (fr_rb+nb_rb)); count++) {
-    sinr_dB[count] = ue_data->tx_power_dBm
-                     + UE2eNB->path_loss_dB
-                     - (thermal_noise + enb_data->rx_noise_level)
-                     + 10 * log10 (pow(UE2eNB->chF[0][count].x, 2)
-                                   + pow(UE2eNB->chF[0][count].y, 2));
-
-
-  }
-
-  //Then apply formula :
-  if(nb_rb > 0) {
-    //calculate lambdas and fill the same with all but just use one of them when necessary for abstraction
-    for (count = fr_rb*12; count < (12 * (fr_rb+nb_rb)); count++) {
-      sinrlin = pow((sinr_dB[count]/10),10); // convert SINR to linear
-      lambda += (sinrlin /  (sinrlin + 1)) ;
-    }
-
-    for (count = fr_rb*12; count < (12 * (fr_rb+nb_rb)); count++) {
-      sinr_dB[count] = pow(lambda,2) /(((nb_rb)*lambda)-pow(lambda,2)) ;
-      sinr_dB[count] = 10*log10(sinr_dB[count]) ; //save it in db
-    }
-
-    printf("tx_power %g, path_loss %g, sinr_dB[0] %g\n",ue_data->tx_power_dBm ,UE2eNB->path_loss_dB,sinr_dB[count-1]);
-
-    for (ccc = 0; ccc < 301 ; ccc++ ) {
-      SINRpost_eff[ccc] = 0;
-      SINRpost_eff[ccc] = sinr_dB[ccc];
-    }
-  }
-}//function ends
-
-#endif
 
 void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double *sinr_dB, uint16_t nb_rb)
 {
@@ -734,7 +662,7 @@ void get_MIESM_param()
         break;
 
       default:
-        msg("Error, bad input, quitting\n");
+        LOG_E(EMU,"Error, bad input, quitting\n");
         break;
       }
 
@@ -745,60 +673,7 @@ void get_MIESM_param()
 
   free(file_path);
 }
-#ifdef PHY_ABSTRACTION_UL
-void get_beta_map_up()
-{
-  char *file_path = NULL;
-  int table_len = 0;
-  int mcs = 0;
-  char *sinr_bler;
-  char buffer[1000];
-  FILE *fp;
 
-  file_path = (char*) malloc(512);
-
-  for (mcs = 0; mcs < MCS_COUNT; mcs++) {
-    sprintf(file_path,"%s/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/awgn_abst/awgn_snr_bler_mcs%d_up.csv",getenv("OPENAIR1_DIR"),mcs);
-    fp = fopen(file_path,"r");
-
-    if (fp == NULL) {
-      LOG_W(OCM,"ERROR: Unable to open the file %s, try an alternative path\n", file_path);
-      memset(file_path, 0, 512);
-      sprintf(file_path,"AWGN/awgn_snr_bler_mcs%d.csv",mcs);
-      LOG_I(OCM,"Opening the alternative path %s\n", file_path);
-      fp = fopen(file_path,"r");
-
-      if (fp == NULL) {
-        LOG_E(OCM,"ERROR: Unable to open the file %s, exisitng\n", file_path);
-        exit(-1);
-      }
-    }
-
-    // else {
-    fgets(buffer, 1000, fp);
-    table_len=0;
-
-    while (!feof(fp)) {
-      sinr_bler = strtok(buffer, ",");
-      sinr_bler_map_up[mcs][0][table_len] = atof(sinr_bler);
-      sinr_bler = strtok(NULL,",");
-      sinr_bler_map_up[mcs][1][table_len] = atof(sinr_bler);
-      table_len++;
-      fgets(buffer, 1000, fp);
-    }
-
-    fclose(fp);
-    //   }
-    LOG_D(OCM,"Print the table for mcs %d\n",mcs);
-
-    for (table_len = 0; table_len < 16; table_len++)
-      LOG_D(OCM,"%lf  %lf \n ",sinr_bler_map_up[mcs][0][table_len],sinr_bler_map_up[mcs][1][table_len]);
-  }
-
-  free(file_path);
-}
-
-#endif
 
 
 

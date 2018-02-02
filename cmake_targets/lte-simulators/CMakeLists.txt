@@ -3,12 +3,9 @@ set(PACKAGE_NAME "unitary_tests_simulators")
 set(PHYSIM True)
 set(RF_BOARD None)
 set(XFORMS True)
-
+set(ENABLE_ITTI False)
 set(DEBUG_PHY False)
 set(MU_RECIEVER False)
-set(RANDOM_BF False)
-set(PBS_SIM False)
-set(PERFECT_CE False)
 set(NAS_UE False)
 set(MESSAGE_CHART_GENERATOR False)
 

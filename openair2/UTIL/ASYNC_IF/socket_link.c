@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2015 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */ 
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file socket_link.c
  * \brief this is the implementation of a TCP socket ASYNC IF
  * \author Cedric Roux
@@ -47,8 +40,6 @@
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
-#include <netinet/udp.h>
-#include <netinet/sctp.h>
 #include <arpa/inet.h>
 #include <stdint.h>
 
@@ -61,30 +52,34 @@ socket_link_t *new_link_server(int port)
   int                socket_server = -1;
   int no_delay;
 
+  
   ret = calloc(1, sizeof(socket_link_t));
   if (ret == NULL) {
-    LOG_D(PROTO_AGENT, "%s:%d: out of memory\n", __FILE__, __LINE__);
+    LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
     goto error;
   }
   ret->socket_fd = -1;
 
-  LOG_D(PROTO_AGENT, "create a new link server socket at port %d\n", port);
+
+  printf("MAC create a new link server socket at port %d\n", port);
 
   socket_server = socket(AF_INET, SOCK_STREAM, 0);
   if (socket_server == -1) {
-    LOG_E(PROTO_AGENT, "%s:%d: socket: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(MAC, "%s:%d: socket: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
 
   reuse = 1;
   if (setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
-    LOG_E(PROTO_AGENT, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
+
+    LOG_E(MAC, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
 
   no_delay = 1;
   if (setsockopt(socket_server, IPPROTO_TCP, TCP_NODELAY, &no_delay, sizeof(no_delay)) == -1) {
-    LOG_E(PROTO_AGENT, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
+
+    LOG_E(MAC, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
   
@@ -92,35 +87,35 @@ socket_link_t *new_link_server(int port)
   addr.sin_port = htons(port);
   addr.sin_addr.s_addr = INADDR_ANY;
   if (bind(socket_server, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-    LOG_E(PROTO_AGENT, "%s:%d: bind: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(MAC, "%s:%d: bind: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
 
   if (listen(socket_server, 5)) {
-    LOG_E(PROTO_AGENT, "%s:%d: listen: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(MAC, "%s:%d: listen: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
 
   addrlen = sizeof(addr);
   ret->socket_fd = accept(socket_server, (struct sockaddr *)&addr, &addrlen);
   if (ret->socket_fd == -1) {
-    LOG_E(PROTO_AGENT, "%s:%d: accept: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(MAC, "%s:%d: accept: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
+
   close(socket_server);
 
-  LOG_D(PROTO_AGENT, "connection from %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-  
+  printf("MAC connection from %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
   return ret;
 
 error:
   close(socket_server);
   if (ret != NULL) close(ret->socket_fd);
   free(ret);
-  LOG_E(PROTO_AGENT, "ERROR in new_link_server (see above), returning NULL\n");
+
+  LOG_E(MAC, "ERROR in new_link_server (see above), returning NULL\n");
   return NULL;
 }
-
 
 socket_link_t *new_link_client(char *server, int port)
 {
@@ -135,31 +130,32 @@ socket_link_t *new_link_client(char *server, int port)
   }
   ret->socket_fd = -1;
 
-  LOG_D(PROTO_AGENT, "Creating a new link client socket connecting to %s:%d\n", server, port);
+  LOG_D(MAC, "create a new link client socket connecting to %s:%d\n", server, port);
 
   ret->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (ret->socket_fd == -1) {
-    LOG_E(PROTO_AGENT, "%s:%d: socket: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(MAC, "%s:%d: socket: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
 
   no_delay = 1;
   if (setsockopt(ret->socket_fd, SOL_TCP, TCP_NODELAY, &no_delay, sizeof(no_delay)) == -1) {
-    LOG_E(PROTO_AGENT, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(MAC, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
   
   addr.sin_family = AF_INET;
   addr.sin_port = htons(port);
   if (inet_aton(server, &addr.sin_addr) == 0) {
-    LOG_E(PROTO_AGENT, "invalid IP address '%s', use a.b.c.d notation\n", server);
+    LOG_E(MAC, "invalid IP address '%s', use a.b.c.d notation\n", server);
     goto error;
   }
   if (connect(ret->socket_fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-    LOG_E(PROTO_AGENT, "%s:%d: connect: %s\n", __FILE__, __LINE__, strerror(errno));
+    LOG_E(MAC, "%s:%d: connect: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
-  LOG_D(PROTO_AGENT, "connection to %s:%d established\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+
+  LOG_D(MAC, "connection to %s:%d established\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
   return ret;
 
 error:
@@ -168,7 +164,6 @@ error:
   LOG_E(MAC, "ERROR in new_link_client (see above), returning NULL\n");
   return NULL;
 }
-
 
 socket_link_t *new_link_udp_server(int port){
 
@@ -185,7 +180,7 @@ socket_link_t *new_link_udp_server(int port){
   }
   ret->socket_fd = -1;
 
-  LOG_D(PROTO_AGENT, "create a new udp link server socket at port %d\n", port);
+  LOG_I(PROTO_AGENT, "create a new udp link server socket at port %d\n", port);
 
   //create a UDP socket
   if ((socket_server=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
@@ -197,7 +192,7 @@ socket_link_t *new_link_udp_server(int port){
 
   si_me.sin_family = AF_INET;
   si_me.sin_port = htons(port);
-  si_me.sin_addr.s_addr = htonl(INADDR_ANY);
+  si_me.sin_addr.s_addr = INADDR_ANY;
 
   //bind socket to port
   if( bind(socket_server , (struct sockaddr*)&si_me, sizeof(si_me) ) == -1) {
@@ -284,7 +279,7 @@ socket_link_t *new_link_sctp_server(int port)
  
   bzero ((void *) &servaddr, sizeof (servaddr));
   servaddr.sin_family = AF_INET;
-  servaddr.sin_addr.s_addr = htonl (INADDR_ANY);
+  servaddr.sin_addr.s_addr = INADDR_ANY;
   servaddr.sin_port = htons(port);
  
   temp = bind (listenSock, (struct sockaddr *) &servaddr, sizeof (servaddr));
@@ -341,6 +336,7 @@ socket_link_t *new_link_sctp_client(char *server, int port)
   bzero ((void *) &servaddr, sizeof (servaddr));
   servaddr.sin_family = AF_INET;
   servaddr.sin_port = htons (port);
+  LOG_E(PROTO_AGENT, "invalid IP address '%s', use a.b.c.d notation\n", server);
   if (inet_aton(server, &servaddr.sin_addr) == 0) {
     LOG_E(PROTO_AGENT, "invalid IP address '%s', use a.b.c.d notation\n", server);
     goto error;
@@ -362,30 +358,6 @@ error:
   free(ret);
   LOG_E(MAC, "ERROR in new_link_sctp_client (see above), returning NULL\n");
   return NULL;
-}
-
-
-/*
- * return -1 on error and 0 if the sending was fine
- */
-static int socket_send(int socket_fd, void *buf, int size)
-{
-  char *s = buf;
-  int   l;
-
-  while (size) {
-    l = send(socket_fd, s, size, MSG_NOSIGNAL);
-    if (l == -1) goto error;
-    if (l == 0) { LOG_E(PROTO_AGENT, "%s:%d: this cannot happen, normally...\n", __FILE__, __LINE__); abort(); }
-    size -= l;
-    s += l;
-  }
-
-  return 0;
-
-error:
-  LOG_E(PROTO_AGENT, "socket_send: ERROR: %s\n", strerror(errno));
-  return -1;
 }
 
 static int socket_udp_send(int socket_fd, void *buf, int size, char *peer_addr, int port)
@@ -424,37 +396,6 @@ error:
   return -1;
 }
 
-
-/*
- * return -1 on error and 0 if the receiving was fine
- */
-static int socket_receive(int socket_fd, void *buf, int size)
-{
-  char *s = buf;
-  int   l;
-
-  while (size) {
-    l = read(socket_fd, s, size);
-    if (l == -1) goto error;
-    if (l == 0) goto socket_closed;
-    size -= l;
-    s += l;
-  }
-
-  return 0;
-
-error:
-  LOG_E(MAC, "socket_receive: ERROR: %s\n", strerror(errno));
-  return -1;
-
-socket_closed:
-  LOG_E(MAC, "socket_receive: socket closed\n");
-  return -1;
-}
-
-/*
- * return -1 on error and 0 if the receiving was fine
- */
 static int socket_udp_receive(int socket_fd, void *buf, int size)
 {
   LOG_D(PROTO_AGENT,"UDP RECEIVE\n");
@@ -489,22 +430,71 @@ socket_closed:
 /*
  * return -1 on error and 0 if the sending was fine
  */
+static int socket_send(int socket_fd, void *buf, int size)
+{
+  char *s = buf;
+  int   l;
+
+  while (size) {
+    l = send(socket_fd, s, size, MSG_NOSIGNAL);
+    if (l == -1) goto error;
+    if (l == 0) { LOG_E(MAC, "%s:%d: this cannot happen, normally...\n", __FILE__, __LINE__); abort(); }
+    size -= l;
+    s += l;
+  }
+
+  return 0;
+
+error:
+  LOG_E(MAC, "socket_send: ERROR: %s\n", strerror(errno));
+  return -1;
+}
+
+/*
+ * return -1 on error and 0 if the receiving was fine
+ */
+static int socket_receive(int socket_fd, void *buf, int size)
+{
+  char *s = buf;
+  int   l;
+
+  while (size) {
+    l = read(socket_fd, s, size);
+    if (l == -1) goto error;
+    if (l == 0) goto socket_closed;
+    size -= l;
+    s += l;
+  }
+
+  return 0;
+
+error:
+  LOG_E(MAC, "socket_receive: ERROR: %s\n", strerror(errno));
+  return -1;
+
+socket_closed:
+  LOG_E(MAC, "socket_receive: socket closed\n");
+  return -1;
+}
+
+/*
+ * return -1 on error and 0 if the sending was fine
+ */
 int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_type, char *peer_addr, int port)
 {
   char sizebuf[4];
   int32_t s = size;
-  
+
   /* send the size first, maximum is 2^31 bytes */
   sizebuf[0] = (s >> 24) & 255;
   sizebuf[1] = (s >> 16) & 255;
   sizebuf[2] = (s >> 8) & 255;
   sizebuf[3] = s & 255;
-
   if ((proto_type == 0) || (proto_type == 2))
   {
     if (socket_send(link->socket_fd, sizebuf, 4) == -1)
       goto error;
-          
+
     link->bytes_sent += 4;
 
     if (socket_send(link->socket_fd, data, size) == -1)
@@ -522,7 +512,8 @@ int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_t
     LOG_D(PROTO_AGENT, "peer port is %d", link->peer_port);
     if (socket_udp_send(link->socket_fd, sizebuf, 4, peer_addr, link->peer_port) == -1)
       goto error;
-      
+    
+    LOG_I(PROTO_AGENT,"sent %d bytes over the channel\n", (int32_t *)sizebuf);
     link->bytes_sent += 4;
 
     if (socket_udp_send(link->socket_fd, data, size, peer_addr, link->peer_port) == -1)
@@ -541,16 +532,19 @@ error:
 /*
  * return -1 on error and 0 if the sending was fine
  */
+
 int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size, uint16_t proto_type, char *peer_addr, int port)
 {
   unsigned char sizebuf[4];
   int32_t       size;
   void          *data = NULL;
-  int 		peer_port = 0;
-
+  
+  int peer_port = 0;
+  /* received the size first, maximum is 2^31 bytes */
+  if (socket_receive(link->socket_fd, sizebuf, 4) == -1)
+    goto error;
   if ((proto_type == 0) || (proto_type == 2))
   {
-  /* received the size first, maximum is 2^31 bytes */
     if (socket_receive(link->socket_fd, sizebuf, 4) == -1)
       goto error;
   }
@@ -559,8 +553,8 @@ int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size, uin
       /* received the size first, maximum is 2^31 bytes */
     peer_port = socket_udp_receive(link->socket_fd, sizebuf, 4);
       if ( peer_port == -1)
-	goto error;
-    if (link->peer_port == 0) link->peer_port = peer_port;
+        goto error;
+    if (peer_port == 0) link->peer_port = peer_port;
   }
   
   size = (sizebuf[0] << 24) |
@@ -570,26 +564,27 @@ int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size, uin
 
   link->bytes_received += 4;
 
-  LOG_D(PROTO_AGENT, "ASYNC BYTES Received are :%d \n", link->bytes_received);
-  
+
   data = malloc(size);
   if (data == NULL) {
     LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
     goto error;
   }
-  
   if ((proto_type == 0) || (proto_type == 2))
   {
+  
     if (socket_receive(link->socket_fd, data, size) == -1)
       goto error;
   }
   else if (proto_type == 1)
-  {
+  { 
     if (socket_udp_receive(link->socket_fd, data, size) == -1)
       goto error;
   }
+
   link->bytes_received += size;
   link->packets_received++;
+
   *ret_data = data;
   *ret_size = size;
   return 0;

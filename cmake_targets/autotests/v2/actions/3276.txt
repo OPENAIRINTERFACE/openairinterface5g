@@ -1,0 +1,13 @@
+When running lsusb, if you have:
+
+    Bus 001 Device 002: ID 12d1:14fe Huawei Technologies Co., Ltd. Modem (Mass Storage Mode)
+
+You need to run:
+
+    usb_modeswitch -v 12d1 -p 14fe -M '55534243123456780000000000000011062000000100000000000000000000'
+
+After what, running lsusb should give:
+
+    Bus 001 Device 004: ID 12d1:1506 Huawei Technologies Co., Ltd. Modem/Networkcard
+
+Values of 'Bus' and 'Device' may differ of course.

@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*
                                  platform_types.h
@@ -38,7 +30,7 @@
 #ifndef __PLATFORM_TYPES_H__
 #    define __PLATFORM_TYPES_H__
 
-#ifdef USER_MODE
+#if !defined(NAS_NETLINK)
 #include <stdint.h>
 #endif
 
@@ -48,6 +40,13 @@
 //-----------------------------------------------------------------------------
 // GENERIC TYPES
 //-----------------------------------------------------------------------------
+
+/* boolean_t is also defined in openair2/COMMON/commonDef.h,
+ * let's protect potential redefinition
+ */
+#ifndef _BOOLEAN_T_DEFINED_
+#define _BOOLEAN_T_DEFINED_
+
 typedef signed char        boolean_t;
 
 #if !defined(TRUE)
@@ -59,6 +58,8 @@ typedef signed char        boolean_t;
 #endif
 
 #define BOOL_NOT(b) (b^TRUE)
+
+#endif /* _BOOLEAN_T_DEFINED_ */
 
 //-----------------------------------------------------------------------------
 // GENERIC ACCESS STRATUM TYPES
@@ -215,6 +216,7 @@ typedef struct protocol_ctxt_s {
   frame_t     frame;         /*!< \brief  LTE frame number.*/
   sub_frame_t subframe;      /*!< \brief  LTE sub frame number.*/
   eNB_index_t eNB_index;     /*!< \brief  valid for UE indicating the index of connected eNB(s)      */
+  boolean_t   configured;  /*!< \brief  flag indicating whether the instance is configured or not  */
 } protocol_ctxt_t;
 // warning time hardcoded
 #define PROTOCOL_CTXT_TIME_MILLI_SECONDS(CtXt_h) ((CtXt_h)->frame*10+(CtXt_h)->subframe)
@@ -262,36 +264,12 @@ typedef struct protocol_ctxt_s {
     (Ctxt_Pp)->subframe  = sUBfRAME; \
     PROTOCOL_CTXT_COMPUTE_MODULE_ID(Ctxt_Pp)
 
-#define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02u][RNTI %"PRIx16"]"
+#define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02u][RNTI %" PRIx16 "]"
 #define PROTOCOL_CTXT_ARGS(CTXT_Pp) \
     (CTXT_Pp)->frame, \
     ((CTXT_Pp)->enb_flag == ENB_FLAG_YES) ? "eNB":" UE", \
     (CTXT_Pp)->module_id, \
     (CTXT_Pp)->rnti
 
-#ifdef OAI_EMU
-#define CHECK_CTXT_ARGS(CTXT_Pp) \
-    if ((CTXT_Pp)->enb_flag) {\
-        AssertFatal (((CTXT_Pp)->module_id >= oai_emulation.info.first_enb_local) && (oai_emulation.info.nb_enb_local > 0),\
-                     "eNB module id is too low (%u/%d/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_enb_local,\
-                     oai_emulation.info.nb_enb_local);\
-        AssertFatal (((CTXT_Pp)->module_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local)) && (oai_emulation.info.nb_enb_local > 0),\
-                     "eNB module id is too high (%u/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local);\
-    } else {\
-        AssertFatal ((CTXT_Pp)->module_id  < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local),\
-                     "UE module id is too high (%u/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);\
-        AssertFatal ((CTXT_Pp)->module_id  >= oai_emulation.info.first_ue_local,\
-                     "UE module id is too low (%u/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_ue_local);\
-    }
-#else
 #define CHECK_CTXT_ARGS(CTXT_Pp)
-#endif
 #endif

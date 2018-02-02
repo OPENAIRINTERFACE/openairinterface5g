@@ -1,38 +1,31 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 //#define DEBUG_DAC 1
 #include <math.h>
 #include <stdio.h>
 #include "PHY/TOOLS/defs.h"
 
-void dac(double **s_re,
-         double **s_im,
+void dac(double *s_re[2],
+         double *s_im[2],
          uint32_t **input,
          uint32_t input_offset,
          uint32_t nb_tx_antennas,
@@ -81,8 +74,8 @@ void dac(double **s_re,
   }
 }
 
-double dac_fixed_gain(double **s_re,
-                      double **s_im,
+double dac_fixed_gain(double *s_re[2],
+                      double *s_im[2],
                       uint32_t **input,
                       uint32_t input_offset,
                       uint32_t nb_tx_antennas,
@@ -91,24 +84,33 @@ double dac_fixed_gain(double **s_re,
                       uint32_t length_meas,
                       uint8_t B,
                       double txpwr_dBm,
+		      uint8_t do_amp_compute,
+		      double *amp1,
                       int NB_RE)
 {
 
   int i;
   int aa;
-  double amp,amp1;
+  double amp,amp1_local,*amp1p;
 
   amp = //sqrt(NB_RE)*pow(10.0,.05*txpwr_dBm)/sqrt(nb_tx_antennas); //this is amp per tx antenna
     pow(10.0,.05*txpwr_dBm)/sqrt(nb_tx_antennas); //this is amp per tx antenna
-  amp1 = 0;
 
-  for (aa=0; aa<nb_tx_antennas; aa++) {
-    amp1 += sqrt((double)signal_energy((int32_t*)&input[aa][input_offset_meas],length_meas)/NB_RE);
+  if (amp1==NULL) amp1p = &amp1_local;
+  else            amp1p = amp1;
+
+  if (do_amp_compute==1) {
+    *amp1p = 0;
+    for (aa=0; aa<nb_tx_antennas; aa++) {
+      *amp1p += (double)signal_energy((int32_t*)&input[aa][input_offset_meas],length_meas)/NB_RE;
+    }
+    *amp1p/=nb_tx_antennas;
+    *amp1p=sqrt(*amp1p);
   }
 
-  amp1/=nb_tx_antennas;
 
-  //  printf("DAC: amp1 %f dB (%d,%d), tx_power %f\n",20*log10(amp1),input_offset,input_offset_meas,txpwr_dBm);
+
+  //  printf("DAC: amp %f, amp1 %f dB (%d,%d), tx_power %f (%f),length %d,pos %d\n",20*log10(amp),20*log10(*amp1p),input_offset,input_offset_meas,txpwr_dBm,length, 10*log10((double)signal_energy((int32_t*)&input[0][input_offset_meas],length_meas)/NB_RE),input_offset_meas);
 
   /*
     if (nb_tx_antennas==2)
@@ -121,14 +123,15 @@ double dac_fixed_gain(double **s_re,
     //printf("DL: amp1 %f dB (%d,%d), tx_power %f\n",20*log10(amp1),input_offset,input_offset_meas,txpwr_dBm);
   */
 
+
   for (i=0; i<length; i++) {
     for (aa=0; aa<nb_tx_antennas; aa++) {
-      s_re[aa][i] = amp*((double)(((short *)input[aa]))[((i+input_offset)<<1)])/amp1; ///(1<<(B-1));
-      s_im[aa][i] = amp*((double)(((short *)input[aa]))[((i+input_offset)<<1)+1])/amp1; ///(1<<(B-1));
+      s_re[aa][i] = amp*((double)(((short *)input[aa]))[((i+input_offset)<<1)])/(*amp1p); 
+      s_im[aa][i] = amp*((double)(((short *)input[aa]))[((i+input_offset)<<1)+1])/(*amp1p); 
     }
   }
 
   //  printf("ener %e\n",signal_energy_fp(s_re,s_im,nb_tx_antennas,length,0));
 
-  return(signal_energy_fp(s_re,s_im,nb_tx_antennas,length_meas,0)/NB_RE);
+  return(signal_energy_fp(s_re,s_im,nb_tx_antennas,length<length_meas?length:length_meas,0)/NB_RE);
 }

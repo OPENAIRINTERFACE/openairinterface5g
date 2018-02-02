@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file vcd_signal_dumper.c
  * \brief Dump functions calls and variables to VCD file. Use GTKWave to display this file.
@@ -56,10 +48,6 @@
 
 #include "vcd_signal_dumper.h"
 
-#if defined(ENABLE_RTAI_CLOCK)
-#include "rtai_lxrt.h"
-#endif
-
 #define VCDSIGNALDUMPER_VERSION_MAJOR 0
 #define VCDSIGNALDUMPER_VERSION_MINOR 1
 
@@ -75,16 +63,32 @@ struct vcd_module_s {
 } vcd_module_s;
 
 const char* eurecomVariablesNames[] = {
-  "frame_number_TX_eNB",
-  "frame_number_RX_eNB",
+  "frame_number_TX0_eNB",
+  "frame_number_TX1_eNB",
+  "frame_number_RX0_eNB",
+  "frame_number_RX1_eNB",
+  "subframe_number_TX0_eNB",
+  "subframe_number_TX1_eNB",
+  "subframe_number_RX0_eNB",
+  "subframe_number_RX1_eNB",
+  "frame_number_TX0_RU",
+  "frame_number_TX1_RU",
+  "frame_number_RX0_RU",
+  "frame_number_RX1_RU",
+  "subframe_number_TX0_RU",
+  "subframe_number_TX1_RU",
+  "subframe_number_RX0_RU",
+  "subframe_number_RX1_RU",
   "runtime_TX_eNB",
   "runtime_RX_eNB",
-  "frame_number_TX_UE",
-  "frame_number_RX_UE",
-  "slot_number_TX_UE",
-  "slot_number_RX_UE",
-  "subframe_number_TX_UE",
-  "subframe_number_RX_UE",
+  "frame_number_TX0_UE",
+  "frame_number_TX1_UE",
+  "frame_number_RX0_UE",
+  "frame_number_RX1_UE",
+  "subframe_TX0_UE",
+  "subframe_TX1_UE",
+  "subframe_RX0_UE",
+  "subframe_RX1_UE",
   "missed_slot_enb",
   "daq_mbox",
   "rx_offset_mbox",
@@ -98,6 +102,9 @@ const char* eurecomVariablesNames[] = {
   "rxcnt",
   "trx_ts",
   "trx_tst",
+  "trx_ts_ue",
+  "trx_tst_ue",
+  "trx_write_flags",
   "tx_ts",
   "rx_ts",
   "hw_cnt_rx",
@@ -174,6 +181,16 @@ const char* eurecomVariablesNames[] = {
   "ue0_SFN5",
   "ue0_SFN6",
   "ue0_SFN7",
+  "send_if4_symbol",
+  "recv_if4_symbol",
+  "send_if5_pkt_id",
+  "recv_if5_pkt_id",
+  "ue_pdcp_flush_size",
+  "ue_pdcp_flush_err",
+  "ue0_trx_read_ns",
+  "ue0_trx_write_ns",
+  "ue0_trx_read_ns_missing",
+  "ue0_trx_write_ns_missing",
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -181,28 +198,27 @@ const char* eurecomFunctionsNames[] = {
   "rt_sleep",
   "trx_read",
   "trx_write",
-  "eNB_thread_tx0",
-  "eNB_thread_rx0",
-  "eNB_thread_tx1",
-  "eNB_thread_rx1",
-  "eNB_thread_tx2",
-  "eNB_thread_rx2",
-  "eNB_thread_tx3",
-  "eNB_thread_rx3",
-  "eNB_thread_tx4",
-  "eNB_thread_rx4",
-  "eNB_thread_tx5",
-  "eNB_thread_rx5",
-  "eNB_thread_tx6",
-  "eNB_thread_rx6",
-  "eNB_thread_tx7",
-  "eNB_thread_rx7",
-  "eNB_thread_tx8",
-  "eNB_thread_rx8",
-  "eNB_thread_tx9",
-  "eNB_thread_rx9",
-  "ue_thread_tx",
-  "ue_thread_rx",
+  "trx_read_ue",
+  "trx_write_ue",
+  "trx_read_if",
+  "trx_write_if",
+  "eNB_thread_rxtx0",
+  "eNB_thread_rxtx1",
+  "ue_thread_synch",
+  "ue_thread_rxtx0",
+  "ue_thread_rxtx1",
+  "trx_read_sf9",
+  "trx_write_sf9",
+  "ue_signal_cond_rxtx0",
+  "ue_signal_cond_rxtx1",
+  "ue_wait_cond_rxtx0",
+  "ue_wait_cond_rxtx1",
+  "ue_lock_mutex_rxtx_for_cond_wait0",
+  "ue_lock_mutex_rxtx_for_cond_wait1",
+  "ue_lock_mutex_rxtx_for_cnt_decrement0",
+  "ue_lock_mutex_rxtx_for_cnt_decrement1",
+  "ue_lock_mutex_rxtx_for_cnt_increment0",
+  "ue_lock_mutex_rxtx_for_cnt_increment1",
 
  /* RRH signals  */ 
   "eNB_tx",
@@ -224,10 +240,23 @@ const char* eurecomFunctionsNames[] = {
   "lte_ue_measurement_procedures",
   "lte_ue_pdcch_procedures",
   "lte_ue_pbch_procedures",
-  "phy_procedures_eNb_tx",
-  "phy_procedures_eNb_rx",
+  "phy_procedures_eNb_tx0",
+  "phy_procedures_eNb_tx1",
+  "phy_procedures_ru_feprx0",
+  "phy_procedures_ru_feprx1",
+  "phy_procedures_ru_feptx_ofdm0",
+  "phy_procedures_ru_feptx_ofdm1",
+  "phy_procedures_ru_feptx_prec0",
+  "phy_procedures_ru_feptx_prec1",
+  "phy_procedures_eNb_rx_uespec0",
+  "phy_procedures_eNb_rx_uespec1",
   "phy_procedures_ue_tx",
   "phy_procedures_ue_rx",
+  "phy_procedures_ue_tx_ulsch_uespec",
+  "phy_procedures_ue_tx_pucch",
+  "phy_procedures_ue_tx_ulsch_common",
+  "phy_procedures_ue_tx_prach",
+  "phy_procedures_ue_tx_ulsch_rar",
   "phy_procedures_eNB_lte",
   "phy_procedures_UE_lte",
   "pdsch_thread",
@@ -250,6 +279,10 @@ const char* eurecomFunctionsNames[] = {
   "rx_pdcch",
   "dci_decoding",
   "rx_phich",
+  "pdsch_procedures",
+  "pdsch_procedures_si",
+  "pdsch_procedures_p",
+  "pdsch_procedures_ra",
   "phy_ue_config_sib2",
   "macxface_phy_config_sib1_eNB",
   "macxface_phy_config_sib2_eNB",
@@ -266,15 +299,22 @@ const char* eurecomFunctionsNames[] = {
   "phy_enb_ulsch_decoding7",
   "phy_enb_sfgen",
   "phy_enb_prach_rx",
+  "phy_ru_prach_rx",
   "phy_enb_pdcch_tx",
   "phy_enb_rs_tx",
   "phy_ue_generate_prach",
   "phy_ue_ulsch_modulation",
   "phy_ue_ulsch_encoding",
+#if 1 // add for debugging losing PDSCH immediately before and after reporting CQI
+  "phy_ue_ulsch_encoding_fill_cqi",
+#endif
   "phy_ue_ulsch_scrambling",
   "phy_eNB_dlsch_modulation",
   "phy_eNB_dlsch_encoding",
+  "phy_eNB_dlsch_encoding_w",
   "phy_eNB_dlsch_scrambling",
+  "phy_eNB_beam_precoding",
+  "phy_eNB_ofdm_mod_l",
 
   /* MAC  signals  */
   "macxface_macphy_init",
@@ -295,6 +335,7 @@ const char* eurecomFunctionsNames[] = {
 
   "macxface_out_of_sync_ind",
   "macxface_ue_decode_si",
+  "macxface_ue_decode_pcch",
   "macxface_ue_decode_ccch",
   "macxface_ue_decode_bcch",
   "macxface_ue_send_sdu",
@@ -322,6 +363,10 @@ const char* eurecomFunctionsNames[] = {
   "pdcp_data_ind",
   "pdcp_apply_security",
   "pdcp_validate_security",
+  "pdcp_fifo_read",
+  "pdcp_fifo_read_buffer",
+  "pdcp_fifo_flush",
+  "pdcp_fifo_flush_buffer",
   /* RRC signals  */
   "rrc_rx_tx",
   "rrc_mac_config_req",
@@ -340,10 +385,30 @@ const char* eurecomFunctionsNames[] = {
   "itti_dump_enqueue_message",
   "itti_dump_enqueue_message_malloc",
   "itti_relay_thread",
-  "test"
+  "test",
+  
+  /* IF4/IF5 signals */
+  "send_if4",
+  "recv_if4",
+  "send_if5",
+  "recv_if5",
+
+  "compress_if",
+  "decompress_if",
+
+  "nfapi_subframe",
+  "generate_pcfich",
+  "generate_dci0",
+  "generate_dlsch",
+  "generate_phich",
+  "pdcch_scrambling",
+  "pdcch_modulation",
+  "pdcch_interleaving",
+  "pdcch_tx",
+
 };
 
-struct vcd_module_s vcd_modules[VCD_SIGNAL_DUMPER_MODULE_END] = {
+struct vcd_module_s vcd_modules[] = {
   { "variables", VCD_SIGNAL_DUMPER_VARIABLES_END, eurecomVariablesNames, VCD_WIRE, 64 },
   { "functions", VCD_SIGNAL_DUMPER_FUNCTIONS_END, eurecomFunctionsNames, VCD_WIRE, 1 },
   //    { "ue_procedures_functions", VCD_SIGNAL_DUMPER_UE_PROCEDURES_FUNCTIONS_END, eurecomUEFunctionsNames, VCD_WIRE, 1 },
@@ -354,8 +419,6 @@ static inline unsigned long long int vcd_get_time(void);
 
 #if defined(ENABLE_USE_CPU_EXECUTION_TIME)
 struct timespec     g_time_start;
-#elif defined(ENABLE_RTAI_CLOCK)
-RTIME start;
 #endif
 
 
@@ -551,8 +614,6 @@ void vcd_signal_dumper_init(char *filename)
 
 #if defined(ENABLE_USE_CPU_EXECUTION_TIME)
     clock_gettime(CLOCK_MONOTONIC, &g_time_start);
-#elif defined(ENABLE_RTAI_CLOCK)
-    start=rt_get_time_ns();
 #endif
 
     vcd_signal_dumper_create_header();
@@ -605,9 +666,6 @@ static inline void vcd_signal_dumper_print_time_since_start(void)
     secondsSinceStart     = (long long unsigned int)time.tv_sec - (long long unsigned int)g_time_start.tv_sec;
     /* Write time in nanoseconds */
     fprintf(vcd_fd, "#%llu\n", nanosecondsSinceStart + (secondsSinceStart * 1000000000UL));
-#elif defined(ENABLE_RTAI_CLOCK)
-    /* Write time in nanoseconds */
-    fprintf(vcd_fd, "#%llu\n",rt_get_time_ns()-start);
 #endif
   }
 }
@@ -621,8 +679,6 @@ static inline unsigned long long int vcd_get_time(void)
 
   return (long long unsigned int)((time.tv_nsec - g_time_start.tv_nsec)) +
          ((long long unsigned int)time.tv_sec - (long long unsigned int)g_time_start.tv_sec) * 1000000000UL;
-#elif defined(ENABLE_RTAI_CLOCK)
-  return rt_get_time_ns() - start;
 #endif
 }
 
@@ -644,7 +700,7 @@ void vcd_signal_dumper_create_header(void)
       fprintf(vcd_fd, "$timescale 1 ns $end\n");
 
       /* Initialize each module definition */
-      for(i = 0; i < VCD_SIGNAL_DUMPER_MODULE_END; i++) {
+      for(i = 0; i < sizeof(vcd_modules) / sizeof(struct vcd_module_s); i++) {
         struct vcd_module_s *module;
         module = &vcd_modules[i];
         fprintf(vcd_fd, "$scope module %s $end\n", module->name);
@@ -669,7 +725,7 @@ void vcd_signal_dumper_create_header(void)
       /* Init variables and functions to 0 */
       fprintf(vcd_fd, "$dumpvars\n");
 
-      for(i = 0; i < VCD_SIGNAL_DUMPER_MODULE_END; i++) {
+      for(i = 0; i < sizeof(vcd_modules) / sizeof(struct vcd_module_s); i++) {
         struct vcd_module_s *module;
         module = &vcd_modules[i];
 

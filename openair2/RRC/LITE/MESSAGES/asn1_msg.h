@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file asn1_msg.h
 * \brief primitives to build the asn1 messages
@@ -36,7 +28,6 @@
 * \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr
 */
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h> /* for atoi(3) */
@@ -44,9 +35,6 @@
 #include <string.h> /* for strerror(3) */
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
-#else
-#include <linux/module.h>  /* Needed by all modules */
-#endif
 
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
@@ -68,19 +56,24 @@ uint16_t get_adjacent_cell_id(uint8_t Mod_id,uint8_t index);
 uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId);
 
 /**
-\brief Generate a default configuration for SIB1 (eNB).
-@param frame_parms Used to store some basic parameters from PHY configuration
-@param buffer Pointer to PER-encoded ASN.1 description of SIB1
-@param sib1 Pointer to asn1c C representation of SIB1
+\brief Generate configuration for SIB1 (eNB).
+@param carrier pointer to Carrier information
+@param N_RB_DL Number of downlink PRBs
+@param phich_Resource PHICH resoure parameter
+@param phich_duration PHICH duration parameter
+@param frame radio frame number
+@return size of encoded bit stream in bytes*/
+uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame);
+
+/**
+\brief Generate configuration for SIB1 (eNB).
+@param carrier pointer to Carrier information
+@param Mod_id Instance of eNB
+@param Component carrier Component carrier to configure
+@param configuration Pointer Configuration Request structure  
 @return size of encoded bit stream in bytes*/
 
-uint8_t do_SIB1(uint8_t Mod_id, int CC_id,
-                LTE_DL_FRAME_PARMS *frame_parms, uint8_t *buffer,
-                BCCH_DL_SCH_Message_t *bcch_message,
-                SystemInformationBlockType1_t **sib1
-#if defined(ENABLE_ITTI)
-                , RrcConfigurationReq *configuration
-#endif
+uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, RrcConfigurationReq *configuration
                );
 
 /**
@@ -95,17 +88,7 @@ uint8_t do_SIB1(uint8_t Mod_id, int CC_id,
 @return size of encoded bit stream in bytes*/
 
 uint8_t do_SIB23(uint8_t Mod_id,
-                 int CC_id,
-                 LTE_DL_FRAME_PARMS *frame_parms,
-                 uint8_t *buffer,
-                 BCCH_DL_SCH_Message_t *systemInformation,
-                 SystemInformationBlockType2_t **sib2,
-                 SystemInformationBlockType3_t **sib3
-#ifdef Rel10
-                 ,
-                 SystemInformationBlockType13_r9_t **sib13,
-                 uint8_t MBMS_flag
-#endif
+                 int CC_id
 #if defined(ENABLE_ITTI)
                  , RrcConfigurationReq *configuration
 #endif
@@ -141,6 +124,7 @@ do_RRCConnectionReconfigurationComplete(
 PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting (PUCCH format 2/2a/2b) or SRS.
 @param ctxt_pP Running context
 @param ue_context_pP UE context
+@param CC_id         Component Carrier ID
 @param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
 @param transmission_mode Transmission mode for UE (1-9)
 @param UE_id UE index for this message
@@ -152,10 +136,10 @@ uint8_t
 do_RRCConnectionSetup(
   const protocol_ctxt_t*     const ctxt_pP,
   rrc_eNB_ue_context_t*      const ue_context_pP,
+  int                              CC_id,
   uint8_t*                   const buffer,
   const uint8_t                    transmission_mode,
   const uint8_t                    Transaction_id,
-  const LTE_DL_FRAME_PARMS* const frame_parms,
   SRB_ToAddModList_t**             SRB_configList,
   struct PhysicalConfigDedicated** physicalConfigDedicated
 );
@@ -203,10 +187,32 @@ do_RRCConnectionReconfiguration(
     RSRP_Range_t                       *rsrp,
     C_RNTI_t                           *cba_rnti,
   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList* dedicatedInfoNASList
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
     , SCellToAddMod_r10_t  *SCell_config
 #endif
                                         );
+/**
+\brief Generate an RRCConnectionReestablishment DL-CCCH-Message (eNB).  This routine configures SRB_ToAddMod (SRB1/SRB2) and
+PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting (PUCCH format 2/2a/2b) or SRS.
+@param ctxt_pP Running context
+@param ue_context_pP UE context
+@param CC_id         Component Carrier ID
+@param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
+@param transmission_mode Transmission mode for UE (1-9)
+@param Transaction_id Transaction_ID for this message
+@param SRB_configList Pointer (returned) to SRB1_config/SRB2_config(later) IEs for this UE
+@param physicalConfigDedicated Pointer (returned) to PhysicalConfigDedicated IE for this UE
+@returns Size of encoded bit stream in bytes*/
+uint8_t
+do_RRCConnectionReestablishment(
+  const protocol_ctxt_t*     const ctxt_pP,
+  rrc_eNB_ue_context_t*      const ue_context_pP,
+  int                              CC_id,
+  uint8_t*                   const buffer,
+  const uint8_t                    transmission_mode,
+  const uint8_t                    Transaction_id,
+  SRB_ToAddModList_t               **SRB_configList,
+  struct PhysicalConfigDedicated   **physicalConfigDedicated);
 
 /**
 \brief Generate an RRCConnectionReestablishmentReject DL-CCCH-Message (eNB).
@@ -244,14 +250,13 @@ uint8_t do_RRCConnectionRelease(uint8_t Mod_id, uint8_t *buffer,int Transaction_
  * @returns Size of encoded bit stream in bytes
 */
 uint8_t do_MCCHMessage(uint8_t *buffer);
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 /***
  * \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
  * @param buffer Pointer to PER-encoded ASN.1 description of MCCH-Message PDU
  * @returns Size of encoded bit stream in bytes
 */
 uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
-                           LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t sync_area,
                            uint8_t *buffer,
                            MCCH_Message_t *mcch_message,
@@ -261,6 +266,8 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
 uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_id,long rsrp_s,long rsrq_s,long rsrp_t,long rsrq_t);
 
 uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t transaction_id, uint32_t pdu_length, uint8_t *pdu_buffer);
+
+uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain);
 
 uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer);
 

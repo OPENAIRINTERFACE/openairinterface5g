@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file vars.hles
 * \brief rrc variables
@@ -44,31 +36,10 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/defs.h"
 
-eNB_RRC_INST *eNB_rrc_inst;
+UE_PF_PO_t UE_PF_PO[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+pthread_mutex_t ue_pf_po_mutex;
 UE_RRC_INST *UE_rrc_inst;
-//RRC_XFACE *Rrc_xface;
-#ifndef USER_MODE
-//MAC_RLC_XFACE *Mac_rlc_xface;
-#ifndef NO_RRM
-int S_rrc= RRC2RRM_FIFO;
-#endif //NO_RRM
-//int R_rrc= RRM2RRC_FIFO;
-#else
 #include "LAYER2/MAC/extern.h"
-#ifndef NO_RRM
-sock_rrm_t S_rrc;
-#endif
-#endif
-
-#ifndef NO_RRM
-#ifndef USER_MODE
-char *Header_buf;
-char *Data;
-unsigned short Header_read_idx,Data_read_idx,Header_size;
-#endif
-unsigned short Data_to_read;
-#endif //NO_RRM
-
 #define MAX_U32 0xFFFFFFFF
 
 uint8_t DRB2LCHAN[8];
@@ -88,7 +59,7 @@ struct LogicalChannelConfig__ul_SpecificParameters LCSRB2 =  {3,
 };
 
 
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
 struct LogicalChannelConfig__ext1 logicalChannelSR_Mask_r9_ext1 = {
          logicalChannelSR_Mask_r9: &logicalChannelSR_Mask_r9
 };
@@ -96,14 +67,14 @@ struct LogicalChannelConfig__ext1 logicalChannelSR_Mask_r9_ext1 = {
 
 // These are the default SRB configurations from 36.331 (Chapter 9, p. 176-179 in v8.6)
 LogicalChannelConfig_t  SRB1_logicalChannelConfig_defaultValue = {ul_SpecificParameters: &LCSRB1
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                                                                   ,
                                                                   ext1: &logicalChannelSR_Mask_r9_ext1
 #endif
                                                                  };
 
 LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {ul_SpecificParameters: &LCSRB2
-#ifdef Rel10
+#if defined(Rel10) || defined(Rel14)
                                                                  ,
                                                                  ext1: &logicalChannelSR_Mask_r9_ext1
 #endif
@@ -266,5 +237,11 @@ float RSRQ_meas_mapping[35] = {
   -2.5,
   -2
 };
+
+// only used for RRC connection re-establishment procedure TS36.331 5.3.7
+// [0]: current C-RNTI, [1]: prior C-RNTI
+// insert one when eNB received RRCConnectionReestablishmentRequest message
+// delete one when eNB received RRCConnectionReestablishmentComplete message
+uint16_t reestablish_rnti_map[NUMBER_OF_UE_MAX][2] = {{0}};
 
 #endif

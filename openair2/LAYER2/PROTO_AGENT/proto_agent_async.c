@@ -27,12 +27,6 @@
 
  *******************************************************************************/
 
-/*! \file enb_agent_async.c
- * \brief channel implementation for async interface
- * \author Xenofon Foukas
- * \date 2016
- * \version 0.1
- */
 
 #include "proto_agent_async.h"
 #include "proto_agent_defs.h"
@@ -60,6 +54,7 @@ proto_agent_async_channel_t * proto_server_async_channel_info(mid_t mod_id, char
   if (strcmp(type, "TCP") == 0)
   {
     proto_tcp = 1;
+    printf("PROTO_AGENT: sTARTING TCP SERVER\n");
     channel->link = new_link_server(dst_port);
     channel->type = 0;
   }
@@ -173,7 +168,15 @@ int proto_agent_async_msg_recv(void **data, int *size, int *priority, void *chan
   proto_agent_async_channel_t *channel;
   channel = (proto_agent_async_channel_t *)channel_info;
 
-  return message_get(channel->receive_queue, data, size, priority);
+  if (channel == NULL)
+    return 0;   
+  else if (channel->type < 0)
+    return 0;
+  else if (channel->receive_queue == NULL)
+    return 0;  
+  else
+    return message_get(channel->receive_queue, data, size, priority);
+
 }
 
 void proto_agent_async_release(proto_agent_channel_t *channel) {

@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
@@ -73,8 +66,7 @@ DCI_PDU *get_dci(uint8_t Mod_id, uint8_t frame, uint8_t subframe)
   int dci_length_bytes,dci_length;
   int BCCH_pdu_size_bits, BCCH_pdu_size_bytes;
 
-  DCI_pdu.Num_ue_spec_dci = 0;
-  DCI_pdu.Num_common_dci = 0;
+  DCI_pdu.Num_dci = 0;
 
   if (subframe_select(&PHY_vars_eNB_g[0]->lte_frame_parms, subframe) == SF_S) {
     return (&DCI_pdu);
@@ -288,28 +280,30 @@ DCI_PDU *get_dci(uint8_t Mod_id, uint8_t frame, uint8_t subframe)
     }
 
     // add common dci
-    DCI_pdu.dci_alloc[0].dci_length = BCCH_pdu_size_bits;
-    DCI_pdu.dci_alloc[0].L          = 2;
-    DCI_pdu.dci_alloc[0].rnti       = SI_RNTI;
-    DCI_pdu.dci_alloc[0].format     = format1A;
-    DCI_pdu.dci_alloc[0].ra_flag    = 0;
+    DCI_pdu.dci_alloc[0].dci_length   = BCCH_pdu_size_bits;
+    DCI_pdu.dci_alloc[0].L            = 2;
+    DCI_pdu.dci_alloc[0].rnti         = SI_RNTI;
+    DCI_pdu.dci_alloc[0].format       = format1A;
+    DCI_pdu.dci_alloc[0].ra_flag      = 0;
+    DCI_pdu.dci_alloc[0].search_space = DCI_COMMON_SPACE;
     memcpy((void*)&DCI_pdu.dci_alloc[0].dci_pdu[0], &BCCH_alloc_pdu[0], BCCH_pdu_size_bytes);
-    DCI_pdu.Num_common_dci++;
+    DCI_pdu.Num_dci++;
 
     // add ue specific dci
-    DCI_pdu.dci_alloc[k+DCI_pdu.Num_common_dci].dci_length = dci_length;
-    DCI_pdu.dci_alloc[k+DCI_pdu.Num_common_dci].L          = 0;
-    DCI_pdu.dci_alloc[k+DCI_pdu.Num_common_dci].rnti       = n_rnti+k;
-    DCI_pdu.dci_alloc[k+DCI_pdu.Num_common_dci].format     = format1;
-    DCI_pdu.dci_alloc[k+DCI_pdu.Num_common_dci].ra_flag    = 0;
-    memcpy((void*)&DCI_pdu.dci_alloc[k+DCI_pdu.Num_common_dci].dci_pdu[0], &DLSCH_alloc_pdu_1[k], dci_length_bytes);
-    DCI_pdu.Num_ue_spec_dci++;
+    DCI_pdu.dci_alloc[DCI_pdu.Num_dci].dci_length   = dci_length;
+    DCI_pdu.dci_alloc[DCI_pdu.Num_dci].L            = 0;
+    DCI_pdu.dci_alloc[DCI_pdu.Num_dci].rnti         = n_rnti+k;
+    DCI_pdu.dci_alloc[DCI_pdu.Num_dci].format       = format1;
+    DCI_pdu.dci_alloc[DCI_pdu.Num_dci].ra_flag      = 0;
+    DCI_pdu.dci_alloc[DCI_pdu.Num_dci].search_space = DCI_UE_SPACE;
+    memcpy((void*)&DCI_pdu.dci_alloc[DCI_pdu.Num_dci].dci_pdu[0], &DLSCH_alloc_pdu_1[k], dci_length_bytes);
+    DCI_pdu.Num_dci++;
 
   }
 
   DCI_pdu.nCCE = 0;
 
-  for (i=0; i<DCI_pdu.Num_common_dci+DCI_pdu.Num_ue_spec_dci; i++) {
+  for (i=0; i<DCI_pdu.Num_dci; i++) {
     DCI_pdu.nCCE += (1<<(DCI_pdu.dci_alloc[i].L));
   }
 
@@ -401,7 +395,7 @@ void lte_param_init(  unsigned char transmission_mode,
   lte_frame_parms->Nid_cell           = Nid_cell;
   lte_frame_parms->nushift            = Nid_cell%6;
   lte_frame_parms->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
-  lte_frame_parms->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
+  lte_frame_parms->nb_antenna_ports_eNB = (transmission_mode == 1) ? 1 : 2;
   lte_frame_parms->nb_antennas_rx     = (transmission_mode == 1) ? 1 : 2;
   lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
   lte_frame_parms->phich_config_common.phich_resource = oneSixth;

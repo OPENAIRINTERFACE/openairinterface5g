@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
-
- *******************************************************************************/
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -70,3 +63,43 @@ int derive_keNB(const uint8_t kasme[32], const uint32_t nas_count, uint8_t *keNB
 }
 #endif
 
+int derive_keNB_star(
+  const uint8_t *kenb_32,
+  const uint16_t pci,
+  const uint32_t earfcn_dl,
+  const bool     is_rel8_only,
+  uint8_t       *kenb_star)
+{
+  // see 33.401 section A.5 KeNB* derivation function
+  uint8_t                                 s[10] = {0};
+
+  // FC = 0x13
+  s[0] = FC_KENB_STAR;
+  // P0 = PCI (target physical cell id)
+  s[1] = (pci & 0x0000ff00) >> 8;
+  s[2] = (pci & 0x000000ff);
+  // L0 = length of PCI (i.e. 0x00 0x02)
+  s[3] = 0x00;
+  s[4] = 0x02;
+  // P1 = EARFCN-DL (target physical cell downlink frequency)
+  if (is_rel8_only) {
+    s[5] = (earfcn_dl & 0x0000ff00) >> 8;
+    s[6] = (earfcn_dl & 0x000000ff);
+	s[7] = 0x00;
+	s[8] = 0x02;
+	kdf (kenb_32, 32, s, 9, kenb_star, 32);
+  } else {
+	s[5] = (earfcn_dl & 0x00ff0000) >> 16;
+	s[6] = (earfcn_dl & 0x0000ff00) >> 8;
+	s[7] = (earfcn_dl & 0x000000ff);
+	s[8] = 0x00;
+	s[9] = 0x03;
+	kdf (kenb_32, 32, s, 10, kenb_star, 32);
+  }
+  // L1 length of EARFCN-DL (i.e. L1 = 0x00 0x02 if EARFCN-DL is between 0 and 65535, and L1 = 0x00 0x03 if EARFCN-DL is between 65536 and 262143)
+  // NOTE: The length of EARFCN-DL cannot be generally set to 3 bytes for backward compatibility reasons: A Rel-8
+  // entity (UE or eNB) would always assume an input parameter length of 2 bytes for the EARFCN-DL. This
+  // would lead to different derived keys if another entity assumed an input parameter length of 3 bytes for the
+  // EARFCN-DL.
+  return 0;
+}

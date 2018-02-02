@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file pdcp_netlink.c
  * \brief pdcp communication with linux IP interface,
@@ -109,13 +101,8 @@ pdcp_netlink_init(
   struct sched_param sched_param;
 
   reset_meas(&ip_pdcp_stats_tmp);
-#if defined(USER_MODE) && defined(OAI_EMU)
-  nb_inst_enb = oai_emulation.info.nb_enb_local;
-  nb_inst_ue  = oai_emulation.info.nb_ue_local;
-#else
   nb_inst_enb = 1;
   nb_inst_ue  = 1;
-#endif
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
   nb_inst_enb = 0;
@@ -267,24 +254,7 @@ void *pdcp_netlink_thread_fct(void *arg)
           }
         } else {
           pdcp_thread_read_state = 0;
-
-#ifdef OAI_EMU
-
-          // LG: new_data_p->pdcp_read_header.inst will contain in fact a module id
-          if (new_data_p->pdcp_read_header.inst >= oai_emulation.info.nb_enb_local) {
-            module_id = new_data_p->pdcp_read_header.inst
-                                                - oai_emulation.info.nb_enb_local +
-                                                + oai_emulation.info.first_ue_local;
-            eNB_flag = 0;
-          } else {
-            module_id = new_data_p->pdcp_read_header.inst
-                                                + oai_emulation.info.first_enb_local;
-            eNB_flag = 1;
-          }
-
-#else
           module_id = 0;
-#endif
           new_data_p->data = malloc(sizeof(uint8_t) * new_data_p->pdcp_read_header.data_size);
           /* Copy the data */
           memcpy(new_data_p->data, NLMSG_DATA(nas_nlh_rx), new_data_p->pdcp_read_header.data_size);

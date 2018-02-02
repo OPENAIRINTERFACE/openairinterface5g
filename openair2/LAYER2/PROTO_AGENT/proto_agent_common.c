@@ -45,6 +45,7 @@
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rrc_eNB_UE_context.h"
+//#include "LAYER2/PDCP_v10.1.0/pdcp_primitives.h"
 
 void * enb[NUM_MAX_ENB];
 void * enb_ue[NUM_MAX_ENB];
@@ -54,18 +55,140 @@ void * enb_rrc[NUM_MAX_ENB];
  * message primitives
  */
 
-int proto_agent_serialize_message(Protocol__FlexsplitMessage *msg, void **buf, int *size) {
+// Function to fill in the dl_data header (32bits) with the appropriate fields (doing bitwise operations)
+void fill_dl_data_header(int pdu_type, int spare, int seq_no, uint32_t *header)
+{
+  uint32_t type = pdu_type;
+  uint32_t spare_ = spare;
+  uint32_t seq = seq_no;
+  type = type << 28;
+  spare_ = spare_ << 24;
+  *header = (type | spare_);
+  *header = (*header | seq);
+  return;
+}
 
-  *size = protocol__flexsplit_message__get_packed_size(msg);
-  
+
+// Function to retrieve data from the dl_data header (32bits) (doing bitwise operations)
+void read_dl_data_header(int *pdu_type, int *spare, int *seqno, uint32_t header)
+{
+  *pdu_type = header;
+  *spare = header;
+  *seqno = header;
+  *pdu_type = *pdu_type >> 28;
+  *spare = *spare << 4;
+  *spare = *spare >> 28;
+  *seqno = *seqno << 8;
+  *seqno = *seqno >> 8;
+  return;
+}
+
+int f1u_serialize_message(Protocol__F1uMessage *msg, void **buf,int *size){
+  *size = protocol__f1u_message__get_packed_size(msg);
+
   *buf = malloc(*size);
   if (buf == NULL)
     goto error;
-  
-  protocol__flexsplit_message__pack(msg, *buf);
-  
+
+  protocol__f1u_message__pack(msg, *buf);
+
+  return 0;
+
+ error:
+  LOG_E(F1U, "an error occured\n"); 
+  return -1;
+
+}
+
+int f1u_deserialize_message(void *data, int size, Protocol__F1uMessage **msg) {
+  *msg = protocol__f1u_message__unpack(NULL, size, data);
+  if (*msg == NULL)
+    goto error;
+
+  return 0;
+
+ error:
+  LOG_E(F1U, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+
+int f1u_dl_data_create_header(uint32_t pdu_type, uint32_t f1u_sn, Protocol__DlDataHeader **header) {
+
+  *header = malloc(sizeof(Protocol__DlDataHeader));
+  if(*header == NULL)
+    goto error;
+
+  protocol__dl_data_header__init(*header);
+  LOG_D(F1U, "Initialized the DL Data User header\n");
+
+  fill_dl_data_header(pdu_type, 0, f1u_sn, (*header)->fields);
+  return 0;
+
+ error:
+  LOG_E(F1U, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+
+int f1u_dl_data(const void *params, Protocol__F1uMessage **msg)
+{
+
+  // Initialize the PDCP params
+  dl_data_args *args = (dl_data_args *)params;
+
+  Protocol__DlDataHeader *header;
+
+  if (f1u_dl_data_create_header(args->pdu_type, args->sn, &header) != 0)
+     goto error;
+
+
+  Protocol__DlUserData *dl_data = NULL;
+
+  *msg = malloc(sizeof(Protocol__DlUserData));
+
+  if(*msg == NULL)
+    goto error;
+
+
+  dl_data = *msg;
+
+  protocol__dl_user_data__init(dl_data);
+
+
+  // Copy data to the bytes structure
+  dl_data->pdu.data = malloc(args->sdu_size);
+  dl_data->pdu.len = args->sdu_size;
+  memcpy(dl_data->pdu.data, args->sdu_p, args->sdu_size);
+
+  dl_data->frame = args->frame;
+  dl_data->subframe = args->subframe;
+  dl_data->rnti = args->rnti;
+
+  dl_data->header = header;
+
   return 0;
   
+  error:
+    if(header != NULL)
+      free(header);
+    if(*msg != NULL)
+      free(*msg);
+    LOG_E(F1U, "%s: an error occured\n", __FUNCTION__);
+    return -1;
+  
+}
+
+int proto_agent_serialize_message(Protocol__FlexsplitMessage *msg, void **buf, int *size) {
+
+  *size = protocol__flexsplit_message__get_packed_size(msg);
+
+  *buf = malloc(*size);
+  if (buf == NULL)
+    goto error;
+
+  protocol__flexsplit_message__pack(msg, *buf);
+
+  return 0;
+
  error:
   LOG_E(PROTO_AGENT, "an error occured\n"); 
   return -1;
@@ -121,7 +244,7 @@ int proto_agent_pdcp_data_req(mid_t mod_id, const void *params, Protocol__Flexsp
  
   // Create the protobuf header
   Protocol__FspHeader *header;
-  xid_t xid = 1;
+  xid_t xid = mod_id;
   LOG_D(PROTO_AGENT, "creating the data_req message\n");
   
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_RLC_DATA_REQ, &header) != 0)
@@ -309,7 +432,7 @@ int proto_agent_pdcp_data_req_ack(mid_t mod_id, const void *params, Protocol__Fl
   muiP = rlc_data->fsp_muip;
   confirmP = rlc_data->fsp_confirm;
   pdcp_pdu_size = rlc_data->fsp_pdu->fsp_pdu_data.len; 
-  pdcp_pdu_p = get_free_mem_block(pdcp_pdu_size);
+  pdcp_pdu_p = get_free_mem_block(pdcp_pdu_size, __func__);
   
   memcpy(pdcp_pdu_p->data, rlc_data->fsp_pdu->fsp_pdu_data.data, pdcp_pdu_size);
 
@@ -340,7 +463,7 @@ int proto_agent_pdcp_data_req_ack(mid_t mod_id, const void *params, Protocol__Fl
   
   error:
     if (pdcp_pdu_p != NULL)
-      free_mem_block(pdcp_pdu_p);
+      free_mem_block(pdcp_pdu_p, __func__);
     if(header != NULL)
       free(header);
     if(ack!=NULL)
@@ -389,7 +512,7 @@ int proto_agent_pdcp_data_ind(mid_t mod_id, const void *params, Protocol__Flexsp
  
   // Create the protobuf header
   Protocol__FspHeader *header;
-  xid_t xid = 1;
+  xid_t xid = mod_id;
   LOG_D(PROTO_AGENT, "creating the data_ind message\n");
   
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_PDCP_DATA_IND, &header) != 0)
@@ -500,7 +623,7 @@ int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__Fl
   xid_t xid;
   rlc_op_status_t result = 0;
   
-  LOG_D(PROTO_AGENT, "creating the data_ind_ack message\n");
+  LOG_I(PROTO_AGENT, "creating the data_ind_ack message\n");
   
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
   Protocol__FspPdcpDataInd *data_ind = input->data_ind_msg;
@@ -528,7 +651,9 @@ int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__Fl
   // Create a new protocol context for handling the packet
   
   ctxt_pP = malloc(sizeof(protocol_ctxt_t));
-  ctxt_pP->module_id = ctxt->fsp_mod_id;
+  //FIXME: 
+  //ctxt_pP->module_id = ctxt->fsp_mod_id;
+  ctxt_pP->module_id = 0;
   ctxt_pP->enb_flag = ctxt->fsp_enb_flag;
   ctxt_pP->instance = ctxt->fsp_instance;
   ctxt_pP->rnti = ctxt->fsp_rnti;
@@ -540,11 +665,15 @@ int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__Fl
   flag_MBMS = rlc_data->fsp_mbms_flag;
   rb_idP = rlc_data->fsp_rb_id;
   pdcp_pdu_size = rlc_data->fsp_pdu->fsp_pdu_data.len; 
-  pdcp_pdu_p = get_free_mem_block(pdcp_pdu_size);
+  pdcp_pdu_p = get_free_mem_block(pdcp_pdu_size, __func__);
   
   memcpy(pdcp_pdu_p->data, rlc_data->fsp_pdu->fsp_pdu_data.data, pdcp_pdu_size);
   
-  pdcp_data_ind((const protocol_ctxt_t*) ctxt_pP, (const srb_flag_t) srb_flagP, (const MBMS_flag_t) flag_MBMS, (const rb_id_t) rb_idP, pdcp_pdu_size, pdcp_pdu_p);
+//   if (xid == 1)
+//     pdcp_data_ind_wifi((const protocol_ctxt_t*) ctxt_pP, (const srb_flag_t) srb_flagP, (const MBMS_flag_t) flag_MBMS, (const rb_id_t) rb_idP, pdcp_pdu_size, pdcp_pdu_p);
+//   else if (xid == 0)   // FIXME: USE a preprocessed definition
+    pdcp_data_ind((const protocol_ctxt_t*) ctxt_pP, (const srb_flag_t) srb_flagP, (const MBMS_flag_t) flag_MBMS, (const rb_id_t) rb_idP, pdcp_pdu_size, pdcp_pdu_p);
+
 
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_PDCP_DATA_IND_ACK, &header) != 0)
     goto error;
@@ -566,6 +695,19 @@ int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__Fl
   (*msg)->msg_dir = PROTOCOL__FLEXSPLIT_DIRECTION__SUCCESSFUL_OUTCOME;
   (*msg)->has_msg_dir = 1;
   (*msg)->data_req_ack = ack;
+  
+  
+  //pdcp_control_plane_data_pdu_header* pdcp_header = (pdcp_control_plane_data_pdu_header*) pdcp_pdu_p;
+  
+//   int sequence_number = pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)pdcp_pdu_p);
+//   LOG_I(PROTO_AGENT,"RECEIVED DATA IND WITH SEQ NO %d\n", sequence_number);
+  
+  
+  
+  
+  
+  
+  
   return 0;
   
   error:
@@ -576,7 +718,7 @@ int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__Fl
     if(*msg != NULL)
       free(*msg);
     if (pdcp_pdu_p != NULL)
-      free_mem_block(pdcp_pdu_p);
+      free_mem_block(pdcp_pdu_p, __func__);
 
     LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
     return -1;
@@ -602,7 +744,7 @@ int proto_agent_hello(mid_t mod_id, const void *params, Protocol__FlexsplitMessa
  
   Protocol__FspHeader *header;
   /*TODO: Need to set random xid or xid from received hello message*/
-  xid_t xid = 1;
+  xid_t xid = mod_id;
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_HELLO, &header) != 0)
     goto error;
 
@@ -655,7 +797,7 @@ int proto_agent_destroy_hello(Protocol__FlexsplitMessage *msg) {
 int proto_agent_echo_request(mid_t mod_id, const void* params, Protocol__FlexsplitMessage **msg) {
   Protocol__FspHeader *header;
 
-  xid_t xid = 1;
+  xid_t xid = mod_id;
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_ECHO_REQUEST, &header) != 0)
     goto error;
   LOG_D(PROTO_AGENT, "creating the echo request message\n");
@@ -758,25 +900,4 @@ int proto_agent_destroy_echo_reply(Protocol__FlexsplitMessage *msg) {
  error:
   LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
   return -1;
-}
-/*
- * get generic info from RAN
- */
-
-void set_enb_vars(mid_t mod_id, ran_name_t ran){
-
-  switch (ran){
-  case RAN_LTE_OAI :
-    enb[mod_id] =  (void *)&eNB_mac_inst[mod_id];
-    enb_ue[mod_id] = (void *)&eNB_mac_inst[mod_id].UE_list;
-    enb_rrc[mod_id] = (void *)&eNB_rrc_inst[mod_id];
-    break;
-  default :
-    goto error;
-  }
-
-  return; 
-
- error:
-  LOG_E(PROTO_AGENT, "unknown RAN name %d\n", ran);
 }

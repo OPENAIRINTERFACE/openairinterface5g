@@ -3,6 +3,17 @@ package protocol;
 import "header.proto";
 import "flexsplit-messages.proto";
 
+
+message f1u_message{
+     optional flexsplit_direction msg_dir = 100;
+     oneof msg{
+	dl_user_data dl_data = 1;
+        dl_data_delivery_status dl_status = 2;
+     }
+}
+
+
+
 message flexsplit_message {
      optional flexsplit_direction msg_dir = 100;
 	oneof msg {
@@ -25,7 +36,6 @@ enum flexsplit_direction {
 }
 
 enum flexsplit_err {
-        option allow_alias = true;
 	// message errors
 	NO_ERR = 0;	
 	MSG_DEQUEUING = -1;
@@ -82,4 +92,25 @@ message fspPdcpDataInd {
 message fspPdcpDataIndAck {
         optional fsp_header header = 1;
 	optional uint32 result = 2;
+}
+
+message dl_data_header {
+        required uint32 fields = 1;
+}
+
+message dl_user_data {
+	required dl_data_header header = 1;
+	required bytes pdu = 2;
+	required uint32 frame = 3;
+	required uint32 subframe = 4;
+	required uint32 rnti = 5;
+}
+
+
+message dl_data_delivery_status {
+	required dl_data_header header = 1;
+	required bytes pdu = 2;
+	required uint32 frame = 3;
+	required uint32 subframe = 4;
+	required uint32 rnti = 5;
 }

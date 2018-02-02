@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-    included in this distribution in the file called "COPYING". If not,
-    see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
 /*! \file proto.h
  * \brief RRC functions prototypes for eNB and UE
  * \author Navid Nikaein and Raymond Knopp
@@ -61,7 +54,22 @@ void rrc_config_buffer(SRB_INFO *srb_info, uint8_t Lchan_type, uint8_t Role);
 void
 openair_rrc_on(
   const protocol_ctxt_t* const ctxt_pP);
+void
+openair_rrc_on_ue(
+  const protocol_ctxt_t* const ctxt_pP);
+
 void rrc_top_cleanup(void);
+
+/** \brief Function to update eNB timers every subframe.  
+@param ctxt_pP  running context
+@param enb_index
+@param CC_id
+*/
+RRC_status_t
+rrc_rx_tx(
+  protocol_ctxt_t* const ctxt_pP,
+  const int          CC_id
+);
 
 /** \brief Function to update timers every subframe.  For UE it updates T300,T304 and T310.
 @param ctxt_pP  running context
@@ -69,7 +77,7 @@ void rrc_top_cleanup(void);
 @param CC_id
 */
 RRC_status_t
-rrc_rx_tx(
+rrc_rx_tx_ue(
   protocol_ctxt_t* const ctxt_pP,
   const uint8_t      enb_index,
   const int          CC_id
@@ -228,19 +236,21 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
 void
 rrc_eNB_process_RRCConnectionSetupComplete(
   const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
+  rrc_eNB_ue_context_t*        ue_context_pP,
   RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
 );
 
 /**\brief Process the RRCConnectionReconfigurationComplete based on information coming from UE
    \param ctxt_pP       Running context
    \param ue_context_pP RRC UE context
-   \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message*/
+   \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message
+   \param xid         the transaction id for the rrcconnectionreconfiguration procedure
+*/
 void
 rrc_eNB_process_RRCConnectionReconfigurationComplete(
   const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
-  RRCConnectionReconfigurationComplete_r8_IEs_t* rrcConnectionReconfigurationComplete
+  rrc_eNB_ue_context_t*        ue_context_pP,
+  const uint8_t xid
 );
 
 /**\brief Generate the RRCConnectionRelease
@@ -258,6 +268,31 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   rrc_eNB_ue_context_t*          const ue_context_pP,
   const uint8_t                ho_state
 );
+
+int freq_to_arfcn10(int band, unsigned long freq);
+
+void
+rrc_eNB_generate_dedeicatedRRCConnectionReconfiguration(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t*          const ue_context_pP,
+  const uint8_t                ho_state
+);
+
+/**\brief release Data Radio Bearer between ENB and UE
+   \param ctxt_pP Running context
+   \param ue_context_pP UE context of UE receiving the message*/
+void
+rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(
+  const protocol_ctxt_t*   const ctxt_pP,
+  rrc_eNB_ue_context_t*    const ue_context_pP,
+  uint8_t                  xid,
+  uint32_t                 nas_length,
+  uint8_t*                 nas_buffer
+);
+
+void 
+rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t* const ctxt_pP,
+			  rrc_eNB_ue_context_t*  ue_context_pP);
 
 #if defined(ENABLE_ITTI)
 /**\brief RRC eNB task.
@@ -290,8 +325,6 @@ mac_rrc_data_req(
   const rb_id_t     Srb_id,
   const uint8_t     Nb_tb,
   uint8_t*    const buffer_pP,
-  const eNB_flag_t  enb_flagP,
-  const uint8_t     eNB_index,
   const uint8_t     mbsfn_sync_area
 );
 
@@ -305,7 +338,31 @@ mac_rrc_data_ind(
   const rb_id_t         srb_idP,
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
-  const eNB_flag_t      eNB_flagP,
+  const uint8_t         mbsfn_sync_areaP
+);
+
+int8_t
+mac_rrc_data_req_ue(
+  const module_id_t Mod_idP,
+  const int         CC_id,
+  const frame_t     frameP,
+  const rb_id_t     Srb_id,
+  const uint8_t     Nb_tb,
+  uint8_t*    const buffer_pP,
+  const mac_enb_index_t eNB_indexP,
+  const uint8_t     mbsfn_sync_area
+);
+
+int8_t
+mac_rrc_data_ind_ue(
+  const module_id_t     module_idP,
+  const int         CC_id,
+  const frame_t         frameP,
+  const sub_frame_t     sub_frameP,
+  const rnti_t          rntiP,
+  const rb_id_t         srb_idP,
+  const uint8_t*        sduP,
+  const sdu_size_t      sdu_lenP,
   const mac_enb_index_t eNB_indexP,
   const uint8_t         mbsfn_sync_areaP
 );
@@ -317,6 +374,12 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
 			    const frame_t frameP,
 			    const sub_frame_t subframeP,
 			    const rnti_t rnti);
+
+void mac_eNB_rrc_uplane_failure(const module_id_t Mod_instP,
+                const int CC_id,
+                const frame_t frameP,
+                const sub_frame_t subframeP,
+                const rnti_t rnti);
 
 void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP, 
 			    const int CC_id, 
@@ -357,6 +420,12 @@ int decode_BCCH_DLSCH_Message(
   const uint8_t                rsrq,
   const uint8_t                rsrp );
 
+int decode_PCCH_DLSCH_Message(
+  const protocol_ctxt_t* const ctxt_pP,
+  const uint8_t                eNB_index,
+  uint8_t*               const Sdu,
+  const uint8_t                Sdu_len);
+
 void
 ue_meas_filtering(
   const protocol_ctxt_t* const ctxt_pP,
@@ -365,7 +434,7 @@ ue_meas_filtering(
 
 void
 ue_measurement_report_triggering(
-  const protocol_ctxt_t* const ctxt_pP,
+  protocol_ctxt_t*        const ctxt_pP,
   const uint8_t                 eNB_index
 );
 
@@ -448,5 +517,14 @@ rrc_eNB_free_UE(
 long binary_search_int(int elements[], long numElem, int value);
 
 long binary_search_float(float elements[], long numElem, float value);
+
+void openair_rrc_top_init_eNB(int eMBMS_active,uint8_t HO_active);
+
+void openair_rrc_top_init_ue(
+                        int eMBMS_active,
+                        char* uecap_xer,
+                        uint8_t cba_group_active,
+                        uint8_t HO_active
+);
 
 /** @}*/

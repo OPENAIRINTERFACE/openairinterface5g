@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*
  * rrc_messages_types.h
@@ -70,6 +62,7 @@ typedef UL_DCCH_Message_t       RrcUlDcchMessage;
 
 #define RRC_CONFIGURATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.rrc_configuration_req
 
+#define NAS_KENB_REFRESH_REQ(mSGpTR)    (mSGpTR)->ittiMsg.nas_kenb_refresh_req
 #define NAS_CELL_SELECTION_REQ(mSGpTR)  (mSGpTR)->ittiMsg.nas_cell_selection_req
 #define NAS_CONN_ESTABLI_REQ(mSGpTR)    (mSGpTR)->ittiMsg.nas_conn_establi_req
 #define NAS_UPLINK_DATA_REQ(mSGpTR)     (mSGpTR)->ittiMsg.nas_ul_data_req
@@ -100,27 +93,20 @@ typedef struct RrcConfigurationReq_s {
   uint16_t            mnc;
   uint8_t             mnc_digit_length;
 
-  /*
-    paging_drx_t        default_drx;
-
-    lte_frame_type_t    frame_type;
-    uint8_t             tdd_config;
-    uint8_t             tdd_config_s;
-    int16_t             eutra_band;
-  */
+  
+  paging_drx_t            default_drx;
   int16_t                 nb_cc;
   lte_frame_type_t        frame_type[MAX_NUM_CCs];
   uint8_t                 tdd_config[MAX_NUM_CCs];
   uint8_t                 tdd_config_s[MAX_NUM_CCs];
   lte_prefix_type_t       prefix_type[MAX_NUM_CCs];
+  uint8_t                 pbch_repetition[MAX_NUM_CCs];
   int16_t                 eutra_band[MAX_NUM_CCs];
   uint32_t                downlink_frequency[MAX_NUM_CCs];
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
-
   int16_t                 Nid_cell[MAX_NUM_CCs];// for testing, change later
   int16_t                 N_RB_DL[MAX_NUM_CCs];// for testing, change later
-  int                   nb_antennas_tx[MAX_NUM_CCs];
-  int                     nb_antennas_rx[MAX_NUM_CCs];
+  int                     nb_antenna_ports[MAX_NUM_CCs];
   long                    prach_root[MAX_NUM_CCs];
   long                    prach_config_index[MAX_NUM_CCs];
   BOOLEAN_t               prach_high_speed[MAX_NUM_CCs];
@@ -129,7 +115,7 @@ typedef struct RrcConfigurationReq_s {
   long                    pucch_delta_shift[MAX_NUM_CCs];
   long                    pucch_nRB_CQI[MAX_NUM_CCs];
   long                    pucch_nCS_AN[MAX_NUM_CCs];
-#ifndef Rel10
+#if !defined(Rel10) && !defined(Rel14)
   long                    pucch_n1_AN[MAX_NUM_CCs];
 #endif
   long                    pdsch_referenceSignalPower[MAX_NUM_CCs];
@@ -179,10 +165,11 @@ typedef struct RrcConfigurationReq_s {
   long                    ue_TimersAndConstants_t311[MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n310[MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
-
+  long                    ue_TransmissionMode[MAX_NUM_CCs];
 } RrcConfigurationReq;
 
 // UE: NAS -> RRC messages
+typedef kenb_refresh_req_t      NasKenbRefreshReq;
 typedef cell_info_req_t         NasCellSelectionReq;
 typedef nas_establish_req_t     NasConnEstabliReq;
 typedef ul_info_transfer_req_t  NasUlDataReq;

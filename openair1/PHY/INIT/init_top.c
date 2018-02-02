@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*!\brief Initilization and reconfiguration routines for LTE PHY */
 #ifndef USER_MODE
 #define __NO_VERSION__
@@ -33,20 +26,44 @@
 
 #include "defs.h"
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/extern.h"
-//#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 
-/*!
-* @addtogroup _PHY_STRUCTURES_
-* Memory Initializaion and Cleanup for LTE MODEM.
-* @{
-\section _Memory_init_ Memory Initialization for LTE MODEM
+void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
+{
 
-*/
+  crcTableInit();
 
-//#define DEBUG_PHY
+  ccodedot11_init();
+  ccodedot11_init_inv();
 
+  ccodelte_init();
+  ccodelte_init_inv();
+
+  treillis_table_init();
+
+  phy_generate_viterbi_tables();
+  phy_generate_viterbi_tables_lte();
+  init_td8();
+  init_td16();
+#ifdef __AVX2__
+  init_td16avx2();
+#endif
+  lte_sync_time_init(frame_parms);
+
+  generate_ul_ref_sigs();
+  generate_ul_ref_sigs_rx();
+
+  generate_64qam_table();
+  generate_16qam_table();
+  generate_RIV_tables();
+
+  init_unscrambling_lut();
+  init_scrambling_lut();
+  //set_taus_seed(1328);
+
+
+}
 
 
 /*
  * @}*/
+

@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file PHY/LTE_TRANSPORT/phich.c
 * \brief Routines for generation of and computations regarding the uplink control information (UCI) for PUSCH. V8.6 2009-03
@@ -176,6 +168,7 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
   //unsigned char rank;
   //UCI_format fmt;
   //uint8_t N_RB_DL = 25;
+  uint8_t i;
   LOG_D(PHY,"[eNB][UCI] N_RB_DL %d uci format %d\n", N_RB_DL,uci_format);
 
   switch(N_RB_DL) {
@@ -239,18 +232,6 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
       stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_1_5MHz *)o)->pmi;
       break;
 
-    case HLC_subband_cqi_mcs_CBA:
-      if ((*crnti == ((HLC_subband_cqi_mcs_CBA_1_5MHz *)o)->crnti) && (*crnti !=0)) {
-        *access_mode=CBA_ACCESS;
-        LOG_N(PHY,"[eNB] UCI for CBA : mcs %d  crnti %x\n",
-              ((HLC_subband_cqi_mcs_CBA_1_5MHz *)o)->mcs, ((HLC_subband_cqi_mcs_CBA_1_5MHz *)o)->crnti);
-      } else {
-        LOG_D(PHY,"[eNB] UCI for CBA : rnti (enb context %x, rx uci %x) invalid, unknown access\n",
-              *crnti, ((HLC_subband_cqi_mcs_CBA_1_5MHz *)o)->crnti);
-      }
-
-      break;
-
     case unknown_cqi:
     default:
       LOG_N(PHY,"[eNB][UCI] received unknown uci (rb %d)\n",N_RB_DL);
@@ -283,6 +264,11 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
         stats->DL_cqi[1] = 24;
 
       stats->DL_pmi_dual   = ((wideband_cqi_rank2_2A_5MHz *)o)->pmi;
+      //this translates the 2-layer PMI into a single layer PMI for the first codeword
+      //the PMI for the second codeword will be stats->DL_pmi_single^0x1555
+      stats->DL_pmi_single = 0;
+      for (i=0;i<7;i++)
+	stats->DL_pmi_single = stats->DL_pmi_single | (((stats->DL_pmi_dual&(1<i))>>i)*2)<<2*i;  
       break;
 
     case HLC_subband_cqi_nopmi:
@@ -318,18 +304,6 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
       do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[0],stats->DL_cqi[0],(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi1));
       do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[1],stats->DL_cqi[1],(((HLC_subband_cqi_rank2_2A_5MHz *)o)->diffcqi2));
       stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_5MHz *)o)->pmi;
-      break;
-
-    case HLC_subband_cqi_mcs_CBA:
-      if ((*crnti == ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti) && (*crnti !=0)) {
-        *access_mode=CBA_ACCESS;
-        LOG_N(PHY,"[eNB] UCI for CBA : mcs %d  crnti %x\n",
-              ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->mcs, ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti);
-      } else {
-        LOG_D(PHY,"[eNB] UCI for CBA : rnti (enb context %x, rx uci %x) invalid, unknown access\n",
-              *crnti, ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti);
-      }
-
       break;
 
     case unknown_cqi:
@@ -400,18 +374,6 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
       stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_10MHz *)o)->pmi;
       break;
 
-    case HLC_subband_cqi_mcs_CBA:
-      if ((*crnti == ((HLC_subband_cqi_mcs_CBA_10MHz *)o)->crnti) && (*crnti !=0)) {
-        *access_mode=CBA_ACCESS;
-        LOG_N(PHY,"[eNB] UCI for CBA : mcs %d  crnti %x\n",
-              ((HLC_subband_cqi_mcs_CBA_10MHz *)o)->mcs, ((HLC_subband_cqi_mcs_CBA_10MHz *)o)->crnti);
-      } else {
-        LOG_D(PHY,"[eNB] UCI for CBA : rnti (enb context %x, rx uci %x) invalid, unknown access\n",
-              *crnti, ((HLC_subband_cqi_mcs_CBA_10MHz *)o)->crnti);
-      }
-
-      break;
-
     case unknown_cqi:
     default:
       LOG_N(PHY,"[eNB][UCI] received unknown uci (RB %d)\n",N_RB_DL);
@@ -478,18 +440,6 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
       do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[0],stats->DL_cqi[0],(((HLC_subband_cqi_rank2_2A_20MHz *)o)->diffcqi1));
       do_diff_cqi(N_RB_DL,stats->DL_subband_cqi[1],stats->DL_cqi[1],(((HLC_subband_cqi_rank2_2A_20MHz *)o)->diffcqi2));
       stats->DL_pmi_dual   = ((HLC_subband_cqi_rank2_2A_20MHz *)o)->pmi;
-      break;
-
-    case HLC_subband_cqi_mcs_CBA:
-      if ((*crnti == ((HLC_subband_cqi_mcs_CBA_20MHz *)o)->crnti) && (*crnti !=0)) {
-        *access_mode=CBA_ACCESS;
-        LOG_N(PHY,"[eNB] UCI for CBA : mcs %d  crnti %x\n",
-              ((HLC_subband_cqi_mcs_CBA_20MHz *)o)->mcs, ((HLC_subband_cqi_mcs_CBA_20MHz *)o)->crnti);
-      } else {
-        LOG_D(PHY,"[eNB] UCI for CBA : rnti (enb context %x, rx uci %x) invalid, unknown access\n",
-              *crnti, ((HLC_subband_cqi_mcs_CBA_20MHz *)o)->crnti);
-      }
-
       break;
 
     case unknown_cqi:
@@ -589,6 +539,7 @@ void print_CQI(void *o,UCI_format_t uci_format,unsigned char eNB_id,int N_RB_DL)
   switch(uci_format) {
   case wideband_cqi_rank1_2A:
 #ifdef DEBUG_UCI
+    LOG_D(PHY,"[PRINT CQI] flat_LA %d\n", flag_LA);
     switch(N_RB_DL) {
     case 6:
       LOG_I(PHY,"[PRINT CQI] wideband_cqi rank 1: eNB %d, cqi %d\n",eNB_id,
@@ -754,13 +705,6 @@ void print_CQI(void *o,UCI_format_t uci_format,unsigned char eNB_id,int N_RB_DL)
 #endif //DEBUG_UCI
     break;
 
-  case HLC_subband_cqi_mcs_CBA:
-#ifdef DEBUG_UCI
-    LOG_I(PHY,"[PRINT CQI] hlc_cqi_mcs_CBA : eNB %d, mcs %d\n",eNB_id,((HLC_subband_cqi_mcs_CBA_5MHz *)o)->mcs);
-    LOG_I(PHY,"[PRINT CQI] hlc_cqi_mcs_CBA : eNB %d, rnti %x\n",eNB_id,((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti);
-#endif //DEBUG_UCI
-    break;
-
   case ue_selected:
 #ifdef DEBUG_UCI
     LOG_W(PHY,"[PRINT CQI] ue_selected CQI not supported yet!!!\n");
@@ -843,4 +787,23 @@ void print_CQI(void *o,UCI_format_t uci_format,unsigned char eNB_id,int N_RB_DL)
   */
 
 }
+
+
+int8_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type) {
+  uint8_t i;
+  int8_t first_free_index=-1;
+
+  AssertFatal(eNB!=NULL,"eNB is null\n");
+  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+    if ((eNB->uci_vars[i].active >0) &&
+	(eNB->uci_vars[i].rnti==rnti) &&
+	(eNB->uci_vars[i].frame==frame) &&
+	(eNB->uci_vars[i].subframe==subframe)) return(i); 
+    else if ((eNB->uci_vars[i].active == 0) && (first_free_index==-1)) first_free_index=i;
+  }
+  if (type == SEARCH_EXIST) return(-1);
+  else return(first_free_index);
+}
+
+
 

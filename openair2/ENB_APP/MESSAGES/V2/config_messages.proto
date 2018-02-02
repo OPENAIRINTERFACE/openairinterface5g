@@ -1,0 +1,88 @@
+syntax = "proto2";
+package protocol;
+
+import "config_common.proto";
+
+message flex_cell_config {
+	optional uint32 phy_cell_id = 1;		// The PCI of this cell
+	optional uint32 cell_id = 2;			// The PLMN cell id of this cell
+	optional uint32 pusch_hopping_offset = 3;	// PUSCH resources in RBs for hopping
+	optional uint32 hopping_mode = 4;		// One of the FLHM_* enum values
+	optional uint32 n_sb = 5;			// The number of subbands
+	optional uint32 phich_resource = 6;		// The number of REGs used for PHICH
+		 					// One of the FLPR_* enum values
+	optional uint32 phich_duration = 7;		// One of the FLPD_* enum values
+	optional uint32 init_nr_PDCCH_OFDM_sym = 8; 	// See TS 36.211, section 6.9
+	optional flex_si_config si_config = 9;	 	// The SI configuration
+	optional uint32 dl_bandwidth = 10;		// The DL transmission bandwidth in RBs
+	optional uint32 ul_bandwidth = 11;		// The UL transmission bandwidth in RBs
+	optional uint32 ul_cyclic_prefix_length = 13;	// One of the FLUCPL_* enum values
+	optional uint32 dl_cyclic_prefix_length = 14;	// One of the FLDCPL_* enum values
+	optional uint32 antenna_ports_count = 15;	// Number of cell specific antenna ports
+	optional uint32 duplex_mode = 16;		// One of the FLDM_* enum values
+	optional uint32 subframe_assignment = 17;	// DL/UL subframe assignment. TDD only
+	optional uint32	special_subframe_patterns = 18; // TDD only. See TS 36.211, table 4.2.1
+	repeated uint32 mbsfn_subframe_config_rfperiod = 19; // The MBSFN radio frame period (Optional)
+	repeated uint32 mbsfn_subframe_config_rfoffset = 20; // The radio frame offset (Optional)
+	repeated uint32 mbsfn_subframe_config_sfalloc = 21; // Bitmap indicating the MBSFN subframes (Optional)
+	optional uint32 prach_config_index = 22;	// See TS 36.211, section 5.7.1
+	optional uint32 prach_freq_offset = 23;	// See TS 36.211, section 5.7.1
+	optional uint32 ra_response_window_size = 24; // The duration of the RA response window in SF
+	optional uint32 mac_contention_resolution_timer = 25; // Timer for RA
+	optional uint32 max_HARQ_Msg3Tx = 26;		// See TS 36.321
+	optional uint32 n1PUCCH_AN = 27;		// See TS 36.213, section 10.1
+	optional uint32 deltaPUCCH_shift = 28;		// See TS 36.211, section 5.4
+	optional uint32 nRB_cqi = 29;			// See TS 36.211, section 5.4
+	optional uint32 srs_subframe_config = 30;	// See TS 36.211, table 5.5.3.3-1 and 2
+	optional uint32 srs_bw_config = 31;		// See TS 36.211, section 5.5.3.2
+	optional uint32 srs_mac_up_pts = 32;		// Boolean value. See TS 36.211, section 5.5.3.2. TDD only
+	optional uint32 enable_64QAM = 33;		// One of the FLEQ_* enum values
+	optional uint32 carrier_index = 34;		// Carrier component index
+}
+
+message flex_ue_config {
+	optional uint32 rnti = 1;
+	optional flex_drx_config drx_config = 2;		// The DRX configuration (Optional)
+	optional uint32 time_alignment_timer = 3;	// Timer in SF. Control the synchronization
+		 					// status of the UE, not the actual advance procedure
+							// See TS 36.321
+	optional uint32 meas_gap_config_pattern = 4;	// Measurement gap configuration.
+		 				  	// One of the FLMGCP_* enum values
+		 					// See TS 36.133
+	optional uint32 meas_gap_config_sf_offset = 5;	// Measurement gap offset if applicable
+	optional flex_sps_config sps_config = 6;	    	// The SPS configuration (Optional)
+	optional flex_sr_config sr_config = 7;		// The SR configuration (Optional)
+	optional flex_cqi_config cqi_config = 8;		// The CQI configuration (Optional)
+	optional uint32 transmission_mode = 9;		// The UE transmission mode
+	optional uint64 ue_aggregated_max_bitrate_UL = 10; // Aggregated bit-rate of non-gbr bearer
+                                		       	   // per UE. See TS 36.413
+	optional uint64 ue_aggregated_max_bitrate_DL = 11; // Aggregated bit-rate of non-gbr bearer
+		 				       	   // per UE. See TS 36.413
+	optional flex_ue_capabilities capabilities = 12;
+	optional uint32 ue_transmission_antenna = 13;	// One of the FLUTA_* enum values
+	optional uint32 tti_bundling = 14;		// Boolean value. See TS 36.321
+	optional uint32 max_HARQ_tx = 15;		// The max HARQ retransmission for UL
+	optional uint32 beta_offset_ACK_index = 16; 	// See TS 36.213
+	optional uint32 beta_offset_RI_index = 17;	// See TS 36.213
+	optional uint32 beta_offset_CQI_index = 18;	// See TS 36.213
+	optional uint32 ack_nack_simultaneous_trans = 19;// Boolean. See TS 36.213
+	optional uint32 simultaneous_ack_nack_cqi = 20; // Boolean. See TS 36.213
+	optional uint32 aperiodic_cqi_rep_mode = 21;    // One of the FLACRM_* enum values
+	optional uint32 tdd_ack_nack_feedback = 22;     // One of the FLTANFM_* enum values
+	optional uint32 ack_nack_repetition_factor = 23;// See TS 36.213, section 10.1
+	optional uint32 extended_bsr_size = 24;	     	// Boolean for extended BSR size
+	optional uint32 ca_support = 25;    		// Boolean. Support for carrier aggregation
+	optional uint32 cross_carrier_sched_support = 26; // Boolean value
+	optional uint32 pcell_carrier_index = 27;     // Index of primary cell
+	repeated flex_scell_config scell_config = 28;  // Secondary cells configuration
+	optional uint32 scell_deactivation_timer = 29;// Deactivation timer for secondary cell
+}
+
+message flex_lc_ue_config {
+	optional uint32 rnti = 1;
+	repeated flex_lc_config lc_config = 2;	// A list of LC configurations for the given UE
+}
+
+
+
+

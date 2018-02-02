@@ -1,32 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
-
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file device.c
 * \brief Networking Device Driver for OpenAirInterface Ethernet
@@ -36,13 +27,6 @@
 
 */
 /*******************************************************************************/
-
-#ifndef OAI_NW_DRIVER_USE_NETLINK
-#ifdef RTAI
-#include "rtai_posix.h"
-#define RTAI_IRQ 30 //try to get this irq with RTAI
-#endif // RTAI
-#endif // OAI_NW_DRIVER_USE_NETLINK
 
 #include "constant.h"
 #include "local.h"
@@ -264,7 +248,11 @@ int oai_nw_drv_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
     // End debug information
     netif_stop_queue(dev);
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+    netif_trans_update(dev);
+#else
     dev->trans_start = jiffies;
+#endif
 #ifdef OAI_DRV_DEBUG_DEVICE
     printk("[OAI_IP_DRV][%s] step 1\n", __FUNCTION__);
 #endif
@@ -337,7 +325,11 @@ void oai_nw_drv_tx_timeout(struct net_device *dev)
   printk("[OAI_IP_DRV][%s] begin\n", __FUNCTION__);
   //  (struct oai_nw_drv_priv *)(dev->priv)->stats.tx_errors++;
   (priv->stats).tx_errors++;
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+  netif_trans_update(dev);
+#else
   dev->trans_start = jiffies;
+#endif
   netif_wake_queue(dev);
   printk("[OAI_IP_DRV][%s] transmit timed out %s\n", __FUNCTION__,dev->name);
 }
@@ -520,22 +512,11 @@ int init_module (void)
 
 #ifndef OAI_NW_DRIVER_USE_NETLINK
 
-#ifdef RTAI //with RTAI you have to indicate which irq# you want
-
-  pdcp_2_oai_nw_drv_irq=rt_request_srq(0, oai_nw_drv_interrupt, NULL);
-
-#endif
-
   if (pdcp_2_oai_nw_drv_irq == -EBUSY || pdcp_2_oai_nw_drv_irq == -EINVAL) {
     printk("[OAI_IP_DRV][%s] No interrupt resource available\n", __FUNCTION__);
     return -EBUSY;
   } else
     printk("[OAI_IP_DRV][%s] Interrupt %d\n", __FUNCTION__, pdcp_2_oai_nw_drv_irq);
-
-  //rt_startup_irq(RTAI_IRQ);
-
-  //rt_enable_irq(RTAI_IRQ);
-
 
 #endif //NETLINK
 
@@ -602,12 +583,6 @@ void cleanup_module(void)
 
   if (pdcp_2_oai_nw_drv_irq!=-EBUSY) {
     pdcp_2_oai_nw_drv_irq=0;
-#ifdef RTAI
-    // V1
-    //    rt_free_linux_irq(priv->irq, NULL);
-    // END V1
-    rt_free_srq(pdcp_2_oai_nw_drv_irq);
-#endif
     // Start IRQ linux
     //free_irq(priv->irq, NULL);
     // End IRQ linux

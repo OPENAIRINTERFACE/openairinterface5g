@@ -1,0 +1,210 @@
+syntax = "proto2";
+package protocol;
+
+import "stats_messages.proto";
+import "header.proto";
+import "time_common.proto";
+import "config_messages.proto";
+import "controller_commands.proto";
+import "control_delegation.proto";
+
+message flexran_message {
+       optional flexran_direction msg_dir = 100;
+	oneof msg {
+              flex_hello hello_msg = 1;
+              flex_echo_request echo_request_msg = 2;
+	      flex_echo_reply echo_reply_msg = 3;
+	      flex_stats_request stats_request_msg = 4;
+	      flex_stats_reply stats_reply_msg = 5;
+	      flex_sf_trigger sf_trigger_msg = 6;
+	      flex_ul_sr_info ul_sr_info_msg = 7;
+	      flex_enb_config_request enb_config_request_msg = 8;
+	      flex_enb_config_reply enb_config_reply_msg = 9;
+	      flex_ue_config_request ue_config_request_msg = 10;
+	      flex_ue_config_reply ue_config_reply_msg = 11;
+	      flex_lc_config_request lc_config_request_msg = 12;
+	      flex_lc_config_reply lc_config_reply_msg = 13;
+	      flex_dl_mac_config dl_mac_config_msg = 14;
+	      flex_ue_state_change ue_state_change_msg = 15;
+	      flex_control_delegation control_delegation_msg = 16;
+	      flex_agent_reconfiguration agent_reconfiguration_msg = 17;
+	}
+}
+
+enum flexran_direction {
+     //option allow_alias = true;
+     NOT_SET = 0;
+     INITIATING_MESSAGE = 1;
+     SUCCESSFUL_OUTCOME=2;
+     UNSUCCESSFUL_OUTCOME=3;	
+}
+	
+enum flexran_err {
+        //option allow_alias = true;
+	// message errors
+	NO_ERR = 0;	
+	MSG_DEQUEUING = -1;
+	MSG_ENQUEUING = -2;
+	MSG_DECODING = -3;
+	MSG_ENCODING = -4;
+	MSG_BUILD = -5;
+	MSG_NOT_SUPPORTED = -6; 
+	MSG_NOT_HANDLED = -7;
+	MSG_NOT_VALIDATED = -8;
+	MSG_OUT_DATED = -9;
+
+	
+	// other erros
+	UNEXPECTED = -100;	
+}	
+
+//
+// Maintenance and discovery messages
+//
+
+message flex_hello {
+	optional flex_header header = 1;
+}
+
+message flex_echo_request {
+	optional flex_header header = 1;
+	extensions 100 to 199;
+}
+
+
+message flex_echo_reply {
+	optional flex_header header = 1;
+	extensions 100 to 199;
+}
+
+
+//
+// Statistics request and reply message
+//
+
+message flex_stats_request {
+	optional flex_header header = 1;
+	optional flex_stats_type type = 2;
+	oneof body {
+	      flex_complete_stats_request complete_stats_request = 3;
+	      flex_cell_stats_request cell_stats_request = 4;
+	      flex_ue_stats_request ue_stats_request = 5;
+	}
+}
+
+message flex_stats_reply {
+	optional flex_header header = 1;
+	repeated flex_ue_stats_report ue_report = 2;
+	repeated flex_cell_stats_report cell_report = 3;
+}
+
+//
+// Time indication messages
+//
+
+message flex_sf_trigger {
+	optional flex_header header = 1;
+	optional uint32 sfn_sf = 2;
+	repeated flex_dl_info dl_info = 3;
+	repeated flex_ul_info ul_info = 4;	
+}
+
+//
+// Asynchronous messages
+//
+
+message flex_ul_sr_info {
+	optional flex_header header = 1;
+	optional uint32 sfn_sf = 2;
+	repeated uint32 rnti = 3;
+}
+
+//
+// eNB configuration messages
+//
+message flex_enb_config_request {
+	optional flex_header header = 1;
+}
+
+message flex_enb_config_reply {
+	optional flex_header header = 1;
+	optional uint32 eNB_id = 2;		// Unique id to distinguish the eNB
+	repeated flex_cell_config cell_config = 3;
+}
+
+message flex_ue_config_request {
+	optional flex_header header = 1;
+}
+
+message flex_ue_config_reply {
+	optional flex_header header = 1;
+	repeated flex_ue_config ue_config = 2;
+}
+
+message flex_lc_config_request {
+	optional flex_header header = 1;
+}
+
+message flex_lc_config_reply {
+	optional flex_header header = 1;
+	repeated flex_lc_ue_config lc_ue_config = 2;
+}
+
+//
+// Controller command messages
+//
+
+message flex_dl_mac_config {
+	optional flex_header header = 1;
+	optional uint32 sfn_sf = 2;
+	repeated flex_dl_data dl_ue_data = 3;
+	repeated flex_dl_rar dl_rar = 4;
+	repeated flex_dl_broadcast dl_broadcast = 5;
+	repeated flex_pdcch_ofdm_sym_count ofdm_sym = 6; // OFDM symbol count for each CC
+}
+
+//
+// UE state change message
+//
+
+message flex_ue_state_change {
+	optional flex_header header = 1;
+	optional uint32 type = 2;		// One of the FLUESC_* values
+	optional flex_ue_config config = 3;	// Body of the message (based on type)
+}
+
+//
+// Control delegation message
+//
+
+message flex_control_delegation {
+	optional flex_header header = 1;
+	optional uint32 delegation_type = 2;	// Bitmap of FLCDT_* flags
+	optional bytes payload = 3;	  	// Byte array of shared lib containing the delegated functions
+	optional string name = 4;		// The delegated functions names ordered based on bitmap flags
+}
+
+//
+// Agent reconfiguration message
+//
+
+message flex_agent_reconfiguration {
+	optional flex_header header = 1;
+	optional string policy = 2;		// The policy changes using YAML syntax in string format
+}
+
+// Extensions of the echo request and reply
+// messages for carrying a latency value in ms
+message flex_echo_request_latency {
+	extend flex_echo_request {
+	       optional uint32 latency = 100;
+	}
+}
+
+message flex_echo_reply_latency {
+	extend flex_echo_reply {
+	       optional uint32 latency = 100;
+	}
+}
+
+

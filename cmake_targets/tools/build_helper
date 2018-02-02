@@ -1,38 +1,45 @@
- ################################################################################
-#
-# Copyright (c) 2015, EURECOM (www.eurecom.fr)
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# The views and conclusions contained in the software and documentation are those
-# of the authors and should not be interpreted as representing official policies,
-# either expressed or implied, of the FreeBSD Project.
-#
-################################################################################
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+
 # file build_helper
 # brief
 # authors Laurent Thomas, Lionel GAUTHIER
 #
 #######################################
+if [ ! -f /etc/os-release ]; then
+  echo "No /etc/os-release file found. You're likely on an unsupported distro."
+  exit -1
+fi
+OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
+OS_RELEASE=$(grep "^VERSION_ID=" /etc/os-release | sed "s/VERSION_ID=//" | sed "s/\"//g")
+case "$OS_DISTRO" in
+  fedora) OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
+  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE="cmake3" ;;
+  centos) OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE="cmake3" ;;
+  debian) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
+  ubuntu) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
+esac
+KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
+KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
+
 SUDO='sudo -E'
 
 ###############################
@@ -75,12 +82,11 @@ echo_info()    { cecho "$*" $blue         ;}
 # If we can't check the distribution, it returns "Unknown"
 # This function return always true as exit code by design
 # Examples:
-#   Ubuntu16.04
-#   Debian8.5
+#   ubuntu16.04
+#   debian8.5
 get_distribution_release() {
-    local distributor
-    if distributor=$(lsb_release -si 2>/dev/null) ; then
-        echo $distributor$(lsb_release -sr)
+    if [[ ! -z "$OS_DISTRO$OS_RELEASE" ]]; then
+        echo "$OS_DISTRO$OS_RELEASE"
     else
         echo Unknown
     fi
@@ -89,8 +95,13 @@ get_distribution_release() {
 check_supported_distribution() {
     local distribution=$(get_distribution_release)
     case "$distribution" in
-        "Ubuntu16.04") return 0 ;;
-        "Ubuntu14.04") return 0 ;;
+        "ubuntu17.10") return 0 ;;
+        "ubuntu17.04") return 0 ;;
+        "ubuntu16.04") return 0 ;;
+        "ubuntu14.04") return 0 ;;
+        "fedora24")    return 0 ;;
+        "rhel7")       return 0 ;;
+        "centos7")     return 0 ;;
     esac
     return 1
 }
@@ -145,6 +156,20 @@ clean_all_files() {
 # Compilers
 ###################################
 
+#check_warnings:
+#    print error message if the compilation had warnings
+#argument:
+#    $1: log file
+check_warnings() {
+  #we look for 'warning:' in the compilation log file
+  #this is how gcc starts a warning
+  #this is not perfect, we may get false positive
+  warning_count=`grep "warning:" "$1"|wc -l`
+  if [ $warning_count -gt 0 ]; then
+    echo_error "WARNING: $warning_count warnings. See $1"
+  fi
+}
+
 compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
   set +e
@@ -162,6 +187,7 @@ compilations() {
   if [ -s $3 ] ; then
      cp $3 $4
      echo_success "$2 compiled"
+     check_warnings "$dlog/$2.$REL.txt"
   else
      echo_error "$2 compilation failed"
      exit 1
@@ -172,87 +198,73 @@ compilations() {
 # External packages installers
 ############################################
 
-install_nettle_from_source() {
-    nettle_install_log=$OPENAIR_DIR/cmake_targets/log/nettle_install_log.txt
-    echo_info "\nInstalling Nettle. The log file for nettle installation is here: $nettle_install_log "
-    (
-    cd /tmp
-    echo "Downloading nettle archive"
-    $SUDO rm -rf /tmp/nettle-2.5.tar.gz* /tmp/nettle-2.5
-    wget https://ftp.gnu.org/gnu/nettle/nettle-2.5.tar.gz
-    if [ $? -ne 0 ]; then
-      wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz
-    fi
-    if [ ! -f nettle-2.5.tar.gz ]; then
-      echo_error "Could not download nettle source files"
-      cd -
-      return
-    fi
-    tar -xzf nettle-2.5.tar.gz
-    cd nettle-2.5/
-    ./configure --disable-openssl --enable-shared --prefix=/usr 
-    echo "Compiling nettle"
-    make -j`nproc`
-    make check 
-    $SUDO make install 
-    ) >& $nettle_install_log
-}
-
-install_gnutls_from_source(){
-    gnutls_install_log=$OPENAIR_DIR/cmake_targets/log/gnutls_install_log.txt
-    echo_info "\nInstalling Gnutls. The log file for Gnutls installation is here: $gnutls_install_log "
-    (
-    cd /tmp 
-    echo "Downloading gnutls archive"
-    $SUDO rm -rf /tmp/gnutls-3.1.23.tar.xz* /tmp/gnutls-3.1.23
-    wget http://mirrors.dotsrc.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz || \
-      wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz
-    if [ ! -f gnutls-3.1.23.tar.xz ]; then
-      echo_error "Could not download gnutls source files"
-      cd -
-      return
-    fi
-    tar -xJf gnutls-3.1.23.tar.xz
-    cd gnutls-3.1.23/
-    ./configure --prefix=/usr
-    echo "Compiling gnutls"
-    make -j`nproc`
-    $SUDO make install 
-    )>& $gnutls_install_log
-}
-
 install_protobuf_from_source(){
+    protobuf_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_install_log.txt
+    echo_info "\nInstalling Google Protobuf from sources. The log file for Protobuf installation is here: $protobuf_install_log "
+    (
     cd /tmp
     echo "Downloading protobuf"
-    rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
-    wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
-    tar -xzvf protobuf-2.6.1.tar.gz
-    cd protobuf-2.6.1/
+    #rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
+    #wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+    #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
+    #cd protobuf-2.6.1/
+    rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
+    wget https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+    tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $USER --no-same-owner
+    cd protobuf-3.3.0/
     ./configure
     echo "Compiling protobuf"
     make -j`nproc`
     $SUDO make install
-    rm -rf /tmp/protobuf-2.6.1.tar.gz /tmp/protobuf-2.6.1
     $SUDO ldconfig
+    ) >& $protobuf_install_log
 }
 
 install_protobuf_c_from_source(){
+    protobuf_c_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_c_install_log.txt
+    echo_info "\nInstalling Google Protobuf_C from sources. The log file for Protobuf_C installation is here: $protobuf_c_install_log "
+    (
+    if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+        export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+    fi
     cd /tmp
     echo "Downloading protobuf-c"
     rm -rf /tmp/protobuf-c
     git clone https://github.com/protobuf-c/protobuf-c.git
     cd protobuf-c
+	git checkout 2a46af42784abf86804d536f6e0122d47cfeea45
     ./autogen.sh
     ./configure
     echo "Compiling protobuf-c"
     make -j`nproc`
     $SUDO make install
-    rm -rf /tmp/protobuf-c
     $SUDO ldconfig
+    ) >& $protobuf_c_install_log
 }
 
+install_usrp_uhd_driver_from_source(){
+    uhd_install_log=$OPENAIR_DIR/cmake_targets/log/uhd_install_log.txt
+    echo_info "\nInstalling UHD driver from sources. The log file for UHD driver installation is here: $uhd_install_log "
+    (
+    cd /tmp
+    echo "Downloading UHD driver"
+    rm -rf /tmp/uhd
+    git clone git://github.com/EttusResearch/uhd.git
+    cd uhd
+    git checkout tags/release_003_010_001_001
+    mkdir -p host/build
+    cd host/build
+    $CMAKE ../
+    echo "Compiling UHD"
+    make
+    make test
+    $SUDO make install
+    $SUDO ldconfig
+    ) >& $uhd_install_log
+}
 
 check_install_usrp_uhd_driver(){
+    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
         #first we remove old installation
         $SUDO apt-get remove -y uhd || true
         $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y
@@ -261,34 +273,99 @@ check_install_usrp_uhd_driver(){
         #The new USRP repository
         $SUDO add-apt-repository ppa:ettusresearch/uhd -y
         $SUDO apt-get update
-        $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
-        $SUDO apt-get -y install libuhd-dev libuhd003
+        $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
+        $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
+    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+        $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
+        if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+            # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
+            $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
+            install_ursp_uhd_driver_from_source
+        else
+            $SUDO $INSTALLER -y install uhd uhd-devel uhd-firmware
+        fi
+    fi
 }
 
 install_usrp_uhd_driver() {
+    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
         # We move uhd-host apart because it depends on linux kernel version
         # On newer kernels, it fails to install
         $SUDO apt-get -y install uhd-host
-        $SUDO uhd_images_downloader 
+    fi
+    if [ -z $1 ]; then
+      $SUDO uhd_images_downloader
+    else
+      $SUDO uhd_images_downloader -i $1
+    fi
+}
+
+install_bladerf_driver_from_source(){
+    bladerf_install_log=$OPENAIR_DIR/cmake_targets/log/bladerf_install_log.txt
+    echo_info "\nInstalling BladeRF driver from sources. The log file for BladeRF driver installation is here: $bladerf_install_log "
+    (
+    cd /tmp
+    echo "Downloading BladeRF driver"
+    rm -rf /tmp/bladeRF
+    git clone https://github.com/Nuand/bladeRF.git
+    cd bladeRF
+    git checkout tags/2016.06
+    mkdir -p build
+    cd build
+    $CMAKE ../
+    echo "Compiling BladeRF driver"
+    make
+    $SUDO make install
+    $SUDO ldconfig
+    echo "Downloading FPGA and firmware images"
+    cd /tmp/bladeRF
+    wget https://www.nuand.com/fx3/bladeRF_fw_latest.img
+    wget https://www.nuand.com/fpga/hostedx40-latest.rbf
+    sudo mkdir -p /usr/share/Nuand/bladeRF
+    sudo mv bladeRF_fw_latest.img /usr/share/Nuand/bladeRF/bladeRF_fw.img
+    sudo mv hostedx40-latest.rbf /usr/share/Nuand/bladeRF/hostedx40.rbf
+    ) >& $bladerf_install_log
 }
 
 check_install_bladerf_driver(){
-	if [ "$(get_distribution_release)" == "Ubuntu14.04" ] ; then
-		$SUDO add-apt-repository -y ppa:bladerf/bladerf
-		$SUDO apt-get update
-	fi
-	$SUDO apt-get install -y bladerf libbladerf-dev
-	$SUDO apt-get install -y bladerf-firmware-fx3
-	$SUDO apt-get install -y bladerf-fpga-hostedx40	
+    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+        if [ "$(get_distribution_release)" == "ubuntu14.04" ] ; then
+            $SUDO add-apt-repository -y ppa:bladerf/bladerf
+            $SUDO apt-get update
+        fi
+        $SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
+        $SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
+        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40	
+   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+        install_bladerf_driver_from_source
+   else
+        echo_error "BladeRF Installer for OAI does not support automatic build. Install BladeRF compiling sources manually from BladeRF website"
+   fi
 }
 
 flash_firmware_bladerf() {
 	$SUDO bladeRF-cli --flash-firmware /usr/share/Nuand/bladeRF/bladeRF_fw.img
 }
 
+check_install_lmssdr_driver(){
+	if ( [ -d "/usr/local/include/lime" ] &&
+             [ -f "/usr/local/include/lime/LimeSuite.h" ] )
+	then
+  		echo_success "Found lmssdr drivers and tools installed from source"
+        else
+                echo_error "lmssdr support implies installing lmssdr drivers and tools" \
+                           " from sources. check:"
+                echo_info "https://open-cells.com/index.php/2017/05/10/limesdr-installation/"
+                echo_fatal "Cannot compile lmssdr device" 
+	fi
+
+
+}
+
 check_install_additional_tools (){
-    $SUDO apt-get update
-    $SUDO apt-get install -y \
+  $SUDO $INSTALLER update -y
+  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+    PACKAGE_LIST="\
 	check \
 	dialog \
 	dkms \
@@ -312,14 +389,78 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         python-numpy \
-    sshpass \
-    nscd
-
-    $SUDO pip install paramiko
-    $SUDO pip install pyroute2
-    $SUDO rm -fr /opt/ssh
-    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gist.github.com/2190472.git /opt/ssh
+        sshpass \
+        nscd \
+        bc \
+        ntp \
+        python-scipy \
+        python-matplotlib"
+  elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+    PACKAGE_LIST="\
+      check \
+      dialog \
+      dkms \
+      gawk \
+      boost-devel \
+      openvpn \
+      pkgconfig \
+      pexpect \
+      sshfs \
+      swig  \
+      wireshark \
+      unzip  \
+      valgrind  \
+      vconfig	  \
+      ctags \
+      ntpdate \
+      iperf3 \
+      wvdial \
+      numpy \
+      sshpass \
+      nscd \
+      python2-paramiko \
+      python-pyroute2 \
+      python-netifaces \
+      scipy \
+      python-matplotlib"
+  elif [[ "$OS_DISTRO" == "fedora" ]]; then
+    PACKAGE_LIST=" \
+      check \
+      dialog \
+      dkms \
+      gawk \
+      boost-devel \
+      openvpn \
+      pkgconfig \
+      python-pexpect \
+      sshfs \
+      swig  \
+      wireshark \
+      unzip  \
+      valgrind  \
+      vconfig	  \
+      ctags \
+      ntpdate \
+      iperf3 \
+      wvdial \
+      python-numpy \
+      sshpass \
+      nscd \
+      python2-paramiko \
+      python-pyroute2 \
+      python-netifaces \
+      python2-scipy \
+      python2-matplotlib"
+  fi
+    $SUDO $INSTALLER install -y $PACKAGE_LIST
     
+    $SUDO rm -fr /opt/ssh
+    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
+
+  #The packages below are already installed for Redhat distros (RHEL, CentOS, Fedora)
+  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+    $SUDO pip install paramiko
+    $SUDO pip install pyroute2 colorama
     log_netiface=$OPENAIR_DIR/cmake_targets/log/netiface_install_log.txt
     echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
     (
@@ -330,6 +471,7 @@ check_install_additional_tools (){
     $SUDO python setup.py install
     cd -
     ) >& $log_netiface
+  fi
 }
 
 check_install_oai_software() {
@@ -338,17 +480,28 @@ check_install_oai_software() {
         echo_error "Your distribution $(get_distribution_release) is not supported by oai !"
         exit 1
     fi
-    $SUDO apt-get update
+    $SUDO $INSTALLER update -y
+  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+    local LAPACK_LIBNAME="liblapack.so"
+    local LAPACK_TARGET="/usr/lib/atlas-base/atlas/liblapack.so"
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
-        "Ubuntu14.04")
-            specific_packages="libtasn1-3-dev"
+        "ubuntu14.04")
+            specific_packages="libtasn1-3-dev gccxml libgnutls-dev libatlas-dev"
             # For iperf3
             $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
             $SUDO apt-get update
             ;;
-        "Ubuntu16.04")
-            specific_packages="libtasn1-6-dev"
+        "ubuntu16.04")
+            specific_packages="libtasn1-6-dev gccxml libgnutls-dev libatlas-dev"
+            ;;
+        "ubuntu17.04")
+            specific_packages="libtasn1-6-dev castxml libgnutls28-dev libatlas-dev"
+            ;;
+        "ubuntu17.10")
+            specific_packages="libtasn1-6-dev castxml libgnutls28-dev"
+            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
     esac
     $SUDO apt-get install -y \
@@ -364,7 +517,6 @@ check_install_oai_software() {
 	texlive-latex-base \
 	ethtool \
 	flex  \
-	gccxml \
 	gdb  \
 	git \
 	graphviz \
@@ -375,7 +527,6 @@ check_install_oai_software() {
 	iptables \
 	iptables-dev \
 	libatlas-base-dev \
-	libatlas-dev \
 	libblas-dev \
 	libconfig8-dev \
 	libffi-dev \
@@ -409,21 +560,96 @@ check_install_oai_software() {
 	xmlstarlet \
 	python-pip \
 	pydb \
-	wget
+	libyaml-dev \
+	wget \
+	libxpm-dev
 
-    $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
+    $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"
+
+    $SUDO apt-get install -y nettle-dev nettle-bin
+  elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+    if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+      if rpm -q epel-release > /dev/null; then
+        echo "EPEL repos already present. Good."
+      else
+        echo "EPEL repos not present. Installing them."
+        $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+      fi
+      $SUDO $INSTALLER install -y python-epdb
+      $SUDO $INSTALLER install -y gccxml
+    else
+      $SUDO $INSTALLER install -y mscgen pydb
+      # Fedora repos already contain gccxml's successor castxml.
+      $SUDO $INSTALLER install -y castxml
+    fi
     
-    #Sometimes linux headers are not available in apt-get if kernel is custom or new
-    $SUDO apt-get install linux-headers-`uname -r` || true
-    # First we remove gnutls/nettle installation and then install from sources
-    $SUDO apt-get remove -y libgnutls-dev nettle-dev nettle-bin
-    install_nettle_from_source
-    install_gnutls_from_source
+    $SUDO $INSTALLER install -y \
+      autoconf \
+      automake \
+      bc \
+      bison \
+      $CMAKE \
+      doxygen \
+      ethtool \
+      flex \
+      gdb \
+      git \
+      graphviz \
+      gtkwave \
+      guile-devel \
+      iperf \
+      iproute \
+      iptables \
+      iptables-devel \
+      atlas-devel \
+      blas-devel \
+      libconfig-devel \
+      libffi-devel \
+      xforms \
+      xforms-devel \
+      libgcrypt-devel \
+      gmp-devel \
+      gtk3-devel \
+      libidn2-devel  \
+      libidn-devel \
+      mariadb-devel \
+      octave-devel \
+      openpgm-devel \
+      lksctp-tools \
+      lksctp-tools-devel \
+      openssl-devel \
+      libtasn1 \
+      libtool \
+      libusb-devel \
+      libxml2 \
+      libxml2-devel \
+      libxslt-devel \
+      octave \
+      octave-signal \
+      openssh-clients \
+      openssh-server \
+      openssl \
+      patch \
+      psmisc \
+      python \
+      subversion \
+      xmlstarlet \
+      python-pip \
+      wget \
+      kernel-headers \
+      kernel-devel \
+      nettle-devel \
+      gnutls-devel \
+      libXpm-devel \
+      lapack \
+      lapack-devel \
+      blas \
+      blas-devel
+  fi
 
     install_asn1c_from_source
-
-    install_protobuf_from_source
-    install_protobuf_c_from_source
+    $SUDO rm -fr /opt/ssh
+    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
 }
 
 install_asn1c_from_source(){
@@ -431,12 +657,13 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c
-    git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
     cd /tmp/asn1c
     ./configure
     make -j`nproc`
     $SUDO make install
     cd -
+    $SUDO ldconfig
     ) > $asn1_install_log 2>&1
 }
 
@@ -445,19 +672,18 @@ install_asn1c_from_source(){
 ################################################
 
 install_nas_tools() {
-  cd $1
-  if [ ! -f .ue.nvram ]; then
+  if [ ! -f .ue.nvram0 ]; then
     echo_success "generate .ue_emm.nvram .ue.nvram"
-    ./nvram --gen
+    ./nvram --gen -c $1 -o $2
   else
-    [ ./nvram -nt .ue.nvram  -o ./nvram -nt .ue_emm.nvram ] && ./nvram --gen
+    [ ./nvram -nt .ue.nvram0 -o ./nvram -nt .ue_emm.nvram0 ] && ./nvram --gen -c $1 -o $2
   fi
 
-  if [ ! -f .usim.nvram ]; then
+  if [ ! -f .usim.nvram0 ]; then
     echo_success "generate .usim.nvram"
-    ./usim --gen
+    ./usim --gen -c $1 -o $2
   else
-    [ ./usim -nt .usim.nvram ] && ./usim --gen
+    [ ./usim -nt .usim.nvram0 ] && ./usim --gen -c $1 -o $2
   fi
 
 }

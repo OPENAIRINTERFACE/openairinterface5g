@@ -1,31 +1,24 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*! \file phy_emulation.c
  *  \brief implements the underlying protocol for emulated data exchange over Ethernet using IP multicast
  *  \author Navid Nikaein
@@ -38,6 +31,7 @@
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+#include "common/ran_context.h"
 #include "defs.h"
 #include "extern.h"
 #include "proto.h"
@@ -46,48 +40,16 @@
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-#include "pgm_link.h"
-
 extern unsigned int Master_list_rx;
 
 extern unsigned char NB_INST;
 //#define DEBUG_CONTROL 1
 //#define DEBUG_EMU   1
 
-#if defined(ENABLE_PGM_TRANSPORT)
-extern unsigned int pgm_would_block;
-#endif
-
 void emu_transport_sync(void)
 {
   LOG_D(EMU, "Entering EMU transport SYNC is primary master %d\n",
         oai_emulation.info.is_primary_master);
-
-#if defined(ENABLE_PGM_TRANSPORT)
-
-  if (oai_emulation.info.is_primary_master == 0) {
-    bypass_tx_data(WAIT_SM_TRANSPORT,0,0);
-    // just wait to recieve the  master 0 msg
-    Master_list_rx = oai_emulation.info.master_list - 1;
-    bypass_rx_data(0,0,0,1);
-  } else {
-    bypass_rx_data(0,0,0,0);
-    bypass_tx_data(WAIT_PM_TRANSPORT,0,0);
-  }
-
-  if (oai_emulation.info.master_list != 0) {
-    bypass_tx_data(SYNC_TRANSPORT,0,0);
-    bypass_rx_data(0,0,0,0);
-
-    // i received the sync from all secondary masters
-    if (emu_rx_status == SYNCED_TRANSPORT) {
-      emu_tx_status = SYNCED_TRANSPORT;
-    }
-
-    LOG_D(EMU,"TX secondary master SYNC_TRANSPORT state \n");
-  }
-
-#else
 
   if (oai_emulation.info.is_primary_master == 0) {
 retry:
@@ -120,8 +82,6 @@ retry2:
 
     LOG_D(EMU,"TX secondary master SYNC_TRANSPORT state \n");
   }
-
-#endif
 
   LOG_D(EMU, "Leaving EMU transport SYNC is primary master %d\n",
         oai_emulation.info.is_primary_master);
@@ -160,9 +120,6 @@ void emu_transport(unsigned int frame, unsigned int last_slot,
     }
   }
 
-#if defined(ENABLE_PGM_TRANSPORT)
-  pgm_would_block = 0;
-#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(
     VCD_SIGNAL_DUMPER_FUNCTIONS_EMU_TRANSPORT, VCD_FUNCTION_OUT);
 }
@@ -295,13 +252,13 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
   // eNB
   // PBCH : copy payload
 
-  *(uint32_t *)PHY_vars_eNB_g[enb_id][CC_id]->pbch_pdu =
+  *(uint32_t *)RC.eNB[enb_id][CC_id]->pbch_pdu =
     eNB_transport_info[enb_id][CC_id].cntl.pbch_payload;
   /*  LOG_I(EMU," RX slot %d ENB TRANSPORT pbch payload %d pdu[0] %d  pdu[0] %d \n",
     next_slot ,
     eNB_transport_info[enb_id][CC_id].cntl.pbch_payload,
-    ((uint8_t*)PHY_vars_eNB_g[enb_id]->pbch_pdu)[0],
-    ((uint8_t*)PHY_vars_eNB_g[enb_id]->pbch_pdu)[1]);
+    ((uint8_t*)RC.eNB[enb_id]->pbch_pdu)[0],
+    ((uint8_t*)RC.eNB[enb_id]->pbch_pdu)[1]);
   */
   //  }
   //CFI
@@ -315,9 +272,9 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
                 eNB_transport_info[enb_id][CC_id].num_ue_spec_dci +
                 eNB_transport_info[enb_id][CC_id].num_common_dci;
 
-  PHY_vars_eNB_g[enb_id][CC_id]->num_ue_spec_dci[(next_slot>>1)&1] =
+  RC.eNB[enb_id][CC_id]->num_ue_spec_dci[(next_slot>>1)&1] =
     eNB_transport_info[enb_id][CC_id].num_ue_spec_dci;
-  PHY_vars_eNB_g[enb_id][CC_id]->num_common_dci[(next_slot>>1)&1]  =
+  RC.eNB[enb_id][CC_id]->num_common_dci[(next_slot>>1)&1]  =
     eNB_transport_info[enb_id][CC_id].num_common_dci;
 #ifdef DEBUG_EMU
   LOG_D(EMU, "Fill phy vars eNB %d for slot %d, DCI found %d  \n",
@@ -326,7 +283,7 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
 
   if (nb_total_dci >0) {
 
-    memcpy(PHY_vars_eNB_g[enb_id][CC_id]->dci_alloc[(next_slot>>1)&1],
+    memcpy(RC.eNB[enb_id][CC_id]->dci_alloc[(next_slot>>1)&1],
            eNB_transport_info[enb_id][CC_id].dci_alloc,
            (nb_total_dci) * sizeof(DCI_ALLOC_t));
 
@@ -348,7 +305,7 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
 
         switch (eNB_transport_info[enb_id][CC_id].dlsch_type[n_dci_dl]) {
         case 0: //SI:
-          memcpy(PHY_vars_eNB_g[enb_id][CC_id]->dlsch_eNB_SI->harq_processes[0]->b,
+          memcpy(RC.eNB[enb_id][CC_id]->dlsch_SI->harq_processes[0]->b,
                  &eNB_transport_info[enb_id][CC_id].transport_blocks[payload_offset],
                  eNB_transport_info[enb_id][CC_id].tbs[n_dci_dl]);
 #ifdef DEBUG_EMU
@@ -358,7 +315,7 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
           break;
 
         case 1: //RA:
-          memcpy(PHY_vars_eNB_g[enb_id][CC_id]->dlsch_eNB_ra->harq_processes[0]->b,
+          memcpy(RC.eNB[enb_id][CC_id]->dlsch_ra->harq_processes[0]->b,
                  &eNB_transport_info[enb_id][CC_id].transport_blocks[payload_offset],
                  eNB_transport_info[enb_id][CC_id].tbs[n_dci_dl]);
 #ifdef DEBUG_EMU
@@ -370,9 +327,9 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
         case 2://TB0:
           harq_pid  = eNB_transport_info[enb_id][CC_id].harq_pid[n_dci_dl];
           ue_id = eNB_transport_info[enb_id][CC_id].ue_id[n_dci_dl];
-          PHY_vars_eNB_g[enb_id][CC_id]->dlsch_eNB[ue_id][0]->rnti=
+          RC.eNB[enb_id][CC_id]->dlsch[ue_id][0]->rnti=
             eNB_transport_info[enb_id][CC_id].dci_alloc[n_dci_dl].rnti;
-          dlsch_eNB = PHY_vars_eNB_g[enb_id][CC_id]->dlsch_eNB[ue_id][0];
+          dlsch_eNB = RC.eNB[enb_id][CC_id]->dlsch[ue_id][0];
 #ifdef DEBUG_EMU
           LOG_D(EMU,
                 " enb_id %d ue id is %d rnti is %x dci index %d, harq_pid %d tbs %d \n",
@@ -393,9 +350,9 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
         case 3://TB1:
           harq_pid = eNB_transport_info[enb_id][CC_id].harq_pid[n_dci_dl];
           ue_id = eNB_transport_info[enb_id][CC_id].ue_id[n_dci_dl];
-          PHY_vars_eNB_g[enb_id][CC_id]->dlsch_eNB[ue_id][1]->rnti=
+          RC.eNB[enb_id][CC_id]->dlsch[ue_id][1]->rnti=
             eNB_transport_info[enb_id][CC_id].dci_alloc[n_dci_dl].rnti;
-          dlsch_eNB = PHY_vars_eNB_g[enb_id][CC_id]->dlsch_eNB[ue_id][1];
+          dlsch_eNB = RC.eNB[enb_id][CC_id]->dlsch[ue_id][1];
 
           memcpy(dlsch_eNB->harq_processes[harq_pid]->b,
                  &eNB_transport_info[enb_id][CC_id].transport_blocks[payload_offset],
@@ -403,7 +360,7 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
           break;
 
         case 5:
-          memcpy(PHY_vars_eNB_g[enb_id][CC_id]->dlsch_eNB_MCH->harq_processes[0]->b,
+          memcpy(RC.eNB[enb_id][CC_id]->dlsch_MCH->harq_processes[0]->b,
                  &eNB_transport_info[enb_id][CC_id].transport_blocks[payload_offset],
                  eNB_transport_info[enb_id][CC_id].tbs[n_dci_dl]);
 #ifdef DEBUG_EMU
@@ -491,52 +448,46 @@ void fill_phy_ue_vars(unsigned int ue_id, uint8_t CC_id,unsigned int last_slot)
 #endif
 
   for (n_enb = 0; n_enb < UE_transport_info[ue_id][CC_id].num_eNB; n_enb++) {
-#ifdef DEBUG_EMU
-    /*     LOG_D(EMU,"Setting ulsch vars for ue %d rnti %x harq pid is %d \n",
-      ue_id, UE_transport_info[ue_id][CC_id].rnti[n_enb],
-      PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id]);
-    */
-#endif
+
     rnti = UE_transport_info[ue_id][CC_id].rnti[n_enb];
     enb_id = UE_transport_info[ue_id][CC_id].eNB_id[n_enb];
 
-    PHY_vars_UE_g[ue_id][CC_id]->lte_ue_pdcch_vars[enb_id]->crnti=rnti;
+    PHY_vars_UE_g[ue_id][CC_id]->pdcch_vars[0][enb_id]->crnti=rnti;
+    PHY_vars_UE_g[ue_id][CC_id]->pdcch_vars[1][enb_id]->crnti=rnti;
 
     harq_pid = UE_transport_info[ue_id][CC_id].harq_pid[n_enb];
 
-    //ulsch = PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id];
-
-    PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id]->o_RI[0] =
+    PHY_vars_UE_g[ue_id][CC_id]->ulsch[enb_id]->o_RI[0] =
       ue_cntl_delay[ue_id][CC_id][last_slot%2].pusch_ri & 0x1;
-    PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id]->o_RI[1] =
+    PHY_vars_UE_g[ue_id][CC_id]->ulsch[enb_id]->o_RI[1] =
       (ue_cntl_delay[ue_id][CC_id][last_slot%2].pusch_ri>>1) & 0x1;
 
-    PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id]->o_ACK[0]=
+    PHY_vars_UE_g[ue_id][CC_id]->ulsch[enb_id]->o_ACK[0]=
       ue_cntl_delay[ue_id][CC_id][last_slot%2].pusch_ack & 0x1;
-    PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id]->o_ACK[1]=
+    PHY_vars_UE_g[ue_id][CC_id]->ulsch[enb_id]->o_ACK[1]=
       (ue_cntl_delay[ue_id][CC_id][last_slot%2].pusch_ack>>1) & 0x1;
     //*(uint32_t *)ulsch->o                        = ue_cntl_delay[ue_id][CC_id][last_slot%2].pusch_uci;
 
     if ((last_slot % 2) == 1) {
-      PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id]->O =
+      PHY_vars_UE_g[ue_id][CC_id]->ulsch[enb_id]->O =
         ue_cntl_delay[ue_id][CC_id][last_slot%2].length_uci;
-      PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id]->uci_format =
+      PHY_vars_UE_g[ue_id][CC_id]->ulsch[enb_id]->uci_format =
         ue_cntl_delay[ue_id][CC_id][last_slot%2].uci_format;
 
-      memcpy(PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id]->o,
+      memcpy(PHY_vars_UE_g[ue_id][CC_id]->ulsch[enb_id]->o,
              ue_cntl_delay[ue_id][CC_id][last_slot%2].pusch_uci,
              MAX_CQI_BYTES);
 
-      ulsch = PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id];
+      ulsch = PHY_vars_UE_g[ue_id][CC_id]->ulsch[enb_id];
       // if (((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1)
       LOG_D(EMU,
             "[UE %d] subframe %d last slot %d copy the payload from eNB %d to UE %d with harq id %d cqi (val %d, length %d) \n",
             ue_id, subframe, last_slot, enb_id, ue_id, harq_pid,
             ((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1,
-            PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id]->O);
+            PHY_vars_UE_g[ue_id][CC_id]->ulsch[enb_id]->O);
     }
 
-    memcpy(PHY_vars_UE_g[ue_id][CC_id]->ulsch_ue[enb_id]->harq_processes[harq_pid]->b,
+    memcpy(PHY_vars_UE_g[ue_id][CC_id]->ulsch[enb_id]->harq_processes[harq_pid]->b,
            UE_transport_info[ue_id][CC_id].transport_blocks,
            UE_transport_info[ue_id][CC_id].tbs[enb_id]);
 

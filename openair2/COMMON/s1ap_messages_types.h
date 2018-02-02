@@ -1,31 +1,23 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 #ifndef S1AP_MESSAGES_TYPES_H_
 #define S1AP_MESSAGES_TYPES_H_
@@ -47,15 +39,22 @@
 #define S1AP_NAS_NON_DELIVERY_IND(mSGpTR)       (mSGpTR)->ittiMsg.s1ap_nas_non_delivery_ind
 #define S1AP_UE_CTXT_MODIFICATION_RESP(mSGpTR)  (mSGpTR)->ittiMsg.s1ap_ue_ctxt_modification_resp
 #define S1AP_UE_CTXT_MODIFICATION_FAIL(mSGpTR)  (mSGpTR)->ittiMsg.s1ap_ue_ctxt_modification_fail
+#define S1AP_E_RAB_SETUP_RESP(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_e_rab_setup_resp
+#define S1AP_E_RAB_SETUP_FAIL(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_e_rab_setup_req_fail
+#define S1AP_E_RAB_MODIFY_RESP(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_e_rab_modify_resp
 
 #define S1AP_DOWNLINK_NAS(mSGpTR)               (mSGpTR)->ittiMsg.s1ap_downlink_nas
 #define S1AP_INITIAL_CONTEXT_SETUP_REQ(mSGpTR)  (mSGpTR)->ittiMsg.s1ap_initial_context_setup_req
 #define S1AP_UE_CTXT_MODIFICATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.s1ap_ue_ctxt_modification_req
 #define S1AP_UE_CONTEXT_RELEASE_COMMAND(mSGpTR) (mSGpTR)->ittiMsg.s1ap_ue_release_command
 #define S1AP_UE_CONTEXT_RELEASE_COMPLETE(mSGpTR) (mSGpTR)->ittiMsg.s1ap_ue_release_complete
-#define S1AP_PAGIND_IND(mSGpTR)                 (mSGpTR)->ittiMsg.s1ap_paging_ind
+#define S1AP_E_RAB_SETUP_REQ(mSGpTR)              (mSGpTR)->ittiMsg.s1ap_e_rab_setup_req
+#define S1AP_E_RAB_MODIFY_REQ(mSGpTR)              (mSGpTR)->ittiMsg.s1ap_e_rab_modify_req
+#define S1AP_PAGING_IND(mSGpTR)                 (mSGpTR)->ittiMsg.s1ap_paging_ind
 
 #define S1AP_UE_CONTEXT_RELEASE_REQ(mSGpTR)     (mSGpTR)->ittiMsg.s1ap_ue_release_req
+#define S1AP_E_RAB_RELEASE_COMMAND(mSGpTR)      (mSGpTR)->ittiMsg.s1ap_e_rab_release_command
+#define S1AP_E_RAB_RELEASE_RESPONSE(mSGpTR)     (mSGpTR)->ittiMsg.s1ap_e_rab_release_resp
 
 //-------------------------------------------------------------------------------------------//
 /* Maximum number of e-rabs to be setup/deleted in a single message.
@@ -76,7 +75,7 @@
  * the key length is 32 bytes (256 bits)
  */
 #define SECURITY_KEY_LENGTH 32
-
+#ifndef OCP_FRAMEWORK
 typedef enum cell_type_e {
   CELL_MACRO_ENB,
   CELL_HOME_ENB
@@ -107,6 +106,7 @@ typedef enum cn_domain_s {
   CN_DOMAIN_PS = 1,
   CN_DOMAIN_CS = 2
 } cn_domain_t;
+#endif
 
 typedef struct net_ip_address_s {
   unsigned ipv4:1;
@@ -122,6 +122,7 @@ typedef struct ambr_s {
   bitrate_t br_dl;
 } ambr_t;
 
+#ifndef OCP_FRAMEWORK
 typedef enum priority_level_s {
   PRIORITY_LEVEL_SPARE       = 0,
   PRIORITY_LEVEL_HIGHEST     = 1,
@@ -140,6 +141,7 @@ typedef enum pre_emp_vulnerability_e {
   PRE_EMPTION_VULNERABILITY_DISABLED = 1,
   PRE_EMPTION_VULNERABILITY_MAX,
 } pre_emp_vulnerability_t;
+#endif
 
 typedef struct allocation_retention_priority_s {
   priority_level_t        priority_level;
@@ -177,6 +179,11 @@ typedef struct s1ap_gummei_s {
   uint16_t mme_group_id;
 } s1ap_gummei_t;
 
+typedef struct s1ap_imsi_s {
+  uint8_t  buffer[S1AP_IMSI_LENGTH];
+  uint8_t  length;
+} s1ap_imsi_t;
+
 typedef struct s_tmsi_s {
   uint8_t  mme_code;
   uint32_t m_tmsi;
@@ -191,7 +198,7 @@ typedef enum ue_paging_identity_presenceMask_e {
 typedef struct ue_paging_identity_s {
   ue_paging_identity_presenceMask_t presenceMask;
   union {
-    char     imsi[S1AP_IMSI_LENGTH];
+    s1ap_imsi_t  imsi;
     s_tmsi_t s_tmsi;
   } choice;
 } ue_paging_identity_t;
@@ -262,11 +269,29 @@ typedef struct e_rab_setup_s {
   uint32_t gtp_teid;
 } e_rab_setup_t;
 
+typedef struct e_rab_modify_s {
+  /* Unique e_rab_id for the UE. */
+  uint8_t e_rab_id;
+} e_rab_modify_t;
+
+typedef enum S1ap_Cause_e {
+  S1AP_CAUSE_NOTHING,  /* No components present */
+  S1AP_CAUSE_RADIO_NETWORK,
+  S1AP_CAUSE_TRANSPORT,
+  S1AP_CAUSE_NAS,
+  S1AP_CAUSE_PROTOCOL,
+  S1AP_CAUSE_MISC,
+  /* Extensions may appear below */
+
+} s1ap_Cause_t;
+
 typedef struct e_rab_failed_s {
   /* Unique e_rab_id for the UE. */
   uint8_t e_rab_id;
   /* Cause of the failure */
   //     cause_t cause;
+  s1ap_Cause_t cause;
+  uint8_t cause_value;
 } e_rab_failed_t;
 
 typedef enum s1ap_ue_ctxt_modification_present_s {
@@ -390,7 +415,7 @@ typedef struct s1ap_initial_context_setup_fail_s {
   unsigned  eNB_ue_s1ap_id:24;
 
   /* TODO add cause */
-} s1ap_initial_context_setup_fail_t, s1ap_ue_ctxt_modification_fail_t;
+} s1ap_initial_context_setup_fail_t, s1ap_ue_ctxt_modification_fail_t, s1ap_e_rab_setup_req_fail_t;
 
 typedef struct s1ap_nas_non_delivery_ind_s {
   unsigned  eNB_ue_s1ap_id:24;
@@ -439,6 +464,7 @@ typedef struct s1ap_downlink_nas_s {
   nas_pdu_t nas_pdu;
 } s1ap_downlink_nas_t;
 
+
 typedef struct s1ap_initial_context_setup_req_s {
   /* UE id for initial connection to S1AP */
   uint16_t ue_initial_id;
@@ -461,6 +487,12 @@ typedef struct s1ap_initial_context_setup_req_s {
   e_rab_t  e_rab_param[S1AP_MAX_E_RAB];
 } s1ap_initial_context_setup_req_t;
 
+typedef struct tai_plmn_identity_s {
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_digit_length;
+} plmn_identity_t;
+
 typedef struct s1ap_paging_ind_s {
   /* UE identity index value.
    * Specified in 3GPP TS 36.304
@@ -473,11 +505,53 @@ typedef struct s1ap_paging_ind_s {
   /* Indicates origin of paging */
   cn_domain_t cn_domain;
 
+  /* PLMN_identity in TAI of Paging*/
+  plmn_identity_t plmn_identity[256];
+
+  /* TAC in TAIList of Paging*/
+  int16_t tac[256];
+
+  /* size of TAIList*/
+  int16_t tai_size;
+
   /* Optional fields */
   paging_drx_t paging_drx;
 
   paging_priority_t paging_priority;
 } s1ap_paging_ind_t;
+
+typedef struct s1ap_e_rab_setup_req_s {
+  /* UE id for initial connection to S1AP */
+  uint16_t ue_initial_id;
+
+  /* MME UE id  */
+  uint16_t mme_ue_s1ap_id;
+
+  /* eNB ue s1ap id as initialized by S1AP layer */
+  unsigned eNB_ue_s1ap_id:24;
+
+  /* Number of e_rab to be setup in the list */
+  uint8_t nb_e_rabs_tosetup;
+
+  /* E RAB setup request */
+  e_rab_t e_rab_setup_params[S1AP_MAX_E_RAB];
+
+} s1ap_e_rab_setup_req_t;
+
+typedef struct s1ap_e_rab_setup_resp_s {
+  unsigned  eNB_ue_s1ap_id:24;
+
+  /* Number of e_rab setup-ed in the list */
+  uint8_t       nb_of_e_rabs;
+  /* list of e_rab setup-ed by RRC layers */
+  e_rab_setup_t e_rabs[S1AP_MAX_E_RAB];
+
+  /* Number of e_rab failed to be setup in list */
+  uint8_t        nb_of_e_rabs_failed;
+  /* list of e_rabs that failed to be setup */
+  e_rab_failed_t e_rabs_failed[S1AP_MAX_E_RAB];
+} s1ap_e_rab_setup_resp_t;
+
 
 // S1AP --> RRC messages
 typedef struct s1ap_ue_release_command_s {
@@ -488,21 +562,85 @@ typedef struct s1ap_ue_release_command_s {
 
 
 //-------------------------------------------------------------------------------------------//
-typedef enum S1ap_Cause_e {
-  S1AP_CAUSE_NOTHING,  /* No components present */
-  S1AP_CAUSE_RADIO_NETWORK,
-  S1AP_CAUSE_TRANSPORT,
-  S1AP_CAUSE_NAS,
-  S1AP_CAUSE_PROTOCOL,
-  S1AP_CAUSE_MISC,
-  /* Extensions may appear below */
-
-} s1ap_Cause_t;
 // S1AP <-- RRC messages
 typedef struct s1ap_ue_release_req_s {
   unsigned      eNB_ue_s1ap_id:24;
   s1ap_Cause_t  cause;
   long          cause_value;
 } s1ap_ue_release_req_t, s1ap_ue_release_resp_t;
+
+typedef struct s1ap_e_rab_modify_req_s {
+  /* UE id for initial connection to S1AP */
+  uint16_t ue_initial_id;
+
+  /* MME UE id  */
+  uint16_t mme_ue_s1ap_id;
+
+  /* eNB ue s1ap id as initialized by S1AP layer */
+  unsigned eNB_ue_s1ap_id:24;
+
+  /* Number of e_rab to be modify in the list */
+  uint8_t nb_e_rabs_tomodify;
+
+  /* E RAB modify request */
+  e_rab_t e_rab_modify_params[S1AP_MAX_E_RAB];
+} s1ap_e_rab_modify_req_t;
+
+typedef struct s1ap_e_rab_modify_resp_s {
+  unsigned  eNB_ue_s1ap_id:24;
+
+  /* Number of e_rab modify-ed in the list */
+  uint8_t       nb_of_e_rabs;
+  /* list of e_rab modify-ed by RRC layers */
+  e_rab_modify_t e_rabs[S1AP_MAX_E_RAB];
+
+  /* Number of e_rab failed to be modify in list */
+  uint8_t        nb_of_e_rabs_failed;
+  /* list of e_rabs that failed to be modify */
+  e_rab_failed_t e_rabs_failed[S1AP_MAX_E_RAB];
+} s1ap_e_rab_modify_resp_t;
+
+typedef struct e_rab_release_s {
+  /* Unique e_rab_id for the UE. */
+  uint8_t                     e_rab_id;
+} e_rab_release_t;
+
+typedef struct s1ap_e_rab_release_command_s {
+  /* MME UE id  */
+  uint16_t mme_ue_s1ap_id;
+
+  /* eNB ue s1ap id as initialized by S1AP layer */
+  unsigned eNB_ue_s1ap_id:24;
+
+  /* The NAS PDU should be forwarded by the RRC layer to the NAS layer */
+  nas_pdu_t                   nas_pdu;
+
+  /* Number of e_rab to be released in the list */
+  uint8_t nb_e_rabs_torelease;
+
+  /* E RAB release command */
+  e_rab_release_t e_rab_release_params[S1AP_MAX_E_RAB];
+
+} s1ap_e_rab_release_command_t;
+
+typedef struct s1ap_e_rab_release_resp_s {
+  /* MME UE id  */
+  uint16_t mme_ue_s1ap_id;
+
+  /* eNB ue s1ap id as initialized by S1AP layer */
+  unsigned eNB_ue_s1ap_id:24;
+
+  /* Number of e_rab released in the list */
+  uint8_t       nb_of_e_rabs_released;
+
+  /* list of e_rabs released */
+  e_rab_release_t e_rab_release[S1AP_MAX_E_RAB];
+
+  /* Number of e_rab failed to be released in list */
+  uint8_t        nb_of_e_rabs_failed;
+  /* list of e_rabs that failed to be released */
+  e_rab_failed_t e_rabs_failed[S1AP_MAX_E_RAB];
+
+} s1ap_e_rab_release_resp_t;
 
 #endif /* S1AP_MESSAGES_TYPES_H_ */

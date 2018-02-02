@@ -1,41 +1,34 @@
-/*******************************************************************************
- OpenAirInterface
- Copyright(c) 1999 - 2014 Eurecom
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
- OpenAirInterface is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
-
- OpenAirInterface is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with OpenAirInterface.The full GNU General Public License is
- included in this distribution in the file called "COPYING". If not,
- see <http://www.gnu.org/licenses/>.
-
- Contact Information
- OpenAirInterface Admin: openair_admin@eurecom.fr
- OpenAirInterface Tech : openair_tech@eurecom.fr
- OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
-
- Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
 /*! \file oaisim.c
-* \brief oaisim top level
-* \author Navid Nikaein 
-* \date 2013-2015
-* \version 1.0
-* \company Eurecom
-* \email: openair_tech@eurecom.fr
-* \note
-* \warning
-*/
+ * \brief oaisim top level
+ * \author Navid Nikaein 
+ * \date 2013-2015
+ * \version 1.0
+ * \company Eurecom
+ * \email: openair_tech@eurecom.fr
+ * \note
+ * \warning
+ */
 
 #include <string.h>
 #include <math.h>
@@ -61,24 +54,16 @@
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/vars.h"
 #include "pdcp.h"
-#ifndef CELLULAR
 #include "RRC/LITE/vars.h"
-#endif
-#include "PHY_INTERFACE/vars.h"
-//#endif
 #include "RRC/NAS/nas_config.h"
 
-#ifdef IFFT_FPGA
-//#include "PHY/LTE_REFSIG/mod_table.h"
-#endif //IFFT_FPGA
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
+#include "system.h"
 
-//#ifdef XFORMS
+
 #include "PHY/TOOLS/lte_phy_scope.h"
-//#endif
 
-//#include "LAYER2/PROTO_AGENT/proto_agent.h"
 
 #ifdef SMBV
 // Rohde&Schwarz SMBV100A vector signal generator
@@ -90,6 +75,11 @@ unsigned char smbv_frame_cnt = 0;
 uint8_t config_smbv = 0;
 char smbv_ip[16];
 #endif
+
+#if defined(FLEXRAN_AGENT_SB_IF)
+#   include "flexran_agent.h"
+#endif
+
 
 #include "oaisim_functions.h"
 
@@ -117,14 +107,12 @@ char smbv_ip[16];
 
 #include "T.h"
 
-#include "LAYER2/PROTO_AGENT/proto_agent.h"
-
 /*
- DCI0_5MHz_TDD0_t          UL_alloc_pdu;
- DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
- DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
- DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
- */
+  DCI0_5MHz_TDD0_t          UL_alloc_pdu;
+  DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
+  DCI2_5MHz_2A_L10PRB_TDD_t DLSCH_alloc_pdu1;
+  DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2;
+*/
 
 #define UL_RB_ALLOC            computeRIV(lte_frame_parms->N_RB_UL,0,24)
 #define CCCH_RB_ALLOC          computeRIV(lte_frame_parms->N_RB_UL,0,3)
@@ -140,13 +128,41 @@ char smbv_ip[16];
 //#define K                      2             /* averaging coefficient */
 //#define TARGET_SF_TIME_NS      1000000       /* 1ms = 1000000 ns */
 
+uint8_t usim_test = 0;
+
 frame_t frame = 0;
 char stats_buffer[16384];
-channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
-channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
+channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
+channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM_CCs];
 //Added for PHY abstraction
-node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
+node_desc_t *enb_data[NUMBER_OF_RU_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
+
+pthread_cond_t sync_cond;
+pthread_mutex_t sync_mutex;
+int sync_var=-1;
+
+pthread_mutex_t subframe_mutex;
+int subframe_ru_mask=0,subframe_UE_mask=0;
+
+openair0_config_t openair0_cfg[MAX_CARDS];
+uint32_t          downlink_frequency[MAX_NUM_CCs][4];
+int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
+openair0_rf_map rf_map[MAX_NUM_CCs];
+
+#if defined(ENABLE_ITTI)
+volatile int             start_eNB = 0;
+volatile int             start_UE = 0;
+#endif
+volatile int                    oai_exit = 0;
+
+
+//int32_t **rxdata;
+//int32_t **txdata;
+
+uint16_t sf_ahead=4;
+uint8_t nfapi_mode = 0;
+
 // Added for PHY abstraction
 extern node_list* ue_node_list;
 extern node_list* enb_node_list;
@@ -166,7 +182,10 @@ extern uint8_t abstraction_flag;
 extern uint8_t ethernet_flag;
 extern uint16_t Nid_cell;
 
-extern LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
+
+double cpuf;
+#include "threads_t.h"
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 
 //#ifdef XFORMS
 int otg_enabled;
@@ -197,6 +216,12 @@ sigh (void *arg);
 void
 oai_shutdown (void);
 
+void reset_opp_meas_oaisim (void);
+
+void wait_eNBs() {
+  return;
+}
+
 void
 help (void)
 {
@@ -223,7 +248,7 @@ help (void)
   printf ("-L [0-1] 0 to disable new link adaptation, 1 to enable new link adapatation\n");
   printf ("-m Gives a fixed DL mcs for eNB scheduler\n");
   printf ("-M Set the machine ID for Ethernet-based emulation\n");
-  printf ("-n Set the number of frames for the simulation\n");
+  printf ("-n Set the number of frames for the simulation. 0 for no limit\n");
   printf ("-O [enb_conf_file] eNB configuration file name\n");
   printf ("-p Set the total number of machine in emulation - valid if M is set\n");
   printf ("-P [trace type] Enable protocol analyzer. Possible values for OPT:\n");
@@ -247,10 +272,13 @@ help (void)
 #else
   printf ("-W [Rohde&Schwarz SMBV100A functions disabled. Recompile with SMBV=1]\n");
 #endif
-  printf ("-x Set the transmission mode (1,2,5,6 supported for now)\n");
+  printf ("-x deprecated. Set the transmission mode in config file!\n");
+  printf ("-y Set the number of receive antennas at the UE (1 or 2)\n");
   printf ("-Y Set the global log verbosity (none, low, medium, high, full) \n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf ("-Z Reserved\n");
+  printf ("--xforms Activate the grapical scope\n");
+
 #if T_TRACER
   printf ("--T_port [port]    use given port\n");
   printf ("--T_nowait         don't wait for tracer, start immediately\n");
@@ -259,73 +287,6 @@ help (void)
 }
 
 pthread_t log_thread;
-// pthread_t async_server_thread;
-// int async_server_thread_finalize (void);
-// 
-// void
-// async_server_thread_init (void)
-// {
-//   //create log_list
-//   //log_list_init(&log_list);
-// 
-//   async_server_shutdown = 0;
-// 
-//   if ((pthread_mutex_init (&async_server_lock, NULL) != 0)
-//       || (pthread_cond_init (&async_server_notify, NULL) != 0)) {
-//     return;
-//   }
-// 
-//   if (pthread_create (&async_server_thread, NULL, proto_server_init, (void*) NULL)
-//       != 0) {
-//     async_server_thread_finalize();
-//     return;
-//   }
-// 
-// 
-// }
-// 
-// //Call it after the last LOG call
-// int
-// async_server_thread_finalize (void)
-// {
-//   int err = 0;
-// 
-// 
-//   if (pthread_mutex_lock (&async_server_lock) != 0) {
-//     return -1;
-//   }
-// 
-//   async_server_shutdown = 1;
-// 
-//   /* Wake up LOG thread */
-//   if ((pthread_cond_broadcast (&async_server_notify) != 0)
-//       || (pthread_mutex_unlock (&async_server_lock) != 0)) {
-//     err = -1;
-//   }
-// 
-//   if (pthread_join (async_server_thread, NULL) != 0) {
-//     err = -1;
-//   }
-// 
-//   if (pthread_mutex_unlock (&async_server_lock) != 0) {
-//     err = -1;
-//   }
-// 
-//   if (!err) {
-//     //log_list_free(&log_list);
-//     pthread_mutex_lock (&async_server_lock);
-//     pthread_mutex_destroy (&async_server_lock);
-//     pthread_cond_destroy (&async_server_notify);
-//   }
-// 
-// 
-//   return err;
-// }
-
-
-
-
-
 
 void
 log_thread_init (void)
@@ -418,20 +379,21 @@ int omv_write(int pfd, node_list* enb_node_list, node_list* ue_node_list, Data_F
       omv_data.geo[i].node_type = 0; //eNB
       enb_node_list = enb_node_list->next;
       omv_data.geo[i].Neighbors = 0;
-
-      for (j = NB_eNB_INST; j < NB_UE_INST + NB_eNB_INST; j++) {
-        if (is_UE_active (i, j - NB_eNB_INST) == 1) {
+/*
+      for (j = NB_RU; j < NB_UE_INST + NB_RU; j++) {
+        if (is_UE_active (i, j - NB_RU) == 1) {
           omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors] = j;
           omv_data.geo[i].Neighbors++;
           LOG_D(
-            OMG,
-            "[eNB %d][UE %d] is_UE_active(i,j) %d geo (x%d, y%d) num neighbors %d\n", i, j-NB_eNB_INST, is_UE_active(i,j-NB_eNB_INST), omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
+		OMG,
+		"[RU %d][UE %d] is_UE_active(i,j) %d geo (x%d, y%d) num neighbors %d\n", i, j-NB_RU, is_UE_active(i,j-NB_RU), omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
         }
       }
+*/
     }
   }
 
-  for (i = NB_eNB_INST; i < NB_UE_INST + NB_eNB_INST; i++) {
+  for (i = NB_RU; i < NB_UE_INST + NB_RU; i++) {
     if (ue_node_list != NULL) {
       omv_data.geo[i].x = (ue_node_list->node->x_pos < 0.0) ? 0.0 : ue_node_list->node->x_pos;
       omv_data.geo[i].y = (ue_node_list->node->y_pos < 0.0) ? 0.0 : ue_node_list->node->y_pos;
@@ -454,16 +416,17 @@ int omv_write(int pfd, node_list* enb_node_list, node_list* ue_node_list, Data_F
 
       ue_node_list = ue_node_list->next;
       omv_data.geo[i].Neighbors = 0;
-
-      for (j = 0; j < NB_eNB_INST; j++) {
-        if (is_UE_active (j, i - NB_eNB_INST) == 1) {
+/*
+      for (j = 0; j < NB_RU; j++) {
+        if (is_UE_active (j, i - NB_RU) == 1) {
           omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors] = j;
           omv_data.geo[i].Neighbors++;
           LOG_D(
-            OMG,
-            "[UE %d][eNB %d] is_UE_active  %d geo (x%d, y%d) num neighbors %d\n", i-NB_eNB_INST, j, is_UE_active(j,i-NB_eNB_INST), omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
+		OMG,
+		"[UE %d][RU %d] is_UE_active  %d geo (x%d, y%d) num neighbors %d\n", i-NB_RU, j, is_UE_active(j,i-NB_RU), omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
         }
       }
+*/
     }
   }
 
@@ -493,9 +456,7 @@ static Data_Flow_Unit omv_data;
 #endif //ALU
 static module_id_t UE_inst = 0;
 static module_id_t eNB_inst = 0;
-#ifdef Rel10
-static module_id_t RN_id = 0;
-#endif
+static module_id_t ru_id;
 
 Packet_OTG_List_t *otg_pdcp_buffer;
 
@@ -505,6 +466,11 @@ typedef enum l2l1_task_state_e {
 
 l2l1_task_state_t l2l1_state = L2L1_WAITTING;
 
+extern openair0_timestamp current_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
+extern openair0_timestamp current_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
+extern openair0_timestamp last_eNB_rx_timestamp[NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
+extern openair0_timestamp last_UE_rx_timestamp[NUMBER_OF_UE_MAX][MAX_NUM_CCs];
+
 /*------------------------------------------------------------------------------*/
 void *
 l2l1_task (void *args_p)
@@ -513,17 +479,10 @@ l2l1_task (void *args_p)
   int CC_id;
 
   // Framing variables
-  int32_t slot, last_slot, next_slot;
+  int32_t sf;
 
-#ifdef Rel10
-  relaying_type_t r_type = no_relay; // no relaying
-#endif
+  //char fname[64], vname[64];
 
-  lte_subframe_t direction;
-
-  char fname[64], vname[64];
-  int sf;
-  protocol_ctxt_t  ctxt;
   //#ifdef XFORMS
   // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
   // at eNB 0, an UL scope for every UE
@@ -550,27 +509,11 @@ l2l1_task (void *args_p)
   char eNB_stats_th_filename[255];
 #endif
 
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
-    for (eNB_inst = 0; eNB_inst < NB_eNB_INST; eNB_inst++) {
-      for (sf = 0; sf < 10; sf++) {
-        PHY_vars_eNB_g[eNB_inst][CC_id]->proc[sf].frame_tx = 0;
-        PHY_vars_eNB_g[eNB_inst][CC_id]->proc[sf].frame_rx = 0;
-        PHY_vars_eNB_g[eNB_inst][CC_id]->proc[sf].subframe_tx = (sf + 1)
-            % 10;
-        PHY_vars_eNB_g[eNB_inst][CC_id]->proc[sf].subframe_rx = (sf + 9)
-            % 10;
-      }
 
-      PHY_vars_eNB_g[eNB_inst][CC_id]->proc[0].frame_rx = 1023;
-      PHY_vars_eNB_g[eNB_inst][CC_id]->proc[9].frame_tx = 1;
-    }
-
-  //#ifdef XFORMS
   if (xforms==1) {
     xargv[0] = xname;
     fl_initialize (&xargc, xargv, NULL, 0, 0);
     eNB_inst = 0;
-    
     for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++) {
       for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
 	// DL scope at UEs
@@ -578,21 +521,16 @@ l2l1_task (void *args_p)
 	sprintf (title, "LTE DL SCOPE eNB %d to UE %d CC_id %d", eNB_inst, UE_inst, CC_id);
 	fl_show_form (form_ue[CC_id][UE_inst]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
-	if (openair_daq_vars.use_ia_receiver == 1) {
+	if (PHY_vars_UE_g[UE_inst][CC_id]->use_ia_receiver == 1) {
 	  fl_set_button(form_ue[CC_id][UE_inst]->button_0,1);
 	  fl_set_object_label(form_ue[CC_id][UE_inst]->button_0, "IA Receiver ON");
 	  fl_set_object_color(form_ue[CC_id][UE_inst]->button_0, FL_GREEN, FL_GREEN);
 	}
 	
       }
-      // UL scope at eNB 0
-      form_enb[UE_inst] = create_lte_phy_scope_enb();
-      sprintf (title, "LTE UL SCOPE UE %d to eNB %d", UE_inst, eNB_inst);
-      fl_show_form (form_enb[UE_inst]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-      
     }
   }
-  //#endif
+
 
 #ifdef PRINT_STATS
 
@@ -643,7 +581,8 @@ l2l1_task (void *args_p)
   itti_mark_task_ready (TASK_L2L1);
   LOG_I(EMU, "TASK_L2L1 is READY\n");
 
-  if (oai_emulation.info.nb_enb_local > 0) {
+  if ((oai_emulation.info.nb_enb_local > 0) && 
+      (oai_emulation.info.node_function[0] < NGFI_RAU_IF4p5)) {
     /* Wait for the initialize message */
     do {
       if (message_p != NULL) {
@@ -658,6 +597,7 @@ l2l1_task (void *args_p)
       switch (ITTI_MSG_ID(message_p)) {
       case INITIALIZE_MESSAGE:
         l2l1_state = L2L1_RUNNING;
+        start_eNB = 1;
         break;
 
       case ACTIVATE_MESSAGE:
@@ -683,10 +623,18 @@ l2l1_task (void *args_p)
   }
 
 #endif
+  module_id_t enb_id;
+  module_id_t UE_id;
+
+  if (abstraction_flag == 1) {
+    for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
+      dl_phy_sync_success (UE_id, 0, 0,1);   //UE_id%NB_eNB_INST);
+  }
+  
   start_meas (&oaisim_stats);
 
   for (frame = 0;
-       (l2l1_state != L2L1_TERMINATED) &&
+       (l2l1_state != L2L1_TERMINATED) && 
 	 ((oai_emulation.info.n_frames_flag == 0) ||
 	  (frame < oai_emulation.info.n_frames));
        frame++) {
@@ -751,7 +699,6 @@ l2l1_task (void *args_p)
     oai_emulation.info.time_s += 0.01; // emu time in s, each frame lasts for 10 ms // JNote: TODO check the coherency of the time and frame (I corrected it to 10 (instead of 0.01)
 
     update_omg (frame); // frequency is defined in the omg_global params configurable by the user
-
     update_omg_ocm ();
 
 #ifdef OPENAIR2
@@ -762,54 +709,74 @@ l2l1_task (void *args_p)
     }
 
 #endif
-#ifdef DEBUG_OMG
-    /*
-     if ((((int) oai_emulation.info.time_s) % 100) == 0) {
-     for (UE_inst = oai_emulation.info.first_ue_local; UE_inst < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); UE_inst++) {
-     get_node_position (UE, UE_inst);
-     }
-     }
-     */
-#endif
 
-    update_ocm ();
 
-    for (slot = 0; slot < 20; slot++) {
-      if (slot % 2 == 0)
-        start_meas (&oaisim_stats_f);
+
+    for (sf = 0; sf < 10; sf++) {
+      LOG_D(EMU,"************************* Subframe %d\n",sf);
+      start_meas (&oaisim_stats_f);
 
       wait_for_slot_isr ();
 
 #if defined(ENABLE_ITTI)
-      itti_update_lte_time(frame % MAX_FRAME_NUMBER, slot);
+      itti_update_lte_time(frame % MAX_FRAME_NUMBER, sf<<1);
 #endif
 
-      last_slot = (slot - 1) % 20;
-
-      if (last_slot < 0)
-        last_slot += 20;
-
-      next_slot = (slot + 1) % 20;
-
-      oai_emulation.info.time_ms = frame * 10 + (slot >> 1);
-
-      direction = subframe_select (frame_parms[0], next_slot >> 1);
+      oai_emulation.info.time_ms = frame * 10 + sf;
 
 #ifdef PROC
 
-      if(Channel_Flag==1)
-        Channel_Func(s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,eNB2UE,UE2eNB,enb_data,ue_data,abstraction_flag,frame_parms,slot);
+    if(Channel_Flag==1)
+      Channel_Func(s_re2,s_im2,r_re2,r_im2,r_re02,r_im02,r_re0_d,r_im0_d,r_re0_u,r_im0_u,RU2UE,UE2RU,enb_data,ue_data,abstraction_flag,frame_parms,sf<<1);
 
-      if(Channel_Flag==0)
+    if(Channel_Flag==0)
 #endif
-      {
+      { // SUBFRAME INNER PART
 #if defined(ENABLE_ITTI)
         log_set_instance_type (LOG_INSTANCE_ENB);
 #endif
 
-        //    if ((next_slot % 2) == 0)
-        if ((slot & 1) == 0)
-          clear_eNB_transport_info (oai_emulation.info.nb_enb_local);
+
+	CC_id=0;
+        int all_done=0;
+
+        while (all_done==0) {
+
+          pthread_mutex_lock(&subframe_mutex);
+          int subframe_ru_mask_local = subframe_ru_mask;
+          int subframe_UE_mask_local  = subframe_UE_mask;
+          pthread_mutex_unlock(&subframe_mutex);
+          LOG_D(EMU,"Frame %d, Subframe %d, NB_RU %d, NB_UE %d: Checking masks %x,%x\n",frame,sf,NB_RU,NB_UE_INST,subframe_ru_mask_local,subframe_UE_mask_local);
+          if ((subframe_ru_mask_local == ((1<<NB_RU)-1)) &&
+              (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
+             all_done=1;
+          else
+	    usleep(1500);
+        }
+
+
+        //clear subframe masks for next round
+        pthread_mutex_lock(&subframe_mutex);
+        subframe_ru_mask=0;
+        subframe_UE_mask=0;
+        pthread_mutex_unlock(&subframe_mutex);
+
+        // increment timestamps
+	/*
+        for (ru_id = oai_emulation.info.first_enb_local;
+             (ru_id
+              < (oai_emulation.info.first_enb_local
+                 + oai_emulation.info.nb_enb_local));
+             ru_id++) {
+	*/
+	for (ru_id=0;ru_id<NB_RU;ru_id++) {
+	  current_ru_rx_timestamp[ru_id][CC_id] += RC.ru[ru_id]->frame_parms.samples_per_tti;
+	  LOG_D(EMU,"RU %d/%d: TS %llu\n",ru_id,CC_id,current_ru_rx_timestamp[ru_id][CC_id]);
+        }
+        for (UE_inst = 0; UE_inst<NB_UE_INST;UE_inst++) {
+	  current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
+	  LOG_D(EMU,"UE %d/%d: TS %llu\n",UE_id,CC_id,current_UE_rx_timestamp[UE_inst][CC_id]);
+        }
 
         for (eNB_inst = oai_emulation.info.first_enb_local;
              (eNB_inst
@@ -817,49 +784,41 @@ l2l1_task (void *args_p)
                  + oai_emulation.info.nb_enb_local));
              eNB_inst++) {
           if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
-            if ((slot & 1) == 0) {
-              T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(slot/2));
-              LOG_D(EMU,
-                    "PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
-                    eNB_inst,
-                    frame % MAX_FRAME_NUMBER,
-                    slot,
-                    PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_tx,
-                    PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_rx,
-                    PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.frame_type,
-                    PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.tdd_config,
-                    PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.Nid_cell);
-            }
-
+        
+	    /*
+	    LOG_D(EMU,
+		  "PHY procedures eNB %d for frame %d, subframe %d TDD %d/%d Nid_cell %d\n",
+		  eNB_inst,
+		  frame % MAX_FRAME_NUMBER,
+		  sf,
+		  PHY_vars_eNB_g[eNB_inst][0]->frame_parms.frame_type,
+		  PHY_vars_eNB_g[eNB_inst][0]->frame_parms.tdd_config,
+		  PHY_vars_eNB_g[eNB_inst][0]->frame_parms.Nid_cell);
+            
+	    */
 #ifdef OPENAIR2
-                        //Application: traffic gen
+	    //Application: traffic gen
             update_otg_eNB (eNB_inst, oai_emulation.info.time_ms);
 
             //IP/OTG to PDCP and PDCP to IP operation
             //        pdcp_run (frame, 1, 0, eNB_inst); //PHY_vars_eNB_g[eNB_id]->Mod_id
 #endif
-
-            // PHY_vars_eNB_g[eNB_id]->frame = frame;
-            if ((slot & 1) == 0)
-              phy_procedures_eNB_lte (slot >> 1,
-                                      PHY_vars_eNB_g[eNB_inst],
-                                      abstraction_flag, no_relay,
-                                      NULL);
+           
 
 #ifdef PRINT_STATS
 
-            if(last_slot==9 && frame%10==0)
+            if((sf==9) && frame%10==0)
               if(eNB_avg_thr)
-                fprintf(eNB_avg_thr,"%d %d\n",PHY_vars_eNB_g[eNB_inst][0]->proc[slot>>1].frame_tx,
-                        (PHY_vars_eNB_g[eNB_inst][0]->total_system_throughput)/((PHY_vars_eNB_g[eNB_inst][0]->proc[slot>>1].frame_tx+1)*10));
-
+                fprintf(eNB_avg_thr,"%d %d\n",RC.eNB[eNB_inst][0]->proc.proc_rxtx[sf&1].frame_tx,
+                        (RC.eNB[eNB_inst][0]->total_system_throughput)/((RC.eNB[eNB_inst][0]->proc.proc_rxtx[sf&1].frame_tx+1)*10));
+	    /*
             if (eNB_stats[eNB_inst]) {
-              len = dump_eNB_stats(PHY_vars_eNB_g[eNB_inst][0], stats_buffer, 0);
+              len = dump_eNB_stats(RC.eNB[eNB_inst][0], stats_buffer, 0);
               rewind (eNB_stats[eNB_inst]);
               fwrite (stats_buffer, 1, len, eNB_stats[eNB_inst]);
               fflush(eNB_stats[eNB_inst]);
             }
-
+	    */
 #ifdef OPENAIR2
 
             if (eNB_l2_stats) {
@@ -872,458 +831,162 @@ l2l1_task (void *args_p)
 #endif
 #endif
           }
-        }
+        }// eNB_inst loop
 
-        // Call ETHERNET emulation here
-        //emu_transport (frame, last_slot, next_slot, direction, oai_emulation.info.frame_type, ethernet_flag);
 
 #if defined(ENABLE_ITTI)
         log_set_instance_type (LOG_INSTANCE_UE);
 #endif
 
-        if ((next_slot % 2) == 0)
-          // if ((slot&1) == 0)
-          clear_UE_transport_info (oai_emulation.info.nb_ue_local);
 
-        for (UE_inst = oai_emulation.info.first_ue_local;
-             (UE_inst < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local));
-             UE_inst++) {
-          if (oai_emulation.info.cli_start_ue[UE_inst] != 0) {
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+	if ((sf == 0) && ((frame % MAX_FRAME_NUMBER) == 0) && (abstraction_flag == 0)
+	    && (oai_emulation.info.n_frames == 1)) {
+	  
+	  write_output ("dlchan0.m",
+			"dlch0",
+			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[0][0][0]),
+			(6
+			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
+			1, 1);
+	  write_output ("dlchan1.m",
+			"dlch1",
+			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[1][0][0]),
+			(6
+			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
+			1, 1);
+	  write_output ("dlchan2.m",
+			"dlch2",
+			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[2][0][0]),
+			(6
+			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
+			1, 1);
+	  write_output ("pbch_rxF_comp0.m",
+			"pbch_comp0",
+			PHY_vars_UE_g[0][0]->pbch_vars[0]->rxdataF_comp[0],
+			6 * 12 * 4, 1, 1);
+	  write_output ("pbch_rxF_llr.m", "pbch_llr",
+			PHY_vars_UE_g[0][0]->pbch_vars[0]->llr,
+			(PHY_vars_UE_g[0][0]->frame_parms.Ncp == 0) ? 1920 : 1728, 1,
+			4);
+	}
+    
+	stop_meas (&oaisim_stats_f);
+      } // SUBFRAME INNER PART
 
-#else
 
-            if (frame >= (UE_inst * 20)) // activate UE only after 20*UE_id frames so that different UEs turn on separately
-#endif
-            {
-              LOG_D(EMU,
-                    "PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
-                    UE_inst, frame % MAX_FRAME_NUMBER, slot, next_slot >> 1,
-                    last_slot >> 1);
-
-              if (PHY_vars_UE_g[UE_inst][0]->UE_mode[0]
-                  != NOT_SYNCHED) {
-                if (frame > 0) {
-                  PHY_vars_UE_g[UE_inst][0]->frame_rx = frame % MAX_FRAME_NUMBER;
-                  PHY_vars_UE_g[UE_inst][0]->slot_rx =  last_slot;
-                  PHY_vars_UE_g[UE_inst][0]->slot_tx = next_slot;
-
-                  if (next_slot > 1)
-                    PHY_vars_UE_g[UE_inst][0]->frame_tx = frame % MAX_FRAME_NUMBER;
-                  else
-                    PHY_vars_UE_g[UE_inst][0]->frame_tx = (frame + 1) % MAX_FRAME_NUMBER;
-
-#ifdef OPENAIR2
-                  //Application
-                  update_otg_UE (UE_inst, oai_emulation.info.time_ms);
-
-                  //Access layer
-		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, 0, ENB_FLAG_NO, NOT_A_RNTI, frame % MAX_FRAME_NUMBER, next_slot);
-                  pdcp_run (&ctxt);
-#endif
-
-                  for (CC_id = 0; CC_id < MAX_NUM_CCs;
-                       CC_id++) {
-                    phy_procedures_UE_lte (
-                      PHY_vars_UE_g[UE_inst][CC_id],
-                      0, abstraction_flag,
-                      normal_txrx, no_relay,
-                      NULL);
-                  }
-
-                  ue_data[UE_inst]->tx_power_dBm =
-                    PHY_vars_UE_g[UE_inst][0]->tx_power_dBm;
-                }
-              } else {
-                if (abstraction_flag == 1) {
-                  LOG_E(EMU,
-                        "sync not supported in abstraction mode (UE%d,mode%d)\n",
-                        UE_inst,
-                        PHY_vars_UE_g[UE_inst][0]->UE_mode[0]);
-                  exit (-1);
-                }
-
-                if ((frame > 0)
-                    && (last_slot
-                        == (LTE_SLOTS_PER_FRAME
-                            - 2))) {
-                  initial_sync (PHY_vars_UE_g[UE_inst][0],
-                                normal_txrx);
-
-                  /*
-                   write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-                   if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
-                   write_output("dlchan01.m","dlch01",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][1][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-                   write_output("dlchan10.m","dlch10",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][2][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-                   if (PHY_vars_UE_g[0]->lte_frame_parms.nb_antennas_rx>1)
-                   write_output("dlchan11.m","dlch11",&(PHY_vars_UE_g[0]->lte_ue_common_vars.dl_ch_estimates[0][3][0]),(6*(PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)),1,1);
-                   write_output("rxsig.m","rxs",PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],PHY_vars_UE_g[0]->lte_frame_parms.samples_per_tti*10,1,1);
-                   write_output("rxsigF.m","rxsF",PHY_vars_UE_g[0]->lte_ue_common_vars.rxdataF[0],2*PHY_vars_UE_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size,2,1);
-                   write_output("pbch_rxF_ext0.m","pbch_ext0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_ext[0],6*12*4,1,1);
-                   write_output("pbch_rxF_comp0.m","pbch_comp0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],6*12*4,1,1);
-                   write_output("pbch_rxF_llr.m","pbch_llr",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
-                   */
-                }
-              }
-
-#ifdef PRINT_STATS
-
-              if(last_slot==2 && frame%10==0) {
-                if (UE_stats_th[UE_inst]) {
-                  fprintf(UE_stats_th[UE_inst],"%d %d\n",frame % MAX_FRAME_NUMBER, PHY_vars_UE_g[UE_inst][0]->bitrate[0]/1000);
-                }
-              }
-
-              if (UE_stats[UE_inst]) {
-                len = dump_ue_stats (PHY_vars_UE_g[UE_inst][0], stats_buffer, 0, normal_txrx, 0);
-                rewind (UE_stats[UE_inst]);
-                fwrite (stats_buffer, 1, len, UE_stats[UE_inst]);
-                fflush(UE_stats[UE_inst]);
-              }
-
-#endif
-            }
-          }
-        }
-
-#ifdef Rel10
-
-        for (RN_id=oai_emulation.info.first_rn_local;
-             RN_id<oai_emulation.info.first_rn_local+oai_emulation.info.nb_rn_local;
-             RN_id++) {
-          // UE id and eNB id of the RN
-          UE_inst= oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local + RN_id;// NB_UE_INST + RN_id
-          eNB_inst= oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local + RN_id;// NB_eNB_INST + RN_id
-
-          // currently only works in FDD
-          if (oai_emulation.info.eMBMS_active_state == 4) {
-            r_type = multicast_relay;
-            //LOG_I(EMU,"Activating the multicast relaying\n");
-          } else {
-            LOG_E(EMU,"Not supported eMBMS option when relaying is enabled %d\n", r_type);
-            exit(-1);
-          }
-
-          PHY_vars_RN_g[RN_id]->frame = frame % MAX_FRAME_NUMBER;
-
-          if ( oai_emulation.info.frame_type == 0) {
-            // RN == UE
-            if (frame>0) {
-              if (PHY_vars_UE_g[UE_inst][0]->UE_mode[0] != NOT_SYNCHED) {
-                LOG_D(EMU,"[RN %d] PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
-                      RN_id, UE_inst, frame, slot, next_slot >> 1,last_slot>>1);
-                PHY_vars_UE_g[UE_inst][0]->frame_rx = frame % MAX_FRAME_NUMBER;
-                PHY_vars_UE_g[UE_inst][0]->slot_rx = last_slot;
-                PHY_vars_UE_g[UE_inst][0]->slot_tx = next_slot;
-
-                if (next_slot>1) PHY_vars_UE_g[UE_inst][0]->frame_tx = frame % MAX_FRAME_NUMBER;
-                else PHY_vars_UE_g[UE_inst][0]->frame_tx = (frame+1) % MAX_FRAME_NUMBER;
-
-                phy_procedures_UE_lte (PHY_vars_UE_g[UE_inst][0], 0, abstraction_flag,normal_txrx,
-                                       r_type, PHY_vars_RN_g[RN_id]);
-              } else if (last_slot == (LTE_SLOTS_PER_FRAME-2)) {
-                initial_sync(PHY_vars_UE_g[UE_inst][0],normal_txrx);
-              }
-            }
-
-            // RN == eNB
-            LOG_D(EMU,"[RN %d] PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
-                  RN_id, eNB_inst, frame % MAX_FRAME_NUMBER, slot, next_slot >> 1,last_slot>>1);
-            phy_procedures_eNB_lte(slot>>1, PHY_vars_eNB_g[eNB_inst], abstraction_flag,
-                                   r_type, PHY_vars_RN_g[RN_id]);
-          } else {
-            LOG_E(EMU,"TDD is not supported for multicast relaying %d\n", r_type);
-            exit(-1);
-          }
-        }
-
-#endif
-        emu_transport (frame % MAX_FRAME_NUMBER, last_slot, next_slot, direction,
-                       oai_emulation.info.frame_type[0], ethernet_flag);
-
-        if ((direction == SF_DL)
-            || (frame_parms[0]->frame_type == FDD)) {
-          // consider only sec id 0
-          /*  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-           if (abstraction_flag == 0) {
-           do_OFDM_mod(PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0],
-           PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0],
-           frame,next_slot,
-           frame_parms);
-           }
-           }*/
-          start_meas (&dl_chan_stats);
-
-          for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++)
-            for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-//#warning figure out what to do with UE frame_parms during initial_sync
-              do_DL_sig (r_re0,
-                         r_im0,
-                         r_re,
-                         r_im,
-                         s_re,
-                         s_im,
-                         eNB2UE,
-                         enb_data,
-                         ue_data,
-                         next_slot,
-                         abstraction_flag,
-                         &PHY_vars_eNB_g[0][CC_id]->lte_frame_parms,
-                         UE_inst, CC_id);
-            }
-
-          stop_meas (&dl_chan_stats);
-        }
-
-        if ((direction == SF_UL) || (frame_parms[0]->frame_type == 0)) { //if ((subframe<2) || (subframe>4))
-          start_meas (&ul_chan_stats);
-
-          for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-//#warning figure out what to do with UE frame_parms during initial_sync
-            do_UL_sig (r_re0, r_im0, r_re, r_im, s_re, s_im, UE2eNB,
-                       enb_data, ue_data, next_slot,
-                       abstraction_flag,
-                       &PHY_vars_eNB_g[0][CC_id]->lte_frame_parms,
-                       frame % MAX_FRAME_NUMBER, CC_id);
-          }
-
-          stop_meas (&ul_chan_stats);
-          /*
-           int ccc;
-           fprintf(SINRpost,"SINRdb For eNB New Subframe : \n ");
-           for(ccc = 0 ; ccc<301; ccc++)
-           {
-           fprintf(SINRpost,"_ %f ", SINRpost_eff[ccc]);
-           }
-           fprintf(SINRpost,"SINRdb For eNB : %f \n ", SINRpost_eff[ccc]);
-           */
-        }
-
-        if ((direction == SF_S)) { //it must be a special subframe
-          if (next_slot % 2 == 0) { //DL part
-            /*  for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
-             if (abstraction_flag == 0) {
-             do_OFDM_mod(PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdataF[0],
-             PHY_vars_eNB_g[eNB_id]->lte_eNB_common_vars.txdata[0],
-             frame,next_slot,
-             frame_parms);
-             }
-             }*/
-            start_meas (&dl_chan_stats);
-
-            for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++)
-              for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-//#warning  check dimensions of r_reN,r_imN for multiple CCs
-                do_DL_sig (r_re0,
-                           r_im0,
-                           r_re,
-                           r_im,
-                           s_re,
-                           s_im,
-                           eNB2UE,
-                           enb_data,
-                           ue_data,
-                           next_slot,
-                           abstraction_flag,
-                           &PHY_vars_eNB_g[0][CC_id]->lte_frame_parms,
-                           UE_inst, CC_id);
-              }
-
-            stop_meas (&dl_chan_stats);
-            /*
-             for (aarx=0;aarx<UE2eNB[1][0]->nb_rx;aarx++)
-             for (aatx=0;aatx<UE2eNB[1][0]->nb_tx;aatx++)
-             for (k=0;k<UE2eNB[1][0]->channel_length;k++)
-             printf("SB(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].r,UE2eNB[1][0]->ch[aarx+(aatx*UE2eNB[1][0]->nb_rx)][k].i);
-             */
-          } else { // UL part
-            start_meas (&ul_chan_stats);
-
-            for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-//#warning  check dimensions of r_reN,r_imN for multiple CCs
-              do_UL_sig (r_re0,
-                         r_im0,
-                         r_re,
-                         r_im,
-                         s_re,
-                         s_im,
-                         UE2eNB,
-                         enb_data,
-                         ue_data,
-                         next_slot,
-                         abstraction_flag,
-                         &PHY_vars_eNB_g[0][CC_id]->lte_frame_parms,
-                         frame % MAX_FRAME_NUMBER, CC_id);
-            }
-
-            stop_meas (&ul_chan_stats);
-
-            /*        int ccc;
-             fprintf(SINRpost,"SINRdb For eNB New Subframe : \n ");
-             for(ccc = 0 ; ccc<301; ccc++)
-             {
-             fprintf(SINRpost,"_ %f ", SINRpost_eff[ccc]);
-             }
-             fprintf(SINRpost,"SINRdb For eNB : %f \n ", SINRpost_eff[ccc]);
-             }
-             */
-          }
-        }
-
-        if ((last_slot == 1) && ((frame % MAX_FRAME_NUMBER) == 0) && (abstraction_flag == 0)
-            && (oai_emulation.info.n_frames == 1)) {
-
-          write_output ("dlchan0.m",
-                        "dlch0",
-                        &(PHY_vars_UE_g[0][0]->lte_ue_common_vars.dl_ch_estimates[0][0][0]),
-                        (6
-                         * (PHY_vars_UE_g[0][0]->lte_frame_parms.ofdm_symbol_size)),
-                        1, 1);
-          write_output ("dlchan1.m",
-                        "dlch1",
-                        &(PHY_vars_UE_g[0][0]->lte_ue_common_vars.dl_ch_estimates[1][0][0]),
-                        (6
-                         * (PHY_vars_UE_g[0][0]->lte_frame_parms.ofdm_symbol_size)),
-                        1, 1);
-          write_output ("dlchan2.m",
-                        "dlch2",
-                        &(PHY_vars_UE_g[0][0]->lte_ue_common_vars.dl_ch_estimates[2][0][0]),
-                        (6
-                         * (PHY_vars_UE_g[0][0]->lte_frame_parms.ofdm_symbol_size)),
-                        1, 1);
-          write_output ("pbch_rxF_comp0.m",
-                        "pbch_comp0",
-                        PHY_vars_UE_g[0][0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],
-                        6 * 12 * 4, 1, 1);
-          write_output ("pbch_rxF_llr.m", "pbch_llr",
-                        PHY_vars_UE_g[0][0]->lte_ue_pbch_vars[0]->llr,
-                        (frame_parms[0]->Ncp == 0) ? 1920 : 1728, 1,
-                        4);
-        }
-
-        /*
-         if ((last_slot==1) && (frame==1)) {
-         write_output("dlsch_rxF_comp0.m","dlsch0_rxF_comp0",PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp[0],300*(-(PHY_vars_UE->lte_frame_parms.Ncp*2)+14),1,1);
-         write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE->lte_ue_pdcch_vars[eNB_id]->rxdataF_comp[0],4*300,1,1);
-         }
-         */
-      } // if Channel_Flag==0
-
-      if (slot % 2 == 1)
-        stop_meas (&oaisim_stats_f);
-    } //end of slot
-
+    }
+    update_ocm ();
+    /*
     if ((frame >= 10) && (frame <= 11) && (abstraction_flag == 0)
 #ifdef PROC
-        &&(Channel_Flag==0)
+	&&(Channel_Flag==0)
 #endif
-       ) {
+	) {
       sprintf (fname, "UEtxsig%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "txs%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
-                    vname,
-                    PHY_vars_UE_g[0][0]->lte_ue_common_vars.txdata[0],
-                    PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti
-                    * 10,
-                    1, 1);
+		    vname,
+		    PHY_vars_UE_g[0][0]->common_vars.txdata[0],
+		    PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti
+		    * 10,
+		    1, 1);
       sprintf (fname, "eNBtxsig%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "txs%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
-                    vname,
-                    PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdata[0][0],
-                    PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti
-                    * 10,
-                    1, 1);
+		    vname,
+		    PHY_vars_eNB_g[0][0]->common_vars.txdata[0][0],
+		    PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti
+		    * 10,
+		    1, 1);
       sprintf (fname, "eNBtxsigF%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "txsF%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
-                    vname,
-                    PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdataF[0][0],
-                    PHY_vars_eNB_g[0][0]->lte_frame_parms.symbols_per_tti
-                    * PHY_vars_eNB_g[0][0]->lte_frame_parms.ofdm_symbol_size,
-                    1, 1);
+		    vname,
+		    PHY_vars_eNB_g[0][0]->common_vars.txdataF[0][0],
+		    PHY_vars_eNB_g[0][0]->frame_parms.symbols_per_tti
+		    * PHY_vars_eNB_g[0][0]->frame_parms.ofdm_symbol_size,
+		    1, 1);
       sprintf (fname, "UErxsig%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "rxs%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
-                    vname,
-                    PHY_vars_UE_g[0][0]->lte_ue_common_vars.rxdata[0],
-                    PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti
-                    * 10,
-                    1, 1);
+		    vname,
+		    PHY_vars_UE_g[0][0]->common_vars.rxdata[0],
+		    PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti
+		    * 10,
+		    1, 1);
       sprintf (fname, "eNBrxsig%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "rxs%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
-                    vname,
-                    PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.rxdata[0][0],
-                    PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti
-                    * 10,
-                    1, 1);
+		    vname,
+		    PHY_vars_eNB_g[0][0]->common_vars.rxdata[0][0],
+		    PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti
+		    * 10,
+		    1, 1);
     }
-
+    */
+    
     //#ifdef XFORMS
     if (xforms==1) {
-    eNB_inst = 0;
-
-    for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++) {
-      for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
-	phy_scope_UE(form_ue[CC_id][UE_inst],
-		     PHY_vars_UE_g[UE_inst][CC_id],
-		     eNB_inst,
-		     UE_inst,
-		     7);
+      eNB_inst = 0;
+      
+      for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++) {
+	for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+	  phy_scope_UE(form_ue[CC_id][UE_inst],
+		   PHY_vars_UE_g[UE_inst][CC_id],
+		   eNB_inst,
+		   UE_inst,
+		   7);
+	}
+	if (RC.eNB && RC.eNB[eNB_inst] && RC.eNB[eNB_inst][0] )
+	  phy_scope_eNB(form_enb[UE_inst],
+			RC.eNB[eNB_inst][0],
+			UE_inst);
+	
       }
-
-      phy_scope_eNB(form_enb[UE_inst],
-                    PHY_vars_eNB_g[eNB_inst][0],
-                    UE_inst);
-
-    }
     }
     //#endif
-
+    
 #ifdef SMBV
-
+    
     // Rohde&Schwarz SMBV100A vector signal generator
     if ((frame % MAX_FRAME_NUMBER == config_frames[0]) || (frame % MAX_FRAME_NUMBER == config_frames[1]) || (frame % MAX_FRAME_NUMBER == config_frames[2]) || (frame % MAX_FRAME_NUMBER == config_frames[3])) {
       smbv_frame_cnt++;
     }
-
+    
 #endif
-
-  }
-
-  //end of frame
+    
+  } // frame loop
 
   stop_meas (&oaisim_stats);
   oai_shutdown ();
-
+  
 #ifdef PRINT_STATS
-
+  
   for (UE_inst=0; UE_inst<NB_UE_INST; UE_inst++) {
     if (UE_stats[UE_inst])
       fclose (UE_stats[UE_inst]);
-
+    
     if(UE_stats_th[UE_inst])
       fclose (UE_stats_th[UE_inst]);
   }
-
+  
   for (eNB_inst=0; eNB_inst<NB_eNB_INST; eNB_inst++) {
     if (eNB_stats[eNB_inst])
       fclose (eNB_stats[eNB_inst]);
   }
-
+  
   if (eNB_avg_thr)
     fclose (eNB_avg_thr);
-
+  
   if (eNB_l2_stats)
     fclose (eNB_l2_stats);
-
+  
 #endif
-
+  
 #if defined(ENABLE_ITTI)
   itti_terminate_tasks(TASK_L2L1);
 #endif
-
+  
   return NULL;
 }
 
@@ -1333,12 +996,88 @@ int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
+
+void wait_RUs() {
+
+  int i;
+
+  // wait for all RUs to be configured over fronthaul
+  pthread_mutex_lock(&RC.ru_mutex);
+
+
+
+  while (RC.ru_mask>0) {
+    pthread_cond_wait(&RC.ru_cond,&RC.ru_mutex);
+  }
+
+  // copy frame parameters from RU to UEs
+  for (i=0;i<NB_UE_INST;i++) {
+    PHY_vars_UE_g[i][0]->frame_parms.N_RB_DL              = RC.ru[0]->frame_parms.N_RB_DL;
+    PHY_vars_UE_g[i][0]->frame_parms.N_RB_UL              = RC.ru[0]->frame_parms.N_RB_UL;
+    PHY_vars_UE_g[i][0]->frame_parms.nb_antennas_tx       = 1;
+    PHY_vars_UE_g[i][0]->frame_parms.nb_antennas_rx       = 1;
+    // set initially to 2, it will be revised after initial synchronization
+    PHY_vars_UE_g[i][0]->frame_parms.nb_antenna_ports_eNB = 2;
+    PHY_vars_UE_g[i][0]->frame_parms.tdd_config = 1;
+    PHY_vars_UE_g[i][0]->frame_parms.dl_CarrierFreq       = RC.ru[0]->frame_parms.dl_CarrierFreq;
+    PHY_vars_UE_g[i][0]->frame_parms.ul_CarrierFreq       = RC.ru[0]->frame_parms.ul_CarrierFreq;
+    PHY_vars_UE_g[i][0]->frame_parms.eutra_band           = RC.ru[0]->frame_parms.eutra_band;
+    LOG_I(PHY,"Initializing UE %d frame parameters from RU information: N_RB_DL %d, p %d, dl_Carrierfreq %u, ul_CarrierFreq %u, eutra_band %d\n",
+	  i,
+	  PHY_vars_UE_g[i][0]->frame_parms.N_RB_DL,
+	  PHY_vars_UE_g[i][0]->frame_parms.nb_antenna_ports_eNB,
+	  PHY_vars_UE_g[i][0]->frame_parms.dl_CarrierFreq,
+	  PHY_vars_UE_g[i][0]->frame_parms.ul_CarrierFreq,
+	  PHY_vars_UE_g[i][0]->frame_parms.eutra_band);
+
+    current_UE_rx_timestamp[i][0] = RC.ru[0]->frame_parms.samples_per_tti + RC.ru[0]->frame_parms.ofdm_symbol_size + RC.ru[0]->frame_parms.nb_prefix_samples0;
+
+  }
+  
+  
+
+
+  for (ru_id=0;ru_id<RC.nb_RU;ru_id++) current_ru_rx_timestamp[ru_id][0] = RC.ru[ru_id]->frame_parms.samples_per_tti;
+
+  printf("RUs are ready, let's go\n");
+}
+
+void init_UE(int,int,int,int);
+void init_RU(const char*);
+
+void set_UE_defaults(int nb_ue) {
+
+  for (int UE_id = 0;UE_id<nb_ue;UE_id++) {
+    for (int CC_id = 0;CC_id<MAX_NUM_CCs;CC_id++) {
+      for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
+	PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[i][0]->dciFormat      = 0;
+	PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[i][0]->agregationLevel      = 0xFF;
+      }
+      PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
+    }
+  }
+}
+
+
+static void print_current_directory(void)
+{
+  char dir[8192]; /* arbitrary size (should be big enough) */
+  if (getcwd(dir, 8192) == NULL)
+    printf("ERROR getting working directory\n");
+  else
+    printf("working directory: %s\n", dir);
+}
+
 /*------------------------------------------------------------------------------*/
 int
 main (int argc, char **argv)
 {
 
   clock_t t;
+
+  print_current_directory();
+
+  start_background_system();
 
 #ifdef SMBV
   // Rohde&Schwarz SMBV100A vector signal generator
@@ -1349,7 +1088,7 @@ main (int argc, char **argv)
   int node_id;
   int port,Process_Flag=0,wgt,Channel_Flag=0,temp;
 #endif
-
+  int i;
 
   //default parameters
   oai_emulation.info.n_frames = MAX_FRAME_NUMBER; //1024;          //10;
@@ -1359,6 +1098,15 @@ main (int argc, char **argv)
   //Default values if not changed by the user in get_simulation_options();
   pdcp_period = 1;
   omg_period = 1;
+  //Clean ip rule table
+  for(int i =0; i<NUMBER_OF_UE_MAX; i++){
+      char command_line[100];
+      sprintf(command_line, "while ip rule del table %d; do true; done",i+201);
+      /* we don't care about return value from system(), but let's the
+       * compiler be silent, so let's do "if (XX);"
+       */
+      if (system(command_line)) /* nothing */;
+  }
   // start thread for log gen
   log_thread_init ();
 
@@ -1407,13 +1155,14 @@ main (int argc, char **argv)
     sinr_dB = -20;
   }
 
+  pthread_cond_init(&sync_cond,NULL);
+  pthread_mutex_init(&sync_mutex, NULL);
+  pthread_mutex_init(&subframe_mutex, NULL);
+
 #ifdef OPENAIR2
   init_omv ();
 #endif
   //Before this call, NB_UE_INST and NB_eNB_INST are not set correctly
-
-
-
   check_and_adjust_params ();
 
   set_seed = oai_emulation.emulation_config.seed.value;
@@ -1422,19 +1171,47 @@ main (int argc, char **argv)
 
   init_seed (set_seed);
 
-  init_openair1 ();
 
-  init_openair2 ();
+  init_RU(NULL);
+
+  init_devices ();
+
+  //  init_openair2 ();
+  //  init_openair0();
+
+
+
+
+  if (create_tasks_ue(oai_emulation.info.nb_ue_local) < 0) 
+      exit(-1); // need a softer mode
+
+
+  printf("Waiting for RUs to get set up\n"); 
+  wait_RUs();
+
+  init_UE(NB_UE_INST,0,0,1);
+
+  set_UE_defaults(NB_UE_INST);
+
 
   init_ocm ();
+  printf("Sending sync to all threads\n");
 
+
+  pthread_mutex_lock(&sync_mutex);
+  sync_var=0;
+  pthread_cond_broadcast(&sync_cond);
+  pthread_mutex_unlock(&sync_mutex);
 
 #ifdef SMBV
   // Rohde&Schwarz SMBV100A vector signal generator
   smbv_init_config(smbv_fname, smbv_nframes);
-  smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0][0]->lte_frame_parms);
+  smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0][0]->frame_parms);
 #endif
 
+  /* #if defined (FLEXRAN_AGENT_SB_IF)
+  flexran_agent_start();
+  #endif */ 
 
   // add events to future event list: Currently not used
   //oai_emulation.info.oeh_enabled = 1;
@@ -1443,7 +1220,9 @@ main (int argc, char **argv)
 
   // oai performance profiler is enabled
   if (oai_emulation.info.opp_enabled == 1)
-    reset_opp_meas ();
+    reset_opp_meas_oaisim ();
+
+  cpuf=get_cpu_freq_GHz();
 
   init_time ();
 
@@ -1451,19 +1230,18 @@ main (int argc, char **argv)
 
   t = clock ();
 
-//   async_server_thread_init();
-
   LOG_N(EMU,
         ">>>>>>>>>>>>>>>>>>>>>>>>>>> OAIEMU initialization done <<<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
+
+#ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+  LOG_I(EMU, "Version: %s\n", PACKAGE_VERSION);
 
 #if defined(ENABLE_ITTI)
 
   // Handle signals until all tasks are terminated
-  if (create_tasks(oai_emulation.info.nb_enb_local, oai_emulation.info.nb_ue_local) >= 0) {
-    itti_wait_tasks_end();
-  } else {
-    exit(-1); // need a softer mode
-  }
+  itti_wait_tasks_end();
 
 #else
 
@@ -1487,7 +1265,7 @@ main (int argc, char **argv)
 }
 
 void
-reset_opp_meas (void)
+reset_opp_meas_oaisim (void)
 {
   uint8_t eNB_id = 0, UE_id = 0;
 
@@ -1499,15 +1277,18 @@ reset_opp_meas (void)
   reset_meas (&ul_chan_stats);
 
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc);
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc[0]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc[1]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[0]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx[1]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_tx);
 
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->ofdm_demod_stats);
+    //    reset_meas (&PHY_vars_UE_g[UE_id][0]->ofdm_demod_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->rx_dft_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_channel_estimation_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_freq_offset_estimation_stats);
-    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[0]);
+    reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[1]);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_rate_unmatching_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_turbo_decoding_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_deinterleaving_stats);
@@ -1532,6 +1313,8 @@ reset_opp_meas (void)
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ulsch_turbo_encoding_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ulsch_interleaving_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ulsch_multiplexing_stats);
+
+
     /*
      * L2 functions
      */
@@ -1552,69 +1335,70 @@ reset_opp_meas (void)
     reset_meas (&UE_pdcp_stats[UE_id].pdcp_ip);
     reset_meas (&UE_pdcp_stats[UE_id].ip_pdcp);
 
+    
   }
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 
     for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-      reset_meas (&eNB2UE[eNB_id][UE_id][0]->random_channel);
-      reset_meas (&eNB2UE[eNB_id][UE_id][0]->interp_time);
-      reset_meas (&eNB2UE[eNB_id][UE_id][0]->interp_freq);
-      reset_meas (&eNB2UE[eNB_id][UE_id][0]->convolution);
-      reset_meas (&UE2eNB[UE_id][eNB_id][0]->random_channel);
-      reset_meas (&UE2eNB[UE_id][eNB_id][0]->interp_time);
-      reset_meas (&UE2eNB[UE_id][eNB_id][0]->interp_freq);
-      reset_meas (&UE2eNB[UE_id][eNB_id][0]->convolution);
+      reset_meas (&RU2UE[eNB_id][UE_id][0]->random_channel);
+      reset_meas (&RU2UE[eNB_id][UE_id][0]->interp_time);
+      reset_meas (&RU2UE[eNB_id][UE_id][0]->interp_freq);
+      reset_meas (&RU2UE[eNB_id][UE_id][0]->convolution);
+      reset_meas (&UE2RU[UE_id][eNB_id][0]->random_channel);
+      reset_meas (&UE2RU[UE_id][eNB_id][0]->interp_time);
+      reset_meas (&UE2RU[UE_id][eNB_id][0]->interp_freq);
+      reset_meas (&UE2RU[UE_id][eNB_id][0]->convolution);
     }
 
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->phy_proc);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->phy_proc_rx);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->phy_proc_tx);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->rx_prach);
+    reset_meas (&RC.eNB[eNB_id][0]->phy_proc);
+    reset_meas (&RC.eNB[eNB_id][0]->phy_proc_rx);
+    reset_meas (&RC.eNB[eNB_id][0]->phy_proc_tx);
+    reset_meas (&RC.eNB[eNB_id][0]->rx_prach);
 
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ofdm_mod_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_encoding_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_modulation_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_scrambling_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_rate_matching_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_turbo_encoding_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_interleaving_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ofdm_mod_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->dlsch_encoding_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->dlsch_modulation_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->dlsch_scrambling_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->dlsch_rate_matching_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->dlsch_turbo_encoding_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->dlsch_interleaving_stats);
 
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ofdm_demod_stats);
-    //reset_meas(&PHY_vars_eNB_g[eNB_id]->rx_dft_stats);
-    //reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_channel_estimation_stats);
-    //reset_meas(&PHY_vars_eNB_g[eNB_id]->ulsch_freq_offset_estimation_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_decoding_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_demodulation_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_rate_unmatching_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_turbo_decoding_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_deinterleaving_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_demultiplexing_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_llr_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_init_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_alpha_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_beta_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_gamma_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_ext_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_intl1_stats);
-    reset_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_intl2_stats);
+    //    reset_meas (&RC.eNB[eNB_id][0]->ofdm_demod_stats);
+    //reset_meas(&RC.eNB[eNB_id]->rx_dft_stats);
+    //reset_meas(&RC.eNB[eNB_id]->ulsch_channel_estimation_stats);
+    //reset_meas(&RC.eNB[eNB_id]->ulsch_freq_offset_estimation_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_decoding_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_demodulation_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_rate_unmatching_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_turbo_decoding_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_deinterleaving_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_demultiplexing_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_llr_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_tc_init_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_tc_alpha_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_tc_beta_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_tc_gamma_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_tc_ext_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_tc_intl1_stats);
+    reset_meas (&RC.eNB[eNB_id][0]->ulsch_tc_intl2_stats);
 #ifdef LOCALIZATION
-    reset_meas(&PHY_vars_eNB_g[eNB_id][0]->localization_stats);
+    reset_meas(&RC.eNB[eNB_id][0]->localization_stats);
 #endif
 
     /*
      * L2 functions
      */
     // eNB MAC
-    reset_meas (&eNB_mac_inst[eNB_id].eNB_scheduler); // total
-    reset_meas (&eNB_mac_inst[eNB_id].schedule_si); // only schedule + tx
-    reset_meas (&eNB_mac_inst[eNB_id].schedule_ra); // only ra
-    reset_meas (&eNB_mac_inst[eNB_id].schedule_ulsch); // onlu ulsch
-    reset_meas (&eNB_mac_inst[eNB_id].fill_DLSCH_dci); // only dci
-    reset_meas (&eNB_mac_inst[eNB_id].schedule_dlsch_preprocessor); // include rlc_data_req + MAC header gen
-    reset_meas (&eNB_mac_inst[eNB_id].schedule_dlsch); // include rlc_data_req + MAC header gen + pre-processor
-    reset_meas (&eNB_mac_inst[eNB_id].schedule_mch); // only embms
-    reset_meas (&eNB_mac_inst[eNB_id].rx_ulsch_sdu); // include rlc_data_ind + mac header parser
+    reset_meas (&RC.mac[eNB_id]->eNB_scheduler); // total
+    reset_meas (&RC.mac[eNB_id]->schedule_si); // only schedule + tx
+    reset_meas (&RC.mac[eNB_id]->schedule_ra); // only ra
+    reset_meas (&RC.mac[eNB_id]->schedule_ulsch); // onlu ulsch
+    reset_meas (&RC.mac[eNB_id]->fill_DLSCH_dci); // only dci
+    reset_meas (&RC.mac[eNB_id]->schedule_dlsch_preprocessor); // include rlc_data_req + MAC header gen
+    reset_meas (&RC.mac[eNB_id]->schedule_dlsch); // include rlc_data_req + MAC header gen + pre-processor
+    reset_meas (&RC.mac[eNB_id]->schedule_mch); // only embms
+    reset_meas (&RC.mac[eNB_id]->rx_ulsch_sdu); // include rlc_data_ind + mac header parser
 
     reset_meas (&eNB_pdcp_stats[eNB_id].pdcp_run);
     reset_meas (&eNB_pdcp_stats[eNB_id].data_req);
@@ -1628,7 +1412,7 @@ reset_opp_meas (void)
 }
 
 void
-print_opp_meas (void)
+print_opp_meas_oaisim (void)
 {
 
   uint8_t eNB_id = 0, UE_id = 0;
@@ -1644,35 +1428,38 @@ print_opp_meas (void)
               &oaisim_stats_f);
 
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-    for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
-      print_meas (&eNB2UE[eNB_id][UE_id][0]->random_channel,
+    for (ru_id = 0; ru_id < NB_RU; ru_id++) {
+      print_meas (&RU2UE[ru_id][UE_id][0]->random_channel,
                   "[DL][random_channel]", &oaisim_stats, &oaisim_stats_f);
-      print_meas (&eNB2UE[eNB_id][UE_id][0]->interp_time,
+      print_meas (&RU2UE[ru_id][UE_id][0]->interp_time,
                   "[DL][interp_time]", &oaisim_stats, &oaisim_stats_f);
-      print_meas (&eNB2UE[eNB_id][UE_id][0]->interp_freq,
+      print_meas (&RU2UE[ru_id][UE_id][0]->interp_freq,
                   "[DL][interp_freq]", &oaisim_stats, &oaisim_stats_f);
-      print_meas (&eNB2UE[eNB_id][UE_id][0]->convolution,
+      print_meas (&RU2UE[ru_id][UE_id][0]->convolution,
                   "[DL][convolution]", &oaisim_stats, &oaisim_stats_f);
 
-      print_meas (&UE2eNB[UE_id][eNB_id][0]->random_channel,
+      print_meas (&UE2RU[UE_id][ru_id][0]->random_channel,
                   "[UL][random_channel]", &oaisim_stats, &oaisim_stats_f);
-      print_meas (&UE2eNB[UE_id][eNB_id][0]->interp_time,
+      print_meas (&UE2RU[UE_id][ru_id][0]->interp_time,
                   "[UL][interp_time]", &oaisim_stats, &oaisim_stats_f);
-      print_meas (&UE2eNB[UE_id][eNB_id][0]->interp_freq,
+      print_meas (&UE2RU[UE_id][ru_id][0]->interp_freq,
                   "[UL][interp_freq]", &oaisim_stats, &oaisim_stats_f);
-      print_meas (&UE2eNB[UE_id][eNB_id][0]->convolution,
+      print_meas (&UE2RU[UE_id][ru_id][0]->convolution,
                   "[UL][convolution]", &oaisim_stats, &oaisim_stats_f);
     }
   }
 
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++) {
-    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc, "[UE][total_phy_proc]",
+    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc[0], "[UE][total_phy_proc[0]]",
                 &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc[1], "[UE][total_phy_proc[1]]",
+                &oaisim_stats, &oaisim_stats_f);
+
 
     print_meas (&PHY_vars_UE_g[UE_id][0]->phy_proc_rx,
                 "[UE][total_phy_proc_rx]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_UE_g[UE_id][0]->ofdm_demod_stats,
-                "[UE][ofdm_demod]", &oaisim_stats, &oaisim_stats_f);
+    //    print_meas (&PHY_vars_UE_g[UE_id][0]->ofdm_demod_stats,
+    //                "[UE][ofdm_demod]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->rx_dft_stats, "[UE][rx_dft]",
                 &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_channel_estimation_stats,
@@ -1683,8 +1470,10 @@ print_opp_meas (void)
                 &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_unscrambling_stats,
                 "[UE][unscrambling]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats,
-                "[UE][decoding]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[0],
+                "[UE][decoding[0]]", &oaisim_stats, &oaisim_stats_f);
+    print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_decoding_stats[1],
+                "[UE][decoding[1]]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_rate_unmatching_stats,
                 "[UE][rate_unmatching]", &oaisim_stats, &oaisim_stats_f);
     print_meas (&PHY_vars_UE_g[UE_id][0]->dlsch_deinterleaving_stats,
@@ -1728,65 +1517,65 @@ print_opp_meas (void)
   }
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->phy_proc,
+    print_meas (&RC.eNB[eNB_id][0]->phy_proc,
                 "[eNB][total_phy_proc]", &oaisim_stats, &oaisim_stats_f);
 
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->phy_proc_tx,
+    print_meas (&RC.eNB[eNB_id][0]->phy_proc_tx,
                 "[eNB][total_phy_proc_tx]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ofdm_mod_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ofdm_mod_stats,
                 "[eNB][ofdm_mod]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_modulation_stats,
+    print_meas (&RC.eNB[eNB_id][0]->dlsch_modulation_stats,
                 "[eNB][modulation]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_scrambling_stats,
+    print_meas (&RC.eNB[eNB_id][0]->dlsch_scrambling_stats,
                 "[eNB][scrambling]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_encoding_stats,
+    print_meas (&RC.eNB[eNB_id][0]->dlsch_encoding_stats,
                 "[eNB][encoding]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_interleaving_stats,
+    print_meas (&RC.eNB[eNB_id][0]->dlsch_interleaving_stats,
                 "[eNB][|_interleaving]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_rate_matching_stats,
+    print_meas (&RC.eNB[eNB_id][0]->dlsch_rate_matching_stats,
                 "[eNB][|_rate_matching]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->dlsch_turbo_encoding_stats,
+    print_meas (&RC.eNB[eNB_id][0]->dlsch_turbo_encoding_stats,
                 "[eNB][|_turbo_encoding]", &oaisim_stats, &oaisim_stats_f);
 
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->phy_proc_rx,
+    print_meas (&RC.eNB[eNB_id][0]->phy_proc_rx,
                 "[eNB][total_phy_proc_rx]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ofdm_demod_stats,
-                "[eNB][ofdm_demod]", &oaisim_stats, &oaisim_stats_f);
-    //print_meas(&PHY_vars_eNB_g[eNB_id][0]->ulsch_channel_estimation_stats,"[eNB][channel_est]");
-    //print_meas(&PHY_vars_eNB_g[eNB_id][0]->ulsch_freq_offset_estimation_stats,"[eNB][freq_offset]");
-    //print_meas(&PHY_vars_eNB_g[eNB_id][0]->rx_dft_stats,"[eNB][rx_dft]");
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_demodulation_stats,
+    //    print_meas (&RC.eNB[eNB_id][0]->ofdm_demod_stats,
+    //                "[eNB][ofdm_demod]", &oaisim_stats, &oaisim_stats_f);
+    //print_meas(&RC.eNB[eNB_id][0]->ulsch_channel_estimation_stats,"[eNB][channel_est]");
+    //print_meas(&RC.eNB[eNB_id][0]->ulsch_freq_offset_estimation_stats,"[eNB][freq_offset]");
+    //print_meas(&RC.eNB[eNB_id][0]->rx_dft_stats,"[eNB][rx_dft]");
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_demodulation_stats,
                 "[eNB][demodulation]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_decoding_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_decoding_stats,
                 "[eNB][decoding]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_deinterleaving_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_deinterleaving_stats,
                 "[eNB][|_deinterleaving]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_demultiplexing_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_demultiplexing_stats,
                 "[eNB][|_demultiplexing]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_rate_unmatching_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_rate_unmatching_stats,
                 "[eNB][|_rate_unmatching]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_turbo_decoding_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_turbo_decoding_stats,
                 "[eNB][|_turbo_decoding]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_init_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_tc_init_stats,
                 "[eNB][ |_tc_init]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_alpha_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_tc_alpha_stats,
                 "[eNB][ |_tc_alpha]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_beta_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_tc_beta_stats,
                 "[eNB][ |_tc_beta]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_gamma_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_tc_gamma_stats,
                 "[eNB][ |_tc_gamma]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_ext_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_tc_ext_stats,
                 "[eNB][ |_tc_ext]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_intl1_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_tc_intl1_stats,
                 "[eNB][ |_tc_intl1]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->ulsch_tc_intl2_stats,
+    print_meas (&RC.eNB[eNB_id][0]->ulsch_tc_intl2_stats,
                 "[eNB][ |_tc_intl2]", &oaisim_stats, &oaisim_stats_f);
 
-    print_meas (&PHY_vars_eNB_g[eNB_id][0]->rx_prach, "[eNB][rx_prach]",
+    print_meas (&RC.eNB[eNB_id][0]->rx_prach, "[eNB][rx_prach]",
                 &oaisim_stats, &oaisim_stats_f);
 
 #ifdef LOCALIZATION
-    print_meas(&PHY_vars_eNB_g[eNB_id][0]->localization_stats, "[eNB][LOCALIZATION]",&oaisim_stats,&oaisim_stats_f);
+    print_meas(&RC.eNB[eNB_id][0]->localization_stats, "[eNB][LOCALIZATION]",&oaisim_stats,&oaisim_stats_f);
 #endif
   }
 
@@ -1826,24 +1615,24 @@ print_opp_meas (void)
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
 
-    print_meas (&eNB_mac_inst[eNB_id].eNB_scheduler, "[eNB][mac_scheduler]",
+    print_meas (&RC.mac[eNB_id]->eNB_scheduler, "[eNB][mac_scheduler]",
                 &oaisim_stats, &oaisim_stats_f);
-    print_meas (&eNB_mac_inst[eNB_id].schedule_si, "[eNB][DL][SI]",
+    print_meas (&RC.mac[eNB_id]->schedule_si, "[eNB][DL][SI]",
                 &oaisim_stats, &oaisim_stats_f);
-    print_meas (&eNB_mac_inst[eNB_id].schedule_ra, "[eNB][DL][RA]",
+    print_meas (&RC.mac[eNB_id]->schedule_ra, "[eNB][DL][RA]",
                 &oaisim_stats, &oaisim_stats_f);
-    print_meas (&eNB_mac_inst[eNB_id].fill_DLSCH_dci,
+    print_meas (&RC.mac[eNB_id]->fill_DLSCH_dci,
                 "[eNB][DL/UL][fill_DCI]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&eNB_mac_inst[eNB_id].schedule_dlsch_preprocessor,
+    print_meas (&RC.mac[eNB_id]->schedule_dlsch_preprocessor,
                 "[eNB][DL][preprocessor]", &oaisim_stats, &oaisim_stats_f);
-    print_meas (&eNB_mac_inst[eNB_id].schedule_dlsch,
+    print_meas (&RC.mac[eNB_id]->schedule_dlsch,
                 "[eNB][DL][schedule_tx_dlsch]", &oaisim_stats,
                 &oaisim_stats_f);
-    print_meas (&eNB_mac_inst[eNB_id].schedule_mch, "[eNB][DL][mch]",
+    print_meas (&RC.mac[eNB_id]->schedule_mch, "[eNB][DL][mch]",
                 &oaisim_stats, &oaisim_stats_f);
-    print_meas (&eNB_mac_inst[eNB_id].schedule_ulsch, "[eNB][UL][ULSCH]",
+    print_meas (&RC.mac[eNB_id]->schedule_ulsch, "[eNB][UL][ULSCH]",
                 &oaisim_stats, &oaisim_stats_f);
-    print_meas (&eNB_mac_inst[eNB_id].rx_ulsch_sdu,
+    print_meas (&RC.mac[eNB_id]->rx_ulsch_sdu,
                 "[eNB][UL][rx_ulsch_sdu]", &oaisim_stats, &oaisim_stats_f);
 
     print_meas (&eNB_pdcp_stats[eNB_id].pdcp_run, "[eNB][pdcp_run]",
@@ -1932,49 +1721,45 @@ oai_shutdown (void)
     kpi_gen ();
   }
   if (oai_emulation.info.opp_enabled == 1)
-    print_opp_meas ();
+    print_opp_meas_oaisim ();
 
-  // relase all rx state
-  if (ethernet_flag == 1) {
-    emu_transport_release ();
-  }
 
 #ifdef PROC
 
   if (abstraction_flag == 0 && Channel_Flag==0 && Process_Flag==0)
 #else
-  if (abstraction_flag == 0)
+    if (abstraction_flag == 0)
 #endif
-  {
-    /*
-     #ifdef IFFT_FPGA
-     free(txdataF2[0]);
-     free(txdataF2[1]);
-     free(txdataF2);
-     free(txdata[0]);
-     free(txdata[1]);
-     free(txdata);
-     #endif
-     */
+      {
+	/*
+	  #ifdef IFFT_FPGA
+	  free(txdataF2[0]);
+	  free(txdataF2[1]);
+	  free(txdataF2);
+	  free(txdata[0]);
+	  free(txdata[1]);
+	  free(txdata);
+	  #endif
+	*/
+	/*
+	for (int i = 0; i < 2; i++) {
+	  free (s_re[i]);
+	  free (s_im[i]);
+	  free (r_re[i]);
+	  free (r_im[i]);
+	}
 
-    for (int i = 0; i < 2; i++) {
-      free (s_re[i]);
-      free (s_im[i]);
-      free (r_re[i]);
-      free (r_im[i]);
-    }
+	free (s_re);
+	free (s_im);
+	free (r_re);
+	free (r_im);
+	s_re = 0;
+	s_im = 0;
+	r_re = 0;
+	r_im = 0;*/
 
-    free (s_re);
-    free (s_im);
-    free (r_re);
-    free (r_im);
-    s_re = 0;
-    s_im = 0;
-    r_re = 0;
-    r_im = 0;
-
-    lte_sync_time_free ();
-  }
+	lte_sync_time_free ();
+      }
 
   // added for PHY abstraction
   if (oai_emulation.info.ocm_enabled == 1) {
@@ -1989,9 +1774,6 @@ oai_shutdown (void)
     }
   } //End of PHY abstraction changes
 
-#ifdef OPENAIR2
-  mac_top_cleanup ();
-#endif
 
   // stop OMG
   stop_mobility_generator (omg_param_list); //omg_param_list.mobility_type
@@ -2034,7 +1816,7 @@ oai_shutdown (void)
 eNB_MAC_INST*
 get_eNB_mac_inst (module_id_t module_idP)
 {
-  return (&eNB_mac_inst[module_idP]);
+  return (RC.mac[module_idP]);
 }
 
 OAI_Emulation*
@@ -2042,3 +1824,12 @@ get_OAI_emulation ()
 {
   return &oai_emulation;
 }
+
+
+// dummy function declarations
+
+void *rrc_enb_task(void *args_p) {
+
+
+}
+

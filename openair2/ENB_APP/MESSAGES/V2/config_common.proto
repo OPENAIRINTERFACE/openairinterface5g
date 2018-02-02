@@ -1,0 +1,180 @@
+syntax = "proto2";
+package protocol;
+
+//
+// Cell config related structures and enums
+//
+
+message flex_si_config {
+       optional uint32 sfn = 1;
+       optional uint32 sib1_length = 2;		// The length of SIB1 in bytes
+       optional uint32 si_window_length = 3; 	// The scheduling window for all SIs in SF
+       repeated flex_si_message si_message = 4;	// List of SI messages to be sent.
+       						// The index identifies the type of an SI message
+						// 0 - SIB1
+						// 1..31 - SIx
+						// 32..63 - PCCH
+}
+
+message flex_si_message {
+	optional uint32 periodicity = 1;		// Periodicity of SI msg in radio frames
+	optional uint32 length = 2;			// The length of the SI message in bytes
+}
+
+enum flex_hopping_mode {
+     FLHM_INTER = 0;
+     FLHM_INTERINTRA = 1;
+}
+
+enum flex_phich_resource {
+     FLPR_ONE_SIXTH = 0;
+     FLPR_HALF = 1;
+     FLPR_ONE = 2;
+     FLPR_TWO = 3;
+}
+
+enum flex_phich_duration {
+     FLPD_NORMAL = 0;
+     FLPD_EXTENDED = 1;
+}
+
+enum flex_ul_cyclic_prefix_length {
+     FLUCPL_NORMAL = 0;
+     FLUCPL_EXTENDED = 1;
+}
+
+enum flex_dl_cyclic_prefix_length {
+     FLDCPL_NORMAL = 0;
+     FLDCPL_EXTENDED = 1;
+}
+
+enum flex_duplex_mode {
+     FLDM_TDD = 0;
+     FLDM_FDD = 1;
+}
+
+enum flex_qam {
+     FLEQ_MOD_16QAM = 0;
+     FLEQ_MOD_64QAM = 1;
+}
+
+//
+// UE config related structures and enums
+//
+
+message flex_drx_config {
+	optional uint32 on_duration_timer = 1;		// Timer in SF. See TS 36.321
+	optional uint32 drx_inactivity_timer = 2;	// Timer in SF. See TS 36.321
+	optional uint32 drx_retransmission_timer = 3;	// Timer in SF. See TS 36.321
+	optional uint32 long_drx_cycle = 4;		// In SF. See TS 36.321
+	optional uint32 long_drx_cycle_start_offset = 5;// See TS 36.321
+	optional uint32 short_drx_cycle = 6;		// In SF
+	optional uint32 drx_short_cycle_timer = 7;	// Timer in subframes. See TS 36.321
+}
+
+message flex_sps_config {
+	optional uint32 semi_persistent_sched_interval_UL = 1; // SPS UL scheduling interval in SF
+	optional uint32 semi_persistent_sched_interval_DL = 2; // SPS DL scheduling interval in SF
+	optional uint32 num_of_conf_sps_proc = 3;	   // Number of SPS HARQ processes. See TS 36.321
+	repeated uint32 n1_PUCCH_AN_persistent_element = 4;// See TS36.213. Ignored when config is used
+		 					   // as part of FLPT_SET_UE_CONFIG
+	optional uint32 implicit_release_after = 5;		   // number of empty transmissions before release of SPS
+}
+
+message flex_sr_config {
+	optional uint32 sr_action = 1;			// Indicates if SR config should be changed or released
+		 					// One of the FLSRA_* enum values
+	optional uint32 sched_interval = 2;		// SR scheduling interval in SF
+	optional uint32 dsr_trans_max = 3;		// See TS 36.213
+}
+
+message flex_cqi_config {
+	optional uint32 cqi_action = 1;			// Indicats if CQI changed or released.
+		 					// One of the FLSRA_* enum values
+	optional uint32 cqi_sched_interval = 2;		// CQI scheduling interval in SF
+	optional uint32 ri_sched_interval = 3;		// RI scheduling interval in SF
+}
+
+message flex_ue_capabilities {
+	optional uint32 half_duplex = 1;		// Boolean value. Only half duplex support. FDD operation
+	optional uint32 intra_SF_hopping = 2;		// Support for intra-subframe hopping. Boolean value
+	optional uint32 type2_sb_1 = 3;			// Support for type 2 hopping with n_sb > 1
+	optional uint32 ue_category = 4;
+	optional uint32 res_alloc_type1 = 5;		// Boolean value. UE support for resource allocation type 1
+}
+
+message flex_scell_config {
+	optional uint32 carrier_index = 1;		// Id of the carrier component
+	optional uint32 scell_index = 2;		// Index of this Scell (RRC SCellIndex)
+	optional uint32 use_ccs = 3;			// Boolean value. Indicates if cross-carrier scheduling
+		 					// is used by this SCell
+	optional uint32 sched_cell_index = 4;		// Index of the cell responsible for scheduling
+		 					// this SCell if cross-carrier scheduling is enabled
+	optional uint32 pdsch_start = 5;		// Starting OFDM symbol of PDSCH data region for this SCell
+}
+
+enum flex_meas_gap_config_pattern {
+     FLMGCP_GP1 = 0;
+     FLMGCP_GP2 = 1;
+     FLMGCP_OFF = 2;
+}
+
+enum flex_setup_release_action {
+     FLSRA_SETUP = 0;
+     FLSRA_RELEASE = 1;
+}
+
+enum flex_ue_transmission_antenna {
+     FLUTA_NONE = 0;
+     FLUTA_OPEN_LOOP = 1;
+     FLUTA_CLOSED_LOOP = 2;
+}
+
+enum flex_aperiodic_cqi_report_mode {
+     FLACRM_RM12 = 0;
+     FLACRM_RM20 = 1;
+     FLACRM_RM22 = 2;
+     FLACRM_RM30 = 3;
+     FLACRM_RM31 = 4;
+     FLACRM_NONE = 5;
+}
+
+enum flex_tdd_ack_nack_feedback_mode {
+     FLTANFM_BUNDLING = 0;
+     FLTANFM_MULTIPLEXING = 1;
+}
+
+//
+// Logical channel config related structures and enums
+//
+
+message flex_lc_config {
+	optional uint32 lcid = 1;	// The logical channel id
+	optional uint32 lcg = 2;	// The logical channel group (0..3) the LC is mapped to
+	optional uint32 direction = 3;	// The LC direction. One of the FLLCD_* enum values
+	optional uint32 qos_bearer_type = 4;// GBR or NGBR bearer. One of the FLQBT_* enum values
+	optional uint32 qci = 5;	// The QCI defined in TS 23.203, coded as defined in TS 36.413
+		 			// One less than the actual QCI value
+	optional uint64 e_RAB_max_bitrate_UL = 6; // In bps (GBR only)
+	optional uint64 e_RAB_max_bitrate_DL = 7; // In bps (GBR only)
+	optional uint64 e_RAB_guaranteed_bitrate_UL = 8; // In bps (GBR only)
+	optional uint64 e_RAB_guaranteed_bitrate_DL = 9;  // In bps (GBR only)
+}
+
+enum flex_lc_direction {
+     FLLCD_UL = 0;
+     FLLCD_DL = 1;
+     FLLCD_BOTH = 2;
+}
+
+enum flex_qos_bearer_type {
+     FLQBT_NON_GBR = 0;
+     FLQBT_GBR = 1;
+}
+
+enum flex_ue_state_change_type {
+     FLUESC_UPDATED = 0;
+     FLUESC_ACTIVATED = 1;
+     FLUESC_DEACTIVATED = 2;
+     FLUESC_MOVED = 3;
+}

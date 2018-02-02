@@ -17,3 +17,9 @@ enum fsp_type {
      FSPT_PDCP_DATA_IND_ACK = 6;
 }
 
+enum f1u_type {
+     // Discovery and maintenance messages
+     F1U_DL_DATA = 0;
+     F1U_DL_STATUS = 1;
+}
+

@@ -49,7 +49,7 @@
 //#include "stats_common.pb-c.h"
 
 #include "proto_agent_defs.h"
-#include "enb_config.h"
+//#include "ENB_APP/enb_config.h"
 #include "UTIL/MEM/mem_block.h"
 
 //#include "LAYER2/MAC/extern.h"
@@ -118,6 +118,7 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
 Protocol__FlexsplitMessage *proto_agent_handle_timed_task(void *args);
 
 typedef struct _data_req_args data_req_args;
+typedef struct _dl_data_args dl_data_args;
 
 struct _data_req_args{
   protocol_ctxt_t* ctxt;
@@ -126,6 +127,16 @@ struct _data_req_args{
   rb_id_t rb_id; 
   mui_t mui;
   confirm_t confirm;
+  sdu_size_t sdu_size;
+  mem_block_t *sdu_p;
+};
+
+struct _dl_data_args{
+  uint8_t pdu_type;
+  uint32_t sn;
+  frame_t frame;
+  sub_frame_t subframe;
+  rnti_t rnti;
   sdu_size_t sdu_size;
   mem_block_t *sdu_p;
 };
