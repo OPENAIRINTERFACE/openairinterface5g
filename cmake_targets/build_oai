@@ -101,8 +101,6 @@ Options
    Specify conf_nvram_path (default \"$conf_nvram_path\")
 --UE-gen-nvram [output path]
    Specify gen_nvram_path (default \"$gen_nvram_path\")
---RRH
-   Makes the RRH
 -a | --agent
    Enables agent for software-defined control of the eNB
 -r | --3gpp-release
@@ -200,7 +198,7 @@ function main() {
             GDB=1
             CMAKE_BUILD_TYPE="Debug"
             echo_info "Will Compile with gdb symbols and disable compiler optimization"
-            CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug"
+            CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug --trace-expand"
             shift;;
        --eNB)
             eNB=1
@@ -224,10 +222,6 @@ function main() {
         --UE-gen-nvram)
             gen_nvram_path=$(readlink -f $2)
             shift 2;;
-       --RRH)
-            RRH=1
-            echo_info "Will compile RRH"
-            shift;;
        -r | --3gpp-release)
             REL=$2
             echo_info "Setting release to: $REL"
@@ -376,7 +370,7 @@ function main() {
   echo_info "CMAKE_CMD=$CMAKE_CMD"
   
   #########################################################
-  # check validity of HW and TP parameters for RRH and eNB
+  # check validity of HW and TP parameters for eNB
   #########################################################
   # to be discussed
   
@@ -392,15 +386,6 @@ function main() {
       fi
   fi
   
-  if [ "$RRH" = "1" ] ; then
-      if [ "$TP" = "None" ] ; then
-	  echo_fatal "A transport protocol (e.g. -t ETHERNET) must be defined!"
-      fi
-      if [ "$HW" = "None" ] ; then
-	  echo_info "No radio head has been selected (HW set to $HW)"	
-      fi
-  fi
-
   echo_info "RF HW set to $HW" 
   #Now we set flags to enable deadline scheduler settings
   #By default: USRP: disable, 
@@ -801,36 +786,6 @@ function main() {
 	#  oaisim_mme $dbin/oaisim_mme.$REL
   fi
 
-  # RRH compilation
-  #####################
-  if [ "$RRH" = "1" ] ; then
-
-     rrh_exec=rrh_gw
-     rrh_build_dir=rrh_gw
-     
-     echo_info "Compiling $rrh_exec ..."
-    
-     [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build 
-     mkdir -p $DIR/$rrh_build_dir/build
-     cmake_file=$DIR/$rrh_build_dir/CMakeLists.txt
-     echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
-     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
-     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
-     echo "set ( ENABLE_ITTI False )"     		 >>  $cmake_file
-     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
-     echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
-     echo 'set ( PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
-     echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
-     echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"    >>$cmake_file
-     echo "set ( T_TRACER $T_TRACER )"            >>  $cmake_file
-     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
-     cd $DIR/$rrh_build_dir/build
-     eval $CMAKE_CMD
-     compilations \
-	 rrh_gw rrh_gw \
-	 rrh_gw $dbin/rrh_gw
-
-  fi
   # Telnet server compilation
   #####################
   if [ "$BUILD_TELNETSRV" = "1" ] ; then
@@ -849,13 +804,9 @@ function main() {
   fi  
   # build RF device and transport protocol libraries
   #####################################
-  if [ "$eNB" = "1" -o "$UE" = "1" -o  "$RRH" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
 
-      if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
-	  build_dir=$lte_build_dir	  
-      else
-	  build_dir=$rrh_build_dir	 
-      fi
+      build_dir=$lte_build_dir	  
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then

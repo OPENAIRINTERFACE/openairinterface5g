@@ -133,6 +133,7 @@ int attach_rru(RU_t *ru);
 
 int connect_rau(RU_t *ru);
 
+extern uint16_t sf_ahead;
 
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
@@ -392,8 +393,8 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   proc->frame_rx     = f;
   proc->timestamp_rx = ((proc->frame_rx * 10)  + proc->subframe_rx ) * fp->samples_per_tti ;
   //  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
-  proc->subframe_tx  = (sf+4)%10;
-  proc->frame_tx     = (sf>5) ? (f+1)&1023 : f;
+  proc->subframe_tx  = (sf+sf_ahead)%10;
+  proc->frame_tx     = (sf>(9-sf_ahead)) ? (f+1)&1023 : f;
  
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
@@ -595,6 +596,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   uint32_t symbol_number,symbol_mask,symbol_mask_full;
   int subframe_tx,frame_tx;
 
+  LOG_D(PHY, "%s(ru:%p frame, subframe)\n", __FUNCTION__, ru);
   symbol_number = 0;
   symbol_mask = 0;
   symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
@@ -696,7 +698,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
     
   for (i=0; i<ru->nb_rx; i++)
     rxp[i] = (void*)&ru->common.rxdata[i][*subframe*fp->samples_per_tti];
-  
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 
   old_ts = proc->timestamp_rx;
@@ -739,11 +741,10 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   proc->subframe_phy_tx  = (proc->subframe_rx+3)%10;
   proc->frame_phy_tx     = (proc->subframe_rx>6) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 #else
-  proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
-  proc->subframe_tx  = (proc->subframe_rx+4)%10;
-  proc->frame_tx     = (proc->subframe_rx>5) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-#endif
-
+  proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
+  proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
+  proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+#endif  
   LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
 	ru->idx, 
 	0, 
@@ -778,11 +779,11 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   
-//  if (rxs != fp->samples_per_tti)
-//    exit_fun( "problem receiving samples" );
-  
-
-  
+  if (rxs != fp->samples_per_tti)
+  {
+    //exit_fun( "problem receiving samples" );
+    LOG_E(PHY, "problem receiving samples");
+  }
 }
 
 
@@ -804,7 +805,6 @@ void tx_rf(RU_t *ru) {
 
   if ((SF_type == SF_DL) ||
       (SF_type == SF_S)) {
-    
     
     int siglen=fp->samples_per_tti,flags=1;
     
@@ -1001,22 +1001,24 @@ static void* ru_thread_prach( void* param ) {
 
   thread_top_init("ru_thread_prach",1,500000L,1000000L,20000000L);
 
+  while (RC.ru_mask>0) {
+    usleep(1e6);
+    LOG_I(PHY,"%s() RACH waiting for RU to be configured\n", __FUNCTION__);
+  }
+  LOG_I(PHY,"%s() RU configured - RACH processing thread running\n", __FUNCTION__);
+
   while (!oai_exit) {
     
     if (oai_exit) break;
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 1 );      
-    rx_prach(NULL,
-	     ru,
-	     NULL,
-             NULL,
-             NULL,
-             proc->frame_prach,
-             0
+    prach_procedures(
+        ru->eNB_list[0]
 #ifdef Rel14
-	     ,0
+        ,0
 #endif
-	     );
+        );
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 );      
     if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
   }
@@ -1166,21 +1168,29 @@ void wakeup_eNBs(RU_t *ru) {
   int i;
   PHY_VARS_eNB **eNB_list = ru->eNB_list;
 
-  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d\n",ru->num_eNB,ru->idx);
+  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
-  if (ru->num_eNB==1) {
+  if (ru->num_eNB==1 && ru->eNB_top!=0) {
     // call eNB function directly
 
     char string[20];
     sprintf(string,"Incoming RU %d",ru->idx);
-    LOG_D(PHY,"RU %d Waking up eNB\n",ru->idx);
+    LOG_D(PHY,"RU %d Call eNB_top\n",ru->idx);
     ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
   }
   else {
 
+    LOG_D(PHY,"ru->num_eNB:%d\n", ru->num_eNB);
+
     for (i=0;i<ru->num_eNB;i++)
-      if (ru->wakeup_rxtx(eNB_list[i],ru) < 0)
+    {
+      LOG_D(PHY,"ru->wakeup_rxtx:%p\n", ru->wakeup_rxtx);
+
+      if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
+      {
 	LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
+      }
+    }
   }
 }
 
@@ -1200,6 +1210,10 @@ static inline int wakeup_prach_ru(RU_t *ru) {
     ++ru->proc.instance_cnt_prach;
     ru->proc.frame_prach    = ru->proc.frame_rx;
     ru->proc.subframe_prach = ru->proc.subframe_rx;
+
+    // DJP - think prach_procedures() is looking at eNB frame_prach
+    ru->eNB_list[0]->proc.frame_prach = ru->proc.frame_rx;
+    ru->eNB_list[0]->proc.subframe_prach = ru->proc.subframe_rx;
 
     LOG_D(PHY,"RU %d: waking up PRACH thread\n",ru->idx);
     // the thread can now be woken up
@@ -1440,7 +1454,6 @@ static void* ru_thread( void* param ) {
         init_frame_parms(&ru->frame_parms,1);
         phy_init_RU(ru);
  
-
         ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
   }
   if (setup_RU_buffers(ru)!=0) {
@@ -1496,19 +1509,9 @@ static void* ru_thread( void* param ) {
       subframe++;
     }      
 
-    LOG_D(PHY,"RU thread (proc %p), frame %d (%p), subframe %d (%p)\n",
-	  proc, frame,&frame,subframe,&subframe);
-
-
     // synchronization on input FH interface, acquire signals/data and block
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&subframe);
     else AssertFatal(1==0, "No fronthaul interface at south port");
-
-
-    LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
-	  ru->do_prach,
-	  is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
-	  proc->frame_rx,proc->subframe_rx);
 
 #ifdef UE_EXPANSION
     if(first_phy_tx == 0)
@@ -1533,10 +1536,25 @@ static void* ru_thread( void* param ) {
     }
     first_phy_tx = 0;
 #endif
+    LOG_D(PHY,"AFTER fh_south_in - SFN/SF:%d%d RU->proc[RX:%d%d TX:%d%d] RC.eNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
+        frame,subframe,
+        proc->frame_rx,proc->subframe_rx,
+        proc->frame_tx,proc->subframe_tx,
+        RC.eNB[0][0]->proc.frame_rx,RC.eNB[0][0]->proc.subframe_rx,
+        RC.eNB[0][0]->proc.frame_tx);
+
+      LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
+          ru->do_prach,
+          is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
+          proc->frame_rx,proc->subframe_rx);
  
-    if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) wakeup_prach_ru(ru);
+    if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
+      wakeup_prach_ru(ru);
+    }
 #ifdef Rel14
-    else if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>1)) wakeup_prach_ru_br(ru);
+    else if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>1)) {
+      wakeup_prach_ru_br(ru);
+    }
 #endif
 
     // adjust for timing offset between RU
@@ -1581,7 +1599,7 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
 
-    // wait until eNBs are finished subframe RX n and TX n+4
+    // wait until eNBs are finished subframe RX n and TX n+sf_ahead
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
 
 
@@ -1601,7 +1619,6 @@ static void* ru_thread( void* param ) {
         continue;
     }
 #endif
-
   }
   
 
@@ -1968,6 +1985,10 @@ void init_RU_proc(RU_t *ru) {
     pthread_setname_np( proc->pthread_FH, name );
     
   }
+  else if (ru->function == eNodeB_3GPP && ru->if_south == LOCAL_RF) { // DJP - need something else to distinguish between monolithic and PNF
+    LOG_I(PHY,"%s() DJP - added creation of pthread_prach\n", __FUNCTION__);
+    pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void*)ru );
+  }
 
   if (get_nprocs()>=2) { 
     if (ru->feprx) init_fep_thread(ru,NULL); 
@@ -1976,10 +1997,6 @@ void init_RU_proc(RU_t *ru) {
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void*)ru); 
   
 }
-
-
-
-
 
 int check_capabilities(RU_t *ru,RRU_capabilities_t *cap) {
 
@@ -2178,10 +2195,13 @@ void init_RU(char *rf_config_file) {
   RCconfig_RU();
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_L1_inst,RC.nb_RU,get_nprocs());
 
-  for (i=0;i<RC.nb_L1_inst;i++) 
-    for (CC_id=0;CC_id<RC.nb_CC[i];CC_id++) RC.eNB[i][CC_id]->num_RU=0;
+  if (RC.nb_CC != 0)
+    for (i=0;i<RC.nb_L1_inst;i++) 
+      for (CC_id=0;CC_id<RC.nb_CC[i];CC_id++) RC.eNB[i][CC_id]->num_RU=0;
 
+  LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
   for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+    LOG_D(PHY,"Process RC.ru[%d]\n",ru_id);
     ru               = RC.ru[ru_id];
     ru->rf_config_file = rf_config_file;
     ru->idx          = ru_id;              
@@ -2189,24 +2209,47 @@ void init_RU(char *rf_config_file) {
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
 
-    
+    LOG_D(PHY, "%s() RC.ru[%d].num_eNB:%d ru->eNB_list[0]:%p RC.eNB[0][0]:%p rf_config_file:%s\n", __FUNCTION__, ru_id, ru->num_eNB, ru->eNB_list[0], RC.eNB[0][0], ru->rf_config_file);
+
+    if (ru->eNB_list[0] == 0)
+    {
+      LOG_E(PHY,"%s() DJP - ru->eNB_list ru->num_eNB are not initialized - so do it manually\n", __FUNCTION__);
+      ru->eNB_list[0] = RC.eNB[0][0];
+      ru->num_eNB=1;
+      //
+      // DJP - feptx_prec() / feptx_ofdm() parses the eNB_list (based on num_eNB) and copies the txdata_F to txdata in RU
+      //
+    }
+    else
+    {
+    LOG_E(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
+    }
+
     eNB0             = ru->eNB_list[0];
-    if ((ru->function != NGFI_RRU_IF5) && (ru->function != NGFI_RRU_IF4p5))
-      AssertFatal(eNB0!=NULL,"eNB0 is null!\n");
+    LOG_D(PHY, "RU FUnction:%d ru->if_south:%d\n", ru->function, ru->if_south);
+    LOG_D(PHY, "eNB0:%p\n", eNB0);
+    if (eNB0)
+    {
+      if ((ru->function != NGFI_RRU_IF5) && (ru->function != NGFI_RRU_IF4p5))
+        AssertFatal(eNB0!=NULL,"eNB0 is null!\n");
 
-    if (eNB0) {
-      LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
-      memcpy((void*)&ru->frame_parms,(void*)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+      if (eNB0) {
+        LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
+        memcpy((void*)&ru->frame_parms,(void*)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
 
-      // attach all RU to all eNBs in its list/
-      for (i=0;i<ru->num_eNB;i++) {
-	eNB0 = ru->eNB_list[i];
-	eNB0->RU_list[eNB0->num_RU++] = ru;
+        // attach all RU to all eNBs in its list/
+        LOG_D(PHY,"ru->num_eNB:%d eNB0->num_RU:%d\n", ru->num_eNB, eNB0->num_RU);
+        for (i=0;i<ru->num_eNB;i++) {
+          eNB0 = ru->eNB_list[i];
+          eNB0->RU_list[eNB0->num_RU++] = ru;
+        }
       }
     }
     //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
 
-    
+
+    LOG_D(PHY,"ru->if_south:%d\n", ru->if_south);
+
     switch (ru->if_south) {
     case LOCAL_RF:   // this is an RU with integrated RF (RRU, eNB)
       if (ru->function ==  NGFI_RRU_IF5) {                 // IF5 RRU
@@ -2285,7 +2328,8 @@ void init_RU(char *rf_config_file) {
       if (setup_RU_buffers(ru)!=0) {
 	printf("Exiting, cannot initialize RU Buffers\n");
 	exit(-1);
-      }*/
+      }
+      */
       break;
 
     case REMOTE_IF5: // the remote unit is IF5 RRU

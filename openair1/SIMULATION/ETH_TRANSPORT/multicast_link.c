@@ -54,9 +54,7 @@
 #include "socket.h"
 #include "multicast_link.h"
 
-#ifdef USER_MODE
-# include "UTIL/LOG/log.h"
-#endif //USER_MODE
+#include "UTIL/LOG/log.h"
 
 extern unsigned short Master_id;
 
@@ -316,9 +314,7 @@ void multicast_link_start(void (*rx_handlerP) (unsigned int, char *),
   LOG_I(EMU, "[MULTICAST] LINK START on interface=%s for group=%d: handler=%p\n",
         (multicast_if == NULL) ? "not specified" : multicast_if, multicast_group,
         rx_handler);
-#if !defined(ENABLE_PGM_TRANSPORT)
   multicast_link_init ();
-#endif
 #if ! defined(ENABLE_NEW_MULTICAST)
   LOG_D(EMU, "[MULTICAST] multicast link start thread\n");
 

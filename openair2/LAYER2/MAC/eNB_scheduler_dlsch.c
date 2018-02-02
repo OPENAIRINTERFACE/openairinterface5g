@@ -63,6 +63,7 @@
 //#define DEBUG_eNB_SCHEDULER 1
 
 extern RAN_CONTEXT_t RC;
+extern uint8_t nfapi_mode;
 
 //------------------------------------------------------------------------------
 void
@@ -71,6 +72,7 @@ add_ue_dlsch_info(module_id_t module_idP,
 		  int UE_id, sub_frame_t subframeP, UE_DLSCH_STATUS status)
 //------------------------------------------------------------------------------
 {
+  //LOG_D(MAC, "%s(module_idP:%d, CC_id:%d, UE_id:%d, subframeP:%d, status:%d) serving_num:%d rnti:%x\n", __FUNCTION__, module_idP, CC_id, UE_id, subframeP, status, eNB_dlsch_info[module_idP][CC_id][UE_id].serving_num, UE_RNTI(module_idP,UE_id));
 
     eNB_dlsch_info[module_idP][CC_id][UE_id].rnti =
 	UE_RNTI(module_idP, UE_id);
@@ -712,8 +714,12 @@ schedule_ue_spec(module_id_t module_idP,
 	       DevCheck(((eNB_UE_stats->dl_cqi < MIN_CQI_VALUE) || (eNB_UE_stats->dl_cqi > MAX_CQI_VALUE)),
 	       eNB_UE_stats->dl_cqi, MIN_CQI_VALUE, MAX_CQI_VALUE);
 	     */
-	    eNB_UE_stats->dlsch_mcs1 =
-		cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
+            if (nfapi_mode) {
+              eNB_UE_stats->dlsch_mcs1 = 10;//cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
+            }
+            else {
+              eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
+            }
 	    eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1;	//cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
 
 
@@ -813,6 +819,8 @@ schedule_ue_spec(module_id_t module_idP,
 		    case 2:
 		    case 7:
 		    default:
+                      LOG_D(MAC,"retransmission DL_REQ: rnti:%x\n",rnti);
+
 			dl_config_pdu =
 			    &dl_req->dl_config_pdu_list[dl_req->
 							number_pdu];
@@ -823,6 +831,7 @@ schedule_ue_spec(module_id_t module_idP,
 			dl_config_pdu->pdu_size =
 			    (uint8_t) (2 +
 				       sizeof(nfapi_dl_config_dci_dl_pdu));
+                        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
 			dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.
 			    dci_format = NFAPI_DL_DCI_FORMAT_1;
 			dl_config_pdu->dci_dl_pdu.
@@ -878,6 +887,10 @@ schedule_ue_spec(module_id_t module_idP,
 			     dci_dl_pdu_rel8.aggregation_level, rnti)) {
 			    dl_req->number_dci++;
 			    dl_req->number_pdu++;
+                            dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+
+                            eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
+                            eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
 
 			    fill_nfapi_dlsch_config(eNB, dl_req, TBS, -1
 						    /* retransmission, no pdu_index */
@@ -1340,7 +1353,6 @@ schedule_ue_spec(module_id_t module_idP,
           for (j=0; j<(TBS-sdu_length_total-offset); j++) {
             UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset+sdu_length_total+j] = (char)(taus()&0xff);
           }
-
 
           if (opt_enabled == 1) {
             trace_pdu(1, (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],

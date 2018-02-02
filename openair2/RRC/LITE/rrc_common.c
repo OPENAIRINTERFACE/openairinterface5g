@@ -69,7 +69,7 @@ openair_rrc_on(
   int            CC_id;
 
   if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
-    LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" OPENAIR RRC IN....\n",
+    LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" ENB:OPENAIR RRC IN....\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
@@ -78,7 +78,7 @@ openair_rrc_on(
       RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
     }
   } else {
-    LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" OPENAIR RRC IN....\n",
+    LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" UE?:OPENAIR RRC IN....\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
 
     for (i = 0; i < NB_eNB_INST; i++) {
@@ -101,9 +101,7 @@ rrc_init_global_param(
 //-----------------------------------------------------------------------------
 {
 
-  //#ifdef USER_MODE
   //  Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
-  //#endif //USRE_MODE
 
   //  Rrc_xface->openair_rrc_top_init = openair_rrc_top_init;
   //  Rrc_xface->openair_rrc_eNB_init = openair_rrc_eNB_init;

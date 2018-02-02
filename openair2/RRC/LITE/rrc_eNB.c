@@ -63,12 +63,10 @@
 #include "MeasResults.h"
 //#endif
 
-#ifdef USER_MODE
-#   include "RRC/NAS/nas_config.h"
-#   include "RRC/NAS/rb_config.h"
-#   include "OCG.h"
-#   include "OCG_extern.h"
-#endif
+#include "RRC/NAS/nas_config.h"
+#include "RRC/NAS/rb_config.h"
+#include "OCG.h"
+#include "OCG_extern.h"
 
 #if defined(ENABLE_SECURITY)
 #   include "UTIL/OSA/osa_defs.h"
@@ -135,6 +133,8 @@ init_SI(
 #ifdef Rel14
   SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext=(SystemInformationBlockType1_v1310_IEs_t *)NULL;
 #endif
+
+  LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
 
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB = (uint8_t*) malloc16(4);
   // copy basic parameters
@@ -282,6 +282,8 @@ init_SI(
       sib1_v13ext = RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension;
   }
 #endif
+
+  LOG_D(RRC, "About to call rrc_mac_config_req_eNB\n");
 
   rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
@@ -806,6 +808,7 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
 #ifndef UE_EXPANSION
   int i, j , CC_id, pdu_number;
   LTE_eNB_ULSCH_t *ulsch = NULL;
+  LTE_eNB_DLSCH_t *dlsch = NULL;
   nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
   PHY_VARS_eNB *eNB_PHY = NULL;
   eNB_MAC_INST *eNB_MAC = RC.mac[enb_mod_idP];
@@ -833,14 +836,6 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
      */
      return;
     }
-#else
-#if defined(OAI_EMU)
-    AssertFatal(ue_context_pP->local_uid < NUMBER_OF_UE_MAX, "local_uid invalid (%d<%d) for UE %x!", ue_context_pP->local_uid, NUMBER_OF_UE_MAX, rnti);
-    ue_module_id = oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_mod_idP][ue_context_pP->local_uid];
-    AssertFatal(ue_module_id < NUMBER_OF_UE_MAX, "ue_module_id invalid (%d<%d) for UE %x!", ue_module_id, NUMBER_OF_UE_MAX, rnti);
-    oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_mod_idP][ue_context_pP->local_uid] = -1;
-    oai_emulation.info.eNB_ue_module_id_to_rnti[enb_mod_idP][ue_module_id] = NOT_A_RNTI;
-#endif
 #endif
 #ifndef UE_EXPANSION
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
@@ -849,9 +844,14 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
         ulsch = eNB_PHY->ulsch[i];
         if((ulsch != NULL) && (ulsch->rnti == rnti)){
           LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
-          //clean_eNb_ulsch(ulsch);
-          ulsch->rnti = 0;
-          break;
+          clean_eNb_ulsch(ulsch);
+        }
+      }
+      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+        dlsch = eNB_PHY->dlsch[i][0];
+        if((dlsch != NULL) && (dlsch->rnti == rnti)){
+          LOG_I(RRC, "clean_eNb_dlsch UE %x \n", rnti);
+          clean_eNb_dlsch(dlsch);
         }
       }
 
@@ -5009,12 +5009,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                        ctxt_pP->module_id + 1);  // fourth octet
 
           if (oip_ifup == 0) {    // interface is up --> send a config the DRB
-#      ifdef OAI_EMU
-            oai_emulation.info.oai_ifup[ctxt_pP->module_id] = 1;
-            dest_ip_offset = NB_eNB_INST;
-#      else
             dest_ip_offset = 8;
-#      endif
             LOG_I(OIP,
                   "[eNB %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
                   ctxt_pP->module_id, ctxt_pP->module_id,
@@ -5031,10 +5026,6 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                   ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ue_module_id);
           }
 
-#   else
-#      ifdef OAI_EMU
-          oai_emulation.info.oai_ifup[ctxt_pP->module_id] = 1;
-#      endif
 #   endif
 #endif
 
@@ -6613,6 +6604,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
           LOG_I(RRC, "Processing ulInformationTransfer UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
           break;
       }
+
+      LOG_D(RRC,"[MSG] RRC UL Information Transfer \n");
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC UL Information Transfer \n");
 

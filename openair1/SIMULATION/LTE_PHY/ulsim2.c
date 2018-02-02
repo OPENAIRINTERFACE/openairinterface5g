@@ -30,9 +30,6 @@
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"
 #endif
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
-#endif
 
 #define BW 10.0
 #define Td 1.0
@@ -68,12 +65,6 @@ int main(int argc, char **argv)
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
   double N0W, path_loss, path_loss_dB;
-
-#ifdef EMOS
-  fifo_dump_emos emos_dump;
-#endif
-
-
 
   if (argc>1)
     sigma2_dB = atoi(argv[1]);

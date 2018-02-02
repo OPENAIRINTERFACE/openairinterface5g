@@ -42,17 +42,8 @@
 # include "intertask_interface.h"
 #endif
 
-#ifdef USER_MODE
 # include <pthread.h>
 # include <string.h>
-#endif
-#ifdef RTAI
-# include <rtai.h>
-# include <rtai_fifos.h>
-#    define FIFO_PRINTF_MAX_STRING_SIZE 1000
-#    define FIFO_PRINTF_NO              62
-#    define FIFO_PRINTF_SIZE            65536
-#endif
 #include "common/config/config_userapi.h"
 // main log variables
 log_t *g_log;
@@ -92,9 +83,7 @@ int log_list_head = 0;
 int log_shutdown;
 #endif
 
-#ifndef RTAI
 static int gfd;
-#endif
 
 static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_ORANGE, LOG_BLUE, "", ""};  /*!< \brief Optional start-format strings for highlighting */
 static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET,LOG_RESET,  "",""};   /*!< \brief Optional end-format strings for highlighting */
@@ -164,24 +153,12 @@ void  log_getconfig(log_t *g_log) {
 
 int logInit (void)
 {
-#ifdef USER_MODE
-#ifndef RTAI
   int i;
-#endif
   g_log = calloc(1, sizeof(log_t));
 
-#else
-  g_log = kmalloc(sizeof(log_t), GFP_KERNEL);
-#endif
-
   if (g_log == NULL) {
-#ifdef USER_MODE
     perror ("cannot allocated memory for log generation module \n");
     exit(EXIT_FAILURE);
-#else
-    printk("cannot allocated memory for log generation module \n");
-    return(-1);
-#endif
   }
 
 
@@ -485,7 +462,6 @@ int logInit (void)
   g_log->level  = LOG_TRACE;
   g_log->flag   = LOG_LOW;
 
-#ifndef RTAI
   g_log->config.remote_ip      = 0;
   g_log->config.remote_level   = LOG_EMERG;
   g_log->config.facility       = LOG_LOCAL7;
@@ -513,19 +489,341 @@ int logInit (void)
     }
   }
 
-#else
-  g_log->syslog = 0;
-  g_log->filelog   = 0;
-  rtf_create (FIFO_PRINTF_NO, FIFO_PRINTF_SIZE);
-#endif
-
-#ifdef USER_MODE
   printf("log init done\n");
-#else
-  printk("log init done\n");
-#endif
 
   return 0;
+}
+
+void nfapi_log(char *file, char *func, int line, int comp, int level, const char* format, va_list args)
+{
+  //logRecord_mt(file,func,line, pthread_self(), comp, level, format, ##args)
+  int len = 0;
+  log_component_t *c;
+  char *log_start;
+  char *log_end;
+  /* The main difference with the version above is the use of this local log_buffer.
+   * The other difference is the return value of snprintf which was not used
+   * correctly. It was not a big problem because in practice MAX_LOG_TOTAL is
+   * big enough so that the buffer is never full.
+   */
+  char log_buffer[MAX_LOG_TOTAL];
+
+  /* for no gcc warnings */
+  (void)log_start;
+  (void)log_end;
+
+  c = &g_log->log_component[comp];
+
+  // do not apply filtering for LOG_F
+  // only log messages which are enabled and are below the global log level and component's level threshold
+  if ((level != LOG_FILE) && ((level > c->level) || (level > g_log->level))) {
+    /* if ((level != LOG_FILE) &&
+          ((level > c->level) ||
+           (level > g_log->level) ||
+           ( c->level > g_log->level))) {
+    */
+    return;
+  }
+
+  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD, VCD_FUNCTION_IN);
+
+  // adjust syslog level for TRACE messages
+  if (g_log->syslog) {
+    if (g_log->level > LOG_DEBUG) {
+      g_log->level = LOG_DEBUG;
+    }
+  }
+
+  // make sure that for log trace the extra info is only printed once, reset when the level changes
+  if ((level == LOG_FILE) || (c->flag == LOG_NONE) || (level == LOG_TRACE)) {
+    log_start = log_buffer;
+    len = vsnprintf(log_buffer, MAX_LOG_TOTAL, format, args);
+    if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+    log_end = log_buffer + len;
+  } else {
+    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) ) {
+      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "%s",
+                      log_level_highlight_start[level]);
+      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+    }
+
+    log_start = log_buffer + len;
+
+    if ( (g_log->flag & FLAG_COMP) || (c->flag & FLAG_COMP) ) {
+      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]",
+                      g_log->log_component[comp].name);
+      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+    }
+
+    if ( (g_log->flag & FLAG_LEVEL) || (c->flag & FLAG_LEVEL) ) {
+      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]",
+                      g_log->level2string[level]);
+      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+    }
+
+    if ( (g_log->flag & FLAG_THREAD) || (c->flag & FLAG_THREAD) ) {
+#     define THREAD_NAME_LEN 128
+      char threadname[THREAD_NAME_LEN];
+      if (pthread_getname_np(pthread_self(), threadname, THREAD_NAME_LEN) != 0)
+      {
+        perror("pthread_getname_np : ");
+      } else {
+        len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]", threadname);
+        if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+      }
+#     undef THREAD_NAME_LEN
+    }
+
+    if ( (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) ) {
+      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s] ",
+                      func);
+      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+    }
+
+    if ( (g_log->flag & FLAG_FILE_LINE) || (c->flag & FLAG_FILE_LINE) ) {
+      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s:%d]",
+                      file, line);
+      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+    }
+
+    //len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%08lx]", thread_id);
+    //if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+
+    len += vsnprintf(&log_buffer[len], MAX_LOG_TOTAL - len, format, args);
+    if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+    log_end = log_buffer + len;
+
+    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) ) {
+      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "%s",
+          log_level_highlight_end[level]);
+      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
+    }
+  }
+
+  va_end(args);
+
+  // OAI printf compatibility
+  if ((g_log->onlinelog == 1) && (level != LOG_FILE))
+#ifdef RTAI
+    if (len > MAX_LOG_TOTAL) {
+      rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
+    }
+
+  if (len > 0) {
+    rtf_put (FIFO_PRINTF_NO, log_buffer, len);
+  }
+
+#else
+  fwrite(log_buffer, len, 1, stdout);
+#endif
+
+#ifndef RTAI
+
+  if (g_log->syslog) {
+    syslog(g_log->level, "%s", log_buffer);
+  }
+
+  if (g_log->filelog) {
+    if (write(gfd, log_buffer, len) < len) {
+      // TODO assert ?
+    }
+  }
+
+  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
+    if (write(g_log->log_component[comp].fd, log_buffer, len) < len) {
+      // TODO assert ?
+    }
+  }
+
+#else
+
+  // online print messges
+  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
+    printf(log_buffer);
+  }
+
+#endif
+
+#if defined(ENABLE_ITTI)
+
+  if (level <= LOG_DEBUG) {
+    task_id_t origin_task_id = TASK_UNKNOWN;
+    MessagesIds messages_id;
+    MessageDef *message_p;
+    size_t      message_string_size;
+    char       *message_msg_p;
+
+    message_string_size = log_end - log_start;
+
+#if !defined(DISABLE_ITTI_DETECT_SUB_TASK_ID)
+
+    /* Try to identify sub task ID from log information (comp, log_instance_type) */
+    switch (comp) {
+    case PHY:
+      switch (log_instance_type) {
+      case LOG_INSTANCE_ENB:
+        origin_task_id = TASK_PHY_ENB;
+        break;
+
+      case LOG_INSTANCE_UE:
+        origin_task_id = TASK_PHY_UE;
+        break;
+
+      default:
+        break;
+      }
+
+      break;
+
+    case MAC:
+      switch (log_instance_type) {
+      case LOG_INSTANCE_ENB:
+        origin_task_id = TASK_MAC_ENB;
+        break;
+
+      case LOG_INSTANCE_UE:
+        origin_task_id = TASK_MAC_UE;
+
+      default:
+        break;
+      }
+
+      break;
+
+    case RLC:
+      switch (log_instance_type) {
+      case LOG_INSTANCE_ENB:
+        origin_task_id = TASK_RLC_ENB;
+        break;
+
+      case LOG_INSTANCE_UE:
+        origin_task_id = TASK_RLC_UE;
+
+      default:
+        break;
+      }
+
+      break;
+
+    case PDCP:
+      switch (log_instance_type) {
+      case LOG_INSTANCE_ENB:
+        origin_task_id = TASK_PDCP_ENB;
+        break;
+
+      case LOG_INSTANCE_UE:
+        origin_task_id = TASK_PDCP_UE;
+
+      default:
+        break;
+      }
+
+      break;
+
+    default:
+      break;
+    }
+
+#endif
+
+    switch (level) {
+    case LOG_EMERG:
+    case LOG_ALERT:
+    case LOG_CRIT:
+    case LOG_ERR:
+      messages_id = ERROR_LOG;
+      break;
+
+    case LOG_WARNING:
+      messages_id = WARNING_LOG;
+      break;
+
+    case LOG_NOTICE:
+      messages_id = NOTICE_LOG;
+      break;
+
+    case LOG_INFO:
+      messages_id = INFO_LOG;
+      break;
+
+    default:
+      messages_id = DEBUG_LOG;
+      break;
+    }
+
+    message_p = itti_alloc_new_message_sized(origin_task_id, messages_id, message_string_size);
+
+    switch (level) {
+    case LOG_EMERG:
+    case LOG_ALERT:
+    case LOG_CRIT:
+    case LOG_ERR:
+      message_msg_p = (char *) &message_p->ittiMsg.error_log;
+      break;
+
+    case LOG_WARNING:
+      message_msg_p = (char *) &message_p->ittiMsg.warning_log;
+      break;
+
+    case LOG_NOTICE:
+      message_msg_p = (char *) &message_p->ittiMsg.notice_log;
+      break;
+
+    case LOG_INFO:
+      message_msg_p = (char *) &message_p->ittiMsg.info_log;
+      break;
+
+    default:
+      message_msg_p = (char *) &message_p->ittiMsg.debug_log;
+      break;
+    }
+
+    memcpy(message_msg_p, log_start, message_string_size);
+
+    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+  }
+
+#endif
+#if 0
+  LOG_params log_params;
+  int        len;
+
+  len = vsnprintf(log_params.l_buff_info, MAX_LOG_INFO-1, format, args);
+
+  //2 first parameters must be passed as 'const' to the thread function
+  log_params.file = strdup(file);
+  log_params.func = strdup(func);
+  log_params.line = line;
+  log_params.comp = PHY;//comp;
+  log_params.level = 6; // INFO - level;
+  log_params.format = format;
+  log_params.len = len;
+
+  if (pthread_mutex_lock(&log_lock) != 0) {
+    return;
+  }
+
+  log_list_tail++;
+  log_list[log_list_tail - 1] = log_params;
+
+  if (log_list_tail >= 1000) {
+    log_list_tail = 0;
+  }
+
+  if (log_list_nb_elements < 1000) {
+    log_list_nb_elements++;
+  }
+
+  if(pthread_cond_signal(&log_notify) != 0) {
+    pthread_mutex_unlock(&log_lock);
+    return;
+  }
+
+  if(pthread_mutex_unlock(&log_lock) != 0) {
+    return;
+  }
+
+#endif
 }
 
 //log record: add to a list
@@ -650,22 +948,8 @@ void logRecord_thread_safe(const char *file, const char *func,
 
   // OAI printf compatibility
   if ((g_log->onlinelog == 1) && (level != LOG_FILE)) {
-#ifdef RTAI
-
-    if (len > MAX_LOG_TOTAL) {
-      rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
-    }
-
-    if (len > 0) {
-      rtf_put (FIFO_PRINTF_NO, log_buffer, len);
-    }
-
-#else
     fprintf(stdout, "%s", log_buffer);
-#endif
   }
-
-#ifndef RTAI
 
   if (g_log->syslog) {
     syslog(g_log->level, "%s", log_buffer);
@@ -682,8 +966,6 @@ void logRecord_thread_safe(const char *file, const char *func,
       // TODO assert ?
     }
   }
-
-#endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,
                                           VCD_FUNCTION_OUT);
@@ -834,20 +1116,7 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
 
   // OAI printf compatibility
   if ((g_log->onlinelog == 1) && (level != LOG_FILE))
-#ifdef RTAI
-    if (len > MAX_LOG_TOTAL) {
-      rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
-    }
-
-  if (len > 0) {
-    rtf_put (FIFO_PRINTF_NO, c->log_buffer, len);
-  }
-
-#else
     fwrite(c->log_buffer, len, 1, stdout);
-#endif
-
-#ifndef RTAI
 
   if (g_log->syslog) {
     syslog(g_log->level, "%s", c->log_buffer);
@@ -864,15 +1133,6 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
       // TODO assert ?
     }
   }
-
-#else
-
-  // online print messges
-  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-    printf(c->log_buffer);
-  }
-
-#endif
 
 #if defined(ENABLE_ITTI)
 
@@ -1132,20 +1392,7 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
 
   // OAI printf compatibility
   if ((g_log->onlinelog == 1) && (level != LOG_FILE))
-#ifdef RTAI
-    if (len > MAX_LOG_TOTAL) {
-      rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
-    }
-
-  if (len > 0) {
-    rtf_put (FIFO_PRINTF_NO, log_buffer, len);
-  }
-
-#else
     fwrite(log_buffer, len, 1, stdout);
-#endif
-
-#ifndef RTAI
 
   if (g_log->syslog) {
     syslog(g_log->level, "%s", log_buffer);
@@ -1162,15 +1409,6 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
       // TODO assert ?
     }
   }
-
-#else
-
-  // online print messges
-  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-    printf(log_buffer);
-  }
-
-#endif
 
 #if defined(ENABLE_ITTI)
 
@@ -1398,16 +1636,11 @@ void set_component_filelog(int comp)
 {
   if (g_log->log_component[comp].filelog ==  0) {
     g_log->log_component[comp].filelog =  1;
-#ifndef RTAI
 
     if (g_log->log_component[comp].fd == 0) {
       g_log->log_component[comp].fd = open(g_log->log_component[comp].filelog_name,
                                            O_WRONLY | O_CREAT | O_TRUNC, 0666);
     }
-
-#else
-
-#endif
   }
 }
 
@@ -1463,9 +1696,6 @@ int is_newline( char *str, int size)
 
 void logClean (void)
 {
-#ifdef RTAI
-  rtf_destroy (FIFO_PRINTF_NO);
-#else
   int i;
 
   if (g_log->syslog) {
@@ -1481,9 +1711,6 @@ void logClean (void)
       close(g_log->log_component[i].fd);
     }
   }
-
-#endif
-
 }
 
 #if defined(ENABLE_ITTI)

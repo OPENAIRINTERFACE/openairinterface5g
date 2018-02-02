@@ -30,7 +30,7 @@
 #ifndef __PLATFORM_TYPES_H__
 #    define __PLATFORM_TYPES_H__
 
-#ifdef USER_MODE
+#if !defined(NAS_NETLINK)
 #include <stdint.h>
 #endif
 
@@ -275,29 +275,5 @@ typedef struct protocol_ctxt_s {
     (CTXT_Pp)->module_id, \
     (CTXT_Pp)->rnti
 
-#ifdef OAI_EMU
-#define CHECK_CTXT_ARGS(CTXT_Pp) \
-    if ((CTXT_Pp)->enb_flag) {\
-        AssertFatal (((CTXT_Pp)->module_id >= oai_emulation.info.first_enb_local) && (oai_emulation.info.nb_enb_local > 0),\
-                     "eNB module id is too low (%u/%d/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_enb_local,\
-                     oai_emulation.info.nb_enb_local);\
-        AssertFatal (((CTXT_Pp)->module_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local)) && (oai_emulation.info.nb_enb_local > 0),\
-                     "eNB module id is too high (%u/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local);\
-    } else {\
-        AssertFatal ((CTXT_Pp)->module_id  < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local),\
-                     "UE module id is too high (%u/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);\
-        AssertFatal ((CTXT_Pp)->module_id  >= oai_emulation.info.first_ue_local,\
-                     "UE module id is too low (%u/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_ue_local);\
-    }
-#else
 #define CHECK_CTXT_ARGS(CTXT_Pp)
-#endif
 #endif

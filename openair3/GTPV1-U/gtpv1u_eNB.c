@@ -49,6 +49,7 @@
 #include "COMMON/platform_constants.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "common/ran_context.h"
+#include "gtpv1u_eNB_defs.h"
 
 #undef GTP_DUMP_SOCKET
 

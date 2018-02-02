@@ -29,21 +29,7 @@
 # @ingroup _openair2
 */
 
-#ifdef USER_MODE
-# include <inttypes.h>
-#else
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/proc_fs.h>
-
-# ifndef PRIu64
-#  if __WORDSIZE == 64
-#     define PRIu64 "lu"
-#   else
-#     define PRIu64 "llu"
-#   endif
-# endif
-#endif
+#include <inttypes.h>
 
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/defs.h"
@@ -410,11 +396,7 @@ int dump_eNB_l2_stats(char *buffer, int length)
 }
 
 #ifdef PROC
-#ifndef USER_MODE
-static int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
-#else
 int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
-#endif
 {
 
   int len = 0,fg,Overhead, Sign;
@@ -697,36 +679,4 @@ int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
   return len;
 }
 
-#ifndef USER_MODE
-static struct proc_dir_entry *proc_openair2_root;
-/*
- * Initialize the module and add the /proc file.
- */
-int add_openair2_stats()
-{
-  struct proc_dir_entry *pde;
-
-  proc_openair2_root = proc_mkdir("openair2",0);
-  // pde = proc_create_entry("lchan_stats", S_IFREG | S_IRUGO, proc_openair2_root);
-  pde = proc_create_data("lchan_stats", S_IFREG | S_IRUGO, proc_openair2_root, NULL,openair2_stats_read);
-
-  if (!pde) {
-    printk("[OPENAIR][ERROR] can't create proc entry !\n");
-  }
-
-  return 0;
-}
-/*
- * Unregister the file when the module is closed.
- */
-void remove_openair_stats()
-{
-
-  if (proc_openair2_root) {
-    printk("[OPENAIR][CLEANUP] Removing openair proc entry\n");
-    remove_proc_entry("lchan_stats", proc_openair2_root);
-
-  }
-}
-#endif
 #endif

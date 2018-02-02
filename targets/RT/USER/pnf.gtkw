@@ -1,0 +1,54 @@
+[*]
+[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
+[*] Tue Jul 25 20:26:12 2017
+[*]
+[dumpfile] "/tmp/openair_dump_eNB.vcd"
+[dumpfile_mtime] "Tue Jul 25 20:11:55 2017"
+[dumpfile_size] 19201475
+[savefile] "/home/papillon/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
+[timestart] 29023604000
+[size] 1236 578
+[pos] 309 0
+*-20.793451 29026062100 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 386
+[signals_width] 262
+[sst_expanded] 1
+[sst_vpaned_height] 146
+@28
+functions.trx_read
+functions.trx_write
+@24
+variables.trx_ts[63:0]
+variables.trx_tst[63:0]
+@25
+variables.frame_number_RX0_RU[63:0]
+variables.subframe_number_RX0_RU[63:0]
+@25
+variables.frame_number_TX0_RU[63:0]
+variables.subframe_number_TX0_RU[63:0]
+@24
+functions.phy_procedures_ru_feprx0
+functions.phy_procedures_ru_feprx1
+functions.phy_procedures_eNb_rx_uespec0
+functions.phy_procedures_eNb_tx0
+functions.eNB_thread_rxtx1
+functions.phy_enb_prach_rx
+functions.phy_enb_rs_tx
+functions.phy_enb_pdcch_tx
+functions.nfapi_subframe
+functions.generate_pcfich
+functions.generate_dci0
+functions.pdcch_scrambling
+functions.pdcch_modulation
+functions.pdcch_interleaving
+functions.pdcch_tx
+functions.generate_dlsch
+functions.generate_phich
+functions.udp_enb_task
+functions.phy_procedures_ru_feptx_ofdm0
+functions.phy_procedures_ru_feptx_ofdm1
+functions.phy_procedures_ru_feptx_prec0
+functions.phy_procedures_ru_feptx_prec1
+functions.phy_enb_prach_rx
+[pattern_trace] 1
+[pattern_trace] 0
