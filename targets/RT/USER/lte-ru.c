@@ -1134,14 +1134,15 @@ void do_ru_synch(RU_t *ru) {
   for (int i=0;i<ru->nb_rx;i++)
     rxp[i] = &ru->common.rxdata[i][0];
 
-  double temp_freq1 = ru->rfdevice.openair0_cfg->rx_freq[0];
+ /* double temp_freq1 = ru->rfdevice.openair0_cfg->rx_freq[0];
   double temp_freq2 = ru->rfdevice.openair0_cfg->tx_freq[0];
   for (i=0;i<4;i++) {
     ru->rfdevice.openair0_cfg->rx_freq[i] = ru->rfdevice.openair0_cfg->tx_freq[i];
     ru->rfdevice.openair0_cfg->tx_freq[i] = temp_freq1;
   }
   ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
-  
+  */
+
   LOG_I(PHY,"Entering synch routine\n");
   
   while ((ru->in_synch ==0)&&(!oai_exit)) {
@@ -1181,13 +1182,13 @@ void do_ru_synch(RU_t *ru) {
 				   rxp,
 				   ru->rx_offset,
 				   ru->nb_rx);
-  for (i=0;i<4;i++) {
+  /*for (i=0;i<4;i++) {
     ru->rfdevice.openair0_cfg->rx_freq[i] = temp_freq1;
     ru->rfdevice.openair0_cfg->tx_freq[i] = temp_freq2;
   }
 
   ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
-
+*/
   LOG_I(PHY,"Exiting synch routine\n");
 }
 
