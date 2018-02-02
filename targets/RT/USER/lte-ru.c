@@ -1838,6 +1838,7 @@ void *ru_thread_synch(void *arg) {
   uint32_t sync_corr[307200] __attribute__((aligned(32)));
   static int ru_thread_synch_status=0;
   int cnt=0;
+  RRU_CONFIG_msg_t rru_config_msg;
 
   thread_top_init("ru_thread_synch",0,5000000,10000000,10000000);
 
@@ -1895,6 +1896,13 @@ void *ru_thread_synch(void *arg) {
 	*/
 	ru->in_synch = 1;
 	ru->state    = RU_RUN;
+	// Send RRU_sync_ok
+	rru_config_msg.type = RRU_start;
+        rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
+
+        LOG_I(PHY,"Sending RRU_sync_ok to RAU\n", ru->idx);
+        AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
+
       } // symc_pos > 0
       else {
 	if (cnt>1000) {
