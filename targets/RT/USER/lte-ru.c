@@ -1201,7 +1201,7 @@ void wakeup_eNBs(RU_t *ru) {
   PHY_VARS_eNB *eNB=eNB_list[0];
   eNB_proc_t *proc = &eNB->proc;
 
-  LOG_I(PHY,"wakeup_eNBs (num %d) for RU %d\n",ru->num_eNB,ru->idx);
+  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d\n",ru->num_eNB,ru->idx);
 
   if (ru->num_eNB==1) {
     // call eNB function directly
@@ -1234,7 +1234,7 @@ void wakeup_eNBs(RU_t *ru) {
       pthread_mutex_unlock(&proc->mutex_RU);
     }
 
-    LOG_I(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
+    LOG_D(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
     ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
   }
   else {
@@ -1722,7 +1722,7 @@ static void* ru_thread( void* param ) {
 	      LOG_E(HW,"Could not start the RF device\n");
 	    else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
 	  }
-	  else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
+	  else LOG_D(PHY,"RU %d no rf device\n",ru->idx);
 
 
 	  // if an asnych_rxtx thread exists
