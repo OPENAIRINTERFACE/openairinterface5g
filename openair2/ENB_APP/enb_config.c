@@ -228,7 +228,7 @@ void RCconfig_RU(void) {
 	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF5_MOBIPASS;
 	}
 	RC.ru[j]->att_tx                         = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr); 
-	RC.ru[j]->att_rx                         = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr); 
+	RC.ru[j]->att_rx                         = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr); 
       }  /* strcmp(local_rf, "yes") != 0 */
 
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
