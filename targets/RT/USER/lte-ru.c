@@ -1897,7 +1897,7 @@ void *ru_thread_synch(void *arg) {
 	ru->in_synch = 1;
 	ru->state    = RU_RUN;
 	// Send RRU_sync_ok
-	rru_config_msg.type = RRU_start;
+	rru_config_msg.type = RRU_sync_ok;
         rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
 
         LOG_I(PHY,"Sending RRU_sync_ok to RAU\n", ru->idx);
