@@ -1557,8 +1557,10 @@ static void* ru_thread_control( void* param ) {
  					  
 					fill_rf_config(ru,ru->rf_config_file);
 					init_frame_parms(&ru->frame_parms,1);
+					ru->frame_parms.nb_antennas_rx = 1;
 					phy_init_RU(ru);
 					 
+					//if (ru->is_slave == 1) lte_sync_time_init(&ru->frame_parms);
 
 					ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
 
@@ -1653,6 +1655,19 @@ static void* ru_thread_control( void* param ) {
 
 				break;
 
+			case RRU_sync_ok: //RAU
+				if (ru->if_south == LOCAL_RF){
+                                        LOG_I(PHY,"Received RRU_config_ok msg...Ignoring\n");
+                                }else{
+					if (ru->is_slave == 1){
+						// Just change the state of the RRU to unblock ru_thread()
+						ru->state = RU_RUN;		
+					}else{
+						LOG_I(PHY,"Received RRU_sync_ok from a master RRU...Ignoring\n");
+					}	
+				}
+				break;
+
 			case RRU_stop: // RRU
 				if (ru->if_south == LOCAL_RF){
 					LOG_I(PHY,"Stop received from RAU\n");
@@ -1707,7 +1722,7 @@ static void* ru_thread( void* param ) {
 
   LOG_I(PHY,"Starting RU %d (%s,%s),slave:%d\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing], ru->is_slave);
 
-
+  
 	
   while (!oai_exit) {
   
