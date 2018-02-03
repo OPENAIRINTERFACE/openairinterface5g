@@ -698,7 +698,7 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		    dl_req->number_pdu++;
 		    dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 		    memset((void *) dl_config_pdu, 0,
-			   sizeof(nfapi_dl_config_request_p du_t));
+			   sizeof(nfapi_dl_config_request_pdu_t));
 		    dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
 		    dl_config_pdu->pdu_size                                                        = (uint8_t) (2 + sizeof(nfapi_dl_config_dlsch_pdu));
 		    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index                              = eNB->pdu_index[CC_id];

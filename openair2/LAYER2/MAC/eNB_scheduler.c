@@ -636,7 +636,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   pdcp_run(&ctxt);
 
 
-  rrc_rx_tx(&ctxt, 0, CC_id);
+  rrc_rx_tx(&ctxt, CC_id);
 
 #if defined(Rel10) || defined(Rel14)
 
@@ -681,7 +681,6 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   
   stop_meas(&RC.mac[module_idP]->eNB_scheduler);
   
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
-    (VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,
-     VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,
+					  VCD_FUNCTION_OUT);
 }

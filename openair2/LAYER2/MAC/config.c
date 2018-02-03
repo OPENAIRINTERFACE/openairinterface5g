@@ -270,12 +270,12 @@ void config_mib(int                 Mod_idP,
   LOG_I(MAC,
 	"%s() NFAPI_CONFIG_REQUEST(num_tlv:%u) DL_BW:%u UL_BW:%u Ncp %d,p_eNB %d,earfcn %d,band %d,phich_resource %u phich_duration %u phich_power_offset %u PSS %d SSS %d PCI %d"
 #ifdef Rel14
-
+	
 	" PBCH repetition %d"
 #endif  
 	"\n"
 	,__FUNCTION__
-`	,cfg->num_tlv
+	,cfg->num_tlv
 	,cfg->rf_config.dl_channel_bandwidth.value
 	,cfg->rf_config.ul_channel_bandwidth.value
 	,NcpP,p_eNBP

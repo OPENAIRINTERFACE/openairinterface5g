@@ -923,7 +923,8 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 		AssertFatal(reps > 2,
 			    "Have to handle programming of ACK when PDSCH repetitions is > 2\n");
 		ul_req = &mac->UL_req_tmp[CC_idP][ackNAK_absSF % 10];
-		ul_req_body = &ul_req->ul_config_request_body;l_config_pdu = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus];
+		ul_req_body = &ul_req->ul_config_request_body;
+		ul_config_pdu = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus];
 
 		ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE;
 		ul_config_pdu->pdu_size = (uint8_t) (2 + sizeof(nfapi_ul_config_uci_harq_pdu));
