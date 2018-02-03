@@ -983,8 +983,8 @@ schedule_ue_spec(module_id_t module_idP,
 
 		    if (rlc_status.bytes_in_buffer > 0) {	// There is DCCH to transmit
 			LOG_D(MAC,
-			      "[eNB %d] Frame %d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
-			      module_idP, frameP, CC_id,
+			      "[eNB %d] SFN/SF %d.%d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+			      module_idP, frameP, subframeP, CC_id,
 			      TBS - header_len_dcch);
 			sdu_lengths[0] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, TBS,	//not used
 							  (char *)
@@ -1469,7 +1469,10 @@ schedule_ue_spec(module_id_t module_idP,
 	    ue_sched_ctl->round[CC_id][harq_pid] = 0;
 	    dl_req->number_dci++;
 	    dl_req->number_pdu++;
+	    dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
 	    
+	    eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
+	    eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
 	    // Toggle NDI for next time
 	    LOG_D(MAC,"CC_id %d Frame %d, subframeP %d: Toggling Format1 NDI for UE %d (rnti %x/%d) oldNDI %d\n",
 		  CC_id, frameP,subframeP,UE_id,
