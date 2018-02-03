@@ -38,10 +38,6 @@
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 
-#ifndef USER_MODE
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-#endif
-
 #include "T.h"
 
 //#define DEBUG_PHICH 1

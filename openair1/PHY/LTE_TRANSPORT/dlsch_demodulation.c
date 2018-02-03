@@ -37,11 +37,7 @@
 #include "PHY/sse_intrin.h"
 #include "T.h"
 
-#ifndef USER_MODE
-#define NOCYGWIN_STATIC static
-#else
 #define NOCYGWIN_STATIC
-#endif
 
 /* dynamic shift for LLR computation for TM3/4
  * set as command line argument, see lte-softmodem.c
@@ -849,18 +845,20 @@ int rx_pdsch(PHY_VARS_UE *ue,
   pllr_symbol_cw1  = (int8_t*)pdsch_vars[eNB_id]->llr[1];
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
-
-  /*LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
-             proc->frame_rx, proc->subframe_rx,symbol,
+  /*
+  LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
+             frame, subframe,symbol,
              nb_rb,dlsch0_harq->Qm,
              pdsch_vars[eNB_id]->llr_length[symbol],
              pdsch_vars[eNB_id]->llr_offset[symbol],
              (int16_t*)pdsch_vars[eNB_id]->llr[0],
-             pllr_symbol);*/
-
+             pllr_symbol_cw0);
+  */
   switch (dlsch0_harq->Qm) {
   case 2 :
     if ((rx_type==rx_standard) || (codeword_TB1 == -1)) {
+
+
         dlsch_qpsk_llr(frame_parms,
                        pdsch_vars[eNB_id]->rxdataF_comp0,
                        (int16_t*)pllr_symbol_cw0,
@@ -6027,9 +6025,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 
 //==============================================================================================
 
-#ifdef USER_MODE
-
-
 void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,unsigned int *coded_bits_per_codeword,int round,  unsigned char harq_pid)
 {
   unsigned int nsymb = (ue->frame_parms.Ncp == 0) ? 14 : 12;
@@ -6119,7 +6114,6 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,unsigned int *c
 
   //  printf("log2_maxh = %d\n",ue->pdsch_vars[eNB_id]->log2_maxh);
 }
-#endif
 
 #ifdef DEBUG_DLSCH_DEMOD
 /*

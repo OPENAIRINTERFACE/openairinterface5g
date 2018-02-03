@@ -29,11 +29,7 @@
 
 #include <stdint.h>
 
-#ifndef NO_OPENAIR1
 #include "PHY/defs.h"
-#else
-#include "PHY/TOOLS/time_meas.h"
-#endif
 
 #define CRC24_A 0
 #define CRC24_B 1

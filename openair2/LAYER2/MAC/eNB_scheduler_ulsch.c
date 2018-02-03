@@ -614,7 +614,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 				     CCCH,
 				     (uint8_t *) payload_ptr,
 				     rx_lengths[i],
-				     ENB_FLAG_YES, enb_mod_idP, 0);
+				     0);
 
 
 		    if (num_ce > 0) {	// handle msg3 which is not RRCConnectionRequest
@@ -732,6 +732,8 @@ rx_sdu(const module_id_t enb_mod_idP,
 			    num_pdu_rx[rx_lcids[i]] += 1;
 			UE_list->eNB_UE_stats[CC_idP][UE_id].
 			    num_bytes_rx[rx_lcids[i]] += rx_lengths[i];
+                        //clear uplane_inactivity_timer
+	                UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
 		    } else {	/* rx_length[i] */
 			UE_list->eNB_UE_stats[CC_idP][UE_id].
 			    num_errors_rx += 1;
@@ -1190,8 +1192,8 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	    AssertFatal(round < 8, "round %d > 7 for UE %d/%x\n", round,
 			UE_id, rnti);
 	    LOG_D(MAC,
-		  "[eNB %d] frame %d subframe %d,Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d, N_RB_UL %d\n",
-		  module_idP, frameP, subframeP, harq_pid, UE_id, rnti,
+		  "[eNB %d] frame %d subframe %d (sched_frame %d, sched_subframe %d), Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d, N_RB_UL %d\n",
+		  module_idP, frameP, subframeP, sched_frame, sched_subframeP, harq_pid, UE_id, rnti,
 		  CC_id, aggregation, N_RB_UL);
 
 	    RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP *

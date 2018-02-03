@@ -32,10 +32,6 @@
 #ifndef __MAC_EXTERN_H__
 #define __MAC_EXTERN_H__
 
-
-#ifdef USER_MODE
-//#include "stdio.h"
-#endif				//USER_MODE
 #include "PHY/defs.h"
 #include "defs.h"
 
@@ -101,4 +97,4 @@ extern DCI2_5MHz_2A_TDD_t DLSCH_alloc_pdu1;
 extern DCI2_5MHz_2A_TDD_t DLSCH_alloc_pdu2;
 extern DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
 
-#endif				//DEF_H
+#endif //DEF_H

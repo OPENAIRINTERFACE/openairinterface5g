@@ -160,6 +160,8 @@ volatile int                    oai_exit = 0;
 //int32_t **rxdata;
 //int32_t **txdata;
 
+uint16_t sf_ahead=4;
+uint8_t nfapi_mode = 0;
 
 // Added for PHY abstraction
 extern node_list* ue_node_list;
@@ -377,7 +379,7 @@ int omv_write(int pfd, node_list* enb_node_list, node_list* ue_node_list, Data_F
       omv_data.geo[i].node_type = 0; //eNB
       enb_node_list = enb_node_list->next;
       omv_data.geo[i].Neighbors = 0;
-
+/*
       for (j = NB_RU; j < NB_UE_INST + NB_RU; j++) {
         if (is_UE_active (i, j - NB_RU) == 1) {
           omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors] = j;
@@ -387,6 +389,7 @@ int omv_write(int pfd, node_list* enb_node_list, node_list* ue_node_list, Data_F
 		"[RU %d][UE %d] is_UE_active(i,j) %d geo (x%d, y%d) num neighbors %d\n", i, j-NB_RU, is_UE_active(i,j-NB_RU), omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
         }
       }
+*/
     }
   }
 
@@ -413,7 +416,7 @@ int omv_write(int pfd, node_list* enb_node_list, node_list* ue_node_list, Data_F
 
       ue_node_list = ue_node_list->next;
       omv_data.geo[i].Neighbors = 0;
-
+/*
       for (j = 0; j < NB_RU; j++) {
         if (is_UE_active (j, i - NB_RU) == 1) {
           omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors] = j;
@@ -423,6 +426,7 @@ int omv_write(int pfd, node_list* enb_node_list, node_list* ue_node_list, Data_F
 		"[UE %d][RU %d] is_UE_active  %d geo (x%d, y%d) num neighbors %d\n", i-NB_RU, j, is_UE_active(j,i-NB_RU), omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
         }
       }
+*/
     }
   }
 
@@ -524,11 +528,6 @@ l2l1_task (void *args_p)
 	}
 	
       }
-      // UL scope at eNB 0
-      form_enb[UE_inst] = create_lte_phy_scope_enb();
-      sprintf (title, "LTE UL SCOPE UE %d to eNB %d", UE_inst, eNB_inst);
-      fl_show_form (form_enb[UE_inst]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-      
     }
   }
 
@@ -747,7 +746,7 @@ l2l1_task (void *args_p)
           int subframe_ru_mask_local = subframe_ru_mask;
           int subframe_UE_mask_local  = subframe_UE_mask;
           pthread_mutex_unlock(&subframe_mutex);
-          LOG_D(EMU,"Frame %d, Subframe %d: Checking masks %x,%x\n",frame,sf,subframe_ru_mask_local,subframe_UE_mask_local);
+          LOG_D(EMU,"Frame %d, Subframe %d, NB_RU %d, NB_UE %d: Checking masks %x,%x\n",frame,sf,NB_RU,NB_UE_INST,subframe_ru_mask_local,subframe_UE_mask_local);
           if ((subframe_ru_mask_local == ((1<<NB_RU)-1)) &&
               (subframe_UE_mask_local == ((1<<NB_UE_INST)-1)))
              all_done=1;
@@ -839,200 +838,6 @@ l2l1_task (void *args_p)
         log_set_instance_type (LOG_INSTANCE_UE);
 #endif
 
-
-	/*
-	clear_UE_transport_info (oai_emulation.info.nb_ue_local);
-          clear_UE_transport_info (oai_emulation.info.nb_ue_local);
-
-        for (UE_inst = oai_emulation.info.first_ue_local;
-             (UE_inst < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local));
-             UE_inst++) {
-          if (oai_emulation.info.cli_start_ue[UE_inst] != 0) {
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-
-#else
-
-            if (frame >= (UE_inst * 20)) // activate UE only after 20*UE_id frames so that different UEs turn on separately
-#endif
-            {
-              LOG_D(EMU,
-                    "PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
-                    UE_inst, frame % MAX_FRAME_NUMBER, slot, next_slot >> 1,
-                    last_slot >> 1);
-
-              if (PHY_vars_UE_g[UE_inst][0]->UE_mode[0]
-                  != NOT_SYNCHED) {
-                if (frame > 0) {
-                  PHY_vars_UE_g[UE_inst][0]->frame_rx = frame % MAX_FRAME_NUMBER;
-                  PHY_vars_UE_g[UE_inst][0]->slot_rx =  last_slot;
-                  PHY_vars_UE_g[UE_inst][0]->slot_tx = next_slot;
-
-                  if (next_slot > 1)
-                    PHY_vars_UE_g[UE_inst][0]->frame_tx = frame % MAX_FRAME_NUMBER;
-                  else
-                    PHY_vars_UE_g[UE_inst][0]->frame_tx = (frame + 1) % MAX_FRAME_NUMBER;
-#ifdef OPENAIR2
-                  //Application
-                  update_otg_UE (UE_inst, oai_emulation.info.time_ms);
-
-                  //Access layer
-		  //		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, ENB_FLAG_NO, NOT_A_RNTI, frame, next_slot>>1, 0);
-		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, 0, ENB_FLAG_NO, NOT_A_RNTI, frame % MAX_FRAME_NUMBER, next_slot);
-                  pdcp_run (&ctxt);
-#endif
-
-                  for (CC_id = 0; CC_id < MAX_NUM_CCs;
-                       CC_id++) {
-                    phy_procedures_UE_lte (
-                      PHY_vars_UE_g[UE_inst][CC_id],
-		      0, abstraction_flag,
-                      normal_txrx, no_relay,
-                      NULL);
-                  }
-
-                  ue_data[UE_inst]->tx_power_dBm =
-                    PHY_vars_UE_g[UE_inst][0]->tx_power_dBm;
-                }
-              } else {
-                if (abstraction_flag == 1) {
-                  LOG_E(EMU,
-                        "sync not supported in abstraction mode (UE%d,mode%d)\n",
-                        UE_inst,
-                        PHY_vars_UE_g[UE_inst][0]->UE_mode[0]);
-                  exit (-1);
-                }
-
-                if ((frame > 0)
-                    && (last_slot
-                        == (LTE_SLOTS_PER_FRAME
-                            - 2))) {
-                  initial_sync (PHY_vars_UE_g[UE_inst][0],
-                                normal_txrx);
-
-                }
-              }
-
-#ifdef PRINT_STATS
-
-              if(last_slot==2 && frame%10==0) {
-                if (UE_stats_th[UE_inst]) {
-                  fprintf(UE_stats_th[UE_inst],"%d %d\n",frame%MAX_FRAME_NUMBER, PHY_vars_UE_g[UE_inst][0]->bitrate[0]/1000);
-                }
-              }
-
-              if (UE_stats[UE_inst]) {
-                len = dump_ue_stats (PHY_vars_UE_g[UE_inst][0], stats_buffer, 0, normal_txrx, 0);
-                rewind (UE_stats[UE_inst]);
-                fwrite (stats_buffer, 1, len, UE_stats[UE_inst]);
-                fflush(UE_stats[UE_inst]);
-              }
-
-#endif
-            }
-          }
-        }
-
-#if defined(Rel10) || defined(Rel14)
-
-        for (RN_id=oai_emulation.info.first_rn_local;
-             RN_id<oai_emulation.info.first_rn_local+oai_emulation.info.nb_rn_local;
-             RN_id++) {
-          // UE id and eNB id of the RN
-          UE_inst= oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local + RN_id;// NB_UE_INST + RN_id
-          eNB_inst= oai_emulation.info.first_enb_local+oai_emulation.info.nb_enb_local + RN_id;// NB_eNB_INST + RN_id
-
-          // currently only works in FDD
-          if (oai_emulation.info.eMBMS_active_state == 4) {
-            r_type = multicast_relay;
-            //LOG_I(EMU,"Activating the multicast relaying\n");
-          } else {
-            LOG_E(EMU,"Not supported eMBMS option when relaying is enabled %d\n", r_type);
-            exit(-1);
-          }
-
-          PHY_vars_RN_g[RN_id]->frame = frame % MAX_FRAME_NUMBER;
-
-          if ( oai_emulation.info.frame_type == 0) {
-            // RN == UE
-            if (frame>0) {
-              if (PHY_vars_UE_g[UE_inst][0]->UE_mode[0] != NOT_SYNCHED) {
-                LOG_D(EMU,"[RN %d] PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
-                      RN_id, UE_inst, frame, slot, next_slot >> 1,last_slot>>1);
-                PHY_vars_UE_g[UE_inst][0]->frame_rx = frame % MAX_FRAME_NUMBER;
-                PHY_vars_UE_g[UE_inst][0]->slot_rx = last_slot;
-                PHY_vars_UE_g[UE_inst][0]->slot_tx = next_slot;
-
-                if (next_slot>1) PHY_vars_UE_g[UE_inst][0]->frame_tx = frame % MAX_FRAME_NUMBER;
-                else PHY_vars_UE_g[UE_inst][0]->frame_tx = (frame+1) % MAX_FRAME_NUMBER;
-
-                phy_procedures_UE_lte (PHY_vars_UE_g[UE_inst][0], 0, abstraction_flag,normal_txrx,
-                                       r_type, PHY_vars_RN_g[RN_id]);
-              } else if (last_slot == (LTE_SLOTS_PER_FRAME-2)) {
-                initial_sync(PHY_vars_UE_g[UE_inst][0],normal_txrx);
-              }
-            }
-
-        emu_transport (frame % MAX_FRAME_NUMBER, sf<<1, ((sf+4)%10)<<1, subframe_select(&PHY_vars_eNB_g[0][0]->frame_parms,sf),
-                       oai_emulation.info.frame_type[0], ethernet_flag);
-
-	start_meas (&dl_chan_stats);
-	
-	for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++)
-	  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-	    //#warning figure out what to do with UE frame_parms during initial_sync
-	    do_DL_sig (r_re0,
-		       r_im0,
-		       r_re,
-		       r_im,
-		       s_re,
-		       s_im,
-		       eNB2UE,
-		       enb_data,
-		       ue_data,
-		       PHY_vars_eNB_g[0][CC_id]->proc.proc_rxtx[sf&1].subframe_tx<<1,
-		       abstraction_flag,
-		       &PHY_vars_eNB_g[0][CC_id]->frame_parms,
-		       UE_inst, CC_id);
-	    do_DL_sig (r_re0,
-		       r_im0,
-		       r_re,
-		       r_im,n
-
-		       s_re,
-		       s_im,
-		       eNB2UE,
-		       enb_data,
-		       ue_data,
-		       (PHY_vars_eNB_g[0][CC_id]->proc.proc_rxtx[sf&1].subframe_tx<<1)+1,
-		       abstraction_flag,
-		       &PHY_vars_eNB_g[0][CC_id]->frame_parms,
-		       UE_inst, CC_id);
-	  }
-
-	stop_meas (&dl_chan_stats);
-        
-
-	start_meas (&ul_chan_stats);
-	
-	for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-	  //#warning figure out what to do with UE frame_parms during initial_sync
-	  do_UL_sig (r_re0, r_im0, r_re, r_im, s_re, s_im, UE2eNB,
-		     enb_data, ue_data,
-		     PHY_vars_UE_g[0][CC_id]->proc.proc_rxtx[sf&1].subframe_tx<<1,
-		     abstraction_flag,
-		     &PHY_vars_eNB_g[0][CC_id]->frame_parms,
-		     frame % MAX_FRAME_NUMBER, CC_id);
-	  do_UL_sig (r_re0, r_im0, r_re, r_im, s_re, s_im, UE2eNB,
-		     enb_data, ue_data,
-		     (PHY_vars_UE_g[0][CC_id]->proc.proc_rxtx[sf&1].subframe_tx<<1)+1,
-		     abstraction_flag,
-		     &PHY_vars_eNB_g[0][CC_id]->frame_parms,
-		     frame % MAX_FRAME_NUMBER, CC_id);
-	}
-	
-	stop_meas (&ul_chan_stats);
-
-	*/
 
 	if ((sf == 0) && ((frame % MAX_FRAME_NUMBER) == 0) && (abstraction_flag == 0)
 	    && (oai_emulation.info.n_frames == 1)) {
@@ -1237,8 +1042,21 @@ void wait_RUs() {
   printf("RUs are ready, let's go\n");
 }
 
-void init_UE(int,int,int);
+void init_UE(int,int,int,int);
 void init_RU(const char*);
+
+void set_UE_defaults(int nb_ue) {
+
+  for (int UE_id = 0;UE_id<nb_ue;UE_id++) {
+    for (int CC_id = 0;CC_id<MAX_NUM_CCs;CC_id++) {
+      for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
+	PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[i][0]->dciFormat      = 0;
+	PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[i][0]->agregationLevel      = 0xFF;
+      }
+      PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
+    }
+  }
+}
 
 
 static void print_current_directory(void)
@@ -1364,15 +1182,17 @@ main (int argc, char **argv)
 
 
 
-  if (create_tasks(0, 
-		   oai_emulation.info.nb_ue_local) < 0) 
+  if (create_tasks_ue(oai_emulation.info.nb_ue_local) < 0) 
       exit(-1); // need a softer mode
 
 
   printf("Waiting for RUs to get set up\n"); 
   wait_RUs();
 
-  init_UE(NB_UE_INST,0,0);
+  init_UE(NB_UE_INST,0,0,1);
+
+  set_UE_defaults(NB_UE_INST);
+
 
   init_ocm ();
   printf("Sending sync to all threads\n");
@@ -1493,6 +1313,8 @@ reset_opp_meas_oaisim (void)
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ulsch_turbo_encoding_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ulsch_interleaving_stats);
     reset_meas (&PHY_vars_UE_g[UE_id][0]->ulsch_multiplexing_stats);
+
+
     /*
      * L2 functions
      */
@@ -1513,6 +1335,7 @@ reset_opp_meas_oaisim (void)
     reset_meas (&UE_pdcp_stats[UE_id].pdcp_ip);
     reset_meas (&UE_pdcp_stats[UE_id].ip_pdcp);
 
+    
   }
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
@@ -1951,9 +1774,6 @@ oai_shutdown (void)
     }
   } //End of PHY abstraction changes
 
-#ifdef OPENAIR2
-  mac_top_cleanup ();
-#endif
 
   // stop OMG
   stop_mobility_generator (omg_param_list); //omg_param_list.mobility_type
@@ -2005,4 +1825,11 @@ get_OAI_emulation ()
   return &oai_emulation;
 }
 
+
+// dummy function declarations
+
+void *rrc_enb_task(void *args_p) {
+
+
+}
 

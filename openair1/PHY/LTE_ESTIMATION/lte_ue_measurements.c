@@ -38,7 +38,6 @@
 
 int16_t cond_num_threshold = 0;
 
-#ifdef USER_MODE
 void print_shorts(char *s,short *x)
 {
 
@@ -57,8 +56,6 @@ void print_ints(char *s,int *x)
         );
 
 }
-#endif
-
 
 int16_t get_PL(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {

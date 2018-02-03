@@ -416,6 +416,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   int offset = eNB->CC_id;//proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
+  
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
@@ -451,7 +452,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
   /* save old HARQ information needed for PHICH generation */
-  if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
+  if ((ul_subframe < 10)&&
+      (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is a potential UL subframe that will be scheduled here
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
       harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
       if (eNB->ulsch[i]) {
@@ -575,180 +577,6 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   
 }
 
-
-void prach_procedures(PHY_VARS_eNB *eNB,
-#ifdef Rel14
-		      int br_flag
-#endif
-		      ) {
-  uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4];
-  uint16_t i;
-  int frame,subframe;
-
-#ifdef Rel14
-  if (br_flag==1) {
-    subframe = eNB->proc.subframe_prach_br;
-    frame = eNB->proc.frame_prach_br;
-    pthread_mutex_lock(&eNB->UL_INFO_mutex);
-    eNB->UL_INFO.rach_ind_br.rach_indication_body.number_of_preambles=0;
-    pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-  }
-  else
-#endif
-    {
-      pthread_mutex_lock(&eNB->UL_INFO_mutex);
-      eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles=0;
-      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-      subframe = eNB->proc.subframe_prach;
-      frame = eNB->proc.frame_prach;
-    }
-  RU_t *ru;
-  int aa=0;
-  int ru_aa;
-
- 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,1);
-
-
-
-  for (i=0;i<eNB->num_RU;i++) {
-    ru=eNB->RU_list[i];
-    for (ru_aa=0,aa=0;ru_aa<ru->nb_rx;ru_aa++,aa++) {
-      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
-#ifdef Rel14
-      int ce_level;
-
-      if (br_flag==1)
-	for (ce_level=0;ce_level<4;ce_level++) eNB->prach_vars_br.rxsigF[ce_level][aa] = eNB->RU_list[i]->prach_rxsigF_br[ce_level][ru_aa];
-#endif
-    }
-  }
-
-  rx_prach(eNB,
-	   eNB->RU_list[0],
-	   &max_preamble[0],
-	   &max_preamble_energy[0],
-	   &max_preamble_delay[0],
-	   frame,
-	   0
-#ifdef Rel14
-	   ,br_flag
-#endif
-	   );
-
-  //#ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : Most likely preamble %d, energy %d dB delay %d\n",
-        frame,subframe,
-        max_preamble[0],
-        max_preamble_energy[0]/10,
-        max_preamble_delay[0]);
-  //q#endif
-
-#ifdef Rel14
-  if (br_flag==1) {
-
-    int prach_mask;
-      
-    prach_mask = is_prach_subframe(&eNB->frame_parms,eNB->proc.frame_prach_br,eNB->proc.subframe_prach_br);
-    
-    eNB->UL_INFO.rach_ind_br.rach_indication_body.preamble_list                              = eNB->preamble_list_br;
-    int ind=0;
-    int ce_level=0;
-    /* Save for later, it doesn't work    
-    for (int ind=0,ce_level=0;ce_level<4;ce_level++) {
-      
-      if ((eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[ce_level]==1)&&
-	  (prach_mask&(1<<(1+ce_level)) > 0) && // prach is active and CE level has finished its repetitions
-	  (eNB->prach_vars_br.repetition_number[ce_level]==
-	   eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[ce_level])) {
-    */ 
-    if (eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[0]==1){ 
-      if ((eNB->prach_energy_counter == 100) && 
-          (max_preamble_energy[0] > eNB->measurements.prach_I0 + 100)) {
-	eNB->UL_INFO.rach_ind_br.rach_indication_body.number_of_preambles++;
-	
-	eNB->preamble_list_br[ind].preamble_rel8.timing_advance        = max_preamble_delay[ind];//
-	eNB->preamble_list_br[ind].preamble_rel8.preamble              = max_preamble[ind];
-	// note: fid is implicitly 0 here, this is the rule for eMTC RA-RNTI from 36.321, Section 5.1.4
-	eNB->preamble_list_br[ind].preamble_rel8.rnti                  = 1+subframe+(eNB->prach_vars_br.first_frame[ce_level]%40);  
-	eNB->preamble_list_br[ind].instance_length                     = 0; //don't know exactly what this is
-	eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type   = 1+ce_level;  // CE Level
-	LOG_D(PHY,"Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
-	      ind,
-	      ce_level,
-	      prach_mask,
-	      eNB->preamble_list_br[ind].preamble_rel8.timing_advance,
-	      eNB->preamble_list_br[ind].preamble_rel8.preamble,
-	      eNB->preamble_list_br[ind].preamble_rel8.rnti,
-	      eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type);
-      }
-      /*
-	ind++;
-      }
-      } */// ce_level
-    }
-  }
-  else
-#endif
-
-    {
-      if ((eNB->prach_energy_counter == 100) && 
-          (max_preamble_energy[0] > eNB->measurements.prach_I0+100)) {
-
-	LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
-	      eNB->Mod_id,
-	      eNB->CC_id,
-	      frame,
-	      subframe,
-	      max_preamble[0],
-	      max_preamble_energy[0]/10,
-	      max_preamble_energy[0]%10,
-	      max_preamble_delay[0]);
-	
-	    T(T_ENB_PHY_INITIATE_RA_PROCEDURE, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
-	      T_INT(max_preamble[0]), T_INT(max_preamble_energy[0]), T_INT(max_preamble_delay[0]));
-	    
-	    pthread_mutex_lock(&eNB->UL_INFO_mutex);
-	    
-	    eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles  = 1;
-	    eNB->UL_INFO.rach_ind.rach_indication_body.preamble_list        = &eNB->preamble_list[0];
-	    eNB->UL_INFO.rach_ind.rach_indication_body.tl.tag               = NFAPI_RACH_INDICATION_BODY_TAG;
-            eNB->UL_INFO.rach_ind.header.message_id                         = NFAPI_RACH_INDICATION;
-            eNB->UL_INFO.rach_ind.sfn_sf                                    = frame<<4 | subframe;
-	    
-	    eNB->preamble_list[0].preamble_rel8.tl.tag                = NFAPI_PREAMBLE_REL8_TAG;
-	    eNB->preamble_list[0].preamble_rel8.timing_advance        = max_preamble_delay[0];
-	    eNB->preamble_list[0].preamble_rel8.preamble              = max_preamble[0];
-	    eNB->preamble_list[0].preamble_rel8.rnti                  = 1+subframe;  // note: fid is implicitly 0 here
-	    eNB->preamble_list[0].preamble_rel13.rach_resource_type   = 0;
-	    eNB->preamble_list[0].instance_length                     = 0; //don't know exactly what this is
-	    
-            if (nfapi_mode == 1) {  // If NFAPI PNF then we need to send the message to the VNF
-
-              LOG_D(PHY,"Filling NFAPI indication for RACH : SFN_SF:%d TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
-                  NFAPI_SFNSF2DEC(eNB->UL_INFO.rach_ind.sfn_sf),
-                  eNB->preamble_list[0].preamble_rel8.timing_advance,
-                  eNB->preamble_list[0].preamble_rel8.preamble,
-                  eNB->preamble_list[0].preamble_rel8.rnti,
-                  eNB->preamble_list[0].preamble_rel13.rach_resource_type);	    
-
-              oai_nfapi_rach_ind(&eNB->UL_INFO.rach_ind);
-
-              eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles = 0;
-            }
-
-	    pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-      
-      } // max_preamble_energy > prach_I0 + 100 
-      else {
-         eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0*900)>>10) + ((max_preamble_energy[0]*124)>>10); 
-         if (frame==0) LOG_I(PHY,"prach_I0 = %d.%d dB\n",eNB->measurements.prach_I0/10,eNB->measurements.prach_I0%10);
-         if (eNB->prach_energy_counter < 100) eNB->prach_energy_counter++;
-      }
-    } // else br_flag
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,0);
-}
 
 void srs_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
@@ -887,10 +715,10 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	if (uci->type == SR) {
 	  if (SR_payload == 1) {
 	    fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
-	    return;
+        continue;
 	  }
 	  else {
-	    return;
+        continue;
 	  }
 	}
       case HARQ:
@@ -1433,6 +1261,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      ulsch->Mlimit,
 	      ulsch_harq->o_ACK[0],
 	      ulsch_harq->o_ACK[1]);
+
         if (ulsch_harq->round >= 3)  {
            ulsch_harq->status  = SCH_IDLE;
            ulsch_harq->handled = 0;
@@ -2072,7 +1901,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
                           eNB->first_run_I0_measurements);
 
   int min_I0=1000,max_I0=0;
-  if ((frame==0) && (subframe==6)) { 
+  if ((frame==0) && (subframe==4)) { 
     for (int i=0;i<eNB->frame_parms.N_RB_UL;i++) {
       if (i==(eNB->frame_parms.N_RB_UL>>1) - 1) i+=2;
  

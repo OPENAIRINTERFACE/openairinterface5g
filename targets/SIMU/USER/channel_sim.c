@@ -60,7 +60,7 @@
 #include "oaisim.h"
 
 #define RF
-#define DEBUG_SIM
+//#define DEBUG_SIM
 
 int number_rb_ul;
 int first_rbUL ;
@@ -83,8 +83,8 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 	       node_desc_t *enb_data[NUMBER_OF_RU_MAX],
 	       node_desc_t *ue_data[NUMBER_OF_UE_MAX],
 	       uint16_t subframe,
-	       uint16_t offset,
-	       uint16_t length,
+	       uint32_t offset,
+	       uint32_t length,
 	       uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *ue_frame_parms,
 	       uint8_t UE_id,
 	       int CC_id)
@@ -244,22 +244,54 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
       frame_parms = &RC.ru[ru_id]->frame_parms;
 
       sf_offset = (subframe*frame_parms->samples_per_tti) + offset;
-      LOG_D(EMU,"TXPATH: RU %d : DL_sig reading TX for subframe %d (sf_offset %d, length %d) from %p\n",ru_id,subframe,sf_offset,length,txdata[0]+sf_offset); 
+      LOG_D(EMU,">>>>>>>>>>>>>>>>>TXPATH: RU %d : DL_sig reading TX for subframe %d (sf_offset %d, length %d) from %p\n",ru_id,subframe,sf_offset,length,txdata[0]+sf_offset); 
       int length_meas = frame_parms->ofdm_symbol_size;
-      tx_pwr = dac_fixed_gain(s_re,
-                              s_im,
-                              txdata,
-                              sf_offset,
-                              nb_antennas_tx,
-                              length,
-                              sf_offset,
-                              length_meas,
-                              14,
-                              frame_parms->pdsch_config_common.referenceSignalPower, // dBm/RE
-			      0,
-			      &ru_amp[ru_id],
-                              frame_parms->N_RB_DL*12);
+      if (sf_offset+length <= frame_parms->samples_per_tti*10) {
 
+	tx_pwr = dac_fixed_gain(s_re,
+				s_im,
+				txdata,
+				sf_offset,
+				nb_antennas_tx,
+				length,
+				sf_offset,
+				length_meas,
+				14,
+				frame_parms->pdsch_config_common.referenceSignalPower, // dBm/RE
+				0,
+				&ru_amp[ru_id],
+				frame_parms->N_RB_DL*12);
+
+      }
+      else {
+	tx_pwr = dac_fixed_gain(s_re,
+				s_im,
+				txdata,
+				sf_offset,
+				nb_antennas_tx,
+				(frame_parms->samples_per_tti*10)-sf_offset,
+				sf_offset,
+				length_meas,
+				14,
+				frame_parms->pdsch_config_common.referenceSignalPower, // dBm/RE
+				0,
+				&ru_amp[ru_id],
+				frame_parms->N_RB_DL*12);
+
+	tx_pwr = dac_fixed_gain(s_re,
+				s_im,
+				txdata,
+				sf_offset,
+				nb_antennas_tx,
+				length+sf_offset-(frame_parms->samples_per_tti*10),
+				sf_offset,
+				length_meas,
+				14,
+				frame_parms->pdsch_config_common.referenceSignalPower, // dBm/RE
+				0,
+				&ru_amp[ru_id],
+				frame_parms->N_RB_DL*12);
+      }
 #ifdef DEBUG_SIM
       LOG_D(PHY,"[SIM][DL] subframe %d: txp (time) %d dB\n",
 	    subframe,dB_fixed(signal_energy(&txdata[0][sf_offset],length_meas)));
@@ -403,9 +435,6 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 {
 
   int32_t **txdata,**rxdata;
-#ifdef PHY_ABSTRACTION_UL
-  int32_t att_eNB_id=-1;
-#endif
   uint8_t UE_id=0;
 
   uint8_t nb_antennas_rx = UE2RU[0][0][CC_id]->nb_rx; // number of rx antennas at eNB
@@ -418,14 +447,6 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 
   uint8_t hold_channel=0;
 
-#ifdef PHY_ABSTRACTION_UL
-  double min_path_loss=-200;
-  uint16_t ul_nb_rb=0 ;
-  uint16_t ul_fr_rb=0;
-  int ulnbrb2 ;
-  int ulfrrb2 ;
-  uint8_t harq_pid;
-#endif
   double s_re0[30720];
   double s_re1[30720];
   double *s_re[2];
@@ -450,38 +471,6 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
   r_im0[1] = r_im01;
   
   if (abstraction_flag!=0)  {
-#ifdef PHY_ABSTRACTION_UL
-    // wire this to 0 until we figure this out
-    int eNB_id=0;
-
-    for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-      if (!hold_channel) {
-	random_channel(UE2RU[UE_id][eNB_id][CC_id],abstraction_flag);
-	freq_channel(UE2RU[UE_id][eNB_id][CC_id], frame_parms->N_RB_UL,frame_parms->N_RB_UL*12+1);
-	
-	// REceived power at the eNB
-	rx_pwr = signal_energy_fp2(UE2RU[UE_id][eNB_id][CC_id]->ch[0],
-				   UE2RU[UE_id][eNB_id][CC_id]->channel_length)*UE2RU[UE_id][att_eNB_id][CC_id]->channel_length; // calculate the rx power at the eNB
-      }
-      
-      //  write_output("SINRch.m","SINRch",PHY_vars_eNB_g[att_eNB_id]->sinr_dB_eNB,frame_parms->N_RB_UL*12+1,1,1);
-      if(subframe>1 && subframe <5) {
-	harq_pid = subframe2harq_pid(frame_parms,frame,subframe);
-	ul_nb_rb = RC.eNB[att_eNB_id][CC_id].ulsch_eNB[(uint8_t)UE_id]->harq_processes[harq_pid]->nb_rb;
-	ul_fr_rb = RC.eNB[att_eNB_id][CC_id].ulsch_eNB[(uint8_t)UE_id]->harq_processes[harq_pid]->first_rb;
-      }
-      
-      if(ul_nb_rb>1 && (ul_fr_rb < 25 && ul_fr_rb > -1)) {
-	number_rb_ul = ul_nb_rb;
-	first_rbUL = ul_fr_rb;
-	init_snr_up(UE2RU[UE_id][att_eNB_id][CC_id],enb_data[att_eNB_id], ue_data[UE_id],PHY_vars_eNB_g[att_eNB_id][CC_id]->sinr_dB,&PHY_vars_UE_g[att_eNB_id][CC_id]->N0,ul_nb_rb,ul_fr_rb);
-	
-      }
-    } //UE_id
-
-#else
-
-#endif
   } else { //without abstraction
 
     pthread_mutex_lock(&UE_output_mutex[ru_id]);
@@ -503,7 +492,7 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
       if (((double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe] +
 	   UE2RU[UE_id][ru_id][CC_id]->path_loss_dB) <= -125.0) {
 	// don't simulate a UE that is too weak
-	LOG_D(OCM,"[SIM][UL] UE %d tx_pwr %d dBm (num_RE %d) for subframe %d (sf_offset %d)\n",
+	LOG_D(OCM,"[SIM][UL] ULPOWERS UE %d tx_pwr %d dBm (num_RE %d) for subframe %d (sf_offset %d)\n",
 	      UE_id,
 	      PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe],
 	      PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe],
@@ -522,7 +511,7 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 				1,
 				NULL,
 				PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe]);  // This make the previous argument the total power
-	LOG_D(OCM,"[SIM][UL] UE %d tx_pwr %f dBm (target %d dBm, num_RE %d) for subframe %d (sf_offset %d)\n",
+	LOG_D(OCM,"[SIM][UL] ULPOWERS UE %d tx_pwr %f dBm (target %d dBm, num_RE %d) for subframe %d (sf_offset %d)\n",
 	      UE_id,
 	      10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe]),
 	      PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe],
@@ -582,11 +571,11 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 		 1e3/UE2RU[0][ru_id][CC_id]->sampling_rate,  // sampling time (ns)
 		 (double)RC.ru[ru_id]->max_rxgain-(double)RC.ru[ru_id]->att_rx - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
     
-#ifdef DEBUG_SIM
+    //#ifdef DEBUG_SIM
     rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,frame_parms->samples_per_tti,0);//*(double)frame_parms->ofdm_symbol_size/(12.0*frame_parms->N_RB_DL;
     LOG_D(OCM,"[SIM][UL] rx_pwr (ADC in) %f dB for subframe %d (rx_gain %f)\n",10*log10(rx_pwr),subframe,
 	  (double)RC.ru[ru_id]->max_rxgain-(double)RC.ru[ru_id]->att_rx);
-#endif
+    //#endif
     
     rxdata = RC.ru[ru_id]->common.rxdata;
     sf_offset = subframe*frame_parms->samples_per_tti;

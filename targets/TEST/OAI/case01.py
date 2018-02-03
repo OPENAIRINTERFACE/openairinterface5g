@@ -246,7 +246,7 @@ def execute(oai, user, pw, host, logfile,logdir,debug,timeout):
         log.start()
         test = '14'
         name = 'Compile oai.rel8.itti.ral.make' 
-        conf = 'make DISABLE_XER_PRINT=1 LINK_ENB_PDCP_TO_IP_DRIVER=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 USER_MODE=1 OPENAIR2=1 ENABLE_RAL=1 MIH_C_MEDIEVAL_EXTENSIONS=1 RLC_STOP_ON_LOST_PDU=1 Rel8=1'
+        conf = 'make DISABLE_XER_PRINT=1 LINK_ENB_PDCP_TO_IP_DRIVER=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 OPENAIR2=1 ENABLE_RAL=1 MIH_C_MEDIEVAL_EXTENSIONS=1 RLC_STOP_ON_LOST_PDU=1 Rel8=1'
         trace = logdir + '/log_' + case + test + '.txt;'
         tee = ' 2>&1 | tee ' + trace
         diag = 'check the compilation errors for ITTI Rel8'
@@ -254,7 +254,7 @@ def execute(oai, user, pw, host, logfile,logdir,debug,timeout):
         oai.send('make cleanall;')
         oai.send('make cleanasn1;')
         oai.send('rm -f ./oaisim.rel8.itti.ral.'+host)
-        oai.send_expect_false('make DISABLE_XER_PRINT=1 LINK_ENB_PDCP_TO_IP_DRIVER=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 USER_MODE=1 OPENAIR2=1 ENABLE_RAL=1 MIH_C_MEDIEVAL_EXTENSIONS=1 RLC_STOP_ON_LOST_PDU=1 Rel8=1 -j4' + tee, makerr1,  timeout)
+        oai.send_expect_false('make DISABLE_XER_PRINT=1 LINK_ENB_PDCP_TO_IP_DRIVER=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 OPENAIR2=1 ENABLE_RAL=1 MIH_C_MEDIEVAL_EXTENSIONS=1 RLC_STOP_ON_LOST_PDU=1 Rel8=1 -j4' + tee, makerr1,  timeout)
         oai.send('cp ./oaisim ./oaisim.rel8.itti.ral.'+host)
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile,trace)
@@ -265,7 +265,7 @@ def execute(oai, user, pw, host, logfile,logdir,debug,timeout):
         log.start()
         test = '15'
         name = 'Compile oai.rel10.itti.ral.make' 
-        conf = 'make DISABLE_XER_PRINT=1 LINK_ENB_PDCP_TO_IP_DRIVER=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 USER_MODE=1 OPENAIR2=1 ENABLE_RAL=1 MIH_C_MEDIEVAL_EXTENSIONS=1 RLC_STOP_ON_LOST_PDU=1 Rel10=1'
+        conf = 'make DISABLE_XER_PRINT=1 LINK_ENB_PDCP_TO_IP_DRIVER=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 OPENAIR2=1 ENABLE_RAL=1 MIH_C_MEDIEVAL_EXTENSIONS=1 RLC_STOP_ON_LOST_PDU=1 Rel10=1'
         trace = logdir + '/log_' + case + test + '.txt;'
         tee = ' 2>&1 | tee ' + trace
         diag = 'check the compilation errors for ITTI Rel10'
@@ -273,7 +273,7 @@ def execute(oai, user, pw, host, logfile,logdir,debug,timeout):
         oai.send('make cleanall;')
         oai.send('make cleanasn1;')
         oai.send('rm -f ./oaisim.rel10.itti.ral.'+host)
-        oai.send_expect_false('make DISABLE_XER_PRINT=1 LINK_ENB_PDCP_TO_IP_DRIVER=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 USER_MODE=1 OPENAIR2=1 ENABLE_RAL=1 MIH_C_MEDIEVAL_EXTENSIONS=1 RLC_STOP_ON_LOST_PDU=1 Rel10=1 -j4' + tee, makerr1,  timeout)
+        oai.send_expect_false('make DISABLE_XER_PRINT=1 LINK_ENB_PDCP_TO_IP_DRIVER=1 OAI_NW_DRIVER_TYPE_ETHERNET=1 ENABLE_ITTI=1 OPENAIR2=1 ENABLE_RAL=1 MIH_C_MEDIEVAL_EXTENSIONS=1 RLC_STOP_ON_LOST_PDU=1 Rel10=1 -j4' + tee, makerr1,  timeout)
         oai.send('cp ./oaisim ./oaisim.rel10.itti.ral.'+host)
     except log.err, e:
         log.fail(case, test, name, conf, e.value, diag, logfile,trace)

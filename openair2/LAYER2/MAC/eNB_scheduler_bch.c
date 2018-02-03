@@ -197,7 +197,7 @@ schedule_SIB1_BR(module_id_t module_idP,
 	n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
 
 
-	bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SIB1_BR, 1, &cc->BCCH_BR_pdu[0].payload[0], 1, module_idP, 0);	// not used in this case
+	bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SIB1_BR, 1, &cc->BCCH_BR_pdu[0].payload[0], 0);	// not used in this case
 
 	AssertFatal(cc->mib->message.schedulingInfoSIB1_BR_r13 < 19,
 		    "schedulingInfoSIB1_BR_r13 %d > 18\n",
@@ -424,7 +424,7 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
 		if ((sf_mod_period < si_WindowLength_BR_r13)
 		    && ((frameP & (((1 << si_RepetitionPattern_r13) - 1))) == 0)) {	// this SIB is to be scheduled
 
-		    bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SI_BR + i, 1, &cc->BCCH_BR_pdu[i + 1].payload[0], 1, module_idP, 0);	// not used in this case
+		    bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SI_BR + i, 1, &cc->BCCH_BR_pdu[i + 1].payload[0], 0);	// not used in this case
 
 		    AssertFatal(bcch_sdu_length > 0,
 				"RRC returned 0 bytes for SI-BR %d\n", i);
@@ -606,7 +606,7 @@ schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	dl_req = &dl_config_request->dl_config_request_body;
 	cc = &eNB->common_channels[CC_id];
 
-	mib_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0], 1, module_idP, 0);	// not used in this case
+	mib_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0], 0);	// not used in this case
 
 	LOG_D(MAC, "Frame %d, subframe %d: BCH PDU length %d\n", frameP, subframeP, mib_sdu_length);
 
@@ -692,7 +692,7 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	    dl_req = &eNB->DL_req[CC_id].dl_config_request_body;
 
 
-	    bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH, 1, &cc->BCCH_pdu.payload[0], 1, module_idP, 0);	// not used in this case
+	    bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH, 1, &cc->BCCH_pdu.payload[0], 0);	// not used in this case
 
 	    if (bcch_sdu_length > 0) {
 		LOG_D(MAC, "[eNB %d] Frame %d : BCCH->DLSCH CC_id %d, Received %d bytes \n", module_idP, frameP, CC_id, bcch_sdu_length);

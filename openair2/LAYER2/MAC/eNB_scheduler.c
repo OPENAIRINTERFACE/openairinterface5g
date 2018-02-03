@@ -74,23 +74,25 @@ uint16_t pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 void
 schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
-  eNB_MAC_INST                         *eNB     = RC.mac[module_idP];
-  UE_list_t                            *UE_list = &eNB->UE_list;
-  nfapi_ul_config_request_body_t       *ul_req;
-  int                                  CC_id, UE_id;
-  COMMON_channels_t                    *cc      = RC.mac[module_idP]->common_channels;
-  SoundingRS_UL_ConfigCommon_t         *soundingRS_UL_ConfigCommon;
-  struct SoundingRS_UL_ConfigDedicated *soundingRS_UL_ConfigDedicated;
-  uint8_t                              TSFC;
-  uint16_t                             deltaTSFC;		// bitmap
-  uint8_t                              srs_SubframeConfig;
 
+
+  eNB_MAC_INST *eNB = RC.mac[module_idP];
+  UE_list_t *UE_list = &eNB->UE_list;
+  nfapi_ul_config_request_body_t *ul_req;
+  int CC_id, UE_id;
+  COMMON_channels_t *cc = RC.mac[module_idP]->common_channels;
+  SoundingRS_UL_ConfigCommon_t *soundingRS_UL_ConfigCommon;
+  struct SoundingRS_UL_ConfigDedicated *soundingRS_UL_ConfigDedicated;
+  uint8_t TSFC;
+  uint16_t deltaTSFC;		// bitmap
+  uint8_t srs_SubframeConfig;
+  
   // table for TSFC (Period) and deltaSFC (offset)
   const uint16_t deltaTSFCTabType1[15][2] = { {1, 1}, {1, 2}, {2, 2}, {1, 5}, {2, 5}, {4, 5}, {8, 5}, {3, 5}, {12, 5}, {1, 10}, {2, 10}, {4, 10}, {8, 10}, {351, 10}, {383, 10} };	// Table 5.5.3.3-2 3GPP 36.211 FDD
   const uint16_t deltaTSFCTabType2[14][2] = { {2, 5}, {6, 5}, {10, 5}, {18, 5}, {14, 5}, {22, 5}, {26, 5}, {30, 5}, {70, 10}, {74, 10}, {194, 10}, {326, 10}, {586, 10}, {210, 10} };	// Table 5.5.3.3-2 3GPP 36.211 TDD
-
+  
   uint16_t srsPeriodicity, srsOffset;
-
+  
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     soundingRS_UL_ConfigCommon = &cc[CC_id].radioResourceConfigCommon->soundingRS_UL_ConfigCommon;
     // check if SRS is enabled in this frame/subframe
@@ -98,26 +100,27 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       srs_SubframeConfig = soundingRS_UL_ConfigCommon->choice.setup.srs_SubframeConfig;
       if (cc[CC_id].tdd_Config == NULL) {	// FDD
 	deltaTSFC = deltaTSFCTabType1[srs_SubframeConfig][0];
-	TSFC      = deltaTSFCTabType1[srs_SubframeConfig][1];
+	TSFC = deltaTSFCTabType1[srs_SubframeConfig][1];
       } else {		// TDD
 	deltaTSFC = deltaTSFCTabType2[srs_SubframeConfig][0];
-	TSFC      = deltaTSFCTabType2[srs_SubframeConfig][1];
+	TSFC = deltaTSFCTabType2[srs_SubframeConfig][1];
       }
       // Sounding reference signal subframes are the subframes satisfying ns/2 mod TSFC (- deltaTSFC
       uint16_t tmp = (subframeP % TSFC);
-
+      
       if ((1 << tmp) & deltaTSFC) {
 	// This is an SRS subframe, loop over UEs
 	for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-	  if (RC.mac[module_idP]->UE_list.active[UE_id] != TRUE) continue;
+	  if (RC.mac[module_idP]->UE_list.active[UE_id] != TRUE)
+	    continue;
 	  ul_req = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
 	  // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
 	  if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
-
+	  
 	  AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated != NULL,
 		      "physicalConfigDedicated is null for UE %d\n",
 		      UE_id);
-
+	  
 	  if ((soundingRS_UL_ConfigDedicated = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated) != NULL) {
 	    if (soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
 	      get_srs_pos(&cc[CC_id],
@@ -127,34 +130,31 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	      if (((10 * frameP + subframeP) % srsPeriodicity) == srsOffset) {
 		// Program SRS
 		ul_req->srs_present = 1;
-		nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
-		memset((void *) ul_config_pdu, 0,
-		       sizeof
-		       (nfapi_ul_config_request_pdu_t));
-		ul_config_pdu->pdu_type                                             = NFAPI_UL_CONFIG_SRS_PDU_TYPE;
-		ul_config_pdu->pdu_size                                             = 2 + (uint8_t) (2 + sizeof(nfapi_ul_config_srs_pdu));
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.tl.tag                          = NFAPI_UL_CONFIG_REQUEST_SRS_PDU_REL8_TAG;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.size                            = (uint8_t)sizeof(nfapi_ul_config_srs_pdu);;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.rnti                            = UE_list->UE_template[CC_id][UE_id].rnti;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.srs_bandwidth                   = soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.frequency_domain_position       = soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.srs_hopping_bandwidth           = soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth;;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.transmission_comb               = soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.i_srs                           = soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.sounding_reference_cyclic_shift = soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;
-		//              ul_config_pdu->srs_pdu.srs_pdu_rel10.antenna_port                   = ;//
+		nfapi_ul_config_request_pdu_t * ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
+		memset((void *) ul_config_pdu, 0, sizeof(nfapi_ul_config_request_pdu_t));
+		ul_config_pdu->pdu_type =  NFAPI_UL_CONFIG_SRS_PDU_TYPE;
+		ul_config_pdu->pdu_size =  2 + (uint8_t) (2 + sizeof(nfapi_ul_config_srs_pdu));
+		ul_config_pdu->srs_pdu.srs_pdu_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_SRS_PDU_REL8_TAG;
+		ul_config_pdu->srs_pdu.srs_pdu_rel8.size = (uint8_t)sizeof(nfapi_ul_config_srs_pdu);
+		ul_config_pdu->srs_pdu.srs_pdu_rel8.rnti = UE_list->UE_template[CC_id][UE_id].rnti;
+		ul_config_pdu->srs_pdu.srs_pdu_rel8.srs_bandwidth = soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth;
+		ul_config_pdu->srs_pdu.srs_pdu_rel8.frequency_domain_position = soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;
+		ul_config_pdu->srs_pdu.srs_pdu_rel8.srs_hopping_bandwidth = soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth;;
+		ul_config_pdu->srs_pdu.srs_pdu_rel8.transmission_comb = soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb;
+		ul_config_pdu->srs_pdu.srs_pdu_rel8.i_srs = soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex;
+		ul_config_pdu->srs_pdu.srs_pdu_rel8.sounding_reference_cyclic_shift = soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;		//              ul_config_pdu->srs_pdu.srs_pdu_rel10.antenna_port                   = ;//
 		//              ul_config_pdu->srs_pdu.srs_pdu_rel13.number_of_combs                = ;//
-		RC.mac[module_idP]->UL_req[CC_id].sfn_sf                            = (frameP << 4) + subframeP;
-		RC.mac[module_idP]->UL_req[CC_id].header.message_id                 = NFAPI_UL_CONFIG_REQUEST;
+		RC.mac[module_idP]->UL_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
+		RC.mac[module_idP]->UL_req[CC_id].header.message_id = NFAPI_UL_CONFIG_REQUEST;
 		ul_req->number_of_pdus++;
 	      }	// if (((10*frameP+subframeP) % srsPeriodicity) == srsOffset)
 	    }	// if (soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup)
-	  }	// if ((soundingRS_UL_ConfigDedicated = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated)!=NULL)
-	}	// for (UE_id ...
-      }		// if((1<<tmp) & deltaTSFC)
-
-    }	        // SRS config
-  }             // for CC_id
+	  }		// if ((soundingRS_UL_ConfigDedicated = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated)!=NULL)
+	}		// for (UE_id ...
+      }			// if((1<<tmp) & deltaTSFC)
+      
+    }			// SRS config
+  }
 }
 
 void
@@ -408,7 +408,7 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
 
     UE_list->UE_sched_ctrl[UE_id].ul_failure_timer++;
     // check threshold
-    if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 200) {
+    if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 20000) {
       // inform RRC of failure and clear timer
       LOG_I(MAC,
 	    "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",
@@ -419,6 +419,12 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
     }
   }				// ul_failure_timer>0
 
+  UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer++;
+  if(UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer > (U_PLANE_INACTIVITY_VALUE*subframe_num(&RC.eNB[module_idP][CC_id]->frame_parms))){
+    LOG_D(MAC,"UE %d rnti %x: U-Plane Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti); 
+    mac_eNB_rrc_uplane_failure(module_idP,CC_id,frameP,subframeP,rnti);
+    UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer  = 0;
+  }// time > 60s
 }
 
 void
@@ -521,10 +527,74 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     RC.mac[module_idP]->frame    = frameP;
     RC.mac[module_idP]->subframe = subframeP;
 
-    clear_nfapi_information(RC.mac[module_idP], CC_id, frameP,subframeP);
+
+    RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP * 10) +
+						  subframeP] = -63;
+    if (i == UE_list->head)
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME
+	(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,
+	 RC.eNB[module_idP][CC_id]->
+	 pusch_stats_bsr[i][(frameP * 10) + subframeP]);
+    // increment this, it is cleared when we receive an sdu
+    RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
+    
+    RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer++;
+    LOG_D(MAC, "UE %d/%x : ul_inactivity %d, cqi_req %d\n", i, rnti,
+	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].
+	  ul_inactivity_timer,
+	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer);
+    check_ul_failure(module_idP, CC_id, i, frameP, subframeP);
+    
+    if (RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0) {
+      RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer++;
+      if(RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer >=
+	 RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer_thres) {
+	RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer = 0;
+	for (int ue_id_l = 0; ue_id_l < NUMBER_OF_UE_MAX; ue_id_l++) {
+	  if (reestablish_rnti_map[ue_id_l][0] == rnti) {
+	    // clear currentC-RNTI from map
+	    reestablish_rnti_map[ue_id_l][0] = 0;
+	    reestablish_rnti_map[ue_id_l][1] = 0;
+	    break;
+	  }
+	}
+	for (int ii=0; ii<NUMBER_OF_UE_MAX; ii++) {
+	  LTE_eNB_ULSCH_t *ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
+	  if((ulsch != NULL) && (ulsch->rnti == rnti)){
+	    LOG_I(MAC, "clean_eNb_ulsch UE %x \n", rnti);
+	    clean_eNb_ulsch(ulsch);
+	  }
+	}
+	for (int ii=0; ii<NUMBER_OF_UE_MAX; ii++) {
+	  LTE_eNB_DLSCH_t *dlsch = RC.eNB[module_idP][CC_id]->dlsch[ii][0];
+	  if((dlsch != NULL) && (dlsch->rnti == rnti)){
+	    LOG_I(MAC, "clean_eNb_dlsch UE %x \n", rnti);
+	    clean_eNb_dlsch(dlsch);
+	  }
+	}
+	
+	for(int j = 0; j < 10; j++){
+	  nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
+	  ul_req_tmp = &RC.mac[module_idP]->UL_req_tmp[CC_id][j].ul_config_request_body;
+	  if(ul_req_tmp){
+	    int pdu_number = ul_req_tmp->number_of_pdus;
+	    for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
+	      if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti){
+		LOG_I(MAC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
+		if(pdu_index < pdu_number -1){
+		  memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+		}
+		ul_req_tmp->number_of_pdus--;
+	      }
+	    }
+	  }
+	}
+	rrc_mac_remove_ue(module_idP,rnti);
+      }
+    }
   }
 
-  // refresh UE list based on UEs dropped by PHY in previous subframe
+    // refresh UE list based on UEs dropped by PHY in previous subframe
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     if (UE_list->active[i] != TRUE) continue;
 
@@ -565,6 +635,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 				 module_idP);
   pdcp_run(&ctxt);
 
+
   rrc_rx_tx(&ctxt, 0, CC_id);
 
 #if defined(Rel10) || defined(Rel14)
@@ -584,6 +655,8 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     schedule_mib(module_idP, frameP, subframeP);
   // This schedules SI for legacy LTE and eMTC starting in subframeP
   schedule_SI(module_idP, frameP, subframeP);
+  // This schedules Paging in subframeP
+  schedule_PCH(module_idP,frameP,subframeP);
   // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
   schedule_RA(module_idP, frameP, subframeP);
   // copy previously scheduled UL resources (ULSCH + HARQ)
@@ -596,18 +669,18 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   schedule_SR(module_idP, frameP, subframeP);
   // This schedules UCI_CSI in subframeP
   schedule_CSI(module_idP, frameP, subframeP);
-
+  
   // This schedules DLSCH in subframeP
   schedule_ue_spec(module_idP, frameP, subframeP, mbsfn_status);
-
+  
   // Allocate CCEs for good after scheduling is done
-
+  
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
     allocate_CCEs(module_idP, CC_id, subframeP, 0);
-
-
+  
+  
   stop_meas(&RC.mac[module_idP]->eNB_scheduler);
-
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
     (VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,
      VCD_FUNCTION_OUT);

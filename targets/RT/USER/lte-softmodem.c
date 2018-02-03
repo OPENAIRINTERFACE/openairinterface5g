@@ -628,8 +628,8 @@ static void get_options(void) {
       if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
       if ( (cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = debug_prach;
       if ( (cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0)  mode = no_L2_connect;
-      if ( (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = calib_prach_tx; 
-      if (dumpframe  > 0)  mode = rx_dump_frame;
+      if ( (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = calib_prach_tx;
+      if ( (cmdline_uemodeparams[CMDLINE_DUMPMEMORY_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_dump_frame;
       
       if ( downlink_frequency[0][0] > 0) {
 	printf("Downlink frequency set to %u\n", downlink_frequency[0][0]);
@@ -1176,11 +1176,18 @@ int main( int argc, char **argv )
       (RC.nb_inst > 0))  {
     
     // don't create if node doesn't connect to RRC/S1/GTP
-    if (create_tasks(UE_flag ? 0 : 1, UE_flag ? 1 : 0) < 0) {
-      printf("cannot create ITTI tasks\n");
-      exit(-1); // need a softer mode
+    if (UE_flag == 0) {
+      if (create_tasks(1) < 0) {
+        printf("cannot create ITTI tasks\n");
+        exit(-1); // need a softer mode
+      }
     }
-    
+    else {
+      if (create_tasks_ue(1) < 0) {
+        printf("cannot create ITTI tasks\n");
+        exit(-1); // need a softer mode
+      }
+    }
     printf("ITTI tasks created\n");
   }
   else {
@@ -1188,6 +1195,10 @@ int main( int argc, char **argv )
     RCconfig_L1();
   }
 #endif
+
+    // init UE_PF_PO and mutex lock
+    pthread_mutex_init(&ue_pf_po_mutex, NULL);
+    memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
   
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -1289,7 +1300,7 @@ int main( int argc, char **argv )
   // start the main threads
   if (UE_flag == 1) {
     int eMBMS_active = 0;
-    init_UE(1,eMBMS_active,uecap_xer_in);
+    init_UE(1,eMBMS_active,uecap_xer_in,0);
 
     if (phy_test==0) {
       printf("Filling UE band info\n");
@@ -1457,7 +1468,7 @@ int main( int argc, char **argv )
   pthread_cond_destroy(&nfapi_sync_cond);
   pthread_mutex_destroy(&nfapi_sync_mutex);
 
-
+  pthread_mutex_destroy(&ue_pf_po_mutex);
 
   // *** Handle per CC_id openair0
   if (UE_flag==1) {

@@ -33,10 +33,7 @@
 typedef struct x2ap_config_s {
 } x2ap_config_t;
 
-#if defined(OAI_EMU)
-#else
 extern x2ap_config_t x2ap_config;
-#endif
 
 void *x2ap_task(void *arg);
 

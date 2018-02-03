@@ -29,11 +29,9 @@
 * \note
 * \warning
 */
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#endif
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "SCHED/defs.h"
@@ -2262,7 +2260,7 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
   y[0] = &yseq0[0];
   y[1] = &yseq1[0];
 
-#if 0
+#if 1
   // reset all bits to <NIL>, here we set <NIL> elements as 2
   // memset(e, 2, DCI_BITS_MAX);
   // here we interpret NIL as a random QPSK sequence. That makes power estimation easier.
@@ -2273,7 +2271,7 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
   /* clear all bits, the above code may generate too much false detections
    * (not sure about this, to be checked somehow)
    */
-  memset(e, 0, DCI_BITS_MAX);
+  //  memset(e, 0, DCI_BITS_MAX);
 
   e_ptr = e;
 
@@ -3127,8 +3125,8 @@ uint16_t dci_CRNTI_decoding_procedure(PHY_VARS_UE *ue,
                           mi,
                           ((ue->decode_SIB == 1) ? SI_RNTI : 0),
                           ra_rnti,
-              P_RNTI,
-              agregationLevel,
+			  P_RNTI,
+			  agregationLevel,
                           format1A,
                           format1A,
                           format1A,
@@ -3146,7 +3144,7 @@ uint16_t dci_CRNTI_decoding_procedure(PHY_VARS_UE *ue,
       ((format0_found==1)&&(format_c_found==1)))
     return(dci_cnt);
 
-  if (DCIFormat == 1)
+  if (DCIFormat == format1)
   {
       if ((tmode < 3) || (tmode == 7)) {
           //printf("Crnti decoding frame param agregation %d DCI %d \n",agregationLevel,DCIFormat);
@@ -3189,14 +3187,14 @@ uint16_t dci_CRNTI_decoding_procedure(PHY_VARS_UE *ue,
           //printf("Crnti 1 decoding frame param agregation %d DCI %d \n",agregationLevel,DCIFormat);
 
       }
-      else
+      else if (DCIFormat == format1A)
       {
           AssertFatal(0,"Other Transmission mode not yet coded\n");
       }
   }
   else
   {
-     AssertFatal(0,"DCI format %d not yet implemented \n",DCIFormat);
+     LOG_W(PHY,"DCI format %d wrong or not yet implemented \n",DCIFormat);
   }
 
   return(dci_cnt);
@@ -3420,7 +3418,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
 
   if (do_common == 1) {
 #ifdef DEBUG_DCI_DECODING
-    printf("[DCI search] doing common search/format0 aggregation 4\n");
+    printf("[DCI search] subframe %d: doing common search/format0 aggregation 4\n",subframe);
 #endif
 
     if (ue->prach_resources[eNB_id])
@@ -4240,33 +4238,3 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
 
   return(dci_cnt);
 }
-
-#ifdef PHY_ABSTRACTION
-uint16_t dci_decoding_procedure_emul(LTE_UE_PDCCH **pdcch_vars,
-                                     uint8_t num_ue_spec_dci,
-                                     uint8_t num_common_dci,
-                                     DCI_ALLOC_t *dci_alloc_tx,
-                                     DCI_ALLOC_t *dci_alloc_rx,
-                                     int16_t eNB_id)
-{
-
-  uint8_t  dci_cnt=0,i;
-
-  memcpy(dci_alloc_rx,dci_alloc_tx,num_common_dci*sizeof(DCI_ALLOC_t));
-  dci_cnt = num_common_dci;
-  LOG_D(PHY,"[DCI][EMUL] : num_common_dci %d\n",num_common_dci);
-
-  for (i=num_common_dci; i<(num_ue_spec_dci+num_common_dci); i++) {
-    LOG_D(PHY,"[DCI][EMUL] Checking dci %d => %x format %d (bit 0 %d)\n",i,pdcch_vars[eNB_id]->crnti,dci_alloc_tx[i].format,
-          dci_alloc_tx[i].dci_pdu[0]&0x80);
-
-    if (dci_alloc_tx[i].rnti == pdcch_vars[eNB_id]->crnti) {
-      memcpy(dci_alloc_rx+dci_cnt,dci_alloc_tx+i,sizeof(DCI_ALLOC_t));
-      dci_cnt++;
-    }
-  }
-
-
-  return(dci_cnt);
-}
-#endif
