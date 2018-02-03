@@ -845,18 +845,20 @@ int rx_pdsch(PHY_VARS_UE *ue,
   pllr_symbol_cw1  = (int8_t*)pdsch_vars[eNB_id]->llr[1];
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
-
-  /*LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
-             proc->frame_rx, proc->subframe_rx,symbol,
+  /*
+  LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
+             frame, subframe,symbol,
              nb_rb,dlsch0_harq->Qm,
              pdsch_vars[eNB_id]->llr_length[symbol],
              pdsch_vars[eNB_id]->llr_offset[symbol],
              (int16_t*)pdsch_vars[eNB_id]->llr[0],
-             pllr_symbol);*/
-
+             pllr_symbol_cw0);
+  */
   switch (dlsch0_harq->Qm) {
   case 2 :
     if ((rx_type==rx_standard) || (codeword_TB1 == -1)) {
+
+
         dlsch_qpsk_llr(frame_parms,
                        pdsch_vars[eNB_id]->rxdataF_comp0,
                        (int16_t*)pllr_symbol_cw0,
