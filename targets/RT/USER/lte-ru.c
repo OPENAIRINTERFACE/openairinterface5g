@@ -1869,20 +1869,23 @@ void *ru_thread_synch(void *arg) {
 	  sync_pos2 = sync_pos - fp->nb_prefix_samples;
 	else
 	  sync_pos2 = sync_pos + (fp->samples_per_tti*10) - fp->nb_prefix_samples;
-	
+	int sync_pos_slot;
 	if (fp->frame_type == FDD) {
-	  
 	  // PSS is hypothesized in last symbol of first slot in Frame
-	  int sync_pos_slot = (fp->samples_per_tti>>1) - fp->ofdm_symbol_size - fp->nb_prefix_samples;
-	  
-	  if (sync_pos2 >= sync_pos_slot)
-	    ru->rx_offset = sync_pos2 - sync_pos_slot;
-	  else
-	    ru->rx_offset = (fp->samples_per_tti*10) + sync_pos2 - sync_pos_slot;
+	  sync_pos_slot = (fp->samples_per_tti>>1) - fp->ofdm_symbol_size - fp->nb_prefix_samples;
 	}
 	else {
-	  
-	}
+	        // PSS is hypothesized in 2nd symbol of third slot in Frame (S-subframe)
+	  sync_pos_slot = fp->samples_per_tti +
+	    (fp->ofdm_symbol_size<<1) +
+	    fp->nb_prefix_samples0 +
+	    (fp->nb_prefix_samples);
+	}	  
+	if (sync_pos2 >= sync_pos_slot)
+	  ru->rx_offset = sync_pos2 - sync_pos_slot;
+	else
+	  ru->rx_offset = (fp->samples_per_tti*10) + sync_pos2 - sync_pos_slot;
+	
 
 	LOG_I(PHY,"Estimated sync_pos %d, peak_val %d => timing offset %d\n",sync_pos,peak_val,ru->rx_offset);
 	
