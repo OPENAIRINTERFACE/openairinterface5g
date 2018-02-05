@@ -499,8 +499,7 @@ schedule_ue_spec(module_id_t module_idP,
 	    break;
 	case 6:
 	case 7:
-	    if ((tdd_sfa != 1) && (tdd_sfa != 2) && (tdd_sfa != 4)
-		&& (tdd_sfa != 5))
+	    if ((tdd_sfa != 3)&& (tdd_sfa != 4) && (tdd_sfa != 5))
 		return;
 	    break;
 	case 8:
@@ -509,8 +508,7 @@ schedule_ue_spec(module_id_t module_idP,
 		return;
 	    break;
 	case 9:
-	    if ((tdd_sfa != 1) && (tdd_sfa != 3) && (tdd_sfa != 4)
-		&& (tdd_sfa != 6))
+	    if (tdd_sfa == 0)
 		return;
 	    break;
 
@@ -690,7 +688,7 @@ schedule_ue_spec(module_id_t module_idP,
 	    nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
 
 	    if (cc->tdd_Config)
-		harq_pid = ((frameP * 10) + subframeP) % 10;
+	    harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
 	    else
 		harq_pid = ((frameP * 10) + subframeP) & 7;
 
@@ -758,7 +756,7 @@ schedule_ue_spec(module_id_t module_idP,
 			UE_list->UE_template[CC_id][UE_id].DAI++;
 			update_ul_dci(module_idP, CC_id, rnti,
 				      UE_list->UE_template[CC_id][UE_id].
-				      DAI);
+				      DAI,subframeP);
 			LOG_D(MAC,
 			      "DAI update: CC_id %d subframeP %d: UE %d, DAI %d\n",
 			      CC_id, subframeP, UE_id,
@@ -1389,7 +1387,7 @@ schedule_ue_spec(module_id_t module_idP,
 
           if (cc[CC_id].tdd_Config != NULL) { // TDD
             UE_list->UE_template[CC_id][UE_id].DAI++;
-            update_ul_dci(module_idP,CC_id,rnti,UE_list->UE_template[CC_id][UE_id].DAI);
+            update_ul_dci(module_idP,CC_id,rnti,UE_list->UE_template[CC_id][UE_id].DAI,subframeP);
           }
 
 	  // do PUCCH power control
@@ -1609,7 +1607,7 @@ fill_DLSCH_dci(
         // clear scheduling flag
         eNB_dlsch_info[module_idP][CC_id][UE_id].status = S_DL_WAITING;
         rnti = UE_RNTI(module_idP,UE_id);
-	if (cc->tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
+	if (cc->tdd_Config) harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
 	else harq_pid = ((frameP*10)+subframeP)&7;
         nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
 
@@ -1691,12 +1689,12 @@ unsigned char *get_dlsch_sdu(module_id_t module_idP,
 //------------------------------------------------------------------------------
 void
 update_ul_dci(module_id_t module_idP,
-	      uint8_t CC_idP, rnti_t rntiP, uint8_t daiP)
+	      uint8_t CC_idP, rnti_t rntiP, uint8_t daiP, sub_frame_t subframe)
 //------------------------------------------------------------------------------
 {
 
     nfapi_hi_dci0_request_t *HI_DCI0_req =
-	&RC.mac[module_idP]->HI_DCI0_req[CC_idP];
+	&RC.mac[module_idP]->HI_DCI0_req[CC_idP][subframe];
     nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu =
 	&HI_DCI0_req->hi_dci0_request_body.hi_dci0_pdu_list[0];
     COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_idP];

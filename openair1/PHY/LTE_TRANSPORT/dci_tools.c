@@ -1266,14 +1266,14 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     dlsch0_harq->mcs             = rel8->mcs_1;
     dlsch0_harq->Qm              = 2;
     dlsch0_harq->TBS             = TBStable[I_mcs][NPRB-1];
-    dlsch0->harq_ids[subframe]   = rel8->harq_process;
+    dlsch0->harq_ids[frame%2][subframe]   = rel8->harq_process;
 #ifdef UE_EXPANSION
     dlsch0->active[subframe]     = 1;
 #else
     dlsch0->active               = 1;
 #endif
     dlsch0->rnti                 = rel8->rnti;
-    dlsch0->harq_ids[subframe]   = rel8->harq_process;
+    //dlsch0->harq_ids[subframe]   = rel8->harq_process;
     if (dlsch0_harq->round == 0)
       dlsch0_harq->status = ACTIVE;
 
@@ -1454,7 +1454,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     }
 
     LOG_D(PHY,"DCI: Set harq_ids[%d] to %d (%p)\n",subframe,rel8->harq_process,dlsch0);
-    dlsch0->harq_ids[subframe] = rel8->harq_process;
+    dlsch0->harq_ids[frame%2][subframe] = rel8->harq_process;
 
     dlsch0->harq_mask          |= (1<<rel8->harq_process);
 
@@ -1621,8 +1621,8 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
 
     dlsch0->subframe_tx[subframe] = 1;
 
-    dlsch0->harq_ids[subframe] = rel8->harq_process;
-    dlsch1->harq_ids[subframe] = rel8->harq_process;
+    dlsch0->harq_ids[frame%2][subframe] = rel8->harq_process;
+    dlsch1->harq_ids[frame%2][subframe] = rel8->harq_process;
     //    printf("Setting DLSCH harq id %d to subframe %d\n",harq_pid,subframe);
 
 
@@ -2076,11 +2076,11 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     if (dlsch0 != NULL){
       dlsch0->subframe_tx[subframe] = 1;
 
-      dlsch0->harq_ids[subframe] = rel8->harq_process;
+      dlsch0->harq_ids[frame%2][subframe] = rel8->harq_process;
     }
 
     if (dlsch1_harq != NULL){
-      dlsch1->harq_ids[subframe] = rel8->harq_process;
+      dlsch1->harq_ids[frame%2][subframe] = rel8->harq_process;
     }
 
 
@@ -2290,6 +2290,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
   LTE_DL_eNB_HARQ_t *dlsch0_harq=NULL;
   int UE_id;
   int subframe = proc->subframe_tx;
+  int frame = proc->frame_tx;
 
   dci_alloc->firstCCE                   = rel13->ecce_index;
   dci_alloc->L                          = rel13->aggregation_level;
@@ -2533,7 +2534,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
     
   }
   
-  dlsch0->harq_ids[subframe] = rel13->harq_process;
+  dlsch0->harq_ids[frame%2][subframe] = rel13->harq_process;
   
   
   

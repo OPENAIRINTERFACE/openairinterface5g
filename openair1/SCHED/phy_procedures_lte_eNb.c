@@ -379,6 +379,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
     dlsch_modulation(eNB,
 		   eNB->common_vars.txdataF,
 		   AMP,
+		   frame,
 		   subframe,
 		   dlsch_harq->pdsch_start,
 		   dlsch,
@@ -540,7 +541,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 #endif
 
 	// get harq_pid
-	harq_pid = dlsch0->harq_ids[subframe];
+	harq_pid = dlsch0->harq_ids[frame%2][subframe];
 	AssertFatal(harq_pid>=0,"harq_pid is negative\n");
 
         if (harq_pid>=8)
@@ -1341,7 +1342,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   const int frame    = proc->frame_rx;
   
   if (fp->frame_type == FDD) harq_pid = ((10*frame) + subframe)&7;
-  else                       harq_pid = subframe%10;
+  else                       harq_pid = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     ulsch = eNB->ulsch[i];
@@ -1638,7 +1639,7 @@ void release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,uint8_t subf
   LTE_eNB_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
   LTE_DL_eNB_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
   int harq_pid;
-  int subframe_tx;
+  int subframe_tx,frame_tx;
   int M,m;
 
   AssertFatal(UE_id!=-1,"no existing dlsch context\n");
@@ -1648,7 +1649,9 @@ void release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,uint8_t subf
 
   if (eNB->frame_parms.frame_type == FDD) {  
     subframe_tx = (subframe+6)%10;
-    harq_pid = dlsch0->harq_ids[subframe_tx];
+    frame_tx = ul_ACK_subframe2_dl_frame(&eNB->frame_parms,frame,subframe,subframe_tx);
+    harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx]; // or just use 0 for fdd?
+
     AssertFatal((harq_pid>=0) && (harq_pid<10),"harq_pid %d not in 0...9\n",harq_pid);
     dlsch0_harq     = dlsch0->harq_processes[harq_pid];
     dlsch1_harq     = dlsch1->harq_processes[harq_pid];
@@ -1671,8 +1674,9 @@ void release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,uint8_t subf
       subframe_tx = ul_ACK_subframe2_dl_subframe(&eNB->frame_parms,
 						 subframe,
 						 m);
+      frame_tx = ul_ACK_subframe2_dl_frame(&eNB->frame_parms,frame,subframe,subframe_tx);
       if (((1<<m)&mask) > 0) {
-	harq_pid = dlsch0->harq_ids[subframe_tx];
+          harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx];
 	if ((harq_pid>=0) && (harq_pid<10)) {
 	  dlsch0_harq     = dlsch0->harq_processes[harq_pid];
 	  dlsch1_harq     = dlsch1->harq_processes[harq_pid];
@@ -1695,7 +1699,7 @@ int getM(PHY_VARS_eNB *eNB,int frame,int subframe) {
   LTE_eNB_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
   LTE_DL_eNB_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
   int harq_pid;
-  int subframe_tx;
+  int subframe_tx,frame_tx;
   int m;
 
   M=ul_ACK_subframe2_M(&eNB->frame_parms,
@@ -1705,7 +1709,10 @@ int getM(PHY_VARS_eNB *eNB,int frame,int subframe) {
     subframe_tx = ul_ACK_subframe2_dl_subframe(&eNB->frame_parms,
 					       subframe,
 					       m);
-    harq_pid = dlsch0->harq_ids[subframe_tx];
+    frame_tx =  ul_ACK_subframe2_dl_frame(&eNB->frame_parms,frame,
+                                            subframe,subframe_tx);
+    harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx];
+
     if (harq_pid>=0 && harq_pid<10) {
       dlsch0_harq     = dlsch0->harq_processes[harq_pid];
       dlsch1_harq     = dlsch1->harq_processes[harq_pid];
@@ -1813,7 +1820,7 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
     for (i=0;i<ulsch_harq->O_ACK;i++) {
       AssertFatal(ulsch_harq->o_ACK[i] == 0 || ulsch_harq->o_ACK[i] == 1, "harq_ack[%d] is %d, should be 1,2 or 4\n",i,ulsch_harq->o_ACK[i]);
 
-      pdu->harq_indication_tdd_rel13.harq_data[0].multiplex.value_0 = 2-ulsch_harq->o_ACK[i];
+      pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 2-ulsch_harq->o_ACK[i];
       // release DLSCH if needed
       if (ulsch_harq->o_ACK[i] == 1) release_harq(eNB,UE_id,i,frame,subframe,0xffff);
       if      (M==1 && ulsch_harq->O_ACK==1 && ulsch_harq->o_ACK[i] == 1) release_harq(eNB,UE_id,0,frame,subframe,0xffff);
@@ -1915,7 +1922,7 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
 
     pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
     pdu->harq_indication_tdd_rel13.mode = tdd_mapping_mode;  
-
+    LOG_D(PHY,"%s(eNB, uci_harq format %d, rnti:%04x, frame:%d, subframe:%d, tdd_mapping_mode:%d) harq_ack[0]:%d harq_ack[1]:%d\n", __FUNCTION__, uci->pucch_fmt,uci->rnti, frame, subframe, tdd_mapping_mode,harq_ack[0],harq_ack[1]);
     switch (tdd_mapping_mode) {
     case 0: // bundling
 
@@ -1977,15 +1984,18 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
     case 2: // special bundling (SR collision)
       pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
       pdu->harq_indication_tdd_rel13.number_of_ack_nack = 1;
+      pdu->harq_indication_tdd_rel13.mode = 0;
       int tdd_config5_sf2scheds=0;
       if (eNB->frame_parms.tdd_config==5) tdd_config5_sf2scheds = getM(eNB,frame,subframe);
  
       switch (harq_ack[0]) {
       case 0:
+          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;// anaake
 	break;
       case 1: // check if M=1,4,7
 	if (uci->num_pucch_resources == 1 || uci->num_pucch_resources == 4 ||
 	    tdd_config5_sf2scheds == 1 || tdd_config5_sf2scheds == 4 || tdd_config5_sf2scheds == 7) {
+	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;// anaake
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
 	}
@@ -1993,6 +2003,7 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
       case 2: // check if M=2,5,8
 	if (uci->num_pucch_resources == 2 || tdd_config5_sf2scheds == 2 || 
 	    tdd_config5_sf2scheds == 5 || tdd_config5_sf2scheds == 8) {
+	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;// anaake
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
 	}
@@ -2000,6 +2011,7 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
       case 3: // check if M=3,6,9
 	if (uci->num_pucch_resources == 3 || tdd_config5_sf2scheds == 3 || 
 	    tdd_config5_sf2scheds == 6 || tdd_config5_sf2scheds == 9) {
+	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;// anaake
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
 	}

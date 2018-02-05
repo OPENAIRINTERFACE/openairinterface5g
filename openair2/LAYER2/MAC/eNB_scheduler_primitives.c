@@ -60,6 +60,7 @@
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
+extern uint16_t frame_cnt;
 
 int choose(int n, int k)
 {
@@ -579,6 +580,32 @@ int is_UL_sf(COMMON_channels_t * ccP, sub_frame_t subframeP)
     }
 }
 
+uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe){
+
+    if(cc->tdd_Config){//TODO fill other tdd config
+        switch(cc->tdd_Config->subframeAssignment){
+        case 0:
+            break;
+        case 1:
+            if(ul_subframe == 2 || ul_subframe == 7)
+                return 4;
+            else if(ul_subframe == 3 || ul_subframe == 8)
+                return 6;
+            else return 255;
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        case 4:
+            break;
+        case 5:
+            break;
+        }
+    }
+    return 4; //idk  sf_ahead?
+}
+
 uint16_t get_pucch1_absSF(COMMON_channels_t * cc, uint16_t dlsch_absSF)
 {
     uint16_t sf, f, nextf;
@@ -592,40 +619,52 @@ uint16_t get_pucch1_absSF(COMMON_channels_t * cc, uint16_t dlsch_absSF)
 
 	switch (cc->tdd_Config->subframeAssignment) {
 	case 0:
-	    AssertFatal(1 == 0, "SFA 0 to be filled in now, :-)\n");
+	   if ((sf == 0) || (sf == 5))
+	   return ((10 * f) + sf + 4)% 10240;  // ACK/NAK in SF 4,9 same frame
+	   else if (sf == 6)
+	   return ((10 * nextf) + 2)% 10240;  // ACK/NAK in SF 2 next frame
+	   else if (sf == 1)
+	   return ((10 * f) + 7)% 10240;  // ACK/NAK in SF 7 same frame
+	   else
+	   AssertFatal(1 == 0,
+	           "Impossible dlsch subframe %d for TDD configuration 0\n",
+	           sf);
+
 	    break;
 	case 1:
 	    if ((sf == 5) || (sf == 6))
-		return ((10 * nextf) + 2);	// ACK/NAK in SF 2 next frame
+		return ((10 * nextf) + 2)% 10240;	// ACK/NAK in SF 2 next frame
 	    else if (sf == 9)
-		return ((10 * nextf) + 3);	// ACK/NAK in SF 3 next frame
+		return ((10 * nextf) + 3)% 10240;	// ACK/NAK in SF 3 next frame
 	    else if ((sf == 0) || (sf == 1))
-		return ((10 * f) + 2);	// ACK/NAK in SF 7 same frame
+		return ((10 * f) + 7)% 10240;	// ACK/NAK in SF 7 same frame
+	    else if (sf == 4)
+        return ((10 * f) + 8)% 10240;  // ACK/NAK in SF 8 same frame
 	    else
 		AssertFatal(1 == 0,
-			    "Impossible dlsch subframe %d for TDD configuration 3\n",
+			    "Impossible dlsch subframe %d for TDD configuration 1\n",
 			    sf);
 	    break;
 	case 2:
 	    if ((sf == 4) || (sf == 5) || (sf == 6) || (sf == 8))
-		return ((10 * nextf) + 2);	// ACK/NAK in SF 2 next frame
+		return ((10 * nextf) + 2)% 10240;	// ACK/NAK in SF 2 next frame
 	    else if (sf == 9)
-		return ((10 * nextf) + 7);	// ACK/NAK in SF 7 next frame
+		return ((10 * nextf) + 7)% 10240;	// ACK/NAK in SF 7 next frame
 	    else if ((sf == 0) || (sf == 1) || (sf == 3))
-		return ((10 * f) + 7);	// ACK/NAK in SF 7 same frame
+		return ((10 * f) + 7)% 10240;	// ACK/NAK in SF 7 same frame
 	    else
 		AssertFatal(1 == 0,
-			    "Impossible dlsch subframe %d for TDD configuration 3\n",
+			    "Impossible dlsch subframe %d for TDD configuration 2\n",
 			    sf);
 	    break;
 	case 3:
 	    if ((sf == 5) || (sf == 6) || (sf == 7) || (sf == 8)
 		|| (sf == 9))
-		return ((10 * nextf) + (sf >> 1));	// ACK/NAK in 2,3,4 resp. next frame
+	    return ((10 * nextf) + ((sf-1) >> 1))% 10240;   // ACK/NAK in 2,3,4 resp. next frame
 	    else if (sf == 1)
-		return ((10 * nextf) + 2);	// ACK/NAK in 2 next frame
+	    return ((10 * nextf) + 2)% 10240; 	// ACK/NAK in 2 next frame
 	    else if (sf == 0)
-		return ((10 * f) + 4);	// ACK/NAK in 4 same frame
+	    return ((10 * f) + 4)% 10240;	// ACK/NAK in 4 same frame
 	    else
 		AssertFatal(1 == 0,
 			    "Impossible dlsch subframe %d for TDD configuration 3\n",
@@ -653,7 +692,16 @@ uint16_t get_pucch1_absSF(COMMON_channels_t * cc, uint16_t dlsch_absSF)
 			    sf);
 	    break;
 	case 6:
-	    AssertFatal(1 == 0, "SFA 6 To be filled in now, :-)\n");
+	    if ((sf == 5) || (sf == 6))
+	    return ((10 * f) + sf + 7)% 10240;  // ACK/NAK in SF 2,3 next frame
+	    else if (sf == 9)
+	    return ((10 * nextf) + 4)% 10240;  // ACK/NAK in SF 4 next frame
+	    else if ((sf == 1) || (sf == 0))
+	    return ((10 * f) + sf + 7)% 10240;  // ACK/NAK in SF 7 same frame
+	    else
+	    AssertFatal(1 == 0,
+	            "Impossible dlsch subframe %d for TDD configuration 6\n",
+	            sf);
 	    break;
 	default:
 	    AssertFatal(1 == 0, "Illegal TDD subframe Assigment %d\n",
@@ -1228,7 +1276,7 @@ program_dlsch_acknak(module_id_t module_idP, int CC_idP, int UE_idP,
 
     if (ulsch_harq_information)
 	fill_nfapi_ulsch_harq_information(module_idP, CC_idP,
-					  rnti, ulsch_harq_information);
+					  rnti, ulsch_harq_information,subframeP);
 
     if (harq_information)
 	fill_nfapi_harq_information(module_idP, CC_idP,
@@ -1237,10 +1285,10 @@ program_dlsch_acknak(module_id_t module_idP, int CC_idP, int UE_idP,
 				    harq_information, cce_idx);
 }
 
-uint8_t get_V_UL_DAI(module_id_t module_idP, int CC_idP, uint16_t rntiP)
+uint8_t get_V_UL_DAI(module_id_t module_idP, int CC_idP, uint16_t rntiP,sub_frame_t subframeP)
 {
     nfapi_hi_dci0_request_body_t *HI_DCI0_req =
-	&RC.mac[module_idP]->HI_DCI0_req[CC_idP].hi_dci0_request_body;
+	&RC.mac[module_idP]->HI_DCI0_req[CC_idP][subframeP].hi_dci0_request_body;
     nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu =
 	&HI_DCI0_req->hi_dci0_pdu_list[0];
 
@@ -1258,7 +1306,8 @@ fill_nfapi_ulsch_harq_information(module_id_t module_idP,
 				  int CC_idP,
 				  uint16_t rntiP,
 				  nfapi_ul_config_ulsch_harq_information
-				  * harq_information)
+				  * harq_information,
+				  sub_frame_t subframeP)
 {
     eNB_MAC_INST *eNB = RC.mac[module_idP];
     COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
@@ -1318,7 +1367,7 @@ fill_nfapi_ulsch_harq_information(module_id_t module_idP,
 	    if (harq_information->harq_information_rel10.ack_nack_mode ==
 		1)
 		harq_information->harq_information_rel10.harq_size =
-		    get_V_UL_DAI(module_idP, CC_idP, rntiP);
+		    get_V_UL_DAI(module_idP, CC_idP, rntiP,subframeP);
 	    else
 		harq_information->harq_information_rel10.harq_size = 1;
 	}
@@ -1330,7 +1379,7 @@ fill_nfapi_ulsch_harq_information(module_id_t module_idP,
 	    if (harq_information->harq_information_rel10.ack_nack_mode ==
 		1)
 		harq_information->harq_information_rel10.harq_size =
-		    get_V_UL_DAI(module_idP, CC_idP, rntiP);
+		    get_V_UL_DAI(module_idP, CC_idP, rntiP,subframeP);
 	    else
 		harq_information->harq_information_rel10.harq_size = 2;
 	}
@@ -3110,7 +3159,7 @@ allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP,
     nfapi_dl_config_request_body_t *DL_req =
 	&RC.mac[module_idP]->DL_req[CC_idP].dl_config_request_body;
     nfapi_hi_dci0_request_body_t *HI_DCI0_req =
-	&RC.mac[module_idP]->HI_DCI0_req[CC_idP].hi_dci0_request_body;
+	&RC.mac[module_idP]->HI_DCI0_req[CC_idP][subframeP].hi_dci0_request_body;
     nfapi_dl_config_request_pdu_t *dl_config_pdu =
 	&DL_req->dl_config_pdu_list[0];
     nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu =
@@ -3575,7 +3624,7 @@ CCE_allocation_infeasible(int module_idP,
     nfapi_dl_config_request_pdu_t *dl_config_pdu =
 	&DL_req->dl_config_pdu_list[DL_req->number_pdu];
     nfapi_hi_dci0_request_body_t *HI_DCI0_req =
-	&RC.mac[module_idP]->HI_DCI0_req[CC_idP].hi_dci0_request_body;
+	&RC.mac[module_idP]->HI_DCI0_req[CC_idP][subframe].hi_dci0_request_body;
     nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu =
 	&HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci +
 				       HI_DCI0_req->number_of_hi];
@@ -3630,6 +3679,73 @@ CCE_allocation_infeasible(int module_idP,
 
     return res;
 }
+void get_retransmission_timing(TDD_Config_t *tdd_Config, frame_t *frameP,
+        sub_frame_t *subframeP)
+{
+
+    if (tdd_Config == NULL)
+    {
+        if (*subframeP > 1)
+            *frameP = (*frameP + 1) % 1024;
+        *subframeP = (*subframeP + 8) % 10;
+    }
+    else
+    {
+        switch (tdd_Config->subframeAssignment)//TODO fill in other TDD configs
+        {
+        case 1:
+            if (*subframeP == 0 || *subframeP == 5)
+            {
+                *subframeP  += 19;
+                *frameP = (*frameP + *subframeP/10) % 1024;
+                *subframeP %= 10;
+            }
+            else if (*subframeP == 4 || *subframeP == 9)
+            {
+                *subframeP  += 16;
+                *frameP = (*frameP + *subframeP/10) % 1024;
+                *subframeP %= 10;
+            }
+            else
+            {
+                AssertFatal(2 == 1,
+                        "Illegal dl subframe %d for tdd config %d\n", *subframeP,
+                        tdd_Config->subframeAssignment);
+            }
+            break;
+        }
+    }
+}
+
+uint8_t get_dl_subframe_count(int tdd_config_sfa, sub_frame_t subframeP){
+
+    uint8_t tdd1[10] = {1,-1,-1,-1,2,3,-1,-1,-1,4}; // special subframes 1,6 are excluded
+
+    switch(tdd_config_sfa){// TODO fill in other tdd configs
+    case 1 :
+        return tdd1[subframeP];
+        break;
+    }
+    return -1;
+}
+
+uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP){
+    int harq_pid;
+    if(tdd_Config){
+
+        switch(tdd_Config->subframeAssignment){ //TODO fill in other tdd config
+        case 1:
+            harq_pid = ((frame_cnt*1024 + abs_frameP) * 4 + get_dl_subframe_count(tdd_Config->subframeAssignment,subframeP))%7;//4 dl subframe in a frame
+            LOG_I(MAC,"[frame_subframe2_dl_harq_pid] (%d,%d) calculate harq_pid (( %d * 1024 + %d) *4 + %d)%7 = %d \n",
+                    (abs_frameP+1024)%1024,subframeP,frame_cnt,abs_frameP,
+                    get_dl_subframe_count(tdd_Config->subframeAssignment,subframeP),harq_pid);
+            return harq_pid;
+            break;
+        }
+    }
+    return -1;
+}
+
 
 void
 extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
@@ -3647,8 +3763,12 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
     int pCCid = UE_list->pCC_id[UE_id];
     int spatial_bundling = 0;
     int tmode[5];
-    int i, j;
+    int i, j, m;
     uint8_t *pdu;
+    LTE_DL_FRAME_PARMS        *fp;
+    sub_frame_t subframe_tx;
+    int frame_tx;
+    uint8_t harq_pid;
 
 #ifdef Rel14
     if (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated != NULL &&
@@ -3668,22 +3788,37 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	  && (format == 1))))
 	spatial_bundling = 1;
 #endif
-
+    fp=&(RC.eNB[mod_idP][CC_idP]->frame_parms);
     for (i = 0; i < numCC; i++)
 	tmode[i] = get_tmode(mod_idP, i, UE_id);
 
     if (cc->tdd_Config) {
-	harq_indication_tdd =
-	    (nfapi_harq_indication_tdd_rel13_t *) harq_indication;
+	harq_indication_tdd = (nfapi_harq_indication_tdd_rel13_t *) harq_indication;
 	//    pdu = &harq_indication_tdd->harq_tb_n[0];
 
 	num_ack_nak = harq_indication_tdd->number_of_ack_nack;
 
 	switch (harq_indication_tdd->mode) {
-	case 0:		// Format 1a/b
-	    AssertFatal(numCC == 1,
-			"numCC %d > 1, should not be using Format1a/b\n",
-			numCC);
+	case 0:         // Format 1a/b bundling
+	    AssertFatal(numCC == 1, "numCC %d > 1, should not be using Format1a/b\n", numCC);
+	    int M = ul_ACK_subframe2_M(fp,subframeP);
+	    for(m=0;m<M;m++){
+	     subframe_tx = ul_ACK_subframe2_dl_subframe(fp,subframeP,m);
+	     if(frameP==1023&&subframeP>5)
+	         frame_tx= -1;
+	     else
+	         frame_tx = subframeP < 5 ? frameP-1:frameP; // not formal
+	     harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame_tx,subframe_tx);
+	     if(num_ack_nak==1){
+	         if(harq_indication_tdd->harq_data[0].bundling.value_0==1){ //ack
+	             sched_ctl->round[CC_idP][harq_pid] = 8; // release HARQ process
+	             sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+	         }else{ //nack
+	          if( sched_ctl->round[CC_idP][harq_pid]<8)
+	             sched_ctl->round[CC_idP][harq_pid]++;
+	         }
+	     }
+	    }
 	    break;
 	case 1:		// Channel Selection
 	    break;
@@ -3700,7 +3835,7 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	num_ack_nak = harq_indication_fdd->number_of_ack_nack;
 	pdu = &harq_indication_fdd->harq_tb_n[0];
 
-	uint8_t harq_pid = ((10 * frameP) + subframeP + 10236) & 7;
+	harq_pid = ((10 * frameP) + subframeP + 10236) & 7;
 
         LOG_D(MAC,"frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",frameP,subframeP,harq_pid,harq_indication_fdd->mode,tmode[0],num_ack_nak,sched_ctl->round[CC_idP][harq_pid]);
 

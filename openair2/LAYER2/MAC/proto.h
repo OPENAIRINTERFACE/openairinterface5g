@@ -640,10 +640,10 @@ rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 uint8_t find_rb_table_index(uint8_t average_rbs);
 
 #ifndef UE_EXPANSION
-void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP, sub_frame_t subframeP, uint16_t *first_rb);
+void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP, sub_frame_t subframeP, unsigned char sched_subframeP,uint16_t *first_rb);
 #else
-void ulsch_scheduler_pre_processor(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, ULSCH_UE_SELECT ulsch_ue_select[MAX_NUM_CCs]);
-void ulsch_scheduler_pre_ue_select(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP,ULSCH_UE_SELECT ulsch_ue_select[MAX_NUM_CCs]);
+void ulsch_scheduler_pre_processor(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, sub_frame_t sched_subframeP,ULSCH_UE_SELECT ulsch_ue_select[MAX_NUM_CCs]);
+void ulsch_scheduler_pre_ue_select(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP,sub_frame_t sched_subframeP,ULSCH_UE_SELECT ulsch_ue_select[MAX_NUM_CCs]);
 #endif
 void
 set_ul_DAI(
@@ -822,7 +822,7 @@ uint32_t allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG,
 			   uint8_t * rballoc);
 
 void update_ul_dci(module_id_t module_idP, uint8_t CC_id, rnti_t rnti,
-		   uint8_t dai);
+		   uint8_t dai, sub_frame_t subframe);
 
 int get_bw_index(module_id_t module_id, uint8_t CC_id);
 
@@ -1121,7 +1121,8 @@ void fill_nfapi_ulsch_harq_information(module_id_t module_idP,
 				       int CC_idP,
 				       uint16_t rntiP,
 				       nfapi_ul_config_ulsch_harq_information
-				       * harq_information);
+				       * harq_information,
+				       sub_frame_t subframeP);
 
 uint16_t fill_nfapi_uci_acknak(module_id_t module_idP,
 			       int CC_idP,

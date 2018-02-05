@@ -291,7 +291,7 @@ typedef struct {
   /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK.
   uint8_t nCCE[10];
   /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids
-  uint8_t harq_ids[10];
+  uint8_t harq_ids[2][10];
   /// Window size (in outgoing transport blocks) for fine-grain rate adaptation
   uint8_t ra_window_size;
   /// First-round error threshold for fine-grain rate adaptation

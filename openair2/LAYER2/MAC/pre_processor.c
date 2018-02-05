@@ -300,7 +300,7 @@ maxround(module_id_t Mod_id, uint16_t rnti, int frame,
 
 	UE_id = find_UE_id(Mod_id, rnti);
 	if (cc->tdd_Config)
-	    harq_pid = ((frame * 10) + subframe) % 10;
+	    harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame ,subframe);
 	else
 	    harq_pid = ((frame * 10) + subframe) & 7;
 
@@ -1128,7 +1128,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
       rnti = dlsch_ue_select[CC_id].list[i].rnti;
 
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-      if (cc->tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
+      if (cc->tdd_Config) harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
       else harq_pid = ((frameP*10)+subframeP)&7;
       Round    = ue_sched_ctl->round[CC_id][harq_pid];
 
@@ -1866,6 +1866,7 @@ dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
 void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int frameP,
                                    sub_frame_t subframeP,
+                                   unsigned char sched_subframeP,
                                    uint16_t *first_rb)
 {
 
@@ -1997,7 +1998,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 	    harq_pid =
 		subframe2harqpid(&RC.mac[module_idP]->
 				 common_channels[CC_id], frameP,
-				 subframeP);
+				 sched_subframeP);
 
 
 	    //      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
@@ -2396,6 +2397,7 @@ void ulsch_scheduler_pre_ue_select(
     module_id_t       module_idP,
     frame_t           frameP,
     sub_frame_t       subframeP,
+    sub_frame_t       sched_subframeP,
     ULSCH_UE_SELECT   ulsch_ue_select[MAX_NUM_CCs])
 {
   eNB_MAC_INST *eNB=RC.mac[module_idP];
@@ -2426,7 +2428,7 @@ void ulsch_scheduler_pre_ue_select(
 
   for ( CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++ ) {
       //save ulsch dci number
-      saved_ulsch_dci[CC_id] = eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_dci;
+      saved_ulsch_dci[CC_id] = eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body.number_of_dci;
       // maximum multiplicity number
       ulsch_ue_max_num[CC_id] =RC.rrc[module_idP]->configuration.ue_multiple_max[CC_id];
 
@@ -2452,7 +2454,7 @@ void ulsch_scheduler_pre_ue_select(
         continue;
 
       // UL DCI
-      HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
+      HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body;
       if ( (ulsch_ue_select[CC_id].ue_num >= ulsch_ue_max_num[CC_id]) || (cc_id_flag[CC_id] == 1) ) {
         cc_id_flag[CC_id] = 1;
         HI_DCI0_req->number_of_dci = saved_ulsch_dci[CC_id];
@@ -2467,7 +2469,7 @@ void ulsch_scheduler_pre_ue_select(
 
       cc = &eNB->common_channels[CC_id];
       //harq_pid
-      harq_pid = subframe2harqpid(cc,(frameP+(subframeP>=6 ? 1 : 0)),((subframeP+4)%10));
+      harq_pid = subframe2harqpid(cc,(frameP+(sched_subframeP<subframeP ? 1 : 0)),sched_subframeP);
       //round
       round = UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid];
 
@@ -2519,7 +2521,7 @@ void ulsch_scheduler_pre_ue_select(
   }
 
   for ( CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++ ) {
-    HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
+    HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body;
     for ( int temp = 0; temp < ue_first_num[CC_id]; temp++ ) {
       if ( (ulsch_ue_select[CC_id].ue_num >= ulsch_ue_max_num[CC_id]) || (cc_id_flag[CC_id] == 1) ) {
         cc_id_flag[CC_id] = 1;
@@ -2586,7 +2588,7 @@ void ulsch_scheduler_pre_ue_select(
     if(i < ulsch_ue_select[CC_id].ue_num)
       continue;
 
-    HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
+    HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body;
     //SR BSR
     if ( (UE_list->UE_template[CC_id][UE_id].ul_total_buffer > 0) || (UE_list->UE_template[CC_id][UE_id].ul_SR > 0) ) {
         hi_dci0_pdu   = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi];
@@ -2623,10 +2625,10 @@ void ulsch_scheduler_pre_ue_select(
   }
 
   for ( CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++ ) {
-    HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
+    HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body;
     for ( int temp = 0; temp < ul_inactivity_num[CC_id]; temp++ ) {
       if ( (ulsch_ue_select[CC_id].ue_num >= ulsch_ue_max_num[CC_id]) || (cc_id_flag[CC_id] == 1) ) {
-        HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
+        HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body;
         cc_id_flag[CC_id] = 1;
         break;
       }
@@ -2668,6 +2670,7 @@ uint8_t find_rb_table_index(uint8_t average_rbs)
 void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    frame_t frameP,
                                    sub_frame_t subframeP,
+                                   sub_frame_t sched_subframeP,
                                    ULSCH_UE_SELECT ulsch_ue_select[MAX_NUM_CCs])
 {
   int                CC_id,ulsch_ue_num;
@@ -2687,7 +2690,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   rnti_t             rnti;
   LOG_D(MAC,"In ulsch_preprocessor: ulsch ue select\n");
   //ue select
-  ulsch_scheduler_pre_ue_select(module_idP,frameP,subframeP,ulsch_ue_select);
+  ulsch_scheduler_pre_ue_select(module_idP,frameP,subframeP,sched_subframeP,ulsch_ue_select);
 
   // MCS and RB assgin
   for ( CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++ ) {

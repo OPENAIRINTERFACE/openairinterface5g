@@ -573,7 +573,7 @@ clear_nfapi_information(eNB_MAC_INST * eNB, int CC_idP,
 {
     nfapi_dl_config_request_t *DL_req = &eNB->DL_req[0];
     nfapi_ul_config_request_t *UL_req = &eNB->UL_req[0];
-    nfapi_hi_dci0_request_t *HI_DCI0_req = &eNB->HI_DCI0_req[0];
+    nfapi_hi_dci0_request_t *HI_DCI0_req = &eNB->HI_DCI0_req[0][subframeP];
     nfapi_tx_request_t *TX_req = &eNB->TX_req[0];
 
     eNB->pdu_index[CC_idP] = 0;
