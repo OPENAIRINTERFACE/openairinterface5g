@@ -149,10 +149,20 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
 
   // generate Cell-Specific Reference Signals for both slots
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_RS_TX,1);
-  generate_pilots_slot(eNB,
-		       txdataF,
-		       AMP,
-		       subframe<<1,0);
+
+   if(subframe_select(fp,subframe) == SF_S)
+       generate_pilots_slot(eNB,
+                    txdataF,
+                    AMP,
+                    subframe<<1,1);
+   else
+       generate_pilots_slot(eNB,
+                    txdataF,
+                    AMP,
+                    subframe<<1,0);
+
+ // check that 2nd slot is for DL
+
   // check that 2nd slot is for DL
   if (subframe_select(fp,subframe) == SF_DL)
     generate_pilots_slot(eNB,
