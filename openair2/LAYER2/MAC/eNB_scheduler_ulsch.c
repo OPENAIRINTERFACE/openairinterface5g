@@ -1169,7 +1169,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
     nfapi_ul_config_request_body_t *ul_req_tmp_body  = &ul_req_tmp->ul_config_request_body;
 
     //LOG_D(MAC, "entering ulsch preprocesor\n");
-    ulsch_scheduler_pre_processor(module_idP, frameP, subframeP, first_rb);
+    ulsch_scheduler_pre_processor(module_idP, frameP, subframeP,sched_subframeP, first_rb);
 
     //LOG_D(MAC, "exiting ulsch preprocesor\n");
 
