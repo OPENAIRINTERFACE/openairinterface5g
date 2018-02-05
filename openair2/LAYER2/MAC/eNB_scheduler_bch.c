@@ -615,10 +615,16 @@ schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	    LOG_D(MAC, "Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n", frameP, subframeP, dl_req->number_pdu, mib_sdu_length);
 
 	    if ((frameP & 1023) < 40)
+#ifdef Rel14
 		LOG_D(MAC,
 		      "[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes (cc->mib->message.schedulingInfoSIB1_BR_r13 %d)\n",
 		      module_idP, frameP, CC_id, mib_sdu_length,
 		      (int) cc->mib->message.schedulingInfoSIB1_BR_r13);
+#else
+		LOG_D(MAC,
+		      "[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",
+		      module_idP, frameP, CC_id, mib_sdu_length);
+#endif
 
 	    dl_config_pdu =
 		&dl_req->dl_config_pdu_list[dl_req->number_pdu];

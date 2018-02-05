@@ -1642,6 +1642,8 @@ initiate_ra_proc(module_id_t module_idP,
     COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
     RA_t *ra = &cc->ra[0];
 
+#ifdef Rel14
+
     struct PRACH_ConfigSIB_v1310 *ext4_prach = NULL;
     PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 = NULL;
 
@@ -1653,6 +1655,9 @@ initiate_ra_proc(module_id_t module_idP,
 	prach_ParametersListCE_r13 =
 	    &ext4_prach->prach_ParametersListCE_r13;
     }
+
+#endif /* Rel14 */
+
     LOG_D(MAC,
 	  "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",
 	  module_idP, CC_id, frameP, subframeP, preamble_index);
@@ -1666,6 +1671,8 @@ initiate_ra_proc(module_id_t module_idP,
     uint16_t msg2_subframe = subframeP;
     int offset;
 
+#ifdef Rel14
+
     if (prach_ParametersListCE_r13 &&
 	prach_ParametersListCE_r13->list.count < rach_resource_type) {
 	LOG_E(MAC,
@@ -1674,6 +1681,8 @@ initiate_ra_proc(module_id_t module_idP,
 	      (int) prach_ParametersListCE_r13->list.count);
 	return;
     }
+
+#endif /* Rel14 */
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);

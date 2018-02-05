@@ -914,6 +914,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
 	else if (ri >= 2 && cc->p_eNB == 4)
 	    return (4 + (N << 1) + 4 + (N << 1) + 4);
 	break;
+#ifdef Rel14
     case CQI_ReportModeAperiodic_rm32_v1250:
 	AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
 		    || tmode == 10,
@@ -947,6 +948,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
 	    return (4 + 4 + 4);
 
 	break;
+#endif /* Rel14 */
     }
     AssertFatal(1 == 0, "Shouldn't get here\n");
     return (0);
@@ -4339,6 +4341,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 	}
 
 	break;
+#ifdef Rel14
     case CQI_ReportModeAperiodic_rm32_v1250:
 	AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8
 		    || tmode == 9
@@ -4362,6 +4365,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 		    tmode);
 	AssertFatal(1 == 0, "CQI_ReportModeAperiodic_rm11 to be done\n");
 	break;
+#endif /* Rel14 */
     }
 }
 
