@@ -1446,12 +1446,15 @@ fill_nfapi_harq_information(module_id_t module_idP,
     case 6:
     case 7:
 	if (cc->tdd_Config != NULL) {
-	    AssertFatal(UE_list->
-			UE_template[CC_idP]
-			[UE_id].physicalConfigDedicated->
-			pucch_ConfigDedicated != NULL,
-			"pucch_ConfigDedicated is null for TDD!\n");
+//	    AssertFatal(UE_list->
+//			UE_template[CC_idP]
+//			[UE_id].physicalConfigDedicated->
+//			pucch_ConfigDedicated != NULL,
+//			"pucch_ConfigDedicated is null for TDD!\n");
 	    if ((UE_list->
+	            UE_template[CC_idP][UE_id].physicalConfigDedicated->
+	            pucch_ConfigDedicated != NULL)
+	    && (UE_list->
 		 UE_template[CC_idP][UE_id].physicalConfigDedicated->
 		 pucch_ConfigDedicated->tdd_AckNackFeedbackMode != NULL)
 		&& (*UE_list->
