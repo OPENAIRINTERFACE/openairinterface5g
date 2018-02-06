@@ -2483,14 +2483,15 @@ UE_is_to_be_scheduled(module_id_t module_idP, int CC_id, uint8_t UE_id)
     LOG_D(MAC, "[eNB %d][PUSCH] Checking UL requirements UE %d/%x\n",
 	  module_idP, UE_id, UE_RNTI(module_idP, UE_id));
 
-    if ((UE_template->bsr_info[LCGID0] > 0) || (UE_template->bsr_info[LCGID1] > 0) || (UE_template->bsr_info[LCGID2] > 0) || (UE_template->bsr_info[LCGID3] > 0) || (UE_template->ul_SR > 0) ||	// uplink scheduling request
+    if ((UE_template->scheduled_ul_bytes < UE_template->estimated_ul_buffer) ||
+        (UE_template->ul_SR > 0) ||	// uplink scheduling request
 	((UE_sched_ctl->ul_inactivity_timer > 20) && (UE_sched_ctl->ul_scheduled == 0)) ||	// every 2 frames when RRC_CONNECTED
 	((UE_sched_ctl->ul_inactivity_timer > 10) && (UE_sched_ctl->ul_scheduled == 0) && (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED)))	// every Frame when not RRC_CONNECTED
     {
 	LOG_D(MAC,
-	      "[eNB %d][PUSCH] UE %d/%x should be scheduled (BSR0 %d,SR %d)\n",
+	      "[eNB %d][PUSCH] UE %d/%x should be scheduled (SRB0 estimated size %d,SR %d)\n",
 	      module_idP, UE_id, UE_RNTI(module_idP, UE_id),
-	      UE_template->bsr_info[LCGID0], UE_template->ul_SR);
+	      UE_template->ul_buffer_info[LCGID0], UE_template->ul_SR);
 	return (1);
     } else {
 	return (0);
