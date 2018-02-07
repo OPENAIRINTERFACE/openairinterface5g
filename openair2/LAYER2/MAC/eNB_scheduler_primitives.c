@@ -3716,7 +3716,7 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 		    sched_ctl->round[CC_idP][harq_pid]++;	// increment round
 	    } else {
 		// one or two ACK/NAK bits
-		AssertFatal(num_ack_nak > 2,
+		AssertFatal(num_ack_nak <= 2,
 			    "num_ack_nak %d > 2 for 1 CC and TM3/4/8/9/10\n",
 			    num_ack_nak);
 		if ((num_ack_nak == 2)
