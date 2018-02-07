@@ -550,7 +550,8 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
 
 	UE_list->UE_sched_ctrl[UE_id].ul_failure_timer++;
 	// check threshold
-	if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 20000) {
+	if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 4000) {
+	    // note: probably ul_failure_timer is should be less than UE radio link failure time(see T310/N310/N311)
 	    // inform RRC of failure and clear timer
 	    LOG_I(MAC,
 		  "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",
