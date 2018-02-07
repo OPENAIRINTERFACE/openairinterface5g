@@ -4472,6 +4472,24 @@ UL_failure_indication(module_id_t mod_idP, int cc_idP, frame_t frameP,
     }
 }
 
+static int nack_or_dtx_reported(
+    COMMON_channels_t *cc,
+    nfapi_harq_indication_pdu_t *harq_pdu)
+{
+  int i;
+
+  if (cc->tdd_Config) {
+    AssertFatal(0==1, "TDD to be done. FAPI structures (see nfapi_harq_indication_tdd_rel13_t) are not clean. To be cleaned as well?\n");
+    abort();
+  } else {
+    nfapi_harq_indication_fdd_rel13_t *hi = &harq_pdu->harq_indication_fdd_rel13;
+    for (i = 0; i < hi->number_of_ack_nack; hi++)
+      if (hi->harq_tb_n[i] != 1)
+        return 1;
+    return 0;
+  }
+}
+
 void
 harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 		sub_frame_t subframeP,
@@ -4500,7 +4518,8 @@ harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 	extract_harq(mod_idP, CC_idP, UE_id, frameP, subframeP,
 		     (void *) &harq_pdu->harq_indication_fdd_rel13,
 		     channel);
-    if (channel == 0) {
+    /* don't care about cqi reporting if NACK/DTX is there */
+    if (channel == 0 && !nack_or_dtx_reported(cc, harq_pdu)) {
 	sched_ctl->pucch1_snr[CC_idP] = ul_cqi;
 	sched_ctl->pucch1_cqi_update[CC_idP] = 1;
     }
