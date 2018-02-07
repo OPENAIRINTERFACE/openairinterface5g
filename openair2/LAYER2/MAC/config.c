@@ -193,8 +193,12 @@ void config_mib(int                 Mod_idP,
 		int                 NcpP,
 		int                 p_eNBP,
 		uint32_t            dl_CarrierFreqP,
-		uint32_t            ul_CarrierFreqP,
-		uint32_t            pbch_repetitionP) {
+		uint32_t            ul_CarrierFreqP
+#ifdef Rel14
+                ,
+		uint32_t            pbch_repetitionP
+#endif
+                ) {
 
   nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
 
