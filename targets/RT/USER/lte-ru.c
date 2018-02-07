@@ -2271,4 +2271,3 @@ void RCconfig_RU(void) {
   return;
   
 }
-

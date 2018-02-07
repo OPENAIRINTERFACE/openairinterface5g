@@ -961,4 +961,3 @@ void init_lte_ue_transport(PHY_VARS_UE *ue,int abstraction_flag) {
   ue->dlsch_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,ue->frame_parms.N_RB_DL,0);
 
 }
-

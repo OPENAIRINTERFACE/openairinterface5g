@@ -98,7 +98,6 @@ static int enb_check_band_frequencies(char* lib_config_file_name_pP,
   return errors;
 }
 
-
 void RCconfig_L1(void) {
   int               i,j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;

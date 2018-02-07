@@ -148,4 +148,3 @@ int phy_init_RU(RU_t *ru) {
 
   return(0);
 }
-

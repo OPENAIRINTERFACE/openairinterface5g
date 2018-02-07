@@ -65,10 +65,7 @@
 #endif
 
 #include "ENB_APP/enb_config.h"
-#include "../../ENB_APP/enb_config.h"
-
 #include "LAYER2/PROTO_AGENT/proto_agent.h"
-
 
 extern int otg_enabled;
 
@@ -689,11 +686,11 @@ pdcp_data_ind(
         PROTOCOL_PDCP_CTXT_FMT" DATA-IND len %u",
         PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
         sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len);
-      rrc_data_ind(ctxt_pP,
+        rrc_data_ind(ctxt_pP,
 		   rb_id,
 		   sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len,
 		   (uint8_t*)&sdu_buffer_pP->data[pdcp_header_len]);
-      free_mem_block(sdu_buffer_pP, __func__);
+
 
       // free_mem_block(new_sdu, __func__);
       if (ctxt_pP->enb_flag) {

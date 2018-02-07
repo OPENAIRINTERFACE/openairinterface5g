@@ -672,14 +672,14 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 
-  //printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
-  /*LOG_I(PHY,"dlsch_qpsk_llr: [symb %d / FirstSym %d / Length %d]: @LLR Buff %x, @LLR Buff(symb) %x \n",
+  /*
+  LOG_I(PHY,"dlsch_qpsk_llr: [symb %d / FirstSym %d / Length %d]: @LLR Buff %x, @LLR Buff(symb) %x \n",
              symbol,
              first_symbol_flag,
              len,
              dlsch_llr,
-             llr32);*/
-
+             llr32);
+  */
   //printf("ll32p=%p , dlsch_llr=%p, symbol=%d, flag=%d \n", llr32, dlsch_llr, symbol, first_symbol_flag);
   for (i=0; i<len; i++) {
     *llr32 = *rxF;

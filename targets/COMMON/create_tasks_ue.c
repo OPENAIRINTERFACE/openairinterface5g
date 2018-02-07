@@ -78,4 +78,3 @@ int create_tasks_ue(uint32_t ue_nb)
   return 0;
 }
 #endif
-
