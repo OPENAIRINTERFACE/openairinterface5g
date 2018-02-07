@@ -215,7 +215,7 @@ void config_mib(int                 Mod_idP,
   cfg->rf_config.dl_channel_bandwidth.value        = to_prb(dl_BandwidthP);
   cfg->rf_config.dl_channel_bandwidth.tl.tag = NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG;
   cfg->num_tlv++;
-LOG_E(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, dl_BandwidthP);
+  LOG_E(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, dl_BandwidthP);
 
   cfg->rf_config.ul_channel_bandwidth.value        = to_prb(dl_BandwidthP);
   cfg->rf_config.ul_channel_bandwidth.tl.tag = NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG;
@@ -267,36 +267,37 @@ LOG_E(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, dl_BandwidthP);
   cfg->emtc_config.pbch_repetitions_enable_r13.tl.tag = NFAPI_EMTC_CONFIG_PBCH_REPETITIONS_ENABLE_R13_TAG;
   cfg->num_tlv++;
 #endif  
-
   LOG_I(MAC,
-      "%s() NFAPI_CONFIG_REQUEST(num_tlv:%u) DL_BW:%u UL_BW:%u Ncp %d,p_eNB %d,earfcn %d,band %d,phich_resource %u phich_duration %u phich_power_offset %u PSS %d SSS %d PCI %d"
+	"%s() NFAPI_CONFIG_REQUEST(num_tlv:%u) DL_BW:%u UL_BW:%u Ncp %d,p_eNB %d,earfcn %d,band %d,phich_resource %u phich_duration %u phich_power_offset %u PSS %d SSS %d PCI %d"
 #ifdef Rel14
-      " PBCH repetition %d"
+	
+	" PBCH repetition %d"
 #endif  
-      "\n"
-      ,__FUNCTION__
-      ,cfg->num_tlv
-      ,cfg->rf_config.dl_channel_bandwidth.value
-      ,cfg->rf_config.ul_channel_bandwidth.value
-      ,NcpP,p_eNBP
-      ,cfg->nfapi_config.earfcn.value
-      ,cfg->nfapi_config.rf_bands.rf_band[0]
-      ,cfg->phich_config.phich_resource.value
-      ,cfg->phich_config.phich_duration.value
-      ,cfg->phich_config.phich_power_offset.value
-      ,cfg->sch_config.primary_synchronization_signal_epre_eprers.value
-      ,cfg->sch_config.secondary_synchronization_signal_epre_eprers.value
-      ,cfg->sch_config.physical_cell_id.value
+	"\n"
+	,__FUNCTION__
+	,cfg->num_tlv
+	,cfg->rf_config.dl_channel_bandwidth.value
+	,cfg->rf_config.ul_channel_bandwidth.value
+	,NcpP,p_eNBP
+	,cfg->nfapi_config.earfcn.value
+	,cfg->nfapi_config.rf_bands.rf_band[0]
+	,cfg->phich_config.phich_resource.value
+	,cfg->phich_config.phich_duration.value
+	,cfg->phich_config.phich_power_offset.value
+	,cfg->sch_config.primary_synchronization_signal_epre_eprers.value
+	,cfg->sch_config.secondary_synchronization_signal_epre_eprers.value
+	,cfg->sch_config.physical_cell_id.value
 #ifdef Rel14
-      ,cfg->emtc_config.pbch_repetitions_enable_r13.value
+	,cfg->emtc_config.pbch_repetitions_enable_r13.value
 #endif  
-      );
+	);
 }
 
 void config_sib1(int Mod_idP, int CC_idP, TDD_Config_t * tdd_ConfigP)
 {
 
-    nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
+
+  nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
 
   if (tdd_ConfigP)   { //TDD
     cfg->subframe_config.duplex_mode.value                          = 0;
@@ -396,16 +397,13 @@ config_sib2(int Mod_idP,
   cfg->pucch_config.n1_pucch_an.tl.tag = NFAPI_PUCCH_CONFIG_N1_PUCCH_AN_TAG;
   cfg->num_tlv++;
 
-  if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == true)
-  {
+  if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == true) {
     cfg->uplink_reference_signal_config.uplink_rs_hopping.value     = 1;
   }
-  else if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled == true)
-  {
+  else if (radioResourceConfigCommonP->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled == true) {
     cfg->uplink_reference_signal_config.uplink_rs_hopping.value     = 2;
   }
-  else // No hopping
-  {
+  else {
     cfg->uplink_reference_signal_config.uplink_rs_hopping.value     = 0;
   }
   cfg->uplink_reference_signal_config.uplink_rs_hopping.tl.tag = NFAPI_UPLINK_REFERENCE_SIGNAL_CONFIG_UPLINK_RS_HOPPING_TAG;
@@ -433,7 +431,7 @@ config_sib2(int Mod_idP,
     cfg->srs_config.srs_acknack_srs_simultaneous_transmission.value     = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
     cfg->srs_config.srs_acknack_srs_simultaneous_transmission.tl.tag = NFAPI_SRS_CONFIG_SRS_ACKNACK_SRS_SIMULTANEOUS_TRANSMISSION_TAG;
     cfg->num_tlv++;
-    
+
     
     nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
     
@@ -704,7 +702,6 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 #endif
 	       );
 
-
     mac_init_cell_params(Mod_idP,CC_idP);
 
     if (schedulingInfoList!=NULL)  {
@@ -717,65 +714,66 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
       RC.mac[Mod_idP]->common_channels[CC_idP].sib1_v13ext = sib1_v13ext;
     }
 #endif
-  if (radioResourceConfigCommon != NULL) {
-    LOG_I(MAC, "[CONFIG]SIB2/3 Contents (partial)\n");
-    LOG_I(MAC, "[CONFIG]pusch_config_common.n_SB = %ld\n",
-	  radioResourceConfigCommon->
-	  pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
-    LOG_I(MAC, "[CONFIG]pusch_config_common.hoppingMode = %ld\n",
-	  radioResourceConfigCommon->
-	  pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
-    LOG_I(MAC,
-	  "[CONFIG]pusch_config_common.pusch_HoppingOffset = %ld\n",
-	  radioResourceConfigCommon->
-	  pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
-    LOG_I(MAC, "[CONFIG]pusch_config_common.enable64QAM = %d\n",
-	  radioResourceConfigCommon->
-	  pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM);
-    LOG_I(MAC,
-	  "[CONFIG]pusch_config_common.groupHoppingEnabled = %d\n",
-	  radioResourceConfigCommon->
-	  pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.
-	  groupHoppingEnabled);
-    LOG_I(MAC,
-	  "[CONFIG]pusch_config_common.groupAssignmentPUSCH = %ld\n",
-	  radioResourceConfigCommon->
-	  pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.
-	  groupAssignmentPUSCH);
-    LOG_I(MAC,
-	  "[CONFIG]pusch_config_common.sequenceHoppingEnabled = %d\n",
-	  radioResourceConfigCommon->
-	  pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.
-	  sequenceHoppingEnabled);
-    LOG_I(MAC, "[CONFIG]pusch_config_common.cyclicShift  = %ld\n",
-	  radioResourceConfigCommon->
-	  pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
+    if (radioResourceConfigCommon != NULL) {
+      LOG_I(MAC, "[CONFIG]SIB2/3 Contents (partial)\n");
+      LOG_I(MAC, "[CONFIG]pusch_config_common.n_SB = %ld\n",
+	    radioResourceConfigCommon->
+	    pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
+      LOG_I(MAC, "[CONFIG]pusch_config_common.hoppingMode = %ld\n",
+	    radioResourceConfigCommon->
+	    pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
+      LOG_I(MAC,
+	    "[CONFIG]pusch_config_common.pusch_HoppingOffset = %ld\n",
+	    radioResourceConfigCommon->
+	    pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
+      LOG_I(MAC, "[CONFIG]pusch_config_common.enable64QAM = %d\n",
+	    radioResourceConfigCommon->
+	    pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM);
+      LOG_I(MAC,
+	    "[CONFIG]pusch_config_common.groupHoppingEnabled = %d\n",
+	    radioResourceConfigCommon->
+	    pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.
+	    groupHoppingEnabled);
+      LOG_I(MAC,
+	    "[CONFIG]pusch_config_common.groupAssignmentPUSCH = %ld\n",
+	    radioResourceConfigCommon->
+	    pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.
+	    groupAssignmentPUSCH);
+      LOG_I(MAC,
+	    "[CONFIG]pusch_config_common.sequenceHoppingEnabled = %d\n",
+	    radioResourceConfigCommon->
+	    pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.
+	    sequenceHoppingEnabled);
+      LOG_I(MAC, "[CONFIG]pusch_config_common.cyclicShift  = %ld\n",
+	    radioResourceConfigCommon->
+	    pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
 
-    AssertFatal(radioResourceConfigCommon->
-		rach_ConfigCommon.maxHARQ_Msg3Tx > 0,
-		"radioResourceconfigCommon %d == 0\n",
-		(int) radioResourceConfigCommon->
-		rach_ConfigCommon.maxHARQ_Msg3Tx);
+      AssertFatal(radioResourceConfigCommon->
+		  rach_ConfigCommon.maxHARQ_Msg3Tx > 0,
+		  "radioResourceconfigCommon %d == 0\n",
+		  (int) radioResourceConfigCommon->
+		  rach_ConfigCommon.maxHARQ_Msg3Tx);
 
-    RC.mac[Mod_idP]->common_channels[CC_idP].
-      radioResourceConfigCommon = radioResourceConfigCommon;
-    if (ul_CarrierFreq > 0)
-      RC.mac[Mod_idP]->common_channels[CC_idP].ul_CarrierFreq =
-	ul_CarrierFreq;
-    if (ul_Bandwidth)
-      RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth =
-	*ul_Bandwidth;
-    else
-      RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth =
-	RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.
-	dl_Bandwidth;
+      RC.mac[Mod_idP]->common_channels[CC_idP].
+	radioResourceConfigCommon = radioResourceConfigCommon;
+      if (ul_CarrierFreq > 0)
+	RC.mac[Mod_idP]->common_channels[CC_idP].ul_CarrierFreq =
+	  ul_CarrierFreq;
+      if (ul_Bandwidth)
+	RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth =
+	  *ul_Bandwidth;
+      else
+	RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth =
+	  RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.
+	  dl_Bandwidth;
 
-    config_sib2(Mod_idP, CC_idP, radioResourceConfigCommon,
+      config_sib2(Mod_idP, CC_idP, radioResourceConfigCommon,
 #ifdef Rel14
-		radioResourceConfigCommon_BR,
+		  radioResourceConfigCommon_BR,
 #endif
-		    NULL, ul_Bandwidth, additionalSpectrumEmission,
-		    mbsfn_SubframeConfigList);
+		  NULL, ul_Bandwidth, additionalSpectrumEmission,
+		  mbsfn_SubframeConfigList);
+
 
     }
   } // mib != NULL
@@ -786,14 +784,14 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 
     if (UE_id == -1) {
       LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
-          __LINE__, __FUNCTION__);
+	    __LINE__, __FUNCTION__);
     } else {
       if (logicalChannelConfig)
         UE_list->
           UE_template[CC_idP][UE_id].lcgidmap
           [logicalChannelIdentity] =
           *logicalChannelConfig->
-            ul_SpecificParameters->logicalChannelGroup;
+	  ul_SpecificParameters->logicalChannelGroup;
       else
         UE_list->
           UE_template[CC_idP][UE_id].lcgidmap
@@ -818,9 +816,9 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
     UE_id = find_UE_id(Mod_idP, rntiP);
     if (UE_id == -1)
       LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
-          __LINE__, __FUNCTION__);
+	    __LINE__, __FUNCTION__);
     else
-	    config_dedicated_scell(Mod_idP, rntiP, sCellToAddMod_r10);
+      config_dedicated_scell(Mod_idP, rntiP, sCellToAddMod_r10);
   }
 #endif
 
@@ -852,7 +850,7 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 #if defined(Rel10) || defined(Rel14)
 
   if (mbsfn_AreaInfoList != NULL) {
-      // One eNB could be part of multiple mbsfn syc area, this could change over time so reset each time
+    // One eNB could be part of multiple mbsfn syc area, this could change over time so reset each time
     LOG_I(MAC,"[eNB %d][CONFIG] Received %d MBSFN Area Info\n", Mod_idP, mbsfn_AreaInfoList->list.count);
     RC.mac[Mod_idP]->common_channels[0].num_active_mbsfn_area = mbsfn_AreaInfoList->list.count;
     
@@ -893,10 +891,10 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 	&pmch_InfoList->list.array[i]->mbms_SessionInfoList_r9;
       LOG_I(MAC, "PMCH[%d] Number of session (MTCH) is: %d\n", i,
 	    RC.mac[Mod_idP]->common_channels[0].
-		  mbms_SessionList[i]->list.count);
+	    mbms_SessionList[i]->list.count);
     }
   }
-
+  
 #endif
     
     LOG_E(MAC, "%s() %s:%d RC.mac[Mod_idP]->if_inst->PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.mac[Mod_idP]->if_inst->PHY_config_req);
@@ -918,11 +916,13 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
       phycfg.Mod_id = Mod_idP;
       phycfg.CC_id  = CC_idP;
       phycfg.cfg    = &RC.mac[Mod_idP]->config[CC_idP];
-
+      
       if (RC.mac[Mod_idP]->if_inst->PHY_config_req) RC.mac[Mod_idP]->if_inst->PHY_config_req(&phycfg); 
-
+      
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
     }
-
+    
     return(0);			   
 }
+
+
