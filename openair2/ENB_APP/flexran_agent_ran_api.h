@@ -301,6 +301,9 @@ long flexran_get_extended_bsr_size(mid_t mod_id, mid_t ue_id);
 /* Get number of UE transmission antennas */
 int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id);
 
+/* Get the IMSI of UE */
+uint64_t flexran_get_ue_imsi(mid_t mod_id, mid_t ue_id);
+
 /* Get logical channel group of a channel with id lc_id */
 long flexran_get_lcg(mid_t mod_id, mid_t ue_id, mid_t lc_id);
 

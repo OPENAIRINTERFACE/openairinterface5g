@@ -86,8 +86,25 @@ static const uint16_t S1AP_INTEGRITY_EIA2_MASK = 0x4000;
 #endif
 #endif
 
-
-
+uint64_t compute_imsi(ImsiMobileIdentity_t *id) {
+  uint64_t imsi;
+  imsi  = id->digit15;
+  imsi += id->digit14 * 10;               // pow(10, 1)
+  imsi += id->digit13 * 100;              // pow(10, 2)
+  imsi += id->digit12 * 1000;             // pow(10, 3)
+  imsi += id->digit11 * 10000;            // pow(10, 4)
+  imsi += id->digit10 * 100000;           // pow(10, 5)
+  imsi += id->digit9  * 1000000;          // pow(10, 6)
+  imsi += id->digit8  * 10000000;         // pow(10, 7)
+  imsi += id->digit7  * 100000000;        // pow(10, 8)
+  imsi += id->digit6  * 1000000000;       // pow(10, 9)
+  imsi += id->digit5  * 10000000000;      // pow(10, 10)
+  imsi += id->digit4  * 100000000000;     // pow(10, 11)
+  imsi += id->digit3  * 1000000000000;    // pow(10, 12)
+  imsi += id->digit2  * 10000000000000;   // pow(10, 13)
+  imsi += id->digit1  * 100000000000000;  // pow(10, 14)
+  return imsi;
+}
 
 # if defined(ENABLE_ITTI)
 //------------------------------------------------------------------------------
