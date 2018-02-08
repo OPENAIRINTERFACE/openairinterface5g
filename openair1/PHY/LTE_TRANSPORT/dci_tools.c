@@ -2565,6 +2565,8 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
 
   uint32_t ndi     = pdu->dci_pdu_rel8.new_data_indication_1;
 
+  uint16_t UE_id   = -1;
+
 #ifdef T_TRACER
   T(T_ENB_PHY_ULSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
     T_INT(pdu->dci_pdu_rel8.rnti), T_INT(((frame*10+subframe+4) % 8) /* TODO: correct harq pid */),
@@ -2709,6 +2711,13 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
     LOG_E(PHY,"Invalid N_RB_DL %d\n", frame_parms->N_RB_DL);
     DevParam (frame_parms->N_RB_DL, 0, 0);
     break;
+  }
+
+  if(frame_parms->frame_type == TDD){
+     UE_id = find_ulsch(pdu->dci_pdu_rel8.rnti, eNB,SEARCH_EXIST_OR_FREE);
+     if(UE_id != -1){
+       eNB->ulsch[UE_id]->harq_processes[pdu->dci_pdu_rel8.harq_pid]->V_UL_DAI = dai +1;
+     }
   }
 }
 
