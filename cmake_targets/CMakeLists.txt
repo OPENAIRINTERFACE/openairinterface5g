@@ -1394,14 +1394,6 @@ add_library(L2_UE
 
 include_directories(${NFAPI_USER_DIR})
 
-if (FLEXRAN_AGENT_SB_IF)
-
-#Test for adding a shared library
-add_library(default_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c)
-add_library(remote_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c)
-
-endif()
-
 # L3 Libs
 ##########################
 
