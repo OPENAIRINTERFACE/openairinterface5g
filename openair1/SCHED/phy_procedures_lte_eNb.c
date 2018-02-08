@@ -1351,8 +1351,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
   
-  if (fp->frame_type == FDD) harq_pid = ((10*frame) + subframe)&7;
-  else                       harq_pid = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
+  harq_pid = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     ulsch = eNB->ulsch[i];

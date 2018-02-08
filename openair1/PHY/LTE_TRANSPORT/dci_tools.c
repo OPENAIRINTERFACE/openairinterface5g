@@ -6587,12 +6587,7 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
   } else {
 
     switch (frame_parms->tdd_config) {
-
     case 1:
-      if ((subframe==2) ||
-          (subframe==3) ||
-          (subframe==7) ||
-          (subframe==8))
         switch (subframe) {
         case 2:
         case 3:
