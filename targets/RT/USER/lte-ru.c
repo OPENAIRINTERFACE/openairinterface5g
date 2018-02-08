@@ -2161,7 +2161,6 @@ void init_RU(char *rf_config_file) {
   
   int ru_id;
   RU_t *ru;
-  int ret;
   PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
   int i;
   int CC_id;
