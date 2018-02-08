@@ -61,7 +61,7 @@ socket_link_t *new_link_server(int port)
   ret->socket_fd = -1;
 
 
-  printf("MAC create a new link server socket at port %d\n", port);
+  //printf("MAC create a new link server socket at port %d\n", port);
 
   socket_server = socket(AF_INET, SOCK_STREAM, 0);
   if (socket_server == -1) {
@@ -103,9 +103,7 @@ socket_link_t *new_link_server(int port)
     goto error;
   }
 
-  close(socket_server);
-
-  printf("MAC connection from %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+  //printf("MAC connection from %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
   return ret;
 
 error:
@@ -180,7 +178,7 @@ socket_link_t *new_link_udp_server(int port){
   }
   ret->socket_fd = -1;
 
-  LOG_I(PROTO_AGENT, "create a new udp link server socket at port %d\n", port);
+  //printf("PROTO_AGENT: create a new udp link server socket at port %d\n", port);
 
   //create a UDP socket
   if ((socket_server=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
@@ -206,7 +204,7 @@ error:
   close(socket_server);
   if (ret != NULL) close(ret->socket_fd);
   free(ret);
-  LOG_E(PROTO_AGENT, "ERROR in new_link_udp_server (see above), returning NULL\n");
+  //printf("\n\n\nERROR PROTO_AGENT: ERROR in new_link_udp_server (see above), returning NULL\n");
   return NULL;
 }
 
@@ -307,7 +305,7 @@ error:
   close(listenSock);
   if (ret != NULL) close(ret->socket_fd);
   free(ret);
-  LOG_E(PROTO_AGENT, "ERROR in new_link_sctp_server (see above), returning NULL\n");
+  LOG_E(MAC,"ERROR in new_link_sctp_server (see above), returning NULL\n");
   return NULL;
 }
 
@@ -336,9 +334,9 @@ socket_link_t *new_link_sctp_client(char *server, int port)
   bzero ((void *) &servaddr, sizeof (servaddr));
   servaddr.sin_family = AF_INET;
   servaddr.sin_port = htons (port);
-  LOG_E(PROTO_AGENT, "invalid IP address '%s', use a.b.c.d notation\n", server);
+
   if (inet_aton(server, &servaddr.sin_addr) == 0) {
-    LOG_E(PROTO_AGENT, "invalid IP address '%s', use a.b.c.d notation\n", server);
+    LOG_E(MAC,"invalid IP address '%s', use a.b.c.d notation\n", server);
     goto error;
   }
 
@@ -385,14 +383,14 @@ static int socket_udp_send(int socket_fd, void *buf, int size, char *peer_addr, 
   while (size) {
     l = sendto(my_socket, s, size, 0, (struct sockaddr *) &si_other, slen);
     if (l == -1) goto error;
-    if (l == 0) { LOG_E(PROTO_AGENT, "%s:%d: this cannot happen, normally...\n", __FILE__, __LINE__); abort(); }
+    if (l == 0) { printf("\n\n\nERROR PROTO_AGENT: %s:%d: this cannot happen, normally...\n", __FILE__, __LINE__); abort(); }
     size -= l;
     s += l;
   }
   
   return 0;
 error:
-  LOG_E(PROTO_AGENT, "socket_udp_send: ERROR: %s\n", strerror(errno));
+  LOG_E(MAC,"socket_udp_send: ERROR: %s\n", strerror(errno));
   return -1;
 }
 
@@ -541,8 +539,6 @@ int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size, uin
   
   int peer_port = 0;
   /* received the size first, maximum is 2^31 bytes */
-  if (socket_receive(link->socket_fd, sizebuf, 4) == -1)
-    goto error;
   if ((proto_type == 0) || (proto_type == 2))
   {
     if (socket_receive(link->socket_fd, sizebuf, 4) == -1)

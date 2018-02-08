@@ -190,7 +190,7 @@ int proto_agent_serialize_message(Protocol__FlexsplitMessage *msg, void **buf, i
   return 0;
 
  error:
-  LOG_E(PROTO_AGENT, "an error occured\n"); 
+  LOG_E(MAC, "an error occured\n"); 
   return -1;
 }
 
@@ -344,7 +344,7 @@ int proto_agent_pdcp_data_req(mid_t mod_id, const void *params, Protocol__Flexsp
       free(data_req);
     if(*msg != NULL)
       free(*msg);
-    LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
+    LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
     return -1;
   
 }
@@ -363,7 +363,7 @@ int proto_agent_destroy_pdcp_data_req(Protocol__FlexsplitMessage *msg) {
   return 0;
   
   error:
-    LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
+    LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
     return -1;
 }
 
@@ -372,10 +372,11 @@ int proto_agent_get_ack_result(mid_t mod_id, const void *params, Protocol__Flexs
   Protocol__FspHeader *header;
   xid_t xid;
   rlc_op_status_t result = 0;
-  LOG_D(PROTO_AGENT, "handling the data_req_ack message\n");
+  //printf("PROTO_AGENT: handling the data_req_ack message\n");
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
   Protocol__FspRlcDataReqAck *data_ack = input->data_req_ack;
   result = data_ack->result;
+  //printf("PROTO_AGENT: ACK RESULT IS %u\n", result);
   ack_result = result;
   return 0;
 
@@ -485,7 +486,7 @@ int proto_agent_destroy_pdcp_data_req_ack(Protocol__FlexsplitMessage *msg) {
   return 0;
   
   error:
-    LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
+    LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
     return -1;
 }
 
@@ -500,7 +501,7 @@ int proto_agent_destroy_pdcp_data_ind(Protocol__FlexsplitMessage *msg) {
   return 0;
   
   error:
-    LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
+    LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
     return -1;
 }
 
@@ -611,7 +612,7 @@ int proto_agent_pdcp_data_ind(mid_t mod_id, const void *params, Protocol__Flexsp
       free(data_ind);
     if(*msg != NULL)
       free(*msg);
-    LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
+    LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
     return -1;
   
 }
@@ -623,7 +624,7 @@ int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__Fl
   xid_t xid;
   rlc_op_status_t result = 0;
   
-  LOG_I(PROTO_AGENT, "creating the data_ind_ack message\n");
+  //printf("PROTO_AGENT: creating the data_ind_ack message\n");
   
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
   Protocol__FspPdcpDataInd *data_ind = input->data_ind_msg;
@@ -696,18 +697,6 @@ int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__Fl
   (*msg)->has_msg_dir = 1;
   (*msg)->data_req_ack = ack;
   
-  
-  //pdcp_control_plane_data_pdu_header* pdcp_header = (pdcp_control_plane_data_pdu_header*) pdcp_pdu_p;
-  
-//   int sequence_number = pdcp_get_sequence_number_of_pdu_with_long_sn((unsigned char*)pdcp_pdu_p);
-//   LOG_I(PROTO_AGENT,"RECEIVED DATA IND WITH SEQ NO %d\n", sequence_number);
-  
-  
-  
-  
-  
-  
-  
   return 0;
   
   error:
@@ -736,7 +725,7 @@ int proto_agent_destroy_pdcp_data_ind_ack(Protocol__FlexsplitMessage *msg) {
   return 0;
   
   error:
-    LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
+    LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
     return -1;
 }
 

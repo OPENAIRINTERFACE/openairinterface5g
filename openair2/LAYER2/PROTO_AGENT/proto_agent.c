@@ -87,13 +87,13 @@ void *receive_thread(void *args) {
       goto error;
     }
 
-    printf("PROTO_AGENT: Received message with size %d and priority %d, calling message handle\n", size, priority);
+    LOG_D(PROTO_AGENT, "Received message with size %d and priority %d, calling message handle\n", size, priority);
 
     msg=proto_agent_handle_message(d->enb_id, data, size);
 
     if (msg == NULL)
     {
-        printf("PROTO_AGENT: msg to send back is NULL\n");
+        LOG_D(PROTO_AGENT, "msg to send back is NULL\n");
     }
     
     if (msg != NULL){
@@ -101,14 +101,14 @@ void *receive_thread(void *args) {
 	err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
 	goto error;
       }
-      printf("PROTO_AGENT: sent message with size %d\n", size);
+      LOG_D(PROTO_AGENT, "sent message with size %d\n", size);
     }
   }
 
   return NULL;
 
 error:
-  LOG_E(PROTO_AGENT,"receive_thread: error %d occured\n",err_code);
+  LOG_E(PROTO_AGENT, "receive_thread: error %d occured\n",err_code);
   return NULL;
 }
 
@@ -145,7 +145,7 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
 
 void * proto_server_init(void *args)
 {
-   printf( "Initializing server thread for listening connections\n");
+   //printf( "Initializing server thread for listening connections\n");
    mid_t mod_id = (mid_t) 0;
    cudu_params_t* cudu = NULL;
    cudu = get_cudu_config();
@@ -167,28 +167,28 @@ int proto_server_start(mid_t mod_id, const cudu_params_t* cudu){
 
   if (cudu->local_du.du_ipv4_address != NULL)
   {
-    //printf("PROTO_AGENT: DU ADDRESS IS %s\n",cudu->local_du.du_ipv4_address);
+    //LOG_D(PROTO_AGENT, "DU ADDRESS IS %s\n",cudu->local_du.du_ipv4_address);
     peer_address = strdup(cudu->local_du.du_ipv4_address);
     strcpy(in_ip, cudu->local_du.du_ipv4_address);
   }
   else
   {
     strcpy(in_ip, DEFAULT_PROTO_AGENT_IPv4_ADDRESS);
-    //printf("PROTO_AGENT: Cannot read DU address from conf file, setting the default (%s)\n", DEFAULT_PROTO_AGENT_IPv4_ADDRESS);
+    //LOG_D(PROTO_AGENT, "Cannot read DU address from conf file, setting the default (%s)\n", DEFAULT_PROTO_AGENT_IPv4_ADDRESS);
   }
   if (cudu->local_du.du_port != 0)
     in_port = cudu->local_du.du_port;
   else
   {
     in_port = DEFAULT_PROTO_AGENT_PORT;
-    //printf("PROTO_AGENT: Cannot read DU port from conf file, setting the default (%d)\n", DEFAULT_PROTO_AGENT_PORT);
+    //LOG_D(PROTO_AGENT, "Cannot read DU port from conf file, setting the default (%d)\n", DEFAULT_PROTO_AGENT_PORT);
   }
 
   if(cudu->local_du.tcp == 1)
   {
       tcp = 1;
       link_type = strdup("TCP");
-      printf("PROTO_AGENT: Starting PROTO agent SERVER for module id %d on ipv4 %s, port %d over TCP\n",
+      LOG_D(PROTO_AGENT, "Starting PROTO agent SERVER for module id %d on ipv4 %s, port %d over TCP\n",
 	proto_server[mod_id].enb_id,
 	in_ip,
 	in_port);
@@ -197,7 +197,7 @@ int proto_server_start(mid_t mod_id, const cudu_params_t* cudu){
   {
       udp = 1;      
       link_type = strdup("UDP");
-      printf("PROTO_AGENT: Starting PROTO agent SERVER for module id %d on ipv4 %s, port %d over UDP\n",
+      LOG_D(PROTO_AGENT, "Starting PROTO agent SERVER for module id %d on ipv4 %s, port %d over UDP\n",
 	proto_server[mod_id].enb_id,
 	in_ip,
 	in_port);
@@ -206,7 +206,7 @@ int proto_server_start(mid_t mod_id, const cudu_params_t* cudu){
   {
       sctp = 1;
       link_type = strdup("SCTP");
-      printf("PROTO_AGENT: Starting PROTO agent SERVER for module id %d on ipv4 %s, port %d over SCTP\n",
+      LOG_D(PROTO_AGENT, "Starting PROTO agent SERVER for module id %d on ipv4 %s, port %d over SCTP\n",
 	proto_server[mod_id].enb_id,
 	in_ip,
 	in_port);
@@ -215,7 +215,7 @@ int proto_server_start(mid_t mod_id, const cudu_params_t* cudu){
   {
       tcp = 1;
       link_type = strdup("TCP");
-      printf("PROTO_AGENT: Starting PROTO agent SERVER for module id %d on ipv4 %s, port %d over TCP\n",
+      LOG_D(PROTO_AGENT, "Starting PROTO agent SERVER for module id %d on ipv4 %s, port %d over TCP\n",
 	proto_server[mod_id].enb_id,
 	in_ip,
 	in_port);
@@ -269,7 +269,7 @@ int proto_server_start(mid_t mod_id, const cudu_params_t* cudu){
   if (udp == 0)
   {
     // If the comm is not UDP, allow the server to send the first packet over the channel
-    printf( "Proto agent Server: Calling the echo_request packet constructor\n");
+    //printf( "Proto agent Server: Calling the echo_request packet constructor\n");
     msg_flag = proto_agent_echo_request(mod_id, NULL, &init_msg);
     if (msg_flag != 0)
     goto error;
@@ -281,7 +281,7 @@ int proto_server_start(mid_t mod_id, const cudu_params_t* cudu){
 
     if (msg!= NULL)
     {
-      printf("PROTO_AGENT: Server sending the message over the async channel\n");
+      LOG_D(PROTO_AGENT, "Server sending the message over the async channel\n");
       proto_agent_async_msg_send((void *)msg, (int) msgsize, 1, (void *) channel_info);
     }
     /* After sending the message, wait for any replies; 
@@ -293,11 +293,11 @@ int proto_server_start(mid_t mod_id, const cudu_params_t* cudu){
 
   
   du_thread=new_thread(proto_server_receive, &proto_server[mod_id]);
-    printf("PROTO_AGENT: server ends with thread_id %u\n",du_thread);
+  LOG_D(PROTO_AGENT, "server ends with thread_id %u\n",du_thread);
   return 0;
 
 error:
-  LOG_E(PROTO_AGENT,"there was an error\n");
+  LOG_E(PROTO_AGENT, "there was an error\n");
   return 1;
 
 }
@@ -326,21 +326,21 @@ int proto_agent_start(uint8_t enb_id, mid_t cu_id, uint8_t type_id, cudu_params_
   else
   {
     strcpy(in_ip, DEFAULT_PROTO_AGENT_IPv4_ADDRESS);
-    printf("PROTO_AGENT: Cannot read DU address from conf file, setting the default (%s)\n", DEFAULT_PROTO_AGENT_IPv4_ADDRESS);
+    LOG_D(PROTO_AGENT, "Cannot read DU address from conf file, setting the default (%s)\n", DEFAULT_PROTO_AGENT_IPv4_ADDRESS);
   }
   if (cudu->cu[cu_id].cu_port != 0)
     in_port = cudu->cu[cu_id].cu_port;
   else
   {
     in_port = DEFAULT_PROTO_AGENT_PORT;
-    printf("PROTO_AGENT: Cannot read DU port from conf file, setting the default (%d)\n", DEFAULT_PROTO_AGENT_PORT);
+    LOG_D(PROTO_AGENT, "Cannot read DU port from conf file, setting the default (%d)\n", DEFAULT_PROTO_AGENT_PORT);
   }
 
   if(cudu->cu[cu_id].tcp == 1)
   {
       tcp = 1;
       link_type = strdup("TCP");
-      printf("PROTO_AGENT: Starting PROTO agent client for module id %d on ipv4 %s, port %d over TCP\n",
+      LOG_D(PROTO_AGENT, "Starting PROTO agent client for module id %d on ipv4 %s, port %d over TCP\n",
 	proto_server[cu_id].enb_id,
 	in_ip,
 	in_port);
@@ -349,7 +349,7 @@ int proto_agent_start(uint8_t enb_id, mid_t cu_id, uint8_t type_id, cudu_params_
   {
       udp = 1;      
       link_type = strdup("UDP");
-      printf("PROTO_AGENT: Starting PROTO agent client for module id %d on ipv4 %s, port %d over UDP\n",
+      LOG_D(PROTO_AGENT, "Starting PROTO agent client for module id %d on ipv4 %s, port %d over UDP\n",
 	proto_server[cu_id].enb_id,
 	in_ip,
 	in_port);
@@ -358,7 +358,7 @@ int proto_agent_start(uint8_t enb_id, mid_t cu_id, uint8_t type_id, cudu_params_
   {
       sctp = 1;
       link_type = strdup("SCTP");
-      printf("PROTO_AGENT: Starting PROTO agent client for module id %d on ipv4 %s, port %d over SCTP\n",
+      LOG_D(PROTO_AGENT, "Starting PROTO agent client for module id %d on ipv4 %s, port %d over SCTP\n",
 	proto_server[cu_id].enb_id,
 	in_ip,
 	in_port);
@@ -367,7 +367,7 @@ int proto_agent_start(uint8_t enb_id, mid_t cu_id, uint8_t type_id, cudu_params_
   {
       tcp = 1;
       link_type = strdup("TCP");
-      printf("PROTO_AGENT: Starting PROTO agent client for module id %d on ipv4 %s, port %d over TCP\n",
+      LOG_D(PROTO_AGENT, "Starting PROTO agent client for module id %d on ipv4 %s, port %d over TCP\n",
 	proto_server[cu_id].enb_id,
 	in_ip,
 	in_port);
@@ -433,7 +433,7 @@ int proto_agent_start(uint8_t enb_id, mid_t cu_id, uint8_t type_id, cudu_params_
 
     if (msg!= NULL)
     {
-      printf("PROTO_AGENT: Client sending the ECHO_REQUEST message over the async channel\n");
+      LOG_D(PROTO_AGENT, "Client sending the ECHO_REQUEST message over the async channel\n");
       proto_agent_async_msg_send((void *)msg, (int) msgsize, 1, (void *) channel_info);
     }
   }
@@ -442,11 +442,10 @@ int proto_agent_start(uint8_t enb_id, mid_t cu_id, uint8_t type_id, cudu_params_
      over the channel
   */
   cu_thread[cu_id]=new_thread(proto_client_receive, (void *) &client_info[cu_id]);
-
   return 0;
 
 error:
-  LOG_E(PROTO_AGENT,"there was an error %u\n", err_code);
+  LOG_E(PROTO_AGENT, "there was an error %u\n", err_code);
   return 1;
 
 }
@@ -459,7 +458,7 @@ proto_agent_send_hello(void)
   int msg_flag = 0;
 
   
-  printf( "PDCP agent: Calling the HELLO packet constructor\n");
+  //printf( "PDCP agent: Calling the HELLO packet constructor\n");
   msg_flag = proto_agent_hello(proto_agent[TEST_MOD].enb_id, NULL, &init_msg);
   
   int msgsize = 0;
@@ -468,7 +467,7 @@ proto_agent_send_hello(void)
     proto_agent_serialize_message(init_msg, &msg, &msgsize);
   }
   
-  printf("PROTO_AGENT: Agent sending the message over the async channel\n");
+  LOG_D(PROTO_AGENT, "Agent sending the message over the async channel\n");
   proto_agent_async_msg_send((void *)msg, (int) msgsize, 1, (void *) client_channel[TEST_MOD]);
 }
 
@@ -478,7 +477,7 @@ proto_agent_send_rlc_data_req(uint8_t mod_id, uint8_t type_id, const protocol_ct
 			      confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP)
 {
   
-  //printf("PROTO_AGENT: PROTOPDCP: sending the data req over the async channel\n");
+  //LOG_D(PROTO_AGENT, "PROTOPDCP: sending the data req over the async channel\n");
   
   Protocol__FlexsplitMessage *msg = NULL;
   Protocol__FlexsplitMessage *init_msg=NULL;
@@ -492,7 +491,7 @@ proto_agent_send_rlc_data_req(uint8_t mod_id, uint8_t type_id, const protocol_ct
   int ret;
   int err_code;
   
-  printf( "PDCP agent: Calling the PDCP DATA REQ constructor\n");
+  //printf( "PDCP agent: Calling the PDCP DATA REQ constructor\n");
  
   data_req_args *args = malloc(sizeof(data_req_args));
   
@@ -518,7 +517,7 @@ proto_agent_send_rlc_data_req(uint8_t mod_id, uint8_t type_id, const protocol_ct
     msg = proto_agent_pack_message(init_msg, &msgsize);
   
     
-    printf("PROTO_AGENT: Sending the pdcp data_req message over the async channel\n");
+    LOG_D(PROTO_AGENT, "Sending the pdcp data_req message over the async channel\n");
   
     if (msg!=NULL)
       proto_agent_async_msg_send((void *)msg, (int) msgsize, 1, (void *) client_channel[mod_id]);
@@ -531,7 +530,7 @@ proto_agent_send_rlc_data_req(uint8_t mod_id, uint8_t type_id, const protocol_ct
   
   return;
 error:
-  LOG_E(PROTO_AGENT,"there was an error\n");
+  LOG_E(PROTO_AGENT, "PROTO_AGENT there was an error\n");
   return;
   
 }
@@ -541,7 +540,7 @@ void
 proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP, const srb_flag_t srb_flagP,
 			       const MBMS_flag_t MBMS_flagP, const rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP)
 {
-  //printf("PROTO_AGENT: PROTOPDCP: Sending Data Indication over the async channel\n");
+  //LOG_D(PROTO_AGENT, "PROTOPDCP: Sending Data Indication over the async channel\n");
   
   Protocol__FlexsplitMessage *msg = NULL;
   Protocol__FlexsplitMessage *init_msg = NULL;
@@ -556,7 +555,7 @@ proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP, const srb_f
   int ret;
   int err_code;
   
-  printf( "PDCP agent: Calling the PDCP_DATA_IND constructor\n");
+  //printf( "PDCP agent: Calling the PDCP_DATA_IND constructor\n");
  
   data_req_args *args = malloc(sizeof(data_req_args));
   
@@ -581,7 +580,7 @@ proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP, const srb_f
     
     if (msg!=NULL)
     {
-      printf("PROTO_AGENT: Sending the pdcp data_ind message over the async channel\n");
+      LOG_D(PROTO_AGENT, "Sending the pdcp data_ind message over the async channel\n");
       proto_agent_async_msg_send((void *)msg, (int) msgsize, 1, (void *) server_channel);
     }
   }
@@ -592,7 +591,7 @@ proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP, const srb_f
   return;
 
 error:
-  LOG_E(PROTO_AGENT,"there was an error\n");
+  LOG_E(PROTO_AGENT, "there was an error\n");
   return;
   
 }
@@ -622,26 +621,26 @@ proto_server_receive(void)
       goto error;
     }
 
-    printf("PROTO_AGENT: Server side Received message with size %d and priority %d, calling message handle\n", size, priority);
+    LOG_D(PROTO_AGENT, "Server side Received message with size %d and priority %d, calling message handle\n", size, priority);
 
     msg=proto_agent_handle_message(d->enb_id, data, size);
 
     if (msg == NULL)
     {
-        printf("PROTO_AGENT: msg to send back is NULL\n");
+        LOG_D(PROTO_AGENT, "msg to send back is NULL\n");
     }
     else
     {
         ser_msg = proto_agent_pack_message(msg, &size);
     }
   
-    printf("PROTO_AGENT: Server sending the reply message over the async channel\n");
+    LOG_D(PROTO_AGENT, "Server sending the reply message over the async channel\n");
     if (ser_msg != NULL){
       if (proto_agent_async_msg_send((void *)ser_msg, (int) size, 1, (void *) server_channel)){
 	err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
 	goto error;
       }
-      printf("PROTO_AGENT: sent message with size %d\n", size);
+      LOG_D(PROTO_AGENT, "sent message with size %d\n", size);
     }
 
   }
@@ -649,7 +648,7 @@ proto_server_receive(void)
   return NULL;
 
 error:
-  LOG_E(PROTO_AGENT,"server_receive_thread: error %d occured\n",err_code);
+  LOG_E(PROTO_AGENT, "server_receive_thread: error %d occured\n",err_code);
   return NULL;
   
 }
@@ -662,7 +661,7 @@ proto_client_receive(void *args)
   mid_t 	      recv_mod = recv->mod_id;
   uint8_t 	      type = recv->type_id;
 
-  printf("PROTO_AGENT: \n\nrecv mod is %u\n\n",recv_mod);  
+  LOG_D(PROTO_AGENT, "\n\nrecv mod is %u\n\n",recv_mod);  
   //proto_agent_instance_t         *d = &proto_agent[TEST_MOD];
   void                  *data = NULL;
   int                   size;
@@ -682,32 +681,32 @@ proto_client_receive(void *args)
     {
 	//just wait
     }
-    printf("PROTO_AGENT: Will receive packets\n");
+    LOG_D(PROTO_AGENT, "Will receive packets\n");
     if (proto_agent_async_msg_recv(&data, &size, &priority, client_channel[recv_mod])){
       err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
       goto error;
     }
 
-    printf("PROTO_AGENT: Client Received message with size %d and priority %d, calling message handle with mod_id %u\n", size, priority, recv_mod);
+    LOG_D(PROTO_AGENT, "Client Received message with size %d and priority %d, calling message handle with mod_id %u\n", size, priority, recv_mod);
 
     msg=proto_agent_handle_message(recv_mod, data, size);
 
     if (msg == NULL)
     {
-        printf("PROTO_AGENT: msg to send back is NULL\n");
+        LOG_D(PROTO_AGENT, "msg to send back is NULL\n");
     }
     else
     {
       ser_msg = proto_agent_pack_message(msg, &size);
     }
-    printf("PROTO_AGENT: Server sending the reply message over the async channel\n");
+    LOG_D(PROTO_AGENT, "Server sending the reply message over the async channel\n");
 
     if (ser_msg != NULL){
       if (proto_agent_async_msg_send((void *)ser_msg, (int) size, 1, (void *) client_channel[recv_mod])){
 	err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
 	goto error;
       }
-      printf("PROTO_AGENT: sent message with size %d\n", size);
+      LOG_D(PROTO_AGENT, "sent message with size %d\n", size);
     }
    
   }
@@ -715,7 +714,7 @@ proto_client_receive(void *args)
   return NULL;
 
 error:
-  LOG_E(PROTO_AGENT,"client_receive_thread: error %d occured\n",err_code);
+  LOG_E(PROTO_AGENT, " client_receive_thread: error %d occured\n",err_code);
   return NULL;
   
 }
