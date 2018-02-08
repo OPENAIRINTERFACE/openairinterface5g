@@ -993,7 +993,7 @@ pdcp_remove_UE(
     }
   }
 
-  for (srb_id=0; srb_id<2; srb_id++) {
+  for (srb_id=1; srb_id<3; srb_id++) {
     key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, srb_id, SRB_FLAG_YES);
     h_rc = hashtable_remove(pdcp_coll_p, key);
   }
