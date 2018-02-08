@@ -661,8 +661,13 @@ rx_sdu(const module_id_t enb_mod_idP,
 
 
 		    if(mac->common_channels[CC_idP].tdd_Config!=NULL){
-		      ra->Msg4_frame = frameP + ((subframeP > 2) ? 1 : 0);
-		      ra->Msg4_subframe = (subframeP + 7) % 10; // TODO need to be complete for other tdd configs.
+		        switch(mac->common_channels[CC_idP].tdd_Config->subframeAssignment){
+		          case 1:
+		            ra->Msg4_frame = frameP + ((subframeP > 2) ? 1 : 0);
+		            ra->Msg4_subframe = (subframeP + 7) % 10;
+		            break;
+		          // TODO need to be complete for other tdd configs.
+		        }
 		    }else{
 		    // Program Msg4 PDCCH+DLSCH/MPDCCH transmission 4 subframes from now, // Check if this is ok for BL/CE, or if the rule is different
 		      ra->Msg4_frame = frameP + ((subframeP > 5) ? 1 : 0);
