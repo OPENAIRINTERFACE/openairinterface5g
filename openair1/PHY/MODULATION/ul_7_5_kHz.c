@@ -23,11 +23,7 @@
 #include "PHY/extern.h"
 #include "extern.h"
 #include "kHz_7_5.h"
-#ifdef USER_MODE
 #include <math.h>
-#else
-#include "rtai_math.h"
-#endif
 #include "PHY/sse_intrin.h"
 
 short conjugate75[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;

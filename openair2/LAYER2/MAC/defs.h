@@ -39,15 +39,9 @@
 
 
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#endif
-
-//#include "COMMON/openair_defs.h"
-
-
 
 #include "PHY/defs.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
@@ -109,9 +103,7 @@
 //#define MCH_PAYLOAD_SIZE_MAX 16384// this value is using in case mcs and TBS index are high
 #endif
 
-#ifdef USER_MODE
 #define printk printf
-#endif				//USER_MODE
 
 /*!\brief Maximum number of logical channl group IDs */
 #define MAX_NUM_LCGID 4
@@ -162,6 +154,8 @@
 
 /*!\brief maximum number of slices / groups */
 #define MAX_NUM_SLICES 4
+
+#define U_PLANE_INACTIVITY_VALUE 6000
 
 /* 
  * eNB part 
@@ -471,6 +465,15 @@ typedef struct {
     uint32_t total_ccch_buffer;
     /// BCCH MCS
     uint32_t ccch_mcs;
+
+  /// num PCCH PDU per CC
+  uint32_t total_num_pcch_pdu;
+  /// PCCH buffer size
+  uint32_t pcch_buffer;
+  /// total PCCH buffer size
+  uint32_t total_pcch_buffer;
+  /// BCCH MCS
+  uint32_t pcch_mcs;
 
 /// num active users
     uint16_t num_dlactive_UEs;
@@ -824,6 +827,8 @@ typedef struct {
     int32_t cqi_req_timer;
     int32_t ul_inactivity_timer;
     int32_t ul_failure_timer;
+    uint32_t ue_reestablishment_reject_timer;
+    uint32_t ue_reestablishment_reject_timer_thres;
     int32_t ul_scheduled;
     int32_t ra_pdcch_order_sent;
     int32_t ul_out_of_sync;
@@ -855,6 +860,7 @@ typedef struct {
     uint8_t aperiodic_wideband_cqi1[NFAPI_CC_MAX];
     uint8_t aperiodic_wideband_pmi1[NFAPI_CC_MAX];
     uint8_t dl_cqi[NFAPI_CC_MAX];
+    int32_t       uplane_inactivity_timer;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {
@@ -982,6 +988,10 @@ typedef struct {
     uint32_t BCCH_alloc_pdu;
     /// Outgoing CCCH pdu for PHY
     CCCH_PDU CCCH_pdu;
+    /// Outgoing PCCH DCI allocation
+    uint32_t PCCH_alloc_pdu;
+    /// Outgoing PCCH pdu for PHY
+    PCCH_PDU PCCH_pdu;
     /// Outgoing RAR pdu for PHY
     RAR_PDU RAR_pdu;
     /// Template for RA computations
@@ -1102,6 +1112,8 @@ typedef struct eNB_MAC_INST_s {
     time_stats_t schedule_mch;
     /// processing time of eNB ULSCH reception
     time_stats_t rx_ulsch_sdu;	// include rlc_data_ind
+    /// processing time of eNB PCH scheduler
+    time_stats_t schedule_pch;
 } eNB_MAC_INST;
 
 /* 

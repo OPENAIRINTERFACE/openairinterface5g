@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vnf>
+	
+	<vnf_p7_list>
+		<vnf_p7>
+			<wireshark_test_mode>1</wireshark_test_mode>
+			<port>5200</port>
+			<address>127.0.0.1</address>
+			<timing_window>10</timing_window>
+			<periodic_timing_enabled>0</periodic_timing_enabled>
+			<periodic_timing_window>0</periodic_timing_window>
+			<aperiodic_timing_enabled>0</aperiodic_timing_enabled>
+
+			<data>
+				<udp>
+					<rx_port>8891</rx_port>
+					<tx_addr>127.0.0.1</tx_addr>
+					<tx_port>8892</tx_port>
+				</udp>
+			</data>
+		</vnf_p7>
+	</vnf_p7_list>
+</vnf>

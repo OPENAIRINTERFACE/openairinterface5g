@@ -153,7 +153,9 @@ typedef struct {
   /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
   uint8_t prach_Config_enabled;
   /// PRACH Configuration Information
+#ifdef Rel14
   PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
+#endif  
 } PRACH_eMTC_CONFIG_COMMON;
 
 /// Enumeration for parameter \f$N_\text{ANRep}\f$ \ref PUCCH_CONFIG_DEDICATED::repetitionFactor.
@@ -817,7 +819,7 @@ typedef struct {
   uint8_t narrowband;
   /// number of PRB pairs for MPDCCH
   uint8_t number_of_prb_pairs;
-  /// mpdcch resource assignement (combinatorial index r)
+  /// mpdcch resource assignment (combinatorial index r)
   uint8_t resource_block_assignment;
   /// transmission type (0=localized,1=distributed) 
   uint8_t transmission_type;

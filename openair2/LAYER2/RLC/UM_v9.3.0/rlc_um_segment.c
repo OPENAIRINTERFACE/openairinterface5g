@@ -25,9 +25,7 @@
 #include "platform_types.h"
 #include "platform_constants.h"
 //-----------------------------------------------------------------------------
-#if USER_MODE
 #include <assert.h>
-#endif
 #include "assertions.h"
 #include "msc.h"
 #include "list.h"
@@ -367,10 +365,8 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
 #endif
-#if USER_MODE
 #if !EXMIMO
         assert(1!=1);
-#endif
 #endif
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
         // reduce the size of the PDU
@@ -754,9 +750,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
 #endif
-#if USER_MODE
         assert(1!=1);
-#endif
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
         // reduce the size of the PDU
         continue_fill_pdu_with_sdu = 0;

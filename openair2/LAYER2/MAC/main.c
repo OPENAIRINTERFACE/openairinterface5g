@@ -48,77 +48,8 @@
 
 extern RAN_CONTEXT_t RC;
 
-void dl_phy_sync_success(module_id_t module_idP, frame_t frameP, unsigned char eNB_index, uint8_t first_sync)	//init as MR
-{
-    LOG_D(MAC, "[UE %d] Frame %d: PHY Sync to eNB_index %d successful \n",
-	  module_idP, frameP, eNB_index);
-#if defined(ENABLE_USE_MME)
-    int mme_enabled = 1;
-#else
-    int mme_enabled = 0;
-#endif
 
-    if (first_sync == 1 && !(mme_enabled == 1)) {
-	//layer2_init_UE(module_idP);
-	openair_rrc_ue_init(module_idP, eNB_index);
-    } else {
-	rrc_in_sync_ind(module_idP, frameP, eNB_index);
-    }
-}
-
-void
-mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP,
-		       uint16_t eNB_index)
-{
-
-    //  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id, frameP, eNB_index);
-}
-
-
-int
-mac_top_init_ue(int eMBMS_active, char *uecap_xer,
-		uint8_t cba_group_active, uint8_t HO_active)
-{
-
-    int i;
-
-    LOG_I(MAC, "[MAIN] Init function start:Nb_UE_INST=%d\n", NB_UE_INST);
-
-    if (NB_UE_INST > 0) {
-	UE_mac_inst =
-	    (UE_MAC_INST *) malloc16(NB_UE_INST * sizeof(UE_MAC_INST));
-
-	AssertFatal(UE_mac_inst != NULL,
-		    "[MAIN] Can't ALLOCATE %zu Bytes for %d UE_MAC_INST with size %zu \n",
-		    NB_UE_INST * sizeof(UE_MAC_INST), NB_UE_INST,
-		    sizeof(UE_MAC_INST));
-
-	LOG_D(MAC, "[MAIN] ALLOCATE %zu Bytes for %d UE_MAC_INST @ %p\n",
-	      NB_UE_INST * sizeof(UE_MAC_INST), NB_UE_INST, UE_mac_inst);
-
-	bzero(UE_mac_inst, NB_UE_INST * sizeof(UE_MAC_INST));
-
-	for (i = 0; i < NB_UE_INST; i++) {
-	    ue_init_mac(i);
-	}
-    } else {
-	UE_mac_inst = NULL;
-    }
-
-
-    LOG_I(MAC, "[MAIN] calling RRC\n");
-    openair_rrc_top_init_ue(eMBMS_active, uecap_xer, cba_group_active,
-			    HO_active);
-
-
-    LOG_I(MAC, "[MAIN][INIT] Init function finished\n");
-
-    return (0);
-
-}
-
-
-void mac_top_init_eNB()
+void mac_top_init_eNB(void)
 {
 
     module_id_t i, j;
@@ -247,10 +178,6 @@ int rlcmac_init_global_param(void)
 void mac_top_cleanup(void)
 {
 
-#ifndef USER_MODE
-    pdcp_module_cleanup();
-#endif
-
     if (NB_UE_INST > 0) {
 	free(UE_mac_inst);
     }
@@ -261,21 +188,7 @@ void mac_top_cleanup(void)
 
 }
 
-int
-l2_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
-	   uint8_t HO_active)
-{
-    LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
-    //    NB_NODE=2;
-    //    NB_INST=2;
-
-    rlcmac_init_global_param();
-    LOG_I(MAC, "[MAIN] init UE MAC functions \n");
-    mac_top_init_ue(eMBMS_active, uecap_xer, cba_group_active, HO_active);
-    return (1);
-}
-
-int l2_init_eNB()
+int l2_init_eNB(void)
 {
 
 

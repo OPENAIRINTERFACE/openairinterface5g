@@ -292,10 +292,5 @@ int send_msg_fifo(int *s, msg_t *fmsg)
 
 int send_msg(void *s, msg_t *smsg)
 {
-#ifdef USER_MODE
   send_msg_sock((sock_rrm_t *)s, smsg);
-#else
-  send_msg_fifo((int *)s,smsg);
-#endif
-
 }

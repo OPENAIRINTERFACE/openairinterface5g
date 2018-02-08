@@ -36,10 +36,6 @@
 #include "enb_config.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
-#if defined(OAI_EMU)
-# include "OCG.h"
-# include "OCG_extern.h"
-#endif
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
 # if defined(ENABLE_USE_MME)
@@ -50,15 +46,16 @@
 #include "sctp_default_values.h"
 #include "SystemInformationBlockType2.h"
 #include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/proto.h"
 #include "PHY/extern.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
+#include "nfapi_vnf.h"
+#include "nfapi_pnf.h"
+
 #include "enb_paramdef.h"
 #include "common/config/config_userapi.h"
 
-
-int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc);
-int RCconfig_S1(MessageDef *msg_p, uint32_t i);
-
+extern uint16_t sf_ahead;
 
 static int enb_check_band_frequencies(char* lib_config_file_name_pP,
                                       int ind,
@@ -101,142 +98,6 @@ static int enb_check_band_frequencies(char* lib_config_file_name_pP,
   return errors;
 }
 
-
-
-
-
-
-
-/* --------------------------------------------------------*/
-/* from here function to use configuration module          */
-void RCconfig_RU(void) {
-  
-  int               j                             = 0;
-  int               i                             = 0;
-
-  
-  paramdef_t RUParams[] = RUPARAMS_DESC;
-  paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
-
-
-  config_getlist( &RUParamList,RUParams,sizeof(RUParams)/sizeof(paramdef_t), NULL);  
-
-  
-  if ( RUParamList.numelt > 0) {
-
-
-    RC.ru = (RU_t**)malloc(RC.nb_RU*sizeof(RU_t*));
-   
-
-
-
-    RC.ru_mask=(1<<NB_RU) - 1;
-    printf("Set RU mask to %lx\n",RC.ru_mask);
-
-    for (j = 0; j < RC.nb_RU; j++) {
-
-      RC.ru[j]                                    = (RU_t*)malloc(sizeof(RU_t));
-      memset((void*)RC.ru[j],0,sizeof(RU_t));
-      RC.ru[j]->idx                                 = j;
-
-      RC.ru[j]->if_timing                           = synch_to_ext_device;
-      if (RC.nb_L1_inst >0)
-        RC.ru[j]->num_eNB                           = RUParamList.paramarray[j][RU_ENB_LIST_IDX].numelt;
-      else
-	    RC.ru[j]->num_eNB                           = 0;
-      for (i=0;i<RC.ru[j]->num_eNB;i++) RC.ru[j]->eNB_list[i] = RC.eNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];     
-
-
-      if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
-	if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
-	  RC.ru[j]->if_south                        = LOCAL_RF;
-	  RC.ru[j]->function                        = eNodeB_3GPP;
-	  printf("Setting function for RU %d to eNodeB_3GPP\n",j);
-        }
-        else { 
-          RC.ru[j]->eth_params.local_if_name            = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));    
-          RC.ru[j]->eth_params.my_addr                  = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr)); 
-          RC.ru[j]->eth_params.remote_addr              = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
-          RC.ru[j]->eth_params.my_portc                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
-          RC.ru[j]->eth_params.remote_portc             = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
-          RC.ru[j]->eth_params.my_portd                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
-          RC.ru[j]->eth_params.remote_portd             = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
-
-	  if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
-	    RC.ru[j]->if_south                        = LOCAL_RF;
-	    RC.ru[j]->function                        = NGFI_RRU_IF5;
-	    RC.ru[j]->eth_params.transp_preference    = ETH_UDP_MODE;
-	    printf("Setting function for RU %d to NGFI_RRU_IF5 (udp)\n",j);
-	  } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
-	    RC.ru[j]->if_south                        = LOCAL_RF;
-	    RC.ru[j]->function                        = NGFI_RRU_IF5;
-	    RC.ru[j]->eth_params.transp_preference    = ETH_RAW_MODE;
-	    printf("Setting function for RU %d to NGFI_RRU_IF5 (raw)\n",j);
-	  } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_if4p5") == 0) {
-	    RC.ru[j]->if_south                        = LOCAL_RF;
-	    RC.ru[j]->function                        = NGFI_RRU_IF4p5;
-	    RC.ru[j]->eth_params.transp_preference    = ETH_UDP_IF4p5_MODE;
-	    printf("Setting function for RU %d to NGFI_RRU_IF4p5 (udp)\n",j);
-	  } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
-	    RC.ru[j]->if_south                        = LOCAL_RF;
-	    RC.ru[j]->function                        = NGFI_RRU_IF4p5;
-	    RC.ru[j]->eth_params.transp_preference    = ETH_RAW_IF4p5_MODE;
-	    printf("Setting function for RU %d to NGFI_RRU_IF4p5 (raw)\n",j);
-	  }
-	}
-	RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
-	RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
-	RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
-	for (i=0;i<RC.ru[j]->num_bands;i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i]; 
-      } //strcmp(local_rf, "yes") == 0
-      else {
-	printf("RU %d: Transport %s\n",j,*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr));
-
-        RC.ru[j]->eth_params.local_if_name	      = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));    
-        RC.ru[j]->eth_params.my_addr		      = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr)); 
-        RC.ru[j]->eth_params.remote_addr	      = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
-        RC.ru[j]->eth_params.my_portc		      = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
-        RC.ru[j]->eth_params.remote_portc	      = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
-        RC.ru[j]->eth_params.my_portd		      = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
-        RC.ru[j]->eth_params.remote_portd	      = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
-	if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
-	  RC.ru[j]->if_south                     = REMOTE_IF5;
-	  RC.ru[j]->function                     = NGFI_RAU_IF5;
-	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_MODE;
-	} else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
-	  RC.ru[j]->if_south                     = REMOTE_IF5;
-	  RC.ru[j]->function                     = NGFI_RAU_IF5;
-	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_MODE;
-	} else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_if4p5") == 0) {
-	  RC.ru[j]->if_south                     = REMOTE_IF4p5;
-	  RC.ru[j]->function                     = NGFI_RAU_IF4p5;
-	  RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF4p5_MODE;
-	} else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
-	  RC.ru[j]->if_south                     = REMOTE_IF4p5;
-	  RC.ru[j]->function                     = NGFI_RAU_IF4p5;
-	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF4p5_MODE;
-	} else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if5_mobipass") == 0) {
-	  RC.ru[j]->if_south                     = REMOTE_IF5;
-	  RC.ru[j]->function                     = NGFI_RAU_IF5;
-	  RC.ru[j]->if_timing                    = synch_to_other;
-	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF5_MOBIPASS;
-	}
-	RC.ru[j]->att_tx                         = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr); 
-	RC.ru[j]->att_rx                         = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr); 
-      }  /* strcmp(local_rf, "yes") != 0 */
-
-      RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
-      RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
-      
-    }// j=0..num_rus
-  } else {
-    RC.nb_RU = 0;	    
-  } // setting != NULL
-
-  return;
-  
-}
-
 #ifdef FLEXRAN_AGENT_SB_IF
 void RCconfig_flexran()
 {
@@ -275,48 +136,47 @@ void RCconfig_flexran()
 }
 #endif
 
-void RCconfig_L1() {
+void RCconfig_L1(void) {
   int               i,j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
   paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
 
 
-  config_getlist( &L1_ParamList,L1_Params,sizeof(L1_Params)/sizeof(paramdef_t), NULL);    
-  if (L1_ParamList.numelt > 0) {
+  if (RC.eNB == NULL) {
+    RC.eNB                       = (PHY_VARS_eNB ***)malloc((1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB**));
+    LOG_I(PHY,"RC.eNB = %p\n",RC.eNB);
+    memset(RC.eNB,0,(1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB**));
+    RC.nb_L1_CC = malloc((1+RC.nb_L1_inst)*sizeof(int));
+  }
 
-    if (RC.eNB == NULL) {
-      RC.eNB                               = (PHY_VARS_eNB ***)malloc((1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
-      LOG_I(PHY,"RC.eNB = %p\n",RC.eNB);
-      memset(RC.eNB,0,(1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB***));
-      RC.nb_L1_CC = malloc((1+RC.nb_L1_inst)*sizeof(int));
-    }
+  config_getlist( &L1_ParamList,L1_Params,sizeof(L1_Params)/sizeof(paramdef_t), NULL);
+  if (L1_ParamList.numelt > 0) {
 
     for (j = 0; j < RC.nb_L1_inst; j++) {
       RC.nb_L1_CC[j] = *(L1_ParamList.paramarray[j][L1_CC_IDX].uptr);
 
-
       if (RC.eNB[j] == NULL) {
-	RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB**));
+	RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB*));
 	LOG_I(PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
-	memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB***));
+	memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB*));
       }
 
-
       for (i=0;i<RC.nb_L1_CC[j];i++) {
-	if (RC.eNB[j][i] == NULL) {
-	  RC.eNB[j][i] = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
-	  memset((void*)RC.eNB[j][i],0,sizeof(PHY_VARS_eNB));
-	  LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",j,i,RC.eNB[j][i]);
-	  RC.eNB[j][i]->Mod_id  = j;
-	  RC.eNB[j][i]->CC_id   = i;
-	}
+        if (RC.eNB[j][i] == NULL) {
+          RC.eNB[j][i] = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
+          memset((void*)RC.eNB[j][i],0,sizeof(PHY_VARS_eNB));
+          LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",j,i,RC.eNB[j][i]);
+          RC.eNB[j][i]->Mod_id  = j;
+          RC.eNB[j][i]->CC_id   = i;
+        }
       }
 
       if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
 
+        sf_ahead = 4; // Need 4 subframe gap between RX and TX
       }
       else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
-	RC.eNB[j][0]->eth_params_n.local_if_name            = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_IF_NAME_IDX].strptr));
+        RC.eNB[j][0]->eth_params_n.local_if_name            = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_IF_NAME_IDX].strptr));
 	RC.eNB[j][0]->eth_params_n.my_addr                  = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_ADDRESS_IDX].strptr));
 	RC.eNB[j][0]->eth_params_n.remote_addr              = strdup(*(L1_ParamList.paramarray[j][L1_REMOTE_N_ADDRESS_IDX].strptr));
 	RC.eNB[j][0]->eth_params_n.my_portc                 = *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTC_IDX].iptr);
@@ -324,8 +184,25 @@ void RCconfig_L1() {
 	RC.eNB[j][0]->eth_params_n.my_portd                 = *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTD_IDX].iptr);
 	RC.eNB[j][0]->eth_params_n.remote_portd             = *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTD_IDX].iptr);
 	RC.eNB[j][0]->eth_params_n.transp_preference        = ETH_UDP_MODE;
+
+        sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
+
+        RC.nb_macrlc_inst = 1;  // This is used by mac_top_init_eNB()
+
+        // This is used by init_eNB_afterRU()
+        RC.nb_CC = (int *)malloc((1+RC.nb_inst)*sizeof(int));
+        RC.nb_CC[0]=1;
+
+        RC.nb_inst =1; // DJP - feptx_prec uses num_eNB but phy_init_RU uses nb_inst
+
+        LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_inst=1 this is because phy_init_RU() uses that to index and not RC.num_eNB - why the 2 similar variables?\n", __FUNCTION__);
+        LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_CC[0]=%d for init_eNB_afterRU()\n", __FUNCTION__, RC.nb_CC[0]);
+        LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_macrlc_inst:%d because used by mac_top_init_eNB()\n", __FUNCTION__, RC.nb_macrlc_inst);
+
+        mac_top_init_eNB();
+
+        configure_nfapi_pnf(RC.eNB[j][0]->eth_params_n.remote_addr, RC.eNB[j][0]->eth_params_n.remote_portc, RC.eNB[j][0]->eth_params_n.my_addr, RC.eNB[j][0]->eth_params_n.my_portd, RC.eNB[j][0]->eth_params_n     .remote_portd);
       }
-      
       else { // other midhaul
       }	
     }// j=0..num_inst
@@ -333,6 +210,30 @@ void RCconfig_L1() {
     l1_north_init_eNB();
   } else {
     LOG_I(PHY,"No " CONFIG_STRING_L1_LIST " configuration found");    
+
+    // DJP need to create some structures for VNF
+
+    j = 0;
+
+    RC.nb_L1_CC = malloc((1+RC.nb_L1_inst)*sizeof(int)); // DJP - 1 lot then???
+
+    RC.nb_L1_CC[j]=1; // DJP - hmmm
+
+    if (RC.eNB[j] == NULL) {
+      RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB**));
+      LOG_I(PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
+      memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB***));
+    }
+
+    for (i=0;i<RC.nb_L1_CC[j];i++) {
+      if (RC.eNB[j][i] == NULL) {
+        RC.eNB[j][i] = (PHY_VARS_eNB *)malloc(sizeof(PHY_VARS_eNB));
+        memset((void*)RC.eNB[j][i],0,sizeof(PHY_VARS_eNB));
+        LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",j,i,RC.eNB[j][i]);
+        RC.eNB[j][i]->Mod_id  = j;
+        RC.eNB[j][i]->CC_id   = i;
+      }
+    }
   }
 }
 
@@ -345,7 +246,6 @@ void RCconfig_macrlc() {
 
   config_getlist( &MacRLC_ParamList,MacRLC_Params,sizeof(MacRLC_Params)/sizeof(paramdef_t), NULL);    
   
-
   if ( MacRLC_ParamList.numelt > 0) {
 
     RC.nb_macrlc_inst=MacRLC_ParamList.numelt; 
@@ -380,6 +280,12 @@ void RCconfig_macrlc() {
 	RC.mac[j]->eth_params_s.my_portd                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_S_PORTD_IDX].iptr);
 	RC.mac[j]->eth_params_s.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTD_IDX].iptr);
 	RC.mac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
+
+        sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
+
+        printf("**************** vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
+        configure_nfapi_vnf(RC.mac[j]->eth_params_s.my_addr, RC.mac[j]->eth_params_s.my_portc);
+        printf("**************** RETURNED FROM configure_nfapi_vnf() vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
       } else { // other midhaul
 	AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
       }	
@@ -462,7 +368,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   int32_t     rach_powerRampingStep         = 0;
   int32_t     rach_preambleInitialReceivedTargetPower    = 0;
   int32_t     rach_preambleTransMax         = 0;
-  int32_t     rach_raResponseWindowSize     = 0;
+  int32_t     rach_raResponseWindowSize     = 10;
   int32_t     rach_macContentionResolutionTimer = 0;
   int32_t     rach_maxHARQ_Msg3Tx           = 0;
   int32_t     pcch_defaultPagingCycle       = 0;

@@ -105,7 +105,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
       if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
 				       symbol_id,
 				       &tx_buffer,
-				       db_fulllength,
+				       db_fulllength, 
 				       1,
 				       IF4p5_PDLFFT)) < 0) {
         perror("ETHERNET write for IF4p5_PDLFFT\n");
@@ -138,19 +138,18 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
     if (packet_type == IF4p5_PULFFT) {
 
-      uint16_t *rx0 = (uint16_t*) &rxdataF[0][blockoffsetF];
-      uint16_t *rx1 = (uint16_t*) &rxdataF[0][slotoffsetF];
+      for (symbol_id=fp->symbols_per_tti-nsym; symbol_id<fp->symbols_per_tti; symbol_id++) {
 
+	uint32_t *rx0 = (uint32_t*) &rxdataF[0][blockoffsetF];
+	uint32_t *rx1 = (uint32_t*) &rxdataF[0][slotoffsetF];
 
-      for (symbol_id=fp->symbols_per_tti-nsym; symbol_id<fp->symbols_per_tti; symbol_id++) {	     
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF4_SYMBOL, symbol_id );
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF4_SYMBOL, symbol_id );
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 1 );		
-
 
 	start_meas(&ru->compression);
 
-       for (element_id=0; element_id<db_halflength; element_id+=8) {
-         i = (uint16_t*) &rx0[element_id];
+	for (element_id=0; element_id<db_halflength; element_id+=8) {
+	  i = (uint16_t*) &rx0[element_id];
           d = (uint16_t*) &data_block[element_id];
           d[0] = ((uint16_t) lin2alaw_if4p5[i[0]])  | ((uint16_t)(lin2alaw_if4p5[i[1]]<<8));
           d[1] = ((uint16_t) lin2alaw_if4p5[i[2]])  | ((uint16_t)(lin2alaw_if4p5[i[3]]<<8));
@@ -176,10 +175,10 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
         stop_meas(&ru->compression);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );   	
-	    packet_header->frame_status &= ~(0x000f<<26);
-	    packet_header->frame_status |= (symbol_id&0x000f)<<26; 
+	packet_header->frame_status &= ~(0x000f<<26);
+	packet_header->frame_status |= (symbol_id&0x000f)<<26; 
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );  
-    start_meas(&ru->transport);
+	start_meas(&ru->transport);
 	if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
 					 symbol_id,
 					 &tx_buffer,
@@ -188,7 +187,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 					 IF4p5_PULFFT)) < 0) {
 	  perror("ETHERNET write for IF4p5_PULFFT\n");
 	}
-    stop_meas(&ru->transport);
+	stop_meas(&ru->transport);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );
 	slotoffsetF  += fp->ofdm_symbol_size;
 	blockoffsetF += fp->ofdm_symbol_size;
@@ -351,6 +350,9 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
 
 	//if (element_id==0) LOG_I(PHY,"recv_if4p5: symbol %d rxdata0 = (%u,%u)\n",*symbol_number,*i,*(i+1));
     }
+    LOG_D(PHY,"PULFFT_IF4p5: CC_id %d : frame %d, subframe %d (symbol %d)=> %d dB\n",ru->idx,*frame,*subframe,*symbol_number,
+	  dB_fixed(signal_energy((int*)&rxdataF[0][slotoffsetF],db_halflength)+
+		   signal_energy((int*)&rxdataF[0][blockoffsetF],db_halflength)));
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF, 0 );		
   } else if (*packet_type >= IF4p5_PRACH &&
 	     *packet_type <= IF4p5_PRACH + 4) {  

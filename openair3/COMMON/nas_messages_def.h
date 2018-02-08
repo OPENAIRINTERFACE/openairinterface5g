@@ -61,9 +61,3 @@ MESSAGE_DEF(NAS_PDN_CONNECTIVITY_FAIL,          MESSAGE_PRIORITY_MED,   nas_pdn_
 MESSAGE_DEF(NAS_AUTHENTICATION_PARAM_RSP,       MESSAGE_PRIORITY_MED,   nas_auth_param_rsp_t,        nas_auth_param_rsp)
 MESSAGE_DEF(NAS_AUTHENTICATION_PARAM_FAIL,      MESSAGE_PRIORITY_MED,   nas_auth_param_fail_t,       nas_auth_param_fail)
 
-#if defined(DISABLE_USE_NAS)
-MESSAGE_DEF(NAS_ATTACH_REQ,                     MESSAGE_PRIORITY_MED,   nas_attach_req_t,           nas_attach_req)
-MESSAGE_DEF(NAS_ATTACH_ACCEPT,                  MESSAGE_PRIORITY_MED,   nas_attach_accept_t,        nas_attach_accept)
-MESSAGE_DEF(NAS_AUTHENTICATION_RESP,            MESSAGE_PRIORITY_MED,   nas_auth_resp_t,            nas_auth_resp)
-MESSAGE_DEF(NAS_AUTHENTICATION_REQ,             MESSAGE_PRIORITY_MED,   nas_auth_req_t,             nas_auth_req)
-#endif

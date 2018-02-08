@@ -71,6 +71,7 @@
 //#define DEBUG_eNB_SCHEDULER 1
 
 extern RAN_CONTEXT_t RC;
+extern uint8_t nfapi_mode;
 
 
 // number of active slices for  past and current time
@@ -109,6 +110,7 @@ add_ue_dlsch_info(module_id_t module_idP,
 		  int UE_id, sub_frame_t subframeP, UE_DLSCH_STATUS status)
 //------------------------------------------------------------------------------
 {
+  //LOG_D(MAC, "%s(module_idP:%d, CC_id:%d, UE_id:%d, subframeP:%d, status:%d) serving_num:%d rnti:%x\n", __FUNCTION__, module_idP, CC_id, UE_id, subframeP, status, eNB_dlsch_info[module_idP][CC_id][UE_id].serving_num, UE_RNTI(module_idP,UE_id));
 
     eNB_dlsch_info[module_idP][CC_id][UE_id].rnti =
 	UE_RNTI(module_idP, UE_id);
@@ -802,9 +804,13 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	       DevCheck(((eNB_UE_stats->dl_cqi < MIN_CQI_VALUE) || (eNB_UE_stats->dl_cqi > MAX_CQI_VALUE)),
 	       eNB_UE_stats->dl_cqi, MIN_CQI_VALUE, MAX_CQI_VALUE);
 	     */
-	    eNB_UE_stats->dlsch_mcs1 =
-		cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
-	    eNB_UE_stats->dlsch_mcs1 =cmin(eNB_UE_stats->dlsch_mcs1, slice_maxmcs[slice_idP]);//openair_daq_vars.target_ue_dl_mcs);
+            if (nfapi_mode) {
+              eNB_UE_stats->dlsch_mcs1 = 10;//cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
+            }
+            else {
+              eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
+            }
+	    eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, slice_maxmcs[slice_idP]);	//cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
 
 
 	    // store stats
@@ -903,6 +909,8 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 		    case 2:
 		    case 7:
 		    default:
+                      LOG_D(MAC,"retransmission DL_REQ: rnti:%x\n",rnti);
+
 			dl_config_pdu =
 			    &dl_req->dl_config_pdu_list[dl_req->
 							number_pdu];
@@ -913,6 +921,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 			dl_config_pdu->pdu_size =
 			    (uint8_t) (2 +
 				       sizeof(nfapi_dl_config_dci_dl_pdu));
+                        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
 			dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.
 			    dci_format = NFAPI_DL_DCI_FORMAT_1;
 			dl_config_pdu->dci_dl_pdu.
@@ -968,6 +977,10 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 			     dci_dl_pdu_rel8.aggregation_level, rnti)) {
 			    dl_req->number_dci++;
 			    dl_req->number_pdu++;
+                            dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+
+                            eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
+                            eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
 
 			    fill_nfapi_dlsch_config(eNB, dl_req, TBS, -1
 						    /* retransmission, no pdu_index */
@@ -1060,8 +1073,8 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 
 		    if (rlc_status.bytes_in_buffer > 0) {	// There is DCCH to transmit
 			LOG_D(MAC,
-			      "[eNB %d] Frame %d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
-			      module_idP, frameP, CC_id,
+			      "[eNB %d] SFN/SF %d.%d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+			      module_idP, frameP, subframeP, CC_id,
 			      TBS - header_len_dcch);
 			sdu_lengths[0] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, TBS,	//not used
 							  (char *)
@@ -1208,6 +1221,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 				header_len_dtch_last--;
 			    }
 			    num_sdus++;
+                            UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
 			}	// no data for this LCID
 			else {
 			    header_len_dtch -= 3;
@@ -1512,6 +1526,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 			get_aggregation(get_bw_index(module_idP, CC_id),
 					ue_sched_ctl->dl_cqi[CC_id],
 					format1);
+                    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
 		    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = rnti;
 		    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = 1;	// CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
 		    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power = 6000;	// equal to RS power
@@ -1558,6 +1573,10 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 			ue_sched_ctl->round[CC_id][harq_pid] = 0;
 			dl_req->number_dci++;
 			dl_req->number_pdu++;
+                        dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+
+                        eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
+                        eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
 
 			// Toggle NDI for next time
 			LOG_D(MAC,
@@ -1785,7 +1804,13 @@ unsigned char *get_dlsch_sdu(module_id_t module_idP,
 		BCCH_pdu.payload[0]);
     }
 
-    UE_id = find_UE_id(module_idP, rntiP);
+    if (rntiP==P_RNTI) {
+        LOG_D(MAC,"[eNB %d] CC_id %d Frame %d Get PCH sdu for PCCH \n", module_idP, CC_id, frameP);
+
+        return((unsigned char *)&eNB->common_channels[CC_id].PCCH_pdu.payload[0]);
+    }
+
+  UE_id = find_UE_id(module_idP,rntiP);
 
     if (UE_id != -1) {
 	LOG_D(MAC,
@@ -1899,4 +1924,350 @@ set_ue_dai(sub_frame_t subframeP,
 	LOG_N(MAC, "unknow TDD config %d\n", tdd_config);
 	break;
     }
+}
+
+void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
+{
+  /* DCI:format 1A/1C P-RNTI:0xFFFE */
+  /* PDU:eNB_rrc_inst[Mod_idP].common_channels[CC_id].PCCH_pdu.payload */
+  uint16_t                       pcch_sdu_length;
+  int                            mcs = -1;
+  int                            CC_id;
+  eNB_MAC_INST                   *eNB      = RC.mac[module_idP];
+  COMMON_channels_t              *cc;
+  uint8_t                        *vrb_map;
+  int                            n_rb_dl;
+  int                            first_rb = -1;
+  nfapi_dl_config_request_pdu_t  *dl_config_pdu;
+  nfapi_tx_request_pdu_t         *TX_req;
+  nfapi_dl_config_request_body_t *dl_req;
+#ifdef FORMAT1C
+  int                            gap_index = 0;      /* indicate which gap(1st or 2nd) is used (0:1st) */
+  const int                      GAP_MAP [9][2] = {
+                                                    {-1, 0},        /* N_RB_DL [6-10] -1: |N_RB/2| 0: N/A*/
+                                                    {4, 0},         /* N_RB_DL [11] */
+                                                    {8, 0},         /* N_RB_DL [12-19] */
+                                                    {12, 0},        /* N_RB_DL [20-26] */
+                                                    {18, 0},        /* N_RB_DL [27-44] */
+                                                    {27, 0},        /* N_RB_DL [45-49] */
+                                                    {27, 9},        /* N_RB_DL [50-63] */
+                                                    {32, 16},       /* N_RB_DL [64-79] */
+                                                    {48, 16}        /* N_RB_DL [80-110] */
+                                                  };
+  uint8_t                        n_rb_step = 0;
+  uint8_t                        n_gap = 0;
+  uint8_t                        n_vrb_dl = 0;
+  uint8_t                        Lcrbs = 0;
+  uint16_t                       rb_bit    = 168;    /* RB bit number value is unsure */
+  #endif
+
+  start_meas(&eNB->schedule_pch);
+
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    cc              = &eNB->common_channels[CC_id];
+    vrb_map         = (void*)&cc->vrb_map;
+    n_rb_dl         = to_prb(cc->mib->message.dl_Bandwidth);
+    dl_req          = &eNB->DL_req[CC_id].dl_config_request_body;
+    for (uint16_t i = 0; i < NUMBER_OF_UE_MAX; i++) {
+      if (UE_PF_PO[CC_id][i].enable_flag != TRUE) {
+        continue;
+      }
+      if (frameP % UE_PF_PO[CC_id][i].T == UE_PF_PO[CC_id][i].PF_min && subframeP == UE_PF_PO[CC_id][i].PO) {
+      pcch_sdu_length = mac_rrc_data_req(module_idP,
+                                           CC_id,
+                                           frameP,
+                                           PCCH,1,
+                                           &cc->PCCH_pdu.payload[0],
+                                           i); // used for ue index
+      if (pcch_sdu_length == 0) {
+        LOG_D(MAC,"[eNB %d] Frame %d subframe %d: PCCH not active(size = 0 byte)\n", module_idP,frameP, subframeP);
+        continue;
+      }
+      LOG_D(MAC,"[eNB %d] Frame %d subframe %d: PCCH->PCH CC_id %d UE_id %d, Received %d bytes \n", module_idP, frameP, subframeP, CC_id,i, pcch_sdu_length);
+#ifdef FORMAT1C
+      //NO SIB
+      if ((subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
+        (subframeP == 5 && ((frameP % 2) != 0 && (frameP % 8) != 1))) {
+        switch (n_rb_dl) {
+#if 0
+        case 6:
+          n_gap = n_rb_dl/2;  /* expect: 3 */
+          n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));;  /* expect: 6 */
+          first_rb = 0;
+          break;
+        case 15:
+          n_gap = GAP_MAP[2][0];  /* expect: 8 */
+          n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 14 */
+          first_rb = 6;
+          break;
+#endif
+        case 25:
+          n_gap = GAP_MAP[3][0];  /* expect: 12 */
+          n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 24 */
+          first_rb = 10;
+          break;
+        case 50:
+          n_gap = GAP_MAP[6][gap_index];  /* expect: 27 or 9 */
+          if (gap_index > 0) {
+            n_vrb_dl = (n_rb_dl / (2*n_gap)) * (2*n_gap);  /* 36 */
+          } else {
+            n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 46 */
+          }
+          first_rb = 24;
+          break;
+        case 100:
+          n_gap = GAP_MAP[8][gap_index];  /* expect: 48 or 16 */
+          if (gap_index > 0) {
+            n_vrb_dl = (n_rb_dl / (2*n_gap)) * (2*n_gap);  /* expect: 96 */
+          } else {
+            n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 96 */
+          }
+          first_rb = 48;
+          break;
+        }
+      } else if (subframeP == 5 && ((frameP % 2) == 0 || (frameP % 8) == 1)) {  // SIB + paging
+        switch (n_rb_dl) {
+#if 0
+        case 6:
+          n_gap = n_rb_dl/2;  /* expect: 3 */
+          n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));;  /* expect: 6 */
+          first_rb = 0;
+          break;
+        case 15:
+          n_gap = GAP_MAP[2][0];  /* expect: 8 */
+          n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 14 */
+          first_rb = 10;
+          break;
+#endif
+        case 25:
+          n_gap = GAP_MAP[3][0];  /* expect: 12 */
+          n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 24 */
+          first_rb = 14;
+          break;
+        case 50:
+          n_gap = GAP_MAP[6][gap_index];  /* expect: 27 or 9 */
+          if (gap_index > 0) {
+            n_vrb_dl = (n_rb_dl / (2*n_gap)) * (2*n_gap);  /* 36 */
+          } else {
+            n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 46 */
+          }
+          first_rb = 28;
+          break;
+        case 100:
+          n_gap = GAP_MAP[8][gap_index];  /* expect: 48 or 16 */
+          if (gap_index > 0) {
+            n_vrb_dl = (n_rb_dl / (2*n_gap)) * (2*n_gap);  /* expect: 96 */
+          } else {
+            n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 96 */
+          }
+          first_rb = 52;
+          break;
+        }
+      }
+      /* Get MCS for length of PCH */
+      if (pcch_sdu_length <= TBStable1C[0]) {
+        mcs=0;
+      } else if (pcch_sdu_length <= TBStable1C[1]) {
+        mcs=1;
+      } else if (pcch_sdu_length <= TBStable1C[2]) {
+        mcs=2;
+      } else if (pcch_sdu_length <= TBStable1C[3]) {
+        mcs=3;
+      } else if (pcch_sdu_length <= TBStable1C[4]) {
+        mcs=4;
+      } else if (pcch_sdu_length <= TBStable1C[5]) {
+        mcs=5;
+      } else if (pcch_sdu_length <= TBStable1C[6]) {
+        mcs=6;
+      } else if (pcch_sdu_length <= TBStable1C[7]) {
+        mcs=7;
+      } else if (pcch_sdu_length <= TBStable1C[8]) {
+        mcs=8;
+      } else if (pcch_sdu_length <= TBStable1C[9]) {
+        mcs=9;
+      } else {
+        /* unexpected: pcch sdb size is over max value*/
+        LOG_E(MAC,"[eNB %d] Frame %d : PCCH->PCH CC_id %d, Received %d bytes is over max length(256) \n",
+             module_idP, frameP,CC_id, pcch_sdu_length);
+        return;
+      }
+      rb_num = TBStable1C[mcs] / rb_bit + ( (TBStable1C[mcs] % rb_bit == 0)? 0: 1) + 1;
+      /* calculate N_RB_STEP and Lcrbs */
+      if (n_rb_dl < 50) {
+        n_rb_step = 2;
+        Lcrbs = rb_num / 2 + ((rb_num % 2 == 0) ? 0:2);
+      } else {
+        n_rb_step = 4;
+        Lcrbs = rb_num / 4 + ((rb_num % 4 == 0) ? 0:4);
+      }
+      for(i = 0;i < Lcrbs ;i++){
+        vrb_map[first_rb+i] = 1;
+      }
+#else
+      //NO SIB
+      if ((subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
+        (subframeP == 5 && ((frameP % 2) != 0 && (frameP % 8) != 1))) {
+        switch (n_rb_dl) {
+        case 25:
+          first_rb = 10;
+          break;
+        case 50:
+          first_rb = 24;
+          break;
+        case 100:
+          first_rb = 48;
+          break;
+        }
+      } else if (subframeP == 5 && ((frameP % 2) == 0 || (frameP % 8) == 1)) {  // SIB + paging
+        switch (n_rb_dl) {
+        case 25:
+          first_rb = 14;
+          break;
+        case 50:
+          first_rb = 28;
+          break;
+        case 100:
+          first_rb = 52;
+          break;
+        }
+      }
+
+      vrb_map[first_rb] = 1;
+      vrb_map[first_rb+1] = 1;
+      vrb_map[first_rb+2] = 1;
+      vrb_map[first_rb+3] = 1;
+      /* Get MCS for length of PCH */
+      if (pcch_sdu_length <= get_TBS_DL(0,3)) {
+        mcs=0;
+      } else if (pcch_sdu_length <= get_TBS_DL(1,3)) {
+        mcs=1;
+      } else if (pcch_sdu_length <= get_TBS_DL(2,3)) {
+        mcs=2;
+      } else if (pcch_sdu_length <= get_TBS_DL(3,3)) {
+        mcs=3;
+      } else if (pcch_sdu_length <= get_TBS_DL(4,3)) {
+        mcs=4;
+      } else if (pcch_sdu_length <= get_TBS_DL(5,3)) {
+        mcs=5;
+      } else if (pcch_sdu_length <= get_TBS_DL(6,3)) {
+        mcs=6;
+      } else if (pcch_sdu_length <= get_TBS_DL(7,3)) {
+        mcs=7;
+      } else if (pcch_sdu_length <= get_TBS_DL(8,3)) {
+        mcs=8;
+      } else if (pcch_sdu_length <= get_TBS_DL(9,3)) {
+        mcs=9;
+      }
+#endif
+      dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
+      memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
+      dl_config_pdu->pdu_type                                               = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
+      dl_config_pdu->pdu_size                                               = (uint8_t)(2+sizeof(nfapi_dl_config_dci_dl_pdu));
+#ifdef FORMAT1C
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1C;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(n_vrb_dl/n_rb_step, first_rb/n_rb_step, Lcrbs/n_rb_step);
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.ngap                        = n_gap;
+#else
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1A;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process                = 0;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc                         = 1; // no TPC
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 1;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 1;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(n_rb_dl,first_rb,4);
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = 0;
+#endif
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = 4;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                        = 0xFFFE; // P-RNTI
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type                   = 2;    // P-RNTI : see Table 4-10 from SCF082 - nFAPI specifications
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power          = 6000; // equal to RS power
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1                       = mcs;
+
+      // Rel10 fields
+      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = 3;
+      // Rel13 fields
+      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 0; // regular UE
+      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 2; // not BR
+      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF;
+
+      if (!CCE_allocation_infeasible(module_idP, CC_id, 0, subframeP, dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level, P_RNTI)) {
+        LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for P_RNTI\n", frameP,subframeP);
+        dl_req->number_dci++;
+        dl_req->number_pdu++;
+        dl_config_pdu                                                                  = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
+        memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
+        dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
+        dl_config_pdu->pdu_size                                                        = (uint8_t)(2+sizeof(nfapi_dl_config_dlsch_pdu));
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index                              = eNB->pdu_index[CC_id];
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti                                   = 0xFFFE;
+#ifdef FORMAT1C
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 3;   // format 1C
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(n_vrb_dl/n_rb_step, first_rb/n_rb_step, Lcrbs/n_rb_step);
+#else
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2;   // format 1A/1B/1D
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(n_rb_dl,first_rb,4);
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;   // localized
+#endif
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = 2; //QPSK
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version                     = 1;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks                       = 1;// first block
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_block_to_codeword_swap_flag  = 0;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme                    = (cc->p_eNB==1 ) ? 0 : 1;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers                       = 1;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands                     = 1;
+        // dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = ;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ue_category_capacity                   = 1;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa                                     = 4; // 0 dB
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index               = 0;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ngap                                   = 0;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb                                   = get_subbandsize(cc->mib->message.dl_Bandwidth); // ignored
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = (cc->p_eNB==1 ) ? 1 : 2;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
+        // dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ;
+        dl_req->number_pdu++;
+
+        eNB->TX_req[CC_id].sfn_sf                                                     = (frameP<<4)+subframeP;
+        TX_req                                                                         = &eNB->TX_req[CC_id].tx_request_body.tx_pdu_list[eNB->TX_req[CC_id].tx_request_body.number_of_pdus];
+        TX_req->pdu_length                                                             = pcch_sdu_length;
+        TX_req->pdu_index                                                              = eNB->pdu_index[CC_id]++;
+        TX_req->num_segments                                                           = 1;
+        TX_req->segments[0].segment_length                                             = pcch_sdu_length;
+        TX_req->segments[0].segment_data                                               = cc[CC_id].PCCH_pdu.payload;
+        eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
+      } else {
+        LOG_E(MAC,"[eNB %d] CCid %d Frame %d, subframe %d : Cannot add DCI 1A/1C for Paging\n",module_idP, CC_id, frameP, subframeP);
+        continue;
+      }
+
+      if (opt_enabled == 1) {
+        trace_pdu(1,
+                  &eNB->common_channels[CC_id].PCCH_pdu.payload[0],
+                  pcch_sdu_length,
+                  0xffff,
+                  PCCH,
+                  P_RNTI,
+                  eNB->frame,
+                  eNB->subframe,
+                  0,
+                  0);
+        LOG_D(OPT,"[eNB %d][PCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
+              module_idP, frameP, CC_id, 0xffff, pcch_sdu_length);
+      }
+      eNB->eNB_stats[CC_id].total_num_pcch_pdu+=1;
+                    eNB->eNB_stats[CC_id].pcch_buffer=pcch_sdu_length;
+                    eNB->eNB_stats[CC_id].total_pcch_buffer+=pcch_sdu_length;
+                    eNB->eNB_stats[CC_id].pcch_mcs=mcs;
+      //paging first_rb log
+      LOG_D(MAC,"[eNB %d] Frame %d subframe %d PCH: paging_ue_index %d pcch_sdu_length %d mcs %d first_rb %d\n",
+             module_idP, frameP, subframeP, UE_PF_PO[CC_id][i].ue_index_value, pcch_sdu_length, mcs, first_rb);
+
+      pthread_mutex_lock(&ue_pf_po_mutex);
+      memset(&UE_PF_PO[CC_id][i], 0, sizeof(UE_PF_PO_t));
+      pthread_mutex_unlock(&ue_pf_po_mutex);
+    }
+    }
+  }
+  /* this might be misleading when pcch is inactive */
+  stop_meas(&eNB->schedule_pch);
+  return;
 }

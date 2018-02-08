@@ -1360,7 +1360,6 @@ void rx_ulsch_emul(PHY_VARS_eNB *eNB,
 	 subframe,harq_pid,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS,eNB->ulsch[UE_id]->harq_processes[harq_pid]->Qm,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
-  //#ifndef OAI_EMU
   write_output("/tmp/ulsch_d.m","ulsch_dseq",&eNB->ulsch[UE_id]->harq_processes[harq_pid]->d[0][96],
                eNB->ulsch[UE_id]->harq_processes[harq_pid]->Kplus*3,1,0);
   if (eNB->common_vars.rxdata) write_output("/tmp/rxsig0.m","rxs0", &eNB->common_vars.rxdata[0][0],eNB->frame_parms.samples_per_tti*10,1,1);

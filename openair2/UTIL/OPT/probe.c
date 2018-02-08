@@ -410,18 +410,8 @@ static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
   /* PCAP Header                                                  */
   /* TODO: Timestamp might want to be relative to a more sensible
      base time... */
-#if defined(RTAI)
-  {
-    unsigned long long int current_ns;
-
-    current_ns = rt_get_time_ns();
-    packet_header.ts_sec  = current_ns / 1000000000UL;
-    packet_header.ts_usec = current_ns % 1000;
-  }
-#else
   packet_header.ts_sec = context->subframesSinceCaptureStart / 1000;
   packet_header.ts_usec = (context->subframesSinceCaptureStart % 1000) * 1000;
-#endif
   packet_header.incl_len = offset + length;
   packet_header.orig_len = offset + length;
 

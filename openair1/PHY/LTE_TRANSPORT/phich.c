@@ -38,10 +38,6 @@
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 
-#ifndef USER_MODE
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-#endif
-
 #include "T.h"
 
 //#define DEBUG_PHICH 1
@@ -162,7 +158,7 @@ int phich_frame2_pusch_frame(LTE_DL_FRAME_PARMS *frame_parms, int frame, int sub
     pusch_frame = (frame);
   }
 
-  LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, subframe, pusch_frame);
+  //LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, subframe, pusch_frame);
   return pusch_frame % 1024;
 }
 

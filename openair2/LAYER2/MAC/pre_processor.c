@@ -61,12 +61,6 @@ extern float slice_percentage[MAX_NUM_SLICES];
 
 //#define ICIC 0
 
-/*
-  #ifndef USER_MODE
-  #define msg debug_msg
-  #endif
-*/
-
 /* this function checks that get_eNB_UE_stats returns
  * a non-NULL pointer for all the active CCs of an UE
  */

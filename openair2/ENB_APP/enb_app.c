@@ -36,10 +36,6 @@
 #include "common/ran_context.h"
 
 #include "log.h"
-#if defined(OAI_EMU)
-# include "OCG.h"
-# include "OCG_extern.h"
-#endif
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
@@ -115,9 +111,6 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, 
   uint32_t         register_enb_pending = 0;
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-#   if defined(OAI_EMU)
-    if (oai_emulation.info.cli_start_enb[enb_id] == 1)
-#   endif
     {
       s1ap_register_enb_req_t *s1ap_register_eNB;
 
@@ -166,24 +159,15 @@ void *eNB_app_task(void *args_p)
 
   itti_mark_task_ready (TASK_ENB_APP);
 
+  LOG_I(PHY, "%s() Task ready initialise structures\n", __FUNCTION__);
+
   RCconfig_L1();
 
   RCconfig_macrlc();
 
+  LOG_I(PHY, "%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_L1_inst);
+
   if (RC.nb_L1_inst>0) AssertFatal(l1_north_init_eNB()==0,"could not initialize L1 north interface\n");
-
-  # if defined(ENABLE_ITTI)
-#   if defined(OAI_EMU)
-  enb_nb =        oai_emulation.info.nb_enb_local;
-  enb_id_start =  oai_emulation.info.first_enb_local;
-  enb_id_end =    oai_emulation.info.first_enb_local + enb_nb;
-
-  AssertFatal (enb_id_end <= NUMBER_OF_eNB_MAX,
-               "Last eNB index is greater or equal to maximum eNB index (%d/%d)!",
-               enb_id_end, NUMBER_OF_eNB_MAX);
-#   endif
-  # endif
-
 
   AssertFatal (enb_nb <= RC.nb_inst,
                "Number of eNB is greater than eNB defined in configuration file (%d/%d)!",
@@ -192,9 +176,11 @@ void *eNB_app_task(void *args_p)
   LOG_I(ENB_APP,"Allocating eNB_RRC_INST for %d instances\n",RC.nb_inst);
 
   RC.rrc = (eNB_RRC_INST **)malloc(RC.nb_inst*sizeof(eNB_RRC_INST *));
+  LOG_I(PHY, "%s() RC.nb_inst:%d RC.rrc:%p\n", __FUNCTION__, RC.nb_inst, RC.rrc);
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     RC.rrc[enb_id] = (eNB_RRC_INST*)malloc(sizeof(eNB_RRC_INST));
+    LOG_I(PHY, "%s() Creating RRC instance RC.rrc[%d]:%p (%d of %d)\n", __FUNCTION__, enb_id, RC.rrc[enb_id], enb_id+1, enb_id_end);
     memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
     configure_rrc(enb_id);
   }
@@ -249,16 +235,6 @@ void *eNB_app_task(void *args_p)
           msg_init_p = itti_alloc_new_message (TASK_ENB_APP, INITIALIZE_MESSAGE);
           itti_send_msg_to_task (TASK_L2L1, INSTANCE_DEFAULT, msg_init_p);
 
-#   if defined(OAI_EMU)
-
-          /* Also inform all NAS UE tasks */
-          for (instance = NB_eNB_INST + oai_emulation.info.first_ue_local;
-               instance < (NB_eNB_INST + oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local); instance ++) {
-            msg_init_p = itti_alloc_new_message (TASK_ENB_APP, INITIALIZE_MESSAGE);
-            itti_send_msg_to_task (TASK_NAS_UE, instance, msg_init_p);
-          }
-
-#   endif
         } else {
           uint32_t not_associated = enb_nb - registered_enb;
 

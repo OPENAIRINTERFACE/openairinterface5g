@@ -837,3 +837,282 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
 
   return ret;
 }
+
+//------------------------------------------------------------------------------
+int s1ap_eNB_e_rab_modify_resp(instance_t instance,
+            s1ap_e_rab_modify_resp_t *e_rab_modify_resp_p)
+//------------------------------------------------------------------------------
+{
+  s1ap_eNB_instance_t          *s1ap_eNB_instance_p = NULL;
+  struct s1ap_eNB_ue_context_s *ue_context_p        = NULL;
+
+  S1ap_E_RABModifyResponseIEs_t  *initial_ies_p  = NULL;
+
+  s1ap_message  message;
+
+  uint8_t  *buffer  = NULL;
+  uint32_t length;
+  int      ret = -1;
+  int      i;
+
+  /* Retrieve the S1AP eNB instance associated with Mod_id */
+  s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance);
+
+  DevAssert(e_rab_modify_resp_p != NULL);
+  DevAssert(s1ap_eNB_instance_p != NULL);
+
+  if ((ue_context_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p,
+                e_rab_modify_resp_p->eNB_ue_s1ap_id)) == NULL) {
+    /* The context for this eNB ue s1ap id doesn't exist in the map of eNB UEs */
+    S1AP_WARN("Failed to find ue context associated with eNB ue s1ap id: 0x%06x\n",
+              e_rab_modify_resp_p->eNB_ue_s1ap_id);
+    return -1;
+  }
+
+  /* Uplink NAS transport can occur either during an s1ap connected state
+   * or during initial attach (for example: NAS authentication).
+   */
+  if (!(ue_context_p->ue_state == S1AP_UE_CONNECTED ||
+        ue_context_p->ue_state == S1AP_UE_WAITING_CSR)) {
+    S1AP_WARN("You are attempting to send NAS data over non-connected "
+              "eNB ue s1ap id: %06x, current state: %d\n",
+              e_rab_modify_resp_p->eNB_ue_s1ap_id, ue_context_p->ue_state);
+    return -1;
+  }
+
+  /* Prepare the S1AP message to encode */
+  memset(&message, 0, sizeof(s1ap_message));
+
+  message.direction     = S1AP_PDU_PR_successfulOutcome;
+  message.procedureCode = S1ap_ProcedureCode_id_E_RABModify;
+  message.criticality   = S1ap_Criticality_reject;
+
+  initial_ies_p = &message.msg.s1ap_E_RABModifyResponseIEs;
+
+  initial_ies_p->eNB_UE_S1AP_ID = e_rab_modify_resp_p->eNB_ue_s1ap_id;
+  initial_ies_p->mme_ue_s1ap_id = ue_context_p->mme_ue_s1ap_id;
+
+  if ( e_rab_modify_resp_p->nb_of_e_rabs >= 1 )
+    initial_ies_p->presenceMask |= S1AP_E_RABMODIFYRESPONSEIES_E_RABMODIFYLISTBEARERMODRES_PRESENT;
+
+  for (i = 0; i < e_rab_modify_resp_p->nb_of_e_rabs; i++) {
+    S1ap_E_RABModifyItemBearerModRes_t *modify_item;
+
+    modify_item = calloc(1, sizeof(S1ap_E_RABModifyItemBearerModRes_t));
+
+    modify_item->e_RAB_ID = e_rab_modify_resp_p->e_rabs[i].e_rab_id;
+
+    S1AP_DEBUG("e_rab_modify_resp: modified e_rab ID %ld\n",
+        modify_item->e_RAB_ID);
+
+    S1ap_IE_t *ie = s1ap_new_ie(S1ap_ProtocolIE_ID_id_E_RABModifyItemBearerModRes,
+        S1ap_Criticality_ignore,
+        &asn_DEF_S1ap_E_RABModifyItemBearerModRes,
+        modify_item);
+
+    ASN_SEQUENCE_ADD(&initial_ies_p->e_RABModifyListBearerModRes.s1ap_E_RABModifyItemBearerModRes,
+                     ie);
+  }
+
+  if ( e_rab_modify_resp_p->nb_of_e_rabs_failed >= 1 )
+    initial_ies_p->presenceMask |= S1AP_E_RABMODIFYRESPONSEIES_E_RABFAILEDTOMODIFYLIST_PRESENT;
+
+  for (i = 0; i < e_rab_modify_resp_p->nb_of_e_rabs_failed; i++) {
+    S1ap_E_RABItem_t *failed_item;
+
+    failed_item = calloc(1, sizeof(S1ap_E_RABItem_t));
+
+    failed_item->e_RAB_ID = e_rab_modify_resp_p->e_rabs_failed[i].e_rab_id;
+    switch(e_rab_modify_resp_p->e_rabs_failed[i].cause)
+    {
+    case S1AP_CAUSE_RADIO_NETWORK:
+        failed_item->cause.present = S1ap_Cause_PR_radioNetwork;
+        failed_item->cause.choice.radioNetwork = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
+        break;
+    case S1AP_CAUSE_TRANSPORT:
+        failed_item->cause.present = S1ap_Cause_PR_transport;
+        failed_item->cause.choice.transport = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
+        break;
+    case S1AP_CAUSE_NAS:
+        failed_item->cause.present = S1ap_Cause_PR_nas;
+        failed_item->cause.choice.nas = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
+        break;
+    case S1AP_CAUSE_PROTOCOL:
+        failed_item->cause.present = S1ap_Cause_PR_protocol;
+        failed_item->cause.choice.protocol = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
+        break;
+    case S1AP_CAUSE_MISC:
+        failed_item->cause.present = S1ap_Cause_PR_misc;
+        failed_item->cause.choice.misc = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
+        break;
+    default:
+        break;
+    }
+    S1AP_DEBUG("e_rab_modify_resp: failed e_rab ID %ld\n",
+        failed_item->e_RAB_ID);
+
+    S1ap_IE_t *ie = s1ap_new_ie(S1ap_ProtocolIE_ID_id_E_RABItem,
+        S1ap_Criticality_ignore,
+        &asn_DEF_S1ap_E_RABItem,
+        failed_item);
+
+    ASN_SEQUENCE_ADD(&initial_ies_p->e_RABFailedToModifyList.s1ap_E_RABItem,
+                     ie);
+  }
+
+  fprintf(stderr, "start encode\n");
+  if (s1ap_eNB_encode_pdu(&message, &buffer, &length) < 0) {
+    S1AP_ERROR("Failed to encode uplink transport\n");
+    /* Encode procedure has failed... */
+    return -1;
+  }
+
+  MSC_LOG_TX_MESSAGE(
+    MSC_S1AP_ENB,
+    MSC_S1AP_MME,
+    (const char *)buffer,
+    length,
+    MSC_AS_TIME_FMT" E_RAN Modify successful Outcome eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
+    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+    initial_ies_p->eNB_UE_S1AP_ID,
+    initial_ies_p->mme_ue_s1ap_id);
+
+  /* UE associated signalling -> use the allocated stream */
+  s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
+                                   ue_context_p->mme_ref->assoc_id, buffer,
+                                   length, ue_context_p->tx_stream);
+
+  return ret;
+}
+//------------------------------------------------------------------------------
+int s1ap_eNB_e_rab_release_resp(instance_t instance,
+			      s1ap_e_rab_release_resp_t *e_rab_release_resp_p)
+//------------------------------------------------------------------------------
+{
+  s1ap_eNB_instance_t          *s1ap_eNB_instance_p = NULL;
+  struct s1ap_eNB_ue_context_s *ue_context_p        = NULL;
+
+  S1ap_E_RABReleaseResponseIEs_t  *release_response_ies_p  = NULL;
+
+  s1ap_message  message;
+
+  uint8_t  *buffer  = NULL;
+  uint32_t length;
+  int      ret = -1;
+  int      i;
+  /* Retrieve the S1AP eNB instance associated with Mod_id */
+  s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance);
+  DevAssert(e_rab_release_resp_p != NULL);
+  DevAssert(s1ap_eNB_instance_p != NULL);
+
+  /* Prepare the S1AP message to encode */
+  memset(&message, 0, sizeof(s1ap_message));
+
+  message.direction     = S1AP_PDU_PR_successfulOutcome;
+  message.procedureCode = S1ap_ProcedureCode_id_E_RABRelease;
+  message.criticality = S1ap_Criticality_ignore;
+
+  if ((ue_context_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p,
+          e_rab_release_resp_p->eNB_ue_s1ap_id)) == NULL) {
+    /* The context for this eNB ue s1ap id doesn't exist in the map of eNB UEs */
+    S1AP_WARN("Failed to find ue context associated with eNB ue s1ap id: %u\n",
+            e_rab_release_resp_p->eNB_ue_s1ap_id);
+    return -1;
+  }
+
+  release_response_ies_p = &message.msg.s1ap_E_RABReleaseResponseIEs;
+  release_response_ies_p->eNB_UE_S1AP_ID = e_rab_release_resp_p->eNB_ue_s1ap_id;
+  release_response_ies_p->mme_ue_s1ap_id = ue_context_p->mme_ue_s1ap_id;
+
+  if ( e_rab_release_resp_p->nb_of_e_rabs_released > 0 )
+      release_response_ies_p->presenceMask |= S1AP_E_RABRELEASERESPONSEIES_E_RABRELEASELISTBEARERRELCOMP_PRESENT;
+
+  //release
+  for (i = 0; i < e_rab_release_resp_p->nb_of_e_rabs_released; i++) {
+
+    S1ap_E_RABReleaseItemBearerRelComp_t *new_item;
+
+    new_item = calloc(1, sizeof(S1ap_E_RABReleaseItemBearerRelComp_t));
+
+    new_item->e_RAB_ID = e_rab_release_resp_p->e_rab_release[i].e_rab_id;
+
+    S1AP_DEBUG("e_rab_release_resp: e_rab ID %ld\n",new_item->e_RAB_ID);
+
+    ASN_SEQUENCE_ADD(&release_response_ies_p->e_RABReleaseListBearerRelComp.s1ap_E_RABReleaseItemBearerRelComp,
+                     new_item);
+
+  }
+
+  if ( e_rab_release_resp_p->nb_of_e_rabs_failed > 0 )
+      release_response_ies_p->presenceMask |= S1AP_E_RABRELEASERESPONSEIES_E_RABFAILEDTORELEASELIST_PRESENT;
+
+  //release failed
+  for (i = 0; i < e_rab_release_resp_p->nb_of_e_rabs_failed; i++) {
+      S1ap_E_RABItem_t     *new_rabitem;
+      new_rabitem = calloc(1, sizeof(S1ap_E_RABItem_t));
+      //e_rab_id
+      new_rabitem->e_RAB_ID = e_rab_release_resp_p->e_rabs_failed[i].e_rab_id;
+      //cause
+      switch(e_rab_release_resp_p->e_rabs_failed[i].cause)
+      {
+        case S1AP_CAUSE_NOTHING:
+          new_rabitem->cause.present = S1ap_Cause_PR_NOTHING;
+        break;
+
+        case S1AP_CAUSE_RADIO_NETWORK:
+          new_rabitem->cause.present = S1ap_Cause_PR_radioNetwork;
+          new_rabitem->cause.choice.radioNetwork = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
+        break;
+
+        case S1AP_CAUSE_TRANSPORT:
+          new_rabitem->cause.present = S1ap_Cause_PR_transport;
+          new_rabitem->cause.choice.transport = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
+        break;
+
+        case S1AP_CAUSE_NAS:
+          new_rabitem->cause.present = S1ap_Cause_PR_nas;
+          new_rabitem->cause.choice.nas = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
+        break;
+
+        case S1AP_CAUSE_PROTOCOL:
+          new_rabitem->cause.present = S1ap_Cause_PR_protocol;
+          new_rabitem->cause.choice.protocol = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
+        break;
+
+        case S1AP_CAUSE_MISC:
+        default:
+          new_rabitem->cause.present = S1ap_Cause_PR_misc;
+          new_rabitem->cause.choice.misc = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
+        break;
+      }
+      S1AP_DEBUG("e_rab_release_resp: failed e_rab ID %ld\n",new_rabitem->e_RAB_ID);
+      ASN_SEQUENCE_ADD(&release_response_ies_p->e_RABFailedToReleaseList.s1ap_E_RABItem, new_rabitem);
+  }
+
+  fprintf(stderr, "start encode\n");
+  if (s1ap_eNB_encode_pdu(&message, &buffer, &length) < 0) {
+    S1AP_ERROR("Failed to encode release response\n");
+    /* Encode procedure has failed... */
+    return -1;
+  }
+
+  MSC_LOG_TX_MESSAGE(
+    MSC_S1AP_ENB,
+    MSC_S1AP_MME,
+    (const char *)buffer,
+    length,
+    MSC_AS_TIME_FMT" E_RAN Release successfulOutcome eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
+    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+    e_rab_release_resp_p->eNB_ue_s1ap_id,
+    ue_context_p->mme_ue_s1ap_id);
+
+  /* UE associated signalling -> use the allocated stream */
+  s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
+                                   ue_context_p->mme_ref->assoc_id, buffer,
+                                   length, ue_context_p->tx_stream);
+
+  S1AP_INFO("e_rab_release_response sended eNB_UE_S1AP_ID %d  mme_ue_s1ap_id %d nb_of_e_rabs_released %d nb_of_e_rabs_failed %d\n",
+          e_rab_release_resp_p->eNB_ue_s1ap_id, ue_context_p->mme_ue_s1ap_id,e_rab_release_resp_p->nb_of_e_rabs_released,e_rab_release_resp_p->nb_of_e_rabs_failed);
+
+  return ret;
+}
