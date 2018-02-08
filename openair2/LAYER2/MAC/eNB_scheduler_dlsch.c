@@ -338,6 +338,7 @@ set_ul_DAI(int module_idP, int UE_idP, int CC_idP, int frameP,
 
 	case 1:
 	    switch (subframeP) {
+	    case 0:
 	    case 1:
 		UE_list->UE_template[CC_idP][UE_idP].DAI_ul[7] = DAI;
 		break;
@@ -346,6 +347,7 @@ set_ul_DAI(int module_idP, int UE_idP, int CC_idP, int frameP,
 		UE_list->UE_template[CC_idP][UE_idP].DAI_ul[8] = DAI;
 		break;
 
+	    case 5:
 	    case 6:
 		UE_list->UE_template[CC_idP][UE_idP].DAI_ul[2] = DAI;
 		break;
