@@ -1004,8 +1004,8 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
     switch (subframeP) {
     case 0:
       if ((tdd_sfa == 0)||
-          (tdd_sfa == 3)||
-          (tdd_sfa == 6)) sched_subframe = 4;
+          (tdd_sfa == 3)) sched_subframe = 4;
+      else if (tdd_sfa==6) sched_subframe = 7;
       else return;
       break;
     case 1:
@@ -1026,11 +1026,11 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
       break;
     case 5:
       if (tdd_sfa==0)      sched_subframe = 9;
-      else if (tdd_sfa==6) sched_subframe = 3;
+      else if (tdd_sfa==6) sched_subframe = 2;
       else return;
       break;
     case 6:
-      if (tdd_sfa==1)      sched_subframe = 2;
+      if (tdd_sfa==0 || tdd_sfa==1)      sched_subframe = 2;
       else if (tdd_sfa==6) sched_subframe = 3;
       else return;
       break;
