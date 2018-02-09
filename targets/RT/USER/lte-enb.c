@@ -1069,7 +1069,9 @@ void init_eNB_afterRU(void) {
     
     RC.ru[ru_id]->wakeup_rxtx         = wakeup_rxtx;
     RC.ru[ru_id]->wakeup_prach_eNB    = wakeup_prach_eNB;
+#ifdef Rel14
     RC.ru[ru_id]->wakeup_prach_eNB_br = wakeup_prach_eNB_br;
+#endif
     RC.ru[ru_id]->eNB_top             = eNB_top;
   }
 }

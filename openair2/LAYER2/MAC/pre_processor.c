@@ -1640,9 +1640,11 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 		to_prb(RC.mac[module_idP]->common_channels[CC_id].
 		       ul_Bandwidth);
 	    // if this UE has UL traffic
-	    if (UE_template->ul_total_buffer > 0) {
+            int bytes_to_schedule = UE_template->estimated_ul_buffer - UE_template->scheduled_ul_bytes;
+            if (bytes_to_schedule < 0) bytes_to_schedule = 0;
+            int bits_to_schedule = bytes_to_schedule * 8;
 
-
+	    if (bits_to_schedule > 0) {
 		tbs = get_TBS_UL(mcs, 3) << 3;	// 1 or 2 PRB with cqi enabled does not work well!
 		rb_table_index = 2;
 
@@ -1652,7 +1654,7 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 					 Ncp, 0);
 
 		while ((((UE_template->phr_info - tx_power) < 0)
-			|| (tbs > UE_template->ul_total_buffer))
+			|| (tbs > bits_to_schedule))
 		       && (mcs > 3)) {
 		    // LOG_I(MAC,"UE_template->phr_info %d tx_power %d mcs %d\n", UE_template->phr_info,tx_power, mcs);
 		    mcs--;
@@ -1660,7 +1662,7 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 		    tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);	// fixme: set use_srs
 		}
 
-		while ((tbs < UE_template->ul_total_buffer) &&
+		while ((tbs < bits_to_schedule) &&
 		       (rb_table[rb_table_index] <
 			(N_RB_UL - first_rb[CC_id]))
 		       && ((UE_template->phr_info - tx_power) > 0)
@@ -1750,11 +1752,14 @@ static int ue_ul_compare(const void *_a, const void *_b, void *_params)
 	UE_list->UE_template[pCCid2][UE_id2].ul_buffer_info[LCGID0])
 	return 1;
 
-    if (UE_list->UE_template[pCCid1][UE_id1].ul_total_buffer >
-	UE_list->UE_template[pCCid2][UE_id2].ul_total_buffer)
+    int bytes_to_schedule1 = UE_list->UE_template[pCCid1][UE_id1].estimated_ul_buffer - UE_list->UE_template[pCCid1][UE_id1].scheduled_ul_bytes;
+    if (bytes_to_schedule1 < 0) bytes_to_schedule1 = 0;
+    int bytes_to_schedule2 = UE_list->UE_template[pCCid2][UE_id2].estimated_ul_buffer - UE_list->UE_template[pCCid2][UE_id2].scheduled_ul_bytes;
+    if (bytes_to_schedule2 < 0) bytes_to_schedule2 = 0;
+
+    if (bytes_to_schedule1 > bytes_to_schedule2)
 	return -1;
-    if (UE_list->UE_template[pCCid1][UE_id1].ul_total_buffer <
-	UE_list->UE_template[pCCid2][UE_id2].ul_total_buffer)
+    if (bytes_to_schedule1 < bytes_to_schedule2)
 	return 1;
 
     if (UE_list->UE_template[pCCid1][UE_id1].pre_assigned_mcs_ul >

@@ -413,7 +413,9 @@ init_MCCH(
 			 0,//rnti
 			 (BCCH_BCH_Message_t *)NULL,
 			 (RadioResourceConfigCommonSIB_t *) NULL,
+#ifdef Rel14
 			 (RadioResourceConfigCommonSIB_t *) NULL,
+#endif
 			 (struct PhysicalConfigDedicated *)NULL,
 #if defined(Rel10) || defined(Rel14)
 			 (SCellToAddMod_r10_t *)NULL,
@@ -1173,7 +1175,9 @@ rrc_eNB_generate_RRCConnectionReestablishment(
                            ctxt_pP->rnti,
                            (BCCH_BCH_Message_t *) NULL, 
                            (RadioResourceConfigCommonSIB_t *) NULL,
+#ifdef Rel14
                            (RadioResourceConfigCommonSIB_t *) NULL,
+#endif
                            (struct PhysicalConfigDedicated* ) ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
                            (SCellToAddMod_r10_t *)NULL,
@@ -4599,7 +4603,9 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 			 ue_context_pP->ue_context.rnti,
 			 (BCCH_BCH_Message_t *) NULL,
 			 (RadioResourceConfigCommonSIB_t*) NULL,
+#ifdef Rel14
 			 (RadioResourceConfigCommonSIB_t*) NULL,
+#endif
 			 ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
 			 (SCellToAddMod_r10_t *)NULL,
@@ -5178,7 +5184,9 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 			 ue_context_pP->ue_context.rnti,
 			 (BCCH_BCH_Message_t *) NULL,
 			 (RadioResourceConfigCommonSIB_t *) NULL,
+#ifdef Rel14
 			 (RadioResourceConfigCommonSIB_t *) NULL,
+#endif
 			 ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
 			 (SCellToAddMod_r10_t *)NULL,
@@ -5448,7 +5456,9 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 				 ue_context_pP->ue_context.rnti,
 				 (BCCH_BCH_Message_t *) NULL,
 				 (RadioResourceConfigCommonSIB_t *) NULL,
+#ifdef Rel14
 				 (RadioResourceConfigCommonSIB_t *) NULL,
+#endif
 				 ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
 				 (SCellToAddMod_r10_t *)NULL,
@@ -5501,7 +5511,9 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 				 ue_context_pP->ue_context.rnti,
 				 (BCCH_BCH_Message_t *) NULL,
 				 (RadioResourceConfigCommonSIB_t *) NULL,
+#ifdef Rel14
 				 (RadioResourceConfigCommonSIB_t *) NULL,
+#endif
 				 ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
 				 (SCellToAddMod_r10_t *)NULL,
@@ -5617,7 +5629,9 @@ rrc_eNB_generate_RRCConnectionSetup(
 			       ue_context_pP->ue_context.rnti,
 			       (BCCH_BCH_Message_t *) NULL,
 			       (RadioResourceConfigCommonSIB_t *) NULL,
+#ifdef Rel14
 			       (RadioResourceConfigCommonSIB_t *) NULL,
+#endif
 			       ue_context_pP->ue_context.physicalConfigDedicated,
 #if defined(Rel10) || defined(Rel14)
 			       (SCellToAddMod_r10_t *)NULL,

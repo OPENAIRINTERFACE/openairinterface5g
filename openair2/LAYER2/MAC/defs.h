@@ -665,7 +665,7 @@ typedef struct {
     /// mcs from last UL scheduling
     uint8_t mcs_UL[8];
     /// TBS from last UL scheduling
-    uint8_t TBS_UL[8];
+    int TBS_UL[8];
     /// Flag to indicate UL has been scheduled at least once
     boolean_t ul_active;
     /// Flag to indicate UE has been configured (ACK from RRCConnectionSetup received)
@@ -720,9 +720,6 @@ typedef struct {
 
     // Logical channel info for link with RLC
 
-    /// Last received UE BSR info for each logical channel group id
-    uint8_t bsr_info[MAX_NUM_LCGID];
-
     /// LCGID mapping
     long lcgidmap[11];
 
@@ -749,14 +746,17 @@ typedef struct {
     /// size of remaining size to send for the downlink head SDU
     uint32_t dl_buffer_head_sdu_remaining_size_to_send[MAX_NUM_LCID];
 
-    /// total uplink buffer size 
-    uint32_t ul_total_buffer;
     /// uplink buffer creation time for each LCID
     uint32_t ul_buffer_creation_time[MAX_NUM_LCGID];
     /// maximum uplink buffer creation time across all the LCIDs
     uint32_t ul_buffer_creation_time_max;
     /// uplink buffer size per LCID
     uint32_t ul_buffer_info[MAX_NUM_LCGID];
+
+    /// uplink bytes that are currently scheduled
+    int scheduled_ul_bytes;
+    /// estimation of the UL buffer size
+    int estimated_ul_buffer;
 
     /// UE tx power
     int32_t ue_tx_power;

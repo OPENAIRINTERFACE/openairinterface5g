@@ -2157,11 +2157,10 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,
 	      uint16_t *max_preamble, 
 	      uint16_t *max_preamble_energy, 
 	      uint16_t *max_preamble_delay, 
-#ifdef Rel14
-	      uint16_t Nf, uint8_t tdd_mapindex,
-	      uint8_t br_flag
-#else
 	      uint16_t Nf, uint8_t tdd_mapindex
+#ifdef Rel14
+	      ,
+              uint8_t br_flag
 #endif
 	      );
 /*!
