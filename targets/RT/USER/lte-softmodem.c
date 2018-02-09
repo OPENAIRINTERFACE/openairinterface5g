@@ -1594,6 +1594,17 @@ int main( int argc, char **argv )
   } else {
     stop_eNB(NB_eNB_INST);
     stop_RU(NB_RU);
+    /* release memory used by the RU/eNB threads (incomplete), after all
+     * threads have been stopped (they partially use the same memory) */
+    for (int inst = 0; inst < NB_eNB_INST; inst++) {
+      for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
+        free_transport(RC.eNB[inst][cc_id]);
+        phy_free_lte_eNB(RC.eNB[inst][cc_id]);
+      }
+    }
+    for (int inst = 0; inst < NB_RU; inst++) {
+      phy_free_RU(RC.ru[inst]);
+    }
     free_lte_top();
   }
 

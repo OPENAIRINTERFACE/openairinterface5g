@@ -1139,10 +1139,5 @@ void stop_eNB(int nb_inst) {
   for (int inst=0;inst<nb_inst;inst++) {
     LOG_I(PHY,"Killing eNB %d processing threads\n",inst);
     kill_eNB_proc(inst);
-    /* release memory used by these threads (incomplete) */
-    for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
-      free_transport(RC.eNB[inst][cc_id]);
-      phy_free_lte_eNB(RC.eNB[inst][cc_id]);
-    }
   }
 }

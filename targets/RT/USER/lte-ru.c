@@ -2251,8 +2251,6 @@ void stop_RU(int nb_ru)
   for (int inst = 0; inst < nb_ru; inst++) {
     LOG_I(PHY, "Stopping RU %d processing threads\n", inst);
     kill_RU_proc(inst);
-    /* release memory used by these threads (incomplete) */
-    phy_free_RU(RC.ru[inst]);
   }
 }
 
