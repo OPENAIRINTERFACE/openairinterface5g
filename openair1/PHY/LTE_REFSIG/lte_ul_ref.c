@@ -185,12 +185,12 @@ void free_ul_ref_sigs(void)
 
   unsigned int u,v,Msc_RS;
 
-  for (Msc_RS=2; Msc_RS<33; Msc_RS++) {
+  for (Msc_RS=0; Msc_RS<33; Msc_RS++) {
     for (u=0; u<30; u++) {
       for (v=0; v<2; v++) {
         if (ul_ref_sigs[u][v][Msc_RS]) {
           free16(ul_ref_sigs[u][v][Msc_RS],2*sizeof(int16_t)*dftsizes[Msc_RS]);
-          ul_ref_sigs_rx[u][v][Msc_RS] = NULL;
+          ul_ref_sigs[u][v][Msc_RS] = NULL;
         }
 
         if (ul_ref_sigs_rx[u][v][Msc_RS]) {
