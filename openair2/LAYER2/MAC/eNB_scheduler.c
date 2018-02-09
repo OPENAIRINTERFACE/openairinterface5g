@@ -504,21 +504,19 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   int               mbsfn_status[MAX_NUM_CCs];
   protocol_ctxt_t   ctxt;
 
-  int               CC_id, i;
+  int               CC_id, i = -1;
   UE_list_t         *UE_list = &RC.mac[module_idP]->UE_list;
   rnti_t            rnti;
 
   COMMON_channels_t *cc      = RC.mac[module_idP]->common_channels;
 
-#if defined(FLEXRAN_AGENT_SB_IF)
-  Protocol__FlexranMessage *msg;
-#endif
-
-
   start_meas(&RC.mac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
     (VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,
      VCD_FUNCTION_IN);
+
+  RC.mac[module_idP]->frame    = frameP;
+  RC.mac[module_idP]->subframe = subframeP;
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     mbsfn_status[CC_id] = 0;
@@ -531,9 +529,29 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 #if defined(Rel10) || defined(Rel14)
     cc[CC_id].mcch_active        = 0;
 #endif
-    RC.mac[module_idP]->frame    = frameP;
-    RC.mac[module_idP]->subframe = subframeP;
 
+    clear_nfapi_information(RC.mac[module_idP], CC_id, frameP, subframeP);
+  }
+
+  // refresh UE list based on UEs dropped by PHY in previous subframe
+  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    if (UE_list->active[i] != TRUE)
+      continue;
+
+    rnti = UE_RNTI(module_idP, i);
+    CC_id = UE_PCCID(module_idP, i);
+
+    if ((frameP == 0) && (subframeP == 0)) {
+      LOG_I(MAC,
+            "UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
+            rnti,
+            UE_list->UE_sched_ctrl[i].ul_out_of_sync ==
+            0 ? "in synch" : "out of sync",
+            UE_list->UE_template[CC_id][i].phr_info,
+            UE_list->UE_sched_ctrl[i].dl_cqi[CC_id],
+            (UE_list->UE_sched_ctrl[i].pusch_snr[CC_id] - 128) / 2,
+            (UE_list->UE_sched_ctrl[i].pucch1_snr[CC_id] - 128) / 2);
+    }
 
     RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP * 10) +
 						  subframeP] = -63;
@@ -601,42 +619,6 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     }
   }
 
-    // refresh UE list based on UEs dropped by PHY in previous subframe
-  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
-    if (UE_list->active[i] != TRUE) continue;
-
-    rnti  = UE_RNTI(module_idP, i);
-    CC_id = UE_PCCID(module_idP, i);
-
-    if ((frameP == 0) && (subframeP == 0)) {
-      LOG_I(MAC,
-	    "UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
-	    rnti,
-	    UE_list->UE_sched_ctrl[i].ul_out_of_sync ==
-	    0 ? "in synch" : "out of sync",
-	    UE_list->UE_template[CC_id][i].phr_info,
-	    UE_list->UE_sched_ctrl[i].dl_cqi[CC_id],
-	    (UE_list->UE_sched_ctrl[i].pusch_snr[CC_id] - 128) / 2,
-	    (UE_list->UE_sched_ctrl[i].pucch1_snr[CC_id] - 128) / 2);
-    }
-
-    RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP * 10) + subframeP] = -63;
-    if (i == UE_list->head)
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME
-	(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,
-	 RC.eNB[module_idP][CC_id]->
-	 pusch_stats_bsr[i][(frameP * 10) + subframeP]);
-    // increment this, it is cleared when we receive an sdu
-    RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
-
-    RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer++;
-    LOG_D(MAC, "UE %d/%x : ul_inactivity %d, cqi_req %d\n", i, rnti,
-	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].
-	  ul_inactivity_timer,
-	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer);
-    check_ul_failure(module_idP, CC_id, i, frameP, subframeP);
-  }
-
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,
 				 NOT_A_RNTI, frameP, subframeP,
 				 module_idP);
@@ -686,7 +668,6 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   // Allocate CCEs for good after scheduling is done
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
       allocate_CCEs(module_idP, CC_id, subframeP, 0);
-
 
   stop_meas(&RC.mac[module_idP]->eNB_scheduler);
 
