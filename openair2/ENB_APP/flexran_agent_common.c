@@ -489,10 +489,10 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 	  lc_config[j]->has_lcid = 1;
 	  lc_config[j]->lcid = j+1;
 	 
-	  int lcg = flexran_get_lcg(i, j+1);
+	  int lcg = flexran_get_lcg(mod_id, i, j+1);
 	  if (lcg >= 0 && lcg <= 3) {
 	    lc_config[j]->has_lcg = 1;
-	    lc_config[j]->lcg = flexran_get_lcg(i,j+1);
+	    lc_config[j]->lcg = flexran_get_lcg(mod_id, i,j+1);
 	  }
 	 
 	  lc_config[j]->has_direction = 1;

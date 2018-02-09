@@ -83,7 +83,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                goto error;
                         for (j = 0; j < ue_report[i]->n_bsr; j++) {
                                 // NN: we need to know the cc_id here, consider the first one 
-                                elem[j] = flexran_get_ue_bsr (enb_id, i, j); 
+                                elem[j] = flexran_get_ue_bsr_ul_buffer_info (enb_id, i, j);
                         }
                           
                         ue_report[i]->bsr = elem;

@@ -77,9 +77,9 @@ int flexran_get_num_ues(mid_t mod_id);
 /* Get the rnti of a UE with id ue_id */
 rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id);
 
-/* Get the RLC buffer status report of a ue for a designated
-   logical channel id */
-uint8_t flexran_get_ue_bsr(mid_t mod_id, mid_t ue_id, lcid_t lcid);
+/* Get the RLC buffer status report in bytes of a ue for a designated
+ * logical channel id */
+int flexran_get_ue_bsr_ul_buffer_info(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /* Get power headroom of UE with id ue_id */
 int8_t flexran_get_ue_phr(mid_t mod_id, mid_t ue_id);
@@ -302,7 +302,7 @@ long flexran_get_extended_bsr_size(mid_t mod_id, mid_t ue_id);
 int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id);
 
 /* Get logical channel group of a channel with id lc_id */
-long flexran_get_lcg(mid_t ue_id, mid_t lc_id);
+long flexran_get_lcg(mid_t mod_id, mid_t ue_id, mid_t lc_id);
 
 /* Get direction of logical channel with id lc_id */
 int flexran_get_direction(mid_t ue_id, mid_t lc_id);
@@ -338,7 +338,7 @@ void flexran_agent_set_operating_bandwidth(mid_t mod_id, uint8_t cc_id, uint8_t 
 void flexran_agent_set_operating_frame_type(mid_t mod_id, uint8_t cc_id, lte_frame_type_t frame_type);
 
 /*RRC status flexRAN*/
-uint8_t flexran_get_rrc_status(const mid_t mod_id,  const rnti_t  rntiP);
+uint8_t flexran_get_rrc_status(mid_t mod_id, mid_t ue_id);
 
 
 /***************************** PDCP ***********************/

@@ -117,10 +117,10 @@ rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id)
   return UE_RNTI(mod_id, ue_id);
 }
 
-uint8_t flexran_get_ue_bsr(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+int flexran_get_ue_bsr_ul_buffer_info(mid_t mod_id, mid_t ue_id, lcid_t lcid)
 {
-  if (!mac_is_present(mod_id)) return 0;
-  return RC.mac[mod_id]->UE_list.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].bsr_info[lcid];
+  if (!mac_is_present(mod_id)) return -1;
+  return RC.mac[mod_id]->UE_list.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].ul_buffer_info[lcid];
 }
 
 int8_t flexran_get_ue_phr(mid_t mod_id, mid_t ue_id)
@@ -390,7 +390,6 @@ PHICH_DURATION_t flexran_get_phich_duration(mid_t mod_id, uint8_t cc_id)
 int flexran_get_phich_resource(mid_t mod_id, uint8_t cc_id)
 {
   if (!phy_is_present(mod_id, cc_id)) return 0;
-  /* TODO why don't we return phich_resource? */
   switch (RC.eNB[mod_id][cc_id]->frame_parms.phich_config_common.phich_resource) {
   case oneSixth:
     return 0;
@@ -544,12 +543,10 @@ uint8_t flexran_get_sib1_length(mid_t mod_id, uint8_t cc_id)
   return RC.rrc[mod_id]->carrier[cc_id].sizeof_SIB1;
 }
 
-uint8_t flexran_get_num_pdcch_symb(mid_t mod_id, uint8_t cc_id) {
-  /* TODO: This should return the number of PDCCH symbols initially used by the
-   * cell cc_id -> is the correction right? */
+uint8_t flexran_get_num_pdcch_symb(mid_t mod_id, uint8_t cc_id)
+{
   if (!phy_is_present(mod_id, cc_id)) return 0;
   return RC.eNB[mod_id][cc_id]->pdcch_vars[0].num_pdcch_symbols;
-  //(PHY_vars_UE_g[mod_id][cc_id]->lte_ue_pdcch_vars[mod_id]->num_pdcch_symbols);
 }
 
 
@@ -614,12 +611,11 @@ long flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id)
   }
 }
 
-/* TODO is there a reason we take the RNTI and not the UE ID? */
-/* TODO return type is unsigned, so we cannot return -1 in case of error! */
-uint8_t flexran_get_rrc_status(mid_t mod_id, rnti_t rnti)
+uint8_t flexran_get_rrc_status(mid_t mod_id, mid_t ue_id)
 {
   if (!rrc_is_present(mod_id)) return 0;
 
+  rnti_t rnti = flexran_get_ue_crnti(mod_id, ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return RRC_INACTIVE;
@@ -893,14 +889,10 @@ int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
   }
 }
 
-/* TODO Navid: Get the same for eNB */
-long flexran_get_lcg(mid_t ue_id, mid_t lc_id)
+long flexran_get_lcg(mid_t mod_id, mid_t ue_id, mid_t lc_id)
 {
-  if (!UE_mac_inst) return -1;
-  if (!UE_mac_inst[ue_id].logicalChannelConfig[lc_id]) return -1;
-  if (!UE_mac_inst[ue_id].logicalChannelConfig[lc_id]->ul_SpecificParameters) return -1;
-  if (!UE_mac_inst[ue_id].logicalChannelConfig[lc_id]->ul_SpecificParameters->logicalChannelGroup) return -1;
-  return *(UE_mac_inst[ue_id].logicalChannelConfig[lc_id]->ul_SpecificParameters->logicalChannelGroup);
+  if (!mac_is_present(mod_id)) return 0;
+  return RC.mac[mod_id]->UE_list.UE_template[UE_PCCID(mod_id, ue_id)][ue_id].lcgidmap[lc_id];
 }
 
 /* TODO Navid: needs to be revised */
@@ -923,14 +915,12 @@ uint8_t flexran_get_antenna_ports(mid_t mod_id, uint8_t cc_id)
   return RC.eNB[mod_id][cc_id]->frame_parms.nb_antenna_ports_eNB;
 }
 
-/* TODO better give real value (without division)? */
 uint32_t flexran_agent_get_operating_dl_freq(mid_t mod_id, uint8_t cc_id)
 {
   if (!phy_is_present(mod_id, cc_id)) return 0;
   return RC.eNB[mod_id][cc_id]->frame_parms.dl_CarrierFreq / 1000000;
 }
 
-/* TODO better give real value (without division)? */
 uint32_t flexran_agent_get_operating_ul_freq(mid_t mod_id, uint8_t cc_id)
 {
   if (!phy_is_present(mod_id, cc_id)) return 0;
