@@ -859,15 +859,6 @@ void kill_eNB_proc(int inst) {
 	pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
       }
     }
-
-    LOG_D(PHY, "joining pthread_asynch_rxtx\n");
-    pthread_join(proc->pthread_asynch_rxtx, (void**)&status );
-    pthread_mutex_destroy(&proc->mutex_asynch_rxtx);
-    pthread_cond_destroy(&proc->cond_asynch_rxtx);
-
-    LOG_D(PHY, "joining pthread_single\n");
-    pthread_join(proc->pthread_single, (void**)&status );
-    LOG_D(PHY, "joined all eNB threads\n");
   }
 }
 
