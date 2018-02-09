@@ -850,7 +850,7 @@ set_msg3_subframe(module_id_t mod_id,
 		  int subframe, int rnti, int Msg3_frame,
 		  int Msg3_subframe)
 {
-  eNB_MAC_INST *mac = RC.mac[Mod_id];
+  eNB_MAC_INST *mac = RC.mac[mod_id];
   int i;
   for (i = 0; i < NB_RA_PROC_MAX; i++) {
     if (mac->common_channels[CC_id].ra[i].state != IDLE &&
@@ -1069,7 +1069,6 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
     }
 
     // Run each enabled slice-specific schedulers one by one
-    /* TODO Navid What is the right call for this message? */
     slice_sched_ul[i](module_idP, i, frameP, subframeP, sched_subframe, first_rb);
   }
 
@@ -1296,10 +1295,9 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	      normalized_rx_power = normalized_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power = target_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = UE_template->pre_assigned_mcs_ul;
-	    UE_template->mcs_UL[harq_pid] = UE_template->pre_assigned_mcs_ul;	//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
+	    UE_template->mcs_UL[harq_pid] = cmin(UE_template->pre_assigned_mcs_ul, slice_maxmcs_uplink[slice_id]);//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
 	    if (UE_template->pre_allocated_rb_table_index_ul >= 0) {
-	      rb_table_index =
-		UE_template->pre_allocated_rb_table_index_ul;
+	      rb_table_index = UE_template->pre_allocated_rb_table_index_ul;
 	    } else {
 	      UE_template->mcs_UL[harq_pid] = 10;	//cmin (10, openair_daq_vars.target_ue_ul_mcs);
 	      rb_table_index = 5;	// for PHR
@@ -1309,10 +1307,9 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	    //            buffer_occupancy = UE_template->ul_total_buffer;
 
 
-	    while (((rb_table[rb_table_index] >
-		     (N_RB_UL - 1 - first_rb[CC_id]))
-		    || (rb_table[rb_table_index] > 45))
-		   && (rb_table_index > 0)) {
+	    while (((rb_table[rb_table_index] > (N_RB_UL - 1 - first_rb[CC_id]))
+                    || (rb_table[rb_table_index] > 45))
+                    && (rb_table_index > 0)) {
 	      rb_table_index--;
 	    }
 
