@@ -1524,8 +1524,10 @@ static void* ru_thread( void* param ) {
 
           // the thread can now be woken up
           AssertFatal(pthread_cond_signal(&ru->proc.cond_phy_tx) == 0, "ERROR pthread_cond_signal for phy_tx thread\n");
+        }else{
+          LOG_E(PHY,"phy tx thread busy, skipping\n");
+          ++ru->proc.instance_cnt_phy_tx;
         }
-        else LOG_W(PHY,"phy tx thread busy, skipping\n");
         pthread_mutex_unlock( &ru->proc.mutex_phy_tx );
     } else {
         phy_tx_end = 1;
@@ -1793,8 +1795,10 @@ static void* eNB_thread_phy_tx( void* param ) {
 
           // the thread can now be woken up
           AssertFatal(pthread_cond_signal(&ru->proc.cond_rf_tx) == 0, "ERROR pthread_cond_signal for rf_tx thread\n");
+        }else{
+          LOG_E(PHY,"rf tx thread busy, skipping\n");
+          ru->proc.instance_cnt_rf_tx++;
         }
-        else LOG_W(PHY,"rf tx thread busy, skipping\n");
         pthread_mutex_unlock( &ru->proc.mutex_rf_tx );
     }
     if (release_thread(&proc->mutex_phy_tx,&proc->instance_cnt_phy_tx,"eNB_thread_phy_tx") < 0) break;
