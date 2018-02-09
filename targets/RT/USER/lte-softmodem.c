@@ -969,8 +969,6 @@ int restart_L1L2(module_id_t enb_id)
     RC.eNB[enb_id][cc_id]->configured = 0;
   }
 
-
-  /* TODO undo malloc_IF4p5_buffer() */
   RC.ru_mask |= (1 << ru->idx);
   /* copy the changed frame parameters to the RU */
   /* TODO this should be done for all RUs associated to this eNB */
@@ -997,18 +995,15 @@ int restart_L1L2(module_id_t enb_id)
   RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
   itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 
-  /* TODO XForms here */
+  /* TODO XForms might need to be restarted, but it is currently (09/02/18)
+   * broken, so we cannot test it */
 
-  /* TODO check for memory leaks */
-  /* TODO wait_eNBs() would wait for phy_config_request()? */
-  //init_eNB(single_thread_flag,wait_for_sync);
   wait_eNBs();
   init_RU_proc(ru);
   ru->rf_map.card = 0;
   ru->rf_map.chain = 0; /* CC_id + chain_offset;*/
   wait_RUs();
   init_eNB_afterRU();
-
 
   printf("Sending sync to all threads\n");
   pthread_mutex_lock(&sync_mutex);
