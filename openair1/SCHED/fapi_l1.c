@@ -63,6 +63,7 @@ void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
 }
 
 #ifdef Rel14
+
 void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
                              eNB_rxtx_proc_t *proc,
                              nfapi_dl_config_request_pdu_t *dl_config_pdu)
@@ -76,6 +77,7 @@ void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
   // copy dci configuration into eNB structure
   fill_mdci_and_dlsch(eNB,proc,&mpdcch_vars->mdci_alloc[mpdcch_vars->num_dci],pdu);
 }
+
 #endif
 
 void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
@@ -265,14 +267,21 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
     dlsch0_harq->codeword           = 0;
     dlsch0_harq->pdsch_start        = rel10->pdsch_start;
   }
-#endif
   dlsch0->i0               = rel13->initial_transmission_sf_io;
+#endif
 
+#ifdef Rel14
   LOG_D(PHY,"dlsch->i0:%04x dlsch0_harq[pdsch_start:%d nb_rb:%d vrb_type:%d rvidx:%d Nl:%d mimo_mode:%d dl_power_off:%d round:%d status:%d TBS:%d Qm:%d codeword:%d rb_alloc:%d] rel8[length:%d]\n", 
       dlsch0->i0, 
       dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->round, dlsch0_harq->status, dlsch0_harq->TBS, dlsch0_harq->Qm, dlsch0_harq->codeword, dlsch0_harq->rb_alloc[0],
       rel8->length
       );
+#else
+  LOG_D(PHY,"dlsch0_harq[pdsch_start:%d nb_rb:%d vrb_type:%d rvidx:%d Nl:%d mimo_mode:%d dl_power_off:%d round:%d status:%d TBS:%d Qm:%d codeword:%d rb_alloc:%d] rel8[length:%d]\n", 
+      dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->round, dlsch0_harq->status, dlsch0_harq->TBS, dlsch0_harq->Qm, dlsch0_harq->codeword, dlsch0_harq->rb_alloc[0],
+      rel8->length
+      );
+#endif
 }
 
 uint16_t to_beta_offset_harqack[16]={16,20,25,32,40,50,64,80,101,127,160,248,400,640,1008,8};
@@ -764,8 +773,10 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
       break;
 #ifdef Rel14
     case NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE:
+#ifdef Rel14
       handle_nfapi_mpdcch_pdu(eNB,proc,dl_config_pdu);
       eNB->mpdcch_vars[subframe&1].num_dci++;
+#endif
       break;
 #endif    
     }

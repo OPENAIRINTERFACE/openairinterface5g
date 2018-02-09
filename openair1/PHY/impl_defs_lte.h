@@ -144,8 +144,6 @@ typedef struct {
   uint8_t prach_hopping_offset[4];
 } PRACH_eMTC_CONFIG_INFO;
 
-#endif
-
 /// PRACH-ConfigSIB or PRACH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
@@ -157,6 +155,8 @@ typedef struct {
   PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
 #endif  
 } PRACH_eMTC_CONFIG_COMMON;
+
+#endif
 
 /// Enumeration for parameter \f$N_\text{ANRep}\f$ \ref PUCCH_CONFIG_DEDICATED::repetitionFactor.
 typedef enum {
