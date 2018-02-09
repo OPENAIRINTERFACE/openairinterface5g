@@ -66,33 +66,12 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch)
 #endif
 
     for (i=0; i<8; i++) {
-#ifdef DEBUG_ULSCH_FREE
-      printf("Freeing ulsch process %d\n",i);
-#endif
-
       if (ulsch->harq_processes[i]) {
-#ifdef DEBUG_ULSCH_FREE
-        printf("Freeing ulsch process %d (%p)\n",i,ulsch->harq_processes[i]);
-#endif
-
         if (ulsch->harq_processes[i]->b) {
           free16(ulsch->harq_processes[i]->b,MAX_ULSCH_PAYLOAD_BYTES);
           ulsch->harq_processes[i]->b = NULL;
-#ifdef DEBUG_ULSCH_FREE
-          printf("Freeing ulsch process %d b (%p)\n",i,ulsch->harq_processes[i]->b);
-#endif
         }
-
-#ifdef DEBUG_ULSCH_FREE
-        printf("Freeing ulsch process %d c (%p)\n",i,ulsch->harq_processes[i]->c);
-#endif
-
         for (r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++) {
-
-#ifdef DEBUG_ULSCH_FREE
-          printf("Freeing ulsch process %d c[%d] (%p)\n",i,r,ulsch->harq_processes[i]->c[r]);
-#endif
-
           if (ulsch->harq_processes[i]->c[r]) {
             free16(ulsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
             ulsch->harq_processes[i]->c[r] = NULL;
@@ -103,7 +82,6 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch)
         ulsch->harq_processes[i] = NULL;
       }
     }
-
     free16(ulsch,sizeof(LTE_UE_ULSCH_t));
     ulsch = NULL;
   }
