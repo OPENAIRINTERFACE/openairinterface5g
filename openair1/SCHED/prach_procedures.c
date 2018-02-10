@@ -52,8 +52,9 @@
 
 extern uint32_t nfapi_mode;
 
-void prach_procedures(PHY_VARS_eNB *eNB,
+void prach_procedures(PHY_VARS_eNB *eNB
 #ifdef Rel14
+                      ,
 		      int br_flag
 #endif
 		      ) {

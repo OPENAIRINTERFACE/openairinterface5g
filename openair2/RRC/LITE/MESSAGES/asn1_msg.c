@@ -876,7 +876,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib3)->intraFreqCellReselectionInfo.presenceAntennaPort1 = 0;
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.buf = CALLOC(8,1);
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.size = 1;
-  (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.buf[0] = 1;
+  (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.buf[0] = 1 << 6;
   (*sib3)->intraFreqCellReselectionInfo.neighCellConfig.bits_unused = 6;
   (*sib3)->intraFreqCellReselectionInfo.t_ReselectionEUTRA = 1;
   (*sib3)->intraFreqCellReselectionInfo.t_ReselectionEUTRA_SF = (struct SpeedStateScaleFactors *)NULL;

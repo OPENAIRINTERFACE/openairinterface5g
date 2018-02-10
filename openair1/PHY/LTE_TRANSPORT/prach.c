@@ -1089,6 +1089,10 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 }
 //__m128i mmtmpX0,mmtmpX1,mmtmpX2,mmtmpX3;
 
+#ifndef Rel14
+#define rx_prach0 rx_prach
+#endif
+
 void rx_prach0(PHY_VARS_eNB *eNB,
 	       RU_t *ru,
 	       uint16_t *max_preamble,
@@ -1764,9 +1768,8 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
 
 
-#ifndef Rel14
-#define rx_prach rx_prach0
-#else
+#ifdef Rel14
+
 void rx_prach(PHY_VARS_eNB *eNB,
 	      RU_t *ru,
 	      uint16_t *max_preamble,
@@ -1806,7 +1809,8 @@ void rx_prach(PHY_VARS_eNB *eNB,
     }
   }
 }
-#endif
+
+#endif /* Rel14 */
 
 void init_prach_tables(int N_ZC)
 {
