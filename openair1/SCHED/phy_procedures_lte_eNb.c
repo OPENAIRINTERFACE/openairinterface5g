@@ -1999,12 +1999,12 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
  
       switch (harq_ack[0]) {
       case 0:
-          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;// anaake
+          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;
 	break;
       case 1: // check if M=1,4,7
 	if (uci->num_pucch_resources == 1 || uci->num_pucch_resources == 4 ||
 	    tdd_config5_sf2scheds == 1 || tdd_config5_sf2scheds == 4 || tdd_config5_sf2scheds == 7) {
-	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;// anaake
+	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
 	}
@@ -2012,7 +2012,7 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
       case 2: // check if M=2,5,8
 	if (uci->num_pucch_resources == 2 || tdd_config5_sf2scheds == 2 || 
 	    tdd_config5_sf2scheds == 5 || tdd_config5_sf2scheds == 8) {
-	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;// anaake
+	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
 	}
@@ -2020,7 +2020,7 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
       case 3: // check if M=3,6,9
 	if (uci->num_pucch_resources == 3 || tdd_config5_sf2scheds == 3 || 
 	    tdd_config5_sf2scheds == 6 || tdd_config5_sf2scheds == 9) {
-	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;// anaake
+	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
 	}
