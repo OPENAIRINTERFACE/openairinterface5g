@@ -2509,7 +2509,13 @@ void ulsch_scheduler_pre_ue_select(
         }
         if ( (ulsch_ue_select[CC_id].ue_num+ul_inactivity_num[CC_id] ) < ulsch_ue_max_num[CC_id] ) {
             UE_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-            if ( ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
+            uint8_t ul_period = 0;
+            if (cc->tdd_Config) {
+              ul_period = 50;
+            } else {
+              ul_period = 20;
+            }
+            if ( ((UE_sched_ctl->ul_inactivity_timer>ul_period)&&(UE_sched_ctl->ul_scheduled==0))  ||
               ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED))) {
             ul_inactivity_id[CC_id][ul_inactivity_num[CC_id]]= UE_id;
             ul_inactivity_num[CC_id] ++;
@@ -2615,7 +2621,13 @@ void ulsch_scheduler_pre_ue_select(
     //inactivity UE
     if ( (ulsch_ue_select[CC_id].ue_num+ul_inactivity_num[CC_id]) < ulsch_ue_max_num[CC_id] ) {
         UE_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-        if ( ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
+        uint8_t ul_period = 0;
+        if (cc->tdd_Config) {
+          ul_period = 50;
+        } else {
+          ul_period = 20;
+        }
+        if ( ((UE_sched_ctl->ul_inactivity_timer>ul_period)&&(UE_sched_ctl->ul_scheduled==0))  ||
             ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED))) {
           ul_inactivity_id[CC_id][ul_inactivity_num[CC_id]]= UE_id;
           ul_inactivity_num[CC_id]++;
