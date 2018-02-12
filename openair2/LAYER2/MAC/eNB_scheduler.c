@@ -657,7 +657,8 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   // This schedules DLSCH in subframeP
   schedule_dlsch(module_idP, frameP, subframeP, mbsfn_status);
 
-  flexran_agent_send_update_stats(module_idP);
+  if (RC.flexran[module_idP]->enabled)
+    flexran_agent_send_update_stats(module_idP);
   
   // Allocate CCEs for good after scheduling is done
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
