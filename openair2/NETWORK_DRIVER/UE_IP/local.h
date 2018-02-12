@@ -57,7 +57,6 @@
 #include "platform_types.h"
 #include "sap.h"
 
-#define OAI_NW_DRIVER_USE_NETLINK 1
 
 typedef struct ue_ip_priv_s {
   int                        irq;
