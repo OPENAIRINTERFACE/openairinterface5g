@@ -541,7 +541,6 @@ schedule_dlsch(module_id_t module_idP,
     }
 
     // Run each enabled slice-specific schedulers one by one
-    /* TODO Navid took out the dl_info additional information */
     slice_sched_dl[i](module_idP, i, frameP, subframeP, mbsfn_flag/*, dl_info*/);
   }
 
