@@ -1273,8 +1273,8 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
     cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
 
-    cfg->tx_gain[i] = (double)fp->att_tx;
-    cfg->rx_gain[i] = ru->max_rxgain-(double)fp->att_rx;
+    cfg->tx_gain[i] = ru->att_tx;
+    cfg->rx_gain[i] = ru->max_rxgain-ru->att_rx;
 
     cfg->configFilename = rf_config_file;
     printf("channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
@@ -2256,13 +2256,13 @@ void RCconfig_RU(void) {
 	  RC.ru[j]->if_timing                    = synch_to_other;
 	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF5_MOBIPASS;
 	}
-	RC.ru[j]->att_tx                         = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr); 
-	RC.ru[j]->att_rx                         = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr); 
       }  /* strcmp(local_rf, "yes") != 0 */
 
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
       RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       
+      RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
+      RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
     }// j=0..num_rus
   } else {
     RC.nb_RU = 0;	    
