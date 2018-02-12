@@ -2297,7 +2297,7 @@ add_custom_command (
 # retrieve the compiler options to send it to gccxml
 get_directory_property(DirDefs COMPILE_DEFINITIONS )
 foreach( d ${DirDefs} )
-  set(module_cc_opt_tmp "${module_cc_opt_tmp} -D${d}")
+  set(module_cc_opt "${module_cc_opt} -D${d}")
 endforeach()
 get_directory_property( DirDefs INCLUDE_DIRECTORIES )
 foreach( d ${DirDefs} )
