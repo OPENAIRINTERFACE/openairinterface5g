@@ -1832,7 +1832,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
         } else {
           tpc = 1; //0
         }
-
         if (tpc!=1) {
           LOG_D(MAC,"[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
               module_idP,frameP,subframeP,harq_pid,tpc,
@@ -1917,6 +1916,11 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             hi_dci0_pdu->dci_pdu.dci_pdu_rel8.harq_pid                          = harq_pid;
 
             hi_dci0_req->number_of_dci++;
+            hi_dci0_req->sfnsf = sfnsf_add_subframe(sched_frame, sched_subframeP, 0); //(frameP, subframeP, 4)
+            hi_dci0_req->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
+            nfapi_hi_dci0_request_t        *nfapi_hi_dci0_req = &eNB->HI_DCI0_req[CC_id][subframeP];
+            nfapi_hi_dci0_req->sfn_sf = frameP<<4|subframeP; // sfnsf_add_subframe(sched_frame, sched_subframeP, 0); // sunday!
+            nfapi_hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
 
             LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
                   harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP);
@@ -2041,6 +2045,11 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             hi_dci0_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms             = UE_template->cshift[harq_pid];
             hi_dci0_pdu->hi_pdu.hi_pdu_rel8.hi_value                            = 0;
             hi_dci0_req->number_of_hi++;
+
+            hi_dci0_req->sfnsf = sfnsf_add_subframe(sched_frame, sched_subframeP, 0); //(frameP, subframeP, 4)
+            nfapi_hi_dci0_request_t        *nfapi_hi_dci0_req = &eNB->HI_DCI0_req[CC_id][subframeP];
+            nfapi_hi_dci0_req->sfn_sf = frameP<<4|subframeP; // sfnsf_add_subframe(sched_frame, sched_subframeP, 0); // sunday!
+            nfapi_hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
 
             LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled (PHICH) UE %d (mcs %d, first rb %d, nb_rb %d, TBS %d, round %d)\n",
                   module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,UE_template->mcs_UL[harq_pid],
