@@ -2065,7 +2065,6 @@ add_executable(oaisim
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${GTPU_need_ITTI}
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${XFORMS_SOURCE}
   ${T_SOURCE}
@@ -2077,9 +2076,7 @@ add_executable(oaisim
 target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim
   -Wl,-ldl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_UE_LIB PHY_UE LFDS L2 ${MSC_LIB} LIB_NAS_UE SIMU SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
-  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB
-  NFAPI_USER_LIB
+  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_UE_LIB PHY_UE LFDS L2_UE ${MSC_LIB} LIB_NAS_UE SIMU SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
   -Wl,--end-group z dl)
 
 target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
