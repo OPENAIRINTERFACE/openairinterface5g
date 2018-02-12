@@ -1197,7 +1197,7 @@ int l2_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
 /*Slice related functions */
 uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
 
-int flexran_slice_member(int UE_id, int slice_id);
+int ue_slice_membership(int UE_id, int slice_id);
 
 #endif
 /** @}*/

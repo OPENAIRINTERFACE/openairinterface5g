@@ -710,7 +710,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
           LOG_D(MAC, "[eNB] Cannot find eNB_UE_stats\n");
           continue_flag = 1;
       }
-      if (flexran_slice_member(UE_id, slice_idP) == 0)
+      if (!ue_slice_membership(UE_id, slice_idP))
                   continue;
 
       if (continue_flag != 1) {
