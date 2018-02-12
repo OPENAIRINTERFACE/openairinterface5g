@@ -106,7 +106,7 @@ int flexran_create_header(xid_t xid, Protocol__FlexType type,  Protocol__FlexHea
 
 int flexran_agent_hello(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
  
-  Protocol__FlexHeader *header;
+  Protocol__FlexHeader *header = NULL;
   /*TODO: Need to set random xid or xid from received hello message*/
   xid_t xid = 1;
 
@@ -161,7 +161,7 @@ int flexran_agent_destroy_hello(Protocol__FlexranMessage *msg) {
 
 
 int flexran_agent_echo_request(mid_t mod_id, const void* params, Protocol__FlexranMessage **msg) {
-  Protocol__FlexHeader *header;
+  Protocol__FlexHeader *header = NULL;
   /*TODO: Need to set a random xid*/
   xid_t xid = 1;
 
@@ -216,6 +216,7 @@ int flexran_agent_destroy_echo_request(Protocol__FlexranMessage *msg) {
 int flexran_agent_echo_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   
   xid_t xid;
+  Protocol__FlexHeader *header = NULL;
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexEchoRequest *echo_req = input->echo_request_msg;
   xid = (echo_req->header)->xid;
@@ -226,7 +227,6 @@ int flexran_agent_echo_reply(mid_t mod_id, const void *params, Protocol__Flexran
     goto error;
   protocol__flex_echo_reply__init(echo_reply_msg);
 
-  Protocol__FlexHeader *header;
   if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_ECHO_REPLY, &header) != 0)
     goto error;
 
@@ -429,6 +429,7 @@ int flexran_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg) {
 int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
   xid_t xid;
+  Protocol__FlexHeader *header = NULL;
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexLcConfigRequest *lc_config_request_msg = input->lc_config_request_msg;
   xid = (lc_config_request_msg->header)->xid;
@@ -441,7 +442,6 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     goto error;
   protocol__flex_lc_config_reply__init(lc_config_reply_msg);
 
-  Protocol__FlexHeader *header;
   if(flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_GET_LC_CONFIG_REPLY, &header) != 0)
     goto error;
 
@@ -557,6 +557,7 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
   xid_t xid;
+  Protocol__FlexHeader *header = NULL;
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexUeConfigRequest *ue_config_request_msg = input->ue_config_request_msg;
   xid = (ue_config_request_msg->header)->xid;
@@ -569,7 +570,6 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     goto error;
   protocol__flex_ue_config_reply__init(ue_config_reply_msg);
 
-  Protocol__FlexHeader *header;
   if(flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_GET_UE_CONFIG_REPLY, &header) != 0)
     goto error;
 
@@ -762,7 +762,7 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 
 int flexran_agent_enb_config_request(mid_t mod_id, const void* params, Protocol__FlexranMessage **msg) {
 
-	Protocol__FlexHeader *header;
+	Protocol__FlexHeader *header = NULL;
 	xid_t xid = 1;
 
 	Protocol__FlexEnbConfigRequest *enb_config_request_msg;
@@ -801,6 +801,7 @@ int flexran_agent_enb_config_request(mid_t mod_id, const void* params, Protocol_
 int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
   xid_t xid;
+  Protocol__FlexHeader *header = NULL;
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexEnbConfigRequest *enb_config_req_msg = input->enb_config_request_msg;
   xid = (enb_config_req_msg->header)->xid;
@@ -814,7 +815,6 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
     goto error;
   protocol__flex_enb_config_reply__init(enb_config_reply_msg);
 
-  Protocol__FlexHeader *header;
   if(flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_GET_ENB_CONFIG_REPLY, &header) != 0)
     goto error;
   

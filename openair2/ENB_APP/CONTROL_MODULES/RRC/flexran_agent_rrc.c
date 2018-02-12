@@ -45,8 +45,8 @@ AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB];
 
 void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change) {
   int size;
-  Protocol__FlexranMessage *msg;
-  Protocol__FlexHeader *header;
+  Protocol__FlexranMessage *msg = NULL;
+  Protocol__FlexHeader *header = NULL;
   void *data;
   int priority = 0;
   err_code_t err_code;

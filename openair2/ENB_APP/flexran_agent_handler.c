@@ -393,7 +393,7 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
 
 int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *report_config, Protocol__FlexranMessage **msg){
 
-  Protocol__FlexHeader *header;
+  Protocol__FlexHeader *header = NULL;
   err_code_t err_code;
   int i;
 
@@ -514,7 +514,7 @@ int flexran_agent_stats_request(mid_t mod_id,
             xid_t xid,
             const stats_request_config_t *report_config,
             Protocol__FlexranMessage **msg) {
-  Protocol__FlexHeader *header;
+  Protocol__FlexHeader *header = NULL;
   int i;
 
   Protocol__FlexStatsRequest *stats_request_msg;

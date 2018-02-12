@@ -670,7 +670,7 @@ int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg) {
 }
 
 int flexran_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
-  Protocol__FlexHeader *header;
+  Protocol__FlexHeader *header = NULL;
   int i;
   const int xid = *((int *)params);
 
@@ -738,7 +738,7 @@ int flexran_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg) {
 }
 
 int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
-  Protocol__FlexHeader *header;
+  Protocol__FlexHeader *header = NULL;
   int i, j, UE_id;
   
   int available_harq[NUMBER_OF_UE_MAX];
@@ -954,7 +954,7 @@ int flexran_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg) {
 int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
 
   int xid = 0;
-  Protocol__FlexHeader *header;
+  Protocol__FlexHeader *header = NULL;
   if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_DL_MAC_CONFIG, &header) != 0)
     goto error;
 
@@ -1049,7 +1049,7 @@ int flexran_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg) {
 int flexran_agent_mac_create_empty_ul_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
 
   int xid = 0;
-  Protocol__FlexHeader *header;
+  Protocol__FlexHeader *header = NULL;
   if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_UL_MAC_CONFIG, &header) != 0)
     goto error;
 

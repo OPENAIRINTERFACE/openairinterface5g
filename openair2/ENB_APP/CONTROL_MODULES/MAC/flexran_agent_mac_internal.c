@@ -101,7 +101,7 @@ Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol
   if (n_cell_report > 0 || n_ue_report > 0) {
     /*Create header*/
     int xid = old_report->header->xid;
-    Protocol__FlexHeader *header;
+    Protocol__FlexHeader *header = NULL;
     if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0) {
     goto error;
     }
