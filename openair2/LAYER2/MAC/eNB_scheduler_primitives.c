@@ -1705,8 +1705,10 @@ fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *
 	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.modulation_type = 2;
     else if (mcs < 21)
 	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.modulation_type = 4;
-    else
+    else if(mcs < 29)
 	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.modulation_type = 6;
+    else
+        ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.modulation_type = 0;
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.cyclic_shift_2_for_drms =
 	cyclic_shift_2_for_drms;
     ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.

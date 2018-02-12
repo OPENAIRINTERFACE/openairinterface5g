@@ -2783,6 +2783,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
 	ulsch->harq_processes[harq_pid]->ndi, ulsch_pdu->ulsch_pdu_rel8.new_data_indication, new_ulsch, ulsch->harq_processes[harq_pid]->status);
   
   ulsch->harq_processes[harq_pid]->rvidx = ulsch_pdu->ulsch_pdu_rel8.redundancy_version;
+  if(ulsch_pdu->ulsch_pdu_rel8.modulation_type!=0)
   ulsch->harq_processes[harq_pid]->Qm    = ulsch_pdu->ulsch_pdu_rel8.modulation_type;
   // Set O_ACK to 0 by default, will be set of DLSCH is scheduled and needs to be 
   ulsch->harq_processes[harq_pid]->O_ACK         = 0;

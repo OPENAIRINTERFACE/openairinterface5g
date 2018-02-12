@@ -1997,8 +1997,13 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             round = UE_sched_ctrl->round_UL[CC_id][harq_pid];
             UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power=normalized_rx_power;
             UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
-
-            UE_template->TBS_UL[harq_pid] = get_TBS_UL(UE_template->mcs_UL[harq_pid],ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb);
+            if(rvidx_tab[round&3]==1){
+                UE_template->mcs_UL[harq_pid] = 29;
+            }else if(rvidx_tab[round&3]==2){
+                UE_template->mcs_UL[harq_pid] = 30;
+            }else if(rvidx_tab[round&3]==3){
+                UE_template->mcs_UL[harq_pid] = 31;
+            }
             UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS=UE_template->TBS_UL[harq_pid];
 
             if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
@@ -2045,6 +2050,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             hi_dci0_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms             = UE_template->cshift[harq_pid];
             hi_dci0_pdu->hi_pdu.hi_pdu_rel8.hi_value                            = 0;
             hi_dci0_req->number_of_hi++;
+            hi_dci0_pdu->hi_pdu.hi_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_HI_PDU_REL8_TAG;
 
             hi_dci0_req->sfnsf = sfnsf_add_subframe(sched_frame, sched_subframeP, 0); //(frameP, subframeP, 4)
             nfapi_hi_dci0_request_t        *nfapi_hi_dci0_req = &eNB->HI_DCI0_req[CC_id][subframeP];
@@ -2077,8 +2083,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                                                  0, // ul_tx_mode
                                                  0, // current_tx_nb
                                                  0, // n_srs
-                                                 get_TBS_UL(UE_template->mcs_UL[harq_pid],
-                                                            ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb)
+                                                 UE_template->TBS_UL[harq_pid]
                                                  );
 #ifdef Rel14
             if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
