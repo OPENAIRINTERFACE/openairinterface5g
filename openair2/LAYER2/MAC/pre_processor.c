@@ -1422,6 +1422,7 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
     for (i = UE_list->head_ul; i >= 0; i = UE_list->next_ul[i]) {
 
       rnti = UE_RNTI(module_idP, i);
+      UE_id = i;
 
       if (rnti == NOT_A_RNTI)
         continue;
@@ -1431,8 +1432,6 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
 
       if (flexran_slice_member(UE_id, slice_id) == 0)
           continue;
-
-      UE_id = i;
 
       LOG_D(MAC, "In ulsch_preprocessor: handling UE %d/%x\n", UE_id,
             rnti);
@@ -1528,6 +1527,7 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
         continue;
 
       UE_id = i;
+      ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
       for (n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
         // This is the actual CC_id in the list
@@ -1636,8 +1636,12 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
       N_RB_UL = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
       ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_id] = flexran_nb_rbs_allowed_slice(slice_percentage_uplink[slice_id],N_RB_UL);
 
+      int bytes_to_schedule = UE_template->estimated_ul_buffer - UE_template->scheduled_ul_bytes;
+      if (bytes_to_schedule < 0) bytes_to_schedule = 0;
+      int bits_to_schedule = bytes_to_schedule * 8;
+
       // if this UE has UL traffic
-      if (UE_template->ul_total_buffer > 0) {
+      if (bits_to_schedule > 0) {
         tbs = get_TBS_UL(mcs, 3) << 3; // 1 or 2 PRB with cqi enabled does not work well!
         rb_table_index = 2;
 
@@ -1645,7 +1649,7 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
         tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);
 
         while ((((UE_template->phr_info - tx_power) < 0)
-              || (tbs > UE_template->ul_total_buffer))
+              || (tbs > bits_to_schedule))
               && (mcs > 3)) {
           // LOG_I(MAC,"UE_template->phr_info %d tx_power %d mcs %d\n", UE_template->phr_info,tx_power, mcs);
           mcs--;
@@ -1654,7 +1658,7 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
         }
 
         while ((tbs < bits_to_schedule)
-                && (rb_table[rb_table_index] < (ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id] - first_rb[CC_id]))
+                && (rb_table[rb_table_index] < (ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_id] - first_rb[CC_id]))
                 && ((UE_template->phr_info - tx_power) > 0)
                 && (rb_table_index < 32)) {
           rb_table_index++;
@@ -1664,7 +1668,7 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 
         UE_template->ue_tx_power = tx_power;
 
-        if (rb_table[rb_table_index] > (ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id] - first_rb[CC_id] - 1)) {
+        if (rb_table[rb_table_index] > (ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_id] - first_rb[CC_id] - 1)) {
           rb_table_index--;
         }
         // 1 or 2 PRB with cqi enabled does not work well
