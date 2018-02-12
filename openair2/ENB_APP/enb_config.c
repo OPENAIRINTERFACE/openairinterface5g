@@ -98,7 +98,6 @@ static int enb_check_band_frequencies(char* lib_config_file_name_pP,
   return errors;
 }
 
-#ifdef FLEXRAN_AGENT_SB_IF
 void RCconfig_flexran()
 {
   int i;
@@ -134,7 +133,6 @@ void RCconfig_flexran()
 
   /* TODO: show FlexRAN config now? */
 }
-#endif
 
 void RCconfig_L1(void) {
   int               i,j;

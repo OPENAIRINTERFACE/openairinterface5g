@@ -76,9 +76,7 @@ uint8_t config_smbv = 0;
 char smbv_ip[16];
 #endif
 
-#if defined(FLEXRAN_AGENT_SB_IF)
-#   include "flexran_agent.h"
-#endif
+#include "flexran_agent.h"
 
 
 #include "oaisim_functions.h"

@@ -57,13 +57,11 @@
 #include "intertask_interface.h"
 #endif
 
-#if defined FLEXRAN_AGENT_SB_IF
 #include "ENB_APP/flexran_agent_defs.h"
 #include "flexran_agent_ran_api.h"
 #include "header.pb-c.h"
 #include "flexran.pb-c.h"
 #include "flexran_agent_mac.h"
-#endif
 #include <dlfcn.h>
 
 #include "T.h"

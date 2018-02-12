@@ -52,11 +52,9 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#if defined(FLEXRAN_AGENT_SB_IF)
 //Agent-related headers
 #include "flexran_agent_extern.h"
 #include "flexran_agent_mac.h"
-#endif
 
 #if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
@@ -419,12 +417,10 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
   }				// ul_failure_timer>0
 
   //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
-#if defined(FLEXRAN_AGENT_SB_IF)
   if (rrc_agent_registered[module_idP]) {
     agent_rrc_xface[module_idP]->flexran_agent_notify_ue_state_change(module_idP,
         rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
   }
-#endif
 
   UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer++;
   if(UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer > (U_PLANE_INACTIVITY_VALUE*subframe_num(&RC.eNB[module_idP][CC_id]->frame_parms))){
@@ -661,9 +657,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   // This schedules DLSCH in subframeP
   schedule_dlsch(module_idP, frameP, subframeP, mbsfn_status);
 
-#if defined(FLEXRAN_AGENT_SB_IF)
   flexran_agent_send_update_stats(module_idP);
-#endif
   
   // Allocate CCEs for good after scheduling is done
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)

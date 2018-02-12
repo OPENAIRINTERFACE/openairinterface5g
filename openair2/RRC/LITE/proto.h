@@ -33,9 +33,7 @@
 
 #include "RRC/LITE/defs.h"
 
-#if defined(FLEXRAN_AGENT_SB_IF)
 #include "flexran_agent_extern.h"
-#endif
 
 //main.c
 int rrc_init_global_param(void);
@@ -274,8 +272,6 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 );
 
 
-#if defined(FLEXRAN_AGENT_SB_IF)
-
 void
 flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 							     const protocol_ctxt_t* const ctxt_pP,
@@ -283,8 +279,6 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 							     const uint8_t ho_state,
 							     agent_reconf_rrc * trig_param
 							     );
-
-#endif
 
 int freq_to_arfcn10(int band, unsigned long freq);
 

@@ -871,12 +871,10 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
         }
       }
 
-#if defined(FLEXRAN_AGENT_SB_IF)
       if (rrc_agent_registered[enb_mod_idP]) {
         agent_rrc_xface[enb_mod_idP]->flexran_agent_notify_ue_state_change(enb_mod_idP,
                               rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
       }
-#endif
 
       for(j = 0; j < 10; j++){
         ul_req_tmp = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
@@ -3361,7 +3359,6 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 	       PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
-#if defined(FLEXRAN_AGENT_SB_IF)
 //-----------------------------------------------------------------------------
 void
 flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* const ctxt_pP,
@@ -3951,8 +3948,6 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
          buffer,
          PDCP_TRANSMISSION_MODE_CONTROL);
 }
-
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -6294,13 +6289,11 @@ rrc_eNB_decode_ccch(
 
         } else {
           // no context available
-#if defined(FLEXRAN_AGENT_SB_IF)
 	  if (rrc_agent_registered[ctxt_pP->module_id]) {
 	    agent_rrc_xface[ctxt_pP->module_id]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
 										      ctxt_pP->rnti,
 										      PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
 	  }
-#endif
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Can't create new context for UE random UE identity (0x%" PRIx64 ")\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 random_value);
@@ -6562,14 +6555,12 @@ rrc_eNB_decode_dcch(
           ue_context_p,
 	  ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
 
-#if defined(FLEXRAN_AGENT_SB_IF)
 	//WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
 	if (rrc_agent_registered[ctxt_pP->module_id]) {
 	  agent_rrc_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
 										ue_context_p->ue_id_rnti,
 										PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED);
 	}
-#endif
       }
 #if defined(ENABLE_ITTI)
 #   if defined(ENABLE_USE_MME)
@@ -6704,14 +6695,12 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
               ul_dcch_msg->message.choice.c1.choice.rrcConnectionReestablishmentComplete.rrc_TransactionIdentifier,
               &ul_dcch_msg->message.choice.c1.choice.rrcConnectionReestablishmentComplete.criticalExtensions.choice.rrcConnectionReestablishmentComplete_r8);
 
-#if defined(FLEXRAN_AGENT_SB_IF)
           //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
           if (mac_agent_registered[ctxt_pP->module_id]) {
             agent_rrc_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
                                                                                       ue_context_p->ue_id_rnti,
                                                                                       PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
           }
-#endif
         }
         //ue_context_p->ue_context.ue_release_timer = 0;
         ue_context_p->ue_context.ue_reestablishment_timer = 1;
@@ -6761,14 +6750,12 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_CONNECTED \n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 	  
-#if defined(FLEXRAN_AGENT_SB_IF)
 	  //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
 	  if (rrc_agent_registered[ctxt_pP->module_id]) {
 	    agent_rrc_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
 										  ue_context_p->ue_id_rnti,
 										  PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
 	  }
-#endif
         }
       }
 

@@ -1319,12 +1319,11 @@ int main( int argc, char **argv )
   }
 #endif
 
-#ifdef FLEXRAN_AGENT_SB_IF
+  /* Start the agent. If it is turned off in the configuration, it won't start */
   RCconfig_flexran();
   for (i = 0; i < RC.nb_L1_inst; i++) {
     flexran_agent_start(i);
   }
-#endif
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);

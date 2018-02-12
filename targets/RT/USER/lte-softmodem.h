@@ -31,6 +31,8 @@
 #include "PHY/defs.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
+#include "flexran_agent.h"
+
 #if defined(ENABLE_ITTI)
 #if defined(ENABLE_USE_MME)
 #include "s1ap_eNB.h"
@@ -270,9 +272,5 @@ void init_eNB_afterRU(void);
 
 extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
-
-#ifdef FLEXRAN_AGENT_SB_IF
-#include "flexran_agent.h"
-#endif
 
 #endif
