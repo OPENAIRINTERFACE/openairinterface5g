@@ -2700,6 +2700,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   int16_t            tx_power;
   int                UE_id;
   rnti_t             rnti;
+  COMMON_channels_t *cc;
   LOG_D(MAC,"In ulsch_preprocessor: ulsch ue select\n");
   //ue select
   ulsch_scheduler_pre_ue_select(module_idP,frameP,subframeP,sched_subframeP,ulsch_ue_select);
@@ -2730,22 +2731,51 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       }
 
       rnti = UE_RNTI(CC_id,UE_id);
-      if(frame_parms->N_RB_UL == 25){
-        if ( first_rb[CC_id] >= frame_parms->N_RB_UL-1 ){
+      cc = &RC.mac[module_idP]->common_channels[CC_id];
+      if (cc->tdd_Config) {
+        if (frame_parms->N_RB_UL == 25) {
+         if (first_rb[CC_id] >= frame_parms->N_RB_UL-1 ) {
+           LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+                      module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+           break;
+        }
+         // calculate the average rb ( remain UE)
+         total_rbs = frame_parms->N_RB_UL-1-first_rb[CC_id];
+       } else if (frame_parms->N_RB_UL == 50) {
+         if (first_rb[CC_id] >= frame_parms->N_RB_UL-2 ) {
+           LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+                      module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+           break;
+         }
+        // calculate the average rb ( remain UE)
+         total_rbs = frame_parms->N_RB_UL-2-first_rb[CC_id];
+       } else {
+         if (first_rb[CC_id] >= frame_parms->N_RB_UL-3 ) {
+           LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+                     module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+           break;
+         }
+         // calculate the average rb ( remain UE)
+         total_rbs = frame_parms->N_RB_UL-3-first_rb[CC_id];
+       }
+      } else {
+        if(frame_parms->N_RB_UL == 25){
+          if ( first_rb[CC_id] >= frame_parms->N_RB_UL-1 ){
             LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
                    module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-          break;
-        }
-        // calculate the average rb ( remain UE)
-        total_rbs = frame_parms->N_RB_UL-1-first_rb[CC_id];
-      }else{
-        if ( first_rb[CC_id] >= frame_parms->N_RB_UL-2 ){
+            break;
+          }
+          // calculate the average rb ( remain UE)
+          total_rbs = frame_parms->N_RB_UL-1-first_rb[CC_id];
+        }else{
+          if ( first_rb[CC_id] >= frame_parms->N_RB_UL-2 ){
             LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
                    module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-          break;
+            break;
+          }
+          // calculate the average rb ( remain UE)
+          total_rbs = frame_parms->N_RB_UL-2-first_rb[CC_id];
         }
-        // calculate the average rb ( remain UE)
-        total_rbs = frame_parms->N_RB_UL-2-first_rb[CC_id];
       }
       average_rbs = (int)round((double)total_rbs/(double)ue_num_temp);
       if ( average_rbs < 3 ) {

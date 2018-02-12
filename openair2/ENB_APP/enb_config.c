@@ -876,9 +876,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
           AssertFatal (0,
               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 2(N_RB_DL %d)!\n",
               RC.config_file_name, i, prach_freq_offset,N_RB_DL);
-        if (((N_RB_DL == 50) || (N_RB_DL == 100)) && (prach_freq_offset != 3))
+        if (((N_RB_DL == 50) || (N_RB_DL == 100)) && (prach_freq_offset < 3))
           AssertFatal (0,
-              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 3(N_RB_DL %d)!\n",
+              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 3,4(N_RB_DL %d)!\n",
               RC.config_file_name, i, prach_freq_offset,N_RB_DL);
 #endif
 	      

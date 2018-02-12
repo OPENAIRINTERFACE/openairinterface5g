@@ -1710,6 +1710,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
       hi_dci0_req = &eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body;
       eNB->HI_DCI0_req[CC_id][subframeP].sfn_sf = (frameP<<4)+subframeP;
       ul_req_tmp = &eNB->UL_req_tmp[CC_id][sched_subframeP].ul_config_request_body;
+      nfapi_ul_config_request_t *ul_req  = &eNB->UL_req_tmp[CC_id][sched_subframeP];
 
     ULSCH_first_end = 0;
     cc  = &eNB->common_channels[CC_id];
@@ -1959,6 +1960,12 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 #endif
             ul_req_tmp->number_of_pdus++;
             eNB->ul_handle++;
+            ul_req->header.message_id = NFAPI_UL_CONFIG_REQUEST;
+            ul_req_tmp->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
+            uint16_t ul_sched_frame = sched_frame;
+            uint16_t ul_sched_subframeP = sched_subframeP;
+            add_subframe(&ul_sched_frame, &ul_sched_subframeP, 2);
+            ul_req->sfn_sf = ul_sched_frame<<4|ul_sched_subframeP;
 
             add_ue_ulsch_info(module_idP,
                               CC_id,
@@ -2096,6 +2103,10 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 #endif
               ul_req_tmp->number_of_pdus++;
               eNB->ul_handle++;
+            ul_req->header.message_id = NFAPI_UL_CONFIG_REQUEST;
+            ul_req_tmp->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
+            ul_req->sfn_sf = sched_frame<<4|sched_subframeP;
+
               LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0(round >0)\n", module_idP,CC_id,frameP,subframeP,UE_id);
 
               // increment first rb for next UE allocation
