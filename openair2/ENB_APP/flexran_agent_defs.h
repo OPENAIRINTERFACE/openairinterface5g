@@ -153,6 +153,7 @@ typedef enum {
 
 typedef struct {
   /* general info */ 
+  int      enabled;
   char    *interface_name;
   char    *remote_ipv4_addr;
   uint16_t remote_port;

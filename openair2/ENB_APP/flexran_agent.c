@@ -184,6 +184,12 @@ int flexran_agent_start(mid_t mod_id)
   int channel_id;
   char *in_ip = flexran->remote_ipv4_addr;
   uint16_t in_port = flexran->remote_port;
+
+  /* if this agent is disabled, return and don't do anything */
+  if (!flexran->enabled) {
+    LOG_I(FLEXRAN_AGENT, "FlexRAN Agent for eNB %d is DISABLED\n", mod_id);
+    return 100;
+  }
   
   flexran->enb_id = mod_id;
   /* assume for the moment the monolithic case, i.e. agent can provide

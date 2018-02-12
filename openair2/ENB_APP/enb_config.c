@@ -119,19 +119,16 @@ void RCconfig_flexran()
     AssertFatal(RC.flexran[i] != NULL,
                 "can't ALLOCATE %zu Bytes for flexran agent info (iteration %d/%d)\n",
                 sizeof(flexran_agent_info_t), i + 1, RC.nb_L1_inst);
+    /* if config says "yes", enable Agent, in all other cases it's like "no" */
+    RC.flexran[i]->enabled          = strcmp(*(flexranParams[FLEXRAN_ENABLED].strptr), "yes") == 0;
     RC.flexran[i]->interface_name   = strdup(*(flexranParams[FLEXRAN_INTERFACE_NAME_IDX].strptr));
     //inet_ntop(AF_INET, &(enb_properties->properties[mod_id]->flexran_agent_ipv4_address), in_ip, INET_ADDRSTRLEN);
-    //strcpy(in_ip, DEFAULT_FLEXRAN_AGENT_IPv4_ADDRESS );
     RC.flexran[i]->remote_ipv4_addr = strdup(*(flexranParams[FLEXRAN_IPV4_ADDRESS_IDX].strptr));
-    // DEFAULT_FLEXRAN_AGENT_PORT
     RC.flexran[i]->remote_port      = *(flexranParams[FLEXRAN_PORT_IDX].uptr);
-    // DEFAULT_FLEXRAN_AGENT_CACHE
     RC.flexran[i]->cache_name       = strdup(*(flexranParams[FLEXRAN_CACHE_IDX].strptr));
     RC.flexran[i]->node_ctrl_state  = strcmp(*(flexranParams[FLEXRAN_AWAIT_RECONF_IDX].strptr), "yes") == 0 ? ENB_WAIT : ENB_NORMAL_OPERATION;
     RC.flexran[i]->enb_id           = i;
   }
-
-  /* TODO: show FlexRAN config now? */
 }
 
 void RCconfig_L1(void) {
