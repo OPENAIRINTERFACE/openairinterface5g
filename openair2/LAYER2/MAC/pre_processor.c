@@ -1589,6 +1589,7 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
   uint16_t n, UE_id;
   uint8_t CC_id;
   rnti_t rnti = -1;
+  int mcs;
   int rb_table_index = 0, tbs, tx_power;
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   UE_list_t *UE_list = &eNB->UE_list;
@@ -1611,10 +1612,14 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
     if (!ue_slice_membership(i, slice_id))
       continue;
 
-    if (UE_list->UE_sched_ctrl[i].phr_received == 1)
-		UE_template->pre_assigned_mcs_ul  = cmin(20, slice_maxmcs_uplink[slice_id]);		// if we've received the power headroom information the UE, we can go to maximum mcs
-    else
-		UE_template->pre_assigned_mcs_ul = cmin(10, slice_maxmcs_uplink[slice_id]);		// otherwise, limit to QPSK PUSCH
+    if (UE_list->UE_sched_ctrl[i].phr_received == 1) {
+      /* if we've received the power headroom information the UE, we can go to
+       * maximum mcs */
+      mcs = cmin(20, slice_maxmcs_uplink[slice_id]);
+    } else {
+      /* otherwise, limit to QPSK PUSCH */
+      mcs = cmin(10, slice_maxmcs_uplink[slice_id]);
+    }
 
     UE_id = i;
 
@@ -1633,6 +1638,7 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
                   UE_list->numactiveULCCs[UE_id]);
 
       UE_template = &UE_list->UE_template[CC_id][UE_id];
+      UE_template->pre_assigned_mcs_ul = mcs;
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
       Ncp = RC.mac[module_idP]->common_channels[CC_id].Ncp;
