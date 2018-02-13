@@ -2221,15 +2221,15 @@ uint32_t dlsch_decoding_abstraction(double *dlsch_MIPB,
                                     uint8_t num_pdcch_symbols);
 
 // DL power control functions
-double get_pa_dB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated);
+double get_pa_dB(uint8_t pa);
 
-double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
-                       LTE_eNB_DLSCH_t *dlsch_eNB,
+double computeRhoA_eNB(uint8_t pa,
+		       LTE_eNB_DLSCH_t *dlsch_eNB,
                        int dl_power_off,
                        uint8_t n_antenna_port);
 
-double computeRhoB_eNB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
-                       PDSCH_CONFIG_COMMON *pdsch_config_common,
+double computeRhoB_eNB(uint8_t pa,
+		       uint8_t pb,
                        uint8_t n_antenna_port,
                        LTE_eNB_DLSCH_t *dlsch_eNB,
                        int dl_power_off);

@@ -50,6 +50,9 @@
 #   include "intertask_interface.h"
 #endif
 
+//#undef LOG_D
+//#define LOG_D(A,B,C...) printf(B,C)
+
 extern uint8_t nfapi_mode;
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 
@@ -395,6 +398,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
 
 
+
 void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 			   eNB_rxtx_proc_t *proc,
                            relaying_type_t r_type,
@@ -416,7 +420,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   int offset = eNB->CC_id;//proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
-  
+
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
@@ -429,6 +433,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
   
 
+
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     if (is_pmch_subframe(frame,subframe,fp)) {
       pmch_procedures(eNB,proc,rn,r_type);
@@ -438,6 +443,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
       common_signal_procedures(eNB,proc->frame_tx, proc->subframe_tx);
     }
   }
+
 
   // clear existing ulsch dci allocations before applying info from MAC  (this is table
   ul_subframe = pdcch_alloc2ul_subframe(fp,subframe);

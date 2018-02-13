@@ -24,6 +24,7 @@
 
 #include "PHY/types.h"
 #include "PHY/defs.h"
+#include "common/ran_context.h"
 
 char* namepointer_chMag ;
 char fmageren_name2[512];

@@ -32,8 +32,12 @@
 
 extern PHY_VARS_eNB *eNB;
 extern PHY_VARS_UE *UE;
+extern RU_t *ru;
 
-void lte_param_init(unsigned char N_tx_port_eNB, 
+void lte_param_init(PHY_VARS_eNB **eNBp,
+		    PHY_VARS_UE **UEp,
+		    RU_t **rup,
+		    unsigned char N_tx_port_eNB, 
                     unsigned char N_tx_phy,
 		    unsigned char N_rx,
 		    unsigned char transmission_mode,
@@ -42,6 +46,7 @@ void lte_param_init(unsigned char N_tx_port_eNB,
 		    uint16_t Nid_cell,
 		    uint8_t tdd_config,
 		    uint8_t N_RB_DL,
+		    uint8_t pa,
 		    uint8_t threequarter_fs,
                     uint8_t osf,
 		    uint32_t perfect_ce)
@@ -49,13 +54,27 @@ void lte_param_init(unsigned char N_tx_port_eNB,
 
   LTE_DL_FRAME_PARMS *frame_parms;
   int i;
-
+  PHY_VARS_eNB *eNB;
+  PHY_VARS_UE  *UE;
+  RU_t         *ru;
   printf("Start lte_param_init\n");
-  eNB = malloc(sizeof(PHY_VARS_eNB));
-  UE = malloc(sizeof(PHY_VARS_UE));
+  *eNBp = malloc(sizeof(PHY_VARS_eNB));
+  *UEp = malloc(sizeof(PHY_VARS_UE));
+  *rup = malloc(sizeof(RU_t));
+  eNB = *eNBp;
+  UE  = *UEp;
+  ru  = *rup;
+  printf("eNB %p, UE %p, ru %p\n",eNB,UE,ru);
+
+
+
   memset((void*)eNB,0,sizeof(PHY_VARS_eNB));
   memset((void*)UE,0,sizeof(PHY_VARS_UE));
+  memset((void*)ru,0,sizeof(RU_t));
 
+  ru->eNB_list[0] = eNB;
+  eNB->RU_list[0] = ru;
+  ru->num_eNB=1;
 
   srand(0);
   randominit(0);
@@ -90,12 +109,17 @@ void lte_param_init(unsigned char N_tx_port_eNB,
 
   UE->is_secondary_ue = 0;
   UE->frame_parms = *frame_parms;
-  eNB->frame_parms = *frame_parms;
+  //  eNB->frame_parms = *frame_parms;
+  ru->frame_parms = *frame_parms;
+  ru->nb_tx = N_tx_phy;
+  ru->nb_rx = 1;
+  ru->if_south = LOCAL_RF;
+
+  eNB->configured=1;
 
   eNB->transmission_mode[0] = transmission_mode;
   UE->transmission_mode[0] = transmission_mode;
 
-  init_lte_top(frame_parms);
   dump_frame_parms(frame_parms);
 
   UE->measurements.n_adj_cells=0;
@@ -105,23 +129,24 @@ void lte_param_init(unsigned char N_tx_port_eNB,
   for (i=0; i<3; i++)
     lte_gold(frame_parms,UE->lte_gold_table[i],Nid_cell+i);
 
-  init_lte_ue(UE,1,0);
+  printf("Calling init_lte_ue_signal\n");
+  init_lte_ue_signal(UE,1,0);
+  printf("Calling phy_init_lte_eNB\n");
   phy_init_lte_eNB(eNB,0,0);
-
+  printf("Calling phy_init_RU (%p)\n",ru);
+  phy_init_RU(ru);
   generate_pcfich_reg_mapping(&UE->frame_parms);
   generate_phich_reg_mapping(&UE->frame_parms);
 
   // DL power control init
   //if (transmission_mode == 1) {
+  UE->pdsch_config_dedicated->p_a  = pa; 
+
   if (transmission_mode == 1 || transmission_mode ==7) {
-    eNB->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
     ((eNB->frame_parms).pdsch_config_common).p_b = 0;
-    UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
     ((UE->frame_parms).pdsch_config_common).p_b = 0;
   } else { // rho_a = rhob
-    eNB->pdsch_config_dedicated->p_a  = dBm3; // 4 = 0dB
     ((eNB->frame_parms).pdsch_config_common).p_b = 1;
-    UE->pdsch_config_dedicated->p_a  = dBm3; // 4 = 0dB
     ((UE->frame_parms).pdsch_config_common).p_b = 1;
   }
 

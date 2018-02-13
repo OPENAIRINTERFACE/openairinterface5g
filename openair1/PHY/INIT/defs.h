@@ -322,8 +322,11 @@ void init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 
 //void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
 
-void lte_param_init(unsigned char N_tx_port_eNB,
-		    unsigned char N_tx, 
+void lte_param_init(PHY_VARS_eNB **eNBp,
+		    PHY_VARS_UE **UEp,
+		    RU_t **rup,
+		    unsigned char N_tx_port_eNB, 
+                    unsigned char N_tx_phy,
 		    unsigned char N_rx,
 		    unsigned char transmission_mode,
 		    uint8_t extended_prefix_flag,
@@ -331,9 +334,11 @@ void lte_param_init(unsigned char N_tx_port_eNB,
 		    uint16_t Nid_cell,
 		    uint8_t tdd_config,
 		    uint8_t N_RB_DL,
+		    uint8_t pa,
 		    uint8_t threequarter_fs,
                     uint8_t osf,
 		    uint32_t perfect_ce);
+
 
 #if defined(Rel10) || defined(Rel14)
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
@@ -359,18 +364,6 @@ void phy_config_request(PHY_Config_t *phy_config);
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
 
-void lte_param_init(unsigned char N_tx_port_eNB, 
-                    unsigned char N_tx_phy,
-		    unsigned char N_rx,
-		    unsigned char transmission_mode,
-		    uint8_t extended_prefix_flag,
-		    frame_t frame_type, 
-		    uint16_t Nid_cell,
-		    uint8_t tdd_config,
-		    uint8_t N_RB_DL,
-		    uint8_t threequarter_fs,
-                    uint8_t osf,
-		    uint32_t perfect_ce);
 /** @} */
 #endif
 

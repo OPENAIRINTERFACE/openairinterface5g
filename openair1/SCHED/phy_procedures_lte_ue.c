@@ -73,6 +73,9 @@
 
 extern double cpuf;
 
+//#undef LOG_D
+//#define LOG_D(A,B,C...) printf(B,C)
+
 void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 void Msg3_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 
@@ -1373,7 +1376,7 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   if (ue->mac_enabled==1){
     // ask L2 for RACH transport
     if ((mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) && (mode != no_L2_connect) ) {
-      LOG_D(PHY,"Getting PRACH resources\n");
+      //LOG_D(PHY,"Getting PRACH resources\n");
 
       ue->prach_resources[eNB_id] = ue_get_rach(ue->Mod_id,
 						ue->CC_id,
@@ -1590,7 +1593,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     LOG_D(PHY,"Generating PUSCH (Abssubframe: %d.%d): harq-Id: %d, round: %d, MaxReTrans: %d \n",frame_tx,subframe_tx,harq_pid,ue->ulsch[eNB_id]->harq_processes[harq_pid]->round,ue->ulsch[eNB_id]->Mlimit);
     if (ue->ulsch[eNB_id]->harq_processes[harq_pid]->round >= (ue->ulsch[eNB_id]->Mlimit - 1))
     {
-        LOG_D(PHY,"PUSCH MAX Retransmission achieved ==> send last pusch\n");
+      //        LOG_D(PHY,"PUSCH MAX Retransmission achieved ==> send last pusch\n");
         ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 0;
         ue->ulsch[eNB_id]->harq_processes[harq_pid]->round  = 0;
     }
@@ -2070,10 +2073,10 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       (bundling_flag==bundling)    ||
       ((frame_parms->frame_type==TDD)&&(frame_parms->tdd_config==1)&&((subframe_tx!=2)||(subframe_tx!=7)))) {
     format = pucch_format1a;
-    LOG_D(PHY,"[UE] PUCCH 1a\n");
+    //    LOG_D(PHY,"[UE] PUCCH 1a\n");
   } else {
     format = pucch_format1b;
-    LOG_D(PHY,"[UE] PUCCH 1b\n");
+    //    LOG_D(PHY,"[UE] PUCCH 1b\n");
   }
 
   // Part - I
@@ -3108,7 +3111,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
   int ret=0;
 
   if (is_pmch_subframe(frame_rx,subframe_rx,&ue->frame_parms)) {
-    LOG_D(PHY,"ue calling pmch subframe ..\n ");
+    // LOG_D(PHY,"ue calling pmch subframe ..\n ");
 
     LOG_D(PHY,"[UE %d] Frame %d, subframe %d: Querying for PMCH demodulation\n",
     ue->Mod_id,(subframe_rx==9?-1:0)+frame_rx,subframe_rx);
