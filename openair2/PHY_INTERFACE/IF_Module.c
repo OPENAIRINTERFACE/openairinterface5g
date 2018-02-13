@@ -546,8 +546,8 @@ void UL_indication(UL_IND_t *UL_info)
         UL_info->frame,UL_info->subframe,
         module_id,CC_id,
         UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->harq_ind.harq_indication_body.number_of_harqs, UL_info->crc_ind.crc_indication_body.number_of_crcs, UL_info->cqi_ind.number_of_cqis, UL_info->rach_ind.rach_indication_body.number_of_preambles, UL_info->sr_ind.sr_indication_body.number_of_srs);
-  if(UL_info->frame==1023&&UL_info->subframe==6){ // dl scheduling 0,0
-      frame_cnt++;
+  if(UL_info->frame==1023&&UL_info->subframe==6){ // dl scheduling (0,0)
+      frame_cnt= (frame_cnt + 1)%7; // to prevent frame_cnt get too big
       LOG_D(MAC,"current (%d,%d) frame count dl is %d\n",UL_info->frame,UL_info->subframe,frame_cnt);
   }
 
