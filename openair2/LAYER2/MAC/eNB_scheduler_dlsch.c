@@ -789,12 +789,12 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	eNB_UE_stats->dl_cqi, MIN_CQI_VALUE, MAX_CQI_VALUE);
       */
       if (nfapi_mode) {
-	eNB_UE_stats->dlsch_mcs1 = 10;//cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
+		  eNB_UE_stats->dlsch_mcs1 = 10;//cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       }
-      else {
-	eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
+      else { // this operation is also done in the preprocessor
+		  eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, slice_maxmcs[slice_idP]);  //cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
       }
-      eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, slice_maxmcs[slice_idP]); //cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
+
 
 
       // store stats

@@ -60,6 +60,10 @@
 extern float slice_percentage[MAX_NUM_SLICES];
 extern float slice_percentage_uplink[MAX_NUM_SLICES];
 
+extern int slice_maxmcs[MAX_NUM_SLICES];
+extern int slice_maxmcs_uplink[MAX_NUM_SLICES];
+
+
 //#define ICIC 0
 
 /* this function checks that get_eNB_UE_stats returns
@@ -211,8 +215,8 @@ assign_rbs_required(module_id_t Mod_id,
 	    CC_id = UE_list->ordered_CCids[n][UE_id];
 	    eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 
-	    eNB_UE_stats->dlsch_mcs1 =
-		cqi_to_mcs[UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id]];
+	    eNB_UE_stats->dlsch_mcs1 =cmin(cqi_to_mcs[UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id]],
+									   slice_maxmcs[slice_id]);
 
 	}
 
@@ -1585,7 +1589,6 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
   uint16_t n, UE_id;
   uint8_t CC_id;
   rnti_t rnti = -1;
-  int mcs;
   int rb_table_index = 0, tbs, tx_power;
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   UE_list_t *UE_list = &eNB->UE_list;
@@ -1609,9 +1612,9 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
       continue;
 
     if (UE_list->UE_sched_ctrl[i].phr_received == 1)
-      mcs = 20;		// if we've received the power headroom information the UE, we can go to maximum mcs
+		UE_template->pre_assigned_mcs_ul  = cmin(20, slice_maxmcs_uplink[slice_id]);		// if we've received the power headroom information the UE, we can go to maximum mcs
     else
-      mcs = 10;		// otherwise, limit to QPSK PUSCH
+		UE_template->pre_assigned_mcs_ul = cmin(10, slice_maxmcs_uplink[slice_id]);		// otherwise, limit to QPSK PUSCH
 
     UE_id = i;
 
@@ -1642,7 +1645,7 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 
       // if this UE has UL traffic
       if (bits_to_schedule > 0) {
-        tbs = get_TBS_UL(mcs, 3) << 3; // 1 or 2 PRB with cqi enabled does not work well!
+        tbs = get_TBS_UL(UE_template->pre_assigned_mcs_ul, 3) << 3; // 1 or 2 PRB with cqi enabled does not work well!
         rb_table_index = 2;
 
         // fixme: set use_srs flag
@@ -1650,10 +1653,10 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 
         while ((((UE_template->phr_info - tx_power) < 0)
               || (tbs > bits_to_schedule))
-              && (mcs > 3)) {
+              && (UE_template->pre_assigned_mcs_ul > 3)) {
           // LOG_I(MAC,"UE_template->phr_info %d tx_power %d mcs %d\n", UE_template->phr_info,tx_power, mcs);
-          mcs--;
-          tbs = get_TBS_UL(mcs, rb_table[rb_table_index]) << 3;
+          UE_template->pre_assigned_mcs_ul--;
+          tbs = get_TBS_UL(UE_template->pre_assigned_mcs_ul, rb_table[rb_table_index]) << 3;
           tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);   // fixme: set use_srs
         }
 
@@ -1662,7 +1665,7 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
                 && ((UE_template->phr_info - tx_power) > 0)
                 && (rb_table_index < 32)) {
           rb_table_index++;
-          tbs = get_TBS_UL(mcs, rb_table[rb_table_index]) << 3;
+          tbs = get_TBS_UL(UE_template->pre_assigned_mcs_ul, rb_table[rb_table_index]) << 3;
           tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);
         }
 
@@ -1676,7 +1679,6 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
             rb_table_index = 2;	//3PRB
         }
 
-        UE_template->pre_assigned_mcs_ul = mcs;
         UE_template->pre_allocated_rb_table_index_ul = rb_table_index;
         UE_template->pre_allocated_nb_rb_ul[slice_id] = rb_table[rb_table_index];
         LOG_D(MAC,
