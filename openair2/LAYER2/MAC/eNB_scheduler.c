@@ -413,14 +413,15 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
       mac_eNB_rrc_ul_failure(module_idP, CC_id, frameP, subframeP,rnti);
       UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
       UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync   = 1;
+
+      //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
+      if (rrc_agent_registered[module_idP]) {
+        LOG_W(MAC, "notify flexran Agent of UE state change\n");
+        agent_rrc_xface[module_idP]->flexran_agent_notify_ue_state_change(module_idP,
+            rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
+      }
     }
   }				// ul_failure_timer>0
-
-  //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
-  if (rrc_agent_registered[module_idP]) {
-    agent_rrc_xface[module_idP]->flexran_agent_notify_ue_state_change(module_idP,
-        rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
-  }
 
   UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer++;
   if(UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer > (U_PLANE_INACTIVITY_VALUE*subframe_num(&RC.eNB[module_idP][CC_id]->frame_parms))){
