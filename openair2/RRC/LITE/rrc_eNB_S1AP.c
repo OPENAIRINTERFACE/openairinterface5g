@@ -86,24 +86,79 @@ static const uint16_t S1AP_INTEGRITY_EIA2_MASK = 0x4000;
 #endif
 #endif
 
-uint64_t compute_imsi(ImsiMobileIdentity_t *id) {
-  uint64_t imsi;
-  imsi  = id->digit15;
-  imsi += id->digit14 * 10;               // pow(10, 1)
-  imsi += id->digit13 * 100;              // pow(10, 2)
-  imsi += id->digit12 * 1000;             // pow(10, 3)
-  imsi += id->digit11 * 10000;            // pow(10, 4)
-  imsi += id->digit10 * 100000;           // pow(10, 5)
-  imsi += id->digit9  * 1000000;          // pow(10, 6)
-  imsi += id->digit8  * 10000000;         // pow(10, 7)
-  imsi += id->digit7  * 100000000;        // pow(10, 8)
-  imsi += id->digit6  * 1000000000;       // pow(10, 9)
-  imsi += id->digit5  * 10000000000;      // pow(10, 10)
-  imsi += id->digit4  * 100000000000;     // pow(10, 11)
-  imsi += id->digit3  * 1000000000000;    // pow(10, 12)
-  imsi += id->digit2  * 10000000000000;   // pow(10, 13)
-  imsi += id->digit1  * 100000000000000;  // pow(10, 14)
-  return imsi;
+void extract_imsi(uint8_t *pdu_buf, uint32_t pdu_len, rrc_eNB_ue_context_t *ue_context_pP)
+{
+  /* Process NAS message locally to get the IMSI */
+  nas_message_t nas_msg;
+  memset(&nas_msg, 0, sizeof(nas_message_t));
+
+  int size = 0;
+
+  nas_message_security_header_t *header = &nas_msg.header;
+  /* Decode the first octet of the header (security header type or EPS
+  * bearer identity, and protocol discriminator) */
+  DECODE_U8((char *) pdu_buf, *(uint8_t*) (header), size);
+
+  /* Decode NAS message only if decodable*/
+  if (!(header->security_header_type <= SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED
+      && header->protocol_discriminator == EPS_MOBILITY_MANAGEMENT_MESSAGE
+      && pdu_len > NAS_MESSAGE_SECURITY_HEADER_SIZE))
+    return;
+
+  if (header->security_header_type != SECURITY_HEADER_TYPE_NOT_PROTECTED) {
+    /* Decode the message authentication code */
+    DECODE_U32((char *) pdu_buf+size, header->message_authentication_code, size);
+    /* Decode the sequence number */
+    DECODE_U8((char *) pdu_buf+size, header->sequence_number, size);
+  }
+
+  /* Note: the value of the pointer (i.e. the address) is given by value, so we
+   * can modify it as we want. The callee retains the original address! */
+  pdu_buf += size;
+  pdu_len -= size;
+
+  /* Decode plain NAS message */
+  EMM_msg *e_msg = &nas_msg.plain.emm;
+  emm_msg_header_t *emm_header = &e_msg->header;
+
+  /* First decode the EMM message header */
+  int e_head_size = 0;
+
+  /* Check that buffer contains more than only the header */
+  if (pdu_len <= sizeof(emm_msg_header_t))
+    return;
+
+  /* Decode the security header type and the protocol discriminator */
+  DECODE_U8(pdu_buf + e_head_size, *(uint8_t *)(emm_header), e_head_size);
+  /* Decode the message type */
+  DECODE_U8(pdu_buf + e_head_size, emm_header->message_type, e_head_size);
+
+  /* Check that this is the right message */
+  if (emm_header->protocol_discriminator != EPS_MOBILITY_MANAGEMENT_MESSAGE)
+    return;
+
+  pdu_buf += e_head_size;
+  pdu_len -= e_head_size;
+
+  if (emm_header->message_type == IDENTITY_RESPONSE) {
+    decode_identity_response(&e_msg->identity_response, pdu_buf, pdu_len);
+
+    if (e_msg->identity_response.mobileidentity.imsi.typeofidentity == MOBILE_IDENTITY_IMSI) {
+      memcpy(&ue_context_pP->ue_context.imsi,
+             &e_msg->identity_response.mobileidentity.imsi,
+             sizeof(ImsiMobileIdentity_t));
+    }
+  } else if (emm_header->message_type == ATTACH_REQUEST) {
+    decode_attach_request(&e_msg->attach_request, pdu_buf, pdu_len);
+
+    if (e_msg->attach_request.oldgutiorimsi.imsi.typeofidentity == MOBILE_IDENTITY_IMSI) {
+      /* the following is very dirty, we cast (implicitly) from
+       * ImsiEpsMobileIdentity_t to ImsiMobileIdentity_t*/
+      memcpy(&ue_context_pP->ue_context.imsi,
+             &e_msg->attach_request.oldgutiorimsi.imsi,
+             sizeof(ImsiMobileIdentity_t));
+    }
+  }
 }
 
 # if defined(ENABLE_ITTI)
@@ -563,73 +618,9 @@ rrc_eNB_send_S1AP_UPLINK_NAS(
       S1AP_UPLINK_NAS (msg_p).nas_pdu.length = pdu_length;
       S1AP_UPLINK_NAS (msg_p).nas_pdu.buffer = pdu_buffer;
 
-      /* Process NAS message locally to get the IMSI */
-      nas_message_t nas_msg;
-      memset(&nas_msg, 0, sizeof(nas_message_t));
-      int size = 0;
-      uint32_t pdu_len = S1AP_UPLINK_NAS (msg_p).nas_pdu.length;
-      uint8_t *pdu_buff = malloc(pdu_len * sizeof(uint8_t));
-      memcpy(pdu_buff, S1AP_UPLINK_NAS (msg_p).nas_pdu.buffer, pdu_len * sizeof(uint8_t));
-
-      nas_message_security_header_t      *header = &nas_msg.header;
-      /* Decode the first octet of the header (security header type or EPS
-       * bearer identity, and protocol discriminator) */
-      DECODE_U8((char *) pdu_buff, *(uint8_t*) (header), size);
-
-      /* Decode NAS message */
-      if (header->security_header_type <= SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED
-          && header->protocol_discriminator == EPS_MOBILITY_MANAGEMENT_MESSAGE
-          && pdu_len > NAS_MESSAGE_SECURITY_HEADER_SIZE) {
-
-        if (header->security_header_type != SECURITY_HEADER_TYPE_NOT_PROTECTED) {
-          /* Decode the message authentication code */
-          DECODE_U32((char *) pdu_buff+size, header->message_authentication_code, size);
-          /* Decode the sequence number */
-          DECODE_U8((char *) pdu_buff+size, header->sequence_number, size);
-        }
-
-        if (size > 1) {
-          pdu_buff += size;
-          pdu_len -= size;
-        }
-
-        /* Decode plain NAS message */
-        EMM_msg *e_msg = &nas_msg.plain.emm;
-        emm_msg_header_t *emm_header = &e_msg->header;
-
-        /* First decode the EMM message header */
-        int e_head_size = 0;
-
-        /* Check the buffer length */
-        if (pdu_len > sizeof(emm_msg_header_t)) {
-
-          /* Decode the security header type and the protocol discriminator */
-          DECODE_U8(pdu_buff + e_head_size, *(uint8_t *)(emm_header), e_head_size);
-          /* Decode the message type */
-          DECODE_U8(pdu_buff + e_head_size, emm_header->message_type, e_head_size);
-
-          /* Check the protocol discriminator */
-          if (emm_header->protocol_discriminator == EPS_MOBILITY_MANAGEMENT_MESSAGE) {
-
-            pdu_buff += e_head_size;
-            pdu_len -= e_head_size;
-
-            if (emm_header->message_type == IDENTITY_RESPONSE) {
-              decode_identity_response(&e_msg->identity_response, pdu_buff, pdu_len);
-
-              if (e_msg->identity_response.mobileidentity.imsi.typeofidentity == MOBILE_IDENTITY_IMSI) {
-                ue_context_pP->ue_context.imsi = compute_imsi(&(e_msg->identity_response.mobileidentity.imsi));
-              }
-            }
-
-            pdu_buff -= e_head_size;
-            if (size > 1) {
-              pdu_buff -= size;
-            }
-          }
-        }
-      }
-      free(pdu_buff);
+      extract_imsi(S1AP_UPLINK_NAS (msg_p).nas_pdu.buffer,
+                   S1AP_UPLINK_NAS (msg_p).nas_pdu.length,
+                   ue_context_pP);
 
       itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
     }
@@ -655,74 +646,9 @@ rrc_eNB_send_S1AP_UPLINK_NAS(
         if (ulInformationTransferR8->dedicatedInfoType.present ==
             ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS) {
 
-          /* Process NAS message locally to get the IMSI */
-          nas_message_t nas_msg;
-          memset(&nas_msg, 0, sizeof(nas_message_t));
-
-          int size = 0;
-          uint32_t pdu_len = ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.size;
-          uint8_t *pdu_buff = malloc(pdu_len * sizeof(uint8_t));
-          memcpy(pdu_buff, ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.buf, pdu_len * sizeof(uint8_t));
-
-          nas_message_security_header_t      *header = &nas_msg.header;
-          /* Decode the first octet of the header (security header type or EPS
-           * bearer identity, and protocol discriminator) */
-          DECODE_U8((char *) pdu_buff, *(uint8_t*) (header), size);
-
-          /* Decode NAS message */
-          if (header->security_header_type <= SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED &&
-              header->protocol_discriminator == EPS_MOBILITY_MANAGEMENT_MESSAGE &&
-              pdu_len > NAS_MESSAGE_SECURITY_HEADER_SIZE) {
-
-            if (header->security_header_type != SECURITY_HEADER_TYPE_NOT_PROTECTED) {
-              /* Decode the message authentication code */
-              DECODE_U32((char *) pdu_buff+size, header->message_authentication_code, size);
-              /* Decode the sequence number */
-              DECODE_U8((char *) pdu_buff+size, header->sequence_number, size);
-            }
-
-            if (size > 1) {
-              pdu_buff += size;
-              pdu_len -= size;
-            }
-
-            /* Decode plain NAS message */
-            EMM_msg *e_msg = &nas_msg.plain.emm;
-            emm_msg_header_t *emm_header = &e_msg->header;
-
-            /* First decode the EMM message header */
-            int e_head_size = 0;
-
-            /* Check the buffer length */
-            if (pdu_len > sizeof(emm_msg_header_t)) {
-
-              /* Decode the security header type and the protocol discriminator */
-              DECODE_U8(pdu_buff + e_head_size, *(uint8_t *)(emm_header), e_head_size);
-              /* Decode the message type */
-              DECODE_U8(pdu_buff + e_head_size, emm_header->message_type, e_head_size);
-
-              /* Check the protocol discriminator */
-              if (emm_header->protocol_discriminator == EPS_MOBILITY_MANAGEMENT_MESSAGE) {
-
-                pdu_buff += e_head_size;
-                pdu_len -= e_head_size;
-
-                if (emm_header->message_type == IDENTITY_RESPONSE) {
-                  decode_identity_response(&e_msg->identity_response, pdu_buff, pdu_len);
-
-                  if (e_msg->identity_response.mobileidentity.imsi.typeofidentity == MOBILE_IDENTITY_IMSI) {
-                    ue_context_pP->ue_context.imsi = compute_imsi(&(e_msg->identity_response.mobileidentity.imsi));
-                  }
-                }
-
-                pdu_buff -= e_head_size;
-                if (size > 1) {
-                  pdu_buff -= size;
-                }
-              }
-            }
-          }
-          free(pdu_buff);
+          extract_imsi(ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.buf,
+                       ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.size,
+                       ue_context_pP);
 
           s1ap_eNB_new_data_request (mod_id, ue_index,
               ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.buf,
@@ -829,77 +755,9 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
     rrcConnectionSetupComplete->dedicatedInfoNAS.buf;
     S1AP_NAS_FIRST_REQ (message_p).nas_pdu.length = rrcConnectionSetupComplete->dedicatedInfoNAS.size;
 
-    // Process NAS message locally to get the IMSI
-    nas_message_t nas_msg;
-    memset(&nas_msg, 0, sizeof(nas_message_t));
-
-    int size = 0;
-    uint32_t pdu_len = S1AP_NAS_FIRST_REQ (message_p).nas_pdu.length;
-    uint8_t *pdu_buff = malloc(pdu_len * sizeof(uint8_t));
-    memcpy(pdu_buff, S1AP_NAS_FIRST_REQ (message_p).nas_pdu.buffer, pdu_len * sizeof(uint8_t));
-
-    nas_message_security_header_t      *header = &nas_msg.header;
-    /* Decode the first octet of the header (security header type or EPS
-     * bearer identity, and protocol discriminator) */
-    DECODE_U8((char *) pdu_buff, *(uint8_t*) (header), size);
-
-    /* Decode NAS message */
-    if (header->security_header_type <= SECURITY_HEADER_TYPE_INTEGRITY_PROTECTED &&
-        header->protocol_discriminator == EPS_MOBILITY_MANAGEMENT_MESSAGE &&
-        pdu_len > NAS_MESSAGE_SECURITY_HEADER_SIZE) {
-
-      if (header->security_header_type != SECURITY_HEADER_TYPE_NOT_PROTECTED) {
-        /* Decode the message authentication code */
-        DECODE_U32((char *) pdu_buff+size, header->message_authentication_code, size);
-        /* Decode the sequence number */
-        DECODE_U8((char *) pdu_buff+size, header->sequence_number, size);
-      }
-
-      if (size > 1) {
-        pdu_buff += size;
-        pdu_len -= size;
-      }
-
-      /* Decode plain NAS message */
-      EMM_msg *e_msg = &nas_msg.plain.emm;
-      emm_msg_header_t *emm_header = &e_msg->header;
-
-      /* First decode the EMM message header */
-      int e_head_size = 0;
-
-      /* Check the buffer length */
-      if (pdu_len > sizeof(emm_msg_header_t)) {
-
-        /* Decode the security header type and the protocol discriminator */
-        DECODE_U8(pdu_buff + e_head_size, *(uint8_t *)(emm_header), e_head_size);
-        /* Decode the message type */
-        DECODE_U8(pdu_buff + e_head_size, emm_header->message_type, e_head_size);
-
-        /* Check the protocol discriminator */
-        if (emm_header->protocol_discriminator == EPS_MOBILITY_MANAGEMENT_MESSAGE) {
-
-          pdu_buff += e_head_size;
-          pdu_len -= e_head_size;
-
-          if (emm_header->message_type == ATTACH_REQUEST) {
-            decode_attach_request(&e_msg->attach_request, pdu_buff, pdu_len);
-
-            if (e_msg->attach_request.oldgutiorimsi.imsi.typeofidentity == MOBILE_IDENTITY_IMSI) {
-              /* the following is very dirty, we cast from
-               * ImsiEpsMobileIdentity_t to ImsiMobileIdentity_t*/
-              ue_context_pP->ue_context.imsi = compute_imsi((ImsiMobileIdentity_t *)&(e_msg->attach_request.oldgutiorimsi.imsi));
-            } else {
-              ue_context_pP->ue_context.imsi = e_msg->attach_request.oldgutiorimsi.guti.mtmsi;
-            }
-          }
-          pdu_buff -= e_head_size;
-          if (size > 1) {
-            pdu_buff -= size;
-          }
-        }
-      }
-    }
-    free(pdu_buff);
+    extract_imsi(S1AP_NAS_FIRST_REQ (message_p).nas_pdu.buffer,
+                 S1AP_NAS_FIRST_REQ (message_p).nas_pdu.length,
+                 ue_context_pP);
 
     /* Fill UE identities with available information */
     {

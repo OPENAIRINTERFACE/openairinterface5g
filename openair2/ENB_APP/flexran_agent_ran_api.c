@@ -891,13 +891,30 @@ int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
 
 uint64_t flexran_get_ue_imsi(mid_t mod_id, mid_t ue_id)
 {
+  uint64_t imsi;
   if (!rrc_is_present(mod_id)) return -1;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (!ue_context_p) return -1;
-  return ue_context_p->ue_context.imsi;
+
+  imsi  = ue_context_p->ue_context.imsi.digit15;
+  imsi += ue_context_p->ue_context.imsi.digit14 * 10;              // pow(10, 1)
+  imsi += ue_context_p->ue_context.imsi.digit13 * 100;             // pow(10, 2)
+  imsi += ue_context_p->ue_context.imsi.digit12 * 1000;            // pow(10, 3)
+  imsi += ue_context_p->ue_context.imsi.digit11 * 10000;           // pow(10, 4)
+  imsi += ue_context_p->ue_context.imsi.digit10 * 100000;          // pow(10, 5)
+  imsi += ue_context_p->ue_context.imsi.digit9  * 1000000;         // pow(10, 6)
+  imsi += ue_context_p->ue_context.imsi.digit8  * 10000000;        // pow(10, 7)
+  imsi += ue_context_p->ue_context.imsi.digit7  * 100000000;       // pow(10, 8)
+  imsi += ue_context_p->ue_context.imsi.digit6  * 1000000000;      // pow(10, 9)
+  imsi += ue_context_p->ue_context.imsi.digit5  * 10000000000;     // pow(10, 10)
+  imsi += ue_context_p->ue_context.imsi.digit4  * 100000000000;    // pow(10, 11)
+  imsi += ue_context_p->ue_context.imsi.digit3  * 1000000000000;   // pow(10, 12)
+  imsi += ue_context_p->ue_context.imsi.digit2  * 10000000000000;  // pow(10, 13)
+  imsi += ue_context_p->ue_context.imsi.digit1  * 100000000000000; // pow(10, 14)
+  return imsi;
 }
 
 long flexran_get_lcg(mid_t mod_id, mid_t ue_id, mid_t lc_id)
