@@ -1448,7 +1448,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
 
   for (j = 0, i = 0; i < NB_RB_MAX; i++) {
-    if (ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED) {
+    if (ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED || ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_DONE) {
       create_tunnel_req.eps_bearer_id[j]       = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
       create_tunnel_req.sgw_S1u_teid[j]        = ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
 
