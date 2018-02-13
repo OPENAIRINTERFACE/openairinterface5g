@@ -630,21 +630,16 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
       Protocol__FlexUeCapabilities *capabilities;
       capabilities = malloc(sizeof(Protocol__FlexUeCapabilities));
       protocol__flex_ue_capabilities__init(capabilities);
-      //TODO: Set half duplex (FDD operation)
-      capabilities->has_half_duplex = 0;
-      capabilities->half_duplex = 0;//flexran_get_half_duplex(i);
-      //TODO: Set intra-frame hopping flag
-      capabilities->has_intra_sf_hopping = 0;
-      capabilities->intra_sf_hopping = 1;//flexran_get_intra_sf_hopping(i);
-      //TODO: Set support for type 2 hopping with n_sb > 1
-      capabilities->has_type2_sb_1 = 0;
-      capabilities->type2_sb_1 = 1;//flexran_get_type2_sb_1(i);
-      //TODO: Set ue category
-      capabilities->has_ue_category = 0;
-      capabilities->ue_category = 1;//flexran_get_ue_category(i);
-      //TODO: Set UE support for resource allocation type 1
-      capabilities->has_res_alloc_type1 = 0;
-      capabilities->res_alloc_type1 = 1;//flexran_get_res_alloc_type1(i);
+      capabilities->has_half_duplex = 1;
+      capabilities->half_duplex = flexran_get_half_duplex(mod_id, i);
+      capabilities->has_intra_sf_hopping = 1;
+      capabilities->intra_sf_hopping = flexran_get_intra_sf_hopping(mod_id, i);
+      capabilities->has_type2_sb_1 = 1;
+      capabilities->type2_sb_1 = flexran_get_type2_sb_1(mod_id, i);
+      capabilities->has_ue_category = 1;
+      capabilities->ue_category = flexran_get_ue_category(mod_id, i);
+      capabilities->has_res_alloc_type1 = 1;
+      capabilities->res_alloc_type1 = flexran_get_res_alloc_type1(mod_id, i);
       //Set the capabilites to the message
       ue_config[i]->capabilities = capabilities;
 
