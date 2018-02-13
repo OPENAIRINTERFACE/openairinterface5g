@@ -81,6 +81,7 @@ message flex_ue_config {
 	optional uint32 pcell_carrier_index = 27;     // Index of primary cell
 	repeated flex_scell_config scell_config = 28;  // Secondary cells configuration
 	optional uint32 scell_deactivation_timer = 29;// Deactivation timer for secondary cell
+	optional uint64 imsi = 30;
 }
 
 message flex_lc_ue_config {
