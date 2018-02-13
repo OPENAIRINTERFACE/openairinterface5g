@@ -52,13 +52,13 @@
 #include "rlc.h"
 
 
-
 #define DEBUG_eNB_SCHEDULER 1
 #define DEBUG_HEADER_PARSING 1
 //#define DEBUG_PACKET_TRACE 1
 
 extern float slice_percentage[MAX_NUM_SLICES];
 extern float slice_percentage_uplink[MAX_NUM_SLICES];
+extern uint32_t sorting_policy[MAX_NUM_SLICES];
 
 extern int slice_maxmcs[MAX_NUM_SLICES];
 extern int slice_maxmcs_uplink[MAX_NUM_SLICES];
@@ -352,6 +352,7 @@ struct sort_ue_dl_params {
     int Mod_idP;
     int frameP;
     int subframeP;
+    int slice_id;
 };
 
 static int ue_dl_compare(const void *_a, const void *_b, void *_params)
@@ -359,62 +360,73 @@ static int ue_dl_compare(const void *_a, const void *_b, void *_params)
     struct sort_ue_dl_params *params = _params;
     UE_list_t *UE_list = &RC.mac[params->Mod_idP]->UE_list;
 
+	int i;
+	int slice_id = params->slice_id;
     int UE_id1 = *(const int *) _a;
     int UE_id2 = *(const int *) _b;
 
     int rnti1 = UE_RNTI(params->Mod_idP, UE_id1);
     int pCC_id1 = UE_PCCID(params->Mod_idP, UE_id1);
-    int round1 =
-	maxround(params->Mod_idP, rnti1, params->frameP, params->subframeP,
-		 1);
+    int round1 = maxround(params->Mod_idP, rnti1, params->frameP, params->subframeP, 1);
 
     int rnti2 = UE_RNTI(params->Mod_idP, UE_id2);
     int pCC_id2 = UE_PCCID(params->Mod_idP, UE_id2);
-    int round2 =
-	maxround(params->Mod_idP, rnti2, params->frameP, params->subframeP,
-		 1);
+    int round2 = maxround(params->Mod_idP, rnti2, params->frameP, params->subframeP, 1);
 
     int cqi1 = maxcqi(params->Mod_idP, UE_id1);
     int cqi2 = maxcqi(params->Mod_idP, UE_id2);
 
-    if (round1 > round2)
-	return -1;
-    if (round1 < round2)
-	return 1;
+  for (i = 0; i < CR_NUM; ++i) {
+    switch (UE_list->sorting_criteria[slice_id][i]) {
 
-    if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[1] +
-	UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[2] >
-	UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[1] +
-	UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[2])
-	return -1;
-    if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[1] +
-	UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[2] <
-	UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[1] +
-	UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[2])
-	return 1;
+      case CR_ROUND :
+        if (round1 > round2)
+          return -1;
+        if (round1 < round2)
+          return 1;
+        break;
 
-    if (UE_list->
-	UE_template[pCC_id1][UE_id1].dl_buffer_head_sdu_creation_time_max >
-	UE_list->
-	UE_template[pCC_id2][UE_id2].dl_buffer_head_sdu_creation_time_max)
-	return -1;
-    if (UE_list->
-	UE_template[pCC_id1][UE_id1].dl_buffer_head_sdu_creation_time_max <
-	UE_list->
-	UE_template[pCC_id2][UE_id2].dl_buffer_head_sdu_creation_time_max)
-	return 1;
+      case CR_SRB12 :
+        if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[1] +
+            UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[2] >
+            UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[1] +
+            UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[2])
+          return -1;
+        if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[1] +
+            UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_info[2] <
+            UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[1] +
+            UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_info[2])
+          return 1;
+        break;
 
-    if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_total >
-	UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_total)
-	return -1;
-    if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_total <
-	UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_total)
-	return 1;
+      case CR_HOL :
+        if (UE_list-> UE_template[pCC_id1][UE_id1].dl_buffer_head_sdu_creation_time_max >
+            UE_list-> UE_template[pCC_id2][UE_id2].dl_buffer_head_sdu_creation_time_max)
+          return -1;
+        if (UE_list-> UE_template[pCC_id1][UE_id1].dl_buffer_head_sdu_creation_time_max <
+            UE_list-> UE_template[pCC_id2][UE_id2].dl_buffer_head_sdu_creation_time_max)
+          return 1;
+        break;
 
-    if (cqi1 > cqi2)
-	return -1;
-    if (cqi1 < cqi2)
-	return 1;
+      case CR_LC :
+        if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_total >
+            UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_total)
+          return -1;
+        if (UE_list->UE_template[pCC_id1][UE_id1].dl_buffer_total <
+            UE_list->UE_template[pCC_id2][UE_id2].dl_buffer_total)
+          return 1;
+        break;
+
+      case CR_CQI :
+        if (cqi1 > cqi2)
+          return -1;
+        if (cqi1 < cqi2)
+          return 1;
+
+      default :
+        break;
+    }
+  }
 
     return 0;
 #if 0
@@ -449,40 +461,64 @@ static int ue_dl_compare(const void *_a, const void *_b, void *_params)
 #endif
 }
 
+void decode_sorting_policy(module_id_t Mod_idP, slice_id_t slice_id) {
+	int i;
+
+	UE_list_t *UE_list = &RC.mac[Mod_idP]->UE_list;
+	uint32_t policy = sorting_policy[slice_id];
+	uint32_t mask = 0x0000000F;
+    uint16_t criterion;
+
+	for(i = 0; i < CR_NUM; ++i) {
+		criterion = (uint16_t)(policy >> 4*(CR_NUM - 1 - i) & mask);
+        if (criterion >= CR_NUM) {
+          LOG_W(MAC, "Invalid criterion in slice %d policy, revert to default policy \n", slice_id);
+          sorting_policy[slice_id] = 0x1234;
+          break;
+        }
+      UE_list->sorting_criteria[slice_id][i] = criterion;
+	}
+}
+
+
 // This fuction sorts the UE in order their dlsch buffer and CQI
-void sort_UEs(module_id_t Mod_idP, int frameP, sub_frame_t subframeP)
+void sort_UEs(module_id_t Mod_idP, slice_id_t slice_id, int frameP, sub_frame_t subframeP)
 {
     int i;
     int list[NUMBER_OF_UE_MAX];
     int list_size = 0;
     int rnti;
-    struct sort_ue_dl_params params = { Mod_idP, frameP, subframeP };
+    struct sort_ue_dl_params params = { Mod_idP, frameP, subframeP, slice_id };
 
     UE_list_t *UE_list = &RC.mac[Mod_idP]->UE_list;
 
-    for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+	for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
 
-	if (UE_list->active[i] == FALSE)
-	    continue;
-	if ((rnti = UE_RNTI(Mod_idP, i)) == NOT_A_RNTI)
-	    continue;
-	if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
-	    continue;
+		if (UE_list->active[i] == FALSE)
+			continue;
+		if ((rnti = UE_RNTI(Mod_idP, i)) == NOT_A_RNTI)
+			continue;
+		if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+			continue;
+		if (!ue_slice_membership(i, slice_id))
+			continue;
 
-	list[list_size] = i;
-	list_size++;
-    }
+		list[list_size] = i;
+		list_size++;
+	}
 
-    qsort_r(list, list_size, sizeof(int), ue_dl_compare, &params);
+	decode_sorting_policy(Mod_idP, slice_id);
 
-    if (list_size) {
-	for (i = 0; i < list_size - 1; i++)
-	    UE_list->next[list[i]] = list[i + 1];
-	UE_list->next[list[list_size - 1]] = -1;
-	UE_list->head = list[0];
-    } else {
-	UE_list->head = -1;
-    }
+	qsort_r(list, list_size, sizeof(int), ue_dl_compare, &params);
+
+	if (list_size) {
+		for (i = 0; i < list_size - 1; i++)
+			UE_list->next[list[i]] = list[i + 1];
+		UE_list->next[list[list_size - 1]] = -1;
+		UE_list->head = list[0];
+	} else {
+		UE_list->head = -1;
+	}
 
 #if 0
 
@@ -651,7 +687,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 
 
     // Sorts the user on the basis of dlsch logical channel buffer and CQI
-    sort_UEs(Mod_id, frameP, subframeP);
+    sort_UEs(Mod_id, slice_id, frameP, subframeP);
 
 
     // loop over all active UEs

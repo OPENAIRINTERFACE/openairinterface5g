@@ -98,6 +98,10 @@ char *dl_scheduler_type[MAX_NUM_SLICES] =
     "schedule_ue_spec"
   };
 
+// The lists of criteria that enforce the sorting policies of the slices
+uint32_t sorting_policy[MAX_NUM_SLICES] = {0x01234, 0x01234, 0x01234, 0x01234};
+uint32_t sorting_policy_current[MAX_NUM_SLICES] = {0x01234, 0x01234, 0x01234, 0x01234};
+
 // pointer to the slice specific scheduler
 slice_scheduler_dl slice_sched_dl[MAX_NUM_SLICES] = {0};
 
@@ -447,7 +451,7 @@ schedule_dlsch(module_id_t module_idP,
 //------------------------------------------------------------------------------{
 {
 
-  int i=0;
+  int i = 0;
 
   total_slice_percentage=0;
   avg_slice_percentage=1.0/n_active_slices;
@@ -470,7 +474,7 @@ schedule_dlsch(module_id_t module_idP,
     // Load any updated functions
     if (update_dl_scheduler[i] > 0 ) {
       slice_sched_dl[i] = dlsym(NULL, dl_scheduler_type[i]);
-      update_dl_scheduler[i] = 0;
+      update_dl_scheduler[i] = 0 ;
       update_dl_scheduler_current[i] = 0;
       LOG_N(MAC,"update dl scheduler slice %d\n", i);
     }
@@ -536,6 +540,13 @@ schedule_dlsch(module_id_t module_idP,
 	n_active_slices = n_active_slices_current;
 	slice_percentage[i] = slice_percentage_current[i];
       }
+    }
+
+    // Check for new sorting policy
+    if (sorting_policy_current[i] != sorting_policy[i]) {
+      LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: UE sorting policy has changed (%x-->%x)\n",
+            module_idP, i, frameP, subframeP, sorting_policy_current[i], sorting_policy[i]);
+      sorting_policy_current[i] = sorting_policy[i];
     }
 
     // Run each enabled slice-specific schedulers one by one

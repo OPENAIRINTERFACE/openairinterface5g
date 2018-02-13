@@ -963,6 +963,10 @@ typedef struct {
     int avail;
     int num_UEs;
     boolean_t active[NUMBER_OF_UE_MAX];
+
+    /// Sorting criteria for the UE list in the MAC preprocessor
+    uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
+
 } UE_list_t;
 
 /*! \brief eNB common channels */

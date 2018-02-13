@@ -100,6 +100,15 @@ typedef enum rb_type_e {
   RADIO_ACCESS_BEARER         = 2
 } rb_type_t;
 
+typedef enum {
+    CR_ROUND = 0,
+    CR_SRB12 = 1,
+    CR_HOL   = 2,
+    CR_LC    = 3,
+    CR_CQI   = 4,
+    CR_NUM   = 5
+} sorting_criterion_t;
+
 //-----------------------------------------------------------------------------
 // PHY TYPES
 //-----------------------------------------------------------------------------
