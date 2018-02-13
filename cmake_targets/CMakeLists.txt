@@ -1880,6 +1880,16 @@ if(EXISTS "/usr/include/atlas/cblas.h" OR EXISTS "/usr/include/cblas.h")
   endif()
 
   list(APPEND ATLAS_LIBRARIES lapack)
+
+# for ubuntu 17.10, directories are different
+elseif(EXISTS "/usr/include/x86_64-linux-gnu/cblas.h")
+
+  include_directories("/usr/include/x86_64-linux-gnu")
+  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
+  list(APPEND ATLAS_LIBRARIES cblas)
+  list(APPEND ATLAS_LIBRARIES atlas)
+  list(APPEND ATLAS_LIBRARIES lapack)
+
 else()
   message("No Blas/Atlas libs found, some targets will fail")
 endif()
