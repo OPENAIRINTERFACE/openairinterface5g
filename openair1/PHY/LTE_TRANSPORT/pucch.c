@@ -2457,7 +2457,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #if defined(USRP_REC_PLAY)
       LOG_I(PHY,"PUCCH 1a/b: NAK subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
 #else
-      LOG_I(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
+      LOG_D(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
 #endif      
       *payload = 4;  // DTX
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
