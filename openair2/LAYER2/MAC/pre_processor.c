@@ -2707,12 +2707,23 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
   // MCS and RB assgin
   for ( CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++ ) {
+    cc = &RC.mac[module_idP]->common_channels[CC_id];
     frame_parms = &(RC.eNB[module_idP][CC_id]->frame_parms);
-    if(frame_parms->N_RB_UL == 25){
-      first_rb[CC_id] = 1;
-    }else{
-      first_rb[CC_id] = 2;
-    } 
+    if (cc->tdd_Config) { //TDD
+      if (frame_parms->N_RB_UL == 25) {
+        first_rb[CC_id] = 1;
+      } else if (frame_parms->N_RB_UL == 50) {
+        first_rb[CC_id] = 2;
+      } else {
+        first_rb[CC_id] = 3;
+      }
+    } else {//FDD
+      if (frame_parms->N_RB_UL == 25) {
+        first_rb[CC_id] = 1;
+      } else {
+    	first_rb[CC_id] = 2;
+      }
+    }
     ue_num_temp       = ulsch_ue_select[CC_id].ue_num;
     for ( ulsch_ue_num = 0; ulsch_ue_num < ulsch_ue_select[CC_id].ue_num; ulsch_ue_num++ ) {
 
@@ -2731,7 +2742,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       }
 
       rnti = UE_RNTI(CC_id,UE_id);
-      cc = &RC.mac[module_idP]->common_channels[CC_id];
       if (cc->tdd_Config) {
         if (frame_parms->N_RB_UL == 25) {
          if (first_rb[CC_id] >= frame_parms->N_RB_UL-1 ) {
