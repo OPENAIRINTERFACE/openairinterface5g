@@ -892,12 +892,12 @@ int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
 uint64_t flexran_get_ue_imsi(mid_t mod_id, mid_t ue_id)
 {
   uint64_t imsi;
-  if (!rrc_is_present(mod_id)) return -1;
+  if (!rrc_is_present(mod_id)) return 0;
 
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
-  if (!ue_context_p) return -1;
+  if (!ue_context_p) return 0;
 
   imsi  = ue_context_p->ue_context.imsi.digit15;
   imsi += ue_context_p->ue_context.imsi.digit14 * 10;              // pow(10, 1)
