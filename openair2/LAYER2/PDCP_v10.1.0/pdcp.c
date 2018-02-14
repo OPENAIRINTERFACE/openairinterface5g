@@ -634,6 +634,7 @@ pdcp_data_ind(
 		   rb_id,
 		   sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len,
 		   (uint8_t*)&sdu_buffer_pP->data[pdcp_header_len]);
+        free_mem_block(sdu_buffer_pP, __func__);
 
 
       // free_mem_block(new_sdu, __func__);
