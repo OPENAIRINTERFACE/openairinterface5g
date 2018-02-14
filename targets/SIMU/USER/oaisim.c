@@ -988,6 +988,25 @@ l2l1_task (void *args_p)
   return NULL;
 }
 
+#if defined(FLEXRAN_AGENT_SB_IF)
+/*
+ * The following two functions are meant to restart *the lte-softmodem* and are
+ * here to make oaisim compile. A restart command from the controller will be
+ * ignored in oaisim.
+ */
+int stop_L1L2(int enb_id)
+{
+  LOG_W(FLEXRAN_AGENT, "stop_L1L2() not supported in oaisim\n");
+  return 0;
+}
+
+int restart_L1L2(int enb_id)
+{
+  LOG_W(FLEXRAN_AGENT, "restart_L1L2() not supported in oaisim\n");
+  return 0;
+}
+#endif
+
 #if T_TRACER
 int T_wait = 1;       /* by default we wait for the tracer */
 int T_port = 2021;    /* default port to listen to to wait for the tracer */
