@@ -599,8 +599,6 @@ add_boolean_option(MESSAGE_CHART_GENERATOR False         "For generating sequenc
 add_boolean_option(MESSAGE_CHART_GENERATOR_RLC_MAC False "trace RLC-MAC exchanges in sequence diagrams")
 add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchanges in sequence diagrams")
 
-add_boolean_option(FLEXRAN_AGENT_SB_IF             False         "enable FlexRAN agent to inteface with a SDN controller")
-
 ########################
 # Include order
 ##########################
@@ -766,6 +764,8 @@ include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
+include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC")
+include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP")
 include_directories("${OPENAIR2_DIR}/UTIL/OSA")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/inc")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
@@ -787,92 +787,94 @@ include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
 ################
-if (FLEXRAN_AGENT_SB_IF)
-  # set the version of protobuf messages, V3 not supported yet
-  add_list1_option(FLPT_VERSION V2 "FLPT MSG  protobuf  grammar version" V2 V3)
+# set the version of protobuf messages, V3 not supported yet
+add_list1_option(FLPT_VERSION V2 "FLPT MSG  protobuf  grammar version" V2 V3)
 
-  if (${FLPT_VERSION} STREQUAL "V2")
-    set (FLPTDIR V2)
-  elseif (${FLPT_VERSION} STREQUAL "V3")
-    set (FLPTDIR V3)
-  endif(${FLPT_VERSION} STREQUAL "V2")
+if (${FLPT_VERSION} STREQUAL "V2")
+  set (FLPTDIR V2)
+elseif (${FLPT_VERSION} STREQUAL "V3")
+  set (FLPTDIR V3)
+endif(${FLPT_VERSION} STREQUAL "V2")
 
-  set(FLPT_MSG_DIR ${OPENAIR2_DIR}/ENB_APP/MESSAGES/${FLPTDIR} )
-  set(FLPT_MSG_FILES
-    ${FLPT_MSG_DIR}/header.proto
-    ${FLPT_MSG_DIR}/flexran.proto
-    ${FLPT_MSG_DIR}/stats_common.proto
-    ${FLPT_MSG_DIR}/stats_messages.proto
-    ${FLPT_MSG_DIR}/time_common.proto
-    ${FLPT_MSG_DIR}/controller_commands.proto
-    ${FLPT_MSG_DIR}/mac_primitives.proto
-    ${FLPT_MSG_DIR}/config_messages.proto
-    ${FLPT_MSG_DIR}/config_common.proto
-    ${FLPT_MSG_DIR}/control_delegation.proto
-    )
+set(FLPT_MSG_DIR ${OPENAIR2_DIR}/ENB_APP/MESSAGES/${FLPTDIR} )
+set(FLPT_MSG_FILES
+  ${FLPT_MSG_DIR}/header.proto
+  ${FLPT_MSG_DIR}/flexran.proto
+  ${FLPT_MSG_DIR}/stats_common.proto
+  ${FLPT_MSG_DIR}/stats_messages.proto
+  ${FLPT_MSG_DIR}/time_common.proto
+  ${FLPT_MSG_DIR}/controller_commands.proto
+  ${FLPT_MSG_DIR}/mac_primitives.proto
+  ${FLPT_MSG_DIR}/config_messages.proto
+  ${FLPT_MSG_DIR}/config_common.proto
+  ${FLPT_MSG_DIR}/control_delegation.proto
+  )
 
-  set(FLPT_C_DIR ${protobuf_generated_dir}/${FLPTDIR})
-  #message("calling protoc_call=${protoc_call} FLPT_C_DIR=${FLPT_C_DIR} FLPT_MSG_FILES=${FLPT_MSG_FILES}")
-  execute_process(COMMAND ${protoc_call} ${FLPT_C_DIR} ${FLPT_MSG_DIR} ${FLPT_MSG_FILES})
-  file(GLOB FLPT_source ${FLPT_C_DIR}/*.c)
-  set(FLPT_OAI_generated
-    ${FLPT_C_DIR}/header.pb-c.c
-    ${FLPT_C_DIR}/flexran.pb-c.c
-    ${FLPT_C_DIR}/stats_common.pb-c.c
-    ${FLPT_C_DIR}/stats_messages.pb-c.c
-    ${FLPT_C_DIR}/time_common.pb-c.c
-    ${FLPT_C_DIR}/controller_commands.pb-c.c
-    ${FLPT_C_DIR}/mac_primitives.pb-c.c
-    ${FLPT_C_DIR}/config_messages.pb-c.c
-    ${FLPT_C_DIR}/config_common.pb-c.c
-    ${FLPT_C_DIR}/control_delegation.pb-c.c
-    )
+set(FLPT_C_DIR ${protobuf_generated_dir}/${FLPTDIR})
+#message("calling protoc_call=${protoc_call} FLPT_C_DIR=${FLPT_C_DIR} FLPT_MSG_FILES=${FLPT_MSG_FILES}")
+execute_process(COMMAND ${protoc_call} ${FLPT_C_DIR} ${FLPT_MSG_DIR} ${FLPT_MSG_FILES})
+file(GLOB FLPT_source ${FLPT_C_DIR}/*.c)
+set(FLPT_OAI_generated
+  ${FLPT_C_DIR}/header.pb-c.c
+  ${FLPT_C_DIR}/flexran.pb-c.c
+  ${FLPT_C_DIR}/stats_common.pb-c.c
+  ${FLPT_C_DIR}/stats_messages.pb-c.c
+  ${FLPT_C_DIR}/time_common.pb-c.c
+  ${FLPT_C_DIR}/controller_commands.pb-c.c
+  ${FLPT_C_DIR}/mac_primitives.pb-c.c
+  ${FLPT_C_DIR}/config_messages.pb-c.c
+  ${FLPT_C_DIR}/config_common.pb-c.c
+  ${FLPT_C_DIR}/control_delegation.pb-c.c
+  )
 
-  file(GLOB flpt_h ${FLPT_C_DIR}/*.h)
-  set(flpt_h ${flpt_h} )
+file(GLOB flpt_h ${FLPT_C_DIR}/*.h)
+set(flpt_h ${flpt_h} )
 
-  add_library(FLPT_MSG
-    ${FLPT_OAI_generated}
-    ${FLPT_source}
-    )
-  set(FLPT_MSG_LIB FLPT_MSG)
-  #message("prpt c dir is : ${FLPT_C_DIR}")
-  include_directories (${FLPT_C_DIR})
+add_library(FLPT_MSG
+  ${FLPT_OAI_generated}
+  ${FLPT_source}
+  )
+set(FLPT_MSG_LIB FLPT_MSG)
+#message("prpt c dir is : ${FLPT_C_DIR}")
+include_directories (${FLPT_C_DIR})
 
-  add_library(ASYNC_IF
-    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
-    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/link_manager.c
-    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/message_queue.c
-    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/ringbuffer_queue.c
-    )
-  set(ASYNC_IF_LIB ASYNC_IF)
-  include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
+add_library(ASYNC_IF
+  ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
+  ${OPENAIR2_DIR}/UTIL/ASYNC_IF/link_manager.c
+  ${OPENAIR2_DIR}/UTIL/ASYNC_IF/message_queue.c
+  ${OPENAIR2_DIR}/UTIL/ASYNC_IF/ringbuffer_queue.c
+  )
+set(ASYNC_IF_LIB ASYNC_IF)
+include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
 
- add_library(FLEXRAN_AGENT
-    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_handler.c
-    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common.c
-    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common_internal.c
-    ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.c
-    ${OPENAIR2_DIR}/ENB_APP/flexran_agent.c
-    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_task_manager.c
-    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_net_comm.c
-    ${OPENAIR2_DIR}/ENB_APP/flexran_agent_async.c
-    ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac_internal.c
-    )
-  set(FLEXRAN_AGENT_LIB FLEXRAN_AGENT)
-  #include_directories(${OPENAIR2_DIR}/ENB_APP)
+add_library(FLEXRAN_AGENT
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_handler.c
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common.c
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_ran_api.c
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_timer.c
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common_internal.c
+  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.c
+  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc.c
+  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP/flexran_agent_pdcp.c
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent.c
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_task_manager.c
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_net_comm.c
+  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_async.c
+  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac_internal.c
+  )
+set(FLEXRAN_AGENT_LIB FLEXRAN_AGENT)
+#include_directories(${OPENAIR2_DIR}/ENB_APP)
 
-  set(PROTOBUF_LIB "protobuf-c")
+set(PROTOBUF_LIB "protobuf-c")
 
-  FIND_PATH(LIBYAML_INCLUDE_DIR NAMES yaml.h)
-  FIND_LIBRARY(LIBYAML_LIBRARIES NAMES yaml libyaml)
+FIND_PATH(LIBYAML_INCLUDE_DIR NAMES yaml.h)
+FIND_LIBRARY(LIBYAML_LIBRARIES NAMES yaml libyaml)
 
-  INCLUDE(FindPackageHandleStandardArgs)
-  FIND_PACKAGE_HANDLE_STANDARD_ARGS(Yaml DEFAULT_MSG LIBYAML_LIBRARIES LIBYAML_INCLUDE_DIR)
-  MARK_AS_ADVANCED(LIBYAML_INCLUDE_DIR LIBYAML_LIBRARIES)
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(Yaml DEFAULT_MSG LIBYAML_LIBRARIES LIBYAML_INCLUDE_DIR)
+MARK_AS_ADVANCED(LIBYAML_INCLUDE_DIR LIBYAML_LIBRARIES)
 
-  #set(PROTOBUF_LIB "protobuf") #for Cpp
-endif()
+#set(PROTOBUF_LIB "protobuf") #for Cpp
 
 
 add_library(HASHTABLE
@@ -1369,17 +1371,6 @@ set (MAC_SRC_UE
   ${MAC_DIR}/config_ue.c
  )
 
-
-if (FLEXRAN_AGENT_SB_IF)
-
-set (MAC_SRC ${MAC_SRC}
-  ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c
-  ${MAC_DIR}/flexran_agent_scheduler_dataplane.c
-  ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c
-)
-
-endif()
-
 set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/enb_app.c
   ${OPENAIR2_DIR}/ENB_APP/enb_config.c
@@ -1398,14 +1389,6 @@ add_library(L2_UE
 
 
 include_directories(${NFAPI_USER_DIR})
-
-if (FLEXRAN_AGENT_SB_IF)
-
-#Test for adding a shared library
-add_library(default_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue.c)
-add_library(remote_sched SHARED ${MAC_DIR}/flexran_agent_scheduler_dlsch_ue_remote.c)
-
-endif()
 
 # L3 Libs
 ##########################
@@ -2087,11 +2070,12 @@ target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim
   -Wl,-ldl,--start-group
   RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_UE_LIB PHY_UE LFDS L2_UE ${MSC_LIB} LIB_NAS_UE SIMU SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   -Wl,--end-group z dl)
 
 target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
 target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp z
-  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} )
+  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim forms)
 target_link_libraries (oaisim ${T_LIB})

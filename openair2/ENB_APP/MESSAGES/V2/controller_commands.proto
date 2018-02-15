@@ -16,6 +16,12 @@ message flex_dl_data {
 	optional uint32 act_deact_ce = 6; //Hex content of MAC CE for Activation/Deactivation in CA
 }
 
+
+message flex_ul_data {
+        optional uint32 rnti = 1;
+        optional flex_ul_dci ul_dci = 2;
+}
+
 //
 // Body of the RAR scheduler configuration
 //

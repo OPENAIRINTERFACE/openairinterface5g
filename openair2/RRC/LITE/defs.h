@@ -391,6 +391,10 @@ typedef struct eNB_RRC_UE_s {
   SRB_INFO_TABLE_ENTRY               Srb2;
   MeasConfig_t*                      measConfig;
   HANDOVER_INFO*                     handover_info;
+  MeasResults_t*                     measResults;
+
+  UE_EUTRA_Capability_t*             UE_Capability;
+  ImsiMobileIdentity_t               imsi;
 
 #if defined(ENABLE_SECURITY)
   /* KeNB as derived from KASME received from EPC */

@@ -344,7 +344,7 @@ static void* eNB_thread_rxtx( void* param ) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
 
-  printf( "Exiting eNB thread RXn_TXnp4\n");
+  LOG_D(PHY, " *** Exiting eNB thread RXn_TXnp4\n");
 
   eNB_thread_rxtx_status = 0;
   return &eNB_thread_rxtx_status;
@@ -817,20 +817,24 @@ void kill_eNB_proc(int inst) {
     
     proc = &eNB->proc;
     proc_rxtx = &proc->proc_rxtx[0];
-    
 
     LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
 
     if (eNB->single_thread_flag==0) {
-      proc_rxtx[0].instance_cnt_rxtx = 0; // FIXME data race!
-      proc_rxtx[1].instance_cnt_rxtx = 0; // FIXME data race!
-      pthread_cond_signal( &proc_rxtx[0].cond_rxtx );    
-      pthread_cond_signal( &proc_rxtx[1].cond_rxtx );
+      pthread_mutex_lock(&proc_rxtx[0].mutex_rxtx);
+      proc_rxtx[0].instance_cnt_rxtx = 0;
+      pthread_mutex_unlock(&proc_rxtx[0].mutex_rxtx);
+      pthread_mutex_lock(&proc_rxtx[1].mutex_rxtx);
+      proc_rxtx[1].instance_cnt_rxtx = 0;
+      pthread_mutex_unlock(&proc_rxtx[1].mutex_rxtx);
     }
     proc->instance_cnt_prach = 0;
     pthread_cond_signal( &proc->cond_prach );
 
+    pthread_cond_signal( &proc->cond_asynch_rxtx );
     pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
+
+    LOG_D(PHY, "joining pthread_prach\n");
     pthread_join( proc->pthread_prach, (void**)&status );    
 
     LOG_I(PHY, "Destroying prach mutex/cond\n");
@@ -884,6 +888,21 @@ void print_opp_meas(void) {
     print_meas(&softmodem_stats_rxtx_sf,"[eNB][total_phy_proc_rxtx]",NULL, NULL);
     print_meas(&softmodem_stats_rx_sf,"[eNB][total_phy_proc_rx]",NULL,NULL);
   }
+}
+
+void free_transport(PHY_VARS_eNB *eNB)
+{
+  int i;
+  int j;
+
+  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+    LOG_I(PHY, "Freeing Transport Channel Buffers for DLSCH, UE %d\n",i);
+    for (j=0; j<2; j++) free_eNB_dlsch(eNB->dlsch[i][j]);
+
+    LOG_I(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
+    free_eNB_ulsch(eNB->ulsch[1+i]);
+  }
+  free_eNB_ulsch(eNB->ulsch[0]);
 }
 
 void init_transport(PHY_VARS_eNB *eNB) {

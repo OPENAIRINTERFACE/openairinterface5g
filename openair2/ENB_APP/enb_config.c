@@ -98,6 +98,39 @@ static int enb_check_band_frequencies(char* lib_config_file_name_pP,
   return errors;
 }
 
+void RCconfig_flexran()
+{
+  int i;
+
+  paramdef_t flexranParams[] = FLEXRANPARAMS_DESC;
+  config_get(flexranParams, sizeof(flexranParams)/sizeof(paramdef_t), CONFIG_STRING_NETWORK_CONTROLLER_CONFIG);
+
+  if (!RC.flexran) {
+    RC.flexran = calloc(RC.nb_L1_inst, sizeof(flexran_agent_info_t*));
+    AssertFatal(RC.flexran != NULL,
+                "can't ALLOCATE %zu Bytes for %d flexran agent info with size %zu\n",
+                RC.nb_L1_inst * sizeof(flexran_agent_info_t*),
+                RC.nb_L1_inst, sizeof(flexran_agent_info_t*));
+  }
+
+  /* For all agent instance, fill in the same controller configuration. */
+  for (i = 0; i < RC.nb_L1_inst; i++) {
+    RC.flexran[i] = calloc(1, sizeof(flexran_agent_info_t));
+    AssertFatal(RC.flexran[i] != NULL,
+                "can't ALLOCATE %zu Bytes for flexran agent info (iteration %d/%d)\n",
+                sizeof(flexran_agent_info_t), i + 1, RC.nb_L1_inst);
+    /* if config says "yes", enable Agent, in all other cases it's like "no" */
+    RC.flexran[i]->enabled          = strcmp(*(flexranParams[FLEXRAN_ENABLED].strptr), "yes") == 0;
+    RC.flexran[i]->interface_name   = strdup(*(flexranParams[FLEXRAN_INTERFACE_NAME_IDX].strptr));
+    //inet_ntop(AF_INET, &(enb_properties->properties[mod_id]->flexran_agent_ipv4_address), in_ip, INET_ADDRSTRLEN);
+    RC.flexran[i]->remote_ipv4_addr = strdup(*(flexranParams[FLEXRAN_IPV4_ADDRESS_IDX].strptr));
+    RC.flexran[i]->remote_port      = *(flexranParams[FLEXRAN_PORT_IDX].uptr);
+    RC.flexran[i]->cache_name       = strdup(*(flexranParams[FLEXRAN_CACHE_IDX].strptr));
+    RC.flexran[i]->node_ctrl_state  = strcmp(*(flexranParams[FLEXRAN_AWAIT_RECONF_IDX].strptr), "yes") == 0 ? ENB_WAIT : ENB_NORMAL_OPERATION;
+    RC.flexran[i]->enb_id           = i;
+  }
+}
+
 void RCconfig_L1(void) {
   int               i,j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
@@ -357,10 +390,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
   
 /* 
-  char*             flexran_agent_interface_name      = NULL;
-  char*             flexran_agent_ipv4_address        = NULL;
-  int32_t     flexran_agent_port                = 0;
-  char*             flexran_agent_cache               = NULL;
   int32_t     otg_ue_id                     = 0;
   char*             otg_app_type                  = NULL;
   char*             otg_bg_traffic                = NULL;
@@ -1934,35 +1963,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	      rrc->srb1_poll_byte             = PollByte_kBinfinity;
 	      rrc->srb1_max_retx_threshold    = UL_AM_RLC__maxRetxThreshold_t8;
 	    }
-	    /*
-	    // Network Controller 
-	    subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_NETWORK_CONTROLLER_CONFIG);
-
-	    if (subsetting != NULL) {
-	      if (  (
-		     config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_INTERFACE_NAME,
-						   (const char **)&flexran_agent_interface_name)
-		     && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_IPV4_ADDRESS,
-						      (const char **)&flexran_agent_ipv4_address)
-		     && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_PORT,
-						  &flexran_agent_port)
-		     && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_CACHE,
-						      (const char **)&flexran_agent_cache)
-		     )
-		    ) {
-		enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_interface_name = strdup(flexran_agent_interface_name);
-		cidr = flexran_agent_ipv4_address;
-		address = strtok(cidr, "/");
-		//enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_ipv4_address = strdup(address);
-		if (address) {
-		  IPV4_STR_ADDR_TO_INT_NWBO (address, enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_ipv4_address, "BAD IP ADDRESS FORMAT FOR eNB Agent !\n" );
-		}
-
-		enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_port = flexran_agent_port;
-		enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_cache = strdup(flexran_agent_cache);
-	      }
-	    }
-	    */	  
 
 	    /*
 	    // OTG _CONFIG

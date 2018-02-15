@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.0  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -18,36 +18,46 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */ 
+#ifndef __FLEXRAN_AGENT_PDCP_PRIMITIVES_H__
+#define __FLEXRAN_AGENT_PDCP_PRIMITIVES_H__
 
-/*! \file ringbuffer_queue.h
- * \brief Lock-free ringbuffer used for async message passing of agent
- * \author Xenofon Foukas
- * \date March 2016
- * \version 1.0
- * \email: x.foukas@sms.ed.ac.uk
- * @ingroup _mac
- */
+#include "flexran_agent_defs.h"
+#include "flexran.pb-c.h"
+#include "header.pb-c.h"
 
-#ifndef RINGBUFFER_QUEUE_H
-#define RINGBUFFER_QUEUE_H
+ /*PDCP aggregated Packet stats  */
+/*
+typedef struct  pdcp_aggr_stats_s {
+  int32_t rnti; 
 
-#include "liblfds700.h"
+  int32_t pkt_tx;
+  int32_t pkt_tx_bytes;
+  int32_t pkt_tx_sn;
+  int32_t pkt_tx_rate_s;
+  int32_t pkt_tx_throughput_s;
+  int32_t pkt_tx_aiat;
+  int32_t pkt_tx_aiat_s;
 
-typedef struct message_s {
-  void *data;
-  int size;
-  int priority;
-} message_t;
+  int32_t pkt_rx;
+  int32_t pkt_rx_bytes;
+  int32_t pkt_rx_sn;
+  int32_t pkt_rx_rate_s;
+  int32_t pkt_rx_goodput_s;
+  int32_t pkt_rx_aiat;
+  int32_t pkt_rx_aiat_s;
+  int32_t pkt_rx_oo;
 
+  
+} pdcp_aggr_stats_t;
+*/
+
+/* FLEXRAN AGENT-PDCP Interface */
 typedef struct {
-  struct lfds700_misc_prng_state ps;
-  struct lfds700_ringbuffer_element *ringbuffer_array;
-  struct lfds700_ringbuffer_state ringbuffer_state;
-} message_queue_t;
+  
+  
+  // PDCP statistics
+  void (*flexran_pdcp_stats_measurement)(mid_t mod_id, uint16_t rnti, uint16_t seq_num,  uint32_t size);
+  
+} AGENT_PDCP_xface;
 
-message_queue_t * new_message_queue(int size);
-int message_put(message_queue_t *queue, void *data, int size, int priority);
-int message_get(message_queue_t *queue, void **data, int *size, int *priority);
-void destroy_message_queue(message_queue_t *queue);
-
-#endif /* RINGBUFFER_QUEUE_H */
+#endif

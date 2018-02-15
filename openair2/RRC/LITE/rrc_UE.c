@@ -4312,6 +4312,7 @@ void *rrc_ue_task( void *args_p )
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
+      LOG_W(RRC, " *** Exiting RRC thread\n");
       itti_exit_task ();
       break;
 

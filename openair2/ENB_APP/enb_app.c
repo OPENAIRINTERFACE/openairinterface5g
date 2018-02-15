@@ -46,10 +46,6 @@
 #   include "gtpv1u_eNB_task.h"
 # endif
 
-#if defined(FLEXRAN_AGENT_SB_IF)
-#   include "flexran_agent.h"
-#endif
-
 extern unsigned char NB_eNB_INST;
 #endif
 
@@ -98,102 +94,6 @@ static void configure_rrc(uint32_t enb_id)
   if (RC.rrc[enb_id]) {
     RCconfig_RRC(msg_p,enb_id, RC.rrc[enb_id]);
     
-  /*
-  RRC_CONFIGURATION_REQ (msg_p).cell_identity =   enb_properties->properties[enb_id]->eNB_id;
-  RRC_CONFIGURATION_REQ (msg_p).tac =             enb_properties->properties[enb_id]->tac;
-  RRC_CONFIGURATION_REQ (msg_p).mcc =             enb_properties->properties[enb_id]->mcc;
-  RRC_CONFIGURATION_REQ (msg_p).mnc =             enb_properties->properties[enb_id]->mnc;
-  RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length = enb_properties->properties[enb_id]->mnc_digit_length;
-
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    RRC_CONFIGURATION_REQ (msg_p).frame_type[CC_id]                               = enb_properties->properties[enb_id]->frame_type[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).tdd_config[CC_id]                               = enb_properties->properties[enb_id]->tdd_config[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).tdd_config_s[CC_id]                             = enb_properties->properties[enb_id]->tdd_config_s[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).eutra_band[CC_id]                               = enb_properties->properties[enb_id]->eutra_band[CC_id];
-
-    // RACH-Config
-    RRC_CONFIGURATION_REQ (msg_p).rach_numberOfRA_Preambles[CC_id]                = enb_properties->properties[enb_id]->rach_numberOfRA_Preambles[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).rach_preamblesGroupAConfig[CC_id]               = enb_properties->properties[enb_id]->rach_preamblesGroupAConfig[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).rach_sizeOfRA_PreamblesGroupA[CC_id]            = enb_properties->properties[enb_id]->rach_sizeOfRA_PreamblesGroupA[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).rach_messageSizeGroupA[CC_id]                   = enb_properties->properties[enb_id]->rach_messageSizeGroupA[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[CC_id]            = enb_properties->properties[enb_id]->rach_messagePowerOffsetGroupB[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).rach_powerRampingStep[CC_id]                    = enb_properties->properties[enb_id]->rach_powerRampingStep[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).rach_preambleInitialReceivedTargetPower[CC_id]  = enb_properties->properties[enb_id]->rach_preambleInitialReceivedTargetPower[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[CC_id]                    = enb_properties->properties[enb_id]->rach_preambleTransMax[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).rach_raResponseWindowSize[CC_id]                = enb_properties->properties[enb_id]->rach_raResponseWindowSize[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).rach_macContentionResolutionTimer[CC_id]        = enb_properties->properties[enb_id]->rach_macContentionResolutionTimer[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).rach_maxHARQ_Msg3Tx[CC_id]                      = enb_properties->properties[enb_id]->rach_maxHARQ_Msg3Tx[CC_id];
-
-    // BCCH-Config
-    RRC_CONFIGURATION_REQ (msg_p).bcch_modificationPeriodCoeff[CC_id]             = enb_properties->properties[enb_id]->bcch_modificationPeriodCoeff[CC_id];
-
-    // PCCH-Config
-    RRC_CONFIGURATION_REQ (msg_p).pcch_defaultPagingCycle[CC_id]                  = enb_properties->properties[enb_id]->pcch_defaultPagingCycle[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pcch_nB[CC_id]                                  = enb_properties->properties[enb_id]->pcch_nB[CC_id];
-
-    // PRACH-Config
-    RRC_CONFIGURATION_REQ (msg_p).prach_root[CC_id]                               = enb_properties->properties[enb_id]->prach_root[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).prach_config_index[CC_id]                       = enb_properties->properties[enb_id]->prach_config_index[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).prach_high_speed[CC_id]                         = enb_properties->properties[enb_id]->prach_high_speed[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).prach_zero_correlation[CC_id]                   = enb_properties->properties[enb_id]->prach_zero_correlation[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).prach_freq_offset[CC_id]                        = enb_properties->properties[enb_id]->prach_freq_offset[CC_id];
-
-    // PDSCH-Config
-    RRC_CONFIGURATION_REQ (msg_p).pdsch_referenceSignalPower[CC_id]               = enb_properties->properties[enb_id]->pdsch_referenceSignalPower[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pdsch_p_b[CC_id]                                = enb_properties->properties[enb_id]->pdsch_p_b[CC_id];
-
-    // PUSCH-Config
-    RRC_CONFIGURATION_REQ (msg_p).pusch_n_SB[CC_id]                               = enb_properties->properties[enb_id]->pusch_n_SB[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pusch_hoppingMode[CC_id]                        = enb_properties->properties[enb_id]->pusch_hoppingMode[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pusch_hoppingOffset[CC_id]                      = enb_properties->properties[enb_id]->pusch_hoppingOffset[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pusch_enable64QAM[CC_id]                        = enb_properties->properties[enb_id]->pusch_enable64QAM[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pusch_groupHoppingEnabled[CC_id]                = enb_properties->properties[enb_id]->pusch_groupHoppingEnabled[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pusch_groupAssignment[CC_id]                    = enb_properties->properties[enb_id]->pusch_groupAssignment[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pusch_sequenceHoppingEnabled[CC_id]             = enb_properties->properties[enb_id]->pusch_sequenceHoppingEnabled[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pusch_nDMRS1[CC_id]                             = enb_properties->properties[enb_id]->pusch_nDMRS1[CC_id];
-
-    // PUCCH-Config
-
-    RRC_CONFIGURATION_REQ (msg_p).pucch_delta_shift[CC_id]                        = enb_properties->properties[enb_id]->pucch_delta_shift[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pucch_nRB_CQI[CC_id]                            = enb_properties->properties[enb_id]->pucch_nRB_CQI[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pucch_nCS_AN[CC_id]                             = enb_properties->properties[enb_id]->pucch_nCS_AN[CC_id];
-#if !defined(Rel10) && !defined(Rel14)
-    RRC_CONFIGURATION_REQ (msg_p).pucch_n1_AN[CC_id]                              = enb_properties->properties[enb_id]->pucch_n1_AN[CC_id];
-#endif
-
-    // SRS Config
-    RRC_CONFIGURATION_REQ (msg_p).srs_enable[CC_id]                               = enb_properties->properties[enb_id]->srs_enable[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).srs_BandwidthConfig[CC_id]                      = enb_properties->properties[enb_id]->srs_BandwidthConfig[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).srs_SubframeConfig[CC_id]                       = enb_properties->properties[enb_id]->srs_SubframeConfig[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).srs_ackNackST[CC_id]                            = enb_properties->properties[enb_id]->srs_ackNackST[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).srs_MaxUpPts[CC_id]                             = enb_properties->properties[enb_id]->srs_MaxUpPts[CC_id];
-
-    // uplinkPowerControlCommon
-
-    RRC_CONFIGURATION_REQ (msg_p).pusch_p0_Nominal[CC_id]                         = enb_properties->properties[enb_id]->pusch_p0_Nominal[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pucch_p0_Nominal[CC_id]                         = enb_properties->properties[enb_id]->pucch_p0_Nominal[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[CC_id]                              = enb_properties->properties[enb_id]->pusch_alpha[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pucch_deltaF_Format1[CC_id]                     = enb_properties->properties[enb_id]->pucch_deltaF_Format1[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pucch_deltaF_Format1b[CC_id]                    = enb_properties->properties[enb_id]->pucch_deltaF_Format1b[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pucch_deltaF_Format2[CC_id]                     = enb_properties->properties[enb_id]->pucch_deltaF_Format2[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pucch_deltaF_Format2a[CC_id]                    = enb_properties->properties[enb_id]->pucch_deltaF_Format2a[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).pucch_deltaF_Format2b[CC_id]                    = enb_properties->properties[enb_id]->pucch_deltaF_Format2b[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).msg3_delta_Preamble[CC_id]                      = enb_properties->properties[enb_id]->msg3_delta_Preamble[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).ul_CyclicPrefixLength[CC_id]                    = enb_properties->properties[enb_id]->ul_CyclicPrefixLength[CC_id];
-
-    // UE Timers and Constants
-
-    RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t300[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_t300[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t301[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_t301[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t310[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_t310[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_n310[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_t311[CC_id];
-    RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[CC_id]               = enb_properties->properties[enb_id]->ue_TimersAndConstants_n311[CC_id];
-
-    RRC_CONFIGURATION_REQ (msg_p).ue_TransmissionMode[CC_id]                      = enb_properties->properties[enb_id]->ue_TransmissionMode[CC_id];
-
-  }
-  */
 
     LOG_I(ENB_APP,"Sending configuration message to RRC task\n");
     itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
@@ -224,44 +124,6 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, 
       s1ap_register_eNB = &S1AP_REGISTER_ENB_REQ(msg_p);
       LOG_I(ENB_APP,"default drx %d\n",s1ap_register_eNB->default_drx);
 
-      /*
-   
-      s1ap_register_eNB->eNB_id           = enb_properties->properties[enb_id]->eNB_id;
-      s1ap_register_eNB->cell_type        = enb_properties->properties[enb_id]->cell_type;
-      s1ap_register_eNB->eNB_name         = enb_properties->properties[enb_id]->eNB_name;
-      s1ap_register_eNB->tac              = enb_properties->properties[enb_id]->tac;
-      s1ap_register_eNB->mcc              = enb_properties->properties[enb_id]->mcc;
-      s1ap_register_eNB->mnc              = enb_properties->properties[enb_id]->mnc;
-      s1ap_register_eNB->mnc_digit_length = enb_properties->properties[enb_id]->mnc_digit_length;
-      s1ap_register_eNB->default_drx      = enb_properties->properties[enb_id]->pcch_defaultPagingCycle[0];
-
-      s1ap_register_eNB->nb_mme =         enb_properties->properties[enb_id]->nb_mme;
-
-      AssertFatal (s1ap_register_eNB->nb_mme <= S1AP_MAX_NB_MME_IP_ADDRESS, "Too many MME for eNB %d (%d/%d)!", enb_id, s1ap_register_eNB->nb_mme,
-                   S1AP_MAX_NB_MME_IP_ADDRESS);
-
-      for (mme_id = 0; mme_id < s1ap_register_eNB->nb_mme; mme_id++) {
-        s1ap_register_eNB->mme_ip_address[mme_id].ipv4 = enb_properties->properties[enb_id]->mme_ip_address[mme_id].ipv4;
-        s1ap_register_eNB->mme_ip_address[mme_id].ipv6 = enb_properties->properties[enb_id]->mme_ip_address[mme_id].ipv6;
-        strncpy (s1ap_register_eNB->mme_ip_address[mme_id].ipv4_address,
-                 enb_properties->properties[enb_id]->mme_ip_address[mme_id].ipv4_address,
-                 sizeof(s1ap_register_eNB->mme_ip_address[0].ipv4_address));
-        strncpy (s1ap_register_eNB->mme_ip_address[mme_id].ipv6_address,
-                 enb_properties->properties[enb_id]->mme_ip_address[mme_id].ipv6_address,
-                 sizeof(s1ap_register_eNB->mme_ip_address[0].ipv6_address));
-      }
-
-      s1ap_register_eNB->sctp_in_streams       = enb_properties->properties[enb_id]->sctp_in_streams;
-      s1ap_register_eNB->sctp_out_streams      = enb_properties->properties[enb_id]->sctp_out_streams;
-
-
-      s1ap_register_eNB->enb_ip_address.ipv6 = 0;
-      s1ap_register_eNB->enb_ip_address.ipv4 = 1;
-      addr.s_addr = enb_properties->properties[enb_id]->enb_ipv4_address_for_S1_MME;
-      str = inet_ntoa(addr);
-      strcpy(s1ap_register_eNB->enb_ip_address.ipv4_address, str);
-
-      */
       LOG_I(ENB_APP,"[eNB %d] eNB_app_register for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
 
       itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
@@ -288,8 +150,8 @@ void *eNB_app_task(void *args_p)
   long                            enb_register_retry_timer_id;
 # endif
   uint32_t                        enb_id;
-  MessageDef                      *msg_p           = NULL;
-  const char                      *msg_name        = NULL;
+  MessageDef                     *msg_p           = NULL;
+  const char                     *msg_name        = NULL;
   instance_t                      instance;
   int                             result;
   /* for no gcc warnings */
@@ -322,16 +184,6 @@ void *eNB_app_task(void *args_p)
     memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
     configure_rrc(enb_id);
   }
-  
-#if defined (FLEXRAN_AGENT_SB_IF)
-  
-  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    printf("\n start enb agent %d\n", enb_id);
-    flexran_agent_start(enb_id, enb_properties_p);
-  }
-#endif 
-  
-
 
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */
@@ -352,6 +204,7 @@ void *eNB_app_task(void *args_p)
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
+      LOG_W(TASK_ENB_APP, " *** Exiting ENB_APP thread\n");
       itti_exit_task ();
       break;
 

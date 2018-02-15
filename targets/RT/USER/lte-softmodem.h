@@ -31,6 +31,8 @@
 #include "PHY/defs.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
+#include "flexran_agent.h"
+
 #if defined(ENABLE_ITTI)
 #if defined(ENABLE_USE_MME)
 #include "s1ap_eNB.h"
@@ -244,6 +246,10 @@ extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
 extern void init_RU(const char*);
+extern void init_RU_proc(RU_t *ru);
+extern void stop_RU(int nb_ru);
+extern void kill_RU_proc(int inst);
+extern void set_function_spec_param(RU_t *ru);
 
 // In lte-ue.c
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
@@ -263,5 +269,8 @@ PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t UE_id,
                           uint8_t abstraction_flag);
 void init_eNB_afterRU(void);
+
+extern int stop_L1L2(module_id_t enb_id);
+extern int restart_L1L2(module_id_t enb_id);
 
 #endif
