@@ -95,8 +95,8 @@ float total_slice_percentage_uplink = 0;
 float total_slice_percentage_current_uplink = 0;
 
 // MAX MCS for each slice for past and current time
-int slice_maxmcs_uplink[MAX_NUM_SLICES] = {16, 16, 16, 16};
-int slice_maxmcs_current_uplink[MAX_NUM_SLICES] = {16,16,16,16};
+int slice_maxmcs_uplink[MAX_NUM_SLICES] = {20, 20, 20, 20};
+int slice_maxmcs_current_uplink[MAX_NUM_SLICES] = {20,20,20,20};
 
 /*resource blocks allowed*/
 uint16_t         nb_rbs_allowed_slice_uplink[MAX_NUM_CCs][MAX_NUM_SLICES];
