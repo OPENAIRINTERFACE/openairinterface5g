@@ -65,6 +65,9 @@
 #include "UE-EUTRA-Capability.h"
 #include "MeasResults.h"
 
+/* for ImsiMobileIdentity_t */
+#include "MobileIdentity.h"
+
 /* correct Rel(8|10)/Rel14 differences
  * the code is in favor of Rel14, those defines do the translation
  */
