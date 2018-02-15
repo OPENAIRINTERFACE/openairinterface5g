@@ -1842,6 +1842,10 @@ static void* rf_tx( void* param ) {
        if (ru->fh_north_out) ru->fh_north_out(ru);
     }
     if (release_thread(&proc->mutex_rf_tx,&proc->instance_cnt_rf_tx,"rf_tx") < 0) break;
+    if(proc->instance_cnt_rf_tx >= 0){
+      late_control=STATE_BURST_TERMINATE;
+      LOG_E(PHY,"detect rf tx busy change mode TX failsafe\n");
+    }
   }
 
   LOG_I(PHY, "Exiting rf TX\n");
