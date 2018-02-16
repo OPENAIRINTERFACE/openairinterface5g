@@ -61,6 +61,8 @@
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 
+extern int n_active_slices;
+
 int choose(int n, int k)
 {
   int res = 1;
@@ -1739,6 +1741,7 @@ int UE_num_active_CC(UE_list_t * listP, int ue_idP)
 int UE_PCCID(module_id_t mod_idP, int ue_idP)
 //------------------------------------------------------------------------------
 {
+  if (!RC.mac || !RC.mac[mod_idP]) return 0;
   return (RC.mac[mod_idP]->UE_list.pCC_id[ue_idP]);
 }
 
@@ -1746,6 +1749,7 @@ int UE_PCCID(module_id_t mod_idP, int ue_idP)
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP)
 //------------------------------------------------------------------------------
 {
+  if (!RC.mac || !RC.mac[mod_idP]) return 0;
   rnti_t rnti =
     RC.mac[mod_idP]->
     UE_list.UE_template[UE_PCCID(mod_idP, ue_idP)][ue_idP].rnti;
@@ -1763,6 +1767,7 @@ rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP)
 boolean_t is_UE_active(module_id_t mod_idP, int ue_idP)
 //------------------------------------------------------------------------------
 {
+  if (!RC.mac || !RC.mac[mod_idP]) return 0;
   return (RC.mac[mod_idP]->UE_list.active[ue_idP]);
 }
 
@@ -4036,4 +4041,23 @@ harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
     sched_ctl->pucch1_snr[CC_idP] = ul_cqi;
     sched_ctl->pucch1_cqi_update[CC_idP] = 1;
   }
+}
+
+// Flexran Slicing functions
+
+uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs)
+{
+    return (uint16_t) floor(rb_percentage * total_rbs);
+}
+
+int ue_slice_membership(int UE_id, int slice_id)
+{
+  if ((slice_id < 0) || (slice_id > n_active_slices))
+    LOG_W(MAC, "out of range slice id %d\n", slice_id);
+
+
+  if ((UE_id % n_active_slices) == slice_id) {
+    return 1;	// this ue is a member of this slice
+  }
+  return 0;
 }

@@ -452,8 +452,10 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
   /* save old HARQ information needed for PHICH generation */
-  if ((ul_subframe < 10)&&
-      (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is a potential UL subframe that will be scheduled here
+  /* TODO: check the following test - in the meantime it is put back as it was before */
+  //if ((ul_subframe < 10)&&
+  //    (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is a potential UL subframe that will be scheduled here
+  if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
       harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
       if (eNB->ulsch[i]) {

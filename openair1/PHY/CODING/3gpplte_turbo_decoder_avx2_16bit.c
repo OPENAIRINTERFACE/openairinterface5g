@@ -830,10 +830,10 @@ void free_td16avx2(void)
   int ind;
 
   for (ind=0; ind<188; ind++) {
-    free(pi2tab16avx2[ind]);
-    free(pi5tab16avx2[ind]);
-    free(pi4tab16avx2[ind]);
-    free(pi6tab16avx2[ind]);
+    free_and_zero(pi2tab16avx2[ind]);
+    free_and_zero(pi5tab16avx2[ind]);
+    free_and_zero(pi4tab16avx2[ind]);
+    free_and_zero(pi6tab16avx2[ind]);
   }
 }
 
