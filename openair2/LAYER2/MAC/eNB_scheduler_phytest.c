@@ -92,6 +92,7 @@ schedule_ue_spec_phy_test(
       continue;
 
     nb_rb = conv_nprb(0,rb_alloc,N_RB_DL);
+    //printf("////////////////////////////////////*************************nb_rb = %d\n",nb_rb);
     TBS = get_TBS_DL(mcs,nb_rb);
 
     LOG_D(PHY,"schedule_ue_spec_phy_test: subframe %d/%d: nb_rb=%d, TBS=%d, mcs=%d (rb_alloc=%x, N_RB_DL=%d)\n",frameP,subframeP,nb_rb,TBS,mcs,rb_alloc,N_RB_DL);
@@ -187,4 +188,171 @@ schedule_ue_spec_phy_test(
       LOG_W(MAC,"[eNB_scheduler_phytest] DCI allocation infeasible!\n");
     }
   }
+}
+
+void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
+{
+  uint16_t first_rb[MAX_NUM_CCs];
+  int               UE_id = 0;
+  uint8_t           aggregation    = 2;
+  rnti_t            rnti           = 0x1235;
+  uint8_t           mcs            = 28;
+  uint8_t           harq_pid       = 0;
+  uint32_t          cqi_req = 0,cshift,ndi,tpc = 1;
+  int32_t           normalized_rx_power;
+  int32_t           target_rx_power= 178;
+  int               n;
+  int               CC_id = 0;
+  int               N_RB_UL;
+  eNB_MAC_INST      *eNB = RC.mac[module_idP];
+  COMMON_channels_t *cc  = eNB->common_channels;
+  UE_list_t         *UE_list=&eNB->UE_list;
+  UE_TEMPLATE       *UE_template;
+  UE_sched_ctrl     *UE_sched_ctrl;
+  int               sched_frame=frameP;
+  int               sched_subframeP = (subframeP+4)%10;
+  
+  if (sched_subframeP<subframeP) sched_frame++;
+
+  nfapi_hi_dci0_request_body_t   *hi_dci0_req = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
+  nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
+
+  nfapi_ul_config_request_pdu_t  *ul_config_pdu;
+  nfapi_ul_config_request_body_t *ul_req       = &eNB->UL_req[CC_id].ul_config_request_body;
+
+  ul_config_pdu                                    = &ul_req->ul_config_pdu_list[0]; 
+
+  eNB->UL_req[CC_id].sfn_sf   = (frameP<<4) + subframeP;
+  eNB->HI_DCI0_req[CC_id].sfn_sf = (frameP<<4)+subframeP;
+  
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    //rnti = UE_RNTI(module_idP,UE_id);
+    N_RB_UL      = to_prb(cc[CC_id].ul_Bandwidth);
+    printf("////////////////////////////////////*************************N_RB_UL = %d\n",N_RB_UL);
+    //leave out first RB for PUCCH
+    first_rb[CC_id] = 1;
+  // loop over all active UEs
+
+      //      if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
+
+      UE_template   = &UE_list->UE_template[CC_id][UE_id];
+      UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+      harq_pid      = subframe2harqpid(&cc[CC_id],sched_frame,sched_subframeP);
+
+
+      RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
+      printf("////////////////////////////////////*************************ul_total_buffer = %d\n",UE_template->ul_total_buffer);
+
+	  
+
+      //power control
+      //compute the expected ULSCH RX power (for the stats)
+	  
+      // this is the normalized RX power and this should be constant (regardless of mcs
+      normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
+      printf("////////////////////////////////////*************************normalized_rx_power = %d\n",normalized_rx_power);
+	  
+      // new transmission
+	  
+      ndi = 1-UE_template->oldNDI_UL[harq_pid];
+      UE_template->oldNDI_UL[harq_pid]=ndi;
+	  UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power=normalized_rx_power;
+	  UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
+	  UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1 = mcs;
+      UE_template->mcs_UL[harq_pid] = mcs;//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
+      UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = mcs;
+	  //            buffer_occupancy = UE_template->ul_total_buffer;
+
+	    
+	    
+      UE_template->TBS_UL[harq_pid] = get_TBS_UL(UE_template->mcs_UL[harq_pid],N_RB_UL-1);
+	  UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx+=N_RB_UL-1;
+	  UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = get_TBS_UL(mcs,N_RB_UL-1);
+	  //            buffer_occupancy -= TBS;
+
+
+	    
+	  // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
+      //store for possible retransmission
+      UE_template->nb_rb_ul[harq_pid]    = N_RB_UL-1;
+      UE_template->first_rb_ul[harq_pid] = first_rb[CC_id];
+	    
+	  UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
+	    
+	  // adjust total UL buffer status by TBS, wait for UL sdus to do final update
+	  UE_template->ul_total_buffer = UE_template->TBS_UL[harq_pid];
+	  // Cyclic shift for DM RS
+	  cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
+	  // save it for a potential retransmission
+      UE_template->cshift[harq_pid] = cshift;	    
+
+	  hi_dci0_pdu                                                         = &hi_dci0_req->hi_dci0_pdu_list[eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_dci+eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_hi]; 	
+	  memset((void*)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
+	  hi_dci0_pdu->pdu_type                                               = NFAPI_HI_DCI0_DCI_PDU_TYPE; 
+	  hi_dci0_pdu->pdu_size                                               = 2+sizeof(nfapi_hi_dci0_dci_pdu);
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dci_format                        = NFAPI_UL_DCI_FORMAT_0;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level                 = aggregation;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti                              = rnti;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power                = 6000;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start              = first_rb[CC_id];
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block          = N_RB_UL-1;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.mcs_1                             = mcs;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cyclic_shift_2_for_drms           = cshift;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.frequency_hopping_enabled_flag    = 0;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.new_data_indication_1             = ndi;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tpc                               = tpc;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cqi_csi_request                   = cqi_req;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index               = UE_template->DAI_ul[sched_subframeP];
+
+	    
+	  eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_dci++;
+	    
+	    
+	  // Add UL_config PDUs
+	  fill_nfapi_ulsch_config_request_rel8(&ul_req->ul_config_pdu_list[ul_req->number_of_pdus],
+						 cqi_req,
+						 cc,
+						 0,//UE_template->physicalConfigDedicated,
+						 get_tmode(module_idP,CC_id,UE_id),
+						 eNB->ul_handle,
+						 rnti,
+						 first_rb[CC_id], // resource_block_start
+						 N_RB_UL-1, // number_of_resource_blocks
+						 mcs,
+						 cshift, // cyclic_shift_2_for_drms
+						 0, // frequency_hopping_enabled_flag
+						 0, // frequency_hopping_bits
+						 ndi, // new_data_indication
+						 0, // redundancy_version
+						 harq_pid, // harq_process_number
+						 0, // ul_tx_mode
+						 0, // current_tx_nb
+						 0, // n_srs
+						 get_TBS_UL(mcs,N_RB_UL-1)
+						 );
+#ifdef Rel14
+	  if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
+	    fill_nfapi_ulsch_config_request_emtc(&ul_req->ul_config_pdu_list[ul_req->number_of_pdus],
+						   UE_template->rach_resource_type>2 ? 2 : 1,
+						   1, //total_number_of_repetitions
+						   1, //repetition_number
+						   (frameP*10)+subframeP);
+	    }
+#endif
+	  ul_req->number_of_pdus = 1;
+	  eNB->ul_handle++;
+	    
+	    
+	  	
+	  add_ue_ulsch_info(module_idP,
+			      CC_id,
+			      UE_id,
+			      subframeP,
+			      S_UL_SCHEDULED);
+	    
+            // increment first rb for next UE allocation
+       first_rb[CC_id]+= N_RB_UL -1;
+	    
+	  	  
+  } // loop of CC_id
 }

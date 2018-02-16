@@ -726,7 +726,7 @@ static void* process_stats_thread(void* param) {
        if (eNB->td) print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
        if (eNB->te)
        {
-         print_meas(&eNB->dlsch_turbo_encoding_preperation_stats,"dlsch_coding_prepare",NULL,NULL);
+         print_meas(&eNB->dlsch_turbo_encoding_preperation_stats,"dlsch_coding_crc",NULL,NULL);
          print_meas(&eNB->dlsch_turbo_encoding_segmentation_stats,"dlsch_segmentation",NULL,NULL);
          print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
          print_meas(&eNB->dlsch_turbo_encoding_signal_stats,"coding_signal",NULL,NULL);
