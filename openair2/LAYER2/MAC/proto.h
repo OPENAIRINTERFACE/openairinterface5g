@@ -209,11 +209,6 @@ void dlsch_scheduler_pre_processor_reset(int module_idP, int UE_id,
 					 uint16_t
 					 nb_rbs_required[MAX_NUM_CCs]
 					 [NUMBER_OF_UE_MAX],
-					 uint16_t
-					 nb_rbs_required_remaining
-					 [MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-					 unsigned char total_ue_count[MAX_NUM_CCs],
-					 unsigned char total_rbs_used[MAX_NUM_CCs],
 					 unsigned char
 					 rballoc_sub[MAX_NUM_CCs]
 					 [N_RBG_MAX],
