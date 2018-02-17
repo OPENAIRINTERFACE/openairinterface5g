@@ -518,6 +518,7 @@ void *l2l1_task(void *arg) {
       case TERMINATE_MESSAGE:
 	printf("received terminate message\n");
 	oai_exit=1;
+        start_eNB = 0;
 	itti_exit_task ();
 	break;
 
@@ -855,13 +856,11 @@ void wait_RUs(void) {
 
   // wait for all RUs to be configured over fronthaul
   pthread_mutex_lock(&RC.ru_mutex);
-
-
-
   while (RC.ru_mask>0) {
     pthread_cond_wait(&RC.ru_cond,&RC.ru_mutex);
     printf("RC.ru_mask:%02lx\n", RC.ru_mask);
   }
+  pthread_mutex_unlock(&RC.ru_mutex);
 
   LOG_I(PHY,"RUs configured\n");
 }
@@ -890,6 +889,131 @@ void wait_eNBs(void) {
   }
   printf("eNB L1 are configured\n");
 }
+
+#if defined(ENABLE_ITTI)
+/*
+ * helper function to terminate a certain ITTI task
+ */
+void terminate_task(task_id_t task_id, module_id_t mod_id)
+{
+  LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
+  MessageDef *msg;
+  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
+  itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
+}
+
+extern void  free_transport(PHY_VARS_eNB *);
+extern void  phy_free_RU(RU_t*);
+
+int stop_L1L2(module_id_t enb_id)
+{
+  LOG_W(ENB_APP, "stopping lte-softmodem\n");
+  oai_exit = 1;
+
+  if (!RC.ru) {
+    LOG_F(ENB_APP, "no RU configured\n");
+    return -1;
+  }
+
+  /* stop trx devices, multiple carrier currently not supported by RU */
+  if (RC.ru[enb_id]) {
+    if (RC.ru[enb_id]->rfdevice.trx_stop_func) {
+      RC.ru[enb_id]->rfdevice.trx_stop_func(&RC.ru[enb_id]->rfdevice);
+      LOG_I(ENB_APP, "turned off RU rfdevice\n");
+    } else {
+      LOG_W(ENB_APP, "can not turn off rfdevice due to missing trx_stop_func callback, proceding anyway!\n");
+    }
+    if (RC.ru[enb_id]->ifdevice.trx_stop_func) {
+      RC.ru[enb_id]->ifdevice.trx_stop_func(&RC.ru[enb_id]->ifdevice);
+      LOG_I(ENB_APP, "turned off RU ifdevice\n");
+    } else {
+      LOG_W(ENB_APP, "can not turn off ifdevice due to missing trx_stop_func callback, proceding anyway!\n");
+    }
+  } else {
+    LOG_W(ENB_APP, "no RU found for index %d\n", enb_id);
+    return -1;
+  }
+
+  /* these tasks need to pick up new configuration */
+  terminate_task(TASK_RRC_ENB, enb_id);
+  terminate_task(TASK_L2L1, enb_id);
+  LOG_I(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
+  kill_eNB_proc(enb_id);
+  LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", enb_id);
+  kill_RU_proc(enb_id);
+  oai_exit = 0;
+  for (int cc_id = 0; cc_id < RC.nb_CC[enb_id]; cc_id++) {
+    free_transport(RC.eNB[enb_id][cc_id]);
+    phy_free_lte_eNB(RC.eNB[enb_id][cc_id]);
+  }
+  phy_free_RU(RC.ru[enb_id]);
+  free_lte_top();
+  return 0;
+}
+
+/*
+ * Restart the lte-softmodem after it has been soft-stopped with stop_L1L2()
+ */
+int restart_L1L2(module_id_t enb_id)
+{
+  RU_t *ru = RC.ru[enb_id];
+  int cc_id;
+  MessageDef *msg_p = NULL;
+
+  LOG_W(ENB_APP, "restarting lte-softmodem\n");
+
+  /* block threads */
+  sync_var = -1;
+
+  for (cc_id = 0; cc_id < RC.nb_L1_CC[enb_id]; cc_id++) {
+    RC.eNB[enb_id][cc_id]->configured = 0;
+  }
+
+  RC.ru_mask |= (1 << ru->idx);
+  /* copy the changed frame parameters to the RU */
+  /* TODO this should be done for all RUs associated to this eNB */
+  memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
+  set_function_spec_param(RC.ru[enb_id]);
+
+  LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
+  if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
+    LOG_E(RRC, "Create task for RRC eNB failed\n");
+    return -1;
+  } else {
+    LOG_I(RRC, "Re-created task for RRC eNB successfully\n");
+  }
+  if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
+    LOG_E(PDCP, "Create task for L2L1 failed\n");
+    return -1;
+  } else {
+    LOG_I(PDCP, "Re-created task for L2L1 successfully\n");
+  }
+
+  /* pass a reconfiguration request which will configure everything down to
+   * RC.eNB[i][j]->frame_parms, too */
+  msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+  RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
+  itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+
+  /* TODO XForms might need to be restarted, but it is currently (09/02/18)
+   * broken, so we cannot test it */
+
+  wait_eNBs();
+  init_RU_proc(ru);
+  ru->rf_map.card = 0;
+  ru->rf_map.chain = 0; /* CC_id + chain_offset;*/
+  wait_RUs();
+  init_eNB_afterRU();
+
+  printf("Sending sync to all threads\n");
+  pthread_mutex_lock(&sync_mutex);
+  sync_var=0;
+  pthread_cond_broadcast(&sync_cond);
+  pthread_mutex_unlock(&sync_mutex);
+
+  return 0;
+}
+#endif
 
 static inline void wait_nfapi_init(char *thread_name) {
 
@@ -1063,7 +1187,6 @@ int main( int argc, char **argv )
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
-
     if (UE_flag==1) {     
       NB_UE_INST=1;     
       NB_INST=1;     
@@ -1196,10 +1319,15 @@ int main( int argc, char **argv )
   }
 #endif
 
-    // init UE_PF_PO and mutex lock
-    pthread_mutex_init(&ue_pf_po_mutex, NULL);
-    memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
-  
+  /* Start the agent. If it is turned off in the configuration, it won't start */
+  RCconfig_flexran();
+  for (i = 0; i < RC.nb_L1_inst; i++) {
+    flexran_agent_start(i);
+  }
+
+  // init UE_PF_PO and mutex lock
+  pthread_mutex_init(&ue_pf_po_mutex, NULL);
+  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   
@@ -1458,7 +1586,20 @@ int main( int argc, char **argv )
   // cleanup
   if (UE_flag == 1) {
   } else {
-    stop_eNB(1);
+    stop_eNB(NB_eNB_INST);
+    stop_RU(NB_RU);
+    /* release memory used by the RU/eNB threads (incomplete), after all
+     * threads have been stopped (they partially use the same memory) */
+    for (int inst = 0; inst < NB_eNB_INST; inst++) {
+      for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
+        free_transport(RC.eNB[inst][cc_id]);
+        phy_free_lte_eNB(RC.eNB[inst][cc_id]);
+      }
+    }
+    for (int inst = 0; inst < NB_RU; inst++) {
+      phy_free_RU(RC.ru[inst]);
+    }
+    free_lte_top();
   }
 
 
@@ -1491,6 +1632,8 @@ int main( int argc, char **argv )
     terminate_opt();
   
   logClean();
+
+  printf("Bye.\n");
   
   return 0;
 }

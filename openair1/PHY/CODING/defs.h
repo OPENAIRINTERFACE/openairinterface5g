@@ -352,10 +352,17 @@ void ccodedab_init_inv(void);
 \brief This function initializes the different crc tables.*/
 void crcTableInit (void);
 
+/*!\fn void free_td8(void)
+\brief This function frees the tables for 8-bit LLR Turbo decoder.*/
+void free_td8(void);
+
 /*!\fn void init_td8(void)
 \brief This function initializes the tables for 8-bit LLR Turbo decoder.*/
 void init_td8 (void);
 
+/*!\fn void free_td16(void)
+\brief This function frees the tables for 16-bit LLR Turbo decoder.*/
+void free_td16(void);
 
 /*!\fn void init_td16(void)
 \brief This function initializes the tables for 16-bit LLR Turbo decoder.*/
@@ -366,6 +373,9 @@ void init_td16 (void);
 \brief This function initializes the tables for 8-bit LLR Turbo decoder (AVX2).*/
 void init_td8avx2 (void);
 
+/*!\fn void free_td16avx2(void)
+\brief This function frees the tables for 16-bit LLR Turbo decoder (AVX2).*/
+void free_td16avx2(void);
 
 /*!\fn void init_td16(void)
 \brief This function initializes the tables for 16-bit LLR Turbo decoder (AVX2).*/

@@ -49,6 +49,7 @@ void *x2ap_task(void *arg)
 
     switch (ITTI_MSG_ID(received_msg)) {
     case TERMINATE_MESSAGE:
+      X2AP_WARN(" *** Exiting X2AP thread\n");
       itti_exit_task();
       break;
 

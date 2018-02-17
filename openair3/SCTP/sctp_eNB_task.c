@@ -841,6 +841,7 @@ void *sctp_eNB_task(void *arg)
         break;
 
       case TERMINATE_MESSAGE:
+        SCTP_WARN("*** Exiting SCTP thread\n");
         itti_exit_task();
         break;
 

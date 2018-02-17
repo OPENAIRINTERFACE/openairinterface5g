@@ -59,6 +59,18 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 
 }
 
+void free_lte_top(void)
+{
+  free_td8();
+  free_td16();
+#ifdef __AVX2__
+  free_td16avx2();
+#endif
+  lte_sync_time_free();
+
+  /* free_ul_ref_sigs() is called in phy_free_lte_eNB() */
+}
+
 
 /*
  * @}*/
