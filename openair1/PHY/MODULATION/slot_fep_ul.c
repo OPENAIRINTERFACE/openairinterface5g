@@ -24,6 +24,9 @@
 #include "defs.h"
 //#define DEBUG_FEP
 
+//#undef LOG_D
+//#define LOG_D(A,B,C...) printf(B,C)
+
 int slot_fep_ul(RU_t *ru,
                 unsigned char l,
                 unsigned char Ns,
@@ -134,7 +137,7 @@ int slot_fep_ul(RU_t *ru,
   }
 
 #ifdef DEBUG_FEP
-  LOG_D(PHY,"slot_fep: done\n");
+  //  LOG_D(PHY,"slot_fep: done\n");
 #endif
   return(0);
 }

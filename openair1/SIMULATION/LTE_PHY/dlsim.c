@@ -1409,8 +1409,8 @@ int main(int argc, char **argv)
   if (input_fd==NULL) {
 
     DL_req.dl_config_request_body.number_pdcch_ofdm_symbols = num_pdcch_symbols;
-    DL_req.sfn_sf = (proc_eNB->frame_tx*10)+subframe;
-    TX_req.sfn_sf = (proc_eNB->frame_tx*10)+subframe;
+    DL_req.sfn_sf = (proc_eNB->frame_tx<<4)+subframe;
+    TX_req.sfn_sf = (proc_eNB->frame_tx<<4)+subframe;
     // UE specific DCI
     fill_DCI(eNB,
 	     proc_eNB->frame_tx,subframe,

@@ -76,6 +76,7 @@ extern double cpuf;
 //#undef LOG_D
 //#define LOG_D(A,B,C...) printf(B,C)
 
+
 void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 void Msg3_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 
@@ -84,7 +85,7 @@ extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
 #endif
 
 
-#define DEBUG_UE_TRACE 1
+#define UE_DEBUG_TRACE 1
 
 void dump_dlsch(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid)
 {
@@ -1269,7 +1270,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
   }
 //#endif
 
-  if ((frame_tx%100) == 0)
+//  if ((frame_tx%100) == 0)
     LOG_D(PHY,"[UE %d] Frame %d, subframe %d: ulsch_start = %d (rxoff %d, HW TA %d, timing advance %d, TA_offset %d\n",
     ue->Mod_id,frame_tx,subframe_tx,
     ulsch_start,
@@ -1291,16 +1292,25 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
        nsymb,
        frame_parms->nb_prefix_samples,
        CYCLIC_PREFIX);
-    else
+    else {
       normal_prefix_mod(&ue->common_vars.txdataF[aa][subframe_tx*nsymb*frame_parms->ofdm_symbol_size],
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
-      dummy_tx_buffer,
+			dummy_tx_buffer,
 #else
-      &ue->common_vars.txdata[aa][ulsch_start],
+			&ue->common_vars.txdata[aa][ulsch_start],
 #endif
-      nsymb,
-      &ue->frame_parms);
-
+			nsymb>>1,
+			&ue->frame_parms);
+      
+      normal_prefix_mod(&ue->common_vars.txdataF[aa][((subframe_tx*nsymb)+(nsymb>>1))*frame_parms->ofdm_symbol_size],
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
+			dummy_tx_buffer+(frame_parms->samples_per_tti>>1),
+#else
+			&ue->common_vars.txdata[aa][ulsch_start+(frame_parms->samples_per_tti>>1)],
+#endif
+			nsymb>>1,
+			&ue->frame_parms);
+      }
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
     apply_7_5_kHz(ue,dummy_tx_buffer,0);

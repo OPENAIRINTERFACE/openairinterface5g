@@ -109,10 +109,11 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
 
   UE->is_secondary_ue = 0;
   UE->frame_parms = *frame_parms;
+  UE->frame_parms.nb_antennas_rx=1;
   //  eNB->frame_parms = *frame_parms;
   ru->frame_parms = *frame_parms;
   ru->nb_tx = N_tx_phy;
-  ru->nb_rx = 1;
+  ru->nb_rx = N_rx;
   ru->if_south = LOCAL_RF;
 
   eNB->configured=1;
@@ -154,6 +155,13 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
 
   /* the UE code is multi-thread "aware", we need to setup this array */
   for (i = 0; i < 10; i++) UE->current_thread_id[i] = i % 2;
+
+  if (eNB->frame_parms.frame_type == TDD) {
+    if      (eNB->frame_parms.N_RB_DL == 100) ru->N_TA_offset = 624;
+    else if (eNB->frame_parms.N_RB_DL == 50)  ru->N_TA_offset = 624/2;
+    else if (eNB->frame_parms.N_RB_DL == 25)  ru->N_TA_offset = 624/4;
+  } 
+  else ru->N_TA_offset=0;
 
   printf("Done lte_param_init\n");
 

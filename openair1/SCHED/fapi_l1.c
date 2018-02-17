@@ -37,10 +37,11 @@
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
 
-//#undef LOG_D
-//#define LOG_D(A,B,C...) printf(B,C)
-//#undef LOG_I
-//#define LOG_I(A,B,C...) printf(B,C)
+/*#undef LOG_D
+#define LOG_D(A,B,C...) printf(B,C)
+#undef LOG_I
+#define LOG_I(A,B,C...) printf(B,C)
+*/
 
 int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req);
 int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req);
@@ -538,11 +539,11 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   int8_t UE_id;
 
   // check if we have received a dci for this ue and ulsch descriptor is configured
-
+  
   if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No existing UE ULSCH for rnti %x\n",rel8->rnti);
-    //LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d\n", UE_id,rel8->rnti,frame,subframe);
+    LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d, modulation %d, rvidx %d\n", UE_id,rel8->rnti,frame,subframe,rel8->modulation_type,rel8->redundancy_version);
 
     fill_ulsch(eNB,&ul_config_pdu->ulsch_pdu,frame,subframe);
 

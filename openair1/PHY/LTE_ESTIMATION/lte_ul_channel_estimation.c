@@ -34,6 +34,9 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 
 #define SCALE 0x3FFF
 
+//#undef LOG_D
+//#define LOG_D(A,B,C...) printf(B,C)
+
 int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
 				  eNB_rxtx_proc_t *proc,
                                   uint8_t UE_id,
@@ -100,7 +103,7 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
     return(-1);
   }
 
-  //  LOG_I(PHY,"subframe %d, Ns %d, l %d, Msc_RS = %d, Msc_RS_idx = %d, u %d, v %d, cyclic_shift %d\n",subframe,Ns,l,Msc_RS, Msc_RS_idx,u,v,cyclic_shift);
+  LOG_D(PHY,"subframe %d, Ns %d, l %d, Msc_RS = %d, Msc_RS_idx = %d, u %d, v %d, cyclic_shift %d\n",subframe,Ns,l,Msc_RS, Msc_RS_idx,u,v,cyclic_shift);
 #ifdef DEBUG_CH
 
   if (Ns==0)

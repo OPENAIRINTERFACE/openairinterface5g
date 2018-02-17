@@ -50,8 +50,10 @@
 #   include "intertask_interface.h"
 #endif
 
-//#undef LOG_D
-//#define LOG_D(A,B,C...) printf(B,C)
+/*
+#undef LOG_D
+#define LOG_D(A,B,C...) printf(B,C)
+*/
 
 extern uint8_t nfapi_mode;
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
@@ -1210,7 +1212,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
         start_meas(&eNB->ulsch_demodulation_stats);
 
-      rx_ulsch(eNB,proc, i);
+	rx_ulsch(eNB,proc, i);
 
         stop_meas(&eNB->ulsch_demodulation_stats);
 
@@ -1263,12 +1265,12 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
 	      eNB->Mod_id,harq_pid,
 	      frame,subframe, i,
-	      ulsch_harq->round-1,
+	      ulsch_harq->round,
 	      ulsch->Mlimit,
 	      ulsch_harq->o_ACK[0],
 	      ulsch_harq->o_ACK[1]);
 
-        if (ulsch_harq->round >= 3)  {
+        if (ulsch_harq->round >= 4)  {
            ulsch_harq->status  = SCH_IDLE;
            ulsch_harq->handled = 0;
            ulsch->harq_mask   &= ~(1 << harq_pid);
