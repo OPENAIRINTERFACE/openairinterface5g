@@ -242,7 +242,7 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
   sigma2 = pow(10,sigma2_dB/10);
 
   for (i=0; i<2*UE->frame_parms.samples_per_tti; i++) {
-    for (aa=0; aa<ru->frame_parms.nb_antennas_rx; aa++) {
+    for (aa=0; aa<UE->frame_parms.nb_antennas_rx; aa++) {
       //printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
       ((short*) UE->common_vars.rxdata[aa])[(2*subframe*UE->frame_parms.samples_per_tti)+2*i] =
 	(short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
@@ -1099,7 +1099,8 @@ int main(int argc, char **argv)
   lte_param_init(&eNB,&UE,&ru,
 		 n_tx_port,
 		 n_tx_phy,
-		 n_rx,
+		 1,
+                 n_rx,
 		 transmission_mode,
 		 extended_prefix_flag,
 		 frame_type,
@@ -1304,6 +1305,7 @@ int main(int argc, char **argv)
 
   UE->pdcch_vars[UE->current_thread_id[subframe]][0]->crnti = n_rnti;
 
+  printf("Allocating %dx%d eNB->UE channel descriptor\n",eNB->frame_parms.nb_antennas_tx,UE->frame_parms.nb_antennas_rx);
   eNB2UE[0] = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
                                    UE->frame_parms.nb_antennas_rx,
                                    channel_model,

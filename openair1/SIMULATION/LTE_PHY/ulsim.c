@@ -720,6 +720,7 @@ int main(int argc, char **argv)
 		 1,
 		 1,
 		 n_rx,
+                 1,
 		 1,
 		 extended_prefix_flag,
 		 frame_type,

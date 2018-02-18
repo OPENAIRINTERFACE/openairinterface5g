@@ -39,7 +39,8 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
 		    RU_t **rup,
 		    unsigned char N_tx_port_eNB, 
                     unsigned char N_tx_phy,
-		    unsigned char N_rx,
+		    unsigned char N_rx_ru,
+                    unsigned char N_rx_ue,
 		    unsigned char transmission_mode,
 		    uint8_t extended_prefix_flag,
 		    frame_t frame_type, 
@@ -90,7 +91,7 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
   frame_parms->Nid_cell           = Nid_cell;
   frame_parms->nushift            = Nid_cell%6;
   frame_parms->nb_antennas_tx     = N_tx_phy;
-  frame_parms->nb_antennas_rx     = N_rx;
+  frame_parms->nb_antennas_rx     = N_rx_ru;
   frame_parms->nb_antenna_ports_eNB = N_tx_port_eNB;
   frame_parms->phich_config_common.phich_resource         = oneSixth;
   frame_parms->phich_config_common.phich_duration         = normal;
@@ -109,11 +110,11 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
 
   UE->is_secondary_ue = 0;
   UE->frame_parms = *frame_parms;
-  UE->frame_parms.nb_antennas_rx=1;
+  UE->frame_parms.nb_antennas_rx=N_rx_ue;
   //  eNB->frame_parms = *frame_parms;
   ru->frame_parms = *frame_parms;
   ru->nb_tx = N_tx_phy;
-  ru->nb_rx = N_rx;
+  ru->nb_rx = N_rx_ru;
   ru->if_south = LOCAL_RF;
 
   eNB->configured=1;
