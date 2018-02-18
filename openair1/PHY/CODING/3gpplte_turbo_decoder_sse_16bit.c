@@ -1117,10 +1117,10 @@ void free_td16(void)
   int ind;
 
   for (ind=0; ind<188; ind++) {
-    free(pi2tab16[ind]);
-    free(pi5tab16[ind]);
-    free(pi4tab16[ind]);
-    free(pi6tab16[ind]);
+    free_and_zero(pi2tab16[ind]);
+    free_and_zero(pi5tab16[ind]);
+    free_and_zero(pi4tab16[ind]);
+    free_and_zero(pi6tab16[ind]);
   }
 }
 

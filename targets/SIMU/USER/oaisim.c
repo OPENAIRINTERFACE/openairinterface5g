@@ -76,9 +76,7 @@ uint8_t config_smbv = 0;
 char smbv_ip[16];
 #endif
 
-#if defined(FLEXRAN_AGENT_SB_IF)
-#   include "flexran_agent.h"
-#endif
+#include "flexran_agent.h"
 
 
 #include "oaisim_functions.h"
@@ -988,6 +986,23 @@ l2l1_task (void *args_p)
 #endif
   
   return NULL;
+}
+
+/*
+ * The following two functions are meant to restart *the lte-softmodem* and are
+ * here to make oaisim compile. A restart command from the controller will be
+ * ignored in oaisim.
+ */
+int stop_L1L2(int enb_id)
+{
+  LOG_W(FLEXRAN_AGENT, "stop_L1L2() not supported in oaisim\n");
+  return 0;
+}
+
+int restart_L1L2(int enb_id)
+{
+  LOG_W(FLEXRAN_AGENT, "restart_L1L2() not supported in oaisim\n");
+  return 0;
 }
 
 #if T_TRACER

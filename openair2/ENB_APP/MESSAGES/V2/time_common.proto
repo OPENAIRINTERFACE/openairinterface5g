@@ -25,6 +25,7 @@ message flex_ul_info {
 	repeated uint32 ul_reception = 2;
 	optional uint32 reception_status = 3;
 	optional uint32 tpc = 4;
-	optional uint32 serv_cell_index = 5; 
+	optional uint32 serv_cell_index = 5;
+	optional uint32 rssi = 6;
 }
 

@@ -635,7 +635,8 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   fp          = &eNB->frame_parms;
   proc        = &eNB->proc.proc_rxtx[0];
 
-  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
+  /* TODO: check that following line is correct - in the meantime it is disabled */
+  //if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
   ul_subframe = pdcch_alloc2ul_subframe(fp,subframe);
   ul_frame    = pdcch_alloc2ul_frame(fp,frame,subframe);
@@ -670,8 +671,10 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
 
   int do_oai =0;
   int dont_send =0;
-  if ((ul_subframe<10)&&
-      (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is an ul_subframe that can be configured here
+  /* TODO: check the following test - in the meantime it is put back as it was before */
+  //if ((ul_subframe<10)&&
+  //    (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is an ul_subframe that can be configured here
+  if (ul_subframe<10) { // This means that there is an ul_subframe that can be configured here
     LOG_D(PHY,"NFAPI: Clearing dci allocations for potential UL subframe %d\n",ul_subframe);
   
     harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);

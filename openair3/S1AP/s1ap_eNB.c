@@ -307,6 +307,7 @@ void *s1ap_eNB_task(void *arg)
 
     switch (ITTI_MSG_ID(received_msg)) {
     case TERMINATE_MESSAGE:
+      S1AP_WARN(" *** Exiting S1AP thread\n");
       itti_exit_task();
       break;
 
