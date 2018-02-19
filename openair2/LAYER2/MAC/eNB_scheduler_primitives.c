@@ -3770,8 +3770,8 @@ uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, su
 
         switch(tdd_Config->subframeAssignment){ //TODO fill in other tdd config
         case 1:
-            harq_pid = ((frame_cnt*1024 + abs_frameP) * 4 + get_dl_subframe_count(tdd_Config->subframeAssignment,subframeP))%7;//4 dl subframe in a frame
-            LOG_I(MAC,"[frame_subframe2_dl_harq_pid] (%d,%d) calculate harq_pid (( %d * 1024 + %d) *4 + %d)%7 = %d \n",
+            harq_pid = (((frame_cnt*1024 + abs_frameP) * 4) - 1 + get_dl_subframe_count(tdd_Config->subframeAssignment,subframeP))%7;//4 dl subframe in a frame
+            LOG_I(MAC,"[frame_subframe2_dl_harq_pid] (%d,%d) calculate harq_pid ((( %d * 1024 + %d) *4) - 1 + %d)%7 = %d \n",
                     (abs_frameP+1024)%1024,subframeP,frame_cnt,abs_frameP,
                     get_dl_subframe_count(tdd_Config->subframeAssignment,subframeP),harq_pid);
             return harq_pid;
