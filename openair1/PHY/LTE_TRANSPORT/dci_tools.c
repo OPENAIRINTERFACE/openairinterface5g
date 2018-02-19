@@ -2507,7 +2507,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
   else  ulsch->harq_processes[harq_pid]->round++;
 
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;
-  LOG_D(PHY,"Filling ULSCH %x (UE_id %d) (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
+  LOG_I(PHY,"Filling ULSCH %x (UE_id %d) (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
 	ulsch->rnti,
         UE_id,
         new_ulsch,

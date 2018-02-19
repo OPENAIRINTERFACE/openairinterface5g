@@ -210,9 +210,9 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   UE_TEMPLATE       *UE_template;
   UE_sched_ctrl     *UE_sched_ctrl;
   int               sched_frame=frameP;
-  int               sched_subframeP = (subframeP+4)%10;
+  int               sched_subframe = (subframeP+4)%10;
   
-  if (sched_subframeP<subframeP) sched_frame++;
+  if (sched_subframe<subframeP) sched_frame++;
 
   nfapi_hi_dci0_request_body_t   *hi_dci0_req = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
@@ -222,7 +222,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 
   ul_config_pdu                                    = &ul_req->ul_config_pdu_list[0]; 
 
-  eNB->UL_req[CC_id].sfn_sf   = (frameP<<4) + subframeP;
+  eNB->UL_req[CC_id].sfn_sf   = (sched_frame<<4) + sched_subframe;
   eNB->HI_DCI0_req[CC_id].sfn_sf = (frameP<<4)+subframeP;
   
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -237,8 +237,9 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 
       UE_template   = &UE_list->UE_template[CC_id][UE_id];
       UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
-      harq_pid      = subframe2harqpid(&cc[CC_id],sched_frame,sched_subframeP);
+      harq_pid      = subframe2harqpid(&cc[CC_id],sched_frame,sched_subframe);
 
+      LOG_I(MAC,"Scheduling for frame %d, subframe %d => harq_pid %d\n",sched_frame,sched_subframe,harq_pid);
 
       RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
       printf("////////////////////////////////////*************************ul_total_buffer = %d\n",UE_template->ul_total_buffer);
@@ -295,14 +296,14 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti                              = rnti;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power                = 6000;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start              = first_rb[CC_id];
-	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block          = N_RB_UL-1;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block          = 20;//N_RB_UL-1;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.mcs_1                             = mcs;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cyclic_shift_2_for_drms           = cshift;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.frequency_hopping_enabled_flag    = 0;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.new_data_indication_1             = ndi;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tpc                               = tpc;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cqi_csi_request                   = cqi_req;
-	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index               = UE_template->DAI_ul[sched_subframeP];
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index               = UE_template->DAI_ul[sched_subframe];
 
 	    
 	  eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_dci++;
@@ -317,7 +318,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 						 eNB->ul_handle,
 						 rnti,
 						 first_rb[CC_id], // resource_block_start
-						 N_RB_UL-1, // number_of_resource_blocks
+						 20,//N_RB_UL-1, // number_of_resource_blocks
 						 mcs,
 						 cshift, // cyclic_shift_2_for_drms
 						 0, // frequency_hopping_enabled_flag
