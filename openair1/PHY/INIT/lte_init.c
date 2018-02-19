@@ -256,7 +256,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
   AssertFatal(fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0] > 0,
 	      "prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0]==0\n");
 #else
-  LOG_E(PHY,"***DJP*** removed assert on preamble fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0]:%d expecting >0 %s:%d\n\n\n", fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0], __FILE__, __LINE__);
+  LOG_D(PHY,"***DJP*** removed assert on preamble fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0]:%d expecting >0 %s:%d\n\n\n", fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0], __FILE__, __LINE__);
 #endif
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[0]                     = cfg->emtc_config.prach_ce_level_0_configuration_index.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[0]                      = cfg->emtc_config.prach_ce_level_0_frequency_offset.value;
@@ -1779,7 +1779,7 @@ int phy_init_RU(RU_t *ru) {
     AssertFatal(RC.nb_L1_inst <= NUMBER_OF_eNB_MAX,"eNB instances %d > %d\n",
 		RC.nb_L1_inst,NUMBER_OF_eNB_MAX);
 
-    LOG_E(PHY,"[INIT] %s() RC.nb_L1_inst:%d \n", __FUNCTION__, RC.nb_L1_inst);
+    LOG_D(PHY,"[INIT] %s() RC.nb_L1_inst:%d \n", __FUNCTION__, RC.nb_L1_inst);
 
     for (i=0; i<RC.nb_L1_inst; i++) {
       for (p=0;p<15;p++) {

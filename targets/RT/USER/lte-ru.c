@@ -2222,7 +2222,7 @@ void init_RU(char *rf_config_file) {
     }
     else
     {
-    LOG_E(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
+    LOG_D(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
     }
 
     eNB0             = ru->eNB_list[0];
