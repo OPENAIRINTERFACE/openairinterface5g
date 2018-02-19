@@ -3839,10 +3839,15 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	    int M = ul_ACK_subframe2_M(fp,subframeP);
 	    for(m=0;m<M;m++){
 	     subframe_tx = ul_ACK_subframe2_dl_subframe(fp,subframeP,m);
-	     if(frameP==1023&&subframeP>5)
-	         frame_tx= -1;
-	     else
-	         frame_tx = subframeP < 5 ? frameP-1:frameP; // not formal
+	     switch (cc->tdd_Config->subframeAssignment){
+	     case 1:
+	        if(frameP==0&&subframeP<4)
+	          frame_tx= 0;
+	        else
+	          frame_tx = subframeP < 4 ? frameP-1:frameP; // not formal
+	          break;
+	         // TODO : Other TDD Config
+	     }
 	     harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame_tx,subframe_tx);
 	     if(num_ack_nak==1){
 	         if(harq_indication_tdd->harq_data[0].bundling.value_0==1){ //ack
