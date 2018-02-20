@@ -242,10 +242,10 @@ void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
 					    int N_RBG,
 					    int transmission_mode,
 					    int min_rb_unit,
-					    uint8_t N_RB_DL,
 					    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
 					    uint16_t nb_rbs_required_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
 					    unsigned char rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+              uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX],
 					    unsigned char MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f

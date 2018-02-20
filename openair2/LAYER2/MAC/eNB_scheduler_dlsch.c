@@ -80,6 +80,10 @@ float slice_percentage_current[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 float total_slice_percentage = 0;
 float total_slice_percentage_current = 0;
 
+// Frequency ranges for slice positioning
+int slice_position[MAX_NUM_SLICES*2]         = {0, N_RBG_MAX, 0, N_RBG_MAX, 0, N_RBG_MAX, 0, N_RBG_MAX};
+int slice_position_current[MAX_NUM_SLICES*2] = {0, N_RBG_MAX, 0, N_RBG_MAX, 0, N_RBG_MAX, 0, N_RBG_MAX};
+
 // MAX MCS for each slice for past and current time
 int slice_maxmcs[MAX_NUM_SLICES] = { 28, 28, 28, 28 };
 int slice_maxmcs_current[MAX_NUM_SLICES] = { 28, 28, 28, 28 };
@@ -445,9 +449,7 @@ set_ul_DAI(int module_idP, int UE_idP, int CC_idP, int frameP,
 
 //------------------------------------------------------------------------------
 void
-schedule_dlsch(module_id_t module_idP,
-	        frame_t frameP, sub_frame_t subframeP, int *mbsfn_flag)
-//------------------------------------------------------------------------------{
+schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, int *mbsfn_flag)
 {
 
   int i = 0;
@@ -462,7 +464,7 @@ schedule_dlsch(module_id_t module_idP,
   for (i = 0; i < n_active_slices; i++) {
     if (slice_percentage[i] < 0 ){
       LOG_W(MAC, "[eNB %d] frame %d subframe %d:invalid slice %d percentage %f. resetting to zero",
-	    module_idP, frameP, subframeP, i, slice_percentage[i]);
+            module_idP, frameP, subframeP, i, slice_percentage[i]);
       slice_percentage[i]=0;
     }
     total_slice_percentage+=slice_percentage[i];
@@ -482,37 +484,38 @@ schedule_dlsch(module_id_t module_idP,
 
       // check if the number of slices has changed, and log
       if (n_active_slices_current != n_active_slices ){
-	if ((n_active_slices > 0) && (n_active_slices <= MAX_NUM_SLICES)) {
-	  LOG_I(MAC,"[eNB %d]frame %d subframe %d: number of active DL slices has changed: %d-->%d\n",
-		module_idP, frameP, subframeP, n_active_slices_current, n_active_slices);
-
-	  n_active_slices_current = n_active_slices;
-
-	} else {
-	  LOG_W(MAC,"invalid number of DL slices %d, revert to the previous value %d\n",n_active_slices, n_active_slices_current);
-	  n_active_slices = n_active_slices_current;
-	}
+        if ((n_active_slices > 0) && (n_active_slices <= MAX_NUM_SLICES)) {
+          LOG_I(MAC, "[eNB %d]frame %d subframe %d: number of active DL slices has changed: %d-->%d\n",
+                module_idP, frameP, subframeP, n_active_slices_current, n_active_slices);
+          n_active_slices_current = n_active_slices;
+        } else {
+          LOG_W(MAC, "invalid number of DL slices %d, revert to the previous value %d\n",
+                n_active_slices, n_active_slices_current);
+          n_active_slices = n_active_slices_current;
+        }
       }
 
       // check if the slice rb share has changed, and log the console
-      if (slice_percentage_current[i] != slice_percentage[i]){ // new slice percentage
-	LOG_I(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
-	      module_idP, i, frameP, subframeP, total_slice_percentage_current, total_slice_percentage, slice_percentage_current[i], slice_percentage[i]);
-	total_slice_percentage_current= total_slice_percentage;
-	slice_percentage_current[i] = slice_percentage[i];
-
+      if (slice_percentage_current[i] != slice_percentage[i]) { // new slice percentage
+        LOG_I(MAC,
+              "[eNB %d][SLICE %d][DL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
+              module_idP, i, frameP, subframeP, total_slice_percentage_current, total_slice_percentage,
+              slice_percentage_current[i], slice_percentage[i]);
+        total_slice_percentage_current = total_slice_percentage;
+        slice_percentage_current[i] = slice_percentage[i];
       }
 
       // check if the slice max MCS, and log the console
-      if (slice_maxmcs_current[i] != slice_maxmcs[i]){
-	if ((slice_maxmcs[i] >= 0) && (slice_maxmcs[i] < 29)){
-	  LOG_I(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
-		module_idP, i, frameP, subframeP, slice_maxmcs_current[i], slice_maxmcs[i]);
-	  slice_maxmcs_current[i] = slice_maxmcs[i];
-	} else {
-	  LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid slice max mcs %d, revert the previous value %d\n",module_idP, i, slice_maxmcs[i],slice_maxmcs_current[i]);
-	  slice_maxmcs[i]= slice_maxmcs_current[i];
-	}
+      if (slice_maxmcs_current[i] != slice_maxmcs[i]) {
+        if ((slice_maxmcs[i] >= 0) && (slice_maxmcs[i] < 29)) {
+          LOG_I(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
+                module_idP, i, frameP, subframeP, slice_maxmcs_current[i], slice_maxmcs[i]);
+          slice_maxmcs_current[i] = slice_maxmcs[i];
+        } else {
+          LOG_W(MAC, "[eNB %d][SLICE %d][DL] invalid slice max mcs %d, revert the previous value %d\n",
+                module_idP, i, slice_maxmcs[i], slice_maxmcs_current[i]);
+          slice_maxmcs[i] = slice_maxmcs_current[i];
+        }
       }
 
       // check if a new scheduler, and log the console
@@ -538,6 +541,29 @@ schedule_dlsch(module_id_t module_idP,
 	      n_active_slices, n_active_slices_current );
 	n_active_slices = n_active_slices_current;
 	slice_percentage[i] = slice_percentage_current[i];
+      }
+    }
+
+    // Check for new slice positions
+    if (slice_position[i*2] > slice_position[i*2 + 1] ||
+        slice_position[i*2] < 0 ||
+        slice_position[i*2 + 1] > N_RBG_MAX) {
+      LOG_W(MAC, "[eNB %d][SLICE %d][DL] invalid slicing position (%d-%d), using previous values (%d-%d)\n",
+            module_idP, i,
+            slice_position[i*2], slice_position[i*2 + 1],
+            slice_position_current[i*2], slice_position_current[i*2 + 1]);
+      slice_position[i*2] = slice_position_current[i*2];
+      slice_position[i*2 + 1] = slice_position_current[i*2 + 1];
+    } else {
+      if (slice_position_current[i*2] != slice_position[i*2]) {
+        LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: start frequency has changed (%d-->%d)\n",
+              module_idP, i, frameP, subframeP, slice_position_current[i*2], slice_position[i*2]);
+        slice_position_current[i*2] = slice_position[i*2];
+      }
+      if (slice_position_current[i*2 + 1] != slice_position[i*2 + 1]) {
+        LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: end frequency has changed (%d-->%d)\n",
+              module_idP, i, frameP, subframeP, slice_position_current[i*2 + 1], slice_position[i*2 + 1]);
+        slice_position_current[i*2 + 1] = slice_position[i*2 + 1];
       }
     }
 
