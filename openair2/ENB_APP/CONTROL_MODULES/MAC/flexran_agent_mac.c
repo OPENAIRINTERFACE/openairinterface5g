@@ -62,7 +62,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
   // Protocol__FlexHeader *header;
   int i, j, k;
-  // int cc_id = 0;
+  int cc_id = 0;
   int enb_id = mod_id;
 
   /* Allocate memory for list of UE reports */
@@ -490,6 +490,101 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                       
 
                      }    
+                      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_STATS) {
+
+                            Protocol__FlexMacStats *macstats;
+                            macstats = malloc(sizeof(Protocol__FlexMacStats));
+                            if (macstats == NULL)
+                              goto error;
+                            protocol__flex_mac_stats__init(macstats);
+                                                   
+
+                            macstats->total_bytes_sdus_dl = flexran_get_total_size_dl_mac_sdus(mod_id, i, cc_id);
+                            macstats->has_total_bytes_sdus_dl = 1;
+
+                            macstats->total_bytes_sdus_ul = flexran_get_total_size_ul_mac_sdus(mod_id, i, cc_id);
+                            macstats->has_total_bytes_sdus_ul = 1;
+
+                            macstats->tbs_dl = flexran_get_TBS_dl(mod_id, i, cc_id);
+                            macstats->has_tbs_dl = 1;
+
+                            macstats->tbs_ul = flexran_get_TBS_ul(mod_id, i, cc_id);                            
+                            macstats->has_tbs_ul = 1;
+
+                            macstats->prb_retx_dl = flexran_get_num_prb_retx_dl_per_ue(mod_id, i, cc_id);
+                            macstats->has_prb_retx_dl = 1;
+
+                            macstats->prb_retx_ul = flexran_get_num_prb_retx_ul_per_ue(mod_id, i, cc_id);
+                            macstats->has_prb_retx_ul = 1;
+
+                            macstats->prb_dl = flexran_get_num_prb_dl_tx_per_ue(mod_id, i, cc_id);
+                            macstats->has_prb_dl = 1;
+
+                            macstats->prb_ul = flexran_get_num_prb_ul_rx_per_ue(mod_id, i, cc_id);
+                            macstats->has_prb_ul = 1;
+
+                            macstats->mcs1_dl = flexran_get_mcs1_dl(mod_id, i, cc_id);
+                            macstats->has_mcs1_dl = 1;
+
+                            macstats->mcs2_dl = flexran_get_mcs2_dl(mod_id, i, cc_id);
+                            macstats->has_mcs2_dl = 1;
+
+                            macstats->mcs1_ul = flexran_get_mcs1_ul(mod_id, i, cc_id);
+                            macstats->has_mcs1_ul = 1;
+
+                            macstats->mcs2_ul = flexran_get_mcs2_ul(mod_id, i, cc_id);
+                            macstats->has_mcs2_ul = 1;
+
+                            macstats->total_prb_dl = flexran_get_total_prb_dl_tx_per_ue(mod_id, i, cc_id);
+                            macstats->has_total_prb_dl = 1;
+
+                            macstats->total_prb_ul = flexran_get_total_prb_ul_rx_per_ue(mod_id, i, cc_id);
+                            macstats->has_total_prb_ul = 1;
+
+                            macstats->total_pdu_dl = flexran_get_total_num_pdu_dl(mod_id, i, cc_id);
+                            macstats->has_total_pdu_dl = 1;
+
+                            macstats->total_pdu_ul = flexran_get_total_num_pdu_ul(mod_id, i, cc_id);
+                            macstats->has_total_pdu_ul = 1;
+
+                            macstats->total_tbs_dl = flexran_get_total_TBS_dl(mod_id, i, cc_id);
+                            macstats->has_total_tbs_dl = 1;
+
+                            macstats->total_tbs_ul = flexran_get_total_TBS_ul(mod_id, i, cc_id);
+                            macstats->has_total_tbs_ul = 1;
+
+                            macstats->harq_round = flexran_get_harq_round(mod_id, cc_id, i);
+                            macstats->has_harq_round = 1;
+
+                            Protocol__FlexMacSdusDl ** mac_sdus;           
+                            mac_sdus = malloc(sizeof(Protocol__FlexMacSdusDl) * flexran_get_num_mac_sdu_tx(mod_id, i, cc_id));
+                            if (mac_sdus == NULL)
+                                goto error;
+
+                            macstats->n_mac_sdus_dl = flexran_get_num_mac_sdu_tx(mod_id, i, cc_id);  
+                             
+                            for (j = 0; j < macstats->n_mac_sdus_dl; j++){
+
+                       
+                                mac_sdus[j] = malloc(sizeof(Protocol__FlexMacSdusDl));
+                                protocol__flex_mac_sdus_dl__init(mac_sdus[j]);
+
+                                mac_sdus[j]->lcid = flexran_get_mac_sdu_lcid_index(mod_id, i, cc_id, j);
+                                mac_sdus[j]->has_lcid = 1;
+
+                                mac_sdus[j]->sdu_length = flexran_get_mac_sdu_size(mod_id, i, cc_id, mac_sdus[j]->lcid);
+                                mac_sdus[j]->has_sdu_length = 1;
+
+
+                            }
+                            
+
+                            macstats->mac_sdus_dl = mac_sdus; 
+                          
+
+                        ue_report[i]->mac_stats = macstats;    
+
+               } 
                              
                  
 
