@@ -148,7 +148,7 @@ static void *feptx_thread(void *param) {
   LOG_I(PHY,"thread feptx created id=%ld\n", syscall(__NR_gettid));
   //CPU_SET(6, &cpuset);
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  wait_sync("feptx_thread");
+  //wait_sync("feptx_thread");
 
   
 
@@ -445,7 +445,7 @@ static void *fep_thread(void *param) {
   CPU_ZERO(&cpuset);
   //CPU_SET(2, &cpuset);
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  wait_sync("fep_thread");
+  //wait_sync("fep_thread");
 
   while (!oai_exit) {
 

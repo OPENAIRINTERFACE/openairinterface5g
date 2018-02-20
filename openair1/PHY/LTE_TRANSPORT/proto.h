@@ -1501,6 +1501,7 @@ uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 
 void generate_64qam_table(void);
 void generate_16qam_table(void);
+void generate_qpsk_table(void);
 
 uint16_t extract_crc(uint8_t *dci,uint8_t DCI_LENGTH);
 

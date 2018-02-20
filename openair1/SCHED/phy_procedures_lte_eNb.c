@@ -1294,14 +1294,11 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
   if (fp->frame_type == FDD) harq_pid = ((10*frame) + subframe)&7;
   else                       harq_pid = subframe%10;
-   LOG_I(PHY,"Frame %d, subframe %d: PUSCH procedures, harq_pid %d\n",
-                             frame,subframe,harq_pid);
-  LOG_I(PHY,"rnti = %x\n",eNB->ulsch[0]->rnti);
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     ulsch = eNB->ulsch[i];
     ulsch_harq = ulsch->harq_processes[harq_pid];
-    if (ulsch->rnti>0) LOG_I(PHY,"Frame %d, subframe %d: PUSCH procedures, harq_pid %d, UE %d/%x, status %d, harq_frame %d, harq_subframe %d ulsch_handled %d\n",
+    if (ulsch->rnti>0) LOG_D(PHY,"Frame %d, subframe %d: PUSCH procedures, harq_pid %d, UE %d/%x, status %d, harq_frame %d, harq_subframe %d ulsch_handled %d\n",
                              frame,subframe,harq_pid,i,ulsch->rnti,ulsch_harq->status,ulsch_harq->frame,ulsch_harq->subframe, ulsch_harq->handled);
 
     if ((ulsch) &&
@@ -1331,7 +1328,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
                             fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
                             nPRS)%12;
 
-      LOG_I(PHY,
+      LOG_D(PHY,
             "[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, first_rb %d, nb_rb %d, Qm %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d, beta_cqi %d \n",
             eNB->Mod_id,harq_pid,frame,subframe,
             ulsch_harq->dci_alloc,

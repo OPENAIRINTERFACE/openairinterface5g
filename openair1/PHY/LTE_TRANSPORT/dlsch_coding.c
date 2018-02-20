@@ -42,6 +42,7 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/LOG/log.h"
 #include <syscall.h>
+#include "targets/RT/USER/rt_wrapper.h"
 
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
@@ -386,7 +387,7 @@ void *te_thread(void *param) {
 
   te_params *tep                 = (te_params *)param;
   
-  wait_sync("te_thread");
+  //wait_sync("te_thread");
   
   while (!oai_exit) {
 

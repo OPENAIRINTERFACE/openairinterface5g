@@ -986,7 +986,7 @@ static void* ru_thread_prach( void* param ) {
   ru_thread_prach_status = 0;
 
   thread_top_init("ru_thread_prach",1,500000,1000000,20000000);
-  wait_sync("ru_thread_prach");
+  //wait_sync("ru_thread_prach");
 
   while (!oai_exit) {
     
@@ -1026,7 +1026,7 @@ static void* ru_thread_prach_br( void* param ) {
   ru_thread_prach_status = 0;
 
   thread_top_init("ru_thread_prach_br",1,500000,1000000,20000000);
-  wait_sync("ru_thread_prach_br");
+  //wait_sync("ru_thread_prach_br");
 
   while (!oai_exit) {
     
@@ -1406,7 +1406,6 @@ static void* ru_stats_thread(void* param) {
 static void* ru_thread_tx( void* param ) {
   RU_t *ru         = (RU_t*)param;
   RU_proc_t *proc  = &ru->proc;
-  int subframe=0, frame=0; 
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
 
@@ -1415,7 +1414,7 @@ static void* ru_thread_tx( void* param ) {
 
   //CPU_SET(5, &cpuset);
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  wait_sync("ru_thread_tx");
+  //wait_sync("ru_thread_tx");
 
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
 
@@ -1429,14 +1428,14 @@ static void* ru_thread_tx( void* param ) {
 	LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
 	// wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
-  	    
-  	#ifdef EMULATE_RF
-    #else    
+  	       
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);
-  	    
+  	  
     // do OFDM if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+    #ifdef EMULATE_RF
+    #else 
     // do outgoing fronthaul (south) if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
   	    
@@ -1445,7 +1444,7 @@ static void* ru_thread_tx( void* param ) {
 
     release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
   }
-
+  release_thread(&proc->mutex_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   return 0;
 }
 
@@ -1543,7 +1542,7 @@ static void* ru_thread( void* param ) {
   if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
   pthread_mutex_lock(&proc->mutex_FH1);
-  proc->instance_cnt_FH1=0;
+  proc->instance_cnt_FH1 = 0;
   pthread_mutex_unlock(&proc->mutex_FH1);
   pthread_cond_signal(&proc->cond_FH1);
   #endif

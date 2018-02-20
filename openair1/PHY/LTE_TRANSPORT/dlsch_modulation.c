@@ -2511,7 +2511,12 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
     switch (mod_order1) {
     case 2:
-      qam_table_s1 = NULL;
+      if (pilots) {
+        qam_table_s1 = qpsk_table_b1;
+      }
+      else {
+        qam_table_s1 = qpsk_table_a1;
+      }
       break;
     case 4:
       if (pilots) {

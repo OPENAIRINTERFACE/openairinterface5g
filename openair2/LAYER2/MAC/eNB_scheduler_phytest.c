@@ -201,9 +201,8 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   uint32_t          cqi_req = 0,cshift,ndi,tpc = 1;
   int32_t           normalized_rx_power;
   int32_t           target_rx_power= 178;
-  int               n;
   int               CC_id = 0;
-  int               N_RB_UL;
+  int               nb_rb = 20;
   eNB_MAC_INST      *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc  = eNB->common_channels;
   UE_list_t         *UE_list=&eNB->UE_list;
@@ -227,8 +226,6 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     //rnti = UE_RNTI(module_idP,UE_id);
-    N_RB_UL      = to_prb(cc[CC_id].ul_Bandwidth);
-    printf("////////////////////////////////////*************************N_RB_UL = %d\n",N_RB_UL);
     //leave out first RB for PUCCH
     first_rb[CC_id] = 1;
   // loop over all active UEs
@@ -242,7 +239,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
       LOG_I(MAC,"Scheduling for frame %d, subframe %d => harq_pid %d\n",sched_frame,sched_subframe,harq_pid);
 
       RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
-      printf("////////////////////////////////////*************************ul_total_buffer = %d\n",UE_template->ul_total_buffer);
+      //printf("////////////////////////////////////*************************ul_total_buffer = %d\n",UE_template->ul_total_buffer);
 
 	  
 
@@ -251,7 +248,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  
       // this is the normalized RX power and this should be constant (regardless of mcs
       normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
-      printf("////////////////////////////////////*************************normalized_rx_power = %d\n",normalized_rx_power);
+      //printf("////////////////////////////////////*************************normalized_rx_power = %d\n",normalized_rx_power);
 	  
       // new transmission
 	  
@@ -266,16 +263,16 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 
 	    
 	    
-      UE_template->TBS_UL[harq_pid] = get_TBS_UL(UE_template->mcs_UL[harq_pid],N_RB_UL-1);
-	  UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx+=N_RB_UL-1;
-	  UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = get_TBS_UL(mcs,N_RB_UL-1);
+      UE_template->TBS_UL[harq_pid] = get_TBS_UL(mcs,nb_rb);
+	  UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += nb_rb;
+	  UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = get_TBS_UL(mcs,nb_rb);
 	  //            buffer_occupancy -= TBS;
 
 
 	    
 	  // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
       //store for possible retransmission
-      UE_template->nb_rb_ul[harq_pid]    = N_RB_UL-1;
+      UE_template->nb_rb_ul[harq_pid]    = nb_rb;
       UE_template->first_rb_ul[harq_pid] = first_rb[CC_id];
 	    
 	  UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
@@ -296,7 +293,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti                              = rnti;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power                = 6000;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start              = first_rb[CC_id];
-	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block          = 20;//N_RB_UL-1;
+	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block          = nb_rb;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.mcs_1                             = mcs;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cyclic_shift_2_for_drms           = cshift;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.frequency_hopping_enabled_flag    = 0;
@@ -318,7 +315,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 						 eNB->ul_handle,
 						 rnti,
 						 first_rb[CC_id], // resource_block_start
-						 20,//N_RB_UL-1, // number_of_resource_blocks
+						 nb_rb, // number_of_resource_blocks
 						 mcs,
 						 cshift, // cyclic_shift_2_for_drms
 						 0, // frequency_hopping_enabled_flag
@@ -329,7 +326,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 						 0, // ul_tx_mode
 						 0, // current_tx_nb
 						 0, // n_srs
-						 get_TBS_UL(mcs,N_RB_UL-1)
+						 get_TBS_UL(mcs,nb_rb)
 						 );
 #ifdef Rel14
 	  if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
@@ -352,7 +349,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 			      S_UL_SCHEDULED);
 	    
             // increment first rb for next UE allocation
-       first_rb[CC_id]+= N_RB_UL -1;
+       first_rb[CC_id]+= nb_rb;
 	    
 	  	  
   } // loop of CC_id
