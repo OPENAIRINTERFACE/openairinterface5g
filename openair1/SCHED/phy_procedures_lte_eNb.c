@@ -1272,7 +1272,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      ulsch_harq->o_ACK[0],
 	      ulsch_harq->o_ACK[1]);
 
-        if (ulsch_harq->round >= 4)  {
+        if (ulsch_harq->round >= 3)  {
            ulsch_harq->status  = SCH_IDLE;
            ulsch_harq->handled = 0;
            ulsch->harq_mask   &= ~(1 << harq_pid);
