@@ -73,10 +73,6 @@
 
 extern double cpuf;
 
-//#undef LOG_D
-//#define LOG_D(A,B,C...) printf(B,C)
-
-
 void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 void Msg3_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 
@@ -1301,7 +1297,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, uint8_t empt
 #endif
 			nsymb>>1,
 			&ue->frame_parms);
-      
+
       normal_prefix_mod(&ue->common_vars.txdataF[aa][((subframe_tx*nsymb)+(nsymb>>1))*frame_parms->ofdm_symbol_size],
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
 			dummy_tx_buffer+(frame_parms->samples_per_tti>>1),

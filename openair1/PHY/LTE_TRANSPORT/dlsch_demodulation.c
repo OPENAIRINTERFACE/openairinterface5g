@@ -48,11 +48,6 @@ int16_t interf_unaw_shift = 13;
 
 //#define DEBUG_HARQ
 
-//#undef LOG_D
-//#define LOG_D(A,B,C...) printf(B,C)
-//#undef LOG_I
-//#define LOG_I(A,B,C...) printf(B,C)
-
 #define DEBUG_PHY 1
 //#define DEBUG_DLSCH_DEMOD 1
 
@@ -847,7 +842,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
   pllr_symbol_cw1  = (int8_t*)pdsch_vars[eNB_id]->llr[1];
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
-  
+
   LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
              frame, subframe,symbol,
              nb_rb,dlsch0_harq->Qm,
@@ -855,7 +850,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
              pdsch_vars[eNB_id]->llr_offset[symbol],
              (int16_t*)pdsch_vars[eNB_id]->llr[0],
              pllr_symbol_cw0);
-  
+
   switch (dlsch0_harq->Qm) {
   case 2 :
     if ((rx_type==rx_standard) || (codeword_TB1 == -1)) {

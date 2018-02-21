@@ -50,11 +50,6 @@
 #   include "intertask_interface.h"
 #endif
 
-/*
-#undef LOG_D
-#define LOG_D(A,B,C...) printf(B,C)
-*/
-
 extern uint8_t nfapi_mode;
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 

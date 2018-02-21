@@ -37,13 +37,13 @@ extern RU_t *ru;
 void lte_param_init(PHY_VARS_eNB **eNBp,
 		    PHY_VARS_UE **UEp,
 		    RU_t **rup,
-		    unsigned char N_tx_port_eNB, 
+		    unsigned char N_tx_port_eNB,
                     unsigned char N_tx_phy,
 		    unsigned char N_rx_ru,
                     unsigned char N_rx_ue,
 		    unsigned char transmission_mode,
 		    uint8_t extended_prefix_flag,
-		    frame_t frame_type, 
+		    frame_t frame_type,
 		    uint16_t Nid_cell,
 		    uint8_t tdd_config,
 		    uint8_t N_RB_DL,
@@ -142,7 +142,7 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
 
   // DL power control init
   //if (transmission_mode == 1) {
-  UE->pdsch_config_dedicated->p_a  = pa; 
+  UE->pdsch_config_dedicated->p_a  = pa;
 
   if (transmission_mode == 1 || transmission_mode ==7) {
     ((eNB->frame_parms).pdsch_config_common).p_b = 0;
@@ -161,7 +161,7 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
     if      (eNB->frame_parms.N_RB_DL == 100) ru->N_TA_offset = 624;
     else if (eNB->frame_parms.N_RB_DL == 50)  ru->N_TA_offset = 624/2;
     else if (eNB->frame_parms.N_RB_DL == 25)  ru->N_TA_offset = 624/4;
-  } 
+  }
   else ru->N_TA_offset=0;
 
   printf("Done lte_param_init\n");

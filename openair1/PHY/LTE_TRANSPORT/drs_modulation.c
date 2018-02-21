@@ -94,7 +94,7 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
        l<frame_parms->symbols_per_tti;
        l += (7 - frame_parms->Ncp),u=u1,v=v1,cyclic_shift=cyclic_shift1) {
 
-    drs_offset = 0;  
+    drs_offset = 0;
 #ifdef DEBUG_DRS
     printf("drs_modulation: Msc_RS = %d, Msc_RS_idx = %d, u=%d,v=%d\n",Msc_RS, Msc_RS_idx,u,v);
 #endif

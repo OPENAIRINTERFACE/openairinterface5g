@@ -254,9 +254,9 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
 
 uint16_t
 fill_tx_req(nfapi_tx_request_body_t *tx_req_body,
-	    uint16_t                absSF, 
+	    uint16_t                absSF,
 	    uint16_t                pdu_length,
-	    uint16_t                pdu_index, 
+	    uint16_t                pdu_index,
 	    uint8_t                 *pdu)
 {
   nfapi_tx_request_pdu_t *TX_req = &tx_req_body->tx_pdu_list[tx_req_body->number_of_pdus];
@@ -384,7 +384,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = n_rnti+k;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = 1;	// CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power = 6000;	// equal to RS power
-	
+
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process = 0;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = TPC;	// dont adjust power when retransmitting
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = ndi;
@@ -403,14 +403,14 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 	dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
 
 
-	fill_dlsch_config(dl_req, 
-			  get_TBS_DL(mcs1,NB_RB), 
+	fill_dlsch_config(dl_req,
+			  get_TBS_DL(mcs1,NB_RB),
 			  (retrans > 0) ? -1 : 0, /* retransmission, no pdu_index */
-			  n_rnti, 
+			  n_rnti,
 			  0,	// type 0 allocation from 7.1.6 in 36.213
 			  0,	// virtual_resource_block_assignment_flag, unused here
-			  DLSCH_RB_ALLOC,	// resource_block_coding, 
-			  get_Qm(mcs1), 
+			  DLSCH_RB_ALLOC,	// resource_block_coding,
+			  get_Qm(mcs1),
 			  rv,	// redundancy version
 			  1,	// transport blocks
 			  0,	// transport block to codeword swap flag
@@ -419,7 +419,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 			  1,	// number of subbands
 				//                      uint8_t codebook_index,
 			  4,	// UE category capacity
-			  pa,    // pa 
+			  pa,    // pa
 			  0,	// delta_power_offset for TM5
 			  0,	// ngap
 			  0,	// nprb
@@ -429,7 +429,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 			  );
 	fill_tx_req(TX_req,
 		    (frame * 10) + subframe,
-		    get_TBS_DL(mcs1,NB_RB), 
+		    get_TBS_DL(mcs1,NB_RB),
 		    0,
 		    input_buffer[k]);
       }
@@ -441,26 +441,26 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 
     case 3:
       if (common_flag == 0) {
-	
+
 	if (eNB->frame_parms.nb_antennas_tx == 2) {
-	  
+
 	  if (eNB->frame_parms.frame_type == TDD) {
-	    
+
 	  }
 	  else {
-	    
+
 	  }
 	}
       }
       break;
-      
+
     case 4:
       if (common_flag == 0) {
-	
+
 	if (eNB->frame_parms.nb_antennas_tx == 2) {
-	  
+
 	  if (eNB->frame_parms.frame_type == TDD) {
-	    
+
 
 	  }
 
@@ -564,7 +564,7 @@ int main(int argc, char **argv)
   //  char input_val_str[50],input_val_str2[50];
 
   char input_trch_val[16];
-  
+
   //  unsigned char pbch_pdu[6];
 
 
@@ -651,7 +651,7 @@ int main(int argc, char **argv)
   nfapi_dl_config_request_t DL_req;
   nfapi_ul_config_request_t UL_req;
   nfapi_hi_dci0_request_t HI_DCI0_req;
-  nfapi_dl_config_request_pdu_t dl_config_pdu_list[MAX_NUM_DL_PDU]; 
+  nfapi_dl_config_request_pdu_t dl_config_pdu_list[MAX_NUM_DL_PDU];
   nfapi_tx_request_pdu_t tx_pdu_list[MAX_NUM_TX_REQUEST_PDU];
   nfapi_tx_request_t TX_req;
   Sched_Rsp_t sched_resp;
@@ -1155,7 +1155,7 @@ int main(int argc, char **argv)
 
   uint8_t input_buffer[NUMBER_OF_UE_MAX][20000];
 
-  for (i=0;i<n_users;i++) 
+  for (i=0;i<n_users;i++)
     for (j=0;j<20000;j++) input_buffer[i][j] = (uint8_t)((taus())&255);
 
   frame_parms = &eNB->frame_parms;
@@ -1585,7 +1585,7 @@ int main(int argc, char **argv)
 			 (TB0_active==1)?mcs1:0,mcs2,!(trials&1),(TB0_active==1)?round&3:0,pa,&num_common_dci,&num_ue_spec_dci,&num_dci);
 	      }
 	    }
-	      
+
 	    proc_eNB->subframe_tx = subframe;
 	    sched_resp.subframe=subframe;
 	    sched_resp.frame=proc_eNB->frame_tx;
@@ -1610,7 +1610,7 @@ int main(int argc, char **argv)
 					      0,
 					      subframe,
 					      transmission_mode>=7?transmission_mode:0);
-	      
+
 	      uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword);
 	      printf("uncoded_ber_bit=%p\n",uncoded_ber_bit);
 	    }
@@ -1736,13 +1736,13 @@ int main(int argc, char **argv)
 
 	    write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[0][eNB_id]->rxdataF_comp[0],4*300,1,1);
 	    write_output("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNB_id]->llr,2400,1,4);
-	    
+
 	    write_output("rxsig0.m","rxs0", &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
 	    write_output("rxsigF0.m","rxsF0", &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
-	    
+
 	    exit(-1);
-	    
+
 	  }
 
 	  int bit_errors=0;
@@ -1755,9 +1755,9 @@ int main(int argc, char **argv)
 			       UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0],
 			       0,
 			       subframe<<1);
-	    for (i=0;i<coded_bits_per_codeword;i++) 
+	    for (i=0;i<coded_bits_per_codeword;i++)
 	      if ((eNB->dlsch[0][0]->harq_processes[0]->e[i]==1 && UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0][i] > 0)||
-		  (eNB->dlsch[0][0]->harq_processes[0]->e[i]==0 && UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0][i] < 0)) { 
+		  (eNB->dlsch[0][0]->harq_processes[0]->e[i]==0 && UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0][i] < 0)) {
 		uncoded_ber_bit[bit_errors++] = 1;
 		printf("error in pos %d : %d => %d\n",i,
 		       eNB->dlsch[0][0]->harq_processes[0]->e[i],
@@ -1770,10 +1770,10 @@ int main(int argc, char **argv)
 		       UE->pdsch_vars[UE->current_thread_id[subframe]][0]->llr[0][i]);
 		*/
 	      }
-	    
+
 	    write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
 	    write_output("ch0.m","ch0",eNB2UE[0]->ch[0],eNB2UE[0]->channel_length,1,8);
-	    
+
 	    if (eNB->frame_parms.nb_antennas_tx>1)
 	      write_output("ch1.m","ch1",eNB2UE[0]->ch[eNB->frame_parms.nb_antennas_rx],eNB2UE[0]->channel_length,1,8);
 
@@ -2488,7 +2488,7 @@ int main(int argc, char **argv)
 
   if (test_perf && !test_passed)
     return(-1);
-  else 
+  else
     return(0);
 }
 

@@ -44,12 +44,6 @@
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 
-/*#undef LOG_D
-#define LOG_D(A,B,C...) printf(B,C)
-#undef LOG_I
-#define LOG_I(A,B,C...) printf(B,C)
-*/
-
 //#define DEBUG_DCI
 
 uint32_t localRIV2alloc_LUT6[32];

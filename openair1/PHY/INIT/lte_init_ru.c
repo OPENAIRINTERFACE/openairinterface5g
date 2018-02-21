@@ -32,11 +32,6 @@
 #include "assertions.h"
 #include <math.h>
 
-#undef LOG_I
-#define LOG_I(A,B,C...) printf(B,C)
-#undef LOG_D
-#define LOG_D(A,B,C...) printf(B,C)
-
 int phy_init_RU(RU_t *ru) {
 
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;

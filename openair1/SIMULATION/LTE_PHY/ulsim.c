@@ -84,20 +84,20 @@ extern void ru_fep_full_2thread(RU_t *ru);
 nfapi_dl_config_request_t DL_req;
 nfapi_ul_config_request_t UL_req;
 nfapi_hi_dci0_request_t HI_DCI0_req;
-nfapi_ul_config_request_pdu_t ul_config_pdu_list[MAX_NUM_DL_PDU]; 
+nfapi_ul_config_request_pdu_t ul_config_pdu_list[MAX_NUM_DL_PDU];
 nfapi_tx_request_pdu_t tx_pdu_list[MAX_NUM_TX_REQUEST_PDU];
 nfapi_tx_request_t TX_req;
 Sched_Rsp_t sched_resp;
 
 void
-fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu, 
+fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
 				uint8_t                        cqi_req,
 				uint8_t                        p_eNB,
 				uint8_t                        cqi_ReportModeAperiodic,
 				uint8_t                        betaOffset_CQI_Index,
 				uint8_t                        betaOffset_RI_Index,
 				uint8_t                        dl_cqi_pmi_size,
-				uint8_t                        tmode, 
+				uint8_t                        tmode,
 				uint32_t                       handle,
 				uint16_t                       rnti,
 				uint8_t                        resource_block_start,
@@ -111,7 +111,7 @@ fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
 				uint8_t                        harq_process_number,
 				uint8_t                        ul_tx_mode,
 				uint8_t                        current_tx_nb,
-				uint8_t                        n_srs, 
+				uint8_t                        n_srs,
 				uint16_t                       size)
 {
   memset((void *) ul_config_pdu, 0, sizeof(nfapi_ul_config_request_pdu_t));
@@ -152,11 +152,11 @@ fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
     else if (p_eNB <= 2) ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].ri_size = 0;
     else if (p_eNB == 4) ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].ri_size = 2;
 
-    for (int ri = 0; 
-	 ri <  (1 << ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].ri_size); 
+    for (int ri = 0;
+	 ri <  (1 << ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].ri_size);
 	 ri++)
       ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.aperiodic_cqi_pmi_ri_report.cc[0].dl_cqi_pmi_size[ri] =	dl_cqi_pmi_size;
-    
+
     ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.delta_offset_cqi = betaOffset_CQI_Index;
     ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9.delta_offset_ri  = betaOffset_RI_Index;
   }
@@ -263,17 +263,17 @@ void fill_ulsch_dci(PHY_VARS_eNB *eNB,
     break;
   }
 
-  fill_nfapi_ulsch_config_request(&ul_req->ul_config_pdu_list[0], 
-				  cqi_flag&1, 
+  fill_nfapi_ulsch_config_request(&ul_req->ul_config_pdu_list[0],
+				  cqi_flag&1,
 				  1,  // p_eNB
 				  0,  // reportmode Aperiodic
 				  beta_CQI,
 				  beta_RI,
 				  cqi_size,
-				  //cc, 
-				  //UE_template->physicalConfigDedicated, 
+				  //cc,
+				  //UE_template->physicalConfigDedicated,
 				  1,
-				  0, 
+				  0,
 				  14,     // rnti
 				  first_rb,	// resource_block_start
 				  nb_rb,	// number_of_resource_blocks
@@ -292,7 +292,7 @@ void fill_ulsch_dci(PHY_VARS_eNB *eNB,
   sched_resp->UL_req->header.message_id = NFAPI_UL_CONFIG_REQUEST;
   ul_req->number_of_pdus=1;
   ul_req->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
-  
+
 }
 
 extern void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
@@ -740,7 +740,7 @@ int main(int argc, char **argv)
   for (int k=0;k<eNB->RU_list[0]->nb_rx;k++) eNB->common_vars.rxdataF[k]     =  eNB->RU_list[0]->common.rxdataF[k];
 
   memset((void*)&eNB->UL_INFO,0,sizeof(eNB->UL_INFO));
-  
+
   printf("Setting indication lists\n");
   eNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list   = eNB->rx_pdu_list;
   eNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = eNB->crc_pdu_list;
@@ -922,7 +922,7 @@ int main(int argc, char **argv)
 
 
   UE->mac_enabled=0;
-  
+
   eNB_rxtx_proc_t *proc_rxtx   = &eNB->proc.proc_rxtx[subframe&1];
   UE_rxtx_proc_t *proc_rxtx_ue = &UE->proc.proc_rxtx[subframe&1];
   proc_rxtx->frame_rx=1;
@@ -1102,7 +1102,7 @@ int main(int argc, char **argv)
       reset_meas(&eNB->ulsch_tc_intl1_stats);
       reset_meas(&eNB->ulsch_tc_intl2_stats);
 
-      // initialization 
+      // initialization
       struct list time_vector_tx;
       initialize(&time_vector_tx);
       struct list time_vector_tx_ifft;
@@ -1137,10 +1137,10 @@ int main(int argc, char **argv)
         while (round < 4) {
 	  proc_rxtx->frame_rx=1;
 	  proc_rxtx->subframe_rx=subframe;
-	  
+
 	  proc_rxtx->frame_tx=pdcch_alloc2ul_frame(&eNB->frame_parms,1,subframe);
 	  proc_rxtx->subframe_tx=pdcch_alloc2ul_subframe(&eNB->frame_parms,subframe);
-	  
+
 	  proc_rxtx_ue->frame_tx = proc_rxtx->frame_rx;
 	  proc_rxtx_ue->frame_rx = (subframe<4)?(proc_rxtx->frame_tx-1):(proc_rxtx->frame_tx);
 	  proc_rxtx_ue->subframe_tx = proc_rxtx->subframe_rx;
@@ -1158,7 +1158,7 @@ int main(int argc, char **argv)
 	  if (mcs < 11)      modulation_type = 2;
 	  else if (mcs < 21) modulation_type = 4;
 	  else if (mcs < 29) modulation_type = 6;
- 
+
 	  fill_ulsch_dci(eNB,proc_rxtx->frame_rx,subframe,&sched_resp,14,(void*)&UL_alloc_pdu,first_rb,nb_rb,(round==0)?mcs:(28+rvidx[round]),modulation_type,ndi,cqi_flag,beta_CQI,beta_RI,cqi_size);
 
 	  UE->ulsch_Msg3_active[eNB_id] = 0;
@@ -1216,16 +1216,16 @@ int main(int argc, char **argv)
 
 	    tx_lev = signal_energy(&UE->common_vars.txdata[0][eNB->frame_parms.samples_per_tti*subframe],
 				   eNB->frame_parms.samples_per_tti);
-	    
-	    
+
+
             if (n_frames==1) {
               write_output("txsigF0UL.m","txsF0", &UE->common_vars.txdataF[0][eNB->frame_parms.ofdm_symbol_size*nsymb*subframe],eNB->frame_parms.ofdm_symbol_size*nsymb,1,
                            1);
               //write_output("txsigF1.m","txsF1", UE->common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
             }
-	    
+
 	  }  // input_fd == NULL
-	  
+
           tx_lev_dB = (unsigned int) dB_fixed_times10(tx_lev);
 
           if (n_frames==1) {
@@ -1337,7 +1337,7 @@ int main(int argc, char **argv)
 	  ru->feprx = (parallel_flag == 1) ? ru_fep_full_2thread        : fep_full;
 	  eNB->td  = (parallel_flag == 1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
 
-	  
+
 	  ru->feprx(ru);
 	  phy_procedures_eNB_uespec_RX(eNB,proc_rxtx,no_relay);
 
@@ -1371,10 +1371,10 @@ int main(int argc, char **argv)
 
           //    printf("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
 
-	  
+
 	  //          if (ret <= eNB->ulsch[0]->max_turbo_iterations) {
-	  
-	  if (eNB->ulsch[0]->harq_processes[harq_pid]->status == SCH_IDLE) { 
+
+	  if (eNB->ulsch[0]->harq_processes[harq_pid]->status == SCH_IDLE) {
 
 	    //  avg_iter += ret;
 	    iter_trials++;
@@ -1425,7 +1425,7 @@ int main(int argc, char **argv)
             if (n_frames==1) {
               printf("ULSCH in error in round %d\n",round);
             }
-          }  // ulsch error	  
+          }  // ulsch error
 
         } // round
 

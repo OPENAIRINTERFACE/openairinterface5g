@@ -744,7 +744,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	}
       }
       /* if (continue_flag != 1 */
-      if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||	// no RBs allocated 
+      if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||	// no RBs allocated
 	  CCE_allocation_infeasible(module_idP, CC_id, 1, subframeP,
 				    aggregation, rnti)) {
 	LOG_D(MAC,
@@ -929,7 +929,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	      dl_req->number_dci++;
 	      dl_req->number_pdu++;
 	      dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
-			  
+
 	      eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
 	      eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
 
@@ -1116,7 +1116,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 		TBS - ta_len - header_len_dcch -
 		sdu_length_total - header_len_dtch);
 
-	  if (TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch > 0) {	// NN: > 2 ? 
+	  if (TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch > 0) {	// NN: > 2 ?
 	    rlc_status = mac_rlc_status_ind(module_idP,
 					    rnti,
 					    module_idP,
@@ -1158,7 +1158,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 		eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid]
 		+= 1;
               UE_list->eNB_UE_stats[CC_id][UE_id].lcid_sdu[num_sdus] = lcid;
-              UE_list->eNB_UE_stats[CC_id][UE_id].sdu_length_tx[lcid] = sdu_lengths[num_sdus];           
+              UE_list->eNB_UE_stats[CC_id][UE_id].sdu_length_tx[lcid] = sdu_lengths[num_sdus];
 	      UE_list->
 		eNB_UE_stats[CC_id][UE_id].num_bytes_tx
 		[lcid] += sdu_lengths[num_sdus];
@@ -1180,7 +1180,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	}
 	if (header_len_dtch == 0)
 	  header_len_dtch_last = 0;
-	// there is at least one SDU 
+	// there is at least one SDU
 	// if (num_sdus > 0 ){
 	if ((sdu_length_total + header_len_dcch +
 	     header_len_dtch) > 0) {
@@ -1193,7 +1193,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	  if (header_len_dtch == 0) {
 	    header_len_dcch = (header_len_dcch > 0) ? 1 : 0;	//header_len_dcch;  // remove length field
 	  } else {
-	    header_len_dtch_last -= 1;	// now use it to find how many bytes has to be removed for the last MAC SDU 
+	    header_len_dtch_last -= 1;	// now use it to find how many bytes has to be removed for the last MAC SDU
 	    header_len_dtch = (header_len_dtch > 0) ? header_len_dtch - header_len_dtch_last : header_len_dtch;	// remove length field for the last SDU
 	  }
 
@@ -1413,10 +1413,10 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 		    tpc, tpc_accumulated,
 		    normalized_rx_power, target_rx_power);
 
-	    }	// Po_PUCCH has been updated 
+	    }	// Po_PUCCH has been updated
 	    else {
 	      tpc = 1;	//0
-	    }	// time to do TPC update 
+	    }	// time to do TPC update
 	  else {
 	    tpc = 1;	//0
 	  }
@@ -1515,7 +1515,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 							  UE_list.DLSCH_pdu[CC_id][0][(unsigned char)
 										      UE_id].payload
 							  [0]);
-	    
+
 	    LOG_D(MAC,
 		  "Filled NFAPI configuration for DCI/DLSCH/TXREQ %d, new SDU\n",
 		  eNB->pdu_index[CC_id]);
@@ -1695,9 +1695,9 @@ update_ul_dci(module_id_t module_idP,
   int i;
 
 
-  if (cc->tdd_Config != NULL) {	// TDD 
+  if (cc->tdd_Config != NULL) {	// TDD
     for (i = 0;
-	 i <HI_DCI0_req->hi_dci0_request_body.number_of_dci + HI_DCI0_req->hi_dci0_request_body.number_of_dci; 
+	 i <HI_DCI0_req->hi_dci0_request_body.number_of_dci + HI_DCI0_req->hi_dci0_request_body.number_of_dci;
 	 i++) {
 
       if ((hi_dci0_pdu[i].pdu_type == NFAPI_HI_DCI0_DCI_PDU_TYPE) &&
