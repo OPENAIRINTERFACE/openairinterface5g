@@ -1874,12 +1874,6 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 #endif //MU_RECEIVER
 
 
-#if T_TRACER
-  T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
-    T_INT(n_pdcch_symbols),
-    T_BUFFER(pdcch_vars[eNB_id]->rxdataF_comp, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
-#endif
-
   // decode pcfich here and find out pdcch ofdm symbol number
   n_pdcch_symbols = rx_pcfich(frame_parms,
                               subframe,
@@ -1889,6 +1883,12 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 
   if (n_pdcch_symbols>3)
     n_pdcch_symbols=1;
+
+#if T_TRACER
+  T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
+    T_INT(n_pdcch_symbols),
+    T_BUFFER(pdcch_vars[eNB_id]->rxdataF_comp, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
+#endif
 
 
 #ifdef DEBUG_DCI_DECODING

@@ -33,6 +33,7 @@
 extern PHY_VARS_eNB *eNB;
 extern PHY_VARS_UE *UE;
 extern RU_t *ru;
+extern void  phy_init_RU(RU_t*);
 
 void lte_param_init(PHY_VARS_eNB **eNBp,
 		    PHY_VARS_UE **UEp,

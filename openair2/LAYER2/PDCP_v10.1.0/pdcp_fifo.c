@@ -769,15 +769,15 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
 void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) {
 
-  unsigned char       *otg_pkt=NULL;
+  //unsigned char       *otg_pkt=NULL;
   module_id_t          dst_id; // dst for otg
-  rb_id_t              rb_id;
-  unsigned int         pkt_size=0;
+  //rb_id_t              rb_id;
+  //unsigned int         pkt_size=0;
   protocol_ctxt_t      ctxt;
   // we need to add conditions to avoid transmitting data when the UE is not RRC connected.
   if ((otg_enabled==1) && (ctxt_pP->enb_flag == ENB_FLAG_YES)) { // generate DL traffic
-    unsigned int ctime=0;
-    ctime = ctxt_pP->frame * 100;
+    //unsigned int ctime=0;
+    //ctime = ctxt_pP->frame * 100;
 
     /*if  ((mac_get_rrc_status(eNB_index, ctxt_pP->enb_flag, 0 ) > 2) &&
     (mac_get_rrc_status(eNB_index, ctxt_pP->enb_flag, 1 ) > 2)) { */

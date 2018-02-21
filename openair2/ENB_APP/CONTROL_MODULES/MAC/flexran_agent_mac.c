@@ -40,6 +40,7 @@
 
 #include "log.h"
 
+extern int flexran_get_harq_round(mid_t mod_id, uint8_t cc_id, mid_t ue_id);
 
 /*Flags showing if a mac agent has already been registered*/
 unsigned int mac_agent_registered[NUM_MAX_ENB];

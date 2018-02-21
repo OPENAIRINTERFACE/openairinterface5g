@@ -175,10 +175,6 @@ typedef enum {
 
 
 
-static int DEFBANDS[] = {7};
-static int DEFENBS[] = {0};
-
-
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */

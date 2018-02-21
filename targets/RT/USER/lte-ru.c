@@ -95,6 +95,10 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "enb_config.h"
 //#include "PHY/TOOLS/time_meas.h"
 
+/* these variables have to be defined before including ENB_APP/enb_paramdef.h */
+static int DEFBANDS[] = {7};
+static int DEFENBS[] = {0};
+
 #include "ENB_APP/enb_paramdef.h"
 #include "common/config/config_userapi.h"
 
@@ -1883,7 +1887,6 @@ void configure_ru(int idx,
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t*)arg;
   int ret;
-  int i;
 
   LOG_I(PHY, "Received capabilities from RRU %d\n",idx);
 
@@ -1918,6 +1921,7 @@ void configure_ru(int idx,
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
     
 #ifdef Rel14
+    int i;
     for (i=0;i<4;i++) {
       config->emtc_prach_CElevel_enable[0][i]  = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i];
       config->emtc_prach_FreqOffset[0][i]      = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i];

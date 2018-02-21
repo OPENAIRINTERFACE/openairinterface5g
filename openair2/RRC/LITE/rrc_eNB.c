@@ -118,7 +118,6 @@ openair_rrc_on(
 )
 //-----------------------------------------------------------------------------
 {
-  unsigned short i;
   int            CC_id;
 
     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" ENB:OPENAIR RRC IN....\n",
@@ -1232,7 +1231,7 @@ rrc_eNB_generate_RRCConnectionReestablishment(
 void
 rrc_eNB_process_RRCConnectionReestablishmentComplete(
   const protocol_ctxt_t* const ctxt_pP,
-  const rnti_t const reestablish_rnti,
+  const rnti_t reestablish_rnti,
   rrc_eNB_ue_context_t*         ue_context_pP,
   const uint8_t xid,
   RRCConnectionReestablishmentComplete_r8_IEs_t * rrcConnectionReestablishmentComplete

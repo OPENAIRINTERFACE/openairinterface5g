@@ -1609,6 +1609,10 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
     }
   }
 
+#if 0
+    /* this logging is wrong, ue_sched_ctl may not be valid here
+     * TODO: fix
+     */
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
 
 	if (total_allocated_rbs[CC_id] > 0) {
@@ -1617,6 +1621,7 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
               ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_id] - first_rb[CC_id]);
 	}
     }
+#endif
 }
 
 

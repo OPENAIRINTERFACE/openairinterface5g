@@ -897,7 +897,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      harq_ack[0] = 4; // DTX
 	      harq_ack[1] = 6; // NACK/DTX
 	      harq_ack[2] = 6; // NACK/DTX
-	      
+              max_metric = 0;
 	    } 
 	    else {
 	      
@@ -980,7 +980,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      harq_ack[1] = 6; // NACK/DTX
 	      harq_ack[2] = 6; // NACK/DTX
 	      harq_ack[3] = 6; // NACK/DTX
-		
+              max_metric = 0;
 	    } else {
 
 	      max_metric = max(metric[0],max(metric[1],max(metric[2],metric[3])));
