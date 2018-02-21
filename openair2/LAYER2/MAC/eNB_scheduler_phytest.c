@@ -196,13 +196,13 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   int               UE_id = 0;
   uint8_t           aggregation    = 2;
   rnti_t            rnti           = 0x1235;
-  uint8_t           mcs            = 28;
+  uint8_t           mcs            = 20;
   uint8_t           harq_pid       = 0;
   uint32_t          cqi_req = 0,cshift,ndi,tpc = 1;
   int32_t           normalized_rx_power;
   int32_t           target_rx_power= 178;
   int               CC_id = 0;
-  int               nb_rb = 20;
+  int               nb_rb = 96;
   eNB_MAC_INST      *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc  = eNB->common_channels;
   UE_list_t         *UE_list=&eNB->UE_list;
@@ -236,10 +236,9 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
       UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
       harq_pid      = subframe2harqpid(&cc[CC_id],sched_frame,sched_subframe);
 
-      LOG_I(MAC,"Scheduling for frame %d, subframe %d => harq_pid %d\n",sched_frame,sched_subframe,harq_pid);
+      LOG_D(MAC,"Scheduling for frame %d, subframe %d => harq_pid %d\n",sched_frame,sched_subframe,harq_pid);
 
       RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
-      //printf("////////////////////////////////////*************************ul_total_buffer = %d\n",UE_template->ul_total_buffer);
 
 	  
 
@@ -248,7 +247,6 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  
       // this is the normalized RX power and this should be constant (regardless of mcs
       normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
-      //printf("////////////////////////////////////*************************normalized_rx_power = %d\n",normalized_rx_power);
 	  
       // new transmission
 	  

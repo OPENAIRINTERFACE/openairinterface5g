@@ -84,8 +84,9 @@
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 #define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
-#define CONFIG_HLP_CODINGW       "coding worker thread disabled(enable by defult)\n"
-#define CONFIG_HLP_FEPW          "FEP worker thread disabled(enable by defult)\n"
+#define CONFIG_HLP_CODINGW       "coding worker thread enable(disable by defult)\n"
+#define CONFIG_HLP_FEPW          "FEP worker thread enabled(disable by defult)\n"
+#define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
 
 
 /***************************************************************************************************************************************/
@@ -170,7 +171,10 @@ extern int16_t dlsch_demod_shift;
 {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
 {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
 {"T" ,                      CONFIG_HLP_TDD,         PARAMFLAG_BOOL,         iptr:&tddflag,                      defintval:0,                    TYPE_INT,       0},                     \
-{"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0}                      \
+{"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0},                     \
+{"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                   defintval:0,                    TYPE_INT,       0},                     \
+{"codingw" ,                CONFIG_HLP_CODINGW,     PARAMFLAG_BOOL,         iptr:&codingw,                      defintval:0,                    TYPE_INT,       0},                     \
+{"fepw" ,                   CONFIG_HLP_FEPW,        PARAMFLAG_BOOL,         iptr:&fepw,                         defintval:0,                    TYPE_INT,       0}                      \
 }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"

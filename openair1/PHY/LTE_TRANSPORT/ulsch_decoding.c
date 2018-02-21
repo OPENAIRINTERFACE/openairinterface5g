@@ -643,6 +643,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
       break;
     }
     stop_meas(&eNB->ulsch_turbo_decoding_stats);    
+  printf("/////////////////////////////////////////**************************loop for %d time in ulsch_decoding main\n",r);
   }
 
    // wait for worker to finish

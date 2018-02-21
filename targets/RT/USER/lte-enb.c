@@ -365,6 +365,10 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc) {
   wait.tv_nsec=5000000L;
   
   
+  if (ru_proc->instance_cnt_eNBs == 0) {
+    LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping\n",proc->frame_rx,proc->subframe_rx);
+    return(-1);
+  }
   if (pthread_mutex_timedlock(&ru_proc->mutex_eNBs,&wait) != 0) {
     LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->subframe_rx&1,ru_proc->instance_cnt_eNBs );
     exit_fun( "error locking mutex_eNB" );
@@ -834,6 +838,13 @@ void init_eNB_proc(int inst) {
 	attr_td     = &proc->attr_td;
 	//attr_te     = &proc->attr_te[0];
 	//attr_te1    = &proc->attr_te[1];
+    //////////////////////////////////////need to modified////////////////*****
+    if(get_nprocs() > 2 && codingw)
+    {
+      init_te_thread(eNB);
+      init_td_thread(eNB,attr_td);
+    }
+    //////////////////////////////////////need to modified////////////////*****
 	pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
 	pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
     if (eNB->single_thread_flag==0) {
@@ -854,13 +865,7 @@ void init_eNB_proc(int inst) {
 
     AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
 	
-	
-	//////////////////////////////////////need to modified////////////////*****
-    if(get_nprocs() > 2 && codingw)
-    {
-      init_te_thread(eNB);
-      init_td_thread(eNB,attr_td);
-    }
+
     if (opp_enabled == 1) pthread_create(&proc->process_stats_thread,NULL,process_stats_thread,(void*)eNB);
 
     
