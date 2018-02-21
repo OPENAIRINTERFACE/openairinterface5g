@@ -681,6 +681,17 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
   do {   
     recv_IF4p5(ru, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
+    if (ru->state != RU_RUN){
+	pthread_mutex_lock(&proc->mutex_ru);
+        proc->instance_cnt_ru = -1;
+        pthread_mutex_unlock(&proc->mutex_ru);
+	if (ru->stop_rf) {
+            ru->stop_rf(ru);  
+            LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+        }
+        else LOG_D(PHY,"RU %d no rf device\n",ru->idx);
+	return;
+    } 
     if ((subframe_select(fp,subframe_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
     LOG_D(PHY,"subframe %d (%d): frame %d, subframe %d, symbol %d\n",
          *subframe,subframe_select(fp,*subframe),frame_tx,subframe_tx,symbol_number);
@@ -901,7 +912,7 @@ void tx_rf(RU_t *ru) {
 				      ru->nb_tx,
 				      flags);
     
-    LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
+    LOG_I(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
 	  (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     
@@ -1614,7 +1625,9 @@ static void* ru_thread_control( void* param ) {
                                         AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RU %d\n",ru->idx);
 
 					
-					proc->instance_cnt_ru = 1;
+					pthread_mutex_lock(&proc->mutex_ru);
+                                        proc->instance_cnt_ru = 1;
+                                        pthread_mutex_unlock(&proc->mutex_ru);
 					if (pthread_cond_signal(&proc->cond_ru_thread) != 0) {
 						LOG_E( PHY, "ERROR pthread_cond_signal for RU %d\n",ru->idx);
 						exit_fun( "ERROR pthread_cond_signal" );
@@ -1638,8 +1651,10 @@ static void* ru_thread_control( void* param ) {
 						wait_sync("ru_thread");
 						
 						ru->state = (ru->is_slave == 1) ? RU_SYNC : RU_RUN ;
-	
+						
+						pthread_mutex_lock(&proc->mutex_ru);
 						proc->instance_cnt_ru = 1;
+						pthread_mutex_unlock(&proc->mutex_ru);
 						if (pthread_cond_signal(&proc->cond_ru_thread) != 0) {
 							LOG_E( PHY, "ERROR pthread_cond_signal for RU %d\n",ru->idx);
 							exit_fun( "ERROR pthread_cond_signal" );
@@ -1730,7 +1745,7 @@ static void* ru_thread( void* param ) {
           // wait to be woken up
           if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
 	  
-
+	  
 	  // Start RF device if any
 	  if (ru->start_rf) {
 	    if (ru->start_rf(ru) != 0)
@@ -1773,7 +1788,7 @@ static void* ru_thread( void* param ) {
 
 
 	    // synchronization on input FH interface, acquire signals/data and block
-	    if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&subframe);
+	    if (ru->fh_south_in && ru->state == RU_RUN) ru->fh_south_in(ru,&frame,&subframe);
 	    else AssertFatal(1==0, "No fronthaul interface at south port");
 
 
@@ -1934,6 +1949,10 @@ int start_if(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB) {
 
 int start_rf(RU_t *ru) {
   return(ru->rfdevice.trx_start_func(&ru->rfdevice));
+}
+
+void stop_rf(RU_t *ru){
+  ru->rfdevice.trx_end_func(&ru->rfdevice);
 }
 
 extern void fep_full(RU_t *ru);
@@ -2343,6 +2362,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
       ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
       ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
       ru->start_rf               = start_rf;                            // need to start the local RF interface
+      ru->stop_rf		 = stop_rf;
       printf("configuring ru_id %d (start_rf %p)\n",ru_id,start_rf);
 /*
       if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise

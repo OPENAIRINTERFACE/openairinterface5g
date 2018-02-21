@@ -190,6 +190,7 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
       eth->num_rx_errors++;
       if (errno == EAGAIN) {
 	printf("Lost IF4p5 connection with %s\n", inet_ntoa(eth->dest_addrd.sin_addr));
+	return -1;
       } else if (errno == EWOULDBLOCK) {
         block_cnt++;
         usleep(10);

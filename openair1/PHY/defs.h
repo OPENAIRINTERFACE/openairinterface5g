@@ -751,6 +751,8 @@ typedef struct RU_t_s{
   void                 (*fh_south_asynch_in)(struct RU_t_s *ru,int *frame, int *subframe);
   /// function pointer to initialization function for radio interface
   int                  (*start_rf)(struct RU_t_s *ru);
+  /// function pointer to stop radio interface
+  int                  (*stop_rf)(struct RU_t_s *ru);
   /// function pointer to initialization function for radio interface
   int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB);
   /// function pointer to RX front-end processing routine (DFTs/prefix removal or NULL)
