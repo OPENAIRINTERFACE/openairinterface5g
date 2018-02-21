@@ -204,20 +204,6 @@ void mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP,
 void clear_nfapi_information(eNB_MAC_INST * eNB, int CC_idP,
 			     frame_t frameP, sub_frame_t subframeP);
 
-void dlsch_scheduler_pre_processor_reset(int module_idP, int UE_id,
-					 uint8_t CC_id,
-					 int frameP,
-					 int subframeP,
-					 int N_RBG,
-					 uint16_t
-					 nb_rbs_required[NFAPI_CC_MAX]
-					 [MAX_MOBILES_PER_ENB],
-					 unsigned char
-					 rballoc_sub[NFAPI_CC_MAX]
-					 [N_RBG_MAX],
-					 unsigned char
-					 MIMO_mode_indicator[NFAPI_CC_MAX]
-					 [N_RBG_MAX]);
 
 // eNB functions
 /* \brief This function assigns pre-available RBS to each UE in specified sub-bands before scheduling is done
@@ -229,12 +215,38 @@ void dlsch_scheduler_pre_processor_reset(int module_idP, int UE_id,
 
 
 void dlsch_scheduler_pre_processor(module_id_t module_idP,
-				   slice_id_t slice_idP,
-				   frame_t frameP,
-				   sub_frame_t subframe,
-				   int N_RBG[NFAPI_CC_MAX],
-				   int *mbsfn_flag);
+                                   slice_id_t slice_idP,
+                                   frame_t frameP,
+                                   sub_frame_t subframe,
+                                   int *mbsfn_flag);
 
+void dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
+                                         slice_id_t slice_id,
+                                         frame_t frameP,
+                                         sub_frame_t subframeP,
+                                         int min_rb_unit[NFAPI_CC_MAX],
+                                         uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                         unsigned char rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+                                         unsigned char MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX],
+                                         int *mbsfn_flag);
+
+void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
+                                              slice_id_t slice_id,
+                                              frame_t frameP,
+                                              sub_frame_t subframeP,
+                                              int min_rb_unit[NFAPI_CC_MAX],
+                                              uint8_t total_ue_count[NFAPI_CC_MAX],
+                                              uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                              uint16_t nb_rbs_required_remaining_1[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
+
+void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
+                                               slice_id_t slice_id,
+                                               int min_rb_unit[NFAPI_CC_MAX],
+                                               uint8_t total_ue_count[NFAPI_CC_MAX],
+                                               uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                               uint16_t nb_rbs_required_remaining_1[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                               uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+                                               uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
 					    int UE_id,

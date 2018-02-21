@@ -700,7 +700,6 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
                                 slice_idP,
                                 frameP,
                                 subframeP,
-                                N_RBG,
                                 mbsfn_flag);
   stop_meas(&eNB->schedule_dlsch_preprocessor);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
