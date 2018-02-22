@@ -3771,6 +3771,8 @@ uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, su
         switch(tdd_Config->subframeAssignment){ //TODO fill in other tdd config
         case 1:
             harq_pid = (((frame_cnt*1024 + abs_frameP) * 4) - 1 + get_dl_subframe_count(tdd_Config->subframeAssignment,subframeP))%7;//4 dl subframe in a frame
+            if(harq_pid < 0)
+              harq_pid += 7;
             LOG_D(MAC,"[frame_subframe2_dl_harq_pid] (%d,%d) calculate harq_pid ((( %d * 1024 + %d) *4) - 1 + %d)%7 = %d \n",
                     (abs_frameP+1024)%1024,subframeP,frame_cnt,abs_frameP,
                     get_dl_subframe_count(tdd_Config->subframeAssignment,subframeP),harq_pid);
@@ -3839,15 +3841,10 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	    int M = ul_ACK_subframe2_M(fp,subframeP);
 	    for(m=0;m<M;m++){
 	     subframe_tx = ul_ACK_subframe2_dl_subframe(fp,subframeP,m);
-	     switch (cc->tdd_Config->subframeAssignment){
-	     case 1:
-	        if(frameP==0&&subframeP<4)
-	          frame_tx= 0;
-	        else
-	          frame_tx = subframeP < 4 ? frameP-1:frameP; // not formal
-	          break;
-	         // TODO : Other TDD Config
-	     }
+	     if(frameP==1023&&subframeP>5)
+	       frame_tx=-1;
+	     else
+	       frame_tx = subframeP < 4 ? frameP -1 : frameP;
 	     harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame_tx,subframe_tx);
 	     if(num_ack_nak==1){
 	         if(harq_indication_tdd->harq_data[0].bundling.value_0==1){ //ack
