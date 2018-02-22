@@ -80,6 +80,9 @@
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
+#include "ENB_APP/enb_paramdef.h"
+#include "common/config/config_userapi.h"
+
 #ifdef SMBV
 extern uint8_t config_smbv;
 extern char smbv_ip[16];
@@ -176,6 +179,18 @@ extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
 
 int oaisim_flag=1;
 
+
+void RCConfig_sim(void) {
+
+  paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
+
+
+    // Get num RU instances
+    config_getlist( &RUParamList,NULL,0, NULL);
+    RC.nb_RU     = RUParamList.numelt;
+
+
+}
 
 void get_simulation_options(int argc, char *argv[])
 {
@@ -788,7 +803,7 @@ void get_simulation_options(int argc, char *argv[])
  
   if (RC.config_file_name != NULL) {
     /* Read eNB configuration file */
-    RCConfig();
+    RCConfig_sim();
     printf("returned with %d eNBs, %d rus\n",RC.nb_inst,RC.nb_RU);
     oai_emulation.info.nb_enb_local = RC.nb_inst;
     oai_emulation.info.nb_ru_local = RC.nb_RU;
@@ -1368,9 +1383,6 @@ void init_ocm(void)
   if (abstraction_flag) {
 
     get_beta_map();
-#ifdef PHY_ABSTRACTION_UL
-    get_beta_map_up();
-#endif
     get_MIESM_param();
 
     //load_pbch_desc();
@@ -1579,7 +1591,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 #if defined(USER_MODE) && defined(OAI_EMU)
 
   //int rrc_state=0;
-
+/*
   if (oai_emulation.info.otg_enabled ==1 ) {
 
     int dst_id, app_id;
@@ -1589,7 +1601,8 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
       for_times += 1;
 
       // generate traffic if the ue is rrc reconfigured state
-      //if ((rrc_state=mac_eNB_get_rrc_status(enb_module_idP, dst_id)) > 2 /*RRC_CONNECTED*/ ) {
+      //if ((rrc_state=mac_eNB_get_rrc_status(enb_module_idP, dst_id)) > 2 //RRC_CONNECTED
+       {
       if (mac_eNB_get_rrc_status(enb_module_idP, oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_idP][dst_id]) > 2 ){
 	if_times += 1;
 
@@ -1649,7 +1662,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
               otg_pkt=NULL;
             }
 
-
+*/
             // old version
             /*      // MBSM multicast traffic
             #if defined(Rel10) || defined(Rel14)
@@ -1675,13 +1688,14 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
             } // end multicast traffic
             #endif
              */
-
+/*
 
           }
         }
       }
 
     } // end multicast traffic
+*/
 
 #endif
   }
@@ -1713,57 +1727,11 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
       }
     }
   }
-
-#endif
 #endif
 }
 
 void update_otg_UE(module_id_t ue_mod_idP, unsigned int ctime)
 {
-#if defined(USER_MODE) && defined(OAI_EMU)
-
-  int app_id;
-  if (oai_emulation.info.otg_enabled ==1 ) {
-    module_id_t dst_id, src_id; //dst_id = eNB_index
-    module_id_t module_id = ue_mod_idP+NB_eNB_INST;
-
-    src_id = module_id;
-
-    for (dst_id=0; dst_id<NB_SIG_CNX_UE; dst_id++) {
-      // only consider the first attached eNB
-      if (mac_UE_get_rrc_status(ue_mod_idP, dst_id ) > 2 /*RRC_CONNECTED*/) {
-        for (app_id=0; app_id<MAX_NUM_APPLICATION; app_id++) {
-	  Packet_otg_elt_t *otg_pkt = malloc (sizeof(Packet_otg_elt_t));
-
-	  if (otg_pkt!=NULL)
-	    memset(otg_pkt,0,sizeof(Packet_otg_elt_t));
-	  else {
-	    LOG_E(OTG,"not enough memory\n");
-	    exit(-1);
-	  }// Manage to add this packet to the tail of your list
-
-	  (otg_pkt->otg_pkt).sdu_buffer = (uint8_t*) packet_gen(src_id, dst_id, app_id, ctime, &((otg_pkt->otg_pkt).sdu_buffer_size));
-
-	  if ((otg_pkt->otg_pkt).sdu_buffer != NULL) {
-	    (otg_pkt->otg_pkt).rb_id     = DTCH-2;
-	    (otg_pkt->otg_pkt).module_id = module_id;
-	    (otg_pkt->otg_pkt).dst_id    = dst_id;
-	    (otg_pkt->otg_pkt).is_ue     = 1;
-	    //Adding the packet to the OTG-PDCP buffer
-	    (otg_pkt->otg_pkt).mode      = PDCP_TRANSMISSION_MODE_DATA;
-	    pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_id]));
-	    LOG_D(EMU, "[UE %d] ADD pkt to OTG buffer with size %d for dst %d on rb_id %d \n",
-		  (otg_pkt->otg_pkt).module_id, otg_pkt->otg_pkt.sdu_buffer_size, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
-	  } else {
-	    free(otg_pkt);
-	    otg_pkt=NULL;
-	  }
-	}
-      }
-    }
-  }
-
-#endif
 }
 #endif
 
@@ -1832,6 +1800,13 @@ void init_time()
   td_avg        = 0;
   sleep_time_us = SLEEP_STEP_US;
   td_avg        = TARGET_SF_TIME_NS;
+}
+
+// dummy function
+int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind) {
+
+   return(0);
+
 }
 
 /*

@@ -73,10 +73,6 @@
 #        include "RLC-Config.h"
 //#        include "rlc_am_test.h"
 
-#ifdef USER_MODE
-//#        include "rlc_am_very_simple_test.h"
-#endif
-
 
 #define PROTOCOL_RLC_AM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u]"
 #define PROTOCOL_RLC_AM_CTXT_ARGS(CTXT_Pp, rLC_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\

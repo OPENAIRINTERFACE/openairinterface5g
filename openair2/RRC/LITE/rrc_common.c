@@ -53,42 +53,6 @@ extern UE_MAC_INST *UE_mac_inst;
 
 extern mui_t rrc_eNB_mui;
 
-//configure  BCCH & CCCH Logical Channels and associated rrc_buffers, configure associated SRBs
-//-----------------------------------------------------------------------------
-void
-openair_rrc_on(
-  const protocol_ctxt_t* const ctxt_pP
-)
-//-----------------------------------------------------------------------------
-{
-  unsigned short i;
-  int            CC_id;
-
-  if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
-    LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" OPENAIR RRC IN....\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
-      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
-      rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
-      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
-    }
-  } else {
-    LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" OPENAIR RRC IN....\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-
-    for (i = 0; i < NB_eNB_INST; i++) {
-      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" Activating CCCH (eNB %d)\n",
-            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP), i);
-      UE_rrc_inst[ctxt_pP->module_id].Srb0[i].Srb_id = CCCH;
-      memcpy (&UE_rrc_inst[ctxt_pP->module_id].Srb0[i].Lchan_desc[0], &CCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
-      memcpy (&UE_rrc_inst[ctxt_pP->module_id].Srb0[i].Lchan_desc[1], &CCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
-      rrc_config_buffer (&UE_rrc_inst[ctxt_pP->module_id].Srb0[i], CCCH, 1);
-      UE_rrc_inst[ctxt_pP->module_id].Srb0[i].Active = 1;
-    }
-  }
-}
-
 //-----------------------------------------------------------------------------
 int
 rrc_init_global_param(
@@ -97,9 +61,7 @@ rrc_init_global_param(
 //-----------------------------------------------------------------------------
 {
 
-  //#ifdef USER_MODE
   //  Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
-  //#endif //USRE_MODE
 
   //  Rrc_xface->openair_rrc_top_init = openair_rrc_top_init;
   //  Rrc_xface->openair_rrc_eNB_init = openair_rrc_eNB_init;
@@ -169,241 +131,6 @@ rrc_config_buffer(
   Srb_info->Tx_buffer.payload_size = 0;
 }
 
-
-//-----------------------------------------------------------------------------
-void
-rrc_t310_expiration(
-  const protocol_ctxt_t* const ctxt_pP,
-  const uint8_t                 eNB_index
-)
-//-----------------------------------------------------------------------------
-{
-
-  if (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State != RRC_CONNECTED) {
-    LOG_D(RRC, "Timer 310 expired, going to RRC_IDLE\n");
-    UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State = RRC_IDLE;
-    UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].UE_index = 0xffff;
-    UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Rx_buffer.payload_size = 0;
-    UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size = 0;
-    UE_rrc_inst[ctxt_pP->module_id].Srb1[eNB_index].Srb_info.Rx_buffer.payload_size = 0;
-    UE_rrc_inst[ctxt_pP->module_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size = 0;
-
-    if (UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Active == 1) {
-      msg ("[RRC Inst %d] eNB_index %d, Remove RB %d\n ", ctxt_pP->module_id, eNB_index,
-           UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Srb_info.Srb_id);
-      rrc_pdcp_config_req (ctxt_pP,
-                           SRB_FLAG_YES,
-                           CONFIG_ACTION_REMOVE,
-                           UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Srb_info.Srb_id,
-                           0);
-      rrc_rlc_config_req (ctxt_pP,
-                          SRB_FLAG_YES,
-                          MBMS_FLAG_NO,
-                          CONFIG_ACTION_REMOVE,
-                          UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Srb_info.Srb_id,
-                          Rlc_info_um);
-      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Active = 0;
-      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Status = IDLE;
-      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Next_check_frame = 0;
-    }
-  } else { // Restablishment procedure
-    LOG_D(RRC, "Timer 310 expired, trying RRCRestablishment ...\n");
-  }
-}
-
-//-----------------------------------------------------------------------------
-RRC_status_t
-rrc_rx_tx(
-  protocol_ctxt_t* const ctxt_pP,
-  const uint8_t      enb_indexP,
-  const int          CC_id
-)
-//-----------------------------------------------------------------------------
-{
-  //uint8_t        UE_id;
-  int32_t        current_timestamp_ms, ref_timestamp_ms;
-  struct timeval ts;
-  struct rrc_eNB_ue_context_s   *ue_context_p = NULL,*ue_to_be_removed = NULL;
-
-#ifdef LOCALIZATION
-  double                         estimated_distance;
-  protocol_ctxt_t                ctxt;
-#endif
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_IN);
-
-  if(ctxt_pP->enb_flag == ENB_FLAG_NO) {
-    // check timers
-
-    if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_active == 1) {
-      if ((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_cnt % 10) == 0)
-        LOG_D(RRC,
-              "[UE %d][RAPROC] Frame %d T300 Count %d ms\n", ctxt_pP->module_id, ctxt_pP->frame, UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_cnt);
-
-      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_cnt
-          == T300[UE_rrc_inst[ctxt_pP->module_id].sib2[enb_indexP]->ue_TimersAndConstants.t300]) {
-        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_active = 0;
-        // ALLOW CCCH to be used
-        UE_rrc_inst[ctxt_pP->module_id].Srb0[enb_indexP].Tx_buffer.payload_size = 0;
-        rrc_ue_generate_RRCConnectionRequest (ctxt_pP, enb_indexP);
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
-        return (RRC_ConnSetup_failed);
-      }
-
-      UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_cnt++;
-    }
-
-    if ((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].SIStatus&2)>0) {
-      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N310_cnt
-          == N310[UE_rrc_inst[ctxt_pP->module_id].sib2[enb_indexP]->ue_TimersAndConstants.n310]) {
-	LOG_I(RRC,"Activating T310\n");
-        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active = 1;
-      }
-    } else { // in case we have not received SIB2 yet
-      /*      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N310_cnt == 100) {
-        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N310_cnt = 0;
-
-	}*/
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
-      return RRC_OK;
-    }
-
-    if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active == 1) {
-      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N311_cnt
-          == N311[UE_rrc_inst[ctxt_pP->module_id].sib2[enb_indexP]->ue_TimersAndConstants.n311]) {
-        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active = 0;
-        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N311_cnt = 0;
-      }
-
-      if ((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_cnt % 10) == 0) {
-        LOG_D(RRC, "[UE %d] Frame %d T310 Count %d ms\n", ctxt_pP->module_id, ctxt_pP->frame, UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_cnt);
-      }
-
-      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_cnt    == T310[UE_rrc_inst[ctxt_pP->module_id].sib2[enb_indexP]->ue_TimersAndConstants.t310]) {
-        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active = 0;
-        rrc_t310_expiration (ctxt_pP, enb_indexP);
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
-	LOG_I(RRC,"Returning RRC_PHY_RESYNCH: T310 expired\n"); 
-        return RRC_PHY_RESYNCH;
-      }
-
-      UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_cnt++;
-    }
-
-    if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_active==1) {
-      if ((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_cnt % 10) == 0)
-        LOG_D(RRC,"[UE %d][RAPROC] Frame %d T304 Count %d ms\n",ctxt_pP->module_id,ctxt_pP->frame,
-              UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_cnt);
-
-      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_cnt == 0) {
-        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_active = 0;
-        UE_rrc_inst[ctxt_pP->module_id].HandoverInfoUe.measFlag = 1;
-        LOG_E(RRC,"[UE %d] Handover failure..initiating connection re-establishment procedure... \n",
-              ctxt_pP->module_id);
-        //Implement 36.331, section 5.3.5.6 here
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
-        return(RRC_Handover_failed);
-      }
-
-      UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_cnt--;
-    }
-
-    // Layer 3 filtering of RRC measurements
-    if (UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[0] != NULL) {
-      ue_meas_filtering(ctxt_pP,enb_indexP);
-    }
-
-    ue_measurement_report_triggering(ctxt_pP,enb_indexP);
-
-    if (UE_rrc_inst[ctxt_pP->module_id].Info[0].handoverTarget > 0) {
-      LOG_I(RRC,"[UE %d] Frame %d : RRC handover initiated\n", ctxt_pP->module_id, ctxt_pP->frame);
-    }
-
-    if((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].State == RRC_HO_EXECUTION)   &&
-        (UE_rrc_inst[ctxt_pP->module_id].HandoverInfoUe.targetCellId != 0xFF)) {
-      UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].State= RRC_IDLE;
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
-      return(RRC_HO_STARTED);
-    }
-
-  } else { // eNB
-    check_handovers(ctxt_pP);
-    // counetr, and get the value and aggregate
-
-    // check for UL failure
-    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
-      if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe==0)) {
-	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
-	  LOG_I(RRC,"UE rnti %x:S-TMSI %x failure timer %d/20000\n",
-		ue_context_p->ue_context.rnti,
-		ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
-		ue_context_p->ue_context.ul_failure_timer);
-	}
-	else {
-	  LOG_I(RRC,"UE rnti %x failure timer %d/20000\n",
-		ue_context_p->ue_context.rnti,
-		ue_context_p->ue_context.ul_failure_timer);
-	}
-      }
-      if (ue_context_p->ue_context.ul_failure_timer>0) {
-	ue_context_p->ue_context.ul_failure_timer++;
-	if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
-	  // remove UE after 20 seconds after MAC has indicated UL failure
-	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
-	  ue_to_be_removed = ue_context_p;
-	  break;
-	}
-      }
-      if (ue_context_p->ue_context.ue_release_timer>0) {
-	ue_context_p->ue_context.ue_release_timer++;
-	if (ue_context_p->ue_context.ue_release_timer >= 
-	    ue_context_p->ue_context.ue_release_timer_thres) {
-	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
-	  ue_to_be_removed = ue_context_p;
-	  break;
-	}
-      }
-    }
-    if (ue_to_be_removed)
-      rrc_eNB_free_UE(ctxt_pP->module_id,ue_to_be_removed);
-
-#ifdef RRC_LOCALIZATION
-
-    /* for the localization, only primary CC_id might be relevant*/
-    gettimeofday(&ts, NULL);
-    current_timestamp_ms = ts.tv_sec * 1000 + ts.tv_usec / 1000;
-    ref_timestamp_ms = RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms;
-    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
-      ctxt = *ctxt_pP;
-      ctxt.rnti = ue_context_p->ue_context.rnti;
-      estimated_distance = rrc_get_estimated_ue_distance(
-                             &ctxt,
-                             CC_id,
-                             RC.rrc[ctxt_pP->module_id]->loc_type);
-
-      if ((current_timestamp_ms - ref_timestamp_ms > RC.rrc[ctxt_pP->module_id]->aggregation_period_ms) &&
-          estimated_distance != -1) {
-        LOG_D(LOCALIZE, " RRC [UE/id %d -> eNB/id %d] timestamp %d frame %d estimated r = %f\n",
-              ctxt.rnti,
-              ctxt_pP->module_id,
-              current_timestamp_ms,
-              ctxt_pP->frame,
-              estimated_distance);
-        LOG_D(LOCALIZE, " RRC status %d\n", ue_context_p->ue_context.Status);
-        push_front(&RC.rrc[ctxt_pP->module_id]->loc_list,
-                   estimated_distance);
-        RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms = current_timestamp_ms;
-      }
-    }
-
-#endif
-    (void)ts; /* remove gcc warning "unused variable" */
-    (void)ref_timestamp_ms; /* remove gcc warning "unused variable" */
-    (void)current_timestamp_ms; /* remove gcc warning "unused variable" */
-  }
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
-  return (RRC_OK);
-}
 
 //-----------------------------------------------------------------------------
 long
@@ -490,3 +217,110 @@ binary_search_float(
   return first;
 }
 
+typedef enum { BAND_TYPE_FDD, BAND_TYPE_TDD } band_type;
+
+typedef struct {
+  band_type t;
+  int band;
+  unsigned long ul_minfreq, ul_maxfreq;
+  unsigned long dl_minfreq, dl_maxfreq;
+} band_freq;
+
+static band_freq bands[] = {
+  { BAND_TYPE_FDD, 1, 1920000000UL, 1980000000UL, 2110000000UL, 2170000000UL },
+  { BAND_TYPE_FDD, 2, 1850000000UL, 1910000000UL, 1930000000UL, 1990000000UL },
+  { BAND_TYPE_FDD, 3, 1710000000UL, 1785000000UL, 1805000000UL, 1880000000UL },
+  { BAND_TYPE_FDD, 4, 1710000000UL, 1755000000UL, 2110000000UL, 2155000000UL },
+  { BAND_TYPE_FDD, 5, 824000000UL, 849000000UL, 869000000UL, 894000000UL },
+    /* to remove? */{ BAND_TYPE_FDD, 6, 830000000UL, 840000000UL, 875000000UL, 885000000UL },
+  { BAND_TYPE_FDD, 7, 2500000000UL, 2570000000UL, 2620000000UL, 2690000000UL },
+  { BAND_TYPE_FDD, 8, 880000000UL, 915000000UL, 925000000UL, 960000000UL },
+  { BAND_TYPE_FDD, 9, 1749900000UL, 1784900000UL, 1844900000UL, 1879900000UL },
+  { BAND_TYPE_FDD, 10, 1710000000UL, 1770000000UL, 2110000000UL, 2170000000UL },
+  { BAND_TYPE_FDD, 11, 1427900000UL, 1447900000UL, 1475900000UL, 1495900000UL },
+  { BAND_TYPE_FDD, 12, 699000000UL, 716000000UL, 729000000UL, 746000000UL },
+  { BAND_TYPE_FDD, 13, 777000000UL, 787000000UL, 746000000UL, 756000000UL },
+  { BAND_TYPE_FDD, 14, 788000000UL, 798000000UL, 758000000UL, 768000000UL },
+  { BAND_TYPE_FDD, 17, 704000000UL, 716000000UL, 734000000UL, 746000000UL },
+  { BAND_TYPE_FDD, 18, 815000000UL, 830000000UL, 860000000UL, 875000000UL },
+  { BAND_TYPE_FDD, 19, 830000000UL, 845000000UL, 875000000UL, 890000000UL },
+  { BAND_TYPE_FDD, 20, 832000000UL, 862000000UL, 791000000UL, 821000000UL },
+  { BAND_TYPE_FDD, 21, 1447900000UL, 1462900000UL, 1495900000UL, 1510900000UL },
+  { BAND_TYPE_FDD, 22, 3410000000UL, 3490000000UL, 3510000000UL, 3590000000UL },
+  { BAND_TYPE_FDD, 23, 2000000000UL, 2020000000UL, 2180000000UL, 2200000000UL },
+  { BAND_TYPE_FDD, 24, 1626500000UL, 1660500000UL, 1525000000UL, 1559000000UL },
+  { BAND_TYPE_FDD, 25, 1850000000UL, 1915000000UL, 1930000000UL, 1995000000UL },
+
+  { BAND_TYPE_TDD, 33, 1900000000UL, 1920000000UL, 1900000000UL, 1920000000UL },
+  { BAND_TYPE_TDD, 34, 2010000000UL, 2025000000UL, 2010000000UL, 2025000000UL },
+  { BAND_TYPE_TDD, 35, 1850000000UL, 1910000000UL, 1850000000UL, 1910000000UL },
+  { BAND_TYPE_TDD, 36, 1930000000UL, 1990000000UL, 1930000000UL, 1990000000UL },
+  { BAND_TYPE_TDD, 37, 1910000000UL, 1930000000UL, 1910000000UL, 1930000000UL },
+  { BAND_TYPE_TDD, 38, 2570000000UL, 2620000000UL, 2570000000UL, 2620000000UL },
+  { BAND_TYPE_TDD, 39, 1880000000UL, 1920000000UL, 1880000000UL, 1920000000UL },
+  { BAND_TYPE_TDD, 40, 2300000000UL, 2400000000UL, 2300000000UL, 2400000000UL },
+  { BAND_TYPE_TDD, 41, 2496000000UL, 2690000000UL, 2496000000UL, 2690000000UL },
+  { BAND_TYPE_TDD, 42, 3400000000UL, 3600000000UL, 3400000000UL, 3600000000UL },
+  { BAND_TYPE_TDD, 43, 3600000000UL, 3800000000UL, 3600000000UL, 3800000000UL },
+};
+
+typedef struct {
+  int band;
+  unsigned long dl_flow;
+  int dl_off;
+  int dl_offmin, dl_offmax;
+  unsigned long ul_flow;
+  int ul_off;
+  int ul_offmin, ul_offmax;
+} earfcn;
+
+static earfcn earfcn_table[] = {
+  { 1, 2110000000UL, 0, 0, 599, 1920000000UL, 18000, 18000, 18599 },
+  { 2, 1930000000UL, 600, 600, 1199, 1850000000UL, 18600, 18600, 19199 },
+  { 3, 1805000000UL, 1200, 1200, 1949, 1710000000UL, 19200, 19200, 19949 },
+  { 4, 2110000000UL, 1950, 1950, 2399, 1710000000UL, 19950, 19950, 20399 },
+  { 5, 869000000UL, 2400, 2400, 2649, 824000000UL, 20400, 20400, 20649 },
+  { 6, 875000000UL, 2650, 2650, 2749, 830000000UL, 20650, 20650, 20749 },
+  { 7, 2620000000UL, 2750, 2750, 3449, 2500000000UL, 20750, 20750, 21449 },
+  { 8, 925000000UL, 3450, 3450, 3799, 880000000UL, 21450, 21450, 21799 },
+  { 9, 1844900000UL, 3800, 3800, 4149, 1749900000UL, 21800, 21800, 22149 },
+  { 10, 2110000000UL, 4150, 4150, 4749, 1710000000UL, 22150, 22150, 22749 },
+  { 11, 1475900000UL, 4750, 4750, 4949, 1427900000UL, 22750, 22750, 22949 },
+  { 12, 729000000UL, 5010, 5010, 5179, 699000000UL, 23010, 23010, 23179 },
+  { 13, 746000000UL, 5180, 5180, 5279, 777000000UL, 23180, 23180, 23279 },
+  { 14, 758000000UL, 5280, 5280, 5379, 788000000UL, 23280, 23280, 23379 },
+  { 17, 734000000UL, 5730, 5730, 5849, 704000000UL, 23730, 23730, 23849 },
+  { 18, 860000000UL, 5850, 5850, 5999, 815000000UL, 23850, 23850, 23999 },
+  { 19, 875000000UL, 6000, 6000, 6149, 830000000UL, 24000, 24000, 24149 },
+  { 20, 791000000UL, 6150, 6150, 6449, 832000000UL, 24150, 24150, 24449 },
+  { 21, 1495900000UL, 6450, 6450, 6599, 1447900000UL, 24450, 24450, 24599 },
+  { 22, 3510000000UL, 6600, 6600, 7399, 3410000000UL, 24600, 24600, 25399 },
+  { 23, 2180000000UL, 7500, 7500, 7699, 2000000000UL, 25500, 25500, 25699 },
+  { 24, 1525000000UL, 7700, 7700, 8039, 1626500000UL, 25700, 25700, 26039 },
+  { 25, 1930000000UL, 8040, 8040, 8689, 1850000000UL, 26040, 26040, 26689 },
+  { 33, 1900000000UL, 36000, 36000, 36199, 1900000000UL, 36000, 36000, 36199 },
+  { 34, 2010000000UL, 36200, 36200, 36349, 2010000000UL, 36200, 36200, 36349 },
+  { 35, 1850000000UL, 36350, 36350, 36949, 1850000000UL, 36350, 36350, 36949 },
+  { 36, 1930000000UL, 36950, 36950, 37549, 1930000000UL, 36950, 36950, 37549 },
+  { 37, 1910000000UL, 37550, 37550, 37749, 1910000000UL, 37550, 37550, 37749 },
+  { 38, 2570000000UL, 37750, 37750, 38249, 2570000000UL, 37750, 37750, 38249 },
+  { 39, 1880000000UL, 38250, 38250, 38649, 1880000000UL, 38250, 38250, 38649 },
+  { 40, 2300000000UL, 38650, 38650, 39649, 2300000000UL, 38650, 38650, 39649 },
+  { 41, 2496000000UL, 39650, 39650, 41589, 2496000000UL, 39650, 39650, 41589 },
+  { 42, 3400000000UL, 41590, 41590, 43589, 3400000000UL, 41590, 41590, 43589 },
+  { 43, 3600000000UL, 43590, 43590, 45589, 3600000000UL, 43590, 43590, 45589 },
+};
+  
+int freq_to_arfcn10(int band, unsigned long freq)
+{ 
+  int N = sizeof(earfcn_table) / sizeof(earfcn_table[0]); 
+  int i;
+  
+  for (i = 0; i < N; i++) if (bands[i].band == band) break; 
+  if (i == N) return -1;
+  
+  if (!(bands[i].dl_minfreq < freq && freq < bands[i].dl_maxfreq))
+    return -1;
+  
+  return (freq - earfcn_table[i].dl_flow) / 100000UL + earfcn_table[i].dl_off;
+}

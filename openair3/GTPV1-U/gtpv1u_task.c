@@ -423,6 +423,7 @@ static void *gtpv1u_thread(void *args)
     switch (ITTI_MSG_ID(received_message_p)) {
 
     case TERMINATE_MESSAGE: {
+      GTPU_WARN(" *** Exiting GTPU thread\n");
       itti_exit_task();
     }
     break;

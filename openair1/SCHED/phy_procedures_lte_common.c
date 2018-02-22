@@ -709,6 +709,26 @@ uint16_t get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1)
     return(Np[0+plus1]);
 }
 
+int subframe_num(LTE_DL_FRAME_PARMS *frame_parms){
+    if (frame_parms->frame_type == FDD)
+        return 10;
+
+    switch (frame_parms->tdd_config) {
+    case 1:
+        return 6;
+    case 3:
+        return 7;
+    case 4:
+        return 8;
+    case 5:
+        return 9;
+    default:
+      LOG_E(PHY,"Unsupported TDD configuration %d\n",frame_parms->tdd_config);
+      AssertFatal(frame_parms->tdd_config==1 || frame_parms->tdd_config==3 || frame_parms->tdd_config==4 || frame_parms->tdd_config==5,"subframe x Unsupported TDD configuration");
+      return(255);
+    }
+}
+
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe)
 {
 
@@ -918,7 +938,7 @@ int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subf
   if(frame_parms->soundingrs_ul_config_common.enabled_flag)
   {
 
-    LOG_D(PHY," SRS SUBFRAMECONFIG: %d\n", frame_parms->soundingrs_ul_config_common.srs_SubframeConfig);
+    //LOG_D(PHY," SRS SUBFRAMECONFIG: %d\n", frame_parms->soundingrs_ul_config_common.srs_SubframeConfig);
 
       uint8_t  TSFC;
       uint16_t deltaTSFC; // bitmap
@@ -951,7 +971,7 @@ int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subf
       }
       LOG_D(PHY," ISTDD: %d, TSFC: %d, deltaTSFC: %d, AbsSubframeTX: %d.%d\n", frame_parms->frame_type, TSFC, deltaTSFC, frame_tx, subframe_tx);
   }
-  LOG_D(PHY," isSubframeSRS %d\n", isSubframeSRS);
+  //LOG_D(PHY," isSubframeSRS %d\n", isSubframeSRS);
   return(isSubframeSRS);
 }
 

@@ -66,33 +66,12 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch)
 #endif
 
     for (i=0; i<8; i++) {
-#ifdef DEBUG_ULSCH_FREE
-      printf("Freeing ulsch process %d\n",i);
-#endif
-
       if (ulsch->harq_processes[i]) {
-#ifdef DEBUG_ULSCH_FREE
-        printf("Freeing ulsch process %d (%p)\n",i,ulsch->harq_processes[i]);
-#endif
-
         if (ulsch->harq_processes[i]->b) {
           free16(ulsch->harq_processes[i]->b,MAX_ULSCH_PAYLOAD_BYTES);
           ulsch->harq_processes[i]->b = NULL;
-#ifdef DEBUG_ULSCH_FREE
-          printf("Freeing ulsch process %d b (%p)\n",i,ulsch->harq_processes[i]->b);
-#endif
         }
-
-#ifdef DEBUG_ULSCH_FREE
-        printf("Freeing ulsch process %d c (%p)\n",i,ulsch->harq_processes[i]->c);
-#endif
-
         for (r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++) {
-
-#ifdef DEBUG_ULSCH_FREE
-          printf("Freeing ulsch process %d c[%d] (%p)\n",i,r,ulsch->harq_processes[i]->c[r]);
-#endif
-
           if (ulsch->harq_processes[i]->c[r]) {
             free16(ulsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
             ulsch->harq_processes[i]->c[r] = NULL;
@@ -103,7 +82,6 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch)
         ulsch->harq_processes[i] = NULL;
       }
     }
-
     free16(ulsch,sizeof(LTE_UE_ULSCH_t));
     ulsch = NULL;
   }
@@ -953,77 +931,3 @@ uint32_t ulsch_encoding(uint8_t *a,
   return(0);
 }
 
-
-#ifdef PHY_ABSTRACTION
-#ifdef OPENAIR2
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/defs.h"
-#endif
-int ulsch_encoding_emul(uint8_t *ulsch_buffer,
-                        PHY_VARS_UE *ue,
-                        uint8_t eNB_id,
-                        uint8_t subframe_rx,
-                        uint8_t harq_pid,
-                        uint8_t control_only_flag)
-{
-
-  LTE_UE_ULSCH_t *ulsch = ue->ulsch[eNB_id];
-  LTE_UE_DLSCH_t **dlsch = ue->dlsch[0][eNB_id];
-  PHY_MEASUREMENTS *meas = &ue->measurements;
-  uint8_t tmode = ue->transmission_mode[eNB_id];
-  uint16_t rnti=ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->crnti;
-  LOG_D(PHY,"EMUL UE ulsch_encoding for eNB %d,mod_id %d, harq_pid %d rnti %x, ACK(%d,%d) \n",
-        eNB_id,ue->Mod_id, harq_pid, rnti,ulsch->o_ACK[0],ulsch->o_ACK[1]);
-
-  if (ulsch->O>0) {
-    /*
-    if(flag_LA==1)
-      sinr_eff = sinr_eff_cqi_calc(ue, eNB_id);
-    else
-      sinr_eff = meas->wideband_cqi_avg[eNB_id];
-    */
-
-    fill_CQI(ulsch,meas,eNB_id,harq_pid,ue->frame_parms.N_RB_DL,rnti,tmode,ue->sinr_eff);
-    //LOG_D(PHY,"UE CQI\n");
-    //    print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
-
-    // save PUSCH pmi for later (transmission modes 4,5,6)
-    //    printf("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
-    // if (ulsch->uci_format != HLC_subband_cqi_mcs_CBA)
-    dlsch[0]->harq_processes[harq_pid]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
-  }
-
-  memcpy(ue->ulsch[eNB_id]->harq_processes[harq_pid]->b,
-         ulsch_buffer,
-         ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3);
-
-
-  //memcpy(&UE_transport_info[ue->Mod_id].transport_blocks[UE_transport_info_TB_index[ue->Mod_id]],
-  memcpy(&UE_transport_info[ue->Mod_id][ue->CC_id].transport_blocks,
-         ulsch_buffer,
-         ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3);
-  //UE_transport_info_TB_index[ue->Mod_id]+=ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3;
-  // navid: currently more than one eNB is not supported in the code
-  UE_transport_info[ue->Mod_id][ue->CC_id].num_eNB = 1;
-  UE_transport_info[ue->Mod_id][ue->CC_id].rnti[0] = ue->pdcch_vars[ue->current_thread_id[subframe_rx]][0]->crnti;
-  UE_transport_info[ue->Mod_id][ue->CC_id].eNB_id[0]  = eNB_id;
-  UE_transport_info[ue->Mod_id][ue->CC_id].harq_pid[0] = harq_pid;
-  UE_transport_info[ue->Mod_id][ue->CC_id].tbs[0]     = ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3 ;
-  // printf("\nue->Mod_id%d\n",ue->Mod_id);
-
-  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_flag = 1;
-  //UE_transport_info[ue->Mod_id].cntl.pusch_uci = *(uint32_t *)ulsch->o;
-  memcpy(UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_uci,
-         ulsch->o,
-         MAX_CQI_BYTES);
-  // printf("[UE]cqi is %d \n", ((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1);
-
-  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.length_uci = ulsch->O;
-  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.uci_format = ulsch->uci_format;
-  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+((ulsch->o_RI[1]&1)<<1);
-  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
-  //printf("ack is %d %d %d\n",UE_transport_info[ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);
-  return(0);
-
-}
-#endif

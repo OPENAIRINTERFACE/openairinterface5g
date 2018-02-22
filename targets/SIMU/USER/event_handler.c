@@ -524,9 +524,9 @@ void update_mac(Event_t event)
 
               for(j=0; j<MAX_NUM_LCID; j++) {
                 oai_emulation->mac_config[i].max_allowed_rbs[j]= mac_config[i].max_allowed_rbs[j];
-                UE_list->UE_sched_ctrl[i].max_allowed_rbs[j] = oai_emulation->mac_config[i].max_allowed_rbs[j];
+                UE_list->UE_sched_ctrl[i].max_rbs_allowed_slice[j][0] = oai_emulation->mac_config[i].max_allowed_rbs[j];
                 LOG_I(EMU,"max_allowed_rbs UE %d LCID %d:",i,j);
-                LOG_I(EMU,"%" PRIu16 "\n",UE_list->UE_sched_ctrl[i].max_allowed_rbs[j]);
+                LOG_I(EMU,"%" PRIu16 "\n",UE_list->UE_sched_ctrl[i].max_rbs_allowed_slice[j][0]);
               }
             }
 
@@ -646,9 +646,9 @@ void update_mac(Event_t event)
           if(mac_config->max_allowed_rbs !=NULL) {
 
             oai_emulation->mac_config[i].max_allowed_rbs[j]= mac_config[i].max_allowed_rbs[j];
-            UE_list->UE_sched_ctrl[i].max_allowed_rbs[j] = oai_emulation->mac_config[i].max_allowed_rbs[j];
+            UE_list->UE_sched_ctrl[i].max_rbs_allowed_slice[j][0] = oai_emulation->mac_config[i].max_allowed_rbs[j];
             LOG_I(EMU,"max_allowed_rbs UE %d LCID %d:",i,j);
-            LOG_I(EMU,"%" PRIu16 "\n",UE_list->UE_sched_ctrl[i].max_allowed_rbs[j]);
+            LOG_I(EMU,"%" PRIu16 "\n",UE_list->UE_sched_ctrl[i].max_rbs_allowed_slice[j][0]);
 
           }
 
@@ -951,18 +951,18 @@ void update_mac(Event_t event)
 
               if(&mac_config[i].max_allowed_rbs[j]!=NULL) {
                 oai_emulation->mac_config[i].max_allowed_rbs[j]= mac_config[i].max_allowed_rbs[j];
-                UE_list->UE_sched_ctrl[i].max_allowed_rbs[j] = oai_emulation->mac_config[i].max_allowed_rbs[j];
+                UE_list->UE_sched_ctrl[i].max_rbs_allowed_slice[j][0] = oai_emulation->mac_config[i].max_allowed_rbs[j];
                 LOG_I(EMU,"max_allowed_rbs UE %d LCID %d:",i,j);
-                LOG_I(EMU,"%" PRIu16 "\n",UE_list->UE_sched_ctrl[i].max_allowed_rbs[j]);
+                LOG_I(EMU,"%" PRIu16 "\n",UE_list->UE_sched_ctrl[i].max_rbs_allowed_slice[j][0]);
               }
             }
           }
         }
       } else {
         oai_emulation->mac_config[event.ue].max_allowed_rbs[event.lcid]= mac_config[event.ue].max_allowed_rbs[event.lcid];
-        UE_list->UE_sched_ctrl[event.ue].max_allowed_rbs[event.lcid] = oai_emulation->mac_config[event.ue].max_allowed_rbs[event.lcid];
+        UE_list->UE_sched_ctrl[event.ue].max_rbs_allowed_slice[event.lcid][0] = oai_emulation->mac_config[event.ue].max_allowed_rbs[event.lcid];
         LOG_I(EMU,"max_allowed_rbs UE %d LCID %d:",event.ue,event.lcid);
-        LOG_I(EMU,"%" PRIu16 "\n",UE_list->UE_sched_ctrl[event.ue].max_allowed_rbs[event.lcid]);
+        LOG_I(EMU,"%" PRIu16 "\n",UE_list->UE_sched_ctrl[event.ue].max_rbs_allowed_slice[event.lcid][0]);
       }
 
     } else if(!strcmp((char *) event.key, "max_mcs") && event.value!=NULL && validate_mac(event)) {

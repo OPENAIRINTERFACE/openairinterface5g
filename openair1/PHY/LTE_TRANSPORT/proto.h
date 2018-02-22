@@ -83,6 +83,12 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
 
 void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
 
+/** \fn free_eNB_ulsch(LTE_eNB_DLSCH_t *dlsch)
+    \brief This function frees memory allocated for a particular ULSCH at eNB
+    @param ulsch Pointer to ULSCH to be removed
+*/
+void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch);
+
 LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
 
 LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
@@ -1716,13 +1722,15 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       uint16_t tc_rnti);
 
 void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
+                        int frame,
+                        int subframe,
 			eNB_rxtx_proc_t *proc,
 			DCI_ALLOC_t *dci_alloc,
 			nfapi_dl_config_dci_dl_pdu *pdu);
 
 void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *dci_alloc,nfapi_dl_config_mpdcch_pdu *pdu);
 
-void fill_dci0(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
+void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
 	      nfapi_hi_dci0_dci_pdu *pdu);
 
 void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe);
@@ -2149,9 +2157,12 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,
 	      uint16_t *max_preamble, 
 	      uint16_t *max_preamble_energy, 
 	      uint16_t *max_preamble_delay, 
-	      uint16_t Nf, uint8_t tdd_mapindex,
-	      uint8_t br_flag);
-
+	      uint16_t Nf, uint8_t tdd_mapindex
+#ifdef Rel14
+	      ,
+              uint8_t br_flag
+#endif
+	      );
 /*!
   \brief Helper for MAC, returns number of available PRACH in TDD for a particular configuration index
   @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure

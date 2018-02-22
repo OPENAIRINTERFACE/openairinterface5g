@@ -76,9 +76,7 @@ uint8_t config_smbv = 0;
 char smbv_ip[16];
 #endif
 
-#if defined(FLEXRAN_AGENT_SB_IF)
-#   include "flexran_agent.h"
-#endif
+#include "flexran_agent.h"
 
 
 #include "oaisim_functions.h"
@@ -160,6 +158,8 @@ volatile int                    oai_exit = 0;
 //int32_t **rxdata;
 //int32_t **txdata;
 
+uint16_t sf_ahead=4;
+uint8_t nfapi_mode = 0;
 
 // Added for PHY abstraction
 extern node_list* ue_node_list;
@@ -377,7 +377,7 @@ int omv_write(int pfd, node_list* enb_node_list, node_list* ue_node_list, Data_F
       omv_data.geo[i].node_type = 0; //eNB
       enb_node_list = enb_node_list->next;
       omv_data.geo[i].Neighbors = 0;
-
+/*
       for (j = NB_RU; j < NB_UE_INST + NB_RU; j++) {
         if (is_UE_active (i, j - NB_RU) == 1) {
           omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors] = j;
@@ -387,6 +387,7 @@ int omv_write(int pfd, node_list* enb_node_list, node_list* ue_node_list, Data_F
 		"[RU %d][UE %d] is_UE_active(i,j) %d geo (x%d, y%d) num neighbors %d\n", i, j-NB_RU, is_UE_active(i,j-NB_RU), omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
         }
       }
+*/
     }
   }
 
@@ -413,7 +414,7 @@ int omv_write(int pfd, node_list* enb_node_list, node_list* ue_node_list, Data_F
 
       ue_node_list = ue_node_list->next;
       omv_data.geo[i].Neighbors = 0;
-
+/*
       for (j = 0; j < NB_RU; j++) {
         if (is_UE_active (j, i - NB_RU) == 1) {
           omv_data.geo[i].Neighbor[omv_data.geo[i].Neighbors] = j;
@@ -423,6 +424,7 @@ int omv_write(int pfd, node_list* enb_node_list, node_list* ue_node_list, Data_F
 		"[UE %d][RU %d] is_UE_active  %d geo (x%d, y%d) num neighbors %d\n", i-NB_RU, j, is_UE_active(j,i-NB_RU), omv_data.geo[i].x, omv_data.geo[i].y, omv_data.geo[i].Neighbors);
         }
       }
+*/
     }
   }
 
@@ -986,6 +988,23 @@ l2l1_task (void *args_p)
   return NULL;
 }
 
+/*
+ * The following two functions are meant to restart *the lte-softmodem* and are
+ * here to make oaisim compile. A restart command from the controller will be
+ * ignored in oaisim.
+ */
+int stop_L1L2(int enb_id)
+{
+  LOG_W(FLEXRAN_AGENT, "stop_L1L2() not supported in oaisim\n");
+  return 0;
+}
+
+int restart_L1L2(int enb_id)
+{
+  LOG_W(FLEXRAN_AGENT, "restart_L1L2() not supported in oaisim\n");
+  return 0;
+}
+
 #if T_TRACER
 int T_wait = 1;       /* by default we wait for the tracer */
 int T_port = 2021;    /* default port to listen to to wait for the tracer */
@@ -1178,8 +1197,7 @@ main (int argc, char **argv)
 
 
 
-  if (create_tasks(0, 
-		   oai_emulation.info.nb_ue_local) < 0) 
+  if (create_tasks_ue(oai_emulation.info.nb_ue_local) < 0) 
       exit(-1); // need a softer mode
 
 
@@ -1771,9 +1789,6 @@ oai_shutdown (void)
     }
   } //End of PHY abstraction changes
 
-#ifdef OPENAIR2
-  mac_top_cleanup ();
-#endif
 
   // stop OMG
   stop_mobility_generator (omg_param_list); //omg_param_list.mobility_type
@@ -1825,4 +1840,11 @@ get_OAI_emulation ()
   return &oai_emulation;
 }
 
+
+// dummy function declarations
+
+void *rrc_enb_task(void *args_p) {
+
+
+}
 

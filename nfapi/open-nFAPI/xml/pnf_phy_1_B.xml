@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pnf>
+	<sync_mode>0</sync_mode>
+	<location_mode>0</location_mode>
+	<location_coordinates></location_coordinates>
+
+	<dl_config_timing>500</dl_config_timing>
+	<ul_config_timing>500</ul_config_timing>
+	<tx_timing>500</tx_timing>
+	<hi_dci0_timing>500</hi_dci0_timing>
+
+	<max_phys>1</max_phys>
+	<max_total_bandwidth>30</max_total_bandwidth>
+	<max_total_num_dl_layers>1</max_total_num_dl_layers>
+	<max_total_num_ul_layers>1</max_total_num_ul_layers>
+
+	<shared_bands>0</shared_bands>
+	<shared_pas>0</shared_pas>
+
+	<maximum_total_power>0</maximum_total_power>
+
+	<oui>ALPHA</oui>
+
+
+	<phys>
+		<phy>
+			<index>89</index>
+			<port>2510</port>
+			<address>127.0.0.1</address>
+
+			<duplex_mode>1</duplex_mode>
+
+			<downlink_channel_bandwidth_support>22</downlink_channel_bandwidth_support>
+			<uplink_channel_bandwidth_support>22</uplink_channel_bandwidth_support>
+
+			<number_of_dl_layers>1</number_of_dl_layers>
+			<number_of_ul_layers>1</number_of_ul_layers>
+
+			<3gpp_release_supported>31</3gpp_release_supported>
+
+			<nmm_modes_supported>0</nmm_modes_supported>
+			
+			<dl_ues_per_subframe>8</dl_ues_per_subframe>
+			<ul_ues_per_subframe>8</ul_ues_per_subframe>
+
+			<!-- todo adn the other release parameters -->
+
+			<rfs>
+				<index>0</index>
+			</rfs>
+			<excluded_rfs>
+				<index>1</index>
+			</excluded_rfs>
+
+			<data>
+				<udp>
+					<rx_port>7744</rx_port>
+					<tx_addr>127.0.0.1</tx_addr>
+					<tx_port>7755</tx_port>
+				</udp>
+			</data>
+		</phy>
+	</phys>
+	<rfs>
+		<rf>
+			<index>0</index>
+			<band>2</band>
+			<max_transmit_power>-30</max_transmit_power>
+			<min_transmit_power>-230</min_transmit_power>
+			<num_antennas_supported>2</num_antennas_supported>
+			<min_downlink_frequency>1890</min_downlink_frequency>
+			<max_downlink_frequency>1890</max_downlink_frequency>
+			<max_uplink_frequency>1890</max_uplink_frequency>
+			<min_uplink_frequency>1890</min_uplink_frequency>
+		</rf>
+		<rf>
+			<index>1</index>
+			<band>3</band>
+			<max_transmit_power>-30</max_transmit_power>
+			<min_transmit_power>-230</min_transmit_power>
+			<num_antennas_supported>2</num_antennas_supported>
+			<min_downlink_frequency>1890</min_downlink_frequency>
+			<max_downlink_frequency>1890</max_downlink_frequency>
+			<max_uplink_frequency>1890</max_uplink_frequency>
+			<min_uplink_frequency>1890</min_uplink_frequency>
+		</rf>
+	</rfs>
+</pnf>

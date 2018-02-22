@@ -27,10 +27,17 @@
 #ifndef _ITTI_TYPES_H_
 #define _ITTI_TYPES_H_
 
-#ifdef USER_MODE
-#include <stdint.h>
+/* The current file is included in the ue_ip.ko compilation.
+ * For it to work we need to include linux/types.h and
+ * not stdint.h.
+ * A solution to this problem is to use #ifndef __KERNEL__.
+ * Maybe a better solution would be to clean things up
+ * so that ue_ip.ko does not include the current file.
+ */
+#ifndef __KERNEL__
+#  include <stdint.h>
 #else
-#include <linux/types.h>
+#  include <linux/types.h>
 #endif
 
 #define CHARS_TO_UINT32(c1, c2, c3, c4) (((c4) << 24) | ((c3) << 16) | ((c2) << 8) | (c1))

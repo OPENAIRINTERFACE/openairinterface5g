@@ -27,10 +27,6 @@
 
 #include <sys/epoll.h>
 
-#ifdef RTAI
-# include <rtai_sem.h>
-#endif
-
 #ifndef INTERTASK_INTERFACE_H_
 #define INTERTASK_INTERFACE_H_
 
@@ -155,12 +151,10 @@ int itti_create_task(task_id_t task_id,
                      void *(*start_routine) (void *),
                      void *args_p);
 
-//#ifdef RTAI
 /** \brief Mark the task as a real time task
  * \param task_id task to mark as real time
  **/
 void itti_set_task_real_time(task_id_t task_id);
-//#endif
 
 /** \brief Indicates to ITTI if newly created tasks should wait for all tasks to be ready
  * \param wait_tasks non 0 to make new created tasks to wait, 0 to let created tasks to run

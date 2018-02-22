@@ -389,7 +389,7 @@ void *udp_eNB_task(void *args_p)
       break;
 
       case TERMINATE_MESSAGE: {
-        LOG_W(UDP_, "Received TERMINATE_MESSAGE\n");
+        LOG_W(UDP_, " *** Exiting UDP thread\n");
         itti_exit_task();
       }
       break;
@@ -427,7 +427,7 @@ on_error:
   return NULL;
 }
 
-int udp_enb_init()
+int udp_enb_init(void)
 {
   LOG_I(UDP_, "Initializing UDP task interface\n");
   STAILQ_INIT(&udp_socket_list);

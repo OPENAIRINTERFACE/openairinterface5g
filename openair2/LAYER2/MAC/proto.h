@@ -35,6 +35,22 @@
  *  @{
  */
 
+/**
+ * slice specific scheduler
+ */
+typedef void (*slice_scheduler_dl)(module_id_t mod_id,
+				   slice_id_t  slice_id,
+				   frame_t     frame,
+				   sub_frame_t subframe,
+				   int        *mbsfn_flag);
+
+typedef void (*slice_scheduler_ul)(module_id_t mod_id,
+                                   slice_id_t  slice_id,
+				   frame_t       frame,
+				   sub_frame_t   subframe,
+				   unsigned char sched_subframe,
+                                   uint16_t     *first_rb);
+
 /** \fn void schedule_mib(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 \brief MIB scheduling for PBCH. This function requests the MIB from RRC and provides it to L1.
 @param Mod_id Instance ID of eNB
@@ -102,11 +118,12 @@ void schedule_ulsch(module_id_t module_idP, frame_t frameP,
 
 /** \brief ULSCH Scheduling per RNTI
 @param Mod_id Instance ID of eNB
+@param slice_id Instance slice for this eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 */
-void schedule_ulsch_rnti(module_id_t module_idP, frame_t frameP,
+void schedule_ulsch_rnti(module_id_t module_idP, slice_id_t slice_idP, frame_t frameP,
 			 sub_frame_t subframe,
 			 unsigned char sched_subframe,
 			 uint16_t * first_rb);
@@ -127,8 +144,11 @@ void fill_DLSCH_dci(module_id_t module_idP, frame_t frameP,
 
 @param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
 */
-void schedule_ue_spec(module_id_t module_idP, frame_t frameP,
+void schedule_dlsch(module_id_t module_idP, frame_t frameP,
 		      sub_frame_t subframe, int *mbsfn_flag);
+
+void schedule_ue_spec(module_id_t module_idP, slice_id_t slice_idP,
+		      frame_t frameP,sub_frame_t subframe, int *mbsfn_flag);
 
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
@@ -192,6 +212,8 @@ void dlsch_scheduler_pre_processor_reset(int module_idP, int UE_id,
 					 uint16_t
 					 nb_rbs_required_remaining
 					 [MAX_NUM_CCs][NUMBER_OF_UE_MAX],
+					 unsigned char total_ue_count[MAX_NUM_CCs],
+					 unsigned char total_rbs_used[MAX_NUM_CCs],
 					 unsigned char
 					 rballoc_sub[MAX_NUM_CCs]
 					 [N_RBG_MAX],
@@ -209,6 +231,7 @@ void dlsch_scheduler_pre_processor_reset(int module_idP, int UE_id,
 
 
 void dlsch_scheduler_pre_processor(module_id_t module_idP,
+				   slice_id_t slice_idP,
 				   frame_t frameP,
 				   sub_frame_t subframe,
 				   int N_RBG[MAX_NUM_CCs],
@@ -426,6 +449,14 @@ void set_ue_dai(sub_frame_t subframeP,
 		int UE_id,
 		uint8_t CC_id, uint8_t tdd_config, UE_list_t * UE_list);
 
+/** \brief First stage of PCH Scheduling. Gets a PCH SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+@param paging_ue_index
+*/
+void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
+
 uint8_t find_num_active_UEs_in_cbagroup(module_id_t module_idP,
 					unsigned char group_id);
 uint8_t UE_is_to_be_scheduled(module_id_t module_idP, int CC_id,
@@ -633,17 +664,18 @@ int UE_PCCID(module_id_t mod_idP, int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 
 
-void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP,
+void ulsch_scheduler_pre_processor(module_id_t module_idP, slice_id_t slice_id, int frameP,
 				   sub_frame_t subframeP,
 				   uint16_t * first_rb);
 void store_ulsch_buffer(module_id_t module_idP, int frameP,
 			sub_frame_t subframeP);
 void sort_ue_ul(module_id_t module_idP, int frameP, sub_frame_t subframeP);
-void assign_max_mcs_min_rb(module_id_t module_idP, int frameP,
+void assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 			   sub_frame_t subframeP, uint16_t * first_rb);
 void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,
 		     UE_TEMPLATE * UE_template);
 int phy_stats_exist(module_id_t Mod_id, int rnti);
+void sort_UEs(module_id_t Mod_idP, slice_id_t slice_id, int frameP, sub_frame_t subframeP);
 
 /*! \fn  UE_L2_state_t ue_scheduler(const module_id_t module_idP,const frame_t frameP, const sub_frame_t subframe, const lte_subframe_t direction,const uint8_t eNB_index)
    \brief UE scheduler where all the ue background tasks are done.  This function performs the following:  1) Trigger PDCP every 5ms 2) Call RRC for link status return to PHY3) Perform SR/BSR procedures for scheduling feedback 4) Perform PHR procedures.
@@ -1156,6 +1188,11 @@ uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn);
 int32_t get_uldl_offset(int eutra_bandP);
 int l2_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
 	       uint8_t HO_active);
+
+/*Slice related functions */
+uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
+
+int ue_slice_membership(int UE_id, int slice_id);
 
 #endif
 /** @}*/

@@ -56,42 +56,20 @@
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
 {
-  int i;
-  int r;
+  int i, r, aa, layer;
 
   if (dlsch) {
-#ifdef DEBUG_DLSCH_FREE
-    printf("Freeing dlsch %p\n",dlsch);
-#endif
-
+    for (layer=0; layer<4; layer++) {
+      for (aa=0; aa<64; aa++) free16(dlsch->ue_spec_bf_weights[layer][aa], OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+      free16(dlsch->ue_spec_bf_weights[layer], 64*sizeof(int32_t*));
+    }
     for (i=0; i<dlsch->Mdlharq; i++) {
-#ifdef DEBUG_DLSCH_FREE
-      printf("Freeing dlsch process %d\n",i);
-#endif
-
       if (dlsch->harq_processes[i]) {
-#ifdef DEBUG_DLSCH_FREE
-        printf("Freeing dlsch process %d (%p)\n",i,dlsch->harq_processes[i]);
-#endif
-
         if (dlsch->harq_processes[i]->b) {
           free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
           dlsch->harq_processes[i]->b = NULL;
-#ifdef DEBUG_DLSCH_FREE
-          printf("Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
-#endif
         }
-
-#ifdef DEBUG_DLSCH_FREE
-        printf("Freeing dlsch process %d c (%p)\n",i,dlsch->harq_processes[i]->c);
-#endif
-
         for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++) {
-
-#ifdef DEBUG_DLSCH_FREE
-          printf("Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
-#endif
-
           if (dlsch->harq_processes[i]->c[r]) {
             free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
             dlsch->harq_processes[i]->c[r] = NULL;
@@ -100,17 +78,14 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
             free16(dlsch->harq_processes[i]->d[r],(96+12+3+(3*6144)));
             dlsch->harq_processes[i]->d[r] = NULL;
           }
-
 	}
 	free16(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
 	dlsch->harq_processes[i] = NULL;
       }
     }
-
     free16(dlsch,sizeof(LTE_eNB_DLSCH_t));
     dlsch = NULL;
-    }
-
+  }
 }
 
 LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t Nsoft,unsigned char N_RB_DL, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS* frame_parms)
@@ -247,6 +222,7 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch)
     Mdlharq = dlsch->Mdlharq;
     dlsch->rnti = 0;
     dlsch->active = 0;
+    dlsch->harq_mask = 0;
 
     for (i=0; i<10; i++)
       dlsch->harq_ids[i] = Mdlharq;

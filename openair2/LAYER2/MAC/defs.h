@@ -39,15 +39,9 @@
 
 
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#endif
-
-//#include "COMMON/openair_defs.h"
-
-
 
 #include "PHY/defs.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
@@ -109,9 +103,7 @@
 //#define MCH_PAYLOAD_SIZE_MAX 16384// this value is using in case mcs and TBS index are high
 #endif
 
-#ifdef USER_MODE
 #define printk printf
-#endif				//USER_MODE
 
 /*!\brief Maximum number of logical channl group IDs */
 #define MAX_NUM_LCGID 4
@@ -162,6 +154,8 @@
 
 /*!\brief maximum number of slices / groups */
 #define MAX_NUM_SLICES 4
+
+#define U_PLANE_INACTIVITY_VALUE 6000
 
 /* 
  * eNB part 
@@ -472,6 +466,15 @@ typedef struct {
     /// BCCH MCS
     uint32_t ccch_mcs;
 
+  /// num PCCH PDU per CC
+  uint32_t total_num_pcch_pdu;
+  /// PCCH buffer size
+  uint32_t pcch_buffer;
+  /// total PCCH buffer size
+  uint32_t total_pcch_buffer;
+  /// BCCH MCS
+  uint32_t pcch_mcs;
+
 /// num active users
     uint16_t num_dlactive_UEs;
     ///  available number of PRBs for a give SF
@@ -662,7 +665,7 @@ typedef struct {
     /// mcs from last UL scheduling
     uint8_t mcs_UL[8];
     /// TBS from last UL scheduling
-    uint8_t TBS_UL[8];
+    int TBS_UL[8];
     /// Flag to indicate UL has been scheduled at least once
     boolean_t ul_active;
     /// Flag to indicate UE has been configured (ACK from RRCConnectionSetup received)
@@ -689,7 +692,7 @@ typedef struct {
     uint16_t cshift[8];		// num_max_harq
 
     /// Number of Allocated RBs by the ulsch preprocessor
-    uint8_t pre_allocated_nb_rb_ul;
+    uint8_t pre_allocated_nb_rb_ul[MAX_NUM_SLICES];
 
     /// index of Allocated RBs by the ulsch preprocessor
     int8_t pre_allocated_rb_table_index_ul;
@@ -717,9 +720,6 @@ typedef struct {
 
     // Logical channel info for link with RLC
 
-    /// Last received UE BSR info for each logical channel group id
-    uint8_t bsr_info[MAX_NUM_LCGID];
-
     /// LCGID mapping
     long lcgidmap[11];
 
@@ -746,14 +746,17 @@ typedef struct {
     /// size of remaining size to send for the downlink head SDU
     uint32_t dl_buffer_head_sdu_remaining_size_to_send[MAX_NUM_LCID];
 
-    /// total uplink buffer size 
-    uint32_t ul_total_buffer;
     /// uplink buffer creation time for each LCID
     uint32_t ul_buffer_creation_time[MAX_NUM_LCGID];
     /// maximum uplink buffer creation time across all the LCIDs
     uint32_t ul_buffer_creation_time_max;
     /// uplink buffer size per LCID
     uint32_t ul_buffer_info[MAX_NUM_LCGID];
+
+    /// uplink bytes that are currently scheduled
+    int scheduled_ul_bytes;
+    /// estimation of the UL buffer size
+    int estimated_ul_buffer;
 
     /// UE tx power
     int32_t ue_tx_power;
@@ -800,7 +803,8 @@ typedef struct {
     ///Contention resolution timer used during random access
     uint8_t mac_ContentionResolutionTimer;
 
-    uint16_t max_allowed_rbs[MAX_NUM_LCID];
+    uint16_t max_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];
+    uint16_t max_rbs_allowed_slice_uplink[MAX_NUM_CCs][MAX_NUM_SLICES];
 
     uint8_t max_mcs[MAX_NUM_LCID];
 
@@ -824,6 +828,8 @@ typedef struct {
     int32_t cqi_req_timer;
     int32_t ul_inactivity_timer;
     int32_t ul_failure_timer;
+    uint32_t ue_reestablishment_reject_timer;
+    uint32_t ue_reestablishment_reject_timer_thres;
     int32_t ul_scheduled;
     int32_t ra_pdcch_order_sent;
     int32_t ul_out_of_sync;
@@ -855,6 +861,7 @@ typedef struct {
     uint8_t aperiodic_wideband_cqi1[NFAPI_CC_MAX];
     uint8_t aperiodic_wideband_pmi1[NFAPI_CC_MAX];
     uint8_t dl_cqi[NFAPI_CC_MAX];
+    int32_t       uplane_inactivity_timer;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {
@@ -956,6 +963,10 @@ typedef struct {
     int avail;
     int num_UEs;
     boolean_t active[NUMBER_OF_UE_MAX];
+
+    /// Sorting criteria for the UE list in the MAC preprocessor
+    uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
+
 } UE_list_t;
 
 /*! \brief eNB common channels */
@@ -982,6 +993,10 @@ typedef struct {
     uint32_t BCCH_alloc_pdu;
     /// Outgoing CCCH pdu for PHY
     CCCH_PDU CCCH_pdu;
+    /// Outgoing PCCH DCI allocation
+    uint32_t PCCH_alloc_pdu;
+    /// Outgoing PCCH pdu for PHY
+    PCCH_PDU PCCH_pdu;
     /// Outgoing RAR pdu for PHY
     RAR_PDU RAR_pdu;
     /// Template for RA computations
@@ -1102,6 +1117,8 @@ typedef struct eNB_MAC_INST_s {
     time_stats_t schedule_mch;
     /// processing time of eNB ULSCH reception
     time_stats_t rx_ulsch_sdu;	// include rlc_data_ind
+    /// processing time of eNB PCH scheduler
+    time_stats_t schedule_pch;
 } eNB_MAC_INST;
 
 /* 
