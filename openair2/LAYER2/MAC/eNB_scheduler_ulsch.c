@@ -302,7 +302,7 @@ rx_sdu(const module_id_t enb_mod_idP,
                 // prepare transmission of Msg4(RRCConnectionReconfiguration)
                 ra->state = MSGCRNTI;
                 LOG_I(MAC,
-                     "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)",
+                     "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)\n",
                      enb_mod_idP, frameP, subframeP, CC_idP, old_rnti, old_UE_id);
                 //
                 UE_id = old_UE_id;
