@@ -120,10 +120,10 @@ uint32_t flexran_get_num_mac_sdu_tx(mid_t mod_id, mid_t ue_id, int cc_id);
 unsigned char flexran_get_mac_sdu_lcid_index(mid_t mod_id, mid_t ue_id, int cc_id, int index);
 
 /*Get MAC size sdus length dl*/
-uint32_t flexran_get_size_dl_mac_sdus(mid_t mod_id, uint32_t cc_id);
+uint32_t flexran_get_size_dl_mac_sdus(mid_t mod_id, int cc_id);
 
 /*Get MAC size sdus length ul */
-uint32_t flexran_get_size_ul_mac_sdus(mid_t mod_id, uint32_t cc_id);
+uint32_t flexran_get_size_ul_mac_sdus(mid_t mod_id, int cc_id);
 
 /*Get total size DL MAC SDUS*/
 uint32_t flexran_get_total_size_dl_mac_sdus(mid_t mod_id, mid_t ue_id, int cc_id);
@@ -144,16 +144,16 @@ uint32_t flexran_get_total_prb_dl_tx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id
 uint32_t flexran_get_total_prb_ul_rx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
 
 /*Get number of prb for tx per UE DL*/
-uint16_t flexran_get_num_prb_dl_tx_per_ue(mid_t mod_id, mid_t ue_id, uint32_t cc_id);
+uint16_t flexran_get_num_prb_dl_tx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
 
 /*Get number of prb for rx per UE UL*/
-uint16_t flexran_get_num_prb_ul_rx_per_ue(mid_t mod_id, mid_t ue_id, uint32_t cc_id);
+uint16_t flexran_get_num_prb_ul_rx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
 
 /*Get number of prb for retx per UE UL*/
-uint32_t flexran_get_num_prb_retx_ul_per_ue(mid_t mod_id, mid_t ue_id, uint32_t cc_id);
+uint32_t flexran_get_num_prb_retx_ul_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
 
 /*Get number of prb for retx per UE*/
-uint16_t flexran_get_num_prb_retx_dl_per_ue(mid_t mod_id, mid_t ue_id, uint32_t cc_id);
+uint16_t flexran_get_num_prb_retx_dl_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
 
 /*MCS before rate adaptation DL*/
 uint8_t flexran_get_mcs1_dl(mid_t mod_id, mid_t ue_id, int cc_id);
@@ -178,6 +178,9 @@ uint64_t flexran_get_total_TBS_dl(mid_t mod_id, mid_t ue_id, int cc_id);
 
 /*Get total TBS DL*/
 uint64_t flexran_get_total_TBS_ul(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/* Get the current HARQ round for UE ue_id */
+int flexran_get_harq_round(mid_t mod_id, uint8_t cc_id, mid_t ue_id);
 
 /* Get the number of active component carriers for a specific UE */
 int flexran_get_active_CC(mid_t mod_id, mid_t ue_id);
