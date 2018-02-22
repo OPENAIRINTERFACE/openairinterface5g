@@ -1451,24 +1451,30 @@ fill_nfapi_harq_information(module_id_t module_idP,
 //			[UE_id].physicalConfigDedicated->
 //			pucch_ConfigDedicated != NULL,
 //			"pucch_ConfigDedicated is null for TDD!\n");
-	    if ((UE_list->
-	            UE_template[CC_idP][UE_id].physicalConfigDedicated->
-	            pucch_ConfigDedicated != NULL)
-	    && (UE_list->
-		 UE_template[CC_idP][UE_id].physicalConfigDedicated->
-		 pucch_ConfigDedicated->tdd_AckNackFeedbackMode != NULL)
-		&& (*UE_list->
-		    UE_template[CC_idP][UE_id].physicalConfigDedicated->
-		    pucch_ConfigDedicated->tdd_AckNackFeedbackMode ==
-		    PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing))
-	    {
-		harq_information->harq_information_rel10_tdd.harq_size = 2;	// 2-bit ACK/NAK
-		harq_information->harq_information_rel10_tdd.ack_nack_mode = 1;	// multiplexing
-	    } else {
-		harq_information->harq_information_rel10_tdd.harq_size = 1;	// 1-bit ACK/NAK
-		harq_information->harq_information_rel10_tdd.ack_nack_mode = 0;	// bundling
-	    }
-            harq_information->harq_information_rel10_tdd.tl.tag = NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL10_TDD_TAG;
+	    if (UE_list->
+	            UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL){
+	      if ((UE_list->
+	              UE_template[CC_idP][UE_id].physicalConfigDedicated->
+	              pucch_ConfigDedicated != NULL)
+	      && (UE_list->
+		   UE_template[CC_idP][UE_id].physicalConfigDedicated->
+		   pucch_ConfigDedicated->tdd_AckNackFeedbackMode != NULL)
+		  && (*UE_list->
+		      UE_template[CC_idP][UE_id].physicalConfigDedicated->
+		      pucch_ConfigDedicated->tdd_AckNackFeedbackMode ==
+		      PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing))
+	      {
+		  harq_information->harq_information_rel10_tdd.harq_size = 2;	// 2-bit ACK/NAK
+		  harq_information->harq_information_rel10_tdd.ack_nack_mode = 1;	// multiplexing
+	      } else {
+		  harq_information->harq_information_rel10_tdd.harq_size = 1;	// 1-bit ACK/NAK
+		  harq_information->harq_information_rel10_tdd.ack_nack_mode = 0;	// bundling
+	      }
+        } else {
+        harq_information->harq_information_rel10_tdd.harq_size = 1;     // 1-bit ACK/NAK
+        harq_information->harq_information_rel10_tdd.ack_nack_mode = 0; // bundling
+        }
+		harq_information->harq_information_rel10_tdd.tl.tag = NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL10_TDD_TAG;
 	    harq_information->harq_information_rel10_tdd.n_pucch_1_0 =
 		cc->radioResourceConfigCommon->pucch_ConfigCommon.
 		n1PUCCH_AN + cce_idxP;
