@@ -293,7 +293,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
 				 db_fulllength,
 				 0) < 0) {
     perror("ETHERNET read");
-    ru->state = RU_IDLE;
+    ru->cmd = STOP_RU;
     return;
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );

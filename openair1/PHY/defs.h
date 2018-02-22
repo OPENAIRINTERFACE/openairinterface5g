@@ -678,6 +678,11 @@ typedef enum {
   RU_SYNC   = 5
 } rru_state_t;
 
+/// Some commamds to RRU. Not sure we should do it like this !
+typedef enum {
+  STOP_RU   = 0
+} rru_cmd_t;
+
 typedef struct RU_t_s{
   /// index of this ru
   uint32_t idx;
@@ -796,6 +801,8 @@ typedef struct RU_t_s{
   openair0_timestamp   ts_offset;
   /// Current state of the RU
   rru_state_t state;
+  /// Command to do
+  rru_cmd_t cmd;
   /// process scheduling variables
   RU_proc_t            proc;
   /// stats thread pthread descriptor

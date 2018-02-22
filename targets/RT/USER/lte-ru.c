@@ -681,15 +681,10 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
   do {   
     recv_IF4p5(ru, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
-    if (ru->state != RU_RUN){
+    if (ru->cmd != STOP_RU){
 	pthread_mutex_lock(&proc->mutex_ru);
         proc->instance_cnt_ru = -1;
         pthread_mutex_unlock(&proc->mutex_ru);
-	if (ru->stop_rf) {
-            ru->stop_rf(ru);  
-            LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
-        }
-        else LOG_D(PHY,"RU %d no rf device\n",ru->idx);
 	return;
     } 
     if ((subframe_select(fp,subframe_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
@@ -1788,6 +1783,14 @@ static void* ru_thread( void* param ) {
 
 
 	    // synchronization on input FH interface, acquire signals/data and block
+ 	    if (ru->stop_rf && ru->cmd == STOP_RU) {
+            	ru->stop_rf(ru);
+		ru->state = RU_IDLE;
+            	LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+		break;
+            }
+            
+	    
 	    if (ru->fh_south_in && ru->state == RU_RUN) ru->fh_south_in(ru,&frame,&subframe);
 	    else AssertFatal(1==0, "No fronthaul interface at south port");
 
@@ -2273,6 +2276,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     ru->idx          = ru_id;              
     ru->ts_offset    = 0;
     ru->in_synch     = (ru->is_slave == 1) ? 0 : 1;
+    ru->cmd	     = -1;
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
     ru->openair0_cfg.clock_source  = clock_source;
