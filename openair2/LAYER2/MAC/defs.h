@@ -562,6 +562,13 @@ typedef struct {
     uint32_t num_retransmission;
     /// instantaneous tx throughput for each TTI
     //  uint32_t tti_throughput[NB_RB_MAX];
+    // Number of received MAC SDU    
+    uint32_t num_mac_sdu_tx;
+    // LCID related to SDU
+    unsigned char lcid_sdu[NB_RB_MAX];
+    // Length of SDU Got from LC DL
+    uint32_t sdu_length_tx[NB_RB_MAX];
+ 
 
     /// overall
     //
@@ -607,6 +614,8 @@ typedef struct {
 
     ///  uplink transport block size
     uint32_t ulsch_TBS;
+    
+    uint32_t total_ulsch_TBS;
 
     ///  total rb used for a new uplink transmission
     uint32_t num_retransmission_rx;
@@ -648,6 +657,10 @@ typedef struct {
     uint32_t total_num_pdus_rx;
     /// num of error pdus
     uint32_t total_num_errors_rx;
+    // Number of error PDUS
+    uint32_t num_mac_sdu_rx;
+    // Length of SDU Got from LC UL - Size array can be refined
+    uint32_t      sdu_length_rx[NB_RB_MAX];
 
 } eNB_UE_STATS;
 /*! \brief eNB template for UE context information  */
