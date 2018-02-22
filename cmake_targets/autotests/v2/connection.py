@@ -13,7 +13,7 @@ class connection:
         try:
             (pid, fd) = os.forkpty()
         except BaseException, e:
-            log("ERROR: forkpty for '" + description + "': " + e)
+            log("ERROR: forkpty for '" + description + "': " + str(e))
             (pid, fd) = (-1, -1)
 
         if pid == -1:
@@ -26,7 +26,7 @@ class connection:
                 os.execvp('sshpass', ['sshpass', '-p', password,
                           'ssh', user + '@' + host])
             except BaseException, e:
-                log("ERROR: execvp for '" + description + "': " + e)
+                log("ERROR: execvp for '" + description + "': " + str(e))
             log("ERROR: execvp failed for '" + description + "'")
             os._exit(1)
 
