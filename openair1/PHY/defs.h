@@ -264,6 +264,8 @@ typedef struct {
   pthread_mutex_t mutex_rxtx;
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
+  /// pipeline ready state
+  int pipe_ready;
 } eNB_rxtx_proc_t;
 
 typedef struct {
@@ -452,6 +454,8 @@ typedef struct RU_proc_t_s {
   int                  num_slaves;
   /// array of pointers to slaves
   struct RU_proc_t_s           **slave_proc;
+  /// pipeline ready state
+  int ru_rx_ready;
 } RU_proc_t;
 
 /// Context data structure for eNB subframe processing

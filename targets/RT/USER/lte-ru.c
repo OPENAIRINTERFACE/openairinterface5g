@@ -1596,7 +1596,9 @@ static void* ru_thread( void* param ) {
 
     LOG_D(PHY,"RU %d/%d frame_tx %d, subframe_tx %d\n",0,ru->idx,proc->frame_tx,proc->subframe_tx);
     // wakeup all eNB processes waiting for this RU
+    proc->ru_rx_ready = 1;
     if (ru->num_eNB>0) wakeup_eNBs(ru);
+    proc->ru_rx_ready = 0;
 
     
 	if(get_nprocs() <=4)
@@ -1752,6 +1754,7 @@ void init_RU_proc(RU_t *ru) {
   proc->frame_offset             = 0;
   proc->num_slaves               = 0;
   proc->frame_tx_unwrap          = 0;
+  proc->ru_rx_ready              = 1;
 
   for (i=0;i<10;i++) proc->symbol_mask[i]=0;
   

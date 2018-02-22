@@ -196,7 +196,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   int               UE_id = 0;
   uint8_t           aggregation    = 2;
   rnti_t            rnti           = 0x1235;
-  uint8_t           mcs            = 20;
+  uint8_t           mcs            = 0;
   uint8_t           harq_pid       = 0;
   uint32_t          cqi_req = 0,cshift,ndi,tpc = 1;
   int32_t           normalized_rx_power;

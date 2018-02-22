@@ -1,17 +1,17 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Fri Nov  3 16:03:52 2017
+[*] Thu Feb 22 14:46:40 2018
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Fri Nov  3 16:00:30 2017"
-[dumpfile_size] 56765827
+[dumpfile_mtime] "Thu Feb 22 14:44:26 2018"
+[dumpfile_size] 3482761
 [savefile] "/homes/wangts/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
-[timestart] 15220241000
+[timestart] 4525000000
 [size] 1920 1018
 [pos] 0 22
-*-19.666586 15221741584 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-21.506693 4530514310 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 386
-[signals_width] 302
+[signals_width] 344
 [sst_expanded] 1
 [sst_vpaned_height] 303
 @28
@@ -34,11 +34,15 @@ functions.macxface_ue_scheduler
 functions.phy_eNB_ofdm_mod_l
 @24
 variables.frame_number_RX0_eNB[63:0]
-variables.frame_number_TX0_eNB[63:0]
 @25
-variables.frame_number_RX1_eNB[63:0]
+variables.subframe_number_RX0_eNB[63:0]
 @24
+variables.frame_number_TX0_eNB[63:0]
+variables.subframe_number_TX0_eNB[63:0]
+variables.frame_number_RX1_eNB[63:0]
+variables.subframe_number_RX1_eNB[63:0]
 variables.frame_number_TX1_eNB[63:0]
+variables.subframe_number_TX1_eNB[63:0]
 @28
 functions.phy_eNB_dlsch_modulation
 functions.phy_eNB_dlsch_encoding
