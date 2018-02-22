@@ -2511,7 +2511,15 @@ void ulsch_scheduler_pre_ue_select(
           ue_first_num[CC_id]++;
           continue;
         }
-        if ( (ulsch_ue_select[CC_id].ue_num+ul_inactivity_num[CC_id] ) < ulsch_ue_max_num[CC_id] ) {
+        UE_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+        if ( ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
+            ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED))) {
+          first_ue_id[CC_id][ue_first_num[CC_id]]= UE_id;
+          first_ue_total[CC_id] [ue_first_num[CC_id]] = 0;
+          ue_first_num[CC_id]++;
+          continue;
+        }
+        /*if ( (ulsch_ue_select[CC_id].ue_num+ul_inactivity_num[CC_id] ) < ulsch_ue_max_num[CC_id] ) {
             UE_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
             if ( ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
               ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED))) {
@@ -2519,7 +2527,7 @@ void ulsch_scheduler_pre_ue_select(
             ul_inactivity_num[CC_id] ++;
             continue;
           }
-        }
+        }*/
       }
 
   }
@@ -2594,7 +2602,10 @@ void ulsch_scheduler_pre_ue_select(
 
     HI_DCI0_req   = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
     //SR BSR
-    if ( (UE_list->UE_template[CC_id][UE_id].ul_total_buffer > 0) || (UE_list->UE_template[CC_id][UE_id].ul_SR > 0) ) {
+        UE_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+    if ( (UE_list->UE_template[CC_id][UE_id].ul_total_buffer > 0) || (UE_list->UE_template[CC_id][UE_id].ul_SR > 0) ||
+          ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
+          ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED)) ){
         hi_dci0_pdu   = &HI_DCI0_req->hi_dci0_pdu_list[HI_DCI0_req->number_of_dci+HI_DCI0_req->number_of_hi];
         format_flag = 2;
         if (CCE_allocation_infeasible(module_idP,CC_id,format_flag,subframeP,aggregation,rnti) == 1) {
@@ -2617,7 +2628,7 @@ void ulsch_scheduler_pre_ue_select(
           }
     }
     //inactivity UE
-    if ( (ulsch_ue_select[CC_id].ue_num+ul_inactivity_num[CC_id]) < ulsch_ue_max_num[CC_id] ) {
+/*    if ( (ulsch_ue_select[CC_id].ue_num+ul_inactivity_num[CC_id]) < ulsch_ue_max_num[CC_id] ) {
         UE_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
         if ( ((UE_sched_ctl->ul_inactivity_timer>20)&&(UE_sched_ctl->ul_scheduled==0))  ||
             ((UE_sched_ctl->ul_inactivity_timer>10)&&(UE_sched_ctl->ul_scheduled==0)&&(mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP,UE_id)) < RRC_CONNECTED))) {
@@ -2625,7 +2636,7 @@ void ulsch_scheduler_pre_ue_select(
           ul_inactivity_num[CC_id]++;
           continue;
         }
-    }
+    }*/
   }
 
   for ( CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++ ) {
