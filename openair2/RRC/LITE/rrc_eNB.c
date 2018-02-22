@@ -1371,8 +1371,10 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
   // get old configuration of SRB2
   if (*SRB_configList2 != NULL) {
-    LOG_D(RRC, "SRB_configList2(%p) count is %d\n           SRB_configList2->list.array[0] addr is %p",
+    if((*SRB_configList2)->list.count!=0){
+      LOG_D(RRC, "SRB_configList2(%p) count is %d\n           SRB_configList2->list.array[0] addr is %p",
           SRB_configList2, (*SRB_configList2)->list.count,  (*SRB_configList2)->list.array[0]);
+    }
     for (i = 0; (i < (*SRB_configList2)->list.count) && (i < 3); i++) {
       if ((*SRB_configList2)->list.array[i]->srb_Identity == 2 ){
         LOG_D(RRC, "get SRB2_config from (ue_context_pP->ue_context.SRB_configList2[%d])\n", xid);
@@ -1384,9 +1386,13 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[next_xid];
   DRB_configList2 = &ue_context_pP->ue_context.DRB_configList2[next_xid];
 
-  if (*SRB_configList2) {
-    free(*SRB_configList2);
-    LOG_D(RRC, "free(ue_context_pP->ue_context.SRB_configList2[%d])\n", next_xid);
+  if(SRB_configList2!=NULL){
+    if (*SRB_configList2) {
+      free(*SRB_configList2);
+      LOG_D(RRC, "free(ue_context_pP->ue_context.SRB_configList2[%d])\n", next_xid);
+    }
+  }else{
+      LOG_E(RRC, "SRB_configList2 is null\n");
   }
   *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
   if (SRB2_config != NULL) {
@@ -1406,9 +1412,13 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
 
 
 
-  if (*DRB_configList2) {
-    free(*DRB_configList2);
-    LOG_D(RRC, "free(ue_context_pP->ue_context.DRB_configList2[%d])\n", next_xid);
+  if(DRB_configList2!=NULL){
+    if (*DRB_configList2) {
+      free(*DRB_configList2);
+      LOG_D(RRC, "free(ue_context_pP->ue_context.DRB_configList2[%d])\n", next_xid);
+    }
+  }else{
+      LOG_E(RRC, "DRB_configList2 is null\n");
   }
   *DRB_configList2 = CALLOC(1, sizeof(**DRB_configList2));
 
@@ -1863,35 +1873,39 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   }
 
 #endif
+  if(size==65535){
+    LOG_E(RRC,"RRC decode err!!! do_RRCConnectionReconfiguration\n");
+    put_UE_in_freelist(ctxt_pP->module_id, reestablish_rnti, 0);
+    return;
+  }else{
+    LOG_I(RRC,
+          "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
+          ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
 
-  LOG_I(RRC,
-        "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
-        ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
+    LOG_D(RRC,
+          "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
+          ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_eNB_mui, ctxt_pP->module_id, DCCH);
 
-  LOG_D(RRC,
-        "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
-        ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_eNB_mui, ctxt_pP->module_id, DCCH);
+    MSC_LOG_TX_MESSAGE(
+      MSC_RRC_ENB,
+      MSC_RRC_UE,
+      buffer,
+      size,
+      MSC_AS_TIME_FMT" rrcConnectionReconfiguration UE %x MUI %d size %u",
+      MSC_AS_TIME_ARGS(ctxt_pP),
+      ue_context_pP->ue_context.rnti,
+      rrc_eNB_mui,
+      size);
 
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_ENB,
-    MSC_RRC_UE,
-    buffer,
-    size,
-    MSC_AS_TIME_FMT" rrcConnectionReconfiguration UE %x MUI %d size %u",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_context.rnti,
-    rrc_eNB_mui,
-    size);
-
-  rrc_data_req(
-         ctxt_pP,
-         DCCH,
-         rrc_eNB_mui++,
-         SDU_CONFIRM_NO,
-         size,
-         buffer,
-         PDCP_TRANSMISSION_MODE_CONTROL);
-
+    rrc_data_req(
+           ctxt_pP,
+           DCCH,
+           rrc_eNB_mui++,
+           SDU_CONFIRM_NO,
+           size,
+           buffer,
+           PDCP_TRANSMISSION_MODE_CONTROL);
+  }
   // delete UE data of prior RNTI.  UE use current RNTI.
 //  protocol_ctxt_t ctxt_prior = *ctxt_pP;
 //  ctxt_prior.rnti = reestablish_rnti;
