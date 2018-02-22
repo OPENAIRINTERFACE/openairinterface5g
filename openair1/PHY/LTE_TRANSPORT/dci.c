@@ -52,6 +52,9 @@
 //extern uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
 //extern uint16_t pcfich_reg[4];
 
+//#undef LOG_D
+//#define LOG_D(A,B,C...) printf(B,C)
+
 uint32_t check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,uint32_t kprime,uint8_t lprime,uint8_t mi)
 {
 
@@ -177,7 +180,7 @@ void dci_encoding(uint8_t *a,
   // encode dci
 
 #ifdef DEBUG_DCI_ENCODING
-  printf("Doing DCI encoding for %d bits, e %p, rnti %x\n",A,e,rnti);
+  printf("Doing DCI encoding for %d bits, e %p, rnti %x, E %d\n",A,e,rnti,E);
 #endif
 
   memset((void *)d,LTE_NULL,96);
@@ -231,18 +234,23 @@ uint8_t *generate_dci0(uint8_t *dci,
 
   coded_bits = 72 * aggregation_level;
 
-  /*
+  
 
   #ifdef DEBUG_DCI_ENCODING
-  for (i=0;i<1+((DCI_LENGTH+16)/8);i++)
+  for (int i=0;i<1+((DCI_LENGTH+16)/8);i++)
     printf("i %d : %x\n",i,dci[i]);
   #endif
-  */
+  
   if (DCI_LENGTH<=32) {
     dci_flip[0] = dci[3];
     dci_flip[1] = dci[2];
     dci_flip[2] = dci[1];
     dci_flip[3] = dci[0];
+#ifdef DEBUG_DCI_ENCODING
+    printf("DCI => %x,%x,%x,%x\n",
+	   dci_flip[0],dci_flip[1],dci_flip[2],dci_flip[3]);
+
+#endif
   } else {
     dci_flip[0] = dci[7];
     dci_flip[1] = dci[6];
@@ -2271,7 +2279,7 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
   /* clear all bits, the above code may generate too much false detections
    * (not sure about this, to be checked somehow)
    */
-  //  memset(e, 0, DCI_BITS_MAX);
+  // memset(e, 0, DCI_BITS_MAX);
 
   e_ptr = e;
 
@@ -2285,11 +2293,11 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
       if (dci_alloc[i].L == (uint8_t)L) {
 
 	#ifdef DEBUG_DCI_ENCODING
-	if (dci_alloc[i].rnti==0x02)
-	  LOG_I(PHY,"Generating DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x), rnti %x\n",i,num_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,dci_alloc[i].L,
+	if (dci_alloc[i].rnti==0x1234)
+	  LOG_D(PHY,"Generating DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x), rnti %x\n",i,num_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,dci_alloc[i].L,
 		*(unsigned int*)dci_alloc[i].dci_pdu,
 		dci_alloc[i].rnti);
-       //dump_dci(frame_parms,&dci_alloc[i]);
+       dump_dci(frame_parms,&dci_alloc[i]);
 	#endif
 
         if (dci_alloc[i].firstCCE>=0) {
@@ -2894,17 +2902,17 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
         LOG_D(PHY,"[DCI search nPdcch %d - common] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x)\n",
                 pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask);
       else
-        LOG_D(PHY,"[DCI search nPdcch %d - ue spec] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x) format %d\n",
-                pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_c);
+        LOG_D(PHY,"[DCI search nPdcch %d - ue spec %x] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x) format %d\n",
+	      pdcch_vars[eNB_id]->num_pdcch_symbols,pdcch_vars[eNB_id]->crnti,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_c);
 
        dci_decoding(sizeof_bits,
                    L,
                    &pdcch_vars[eNB_id]->e_rx[CCEind*72],
                    &dci_decoded_output[current_thread_id][0]);
-      /*
+       /*
         for (i=0;i<3+(sizeof_bits>>3);i++)
-        printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
-      */
+	  printf("dci_decoded_output[%d][%d] => %x\n",current_thread_id,i,dci_decoded_output[current_thread_id][i]);
+       */
 
       crc = (crc16(&dci_decoded_output[current_thread_id][0],sizeof_bits)>>16) ^ extract_crc(&dci_decoded_output[current_thread_id][0],sizeof_bits);
 #ifdef DEBUG_DCI_DECODING
@@ -3823,7 +3831,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
   } else if (tmode == 3) {
 
 
-    LOG_D(PHY," Now check UE_SPEC format 2A_2A search aggregation 1 dci length: %d[bits] %d[bytes]\n",format2A_size_bits,format2A_size_bytes);
+    //    LOG_D(PHY," Now check UE_SPEC format 2A_2A search aggregation 1 dci length: %d[bits] %d[bytes]\n",format2A_size_bits,format2A_size_bytes);
     // Now check UE_SPEC format 2A_2A search spaces at aggregation 1
     old_dci_cnt=dci_cnt;
     dci_decoding_procedure0(pdcch_vars,0,mode,
@@ -3895,7 +3903,7 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
       return(dci_cnt);
 
     // Now check UE_SPEC format 2_2A search spaces at aggregation 4
-    LOG_D(PHY," Now check UE_SPEC format 2_2A search spaces at aggregation 4 \n");
+    //    LOG_D(PHY," Now check UE_SPEC format 2_2A search spaces at aggregation 4 \n");
     old_dci_cnt=dci_cnt;
     dci_decoding_procedure0(pdcch_vars,0,mode,
                             subframe,
@@ -4238,3 +4246,6 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
 
   return(dci_cnt);
 }
+
+
+

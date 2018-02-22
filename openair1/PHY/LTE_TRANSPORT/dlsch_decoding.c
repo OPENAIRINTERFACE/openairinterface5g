@@ -37,6 +37,12 @@
 #include "SCHED/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
 //#define DEBUG_DLSCH_DECODING
+//#define UE_DEBUG_TRACE 1
+
+//#undef LOG_D
+//#define LOG_D(A,B,C...) printf(B,C)
+//#undef LOG_I
+//#define LOG_I(A,B,C...) printf(B,C)
 
 extern double cpuf;
 

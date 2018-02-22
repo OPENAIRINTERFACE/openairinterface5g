@@ -1084,7 +1084,7 @@ typedef struct eNB_MAC_INST_s {
     /// Prealocated TX pdu list
     nfapi_tx_request_pdu_t
 	tx_request_pdu[MAX_NUM_CCs][MAX_NUM_TX_REQUEST_PDU];
-    /// NFAPI DL PDU structure
+    /// NFAPI DL PDU structuree
     nfapi_tx_request_t TX_req[MAX_NUM_CCs];
     /// UL handle
     uint32_t ul_handle;

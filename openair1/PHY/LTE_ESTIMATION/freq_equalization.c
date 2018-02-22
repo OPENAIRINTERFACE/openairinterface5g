@@ -306,7 +306,7 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
 
   AssertFatal(symbol<frame_parms->symbols_per_tti,"symbol %d >= %d\n",
 	      symbol,frame_parms->symbols_per_tti);
-  AssertFatal(Msc_RS<frame_parms->N_RB_UL*12,"Msc_RS %d >= %d\n",
+  AssertFatal(Msc_RS<=frame_parms->N_RB_UL*12,"Msc_RS %d >= %d\n",
 	      Msc_RS,frame_parms->N_RB_UL*12);
 
   for (re=0; re<(Msc_RS>>2); re++) {

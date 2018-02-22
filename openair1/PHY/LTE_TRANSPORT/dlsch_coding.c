@@ -579,7 +579,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 #ifdef DEBUG_DLSCH_CODING
-  printf("encoding thinks this is a new packet \n");
+    printf("encoding thinks this is a new packet for harq_pid %d (%p) \n",harq_pid,dlsch->harq_processes[harq_pid]->b);
 #endif
     /*
     int i;
@@ -589,6 +589,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
     printf("\n");
     */
     // Add 24-bit crc (polynomial A) to payload
+
     crc = crc24a(a,
                  A)>>8;
     a[A>>3] = ((uint8_t*)&crc)[2];

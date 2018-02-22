@@ -749,6 +749,10 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
 
   for (; (ind<Ncb)&&(k<E); ind++) {
     if (dummy_w[ind] != LTE_NULL) {
+      /*
+      if ((w[ind]>0 && soft_input2[k]<0) || 
+	  (w[ind]<0 && soft_input2[k]>0))  
+	  printf("ind %d: w %d => soft_in %d\n",ind,w[ind],soft_input2[k]);*/
       w[ind] += soft_input2[k++];
 #ifdef RM_DEBUG
       printf("RM_RX k%d Ind: %d (%d)\n",k-1,ind,w[ind]);

@@ -32,6 +32,11 @@
 #include "assertions.h"
 #include <math.h>
 
+#undef LOG_I
+#define LOG_I(A,B,C...) printf(B,C)
+#undef LOG_D
+#define LOG_D(A,B,C...) printf(B,C)
+
 int phy_init_RU(RU_t *ru) {
 
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
@@ -60,7 +65,7 @@ int phy_init_RU(RU_t *ru) {
     }
   } // IF5 or local RF
   else {
-    LOG_I(PHY,"No rxdata/txdata for RU\n");
+    //    LOG_I(PHY,"No rxdata/txdata for RU\n");
     ru->common.txdata        = (int32_t**)NULL;
     ru->common.rxdata        = (int32_t**)NULL;
 
@@ -91,8 +96,8 @@ int phy_init_RU(RU_t *ru) {
     }
 
     /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
-    AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
-		"nb_antennas_rx too large");
+    //    AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
+    //		"nb_antennas_rx too large");
     ru->prach_rxsigF = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
     for (j=0;j<4;j++) ru->prach_rxsigF_br[j] = (int16_t**)malloc(ru->nb_rx * sizeof(int16_t*));
 
