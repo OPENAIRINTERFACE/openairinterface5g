@@ -849,7 +849,7 @@ void free_td8(void)
 
 extern RAN_CONTEXT_t RC;
 
-void init_td8()
+void init_td8(void)
 {
 
   int ind,i,j,n,n2,pi,pi3;

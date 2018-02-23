@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -18,7 +18,6 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
 /*! \file common/utils/telnetsrv/telnetsrv.h
  * \brief: include file for telnet server implementation
  * \author Francois TABURET
@@ -38,7 +37,7 @@
 #define TELNET_MAX_MSGLENGTH      2048
 #define TELNET_PROMPT             "softmodem> "
 #define TELNET_MAXCMD             20
-#define TELNET_CMD_MAXSIZE        10
+#define TELNET_CMD_MAXSIZE        20
 #define TELNET_HELPSTR_SIZE       80
 
 /* status return by the command parser after it analysed user input */
@@ -70,7 +69,7 @@ typedef struct cmddef {
 #define TELNET_VARTYPE_INT64  3
 #define TELNET_VARTYPE_STRING 4
 #define TELNET_VARTYPE_DOUBLE 5
-#define TELNET_VARTYPE_PTR    6
+//#define TELNET_VARTYPE_PTR    6
 typedef struct variabledef {
     char varname[TELNET_CMD_MAXSIZE];
     char vartype;
@@ -96,6 +95,8 @@ typedef struct {
      pthread_t telnet_pthread;       // thread id of the telnet server
      int telnetdbg;                  // debug level of the server
      int priority;                   // server running priority
+     char *histfile;                 // command history
+     int histsize;                   // command history length
      int new_socket;                 // socket of the client connection
      int logfilefd;                  // file id of the log file when log output is redirected to a file
      int  saved_stdout;              // file id of the previous stdout, used to be able to restore original stdout 
@@ -134,6 +135,6 @@ VT escape sequence definition, for smarter display....
 int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd);
 void set_sched(pthread_t tid, int pid,int priority);
 void set_affinity(pthread_t tid, int pid, int coreid);
-extern int get_phybsize(); 
+extern int get_phybsize(void); 
 #endif
 #endif

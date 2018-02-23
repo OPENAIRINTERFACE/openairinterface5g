@@ -19,10 +19,19 @@
  *      contact@openairinterface.org
  */
 
-extern unsigned short f1f2mat_old[2*188];
-extern double cpuf;
-extern decoder_if_t decoder16;
-extern decoder_if_t decoder8;
-extern encoder_if_t encoder;
-extern int load_codinglib(void);
-extern int free_codinglib(void);
+/*
+  nbiot_config.h
+  -------------------
+  AUTHOR  : Francois Taburet
+  COMPANY : NOKIA
+  EMAIL   : francois.taburet@nokia-bell-labs.com
+*/
+#ifndef INCLUDE_NBIOT_CONFIG_H
+#define INCLUDE_NBIOT_CONFIG_H
+
+
+extern void RCconfig_NbIoTL1(void) ;
+extern void RCconfig_NbIoTmacrlc(void);
+extern int  RCconfig_NbIoTRRC(MessageDef *msg_p, int nbiotrrc_id,eNB_RRC_INST_NB_IoT *nbiotrrc);
+extern void RCConfig_NbIoT(RAN_CONTEXT_t *RC);
+#endif

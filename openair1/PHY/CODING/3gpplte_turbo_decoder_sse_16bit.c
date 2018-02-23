@@ -1124,7 +1124,7 @@ void free_td16(void)
   }
 }
 
-void init_td16()
+void init_td16(void)
 {
 
   int ind,i,i2,i3,j,n,pi,pi3;

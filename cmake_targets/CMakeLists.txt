@@ -1042,6 +1042,19 @@ include_directories(${NFAPI_USER_DIR})
 
 # Layer 1
 #############################
+set(PHY_TURBOSRC
+  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_sse.c
+  ${OPENAIR1_DIR}/PHY/CODING/3gpplte.c
+  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_8bit.c
+  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_16bit.c
+  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_avx2_16bit.c
+  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder.c
+)
+set(PHY_TURBOIF
+  ${OPENAIR1_DIR}/PHY/CODING/coding_load.c
+)
+
+add_library(coding MODULE ${PHY_TURBOSRC} )
 set(PHY_SRC
   # depend on code generation from asn1c
   ${RRC_FULL_DIR}/asn1_constants.h
@@ -1109,11 +1122,8 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/CODING/lte_segmentation.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte_lte.c
-  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_sse.c
   ${OPENAIR1_DIR}/PHY/CODING/crc_byte.c
-  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_8bit.c
-  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_16bit.c
-  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_avx2_16bit.c
+  ${PHY_TURBOIF}
   ${OPENAIR1_DIR}/PHY/CODING/lte_rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/viterbi.c
   ${OPENAIR1_DIR}/PHY/CODING/viterbi_lte.c
@@ -1373,6 +1383,7 @@ set (MAC_SRC_UE
 set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/enb_app.c
   ${OPENAIR2_DIR}/ENB_APP/enb_config.c
+  ${OPENAIR2_DIR}/ENB_APP/RRC_config_tools.c
   )
 
 add_library(L2
@@ -2397,4 +2408,9 @@ endforeach(file)
 ADD_CUSTOM_TARGET(oarf
    DEPENDS ${OCT_FILES}
 )
+
+include (${OPENAIR_DIR}/common/utils/telnetsrv/telnetsrv_CMakeLists.txt)
+
+
+
 

@@ -85,7 +85,7 @@
 #define CONFIG_HLP_TPORT         "tracer port\n"
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
-
+#define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument 
@@ -129,7 +129,7 @@
 {"ue-nb-ant-tx",     	       CONFIG_HLP_UENANTT,    0,		u8ptr:&nb_antenna_tx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-scan-carrier",  	       CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL,	iptr:&UE_scan_carrier,  	    defintval:0,    TYPE_INT,	   0},     \
 {"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:90,   TYPE_INT,	   0},     \
-{"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&n_rb_dl,                     defintval:0,    TYPE_UINT8,    0},     \
+{"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:0,    TYPE_UINT8,    0},     \
 }
 
 
@@ -168,7 +168,8 @@ extern int16_t dlsch_demod_shift;
 {"V" ,  		  	 CONFIG_HLP_VCD,	PARAMFLAG_BOOL,   iptr:&ouput_vcd,			defintval:0,			   TYPE_INT,	  0},			   \
 {"q" ,  		  	 CONFIG_HLP_STMON,	PARAMFLAG_BOOL,   iptr:&opp_enabled,			defintval:0,			   TYPE_INT,	  0},			   \
 {"S" ,  		  	 CONFIG_HLP_MSLOTS,	PARAMFLAG_BOOL,   u8ptr:&exit_missed_slots,		defintval:1,			   TYPE_UINT8,    0},			   \
-{"T" ,  		  	 CONFIG_HLP_TDD,	PARAMFLAG_BOOL,   iptr:&tddflag,			defintval:0,			   TYPE_INT,	  0}			   \
+{"T" ,  		  	 CONFIG_HLP_TDD,	PARAMFLAG_BOOL,   iptr:&tddflag,			defintval:0,			   TYPE_INT,	  0},			   \
+{"nbiot-disable",        	 CONFIG_HLP_DISABLNBIOT,PARAMFLAG_BOOL,   iptr:&nonbiotflag,			defintval:0,			   TYPE_INT,	  0}                       \
 }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"

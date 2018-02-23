@@ -550,7 +550,7 @@ void compute_alpha_s(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_l
 
 void compute_beta_s(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned short frame_length,unsigned char F)
 {
-  int k,i;
+  int k;
   llr_t old0, old1, old2, old3, old4, old5, old6, old7;
   llr_t new0, new1, new2, new3, new4, new5, new6, new7;
   llr_t m_b0, m_b1, m_b2, m_b3, m_b4,m_b5, m_b6, m_b7;
@@ -897,7 +897,7 @@ unsigned char phy_threegpplte_turbo_decoder_scalar(llr_t *y,
   unsigned char crc_len,temp;
 
   if (crc_type > 3) {
-    msg("Illegal crc length!\n");
+    fprintf(stderr,"Illegal crc length!\n");
     return 255;
   }
 

@@ -42,8 +42,6 @@
 #define TELNETVAR_PHYCC1    1
 
 telnetshell_vardef_t phy_vardef[] = {
-{"phycc1",TELNET_VARTYPE_PTR,NULL},
-{"phycc2",TELNET_VARTYPE_PTR,NULL},
 //{"iqmax",TELNET_VARTYPE_INT16,NULL},
 //{"iqmin",TELNET_VARTYPE_INT16,NULL},
 //{"loglvl",TELNET_VARTYPE_INT32,NULL},
@@ -57,7 +55,7 @@ telnetshell_vardef_t phy_vardef[] = {
 
 #else
 
-extern void add_phy_cmds();
+extern void add_phy_cmds(void);
 
 #endif
 

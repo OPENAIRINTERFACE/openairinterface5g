@@ -286,13 +286,13 @@ int dlsch_encoding_2threads0(te_params *tep) {
 
 
 
-      threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
-                                Kr>>3,
-                                &dlsch->harq_processes[harq_pid]->d[r][96],
-                                (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-                                f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-                                f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
-                               );
+      encoder(dlsch->harq_processes[harq_pid]->c[r],
+              Kr>>3,
+              &dlsch->harq_processes[harq_pid]->d[r][96],
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
+              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+             );
       dlsch->harq_processes[harq_pid]->RTC[r] =
         sub_block_interleaving_turbo(4+(Kr_bytes*8),
                                      &dlsch->harq_processes[harq_pid]->d[r][96],
@@ -458,13 +458,13 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
 
       start_meas(te_stats);
-      threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
-                                Kr>>3,
-                                &dlsch->harq_processes[harq_pid]->d[r][96],
-                                (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-                                f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-                                f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
-                               );
+      encoder(dlsch->harq_processes[harq_pid]->c[r],
+              Kr>>3,
+              &dlsch->harq_processes[harq_pid]->d[r][96],
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
+              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+             );
       stop_meas(te_stats);
 
       start_meas(i_stats);
@@ -651,13 +651,13 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
       printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
       start_meas(te_stats);
-      threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
-                                Kr>>3,
-                                &dlsch->harq_processes[harq_pid]->d[r][96],
-                                (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-                                f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-                                f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
-                               );
+      encoder(dlsch->harq_processes[harq_pid]->c[r],
+              Kr>>3,
+              &dlsch->harq_processes[harq_pid]->d[r][96],
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
+              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+             );
       stop_meas(te_stats);
 #ifdef DEBUG_DLSCH_CODING
 
@@ -833,13 +833,13 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
       printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
       start_meas(te_stats);
-      threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
-                                Kr>>3,
-                                &dlsch->harq_processes[harq_pid]->d[r][96],
-                                (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-                                f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-                                f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
-                               );
+      encoder(dlsch->harq_processes[harq_pid]->c[r],
+              Kr>>3,
+              &dlsch->harq_processes[harq_pid]->d[r][96],
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
+              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+             );
       stop_meas(te_stats);
 #ifdef DEBUG_DLSCH_CODING
 

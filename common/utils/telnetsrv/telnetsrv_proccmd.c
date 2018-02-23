@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -54,6 +54,8 @@
 #define TELNETSRV_PROCCMD_MAIN
 #include "log.h"
 #include "log_extern.h"
+#include "common/config/config_userapi.h"
+#include "openair1/PHY/extern.h"
 #include "telnetsrv_proccmd.h"
 
 void decode_procstat(char *record, int debug, telnet_printfunc_t prnt)
@@ -70,14 +72,13 @@ char toksep[2];
   lptr= prntline;
 /*http://man7.org/linux/man-pages/man5/proc.5.html gives the structure of the stat file */
  
-  while( 	procfile_fiels != NULL && fieldcnt < 42)
-    {
+  while( 	procfile_fiels != NULL && fieldcnt < 42) {
+    long int policy;
     if (strlen(procfile_fiels) == 0)
        continue;
     fieldcnt++;
     sprintf(toksep," ");
-    switch(fieldcnt)
-       {
+    switch(fieldcnt) {
        case 1: /* id */
            lptr+=sprintf(lptr,"%9.9s ",procfile_fiels);
            sprintf(toksep,")");
@@ -104,12 +105,36 @@ char toksep[2];
        break;
        case 41:   //policy	       
            lptr+=sprintf(lptr,"%3.3s ",procfile_fiels);
+           policy=strtol(procfile_fiels,NULL,0);
+           switch(policy) {
+              case SCHED_FIFO:
+                   lptr+=sprintf(lptr,"%s ","rt: fifo");
+              break;
+              case SCHED_OTHER:
+                   lptr+=sprintf(lptr,"%s ","other");
+              break;
+              case SCHED_IDLE:
+                   lptr+=sprintf(lptr,"%s ","idle");
+              break;
+              case SCHED_BATCH:
+                   lptr+=sprintf(lptr,"%s ","batch");
+              break;
+              case SCHED_RR:
+                   lptr+=sprintf(lptr,"%s ","rt: rr");
+              break;
+              case SCHED_DEADLINE:
+                   lptr+=sprintf(lptr,"%s ","rt: deadline");
+              break;
+              default:
+                   lptr+=sprintf(lptr,"%s ","????");
+              break;
+           }
        break;
        default:
        break;	       	       	       	       	       
-       }/* switch on fieldcnr */  
+    }/* switch on fieldcnr */  
     procfile_fiels =strtok_r(NULL,toksep,&strtokptr); 
-    } /* while on proc_fields != NULL */
+  } /* while on proc_fields != NULL */
   prnt("%s\n",prntline); 
 } /*decode_procstat */
 
@@ -141,7 +166,7 @@ char aname[256];
 DIR *proc_dir;
 struct dirent *entry;
 
-int rt;
+
 
     prnt("  id          name            state   USRmod    KRNmod  prio nice   vsize   proc pol \n\n");
     snprintf(aname, sizeof(aname), "/proc/%d/stat", getpid());
@@ -172,14 +197,51 @@ extern log_t *g_log;
    
    if (debug > 0)
        prnt(" proccmd_show received %s\n",buf);
-   if (strcasestr(buf,"thread") != NULL)
-       {
+   if (strcasestr(buf,"thread") != NULL) {
        print_threads(buf,debug,prnt);
-       }
+   }
    if (strcasestr(buf,"loglvl") != NULL) {
-       for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++){
-            prnt("\t%s:\t%s\t%s\n",g_log->log_component[i].name, map_int_to_str(log_verbosity_names,g_log->log_component[i].flag),
-	        map_int_to_str(log_level_names,g_log->log_component[i].level));
+       prnt("component                 verbosity  level  enabled\n");
+       for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
+            prnt("%02i %17.17s:%10.10s%10.10s  %s\n",i ,g_log->log_component[i].name, 
+                  map_int_to_str(log_verbosity_names,g_log->log_component[i].flag),
+	          map_int_to_str(log_level_names,g_log->log_component[i].level),
+                  ((g_log->log_component[i].interval>0)?"Y":"N") );
+       }
+   }
+   if (strcasestr(buf,"config") != NULL) {
+       prnt("Command line arguments:\n");
+       for (int i=0; i < config_get_if()->argc; i++) {
+            prnt("    %02i %s\n",i ,config_get_if()->argv[i]);
+       }
+       prnt("Config module flags ( -O <cfg source>:<xxx>:dbgl<flags>): 0x%08x\n", config_get_if()->rtflags); 
+
+       prnt("    Print config debug msg, params values (flag %u): %s\n",CONFIG_PRINTPARAMS,
+            ((config_get_if()->rtflags & CONFIG_PRINTPARAMS) ? "Y" : "N") ); 
+       prnt("    Print config debug msg, memory management(flag %u): %s\n",CONFIG_DEBUGPTR,
+            ((config_get_if()->rtflags & CONFIG_DEBUGPTR) ? "Y" : "N") ); 
+       prnt("    Print config debug msg, command line processing (flag %u): %s\n",CONFIG_DEBUGCMDLINE,
+            ((config_get_if()->rtflags & CONFIG_DEBUGCMDLINE) ? "Y" : "N") );        
+       prnt("    Don't exit if param check fails (flag %u): %s\n",CONFIG_NOABORTONCHKF,
+            ((config_get_if()->rtflags & CONFIG_NOABORTONCHKF) ? "Y" : "N") );      
+       prnt("Config source: %s,  parameters:\n",CONFIG_GETSOURCE );
+       for (int i=0; i < config_get_if()->num_cfgP; i++) {
+            prnt("    %02i %s\n",i ,config_get_if()->cfgP[i]);
+       }
+       prnt("Softmodem components:\n");
+       prnt("   %02i Ru(s)\n", RC.nb_RU);
+       prnt("   %02i lte RRc(s),     %02i NbIoT RRC(s)\n",    RC.nb_inst, RC.nb_nb_iot_rrc_inst);
+       prnt("   %02i lte MACRLC(s),  %02i NbIoT MACRLC(s)\n", RC.nb_macrlc_inst, RC.nb_nb_iot_macrlc_inst);
+       prnt("   %02i lte L1,	    %02i NbIoT L1\n",	     RC.nb_L1_inst, RC.nb_nb_iot_L1_inst);
+
+       for(int i=0; i<RC.nb_inst; i++) {
+           prnt("    lte RRC %i:     %02i CC(s) \n",i,((RC.nb_CC == NULL)?0:RC.nb_CC[i]));
+       }
+       for(int i=0; i<RC.nb_L1_inst; i++) {
+           prnt("    lte L1 %i:      %02i CC(s)\n",i,((RC.nb_L1_CC == NULL)?0:RC.nb_L1_CC[i]));
+       }
+       for(int i=0; i<RC.nb_macrlc_inst; i++) {
+           prnt("    lte macrlc %i:  %02i CC(s)\n",i,((RC.nb_mac_CC == NULL)?0:RC.nb_mac_CC[i]));
        }
    }
    return 0;
@@ -190,12 +252,16 @@ int proccmd_thread(char *buf, int debug, telnet_printfunc_t prnt)
 int bv1,bv2;   
 int res;
 char sv1[64]; 
-char tname[32];  
+ 
    bv1=0;
    bv2=0;
    sv1[0]=0;
    if (debug > 0)
        prnt("proccmd_thread received %s\n",buf);
+   if (strcasestr(buf,"help") != NULL) {
+          prnt(PROCCMD_THREAD_HELP_STRING);
+          return 0;
+   } 
    res=sscanf(buf,"%i %9s %i",&bv1,sv1,&bv2);
    if (debug > 0)
        prnt(" proccmd_thread: %i params = %i,%s,%i\n",res,bv1,sv1,bv2);   
@@ -231,32 +297,95 @@ extern void exit_fun(const char* s);
    return 0;
 }
  
+
 int proccmd_log(char *buf, int debug, telnet_printfunc_t prnt)
 {
 int idx1=0;
 int idx2=NUM_LOG_LEVEL-1;
-int s = sscanf(buf,"%*s %i-%i",&idx1,&idx2);   
+char *logsubcmd=NULL;
+
+int s = sscanf(buf,"%ms %i-%i\n",&logsubcmd, &idx1,&idx2);   
    
    if (debug > 0)
-       prnt("process module received %s\n",buf);
+       prnt( "proccmd_log received %s\n   s=%i sub command %s\n",buf,s,((logsubcmd==NULL)?"":logsubcmd));
 
-   if (strcasestr(buf,"enable") != NULL)
-       {
-       set_glog_onlinelog(1);
-       }
-   if (strcasestr(buf,"disable") != NULL)
-       {
-       set_glog_onlinelog(0);
-       }
-    if (strcasestr(buf,"show") != NULL)
-       {
-       proccmd_show("loglvl",debug,prnt);
-       }      
+   if (s == 1 && logsubcmd != NULL) {
+      if (strcasestr(logsubcmd,"online") != NULL) {
+          if (strcasestr(buf,"noonline") != NULL) {
+   	      set_glog_onlinelog(0);
+              prnt("online logging disabled\n",buf);
+          } else {
+   	      set_glog_onlinelog(1);
+              prnt("online logging enabled\n",buf);
+          }
+      }
+      else if (strcasestr(logsubcmd,"show") != NULL) {
+          prnt("Available log levels: \n   ");
+          for (int i=0; log_level_names[i].name != NULL; i++)
+             prnt("%s ",log_level_names[i].name);
+          prnt("\nAvailable verbosity: \n   ");
+          for (int i=0; log_verbosity_names[i].name != NULL; i++)
+             prnt("%s ",log_verbosity_names[i].name);
+          prnt("\n");
+   	  proccmd_show("loglvl",debug,prnt);
+      }
+      else if (strcasestr(logsubcmd,"help") != NULL) {
+          prnt(PROCCMD_LOG_HELP_STRING);
+      } else {
+          prnt("%s: wrong log command...\n",logsubcmd);
+      }
+   } else if ( s == 3 && logsubcmd != NULL) {
+      int level, verbosity, interval;
+      char *tmpstr=NULL;
+      char *logparam=NULL;
+      int l;
+
+      level = verbosity = interval = -1;
+      l=sscanf(logsubcmd,"%m[^'_']_%m[^'_']",&logparam,&tmpstr);
+      if (debug > 0)
+          prnt("l=%i, %s %s\n",l,((logparam==NULL)?"\"\"":logparam), ((tmpstr==NULL)?"\"\"":tmpstr));
+      if (l ==2 ) {
+         if (strcmp(logparam,"level") == 0) {
+             level=map_str_to_int(log_level_names,tmpstr);
+             if (level < 0)  prnt("level %s unknown\n",tmpstr);
+         } else if (strcmp(logparam,"verbos") == 0) {
+             verbosity=map_str_to_int(log_verbosity_names,tmpstr);
+             if (verbosity < 0)  prnt("verbosity %s unknown\n",tmpstr);
+         } else {
+             prnt("%s%s unknown log sub command \n",logparam, tmpstr);
+         }
+      } else if (l ==1 ) {
+         if (strcmp(logparam,"enable") == 0) {
+              interval = 1;
+         } else if (strcmp(logparam,"disable") == 0) {
+              interval = 0;
+         } else {
+             prnt("%s%s unknown log sub command \n",logparam, tmpstr);
+         }
+      } else {
+          prnt("%s unknown log sub command \n",logsubcmd); 
+      }
+      if (logparam != NULL) free(logparam);
+      if (tmpstr != NULL)   free(tmpstr);
+      for (int i=idx1; i<=idx2 ; i++) {
+          set_comp_log(i, level, verbosity, interval);
+          prnt("log level/verbosity  comp %i %s set to %s / %s (%s)\n",
+                i,((g_log->log_component[i].name==NULL)?"":g_log->log_component[i].name),
+                map_int_to_str(log_level_names,g_log->log_component[i].level),
+                map_int_to_str(log_verbosity_names,g_log->log_component[i].flag),
+                ((g_log->log_component[i].interval>0)?"enabled":"disabled"));
+
+        
+      }     
+   } else {
+       prnt("%s: wrong log command...\n",buf);
+   }
+
    return 0;
 } 
 /*-------------------------------------------------------------------------------------*/
 
-void add_softmodem_cmds()
+void add_softmodem_cmds(void)
 {
    add_telnetcmd("softmodem",proc_vardef,proc_cmdarray);
 }

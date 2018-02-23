@@ -34,32 +34,49 @@
 
 
 typedef int(*initfunc_t)(void);
-
-typedef struct {
-   char *shlibpath;
-}loader_data_t;
+typedef int(*checkverfunc_t)(char * mainexec_version, char ** shlib_version);
 
 typedef struct {
    char *fname;
    int (*fptr)(void);
 }loader_shlibfunc_t;
+
+typedef struct {
+   char               *name;
+   char               *shlib_version;    // 
+   char               *shlib_buildversion;
+   char               *thisshlib_path;
+   uint32_t           numfunc;
+   loader_shlibfunc_t *funcarray;
+}loader_shlibdesc_t;
+
+typedef struct {
+   char               *mainexec_buildversion;
+   char               *shlibpath;
+   uint32_t           maxshlibs;
+   uint32_t           numshlibs;
+   loader_shlibdesc_t *shlibs;
+}loader_data_t;
+
 #ifdef LOAD_MODULE_SHLIB_MAIN
 #define LOADER_CONFIG_PREFIX  "loader"
 #define DEFAULT_PATH ""
 loader_data_t loader_data;
 
-/*--------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                       LOADER parameters                                                                              */
-/*   optname               helpstr   paramflags    XXXptr	                           defXXXval	            type       numelt   */
-/*--------------------------------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                       LOADER parameters                                                                                      */
+/*   optname               helpstr   paramflags           XXXptr	                           defXXXval	            type       numelt   */
+/*----------------------------------------------------------------------------------------------------------------------------------------------*/
 #define LOADER_PARAMS_DESC { \
-{"shlibpath",                NULL,    0,          strptr:(char **)&(loader_data.shlibpath), defstrval:DEFAULT_PATH, TYPE_STRING, 0} \
+{"shlibpath",                NULL,    PARAMFLAG_NOFREE, strptr:(char **)&(loader_data.shlibpath), defstrval:DEFAULT_PATH, TYPE_STRING, 0}, \
+{"maxshlibs",                NULL,    0,                uptr:&(loader_data.maxshlibs),            defintval:10,           TYPE_UINT32, 0}, \
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
-#else
+#else  /* LOAD_MODULE_SHLIB_MAIN */
 extern int load_module_shlib(char *modname, loader_shlibfunc_t *farray, int numf);
-#endif
+extern loader_data_t loader_data;
+#endif /* LOAD_MODULE_SHLIB_MAIN */
 
 #endif
 
