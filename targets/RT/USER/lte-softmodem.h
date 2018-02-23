@@ -245,7 +245,7 @@ extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
-extern void init_RU(const char*);
+extern void init_RU(const char*,clock_source_t clock_source,clock_source_t time_source);
 extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
 extern void kill_RU_proc(int inst);
