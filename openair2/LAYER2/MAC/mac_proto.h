@@ -237,14 +237,14 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
                                               int min_rb_unit[NFAPI_CC_MAX],
                                               uint8_t total_ue_count[NFAPI_CC_MAX],
                                               uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                              uint16_t nb_rbs_required_remaining_1[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
+                                              uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
 
 void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
                                                slice_id_t slice_id,
                                                int min_rb_unit[NFAPI_CC_MAX],
                                                uint8_t total_ue_count[NFAPI_CC_MAX],
                                                uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                               uint16_t nb_rbs_required_remaining_1[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                               uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
                                                uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
                                                uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
@@ -252,10 +252,10 @@ void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
 					    int UE_id,
 					    uint8_t CC_id,
 					    int N_RBG,
-					    int transmission_mode,
+					    int tm,
 					    int min_rb_unit,
 					    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-					    uint16_t nb_rbs_required_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+					    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
 					    unsigned char rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
               uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX],
 					    unsigned char MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
@@ -1256,8 +1256,7 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
 #endif
 
 /*Slice related functions */
-uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
-
+uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
 int ue_slice_membership(int UE_id, int slice_id);
 
 /* from here: prototypes to get rid of compilation warnings: doc to be written by function author */

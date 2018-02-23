@@ -4536,7 +4536,7 @@ harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 
 // Flexran Slicing functions
 
-uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs)
+uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs)
 {
     return (uint16_t) floor(rb_percentage * total_rbs);
 }

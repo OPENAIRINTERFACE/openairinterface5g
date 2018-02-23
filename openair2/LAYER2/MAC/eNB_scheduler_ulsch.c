@@ -48,6 +48,7 @@
 
 #include "assertions.h"
 //#include "LAYER2/MAC/pre_processor.c"
+#include "eNB_scheduler_ulsch.h"
 #include "pdcp.h"
 
 #if defined(ENABLE_ITTI)
@@ -72,45 +73,13 @@ extern uint16_t sfnsf_add_subframe(uint16_t frameP, uint16_t subframeP, int offs
 extern int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req);
 extern uint8_t nfapi_mode;
 
-extern uint8_t nfapi_mode;
-
 // This table holds the allowable PRB sizes for ULSCH transmissions
 uint8_t rb_table[34] =
   { 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24, 25, 27, 30, 32,
     36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80, 81, 90, 96, 100
   };
 
-/* number of active slices for  past and current time*/
-int n_active_slices_uplink = 1;
-int n_active_slices_current_uplink = 1;
-
-/* RB share for each slice for past and current time*/
-float avg_slice_percentage_uplink=0.25;
-float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
-float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
-float total_slice_percentage_uplink = 0;
-float total_slice_percentage_current_uplink = 0;
-
-// MAX MCS for each slice for past and current time
-int slice_maxmcs_uplink[MAX_NUM_SLICES] = {20, 20, 20, 20};
-int slice_maxmcs_current_uplink[MAX_NUM_SLICES] = {20,20,20,20};
-
-/*resource blocks allowed*/
-uint16_t         nb_rbs_allowed_slice_uplink[MAX_NUM_CCs][MAX_NUM_SLICES];
-/*Slice Update */
-int update_ul_scheduler[MAX_NUM_SLICES] = {1, 1, 1, 1};
-int update_ul_scheduler_current[MAX_NUM_SLICES] = {1, 1, 1, 1};
-
-/* name of available scheduler*/
-char *ul_scheduler_type[MAX_NUM_SLICES] = {"schedule_ulsch_rnti",
-					   "schedule_ulsch_rnti",
-					   "schedule_ulsch_rnti",
-					   "schedule_ulsch_rnti"
-};
 extern mui_t    rrc_eNB_mui;
-
-/* Slice Function Pointer */
-slice_scheduler_ul slice_sched_ul[MAX_NUM_SLICES] = {0};
 
 void
 rx_sdu(const module_id_t enb_mod_idP,
