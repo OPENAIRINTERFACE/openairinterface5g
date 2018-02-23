@@ -1494,18 +1494,29 @@ extern int oai_exit;
 
 extern void *td_thread(void*);
 
-void init_td_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_td) {
+void init_td_thread(PHY_VARS_eNB *eNB) {
 
   eNB_proc_t *proc = &eNB->proc;
 
   proc->tdp.eNB = eNB;
   proc->instance_cnt_td         = -1;
-    
+  
+  pthread_attr_init( &proc->attr_td);  
   pthread_mutex_init( &proc->mutex_td, NULL);
   pthread_cond_init( &proc->cond_td, NULL);
+  
+  pthread_create(&proc->pthread_td, &proc->attr_td, td_thread, (void*)&proc->tdp);
 
-  pthread_create(&proc->pthread_td, attr_td, td_thread, (void*)&proc->tdp);
+}
+void kill_td_thread(PHY_VARS_eNB *eNB) {
 
+  eNB_proc_t *proc = &eNB->proc;
+  proc->instance_cnt_td         = 0;
+  pthread_cond_signal(&proc->cond_td);
+  
+  pthread_join(proc->pthread_td, NULL);
+  pthread_mutex_destroy( &proc->mutex_td );
+  pthread_cond_destroy( &proc->cond_td );
 }
 
 extern void *te_thread(void*);
@@ -1514,37 +1525,29 @@ void init_te_thread(PHY_VARS_eNB *eNB) {
 
   eNB_proc_t *proc = &eNB->proc;
 
-  proc->tep[0].eNB = eNB;
-  proc->tep[0].instance_cnt_te         = -1;
+  for(int i=0; i<3 ;i++){
+    proc->tep[i].eNB = eNB;
+    proc->tep[i].instance_cnt_te         = -1;
+      
+    pthread_mutex_init( &proc->tep[i].mutex_te, NULL);
+    pthread_cond_init( &proc->tep[i].cond_te, NULL);
+    pthread_attr_init( &proc->tep[i].attr_te);
     
-  pthread_mutex_init( &proc->tep[0].mutex_te, NULL);
-  pthread_cond_init( &proc->tep[0].cond_te, NULL);
-  pthread_attr_init( &proc->tep[0].attr_te);
+    printf("Creating te_thread 0\n");
+    pthread_create(&proc->tep[i].pthread_te, &proc->tep[i].attr_te, te_thread, (void*)&proc->tep[i]);
+  }
+}
+void kill_te_thread(PHY_VARS_eNB *eNB) {
 
-  printf("Creating te_thread 0\n");
-  pthread_create(&proc->tep[0].pthread_te, &proc->tep[0].attr_te, te_thread, (void*)&proc->tep[0]);
+  eNB_proc_t *proc = &eNB->proc;
 
-  /////////////////////////////////////////////////////////////////////////
-  proc->tep[1].eNB = eNB;
-  proc->tep[1].instance_cnt_te         = -1;
-    
-  pthread_mutex_init( &proc->tep[1].mutex_te, NULL);
-  pthread_cond_init( &proc->tep[1].cond_te, NULL);
-  pthread_attr_init( &proc->tep[1].attr_te);
-
-  printf("Creating te_thread 1\n");
-  pthread_create(&proc->tep[1].pthread_te, &proc->tep[1].attr_te, te_thread, (void*)&proc->tep[1]);
-  
-  /////////////////////////////////////////////////////////////////////////
-  proc->tep[2].eNB = eNB;
-  proc->tep[2].instance_cnt_te         = -1;
-    
-  pthread_mutex_init( &proc->tep[2].mutex_te, NULL);
-  pthread_cond_init( &proc->tep[2].cond_te, NULL);
-  pthread_attr_init( &proc->tep[2].attr_te);
-
-  printf("Creating te_thread 2\n");
-  pthread_create(&proc->tep[2].pthread_te, &proc->tep[2].attr_te, te_thread, (void*)&proc->tep[2]);
+  for(int i=0; i<3 ;i++){
+    proc->tep[i].instance_cnt_te         = 0;
+    pthread_cond_signal(&proc->tep[i].cond_te);
+    pthread_join(proc->tep[i].pthread_te, NULL);
+    pthread_mutex_init( &proc->tep[i].mutex_te, NULL);
+    pthread_cond_init( &proc->tep[i].cond_te, NULL);
+  }
 }
 
 

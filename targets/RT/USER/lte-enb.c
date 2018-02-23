@@ -756,8 +756,10 @@ static void* eNB_thread_prach_br( void* param ) {
 
 
 
-extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
+extern void init_td_thread(PHY_VARS_eNB *);
 extern void init_te_thread(PHY_VARS_eNB *);
+extern void kill_td_thread(PHY_VARS_eNB *);
+extern void kill_te_thread(PHY_VARS_eNB *);
 //////////////////////////////////////need to modified////////////////*****
 
 static void* process_stats_thread(void* param) {
@@ -795,7 +797,7 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL,*attr_td=NULL;//,*attr_te=NULL,*attr_te1=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL;
 #ifdef Rel14
   pthread_attr_t *attr_prach_br=NULL;
 #endif
@@ -838,9 +840,6 @@ void init_eNB_proc(int inst) {
 
     pthread_attr_init( &proc->attr_prach);
     pthread_attr_init( &proc->attr_asynch_rxtx);
-    pthread_attr_init( &proc->attr_td);
-    //pthread_attr_init( &proc->attr_te[0]);
-    //pthread_attr_init( &proc->attr_te[1]);
     pthread_attr_init( &proc_rxtx[0].attr_rxtx);
     pthread_attr_init( &proc_rxtx[1].attr_rxtx);
 #ifdef Rel14
@@ -862,14 +861,11 @@ void init_eNB_proc(int inst) {
     //    attr_td     = &proc->attr_td;
     //    attr_te     = &proc->attr_te; 
 #endif
-	attr_td     = &proc->attr_td;
-	//attr_te     = &proc->attr_te[0];
-	//attr_te1    = &proc->attr_te[1];
     //////////////////////////////////////need to modified////////////////*****
     if(get_nprocs() > 2 && codingw)
     {
       init_te_thread(eNB);
-      init_td_thread(eNB,attr_td);
+      init_td_thread(eNB);
     }
     //////////////////////////////////////need to modified////////////////*****
 	pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
@@ -941,11 +937,12 @@ void kill_eNB_proc(int inst) {
     proc_rxtx = &proc->proc_rxtx[0];
     
 
+    kill_td_thread(eNB);
+    kill_te_thread(eNB);
     LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
-
+    proc_rxtx[0].instance_cnt_rxtx = 0; // FIXME data race!
+    proc_rxtx[1].instance_cnt_rxtx = 0; // FIXME data race!
     if (eNB->single_thread_flag==0) {
-      proc_rxtx[0].instance_cnt_rxtx = 0; // FIXME data race!
-      proc_rxtx[1].instance_cnt_rxtx = 0; // FIXME data race!
       pthread_cond_signal( &proc_rxtx[0].cond_rxtx );    
       pthread_cond_signal( &proc_rxtx[1].cond_rxtx );
     }
@@ -968,14 +965,12 @@ void kill_eNB_proc(int inst) {
     LOG_I(PHY, "Destroying UL_INFO mutex\n");
     pthread_mutex_destroy(&eNB->UL_INFO_mutex);
     int i;
-    if (eNB->single_thread_flag==0) {
-      for (i=0;i<2;i++) {
-	LOG_I(PHY, "Joining rxtx[%d] mutex/cond\n",i);
-	pthread_join( proc_rxtx[i].pthread_rxtx, (void**)&status );
-	LOG_I(PHY, "Destroying rxtx[%d] mutex/cond\n",i);
-	pthread_mutex_destroy( &proc_rxtx[i].mutex_rxtx );
-	pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
-      }
+    for (i=0;i<2;i++) {
+      LOG_I(PHY, "Joining rxtx[%d] mutex/cond\n",i);
+      pthread_join( proc_rxtx[i].pthread_rxtx, (void**)&status );
+      LOG_I(PHY, "Destroying rxtx[%d] mutex/cond\n",i);
+      pthread_mutex_destroy( &proc_rxtx[i].mutex_rxtx );
+      pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
     }
   }
 }
