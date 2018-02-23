@@ -816,7 +816,6 @@ l2l1_task (void *args_p)
               fwrite (stats_buffer, 1, len, eNB_stats[eNB_inst]);
               fflush(eNB_stats[eNB_inst]);
             }
-	    */
 #ifdef OPENAIR2
 
             if (eNB_l2_stats) {
@@ -827,6 +826,7 @@ l2l1_task (void *args_p)
             }
 
 #endif
+*/
 #endif
           }
         }// eNB_inst loop

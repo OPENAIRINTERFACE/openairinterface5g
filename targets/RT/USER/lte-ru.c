@@ -119,8 +119,8 @@ extern volatile int                    oai_exit;
 extern void  phy_init_RU(RU_t*);
 extern void  phy_free_RU(RU_t*);
 
-void init_RU(char*);
-void stop_RU(RU_t *ru);
+void init_RU(char*,clock_source_t clock_source,clock_source_t time_source);
+void stop_RU(int nb_ru);
 void do_ru_sync(RU_t *ru);
 
 void configure_ru(int idx,

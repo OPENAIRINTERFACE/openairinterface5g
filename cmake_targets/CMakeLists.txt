@@ -1300,7 +1300,7 @@ set(L2_SRC
   )
 
 set(L2_SRC_UE
-  ${OPENAIR2_DIR}/LAYER2/openair2_proc.c
+#  ${OPENAIR2_DIR}/LAYER2/openair2_proc.c
   ${PDCP_DIR}/pdcp.c
   ${PDCP_DIR}/pdcp_fifo.c
   ${PDCP_DIR}/pdcp_sequence_manager.c
