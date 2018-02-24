@@ -2696,6 +2696,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   uint16_t           first_rb[MAX_NUM_CCs];
   uint8_t            mcs;
   uint8_t            rb_table_index;
+  uint8_t            num_pucch_rb;
   uint32_t           tbs;
   int16_t            tx_power;
   int                UE_id;
@@ -2711,19 +2712,21 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
     frame_parms = &(RC.eNB[module_idP][CC_id]->frame_parms);
     if (cc->tdd_Config) { //TDD
       if (frame_parms->N_RB_UL == 25) {
-        first_rb[CC_id] = 1;
+          num_pucch_rb = 1;
       } else if (frame_parms->N_RB_UL == 50) {
-        first_rb[CC_id] = 2;
+          num_pucch_rb = 2;
       } else {
-        first_rb[CC_id] = 3;
+          num_pucch_rb = 3;
       }
     } else {//FDD
       if (frame_parms->N_RB_UL == 25) {
-        first_rb[CC_id] = 1;
+          num_pucch_rb = 1;
       } else {
-    	first_rb[CC_id] = 2;
+          num_pucch_rb = 2;
       }
     }
+
+    first_rb[CC_id] = num_pucch_rb;
     ue_num_temp       = ulsch_ue_select[CC_id].ue_num;
     for ( ulsch_ue_num = 0; ulsch_ue_num < ulsch_ue_select[CC_id].ue_num; ulsch_ue_num++ ) {
 
@@ -2742,51 +2745,14 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       }
 
       rnti = UE_RNTI(CC_id,UE_id);
-      if (cc->tdd_Config) {
-        if (frame_parms->N_RB_UL == 25) {
-         if (first_rb[CC_id] >= frame_parms->N_RB_UL-1 ) {
-           LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-                      module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-           break;
-        }
-         // calculate the average rb ( remain UE)
-         total_rbs = frame_parms->N_RB_UL-1-first_rb[CC_id];
-       } else if (frame_parms->N_RB_UL == 50) {
-         if (first_rb[CC_id] >= frame_parms->N_RB_UL-2 ) {
-           LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-                      module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-           break;
-         }
-        // calculate the average rb ( remain UE)
-         total_rbs = frame_parms->N_RB_UL-2-first_rb[CC_id];
-       } else {
-         if (first_rb[CC_id] >= frame_parms->N_RB_UL-3 ) {
-           LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-                     module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-           break;
-         }
-         // calculate the average rb ( remain UE)
-         total_rbs = frame_parms->N_RB_UL-3-first_rb[CC_id];
-       }
-      } else {
-        if(frame_parms->N_RB_UL == 25){
-          if ( first_rb[CC_id] >= frame_parms->N_RB_UL-1 ){
-            LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-                   module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-            break;
-          }
-          // calculate the average rb ( remain UE)
-          total_rbs = frame_parms->N_RB_UL-1-first_rb[CC_id];
-        }else{
-          if ( first_rb[CC_id] >= frame_parms->N_RB_UL-2 ){
-            LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-                   module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-            break;
-          }
-          // calculate the average rb ( remain UE)
-          total_rbs = frame_parms->N_RB_UL-2-first_rb[CC_id];
-        }
+
+      if (first_rb[CC_id] >= frame_parms->N_RB_UL-num_pucch_rb ) {
+         LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+               module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+         break;
       }
+      total_rbs = frame_parms->N_RB_UL-num_pucch_rb-first_rb[CC_id];
+
       average_rbs = (int)round((double)total_rbs/(double)ue_num_temp);
       if ( average_rbs < 3 ) {
         ue_num_temp--;
@@ -2835,30 +2801,13 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
               tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
             }
 
-            if(frame_parms->N_RB_UL == 25){
-              while ( (tbs < UE_template->ul_total_buffer) && (rb_table[rb_table_index]<(frame_parms->N_RB_UL-1-first_rb[CC_id])) &&
-                     ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
-                rb_table_index++;
-                tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
-                tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
-              }
-            }else{
-              if (cc->tdd_Config && frame_parms->N_RB_UL == 100) {
-                while ( (tbs < UE_template->ul_total_buffer) && (rb_table[rb_table_index]<(frame_parms->N_RB_UL-3-first_rb[CC_id])) &&
-                      ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
-                  rb_table_index++;
-                  tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
-                  tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
-                }
-              } else {
-                while ( (tbs < UE_template->ul_total_buffer) && (rb_table[rb_table_index]<(frame_parms->N_RB_UL-2-first_rb[CC_id])) &&
-                       ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
-                  rb_table_index++;
-                  tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
-                  tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
-                }
-              }
+            while ( (tbs < UE_template->ul_total_buffer) && (rb_table[rb_table_index]<(frame_parms->N_RB_UL-num_pucch_rb-first_rb[CC_id])) &&
+                   ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
+              rb_table_index++;
+              tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
+              tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
             }
+
             if ( rb_table[rb_table_index]<3 ) {
               rb_table_index=2;
             }
