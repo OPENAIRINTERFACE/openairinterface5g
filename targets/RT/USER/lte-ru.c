@@ -681,16 +681,17 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   uint32_t symbol_number,symbol_mask,symbol_mask_full;
   int subframe_tx,frame_tx;
 
-  LOG_D(PHY, "%s(ru:%p frame, subframe)\n", __FUNCTION__, ru);
   symbol_number = 0;
   symbol_mask = 0;
   symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
   do {   
     recv_IF4p5(ru, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
-    if (ru->cmd != STOP_RU){
+    if (ru->cmd == STOP_RU){
+	LOG_E(PHY,"Got STOP_RU\n");
 	pthread_mutex_lock(&proc->mutex_ru);
         proc->instance_cnt_ru = -1;
         pthread_mutex_unlock(&proc->mutex_ru);
+	ru->cmd=EMPTY;
 	return;
     } 
     if ((subframe_select(fp,subframe_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
@@ -711,7 +712,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
     if (packet_type == IF4p5_PDLFFT) {
       symbol_mask = symbol_mask | (1<<symbol_number);
     }
-    else AssertFatal(1==0,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
+    else AssertFatal(1==0,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT got %d\n",packet_type);
   } while (symbol_mask != symbol_mask_full);    
 
   if (subframe_select(fp,subframe_tx) == SF_DL) stop_meas(&ru->rx_fhaul);
@@ -754,6 +755,7 @@ void fh_if4p5_north_out(RU_t *ru) {
   const int subframe     = proc->subframe_rx;
   if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
 
+  LOG_D(PHY,"Sending IF4p5_PULFFT SFN.SF %d.%d\n",proc->frame_rx,proc->subframe_rx);
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) {
     /// **** in TDD during DL send_IF4 of ULTICK to RCC **** ///
     send_IF4p5(ru, proc->frame_rx, proc->subframe_rx, IF4p5_PULTICK);
@@ -1305,7 +1307,7 @@ static inline int wakeup_prach_ru(RU_t *ru) {
       ru->eNB_list[0]->proc.frame_prach = ru->proc.frame_rx;
       ru->eNB_list[0]->proc.subframe_prach = ru->proc.subframe_rx;
     }
-    LOG_I(PHY,"RU %d: waking up PRACH thread\n",ru->idx);
+    LOG_D(PHY,"RU %d: waking up PRACH thread\n",ru->idx);
     // the thread can now be woken up
     AssertFatal(pthread_cond_signal(&ru->proc.cond_prach) == 0, "ERROR pthread_cond_signal for RU prach thread\n");
   }
@@ -1826,8 +1828,15 @@ static void* ru_thread( void* param ) {
  	    if (ru->stop_rf && ru->cmd == STOP_RU) {
             	ru->stop_rf(ru);
 		ru->state = RU_IDLE;
+		ru->cmd   = EMPTY;
             	LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
 		break;
+            }
+	    else if (ru->cmd == STOP_RU) {
+                ru->state = RU_IDLE;
+ 		ru->cmd   = EMPTY;
+                LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+                break;
             }
             
 	    
@@ -1835,7 +1844,7 @@ static void* ru_thread( void* param ) {
 	    else AssertFatal(1==0, "No fronthaul interface at south port");
 
 /*
-    LOG_D(PHY,"AFTER fh_south_in - SFN/SF:%d%d RU->proc[RX:%d%d TX:%d%d] RC.eNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
+    LOG_I(PHY,"AFTER fh_south_in - SFN/SF:%d%d RU->proc[RX:%d%d TX:%d%d] RC.eNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
         frame,subframe,
         proc->frame_rx,proc->subframe_rx,
         proc->frame_tx,proc->subframe_tx,
@@ -1846,7 +1855,7 @@ static void* ru_thread( void* param ) {
           ru->do_prach,
           is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
           proc->frame_rx,proc->subframe_rx);
-*/ 
+ */
     if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
       wakeup_prach_ru(ru);
     }
@@ -2590,7 +2599,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     ru->idx          = ru_id;              
     ru->ts_offset    = 0;
     ru->in_synch     = (ru->is_slave == 1) ? 0 : 1;
-    ru->cmd	     = -1;
+    ru->cmd	     = EMPTY;
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
     ru->openair0_cfg.clock_source  = clock_source;

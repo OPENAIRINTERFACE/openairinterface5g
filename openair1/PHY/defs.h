@@ -686,7 +686,8 @@ typedef enum {
 
 /// Some commamds to RRU. Not sure we should do it like this !
 typedef enum {
-  STOP_RU   = 0
+  EMPTY     = 0,
+  STOP_RU   = 1
 } rru_cmd_t;
 
 typedef struct RU_t_s{

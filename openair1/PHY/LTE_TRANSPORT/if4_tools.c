@@ -287,14 +287,18 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
 
   LOG_D(PHY,"recv IF4p5: RU %d waiting (%d samples)\n",ru->idx,db_fulllength);    
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 1 );   
-  if (ru->ifdevice.trx_read_func(&ru->ifdevice,
+  int read_cnt=0;
+  while (ru->ifdevice.trx_read_func(&ru->ifdevice,
 				 (int64_t*) packet_type,
 				 &rx_buffer,
 				 db_fulllength,
 				 0) < 0) {
     perror("ETHERNET read");
-    ru->cmd = STOP_RU;
-    return;
+    read_cnt++;
+    if (read_cnt == 2) {
+      ru->cmd = STOP_RU;
+      return;
+    }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );
   if (eth->flags == ETH_RAW_IF4p5_MODE) {
