@@ -1475,9 +1475,9 @@ fill_nfapi_harq_information(module_id_t module_idP,
         harq_information->harq_information_rel10_tdd.ack_nack_mode = 0; // bundling
         }
 		harq_information->harq_information_rel10_tdd.tl.tag = NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL10_TDD_TAG;
-	    harq_information->harq_information_rel10_tdd.n_pucch_1_0 =
-		cc->radioResourceConfigCommon->pucch_ConfigCommon.
-		n1PUCCH_AN + cce_idxP;
+            LTE_DL_FRAME_PARMS *frame_parms = &RC.eNB[module_idP][CC_idP]->frame_parms;
+	    harq_information->harq_information_rel10_tdd.n_pucch_1_0 = get_Np(frame_parms->N_RB_DL,cce_idxP,0) +
+		cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + cce_idxP;
 	    harq_information->
 		harq_information_rel10_tdd.number_of_pucch_resources = 1;
 	} else {
@@ -3860,7 +3860,21 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	          if( sched_ctl->round[CC_idP][harq_pid]<8)
 	             sched_ctl->round[CC_idP][harq_pid]++;
 	         }
-	     }
+	       }
+               RA_t *ra = &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
+               for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
+               if ((ra[ra_i].rnti == rnti) && (ra[ra_i].state == MSGCRNTI_ACK) && (ra[ra_i].crnti_harq_pid == harq_pid)) {
+                 LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",harq_indication_tdd->harq_data[0].bundling.value_0,rnti,sched_ctl->round[CC_idP][harq_pid],frameP,subframeP);
+                 if(num_ack_nak == 1 && harq_indication_tdd->harq_data[0].bundling.value_0 == 1) {
+                   cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
+                 }else{
+                   if(sched_ctl->round[CC_idP][harq_pid] == 7){
+                     cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
+                   }
+                 }
+                 break;
+               }
+              }
 	    }
 	    break;
 	case 1:		// Channel Selection

@@ -2843,12 +2843,21 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
                 tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
               }
             }else{
+              if (cc->tdd_Config && frame_parms->N_RB_UL == 100) {
+                while ( (tbs < UE_template->ul_total_buffer) && (rb_table[rb_table_index]<(frame_parms->N_RB_UL-3-first_rb[CC_id])) &&
+                      ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
+                  rb_table_index++;
+                  tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
+                  tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
+                }
+              } else {
                 while ( (tbs < UE_template->ul_total_buffer) && (rb_table[rb_table_index]<(frame_parms->N_RB_UL-2-first_rb[CC_id])) &&
                        ((UE_template->phr_info - tx_power) > 0) && (rb_table_index < 32 )) {
                   rb_table_index++;
                   tbs = get_TBS_UL(mcs,rb_table[rb_table_index])<<3;
                   tx_power= estimate_ue_tx_power(tbs,rb_table[rb_table_index],0,frame_parms->Ncp,0);
                 }
+              }
             }
             if ( rb_table[rb_table_index]<3 ) {
               rb_table_index=2;
