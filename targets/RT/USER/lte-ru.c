@@ -963,24 +963,30 @@ static void* ru_thread_asynch_rxtx( void* param ) {
    
     if (oai_exit) break;   
 
-    if (subframe==9) { 
+    if (ru->state != RU_RUN) {
       subframe=0;
-      frame++;
-      frame&=1023;
-    } else {
-      subframe++;
-    }      
-    LOG_D(PHY,"ru_thread_asynch_rxtx: Waiting on incoming fronthaul\n");
-    // asynchronous receive from south (Mobipass)
-    if (ru->fh_south_asynch_in) ru->fh_south_asynch_in(ru,&frame,&subframe);
-    // asynchronous receive from north (RRU IF4/IF5)
-    else if (ru->fh_north_asynch_in) {
-      if (subframe_select(&ru->frame_parms,subframe)!=SF_UL)
-	ru->fh_north_asynch_in(ru,&frame,&subframe);
+      frame=0;
+      usleep(1000);
     }
-    else AssertFatal(1==0,"Unknown function in ru_thread_asynch_rxtx\n");
+    else {
+      if (subframe==9) { 
+         subframe=0;
+         frame++;
+         frame&=1023;
+       } else {
+         subframe++;
+       }      
+       LOG_D(PHY,"ru_thread_asynch_rxtx: Waiting on incoming fronthaul\n");
+       // asynchronous receive from south (Mobipass)
+       if (ru->fh_south_asynch_in) ru->fh_south_asynch_in(ru,&frame,&subframe);
+       // asynchronous receive from north (RRU IF4/IF5)
+       else if (ru->fh_north_asynch_in) {
+         if (subframe_select(&ru->frame_parms,subframe)!=SF_UL)
+	   ru->fh_north_asynch_in(ru,&frame,&subframe);
+       }
+       else AssertFatal(1==0,"Unknown function in ru_thread_asynch_rxtx\n");
+    }
   }
-
   ru_thread_asynch_rxtx_status=0;
   return(&ru_thread_asynch_rxtx_status);
 }
@@ -1501,6 +1507,7 @@ static void* ru_stats_thread(void* param) {
 }
 
 
+void reset_proc(RU_t *ru);
 
 static void* ru_thread_control( void* param ) {
 
@@ -1622,7 +1629,7 @@ static void* ru_thread_control( void* param ) {
 
 		AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),
 			    "RU %d failed send CONFIG_OK to RAU\n",ru->idx);
-
+                reset_proc(ru);
 		ru->state = RU_READY;
 	      }else{
 		LOG_I(PHY,"Received RRU_config msg...Ignoring\n");
@@ -1649,7 +1656,7 @@ static void* ru_thread_control( void* param ) {
 		pthread_cond_signal(&RC.ru_cond);
 		pthread_mutex_unlock(&RC.ru_mutex);
 					  
-		wait_sync("ru_thread");
+		wait_sync("ru_thread_control");
 
 		// send start
 		rru_config_msg.type = RRU_start;
@@ -1682,10 +1689,10 @@ static void* ru_thread_control( void* param ) {
 		  pthread_cond_signal(&RC.ru_cond);
 		  pthread_mutex_unlock(&RC.ru_mutex);
 						  
-		  wait_sync("ru_thread");
+		  wait_sync("ru_thread_control");
 						
 		  ru->state = (ru->is_slave == 1) ? RU_SYNC : RU_RUN ;
-						
+	          ru->cmd   = EMPTY;			
 		  pthread_mutex_lock(&proc->mutex_ru);
 		  proc->instance_cnt_ru = 1;
 		  pthread_mutex_unlock(&proc->mutex_ru);
@@ -1780,6 +1787,7 @@ static void* ru_thread( void* param ) {
     // wait to be woken up
     if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
 	  
+    AssertFatal(ru->state == RU_RUN,"ru->state = %d != RU_RUN\n");
 	  
     // Start RF device if any
     if (ru->start_rf) {
@@ -1878,7 +1886,6 @@ static void* ru_thread( void* param ) {
 	 
       if (ru->fh_north_out) ru->fh_north_out(ru);
 
-      LOG_I(PHY,"ru->state = %d (RU_RUN is %d)\n",ru->state,RU_RUN);
     }
 
   } // while !oai_exit
@@ -2012,6 +2019,23 @@ extern void feptx_ofdm_2thread(RU_t *ru);
 extern void feptx_prec(RU_t *ru);
 extern void init_fep_thread(RU_t *ru,pthread_attr_t *attr);
 extern void init_feptx_thread(RU_t *ru,pthread_attr_t *attr);
+
+void reset_proc(RU_t *ru) {
+
+  int i=0;
+  RU_proc_t *proc;
+
+  AssertFatal(ru != NULL, "ru is null\n");
+  proc = &ru->proc;
+
+  proc->ru = ru;
+  proc->first_rx                 = 1;
+  proc->first_tx                 = 1;
+  proc->frame_offset             = 0;
+  proc->frame_tx_unwrap          = 0;
+
+  for (i=0;i<10;i++) proc->symbol_mask[i]=0;
+}
 
 void init_RU_proc(RU_t *ru) {
    
@@ -2371,7 +2395,7 @@ void configure_rru(int idx,
   fill_rf_config(ru,ru->rf_config_file);
 
 
-  phy_init_RU(ru);
+//  phy_init_RU(ru);
 
 }
 
