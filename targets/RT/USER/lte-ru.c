@@ -691,7 +691,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
       pthread_mutex_lock(&proc->mutex_ru);
       proc->instance_cnt_ru = -1;
       pthread_mutex_unlock(&proc->mutex_ru);
-      ru->cmd=EMPTY;
+      ru->cmd=STOP_RU;
       return;
     } 
     if ((subframe_select(fp,subframe_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
@@ -1839,8 +1839,7 @@ static void* ru_thread( void* param ) {
 	break;
       }
             
-	    
-      if (ru->fh_south_in && ru->state == RU_RUN) ru->fh_south_in(ru,&frame,&subframe);
+      if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
 
       if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
@@ -1879,6 +1878,7 @@ static void* ru_thread( void* param ) {
 	 
       if (ru->fh_north_out) ru->fh_north_out(ru);
 
+      LOG_I(PHY,"ru->state = %d (RU_RUN is %d)\n",ru->state,RU_RUN);
     }
 
   } // while !oai_exit
