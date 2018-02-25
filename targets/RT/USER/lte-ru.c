@@ -458,9 +458,9 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
     symbol_mask_full = (1<<fp->symbols_per_tti)-1; 
 
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
-  do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
+  do { 
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
-
+    if (oai_exit == 1) break;
     if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
     else if (packet_type == IF4p5_PULTICK) {           
       if ((proc->first_rx==0) && (f!=*frame)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d\n",f,*frame);       
