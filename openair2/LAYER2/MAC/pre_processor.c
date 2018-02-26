@@ -583,6 +583,29 @@ void sort_UEs(module_id_t Mod_idP, slice_id_t slice_id, int frameP, sub_frame_t 
 #endif
 }
 
+void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
+                                                slice_id_t slice_id,
+                                                const uint8_t rbs_retx[NFAPI_CC_MAX]) {
+  int UE_id, CC_id, N_RB_DL, i;
+  UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
+  UE_sched_ctrl *ue_sched_ctl;
+
+  for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+
+    if (UE_RNTI(Mod_id, UE_id) == NOT_A_RNTI) continue;
+    if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
+    if (!ue_slice_membership(UE_id, slice_id)) continue;
+
+    ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+
+    for (i = 0; i < UE_num_active_CC(UE_list, UE_id); ++i) {
+      CC_id = UE_list->ordered_CCids[i][UE_id];
+      N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
+      ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id] = nb_rbs_allowed_slice(slice_percentage[slice_id], N_RB_DL) - rbs_retx[CC_id];
+    }
+  }
+}
+
 void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
                                               slice_id_t slice_id,
                                               frame_t frameP,
@@ -604,7 +627,6 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
   int ue_count_retx[NFAPI_CC_MAX];
   uint8_t ue_retx_flag[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
 
-  int N_RB_DL;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   UE_sched_ctrl *ue_sched_ctl;
   COMMON_channels_t *cc;
@@ -654,6 +676,10 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
     }
   }
 
+  // PARTITIONING
+  // Reduces the available RBs according to slicing configuration
+  dlsch_scheduler_pre_processor_partitioning(Mod_id, slice_id, rbs_retx);
+
   switch (accounting_policy[slice_id]) {
 
     // If greedy scheduling, try to account all the required RBs
@@ -684,19 +710,15 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
         if (!ue_slice_membership(UE_id, slice_id)) continue;
 
         for (i = 0; i < UE_num_active_CC(UE_list, UE_id); ++i) {
+
           CC_id = UE_list->ordered_CCids[i][UE_id];
           ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-
-          N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth) - rbs_retx[CC_id];
-          // recalculate based on the what is left after retransmission
-          ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id] = nb_rbs_allowed_slice(slice_percentage[slice_id], N_RB_DL);
-
           available_rbs = ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id];
 
-          if (total_ue_count[CC_id] == 0) {
+          if (ue_count_newtx[CC_id] == 0) {
             average_rbs_per_user[CC_id] = 0;
-          } else if ((min_rb_unit[CC_id] * total_ue_count[CC_id]) <= available_rbs) {
-            average_rbs_per_user[CC_id] = (uint16_t) floor(available_rbs / total_ue_count[CC_id]);
+          } else if (min_rb_unit[CC_id]*ue_count_newtx[CC_id] <= available_rbs) {
+            average_rbs_per_user[CC_id] = (uint16_t)floor(available_rbs/ue_count_newtx[CC_id]);
           } else {
             // consider the total number of use that can be scheduled UE
             average_rbs_per_user[CC_id] = (uint16_t)min_rb_unit[CC_id];
