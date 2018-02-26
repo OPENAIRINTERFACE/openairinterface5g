@@ -65,25 +65,13 @@ mac_rrc_data_req_ue(
 )
 //--------------------------------------------------------------------------
 {
-  asn_enc_rval_t enc_rval;
-  SRB_INFO *Srb_info;
-  uint8_t Sdu_size                = 0;
-  uint8_t sfn                     = (uint8_t)((frameP>>2)&0xff);
-
-
 #ifdef DEBUG_RRC
   int i;
   LOG_I(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
 #endif
 
-  eNB_RRC_INST *rrc;
-  rrc_eNB_carrier_data_t *carrier;
-  BCCH_BCH_Message_t *mib;
-
-
   LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_idP,frameP,Srb_id);
   LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size);
-
 
   if( (UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size > 0) ) {
 
@@ -139,7 +127,6 @@ mac_rrc_data_ind_ue(
 )
 //--------------------------------------------------------------------------
 {
-  SRB_INFO *Srb_info;
   protocol_ctxt_t ctxt;
   sdu_size_t      sdu_size = 0;
 
@@ -214,6 +201,7 @@ mac_rrc_data_ind_ue(
           itti_send_msg_to_task (TASK_RRC_UE, ctxt.instance, message_p);
         }
 #else
+        SRB_INFO *Srb_info;
         Srb_info = &UE_rrc_inst[module_idP].Srb0[eNB_indexP];
         memcpy(Srb_info->Rx_buffer.Payload,sduP,sdu_lenP);
         Srb_info->Rx_buffer.payload_size = sdu_lenP;

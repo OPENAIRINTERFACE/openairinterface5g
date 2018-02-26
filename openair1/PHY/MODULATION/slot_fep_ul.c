@@ -134,7 +134,7 @@ int slot_fep_ul(RU_t *ru,
   }
 
 #ifdef DEBUG_FEP
-  LOG_D(PHY,"slot_fep: done\n");
+  //  LOG_D(PHY,"slot_fep: done\n");
 #endif
   return(0);
 }

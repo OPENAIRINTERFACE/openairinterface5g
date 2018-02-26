@@ -17,7 +17,7 @@
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
- */ 
+ */
 
 /*! \file flexran_agent_mac.c
  * \brief FlexRAN agent message handler for MAC layer
@@ -40,6 +40,7 @@
 
 #include "log.h"
 
+extern int flexran_get_harq_round(mid_t mod_id, uint8_t cc_id, mid_t ue_id);
 
 /*Flags showing if a mac agent has already been registered*/
 unsigned int mac_agent_registered[NUM_MAX_ENB];
@@ -54,7 +55,7 @@ struct lfds700_ringbuffer_element *dl_mac_config_array[NUM_MAX_ENB];
 struct lfds700_ringbuffer_state ringbuffer_state[NUM_MAX_ENB];
 
 
-int flexran_agent_mac_stats_reply(mid_t mod_id,       
+int flexran_agent_mac_stats_reply(mid_t mod_id,
           const report_config_t *report_config,
            Protocol__FlexUeStatsReport **ue_report,
            Protocol__FlexCellStatsReport **cell_report) {
@@ -62,13 +63,13 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
   // Protocol__FlexHeader *header;
   int i, j, k;
-  // int cc_id = 0;
+  int cc_id = 0;
   int enb_id = mod_id;
 
   /* Allocate memory for list of UE reports */
   if (report_config->nr_ue > 0) {
 
-          
+
           for (i = 0; i < report_config->nr_ue; i++) {
 
 
@@ -76,24 +77,24 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                 /* Check flag for creation of buffer status report */
                 if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_BSR) {
                       //TODO should be automated
-                        ue_report[i]->n_bsr = 4; 
+                        ue_report[i]->n_bsr = 4;
                         uint32_t *elem;
                         elem = (uint32_t *) malloc(sizeof(uint32_t)*ue_report[i]->n_bsr);
                         if (elem == NULL)
                                goto error;
                         for (j = 0; j < ue_report[i]->n_bsr; j++) {
-                                // NN: we need to know the cc_id here, consider the first one 
+                                // NN: we need to know the cc_id here, consider the first one
                                 elem[j] = flexran_get_ue_bsr_ul_buffer_info (enb_id, i, j);
                         }
-                          
+
                         ue_report[i]->bsr = elem;
                 }
-                
+
                 /* Check flag for creation of PHR report */
                 if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR) {
                         ue_report[i]->phr = flexran_get_ue_phr (enb_id, i); // eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].phr_info;
                         ue_report[i]->has_phr = 1;
-                      
+
                 }
 
                 /* Check flag for creation of RLC buffer status report */
@@ -134,19 +135,19 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         if (ue_report[i]->n_rlc_report > 0)
                             ue_report[i]->rlc_report = rlc_reports;
 
-                      
+
                 }
 
                 /* Check flag for creation of MAC CE buffer status report */
                 if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_CE_BS) {
                         // TODO: Fill in the actual MAC CE buffer status report
-                        ue_report[i]->pending_mac_ces = (flexran_get_MAC_CE_bitmap_TA(enb_id,i,0) | (0 << 1) | (0 << 2) | (0 << 3)) & 15; 
+                        ue_report[i]->pending_mac_ces = (flexran_get_MAC_CE_bitmap_TA(enb_id,i,0) | (0 << 1) | (0 << 2) | (0 << 3)) & 15;
                                       // Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
                                        // PROTOCOL__FLEX_CE_TYPE__FLPCET_ values
                                        // found in stats_common.pb-c.h. See
-                                       // flex_ce_type in FlexRAN specification 
+                                       // flex_ce_type in FlexRAN specification
                         ue_report[i]->has_pending_mac_ces = 1;
-                  
+
                 }
 
                 /* Check flag for creation of DL CQI report */
@@ -167,7 +168,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         Protocol__FlexDlCsi **csi_reports;
                         csi_reports = malloc(sizeof(Protocol__FlexDlCsi *)*dl_report->n_csi_report);
                         if (csi_reports == NULL)
-                          goto error;                    
+                          goto error;
                         for (j = 0; j < dl_report->n_csi_report; j++) {
 
                               csi_reports[j] = malloc(sizeof(Protocol__FlexDlCsi));
@@ -211,18 +212,18 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                     if (csi11 == NULL)
                                     goto error;
                                     protocol__flex_csi_p11__init(csi11);
-                                  
-                                    csi11->wb_cqi = malloc(sizeof(csi11->wb_cqi));  
+
+                                    csi11->wb_cqi = malloc(sizeof(csi11->wb_cqi));
 				    csi11->n_wb_cqi = 1;
-				    csi11->wb_cqi[0] = flexran_get_ue_wcqi (enb_id, i);                                       		    
-                                    // According To spec 36.213                                  
-                                     
+				    csi11->wb_cqi[0] = flexran_get_ue_wcqi (enb_id, i);
+                                    // According To spec 36.213
+
                                     if (flexran_get_antenna_ports(enb_id, j) == 2 && csi_reports[j]->ri == 1) {
                                         // TODO PMI
                                         csi11->wb_pmi = flexran_get_ue_wpmi(enb_id, i, 0);
                                         csi11->has_wb_pmi = 1;
 
-                                       }   
+                                       }
 
                                       else if (flexran_get_antenna_ports(enb_id, j) == 2 && csi_reports[j]->ri == 2){
                                         // TODO PMI
@@ -239,14 +240,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                                       }
 
-                                      csi11->has_wb_pmi = 0;                                      
+                                      csi11->has_wb_pmi = 0;
 
                                       csi_reports[j]->p11csi = csi11;
 
                                }
 
-                                      
-                                     
+
+
 
 
                               else if(csi_reports[j]->report_case == PROTOCOL__FLEX_DL_CSI__REPORT_P20CSI){
@@ -256,16 +257,16 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                     if (csi20 == NULL)
                                     goto error;
                                     protocol__flex_csi_p20__init(csi20);
-                                    
-                                    csi20->wb_cqi = flexran_get_ue_wcqi (enb_id, i);                                       
+
+                                    csi20->wb_cqi = flexran_get_ue_wcqi (enb_id, i);
                                     csi20->has_wb_cqi = 1;
 
-                                      
+
                                     csi20->bandwidth_part_index = 1 ;//TODO
                                     csi20->has_bandwidth_part_index = 1;
 
                                     csi20->sb_index = 1 ;//TODO
-                                    csi20->has_sb_index = 1 ;                                     
+                                    csi20->has_sb_index = 1 ;
 
 
                                     csi_reports[j]->p20csi = csi20;
@@ -280,20 +281,20 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                   // if (csi21 == NULL)
                                   // goto error;
                                   // protocol__flex_csi_p21__init(csi21);
-                                
-                                  // csi21->wb_cqi = flexran_get_ue_wcqi (enb_id, i);                                       
-                                  
-                                  
+
+                                  // csi21->wb_cqi = flexran_get_ue_wcqi (enb_id, i);
+
+
                                   // csi21->wb_pmi = flexran_get_ue_pmi(enb_id); //TDO inside
                                   // csi21->has_wb_pmi = 1;
 
-                                  // csi21->sb_cqi = 1; // TODO 
-                                   
+                                  // csi21->sb_cqi = 1; // TODO
+
                                   // csi21->bandwidth_part_index = 1 ; //TDO inside
-                                  // csi21->has_bandwidth_part_index = 1 ;   
+                                  // csi21->has_bandwidth_part_index = 1 ;
 
                                   // csi21->sb_index = 1 ;//TODO
-                                  // csi21->has_sb_index = 1 ;                                     
+                                  // csi21->has_sb_index = 1 ;
 
 
                                   // csi_reports[j]->p20csi = csi21;
@@ -308,10 +309,10 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                   // if (csi12 == NULL)
                                   // goto error;
                                   // protocol__flex_csi_a12__init(csi12);
-                                
-                                  // csi12->wb_cqi = flexran_get_ue_wcqi (enb_id, i);                                       
-                                  
-                                  // csi12->sb_pmi = 1 ; //TODO inside                                                                      
+
+                                  // csi12->wb_cqi = flexran_get_ue_wcqi (enb_id, i);
+
+                                  // csi12->sb_pmi = 1 ; //TODO inside
 
                                   // TODO continou
                               }
@@ -323,18 +324,18 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                     // if (csi22 == NULL)
                                     // goto error;
                                     // protocol__flex_csi_a22__init(csi22);
-                                  
-                                    // csi22->wb_cqi = flexran_get_ue_wcqi (enb_id, i);                                       
-                                    
-                                    // csi22->sb_cqi = 1 ; //TODO inside                                      
 
-                                    // csi22->wb_pmi = flexran_get_ue_wcqi (enb_id, i);                                       
-                                    // csi22->has_wb_pmi = 1;
-                                    
-                                    // csi22->sb_pmi = 1 ; //TODO inside                                                                            
+                                    // csi22->wb_cqi = flexran_get_ue_wcqi (enb_id, i);
+
+                                    // csi22->sb_cqi = 1 ; //TODO inside
+
+                                    // csi22->wb_pmi = flexran_get_ue_wcqi (enb_id, i);
                                     // csi22->has_wb_pmi = 1;
 
-                                    // csi22->sb_list = flexran_get_ue_wcqi (enb_id, i);                                       
+                                    // csi22->sb_pmi = 1 ; //TODO inside
+                                    // csi22->has_wb_pmi = 1;
+
+                                    // csi22->sb_list = flexran_get_ue_wcqi (enb_id, i);
 
 
                                 }
@@ -347,10 +348,10 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                     // goto error;
                                     // protocol__flex_csi_a20__init(csi20);
 
-                                    // csi20->wb_cqi = flexran_get_ue_wcqi (enb_id, i);                                       
+                                    // csi20->wb_cqi = flexran_get_ue_wcqi (enb_id, i);
                                     // csi20->has_wb_cqi = 1;
 
-                                    // csi20>sb_cqi = 1 ; //TODO inside                                      
+                                    // csi20>sb_cqi = 1 ; //TODO inside
                                     // csi20>has_sb_cqi = 1 ;
 
                                     // csi20->sb_list = 1; // TODO inside
@@ -371,7 +372,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                     dl_report->csi_report = csi_reports;
                     //Add the DL CQI report to the stats report
                      ue_report[i]->dl_cqi_report = dl_report;
-                      
+
                 }
 
                 /* Check flag for creation of paging buffer status report */
@@ -463,7 +464,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                               //TODO: Set the servCellIndex for this report
                               ul_report[j]->serv_cell_index = 0;
                               ul_report[j]->has_serv_cell_index = 1;
-                              
+
                               //Set the list of UL reports of this UE to the full UL report
                               full_ul_report->cqi_meas = ul_report;
 
@@ -487,24 +488,119 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                           }
                         //  Add full UL CQI report to the UE report
                         ue_report[i]->ul_cqi_report = full_ul_report;
-                      
 
-                     }    
-                             
-                 
 
-                            
-             }       
+                     }
+                      if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_STATS) {
 
-          
-         
-         
-     } 
+                            Protocol__FlexMacStats *macstats;
+                            macstats = malloc(sizeof(Protocol__FlexMacStats));
+                            if (macstats == NULL)
+                              goto error;
+                            protocol__flex_mac_stats__init(macstats);
+
+
+                            macstats->total_bytes_sdus_dl = flexran_get_total_size_dl_mac_sdus(mod_id, i, cc_id);
+                            macstats->has_total_bytes_sdus_dl = 1;
+
+                            macstats->total_bytes_sdus_ul = flexran_get_total_size_ul_mac_sdus(mod_id, i, cc_id);
+                            macstats->has_total_bytes_sdus_ul = 1;
+
+                            macstats->tbs_dl = flexran_get_TBS_dl(mod_id, i, cc_id);
+                            macstats->has_tbs_dl = 1;
+
+                            macstats->tbs_ul = flexran_get_TBS_ul(mod_id, i, cc_id);
+                            macstats->has_tbs_ul = 1;
+
+                            macstats->prb_retx_dl = flexran_get_num_prb_retx_dl_per_ue(mod_id, i, cc_id);
+                            macstats->has_prb_retx_dl = 1;
+
+                            macstats->prb_retx_ul = flexran_get_num_prb_retx_ul_per_ue(mod_id, i, cc_id);
+                            macstats->has_prb_retx_ul = 1;
+
+                            macstats->prb_dl = flexran_get_num_prb_dl_tx_per_ue(mod_id, i, cc_id);
+                            macstats->has_prb_dl = 1;
+
+                            macstats->prb_ul = flexran_get_num_prb_ul_rx_per_ue(mod_id, i, cc_id);
+                            macstats->has_prb_ul = 1;
+
+                            macstats->mcs1_dl = flexran_get_mcs1_dl(mod_id, i, cc_id);
+                            macstats->has_mcs1_dl = 1;
+
+                            macstats->mcs2_dl = flexran_get_mcs2_dl(mod_id, i, cc_id);
+                            macstats->has_mcs2_dl = 1;
+
+                            macstats->mcs1_ul = flexran_get_mcs1_ul(mod_id, i, cc_id);
+                            macstats->has_mcs1_ul = 1;
+
+                            macstats->mcs2_ul = flexran_get_mcs2_ul(mod_id, i, cc_id);
+                            macstats->has_mcs2_ul = 1;
+
+                            macstats->total_prb_dl = flexran_get_total_prb_dl_tx_per_ue(mod_id, i, cc_id);
+                            macstats->has_total_prb_dl = 1;
+
+                            macstats->total_prb_ul = flexran_get_total_prb_ul_rx_per_ue(mod_id, i, cc_id);
+                            macstats->has_total_prb_ul = 1;
+
+                            macstats->total_pdu_dl = flexran_get_total_num_pdu_dl(mod_id, i, cc_id);
+                            macstats->has_total_pdu_dl = 1;
+
+                            macstats->total_pdu_ul = flexran_get_total_num_pdu_ul(mod_id, i, cc_id);
+                            macstats->has_total_pdu_ul = 1;
+
+                            macstats->total_tbs_dl = flexran_get_total_TBS_dl(mod_id, i, cc_id);
+                            macstats->has_total_tbs_dl = 1;
+
+                            macstats->total_tbs_ul = flexran_get_total_TBS_ul(mod_id, i, cc_id);
+                            macstats->has_total_tbs_ul = 1;
+
+                            macstats->harq_round = flexran_get_harq_round(mod_id, cc_id, i);
+                            macstats->has_harq_round = 1;
+
+                            Protocol__FlexMacSdusDl ** mac_sdus;
+                            mac_sdus = malloc(sizeof(Protocol__FlexMacSdusDl) * flexran_get_num_mac_sdu_tx(mod_id, i, cc_id));
+                            if (mac_sdus == NULL)
+                                goto error;
+
+                            macstats->n_mac_sdus_dl = flexran_get_num_mac_sdu_tx(mod_id, i, cc_id);
+
+                            for (j = 0; j < macstats->n_mac_sdus_dl; j++){
+
+
+                                mac_sdus[j] = malloc(sizeof(Protocol__FlexMacSdusDl));
+                                protocol__flex_mac_sdus_dl__init(mac_sdus[j]);
+
+                                mac_sdus[j]->lcid = flexran_get_mac_sdu_lcid_index(mod_id, i, cc_id, j);
+                                mac_sdus[j]->has_lcid = 1;
+
+                                mac_sdus[j]->sdu_length = flexran_get_mac_sdu_size(mod_id, i, cc_id, mac_sdus[j]->lcid);
+                                mac_sdus[j]->has_sdu_length = 1;
+
+
+                            }
+
+
+                            macstats->mac_sdus_dl = mac_sdus;
+
+
+                        ue_report[i]->mac_stats = macstats;
+
+               }
+
+
+
+
+             }
+
+
+
+
+     }
 
   /* Allocate memory for list of cell reports */
   if (report_config->nr_cc > 0) {
-    
-            
+
+
             // Fill in the Cell reports
             for (i = 0; i < report_config->nr_cc; i++) {
 
@@ -532,10 +628,10 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                             cell_report[i]->noise_inter_report = ni_report;
                       }
             }
-            
 
-      
-            
+
+
+
   }
 
   return 0;
@@ -740,9 +836,9 @@ int flexran_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg) {
 int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
   Protocol__FlexHeader *header = NULL;
   int i, j, UE_id;
-  
+
   int available_harq[NUMBER_OF_UE_MAX];
-  
+
   const int xid = *((int *)params);
 
 
@@ -764,12 +860,12 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   }
 
   int ahead_of_time = 0;
-  
+
   frame = (frame_t) flexran_get_current_system_frame_num(mod_id);
   subframe = (sub_frame_t) flexran_get_current_subframe(mod_id);
 
   subframe = ((subframe + ahead_of_time) % 10);
-  
+
   if (subframe < flexran_get_current_subframe(mod_id)) {
     frame = (frame + 1) % 1024;
   }
@@ -792,7 +888,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       }
     }
   }
-  
+
 
   //  LOG_I(FLEXRAN_AGENT, "Sending subframe trigger for frame %d and subframe %d\n", flexran_get_current_frame(mod_id), (flexran_get_current_subframe(mod_id) + 1) % 10);
 
@@ -825,8 +921,8 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       //      uint8_t harq_id;
       //uint8_t harq_status;
       //      flexran_get_harq(mod_id, UE_PCCID(mod_id,i), i, frame, subframe, &harq_id, &harq_status);
-      
-      
+
+
       dl_info[i]->harq_process_id = available_harq[UE_id];
       if (RC.mac && RC.mac[mod_id])
         RC.mac[mod_id]->UE_list.eNB_UE_stats[UE_PCCID(mod_id,i)][UE_id].harq_pid = 0;
@@ -915,7 +1011,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
     for (i = 0; i < sf_trigger_msg->n_dl_info; i++) {
       free(sf_trigger_msg->dl_info[i]->harq_status);
     }
-    free(sf_trigger_msg->dl_info);    
+    free(sf_trigger_msg->dl_info);
     free(sf_trigger_msg->ul_info);
     free(sf_trigger_msg);
   }
@@ -1089,7 +1185,7 @@ int flexran_agent_mac_destroy_ul_config(Protocol__FlexranMessage *msg) {
   free(msg->ul_mac_config_msg->header);
   for (i = 0; i < msg->ul_mac_config_msg->n_ul_ue_data; i++) {
     // TODO  uplink rlc ...
-    // free(msg->ul_mac_config_msg->dl_ue_data[i]->ce_bitmap); 
+    // free(msg->ul_mac_config_msg->dl_ue_data[i]->ce_bitmap);
   //   for (j = 0; j < msg->ul_mac_config_msg->ul_ue_data[i]->n_rlc_pdu; j++) {
   //     for (k = 0; k <  msg->ul_mac_config_msg->ul_ue_data[i]->rlc_pdu[j]->n_rlc_pdu_tb; k++) {
   // free(msg->ul_mac_config_msg->dl_ue_data[i]->rlc_pdu[j]->rlc_pdu_tb[k]);
@@ -1107,7 +1203,7 @@ int flexran_agent_mac_destroy_ul_config(Protocol__FlexranMessage *msg) {
     // free(msg->ul_mac_config_msg->ul_ue_data[i]);
   }
   free(msg->ul_mac_config_msg->ul_ue_data);
-  
+
   free(msg->ul_mac_config_msg);
   free(msg);
 
@@ -1121,10 +1217,10 @@ int flexran_agent_mac_destroy_ul_config(Protocol__FlexranMessage *msg) {
 void flexran_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage **msg) {
 
   struct lfds700_misc_prng_state ls;
-  
+
   LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
   lfds700_misc_prng_init(&ls);
-  
+
   if (lfds700_ringbuffer_read(&ringbuffer_state[mod_id], NULL, (void **) msg, &ls) == 0) {
     *msg = NULL;
   }
@@ -1135,10 +1231,10 @@ int flexran_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Pro
   struct lfds700_misc_prng_state ls;
   enum lfds700_misc_flag overwrite_occurred_flag;
   Protocol__FlexranMessage *overwritten_dl_config;
-   
+
   LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
   lfds700_misc_prng_init(&ls);
-  
+
   lfds700_ringbuffer_write( &ringbuffer_state[mod_id],
 			    NULL,
 			    (void *) params,
@@ -1252,7 +1348,7 @@ int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->flexran_agent_send_sf_trigger = flexran_agent_send_sf_trigger;
   //xface->flexran_agent_send_update_mac_stats = flexran_agent_send_update_mac_stats;
   xface->flexran_agent_get_pending_dl_mac_config = flexran_agent_get_pending_dl_mac_config;
-  
+
   xface->dl_scheduler_loaded_lib = NULL;
   xface->ul_scheduler_loaded_lib = NULL;
   mac_agent_registered[mod_id] = 1;

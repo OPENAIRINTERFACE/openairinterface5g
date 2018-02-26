@@ -1315,6 +1315,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 						       rb_table[rb_table_index]);
 	    UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_rx += rb_table[rb_table_index];
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS = UE_template->TBS_UL[harq_pid];
+            UE_list->eNB_UE_stats[CC_id][UE_id].total_ulsch_TBS += UE_template->TBS_UL[harq_pid];
 	    //            buffer_occupancy -= TBS;
 
 	    T(T_ENB_MAC_UE_UL_SCHEDULE, T_INT(module_idP),

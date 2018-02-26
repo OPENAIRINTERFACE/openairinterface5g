@@ -539,6 +539,7 @@ void fep_full(RU_t *ru) {
 
   remove_7_5_kHz(ru,proc->subframe_rx<<1);
   remove_7_5_kHz(ru,1+(proc->subframe_rx<<1));
+
   for (l=0; l<fp->symbols_per_tti/2; l++) {
     slot_fep_ul(ru,
 		l,

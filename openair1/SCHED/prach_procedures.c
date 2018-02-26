@@ -52,6 +52,8 @@
 
 extern uint32_t nfapi_mode;
 
+extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
+
 void prach_procedures(PHY_VARS_eNB *eNB
 #ifdef Rel14
                       ,

@@ -294,7 +294,7 @@ void config_mib(int                 Mod_idP,
 #ifdef Rel14
 	,cfg->emtc_config.pbch_repetitions_enable_r13.value
 #endif  
-	);
+      );
 }
 
 void config_sib1(int Mod_idP, int CC_idP, TDD_Config_t * tdd_ConfigP)
@@ -435,7 +435,6 @@ config_sib2(int Mod_idP,
     cfg->srs_config.srs_acknack_srs_simultaneous_transmission.value     = radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
     cfg->srs_config.srs_acknack_srs_simultaneous_transmission.tl.tag = NFAPI_SRS_CONFIG_SRS_ACKNACK_SRS_SIMULTANEOUS_TRANSMISSION_TAG;
     cfg->num_tlv++;
-
     
     if (radioResourceConfigCommonP->soundingRS_UL_ConfigCommon.choice.setup.srs_MaxUpPts) {
        cfg->srs_config.max_up_pts.value                                 = 1;
@@ -992,5 +991,3 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
     
     return(0);			   
 }
-
-

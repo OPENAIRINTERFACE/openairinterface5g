@@ -236,7 +236,7 @@ int ue_ip_hard_start_xmit(struct sk_buff *skb_pP, struct net_device *dev_pP)
 
     // End debug information
     netif_stop_queue(dev_pP);
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) || RHEL_RELEASE_CODE >= 1796
     netif_trans_update(dev_pP);
 #else
     dev_pP->trans_start = jiffies;
@@ -312,7 +312,7 @@ void ue_ip_tx_timeout(struct net_device *dev_pP)
   printk("[UE_IP_DRV][%s] begin\n", __FUNCTION__);
   //  (ue_ip_priv_t *)(dev_pP->priv_p)->stats.tx_errors++;
   (priv_p->stats).tx_errors++;
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) || RHEL_RELEASE_CODE >= 1796
   netif_trans_update(dev_pP);
 #else
   dev_pP->trans_start = jiffies;
