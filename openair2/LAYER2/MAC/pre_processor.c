@@ -299,10 +299,8 @@ maxround(module_id_t Mod_id, uint16_t rnti, int frame,
 	cc = &RC.mac[Mod_id]->common_channels[CC_id];
 
 	UE_id = find_UE_id(Mod_id, rnti);
-	if (cc->tdd_Config)
-	    harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame ,subframe);
-	else
-	    harq_pid = ((frame * 10) + subframe) & 7;
+
+	harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame ,subframe);
 
 	round = UE_list->UE_sched_ctrl[UE_id].round[CC_id][harq_pid];
 	if (round > round_max) {
@@ -676,8 +674,7 @@ void dlsch_scheduler_pre_ue_select(
         continue;
       }
 #endif
-      if (cc[CC_id].tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
-      else harq_pid = ((frameP*10)+subframeP)&7;
+      harq_pid = frame_subframe2_dl_harq_pid(cc[CC_id].tdd_Config,frameP ,subframeP);
 
       round = ue_sched_ctl->round[CC_id][harq_pid];
       if (round != 8) {  // retransmission
@@ -791,8 +788,7 @@ void dlsch_scheduler_pre_ue_select(
         if(i < dlsch_ue_select[CC_id].ue_num)
           continue;
 
-        if (cc[CC_id].tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
-        else harq_pid = ((frameP*10)+subframeP)&7;
+        harq_pid = frame_subframe2_dl_harq_pid(cc[CC_id].tdd_Config,frameP ,subframeP);
 
         round = ue_sched_ctl->round[CC_id][harq_pid];
         if (round == 8) {
@@ -905,8 +901,7 @@ void dlsch_scheduler_pre_ue_select(
         if(i < dlsch_ue_select[CC_id].ue_num)
           continue;
 
-        if (cc[CC_id].tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
-        else harq_pid = ((frameP*10)+subframeP)&7;
+        harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
 
         round = ue_sched_ctl->round[CC_id][harq_pid];
         if (round == 8) {
@@ -1128,8 +1123,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
       rnti = dlsch_ue_select[CC_id].list[i].rnti;
 
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-      if (cc->tdd_Config) harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
-      else harq_pid = ((frameP*10)+subframeP)&7;
+      harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
       Round    = ue_sched_ctl->round[CC_id][harq_pid];
 
       //if (mac_eNB_get_rrc_status(Mod_id, rnti) < RRC_RECONFIGURED || round > 0) {

@@ -689,10 +689,7 @@ schedule_ue_spec(module_id_t module_idP,
 
 	    nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
 
-	    if (cc->tdd_Config)
 	    harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
-	    else
-		harq_pid = ((frameP * 10) + subframeP) & 7;
 
 	    round = ue_sched_ctl->round[CC_id][harq_pid];
 
@@ -1609,8 +1606,7 @@ fill_DLSCH_dci(
         // clear scheduling flag
         eNB_dlsch_info[module_idP][CC_id][UE_id].status = S_DL_WAITING;
         rnti = UE_RNTI(module_idP,UE_id);
-	if (cc->tdd_Config) harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
-	else harq_pid = ((frameP*10)+subframeP)&7;
+        harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
         nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
 
 

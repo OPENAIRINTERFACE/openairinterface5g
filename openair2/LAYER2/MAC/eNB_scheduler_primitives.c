@@ -3789,6 +3789,8 @@ uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, su
             return harq_pid;
             break;
         }
+    }else{
+        return ((abs_frameP*10)+subframeP)&7;
     }
     return -1;
 }

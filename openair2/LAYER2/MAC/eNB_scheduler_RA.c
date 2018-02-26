@@ -853,10 +853,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 
     // set HARQ process round to 0 for this UE
 
-    if (cc->tdd_Config)
     ra->harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
-    else
-	ra->harq_pid = ((frameP * 10) + subframeP) & 7;
 
     // Get RRCConnectionSetup for Piggyback
     rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 1,	// 1 transport block
@@ -1310,10 +1307,8 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 		lcid = 0;
 
 		// put HARQ process round to 0
-		if (cc->tdd_Config)
-		    ra->harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
-		else
-		    ra->harq_pid = ((frameP * 10) + subframeP) & 7;
+		ra->harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
+
 		UE_list->UE_sched_ctrl[UE_id].round[CC_idP][ra->harq_pid] =
 		    0;
 
