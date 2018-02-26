@@ -249,16 +249,15 @@ void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
                                                uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
-					    int UE_id,
-					    uint8_t CC_id,
-					    int N_RBG,
-					    int tm,
-					    int min_rb_unit,
-					    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-					    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-					    unsigned char rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-              uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX],
-					    unsigned char MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
+                                            int UE_id,
+                                            uint8_t CC_id,
+                                            int N_RBG,
+                                            int min_rb_unit,
+                                            uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                            uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                            unsigned char rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+                                            uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX],
+                                            unsigned char MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
    and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f. 
