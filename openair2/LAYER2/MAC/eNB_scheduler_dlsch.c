@@ -537,6 +537,19 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       sorting_policy_current[i] = sorting_policy[i];
     }
 
+    // Check for new accounting policy
+    if (accounting_policy_current[i] != accounting_policy[i]) {
+      if (accounting_policy[i] > 1 || accounting_policy[i] < 0) {
+        LOG_W(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: invalid accounting policy (%d), revert to its previous value (%d)\n",
+              module_idP, i, frameP, subframeP, accounting_policy[i], accounting_policy_current[i]);
+        accounting_policy[i] = accounting_policy_current[i];
+      } else {
+        LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: UE sorting policy has changed (%x-->%x)\n",
+              module_idP, i, frameP, subframeP, accounting_policy_current[i], accounting_policy[i]);
+        accounting_policy_current[i] = accounting_policy[i];
+      }
+    }
+
     // Run each enabled slice-specific schedulers one by one
     slice_sched_dl[i](module_idP, i, frameP, subframeP, mbsfn_flag/*, dl_info*/);
   }

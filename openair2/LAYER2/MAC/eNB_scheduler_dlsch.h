@@ -71,6 +71,10 @@ char *dl_scheduler_type[MAX_NUM_SLICES] =
 uint32_t sorting_policy[MAX_NUM_SLICES] = {0x01234, 0x01234, 0x01234, 0x01234};
 uint32_t sorting_policy_current[MAX_NUM_SLICES] = {0x01234, 0x01234, 0x01234, 0x01234};
 
+// Accounting policy (just greedy(1) or fair(0) setting for now)
+int accounting_policy[MAX_NUM_SLICES] = {0, 0, 0, 0};
+int accounting_policy_current[MAX_NUM_SLICES] = {0, 0, 0, 0};
+
 // pointer to the slice specific scheduler
 slice_scheduler_dl slice_sched_dl[MAX_NUM_SLICES] = {0};
 

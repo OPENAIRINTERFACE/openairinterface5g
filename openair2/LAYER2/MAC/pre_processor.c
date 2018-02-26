@@ -58,6 +58,7 @@ extern float slice_percentage[MAX_NUM_SLICES];
 extern float slice_percentage_uplink[MAX_NUM_SLICES];
 extern int slice_position[MAX_NUM_SLICES*2];
 extern uint32_t sorting_policy[MAX_NUM_SLICES];
+extern int accounting_policy[MAX_NUM_SLICES];
 
 extern int slice_maxmcs[MAX_NUM_SLICES];
 extern int slice_maxmcs_uplink[MAX_NUM_SLICES];
@@ -596,6 +597,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
 
   rnti_t rnti;
   uint8_t harq_pid, round;
+  uint16_t available_rbs;
   uint8_t rbs_retx[NFAPI_CC_MAX];
   uint16_t average_rbs_per_user[NFAPI_CC_MAX];
   int ue_count_newtx[NFAPI_CC_MAX];
@@ -622,7 +624,6 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
   // Find total UE count, and account the RBs required for retransmissions
   for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     rnti = UE_RNTI(Mod_id, UE_id);
-
     if (rnti == NOT_A_RNTI) continue;
     if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
     if (!ue_slice_membership(UE_id, slice_id)) continue;
@@ -653,38 +654,77 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
     }
   }
 
-  // loop over all active UEs and calculate avg rb per user based on total active UEs
-  for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
-    rnti = UE_RNTI(Mod_id, UE_id);
+  switch (accounting_policy[slice_id]) {
 
-    if (rnti == NOT_A_RNTI) continue;
-    if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
-    if (!ue_slice_membership(UE_id, slice_id)) continue;
+    // If greedy scheduling, try to account all the required RBs
+    case 1:
+      for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+        rnti = UE_RNTI(Mod_id, UE_id);
+        if (rnti == NOT_A_RNTI) continue;
+        if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
+        if (!ue_slice_membership(UE_id, slice_id)) continue;
 
-    for (i = 0; i < UE_num_active_CC(UE_list, UE_id); ++i) {
-      CC_id = UE_list->ordered_CCids[i][UE_id];
-
-      N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth) - rbs_retx[CC_id];
-
-      // recalculate based on the what is left after retransmission
-      ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-      ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id] = nb_rbs_allowed_slice(slice_percentage[slice_id], N_RB_DL);
-
-      if (total_ue_count[CC_id] == 0) {
-        average_rbs_per_user[CC_id] = 0;
-      } else if ((min_rb_unit[CC_id] * total_ue_count[CC_id]) <=
-                 (ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id])) {
-        average_rbs_per_user[CC_id] =
-                (uint16_t) floor(ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id] / total_ue_count[CC_id]);
-        } else {
-          // consider the total number of use that can be scheduled UE
-        average_rbs_per_user[CC_id] = (uint16_t)min_rb_unit[CC_id];
+        for (i = 0; i < UE_num_active_CC(UE_list, UE_id); i++) {
+          CC_id = UE_list->ordered_CCids[i][UE_id];
+          nb_rbs_accounted[CC_id][UE_id] = nb_rbs_required[CC_id][UE_id];
+        }
       }
-    }
+      break;
+
+    // Use the old, fair algorithm
+    // Loop over all active UEs and account the avg number of RBs to each UE, based on all non-retx UEs.
+    default:
+      // FIXME: This is not ideal, why loop on UEs to find average_rbs_per_user[], that is per-CC?
+      // TODO: Look how to loop on active CCs only without using the UE_num_active_CC() function.
+      for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+        rnti = UE_RNTI(Mod_id, UE_id);
+
+        if (rnti == NOT_A_RNTI) continue;
+        if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
+        if (!ue_slice_membership(UE_id, slice_id)) continue;
+
+        for (i = 0; i < UE_num_active_CC(UE_list, UE_id); ++i) {
+          CC_id = UE_list->ordered_CCids[i][UE_id];
+          ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+
+          N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth) - rbs_retx[CC_id];
+          // recalculate based on the what is left after retransmission
+          ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id] = nb_rbs_allowed_slice(slice_percentage[slice_id], N_RB_DL);
+
+          available_rbs = ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id];
+
+          if (total_ue_count[CC_id] == 0) {
+            average_rbs_per_user[CC_id] = 0;
+          } else if ((min_rb_unit[CC_id] * total_ue_count[CC_id]) <= available_rbs) {
+            average_rbs_per_user[CC_id] = (uint16_t) floor(available_rbs / total_ue_count[CC_id]);
+          } else {
+            // consider the total number of use that can be scheduled UE
+            average_rbs_per_user[CC_id] = (uint16_t)min_rb_unit[CC_id];
+          }
+        }
+      }
+
+      // note: nb_rbs_required is assigned according to total_buffer_dl
+      // extend nb_rbs_required to capture per LCID RB required
+      for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+        rnti = UE_RNTI(Mod_id, UE_id);
+        if (rnti == NOT_A_RNTI) continue;
+        if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
+        if (!ue_slice_membership(UE_id, slice_id)) continue;
+
+        for (i = 0; i < UE_num_active_CC(UE_list, UE_id); i++) {
+          CC_id = UE_list->ordered_CCids[i][UE_id];
+          nb_rbs_accounted[CC_id][UE_id] = cmin(average_rbs_per_user[CC_id], nb_rbs_required[CC_id][UE_id]);
+        }
+      }
+      break;
   }
 
-  // note: nb_rbs_required is assigned according to total_buffer_dl
-  // extend nb_rbs_required to capture per LCID RB required
+
+
+
+  // Check retransmissions
+  // TODO: Do this once at the beginning
   for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     rnti = UE_RNTI(Mod_id, UE_id);
     if (rnti == NOT_A_RNTI) continue;
@@ -702,8 +742,6 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
       /* TODO: do we have to check for retransmission? */
       if (mac_eNB_get_rrc_status(Mod_id, rnti) < RRC_RECONFIGURED || round != 8) {
         nb_rbs_accounted[CC_id][UE_id] = nb_rbs_required[CC_id][UE_id];
-      } else {
-        nb_rbs_accounted[CC_id][UE_id] = cmin(average_rbs_per_user[CC_id], nb_rbs_required[CC_id][UE_id]);
       }
     }
   }
