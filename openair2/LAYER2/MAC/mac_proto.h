@@ -235,18 +235,26 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
                                               frame_t frameP,
                                               sub_frame_t subframeP,
                                               int min_rb_unit[NFAPI_CC_MAX],
-                                              uint8_t total_ue_count[NFAPI_CC_MAX],
                                               uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
                                               uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
 
 void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
                                                slice_id_t slice_id,
                                                int min_rb_unit[NFAPI_CC_MAX],
-                                               uint8_t total_ue_count[NFAPI_CC_MAX],
                                                uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
                                                uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                               uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
                                                uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
                                                uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
+
+void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
+                                                      slice_id_t slice_id,
+                                                      int min_rb_unit[NFAPI_CC_MAX],
+                                                      uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                                      uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                                      uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                                                      uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+                                                      uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
                                             int UE_id,
