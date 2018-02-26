@@ -3511,8 +3511,12 @@ allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP,
                 if(((ul_req->ul_config_pdu_list[ack_int].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE) ||
                     (ul_req->ul_config_pdu_list[ack_int].pdu_type == NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE)) &&
                    (ul_req->ul_config_pdu_list[ack_int].uci_harq_pdu.ue_information.ue_information_rel8.rnti == dl_config_pdu[i].dci_dl_pdu.dci_dl_pdu_rel8.rnti)){
-                  ul_req->ul_config_pdu_list[ack_int].uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0 =
+                    if (cc->tdd_Config==NULL)
+                      ul_req->ul_config_pdu_list[ack_int].uci_harq_pdu.harq_information.harq_information_rel9_fdd.n_pucch_1_0 =
                         cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + fCCE;
+                    else
+                      ul_req->ul_config_pdu_list[ack_int].uci_harq_pdu.harq_information.harq_information_rel10_tdd.n_pucch_1_0 =
+                        cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + fCCE + get_Np(to_prb(cc->mib->message.dl_Bandwidth),fCCE,0) ;
                 }
               }
             }
@@ -3852,13 +3856,16 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	     else
 	       frame_tx = subframeP < 4 ? frameP -1 : frameP;
 	     harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame_tx,subframe_tx);
+
 	     if(num_ack_nak==1){
 	         if(harq_indication_tdd->harq_data[0].bundling.value_0==1){ //ack
 	             sched_ctl->round[CC_idP][harq_pid] = 8; // release HARQ process
 	             sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+	             LOG_D(MAC,"frame %d subframe %d Acking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
 	         }else{ //nack
 	          if( sched_ctl->round[CC_idP][harq_pid]<8)
 	             sched_ctl->round[CC_idP][harq_pid]++;
+              LOG_D(MAC,"frame %d subframe %d Nacking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
 	         }
 	       }
                RA_t *ra = &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
