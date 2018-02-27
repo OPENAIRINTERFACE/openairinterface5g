@@ -901,7 +901,7 @@ void dlsch_scheduler_pre_ue_select(
         if(i < dlsch_ue_select[CC_id].ue_num)
           continue;
 
-        harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
+        harq_pid = frame_subframe2_dl_harq_pid(cc[CC_id].tdd_Config,frameP ,subframeP);
 
         round = ue_sched_ctl->round[CC_id][harq_pid];
         if (round == 8) {
