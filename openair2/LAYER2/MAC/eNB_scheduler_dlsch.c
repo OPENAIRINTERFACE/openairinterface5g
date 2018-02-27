@@ -1703,7 +1703,7 @@ update_ul_dci(module_id_t module_idP,
 	for (i = 0;
 	     i <
 	     HI_DCI0_req->hi_dci0_request_body.number_of_dci +
-	     HI_DCI0_req->hi_dci0_request_body.number_of_dci; i++) {
+	     HI_DCI0_req->hi_dci0_request_body.number_of_hi; i++) {
 
 	    if ((hi_dci0_pdu[i].pdu_type == NFAPI_HI_DCI0_DCI_PDU_TYPE) &&
 		(hi_dci0_pdu[i].dci_pdu.dci_pdu_rel8.rnti == rntiP))
