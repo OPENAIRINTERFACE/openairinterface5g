@@ -1683,6 +1683,7 @@ cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 	  ra[i].RRC_timer = 20;
 	  ra[i].rnti = 0;
 	  ra[i].msg3_round = 0;
+    LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Canceled RA procedure for UE rnti %x\n", module_idP, CC_id, frameP, rnti);
 	}
     }
 }

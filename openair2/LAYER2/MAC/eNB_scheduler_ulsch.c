@@ -157,18 +157,16 @@ rx_sdu(const module_id_t enb_mod_idP,
 		  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 		  ul_cqi);
 
-	    //      AssertFatal(1==0,"ulsch in error\n");
-	    if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] ==
-		3) {
-		UE_list->UE_sched_ctrl[UE_id].ul_scheduled &=
-		    (~(1 << harq_pid));
-		UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] =
-		    0;
-		if (UE_list->UE_sched_ctrl[UE_id].
-		    ul_consecutive_errors++ == 10)
-		    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
-	    } else
-		UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]++;
+      //      AssertFatal(1==0,"ulsch in error\n");
+      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] == 3) {
+        UE_list->UE_sched_ctrl[UE_id].ul_scheduled &= (~(1 << harq_pid));
+        UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0;
+        if (UE_list->UE_sched_ctrl[UE_id].ul_consecutive_errors++ == 10)
+          UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
+        if(find_RA_id(enb_mod_idP, CC_idP, current_rnti) != -1)
+          cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
+      } else
+        UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]++;
 	    return;
 
 	}
