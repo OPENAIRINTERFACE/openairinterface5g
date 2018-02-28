@@ -6274,7 +6274,7 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
                              ue_context_p,
                              ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
           }
-	}else {
+  }else if(dedicated_DRB == 0){
           if(ue_context_p->ue_context.reestablishment_cause == ReestablishmentCause_spare1){
 	    rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP,
 						       ue_context_p);
@@ -6288,7 +6288,15 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
               }
             }
           }
-	}
+  }else if(dedicated_DRB == 2){
+             for (uint8_t e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+               if (ue_context_p->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+                 ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
+               } else {
+                 ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
+               }
+             }
+         }
       }    
 #else  // establish a dedicated bearer 
       if (dedicated_DRB == 0 ) {
