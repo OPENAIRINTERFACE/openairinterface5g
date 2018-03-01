@@ -2170,16 +2170,8 @@ int rrc_mac_remove_ue(module_id_t mod_idP, rnti_t rntiP)
     eNB_dlsch_info[mod_idP][pCC_id][UE_id].serving_num = 0;
 
     // check if this has an RA process active
-    RA_t *ra;
-    for (i = 0; i < NB_RA_PROC_MAX; i++) {
-	ra = (RA_t *) & RC.mac[mod_idP]->common_channels[pCC_id].ra[i];
-	if (ra->rnti == rntiP) {
-	    ra->state = IDLE;
-	    ra->timing_offset = 0;
-	    ra->RRC_timer = 20;
-	    ra->rnti = 0;
-	    //break;
-	}
+    if(find_RA_id(mod_idP, pCC_id, rntiP) != -1) {
+      cancel_ra_proc(mod_idP, pCC_id, 0, rntiP);
     }
 
     return 0;

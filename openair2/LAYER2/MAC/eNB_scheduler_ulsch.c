@@ -194,7 +194,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 		  (int) mac->common_channels[CC_idP].
 		  radioResourceConfigCommon->rach_ConfigCommon.
 		  maxHARQ_Msg3Tx);
-	    if (ra[RA_id].msg3_round ==
+	    if (ra[RA_id].msg3_round >=
 		mac->common_channels[CC_idP].radioResourceConfigCommon->
 		rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
 		cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
