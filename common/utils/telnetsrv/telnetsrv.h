@@ -131,6 +131,8 @@ VT escape sequence definition, for smarter display....
 #define STDFMT   "\x1b[0m"
 
 /*---------------------------------------------------------------------------------------------*/
+#define TELNET_ADDCMD_FNAME "add_telnetcmd"
+typedef int(*add_telnetcmd_func_t)(char *, telnetshell_vardef_t *, telnetshell_cmddef_t *);
 #ifdef TELNETSERVERCODE
 int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd);
 void set_sched(pthread_t tid, int pid,int priority);

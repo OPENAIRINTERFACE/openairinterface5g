@@ -48,11 +48,11 @@ void loader_init(void) {
   loader_data.mainexec_buildversion =  PACKAGE_VERSION;
   int ret = config_get( LoaderParams,sizeof(LoaderParams)/sizeof(paramdef_t),LOADER_CONFIG_PREFIX);
   if (ret <0) {
-       fprintf(stderr,"[LOADER]  %s %d configuration couldn't be performed",__FILE__, __LINE__);
+       printf("[LOADER]  configuration couldn't be performed via config module, parameters set to default values\n");
        if (loader_data.shlibpath == NULL) {
          loader_data.shlibpath=DEFAULT_PATH;
         }
-       return;
+       loader_data.maxshlibs = DEFAULT_MAXSHLIBS;
   }
   loader_data.shlibs = malloc(loader_data.maxshlibs * sizeof(loader_shlibdesc_t));
   if(loader_data.shlibs == NULL) {
@@ -96,7 +96,10 @@ int ret;
    if (shlibpath == NULL) {
        shlibpath =  loader_data.shlibpath ;
    } 
-
+/* no specific shared lib version */
+   if (shlibversion == NULL) {
+       shlibversion = "" ;
+   } 
 /* alloc memory for full module shared lib file name */
    tmpstr = malloc(strlen(shlibpath)+strlen(modname)+strlen(shlibversion)+16);
    if (tmpstr == NULL) {
@@ -120,6 +123,7 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf)
    void *lib_handle;
    initfunc_t fpi;
    checkverfunc_t fpc;
+   getfarrayfunc_t fpg;
    char *shlib_path;
    char *afname=NULL;
    int ret=0;
@@ -155,25 +159,29 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf)
       }
 
       if (farray != NULL) {
+          loader_data.shlibs[loader_data.numshlibs].funcarray=malloc(numf*sizeof(loader_shlibfunc_t));
+          loader_data.shlibs[loader_data.numshlibs].numfunc=0;
           for (int i=0; i<numf; i++) {
 	      farray[i].fptr = dlsym(lib_handle,farray[i].fname);
 	      if (farray[i].fptr == NULL ) {
 	          fprintf(stderr,"[LOADER] %s %d %s function not found %s\n",__FILE__, __LINE__, dlerror(),farray[i].fname);
-               ret= -1;
-	      }
+                  ret= -1;
+	      } else { /* farray[i].fptr == NULL */
+                  loader_data.shlibs[loader_data.numshlibs].funcarray[i].fname=strdup(farray[i].fname); 
+                  loader_data.shlibs[loader_data.numshlibs].funcarray[i].fptr = farray[i].fptr;
+                  loader_data.shlibs[loader_data.numshlibs].numfunc++;                 
+              }/* farray[i].fptr != NULL */
 	  } /* for int i... */
-      }	 /* farray ! NULL */
+      }	else {  /* farray ! NULL */
+          sprintf(afname,"%s_getfarray",modname);
+          fpg = dlsym(lib_handle,afname);
+          if (fpg != NULL ) {
+	      loader_data.shlibs[loader_data.numshlibs].numfunc = fpg(&(loader_data.shlibs[loader_data.numshlibs].funcarray));
+          }            
+      } /* farray ! NULL */
     loader_data.shlibs[loader_data.numshlibs].name=strdup(modname);
     loader_data.shlibs[loader_data.numshlibs].thisshlib_path=strdup(shlib_path); 
-    loader_data.shlibs[loader_data.numshlibs].funcarray=malloc(numf*sizeof(loader_shlibfunc_t));
-    loader_data.shlibs[loader_data.numshlibs].numfunc=0;
-    for (int i=0; i<numf;i++) {
-       if (farray[i].fptr != NULL) {
-          loader_data.shlibs[loader_data.numshlibs].funcarray[i].fname=strdup(farray[i].fname); 
-          loader_data.shlibs[loader_data.numshlibs].funcarray[i].fptr = farray[i].fptr;
-          loader_data.shlibs[loader_data.numshlibs].numfunc++;
-       }
-    }
+
     (loader_data.numshlibs)++;
     } /* lib_handle != NULL */ 
 	  	 
@@ -181,4 +189,18 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf)
    if ( afname!= NULL) free(afname);
    if (lib_handle != NULL) dlclose(lib_handle); 
    return ret;	       
+}
+
+void * get_shlibmodule_fptr(char *modname, char *fname)
+{
+    for (int i=0; i<loader_data.numshlibs && loader_data.shlibs[i].name != NULL; i++) {
+        if ( strcmp(loader_data.shlibs[i].name, modname) == 0) {
+            for (int j =0; j<loader_data.shlibs[i].numfunc ; j++) {
+                 if (strcmp(loader_data.shlibs[i].funcarray[j].fname, fname) == 0) {
+                     return loader_data.shlibs[i].funcarray[j].fptr;
+                 }
+            } /* for j loop on module functions*/
+        }
+    } /* for i loop on modules */
+    return NULL;
 }

@@ -1172,7 +1172,9 @@ void init_td16(void)
 }
 
 unsigned char phy_threegpplte_turbo_decoder16(short *y,
+    short *y2,
     unsigned char *decoded_bytes,
+    unsigned char *decoded_bytes2,
     unsigned short n,
     unsigned short f1,
     unsigned short f2,

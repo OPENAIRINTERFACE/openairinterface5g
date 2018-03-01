@@ -359,7 +359,11 @@ function main() {
   
   CMAKE_CMD="$CMAKE_CMD .."
   echo_info "CMAKE_CMD=$CMAKE_CMD"
-  
+  if [ "$eNB" = "1" ] && [ "$UE" = "1" ]; then
+    echo_error "Cannot build UE and eNB on one build_oai execution"
+    echo_error "use 2 build_oai invocations"
+    exit
+  fi  
   #########################################################
   # check validity of HW and TP parameters for eNB
   #########################################################
@@ -488,10 +492,20 @@ function main() {
   DIR=$OPENAIR_DIR/cmake_targets
   if [ "$NOS1" =  "1" ] ; then
       lte_build_dir=lte_noS1_build_oai
-      lte_exec=lte-softmodem-nos1
+      if [ "$eNB" = "1" ] ; then
+         lte_exec=lte-softmodem-nos1
+      fi
+      if [ "$UE" = "1" ] ; then
+         lte_exec=lte-uesoftmodem-nos1
+      fi
   else
       lte_build_dir=lte_build_oai
-      lte_exec=lte-softmodem
+      if [ "$eNB" = "1" ] ; then
+         lte_exec=lte-softmodem
+      fi
+      if [ "$UE" = "1" ] ; then
+         lte_exec=lte-uesoftmodem
+      fi
   fi
 
 # configuration module libraries, one currently available, using libconfig 

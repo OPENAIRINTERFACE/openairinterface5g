@@ -51,7 +51,7 @@
 #include <dlfcn.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-
+#include "common/utils/load_module_shlib.h" 
 #include "common/config/config_userapi.h"
 #include <readline/history.h>
 
@@ -787,4 +787,10 @@ int  telnetsrv_checkbuildver(char * mainexec_buildversion, char ** shlib_buildve
     return 0;
 }
 
-
+int telnetsrv_getfarray(loader_shlibfunc_t  **farray)
+ {
+  *farray=malloc(sizeof(loader_shlibfunc_t));
+  (*farray)[0].fname=TELNET_ADDCMD_FNAME;
+  (*farray)[0].fptr=(int (*)(void) )add_telnetcmd;
+  return 1;
+ }

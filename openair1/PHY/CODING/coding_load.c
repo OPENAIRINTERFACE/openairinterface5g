@@ -29,13 +29,32 @@
  * \note
  * \warning
  */
+#define _GNU_SOURCE 
 #include <sys/types.h>
+
+
 #include "PHY/defs.h"
+#include "PHY/extern.h"
 #include "common/utils/load_module_shlib.h" 
+#include "common/utils/telnetsrv/telnetsrv.h" 
 
-
+static int coding_setmod_cmd(char *buff, int debug, telnet_printfunc_t prnt);
+static telnetshell_cmddef_t coding_cmdarray[] = {
+   {"mode","[sse,avx2,stdc,none]",coding_setmod_cmd},
+   {"","",NULL},
+};
+telnetshell_vardef_t coding_vardef[] = {
+{"maxiter",TELNET_VARTYPE_INT32,&max_turbo_iterations},
+{"",0,NULL}
+};
+/* PHY/defs.h contains MODE_DECODE_XXX macros, following table must match */
+static char *modedesc[] = {"none","sse","C","avx2"};
+static int curmode;
+/* function description array, to be used when loading the encoding/decoding shared lib */
 loader_shlibfunc_t shlib_fdesc[DECODE_NUM_FPTR];
 
+/* encoding decoding functions pointers, filled here and used when encoding/decoding */
+/*defined as extern in PHY?CODING/extern.h */
 decoder_if_t    decoder16;
 decoder_if_t    decoder8;
 encoder_if_t    encoder;
@@ -59,7 +78,6 @@ uint8_t  nodecod(short *y,
     time_stats_t *intl1_stats,
     time_stats_t *intl2_stats)
 {
- printf(".");
  return max_iterations+1;
 };
 
@@ -69,11 +87,6 @@ void decoding_setmode (int mode) {
           decoder8=nodecod;
           decoder16=nodecod;
           encoder=(encoder_if_t)shlib_fdesc[ENCODE_C_FPTRIDX].fptr;
-       break;
-       case MODE_DECODE_SSE:
-          decoder8=(decoder_if_t)shlib_fdesc[DECODE_TD8_SSE_FPTRIDX].fptr; 
-          decoder16=(decoder_if_t)shlib_fdesc[DECODE_TD16_SSE_FPTRIDX].fptr;
-          encoder=(encoder_if_t)shlib_fdesc[ENCODE_SSE_FPTRIDX].fptr;
        break;
        case MODE_DECODE_C:
           decoder16=(decoder_if_t)shlib_fdesc[DECODE_TD_C_FPTRIDX].fptr;
@@ -85,15 +98,22 @@ void decoding_setmode (int mode) {
           decoder8=(decoder_if_t)shlib_fdesc[DECODE_TD8_SSE_FPTRIDX].fptr; 
           encoder=(encoder_if_t)shlib_fdesc[ENCODE_SSE_FPTRIDX].fptr;  
        break;
+       default:
+           mode=MODE_DECODE_SSE;
+       case MODE_DECODE_SSE:
+          decoder8=(decoder_if_t)shlib_fdesc[DECODE_TD8_SSE_FPTRIDX].fptr; 
+          decoder16=(decoder_if_t)shlib_fdesc[DECODE_TD16_SSE_FPTRIDX].fptr;
+          encoder=(encoder_if_t)shlib_fdesc[ENCODE_SSE_FPTRIDX].fptr;
+       break;
    }
-
+   curmode=mode;
 }
 
 
 int load_codinglib(void) {
  int ret;
-
  
+     memset(shlib_fdesc,0,sizeof(shlib_fdesc));
      shlib_fdesc[DECODE_INITTD8_SSE_FPTRIDX].fname = "init_td8";
      shlib_fdesc[DECODE_INITTD16_SSE_FPTRIDX].fname= "init_td16";
      shlib_fdesc[DECODE_INITTD_AVX2_FPTRIDX].fname="init_td16avx2";
@@ -117,10 +137,18 @@ int load_codinglib(void) {
 /* execute encoder/decoder init functions */     
      shlib_fdesc[DECODE_INITTD8_SSE_FPTRIDX].fptr();
      shlib_fdesc[DECODE_INITTD16_SSE_FPTRIDX].fptr();
-     shlib_fdesc[DECODE_INITTD_AVX2_FPTRIDX].fptr();
-     shlib_fdesc[ENCODE_INIT_SSE_FPTRIDX].fptr();
+     if(shlib_fdesc[DECODE_INITTD_AVX2_FPTRIDX].fptr != NULL) {
+        shlib_fdesc[DECODE_INITTD_AVX2_FPTRIDX].fptr();
+     }
+     if(shlib_fdesc[ENCODE_INIT_SSE_FPTRIDX].fptr != NULL) {
+        shlib_fdesc[ENCODE_INIT_SSE_FPTRIDX].fptr();
+     }
      decoding_setmode(MODE_DECODE_SSE);
-     
+/* look for telnet server, if it is loaded, add the coding commands to it */
+     add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
+     if (addcmd != NULL) {
+         addcmd("coding",coding_vardef,coding_cmdarray); 
+     }
 return 0;
 }
 
@@ -131,4 +159,25 @@ void free_codinglib(void) {
      shlib_fdesc[DECODE_FREETD_AVX2_FPTRIDX].fptr();
 
 
+}
+
+/* functions for telnet support, when telnet server is loaded */
+int coding_setmod_cmd(char *buff, int debug, telnet_printfunc_t prnt)
+{
+   if (debug > 0)
+       prnt( "coding_setmod_cmd received %s\n",buff);
+
+      if (strcasestr(buff,"sse") != NULL) {
+         decoding_setmode(MODE_DECODE_SSE);
+      } else if (strcasestr(buff,"avx2") != NULL) {
+         decoding_setmode(MODE_DECODE_AVX2);
+      } else if (strcasestr(buff,"stdc") != NULL) {
+         decoding_setmode(MODE_DECODE_C);
+      } else if (strcasestr(buff,"none") != NULL) {
+         decoding_setmode(MODE_DECODE_NONE);
+      } else {
+          prnt("%s: wrong setmod parameter...\n",buff);
+      }
+   prnt("Coding and decoding current mode: %s\n",modedesc[curmode]);
+   return 0;
 }

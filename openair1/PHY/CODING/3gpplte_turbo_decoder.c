@@ -874,14 +874,22 @@ void compute_ext_s(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, 
 
 
 unsigned char phy_threegpplte_turbo_decoder_scalar(llr_t *y,
+    llr_t *y2,
     unsigned char *decoded_bytes,
+    unsigned char *decoded_bytes2,
     unsigned short n,
     unsigned short f1,
     unsigned short f2,
     unsigned char max_iterations,
     unsigned char crc_type,
     unsigned char F,
-    unsigned char inst)
+    time_stats_t *init_stats,
+    time_stats_t *alpha_stats,
+    time_stats_t *beta_stats,
+    time_stats_t *gamma_stats,
+    time_stats_t *ext_stats,
+    time_stats_t *intl1_stats,
+    time_stats_t *intl2_stats)
 {
 
   /*  y is a pointer to the input

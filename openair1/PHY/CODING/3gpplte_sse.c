@@ -696,7 +696,7 @@ int main(int argc,char **argv)
     printf("Input %d : %d\n",i,input[i]);
   }
 
-  threegpplte_turbo_encoder(&input[0],
+  threegpplte_turbo_encoder_sse(&input[0],
                             INPUT_LENGTH,
                             &output[0],
                             0,

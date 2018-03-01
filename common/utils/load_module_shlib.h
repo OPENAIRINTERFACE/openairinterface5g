@@ -33,8 +33,7 @@
 #define LOAD_SHLIB_H
 
 
-typedef int(*initfunc_t)(void);
-typedef int(*checkverfunc_t)(char * mainexec_version, char ** shlib_version);
+
 
 typedef struct {
    char *fname;
@@ -58,23 +57,34 @@ typedef struct {
    loader_shlibdesc_t *shlibs;
 }loader_data_t;
 
+/* function type of functions which may be implemented by a module */
+/* 1: init function, called when loading, if found in the shared lib */
+typedef int(*initfunc_t)(void);
+/* 2: version checking function, called when loading, if it returns -1, trigger main exec abort  */
+typedef int(*checkverfunc_t)(char * mainexec_version, char ** shlib_version);
+/* 3: get function array function, called when loading when a module doesn't provide */
+/* the function array when calling load_module_shlib (farray param NULL)             */
+typedef int(*getfarrayfunc_t)(loader_shlibfunc_t **funcarray);
+
 #ifdef LOAD_MODULE_SHLIB_MAIN
 #define LOADER_CONFIG_PREFIX  "loader"
-#define DEFAULT_PATH ""
+#define DEFAULT_PATH      ""
+#define DEFAULT_MAXSHLIBS 10
 loader_data_t loader_data;
 
-/*----------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                       LOADER parameters                                                                                      */
-/*   optname               helpstr   paramflags           XXXptr	                           defXXXval	            type       numelt   */
-/*----------------------------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                       LOADER parameters                                                                                        */
+/*   optname               helpstr   paramflags           XXXptr	                           defXXXval	              type       numelt   */
+/*------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define LOADER_PARAMS_DESC { \
-{"shlibpath",                NULL,    PARAMFLAG_NOFREE, strptr:(char **)&(loader_data.shlibpath), defstrval:DEFAULT_PATH, TYPE_STRING, 0}, \
-{"maxshlibs",                NULL,    0,                uptr:&(loader_data.maxshlibs),            defintval:10,           TYPE_UINT32, 0}, \
+{"shlibpath",                NULL,    PARAMFLAG_NOFREE, strptr:(char **)&(loader_data.shlibpath), defstrval:DEFAULT_PATH,      TYPE_STRING, 0}, \
+{"maxshlibs",                NULL,    0,                uptr:&(loader_data.maxshlibs),            defintval:DEFAULT_MAXSHLIBS, TYPE_UINT32, 0}, \
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/
 #else  /* LOAD_MODULE_SHLIB_MAIN */
 extern int load_module_shlib(char *modname, loader_shlibfunc_t *farray, int numf);
+extern void * get_shlibmodule_fptr(char *modname, char *fname);
 extern loader_data_t loader_data;
 #endif /* LOAD_MODULE_SHLIB_MAIN */
 

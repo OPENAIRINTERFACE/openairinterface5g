@@ -22,7 +22,7 @@
 /*!\brief Initilization and reconfiguration routines for LTE PHY */
 #include "defs.h"
 #include "PHY/extern.h"
-
+#include "PHY/CODING/extern.h"
 void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 {
 
