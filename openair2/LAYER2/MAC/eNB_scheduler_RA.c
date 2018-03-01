@@ -1667,7 +1667,7 @@ initiate_ra_proc(module_id_t module_idP,
   
     failure_cnt++;
     if(failure_cnt > 20) {
-      LOG_E(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Clear Random access information\n");
+      LOG_E(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Clear Random access information\n", module_idP, CC_id, frameP);
       clear_ra_proc(module_idP, CC_id, frameP);
     }
   
