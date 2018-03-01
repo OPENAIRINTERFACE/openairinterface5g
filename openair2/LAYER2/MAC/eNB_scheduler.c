@@ -544,8 +544,8 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
 		  "UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",
 		  UE_id, rnti,
 		  UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
-	    if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer % 40) == 0)
-		UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 0;	// resend every 4 frames
+	    if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer % 80) == 0)
+		UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 0;	// resend every 8 frames
 	}
 
 	UE_list->UE_sched_ctrl[UE_id].ul_failure_timer++;
