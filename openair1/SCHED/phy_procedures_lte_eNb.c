@@ -904,12 +904,13 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 			      frame,
 			      subframe,
 			      PUCCH1_THRES);
-	LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR is %d (SR n1pucch is %d)\n",
+	LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR is %d (uci.type %d SR n1pucch is %d)\n",
 	      eNB->Mod_id,
 	      uci->rnti,
 	      frame,
 	      subframe,
 	      SR_payload,
+              uci->type,
 	      uci->n_pucch_1_0_sr[0]);
 	if (uci->type == SR) {
 	  if (SR_payload == 1) {
@@ -1021,21 +1022,23 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
 	  }
 
-	  
+ 	      LOG_I(PHY,"RNTI %x type %d SR_payload %d  Frame %d Subframe %d  pucch_b0b1[0][0] %d pucch_b0b1[0][1] %d pucch_b0b1[1][0] %d pucch_b0b1[1][1] %d  \n",
+	              uci->rnti,uci->type,SR_payload,frame,subframe,pucch_b0b1[0][0],pucch_b0b1[0][1],pucch_b0b1[1][0],pucch_b0b1[1][1]);
+
 	  if (SR_payload == 1) { // this implements Table 7.3.1 from 36.213
 	    if (pucch_b0b1[0][0] == 4) { // there isn't a likely transmission
 	      harq_ack[0] = 4; // DTX
 	    }
-	    else if (pucch_b0b1[1][0] == 1 && pucch_b0b1[1][1] == 1) { // 1/4/7 ACKs
+	    else if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] == 1) { // 1/4/7 ACKs
 	      harq_ack[0] = 1;
 	    }
-	    else if (pucch_b0b1[1][0] == 1 && pucch_b0b1[1][1] != 1) { // 2/5/8 ACKs
+	    else if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] != 1) { // 2/5/8 ACKs
 	      harq_ack[0] = 2;
 	    }
-	    else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] == 1) { // 3/6/9 ACKs
+	    else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] == 1) { // 3/6/9 ACKs
 	      harq_ack[0] = 3;
 	    }
-	    else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] != 1) { // 0 ACKs, or at least one DL assignment missed
+	    else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] != 1) { // 0 ACKs, or at least one DL assignment missed
 	      harq_ack[0] = 0;
 	    }
         uci->stat = metric[0];
