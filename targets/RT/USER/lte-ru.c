@@ -1241,7 +1241,7 @@ void wakeup_eNBs(RU_t *ru) {
   PHY_VARS_eNB *eNB=eNB_list[0];
   eNB_proc_t *proc = &eNB->proc;
 
-  LOG_I(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
+  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
   if (ru->num_eNB==1 && ru->eNB_top!=0) {
     // call eNB function directly
@@ -1252,6 +1252,7 @@ void wakeup_eNBs(RU_t *ru) {
     
     pthread_mutex_lock(&proc->mutex_RU);
     for (i=0;i<eNB->num_RU;i++) {
+      LOG_D(PHY,"RU %d state %s\n",eNB->RU_list[i]->idx,ru_states[eNB->RU_list[i]->state]);
       if (ru == eNB->RU_list[i]) {
 //	AssertFatal((proc->RU_mask&(1<<i)) == 0, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",eNB->Mod_id,ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
         proc->RU_mask |= (1<<i);
@@ -1259,6 +1260,7 @@ void wakeup_eNBs(RU_t *ru) {
       	proc->RU_mask |= (1<<i);
       }
     }
+    LOG_D(PHY,"RU mask is now %x\n",proc->RU_mask);
     if (proc->RU_mask != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
       pthread_mutex_unlock(&proc->mutex_RU);
       return(0);
@@ -1646,7 +1648,7 @@ static void* ru_thread_control( void* param ) {
 		ru->state = (ru->is_slave == 1) ? RU_SYNC : RU_RUN ;
 					
 
-		LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
+		LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d) is ready in state %s\n",ru->idx,ru->is_slave,ru_states[ru->state]);
 		pthread_mutex_lock(&RC.ru_mutex);
 		RC.ru_mask &= ~(1<<ru->idx);
 		pthread_cond_signal(&RC.ru_cond);
@@ -1657,6 +1659,7 @@ static void* ru_thread_control( void* param ) {
 		// send start
 		rru_config_msg.type = RRU_start;
 		rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
+
  
 		LOG_I(PHY,"Sending Start to RRU %d\n", ru->idx);
 		AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RU %d\n",ru->idx);
@@ -2743,6 +2746,7 @@ void RCconfig_RU(void) {
 	    RC.ru[j]->eth_params.transp_preference    = ETH_RAW_IF4p5_MODE;
 	    printf("Setting function for RU %d to NGFI_RRU_IF4p5 (raw)\n",j);
 	  }
+          printf("RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
           if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) RC.ru[j]->is_slave=1;
           else RC.ru[j]->is_slave=0;
 	}
@@ -2783,6 +2787,8 @@ void RCconfig_RU(void) {
 	  RC.ru[j]->if_timing                    = synch_to_other;
 	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF5_MOBIPASS;
 	}
+        if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) RC.ru[j]->is_slave=1;
+        else RC.ru[j]->is_slave=0;
       }  /* strcmp(local_rf, "yes") != 0 */
 
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);

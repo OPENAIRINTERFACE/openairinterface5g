@@ -249,7 +249,8 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
   
   if (oai_exit) return(-1);
-  
+
+  LOG_D(PHY,"Calling eNB_procedures_TX for SFN.SF %d.%d\n",proc->frame_tx,proc->subframe_tx);  
   phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
 
   stop_meas( &softmodem_stats_rxtx_sf );
