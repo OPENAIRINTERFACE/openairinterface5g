@@ -660,7 +660,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
         NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),number_dl_pdu,
         NFAPI_SFNSF2SFN(TX_req->sfn_sf),NFAPI_SFNSF2SF(TX_req->sfn_sf),TX_req->tx_request_body.number_of_pdus,
         NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),number_hi_dci0_pdu,
-        NFAPI_SFNSF2SFN(UL_req->sfn_sf),NFAPI_SFNSF2SF(UL_req->sfn_sf),number_ul_pdu, 
+        UL_req!=NULL ? NFAPI_SFNSF2SFN(UL_req->sfn_sf) : 0,number_ul_pdu, 
         eNB->pdcch_vars[subframe&1].num_pdcch_symbols);
 
   int do_oai =0;
