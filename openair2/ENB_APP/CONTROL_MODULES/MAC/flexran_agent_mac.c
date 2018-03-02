@@ -70,7 +70,8 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
           for (i = 0; i < report_config->nr_ue; i++) {
 
-
+                ue_report[i]->rnti = report_config->ue_report_type[i].ue_rnti;
+                ue_report[i]->has_rnti = 1;
 
                 /* Check flag for creation of buffer status report */
                 if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_BSR) {
