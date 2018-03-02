@@ -140,6 +140,8 @@ extern uint16_t sf_ahead;
 
 extern void wait_eNBs(void);
 
+char ru_states[6][8] = {"RU_IDLE","RU_CONFIG","RU_READY","RU_RUN","RU_ERROR","RU_SYNC"};
+
 int send_tick(RU_t *ru){
   
   ssize_t      msg_len,len;
@@ -1239,7 +1241,7 @@ void wakeup_eNBs(RU_t *ru) {
   PHY_VARS_eNB *eNB=eNB_list[0];
   eNB_proc_t *proc = &eNB->proc;
 
-  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
+  LOG_I(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
   if (ru->num_eNB==1 && ru->eNB_top!=0) {
     // call eNB function directly
@@ -1250,14 +1252,8 @@ void wakeup_eNBs(RU_t *ru) {
     
     pthread_mutex_lock(&proc->mutex_RU);
     for (i=0;i<eNB->num_RU;i++) {
-      // if (ru->state == RU_SYNC){
-      //proc->RU_mask |= (1<<i);
-      //break;
-      //}
       if (ru == eNB->RU_list[i]) {
-        //AssertFatal(((proc->RU_mask&(1<<i)) == 0) ,
-        if ((proc->RU_mask&(1<<i)) > 0)            
-	  LOG_E(PHY, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",eNB->Mod_id,ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
+//	AssertFatal((proc->RU_mask&(1<<i)) == 0, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",eNB->Mod_id,ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
         proc->RU_mask |= (1<<i);
       }else if (eNB->RU_list[i]->state == RU_SYNC){
       	proc->RU_mask |= (1<<i);
@@ -1625,7 +1621,7 @@ static void* ru_thread_control( void* param ) {
 
 		rru_config_msg.type = RRU_config_ok; 
 		rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t);
-		LOG_I(PHY,"Sending CONFIG_OK to RRU %d\n", ru->idx);
+		LOG_I(PHY,"Sending CONFIG_OK to RAU %d\n", ru->idx);
 
 		AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),
 			    "RU %d failed send CONFIG_OK to RAU\n",ru->idx);
@@ -1662,7 +1658,7 @@ static void* ru_thread_control( void* param ) {
 		rru_config_msg.type = RRU_start;
 		rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
  
-		LOG_I(PHY,"Sending Start to RRU\n", ru->idx);
+		LOG_I(PHY,"Sending Start to RRU %d\n", ru->idx);
 		AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RU %d\n",ru->idx);
 
 					
