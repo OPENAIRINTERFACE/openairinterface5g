@@ -1787,8 +1787,8 @@ static void* ru_thread( void* param ) {
     // wait to be woken up
     if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
 	  
-    AssertFatal(ru->state == RU_RUN,"ru->state = %d != RU_RUN\n");
-	  
+    if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru->state = %d != RU_RUN\n",ru->state);
+    else if (ru->is_slave == 1) AssertFatal(ru->state == RU_SYNC,"ru->state = %d != RU_SYNC\n",ru->state);  
     // Start RF device if any
     if (ru->start_rf) {
       if (ru->start_rf(ru) != 0)
@@ -2747,6 +2747,8 @@ void RCconfig_RU(void) {
 	    RC.ru[j]->eth_params.transp_preference    = ETH_RAW_IF4p5_MODE;
 	    printf("Setting function for RU %d to NGFI_RRU_IF4p5 (raw)\n",j);
 	  }
+          if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) RC.ru[j]->is_slave=1;
+          else RC.ru[j]->is_slave=0;
 	}
 	RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
 	RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
