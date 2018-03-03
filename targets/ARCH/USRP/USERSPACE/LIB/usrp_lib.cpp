@@ -341,7 +341,7 @@ static int trx_usrp_start(openair0_device *device) {
     }
     else {
       s->wait_for_first_pps = 0; 
-      cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.05);
+      cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.005);
     }
 
     cmd.stream_now = false; // start at constant delay

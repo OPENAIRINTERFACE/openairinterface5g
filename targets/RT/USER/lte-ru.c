@@ -661,6 +661,9 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   subframe_tx = (timestamp_tx/fp->samples_per_tti)%10;
   frame_tx    = (timestamp_tx/(fp->samples_per_tti*10))&1023;
 
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+  
   if (proc->first_tx != 0) {
     *subframe = subframe_tx;
     *frame    = frame_tx;
@@ -733,7 +736,9 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, subframe_tx );
   }
 
+
   if (ru->feptx_ofdm) ru->feptx_ofdm(ru);
+
   if (ru->fh_south_out) ru->fh_south_out(ru);
 } 
 
@@ -816,10 +821,11 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
 
-  proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
-  proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
-  proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-  
+  if (ru->fh_north_asynch_in == NULL) {
+     proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
+     proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
+     proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+  } 
   LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
 	ru->idx, 
 	0, 
@@ -830,8 +836,10 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+    if (ru->fh_north_asynch_in == NULL) {
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+    }
   }
   
   if (proc->first_rx == 0) {
@@ -954,11 +962,11 @@ static void* ru_thread_asynch_rxtx( void* param ) {
   wait_sync("ru_thread_asynch_rxtx");
 
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
-  printf( "waiting for devices (ru_thread_asynch_rx)\n");
+  LOG_I(PHY, "waiting for devices (ru_thread_asynch_rxtx)\n");
 
   wait_on_condition(&proc->mutex_asynch_rxtx,&proc->cond_asynch_rxtx,&proc->instance_cnt_asynch_rxtx,"thread_asynch");
 
-  printf( "devices ok (ru_thread_asynch_rx)\n");
+  LOG_I(PHY, "devices ok (ru_thread_asynch_rxtx)\n");
 
 
   while (!oai_exit) { 
@@ -1768,6 +1776,8 @@ static void* ru_thread( void* param ) {
   int                ret;
   int                subframe =9;
   int                frame    =1023; 
+  struct timespec  time_rf;
+  long old_time;
 
   // set default return value
   ru_thread_status = 0;
@@ -1789,6 +1799,7 @@ static void* ru_thread( void* param ) {
     if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru->state = %d != RU_RUN\n",ru->state);
     else if (ru->is_slave == 1) AssertFatal(ru->state == RU_SYNC,"ru->state = %d != RU_SYNC\n",ru->state);  
     // Start RF device if any
+    clock_gettime(CLOCK_MONOTONIC,&time_rf); 
     if (ru->start_rf) {
       if (ru->start_rf(ru) != 0)
 	LOG_E(HW,"Could not start the RF device\n");
@@ -1845,7 +1856,12 @@ static void* ru_thread( void* param ) {
 	LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
 	break;
       }
-            
+      old_time = time_rf.tv_nsec;
+      clock_gettime(CLOCK_MONOTONIC,&time_rf);
+      if ((time_rf.tv_nsec > old_time + 1200000) || (time_rf.tv_nsec < old_time + 500000))
+         LOG_I(PHY,"RU thread %d, frame %d (%p), subframe %d : RF time difference : %lu\n",
+            ru->idx, frame,&frame,subframe,time_rf.tv_nsec - old_time);
+             
       if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
 
