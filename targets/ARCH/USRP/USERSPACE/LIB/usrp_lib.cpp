@@ -327,8 +327,7 @@ static int trx_usrp_start(openair0_device *device) {
     s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0x7f);
   
   //set ATR register
-    s->usrp->set_gpio_attr("FP0", "ATR_RX", 1<<4, 0x7f);
-    s->usrp->set_gpio_attr("FP0", "ATR_RX", 1<<6, 0x7f);
+    s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
 
     // init recv and send streaming
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
@@ -341,7 +340,7 @@ static int trx_usrp_start(openair0_device *device) {
     }
     else {
       s->wait_for_first_pps = 0; 
-      cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.05);
+      cmd.time_spec = s->usrp->get_time_now() + uhd::time_spec_t(0.005);
     }
 
     cmd.stream_now = false; // start at constant delay

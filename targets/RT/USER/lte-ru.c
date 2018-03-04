@@ -662,6 +662,9 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   subframe_tx = (timestamp_tx/fp->samples_per_tti)%10;
   frame_tx    = (timestamp_tx/(fp->samples_per_tti*10))&1023;
 
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+  
   if (proc->first_tx != 0) {
     *subframe = subframe_tx;
     *frame    = frame_tx;
@@ -734,7 +737,9 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, subframe_tx );
   }
 
+
   if (ru->feptx_ofdm) ru->feptx_ofdm(ru);
+
   if (ru->fh_south_out) ru->fh_south_out(ru);
 } 
 
@@ -823,10 +828,11 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
 
-  proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
-  proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
-  proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-  
+  if (ru->fh_north_asynch_in == NULL) {
+     proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
+     proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
+     proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+  } 
   LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
 	ru->idx, 
 	0, 
@@ -837,8 +843,10 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+    if (ru->fh_north_asynch_in == NULL) {
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+    }
   }
   
   if (proc->first_rx == 0) {
@@ -961,11 +969,11 @@ static void* ru_thread_asynch_rxtx( void* param ) {
   wait_sync("ru_thread_asynch_rxtx");
 
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
-  printf( "waiting for devices (ru_thread_asynch_rx)\n");
+  LOG_I(PHY, "waiting for devices (ru_thread_asynch_rxtx)\n");
 
   wait_on_condition(&proc->mutex_asynch_rxtx,&proc->cond_asynch_rxtx,&proc->instance_cnt_asynch_rxtx,"thread_asynch");
 
-  printf( "devices ok (ru_thread_asynch_rx)\n");
+  LOG_I(PHY, "devices ok (ru_thread_asynch_rxtx)\n");
 
 
   while (!oai_exit) { 
@@ -1176,6 +1184,7 @@ void do_ru_synch(RU_t *ru) {
   int32_t dummy_rx[ru->nb_rx][fp->samples_per_tti] __attribute__((aligned(32)));
   int rxs;
   int ic;
+  RRU_CONFIG_msg_t rru_config_msg;
 
   // initialize the synchronization buffer to the common_vars.rxdata
   for (int i=0;i<ru->nb_rx;i++)
@@ -1236,6 +1245,14 @@ void do_ru_synch(RU_t *ru) {
 
     ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
   */
+  ru->state    = RU_RUN;
+  // Send RRU_sync_ok
+  rru_config_msg.type = RRU_sync_ok;
+  rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
+
+  LOG_I(PHY,"Sending RRU_sync_ok to RAU\n", ru->idx);
+  AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
+
   LOG_I(PHY,"Exiting synch routine\n");
 }
 
@@ -1779,6 +1796,8 @@ static void* ru_thread( void* param ) {
   int                ret;
   int                subframe =9;
   int                frame    =1023; 
+  struct timespec  time_rf;
+  long old_time;
 
   // set default return value
   ru_thread_status = 0;
@@ -1801,6 +1820,7 @@ static void* ru_thread( void* param ) {
     if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru-%d state = %s != RU_RUN\n",ru->idx,ru_states[ru->state]);
     else if (ru->is_slave == 1) AssertFatal(ru->state == RU_SYNC || ru->state == RU_RUN,"ru %d state = %s != RU_SYNC or RU_RUN\n",ru->idx,ru_states[ru->state]);  
     // Start RF device if any
+    clock_gettime(CLOCK_MONOTONIC,&time_rf); 
     if (ru->start_rf) {
       if (ru->start_rf(ru) != 0)
 	LOG_E(HW,"Could not start the RF device\n");
@@ -1853,7 +1873,12 @@ static void* ru_thread( void* param ) {
 	LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
 	break;
       }
-            
+      old_time = time_rf.tv_nsec;
+      clock_gettime(CLOCK_MONOTONIC,&time_rf);
+      //if ((time_rf.tv_nsec > old_time + 1200000) || (time_rf.tv_nsec < old_time + 500000))
+      //   LOG_I(PHY,"RU thread %d, frame %d (%p), subframe %d : RF time difference : %lu\n",
+      //      ru->idx, frame,&frame,subframe,time_rf.tv_nsec - old_time);
+             
       if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
       if (ru->wait_cnt > 0) {
@@ -1935,7 +1960,6 @@ void *ru_thread_synch(void *arg) {
   uint32_t sync_corr[307200] __attribute__((aligned(32)));
   static int ru_thread_synch_status=0;
   int cnt=0;
-  RRU_CONFIG_msg_t rru_config_msg;
 
   thread_top_init("ru_thread_synch",0,5000000,10000000,10000000);
 
@@ -1996,13 +2020,6 @@ void *ru_thread_synch(void *arg) {
 	  }
 	*/
 	ru->in_synch = 1;
-	ru->state    = RU_RUN;
-	// Send RRU_sync_ok
-	rru_config_msg.type = RRU_sync_ok;
-        rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
-
-        LOG_I(PHY,"Sending RRU_sync_ok to RAU\n", ru->idx);
-        AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
 
       } // symc_pos > 0
       else {
