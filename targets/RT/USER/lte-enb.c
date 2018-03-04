@@ -225,6 +225,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) {
+    LOG_I(PHY,"Calling RX procedures for SFNSF %d.%d\n",proc->frame_rx,proc->subframe_rx);
     phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
   }
 
@@ -250,7 +251,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   
   if (oai_exit) return(-1);
 
-  LOG_D(PHY,"Calling eNB_procedures_TX for SFN.SF %d.%d\n",proc->frame_tx,proc->subframe_tx);  
+  LOG_I(PHY,"Calling eNB_procedures_TX for SFN.SF %d.%d\n",proc->frame_tx,proc->subframe_tx);  
   phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
 
   stop_meas( &softmodem_stats_rxtx_sf );
@@ -416,21 +417,21 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   pthread_mutex_lock(&proc->mutex_RU);
   for (i=0;i<eNB->num_RU;i++) {
     if (ru == eNB->RU_list[i]) {
-      if ((proc->RU_mask&(1<<i)) > 0)
+      if ((proc->RU_mask[ru->proc.subframe_rx]&(1<<i)) > 0)
 	LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",
-	      eNB->Mod_id,proc->frame_rx,proc->subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
-      proc->RU_mask |= (1<<i);
+	      eNB->Mod_id,proc->frame_rx,proc->subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask[ru->proc.subframe_rx]);
+      proc->RU_mask[ru->proc.subframe_rx] |= (1<<i);
     }else if (eNB->RU_list[i]->state == RU_SYNC){
-        proc->RU_mask |= (1<<i);
+        proc->RU_mask[ru->proc.subframe_rx] |= (1<<i);
      }
   }
-  if (proc->RU_mask != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
+  if (proc->RU_mask[ru->proc.subframe_rx] != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
     LOG_E(PHY,"Not all RUs have provided their info\n");
     pthread_mutex_unlock(&proc->mutex_RU);
     return(0);
   }
   else { // all RUs have provided their information so continue on and wakeup eNB processing
-    proc->RU_mask = 0;
+    proc->RU_mask[ru->proc.subframe_rx] = 0;
     pthread_mutex_unlock(&proc->mutex_RU);
   }
 
@@ -724,7 +725,7 @@ void init_eNB_proc(int inst) {
 
     proc->first_rx=1;
     proc->first_tx=1;
-    proc->RU_mask=0;
+    for (i=0;i<10;i++) proc->RU_mask[i]=0;
     proc->RU_mask_prach=0;
 
     pthread_mutex_init( &eNB->UL_INFO_mutex, NULL);

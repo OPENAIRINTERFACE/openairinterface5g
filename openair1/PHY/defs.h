@@ -559,7 +559,9 @@ typedef struct eNB_proc_t_s {
   /// mutex for RU access to eNB processing (PRACH BR)
   pthread_mutex_t mutex_RU_PRACH_br;
   /// mask for RUs serving eNB (PDSCH/PUSCH)
-  int RU_mask;
+  int RU_mask[10];
+  /// time measurements for RU arrivals
+  struct timespec t[10];
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach;
 #ifdef Rel14
@@ -687,7 +689,8 @@ typedef enum {
 /// Some commamds to RRU. Not sure we should do it like this !
 typedef enum {
   EMPTY     = 0,
-  STOP_RU   = 1
+  STOP_RU   = 1,
+  RU_FRAME_RESYNCH = 2
 } rru_cmd_t;
 
 typedef struct RU_t_s{
@@ -709,6 +712,8 @@ typedef struct RU_t_s{
   int rx_offset;        
   /// flag to indicate the RU is a slave to another source
   int is_slave;
+  /// counter to delay start of processing of RU until HW settles
+  int wait_cnt;
   /// Total gain of receive chain
   uint32_t             rx_total_gain_dB;
   /// number of bands that this device can support
@@ -812,6 +817,8 @@ typedef struct RU_t_s{
   rru_state_t state;
   /// Command to do
   rru_cmd_t cmd;
+  /// value to be passed using command
+  uint16_t cmdval;
   /// process scheduling variables
   RU_proc_t            proc;
   /// stats thread pthread descriptor
@@ -1501,7 +1508,8 @@ typedef enum {
   RRU_config_ok=4,
   RRU_start=5,
   RRU_stop=6,
-  RRU_sync_ok=7
+  RRU_sync_ok=7,
+  RRU_frame_resynch=8
 } rru_config_msg_type_t;
 
 
