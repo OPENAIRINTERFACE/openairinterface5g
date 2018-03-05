@@ -690,7 +690,8 @@ typedef enum {
 typedef enum {
   EMPTY     = 0,
   STOP_RU   = 1,
-  RU_FRAME_RESYNCH = 2
+  RU_FRAME_RESYNCH = 2,
+  WAIT_RESYNCH = 3
 } rru_cmd_t;
 
 typedef struct RU_t_s{

@@ -225,7 +225,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) {
-    LOG_I(PHY,"Calling RX procedures for SFNSF %d.%d\n",proc->frame_rx,proc->subframe_rx);
+    LOG_D(PHY,"Calling RX procedures for SFNSF %d.%d\n",proc->frame_rx,proc->subframe_rx);
     phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
   }
 
@@ -251,7 +251,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   
   if (oai_exit) return(-1);
 
-  LOG_I(PHY,"Calling eNB_procedures_TX for SFN.SF %d.%d\n",proc->frame_tx,proc->subframe_tx);  
+  LOG_D(PHY,"Calling eNB_procedures_TX for SFN.SF %d.%d\n",proc->frame_tx,proc->subframe_tx);  
   phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
 
   stop_meas( &softmodem_stats_rxtx_sf );
