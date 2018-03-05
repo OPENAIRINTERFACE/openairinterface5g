@@ -1156,7 +1156,7 @@ void wakeup_eNBs(RU_t *ru) {
 
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d\n",ru->num_eNB,ru->idx);
 
-  if (get_nprocs() <= 4) {
+  if (get_nprocs() < 4) {
     // call eNB function directly
   
     char string[20];
@@ -1440,8 +1440,16 @@ static void* ru_thread_tx( void* param ) {
   	      
       if (ru->fh_north_out) ru->fh_north_out(ru);
 	}
-
     release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
+    
+    pthread_mutex_lock( &proc->mutex_eNBs );
+    proc->ru_tx_ready++;
+    // the thread can now be woken up
+    if (pthread_cond_signal(&proc->cond_eNBs) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+    }
+    pthread_mutex_unlock( &proc->mutex_eNBs );
   }
   release_thread(&proc->mutex_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   return 0;
@@ -1596,12 +1604,10 @@ static void* ru_thread( void* param ) {
 
     LOG_D(PHY,"RU %d/%d frame_tx %d, subframe_tx %d\n",0,ru->idx,proc->frame_tx,proc->subframe_tx);
     // wakeup all eNB processes waiting for this RU
-    proc->ru_rx_ready = 1;
     if (ru->num_eNB>0) wakeup_eNBs(ru);
-    proc->ru_rx_ready = 0;
 
     
-	if(get_nprocs() <=4)
+	if(get_nprocs() <4)
 	{
       if(!emulate_rf){
         // do TX front-end processing if needed (precoding and/or IDFTs)
@@ -1754,7 +1760,8 @@ void init_RU_proc(RU_t *ru) {
   proc->frame_offset             = 0;
   proc->num_slaves               = 0;
   proc->frame_tx_unwrap          = 0;
-  proc->ru_rx_ready              = 1;
+  proc->ru_rx_ready              = 0;
+  proc->ru_tx_ready              = 0;
 
   for (i=0;i<10;i++) proc->symbol_mask[i]=0;
   

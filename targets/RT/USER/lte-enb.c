@@ -183,12 +183,11 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 0 );
-  proc->pipe_ready = 1;
   if(get_nprocs() >= 8)
   {
     wakeup_tx(eNB,eNB->proc.ru_proc);
   }
-  else if(get_nprocs() > 4)
+  else if(get_nprocs() >= 4)
   {
     if(oai_exit) return(-1);
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
@@ -200,7 +199,6 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
     if(oai_exit) return(-1);
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
   }
-  proc->pipe_ready = 0;
 
   stop_meas( &softmodem_stats_rxtx_sf );
   
@@ -221,6 +219,15 @@ static void* tx_thread(void* param) {
   //wait_sync("tx_thread");
   
   while (!oai_exit) {
+    
+    pthread_mutex_lock( &proc->mutex_rxtx );
+    proc->pipe_ready++;
+    // the thread can now be woken up
+    if (pthread_cond_signal(&proc->cond_rxtx) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+    }
+    pthread_mutex_unlock( &proc->mutex_rxtx );
 
     if (wait_on_condition(&proc->mutex_rxtx,&proc->cond_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
     if (oai_exit) break;    
@@ -237,9 +244,7 @@ static void* tx_thread(void* param) {
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
 	if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
 	
-    proc->pipe_ready = 1;
     wakeup_txfh(eNB,eNB_proc->ru_proc);
-    proc->pipe_ready = 0;
   }
 
   return 0;
@@ -279,7 +284,18 @@ static void* eNB_thread_rxtx( void* param ) {
   //wait_sync("eNB_thread_rxtx");
 
   while (!oai_exit) {
+    
+    pthread_mutex_lock( &proc->mutex_rxtx );
+    proc->pipe_ready++;
+    // the thread can now be woken up
+    if (pthread_cond_signal(&proc->cond_rxtx) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+    }
+    pthread_mutex_unlock( &proc->mutex_rxtx );
+    
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
+    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
 
     if (wait_on_condition(&proc->mutex_rxtx,&proc->cond_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
 
@@ -368,17 +384,16 @@ int wakeup_txfh(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc) {
   wait.tv_nsec=5000000L;
   eNB_proc_t *proc=&eNB->proc;
   eNB_rxtx_proc_t *proc_rxtx1=&proc->proc_rxtx[1];
-  eNB_rxtx_proc_t *proc_rxtx0=&proc->proc_rxtx[0];
+  //eNB_rxtx_proc_t *proc_rxtx0=&proc->proc_rxtx[0];
   
-  int ru_rx_ready = ru_proc->ru_rx_ready;
-  int pipe_ready_rx  = proc_rxtx0->pipe_ready;
-  int pipe_ready_tx  = proc_rxtx1->pipe_ready;
-  
-  while(!ru_rx_ready && !pipe_ready_rx && !pipe_ready_tx){
-    usleep(10);
+  if(wait_on_condition(&ru_proc->mutex_eNBs,&ru_proc->cond_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) {
+    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", ru_proc->frame_tx, ru_proc->subframe_tx);
+    return(-1);
   }
+  if (release_thread(&ru_proc->mutex_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) return(-1);
+  
   if (ru_proc->instance_cnt_eNBs == 0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping\n",proc_rxtx1->frame_rx,proc_rxtx1->subframe_rx);
+    LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc_rxtx1->frame_rx, proc_rxtx1->subframe_rx);
     return(-1);
   }
   if (pthread_mutex_timedlock(&ru_proc->mutex_eNBs,&wait) != 0) {
@@ -417,13 +432,14 @@ int wakeup_tx(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc) {
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
   
-  int ru_rx_ready = ru_proc->ru_rx_ready;
-  int pipe_ready_rx  = proc_rxtx0->pipe_ready;
   int pipe_ready_tx  = proc_rxtx1->pipe_ready;
   
-  while(!ru_rx_ready && !pipe_ready_rx && !pipe_ready_tx){
-    usleep(10);
+  if(wait_on_condition(&proc_rxtx1->mutex_rxtx,&proc_rxtx1->cond_rxtx,&proc_rxtx1->pipe_ready,"wakeup_tx")<0) {
+    LOG_E(PHY,"Frame %d, subframe %d: TX1 not ready\n",proc_rxtx1->frame_rx,proc_rxtx1->subframe_rx);
+    return(-1);
   }
+  if (release_thread(&proc_rxtx1->mutex_rxtx,&proc_rxtx1->pipe_ready,"wakeup_tx")<0)  return(-1);
+  
   if (proc_rxtx1->instance_cnt_rxtx == 0) {
     LOG_E(PHY,"Frame %d, subframe %d: TX1 thread busy, dropping\n",proc_rxtx1->frame_rx,proc_rxtx1->subframe_rx);
     return(-1);
@@ -493,17 +509,14 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
 
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-  int ru_rx_ready = ru_proc->ru_rx_ready;
-  int pipe_ready_rx  = proc_rxtx0->pipe_ready;
-  int pipe_ready_tx  = proc_rxtx1->pipe_ready;
+
   
-  while(!ru_rx_ready && !pipe_ready_rx && !pipe_ready_tx){
-    usleep(10);
+  if(wait_on_condition(&proc_rxtx0->mutex_rxtx,&proc_rxtx0->cond_rxtx,&proc_rxtx0->pipe_ready,"wakeup_rxtx")<0) {
+    LOG_E(PHY,"Frame %d, subframe %d: RXTX0 not ready\n",proc_rxtx0->frame_rx,proc_rxtx0->subframe_rx);
+    return(-1);
   }
-  /* accept some delay in processing - up to 50us */
-  //if (proc_rxtx0->instance_cnt_rxtx == 0) {
-  //  usleep(50);
-  //}
+  if (release_thread(&proc_rxtx0->mutex_rxtx,&proc_rxtx0->pipe_ready,"wakeup_rxtx")<0) return(-1);
+  
   if (proc_rxtx0->instance_cnt_rxtx == 0) {
     LOG_E(PHY,"Frame %d, subframe %d: RXTX0 thread busy, dropping\n",proc_rxtx0->frame_rx,proc_rxtx0->subframe_rx);
     return(-1);
@@ -812,8 +825,8 @@ void init_eNB_proc(int inst) {
     proc_rxtx                      = proc->proc_rxtx;
     proc_rxtx[0].instance_cnt_rxtx = -1;
     proc_rxtx[1].instance_cnt_rxtx = -1;
-    proc_rxtx[0].pipe_ready        = 1;
-    proc_rxtx[1].pipe_ready        = 1;
+    proc_rxtx[0].pipe_ready        = 0;
+    proc_rxtx[1].pipe_ready        = 0;
     proc->instance_cnt_prach       = -1;
     proc->instance_cnt_asynch_rxtx = -1;
     proc->instance_cnt_synch       = -1;

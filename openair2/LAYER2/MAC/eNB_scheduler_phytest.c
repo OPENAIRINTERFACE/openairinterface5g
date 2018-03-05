@@ -216,10 +216,9 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   nfapi_hi_dci0_request_body_t   *hi_dci0_req = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
 
-  nfapi_ul_config_request_pdu_t  *ul_config_pdu;
+  //nfapi_ul_config_request_pdu_t  *ul_config_pdu = &ul_req->ul_config_pdu_list[0];;
   nfapi_ul_config_request_body_t *ul_req       = &eNB->UL_req[CC_id].ul_config_request_body;
 
-  ul_config_pdu                                    = &ul_req->ul_config_pdu_list[0]; 
 
   eNB->UL_req[CC_id].sfn_sf   = (sched_frame<<4) + sched_subframe;
   eNB->HI_DCI0_req[CC_id].sfn_sf = (frameP<<4)+subframeP;

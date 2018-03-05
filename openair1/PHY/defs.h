@@ -456,6 +456,7 @@ typedef struct RU_proc_t_s {
   struct RU_proc_t_s           **slave_proc;
   /// pipeline ready state
   int ru_rx_ready;
+  int ru_tx_ready;
 } RU_proc_t;
 
 /// Context data structure for eNB subframe processing
