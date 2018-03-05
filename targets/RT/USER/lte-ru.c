@@ -488,9 +488,13 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
       LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
-    if (proc->frame_rx != *frame) {
+    if (ru->cmd != WAIT_RESYNCH && proc->frame_rx != *frame) {
       LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,*frame);
       exit_fun("Exiting");
+    }
+    else if (ru->cmd == WAIT_RESYNCH && proc->frame_rx != *frame){
+       ru->cmd=EMPTY;
+       *frame=proc->frame_rx; 
     }
   } else {
     proc->first_rx = 0;
@@ -1275,7 +1279,8 @@ void wakeup_eNBs(RU_t *ru) {
     sprintf(string,"Incoming RU %d",ru->idx);
     
     pthread_mutex_lock(&proc->mutex_RU);
-    LOG_D(PHY,"Frame %d, Subframe %d: RU %d done,RU_mask[%d] %x\n",ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx]);
+    LOG_I(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
+          ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,ru->wait_cnt,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx]);
 
     if (proc->RU_mask[ru->proc.subframe_rx] == 0)
       clock_gettime(CLOCK_MONOTONIC,&proc->t[ru->proc.subframe_rx]);
@@ -1293,13 +1298,13 @@ void wakeup_eNBs(RU_t *ru) {
     if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) {
       proc->RU_mask[ru->proc.subframe_rx] = 0;
       clock_gettime(CLOCK_MONOTONIC,&t);
-      AssertFatal(t.tv_nsec > proc->t[ru->proc.subframe_rx].tv_nsec+500000,
+      AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+500000,
                   "Time difference for subframe %d => %d > 5ms\n",
                   ru->proc.subframe_rx,t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
     }
     
     pthread_mutex_unlock(&proc->mutex_RU);
-    LOG_D(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
+    LOG_I(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
     ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
   }
   else { // multiple eNB case for later
@@ -1749,6 +1754,7 @@ static void* ru_thread_control( void* param ) {
               else {
                  ru->cmd = RU_FRAME_RESYNCH;
                  ru->cmdval = ((uint16_t*)&rru_config_msg.msg[0])[0];
+                 LOG_I(PHY,"Received Frame Resynch messaage with value %d\n",ru->cmdval);
               }
               break;
 
@@ -1884,12 +1890,13 @@ static void* ru_thread( void* param ) {
       if (ru->wait_cnt > 0) {
          ru->wait_cnt--;
 
-         if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=20 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx) {
+         if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=10 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx) {
            // Send RRU_frame adjust
            RRU_CONFIG_msg_t rru_config_msg;
            rru_config_msg.type = RRU_frame_resynch;
            rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
            ((uint16_t*)&rru_config_msg.msg[0])[0] = RC.ru[0]->proc.frame_rx;
+           ru->cmd=WAIT_RESYNCH;
            LOG_I(PHY,"Sending Frame Resynch %d to RRU\n", ru->idx,RC.ru[0]->proc.frame_rx);
            AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
 
