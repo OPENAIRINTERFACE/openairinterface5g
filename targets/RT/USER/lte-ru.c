@@ -784,7 +784,8 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   unsigned int rxs;
   int i;
   openair0_timestamp ts,old_ts;
-    
+  int resynch=0;
+  
   for (i=0; i<ru->nb_rx; i++)
     rxp[i] = (void*)&ru->common.rxdata[i][*subframe*fp->samples_per_tti];
 
@@ -801,9 +802,12 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
   if (ru->cmd==RU_FRAME_RESYNCH) {
-    ru->ts_offset += (proc->frame_rx - ru->cmdval)*fp->samples_per_tti*10;
+    LOG_I(PHY,"Applying frame resynch %d => %d\n",*frame,ru->cmdval);
+    if (proc->frame_rx>ru->cmdval) ru->ts_offset += (proc->frame_rx - ru->cmdval)*fp->samples_per_tti*10;
+    else ru->ts_offset -= (-proc->frame_rx + ru->cmdval)*fp->samples_per_tti*10;
     *frame = ru->cmdval;
     ru->cmd=EMPTY;
+    resynch=1;
   }
  
   proc->timestamp_rx = ts-ru->ts_offset;
@@ -815,15 +819,13 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   if (proc->first_rx == 1) {
     ru->ts_offset = proc->timestamp_rx;
     proc->timestamp_rx = 0;
+  } 
+  else if (resynch==0 && (proc->timestamp_rx - old_ts != fp->samples_per_tti)) {
+    LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,ru->ts_offset);
+    ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
+    proc->timestamp_rx = ts-ru->ts_offset;
   }
-  else {
-    if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
-      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,ru->ts_offset);
-      ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
-      proc->timestamp_rx = ts-ru->ts_offset;
-    }
 
-  }
   proc->frame_rx     = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
@@ -1747,6 +1749,7 @@ static void* ru_thread_control( void* param ) {
             case RRU_frame_resynch: //RRU
               if (ru->if_south != LOCAL_RF) LOG_E(PHY,"Received RRU frame resynch message, should not happen in RAU\n");
               else {
+                 LOG_I(PHY,"Received RRU_frame_resynch command\n");
                  ru->cmd = RU_FRAME_RESYNCH;
                  ru->cmdval = ((uint16_t*)&rru_config_msg.msg[0])[0];
               }
@@ -1878,7 +1881,7 @@ static void* ru_thread( void* param ) {
       //if ((time_rf.tv_nsec > old_time + 1200000) || (time_rf.tv_nsec < old_time + 500000))
       //   LOG_I(PHY,"RU thread %d, frame %d (%p), subframe %d : RF time difference : %lu\n",
       //      ru->idx, frame,&frame,subframe,time_rf.tv_nsec - old_time);
-             
+  
       if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
       if (ru->wait_cnt > 0) {
