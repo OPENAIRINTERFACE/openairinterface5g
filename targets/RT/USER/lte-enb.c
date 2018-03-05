@@ -146,7 +146,7 @@ void init_eNB(int,int);
 void stop_eNB(int nb_inst);
 
 int wakeup_tx(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc);
-int wakeup_txfh(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc);
+int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc);
 void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #ifdef Rel14
 void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
@@ -192,7 +192,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
     if(oai_exit) return(-1);
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
     
-    wakeup_txfh(eNB,eNB->proc.ru_proc);
+    wakeup_txfh(proc,eNB->proc.ru_proc);
   }
   else
   {
@@ -244,7 +244,7 @@ static void* tx_thread(void* param) {
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
 	if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
 	
-    wakeup_txfh(eNB,eNB_proc->ru_proc);
+    wakeup_txfh(proc,eNB_proc->ru_proc);
   }
 
   return 0;
@@ -377,14 +377,12 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
   }
 }
 
-int wakeup_txfh(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc) {
+int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc) {
   
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-  eNB_proc_t *proc=&eNB->proc;
-  eNB_rxtx_proc_t *proc_rxtx1=&proc->proc_rxtx[1];
-  //eNB_rxtx_proc_t *proc_rxtx0=&proc->proc_rxtx[0];
+
   
   if(wait_on_condition(&ru_proc->mutex_eNBs,&ru_proc->cond_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) {
     LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", ru_proc->frame_tx, ru_proc->subframe_tx);
@@ -393,7 +391,7 @@ int wakeup_txfh(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc) {
   if (release_thread(&ru_proc->mutex_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) return(-1);
   
   if (ru_proc->instance_cnt_eNBs == 0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc_rxtx1->frame_rx, proc_rxtx1->subframe_rx);
+    LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
     return(-1);
   }
   if (pthread_mutex_timedlock(&ru_proc->mutex_eNBs,&wait) != 0) {
@@ -403,9 +401,9 @@ int wakeup_txfh(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc) {
   }
 
     ++ru_proc->instance_cnt_eNBs;
-    ru_proc->timestamp_tx = proc_rxtx1->timestamp_tx;
-    ru_proc->subframe_tx  = proc_rxtx1->subframe_tx;
-    ru_proc->frame_tx     = proc_rxtx1->frame_tx;
+    ru_proc->timestamp_tx = proc->timestamp_tx;
+    ru_proc->subframe_tx  = proc->subframe_tx;
+    ru_proc->frame_tx     = proc->frame_tx;
   
   // the thread can now be woken up
   if (pthread_cond_signal(&ru_proc->cond_eNBs) != 0) {
@@ -478,7 +476,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   RU_proc_t *ru_proc=&ru->proc;
 
   eNB_rxtx_proc_t *proc_rxtx0=&proc->proc_rxtx[0];//*proc_rxtx=&proc->proc_rxtx[proc->frame_rx&1];
-  eNB_rxtx_proc_t *proc_rxtx1=&proc->proc_rxtx[1];
+  //eNB_rxtx_proc_t *proc_rxtx1=&proc->proc_rxtx[1];
   
 
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;

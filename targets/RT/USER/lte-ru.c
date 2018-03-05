@@ -1609,12 +1609,12 @@ static void* ru_thread( void* param ) {
     
 	if(get_nprocs() <4)
 	{
+      // do TX front-end processing if needed (precoding and/or IDFTs)
+      if (ru->feptx_prec) ru->feptx_prec(ru);
+      
+      // do OFDM if needed
+      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
       if(!emulate_rf){
-        // do TX front-end processing if needed (precoding and/or IDFTs)
-        if (ru->feptx_prec) ru->feptx_prec(ru);
-        
-        // do OFDM if needed
-        if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
         // do outgoing fronthaul (south) if needed
         if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
         
