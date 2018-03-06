@@ -2090,7 +2090,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                                                  0, // ul_tx_mode
                                                  0, // current_tx_nb
                                                  0, // n_srs
-                                                 UE_template->TBS_UL[harq_pid]
+                                                 get_TBS_UL(UE_template->mcs_UL[harq_pid], ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb)
                                                  );
 #ifdef Rel14
             if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation

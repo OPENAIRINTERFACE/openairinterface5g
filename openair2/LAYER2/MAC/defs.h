@@ -667,7 +667,7 @@ typedef struct {
     /// mcs from last UL scheduling
     uint8_t mcs_UL[8];
     /// TBS from last UL scheduling
-    uint8_t TBS_UL[8];
+    uint16_t TBS_UL[8];
     /// Flag to indicate UL has been scheduled at least once
     boolean_t ul_active;
     /// Flag to indicate UE has been configured (ACK from RRCConnectionSetup received)
