@@ -1127,7 +1127,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   uint32_t l,i;
   int32_t avgs;
   uint8_t log2_maxh=0,aarx;
-  int32_t avgU[2];
+  int32_t avgU[eNB->frame_parms.nb_antennas_rx];
 
 
   //  uint8_t harq_pid = ( ulsch->RRCConnRequest_flag== 0) ? subframe2harq_pid_tdd(frame_parms->tdd_config,subframe) : 0;
@@ -1212,7 +1212,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   avgs = 0;
   
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
-    avgs = cmax(avgs,avgU[(aarx<<1)]);
+    avgs = cmax(avgs,avgU[aarx]);
   
   //      log2_maxh = 4+(log2_approx(avgs)/2);
   
