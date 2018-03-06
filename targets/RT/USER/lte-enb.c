@@ -187,7 +187,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   {
     wakeup_tx(eNB,eNB->proc.ru_proc);
   }
-  else if(get_nprocs() >= 4)
+  else if(get_nprocs() > 4)
   {
     if(oai_exit) return(-1);
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
@@ -977,6 +977,7 @@ void kill_eNB_proc(int inst) {
     pthread_mutex_destroy(&eNB->UL_INFO_mutex);
     int i;
     for (i=0;i<2;i++) {
+      pthread_cond_signal( &proc_rxtx[i].cond_rxtx );
       LOG_I(PHY, "Joining rxtx[%d] mutex/cond\n",i);
       pthread_join( proc_rxtx[i].pthread_rxtx, (void**)&status );
       LOG_I(PHY, "Destroying rxtx[%d] mutex/cond\n",i);

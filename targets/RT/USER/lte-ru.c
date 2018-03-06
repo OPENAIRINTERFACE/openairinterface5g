@@ -1156,7 +1156,7 @@ void wakeup_eNBs(RU_t *ru) {
 
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d\n",ru->num_eNB,ru->idx);
 
-  if (get_nprocs() < 4) {
+  if (get_nprocs() <= 4) {
     // call eNB function directly
   
     char string[20];
@@ -1607,7 +1607,7 @@ static void* ru_thread( void* param ) {
     if (ru->num_eNB>0) wakeup_eNBs(ru);
 
     
-	if(get_nprocs() <4)
+	if(get_nprocs() <= 4)
 	{
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);
@@ -2109,8 +2109,8 @@ void init_RU(char *rf_config_file) {
       }
       else if (ru->function == eNodeB_3GPP) {   
 	ru->do_prach             = 0;                       // no prach processing in RU            
-	ru->feprx                = (get_nprocs()<=4) ? fep_full : ru_fep_full_2thread;                // RX DFTs
-	ru->feptx_ofdm           = (get_nprocs()<=4) ? feptx_ofdm : feptx_ofdm_2thread;              // this is fep with idft and precoding
+	ru->feprx                = (get_nprocs()> 2 && fepw) ? ru_fep_full_2thread : fep_full;                // RX DFTs
+	ru->feptx_ofdm           = (get_nprocs()> 2 && fepw) ? feptx_ofdm_2thread : feptx_ofdm;              // this is fep with idft and precoding
 	ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
 	ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
 	ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
