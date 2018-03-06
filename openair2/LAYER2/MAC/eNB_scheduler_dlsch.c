@@ -417,8 +417,8 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
 
   int i = 0;
 
-  total_slice_percentage=0;
-  avg_slice_percentage=1.0/n_active_slices;
+  slice_percentage_total=0;
+  slice_percentage_avg=1.0/n_active_slices;
 
   // reset the slice percentage for inactive slices
   for (i = n_active_slices; i< MAX_NUM_SLICES; i++) {
@@ -430,7 +430,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
             module_idP, frameP, subframeP, i, slice_percentage[i]);
       slice_percentage[i]=0;
     }
-    total_slice_percentage+=slice_percentage[i];
+    slice_percentage_total+=slice_percentage[i];
   }
 
   for (i = 0; i < n_active_slices; i++) {
@@ -443,7 +443,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       LOG_I(MAC,"update dl scheduler slice %d\n", i);
     }
 
-    if (total_slice_percentage <= 1.0){ // the new total RB share is within the range
+    if (slice_percentage_total <= 1.0){ // the new total RB share is within the range
 
       // check if the number of slices has changed, and log
       if (n_active_slices_current != n_active_slices ){
@@ -462,9 +462,9 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       if (slice_percentage_current[i] != slice_percentage[i]) { // new slice percentage
         LOG_I(MAC,
               "[eNB %d][SLICE %d][DL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
-              module_idP, i, frameP, subframeP, total_slice_percentage_current, total_slice_percentage,
+              module_idP, i, frameP, subframeP, slice_percentage_total_current, slice_percentage_total,
               slice_percentage_current[i], slice_percentage[i]);
-        total_slice_percentage_current = total_slice_percentage;
+        slice_percentage_total_current = slice_percentage_total;
         slice_percentage_current[i] = slice_percentage[i];
       }
 
@@ -493,14 +493,14 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
 
       if (n_active_slices == n_active_slices_current){
 	LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid total RB share (%f->%f), reduce proportionally the RB share by 0.1\n",
-	      module_idP, i, total_slice_percentage_current, total_slice_percentage);
-	if (slice_percentage[i] >= avg_slice_percentage){
+	      module_idP, i, slice_percentage_total_current, slice_percentage_total);
+	if (slice_percentage[i] >= slice_percentage_avg){
 	  slice_percentage[i]-=0.1;
-	  total_slice_percentage-=0.1;
+	  slice_percentage_total-=0.1;
 	}
       } else {
 	LOG_W(MAC,"[eNB %d][SLICE %d][DL] invalid total RB share (%f->%f), revert the number of slice to its previous value (%d->%d)\n",
-	      module_idP, i, total_slice_percentage_current, total_slice_percentage,
+	      module_idP, i, slice_percentage_total_current, slice_percentage_total,
 	      n_active_slices, n_active_slices_current );
 	n_active_slices = n_active_slices_current;
 	slice_percentage[i] = slice_percentage_current[i];
@@ -531,22 +531,22 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
     }
 
     // Check for new sorting policy
-    if (sorting_policy_current[i] != sorting_policy[i]) {
+    if (slice_sorting_policy_current[i] != slice_sorting_policy[i]) {
       LOG_I(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: UE sorting policy has changed (%x-->%x)\n",
-            module_idP, i, frameP, subframeP, sorting_policy_current[i], sorting_policy[i]);
-      sorting_policy_current[i] = sorting_policy[i];
+            module_idP, i, frameP, subframeP, slice_sorting_policy_current[i], slice_sorting_policy[i]);
+      slice_sorting_policy_current[i] = slice_sorting_policy[i];
     }
 
     // Check for new accounting policy
-    if (accounting_policy_current[i] != accounting_policy[i]) {
-      if (accounting_policy[i] > 1 || accounting_policy[i] < 0) {
+    if (slice_accounting_policy_current[i] != slice_accounting_policy[i]) {
+      if (slice_accounting_policy[i] > 1 || slice_accounting_policy[i] < 0) {
         LOG_W(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: invalid accounting policy (%d), revert to its previous value (%d)\n",
-              module_idP, i, frameP, subframeP, accounting_policy[i], accounting_policy_current[i]);
-        accounting_policy[i] = accounting_policy_current[i];
+              module_idP, i, frameP, subframeP, slice_accounting_policy[i], slice_accounting_policy_current[i]);
+        slice_accounting_policy[i] = slice_accounting_policy_current[i];
       } else {
         LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: UE sorting policy has changed (%x-->%x)\n",
-              module_idP, i, frameP, subframeP, accounting_policy_current[i], accounting_policy[i]);
-        accounting_policy_current[i] = accounting_policy[i];
+              module_idP, i, frameP, subframeP, slice_accounting_policy_current[i], slice_accounting_policy[i]);
+        slice_accounting_policy_current[i] = slice_accounting_policy[i];
       }
     }
 
