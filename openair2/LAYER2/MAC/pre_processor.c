@@ -101,7 +101,7 @@ store_dlsch_buffer(module_id_t Mod_id,
                    frame_t frameP,
                    sub_frame_t subframeP) {
 
-  int UE_id, i;
+  int UE_id, lcid;
   rnti_t rnti;
   mac_rlc_status_resp_t rlc_status;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
@@ -114,70 +114,64 @@ store_dlsch_buffer(module_id_t Mod_id,
     if (!ue_slice_membership(UE_id, slice_id))
       continue;
 
-    UE_template =
-            &UE_list->UE_template[UE_PCCID(Mod_id, UE_id)][UE_id];
+    UE_template = &UE_list->UE_template[UE_PCCID(Mod_id, UE_id)][UE_id];
 
     // clear logical channel interface variables
     UE_template->dl_buffer_total = 0;
     UE_template->dl_pdus_total = 0;
 
-    for (i = 0; i < MAX_NUM_LCID; i++) {
-      UE_template->dl_buffer_info[i] = 0;
-      UE_template->dl_pdus_in_buffer[i] = 0;
-      UE_template->dl_buffer_head_sdu_creation_time[i] = 0;
-      UE_template->dl_buffer_head_sdu_remaining_size_to_send[i] = 0;
+    for (lcid = 0; lcid < MAX_NUM_LCID; ++lcid) {
+      UE_template->dl_buffer_info[lcid] = 0;
+      UE_template->dl_pdus_in_buffer[lcid] = 0;
+      UE_template->dl_buffer_head_sdu_creation_time[lcid] = 0;
+      UE_template->dl_buffer_head_sdu_remaining_size_to_send[lcid] = 0;
     }
 
     rnti = UE_RNTI(Mod_id, UE_id);
 
-    for (i = 0; i < MAX_NUM_LCID; i++) {    // loop over all the logical channels
+    for (lcid = 0; lcid < MAX_NUM_LCID; ++lcid) {    // loop over all the logical channels
 
 	    rlc_status = mac_rlc_status_ind(Mod_id, rnti, Mod_id, frameP, subframeP,
-				   ENB_FLAG_YES, MBMS_FLAG_NO, i, 0
+				   ENB_FLAG_YES, MBMS_FLAG_NO, lcid, 0
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                    ,0, 0
 #endif
                    );
-      UE_template->dl_buffer_info[i] = rlc_status.bytes_in_buffer;    //storing the dlsch buffer for each logical channel
-      UE_template->dl_pdus_in_buffer[i] = rlc_status.pdus_in_buffer;
-      UE_template->dl_buffer_head_sdu_creation_time[i] = rlc_status.head_sdu_creation_time;
+      UE_template->dl_buffer_info[lcid] = rlc_status.bytes_in_buffer;    //storing the dlsch buffer for each logical channel
+      UE_template->dl_pdus_in_buffer[lcid] = rlc_status.pdus_in_buffer;
+      UE_template->dl_buffer_head_sdu_creation_time[lcid] = rlc_status.head_sdu_creation_time;
       UE_template->dl_buffer_head_sdu_creation_time_max =
               cmax(UE_template->dl_buffer_head_sdu_creation_time_max, rlc_status.head_sdu_creation_time);
-      UE_template->dl_buffer_head_sdu_remaining_size_to_send[i] =
-              rlc_status.head_sdu_remaining_size_to_send;
-      UE_template->dl_buffer_head_sdu_is_segmented[i] =
-              rlc_status.head_sdu_is_segmented;
-      UE_template->dl_buffer_total += UE_template->dl_buffer_info[i];    //storing the total dlsch buffer
-      UE_template->dl_pdus_total += UE_template->dl_pdus_in_buffer[i];
+      UE_template->dl_buffer_head_sdu_remaining_size_to_send[lcid] = rlc_status.head_sdu_remaining_size_to_send;
+      UE_template->dl_buffer_head_sdu_is_segmented[lcid] = rlc_status.head_sdu_is_segmented;
+      UE_template->dl_buffer_total += UE_template->dl_buffer_info[lcid];    //storing the total dlsch buffer
+      UE_template->dl_pdus_total += UE_template->dl_pdus_in_buffer[lcid];
 
 #ifdef DEBUG_eNB_SCHEDULER
 
-      /* note for dl_buffer_head_sdu_remaining_size_to_send[i] :
+      /* note for dl_buffer_head_sdu_remaining_size_to_send[lcid] :
        * 0 if head SDU has not been segmented (yet), else remaining size not already segmented and sent
        */
-      if (UE_template->dl_buffer_info[i] > 0)
+      if (UE_template->dl_buffer_info[lcid] > 0)
         LOG_D(MAC,
               "[eNB %d][SLICE %d] Frame %d Subframe %d : RLC status for UE %d in LCID%d: total of %d pdus and size %d, head sdu queuing time %d, remaining size %d, is segmeneted %d \n",
               Mod_id, slice_id, frameP, subframeP, UE_id,
-              i, UE_template->dl_pdus_in_buffer[i],
-              UE_template->dl_buffer_info[i],
-              UE_template->dl_buffer_head_sdu_creation_time[i],
-              UE_template->dl_buffer_head_sdu_remaining_size_to_send[i],
-              UE_template->dl_buffer_head_sdu_is_segmented[i]);
+              lcid, UE_template->dl_pdus_in_buffer[lcid],
+              UE_template->dl_buffer_info[lcid],
+              UE_template->dl_buffer_head_sdu_creation_time[lcid],
+              UE_template->dl_buffer_head_sdu_remaining_size_to_send[lcid],
+              UE_template->dl_buffer_head_sdu_is_segmented[lcid]);
 
 #endif
 
     }
 
-    //#ifdef DEBUG_eNB_SCHEDULER
     if (UE_template->dl_buffer_total > 0)
       LOG_D(MAC,
             "[eNB %d] Frame %d Subframe %d : RLC status for UE %d : total DL buffer size %d and total number of pdu %d \n",
             Mod_id, frameP, subframeP, UE_id,
             UE_template->dl_buffer_total,
             UE_template->dl_pdus_total);
-
-    //#endif
   }
 }
 
