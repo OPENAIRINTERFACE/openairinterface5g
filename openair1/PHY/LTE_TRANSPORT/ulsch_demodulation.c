@@ -1395,7 +1395,7 @@ void rx_ulsch_emul(PHY_VARS_eNB *eNB,
   if (eNB->frame_parms.nb_antennas_rx>1) {
     sprintf(fname,"/tmp/rxsigF1_ext_r%d.m",round);
     sprintf(vname,"rxsF1_ext_r%d",round);
-    write_output(fname,vname,&eNB->pusch_vars[UE_id]->rxdataF_ext[0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+    write_output(fname,vname,&eNB->pusch_vars[UE_id]->rxdataF_ext[1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
   }
   /*
   if (eNB->srs_vars[UE_id].srs_ch_estimates) write_output("/tmp/srs_est0.m","srsest0",eNB->srs_vars[UE_id].srs_ch_estimates[0],eNB->frame_parms.ofdm_symbol_size,1,1);

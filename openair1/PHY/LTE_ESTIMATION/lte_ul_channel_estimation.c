@@ -291,7 +291,7 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
 
 #ifdef DEBUG_CH
 
-      if (aa==0) {
+      if (aa==1) {
         if (Ns == 0) {
           write_output("rxdataF_ext.m","rxF_ext",&rxdataF_ext[aa][symbol_offset],512*2,2,1);
           write_output("tmpin_ifft.m","drs_in",temp_in_ifft_0,512,1,1);
