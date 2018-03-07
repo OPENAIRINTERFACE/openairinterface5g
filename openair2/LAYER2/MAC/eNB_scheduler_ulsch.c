@@ -165,18 +165,16 @@ rx_sdu(const module_id_t enb_mod_idP,
 		  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 		  ul_cqi);
 
-	    //      AssertFatal(1==0,"ulsch in error\n");
-	    if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] ==
-		3) {
-		UE_list->UE_sched_ctrl[UE_id].ul_scheduled &=
-		    (~(1 << harq_pid));
-		UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] =
-		    0;
-		if (UE_list->UE_sched_ctrl[UE_id].
-		    ul_consecutive_errors++ == 10)
-		    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
-	    } else
-		UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]++;
+      //      AssertFatal(1==0,"ulsch in error\n");
+      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] == 3) {
+        UE_list->UE_sched_ctrl[UE_id].ul_scheduled &= (~(1 << harq_pid));
+        UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0;
+        if (UE_list->UE_sched_ctrl[UE_id].ul_consecutive_errors++ == 10)
+          UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
+        if(find_RA_id(enb_mod_idP, CC_idP, current_rnti) != -1)
+          cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
+      } else
+        UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]++;
 	    return;
 
 	}
@@ -204,7 +202,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 		  (int) mac->common_channels[CC_idP].
 		  radioResourceConfigCommon->rach_ConfigCommon.
 		  maxHARQ_Msg3Tx);
-	    if (ra[RA_id].msg3_round ==
+	    if (ra[RA_id].msg3_round >=
 		mac->common_channels[CC_idP].radioResourceConfigCommon->
 		rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
 		cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
@@ -309,7 +307,7 @@ rx_sdu(const module_id_t enb_mod_idP,
                 // prepare transmission of Msg4(RRCConnectionReconfiguration)
                 ra->state = MSGCRNTI;
                 LOG_I(MAC,
-                     "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)",
+                     "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)\n",
                      enb_mod_idP, frameP, subframeP, CC_idP, old_rnti, old_UE_id);
                 //
                 UE_id = old_UE_id;
@@ -2090,7 +2088,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                                                  0, // ul_tx_mode
                                                  0, // current_tx_nb
                                                  0, // n_srs
-                                                 get_TBS_UL(UE_template->mcs_UL[harq_pid], ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb)
+//                                                 get_TBS_UL(UE_template->mcs_UL[harq_pid], ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb)
+UE_template->TBS_UL[harq_pid]
                                                  );
 #ifdef Rel14
             if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation

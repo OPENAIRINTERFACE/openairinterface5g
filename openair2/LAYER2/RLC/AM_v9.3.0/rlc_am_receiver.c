@@ -396,14 +396,20 @@ rlc_am_receive_process_data_pdu (
         }
 
         if (pdu_info_p->sn == rlc_pP->vr_r) {
+mem_block_t*       cursor_p                    = rlc_pP->receiver_buffer.head;
+rlc_am_rx_pdu_management_t * pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (cursor_p->data);
+if( (((rlc_am_rx_pdu_management_t*)(tb_pP->data))->all_segments_received) == (pdu_cursor_mgnt_p->all_segments_received)){
           if (((rlc_am_rx_pdu_management_t*)(tb_pP->data))->all_segments_received) {
             rlc_am_rx_update_vr_r(ctxt_pP, rlc_pP, tb_pP);
             rlc_pP->vr_mr = (rlc_pP->vr_r + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
           }
-
           reassemble = rlc_am_rx_check_vr_reassemble(ctxt_pP, rlc_pP);
           //TODO : optimization : check whether a reassembly is needed by looking at LI, FI, SO, etc...
-
+}else{
+  LOG_E(RLC, "BAD all_segments_received!!! discard buffer!!!\n");
+  /* Discard received block if out of window, duplicate or header error */
+  free_mem_block (tb_pP, __func__);
+}
         }
 
         //FNA: fix check VrX out of receiving window

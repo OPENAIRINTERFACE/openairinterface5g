@@ -550,8 +550,10 @@ rlc_am_mac_status_indication (
   }
 
   rlc->last_absolute_subframe_status_indication = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
-  if (tb_sizeP > 0)
-  rlc->nb_bytes_requested_by_mac = tb_sizeP;
+
+  if (tb_sizeP > 0) {
+    rlc->nb_bytes_requested_by_mac = tb_sizeP;
+  }
 
   status_resp.buffer_occupancy_in_bytes = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, rlc);
 
