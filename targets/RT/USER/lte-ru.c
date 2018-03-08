@@ -1308,8 +1308,8 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
     cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
 
-    cfg->tx_gain[i] = (double)fp->att_tx;
-    cfg->rx_gain[i] = ru->max_rxgain-(double)fp->att_rx;
+    cfg->tx_gain[i] = (double)ru->att_tx;
+    cfg->rx_gain[i] = ru->max_rxgain-(double)ru->att_rx;
 
     cfg->configFilename = rf_config_file;
     printf("channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
