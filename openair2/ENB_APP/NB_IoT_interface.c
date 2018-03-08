@@ -19,9 +19,40 @@
  *      contact@openairinterface.org
  */
 
-#if !defined(NFAPI_PNF_H__)
-#define NFAPI_PNF_H__
-int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
-void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);
+/*! \file openair2/ENB_APP/NB_IoT_interface.c
+ * \brief: load library implementing coding/decoding algorithms
+ * \date 2018
+ * \version 0.1
+ * \note
+ * \warning
+ */
+#define _GNU_SOURCE 
+#include <sys/types.h>
 
-#endif
+
+#include "openair1/PHY/extern.h"
+#include "common/utils/load_module_shlib.h" 
+#define NBIOT_INTERFACE_SOURCE
+#include "NB_IoT_interface.h"
+
+
+
+
+int load_NB_IoT(void) {
+ int ret;
+ RCConfig_NbIoT_f_t RCConfig;
+ loader_shlibfunc_t shlib_fdesc[]=NBIOT_INTERFACE_FLIST; 
+
+     ret=load_module_shlib(NBIOT_MODULENAME,shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t));
+     if (ret) {
+        return ret;
+     }
+     RCConfig = get_shlibmodule_fptr(NBIOT_MODULENAME,NBIOT_RCCONFIG_FNAME );
+     if (RCConfig == NULL) {
+        return -1;
+     } 
+ 
+     RCConfig(&RC);
+return 0;
+}
+

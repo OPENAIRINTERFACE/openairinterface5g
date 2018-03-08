@@ -33,13 +33,6 @@
 #include "log.h"
 #include "log_extern.h"
 #include "assertions.h"
-#include "enb_config.h"
-#include "UTIL/OTG/otg.h"
-#include "UTIL/OTG/otg_externs.h"
-#if defined(OAI_EMU)
-# include "OCG.h"
-# include "OCG_extern.h"
-#endif
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
 # if defined(ENABLE_USE_MME)
@@ -47,16 +40,14 @@
 #   include "sctp_eNB_task.h"
 # endif
 #endif
-#include "sctp_default_values.h"
 #include "SystemInformationBlockType2.h"
-#include "LAYER2/MAC/extern.h"
+
 #include "PHY/extern.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
-
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"
 #include "RRC_paramsvalues.h"
-#include "nbiot_paramdef.h"
+#include "NB_IoT_paramdef.h"
 #include "L1_paramdef.h"
 #include "MACRLC_paramdef.h"
 #include "LAYER2/MAC/proto_NB_IoT.h"

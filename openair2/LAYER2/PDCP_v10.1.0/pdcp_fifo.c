@@ -769,18 +769,15 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
 void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) {
 
-  //unsigned char       *otg_pkt=NULL;
+
   module_id_t          dst_id; // dst for otg
-  //rb_id_t              rb_id;
-  //unsigned int         pkt_size=0;
   protocol_ctxt_t      ctxt;
   // we need to add conditions to avoid transmitting data when the UE is not RRC connected.
   if ((otg_enabled==1) && (ctxt_pP->enb_flag == ENB_FLAG_YES)) { // generate DL traffic
-    //unsigned int ctime=0;
-    //ctime = ctxt_pP->frame * 100;
 
-    /*if  ((mac_get_rrc_status(eNB_index, ctxt_pP->enb_flag, 0 ) > 2) &&
-    (mac_get_rrc_status(eNB_index, ctxt_pP->enb_flag, 1 ) > 2)) { */
+
+
+
     PROTOCOL_CTXT_SET_BY_MODULE_ID(
       &ctxt,
       ctxt_pP->module_id,
@@ -792,36 +789,7 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
 
     for (dst_id = 0; dst_id<NUMBER_OF_UE_MAX; dst_id++) {
       ctxt.rnti = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id][dst_id];
-/*
-      if (ctxt.rnti != NOT_A_RNTI) {
-        if (mac_eNB_get_rrc_status(ctxt.module_id, ctxt.rnti ) > 2 ) {
-        unsigned int temp = 0;
-          otg_pkt=packet_gen(
-                    ENB_MODULE_ID_TO_INSTANCE(ctxt.module_id),
-                    UE_MODULE_ID_TO_INSTANCE(dst_id),
-                    0,
-                    ctime,
-                    &temp);
-        pkt_size = temp;
 
-        if (otg_pkt != NULL) {
-          rb_id = dst_id * maxDRB + DTCH;
-          pdcp_data_req(&ctxt,
-                        SRB_FLAG_NO,
-                        rb_id,
-                        RLC_MUI_UNDEFINED,
-                        RLC_SDU_CONFIRM_NO,
-                        pkt_size,
-                        otg_pkt,
-                        PDCP_TRANSMISSION_MODE_DATA);
-            LOG_I(OTG,
-                  "send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n",
-                  ctxt_pP->module_id, rb_id, ctxt_pP->module_id, dst_id, pkt_size);
-            free(otg_pkt);
-          }
-        }
-      }
-*/
     }
   }
 }

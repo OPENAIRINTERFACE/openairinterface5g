@@ -11,7 +11,6 @@
 #        define NUMBER_OF_RU_MAX 32
 #        define NUMBER_OF_UE_MAX 20
 #        define NUMBER_OF_CONNECTED_eNB_MAX 3
-
 #        if defined(STANDALONE) && STANDALONE==1
 #                undef  NUMBER_OF_eNB_MAX
 #                undef  NUMBER_OF_UE_MAX

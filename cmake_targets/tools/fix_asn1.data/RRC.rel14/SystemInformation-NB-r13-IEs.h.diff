@@ -1,0 +1,47 @@
+48a49,70
+> struct SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member {
+> 	SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member_PR present;
+> 	union SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member_u {
+> 		SystemInformationBlockType2_NB_r13_t	 sib2_r13;
+> 		SystemInformationBlockType3_NB_r13_t	 sib3_r13;
+> 		SystemInformationBlockType4_NB_r13_t	 sib4_r13;
+> 		SystemInformationBlockType5_NB_r13_t	 sib5_r13;
+> 		SystemInformationBlockType14_NB_r13_t	 sib14_r13;
+> 		SystemInformationBlockType16_NB_r13_t	 sib16_r13;
+> 		/*
+> 		 * This type is extensible,
+> 		 * possible extensions are below.
+> 		 */
+> 		SystemInformationBlockType15_NB_r14_t	 sib15_v1430;
+> 		SystemInformationBlockType20_NB_r14_t	 sib20_v1430;
+> 		SystemInformationBlockType22_NB_r14_t	 sib22_v1430;
+> 	} choice;
+> 	
+> 	/* Context for parsing across buffer boundaries */
+> 	asn_struct_ctx_t _asn_ctx;
+> };
+> 
+52,72c74
+< 		A_SEQUENCE_OF(struct SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member {
+< 			SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member_PR present;
+< 			union SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member_u {
+< 				SystemInformationBlockType2_NB_r13_t	 sib2_r13;
+< 				SystemInformationBlockType3_NB_r13_t	 sib3_r13;
+< 				SystemInformationBlockType4_NB_r13_t	 sib4_r13;
+< 				SystemInformationBlockType5_NB_r13_t	 sib5_r13;
+< 				SystemInformationBlockType14_NB_r13_t	 sib14_r13;
+< 				SystemInformationBlockType16_NB_r13_t	 sib16_r13;
+< 				/*
+< 				 * This type is extensible,
+< 				 * possible extensions are below.
+< 				 */
+< 				SystemInformationBlockType15_NB_r14_t	 sib15_v1430;
+< 				SystemInformationBlockType20_NB_r14_t	 sib20_v1430;
+< 				SystemInformationBlockType22_NB_r14_t	 sib22_v1430;
+< 			} choice;
+< 			
+< 			/* Context for parsing across buffer boundaries */
+< 			asn_struct_ctx_t _asn_ctx;
+< 		} ) list;
+---
+> 		A_SEQUENCE_OF(struct SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member) list;
