@@ -1131,10 +1131,8 @@ int main( int argc, char **argv )
 
   printf("Runtime table\n");
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
-  cpuf=get_cpu_freq_GHz();
-  
-  
-  
+
+
 #ifndef DEADLINE_SCHEDULER
   
   printf("NO deadline scheduler\n");
