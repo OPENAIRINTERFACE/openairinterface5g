@@ -6665,10 +6665,13 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n)
   uint8_t ul_subframe = 255;
 
   if ((frame_parms->frame_type == TDD) &&
-      (frame_parms->tdd_config == 1) &&
-      ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
-    ul_subframe = ((n+6)%10);
-  else if ((frame_parms->frame_type == TDD) &&
+      (frame_parms->tdd_config == 1)) {
+    if ((n==1)||(n==6)) { // tdd_config 0,1 SF 1,5
+      ul_subframe = ((n+6)%10);
+    } else if ((n==4)||(n==9)) {
+      ul_subframe = ((n+4)%10);
+    }
+  } else if ((frame_parms->frame_type == TDD) &&
            (frame_parms->tdd_config == 6) &&
            ((n==0)||(n==1)||(n==5)||(n==6)))
     ul_subframe = ((n+7)%10);
@@ -6688,10 +6691,13 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n)
 uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n)
 {
   if ((frame_parms->frame_type == TDD) &&
-      (frame_parms->tdd_config == 1) &&
-      ((n==7)||(n==2))) // tdd_config 0,1 SF 1,5
-    return((n==7)? 1 : 6);
-  else if ((frame_parms->frame_type == TDD) &&
+      (frame_parms->tdd_config == 1)) {
+    if ((n==7)||(n==2)) { // tdd_config 0,1 SF 1,5
+      return((n==7)? 1 : 6);
+    } else if ((n==3)||(n==8)) {
+      return((n==3)? 9 : 4);
+    }
+  } else if ((frame_parms->frame_type == TDD) &&
            (frame_parms->tdd_config == 6) &&
            ((n==7)||(n==8)||(n==2)||(n==3)))
     return((n+3)%10);
@@ -6705,13 +6711,14 @@ uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
 
 uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n)
 {
-  uint32_t ul_frame;
+  uint32_t ul_frame = frame;
 
   if ((frame_parms->frame_type == TDD) &&
-      (frame_parms->tdd_config == 1) &&
-      ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
-    ul_frame = (frame + (n==1 ? 0 : 1));
-  else if ((frame_parms->frame_type == TDD) &&
+      (frame_parms->tdd_config == 1)) {
+    if ((n==1)||(n==6)||(n==4)||(n==9)) { // tdd_config 0,1 SF 1,5
+      ul_frame = (frame + (n < 5 ? 0 : 1));
+    }
+  } else if ((frame_parms->frame_type == TDD) &&
            (frame_parms->tdd_config == 6) &&
            ((n==0)||(n==1)||(n==5)||(n==6)))
     ul_frame = (frame + (n>=5 ? 1 : 0));
