@@ -40,6 +40,7 @@
 // number of active slices for  past and current time
 int       n_active_slices = 1;
 int       n_active_slices_current = 1;
+int       slice_counter = 0;
 
 // RB share for each slice for past and current time
 float     slice_percentage[MAX_NUM_SLICES]         = {1.0, 0.0, 0.0, 0.0};
@@ -47,6 +48,7 @@ float     slice_percentage_current[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 float     slice_percentage_total = 0;
 float     slice_percentage_total_current = 0;
 float     slice_percentage_avg = 0.25;
+int       slice_isolation[MAX_NUM_SLICES] = {0, 0, 0, 0};
 
 // Frequency ranges for slice positioning
 int       slice_position[MAX_NUM_SLICES*2]         = {0, N_RBG_MAX, 0, N_RBG_MAX, 0, N_RBG_MAX, 0, N_RBG_MAX};
@@ -77,5 +79,7 @@ char *dl_scheduler_type[MAX_NUM_SLICES] =
 
 // pointer to the slice specific scheduler
 slice_scheduler_dl slice_sched_dl[MAX_NUM_SLICES] = {0};
+
+pre_processor_results_t pre_processor_results[MAX_NUM_SLICES];
 
 #endif //__LAYER2_MAC_ENB_SCHEDULER_DLSCH_H__

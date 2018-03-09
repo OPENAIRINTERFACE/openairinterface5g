@@ -226,8 +226,8 @@ void dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
                                          sub_frame_t subframeP,
                                          int min_rb_unit[NFAPI_CC_MAX],
                                          uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                         unsigned char rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-                                         unsigned char MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX],
+                                         uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+                                         uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX],
                                          int *mbsfn_flag);
 
 void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
@@ -260,6 +260,10 @@ void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
                                                       uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
                                                       uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
+void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
+                                             int frameP,
+                                             sub_frame_t subframeP);
+
 void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
                                             int UE_id,
                                             uint8_t CC_id,
@@ -267,9 +271,9 @@ void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
                                             int min_rb_unit,
                                             uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
                                             uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-                                            unsigned char rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+                                            uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
                                             uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX],
-                                            unsigned char MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
+                                            uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
    and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f. 

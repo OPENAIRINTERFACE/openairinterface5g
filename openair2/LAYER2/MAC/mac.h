@@ -1571,6 +1571,16 @@ typedef  struct {
   mui_t                        rrc_mui[128];
 }mac_rlc_am_muilist_t;
 
+/// Structure for saving the output of each pre_processor instance
+typedef struct {
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+    uint8_t  slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX];
+    uint8_t  slice_allocated_rbgs[NFAPI_CC_MAX][N_RBG_MAX];
+    uint8_t  MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX];
+} pre_processor_results_t;
+
 #include "mac_proto.h"
 
 /*@}*/
