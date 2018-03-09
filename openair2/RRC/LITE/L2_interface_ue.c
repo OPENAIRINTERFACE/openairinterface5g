@@ -65,6 +65,7 @@ mac_rrc_data_req_ue(
 )
 //--------------------------------------------------------------------------
 {
+
 #ifdef DEBUG_RRC
   int i;
   LOG_I(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);

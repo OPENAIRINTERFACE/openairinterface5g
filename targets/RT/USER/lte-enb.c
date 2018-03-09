@@ -163,13 +163,6 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 
 
 static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_name) {
-
-  static double cpu_freq_GHz = 0.0;
-
-  if (cpu_freq_GHz == 0.0)
-    cpu_freq_GHz = get_cpu_freq_GHz();
-
-
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************

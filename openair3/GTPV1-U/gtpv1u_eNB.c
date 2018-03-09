@@ -53,6 +53,7 @@
 
 #undef GTP_DUMP_SOCKET
 
+/*
 extern boolean_t pdcp_data_req(
   const protocol_ctxt_t* const  ctxt_pP,
   const srb_flag_t     srb_flagP,
@@ -62,7 +63,7 @@ extern boolean_t pdcp_data_req(
   const sdu_size_t     sdu_buffer_sizeP,
   unsigned char *const sdu_buffer_pP,
   const pdcp_transmission_mode_t modeP);
-
+*/
 extern unsigned char NB_eNB_INST;
 extern RAN_CONTEXT_t RC;
 

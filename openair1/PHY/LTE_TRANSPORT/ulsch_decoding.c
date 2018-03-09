@@ -242,27 +242,12 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
   uint32_t E=0;
   uint32_t Gp,GpmodC,Nl=1;
   uint32_t C = ulsch_harq->C;
-
-  uint8_t (*tc)(int16_t *y,
-                uint8_t *,
-                uint16_t,
-                uint16_t,
-                uint16_t,
-                uint8_t,
-                uint8_t,
-                uint8_t,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *);
+  decoder_if_t tc;
 
   if (llr8_flag == 0)
-    tc = phy_threegpplte_turbo_decoder16;
+    tc = decoder16;
   else
-    tc = phy_threegpplte_turbo_decoder8;
+    tc = decoder8;
 
 
 
@@ -385,7 +370,9 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
     
     
     ret = tc(&ulsch_harq->d[r][96],
+             NULL,
 	     ulsch_harq->c[r],
+             NULL,
 	     Kr,
 	     f1f2mat_old[iind*2],
 	     f1f2mat_old[(iind*2)+1],
@@ -463,22 +450,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
   int G = ulsch_harq->G;
   unsigned int E;
   int Cby2;
-
-  uint8_t (*tc)(int16_t *y,
-                uint8_t *,
-                uint16_t,
-                uint16_t,
-                uint16_t,
-                uint8_t,
-                uint8_t,
-                uint8_t,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *);
+  decoder_if_t tc;
 
   struct timespec wait;
 
@@ -487,9 +459,9 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 
 
   if (llr8_flag == 0)
-    tc = phy_threegpplte_turbo_decoder16;
+    tc = decoder16;
   else
-    tc = phy_threegpplte_turbo_decoder8;
+    tc = decoder8;
 
   if (ulsch_harq->C>1) { // wakeup worker if more than 1 segment
     if (pthread_mutex_timedlock(&proc->mutex_td,&wait) != 0) {
@@ -608,7 +580,9 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     
     ret = tc(&ulsch_harq->d[r][96],
+             NULL,
 	     ulsch_harq->c[r],
+             NULL,
 	     Kr,
 	     f1f2mat_old[iind*2],
 	     f1f2mat_old[(iind*2)+1],
@@ -670,27 +644,12 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 
   int G = ulsch_harq->G;
   unsigned int E;
-
-  uint8_t (*tc)(int16_t *y,
-                uint8_t *,
-                uint16_t,
-                uint16_t,
-                uint16_t,
-                uint8_t,
-                uint8_t,
-                uint8_t,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *);
+  decoder_if_t tc;
 
   if (llr8_flag == 0)
-    tc = phy_threegpplte_turbo_decoder16;
+    tc = *decoder16;
   else
-    tc = phy_threegpplte_turbo_decoder8;
+    tc = *decoder8;
 
 
   for (r=0; r<ulsch_harq->C; r++) {
@@ -773,7 +732,9 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     
     ret = tc(&ulsch_harq->d[r][96],
+             NULL,
 	     ulsch_harq->c[r],
+             NULL,
 	     Kr,
 	     f1f2mat_old[iind*2],
 	     f1f2mat_old[(iind*2)+1],

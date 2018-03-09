@@ -855,15 +855,15 @@ in the DLSCH buffer.
 @param post_padding number of bytes for padding at the end of MAC PDU
 @returns Number of bytes used for header
 */
-unsigned char generate_dlsch_header(unsigned char *mac_header,
-				    unsigned char num_sdus,
-				    unsigned short *sdu_lengths,
-				    unsigned char *sdu_lcids,
-				    unsigned char drx_cmd,
-				    unsigned short timing_advance_cmd,
-				    unsigned char *ue_cont_res_id,
-				    unsigned char short_padding,
-				    unsigned short post_padding);
+int generate_dlsch_header(unsigned char *mac_header,
+                          unsigned char num_sdus,
+                          unsigned short *sdu_lengths,
+                          unsigned char *sdu_lcids,
+                          unsigned char drx_cmd,
+                          unsigned short timing_advance_cmd,
+                          unsigned char *ue_cont_res_id,
+                          unsigned char short_padding,
+                          unsigned short post_padding);
 
 /** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
 @param Mod_id Instance ID of eNB

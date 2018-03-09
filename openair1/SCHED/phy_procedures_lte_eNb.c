@@ -650,7 +650,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 {
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint8_t SR_payload = 0,pucch_b0b1[4][2]= {{0,0},{0,0},{0,0},{0,0}},harq_ack[4]={0,0,0,0};
-  int32_t metric[4]={0,0,0,0},metric_SR=0,max_metric;
+  int32_t metric[4]={0,0,0,0},metric_SR=0,max_metric=0;
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
   int i;

@@ -859,8 +859,8 @@ int main(int argc, char **argv)
 
   printf("PUSCH Beta : ACK %f, RI %f, CQI %f\n",(double)beta_ack[beta_ACK]/8,(double)beta_ri[beta_RI]/8,(double)beta_cqi[beta_CQI]/8);
 
-  UE2eNB = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
-                                UE->frame_parms.nb_antennas_rx,
+  UE2eNB = new_channel_desc_scm(1,
+                                n_rx,
                                 channel_model,
 				N_RB2sampling_rate(eNB->frame_parms.N_RB_UL),
 				N_RB2channel_bandwidth(eNB->frame_parms.N_RB_UL),
@@ -1330,7 +1330,7 @@ int main(int argc, char **argv)
             printf("SNRmeas %f\n",SNRmeas);
 
 	    write_output("rxsig0UL.m","rxs0", &ru->common.rxdata[0][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
-	    //            write_output("rxsig1UL.m","rxs1", &ru->common_vars.rxdata[0][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
+	    if (eNB->frame_parms.nb_antennas_rx>1) write_output("rxsig1UL.m","rxs1", &ru->common.rxdata[1][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
           }
 
 

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -131,7 +131,7 @@ int8_t flexran_get_ue_phr(mid_t mod_id, mid_t ue_id)
 
 uint8_t flexran_get_ue_wcqi(mid_t mod_id, mid_t ue_id)
 {
-  if (!phy_is_present(mod_id, 0)) return 0;
+  if (!mac_is_present(mod_id)) return 0;
   return RC.mac[mod_id]->UE_list.UE_sched_ctrl[ue_id].dl_cqi[0];
 }
 

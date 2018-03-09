@@ -1,3 +1,33 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+/*! \file common/config/libconfig/config_libconfig.c
+ * \brief: implementation libconfig configuration library
+ * \author Francois TABURET
+ * \date 2017
+ * \version 0.1
+ * \company NOKIA BellLabs France
+ * \email: francois.taburet@nokia-bell-labs.com
+ * \note
+ * \warning
+ */
 #define _GNU_SOURCE
 #include <libconfig.h>
 
@@ -21,21 +51,23 @@ int read_strlist(paramdef_t *cfgoptions,config_setting_t *setting, char *cfgpath
 {
 const char *str;
 int st;
+int numelt;
 
-   cfgoptions->numelt=config_setting_length(setting);
-   cfgoptions->strlistptr=malloc(sizeof(char *) * (cfgoptions->numelt));
+   numelt=config_setting_length(setting);
+   config_check_valptr(cfgoptions,(char **)&(cfgoptions->strlistptr), sizeof(char *) * numelt);
    st=0;
-   for (int i=0; i< cfgoptions->numelt && cfgoptions->strlistptr != NULL; i++) {
+   for (int i=0; i< numelt ; i++) {
        str=config_setting_get_string_elem(setting,i);
        if (str==NULL) {
           printf("[LIBCONFIG] %s%i  not found in config file\n", cfgoptions->optname,i);
        } else {
-            cfgoptions->strlistptr[i]=malloc(strlen(str)+1);
+            config_check_valptr(cfgoptions,&(cfgoptions->strlistptr[i]),strlen(str)+1);
             sprintf(cfgoptions->strlistptr[i],"%s",str);
 	    st++;
             printf_params("[LIBCONFIG] %s%i: %s\n", cfgpath,i,cfgoptions->strlistptr[i]);
        }
    }
+   cfgoptions->numelt=numelt;
    return st;
 }
 
@@ -108,10 +140,10 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
                   config_check_valptr(&(cfgoptions[i]), (char **)(&(cfgoptions[i].strptr)), sizeof(char *));
                   config_check_valptr(&(cfgoptions[i]), cfgoptions[i].strptr, strlen(str)+1);
                   sprintf( *(cfgoptions[i].strptr) , "%s", str);
-                  printf_params("[LIBCONFIG] %s: %s\n", cfgpath,*(cfgoptions[i].strptr) );
+                  printf_params("[LIBCONFIG] %s: \"%s\"\n", cfgpath,*(cfgoptions[i].strptr) );
               } else {
                  sprintf( (char *)(cfgoptions[i].strptr) , "%s", str);
-                 printf_params("[LIBCONFIG] %s: %s\n", cfgpath,(char *)cfgoptions[i].strptr );
+                 printf_params("[LIBCONFIG] %s: \"%s\"\n", cfgpath,(char *)cfgoptions[i].strptr );
               }
            } else {
 	      if( cfgoptions[i].defstrval != NULL) {
@@ -121,10 +153,10 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
                      config_check_valptr(&(cfgoptions[i]), (char **)(&(cfgoptions[i].strptr)), sizeof(char *));
                      config_check_valptr(&(cfgoptions[i]), cfgoptions[i].strptr, strlen(cfgoptions[i].defstrval)+1);
                      sprintf(*(cfgoptions[i].strptr), "%s",cfgoptions[i].defstrval);
-                     printf_params("[LIBCONFIG] %s set to default value %s\n", cfgpath, *(cfgoptions[i].strptr));
+                     printf_params("[LIBCONFIG] %s set to default value \"%s\"\n", cfgpath, *(cfgoptions[i].strptr));
                  } else {
-                    sprintf((char *)(cfgoptions[i].strptr), "%s",cfgoptions[i].defstrval);
-                    printf_params("[LIBCONFIG] %s set to default value %s\n", cfgpath, (char *)cfgoptions[i].strptr);
+                    sprintf((char *)*(cfgoptions[i].strptr), "%s",cfgoptions[i].defstrval);
+                    printf_params("[LIBCONFIG] %s set to default value \"%s\"\n", cfgpath, (char *)*(cfgoptions[i].strptr));
                  }
               } else {
 	         notfound=1;
@@ -374,6 +406,7 @@ void config_libconfig_end(void )
   config_destroy(&(libconfig_privdata.cfg));
   if ( libconfig_privdata.configfile != NULL ) {
      free(libconfig_privdata.configfile);
+     libconfig_privdata.configfile=NULL;
   } 
   
 }

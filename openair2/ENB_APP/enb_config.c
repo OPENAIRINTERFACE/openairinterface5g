@@ -52,51 +52,14 @@
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
 
-#include "enb_paramdef.h"
+#include "L1_paramdef.h"
+#include "MACRLC_paramdef.h"
 #include "common/config/config_userapi.h"
+#include "RRC_config_tools.h"
+#include "enb_paramdef.h"
 
 extern uint16_t sf_ahead;
 
-static int enb_check_band_frequencies(char* lib_config_file_name_pP,
-                                      int ind,
-                                      int16_t band,
-                                      uint32_t downlink_frequency,
-                                      int32_t uplink_frequency_offset,
-                                      lte_frame_type_t frame_type)
-{
-  int errors = 0;
-
-  if (band > 0) {
-    int band_index;
-
-    for (band_index = 0; band_index < sizeof (eutra_bands) / sizeof (eutra_bands[0]); band_index++) {
-      if (band == eutra_bands[band_index].band) {
-        uint32_t uplink_frequency = downlink_frequency + uplink_frequency_offset;
-
-        AssertError (eutra_bands[band_index].dl_min < downlink_frequency, errors ++,
-                     "Failed to parse eNB configuration file %s, enb %d downlink frequency %u too low (%u) for band %d!",
-                     lib_config_file_name_pP, ind, downlink_frequency, eutra_bands[band_index].dl_min, band);
-        AssertError (downlink_frequency < eutra_bands[band_index].dl_max, errors ++,
-                     "Failed to parse eNB configuration file %s, enb %d downlink frequency %u too high (%u) for band %d!",
-                     lib_config_file_name_pP, ind, downlink_frequency, eutra_bands[band_index].dl_max, band);
-
-        AssertError (eutra_bands[band_index].ul_min < uplink_frequency, errors ++,
-                     "Failed to parse eNB configuration file %s, enb %d uplink frequency %u too low (%u) for band %d!",
-                     lib_config_file_name_pP, ind, uplink_frequency, eutra_bands[band_index].ul_min, band);
-        AssertError (uplink_frequency < eutra_bands[band_index].ul_max, errors ++,
-                     "Failed to parse eNB configuration file %s, enb %d uplink frequency %u too high (%u) for band %d!",
-                     lib_config_file_name_pP, ind, uplink_frequency, eutra_bands[band_index].ul_max, band);
-
-        AssertError (eutra_bands[band_index].frame_type == frame_type, errors ++,
-                     "Failed to parse eNB configuration file %s, enb %d invalid frame type (%d/%d) for band %d!",
-                     lib_config_file_name_pP, ind, eutra_bands[band_index].frame_type, frame_type, band);
-      }
-    }
-  }
-
-
-  return errors;
-}
 
 void RCconfig_flexran()
 {
@@ -420,14 +383,16 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   paramdef_t ENBParams[]  = ENBPARAMS_DESC;
   paramlist_def_t ENBParamList = {ENB_CONFIG_STRING_ENB_LIST,NULL,0};  
 
+  checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
   paramdef_t CCsParams[] = CCPARAMS_DESC;
   paramlist_def_t CCsParamList = {ENB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
   
   paramdef_t SRB1Params[] = SRB1PARAMS_DESC;  
 
-  
-
-
+/* map parameter checking array instances to parameter definition array instances */
+  for (int I=0; I< ( sizeof(CCsParams)/ sizeof(paramdef_t)  ) ; I++) {
+     CCsParams[I].chkPptr = &(config_check_CCparams[I]);  
+  }
 /* get global parameters, defined outside any section in the config file */
   
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL); 
@@ -562,43 +527,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		    
 
 	      nb_cc++;
-	      /*
-		if (strcmp(cc_node_function, "eNodeB_3GPP") == 0) {
-		enb_properties_loc.properties[enb_properties_loc_index]->cc_node_function[j] = eNodeB_3GPP;
-		} else if (strcmp(cc_node_function, "eNodeB_3GPP_BBU") == 0) {
-		enb_properties_loc.properties[enb_properties_loc_index]->cc_node_function[j] = eNodeB_3GPP_BBU;
-		} else if (strcmp(cc_node_function, "NGFI_RCC_IF4p5") == 0) {
-		enb_properties_loc.properties[enb_properties_loc_index]->cc_node_function[j] = NGFI_RCC_IF4p5;
-		} else if (strcmp(cc_node_function, "NGFI_RAU_IF4p5") == 0) {
-		enb_properties_loc.properties[enb_properties_loc_index]->cc_node_function[j] = NGFI_RAU_IF4p5;
-		} else if (strcmp(cc_node_function, "NGFI_RRU_IF4p5") == 0) {
-		enb_properties_loc.properties[enb_properties_loc_index]->cc_node_function[j] = NGFI_RRU_IF4p5;
-		} else if (strcmp(cc_node_function, "NGFI_RRU_IF5") == 0) {
-		enb_properties_loc.properties[enb_properties_loc_index]->cc_node_function[j] = NGFI_RRU_IF5;
-		} else {
-		AssertError (0, parse_errors ++,
-		"Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for node_function choice: eNodeB_3GPP or eNodeB_3GPP_BBU or NGFI_IF4_RCC or NGFI_IF4_RRU or NGFI_IF5_RRU !\n",
-		lib_config_file_name_pP, i, cc_node_function);
-		}
-		
-		if (strcmp(cc_node_timing, "synch_to_ext_device") == 0) {
-		enb_properties_loc.properties[enb_properties_loc_index]->cc_node_timing[j] = synch_to_ext_device;
-		} else if (strcmp(cc_node_timing, "synch_to_other") == 0) {
-		enb_properties_loc.properties[enb_properties_loc_index]->cc_node_timing[j] = synch_to_other;
-		} else {
-		AssertError (0, parse_errors ++,
-		"Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for node_function choice: SYNCH_TO_DEVICE or SYNCH_TO_OTHER !\n",
-		lib_config_file_name_pP, i, cc_node_timing);
-		}
-		
-		if ((cc_node_synch_ref >= -1) && (cc_node_synch_ref < num_component_carriers)) {  
-		enb_properties_loc.properties[enb_properties_loc_index]->cc_node_synch_ref[j] = (int16_t) cc_node_synch_ref; 
-		} else {
-		AssertError (0, parse_errors ++,
-		"Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for node_synch_ref choice: valid CC_id or -1 !\n",
-		lib_config_file_name_pP, i, cc_node_synch_ref);
-		}
-	      */
+
 	      
 	      RRC_CONFIGURATION_REQ (msg_p).tdd_config[j] = tdd_config;
 	      
@@ -710,8 +639,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	      
 	      RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j] = (unsigned int) uplink_frequency_offset;
 	      
-	      if (enb_check_band_frequencies(RC.config_file_name,
-					     j,
+	      if (config_check_band_frequencies(j,
 					     RRC_CONFIGURATION_REQ (msg_p).eutra_band[j],
 					     RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j],
 					     RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j],
@@ -1385,244 +1313,13 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		  break;
 		}
 
-
-		switch (ue_TimersAndConstants_t300) {
-		case 100:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t300[j] = UE_TimersAndConstants__t300_ms100;
-		  break;
-
-		case 200:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t300[j] = UE_TimersAndConstants__t300_ms200;
-		  break;
-
-		case 300:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t300[j] = UE_TimersAndConstants__t300_ms300;
-		  break;
-
-		case 400:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t300[j] = UE_TimersAndConstants__t300_ms400;
-		  break;
-
-		case 600:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t300[j] = UE_TimersAndConstants__t300_ms600;
-		  break;
-
-		case 1000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t300[j] = UE_TimersAndConstants__t300_ms1000;
-		  break;
-
-		case 1500:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t300[j] = UE_TimersAndConstants__t300_ms1500;
-		  break;
-
-		case 2000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t300[j] = UE_TimersAndConstants__t300_ms2000;
-		  break;
-
-		default:
-		  AssertFatal (0,
-			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_t300 choice: 100,200,300,400,600,1000,1500,2000 ",
-			       RC.config_file_name, i, ue_TimersAndConstants_t300);
-		  break;
-
-		}
-
-		switch (ue_TimersAndConstants_t301) {
-		case 100:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t301[j] = UE_TimersAndConstants__t301_ms100;
-		  break;
-
-		case 200:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t301[j] = UE_TimersAndConstants__t301_ms200;
-		  break;
-
-		case 300:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t301[j] = UE_TimersAndConstants__t301_ms300;
-		  break;
-
-		case 400:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t301[j] = UE_TimersAndConstants__t301_ms400;
-		  break;
-
-		case 600:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t301[j] = UE_TimersAndConstants__t301_ms600;
-		  break;
-
-		case 1000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t301[j] = UE_TimersAndConstants__t301_ms1000;
-		  break;
-
-		case 1500:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t301[j] = UE_TimersAndConstants__t301_ms1500;
-		  break;
-
-		case 2000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t301[j] = UE_TimersAndConstants__t301_ms2000;
-		  break;
-
-		default:
-		  AssertFatal (0,
-			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_t301 choice: 100,200,300,400,600,1000,1500,2000 ",
-			       RC.config_file_name, i, ue_TimersAndConstants_t301);
-		  break;
-
-		}
-
-		switch (ue_TimersAndConstants_t310) {
-		case 0:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t310[j] = UE_TimersAndConstants__t310_ms0;
-		  break;
-
-		case 50:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t310[j] = UE_TimersAndConstants__t310_ms50;
-		  break;
-
-		case 100:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t310[j] = UE_TimersAndConstants__t310_ms100;
-		  break;
-
-		case 200:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t310[j] = UE_TimersAndConstants__t310_ms200;
-		  break;
-
-		case 500:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t310[j] = UE_TimersAndConstants__t310_ms500;
-		  break;
-
-		case 1000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t310[j] = UE_TimersAndConstants__t310_ms1000;
-		  break;
-
-		case 2000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t310[j] = UE_TimersAndConstants__t310_ms2000;
-		  break;
-
-		default:
-		  AssertFatal (0,
-			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_t310 choice: 0,50,100,200,500,1000,1500,2000 ",
-			       RC.config_file_name, i, ue_TimersAndConstants_t310);
-		  break;
-
-		}
-
-		switch (ue_TimersAndConstants_t311) {
-		case 1000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[j] = UE_TimersAndConstants__t311_ms1000;
-		  break;
-
-		case 3110:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[j] = UE_TimersAndConstants__t311_ms3000;
-		  break;
-
-		case 5000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[j] = UE_TimersAndConstants__t311_ms5000;
-		  break;
-
-		case 10000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[j] = UE_TimersAndConstants__t311_ms10000;
-		  break;
-
-		case 15000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[j] = UE_TimersAndConstants__t311_ms15000;
-		  break;
-
-		case 20000:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[j] = UE_TimersAndConstants__t311_ms20000;
-		  break;
-
-		case 31100:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[j] = UE_TimersAndConstants__t311_ms30000;
-		  break;
-
-		default:
-		  AssertFatal (0,
-			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_t311 choice: 1000,3000,5000,10000,150000,20000,30000",
-			       RC.config_file_name, i, ue_TimersAndConstants_t311);
-		  break;
-
-		}
-
-		switch (ue_TimersAndConstants_n310) {
-		case 1:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[j] = UE_TimersAndConstants__n310_n1;
-		  break;
-
-		case 2:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[j] = UE_TimersAndConstants__n310_n2;
-		  break;
-
-		case 3:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[j] = UE_TimersAndConstants__n310_n3;
-		  break;
-
-		case 4:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[j] = UE_TimersAndConstants__n310_n4;
-		  break;
-
-		case 6:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[j] = UE_TimersAndConstants__n310_n6;
-		  break;
-
-		case 8:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[j] = UE_TimersAndConstants__n310_n8;
-		  break;
-
-		case 10:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[j] = UE_TimersAndConstants__n310_n10;
-		  break;
-
-		case 20:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[j] = UE_TimersAndConstants__n310_n20;
-		  break;
-
-		default:
-		  AssertFatal (0,
-			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_n310 choice: 1,2,3,4,6,6,8,10,20",
-			       RC.config_file_name, i, ue_TimersAndConstants_n311);
-		  break;
-
-		}
-
-		switch (ue_TimersAndConstants_n311) {
-		case 1:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[j] = UE_TimersAndConstants__n311_n1;
-		  break;
-
-		case 2:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[j] = UE_TimersAndConstants__n311_n2;
-		  break;
-
-		case 3:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[j] = UE_TimersAndConstants__n311_n3;
-		  break;
-
-		case 4:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[j] = UE_TimersAndConstants__n311_n4;
-		  break;
-
-		case 5:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[j] = UE_TimersAndConstants__n311_n5;
-		  break;
-
-		case 6:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[j] = UE_TimersAndConstants__n311_n6;
-		  break;
-
-		case 8:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[j] = UE_TimersAndConstants__n311_n8;
-		  break;
-
-		case 10:
-		  RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[j] = UE_TimersAndConstants__n311_n10;
-		  break;
-
-		default:
-		  AssertFatal (0,
-			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TimersAndConstants_t311 choice: 1,2,3,4,5,6,8,10",
-			       RC.config_file_name, i, ue_TimersAndConstants_t311);
-		  break;
-
-		}
+                
+                RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t300[j] = ue_TimersAndConstants_t300;
+                RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t301[j] = ue_TimersAndConstants_t301;
+                RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t310[j] = ue_TimersAndConstants_t310;
+                RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_t311[j] = ue_TimersAndConstants_t311;
+                RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310[j] = ue_TimersAndConstants_n310;
+                RRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311[j] = ue_TimersAndConstants_n311;
 
 		switch (ue_TransmissionMode) {
 		case 1:
@@ -1965,275 +1662,32 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	    }
 
 	    /*
-	    // OTG _CONFIG
-	    setting_otg = config_setting_get_member (setting_enb, ENB_CONF_STRING_OTG_CONFIG);
-
-	    if (setting_otg != NULL) {
-	      num_otg_elements  = config_setting_length(setting_otg);
-	      printf("num otg elements %d \n", num_otg_elements);
-	      enb_properties_loc.properties[enb_properties_loc_index]->num_otg_elements = 0;
-
-	      for (j = 0; j < num_otg_elements; j++) {
-		subsetting_otg=config_setting_get_elem(setting_otg, j);
-
-		if (config_setting_lookup_int(subsetting_otg, ENB_CONF_STRING_OTG_UE_ID, &otg_ue_id)) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->otg_ue_id[j] = otg_ue_id;
-		} else {
-		  enb_properties_loc.properties[enb_properties_loc_index]->otg_ue_id[j] = 1;
-		}
-
-		if (config_setting_lookup_string(subsetting_otg, ENB_CONF_STRING_OTG_APP_TYPE, (const char **)&otg_app_type)) {
-		  if ((enb_properties_loc.properties[enb_properties_loc_index]->otg_app_type[j] = map_str_to_int(otg_app_type_names,otg_app_type))== -1) {
-		    enb_properties_loc.properties[enb_properties_loc_index]->otg_app_type[j] = BCBR;
-		  }
-		} else {
-		  enb_properties_loc.properties[enb_properties_loc_index]->otg_app_type[j] = NO_PREDEFINED_TRAFFIC; // 0
-		}
-
-		if (config_setting_lookup_string(subsetting_otg, ENB_CONF_STRING_OTG_BG_TRAFFIC, (const char **)&otg_bg_traffic)) {
-
-		  if ((enb_properties_loc.properties[enb_properties_loc_index]->otg_bg_traffic[j] = map_str_to_int(switch_names,otg_bg_traffic)) == -1) {
-		    enb_properties_loc.properties[enb_properties_loc_index]->otg_bg_traffic[j]=0;
-		  }
-		} else {
-		  enb_properties_loc.properties[enb_properties_loc_index]->otg_bg_traffic[j] = 0;
-		  printf("otg bg %s\n", otg_bg_traffic);
-		}
-
-		enb_properties_loc.properties[enb_properties_loc_index]->num_otg_elements+=1;
-
-	      }
-	    }
-
-	    // log_config
-	    subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_LOG_CONFIG);
+	    // Network Controller 
+	    subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_NETWORK_CONTROLLER_CONFIG);
 
 	    if (subsetting != NULL) {
-	      // global
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_GLOBAL_LOG_LEVEL, (const char **)  &glog_level)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->glog_level = map_str_to_int(log_level_names, glog_level)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->glog_level = LOG_INFO;
+	      if (  (
+		     config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_INTERFACE_NAME,
+						   (const char **)&flexran_agent_interface_name)
+		     && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_IPV4_ADDRESS,
+						      (const char **)&flexran_agent_ipv4_address)
+		     && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_PORT,
+						  &flexran_agent_port)
+		     && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_CACHE,
+						      (const char **)&flexran_agent_cache)
+		     )
+		    ) {
+		enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_interface_name = strdup(flexran_agent_interface_name);
+		cidr = flexran_agent_ipv4_address;
+		address = strtok(cidr, "/");
+		//enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_ipv4_address = strdup(address);
+		if (address) {
+		  IPV4_STR_ADDR_TO_INT_NWBO (address, enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_ipv4_address, "BAD IP ADDRESS FORMAT FOR eNB Agent !\n" );
 		}
 
-		//printf( "\tGlobal log level :\t%s->%d\n",glog_level, enb_properties_loc.properties[enb_properties_loc_index]->glog_level);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->glog_level = LOG_INFO;
+		enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_port = flexran_agent_port;
+		enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_cache = strdup(flexran_agent_cache);
 	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_GLOBAL_LOG_VERBOSITY,(const char **)  &glog_verbosity)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->glog_verbosity = map_str_to_int(log_verbosity_names, glog_verbosity)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->glog_verbosity = LOG_MED;
-		}
-
-		//printf( "\tGlobal log verbosity:\t%s->%d\n",glog_verbosity, enb_properties_loc.properties[enb_properties_loc_index]->glog_verbosity);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->glog_verbosity = LOG_MED;
-	      }
-
-	      // HW
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_HW_LOG_LEVEL, (const char **) &hw_log_level)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->hw_log_level = map_str_to_int(log_level_names,hw_log_level)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->hw_log_level = LOG_INFO;
-		}
-
-		//printf( "\tHW log level :\t%s->%d\n",hw_log_level,enb_properties_loc.properties[enb_properties_loc_index]->hw_log_level);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->hw_log_level = LOG_INFO;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_HW_LOG_VERBOSITY, (const char **) &hw_log_verbosity)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->hw_log_verbosity = map_str_to_int(log_verbosity_names,hw_log_verbosity)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->hw_log_verbosity = LOG_MED;
-		}
-
-		//printf( "\tHW log verbosity:\t%s->%d\n",hw_log_verbosity, enb_properties_loc.properties[enb_properties_loc_index]->hw_log_verbosity);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->hw_log_verbosity = LOG_MED;
-	      }
-
-	      // phy
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_PHY_LOG_LEVEL,(const char **) &phy_log_level)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->phy_log_level = map_str_to_int(log_level_names,phy_log_level)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->phy_log_level = LOG_INFO;
-		}
-
-		//printf( "\tPHY log level :\t%s->%d\n",phy_log_level,enb_properties_loc.properties[enb_properties_loc_index]->phy_log_level);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->phy_log_level = LOG_INFO;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_PHY_LOG_VERBOSITY, (const char **)&phy_log_verbosity)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->phy_log_verbosity = map_str_to_int(log_verbosity_names,phy_log_verbosity)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->phy_log_verbosity = LOG_MED;
-		}
-
-		//printf( "\tPHY log verbosity:\t%s->%d\n",phy_log_level,enb_properties_loc.properties[enb_properties_loc_index]->phy_log_verbosity);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->phy_log_verbosity = LOG_MED;
-	      }
-
-	      //mac
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_MAC_LOG_LEVEL, (const char **)&mac_log_level)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->mac_log_level = map_str_to_int(log_level_names,mac_log_level)) == -1 ) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->mac_log_level = LOG_INFO;
-		}
-
-		//printf( "\tMAC log level :\t%s->%d\n",mac_log_level,enb_properties_loc.properties[enb_properties_loc_index]->mac_log_level);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->mac_log_level = LOG_INFO;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_MAC_LOG_VERBOSITY, (const char **)&mac_log_verbosity)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->mac_log_verbosity = map_str_to_int(log_verbosity_names,mac_log_verbosity)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->mac_log_verbosity = LOG_MED;
-		}
-
-		//printf( "\tMAC log verbosity:\t%s->%d\n",mac_log_verbosity,enb_properties_loc.properties[enb_properties_loc_index]->mac_log_verbosity);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->mac_log_verbosity = LOG_MED;
-	      }
-
-	      //rlc
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_RLC_LOG_LEVEL, (const char **)&rlc_log_level)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->rlc_log_level = map_str_to_int(log_level_names,rlc_log_level)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->rlc_log_level = LOG_INFO;
-		}
-
-		//printf( "\tRLC log level :\t%s->%d\n",rlc_log_level, enb_properties_loc.properties[enb_properties_loc_index]->rlc_log_level);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->rlc_log_level = LOG_INFO;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_RLC_LOG_VERBOSITY, (const char **)&rlc_log_verbosity)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->rlc_log_verbosity = map_str_to_int(log_verbosity_names,rlc_log_verbosity)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->rlc_log_verbosity = LOG_MED;
-		}
-
-		//printf( "\tRLC log verbosity:\t%s->%d\n",rlc_log_verbosity, enb_properties_loc.properties[enb_properties_loc_index]->rlc_log_verbosity);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->rlc_log_verbosity = LOG_MED;
-	      }
-
-	      //pdcp
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_PDCP_LOG_LEVEL, (const char **)&pdcp_log_level)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->pdcp_log_level = map_str_to_int(log_level_names,pdcp_log_level)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->pdcp_log_level = LOG_INFO;
-		}
-
-		//printf( "\tPDCP log level :\t%s->%d\n",pdcp_log_level, enb_properties_loc.properties[enb_properties_loc_index]->pdcp_log_level);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->pdcp_log_level = LOG_INFO;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_PDCP_LOG_VERBOSITY, (const char **)&pdcp_log_verbosity)) {
-		enb_properties_loc.properties[enb_properties_loc_index]->pdcp_log_verbosity = map_str_to_int(log_verbosity_names,pdcp_log_verbosity);
-		//printf( "\tPDCP log verbosity:\t%s->%d\n",pdcp_log_verbosity, enb_properties_loc.properties[enb_properties_loc_index]->pdcp_log_verbosity);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->pdcp_log_verbosity = LOG_MED;
-	      }
-
-	      //rrc
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_RRC_LOG_LEVEL, (const char **)&rrc_log_level)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->rrc_log_level = map_str_to_int(log_level_names,rrc_log_level)) == -1 ) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->rrc_log_level = LOG_INFO;
-		}
-
-		//printf( "\tRRC log level :\t%s->%d\n",rrc_log_level,enb_properties_loc.properties[enb_properties_loc_index]->rrc_log_level);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->rrc_log_level = LOG_INFO;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_RRC_LOG_VERBOSITY, (const char **)&rrc_log_verbosity)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->rrc_log_verbosity = map_str_to_int(log_verbosity_names,rrc_log_verbosity)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->rrc_log_verbosity = LOG_MED;
-		}
-
-		//printf( "\tRRC log verbosity:\t%s->%d\n",rrc_log_verbosity,enb_properties_loc.properties[enb_properties_loc_index]->rrc_log_verbosity);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->rrc_log_verbosity = LOG_MED;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_GTPU_LOG_LEVEL, (const char **)&gtpu_log_level)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_level = map_str_to_int(log_level_names,gtpu_log_level)) == -1 ) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_level = LOG_INFO;
-		}
-
-		//printf( "\tGTPU log level :\t%s->%d\n",gtpu_log_level,enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_level);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_level = LOG_INFO;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_GTPU_LOG_VERBOSITY, (const char **)&gtpu_log_verbosity)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_verbosity = map_str_to_int(log_verbosity_names,gtpu_log_verbosity)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_verbosity = LOG_MED;
-		}
-
-		//printf( "\tGTPU log verbosity:\t%s->%d\n",gtpu_log_verbosity,enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_verbosity);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_verbosity = LOG_MED;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_UDP_LOG_LEVEL, (const char **)&udp_log_level)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->udp_log_level = map_str_to_int(log_level_names,udp_log_level)) == -1 ) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->udp_log_level = LOG_INFO;
-		}
-
-		//printf( "\tUDP log level :\t%s->%d\n",udp_log_level,enb_properties_loc.properties[enb_properties_loc_index]->udp_log_level);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->udp_log_level = LOG_INFO;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_UDP_LOG_VERBOSITY, (const char **)&udp_log_verbosity)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->udp_log_verbosity = map_str_to_int(log_verbosity_names,udp_log_verbosity)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->udp_log_verbosity = LOG_MED;
-		}
-
-		//printf( "\tUDP log verbosity:\t%s->%d\n",udp_log_verbosity,enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_verbosity);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->udp_log_verbosity = LOG_MED;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_OSA_LOG_LEVEL, (const char **)&osa_log_level)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->osa_log_level = map_str_to_int(log_level_names,osa_log_level)) == -1 ) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->osa_log_level = LOG_INFO;
-		}
-
-		//printf( "\tOSA log level :\t%s->%d\n",osa_log_level,enb_properties_loc.properties[enb_properties_loc_index]->osa_log_level);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->osa_log_level = LOG_INFO;
-	      }
-
-	      if (config_setting_lookup_string(subsetting, ENB_CONFIG_STRING_OSA_LOG_VERBOSITY, (const char **)&osa_log_verbosity)) {
-		if ((enb_properties_loc.properties[enb_properties_loc_index]->osa_log_verbosity = map_str_to_int(log_verbosity_names,osa_log_verbosity)) == -1) {
-		  enb_properties_loc.properties[enb_properties_loc_index]->osa_log_verbosity = LOG_MED;
-		}
-
-		//printf( "\tOSA log verbosity:\t%s->%d\n",osa_log_verbosity,enb_properties_loc.properties[enb_properties_loc_index]->gosa_log_verbosity);
-	      } else {
-		enb_properties_loc.properties[enb_properties_loc_index]->osa_log_verbosity = LOG_MED;
-	      }
-
-	    } else { // not configuration is given
-	      enb_properties_loc.properties[enb_properties_loc_index]->glog_level         = LOG_INFO;
-	      enb_properties_loc.properties[enb_properties_loc_index]->glog_verbosity     = LOG_MED;
-	      enb_properties_loc.properties[enb_properties_loc_index]->hw_log_level       = LOG_INFO;
-	      enb_properties_loc.properties[enb_properties_loc_index]->hw_log_verbosity   = LOG_MED;
-	      enb_properties_loc.properties[enb_properties_loc_index]->phy_log_level      = LOG_INFO;
-	      enb_properties_loc.properties[enb_properties_loc_index]->phy_log_verbosity  = LOG_MED;
-	      enb_properties_loc.properties[enb_properties_loc_index]->mac_log_level      = LOG_INFO;
-	      enb_properties_loc.properties[enb_properties_loc_index]->mac_log_verbosity  = LOG_MED;
-	      enb_properties_loc.properties[enb_properties_loc_index]->rlc_log_level      = LOG_INFO;
-	      enb_properties_loc.properties[enb_properties_loc_index]->rlc_log_verbosity  = LOG_MED;
-	      enb_properties_loc.properties[enb_properties_loc_index]->pdcp_log_level     = LOG_INFO;
-	      enb_properties_loc.properties[enb_properties_loc_index]->pdcp_log_verbosity = LOG_MED;
-	      enb_properties_loc.properties[enb_properties_loc_index]->rrc_log_level      = LOG_INFO;
-	      enb_properties_loc.properties[enb_properties_loc_index]->rrc_log_verbosity  = LOG_MED;
-	      enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_level     = LOG_INFO;
-	      enb_properties_loc.properties[enb_properties_loc_index]->gtpu_log_verbosity = LOG_MED;
-	      enb_properties_loc.properties[enb_properties_loc_index]->udp_log_level      = LOG_INFO;
-	      enb_properties_loc.properties[enb_properties_loc_index]->udp_log_verbosity  = LOG_MED;
-	      enb_properties_loc.properties[enb_properties_loc_index]->osa_log_level      = LOG_INFO;
-	      enb_properties_loc.properties[enb_properties_loc_index]->osa_log_verbosity  = LOG_MED;
 	    }
 	    */
 	    break;

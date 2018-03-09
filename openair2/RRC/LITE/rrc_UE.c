@@ -242,6 +242,7 @@ openair_rrc_on_ue(
 {
   unsigned short i;
 
+
     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" UE?:OPENAIR RRC IN....\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
 
@@ -4841,7 +4842,6 @@ rrc_rx_tx_ue(
 )
 //-----------------------------------------------------------------------------
 {
-  //uint8_t        UE_id;
 
 #ifdef LOCALIZATION
   double                         estimated_distance;
