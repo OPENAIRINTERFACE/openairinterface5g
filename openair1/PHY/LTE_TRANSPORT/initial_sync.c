@@ -281,9 +281,12 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
   frame_parms->nb_antenna_ports_eNB = 2;
 
   init_frame_parms(frame_parms,1);
-  /*
-  write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
-  exit(-1);
+
+/* 
+  if (ue->Mod_id == 1) {	 
+    write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
+    exit(-1);
+  }
   */
   sync_pos = lte_sync_time(ue->common_vars.rxdata,
                            frame_parms,
@@ -333,6 +336,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"FDD Normal prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
+    write_output("rxdata.m","rxd",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
   }
 
 
