@@ -462,7 +462,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
   do { 
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
-    if (oai_exit == 1) break;
+    if (oai_exit == 1 || ru->cmd== STOP_RU) break;
     if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
     else if (packet_type == IF4p5_PULTICK) {           
       if ((proc->first_rx==0) && (f!=*frame)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d\n",f,*frame);       
@@ -511,8 +511,8 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
 
   proc->symbol_mask[sf] = 0;  
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
-  LOG_D(PHY,"RU %d: fh_if4p5_south_in sleeping ...\n",ru->idx);
-  usleep(100);
+  LOG_D(PHY,"RU %d: fh_if4p5_south_in returning ...\n",ru->idx);
+  //  usleep(100);
 }
 
 // Dummy FH from south for getting synchronization from master RU
@@ -1281,7 +1281,7 @@ void wakeup_eNBs(RU_t *ru) {
     sprintf(string,"Incoming RU %d",ru->idx);
     
     pthread_mutex_lock(&proc->mutex_RU);
-    LOG_I(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
+    LOG_D(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
           ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,ru->wait_cnt,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx]);
 
     if (proc->RU_mask[ru->proc.subframe_rx] == 0)
@@ -1306,7 +1306,7 @@ void wakeup_eNBs(RU_t *ru) {
     }
     
     pthread_mutex_unlock(&proc->mutex_RU);
-    LOG_I(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
+    LOG_D(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
     ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
   }
   else { // multiple eNB case for later
@@ -1820,7 +1820,7 @@ static void* ru_thread( void* param ) {
 	
   while (!oai_exit) {
   
-    if (ru->if_south != LOCAL_RF) ru->wait_cnt = 100;
+    if (ru->if_south != LOCAL_RF && ru->is_slave==1) ru->wait_cnt = 100;
     else                          ru->wait_cnt = 0;
 
     // wait to be woken up
@@ -1840,7 +1840,8 @@ static void* ru_thread( void* param ) {
 
     // if an asnych_rxtx thread exists
     // wakeup the thread because the devices are ready at this point
-	 
+	
+    LOG_I(PHY,"Locking asynch mutex\n"); 
     if ((ru->fh_south_asynch_in)||(ru->fh_north_asynch_in)) {
       pthread_mutex_lock(&proc->mutex_asynch_rxtx);
       proc->instance_cnt_asynch_rxtx=0;
@@ -1853,7 +1854,7 @@ static void* ru_thread( void* param ) {
     if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
   
-
+    LOG_I(PHY,"Starting steady-state operation\n");
     // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
     while (ru->state == RU_RUN) {
 
