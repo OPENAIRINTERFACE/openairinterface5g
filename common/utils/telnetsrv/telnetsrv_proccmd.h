@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -18,6 +18,7 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+
 
 /*! \file common/utils/telnetsrv/telnetsrv_proccmd.h
  * \brief: Include file defining telnet commands related to this linux process
@@ -43,15 +44,33 @@ extern int proccmd_log(char *buf, int debug, telnet_printfunc_t prnt);
 telnetshell_vardef_t proc_vardef[] = {
 {"",0,NULL}
 };
+#define PROCCMD_LOG_HELP_STRING " log sub commands: \n\
+ show:  		     display current log configuration \n\
+ online, noonline:	     enable or disable console logs \n\
+ enable, disable id1-id2:    enable or disable logs for components index id1 to id2 \n\
+ level_<level> id1-id2:      set log level to <level> for components index id1 to id2 \n\
+ level_<verbosity> id1-id2:  set log verbosity to <verbosity> for components index id1 to id2 \n\
+use the show command to get the values for <level>, <verbosity> and the list of component indexes \
+that can be used for id1 and id2 \n"    
+
+#define PROCCMD_THREAD_HELP_STRING " thread sub commands: \n\
+ <thread id> aff <core>  :    set affinity of thread <thread id> to core <core> \n\
+ <thread id> prio <prio> :    set scheduling parameters for thread <thread id>  \n\
+                   if prio < -20: linux scheduling policy set to FIFO, \n\
+                                  with priority = -20 - prio \n\
+                   if prio > 19: linux scheduling policy set to OTHER, \n\
+                                  with priority (nice value) =  prio \n\
+  use \"softmodem show thread\" to get <thread id> \n"
+ 
 
 telnetshell_cmddef_t proc_cmdarray[] = {
-   {"show","loglvl|thread", proccmd_show},
-   {"log","[enable,disable]", proccmd_log},
-   {"thread","<id> aff|prio <aff|prio>", proccmd_thread},
+   {"show","loglvl|thread|config", proccmd_show},
+   {"log","(enter help for details)", proccmd_log},
+   {"thread","(enter help for details)", proccmd_thread},
    {"exit","", proccmd_exit},
    {"","",NULL},
 };
 #else
-extern void add_proccmd_cmds();
+extern void add_proccmd_cmds(void);
 #endif  /* TELNETSRV_PROCCMD_MAIN */
 

@@ -162,7 +162,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   int16_t **chest_t;
   int16_t **chest_f;
   int16_t *pusch_llr;
-  int16_t *pusch_comp;
+  int32_t *pusch_comp;
   int32_t *pucch1_comp;
   int32_t *pucch1_thres;
   int32_t *pucch1ab_comp;
@@ -200,7 +200,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   chest_t = (int16_t**) phy_vars_enb->srs_vars[UE_id].srs_ch_estimates[eNB_id];
   chest_f = (int16_t**) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates[eNB_id];
   pusch_llr = (int16_t*) phy_vars_enb->pusch_vars[UE_id]->llr;
-  pusch_comp = (int16_t*) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[0];
+  pusch_comp = (int32_t*) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[0];
   pucch1_comp = (int32_t*) phy_vars_enb->pucch1_stats[UE_id];
   pucch1_thres = (int32_t*) phy_vars_enb->pucch1_stats_thres[UE_id];
   pucch1ab_comp = (int32_t*) phy_vars_enb->pucch1ab_stats[UE_id];

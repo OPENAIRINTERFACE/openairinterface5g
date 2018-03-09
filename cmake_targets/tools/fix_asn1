@@ -5,6 +5,7 @@
 
 RRC_Rel14=(
   "SystemInformation-r8-IEs.h" 4df485c5ddf2540eca271876cdc512caa19b0890 "fix_asn1.data/RRC.rel14/SystemInformation-r8-IEs.h.diff"
+  "SystemInformation-NB-r13-IEs.h" 6d91332d5c39205819b06e5e36efe62ff8e5b33b "fix_asn1.data/RRC.rel14/SystemInformation-NB-r13-IEs.h.diff"
 )
 
 RRC_Rel10=(
