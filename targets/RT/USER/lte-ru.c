@@ -1300,7 +1300,7 @@ void wakeup_eNBs(RU_t *ru) {
     if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) {
       proc->RU_mask[ru->proc.subframe_rx] = 0;
       clock_gettime(CLOCK_MONOTONIC,&t);
-      AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+500000,
+      AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+5000000,
                   "Time difference for subframe %d => %d > 5ms\n",
                   ru->proc.subframe_rx,t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
     }
