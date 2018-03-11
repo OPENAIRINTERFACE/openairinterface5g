@@ -60,7 +60,7 @@ int phy_init_RU(RU_t *ru) {
     }
   } // IF5 or local RF
   else {
-    LOG_I(PHY,"No rxdata/txdata for RU\n");
+    //    LOG_I(PHY,"No rxdata/txdata for RU\n");
     ru->common.txdata        = (int32_t**)NULL;
     ru->common.rxdata        = (int32_t**)NULL;
 

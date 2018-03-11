@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -42,8 +42,6 @@
 #define TELNETVAR_PHYCC1    1
 
 telnetshell_vardef_t phy_vardef[] = {
-{"phycc1",TELNET_VARTYPE_PTR,NULL},
-{"phycc2",TELNET_VARTYPE_PTR,NULL},
 //{"iqmax",TELNET_VARTYPE_INT16,NULL},
 //{"iqmin",TELNET_VARTYPE_INT16,NULL},
 //{"loglvl",TELNET_VARTYPE_INT32,NULL},
@@ -57,7 +55,7 @@ telnetshell_vardef_t phy_vardef[] = {
 
 #else
 
-extern void add_phy_cmds();
+extern void add_phy_cmds(void);
 
 #endif
 

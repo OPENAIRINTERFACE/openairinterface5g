@@ -188,7 +188,7 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
   }
 
 
-  slot_offset = (uint32_t)slot * frame_parms->samples_per_tti/2-ru->N_TA_offset;
+  slot_offset = ((uint32_t)slot * frame_parms->samples_per_tti/2)-ru->N_TA_offset;
   slot_offset2 = (uint32_t)(slot&1) * frame_parms->samples_per_tti/2;
 
   len = frame_parms->samples_per_tti/2;

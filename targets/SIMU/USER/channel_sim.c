@@ -144,6 +144,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
     if (!hold_channel) {
       // calculate the random channel from each RU
       for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+        frame_parms = &RC.ru[ru_id]->frame_parms;
 
         random_channel(RU2UE[ru_id][UE_id][CC_id],abstraction_flag);
         /*

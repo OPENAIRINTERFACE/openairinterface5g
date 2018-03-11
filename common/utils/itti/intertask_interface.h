@@ -108,6 +108,18 @@ int itti_send_broadcast_message(MessageDef *message_p);
  **/
 int itti_send_msg_to_task(task_id_t task_id, instance_t instance, MessageDef *message);
 
+/* TODO: this is a hack. Almost no caller of itti_send_msg_to_task checks
+ * the return value so it has been changed to crash the program in case
+ * of failure instead of returning -1 as the documentation above says.
+ * The RLC UM code may receive too much data when doing UDP at a higher
+ * throughput than the link allows and so for this specific case we need
+ * a version that actually returns -1 on failure.
+ *
+ * This needs to be cleaned at some point.
+ */
+/* look for HACK_RLC_UM_LIMIT for others places related to the hack. Please do not remove this comment. */
+int itti_try_send_msg_to_task(task_id_t task_id, instance_t instance, MessageDef *message);
+
 /** \brief Add a new fd to monitor.
  * NOTE: it is up to the user to read data associated with the fd
  *  \param task_id Task ID of the receiving task

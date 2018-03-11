@@ -269,3 +269,39 @@ message flex_pdcp_stats {
 
 	optional uint64 sfn=17;
 }
+
+//
+// MAC Stats
+//
+
+message flex_mac_stats {
+
+    optional uint32 tbs_dl = 1;
+    optional uint32 tbs_ul = 2;
+    optional uint32 prb_retx_dl = 3;
+    optional uint32 prb_retx_ul = 4;
+    optional uint32 prb_dl = 5;
+    optional uint32 prb_ul = 6;
+    optional uint32 mcs1_dl = 7;
+    optional uint32 mcs2_dl = 8;
+    optional uint32 mcs1_ul = 9;
+    optional uint32 mcs2_ul = 10;
+    optional uint32 total_bytes_sdus_ul = 11;
+    optional uint32 total_bytes_sdus_dl = 12;
+    optional uint32 total_prb_retx_dl = 13;
+    optional uint32 total_prb_retx_ul = 14;
+    optional uint32 total_prb_dl = 15;
+    optional uint32 total_prb_ul = 16;
+    optional uint32 total_pdu_dl = 17;
+    optional uint32 total_pdu_ul = 18;
+    optional uint32 total_tbs_dl = 19;
+    optional uint32 total_tbs_ul = 20;
+    repeated flex_mac_sdus_dl mac_sdus_dl = 21;
+    optional uint32 harq_round = 22;
+}
+
+message flex_mac_sdus_dl {
+    
+    optional uint32 sdu_length = 1; 
+    optional uint32 lcid = 2;
+}

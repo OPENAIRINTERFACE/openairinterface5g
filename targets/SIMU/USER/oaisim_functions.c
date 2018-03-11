@@ -868,7 +868,7 @@ void check_and_adjust_params(void)
 {
 
   int32_t ret;
-  int i,j;
+  //int i,j;
 
   if (oai_emulation.info.nb_ue_local  + oai_emulation.info.nb_rn_local > NUMBER_OF_UE_MAX) {
     LOG_E(EMU,"Enter fewer than %d UEs/RNs for the moment or change the NUMBER_OF_UE_MAX\n", NUMBER_OF_UE_MAX);
@@ -1081,7 +1081,7 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   while (sample_count<nsamps) {
     while (current_ru_rx_timestamp[ru_id][CC_id]<
 	   (nsamps+last_ru_rx_timestamp[ru_id][CC_id])) {
-      LOG_D(EMU,"RU: current TS %llu, last TS %llu, sleeping\n",current_ru_rx_timestamp[ru_id][CC_id],last_ru_rx_timestamp[ru_id][CC_id]);
+      LOG_D(EMU,"RU: current TS %"PRIi64", last TS %"PRIi64", sleeping\n",current_ru_rx_timestamp[ru_id][CC_id],last_ru_rx_timestamp[ru_id][CC_id]);
       usleep(500);
     }
 
@@ -1136,13 +1136,13 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
     read_size = sptti;
 
   while (sample_count<nsamps) {
-    LOG_D(EMU,"UE %d: DL simulation 1: UE_trx_read : current TS now %llu, last TS %llu\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+    LOG_D(EMU,"UE %d: DL simulation 1: UE_trx_read : current TS now %"PRIi64", last TS %"PRIi64"\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
     while (current_UE_rx_timestamp[UE_id][CC_id] < 
 	   (last_UE_rx_timestamp[UE_id][CC_id]+read_size)) {
-      LOG_D(EMU,"UE %d: DL simulation 2: UE_trx_read : current TS %llu, last TS %llu, sleeping\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+      LOG_D(EMU,"UE %d: DL simulation 2: UE_trx_read : current TS %"PRIi64", last TS %"PRIi64", sleeping\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
       usleep(500);
     }
-    LOG_D(EMU,"UE %d: DL simulation 3: UE_trx_read : current TS now %llu, last TS %llu\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
+    LOG_D(EMU,"UE %d: DL simulation 3: UE_trx_read : current TS now %"PRIi64", last TS %"PRIi64"\n",UE_id,current_UE_rx_timestamp[UE_id][CC_id],last_UE_rx_timestamp[UE_id][CC_id]);
 
     // if we cross a subframe-boundary
     subframe = (last_UE_rx_timestamp[UE_id][CC_id]/sptti)%10;
@@ -1174,10 +1174,10 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
 	      UE_id,
 	      CC_id);
-    LOG_D(EMU,"UE %d: DL simulation 6: UE_trx_read @ TS %llu (%llu)=> frame %d, subframe %d\n",
-	  UE_id,(unsigned long long)current_UE_rx_timestamp[UE_id][CC_id],
-	  (unsigned long long)last_UE_rx_timestamp[UE_id][CC_id],
-	  ((unsigned long long)last_UE_rx_timestamp[UE_id][CC_id]/(sptti*10))&1023,
+    LOG_D(EMU,"UE %d: DL simulation 6: UE_trx_read @ TS %"PRIi64" (%"PRIi64")=> frame %d, subframe %d\n",
+	  UE_id, current_UE_rx_timestamp[UE_id][CC_id],
+	  last_UE_rx_timestamp[UE_id][CC_id],
+	  (int)((last_UE_rx_timestamp[UE_id][CC_id]/(sptti*10))&1023),
 	  subframe);
 
     last_UE_rx_timestamp[UE_id][CC_id] += read_size;
@@ -1367,9 +1367,11 @@ void init_ocm(void)
 
   /* Added for PHY abstraction */
 
-  char* frame_type = "unknown";
+  /* TODO: frame_type is unused, is it intended? */
+  //char* frame_type = "unknown";
   LTE_DL_FRAME_PARMS *fp = &RC.ru[0]->frame_parms;
 
+#if 0
   switch (fp->frame_type) {
   case FDD:
     frame_type = "FDD";
@@ -1379,6 +1381,7 @@ void init_ocm(void)
     frame_type = "TDD";
     break;
   }
+#endif
 
   if (abstraction_flag) {
 

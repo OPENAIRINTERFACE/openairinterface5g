@@ -37,9 +37,9 @@
 ///
 ///
 
-#ifdef __AVX2__
 
-#include "PHY/sse_intrin.h"
+
+
 
 #ifndef TEST_DEBUG
 #include "PHY/defs.h"
@@ -58,6 +58,8 @@
 #include "mex.h"
 #endif
 
+#ifdef __AVX2__
+#include "PHY/sse_intrin.h"
 
 //#define DEBUG_LOGMAP
 
@@ -837,7 +839,7 @@ void free_td16avx2(void)
   }
 }
 
-void init_td16avx2()
+void init_td16avx2(void)
 {
 
   int ind,i,i2,i3,j,n,pi,pi2_i,pi2_pi;
@@ -1407,6 +1409,36 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
   fclose(fdavx2);
 #endif
   return(iteration_cnt);
+}
+#else  //__AVX2__
+unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
+						  int16_t *y2,
+						  uint8_t *decoded_bytes,
+						  uint8_t *decoded_bytes2,
+						  uint16_t n,
+						  uint16_t f1,
+						  uint16_t f2,
+						  uint8_t max_iterations,
+						  uint8_t crc_type,
+						  uint8_t F,
+						  time_stats_t *init_stats,
+						  time_stats_t *alpha_stats,
+						  time_stats_t *beta_stats,
+						  time_stats_t *gamma_stats,
+						  time_stats_t *ext_stats,
+						  time_stats_t *intl1_stats,
+						  time_stats_t *intl2_stats)
+{
+   return 0;
+}
+void free_td16avx2(void)
+{
+
+}
+
+void init_td16avx2(void)
+{
+    
 }
 
 #endif //__AVX2__

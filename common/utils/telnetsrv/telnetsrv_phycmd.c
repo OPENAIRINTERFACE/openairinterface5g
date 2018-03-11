@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -41,7 +41,7 @@
 char *prnbuff;
 extern int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length);
 
-void init_phytelnet()
+void init_phytelnet(void)
 {
 prnbuff=malloc(get_phybsize() );
 if (prnbuff == NULL)
@@ -134,7 +134,7 @@ telnetshell_cmddef_t phy_cmdarray[] = {
 
 
 /*-------------------------------------------------------------------------------------*/
-void add_phy_cmds()
+void add_phy_cmds(void)
 {
 
    init_phytelnet();

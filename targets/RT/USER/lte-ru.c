@@ -95,6 +95,10 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "enb_config.h"
 //#include "PHY/TOOLS/time_meas.h"
 
+/* these variables have to be defined before including ENB_APP/enb_paramdef.h */
+static int DEFBANDS[] = {7};
+static int DEFENBS[] = {0};
+
 #include "ENB_APP/enb_paramdef.h"
 #include "common/config/config_userapi.h"
 
@@ -1954,7 +1958,13 @@ static void* ru_thread( void* param ) {
   
 
   printf( "Exiting ru_thread \n");
- 
+
+  if (ru->stop_rf != NULL) {
+    if (ru->stop_rf(ru) != 0)
+      LOG_E(HW,"Could not stop the RF device\n");
+    else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+  }
+
   ru_thread_status = 0;
   return &ru_thread_status;
 
@@ -2062,8 +2072,10 @@ int start_rf(RU_t *ru) {
   return(ru->rfdevice.trx_start_func(&ru->rfdevice));
 }
 
-void stop_rf(RU_t *ru){
+int stop_rf(RU_t *ru)
+{
   ru->rfdevice.trx_end_func(&ru->rfdevice);
+  return 0;
 }
 
 extern void fep_full(RU_t *ru);
@@ -2358,7 +2370,6 @@ void configure_ru(int idx,
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t*)arg;
   int ret;
-  int i;
 
   LOG_I(PHY, "Received capabilities from RRU %d\n",idx);
 
@@ -2393,6 +2404,7 @@ void configure_ru(int idx,
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
     
 #ifdef Rel14
+    int i;
     for (i=0;i<4;i++) {
       config->emtc_prach_CElevel_enable[0][i]  = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i];
       config->emtc_prach_FreqOffset[0][i]      = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i];
@@ -2553,7 +2565,7 @@ void set_function_spec_param(RU_t *ru)
     ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
     ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
     ru->start_rf               = start_rf;                            // need to start the local RF interface
-    ru->stop_rf		       = stop_rf;
+    ru->stop_rf                = stop_rf;
     printf("configuring ru_id %d (start_rf %p)\n", ru->idx, start_rf);
     /*
       if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
@@ -2585,6 +2597,7 @@ void set_function_spec_param(RU_t *ru)
       ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
     }
     ru->start_rf               = NULL;                 // no local RF
+    ru->stop_rf                = NULL;
     ru->start_if               = start_if;             // need to start if interface for IF5
     ru->ifdevice.host_type     = RAU_HOST;
     ru->ifdevice.eth_params    = &ru->eth_params;
@@ -2609,6 +2622,7 @@ void set_function_spec_param(RU_t *ru)
     ru->fh_north_out           = NULL;
     ru->fh_north_asynch_in     = NULL;
     ru->start_rf               = NULL;                // no local RF
+    ru->stop_rf                = NULL;
     ru->start_if               = start_if;            // need to start if interface for IF4p5
     ru->ifdevice.host_type     = RAU_HOST;
     ru->ifdevice.eth_params    = &ru->eth_params;

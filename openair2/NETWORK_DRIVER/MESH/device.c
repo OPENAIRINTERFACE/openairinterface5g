@@ -241,7 +241,7 @@ int nas_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
     // End debug information
     netif_stop_queue(dev);
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) || RHEL_RELEASE_CODE>=1796
     netif_trans_update(dev);
 #else
     dev->trans_start = jiffies;
@@ -306,7 +306,7 @@ void nas_tx_timeout(struct net_device *dev)
   printk("TX_TIMEOUT: begin\n");
   //  (struct nas_priv *)(dev->priv)->stats.tx_errors++;
   (priv->stats).tx_errors++;
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) || RHEL_RELEASE_CODE>=1796
   netif_trans_update(dev);
 #else
   dev->trans_start = jiffies;
