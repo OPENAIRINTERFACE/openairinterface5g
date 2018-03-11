@@ -1077,9 +1077,9 @@ static void* ru_thread_prach( void* param ) {
 
   thread_top_init("ru_thread_prach",1,500000L,1000000L,20000000L);
 
-  while (RC.ru_mask>0) {
+  while (RC.ru_mask>0 && ru->function!=eNodeB_3GPP) {
     usleep(1e6);
-    LOG_I(PHY,"%s() RACH waiting for RU to be configured\n", __FUNCTION__);
+    LOG_D(PHY,"%s() RACH waiting for RU to be configured\n", __FUNCTION__);
   }
   LOG_I(PHY,"%s() RU configured - RACH processing thread running\n", __FUNCTION__);
 
@@ -1564,7 +1564,7 @@ static void* ru_thread_control( void* param ) {
   }
 
   
-  ru->state = RU_IDLE;
+  ru->state = (ru->function==eNodeB_3GPP)? RU_RUN : RU_IDLE;
   LOG_I(PHY,"Control channel ON for RU %d\n", ru->idx);
 
   while (!oai_exit) // Change the cond
@@ -1798,7 +1798,6 @@ static void* ru_thread( void* param ) {
   LTE_DL_FRAME_PARMS *fp      = &ru->frame_parms;
   int                subframe =9;
   int                frame    =1023; 
-  struct timespec  time_rf;
 
 
 
@@ -1814,12 +1813,14 @@ static void* ru_thread( void* param ) {
     else                          ru->wait_cnt = 0;
 
     // wait to be woken up
-    if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
+    if (ru->function!=eNodeB_3GPP) {
+      if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
+    }
+    else wait_sync("ru_thread");
 	  
     if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru-%d state = %s != RU_RUN\n",ru->idx,ru_states[ru->state]);
     else if (ru->is_slave == 1) AssertFatal(ru->state == RU_SYNC || ru->state == RU_RUN,"ru %d state = %s != RU_SYNC or RU_RUN\n",ru->idx,ru_states[ru->state]);  
     // Start RF device if any
-    clock_gettime(CLOCK_MONOTONIC,&time_rf); 
     if (ru->start_rf) {
       if (ru->start_rf(ru) != 0)
 	LOG_E(HW,"Could not start the RF device\n");
@@ -1873,7 +1874,8 @@ static void* ru_thread( void* param ) {
 	LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
 	break;
       }
-  
+      if (oai_exit == 1) break;
+ 
       if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
       if (ru->wait_cnt > 0) {
@@ -2151,8 +2153,7 @@ void init_RU_proc(RU_t *ru) {
 #endif
 #endif
   
-  pthread_create( &proc->pthread_ctrl, attr_ctrl, ru_thread_control, (void*)ru );
-  pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
+  if (ru->function!=eNodeB_3GPP) pthread_create( &proc->pthread_ctrl, attr_ctrl, ru_thread_control, (void*)ru );
   
 
   if (ru->function == NGFI_RRU_IF4p5) {
@@ -2174,6 +2175,20 @@ void init_RU_proc(RU_t *ru) {
   else if (ru->function == eNodeB_3GPP && ru->if_south == LOCAL_RF) { // DJP - need something else to distinguish between monolithic and PNF
     LOG_I(PHY,"%s() DJP - added creation of pthread_prach\n", __FUNCTION__);
     pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void*)ru );
+    ru->state=RU_RUN;
+    fill_rf_config(ru,ru->rf_config_file);
+    init_frame_parms(&ru->frame_parms,1);
+    ru->frame_parms.nb_antennas_rx = ru->nb_rx;
+    phy_init_RU(ru);
+
+
+    openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+
+   if (setup_RU_buffers(ru)!=0) {
+      printf("Exiting, cannot initialize RU Buffers\n");
+      exit(-1);
+   }
+
   }
 
   if (get_nprocs()>=2) { 
@@ -2181,7 +2196,16 @@ void init_RU_proc(RU_t *ru) {
     if (ru->feptx_ofdm) init_feptx_thread(ru,NULL);
   } 
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void*)ru); 
-  
+ 
+  pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
+  if (ru->function == eNodeB_3GPP) {
+    usleep(10000);
+    LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d) is ready in state %s\n",ru->idx,ru->is_slave,ru_states[ru->state]);
+    pthread_mutex_lock(&RC.ru_mutex);
+    RC.ru_mask &= ~(1<<ru->idx);
+    pthread_cond_signal(&RC.ru_cond);
+    pthread_mutex_unlock(&RC.ru_mutex);
+  }
 }
 
 void kill_RU_proc(int inst)
@@ -2762,6 +2786,7 @@ void RCconfig_RU(void) {
 	if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
 	  RC.ru[j]->if_south                        = LOCAL_RF;
 	  RC.ru[j]->function                        = eNodeB_3GPP;
+          RC.ru[j]->state                           = RU_RUN;
 	  printf("Setting function for RU %d to eNodeB_3GPP\n",j);
         }
         else { 
