@@ -764,7 +764,6 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 			  CC_id, UE_id, subframeP, S_DL_NONE);
 	continue;
       }
-#warning RK->CR This old API call has to be revisited for FAPI, or logic must be changed
 #if 0
       /* add "fake" DCI to have CCE_allocation_infeasible work properly for next allocations */
       /* if we don't add it, next allocations may succeed but overall allocations may fail */

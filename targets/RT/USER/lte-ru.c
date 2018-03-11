@@ -144,11 +144,10 @@ extern uint16_t sf_ahead;
 
 extern void wait_eNBs(void);
 
-char ru_states[6][8] = {"RU_IDLE","RU_CONFIG","RU_READY","RU_RUN","RU_ERROR","RU_SYNC"};
+char ru_states[6][9] = {"RU_IDLE","RU_CONFIG","RU_READY","RU_RUN","RU_ERROR","RU_SYNC"};
 
 int send_tick(RU_t *ru){
   
-  ssize_t      msg_len,len;
   RRU_CONFIG_msg_t rru_config_msg;
 
   rru_config_msg.type = RAU_tick; 
@@ -163,7 +162,6 @@ int send_tick(RU_t *ru){
 
 int send_config(RU_t *ru, RRU_CONFIG_msg_t rru_config_msg){
 
-  ssize_t      msg_len,len;
 
   rru_config_msg.type = RRU_config;
   rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t)-MAX_RRU_CONFIG_SIZE+sizeof(RRU_config_t);
@@ -1260,7 +1258,7 @@ void do_ru_synch(RU_t *ru) {
   rru_config_msg.type = RRU_sync_ok;
   rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
 
-  LOG_I(PHY,"Sending RRU_sync_ok to RAU\n", ru->idx);
+  LOG_I(PHY,"Sending RRU_sync_ok to RAU\n");
   AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
 
   LOG_I(PHY,"Exiting synch routine\n");
@@ -1305,7 +1303,7 @@ void wakeup_eNBs(RU_t *ru) {
       proc->RU_mask[ru->proc.subframe_rx] = 0;
       clock_gettime(CLOCK_MONOTONIC,&t);
       AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+5000000,
-                  "Time difference for subframe %d => %d > 5ms\n",
+                  "Time difference for subframe %d => %lu > 5ms\n",
                   ru->proc.subframe_rx,t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
     }
     
@@ -1549,18 +1547,11 @@ void reset_proc(RU_t *ru);
 
 static void* ru_thread_control( void* param ) {
 
-  static int ru_thread_status;
 
   RU_t               *ru      = (RU_t*)param;
   RU_proc_t          *proc    = &ru->proc;
   RRU_CONFIG_msg_t   rru_config_msg;
   ssize_t	     msg_len;
-  int                tick_received          = 0;
-  int                configuration_received = 0;
-  int                start_received = 0;
-  RRU_capabilities_t *cap;
-  int                i;
-  int                ret;
   int                len;
 
 
@@ -1651,7 +1642,7 @@ static void* ru_thread_control( void* param ) {
 					 
 		//if (ru->is_slave == 1) lte_sync_time_init(&ru->frame_parms);
 
-		ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+		openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
 
 		if (setup_RU_buffers(ru)!=0) {
 		  printf("Exiting, cannot initialize RU Buffers\n");
@@ -1795,25 +1786,20 @@ static void* ru_thread_control( void* param ) {
 
 
     }//while
-
+  return(NULL);
 }
 
 
 static void* ru_thread( void* param ) {
 
-  static int ru_thread_status;
 
   RU_t               *ru      = (RU_t*)param;
   RU_proc_t          *proc    = &ru->proc;
   LTE_DL_FRAME_PARMS *fp      = &ru->frame_parms;
-  int                ret;
   int                subframe =9;
   int                frame    =1023; 
   struct timespec  time_rf;
-  long old_time;
 
-  // set default return value
-  ru_thread_status = 0;
 
 
   // set default return value
@@ -1887,11 +1873,6 @@ static void* ru_thread( void* param ) {
 	LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
 	break;
       }
-      old_time = time_rf.tv_nsec;
-      clock_gettime(CLOCK_MONOTONIC,&time_rf);
-      //if ((time_rf.tv_nsec > old_time + 1200000) || (time_rf.tv_nsec < old_time + 500000))
-      //   LOG_I(PHY,"RU thread %d, frame %d (%p), subframe %d : RF time difference : %lu\n",
-      //      ru->idx, frame,&frame,subframe,time_rf.tv_nsec - old_time);
   
       if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
@@ -1905,8 +1886,8 @@ static void* ru_thread( void* param ) {
            rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
            ((uint16_t*)&rru_config_msg.msg[0])[0] = RC.ru[0]->proc.frame_rx;
            ru->cmd=WAIT_RESYNCH;
-           LOG_I(PHY,"Sending Frame Resynch %d to RRU\n", ru->idx,RC.ru[0]->proc.frame_rx);
-           AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
+           LOG_I(PHY,"Sending Frame Resynch %d to RRU %d\n", RC.ru[0]->proc.frame_rx,ru->idx);
+           AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU\n");
 
          }
       }
@@ -1965,8 +1946,7 @@ static void* ru_thread( void* param ) {
     else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   }
 
-  ru_thread_status = 0;
-  return &ru_thread_status;
+  return NULL;
 
 }
 
@@ -2651,7 +2631,6 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
   
   int ru_id;
   RU_t *ru;
-  int ret;
   PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
   int i;
   int CC_id;
