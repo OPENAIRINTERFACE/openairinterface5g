@@ -2168,8 +2168,6 @@ void init_RU_proc(RU_t *ru) {
 	(ru->function == NGFI_RRU_IF5) ||
 	(ru->function == NGFI_RRU_IF4p5)) pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, ru_thread_asynch_rxtx, (void*)ru );
     
-    snprintf( name, sizeof(name), "ru_thread_FH %d", ru->idx );
-    pthread_setname_np( proc->pthread_FH, name );
     
   }
   else if (ru->function == eNodeB_3GPP && ru->if_south == LOCAL_RF) { // DJP - need something else to distinguish between monolithic and PNF
@@ -2198,6 +2196,9 @@ void init_RU_proc(RU_t *ru) {
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void*)ru); 
  
   pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
+  snprintf( name, sizeof(name), "ru_thread_FH %d", ru->idx );
+  pthread_setname_np( proc->pthread_FH, name );
+
   if (ru->function == eNodeB_3GPP) {
     usleep(10000);
     LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d) is ready in state %s\n",ru->idx,ru->is_slave,ru_states[ru->state]);

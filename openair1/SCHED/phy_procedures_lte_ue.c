@@ -81,7 +81,7 @@ extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
 #endif
 
 
-#define UE_DEBUG_TRACE 1
+//#define UE_DEBUG_TRACE 1
 
 void dump_dlsch(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid)
 {

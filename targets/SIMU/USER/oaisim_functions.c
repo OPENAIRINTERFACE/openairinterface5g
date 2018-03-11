@@ -1529,11 +1529,11 @@ void update_ocm()
     //LOG_D(OMG," extracting position of eNb...\n");
     //display_node_list(enb_node_list);
     //  display_node_list(ue_node_list);
-    extract_position(enb_node_list, enb_data, RC.nb_RU);
+    //extract_position(enb_node_list, enb_data, RC.nb_RU);
     //extract_position_fixed_enb(enb_data, NB_eNB_INST,frame);
     //LOG_D(OMG," extracting position of UE...\n");
     //      if (oai_emulation.info.omg_model_ue == TRACE)
-    extract_position(ue_node_list, ue_data, NB_UE_INST);
+    //extract_position(ue_node_list, ue_data, NB_UE_INST);
 
     /* if (frame % 50 == 0)
        LOG_N(OCM,"Path loss for TTI %d : \n", frame);

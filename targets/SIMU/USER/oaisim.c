@@ -814,14 +814,12 @@ l2l1_task (void *args_p)
               fflush(eNB_stats[eNB_inst]);
             }
 #ifdef OPENAIR2
-/*
             if (eNB_l2_stats) {
               len = dump_eNB_l2_stats (stats_buffer, 0);
               rewind (eNB_l2_stats);
               fwrite (stats_buffer, 1, len, eNB_l2_stats);
               fflush(eNB_l2_stats);
             }
-*/
 
 #endif
 */
