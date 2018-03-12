@@ -1563,7 +1563,8 @@ static void* ru_thread_control( void* param ) {
   // Start IF device if any
   if (ru->start_if) {
     LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
-    AssertFatal(ru->start_if(ru,NULL) == 0, "Could not start the IF device\n");
+    AssertFatal(
+	ru->start_if(ru,NULL) 	== 0, "Could not start the IF device\n");
 
     if (ru->if_south != LOCAL_RF) wait_eNBs();
   }
@@ -1647,7 +1648,16 @@ static void* ru_thread_control( void* param ) {
 					 
 		//if (ru->is_slave == 1) lte_sync_time_init(&ru->frame_parms);
 
-		ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+		if (ru->rfdevice.is_init != 1){
+			ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+		}
+
+		
+		AssertFatal((ru->rfdevice.trx_config_func(&ru->rfdevice,&ru->openair0_cfg)==0), 
+				"Failed to configure RF device for RU %d\n",ru->idx);
+
+
+
 
 		if (setup_RU_buffers(ru)!=0) {
 		  printf("Exiting, cannot initialize RU Buffers\n");
@@ -1879,7 +1889,7 @@ static void* ru_thread( void* param ) {
       else if (ru->cmd == STOP_RU) {
 	ru->state = RU_IDLE;
 	ru->cmd   = EMPTY;
-	LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+	LOG_I(PHY,"RU %d stopped\n",ru->idx);
 	break;
       }
       old_time = time_rf.tv_nsec;
