@@ -852,16 +852,21 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
       LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
 	    __LINE__, __FUNCTION__);
     } else {
-      if (logicalChannelConfig)
+		if (logicalChannelConfig) {
         UE_list->
           UE_template[CC_idP][UE_id].lcgidmap
           [logicalChannelIdentity] =
           *logicalChannelConfig->
-	  ul_SpecificParameters->logicalChannelGroup;
-      else
-        UE_list->
-          UE_template[CC_idP][UE_id].lcgidmap
-          [logicalChannelIdentity] = 0;
+			ul_SpecificParameters->logicalChannelGroup;
+		UE_list->
+          UE_template[CC_idP][UE_id].lcgidpriority
+          [logicalChannelIdentity]=
+			logicalChannelConfig->ul_SpecificParameters->priority;
+
+		} else
+			UE_list->
+				UE_template[CC_idP][UE_id].lcgidmap
+				[logicalChannelIdentity] = 0;
     }
   }
 

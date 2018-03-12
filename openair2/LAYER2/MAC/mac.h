@@ -849,6 +849,9 @@ typedef struct {
     /// LCGID mapping
     long lcgidmap[11];
 
+	///UE logical channel priority
+    long lcgidpriority[11];
+
     /// phr information
     int8_t phr_info;
 
