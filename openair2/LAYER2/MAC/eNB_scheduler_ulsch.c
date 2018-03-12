@@ -1174,7 +1174,8 @@ schedule_ulsch_rnti(module_id_t module_idP,
     UE_sched_ctrl *UE_sched_ctrl;
     int sched_frame = frameP;
     int rvidx_tab[4] = { 0, 2, 3, 1 };
-
+    uint16_t          ul_req_index;
+    uint8_t           dlsch_flag;
     if (sched_subframeP < subframeP)
 	sched_frame++;
 
@@ -1501,9 +1502,17 @@ schedule_ulsch_rnti(module_id_t module_idP,
 			  "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
 			  harq_pid, frameP, subframeP, UE_id, rnti,
 			  sched_frame, sched_subframeP);
-
+            ul_req_index = 0;
+            dlsch_flag = 0;
+            for(ul_req_index = 0;ul_req_index < ul_req_tmp_body->number_of_pdus;ul_req_index++){
+                if(ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE){
+                   dlsch_flag = 1;
+                   LOG_D(MAC,"Frame %d, Subframe %d:rnti %x ul_req_index %d Switched UCI HARQ to ULSCH HARQ(first)\n",frameP,subframeP,rnti,ul_req_index);
+                   break;
+                }
+            }
 		    // Add UL_config PDUs
-		    fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp_body->ul_config_pdu_list[ul_req_tmp_body->number_of_pdus], cqi_req, cc, UE_template->physicalConfigDedicated, get_tmode(module_idP, CC_id, UE_id), mac->ul_handle, rnti, first_rb[CC_id],	// resource_block_start
+		    fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index], cqi_req, cc, UE_template->physicalConfigDedicated, get_tmode(module_idP, CC_id, UE_id), mac->ul_handle, rnti, first_rb[CC_id],	// resource_block_start
 							 rb_table[rb_table_index],	// number_of_resource_blocks
 							 UE_template->mcs_UL[harq_pid], cshift,	// cyclic_shift_2_for_drms
 							 0,	// frequency_hopping_enabled_flag
@@ -1521,15 +1530,24 @@ schedule_ulsch_rnti(module_id_t module_idP,
 							  [rb_table_index]));
 #ifdef Rel14
 		    if (UE_template->rach_resource_type > 0) {	// This is a BL/CE UE allocation
-			fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_tmp_body->number_of_pdus], UE_template->rach_resource_type > 2 ? 2 : 1, 1,	//total_number_of_repetitions
+			fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index], UE_template->rach_resource_type > 2 ? 2 : 1, 1,	//total_number_of_repetitions
 							     1,	//repetition_number
 							     (frameP *
 							      10) +
 							     subframeP);
 		    }
 #endif
+            if(dlsch_flag == 1){
+                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
+                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
+                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0;  // last symbol not punctured
+                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = rb_table[rb_table_index];
+                fill_nfapi_ulsch_harq_information(module_idP, CC_id,rnti,  &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.harq_information,subframeP);
+            }else{
+                ul_req_tmp_body->number_of_pdus++;
+            }
                     ul_req_tmp->header.message_id = NFAPI_UL_CONFIG_REQUEST;
-		    ul_req_tmp_body->number_of_pdus++;
+
                     ul_req_tmp_body->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
 		    mac->ul_handle++;
 
@@ -1588,7 +1606,16 @@ schedule_ulsch_rnti(module_id_t module_idP,
 			  "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
 			  harq_pid, frameP, subframeP, UE_id, rnti,
 			  sched_frame, sched_subframeP);
-		    fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp_body->ul_config_pdu_list[ul_req_tmp_body->number_of_pdus], cqi_req, cc, UE_template->physicalConfigDedicated, get_tmode(module_idP, CC_id, UE_id), mac->ul_handle, rnti, UE_template->first_rb_ul[harq_pid],	// resource_block_start
+            ul_req_index = 0;
+            dlsch_flag = 0;
+            for(ul_req_index = 0;ul_req_index < ul_req_tmp_body->number_of_pdus;ul_req_index++){
+                if(ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE){
+                   dlsch_flag = 1;
+                   LOG_D(MAC,"Frame %d, Subframe %d:rnti %x ul_req_index %d Switched UCI HARQ to ULSCH HARQ(first)\n",frameP,subframeP,rnti,ul_req_index);
+                   break;
+                }
+            }
+		    fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index], cqi_req, cc, UE_template->physicalConfigDedicated, get_tmode(module_idP, CC_id, UE_id), mac->ul_handle, rnti, UE_template->first_rb_ul[harq_pid],	// resource_block_start
 							 UE_template->nb_rb_ul[harq_pid],	// number_of_resource_blocks
 							 UE_template->mcs_UL[harq_pid], cshift,	// cyclic_shift_2_for_drms
 							 0,	// frequency_hopping_enabled_flag
@@ -1603,14 +1630,23 @@ schedule_ulsch_rnti(module_id_t module_idP,
 							 TBS_UL[harq_pid]);
 #ifdef Rel14
 		    if (UE_template->rach_resource_type > 0) {	// This is a BL/CE UE allocation
-			fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_tmp_body->number_of_pdus], UE_template->rach_resource_type > 2 ? 2 : 1, 1,	//total_number_of_repetitions
+			fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index], UE_template->rach_resource_type > 2 ? 2 : 1, 1,	//total_number_of_repetitions
 							     1,	//repetition_number
 							     (frameP *
 							      10) +
 							     subframeP);
 		    }
 #endif
-		    ul_req_tmp_body->number_of_pdus++;
+            if(dlsch_flag == 1){
+                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
+                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
+                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0;  // last symbol not punctured
+                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = rb_table[rb_table_index];
+                fill_nfapi_ulsch_harq_information(module_idP, CC_id,rnti,  &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.harq_information,subframeP);
+            }else{
+                ul_req_tmp_body->number_of_pdus++;
+            }
+
 		    mac->ul_handle++;
 
                     ul_req_tmp_body->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
