@@ -196,7 +196,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
 	if (sduP == NULL) {	// we've got an error on Msg3
 	    LOG_D(MAC,
-		  "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
+		  "[eNB %d] CC_id %d, RA %d ULSCH in error in round(Msg3) %d/%d\n",
 		  enb_mod_idP, CC_idP, RA_id,
 		  ra[RA_id].msg3_round,
 		  (int) mac->common_channels[CC_idP].
@@ -1683,7 +1683,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   UE_sched_ctrl     *UE_sched_ctrl;
   int               sched_frame=frameP;
   int               rvidx_tab[4] = {0,2,3,1};
-
+  uint16_t          ul_req_index;
+  uint8_t           dlsch_flag;
   if (sched_subframeP < subframeP) sched_frame++;
 
   nfapi_hi_dci0_request_body_t   *hi_dci0_req;
@@ -1915,8 +1916,17 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
                   harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP);
 
+            ul_req_index = 0;
+            dlsch_flag = 0;
+            for(ul_req_index = 0;ul_req_index < ul_req_tmp->number_of_pdus;ul_req_index++){
+                if(ul_req_tmp->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE){
+                   dlsch_flag = 1;
+                   LOG_D(MAC,"Frame %d, Subframe %d:rnti %x ul_req_index %d Switched UCI HARQ to ULSCH HARQ(first)\n",frameP,subframeP,rnti,ul_req_index);
+                   break;
+                }
+            }
             // Add UL_config PDUs
-            fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp->ul_config_pdu_list[ul_req_tmp->number_of_pdus],
+            fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp->ul_config_pdu_list[ul_req_index],
                                                  cqi_req,
                                                  cc,
                                                  UE_template->physicalConfigDedicated,
@@ -1940,14 +1950,22 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                                                  );
 #ifdef Rel14
             if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
-              fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp->ul_config_pdu_list[ul_req_tmp->number_of_pdus],
+              fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp->ul_config_pdu_list[ul_req_index],
                                                    UE_template->rach_resource_type>2 ? 2 : 1,
                                                    1, //total_number_of_repetitions
                                                    1, //repetition_number
                                                    (frameP*10)+subframeP);
             }
 #endif
-            ul_req_tmp->number_of_pdus++;
+            if(dlsch_flag == 1){
+                ul_req_tmp->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
+                ul_req_tmp->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
+                ul_req_tmp->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0;  // last symbol not punctured
+                ul_req_tmp->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = rb_table[rb_table_index];
+                fill_nfapi_ulsch_harq_information(module_idP, CC_id,rnti,  &ul_req_tmp->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.harq_information,subframeP);
+            }else{
+                ul_req_tmp->number_of_pdus++;
+            }
             eNB->ul_handle++;
             ul_req->header.message_id = NFAPI_UL_CONFIG_REQUEST;
             ul_req_tmp->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
@@ -2063,7 +2081,16 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             // Add UL_config PDUs
             LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
                   harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP);
-            fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp->ul_config_pdu_list[ul_req_tmp->number_of_pdus],
+            ul_req_index = 0;
+            dlsch_flag = 0;
+            for(ul_req_index = 0;ul_req_index < ul_req_tmp->number_of_pdus;ul_req_index++){
+                if(ul_req_tmp->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE){
+                   dlsch_flag = 1;
+                   LOG_D(MAC,"Frame %d, Subframe %d:rnti %x ul_req_index %d Switched UCI HARQ to ULSCH HARQ(phich)\n",frameP,subframeP,rnti,ul_req_index);
+                   break;
+                }
+            }
+            fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp->ul_config_pdu_list[ul_req_index],
                                                  cqi_req,
                                                  cc,
                                                  UE_template->physicalConfigDedicated,
@@ -2086,14 +2113,22 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                                                  );
 #ifdef Rel14
             if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
-              fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp->ul_config_pdu_list[ul_req_tmp->number_of_pdus],
+              fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp->ul_config_pdu_list[ul_req_index],
                                                    UE_template->rach_resource_type>2 ? 2 : 1,
                                                    1, //total_number_of_repetitions
                                                    1, //repetition_number
                                                    (frameP*10)+subframeP);
             }
 #endif
-              ul_req_tmp->number_of_pdus++;
+              if(dlsch_flag == 1){
+                ul_req_tmp->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
+                ul_req_tmp->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
+                ul_req_tmp->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0;  // last symbol not punctured
+                ul_req_tmp->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb;
+                fill_nfapi_ulsch_harq_information(module_idP, CC_id,rnti,  &ul_req_tmp->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.harq_information,subframeP);
+              }else{
+                ul_req_tmp->number_of_pdus++;
+              }
               eNB->ul_handle++;
             ul_req->header.message_id = NFAPI_UL_CONFIG_REQUEST;
             ul_req_tmp->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
