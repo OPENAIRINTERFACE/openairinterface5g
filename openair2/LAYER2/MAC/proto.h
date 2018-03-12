@@ -209,11 +209,6 @@ void dlsch_scheduler_pre_processor_reset(int module_idP, int UE_id,
 					 uint16_t
 					 nb_rbs_required[MAX_NUM_CCs]
 					 [NUMBER_OF_UE_MAX],
-					 uint16_t
-					 nb_rbs_required_remaining
-					 [MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-					 unsigned char total_ue_count[MAX_NUM_CCs],
-					 unsigned char total_rbs_used[MAX_NUM_CCs],
 					 unsigned char
 					 rballoc_sub[MAX_NUM_CCs]
 					 [N_RBG_MAX],
@@ -860,15 +855,15 @@ in the DLSCH buffer.
 @param post_padding number of bytes for padding at the end of MAC PDU
 @returns Number of bytes used for header
 */
-unsigned char generate_dlsch_header(unsigned char *mac_header,
-				    unsigned char num_sdus,
-				    unsigned short *sdu_lengths,
-				    unsigned char *sdu_lcids,
-				    unsigned char drx_cmd,
-				    unsigned short timing_advance_cmd,
-				    unsigned char *ue_cont_res_id,
-				    unsigned char short_padding,
-				    unsigned short post_padding);
+int generate_dlsch_header(unsigned char *mac_header,
+                          unsigned char num_sdus,
+                          unsigned short *sdu_lengths,
+                          unsigned char *sdu_lcids,
+                          unsigned char drx_cmd,
+                          unsigned short timing_advance_cmd,
+                          unsigned char *ue_cont_res_id,
+                          unsigned char short_padding,
+                          unsigned short post_padding);
 
 /** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
 @param Mod_id Instance ID of eNB

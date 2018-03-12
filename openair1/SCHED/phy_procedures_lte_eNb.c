@@ -395,6 +395,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
 
 
+
 void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 			   eNB_rxtx_proc_t *proc,
                            relaying_type_t r_type,
@@ -416,7 +417,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   int offset = eNB->CC_id;//proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
-  
+
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
@@ -429,6 +430,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
   
 
+
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     if (is_pmch_subframe(frame,subframe,fp)) {
       pmch_procedures(eNB,proc,rn,r_type);
@@ -438,6 +440,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
       common_signal_procedures(eNB,proc->frame_tx, proc->subframe_tx);
     }
   }
+
 
   // clear existing ulsch dci allocations before applying info from MAC  (this is table
   ul_subframe = pdcch_alloc2ul_subframe(fp,subframe);
@@ -647,7 +650,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 {
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint8_t SR_payload = 0,pucch_b0b1[4][2]= {{0,0},{0,0},{0,0},{0,0}},harq_ack[4]={0,0,0,0};
-  int32_t metric[4]={0,0,0,0},metric_SR=0,max_metric;
+  int32_t metric[4]={0,0,0,0},metric_SR=0,max_metric=0;
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
   int i;
@@ -894,7 +897,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      harq_ack[0] = 4; // DTX
 	      harq_ack[1] = 6; // NACK/DTX
 	      harq_ack[2] = 6; // NACK/DTX
-	      
+              max_metric = 0;
 	    } 
 	    else {
 	      
@@ -977,7 +980,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      harq_ack[1] = 6; // NACK/DTX
 	      harq_ack[2] = 6; // NACK/DTX
 	      harq_ack[3] = 6; // NACK/DTX
-		
+              max_metric = 0;
 	    } else {
 
 	      max_metric = max(metric[0],max(metric[1],max(metric[2],metric[3])));
@@ -1206,7 +1209,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
         start_meas(&eNB->ulsch_demodulation_stats);
 
-      rx_ulsch(eNB,proc, i);
+	rx_ulsch(eNB,proc, i);
 
         stop_meas(&eNB->ulsch_demodulation_stats);
 
@@ -1259,7 +1262,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
 	      eNB->Mod_id,harq_pid,
 	      frame,subframe, i,
-	      ulsch_harq->round-1,
+	      ulsch_harq->round,
 	      ulsch->Mlimit,
 	      ulsch_harq->o_ACK[0],
 	      ulsch_harq->o_ACK[1]);

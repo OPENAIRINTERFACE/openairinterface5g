@@ -27,7 +27,9 @@
 #ifndef TC_MAIN
 //#include "defs.h"
 #endif
-
+#include <stdint.h>
+#include <stdio.h>
+#include "PHY/CODING/defs.h"
 #include "extern_3GPPinterleaver.h"
 
 //#define DEBUG_TURBO_ENCODER 1
@@ -35,7 +37,7 @@
 uint32_t threegpplte_interleaver_output;
 uint32_t threegpplte_interleaver_tmp;
 
-inline void threegpplte_interleaver_reset()
+inline void threegpplte_interleaver_reset(void)
 {
   threegpplte_interleaver_output = 0;
   threegpplte_interleaver_tmp    = 0;
@@ -82,7 +84,7 @@ uint8_t output_lut[16],state_lut[16];
 inline uint8_t threegpplte_rsc_lut(uint8_t input,uint8_t *state)
 {
 
-  uint8_t output;
+
   uint8_t off;
 
   off = (*state<<1)|input;
@@ -146,7 +148,7 @@ void threegpplte_turbo_encoder(uint8_t *input,
   for (i=0; f1f2mat[i].nb_bits!= input_length_bits && i <188; i++);
 
   if ( i == 188 ) {
-    msg("Illegal frame length!\n");
+    printf("Illegal frame length!\n");
     return;
   } else {
     base_interleaver=il_tb+f1f2mat[i].beg_index;

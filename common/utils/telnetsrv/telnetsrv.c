@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -43,7 +43,7 @@
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
-#include <telnetsrv.h>
+#include "telnetsrv.h"
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -51,20 +51,27 @@
 #include <dlfcn.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-
+#include "common/utils/load_module_shlib.h" 
 #include "common/config/config_userapi.h"
+#include <readline/history.h>
 
 
 #include "telnetsrv_phycmd.h"
 #include "telnetsrv_proccmd.h"	
-static char* telnet_defstatmod[] = {"softmodem","phy"}; 
+static char* telnet_defstatmod[] = {"softmodem","phy","loader"}; 
 static telnetsrv_params_t telnetparams;
 #define TELNETSRV_LISTENADDR 0
 #define TELNETSRV_LISTENPORT 1
 #define TELNETSRV_PRIORITY   2
 #define TELNETSRV_DEBUG      3
-#define TELNETSRV_STATICMOD  7
-#define TELNETSRV_SHRMOD     8
+#define TELNETSRV_LOOPC      4
+#define TELNETSRV_LOOPD      5
+#define TELNETSRV_HISFILE    6  
+#define TELNETSRV_HISSIZE    7 
+#define TELNETSRV_PHYBSIZE   8  
+#define TELNETSRV_STATICMOD  9
+#define TELNETSRV_SHRMOD     10
+
 paramdef_t telnetoptions[] = {
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            configuration parameters for telnet utility                                                                             */
@@ -72,19 +79,22 @@ paramdef_t telnetoptions[] = {
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 	{"listenaddr",    "<listen ip address>",         0,                 uptr:&telnetparams.listenaddr,        defstrval:"0.0.0.0",            TYPE_IPV4ADDR,  0 },
 	{"listenport",    "<local port>",                0,                 uptr:&(telnetparams.listenport),      defuintval:9090,                TYPE_UINT,      0 },
-        {"priority",      "<scheduling policy (0-99)",   0,                 uptr:&telnetparams.priority,          defuintval:0,                   TYPE_INT,       0 }, 
+        {"priority",      "<scheduling policy (0-99)",   0,                 iptr:&telnetparams.priority,          defuintval:0,                   TYPE_INT,       0 }, 
 	{"debug",         "<debug level>",               0,                 uptr:NULL,                            defuintval:0,                   TYPE_UINT,      0 },
 	{"loopcount",     "<loop command iterations>",   0,                 uptr:&(telnetparams.loopcount),       defuintval:10,                  TYPE_UINT,      0 },
 	{"loopdelay",     "<loop command delay (ms)>",   0,                 uptr:&(telnetparams.loopdelay),       defuintval:5000,                TYPE_UINT,      0 },
+	{"histfile",      "<history file name>",         PARAMFLAG_NOFREE,  strptr:&(telnetparams.histfile),      defstrval:"oaitelnet.history",  TYPE_STRING,    0 },
+	{"histsize",      "<history sizes>",             0,                 iptr:&(telnetparams.histsize),        defuintval:50,                  TYPE_INT,       0 },
 	{"phypbsize",     "<phy dump buff size (bytes)>",0,                 uptr:&(telnetparams.phyprntbuff_size),defuintval:65000,               TYPE_UINT,      0 },
-        {"staticmod",     "<static modules selection>",  0,                 NULL,                                 defstrlistval:telnet_defstatmod,TYPE_STRINGLIST,1},
-        {"shrmod",        "<static modules selection>",  0,                 NULL,                                 NULL,TYPE_STRINGLIST,0 },
+        {"staticmod",     "<static modules selection>",  0,                 strlistptr:NULL,                      defstrlistval:telnet_defstatmod,TYPE_STRINGLIST,(sizeof(telnet_defstatmod)/sizeof(char *))},
+        {"shrmod",        "<dynamic modules selection>", 0,                 strlistptr:NULL,                      defstrlistval:NULL,TYPE_STRINGLIST,0 }
 };
 
-int get_phybsize() {return telnetparams.phyprntbuff_size; };
+int get_phybsize(void) {return telnetparams.phyprntbuff_size; };
 int add_telnetcmd(char *modulename,telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd );
 int setoutput(char *buff, int debug, telnet_printfunc_t prnt);
 int setparam(char *buff, int debug, telnet_printfunc_t prnt);
+int history_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 
 telnetshell_vardef_t telnet_vardef[] = {
 {"debug",TELNET_VARTYPE_INT32,&telnetparams.telnetdbg},
@@ -92,12 +102,15 @@ telnetshell_vardef_t telnet_vardef[] = {
 {"loopc",TELNET_VARTYPE_INT32,&telnetparams.loopcount},
 {"loopd",TELNET_VARTYPE_INT32,&telnetparams.loopdelay},
 {"phypb",TELNET_VARTYPE_INT32,&telnetparams.phyprntbuff_size},
+{"hsize",TELNET_VARTYPE_INT32,&telnetparams.histsize},
+{"hfile",TELNET_VARTYPE_STRING,&telnetparams.histfile},
 {"",0,NULL}
 };
 
 telnetshell_cmddef_t  telnet_cmdarray[] = {
    {"redirlog","[here,file,off]",setoutput},
    {"param","[prio]",setparam},
+   {"history","[list,reset]",history_cmd},
    {"","",NULL},
 };
 
@@ -131,41 +144,54 @@ char strpolicy[10];
 
 
 //sched_get_priority_max(SCHED_FIFO)
-if (priority < NICE_MIN)
-   {
+if (priority < NICE_MIN) {
    policy=SCHED_FIFO;
    sprintf(strpolicy,"%s","fifo");
-   schedp.sched_priority= NICE_MIN - priority ;   
+   schedp.sched_priority= NICE_MIN - priority ;
+   if (   (schedp.sched_priority < sched_get_priority_min(SCHED_FIFO)) ||
+          (schedp.sched_priority > sched_get_priority_max(SCHED_FIFO)) ) {
+        client_printf("Error: %i invalid prio, should be %i to %i, \n",
+                       priority, NICE_MIN -sched_get_priority_min(SCHED_FIFO),
+                       NICE_MIN - sched_get_priority_max(SCHED_FIFO) );        
    }
-else if (priority > NICE_MAX)
-   {
+} else if (priority > NICE_MAX) {
    policy=SCHED_IDLE;
    sprintf(strpolicy,"%s","idle");
    schedp.sched_priority=0;   
-   } 
-else 
-   {
+} else {
    policy=SCHED_OTHER;
    sprintf(strpolicy,"%s","other");
    schedp.sched_priority=0;   
-   } 
-if( tid != 0)
-  {  
+}
+ 
+if( tid != 0) {  
   rt = pthread_setschedparam(tid, policy, &schedp);
-  }
-else if(pid > 0)
-  {
+} else if(pid > 0)  {
   rt = sched_setscheduler( pid, policy,&schedp);
-  }
-if (rt != 0)
-    {
+} else {
+  rt= -1;
+  client_printf("Error: no pid or tid specified\n");
+}
+
+if (rt != 0) {
     client_printf("Error %i: %s modifying sched param to %s:%i, \n",
                   errno,strerror(errno),strpolicy,schedp.sched_priority); 
-    }
-else
-    {
+} else  {
     client_printf("policy set to %s, priority %i\n",strpolicy,schedp.sched_priority);
+    if ( policy==SCHED_OTHER) {
+        rt = getpriority(PRIO_PROCESS,tid);
+        if (rt != -1) {
+           rt = setpriority(PRIO_PROCESS,tid,priority);  
+           if (rt < 0) {
+               client_printf("Error %i: %s trying to set nice value of thread %u to %i\n",
+                             errno,strerror(errno),tid,priority); 
+           }
+        } else {
+               client_printf("Error %i: %s trying to get nice value of thread %u \n",
+                              errno,strerror(errno),tid); 
+        }
     }
+}
 
 
 
@@ -198,14 +224,13 @@ int rt;
 
   CPU_ZERO(&cpuset);
   CPU_SET(coreid, &cpuset);
-  if (tid > 0)
-     {
+  if (tid > 0) {
      rt = pthread_setaffinity_np((pthread_t)tid, sizeof(cpu_set_t), &cpuset);
-     }
-  else if (pid > 0)
-     {
+  } else if (pid > 0){
      rt = sched_setaffinity((pid_t)pid, sizeof(cpu_set_t), &cpuset);
-     }
+  } else {
+     rt= -1;
+  }
   if (rt != 0)
       {
       client_printf("Error %i: %s calling , xxx_setaffinity...\n",errno,strerror(errno)); 
@@ -284,7 +309,6 @@ memset(cmds,0,sizeof(cmds));
 sscanf(buff,"%9s %9s %9s %9s %9s", cmds[0],cmds[1],cmds[2],cmds[3],cmds[4]  );
 if (strncasecmp(cmds[0],"prio",4) == 0)
    {
-   pthread_attr_t attr;
    int prio;
    prio=(int)strtol(cmds[1],NULL,0);
    if (errno == ERANGE)
@@ -305,6 +329,35 @@ if (strncasecmp(cmds[0],"aff",3) == 0)
 
 return CMDSTATUS_NOTFOUND;   
 } /* setparam */
+
+int history_cmd(char *buff, int debug, telnet_printfunc_t prnt)
+{
+char cmds[TELNET_MAX_MSGLENGTH/TELNET_CMD_MAXSIZE][TELNET_CMD_MAXSIZE];
+
+
+memset(cmds,0,sizeof(cmds));
+sscanf(buff,"%9s %9s %9s %9s %9s", cmds[0],cmds[1],cmds[2],cmds[3],cmds[4]  );
+if (cmds[0] == NULL)
+    return CMDSTATUS_VARNOTFOUND;
+if (strncasecmp(cmds[0],"list",4) == 0)
+   {
+   HIST_ENTRY **hist = history_list();
+   if (hist) {
+      for (int i = 0; hist[i]; i++) {
+          prnt ("%d: %s\n", i + history_base, hist[i]->line);
+      }
+   }
+   return CMDSTATUS_FOUND; 
+   }
+if (strncasecmp(cmds[0],"reset",5) == 0)
+   {
+   clear_history();
+   write_history(telnetparams.histfile);
+   return CMDSTATUS_FOUND; 
+   }
+
+return CMDSTATUS_NOTFOUND; 
+} /* history_cmd */
 /*-------------------------------------------------------------------------------------------------------*/
 /*
 generic commands available for all modules loaded by the server
@@ -314,11 +367,11 @@ int setgetvar(int moduleindex,char getorset,char *params)
 {
 int n,i;
 char varname[TELNET_CMD_MAXSIZE];
-char varval[TELNET_CMD_MAXSIZE];
+char *varval=NULL;
 
    memset(varname,0,sizeof(varname));
-   memset(varval,0,sizeof(varval));
-   n = sscanf(params,"%s %s",varname,varval);
+
+   n = sscanf(params,"%s %ms",varname,&varval);
    for ( i=0 ; telnetparams.CmdParsers[moduleindex].var[i].varvalptr != NULL ; i++)
       {
       if ( strncasecmp(telnetparams.CmdParsers[moduleindex].var[i].varname,varname,strlen(telnetparams.CmdParsers[moduleindex].var[i].varname)) == 0)
@@ -330,7 +383,10 @@ char varval[TELNET_CMD_MAXSIZE];
 	    switch(telnetparams.CmdParsers[moduleindex].var[i].vartype)
 	        {
 		case TELNET_VARTYPE_INT32:
-	             client_printf("%i\n",*(int *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
+	             client_printf("%i\n",*(int32_t *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
+		break;
+		case TELNET_VARTYPE_INT64:
+	             client_printf("%lli\n",*(int64_t *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
 		break;
 		case TELNET_VARTYPE_INT16:
 	             client_printf("%hi\n",*(short *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
@@ -338,8 +394,8 @@ char varval[TELNET_CMD_MAXSIZE];
 		case TELNET_VARTYPE_DOUBLE:
 	             client_printf("%g\n",*(double *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
 		break;
-		case TELNET_VARTYPE_PTR:
-	             client_printf("0x%08x\n",*((unsigned int *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr)));						
+		case TELNET_VARTYPE_STRING:
+	             client_printf("\"%s\"\n",*(char **)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));						
                 break;
 		default:
 		     client_printf("unknown type\n");
@@ -364,6 +420,10 @@ char varval[TELNET_CMD_MAXSIZE];
 		case TELNET_VARTYPE_DOUBLE:
 		     *(double *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr) = strtod(varval,NULL);
 	             client_printf("%g\n",*(double *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
+		break;	
+		case TELNET_VARTYPE_STRING:
+		     sprintf(*(char **)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr),"%s", varval);
+	             client_printf("\"%s\"\n",*(char **)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
 		break;				
 		default:
 		     client_printf("unknown type\n");
@@ -372,6 +432,9 @@ char varval[TELNET_CMD_MAXSIZE];
 	    }		   
 	 }
       } 
+if (n>1 && varval != NULL) {
+   free(varval);
+}
 return CMDSTATUS_VARNOTFOUND;
 }
 /*----------------------------------------------------------------------------------------------------*/
@@ -515,13 +578,14 @@ if(listen(sock, 1) == -1)
      fprintf(stderr,"[TELNETSRV] Error %s on listen call\n",strerror(errno));
 
 
+using_history();
 
 printf("\nInitializing telnet server...\n");
 while( (telnetparams.new_socket = accept(sock, &cli_addr, &cli_len)) )
      {
      printf("[TELNETSRV] Telnet client connected....\n");
-
-
+    read_history(telnetparams.histfile);
+    stifle_history(telnetparams.histsize);
     if(telnetparams.new_socket < 0)
        fprintf(stderr,"[TELNETSRV] Error %s on accept call\n",strerror(errno));
 
@@ -548,31 +612,43 @@ while( (telnetparams.new_socket = accept(sock, &cli_addr, &cli_len)) )
            break;
            }
          if (telnetparams.telnetdbg > 0)
-	    printf("[TELNETSRV] Command received: readc %i filled %i %s\n", readc, filled ,buf);
-	 if (strlen(buf) >= 2 )
+	    printf("[TELNETSRV] Command received: readc %i filled %i \"%s\"\n", readc, filled ,buf);
+         if (buf[0] == '!') {
+             if (buf[1] == '!') {
+         	 sprintf(buf,"%s","telnet history list");
+             } else {
+         	 HIST_ENTRY *hisentry = history_get(strtol(buf+1,NULL,0)); 
+         	 if (hisentry) {
+                     char msg[TELNET_MAX_MSGLENGTH + sizeof(TELNET_PROMPT) +10];
+         	     sprintf(buf,"%s",hisentry->line);
+        	     sprintf(msg,"%s %s\n",TELNET_PROMPT, hisentry->line);
+                     send(telnetparams.new_socket, msg, strlen(msg), MSG_NOSIGNAL);
+         	 }
+             }  	 
+         }
+	 if (strlen(buf) > 2 )
 	    {
             status=process_command(buf);
 	    }
 	 else
 	    status=CMDSTATUS_NOCMD;
 	    
-         if (status != CMDSTATUS_EXIT)
-	    {
-	    if (status == CMDSTATUS_NOTFOUND)
-	       {
+         if (status != CMDSTATUS_EXIT) {
+	    if (status == CMDSTATUS_NOTFOUND) {
 	       char msg[TELNET_MAX_MSGLENGTH + 50];
 	       sprintf(msg,"Error: \n      %s\n is not a softmodem command\n",buf);
 	       send(telnetparams.new_socket, msg, strlen(msg), MSG_NOSIGNAL);
-	       }
+	    } else if (status == CMDSTATUS_FOUND) {
+               add_history(buf);
+            }
             send(telnetparams.new_socket, TELNET_PROMPT, sizeof(TELNET_PROMPT), MSG_NOSIGNAL);
-	    }
-	 else
-	    {
+	} else {
 	    printf ("[TELNETSRV] Closing telnet connection...\n");
 	    break;
-	    }
+	}
     }
-
+    write_history(telnetparams.histfile);
+    clear_history();
     close(telnetparams.new_socket);
     printf ("[TELNETSRV] Telnet server waitting for connection...\n");
     }
@@ -588,7 +664,7 @@ return;
 */
 void exec_moduleinit(char *modname)
 {
-void (*fptr)();
+void (*fptr)(void);
 char initfunc[TELNET_CMD_MAXSIZE+9];
 
        if (strlen(modname) > TELNET_CMD_MAXSIZE)
@@ -609,23 +685,26 @@ char initfunc[TELNET_CMD_MAXSIZE+9];
           }
 }
 
-int add_embeddedmodules()
+int add_embeddedmodules(void)
 {
-
+int ret=0;
 
 
 
     for(int i=0; i<telnetoptions[TELNETSRV_STATICMOD].numelt;i++)
        {
+       ret++;
        exec_moduleinit(telnetoptions[TELNETSRV_STATICMOD].strlistptr[i]);
        }
+return ret;
+
 }
 
-int add_sharedmodules()
+int add_sharedmodules(void)
 {
 char initfunc[TELNET_CMD_MAXSIZE+9];
-void (*fptr)();
-
+void (*fptr)(void);
+int ret=0;
 
     for(int i=0; i<telnetoptions[TELNETSRV_SHRMOD].numelt;i++)
        {
@@ -634,22 +713,23 @@ void (*fptr)();
        if ( fptr != NULL)
           {
           fptr();
+          ret++;
           }
        else
           {
           fprintf(stderr,"[TELNETSRV] couldn't find %s for module %s \n",initfunc,telnetoptions[TELNETSRV_STATICMOD].strlistptr[i]);
           }
        }
+    return ret;
 }
 
-int init_telnetsrv(char *cfgfile)
+int telnetsrv_autoinit(void)
  {
-  void *lib_handle;
-  char** moduleslist; 
+
 
    memset(&telnetparams,0,sizeof(telnetparams));
 
-   config_get( telnetoptions,sizeof(telnetoptions)/sizeof(paramdef_t),NULL); 
+   config_get( telnetoptions,sizeof(telnetoptions)/sizeof(paramdef_t),"telnetsrv"); 
 
  
    if(pthread_create(&telnetparams.telnet_pthread,NULL, (void *(*)(void *))run_telnetsrv, NULL) != 0)
@@ -691,6 +771,26 @@ int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmdde
  }
 
 
+/* function which will be called by the shared lib loader, to check shared lib version
+   against main exec version. version mismatch no considered as fatal (interfaces not supposed to change)
+*/ 
+int  telnetsrv_checkbuildver(char * mainexec_buildversion, char ** shlib_buildversion)
+{
+#ifndef PACKAGE_VERSION
+#define PACKAGE_VERSION "standalone built: " __DATE__ __TIME__
+#endif
+    *shlib_buildversion = PACKAGE_VERSION;
+    if (strcmp(mainexec_buildversion, *shlib_buildversion) != 0) {
+          fprintf(stderr,"[TELNETSRV] shared lib version %s, doesn't match main version %s, compatibility should be checked\n",
+                mainexec_buildversion,*shlib_buildversion);
+    }
+    return 0;
+}
 
-
-
+int telnetsrv_getfarray(loader_shlibfunc_t  **farray)
+ {
+  *farray=malloc(sizeof(loader_shlibfunc_t));
+  (*farray)[0].fname=TELNET_ADDCMD_FNAME;
+  (*farray)[0].fptr=(int (*)(void) )add_telnetcmd;
+  return 1;
+ }

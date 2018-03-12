@@ -359,7 +359,11 @@ function main() {
   
   CMAKE_CMD="$CMAKE_CMD .."
   echo_info "CMAKE_CMD=$CMAKE_CMD"
-  
+  if [ "$eNB" = "1" ] && [ "$UE" = "1" ]; then
+    echo_error "Cannot build UE and eNB on one build_oai execution"
+    echo_error "use 2 build_oai invocations"
+    exit
+  fi  
   #########################################################
   # check validity of HW and TP parameters for eNB
   #########################################################
@@ -488,10 +492,20 @@ function main() {
   DIR=$OPENAIR_DIR/cmake_targets
   if [ "$NOS1" =  "1" ] ; then
       lte_build_dir=lte_noS1_build_oai
-      lte_exec=lte-softmodem-nos1
+      if [ "$eNB" = "1" ] ; then
+         lte_exec=lte-softmodem-nos1
+      fi
+      if [ "$UE" = "1" ] ; then
+         lte_exec=lte-uesoftmodem-nos1
+      fi
   else
       lte_build_dir=lte_build_oai
-      lte_exec=lte-softmodem
+      if [ "$eNB" = "1" ] ; then
+         lte_exec=lte-softmodem
+      fi
+      if [ "$UE" = "1" ] ; then
+         lte_exec=lte-uesoftmodem
+      fi
   fi
 
 # configuration module libraries, one currently available, using libconfig 
@@ -544,6 +558,9 @@ function main() {
     compilations \
 	  $lte_build_dir $config_libconfig_shlib \
 	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+    compilations \
+          $lte_build_dir coding \
+          libcoding.so $dbin/libcoding.so
 	  
     if [ "$NOS1" = "1" ] ; then
 	compilations \
@@ -663,6 +680,13 @@ function main() {
 	  oaisim_build_dir=oaisim_build_oai
 	  oaisim_exec=oaisim
       fi
+# mandatory shared lib
+    compilations \
+          $oaisim_build_dir $config_libconfig_shlib \
+          lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+    compilations \
+          $oaisim_build_dir coding \
+          libcoding.so $dbin/libcoding.so
     
     echo_info "Compiling $oaisim_exec ($oaisim_build_dir)"
     cmake_file=$DIR/$oaisim_build_dir/CMakeLists.txt
@@ -766,17 +790,10 @@ function main() {
   # Telnet server compilation
   #####################
   if [ "$BUILD_TELNETSRV" = "1" ] ; then
-
-     telnetsrv_build_dir=telnetsrv
-     mkdir -p $DIR/$telnetsrv_build_dir/build
-     cd $DIR/$telnetsrv_build_dir/build   
-     echo_info "Compiling telnet server library ..."
-    
-     [ "$CLEAN" = "1" ] && rm -rf $DIR/$telnetsrv_build_dir 
-     cmake_file=$OPENAIR_DIR/common/utils/$telnetsrv_build_dir/CMakeLists.txt   
-     cd $DIR/$telnetsrv_build_dir/build
-     eval  "$CMAKE_CMD $OPENAIR_DIR/common/utils/$telnetsrv_build_dir/"
-     make
+              build_dir=$lte_build_dir
+              compilations \
+                  $build_dir telnetsrv \
+                  libtelnetsrv.so $dbin/libtelnetsrv.so
 
   fi  
   # build RF device and transport protocol libraries

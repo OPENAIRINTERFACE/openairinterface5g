@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -190,12 +190,12 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
   eNB->pdsch_config_dedicated[UE_id].p_a = rel8->pa;
 
   if (dlsch0->active){
-    computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch0,dlsch0_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
-    computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
+    computeRhoA_eNB(rel8->pa, dlsch0,dlsch0_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
+    computeRhoB_eNB(rel8->pa,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
   }
   if (dlsch1->active){
-    computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch1,dlsch1_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
-    computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
+    computeRhoA_eNB(rel8->pa, dlsch1,dlsch1_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
+    computeRhoB_eNB(rel8->pa,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
   }
 
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[subframe & 1].num_pdcch_symbols;
@@ -537,7 +537,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No existing UE ULSCH for rnti %x\n",rel8->rnti);
-    //LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d\n", UE_id,rel8->rnti,frame,subframe);
+    LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d, modulation %d, rvidx %d\n", UE_id,rel8->rnti,frame,subframe,rel8->modulation_type,rel8->redundancy_version);
 
     fill_ulsch(eNB,&ul_config_pdu->ulsch_pdu,frame,subframe);
 
@@ -660,7 +660,8 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
         NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),number_dl_pdu,
         NFAPI_SFNSF2SFN(TX_req->sfn_sf),NFAPI_SFNSF2SF(TX_req->sfn_sf),TX_req->tx_request_body.number_of_pdus,
         NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),number_hi_dci0_pdu,
-        UL_req!=NULL ? NFAPI_SFNSF2SFN(UL_req->sfn_sf) : 0,number_ul_pdu, 
+        UL_req!=NULL ? NFAPI_SFNSF2SFN(UL_req->sfn_sf) : 0,
+        UL_req!=NULL ? NFAPI_SFNSF2SF(UL_req->sfn_sf)  : 0,number_ul_pdu, 
         eNB->pdcch_vars[subframe&1].num_pdcch_symbols);
 
   int do_oai =0;

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -31,7 +31,7 @@
  */
 
 #include "common/config/config_paramdesc.h"
-
+#include "RRC_paramsvalues.h"
 
 
 
@@ -54,52 +54,6 @@
 
 
 
-
-
-#define KHz (1000UL)
-#define MHz (1000 * KHz)
-
-typedef struct eutra_band_s {
-  int16_t             band;
-  uint32_t            ul_min;
-  uint32_t            ul_max;
-  uint32_t            dl_min;
-  uint32_t            dl_max;
-  lte_frame_type_t    frame_type;
-} eutra_band_t;
-
-static const eutra_band_t eutra_bands[] = {
-  { 1, 1920    * MHz, 1980    * MHz, 2110    * MHz, 2170    * MHz, FDD},
-  { 2, 1850    * MHz, 1910    * MHz, 1930    * MHz, 1990    * MHz, FDD},
-  { 3, 1710    * MHz, 1785    * MHz, 1805    * MHz, 1880    * MHz, FDD},
-  { 4, 1710    * MHz, 1755    * MHz, 2110    * MHz, 2155    * MHz, FDD},
-  { 5,  824    * MHz,  849    * MHz,  869    * MHz,  894    * MHz, FDD},
-  { 6,  830    * MHz,  840    * MHz,  875    * MHz,  885    * MHz, FDD},
-  { 7, 2500    * MHz, 2570    * MHz, 2620    * MHz, 2690    * MHz, FDD},
-  { 8,  880    * MHz,  915    * MHz,  925    * MHz,  960    * MHz, FDD},
-  { 9, 1749900 * KHz, 1784900 * KHz, 1844900 * KHz, 1879900 * KHz, FDD},
-  {10, 1710    * MHz, 1770    * MHz, 2110    * MHz, 2170    * MHz, FDD},
-  {11, 1427900 * KHz, 1452900 * KHz, 1475900 * KHz, 1500900 * KHz, FDD},
-  {12,  698    * MHz,  716    * MHz,  728    * MHz,  746    * MHz, FDD},
-  {13,  777    * MHz,  787    * MHz,  746    * MHz,  756    * MHz, FDD},
-  {14,  788    * MHz,  798    * MHz,  758    * MHz,  768    * MHz, FDD},
-
-  {17,  704    * MHz,  716    * MHz,  734    * MHz,  746    * MHz, FDD},
-  {20,  832    * MHz,  862    * MHz,  791    * MHz,  821    * MHz, FDD},
-  {33, 1900    * MHz, 1920    * MHz, 1900    * MHz, 1920    * MHz, TDD},
-  {33, 1900    * MHz, 1920    * MHz, 1900    * MHz, 1920    * MHz, TDD},
-  {34, 2010    * MHz, 2025    * MHz, 2010    * MHz, 2025    * MHz, TDD},
-  {35, 1850    * MHz, 1910    * MHz, 1850    * MHz, 1910    * MHz, TDD},
-  {36, 1930    * MHz, 1990    * MHz, 1930    * MHz, 1990    * MHz, TDD},
-  {37, 1910    * MHz, 1930    * MHz, 1910    * MHz, 1930    * MHz, TDD},
-  {38, 2570    * MHz, 2620    * MHz, 2570    * MHz, 2630    * MHz, TDD},
-  {39, 1880    * MHz, 1920    * MHz, 1880    * MHz, 1920    * MHz, TDD},
-  {40, 2300    * MHz, 2400    * MHz, 2300    * MHz, 2400    * MHz, TDD},
-  {41, 2496    * MHz, 2690    * MHz, 2496    * MHz, 2690    * MHz, TDD},
-  {42, 3400    * MHz, 3600    * MHz, 3400    * MHz, 3600    * MHz, TDD},
-  {43, 3600    * MHz, 3800    * MHz, 3600    * MHz, 3800    * MHz, TDD},
-  {44, 703    * MHz, 803    * MHz, 703    * MHz, 803    * MHz, TDD},
-};
 
 
 
@@ -153,6 +107,7 @@ typedef enum {
 #define CONFIG_STRING_RU_MAX_RXGAIN               "max_rxgain"
 #define CONFIG_STRING_RU_IF_COMPRESSION           "if_compression"
 #define CONFIG_STRING_RU_IS_SLAVE                 "is_slave"
+#define CONFIG_STRING_RU_NBIOTRRC_LIST            "NbIoT_RRC_instances"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -172,12 +127,8 @@ typedef enum {
 #define RU_ATT_TX_IDX                 15
 #define RU_ATT_RX_IDX                 16
 #define RU_IS_SLAVE_IDX               17
+#define RU_NBIOTRRC_LIST_IDX          18
 
-
-
-
-static int DEFBANDS[] = {7};
-static int DEFENBS[] = {0};
 
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
@@ -203,6 +154,7 @@ static int DEFENBS[] = {0};
 {CONFIG_STRING_RU_ATT_TX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
 {CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
 {CONFIG_STRING_RU_IS_SLAVE,                      NULL,       0,       strptr:NULL,     defstrval:"yes",         TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_NBIOTRRC_LIST,                 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
@@ -239,8 +191,7 @@ static int DEFENBS[] = {0};
 
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
-/*    cell configuration section name */
-#define ENB_CONFIG_STRING_ENB_LIST                      "eNBs"
+
 
 /* cell configuration parameters names */
 #define ENB_CONFIG_STRING_ENB_ID                        "eNB_ID"
@@ -295,21 +246,9 @@ static int DEFENBS[] = {0};
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/		  
 
-/* component carriers configuration section name */		
-#define ENB_CONFIG_STRING_COMPONENT_CARRIERS                            "component_carriers"		 
 
 /* component carries configuration parameters name */
-#define ENB_CONFIG_STRING_FRAME_TYPE                                    "frame_type"
-#define ENB_CONFIG_STRING_PBCH_REPETITION                               "pbch_repetition"
-#define ENB_CONFIG_STRING_TDD_CONFIG                                    "tdd_config"
-#define ENB_CONFIG_STRING_TDD_CONFIG_S                                  "tdd_config_s"
-#define ENB_CONFIG_STRING_PREFIX_TYPE                                   "prefix_type"
-#define ENB_CONFIG_STRING_EUTRA_BAND                                    "eutra_band"
-#define ENB_CONFIG_STRING_DOWNLINK_FREQUENCY                            "downlink_frequency"
-#define ENB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET                       "uplink_frequency_offset"
-#define ENB_CONFIG_STRING_NID_CELL                                      "Nid_cell"
-#define ENB_CONFIG_STRING_N_RB_DL                                       "N_RB_DL"
-#define ENB_CONFIG_STRING_CELL_MBSFN                                    "Nid_cell_mbsfn"
+
 #define ENB_CONFIG_STRING_NB_ANT_PORTS                                  "nb_antenna_ports"
 #define ENB_CONFIG_STRING_NB_ANT_TX                                     "nb_antennas_tx"
 #define ENB_CONFIG_STRING_NB_ANT_RX                                     "nb_antennas_rx"
@@ -373,11 +312,83 @@ static int DEFENBS[] = {0};
 #define ENB_CONFIG_STRING_UETIMERS_N310                                 "ue_TimersAndConstants_n310"
 #define ENB_CONFIG_STRING_UETIMERS_N311                                 "ue_TimersAndConstants_n311"
 #define ENB_CONFIG_STRING_UE_TRANSMISSION_MODE                          "ue_TransmissionMode"
-		
-/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                     component carriers configuration parameters                                                                                                     */
-/*   optname                                                   helpstr   paramflags    XXXptr                                        defXXXval                    type         numelt  */
-/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* init for checkedparam_t structure */
+
+#define CCPARAMS_CHECK                 {                                     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+             { .s1a= { config_check_modify_integer, UETIMER_T300_OKVALUES, UETIMER_T300_MODVALUES,8}} ,						     \
+             { .s1a= { config_check_modify_integer, UETIMER_T301_OKVALUES, UETIMER_T301_MODVALUES,8}} ,						     \
+             { .s1a= { config_check_modify_integer, UETIMER_T310_OKVALUES, UETIMER_T310_MODVALUES,7}} ,						     \
+             { .s1a= { config_check_modify_integer, UETIMER_T311_OKVALUES, UETIMER_T311_MODVALUES,7}} ,						     \
+             { .s1a= { config_check_modify_integer, UETIMER_N310_OKVALUES, UETIMER_N310_MODVALUES,8}} , 					      \
+             { .s1a= { config_check_modify_integer, UETIMER_N311_OKVALUES, UETIMER_N311_MODVALUES,8}} , 					      \
+             { .s5= {NULL }} ,						     \
+}
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                     component carriers configuration parameters                                                                                                                   */
+/*   optname                                                   helpstr   paramflags    XXXptr                                        defXXXval                    type         numelt  checked_param */
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CCPARAMS_DESC { \
 {ENB_CONFIG_STRING_FRAME_TYPE,                                   NULL,   0,           strptr:&frame_type,                             defstrval:"FDD",           TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_TDD_CONFIG,                                   NULL,   0,           iptr:&tdd_config,                               defintval:3,               TYPE_UINT,       0},  \
@@ -448,6 +459,75 @@ static int DEFENBS[] = {0};
 {ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ue_TimersAndConstants_n311,               defintval:1,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0}   \
 }
+
+#define ENB_CONFIG_FRAME_TYPE_IDX                            0  			     
+#define ENB_CONFIG_TDD_CONFIG_IDX                            1  			     
+#define ENB_CONFIG_TDD_CONFIG_S_IDX			     2
+#define ENB_CONFIG_PREFIX_TYPE_IDX 			     3
+#define ENB_CONFIG_PBCH_REPETITION_IDX			     4
+#define ENB_CONFIG_EUTRA_BAND_IDX  			     5
+#define ENB_CONFIG_DOWNLINK_FREQUENCY_IDX  		     6
+#define ENB_CONFIG_UPLINK_FREQUENCY_OFFSET_IDX		     7
+#define ENB_CONFIG_NID_CELL_IDX				     8
+#define ENB_CONFIG_N_RB_DL_IDX				     9
+#define ENB_CONFIG_CELL_MBSFN_IDX  			     10
+#define ENB_CONFIG_NB_ANT_PORTS_IDX			     11
+#define ENB_CONFIG_PRACH_ROOT_IDX  			     12
+#define ENB_CONFIG_PRACH_CONFIG_INDEX_IDX  		     13
+#define ENB_CONFIG_PRACH_HIGH_SPEED_IDX			     14
+#define ENB_CONFIG_PRACH_ZERO_CORRELATION_IDX		     15
+#define ENB_CONFIG_PRACH_FREQ_OFFSET_IDX	             16     
+#define ENB_CONFIG_PUCCH_DELTA_SHIFT_IDX		     17     
+#define ENB_CONFIG_PUCCH_NRB_CQI_IDX			     18
+#define ENB_CONFIG_PUCCH_NCS_AN_IDX			     19
+#define ENB_CONFIG_PUCCH_N1_AN_IDX 			     20
+#define ENB_CONFIG_PDSCH_RS_EPRE_IDX			     21
+#define ENB_CONFIG_PDSCH_PB_IDX				     22
+#define ENB_CONFIG_PUSCH_N_SB_IDX  			     23
+#define ENB_CONFIG_PUSCH_HOPPINGMODE_IDX		     24     
+#define ENB_CONFIG_PUSCH_HOPPINGOFFSET_IDX 		     25
+#define ENB_CONFIG_PUSCH_ENABLE64QAM_IDX		     26     
+#define ENB_CONFIG_PUSCH_GROUP_HOPPING_EN_IDX		     27
+#define ENB_CONFIG_PUSCH_GROUP_ASSIGNMENT_IDX		     28
+#define ENB_CONFIG_PUSCH_SEQUENCE_HOPPING_EN_IDX	     29     
+#define ENB_CONFIG_PUSCH_NDMRS1_IDX			     30
+#define ENB_CONFIG_PHICH_DURATION_IDX			     31
+#define ENB_CONFIG_PHICH_RESOURCE_IDX			     32
+#define ENB_CONFIG_SRS_ENABLE_IDX  			     33
+#define ENB_CONFIG_SRS_BANDWIDTH_CONFIG_IDX		     34
+#define ENB_CONFIG_SRS_SUBFRAME_CONFIG_IDX 		     35
+#define ENB_CONFIG_SRS_ACKNACKST_CONFIG_IDX		     36
+#define ENB_CONFIG_SRS_MAXUPPTS_IDX			     37
+#define ENB_CONFIG_PUSCH_PO_NOMINAL_IDX			     38
+#define ENB_CONFIG_PUSCH_ALPHA_IDX 			     39
+#define ENB_CONFIG_PUCCH_PO_NOMINAL_IDX			     40
+#define ENB_CONFIG_MSG3_DELTA_PREAMBLE_IDX 		     41
+#define ENB_CONFIG_PUCCH_DELTAF_FORMAT1_IDX		     42
+#define ENB_CONFIG_PUCCH_DELTAF_FORMAT1b_IDX		     43
+#define ENB_CONFIG_PUCCH_DELTAF_FORMAT2_IDX		     44
+#define ENB_CONFIG_PUCCH_DELTAF_FORMAT2A_IDX		     45
+#define ENB_CONFIG_PUCCH_DELTAF_FORMAT2B_IDX		     46
+#define ENB_CONFIG_RACH_NUM_RA_PREAMBLES_IDX		     47
+#define ENB_CONFIG_RACH_PREAMBLESGROUPACONFIG_IDX  	     48
+#define ENB_CONFIG_RACH_SIZEOFRA_PREAMBLESGROUPA_IDX	     49
+#define ENB_CONFIG_RACH_MESSAGESIZEGROUPA_IDX		     50
+#define ENB_CONFIG_RACH_MESSAGEPOWEROFFSETGROUPB_IDX	     51
+#define ENB_CONFIG_RACH_POWERRAMPINGSTEP_IDX		     52
+#define ENB_CONFIG_RACH_PREAMBLEINITIALRECEIVEDTARGETPOWER_IDX 53 
+#define ENB_CONFIG_RACH_PREAMBLETRANSMAX_IDX		     54
+#define ENB_CONFIG_RACH_RARESPONSEWINDOWSIZE_IDX	     55     
+#define ENB_CONFIG_RACH_MACCONTENTIONRESOLUTIONTIMER_IDX     56	     
+#define ENB_CONFIG_RACH_MAXHARQMSG3TX_IDX  		     57
+#define ENB_CONFIG_PCCH_DEFAULT_PAGING_CYCLE_IDX	     58     
+#define ENB_CONFIG_PCCH_NB_IDX				     59
+#define ENB_CONFIG_BCCH_MODIFICATIONPERIODCOEFF_IDX	     60
+#define ENB_CONFIG_UETIMERS_T300_IDX			     61
+#define ENB_CONFIG_UETIMERS_T301_IDX			     62
+#define ENB_CONFIG_UETIMERS_T310_IDX			     63
+#define ENB_CONFIG_UETIMERS_T311_IDX			     64
+#define ENB_CONFIG_UETIMERS_N310_IDX			     65
+#define ENB_CONFIG_UETIMERS_N311_IDX			     66
+#define ENB_CONFIG_UE_TRANSMISSION_MODE_IDX		     67
 
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -575,43 +655,8 @@ static int DEFENBS[] = {0};
 
 
 
-/* L1 configuration parameters names   */
-#define CONFIG_STRING_L1_CC                                "num_cc"
-#define CONFIG_STRING_L1_LOCAL_N_IF_NAME                   "local_n_if_name"
-#define CONFIG_STRING_L1_LOCAL_N_ADDRESS                   "local_n_address"
-#define CONFIG_STRING_L1_REMOTE_N_ADDRESS                  "remote_n_address"
-#define CONFIG_STRING_L1_LOCAL_N_PORTC                     "local_n_portc"
-#define CONFIG_STRING_L1_REMOTE_N_PORTC                    "remote_n_portc"
-#define CONFIG_STRING_L1_LOCAL_N_PORTD                     "local_n_portd"
-#define CONFIG_STRING_L1_REMOTE_N_PORTD                    "remote_n_portd"
-#define CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE            "tr_n_preference"
+/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            L1 configuration parameters                                                                             */
-/*   optname                                         helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
-/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define L1PARAMS_DESC { \
-{CONFIG_STRING_L1_CC,                                NULL,      0,         uptr:NULL,           defintval:1,               TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE,            NULL,      0,         strptr:NULL,         defstrval:"local_mac",     TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_LOCAL_N_IF_NAME,                   NULL,      0,         strptr:NULL,         defstrval:"lo",            TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_LOCAL_N_ADDRESS,                   NULL,      0,         strptr:NULL,         defstrval:"127.0.0.1",     TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_REMOTE_N_ADDRESS,                  NULL,      0,         strptr:NULL,         defstrval:"127.0.0.2",     TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_LOCAL_N_PORTC,                     NULL,      0,         uptr:NULL,           defintval:50030,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_REMOTE_N_PORTC,                    NULL,      0,         uptr:NULL,           defintval:50030,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_LOCAL_N_PORTD,                     NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
-}
-#define L1_CC_IDX                                          0
-#define L1_TRANSPORT_N_PREFERENCE_IDX                      1
-#define L1_LOCAL_N_IF_NAME_IDX                             2
-#define L1_LOCAL_N_ADDRESS_IDX                             3
-#define L1_REMOTE_N_ADDRESS_IDX                            4
-#define L1_LOCAL_N_PORTC_IDX                               5
-#define L1_REMOTE_N_PORTC_IDX                              6
-#define L1_LOCAL_N_PORTD_IDX                               7
-#define L1_REMOTE_N_PORTD_IDX                              8
-
-/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CONFIG_STRING_NETWORK_CONTROLLER_CONFIG         "NETWORK_CONTROLLER"
 
@@ -645,64 +690,4 @@ static int DEFENBS[] = {0};
 #define CONFIG_STRING_MACRLC_CONFIG                        "macrlc_config"
 
 
-/* MACRLC configuration parameters names   */
-#define CONFIG_STRING_MACRLC_CC                            "num_cc"
-#define CONFIG_STRING_MACRLC_TRANSPORT_N_PREFERENCE        "tr_n_preference"
-#define CONFIG_STRING_MACRLC_LOCAL_N_IF_NAME               "local_n_if_name"
-#define CONFIG_STRING_MACRLC_LOCAL_N_ADDRESS               "local_n_address"
-#define CONFIG_STRING_MACRLC_REMOTE_N_ADDRESS              "remote_n_address"
-#define CONFIG_STRING_MACRLC_LOCAL_N_PORTC                 "local_n_portc"
-#define CONFIG_STRING_MACRLC_REMOTE_N_PORTC                "remote_n_portc"
-#define CONFIG_STRING_MACRLC_LOCAL_N_PORTD                 "local_n_portd"
-#define CONFIG_STRING_MACRLC_REMOTE_N_PORTD                "remote_n_portd"
-#define CONFIG_STRING_MACRLC_TRANSPORT_S_PREFERENCE        "tr_s_preference"
-#define CONFIG_STRING_MACRLC_LOCAL_S_IF_NAME               "local_s_if_name"
-#define CONFIG_STRING_MACRLC_LOCAL_S_ADDRESS               "local_s_address"
-#define CONFIG_STRING_MACRLC_REMOTE_S_ADDRESS              "remote_s_address"
-#define CONFIG_STRING_MACRLC_LOCAL_S_PORTC                 "local_s_portc"
-#define CONFIG_STRING_MACRLC_REMOTE_S_PORTC                "remote_s_portc"
-#define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
-#define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
 
-
-/*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            MacRLC  configuration parameters                                                                           */
-/*   optname                                            helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
-/*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define MACRLCPARAMS_DESC { \
-{CONFIG_STRING_MACRLC_CC,                                NULL,     0,          uptr:NULL,           defintval:50011,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_TRANSPORT_N_PREFERENCE,            NULL,     0,          strptr:NULL,         defstrval:"local_L1",      TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_N_IF_NAME,                   NULL,     0,          strptr:NULL,         defstrval:"lo",            TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_N_ADDRESS,                   NULL,     0,          strptr:NULL,         defstrval:"127.0.0.1",     TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_REMOTE_N_ADDRESS,                  NULL,     0,          uptr:NULL,           defstrval:"127.0.0.2",     TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_N_PORTC,                     NULL,     0,          uptr:NULL,           defintval:50010,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_REMOTE_N_PORTC,                    NULL,     0,          uptr:NULL,           defintval:50010,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_LOCAL_N_PORTD,                     NULL,     0,          uptr:NULL,           defintval:50011,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_REMOTE_N_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50011,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_TRANSPORT_S_PREFERENCE,            NULL,     0,          strptr:NULL,         defstrval:"local_RRC",     TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_S_IF_NAME,                   NULL,     0,          strptr:NULL,         defstrval:"lo",            TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_S_ADDRESS,                   NULL,     0,          uptr:NULL,           defstrval:"127.0.0.1",     TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_REMOTE_S_ADDRESS,                  NULL,     0,          uptr:NULL,           defstrval:"127.0.0.2",     TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_S_PORTC,                     NULL,     0,          uptr:NULL,           defintval:50020,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_REMOTE_S_PORTC,                    NULL,     0,          uptr:NULL,           defintval:50020,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_LOCAL_S_PORTD,                     NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_REMOTE_S_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
-}
-#define MACRLC_CC_IDX                                          0
-#define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1
-#define MACRLC_LOCAL_N_IF_NAME_IDX                             2
-#define MACRLC_LOCAL_N_ADDRESS_IDX                             3
-#define MACRLC_REMOTE_N_ADDRESS_IDX                            4
-#define MACRLC_LOCAL_N_PORTC_IDX                               5
-#define MACRLC_REMOTE_N_PORTC_IDX                              6
-#define MACRLC_LOCAL_N_PORTD_IDX                               7
-#define MACRLC_REMOTE_N_PORTD_IDX                              8
-#define MACRLC_TRANSPORT_S_PREFERENCE_IDX                      9
-#define MACRLC_LOCAL_S_IF_NAME_IDX                             10
-#define MACRLC_LOCAL_S_ADDRESS_IDX                             11
-#define MACRLC_REMOTE_S_ADDRESS_IDX                            12
-#define MACRLC_LOCAL_S_PORTC_IDX                               13
-#define MACRLC_REMOTE_S_PORTC_IDX                              14
-#define MACRLC_LOCAL_S_PORTD_IDX                               15
-#define MACRLC_REMOTE_S_PORTD_IDX                              16
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------*/

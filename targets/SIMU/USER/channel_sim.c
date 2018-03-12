@@ -60,7 +60,11 @@
 #include "oaisim.h"
 
 #define RF
-//#define DEBUG_SIM
+#define DEBUG_SIM
+/*
+#undef LOG_D
+#define LOG_D(A,B,C...) printf(B,C)
+*/
 
 int number_rb_ul;
 int first_rbUL ;
@@ -140,6 +144,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
     if (!hold_channel) {
       // calculate the random channel from each RU
       for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+        frame_parms = &RC.ru[ru_id]->frame_parms;
 
         random_channel(RU2UE[ru_id][UE_id][CC_id],abstraction_flag);
         /*
@@ -231,7 +236,6 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
     pthread_mutex_lock(&RU_output_mutex[UE_id]);
  
     if (RU_output_mask[UE_id] == 0) {  //  This is the first eNodeB for this UE, clear the buffer
-      
       for (aa=0; aa<nb_antennas_rx; aa++) {
 	memset((void*)r_re_DL[UE_id][aa],0,(RC.ru[0]->frame_parms.samples_per_tti)*sizeof(double));
 	memset((void*)r_im_DL[UE_id][aa],0,(RC.ru[0]->frame_parms.samples_per_tti)*sizeof(double));
@@ -374,7 +378,8 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
             UE_id,ru_id,
             10*log10(rx_pwr),subframe);
 #endif
-      
+
+
       pthread_mutex_lock(&RU_output_mutex[UE_id]);
       for (i=0; i<frame_parms->samples_per_tti; i++) {
         for (aa=0; aa<nb_antennas_rx; aa++) {
@@ -388,14 +393,14 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
       
 
 
-	double *r_re_p[2] = {r_re_DL[ru_id][0],r_re_DL[ru_id][1]};
-	double *r_im_p[2] = {r_im_DL[ru_id][0],r_im_DL[ru_id][1]};
+	double *r_re_p[2] = {r_re_DL[UE_id][0],r_re_DL[UE_id][1]};
+	double *r_im_p[2] = {r_im_DL[UE_id][0],r_im_DL[UE_id][1]};
 
 #ifdef DEBUG_SIM
 	rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,length<length_meas?length:length_meas,0)/(12.0*frame_parms->N_RB_DL);
 	LOG_D(OCM,"[SIM][DL] UE %d : ADC in %f dBm/RE for subframe %d\n",UE_id,10*log10(rx_pwr),subframe);
 #endif
-	
+
 	rxdata = PHY_vars_UE_g[UE_id][CC_id]->common_vars.rxdata;
 	sf_offset = (subframe*frame_parms->samples_per_tti)+offset;
 

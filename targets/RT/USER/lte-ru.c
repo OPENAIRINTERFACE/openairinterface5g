@@ -95,6 +95,10 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "enb_config.h"
 //#include "PHY/TOOLS/time_meas.h"
 
+/* these variables have to be defined before including ENB_APP/enb_paramdef.h */
+static int DEFBANDS[] = {7};
+static int DEFENBS[] = {0};
+
 #include "ENB_APP/enb_paramdef.h"
 #include "common/config/config_userapi.h"
 
@@ -140,11 +144,10 @@ extern uint16_t sf_ahead;
 
 extern void wait_eNBs(void);
 
-char ru_states[6][8] = {"RU_IDLE","RU_CONFIG","RU_READY","RU_RUN","RU_ERROR","RU_SYNC"};
+char ru_states[6][9] = {"RU_IDLE","RU_CONFIG","RU_READY","RU_RUN","RU_ERROR","RU_SYNC"};
 
 int send_tick(RU_t *ru){
   
-  ssize_t      msg_len,len;
   RRU_CONFIG_msg_t rru_config_msg;
 
   rru_config_msg.type = RAU_tick; 
@@ -159,7 +162,6 @@ int send_tick(RU_t *ru){
 
 int send_config(RU_t *ru, RRU_CONFIG_msg_t rru_config_msg){
 
-  ssize_t      msg_len,len;
 
   rru_config_msg.type = RRU_config;
   rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t)-MAX_RRU_CONFIG_SIZE+sizeof(RRU_config_t);
@@ -462,7 +464,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
   do { 
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
-    if (oai_exit == 1) break;
+    if (oai_exit == 1 || ru->cmd== STOP_RU) break;
     if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
     else if (packet_type == IF4p5_PULTICK) {           
       if ((proc->first_rx==0) && (f!=*frame)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d\n",f,*frame);       
@@ -511,8 +513,8 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
 
   proc->symbol_mask[sf] = 0;  
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
-  LOG_D(PHY,"RU %d: fh_if4p5_south_in sleeping ...\n",ru->idx);
-  usleep(100);
+  LOG_D(PHY,"RU %d: fh_if4p5_south_in returning ...\n",ru->idx);
+  //  usleep(100);
 }
 
 // Dummy FH from south for getting synchronization from master RU
@@ -1075,9 +1077,9 @@ static void* ru_thread_prach( void* param ) {
 
   thread_top_init("ru_thread_prach",1,500000L,1000000L,20000000L);
 
-  while (RC.ru_mask>0) {
+  while (RC.ru_mask>0 && ru->function!=eNodeB_3GPP) {
     usleep(1e6);
-    LOG_I(PHY,"%s() RACH waiting for RU to be configured\n", __FUNCTION__);
+    LOG_D(PHY,"%s() RACH waiting for RU to be configured\n", __FUNCTION__);
   }
   LOG_I(PHY,"%s() RU configured - RACH processing thread running\n", __FUNCTION__);
 
@@ -1256,7 +1258,7 @@ void do_ru_synch(RU_t *ru) {
   rru_config_msg.type = RRU_sync_ok;
   rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
 
-  LOG_I(PHY,"Sending RRU_sync_ok to RAU\n", ru->idx);
+  LOG_I(PHY,"Sending RRU_sync_ok to RAU\n");
   AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
 
   LOG_I(PHY,"Exiting synch routine\n");
@@ -1281,7 +1283,7 @@ void wakeup_eNBs(RU_t *ru) {
     sprintf(string,"Incoming RU %d",ru->idx);
     
     pthread_mutex_lock(&proc->mutex_RU);
-    LOG_I(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
+    LOG_D(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
           ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,ru->wait_cnt,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx]);
 
     if (proc->RU_mask[ru->proc.subframe_rx] == 0)
@@ -1300,13 +1302,13 @@ void wakeup_eNBs(RU_t *ru) {
     if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) {
       proc->RU_mask[ru->proc.subframe_rx] = 0;
       clock_gettime(CLOCK_MONOTONIC,&t);
-      AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+500000,
-                  "Time difference for subframe %d => %d > 5ms\n",
+      AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+5000000,
+                  "Time difference for subframe %d => %lu > 5ms\n",
                   ru->proc.subframe_rx,t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
     }
     
     pthread_mutex_unlock(&proc->mutex_RU);
-    LOG_I(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
+    LOG_D(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
     ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
   }
   else { // multiple eNB case for later
@@ -1545,18 +1547,11 @@ void reset_proc(RU_t *ru);
 
 static void* ru_thread_control( void* param ) {
 
-  static int ru_thread_status;
 
   RU_t               *ru      = (RU_t*)param;
   RU_proc_t          *proc    = &ru->proc;
   RRU_CONFIG_msg_t   rru_config_msg;
   ssize_t	     msg_len;
-  int                tick_received          = 0;
-  int                configuration_received = 0;
-  int                start_received = 0;
-  RRU_capabilities_t *cap;
-  int                i;
-  int                ret;
   int                len;
 
 
@@ -1570,7 +1565,7 @@ static void* ru_thread_control( void* param ) {
   }
 
   
-  ru->state = RU_IDLE;
+  ru->state = (ru->function==eNodeB_3GPP)? RU_RUN : RU_IDLE;
   LOG_I(PHY,"Control channel ON for RU %d\n", ru->idx);
 
   while (!oai_exit) // Change the cond
@@ -1801,25 +1796,19 @@ static void* ru_thread_control( void* param ) {
 
 
     }//while
-
+  return(NULL);
 }
 
 
 static void* ru_thread( void* param ) {
 
-  static int ru_thread_status;
 
   RU_t               *ru      = (RU_t*)param;
   RU_proc_t          *proc    = &ru->proc;
   LTE_DL_FRAME_PARMS *fp      = &ru->frame_parms;
-  int                ret;
   int                subframe =9;
   int                frame    =1023; 
-  struct timespec  time_rf;
-  long old_time;
 
-  // set default return value
-  ru_thread_status = 0;
 
 
   // set default return value
@@ -1830,16 +1819,18 @@ static void* ru_thread( void* param ) {
 	
   while (!oai_exit) {
   
-    if (ru->if_south != LOCAL_RF) ru->wait_cnt = 100;
+    if (ru->if_south != LOCAL_RF && ru->is_slave==1) ru->wait_cnt = 100;
     else                          ru->wait_cnt = 0;
 
     // wait to be woken up
-    if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
+    if (ru->function!=eNodeB_3GPP) {
+      if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
+    }
+    else wait_sync("ru_thread");
 	  
     if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru-%d state = %s != RU_RUN\n",ru->idx,ru_states[ru->state]);
     else if (ru->is_slave == 1) AssertFatal(ru->state == RU_SYNC || ru->state == RU_RUN,"ru %d state = %s != RU_SYNC or RU_RUN\n",ru->idx,ru_states[ru->state]);  
     // Start RF device if any
-    clock_gettime(CLOCK_MONOTONIC,&time_rf); 
     if (ru->start_rf) {
       if (ru->start_rf(ru) != 0)
 	LOG_E(HW,"Could not start the RF device\n");
@@ -1850,7 +1841,8 @@ static void* ru_thread( void* param ) {
 
     // if an asnych_rxtx thread exists
     // wakeup the thread because the devices are ready at this point
-	 
+	
+    LOG_I(PHY,"Locking asynch mutex\n"); 
     if ((ru->fh_south_asynch_in)||(ru->fh_north_asynch_in)) {
       pthread_mutex_lock(&proc->mutex_asynch_rxtx);
       proc->instance_cnt_asynch_rxtx=0;
@@ -1863,7 +1855,7 @@ static void* ru_thread( void* param ) {
     if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
   
-
+    LOG_I(PHY,"Starting steady-state operation\n");
     // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
     while (ru->state == RU_RUN) {
 
@@ -1892,12 +1884,8 @@ static void* ru_thread( void* param ) {
 	LOG_I(PHY,"RU %d stopped\n",ru->idx);
 	break;
       }
-      old_time = time_rf.tv_nsec;
-      clock_gettime(CLOCK_MONOTONIC,&time_rf);
-      //if ((time_rf.tv_nsec > old_time + 1200000) || (time_rf.tv_nsec < old_time + 500000))
-      //   LOG_I(PHY,"RU thread %d, frame %d (%p), subframe %d : RF time difference : %lu\n",
-      //      ru->idx, frame,&frame,subframe,time_rf.tv_nsec - old_time);
-  
+      if (oai_exit == 1) break;
+ 
       if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
       if (ru->wait_cnt > 0) {
@@ -1910,8 +1898,8 @@ static void* ru_thread( void* param ) {
            rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
            ((uint16_t*)&rru_config_msg.msg[0])[0] = RC.ru[0]->proc.frame_rx;
            ru->cmd=WAIT_RESYNCH;
-           LOG_I(PHY,"Sending Frame Resynch %d to RRU\n", ru->idx,RC.ru[0]->proc.frame_rx);
-           AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
+           LOG_I(PHY,"Sending Frame Resynch %d to RRU %d\n", RC.ru[0]->proc.frame_rx,ru->idx);
+           AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU\n");
 
          }
       }
@@ -1963,9 +1951,14 @@ static void* ru_thread( void* param ) {
   
 
   printf( "Exiting ru_thread \n");
- 
-  ru_thread_status = 0;
-  return &ru_thread_status;
+
+  if (ru->stop_rf != NULL) {
+    if (ru->stop_rf(ru) != 0)
+      LOG_E(HW,"Could not stop the RF device\n");
+    else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+  }
+
+  return NULL;
 
 }
 
@@ -2071,8 +2064,10 @@ int start_rf(RU_t *ru) {
   return(ru->rfdevice.trx_start_func(&ru->rfdevice));
 }
 
-void stop_rf(RU_t *ru){
+int stop_rf(RU_t *ru)
+{
   ru->rfdevice.trx_end_func(&ru->rfdevice);
+  return 0;
 }
 
 extern void fep_full(RU_t *ru);
@@ -2168,8 +2163,7 @@ void init_RU_proc(RU_t *ru) {
 #endif
 #endif
   
-  pthread_create( &proc->pthread_ctrl, attr_ctrl, ru_thread_control, (void*)ru );
-  pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
+  if (ru->function!=eNodeB_3GPP) pthread_create( &proc->pthread_ctrl, attr_ctrl, ru_thread_control, (void*)ru );
   
 
   if (ru->function == NGFI_RRU_IF4p5) {
@@ -2184,13 +2178,25 @@ void init_RU_proc(RU_t *ru) {
 	(ru->function == NGFI_RRU_IF5) ||
 	(ru->function == NGFI_RRU_IF4p5)) pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, ru_thread_asynch_rxtx, (void*)ru );
     
-    snprintf( name, sizeof(name), "ru_thread_FH %d", ru->idx );
-    pthread_setname_np( proc->pthread_FH, name );
     
   }
   else if (ru->function == eNodeB_3GPP && ru->if_south == LOCAL_RF) { // DJP - need something else to distinguish between monolithic and PNF
     LOG_I(PHY,"%s() DJP - added creation of pthread_prach\n", __FUNCTION__);
     pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void*)ru );
+    ru->state=RU_RUN;
+    fill_rf_config(ru,ru->rf_config_file);
+    init_frame_parms(&ru->frame_parms,1);
+    ru->frame_parms.nb_antennas_rx = ru->nb_rx;
+    phy_init_RU(ru);
+
+
+    openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+
+   if (setup_RU_buffers(ru)!=0) {
+      printf("Exiting, cannot initialize RU Buffers\n");
+      exit(-1);
+   }
+
   }
 
   if (get_nprocs()>=2) { 
@@ -2198,7 +2204,19 @@ void init_RU_proc(RU_t *ru) {
     if (ru->feptx_ofdm) init_feptx_thread(ru,NULL);
   } 
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void*)ru); 
-  
+ 
+  pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
+  snprintf( name, sizeof(name), "ru_thread_FH %d", ru->idx );
+  pthread_setname_np( proc->pthread_FH, name );
+
+  if (ru->function == eNodeB_3GPP) {
+    usleep(10000);
+    LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d) is ready in state %s\n",ru->idx,ru->is_slave,ru_states[ru->state]);
+    pthread_mutex_lock(&RC.ru_mutex);
+    RC.ru_mask &= ~(1<<ru->idx);
+    pthread_cond_signal(&RC.ru_cond);
+    pthread_mutex_unlock(&RC.ru_mutex);
+  }
 }
 
 void kill_RU_proc(int inst)
@@ -2367,7 +2385,6 @@ void configure_ru(int idx,
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t*)arg;
   int ret;
-  int i;
 
   LOG_I(PHY, "Received capabilities from RRU %d\n",idx);
 
@@ -2402,6 +2419,7 @@ void configure_ru(int idx,
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
     
 #ifdef Rel14
+    int i;
     for (i=0;i<4;i++) {
       config->emtc_prach_CElevel_enable[0][i]  = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i];
       config->emtc_prach_FreqOffset[0][i]      = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i];
@@ -2562,7 +2580,7 @@ void set_function_spec_param(RU_t *ru)
     ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
     ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
     ru->start_rf               = start_rf;                            // need to start the local RF interface
-    ru->stop_rf		       = stop_rf;
+    ru->stop_rf                = stop_rf;
     printf("configuring ru_id %d (start_rf %p)\n", ru->idx, start_rf);
     /*
       if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
@@ -2594,6 +2612,7 @@ void set_function_spec_param(RU_t *ru)
       ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
     }
     ru->start_rf               = NULL;                 // no local RF
+    ru->stop_rf                = NULL;
     ru->start_if               = start_if;             // need to start if interface for IF5
     ru->ifdevice.host_type     = RAU_HOST;
     ru->ifdevice.eth_params    = &ru->eth_params;
@@ -2618,6 +2637,7 @@ void set_function_spec_param(RU_t *ru)
     ru->fh_north_out           = NULL;
     ru->fh_north_asynch_in     = NULL;
     ru->start_rf               = NULL;                // no local RF
+    ru->stop_rf                = NULL;
     ru->start_if               = start_if;            // need to start if interface for IF4p5
     ru->ifdevice.host_type     = RAU_HOST;
     ru->ifdevice.eth_params    = &ru->eth_params;
@@ -2646,7 +2666,6 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
   
   int ru_id;
   RU_t *ru;
-  int ret;
   PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
   int i;
   int CC_id;
@@ -2778,6 +2797,7 @@ void RCconfig_RU(void) {
 	if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
 	  RC.ru[j]->if_south                        = LOCAL_RF;
 	  RC.ru[j]->function                        = eNodeB_3GPP;
+          RC.ru[j]->state                           = RU_RUN;
 	  printf("Setting function for RU %d to eNodeB_3GPP\n",j);
         }
         else { 

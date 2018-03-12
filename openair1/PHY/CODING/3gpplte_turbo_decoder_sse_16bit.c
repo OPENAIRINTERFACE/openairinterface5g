@@ -1124,7 +1124,7 @@ void free_td16(void)
   }
 }
 
-void init_td16()
+void init_td16(void)
 {
 
   int ind,i,i2,i3,j,n,pi,pi3;
@@ -1172,7 +1172,9 @@ void init_td16()
 }
 
 unsigned char phy_threegpplte_turbo_decoder16(short *y,
+    short *y2,
     unsigned char *decoded_bytes,
+    unsigned char *decoded_bytes2,
     unsigned short n,
     unsigned short f1,
     unsigned short f2,

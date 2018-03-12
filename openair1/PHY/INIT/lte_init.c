@@ -882,11 +882,11 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     AssertFatal(fp->N_RB_UL > 5, "fp->N_RB_UL %d < 6\n",fp->N_RB_UL);
     for (i=0; i<2; i++) {
       // RK 2 times because of output format of FFT!
-      // FIXME We should get rid of this, consider also phy_free_lte_eNB()
-      pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
+      // FIXME We should get rid of this
+      pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
       pusch_vars[UE_id]->rxdataF_ext2[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
       pusch_vars[UE_id]->drs_ch_estimates[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
-      pusch_vars[UE_id]->drs_ch_estimates_time[i] = (int32_t*)malloc16_clear( 2*2*sizeof(int32_t)*fp->ofdm_symbol_size );
+      pusch_vars[UE_id]->drs_ch_estimates_time[i] = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
       pusch_vars[UE_id]->rxdataF_comp[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->N_RB_UL*12*fp->symbols_per_tti );
       pusch_vars[UE_id]->ul_ch_mag[i]  = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );
       pusch_vars[UE_id]->ul_ch_magb[i] = (int32_t*)malloc16_clear( fp->symbols_per_tti*sizeof(int32_t)*fp->N_RB_UL*12 );

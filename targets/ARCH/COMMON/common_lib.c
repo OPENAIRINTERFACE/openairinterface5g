@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "common_lib.h"
+#include "common/utils/load_module_shlib.h"
 
 int set_device(openair0_device *device) {
 
@@ -85,52 +86,26 @@ int set_transport(openair0_device *device) {
   }
   
 }
-
+typedef int(*devfunc_t)(openair0_device *, openair0_config_t *, eth_params_t *);
 /* look for the interface library and load it */
 int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * cfg, uint8_t flag) {
   
-  void *lib_handle;
-  oai_device_initfunc_t dp ;
-  oai_transport_initfunc_t tp ;
+  loader_shlibfunc_t shlib_fdesc[1];
   int ret=0;
-
+  char *libname;
   if (flag == RAU_LOCAL_RADIO_HEAD) {
-      lib_handle = dlopen(OAI_RF_LIBNAME, RTLD_LAZY);
-      if (!lib_handle) {
-	fprintf(stderr,"Unable to locate %s: HW device set to NONE_DEV.\n", OAI_RF_LIBNAME);
-	fprintf(stderr,"%s\n",dlerror());
-	return -1;
-      } 
-      
-      dp = dlsym(lib_handle,"device_init");
-      
-      if (dp != NULL ) {
-	ret = dp(device,openair0_cfg);
-	if (ret<0) {
-	  fprintf(stderr, "%s %d:oai device intialization failed %s\n", __FILE__, __LINE__, dlerror());
-	}
-      } else {
-	fprintf(stderr, "%s %d:oai device intializing function not found %s\n", __FILE__, __LINE__, dlerror());
-	return -1;
-      }
+      libname=OAI_RF_LIBNAME;
+      shlib_fdesc[0].fname="device_init";
     } else {
-      lib_handle = dlopen(OAI_TP_LIBNAME, RTLD_LAZY);
-      if (!lib_handle) {
-	printf( "Unable to locate %s: transport protocol set to NONE_TP.\n", OAI_TP_LIBNAME);
-	printf( "%s\n",dlerror());
-	return -1;
-      } 
-      
-      tp = dlsym(lib_handle,"transport_init");
-      
-      if (tp != NULL ) {
-	tp(device,openair0_cfg,cfg);
-      } else {
-	fprintf(stderr, "%s %d:oai device intializing function not found %s\n", __FILE__, __LINE__, dlerror());
-	return -1;
-      }
+      libname=OAI_TP_LIBNAME;
+      shlib_fdesc[0].fname="transport_init";      
     } 
-    
+  ret=load_module_shlib(libname,shlib_fdesc,1);
+  if (ret < 0) {
+       fprintf(stderr,"Library %s couldn't be loaded\n",libname);
+  } else {
+       ret=((devfunc_t)shlib_fdesc[0].fptr)(device,openair0_cfg,cfg);
+  }    
   return ret; 	       
 }
 

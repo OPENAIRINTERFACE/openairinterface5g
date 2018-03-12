@@ -2125,6 +2125,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   amp_rho_b = (int16_t)(((int32_t)amp*dlsch1->sqrt_rho_b)>>13);
   }
 
+
   if (mod_order0 == 4)
     for (i=0;i<4; i++) {
       qam16_table_a0[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_a)>>15);
