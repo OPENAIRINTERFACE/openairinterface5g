@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -35,13 +35,9 @@ typedef struct s1ap_eNB_config_s {
   unsigned char mme_enabled;          ///< MME enabled ?
 } s1ap_eNB_config_t;
 
-#if defined(OAI_EMU)
-# define EPC_MODE_ENABLED       oai_emulation.info.s1ap_config.mme_enabled
-#else
 extern s1ap_eNB_config_t s1ap_config;
 
-# define EPC_MODE_ENABLED       s1ap_config.mme_enabled
-#endif
+#define EPC_MODE_ENABLED       s1ap_config.mme_enabled
 
 void *s1ap_eNB_task(void *arg);
 

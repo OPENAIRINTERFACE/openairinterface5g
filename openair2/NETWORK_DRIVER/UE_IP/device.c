@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -27,13 +27,6 @@
 
 */
 /*******************************************************************************/
-
-#ifndef OAI_NW_DRIVER_USE_NETLINK
-#ifdef RTAI
-#include "rtai_posix.h"
-#define RTAI_IRQ 30 //try to get this irq with RTAI
-#endif // RTAI
-#endif // OAI_NW_DRIVER_USE_NETLINK
 
 #include "constant.h"
 #include "local.h"
@@ -243,7 +236,7 @@ int ue_ip_hard_start_xmit(struct sk_buff *skb_pP, struct net_device *dev_pP)
 
     // End debug information
     netif_stop_queue(dev_pP);
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) || RHEL_RELEASE_CODE >= 1796
     netif_trans_update(dev_pP);
 #else
     dev_pP->trans_start = jiffies;
@@ -319,7 +312,7 @@ void ue_ip_tx_timeout(struct net_device *dev_pP)
   printk("[UE_IP_DRV][%s] begin\n", __FUNCTION__);
   //  (ue_ip_priv_t *)(dev_pP->priv_p)->stats.tx_errors++;
   (priv_p->stats).tx_errors++;
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) || RHEL_RELEASE_CODE >= 1796
   netif_trans_update(dev_pP);
 #else
   dev_pP->trans_start = jiffies;

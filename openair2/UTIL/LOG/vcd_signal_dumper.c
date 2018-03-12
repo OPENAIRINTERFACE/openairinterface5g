@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -47,10 +47,6 @@
 #include "signals.h"
 
 #include "vcd_signal_dumper.h"
-
-#if defined(ENABLE_RTAI_CLOCK)
-#include "rtai_lxrt.h"
-#endif
 
 #define VCDSIGNALDUMPER_VERSION_MAJOR 0
 #define VCDSIGNALDUMPER_VERSION_MINOR 1
@@ -402,6 +398,17 @@ const char* eurecomFunctionsNames[] = {
 
   "compress_if",
   "decompress_if",
+
+  "nfapi_subframe",
+  "generate_pcfich",
+  "generate_dci0",
+  "generate_dlsch",
+  "generate_phich",
+  "pdcch_scrambling",
+  "pdcch_modulation",
+  "pdcch_interleaving",
+  "pdcch_tx",
+
 };
 
 struct vcd_module_s vcd_modules[] = {
@@ -415,8 +422,6 @@ static inline unsigned long long int vcd_get_time(void);
 
 #if defined(ENABLE_USE_CPU_EXECUTION_TIME)
 struct timespec     g_time_start;
-#elif defined(ENABLE_RTAI_CLOCK)
-RTIME start;
 #endif
 
 
@@ -612,8 +617,6 @@ void vcd_signal_dumper_init(char *filename)
 
 #if defined(ENABLE_USE_CPU_EXECUTION_TIME)
     clock_gettime(CLOCK_MONOTONIC, &g_time_start);
-#elif defined(ENABLE_RTAI_CLOCK)
-    start=rt_get_time_ns();
 #endif
 
     vcd_signal_dumper_create_header();
@@ -666,9 +669,6 @@ static inline void vcd_signal_dumper_print_time_since_start(void)
     secondsSinceStart     = (long long unsigned int)time.tv_sec - (long long unsigned int)g_time_start.tv_sec;
     /* Write time in nanoseconds */
     fprintf(vcd_fd, "#%llu\n", nanosecondsSinceStart + (secondsSinceStart * 1000000000UL));
-#elif defined(ENABLE_RTAI_CLOCK)
-    /* Write time in nanoseconds */
-    fprintf(vcd_fd, "#%llu\n",rt_get_time_ns()-start);
 #endif
   }
 }
@@ -682,8 +682,6 @@ static inline unsigned long long int vcd_get_time(void)
 
   return (long long unsigned int)((time.tv_nsec - g_time_start.tv_nsec)) +
          ((long long unsigned int)time.tv_sec - (long long unsigned int)g_time_start.tv_sec) * 1000000000UL;
-#elif defined(ENABLE_RTAI_CLOCK)
-  return rt_get_time_ns() - start;
 #endif
 }
 

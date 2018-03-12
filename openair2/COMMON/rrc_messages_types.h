@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -61,6 +61,8 @@ typedef UL_DCCH_Message_t       RrcUlDcchMessage;
 #define RRC_STATE_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_state_ind
 
 #define RRC_CONFIGURATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.rrc_configuration_req
+
+#define NBIOTRRC_CONFIGURATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.nbiotrrc_configuration_req
 
 #define NAS_KENB_REFRESH_REQ(mSGpTR)    (mSGpTR)->ittiMsg.nas_kenb_refresh_req
 #define NAS_CELL_SELECTION_REQ(mSGpTR)  (mSGpTR)->ittiMsg.nas_cell_selection_req
@@ -167,6 +169,77 @@ typedef struct RrcConfigurationReq_s {
   long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
   long                    ue_TransmissionMode[MAX_NUM_CCs];
 } RrcConfigurationReq;
+#define MAX_NUM_NBIOT_CELEVELS    3
+typedef struct NbIoTRrcConfigurationReq_s {
+  uint32_t            cell_identity;
+
+  uint16_t            tac;
+
+  uint16_t	      mcc;
+  uint16_t	      mnc;
+  uint8_t	      mnc_digit_length;
+  lte_frame_type_t	  frame_type;
+  uint8_t                 tdd_config;
+  uint8_t                 tdd_config_s;
+  lte_prefix_type_t       prefix_type;
+  lte_prefix_type_t	  prefix_type_UL;
+  int16_t                 eutra_band;
+  uint32_t                downlink_frequency;
+  int32_t                 uplink_frequency_offset;
+  int16_t                 Nid_cell;// for testing, change later
+  int16_t                 N_RB_DL;// for testing, change later
+  //RACH
+  long					  rach_raResponseWindowSize_NB;
+  long					  rach_macContentionResolutionTimer_NB;
+  long					  rach_powerRampingStep_NB;
+  long					  rach_preambleInitialReceivedTargetPower_NB;
+  long					  rach_preambleTransMax_CE_NB;
+  //BCCH
+  long					  bcch_modificationPeriodCoeff_NB;
+  //PCCH
+  long					  pcch_defaultPagingCycle_NB;
+  long					  pcch_nB_NB;
+  long					  pcch_npdcch_NumRepetitionPaging_NB;
+  //NPRACH
+  long					  nprach_CP_Length;
+  long					  nprach_rsrp_range;
+  long					  nprach_Periodicity[MAX_NUM_NBIOT_CELEVELS];
+  long					  nprach_StartTime[MAX_NUM_NBIOT_CELEVELS];
+  long					  nprach_SubcarrierOffset[MAX_NUM_NBIOT_CELEVELS];
+  long					  nprach_NumSubcarriers[MAX_NUM_NBIOT_CELEVELS];
+  long					  numRepetitionsPerPreambleAttempt_NB[MAX_NUM_NBIOT_CELEVELS];
+  long					  nprach_SubcarrierMSG3_RangeStart;
+  long					  maxNumPreambleAttemptCE_NB;
+  long					  npdcch_NumRepetitions_RA[MAX_NUM_NBIOT_CELEVELS];
+  long					  npdcch_StartSF_CSS_RA[MAX_NUM_NBIOT_CELEVELS];
+  long					  npdcch_Offset_RA[MAX_NUM_NBIOT_CELEVELS];
+  //NPDSCH
+  long					  npdsch_nrs_Power;
+  //NPUSCH
+  long					  npusch_ack_nack_numRepetitions_NB;
+  long					  npusch_srs_SubframeConfig_NB;
+  long					  npusch_threeTone_CyclicShift_r13;
+  long					  npusch_sixTone_CyclicShift_r13;
+  BOOLEAN_t				  npusch_groupHoppingEnabled;
+  long					  npusch_groupAssignmentNPUSCH_r13;
+
+  //DL_GapConfig
+  long					  dl_GapThreshold_NB;
+  long	 				  dl_GapPeriodicity_NB;
+  long	 				  dl_GapDurationCoeff_NB;
+  //Uplink power control Common
+  long					  npusch_p0_NominalNPUSCH;
+  long					  npusch_alpha;
+  long					  deltaPreambleMsg3;
+  //UE timers and constants
+  long					  ue_TimersAndConstants_t300_NB;
+  long					  ue_TimersAndConstants_t301_NB;
+  long					  ue_TimersAndConstants_t310_NB;
+  long					  ue_TimersAndConstants_t311_NB;
+  long					  ue_TimersAndConstants_n310_NB;
+  long					  ue_TimersAndConstants_n311_NB;
+} NbIoTRrcConfigurationReq;
+
 
 // UE: NAS -> RRC messages
 typedef kenb_refresh_req_t      NasKenbRefreshReq;

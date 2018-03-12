@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -28,7 +28,6 @@
 * \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr
 */
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h> /* for atoi(3) */
@@ -36,9 +35,6 @@
 #include <string.h> /* for strerror(3) */
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
-#else
-#include <linux/module.h>  /* Needed by all modules */
-#endif
 
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
@@ -195,6 +191,28 @@ do_RRCConnectionReconfiguration(
     , SCellToAddMod_r10_t  *SCell_config
 #endif
                                         );
+/**
+\brief Generate an RRCConnectionReestablishment DL-CCCH-Message (eNB).  This routine configures SRB_ToAddMod (SRB1/SRB2) and
+PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting (PUCCH format 2/2a/2b) or SRS.
+@param ctxt_pP Running context
+@param ue_context_pP UE context
+@param CC_id         Component Carrier ID
+@param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
+@param transmission_mode Transmission mode for UE (1-9)
+@param Transaction_id Transaction_ID for this message
+@param SRB_configList Pointer (returned) to SRB1_config/SRB2_config(later) IEs for this UE
+@param physicalConfigDedicated Pointer (returned) to PhysicalConfigDedicated IE for this UE
+@returns Size of encoded bit stream in bytes*/
+uint8_t
+do_RRCConnectionReestablishment(
+  const protocol_ctxt_t*     const ctxt_pP,
+  rrc_eNB_ue_context_t*      const ue_context_pP,
+  int                              CC_id,
+  uint8_t*                   const buffer,
+  const uint8_t                    transmission_mode,
+  const uint8_t                    Transaction_id,
+  SRB_ToAddModList_t               **SRB_configList,
+  struct PhysicalConfigDedicated   **physicalConfigDedicated);
 
 /**
 \brief Generate an RRCConnectionReestablishmentReject DL-CCCH-Message (eNB).
@@ -248,6 +266,8 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
 uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_id,long rsrp_s,long rsrq_s,long rsrp_t,long rsrq_t);
 
 uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t transaction_id, uint32_t pdu_length, uint8_t *pdu_buffer);
+
+uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain);
 
 uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer);
 

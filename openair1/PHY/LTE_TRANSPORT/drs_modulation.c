@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -81,7 +81,6 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
   //        cyclic_shift1 = 0;
   Msc_RS = 12*nb_rb;
 
-#ifdef USER_MODE
   Msc_idx_ptr = (uint16_t*) bsearch(&Msc_RS, dftsizes, 33, sizeof(uint16_t), compareints);
 
   if (Msc_idx_ptr)
@@ -91,26 +90,14 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
     return(-1);
   }
 
-#else
-  uint8_t b;
-
-  for (b=0; b<33; b++)
-    if (Msc_RS==dftsizes[b])
-      Msc_RS_idx = b;
-
-#endif
-#ifdef DEBUG_DRS
-  printf("[PHY] drs_modulation: Msc_RS = %d, Msc_RS_idx = %d,cyclic_shift %d, u0 %d, v0 %d, u1 %d, v1 %d,cshift0 %d,cshift1 %d\n",Msc_RS, Msc_RS_idx,cyclic_shift,u0,v0,u1,v1,cyclic_shift0,cyclic_shift1);
-
-#endif
-
-
   for (l = (3 - frame_parms->Ncp),u=u0,v=v0,cyclic_shift=cyclic_shift0;
        l<frame_parms->symbols_per_tti;
        l += (7 - frame_parms->Ncp),u=u1,v=v1,cyclic_shift=cyclic_shift1) {
 
-    drs_offset = 0;  //  printf("drs_modulation: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
-
+    drs_offset = 0;
+#ifdef DEBUG_DRS
+    printf("drs_modulation: Msc_RS = %d, Msc_RS_idx = %d, u=%d,v=%d\n",Msc_RS, Msc_RS_idx,u,v);
+#endif
 
 
     re_offset = frame_parms->first_carrier_offset;

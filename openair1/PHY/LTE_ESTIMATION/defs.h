@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -23,12 +23,6 @@
 #define __LTE_ESTIMATION_DEFS__H__
 
 #include "PHY/defs.h"
-/*
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
-#endif
- */
-
 /** @addtogroup _PHY_PARAMETER_ESTIMATION_BLOCKS_
  * @{
  */
@@ -135,18 +129,6 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                                     uint8_t eNB_offset,
                                     int subframe,
                                     unsigned char l);
-
-/*
-#ifdef EMOS
-int lte_dl_channel_estimation_emos(int dl_ch_estimates_emos[NB_ANTENNAS_RX*NB_ANTENNAS_TX][N_RB_DL_EMOS*N_PILOTS_PER_RB*N_SLOTS_EMOS],
-           int **rxdataF,
-           LTE_DL_FRAME_PARMS *frame_parms,
-           unsigned char Ns,
-           unsigned char p,
-           unsigned char l,
-           unsigned char sector);
-#endif
- */
 
 /*!
 \brief Frequency offset estimation for LTE

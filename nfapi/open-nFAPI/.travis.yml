@@ -1,0 +1,36 @@
+
+env:
+  global:
+    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created 
+    #   via the "travis encrypt" command using the project repo's public key
+    - secure: "oNj8JhGBN/zjzrAU7y2Nn/wxSxA/MDp2Y8fVLLp6fhx+y2mWdlMZhgCjeKSpdbGtroUnxErX1P8t+8EPz2+mMoq+G809Q9t7eJjd1+6nkVhEEfDXN83BmJkvIylC0/IKJiT2wCa8LzbdhpQUFyZ1Gk1WKZozAW5HotfFjm6/NFi/GX4uA7S0tU5E4yC3r4yqH9cLZ+arWMOEY/X0lrx0n6tLjDe921kFwkZQGFzAzrbXN2fZXKQ3xFcpREWEgEWsY7H2n4T7oJI3nEPY4P/4kvCjeQMjnlATEwtcciBiUbHRew4WWSTndF54crRlqFlzFcEf/Ouz27U/d2xYHJWcWNi88l+/qsb+V0uobwhiGUJGbVhf9IkgEO3tr/zbwkPDFrXpa/1xuSoc6jDm8i61gKQkcBhQsRFXlciPvwLhiL07gzeAfZD1Yke3tE+0geHPbEA0czzwtHe35jorAKYWsFXOXmcoK9t9SpnvBRFz6JuEsHPooafze43sTJg3qkgBszkU+U38CneeAVwo/uTA3Zw1ZrtOQv56v0UvAHze/VAF5z3rFJPl1oJl60OI8V5UBg4yIa2bySKhO//zwd4MGmsBpcWwDuu2BHUVasfk0vaetVxVVtdXG/2BuBP+IXinpJtI48NSFs6PT82dHz4cDF/iLDs0hPC6sbV258PY8F0="
+
+language: cpp
+
+dist: trusty
+sudo: required
+
+compiler:
+  - g++
+
+before_install:
+  - sudo apt-get install doxygen 
+  - sudo apt-get install libcunit1-dev 
+  - sudo apt-get install libz-dev
+  - sudo apt-get install libsctp-dev
+  - sudo apt-get install libboost-all-dev
+  - autoreconf -i
+
+addons:
+  coverity_scan:
+    project:
+      name: cisco-open-nFAPI
+      version: 1.0
+      description: Build submitted via Travis CI
+    notification_email: xxx@cisco.com
+    build_command_prepend: ./configure
+    build_command: make
+    branch_pattern: coverity_scan
+
+script:
+  - ./configure && make && make check

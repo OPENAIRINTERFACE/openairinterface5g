@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -38,10 +38,6 @@
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
-#endif
-
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 #include "UTIL/LOG/log.h"
@@ -69,16 +65,17 @@ void feptx0(RU_t *ru,int slot) {
   //int dummy_tx_b[7680*2] __attribute__((aligned(32)));
 
   unsigned int aa,slot_offset;
-  int i,j, tx_offset;
+  int i, tx_offset;
   int slot_sizeF = (fp->ofdm_symbol_size)*
                    ((fp->Ncp==1) ? 6 : 7);
-  int len,len2;
-  int16_t *txdata;
   int subframe = ru->proc.subframe_tx;
+
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+slot , 1 );
 
   slot_offset = subframe*fp->samples_per_tti + (slot*(fp->samples_per_tti>>1));
 
-  //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
+  //LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d\n",ru->proc.frame_tx, ru->proc.subframe_tx,slot);
 
   for (aa=0; aa<ru->nb_tx; aa++) {
     if (fp->Ncp == EXTENDED) PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
@@ -134,6 +131,7 @@ void feptx0(RU_t *ru,int slot) {
       }
     }
   }
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+slot , 0);
 }
 
 static void *feptx_thread(void *param) {
@@ -189,6 +187,8 @@ void feptx_ofdm_2thread(RU_t *ru) {
 
   if (subframe_select(fp,subframe) == SF_UL) return;
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
+
   if (subframe_select(fp,subframe)==SF_DL) {
     // If this is not an S-subframe
     if (pthread_mutex_timedlock(&proc->mutex_feptx,&wait) != 0) {
@@ -226,6 +226,8 @@ void feptx_ofdm_2thread(RU_t *ru) {
     print_meas_now(&ru->ofdm_mod_wait_stats,"fep wakeup",stderr);
     printf("delay in feptx wait on codition in frame_rx: %d  subframe_rx: %d \n",proc->frame_tx,proc->subframe_tx);
   }*/
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
 
   stop_meas(&ru->ofdm_mod_stats);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
@@ -322,11 +324,11 @@ void feptx_ofdm(RU_t *ru) {
 	}
 	txdata = (int16_t*)&ru->common.txdata[aa][0];
 	for (j=0; i<(len<<1); i++,j++) {
-	  txdata[j++] = ((int16_t*)dummy_tx_b)[i];
+          txdata[j++] = ((int16_t*)dummy_tx_b)[i];
 	}
       }
       else {
-	LOG_D(PHY,"feptx_ofdm: Writing to position %d\n",slot_offset);
+	//LOG_D(PHY,"feptx_ofdm: Writing to position %d\n",slot_offset);
 	tx_offset = (int)slot_offset;
 	txdata = (int16_t*)&ru->common.txdata[aa][tx_offset];
 
@@ -345,9 +347,9 @@ void feptx_ofdm(RU_t *ru) {
       */
      if ((fp->frame_type == TDD) && 
          ((fp->tdd_config==0) ||
-	      (fp->tdd_config==1) ||
-	      (fp->tdd_config==2) ||
-	      (fp->tdd_config==6)) && 
+	   (fp->tdd_config==1) ||
+	   (fp->tdd_config==2) ||
+	   (fp->tdd_config==6)) && 
 	     ((subframe==0) || (subframe==5))) {
        // turn on tx switch N_TA_offset before
        //LOG_D(HW,"subframe %d, time to switch to tx (N_TA_offset %d, slot_offset %d) \n",subframe,ru->N_TA_offset,slot_offset);
@@ -383,10 +385,14 @@ void feptx_prec(RU_t *ru) {
     eNB = eNB_list[0];
     fp  = &eNB->frame_parms;
     
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
+
     for (aa=0;aa<ru->nb_tx;aa++)
       memcpy((void*)ru->common.txdataF_BF[aa],
 	     (void*)&eNB->common_vars.txdataF[aa][subframe*fp->symbols_per_tti*fp->ofdm_symbol_size],
 	     fp->symbols_per_tti*fp->ofdm_symbol_size*sizeof(int32_t));
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);
   }
   else {
     for (i=0;i<ru->num_eNB;i++) {
@@ -405,9 +411,11 @@ void feptx_prec(RU_t *ru) {
 			 aa);
 	}
       }
+#if 0
       LOG_D(PHY,"feptx_prec: frame %d, subframe %d: txp (freq) %d dB\n",
 	    ru->proc.frame_tx,subframe,
 	    dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[0],2*fp->symbols_per_tti*fp->ofdm_symbol_size)));
+#endif
     }
   }
 }
@@ -420,6 +428,8 @@ void fep0(RU_t *ru,int slot) {
 
   //  printf("fep0: slot %d\n",slot);
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+slot, 1);
+
   remove_7_5_kHz(ru,(slot&1)+(proc->subframe_rx<<1));
   for (l=0; l<fp->symbols_per_tti/2; l++) {
     slot_fep_ul(ru,
@@ -428,6 +438,7 @@ void fep0(RU_t *ru,int slot) {
 		0
 		);
   }
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+slot, 0);
 }
 
 
@@ -505,6 +516,13 @@ void ru_fep_full_2thread(RU_t *ru) {
 
   struct timespec wait;
 
+  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+
+  if ((fp->frame_type == TDD) &&
+     (subframe_select(fp,proc->subframe_rx) != SF_UL)) return;
+
+  if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
+
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
@@ -559,11 +577,15 @@ void fep_full(RU_t *ru) {
   int l;
   LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
 
-  start_meas(&ru->ofdm_demod_stats);
+  if ((fp->frame_type == TDD) && 
+     (subframe_select(fp,proc->subframe_rx) != SF_UL)) return;
 
+  start_meas(&ru->ofdm_demod_stats);
+  if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
 
   remove_7_5_kHz(ru,proc->subframe_rx<<1);
   remove_7_5_kHz(ru,1+(proc->subframe_rx<<1));
+
   for (l=0; l<fp->symbols_per_tti/2; l++) {
     slot_fep_ul(ru,
 		l,
@@ -576,6 +598,7 @@ void fep_full(RU_t *ru) {
 		0
 		);
   }
+  if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 0 );
   stop_meas(&ru->ofdm_demod_stats);
   
   
@@ -621,4 +644,3 @@ void do_prach_ru(RU_t *ru) {
   }
 
 }
-

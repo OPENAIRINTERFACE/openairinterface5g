@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -19,18 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifdef USER_MODE
 #include <time.h>
 #include <stdlib.h>
-#else
-#include <asm/io.h>
-#include <asm/rtai.h>
-#endif
-#ifdef RTAI_ENABLED
-#include <rtai.h>
-#include <rtai_sched.h>
-#define time(x) (unsigned int)(rt_get_time_ns())
-#endif
 
 unsigned int s0, s1, s2, b;
 
@@ -55,21 +45,14 @@ unsigned int taus(void)
 void set_taus_seed(unsigned int seed_init)
 {
 
-#ifdef USER_MODE
   struct drand48_data buffer;
   unsigned long result = 0;
-#endif
 
   if (seed_init == 0) {
     s0 = (unsigned int)time(NULL);
     s1 = (unsigned int)time(NULL);
     s2 = (unsigned int)time(NULL);
   } else {
-#ifndef USER_MODE
-    s0 = (unsigned int)0x1e23d852;
-    s1 = (unsigned int)0x81f38a1c;
-    s2 = (unsigned int)0xfe1a133e;
-#else
     /* Use reentrant version of rand48 to ensure that no conflicts with other generators occur */
     srand48_r((long int)seed_init, &buffer);
     mrand48_r(&buffer, (long int *)&result);
@@ -78,7 +61,6 @@ void set_taus_seed(unsigned int seed_init)
     s1 = result;
     mrand48_r(&buffer, (long int *)&result);
     s2 = result;
-#endif
   }
 }
 #endif
@@ -87,10 +69,8 @@ void set_taus_seed(unsigned int seed_init)
  void set_taus_seed(unsigned int seed_init)
 {
 
-#ifdef USER_MODE
   struct drand48_data buffer;
   unsigned long result = 0;
-#endif
     s0 = (unsigned int)0x1e23d852;
     s1 = (unsigned int)0x81f38a1c;
     s2 = (unsigned int)0xfe1a133e;
@@ -102,11 +82,6 @@ void set_taus_seed(unsigned int seed_init)
     s1 = (unsigned int)time(NULL);
     s2 = (unsigned int)time(NULL);
   } else {
-#ifndef USER_MODE
-    s0 = (unsigned int)0x1e23d852;
-    s1 = (unsigned int)0x81f38a1c;
-    s2 = (unsigned int)0xfe1a133e;
-#else
    // Use reentrant version of rand48 to ensure that no conflicts with other generators occur */
     srand48_r((long int)seed_init, &buffer);
     mrand48_r(&buffer, (long int *)&result);
@@ -115,7 +90,6 @@ void set_taus_seed(unsigned int seed_init)
     s1 = result;
     mrand48_r(&buffer, (long int *)&result);
     s2 = result;
-#endif
   }
 }
 #endif

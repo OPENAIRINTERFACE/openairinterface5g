@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -40,6 +40,10 @@ SUB_TASK_DEF(TASK_L2L1,     TASK_PDCP_ENB,              200)
 
 ///   Radio Resource Control task
 TASK_DEF(TASK_RRC_ENB,  TASK_PRIORITY_MED,          200)
+
+// Define here for now
+TASK_DEF(TASK_RRC_ENB_NB_IoT,  TASK_PRIORITY_MED,          200)
+
 ///   S1ap task
 /// RAL task for ENB
 TASK_DEF(TASK_RAL_ENB, TASK_PRIORITY_MED, 200)

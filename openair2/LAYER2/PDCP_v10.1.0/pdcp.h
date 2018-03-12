@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -94,15 +94,54 @@ extern int             pdcp_instance_cnt;
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 
+public_pdcp(uint32_t Pdcp_stats_tx_window_ms[MAX_NUM_CCs][NUMBER_OF_UE_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_bytes[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_bytes_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_bytes_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_sn[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_throughput_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_iat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
 
-public_pdcp(unsigned int Pdcp_stats_tx[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_tx_bytes[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_tx_bytes_last[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_tx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx_bytes[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx_bytes_last[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_window_ms[MAX_NUM_CCs][NUMBER_OF_UE_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_bytes[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_bytes_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_bytes_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_sn[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_goodput_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat_tmp_w[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_iat[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_outoforder[MAX_NUM_CCs][NUMBER_OF_UE_MAX][NB_RB_MAX]);
+
+public_pdcp(void pdcp_update_perioidical_stats(const protocol_ctxt_t* const  ctxt_pP));
+
+
+/*Packet Probing for agent PDCP*/
+//public_pdcp(uint64_t *pdcp_packet_counter);
+//public_pdcp(uint64_t *pdcp_size_packet);
+typedef struct pdcp_enb_s {
+  // used for eNB stats generation
+  uint16_t uid[NUMBER_OF_UE_MAX];
+  rnti_t rnti[NUMBER_OF_UE_MAX];
+  uint16_t num_ues;
+  
+  uint64_t sfn;
+  frame_t  frame;
+  sub_frame_t subframe;
+  
+} pdcp_enb_t; 
+
+public_pdcp(pdcp_enb_t pdcp_enb[MAX_NUM_CCs]);
 
 typedef struct pdcp_stats_s {
   time_stats_t pdcp_run;
@@ -125,7 +164,7 @@ typedef struct pdcp_s {
   boolean_t is_ue;
   boolean_t is_srb;
 
-  /* Configured security algorithms */
+   /* Configured security algorithms */
   uint8_t cipheringAlgorithm;
   uint8_t integrityProtAlgorithm;
 
@@ -327,9 +366,15 @@ public_pdcp(boolean_t pdcp_config_req_asn1 (
               uint8_t         *const kRRCint,
               uint8_t         *const kUPenc));
 
-
+/*! \fn void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP)
+* \brief  Function (for RRC) to add a new UE in PDCP module
+* \param[in]  ctxt_pP           Running context.
+* \return     A status about the processing, OK or error code.
+*/
+public_pdcp(void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP));
+  
 /*! \fn boolean_t pdcp_remove_UE(const protocol_ctxt_t* const  ctxt_pP)
-* \brief  Function for RRC to configure a Radio Bearer clear all PDCP resources for a particular UE
+* \brief  Function for RRC to remove UE from PDCP module hashtable 
 * \param[in]  ctxt_pP           Running context.
 * \return     A status about the processing, OK or error code.
 */

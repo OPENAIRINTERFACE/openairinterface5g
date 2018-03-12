@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -101,13 +101,8 @@ pdcp_netlink_init(
   struct sched_param sched_param;
 
   reset_meas(&ip_pdcp_stats_tmp);
-#if defined(USER_MODE) && defined(OAI_EMU)
-  nb_inst_enb = oai_emulation.info.nb_enb_local;
-  nb_inst_ue  = oai_emulation.info.nb_ue_local;
-#else
   nb_inst_enb = 1;
   nb_inst_ue  = 1;
-#endif
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
   nb_inst_enb = 0;
@@ -259,24 +254,7 @@ void *pdcp_netlink_thread_fct(void *arg)
           }
         } else {
           pdcp_thread_read_state = 0;
-
-#ifdef OAI_EMU
-
-          // LG: new_data_p->pdcp_read_header.inst will contain in fact a module id
-          if (new_data_p->pdcp_read_header.inst >= oai_emulation.info.nb_enb_local) {
-            module_id = new_data_p->pdcp_read_header.inst
-                                                - oai_emulation.info.nb_enb_local +
-                                                + oai_emulation.info.first_ue_local;
-            eNB_flag = 0;
-          } else {
-            module_id = new_data_p->pdcp_read_header.inst
-                                                + oai_emulation.info.first_enb_local;
-            eNB_flag = 1;
-          }
-
-#else
           module_id = 0;
-#endif
           new_data_p->data = malloc(sizeof(uint8_t) * new_data_p->pdcp_read_header.data_size);
           /* Copy the data */
           memcpy(new_data_p->data, NLMSG_DATA(nas_nlh_rx), new_data_p->pdcp_read_header.data_size);

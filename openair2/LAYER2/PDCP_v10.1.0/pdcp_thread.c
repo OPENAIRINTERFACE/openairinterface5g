@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -110,9 +110,7 @@ int init_pdcp_thread(void)
 
   p.sched_priority = OPENAIR_THREAD_PRIORITY;
   pthread_attr_setschedparam  (&pdcp_thread_attr, &p);
-#ifndef RTAI_ISNT_POSIX
   pthread_attr_setschedpolicy (&pdcp_thread_attr, SCHED_FIFO);
-#endif
   pthread_mutex_init(&pdcp_mutex,NULL);
   pthread_cond_init(&pdcp_cond,NULL);
 

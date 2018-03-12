@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -26,10 +26,6 @@
  */
 
 #include <sys/epoll.h>
-
-#ifdef RTAI
-# include <rtai_sem.h>
-#endif
 
 #ifndef INTERTASK_INTERFACE_H_
 #define INTERTASK_INTERFACE_H_
@@ -112,6 +108,18 @@ int itti_send_broadcast_message(MessageDef *message_p);
  **/
 int itti_send_msg_to_task(task_id_t task_id, instance_t instance, MessageDef *message);
 
+/* TODO: this is a hack. Almost no caller of itti_send_msg_to_task checks
+ * the return value so it has been changed to crash the program in case
+ * of failure instead of returning -1 as the documentation above says.
+ * The RLC UM code may receive too much data when doing UDP at a higher
+ * throughput than the link allows and so for this specific case we need
+ * a version that actually returns -1 on failure.
+ *
+ * This needs to be cleaned at some point.
+ */
+/* look for HACK_RLC_UM_LIMIT for others places related to the hack. Please do not remove this comment. */
+int itti_try_send_msg_to_task(task_id_t task_id, instance_t instance, MessageDef *message);
+
 /** \brief Add a new fd to monitor.
  * NOTE: it is up to the user to read data associated with the fd
  *  \param task_id Task ID of the receiving task
@@ -155,12 +163,10 @@ int itti_create_task(task_id_t task_id,
                      void *(*start_routine) (void *),
                      void *args_p);
 
-//#ifdef RTAI
 /** \brief Mark the task as a real time task
  * \param task_id task to mark as real time
  **/
 void itti_set_task_real_time(task_id_t task_id);
-//#endif
 
 /** \brief Indicates to ITTI if newly created tasks should wait for all tasks to be ready
  * \param wait_tasks non 0 to make new created tasks to wait, 0 to let created tasks to run

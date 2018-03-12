@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -48,10 +48,11 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 	       uint32_t frame,int eNB_id,uint8_t CC_id);
 
 void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs],
-               node_desc_t *enb_data[NUMBER_OF_RU_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],
+               node_desc_t *enb_data[NUMBER_OF_RU_MAX],
+	       node_desc_t *ue_data[NUMBER_OF_UE_MAX],
 	       uint16_t subframe,
-	       uint16_t offset,
-	       uint16_t length,
+	       uint32_t offset,
+	       uint32_t length,
 	       uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms,uint8_t UE_id,int CC_id);
 
 void init_ue(node_desc_t  *ue_data, UE_Antenna ue_ant);//Abstraction changes

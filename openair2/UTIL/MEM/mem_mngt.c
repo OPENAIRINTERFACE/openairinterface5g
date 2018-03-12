@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -49,9 +49,7 @@
 //
 #endif
 //-----------------------------------------------------------------------------
-#ifdef USER_MODE
 uint32_t             counters[11] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-#endif
 //-----------------------------------------------------------------------------
 /*
  * initialize all ures
@@ -227,10 +225,8 @@ get_free_mem_block (uint16_t sizeP, __func__)
 
 #ifdef DEBUG_MEM_MNGT_ALLOC
     msg ("[MEM_MNGT][ERROR][MINOR] memory pool %d is empty trying next pool alloc count = %d\n", pool_selected, counters[pool_selected]);
-#    ifdef USER_MODE
     display_mem_load ();
     check_mem_area (mem);
-#    endif
 #endif
   } while (pool_selected++ < 9);
 

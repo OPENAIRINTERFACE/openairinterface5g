@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -40,7 +40,7 @@
 //#define DEBUG_LLR_SIC
 
 
-int16_t zero[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
+int16_t zeros[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
 int16_t ones[8] __attribute__ ((aligned(16))) = {0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff};
 #if defined(__x86_64__) || defined(__i386__)
 __m128i rho_rpi __attribute__ ((aligned(16)));
@@ -672,14 +672,14 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 
-  //printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
-  /*LOG_I(PHY,"dlsch_qpsk_llr: [symb %d / FirstSym %d / Length %d]: @LLR Buff %x, @LLR Buff(symb) %x \n",
+  /*
+  LOG_I(PHY,"dlsch_qpsk_llr: [symb %d / FirstSym %d / Length %d]: @LLR Buff %x, @LLR Buff(symb) %x \n",
              symbol,
              first_symbol_flag,
              len,
              dlsch_llr,
-             llr32);*/
-
+             llr32);
+  */
   //printf("ll32p=%p , dlsch_llr=%p, symbol=%d, flag=%d \n", llr32, dlsch_llr, symbol, first_symbol_flag);
   for (i=0; i<len; i++) {
     *llr32 = *rxF;

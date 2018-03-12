@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -28,44 +28,9 @@
 * \email: navid.nikaein@eurecom.fr
 */
 
-#ifdef USER_MODE
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#else //USER_MODE
-
-#include <asm/io.h>
-#include <asm/bitops.h>
-#include <asm/uaccess.h>
-#include <asm/segment.h>
-#include <asm/page.h>
-#include <asm/delay.h>
-
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/pci.h>
-#include <linux/mm.h>
-#include <linux/mman.h>
-
-#include <linux/slab.h>
-#include <linux/version.h>
-#include <linux/kernel.h>
-#include <linux/fs.h>
-
-#include <linux/errno.h>
-
-
-#ifdef KERNEL2_6
-
-#include <linux/slab.h>
-#endif
-
-#ifdef KERNEL2_4
-#include <linux/malloc.h>
-#include <linux/wrapper.h>
-#endif
-#endif //USER_MODE
 
 #include "platform_types.h"
 #include "openair_defs.h"

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -149,10 +149,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
   int temp, i, aa, max_pos = 0,ind;
   int max_val=0;
   short Re,Im,ncoef;
-#ifdef USER_MODE
 #ifdef DEBUG_PHY
   char fname[100],vname[100];
-#endif
 #endif
 
   ncoef = 32768 - coef;
@@ -187,12 +185,10 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 	       1);
 	break;
       }
-#ifdef USER_MODE
 #ifdef DEBUG_PHY
       sprintf(fname,"srs_ch_estimates_time_%d%d.m",ind,aa);
       sprintf(vname,"srs_time_%d%d",ind,aa);
       write_output(fname,vname,lte_eNB_srs->srs_ch_estimates_time[aa],frame_parms->ofdm_symbol_size*2,2,1);
-#endif
 #endif
     }
 
@@ -227,11 +223,8 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 
 int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
 {
-  static int first_run=1;
-  static int max_pos_fil2=0;
   int temp, i, aa, max_pos=0, max_val=0;
-  short Re,Im,coef=24576;
-  short ncoef = 32768 - coef;
+  short Re,Im;
 
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   LTE_eNB_PUSCH *eNB_pusch_vars = eNB->pusch_vars[UE_id];
@@ -260,16 +253,9 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
   if (max_pos>frame_parms->ofdm_symbol_size/2)
     max_pos = max_pos-frame_parms->ofdm_symbol_size;
 
-  // filter position to reduce jitter
-  if (first_run == 1) {
-    first_run=0;
-    max_pos_fil2 = max_pos;
-  } else
-    max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
-
   //#ifdef DEBUG_PHY
-  LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d, sync_pos=%d\n",eNB->proc.frame_rx,max_pos,max_pos_fil2,sync_pos);
+  LOG_D(PHY,"frame %d: max_pos = %d, sync_pos=%d\n",eNB->proc.frame_rx,max_pos,sync_pos);
   //#endif //DEBUG_PHY
 
-  return(max_pos_fil2-sync_pos);
+  return max_pos - sync_pos;
 }

@@ -1,5 +1,0 @@
-#killall -qw tdcdma_gui
-#killall -qw IALdummy
-#./bin/mobile_node.down
-rmmod -w nascellmt
-

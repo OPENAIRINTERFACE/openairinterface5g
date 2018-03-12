@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -20,10 +20,7 @@
  */
 
 #include "defs.h"
-//#include "MAC_INTERFACE/extern.h"
-#ifdef USER_MODE
 #include <stdio.h>
-#endif
 
 #if defined(__x86_64__) || defined(__i386__)
 int16_t conjug[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;

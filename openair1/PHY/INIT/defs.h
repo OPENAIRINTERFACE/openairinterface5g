@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -65,7 +65,7 @@ int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 @returns -1 if any memory allocation failed
 @note The current implementation will never return -1, but segfault.
  */
-int phy_init_lte_ue_signal(PHY_VARS_UE *phy_vars_ue,
+int init_lte_ue_signal(PHY_VARS_UE *phy_vars_ue,
 			   int          nb_connected_eNB,
 			   uint8_t         abstraction_flag);
 
@@ -89,6 +89,13 @@ void init_lte_ue_transport(PHY_VARS_UE *ue,int absraction_flag);
 int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNb,
                      unsigned char is_secondary_eNb,
                      unsigned char abstraction_flag);
+
+/*!
+\brief Free the PHY variables relevant to the LTE implementation (eNB).
+\details Only a subset of phy_vars_eNb is freed (those who have been allocated with phy_init_lte_eNB()).
+@param[in] phy_vars_eNb Pointer to eNB Variables
+ */
+void phy_free_lte_eNB(PHY_VARS_eNB *phy_vars_eNb);
 
 /** \brief Configure LTE_DL_FRAME_PARMS with components derived after initial synchronization (MIB decoding + primary/secondary synch).
 \details The basically allows configuration of \f$N_{\mathrm{RB}}^{\mathrm{DL}}\f$, the cell id  \f$N_{\mathrm{ID}}^{\mathrm{cell}}\f$, the normal/extended prefix mode, the frame type (FDD/TDD), \f$N_{\mathrm{cp}}\f$, the number of TX antennas at eNB (\f$p\f$) and the number of PHICH groups, \f$N_{\mathrm{group}}^{\mathrm{PHICH}}\f$
@@ -317,23 +324,30 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB);
  */
 int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb);
 
+void free_lte_top(void);
 
 void init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 
 //void copy_lte_parms_to_phy_framing(LTE_DL_FRAME_PARMS *frame_parm, PHY_FRAMING *phy_framing);
 
-void lte_param_init(unsigned char N_tx_port_eNB,
-		    unsigned char N_tx, 
-		    unsigned char N_rx,
+void lte_param_init(PHY_VARS_eNB **eNBp,
+		    PHY_VARS_UE **UEp,
+		    RU_t **rup,
+		    unsigned char N_tx_port_eNB,
+                    unsigned char N_tx_phy,
+		    unsigned char N_rx_ru,
+		    unsigned char N_rx_ue,
 		    unsigned char transmission_mode,
 		    uint8_t extended_prefix_flag,
-		    frame_t frame_type, 
+		    frame_t frame_type,
 		    uint16_t Nid_cell,
 		    uint8_t tdd_config,
 		    uint8_t N_RB_DL,
+		    uint8_t pa,
 		    uint8_t threequarter_fs,
                     uint8_t osf,
 		    uint32_t perfect_ce);
+
 
 #if defined(Rel10) || defined(Rel14)
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
@@ -359,18 +373,6 @@ void phy_config_request(PHY_Config_t *phy_config);
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
 
-void lte_param_init(unsigned char N_tx_port_eNB, 
-                    unsigned char N_tx_phy,
-		    unsigned char N_rx,
-		    unsigned char transmission_mode,
-		    uint8_t extended_prefix_flag,
-		    frame_t frame_type, 
-		    uint16_t Nid_cell,
-		    uint8_t tdd_config,
-		    uint8_t N_RB_DL,
-		    uint8_t threequarter_fs,
-                    uint8_t osf,
-		    uint32_t perfect_ce);
 /** @} */
 #endif
 

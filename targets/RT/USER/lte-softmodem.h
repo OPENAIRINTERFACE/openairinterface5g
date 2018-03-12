@@ -31,6 +31,8 @@
 #include "PHY/defs.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
+#include "flexran_agent.h"
+
 #if defined(ENABLE_ITTI)
 #if defined(ENABLE_USE_MME)
 #include "s1ap_eNB.h"
@@ -65,7 +67,7 @@
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n" 
 #define CONFIG_HLP_TADV          "Set timing_advance\n"
 #define CONFIG_HLP_DLF           "Set the downlink frequency for all component carriers\n"
-#define CONFIG_HLP_CHOFF         "Channel id offset"
+#define CONFIG_HLP_CHOFF         "Channel id offset\n"
 #define CONFIG_HLP_SOFTS         "Enable soft scope and L1 and L2 stats (Xforms)\n"
 #define CONFIG_HLP_EXMCAL        "Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n"
 #define CONFIG_HLP_ITTIL         "Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n"
@@ -83,11 +85,13 @@
 #define CONFIG_HLP_TPORT         "tracer port\n"
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
+
 #define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
 #define CONFIG_HLP_CODINGW       "coding worker thread enable(disable by defult)\n"
 #define CONFIG_HLP_FEPW          "FEP worker thread enabled(disable by defult)\n"
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
 
+#define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument 
@@ -131,10 +135,10 @@
 {"ue-nb-ant-tx",     	       CONFIG_HLP_UENANTT,    0,		u8ptr:&nb_antenna_tx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-scan-carrier",  	       CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL,	iptr:&UE_scan_carrier,  	    defintval:0,    TYPE_INT,	   0},     \
 {"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:90,   TYPE_INT,	   0},     \
-{"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:0,    TYPE_UINT8,    0},     \
+{"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT8,    0},     \
 }
 
-
+#define DEFAULT_DLF 2680000000
 extern int16_t dlsch_demod_shift;
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                                                */
@@ -162,7 +166,6 @@ extern int16_t dlsch_demod_shift;
 {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
 {"E" ,                      CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,         i8ptr:&threequarter_fs,             defintval:0,                    TYPE_INT8,      0},                     \
 {"K" ,                      CONFIG_HLP_ITTIL,       PARAMFLAG_NOFREE,       strptr:&itti_dump_file,             defstrval:"/tmp/itti.dump",     TYPE_STRING,    0},                     \
-{"U" ,                      CONFIG_HLP_UE,          PARAMFLAG_BOOL,         i8ptr:&UE_flag,                     defintval:0,                    TYPE_INT8,      0},                     \
 {"m" ,                      CONFIG_HLP_DLMCS,       0,                      uptr:&target_dl_mcs,                defintval:0,                    TYPE_UINT,      0},                     \
 {"t" ,                      CONFIG_HLP_ULMCS,       0,                      uptr:&target_ul_mcs,                defintval:0,                    TYPE_UINT,      0},                     \
 {"W" ,                      CONFIG_HLP_L2MONW,      0,                      strptr:(char **)&in_ip,             defstrval:"127.0.0.1",          TYPE_STRING,    sizeof(in_ip)},         \
@@ -174,7 +177,8 @@ extern int16_t dlsch_demod_shift;
 {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0},                     \
 {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                   defintval:0,                    TYPE_INT,       0},                     \
 {"codingw" ,                CONFIG_HLP_CODINGW,     PARAMFLAG_BOOL,         iptr:&codingw,                      defintval:0,                    TYPE_INT,       0},                     \
-{"fepw" ,                   CONFIG_HLP_FEPW,        PARAMFLAG_BOOL,         iptr:&fepw,                         defintval:0,                    TYPE_INT,       0}                      \
+{"fepw" ,                   CONFIG_HLP_FEPW,        PARAMFLAG_BOOL,         iptr:&fepw,                         defintval:0,                    TYPE_INT,       0},                     \
+{"nbiot-disable",        	 CONFIG_HLP_DISABLNBIOT,PARAMFLAG_BOOL,   iptr:&nonbiotflag,			defintval:0,			   TYPE_INT,	  0}                       \
 }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
@@ -206,9 +210,9 @@ extern int T_dont_fork;
 /*   optname                     helpstr                paramflags           XXXptr           defXXXval         type       numelt           */
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_TTRACEPARAMS_DESC {  \
-{"T_port",                     CONFIG_HLP_TPORT,      0,		uptr:&T_port,	     defuintval:0,	TYPE_UINT,   0},	   \
-{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,	uptr:&T_nowait,      defuintval:0,	TYPE_UINT,   0},	   \
-{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,	uptr:&T_dont_fork,   defuintval:1,	TYPE_UINT,   0},	   \
+{"T_port",                     CONFIG_HLP_TPORT,      0,		iptr:&T_port,	     defintval:0,	TYPE_INT,   0},	   \
+{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,	iptr:&T_nowait,      defintval:0,	TYPE_INT,   0},	   \
+{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,	iptr:&T_dont_fork,   defintval:1,	TYPE_INT,   0},	   \
 } 
 
 
@@ -252,12 +256,16 @@ extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
 extern void init_RU(const char*);
+extern void init_RU_proc(RU_t *ru);
+extern void stop_RU(int nb_ru);
+extern void kill_RU_proc(int inst);
+extern void set_function_spec_param(RU_t *ru);
 
 // In lte-ue.c
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
 
-extern void init_UE(int,int,int);
+extern void init_UE(int,int,int,int);
 extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char * name);
 
 extern void reset_opp_meas(void);
@@ -268,5 +276,13 @@ extern void init_td_thread(PHY_VARS_eNB *);
 extern void init_te_thread(PHY_VARS_eNB *);
 extern void kill_td_thread(PHY_VARS_eNB *);
 extern void kill_te_thread(PHY_VARS_eNB *);
+
+PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
+                          uint8_t UE_id,
+                          uint8_t abstraction_flag);
+void init_eNB_afterRU(void);
+
+extern int stop_L1L2(module_id_t enb_id);
+extern int restart_L1L2(module_id_t enb_id);
 
 #endif

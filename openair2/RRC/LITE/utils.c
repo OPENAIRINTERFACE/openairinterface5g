@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -29,25 +29,8 @@ ________________________________________________________________*/
 
 
 
-//#include "openair_types.h"
 #include "defs.h"
 #include "extern.h"
-//#include "openair_proto.h"
-
-
-#ifndef USER_MODE
-char bcmp(void *x, void *y,int Size )
-{
-  unsigned char i;
-
-  for(i=0; i<Size; i++)
-    if(*(char*)(x+i)!= *(char*)(y+i)) {
-      return 1;
-    }
-
-  return 0;
-}
-#endif
 
 
 //------------------------------------------------------------------------------------------------------------------//
@@ -63,7 +46,6 @@ uint16_t find_free_dtch_position(uint8_t Mod_id, uint16_t UE_CH_index)
 
   for(i=j; i<NB_RAB_MAX; i++) { //first RAB IS BROADCAST DTCH
 
-    //msg("i=%d\n",i);
     if(CH_rrc_inst[Mod_id].Rab[i][UE_CH_index].Active==0) {
       return( i);
     }
@@ -130,11 +112,7 @@ uint8_t find_rrc_info_index(uint8_t Mod_id,uint8_t CH_id)
     if(Rrc_inst[Mod_id].Rrc_info[i].Info.UE_info.CH_id == CH_id) return i;
   }
   error_msg("[OPENAIR][RRC] RRC_INFO_INDEX: FATAL ERROR: Not yet Pre_Synchronized with CH ???%d\n",CH_id);
-  #ifndef USER_MODE
-  //  mac_xface->macphy_exit();
-  #else
   exit(-1);
-  #endif
   */
 }
 /*

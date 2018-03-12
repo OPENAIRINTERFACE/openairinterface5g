@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -36,6 +36,8 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/defs.h"
 
+UE_PF_PO_t UE_PF_PO[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+pthread_mutex_t ue_pf_po_mutex;
 UE_RRC_INST *UE_rrc_inst;
 #include "LAYER2/MAC/extern.h"
 #define MAX_U32 0xFFFFFFFF
@@ -235,5 +237,11 @@ float RSRQ_meas_mapping[35] = {
   -2.5,
   -2
 };
+
+// only used for RRC connection re-establishment procedure TS36.331 5.3.7
+// [0]: current C-RNTI, [1]: prior C-RNTI
+// insert one when eNB received RRCConnectionReestablishmentRequest message
+// delete one when eNB received RRCConnectionReestablishmentComplete message
+uint16_t reestablish_rnti_map[NUMBER_OF_UE_MAX][2] = {{0}};
 
 #endif

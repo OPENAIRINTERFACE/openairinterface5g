@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -62,14 +62,8 @@
 #include "TDD-Config.h"
 #include "UECapabilityEnquiry.h"
 #include "UE-CapabilityRequest.h"
-#ifdef PHY_ABSTRACTION
-#include "OCG.h"
-#include "OCG_extern.h"
-#endif
-#ifdef USER_MODE
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
-#endif
 #if ENABLE_RAL
 #include "rrc_UE_ral.h"
 #endif
@@ -240,6 +234,30 @@ static int rrc_set_sub_state( module_id_t ue_mod_idP, Rrc_Sub_State_t subState )
 }
 
 //-----------------------------------------------------------------------------
+void
+openair_rrc_on_ue(
+  const protocol_ctxt_t* const ctxt_pP
+)
+//-----------------------------------------------------------------------------
+{
+  unsigned short i;
+
+
+    LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" UE?:OPENAIR RRC IN....\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
+
+    for (i = 0; i < NB_eNB_INST; i++) {
+      LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" Activating CCCH (eNB %d)\n",
+            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP), i);
+      UE_rrc_inst[ctxt_pP->module_id].Srb0[i].Srb_id = CCCH;
+      memcpy (&UE_rrc_inst[ctxt_pP->module_id].Srb0[i].Lchan_desc[0], &CCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+      memcpy (&UE_rrc_inst[ctxt_pP->module_id].Srb0[i].Lchan_desc[1], &CCCH_LCHAN_DESC, LCHAN_DESC_SIZE);
+      rrc_config_buffer (&UE_rrc_inst[ctxt_pP->module_id].Srb0[i], CCCH, 1);
+      UE_rrc_inst[ctxt_pP->module_id].Srb0[i].Active = 1;
+    }
+}
+
+//-----------------------------------------------------------------------------
 static void init_SI_UE( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index )
 {
   UE_rrc_inst[ctxt_pP->module_id].sizeof_SIB1[eNB_index] = 0;
@@ -345,7 +363,7 @@ char openair_rrc_ue_init( const module_id_t ue_mod_idP, const unsigned char eNB_
 #endif
 
 #ifdef NO_RRM //init ch SRB0, SRB1 & BDTCH
-  openair_rrc_on(&ctxt);
+  openair_rrc_on_ue(&ctxt);
 #endif
 #ifdef CBA
   int j;
@@ -437,6 +455,47 @@ static const char const nas_attach_req_guti[] = {
 #endif
 
 //-----------------------------------------------------------------------------
+void
+rrc_t310_expiration(
+  const protocol_ctxt_t* const ctxt_pP,
+  const uint8_t                 eNB_index
+)
+//-----------------------------------------------------------------------------
+{
+
+  if (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State != RRC_CONNECTED) {
+    LOG_D(RRC, "Timer 310 expired, going to RRC_IDLE\n");
+    UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State = RRC_IDLE;
+    UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].UE_index = 0xffff;
+    UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Rx_buffer.payload_size = 0;
+    UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size = 0;
+    UE_rrc_inst[ctxt_pP->module_id].Srb1[eNB_index].Srb_info.Rx_buffer.payload_size = 0;
+    UE_rrc_inst[ctxt_pP->module_id].Srb1[eNB_index].Srb_info.Tx_buffer.payload_size = 0;
+
+    if (UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Active == 1) {
+      LOG_D (RRC,"[Inst %d] eNB_index %d, Remove RB %d\n ", ctxt_pP->module_id, eNB_index,
+           UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Srb_info.Srb_id);
+      rrc_pdcp_config_req (ctxt_pP,
+                           SRB_FLAG_YES,
+                           CONFIG_ACTION_REMOVE,
+                           UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Srb_info.Srb_id,
+                           0);
+      rrc_rlc_config_req (ctxt_pP,
+                          SRB_FLAG_YES,
+                          MBMS_FLAG_NO,
+                          CONFIG_ACTION_REMOVE,
+                          UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Srb_info.Srb_id,
+                          Rlc_info_um);
+      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Active = 0;
+      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Status = IDLE;
+      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Next_check_frame = 0;
+    }
+  } else { // Restablishment procedure
+    LOG_D(RRC, "Timer 310 expired, trying RRCRestablishment ...\n");
+  }
+}
+
+//-----------------------------------------------------------------------------
 static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, const uint8_t Transaction_id )
 {
 
@@ -460,7 +519,7 @@ static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t* c
   LOG_D(RLC,
         "[FRAME %05d][RRC_UE][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to eNB %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
         ctxt_pP->frame, ctxt_pP->module_id+NB_eNB_INST, size, eNB_index, rrc_mui, ctxt_pP->module_id+NB_eNB_INST, DCCH);
-  rrc_data_req (
+  rrc_data_req_ue (
 		ctxt_pP,
 		DCCH,
 		rrc_mui++,
@@ -487,7 +546,7 @@ static void rrc_ue_generate_RRCConnectionReconfigurationComplete( const protocol
         rrc_mui,
         UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id),
         DCCH);
-  rrc_data_req (
+  rrc_data_req_ue (
 		ctxt_pP,
 		DCCH,
 		rrc_mui++,
@@ -730,13 +789,8 @@ rrc_ue_establish_drb(
    */
 #ifdef PDCP_USE_NETLINK
 #   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
-#    ifdef OAI_EMU
-  ip_addr_offset3 = oai_emulation.info.nb_enb_local;
-  ip_addr_offset4 = NB_eNB_INST;
-#    else
   ip_addr_offset3 = 0;
-  ip_addr_offset4 = 8;
-#    endif
+  ip_addr_offset4 = 1;
   LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", ue_mod_idP, ip_addr_offset3+ue_mod_idP,
         ip_addr_offset3+ue_mod_idP+1,ip_addr_offset4+ue_mod_idP+1);
   oip_ifup=nas_config(ip_addr_offset3+ue_mod_idP,   // interface_id
@@ -744,9 +798,6 @@ rrc_ue_establish_drb(
                       ip_addr_offset4+ue_mod_idP+1); // fourth_octet
 
   if (oip_ifup == 0 ) { // interface is up --> send a config the DRB
-#        ifdef OAI_EMU
-    oai_emulation.info.oai_ifup[ue_mod_idP]=1;
-#        endif
     LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
           ue_mod_idP,
           ip_addr_offset3+ue_mod_idP,
@@ -762,10 +813,6 @@ rrc_ue_establish_drb(
     LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",ue_mod_idP,eNB_index);
   }
 
-#    else
-#        ifdef OAI_EMU
-  oai_emulation.info.oai_ifup[ue_mod_idP]=1;
-#        endif
 #    endif
 #endif
 
@@ -1540,17 +1587,6 @@ rrc_ue_process_radioResourceConfigDedicated(
   
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State = RRC_CONNECTED;
   LOG_I(RRC,"[UE %d] State = RRC_CONNECTED (eNB %d)\n",ctxt_pP->module_id,eNB_index);
-#if !defined(ENABLE_USE_MME) && defined(OAI_EMU)
-#    ifdef OAI_EMU
-  rrc_eNB_emulation_notify_ue_module_id(
-    ctxt_pP->module_id,
-    ctxt_pP->rnti,
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[0],
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[1],
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[2],
-    UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[3]);
-#    endif /* OAI_EMU */
-#endif
 }
 
 
@@ -1691,48 +1727,49 @@ rrc_ue_process_securityModeCommand(
 #endif //#if defined(ENABLE_SECURITY)
 
   if (securityModeCommand->criticalExtensions.present == SecurityModeCommand__criticalExtensions_PR_c1) {
-    if (securityModeCommand->criticalExtensions.choice.c1.present == SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8) {
-
-      ul_dcch_msg.message.choice.c1.choice.securityModeComplete.rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
-      ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.present = SecurityModeCommand__criticalExtensions_PR_c1;
-      ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.choice.securityModeComplete_r8.nonCriticalExtension =NULL;
-
-      LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (eNB %d)\n",
-            ctxt_pP->module_id,ctxt_pP->frame,eNB_index);
-
-      enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
-                                       (void*)&ul_dcch_msg,
-                                       buffer,
-                                       100);
-      AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-                   enc_rval.failed_type->name, enc_rval.encoded);
-
+    if (securityModeCommand->criticalExtensions.choice.c1.present != SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8)
+      LOG_W(RRC,"securityModeCommand->criticalExtensions.choice.c1.present (%d) != SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8\n",
+	    securityModeCommand->criticalExtensions.choice.c1.present);
+    
+    
+    ul_dcch_msg.message.choice.c1.choice.securityModeComplete.rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
+    ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.present = SecurityModeCommand__criticalExtensions_PR_c1;
+    ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.choice.securityModeComplete_r8.nonCriticalExtension =NULL;
+    
+    LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (eNB %d)\n",
+	  ctxt_pP->module_id,ctxt_pP->frame,eNB_index);
+    
+    enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+				     (void*)&ul_dcch_msg,
+				     buffer,
+				     100);
+    AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+		 enc_rval.failed_type->name, enc_rval.encoded);
+    
 #ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+    xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
 #endif
-
+    
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
-      {
-        char        message_string[20000];
-        size_t      message_string_size;
-
-        if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_DCCH_Message, (void *) &ul_dcch_msg)) > 0) {
-          MessageDef *msg_p;
-
-          msg_p = itti_alloc_new_message_sized (TASK_RRC_UE, RRC_UL_DCCH, message_string_size + sizeof (IttiMsgText));
-          msg_p->ittiMsg.rrc_ul_dcch.size = message_string_size;
-          memcpy(&msg_p->ittiMsg.rrc_ul_dcch.text, message_string, message_string_size);
-
-          itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
-        }
+    {
+      char        message_string[20000];
+      size_t      message_string_size;
+      
+      if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_DCCH_Message, (void *) &ul_dcch_msg)) > 0) {
+	MessageDef *msg_p;
+	
+	msg_p = itti_alloc_new_message_sized (TASK_RRC_UE, RRC_UL_DCCH, message_string_size + sizeof (IttiMsgText));
+	msg_p->ittiMsg.rrc_ul_dcch.size = message_string_size;
+	memcpy(&msg_p->ittiMsg.rrc_ul_dcch.text, message_string, message_string_size);
+	
+	itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
       }
+    }
 # endif
 #endif
 
-#ifdef USER_MODE
       LOG_D(RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
-#endif
 
       for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
         LOG_T(RRC, "%02x.", buffer[i]);
@@ -1748,7 +1785,9 @@ rrc_ue_process_securityModeCommand(
 		    buffer,
 		    PDCP_TRANSMISSION_MODE_CONTROL);
     }
-  }
+    
+  else LOG_W(RRC,"securityModeCommand->criticalExtensions.present (%d) != SecurityModeCommand__criticalExtensions_PR_c1\n",
+	     securityModeCommand->criticalExtensions.present);
 }
 
 //-----------------------------------------------------------------------------
@@ -1792,68 +1831,71 @@ rrc_ue_process_ueCapabilityEnquiry(
   // ue_CapabilityRAT_Container.ueCapabilityRAT_Container.size = UE_rrc_inst[ue_mod_idP].UECapability_size;
 
 
-  if (UECapabilityEnquiry->criticalExtensions.present == UECapabilityEnquiry__criticalExtensions_PR_c1) {
-    if (UECapabilityEnquiry->criticalExtensions.choice.c1.present == UECapabilityEnquiry__criticalExtensions__c1_PR_ueCapabilityEnquiry_r8) {
-      ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.present           = UECapabilityInformation__criticalExtensions_PR_c1;
-      ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.present =
-        UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8;
-      ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count
-        =0;
+  AssertFatal(UECapabilityEnquiry->criticalExtensions.present == UECapabilityEnquiry__criticalExtensions_PR_c1,
+	      "UECapabilityEnquiry->criticalExtensions.present (%d) != UECapabilityEnquiry__criticalExtensions_PR_c1 (%d)\n",
+	      UECapabilityEnquiry->criticalExtensions.present,UECapabilityEnquiry__criticalExtensions_PR_c1);
 
-      for (i=0; i<UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count; i++) {
-
-        if (*UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.array[i]
-            == RAT_Type_eutra) {
-          ASN_SEQUENCE_ADD(
-            &ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
-            &ue_CapabilityRAT_Container);
-
-          enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, (void*) &ul_dcch_msg, buffer, 100);
-          AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-                       enc_rval.failed_type->name, enc_rval.encoded);
-
+  if (UECapabilityEnquiry->criticalExtensions.choice.c1.present != UECapabilityEnquiry__criticalExtensions__c1_PR_ueCapabilityEnquiry_r8)
+    LOG_W(RRC,"UECapabilityEnquiry->criticalExtensions.choice.c1.present (%d) != UECapabilityEnquiry__criticalExtensions__c1_PR_ueCapabilityEnquiry_r8)\n",
+	  UECapabilityEnquiry->criticalExtensions.choice.c1.present);
+  
+  ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.present           = UECapabilityInformation__criticalExtensions_PR_c1;
+  ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.present =
+    UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8;
+  ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count
+    =0;
+  
+  for (i=0; i<UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count; i++) {
+    
+    if (*UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.array[i]
+	== RAT_Type_eutra) {
+      ASN_SEQUENCE_ADD(
+		       &ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
+		       &ue_CapabilityRAT_Container);
+      
+      enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, (void*) &ul_dcch_msg, buffer, 100);
+      AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+		   enc_rval.failed_type->name, enc_rval.encoded);
+      
 #ifdef XER_PRINT
-          xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
 #endif
-
+      
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
-          {
-            char        message_string[20000];
-            size_t      message_string_size;
-
-            if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_DCCH_Message, (void *) &ul_dcch_msg)) > 0) {
-              MessageDef *msg_p;
-
-              msg_p = itti_alloc_new_message_sized (TASK_RRC_UE, RRC_UL_DCCH, message_string_size + sizeof (IttiMsgText));
-              msg_p->ittiMsg.rrc_ul_dcch.size = message_string_size;
-              memcpy(&msg_p->ittiMsg.rrc_ul_dcch.text, message_string, message_string_size);
-
-              itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
-            }
-          }
+      {
+	char        message_string[20000];
+	size_t      message_string_size;
+	
+	if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_DCCH_Message, (void *) &ul_dcch_msg)) > 0) {
+	  MessageDef *msg_p;
+	  
+	  msg_p = itti_alloc_new_message_sized (TASK_RRC_UE, RRC_UL_DCCH, message_string_size + sizeof (IttiMsgText));
+	  msg_p->ittiMsg.rrc_ul_dcch.size = message_string_size;
+	  memcpy(&msg_p->ittiMsg.rrc_ul_dcch.text, message_string, message_string_size);
+	  
+	  itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
+	}
+      }
 # endif
 #endif
+	
 
-#ifdef USER_MODE
           LOG_D(RRC,"UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
           for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
             LOG_T(RRC, "%02x.", buffer[i]);
           }
-
-          LOG_T(RRC, "\n");
-          rrc_data_req (
-			ctxt_pP,
-			DCCH,
-			rrc_mui++,
-			SDU_CONFIRM_NO,
-			(enc_rval.encoded + 7) / 8,
-			buffer,
-			PDCP_TRANSMISSION_MODE_CONTROL);
-        }
-      }
+      
+      LOG_T(RRC, "\n");
+      rrc_data_req_ue (
+		    ctxt_pP,
+		    DCCH,
+		    rrc_mui++,
+		    SDU_CONFIRM_NO,
+		    (enc_rval.encoded + 7) / 8,
+		    buffer,
+		    PDCP_TRANSMISSION_MODE_CONTROL);
     }
   }
 }
@@ -2604,7 +2646,7 @@ static const char* SIB2mac_ContentionResolutionTimer( long value )
 }
 static const char* SIB2modificationPeriodCoeff( long value )
 {
-  static char temp[4] = {0};
+  static char temp[32] = {0};
 
   if (value < 0 || value > 3)
     return "ERR";
@@ -2614,7 +2656,7 @@ static const char* SIB2modificationPeriodCoeff( long value )
 }
 static const char* SIB2defaultPagingCycle( long value )
 {
-  static char temp[6] = {0};
+  static char temp[32] = {0};
 
   if (value < 0 || value > 3)
     return "ERR";
@@ -4246,10 +4288,6 @@ static void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_i
 
 #endif // rel10
 
-#ifndef USER_MODE
-EXPORT_SYMBOL(Rlc_info_am_config);
-#endif
-
 #if defined(ENABLE_ITTI)
 //-----------------------------------------------------------------------------
 void *rrc_ue_task( void *args_p )
@@ -4274,6 +4312,7 @@ void *rrc_ue_task( void *args_p )
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
+      LOG_W(RRC, " *** Exiting RRC thread\n");
       itti_exit_task ();
       break;
 
@@ -4540,7 +4579,7 @@ void *rrc_ue_task( void *args_p )
       // check if SRB2 is created, if yes request data_req on DCCH1 (SRB2) 
       if(UE_rrc_inst[ue_mod_id].SRB2_config[0] == NULL)
       {
-          rrc_data_req (&ctxt,
+          rrc_data_req_ue (&ctxt,
                   DCCH,
                   rrc_mui++,
                   SDU_CONFIRM_NO,
@@ -4549,7 +4588,7 @@ void *rrc_ue_task( void *args_p )
       }
       else
       {
-          rrc_data_req (&ctxt,
+          rrc_data_req_ue (&ctxt,
                   DCCH1,
                   rrc_mui++,
                   SDU_CONFIRM_NO,
@@ -4791,4 +4830,118 @@ rrc_top_cleanup_ue(
   if (NB_UE_INST > 0) free (UE_rrc_inst);
   
 
+}
+
+
+//-----------------------------------------------------------------------------
+RRC_status_t
+rrc_rx_tx_ue(
+  protocol_ctxt_t* const ctxt_pP,
+  const uint8_t      enb_indexP,
+  const int          CC_id
+)
+//-----------------------------------------------------------------------------
+{
+
+#ifdef LOCALIZATION
+  double                         estimated_distance;
+  protocol_ctxt_t                ctxt;
+#endif
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_IN);
+
+    // check timers
+
+    if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_active == 1) {
+      if ((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_cnt % 10) == 0)
+        LOG_D(RRC,
+              "[UE %d][RAPROC] Frame %d T300 Count %d ms\n", ctxt_pP->module_id, ctxt_pP->frame, UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_cnt);
+
+      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_cnt
+          == T300[UE_rrc_inst[ctxt_pP->module_id].sib2[enb_indexP]->ue_TimersAndConstants.t300]) {
+        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_active = 0;
+        // ALLOW CCCH to be used
+        UE_rrc_inst[ctxt_pP->module_id].Srb0[enb_indexP].Tx_buffer.payload_size = 0;
+        rrc_ue_generate_RRCConnectionRequest (ctxt_pP, enb_indexP);
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
+        return (RRC_ConnSetup_failed);
+      }
+
+      UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_cnt++;
+    }
+
+    if ((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].SIStatus&2)>0) {
+      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N310_cnt
+          == N310[UE_rrc_inst[ctxt_pP->module_id].sib2[enb_indexP]->ue_TimersAndConstants.n310]) {
+	LOG_I(RRC,"Activating T310\n");
+        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active = 1;
+      }
+    } else { // in case we have not received SIB2 yet
+      /*      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N310_cnt == 100) {
+        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N310_cnt = 0;
+
+	}*/
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
+      return RRC_OK;
+    }
+
+    if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active == 1) {
+      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N311_cnt
+          == N311[UE_rrc_inst[ctxt_pP->module_id].sib2[enb_indexP]->ue_TimersAndConstants.n311]) {
+        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active = 0;
+        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N311_cnt = 0;
+      }
+
+      if ((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_cnt % 10) == 0) {
+        LOG_D(RRC, "[UE %d] Frame %d T310 Count %d ms\n", ctxt_pP->module_id, ctxt_pP->frame, UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_cnt);
+      }
+
+      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_cnt    == T310[UE_rrc_inst[ctxt_pP->module_id].sib2[enb_indexP]->ue_TimersAndConstants.t310]) {
+        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active = 0;
+        rrc_t310_expiration (ctxt_pP, enb_indexP);
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
+	LOG_I(RRC,"Returning RRC_PHY_RESYNCH: T310 expired\n"); 
+        return RRC_PHY_RESYNCH;
+      }
+
+      UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_cnt++;
+    }
+
+    if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_active==1) {
+      if ((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_cnt % 10) == 0)
+        LOG_D(RRC,"[UE %d][RAPROC] Frame %d T304 Count %d ms\n",ctxt_pP->module_id,ctxt_pP->frame,
+              UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_cnt);
+
+      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_cnt == 0) {
+        UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_active = 0;
+        UE_rrc_inst[ctxt_pP->module_id].HandoverInfoUe.measFlag = 1;
+        LOG_E(RRC,"[UE %d] Handover failure..initiating connection re-establishment procedure... \n",
+              ctxt_pP->module_id);
+        //Implement 36.331, section 5.3.5.6 here
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
+        return(RRC_Handover_failed);
+      }
+
+      UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T304_cnt--;
+    }
+
+    // Layer 3 filtering of RRC measurements
+    if (UE_rrc_inst[ctxt_pP->module_id].QuantityConfig[0] != NULL) {
+      ue_meas_filtering(ctxt_pP,enb_indexP);
+    }
+
+    ue_measurement_report_triggering(ctxt_pP,enb_indexP);
+
+    if (UE_rrc_inst[ctxt_pP->module_id].Info[0].handoverTarget > 0) {
+      LOG_I(RRC,"[UE %d] Frame %d : RRC handover initiated\n", ctxt_pP->module_id, ctxt_pP->frame);
+    }
+
+    if((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].State == RRC_HO_EXECUTION)   &&
+        (UE_rrc_inst[ctxt_pP->module_id].HandoverInfoUe.targetCellId != 0xFF)) {
+      UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].State= RRC_IDLE;
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
+      return(RRC_HO_STARTED);
+    }
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
+  return (RRC_OK);
 }

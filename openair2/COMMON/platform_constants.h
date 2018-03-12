@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -43,7 +43,6 @@
 #define NL_MAX_PAYLOAD 9000  /* this should cover the max mtu size*/
 #endif
 
-#ifdef USER_MODE
 #ifdef LARGE_SCALE
 #    define NB_MODULES_MAX 128
 #    define NB_NODE_MAX    128
@@ -51,11 +50,6 @@
 #    define NB_MODULES_MAX 32
 #    define NB_NODE_MAX    32
 #endif
-#else
-#    define NB_MODULES_MAX 1
-#    define NB_NODE_MAX    1
-#endif //PHY_EMUL
-
 
 #ifdef JUMBO_FRAME
 #    define MAX_IP_PACKET_SIZE         10000 // 9000
@@ -82,6 +76,10 @@
 #endif
 
 #define MAX_MANAGED_ENB_PER_MOBILE  2
+
+///NB-IOT
+#define NB_RB_MAX_NB_IOT  (maxDRB_NB_r13 + 3) //MP: NB_IoT --> 2(DRB)+3(SRBs - 2 is not used) = 5
+
 
 #define DEFAULT_RAB_ID 1
 
@@ -132,9 +130,7 @@
 #define  UNUSED_PARAM_MBMS_SESSION_ID  0
 #define  UNUSED_PARAM_MBMS_SERVICE_ID  0
 
-#ifdef USER_MODE
 #define printk printf
-#endif
 
 #define UNUSED_VARIABLE(vARIABLE)   (void)(vARIABLE)
 

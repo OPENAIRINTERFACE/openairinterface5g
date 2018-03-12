@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -68,12 +68,12 @@ flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, c
 
  error:
   LOG_I(FLEXRAN_AGENT,"there was an error\n");
-  return 1;
+  return NULL;
 }
 
 int flexran_agent_async_msg_send(void *data, int size, int priority, void *channel_info) {
   flexran_agent_async_channel_t *channel;
-  channel = (flexran_agent_channel_t *)channel_info;
+  channel = (flexran_agent_async_channel_t *)channel_info;
 
   return message_put(channel->send_queue, data, size, priority);
 }

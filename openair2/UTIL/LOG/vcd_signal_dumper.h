@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -378,6 +378,16 @@ typedef enum {
 
   VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF,
   VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_DECOMPR_IF,
+
+  VCD_SIGNAL_DUMPER_FUNCTIONS_NFAPI,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_PCFICH,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DCI0,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_PHICH,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDCCH_SCRAMBLING,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDCCH_MODULATION,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDCCH_INTERLEAVING,
+  VCD_SIGNAL_DUMPER_FUNCTIONS_PDCCH_TX,
 
   VCD_SIGNAL_DUMPER_FUNCTIONS_END
 } vcd_signal_dump_functions;

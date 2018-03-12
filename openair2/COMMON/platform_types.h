@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -30,7 +30,7 @@
 #ifndef __PLATFORM_TYPES_H__
 #    define __PLATFORM_TYPES_H__
 
-#ifdef USER_MODE
+#if !defined(NAS_NETLINK)
 #include <stdint.h>
 #endif
 
@@ -69,6 +69,7 @@ typedef uint32_t              frame_t;
 typedef int32_t               sframe_t;
 typedef uint32_t              sub_frame_t;
 typedef uint8_t               module_id_t;
+typedef uint8_t               slice_id_t;
 typedef uint8_t               eNB_index_t;
 typedef uint16_t              ue_id_t;
 typedef int16_t               smodule_id_t;
@@ -98,6 +99,15 @@ typedef enum rb_type_e {
   SIGNALLING_RADIO_BEARER     = 1,
   RADIO_ACCESS_BEARER         = 2
 } rb_type_t;
+
+typedef enum {
+    CR_ROUND = 0,
+    CR_SRB12 = 1,
+    CR_HOL   = 2,
+    CR_LC    = 3,
+    CR_CQI   = 4,
+    CR_NUM   = 5
+} sorting_criterion_t;
 
 //-----------------------------------------------------------------------------
 // PHY TYPES
@@ -271,29 +281,5 @@ typedef struct protocol_ctxt_s {
     (CTXT_Pp)->module_id, \
     (CTXT_Pp)->rnti
 
-#ifdef OAI_EMU
-#define CHECK_CTXT_ARGS(CTXT_Pp) \
-    if ((CTXT_Pp)->enb_flag) {\
-        AssertFatal (((CTXT_Pp)->module_id >= oai_emulation.info.first_enb_local) && (oai_emulation.info.nb_enb_local > 0),\
-                     "eNB module id is too low (%u/%d/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_enb_local,\
-                     oai_emulation.info.nb_enb_local);\
-        AssertFatal (((CTXT_Pp)->module_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local)) && (oai_emulation.info.nb_enb_local > 0),\
-                     "eNB module id is too high (%u/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local);\
-    } else {\
-        AssertFatal ((CTXT_Pp)->module_id  < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local),\
-                     "UE module id is too high (%u/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);\
-        AssertFatal ((CTXT_Pp)->module_id  >= oai_emulation.info.first_ue_local,\
-                     "UE module id is too low (%u/%d)!\n",\
-                     (CTXT_Pp)->module_id,\
-                     oai_emulation.info.first_ue_local);\
-    }
-#else
 #define CHECK_CTXT_ARGS(CTXT_Pp)
-#endif
 #endif

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -23,11 +23,7 @@
 #include "PHY/extern.h"
 #include "extern.h"
 #include "kHz_7_5.h"
-#ifdef USER_MODE
 #include <math.h>
-#else
-#include "rtai_math.h"
-#endif
 #include "PHY/sse_intrin.h"
 
 short conjugate75[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
@@ -192,7 +188,7 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
   }
 
 
-  slot_offset = (uint32_t)slot * frame_parms->samples_per_tti/2-ru->N_TA_offset;
+  slot_offset = ((uint32_t)slot * frame_parms->samples_per_tti/2)-ru->N_TA_offset;
   slot_offset2 = (uint32_t)(slot&1) * frame_parms->samples_per_tti/2;
 
   len = frame_parms->samples_per_tti/2;

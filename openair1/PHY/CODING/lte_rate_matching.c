@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -463,7 +463,7 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
                                  uint8_t Qm,
                                  uint8_t Nl,
                                  uint8_t r,
-                                 uint8_t nb_rb) 
+                                 uint8_t nb_rb)
 //                                 uint8_t m)
 {
 
@@ -513,7 +513,7 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   //    counter_buffer[rvidx][cnt]=0;
   if (Ncb>(3*(RTC<<5)))
     AssertFatal(1==0,"Exiting, RM condition (Ncb %d, RTC %d, Nir/C %d, Nsoft %d, Kw %d)\n",Ncb,RTC,Nir/C,Nsoft,3*(RTC<<5));
-  
+
   AssertFatal(Nl>0,"Nl is 0\n");
   AssertFatal(Qm>0,"Qm is 0\n");
   Gp = G/Nl/Qm;
@@ -749,6 +749,10 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
 
   for (; (ind<Ncb)&&(k<E); ind++) {
     if (dummy_w[ind] != LTE_NULL) {
+      /*
+      if ((w[ind]>0 && soft_input2[k]<0) ||
+	  (w[ind]<0 && soft_input2[k]>0))
+	  printf("ind %d: w %d => soft_in %d\n",ind,w[ind],soft_input2[k]);*/
       w[ind] += soft_input2[k++];
 #ifdef RM_DEBUG
       printf("RM_RX k%d Ind: %d (%d)\n",k-1,ind,w[ind]);

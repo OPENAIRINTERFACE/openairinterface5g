@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -44,4 +44,9 @@ int s1ap_eNB_ue_capabilities(instance_t instance,
 int s1ap_eNB_e_rab_setup_resp(instance_t instance,
                               s1ap_e_rab_setup_resp_t *e_rab_setup_resp_p);
 
+int s1ap_eNB_e_rab_modify_resp(instance_t instance,
+               s1ap_e_rab_modify_resp_t *e_rab_modify_resp_p);
+
+int s1ap_eNB_e_rab_release_resp(instance_t instance,
+                  s1ap_e_rab_release_resp_t *e_rab_release_resp_p);
 #endif /* S1AP_ENB_NAS_PROCEDURES_H_ */

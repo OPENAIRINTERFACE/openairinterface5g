@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -33,14 +33,11 @@
 #define PDCP_DEBUG 1
 //#define DEBUG_PDCP_FIFO_FLUSH_SDU
 
-#ifndef OAI_EMU
 extern int otg_enabled;
-#endif
 
 #include "pdcp.h"
 #include "pdcp_primitives.h"
 
-#ifdef USER_MODE
 #include <pthread.h>
 #include <errno.h>
 #include <stdio.h>
@@ -48,9 +45,6 @@ extern int otg_enabled;
 #include <unistd.h>
 #define rtf_put write
 #define rtf_get read
-#else
-#include <rtai_fifos.h>
-#endif //USER_MODE
 
 #include "../MAC/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -89,7 +83,10 @@ extern Packet_OTG_List_t *otg_pdcp_buffer;
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
 #  include "gtpv1u_eNB_task.h"
+#  include "gtpv1u_eNB_defs.h"
 #endif
+
+extern int gtpv1u_new_data_req( uint8_t  enb_module_idP, rnti_t   ue_rntiP, uint8_t  rab_idP, uint8_t *buffer_pP, uint32_t buf_lenP, uint32_t buf_offsetP);
 
 /* Prevent de-queueing the same PDCP SDU from the queue twice
  * by multiple threads. This has happened in TDD when thread-odd
@@ -165,11 +162,6 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
         threadname, ctxt_pP->frame, ctxt_pP->subframe,
         ((pdcp_data_ind_header_t*) sdu_p->data)->inst,
         ((pdcp_data_ind_header_t *) sdu_p->data)->data_size);
-#else
-#if ! defined(OAI_EMU)
-    /* TODO: do we have to reset to 0 or not? not for a scenario with 1 UE at least */
-//    ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
-#endif
 #endif
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
@@ -550,29 +542,6 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                 nas_nlh_rx->nlmsg_len - sizeof(struct nlmsghdr));
 #endif
 
-#ifdef OAI_EMU
-
-          // overwrite function input parameters, because only one netlink socket for all instances
-          if (pdcp_read_header_g.inst < oai_emulation.info.nb_enb_local) {
-            ctxt.frame         = ctxt_cpy.frame;
-            ctxt.enb_flag      = ENB_FLAG_YES;
-            ctxt.module_id     = pdcp_read_header_g.inst  +  oai_emulation.info.first_enb_local;
-            ctxt.rnti          = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id ][pdcp_read_header_g.rb_id / maxDRB + oai_emulation.info.first_ue_local];
-            rab_id    = pdcp_read_header_g.rb_id % maxDRB;
-          } else {
-            ctxt.frame         = ctxt_cpy.frame;
-            ctxt.enb_flag      = ENB_FLAG_NO;
-            ctxt.module_id     = pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local + oai_emulation.info.first_ue_local;
-            ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
-            rab_id    = pdcp_read_header_g.rb_id % maxDRB;
-          }
-
-          CHECK_CTXT_ARGS(&ctxt);
-          AssertFatal (rab_id    < maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, maxDRB);
-          /*LGpdcp_read_header.inst = (pdcp_read_header_g.inst >= oai_emulation.info.nb_enb_local) ? \
-                  pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local+ NB_eNB_INST + oai_emulation.info.first_ue_local :
-                  pdcp_read_header_g.inst +  oai_emulation.info.first_enb_local;*/
-#else // OAI_EMU
           /* TODO: do we have to reset to 0 or not? not for a scenario with 1 UE at least */
 //          pdcp_read_header_g.inst = 0;
 //#warning "TO DO CORRCT VALUES FOR ue mod id, enb mod id"
@@ -586,15 +555,12 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
           if (ctxt_cpy.enb_flag) {
             ctxt.module_id = 0;
             rab_id      = pdcp_read_header_g.rb_id % maxDRB;
-            ctxt.rnti          = pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index];
+            ctxt.rnti          = pdcp_eNB_UE_instance_to_rnti[pdcp_read_header_g.rb_id / maxDRB];
           } else {
             ctxt.module_id = 0;
             rab_id      = pdcp_read_header_g.rb_id % maxDRB;
             ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
           }
-
-
-#endif
 
           if (ctxt.enb_flag) {
             if (rab_id != 0) {
@@ -803,131 +769,15 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
 void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) {
 
-  unsigned char       *otg_pkt=NULL;
-  module_id_t          dst_id; // dst for otg
-  rb_id_t              rb_id;
-  unsigned int         pkt_size=0;
-#if defined(USER_MODE) && defined(OAI_EMU)
-  module_id_t          src_id;
-  static unsigned int  pkt_cnt_enb=0, pkt_cnt_ue=0;
 
-  Packet_otg_elt_t    *otg_pkt_info=NULL;
-  int                  result;
-  uint8_t              pdcp_mode, is_ue=0;
-#endif
+  module_id_t          dst_id; // dst for otg
   protocol_ctxt_t      ctxt;
   // we need to add conditions to avoid transmitting data when the UE is not RRC connected.
-#if defined(USER_MODE) && defined(OAI_EMU)
-
-  if (oai_emulation.info.otg_enabled ==1 ) {
-    // module_id is source id
-    while ((otg_pkt_info = pkt_list_remove_head(&(otg_pdcp_buffer[ctxt_pP->instance]))) != NULL) {
-      LOG_I(OTG,"Mod_id %d Frame %d Got a packet (%p), HEAD of otg_pdcp_buffer[%d] is %p and Nb elements is %d\n",
-            ctxt_pP->module_id,
-            ctxt_pP->frame,
-            otg_pkt_info,
-            ctxt_pP->instance,
-            pkt_list_get_head(&(otg_pdcp_buffer[ctxt_pP->instance])),
-            otg_pdcp_buffer[ctxt_pP->instance].nb_elements);
-      //otg_pkt_info = pkt_list_remove_head(&(otg_pdcp_buffer[module_id]));
-      dst_id    = (otg_pkt_info->otg_pkt).dst_id; // type is module_id_t
-      src_id    = (otg_pkt_info->otg_pkt).module_id; // type is module_id_t
-      rb_id     = (otg_pkt_info->otg_pkt).rb_id;
-      is_ue     = (otg_pkt_info->otg_pkt).is_ue;
-      pdcp_mode = (otg_pkt_info->otg_pkt).mode;
-      //    LOG_I(PDCP,"pdcp_fifo, pdcp mode is= %d\n",pdcp_mode);
-
-      // generate traffic if the ue is rrc reconfigured state
-      // if (mac_get_rrc_status(module_id, ctxt_pP->enb_flag, dst_id ) > 2 /*RRC_CONNECTED*/) { // not needed: this test is already done in update_otg_enb
-      otg_pkt = (unsigned char*) (otg_pkt_info->otg_pkt).sdu_buffer;
-      pkt_size = (otg_pkt_info->otg_pkt).sdu_buffer_size;
-
-      if (otg_pkt != NULL) {
-        if (is_ue == 0 ) {
-          PROTOCOL_CTXT_SET_BY_MODULE_ID(
-            &ctxt,
-            src_id,
-            ENB_FLAG_YES,
-            oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id][dst_id],
-            ctxt_pP->frame,
-            ctxt_pP->subframe,
-	    src_id);
-
-          LOG_D(OTG,"[eNB %d] Frame %d sending packet %d from module %d on rab id %d (src %d, dst %d/%x) pkt size %d for pdcp mode %d\n",
-                ctxt.module_id,
-                ctxt.frame,
-                pkt_cnt_enb++,
-                src_id,
-                rb_id,
-                src_id,
-                dst_id,
-		oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id][dst_id],
-                pkt_size,
-                pdcp_mode);
-          result = pdcp_data_req(&ctxt,
-                                 SRB_FLAG_NO,
-                                 rb_id,
-                                 RLC_MUI_UNDEFINED,
-                                 RLC_SDU_CONFIRM_NO,
-                                 pkt_size,
-                                 otg_pkt,
-                                 pdcp_mode);
-          if (result != TRUE) {
-            LOG_W(OTG,"PDCP data request failed!\n");
-          }
-        } else {
-          //rb_id= eNB_index * MAX_NUM_RB + DTCH;
-
-
-          LOG_D(OTG,"[UE %d] Frame %d: sending packet %d from module %d on rab id %d (src %d/%x, dst %d) pkt size %d\n",
-                ctxt_pP->module_id,
-                ctxt_pP->frame,
-                pkt_cnt_ue++,
-                ctxt_pP->module_id,
-                rb_id,
-                src_id,
-		pdcp_UE_UE_module_id_to_rnti[ctxt_pP->module_id], // [src_id]
-                dst_id,
-                pkt_size);
-          PROTOCOL_CTXT_SET_BY_MODULE_ID(
-            &ctxt,
-            ctxt_pP->module_id, //src_id,
-            ENB_FLAG_NO,
-            pdcp_UE_UE_module_id_to_rnti[ctxt_pP->module_id],// [src_id]
-            ctxt_pP->frame,
-            ctxt_pP->subframe,
-	    dst_id);
-
-          result = pdcp_data_req( &ctxt,
-                                  SRB_FLAG_NO,
-                                  rb_id,
-                                  RLC_MUI_UNDEFINED,
-                                  RLC_SDU_CONFIRM_NO,
-                                  pkt_size,
-                                  otg_pkt,
-                                  PDCP_TRANSMISSION_MODE_DATA);
-          if (result != TRUE) {
-            LOG_W(OTG,"PDCP data request failed!\n");
-          }
-        }
-
-        free(otg_pkt);
-        otg_pkt = NULL;
-      }
-
-      // } //else LOG_D(OTG,"ctxt_pP->frame %d enb %d-> ue %d link not yet established state %d  \n", ctxt_pP->frame, eNB_index,dst_id - NB_eNB_INST, mac_get_rrc_status(module_id, ctxt_pP->enb_flag, dst_id - NB_eNB_INST));
-
-    }
-  }
-
-#else
-
   if ((otg_enabled==1) && (ctxt_pP->enb_flag == ENB_FLAG_YES)) { // generate DL traffic
-    unsigned int ctime=0;
-    ctime = ctxt_pP->frame * 100;
 
-    /*if  ((mac_get_rrc_status(eNB_index, ctxt_pP->enb_flag, 0 ) > 2) &&
-    (mac_get_rrc_status(eNB_index, ctxt_pP->enb_flag, 1 ) > 2)) { */
+
+
+
     PROTOCOL_CTXT_SET_BY_MODULE_ID(
       &ctxt,
       ctxt_pP->module_id,
@@ -940,36 +790,6 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
     for (dst_id = 0; dst_id<NUMBER_OF_UE_MAX; dst_id++) {
       ctxt.rnti = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id][dst_id];
 
-      if (ctxt.rnti != NOT_A_RNTI) {
-        if (mac_eNB_get_rrc_status(ctxt.module_id, ctxt.rnti ) > 2 /*RRC_SI_RECEIVED*/) {
-        unsigned int temp = 0;
-          otg_pkt=packet_gen(
-                    ENB_MODULE_ID_TO_INSTANCE(ctxt.module_id),
-                    UE_MODULE_ID_TO_INSTANCE(dst_id),
-                    0,
-                    ctime,
-                    &temp);
-        pkt_size = temp;
-
-        if (otg_pkt != NULL) {
-          rb_id = dst_id * maxDRB + DTCH;
-          pdcp_data_req(&ctxt,
-                        SRB_FLAG_NO,
-                        rb_id,
-                        RLC_MUI_UNDEFINED,
-                        RLC_SDU_CONFIRM_NO,
-                        pkt_size,
-                        otg_pkt,
-                        PDCP_TRANSMISSION_MODE_DATA);
-            LOG_I(OTG,
-                  "send packet from module %d on rab id %d (src %d, dst %d) pkt size %d\n",
-                  ctxt_pP->module_id, rb_id, ctxt_pP->module_id, dst_id, pkt_size);
-            free(otg_pkt);
-          }
-        }
-      }
     }
   }
-
-#endif
 }

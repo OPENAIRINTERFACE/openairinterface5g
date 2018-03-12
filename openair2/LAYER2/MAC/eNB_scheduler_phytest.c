@@ -237,7 +237,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 
       LOG_D(MAC,"Scheduling for frame %d, subframe %d => harq_pid %d\n",sched_frame,sched_subframe,harq_pid);
 
-      RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
+      RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->TBS_UL[harq_pid];
 
 	  
 
@@ -275,7 +275,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
 	    
 	  // adjust total UL buffer status by TBS, wait for UL sdus to do final update
-	  UE_template->ul_total_buffer = UE_template->TBS_UL[harq_pid];
+	  //UE_template->ul_total_buffer = UE_template->TBS_UL[harq_pid];
 	  // Cyclic shift for DM RS
 	  cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
 	  // save it for a potential retransmission

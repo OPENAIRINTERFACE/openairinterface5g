@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -27,13 +27,6 @@
 
 */
 /*******************************************************************************/
-
-#ifndef PDCP_USE_NETLINK
-#ifdef RTAI
-#include "rtai_posix.h"
-#define RTAI_IRQ 30 //try to get this irq with RTAI
-#endif // RTAI
-#endif // PDCP_USE_NETLINK
 
 #include "constant.h"
 #include "local.h"
@@ -116,6 +109,7 @@ void *nas_interrupt(void)
   printk("INTERRUPT: end\n");
 #endif
   //  return 0;
+  return NULL;
 }
 #endif //NETLINK
 
@@ -247,7 +241,7 @@ int nas_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
     // End debug information
     netif_stop_queue(dev);
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) || RHEL_RELEASE_CODE>=1796
     netif_trans_update(dev);
 #else
     dev->trans_start = jiffies;
@@ -312,7 +306,7 @@ void nas_tx_timeout(struct net_device *dev)
   printk("TX_TIMEOUT: begin\n");
   //  (struct nas_priv *)(dev->priv)->stats.tx_errors++;
   (priv->stats).tx_errors++;
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) || RHEL_RELEASE_CODE>=1796
   netif_trans_update(dev);
 #else
   dev->trans_start = jiffies;
@@ -449,22 +443,11 @@ int init_module (void)
 
 #ifndef PDCP_USE_NETLINK
 
-#ifdef RTAI //with RTAI you have to indicate which irq# you want
-
-  pdcp_2_nas_irq=rt_request_srq(0, nas_interrupt, NULL);
-
-#endif
-
   if (pdcp_2_nas_irq == -EBUSY || pdcp_2_nas_irq == -EINVAL) {
     printk("[NAS][INIT] No interrupt resource available\n");
     return -EBUSY;
   } else
     printk("[NAS][INIT]: Interrupt %d\n", pdcp_2_nas_irq);
-
-  //rt_startup_irq(RTAI_IRQ);
-
-  //rt_enable_irq(RTAI_IRQ);
-
 
 #endif //NETLINK
 
@@ -529,12 +512,6 @@ void cleanup_module(void)
 
   if (pdcp_2_nas_irq!=-EBUSY) {
     pdcp_2_nas_irq=0;
-#ifdef RTAI
-    // V1
-    //    rt_free_linux_irq(priv->irq, NULL);
-    // END V1
-    rt_free_srq(pdcp_2_nas_irq);
-#endif
     // Start IRQ linux
     //    free_irq(priv->irq, NULL);
     // End IRQ linux

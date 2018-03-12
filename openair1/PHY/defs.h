@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -79,6 +79,12 @@
 #define bigmalloc16 malloc16
 #define openair_free(y,x) free((y))
 #define PAGE_SIZE 4096
+#define free_and_zero(PtR) do { \
+      if (PtR) {           \
+        free(PtR);         \
+        PtR = NULL;        \
+      }                    \
+    } while (0)
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2
@@ -772,6 +778,8 @@ typedef struct RU_t_s{
   void                 (*fh_south_asynch_in)(struct RU_t_s *ru,int *frame, int *subframe);
   /// function pointer to initialization function for radio interface
   int                  (*start_rf)(struct RU_t_s *ru);
+  /// function pointer to release function for radio interface
+  int                  (*stop_rf)(struct RU_t_s *ru);
   /// function pointer to initialization function for radio interface
   int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB);
   /// function pointer to RX front-end processing routine (DFTs/prefix removal or NULL)
@@ -784,8 +792,10 @@ typedef struct RU_t_s{
   int (*wakeup_rxtx)(struct PHY_VARS_eNB_s *eNB, struct RU_t_s *ru);
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
+#ifdef Rel14
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
+#endif
   /// function pointer to eNB entry routine
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string,struct RU_t_s *ru);
   /// Timing statistics
@@ -800,6 +810,14 @@ typedef struct RU_t_s{
   time_stats_t ofdm_mod_wait_stats;
   /// Timing wakeup statistics (TX)
   time_stats_t ofdm_mod_wakeup_stats;
+  /// Timing statistics (RX Fronthaul + Compression)
+  time_stats_t rx_fhaul;
+  /// Timing statistics (TX Fronthaul + Compression)
+  time_stats_t tx_fhaul; 
+  /// Timong statistics (Compression)
+  time_stats_t compression;
+  /// Timing statistics (Fronthaul transport)
+  time_stats_t transport;
   /// RX and TX buffers for precoder output
   RU_COMMON            common;
   /// beamforming weight vectors per eNB
@@ -963,7 +981,8 @@ typedef struct {
   int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
   /// Total Subband CQI and RB
   int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
-
+  /// PRACH background noise level
+  int            prach_I0;
 } PHY_MEASUREMENTS_eNB;
 
 
@@ -1028,6 +1047,7 @@ typedef struct PHY_VARS_eNB_s {
   LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
   LTE_eNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   LTE_eNB_DLSCH_t     *dlsch_MCH;
+  LTE_eNB_DLSCH_t     *dlsch_PCH;
   LTE_eNB_UE_stats     UE_stats[NUMBER_OF_UE_MAX];
   LTE_eNB_UE_stats    *UE_stats_ptr[NUMBER_OF_UE_MAX];
 
@@ -1079,8 +1099,8 @@ typedef struct PHY_VARS_eNB_s {
 
   /// if ==0 enables phy only test mode
   int mac_enabled;
-
-
+  /// counter to average prach energh over first 100 prach opportunities
+  int prach_energy_counter;
 
   // PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_UE_MAX];
@@ -1498,6 +1518,53 @@ extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 
+
+#define MODE_DECODE_NONE         0
+#define MODE_DECODE_SSE          1
+#define MODE_DECODE_C            2
+#define MODE_DECODE_AVX2         3
+
+#define DECODE_INITTD8_SSE_FPTRIDX   0
+#define DECODE_INITTD16_SSE_FPTRIDX  1
+#define DECODE_INITTD_AVX2_FPTRIDX   2
+#define DECODE_TD8_SSE_FPTRIDX       3
+#define DECODE_TD16_SSE_FPTRIDX      4
+#define DECODE_TD_C_FPTRIDX          5
+#define DECODE_TD16_AVX2_FPTRIDX     6
+#define DECODE_FREETD8_FPTRIDX       7
+#define DECODE_FREETD16_FPTRIDX      8
+#define DECODE_FREETD_AVX2_FPTRIDX   9
+#define ENCODE_SSE_FPTRIDX           10
+#define ENCODE_C_FPTRIDX             11
+#define ENCODE_INIT_SSE_FPTRIDX      12
+#define DECODE_NUM_FPTR              13
+
+
+typedef uint8_t(*decoder_if_t)(int16_t *y,
+                               int16_t *y2,
+    		               uint8_t *decoded_bytes,
+    		               uint8_t *decoded_bytes2,
+	   		       uint16_t n,
+	   		       uint16_t f1,
+	   		       uint16_t f2,
+	   		       uint8_t max_iterations,
+	   		       uint8_t crc_type,
+	   		       uint8_t F,
+	   		       time_stats_t *init_stats,
+	   		       time_stats_t *alpha_stats,
+	   		       time_stats_t *beta_stats,
+	   		       time_stats_t *gamma_stats,
+	   		       time_stats_t *ext_stats,
+	   		       time_stats_t *intl1_stats,
+                               time_stats_t *intl2_stats);
+
+typedef uint8_t(*encoder_if_t)(uint8_t *input,
+                               uint16_t input_length_bytes,
+                               uint8_t *output,
+                               uint8_t F,
+                               uint16_t interleaver_f1,
+                               uint16_t interleaver_f2);
+
 #define MAX_RRU_CONFIG_SIZE 1024
 typedef enum {
   RAU_tick=0,
@@ -1553,6 +1620,10 @@ typedef struct RRU_config_s {
   uint8_t num_bands;
   /// EUTRA band list configured in RRU
   uint8_t band_list[MAX_BANDS_PER_RRU];
+  /// TDD configuration (0-6)
+  uint8_t tdd_config[MAX_BANDS_PER_RRU];
+  /// TDD special subframe configuration (0-10)
+  uint8_t tdd_config_S[MAX_BANDS_PER_RRU];
   /// TX frequency
   uint32_t tx_freq[MAX_BANDS_PER_RRU];
   /// RX frequency

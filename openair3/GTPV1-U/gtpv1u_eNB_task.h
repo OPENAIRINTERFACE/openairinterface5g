@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -49,5 +49,9 @@ gtpv1u_create_s1u_tunnel(
   const gtpv1u_enb_create_tunnel_req_t *  const create_tunnel_req_pP,
         gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP);
 
-
+int
+gtpv1u_update_s1u_tunnel(
+    const instance_t                              instanceP,
+    const gtpv1u_enb_create_tunnel_req_t * const  create_tunnel_req_pP,
+    const rnti_t                                  prior_rnti);
 #endif /* GTPV1U_ENB_TASK_H_ */

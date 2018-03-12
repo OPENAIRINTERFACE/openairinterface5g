@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -24,6 +24,7 @@
 
 #include "PHY/types.h"
 #include "PHY/defs.h"
+#include "common/ran_context.h"
 
 char* namepointer_chMag ;
 char fmageren_name2[512];
@@ -148,5 +149,5 @@ int16_t unscrambling_lut[65536*16] __attribute__((aligned(32)));
 /// lookup table for scrambling in TX
 uint8_t scrambling_lut[65536*16] __attribute__((aligned(32)));
 
-
+uint8_t max_turbo_iterations=4;
 #endif /*__PHY_VARS_H__ */

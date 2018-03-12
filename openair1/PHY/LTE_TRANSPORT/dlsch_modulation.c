@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -79,7 +79,7 @@ uint8_t is_not_UEspecRS(int8_t lprime, uint8_t re, uint8_t nushift, uint8_t Ncp,
         if ((re!=nushift+offset) && (re!=((nushift+4+offset)%12)) &&  (re!=((nushift+8+offset)%12)))
           return(1);
         /*else{
-          printf("(is_no_UEspec_RS):lprime=%d, re=%d, nushift=%d, offset=%d\n",lprime, re,nushift,offset);
+          LOG_I(PHY,"(is_no_UEspec_RS):lprime=%d, re=%d, nushift=%d, offset=%d\n",lprime, re,nushift,offset);
         }*/
       } else {
         if ((re!=nushift+offset) && (re!=((nushift+3+offset)%12)) && (re!=((nushift+6+offset)%12)) && (re!=((nushift+9+offset)%12)))
@@ -434,7 +434,7 @@ int allocate_REs_in_RB_pilots_16QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
 
 
   if (skip_dc == 0) {
-    //    printf("pilots: P1_SHIFT[0] %d\n",P1_SHIFT[0]);
+    //    LOG_I(PHY,"pilots: P1_SHIFT[0] %d\n",P1_SHIFT[0]);
     for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+P1_SHIFT[0],re=P1_SHIFT[0];
          re<12;
          x0p+=4) {
@@ -445,7 +445,7 @@ int allocate_REs_in_RB_pilots_16QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
       qam16_table_offset_im+=x0p[3];
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qam16_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qam16_table_offset_im];
-      //      printf("pilots: re %d, tti_offset %d, P1_SHIFT %d\n",re,tti_offset,P1_SHIFT[re+1]);
+      //      LOG_I(PHY,"pilots: re %d, tti_offset %d, P1_SHIFT %d\n",re,tti_offset,P1_SHIFT[re+1]);
       tti_offset+=P1_SHIFT[re+1];
       re+=P1_SHIFT[re+1];
     }
@@ -661,7 +661,7 @@ int allocate_REs_in_RB_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
 
 
   if (skip_dc == 0) {
-    //    printf("pilots: P1_SHIFT[0] %d\n",P1_SHIFT[0]);
+    //    LOG_I(PHY,"pilots: P1_SHIFT[0] %d\n",P1_SHIFT[0]);
     for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+P1_SHIFT[0],re=P1_SHIFT[0];
          re<12;
          x0p+=6) {
@@ -674,7 +674,7 @@ int allocate_REs_in_RB_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
       qam64_table_offset_im+=x0p[5];
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qam64_table_offset_im];
-      //      printf("pilots: re %d, tti_offset %d, P1_SHIFT %d\n",re,tti_offset,P1_SHIFT[re+1]);
+      //      LOG_I(PHY,"pilots: re %d, tti_offset %d, P1_SHIFT %d\n",re,tti_offset,P1_SHIFT[re+1]);
       tti_offset+=P1_SHIFT[re+1];
       re+=P1_SHIFT[re+1];
     }
@@ -831,11 +831,11 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
   if (dlsch0_harq != NULL){
     #ifdef DEBUG_DLSCH_MODULATION
-      printf("allocate_re (mod %d): symbol_offset %d re_offset %d (%d,%d), jj %d -> %d,%d\n",mod_order0,symbol_offset,re_offset,skip_dc,skip_half,*jj, x0[*jj], x0[1+*jj]);
+      LOG_I(PHY,"allocate_re (mod %d): symbol_offset %d re_offset %d (%d,%d), jj %d -> %d,%d\n",mod_order0,symbol_offset,re_offset,skip_dc,skip_half,*jj, x0[*jj], x0[1+*jj]);
     #endif
   } else{
     #ifdef DEBUG_DLSCH_MODULATION
-      printf("allocate_re (mod %d): symbol_offset %d re_offset %d (%d,%d), jj %d -> %d,%d\n",mod_order0,symbol_offset,re_offset,skip_dc,skip_half,*jj, x0[*jj], x0[1+*jj]);
+      LOG_I(PHY,"allocate_re (mod %d): symbol_offset %d re_offset %d (%d,%d), jj %d -> %d,%d\n",mod_order0,symbol_offset,re_offset,skip_dc,skip_half,*jj, x0[*jj], x0[1+*jj]);
     #endif
   }
 
@@ -849,7 +849,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
 
   for (re=first_re; re<last_re; re++) {
-  // printf("element %d precoder_index for allocation %d\n",re, precoder_index );
+  // LOG_I(PHY,"element %d precoder_index for allocation %d\n",re, precoder_index );
 
     if ((skip_dc == 1) && (re==6))
       re_off=re_off - frame_parms->ofdm_symbol_size+1;
@@ -859,7 +859,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
       //check that RE is not from Cell-specific RS
 
     if (is_not_pilot(pilots,re,frame_parms->nushift,use2ndpilots)==1) {
-      //printf("re %d (jj %d)\n",re,*jj);
+      //LOG_I(PHY,"re %d (jj %d)\n",re,*jj);
 
 
       if (mimo_mode == SISO) {  //SISO mapping
@@ -869,7 +869,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
         case 2:  //QPSK
 
 
-          //printf("re %d %d(%d) : %d,%d => ",re,tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+          //LOG_I(PHY,"re %d %d(%d) : %d,%d => ",re,tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
           ((int16_t*)&txdataF[0][tti_offset])[0] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
 
           *jj = *jj + 1;
@@ -1135,12 +1135,12 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
             break;
 
           case 2:  //QPSK
-            //printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+            //LOG_I(PHY,"%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
             xx0_re = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
             *jj = *jj + 1;
             xx0_im = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
             *jj = *jj + 1;
-            //printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+            //LOG_I(PHY,"%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
             break;
 
           case 4:  //16QAM
@@ -1206,12 +1206,12 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
             break;
 
           case 2:  //QPSK
-            //printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+            //LOG_I(PHY,"%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
             xx1_re = (x1[*jj2]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
             *jj2 = *jj2 + 1;
             xx1_im = (x1[*jj2]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
             *jj2 = *jj2 + 1;
-            //printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+            //LOG_I(PHY,"%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
             break;
 
           case 4:  //16QAM
@@ -1278,7 +1278,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           ((int16_t *)&txdataF[0][tti_offset])[1]+=((xx0_im+xx1_im)>>1);
           ((int16_t *)&txdataF[1][tti_offset])[1]+=(s*((xx0_im-xx1_im)>>1));
           /*
-          printf("CDD: xx0 (%d,%d), xx1(%d,%d), s(%d), txF[0] (%d,%d), txF[1] (%d,%d)\n",
+          LOG_I(PHY,"CDD: xx0 (%d,%d), xx1(%d,%d), s(%d), txF[0] (%d,%d), txF[1] (%d,%d)\n",
            xx0_re,xx0_im,xx1_re,xx1_im, s, ((int16_t *)&txdataF[0][tti_offset])[0],((int16_t *)&txdataF[0][tti_offset])[1],
            ((int16_t *)&txdataF[1][tti_offset])[0],((int16_t *)&txdataF[1][tti_offset])[1]);
           */
@@ -1408,7 +1408,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           precoder_index1 = 3; //[1 -j]
         }
         else {
-         printf("problem with precoder in TM4\n");
+         LOG_I(PHY,"problem with precoder in TM4\n");
           return(-1);
         }
 
@@ -1427,7 +1427,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           ((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_SQRT2_Q15)>>15);
           ((int16_t*)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_SQRT2_Q15)>>15);
 
-          //printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+          //LOG_I(PHY,"%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
 
           if (frame_parms->nb_antenna_ports_eNB == 2) {
             layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index0);
@@ -1630,7 +1630,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
               ((int16_t*)&txdataF[5][tti_offset])[1] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
               *jj = *jj + 1;
 
-              //printf("%d(%d) : %d,%d =>
+              //LOG_I(PHY,"%d(%d) : %d,%d =>
               //",tti_offset,*jj,((int16_t*)&tmp_sample1)[0],((int16_t*)&tmp_sample1)[1]);
               break;
 
@@ -1709,7 +1709,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           }
         } else {
           //precoding UE spec RS
-          //printf("precoding UE spec RS\n");
+          //LOG_I(PHY,"precoding UE spec RS\n");
 
           ind = 3*lprime*dlsch0_harq->nb_rb+mprime2;
           ind_dword = ind>>4;
@@ -1727,7 +1727,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           switch (mod_order0) {
           case 2:  //QPSK
 
-            //    printf("%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+            //    LOG_I(PHY,"%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
             for (int layer=first_layer0; layer<=(first_layer0+Nlayers0); layer++) {
               ((int16_t*)&txdataF[layer][tti_offset])[0] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
               *jj = *jj + 1;
@@ -1815,7 +1815,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
           }
         }
       } else if (mimo_mode>=TM9_10) {
-        printf("allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
+        LOG_I(PHY,"allocate_REs_in_RB() [dlsch.c] : ERROR, unknown mimo_mode %d\n",mimo_mode);
         return(-1);
       }
     }
@@ -1850,7 +1850,7 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
   uint8_t first_re,last_re;
   int inc;
 #ifdef DEBUG_DLSCH_MODULATION
-  printf("allocate_re_MCH (mod %d): symbol_offset %d re_offset %d (%d), jj %d -> %d,%d, gain_lin_QPSK %d,txdataF %p\n",mod_order,symbol_offset,re_offset,skip_dc,*jj, x0[*jj], x0[1+*jj],gain_lin_QPSK,&txdataF[0][symbol_offset]);
+  LOG_I(PHY,"allocate_re_MCH (mod %d): symbol_offset %d re_offset %d (%d), jj %d -> %d,%d, gain_lin_QPSK %d,txdataF %p\n",mod_order,symbol_offset,re_offset,skip_dc,*jj, x0[*jj], x0[1+*jj],gain_lin_QPSK,&txdataF[0][symbol_offset]);
 #endif
 
   last_re=12;
@@ -1871,7 +1871,7 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
 
     tti_offset = symbol_offset + re_off + re;
 
-    //printf("re %d (jj %d)\n",re,*jj);
+    //LOG_I(PHY,"re %d (jj %d)\n",re,*jj);
     *re_allocated = *re_allocated + 1;
 
 
@@ -1879,7 +1879,7 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
 
       case 2:  //QPSK
 
-      //            printf("%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+      //            LOG_I(PHY,"%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
       ((int16_t*)&txdataF[4][tti_offset])[0] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
 
       *jj = *jj + 1;
@@ -1888,7 +1888,7 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
 
       *jj = *jj + 1;
 
-      //printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+      //LOG_I(PHY,"%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
       break;
 
 
@@ -2095,7 +2095,7 @@ inline int check_skip(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms
 inline int check_skiphalf(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) __attribute__((always_inline));
 inline int check_skiphalf(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) {
 
-  //  printf("check_skiphalf : rb %d, subframe_offset %d,l %d, nsymb %d\n",rb,subframe_offset,l,nsymb);
+  //  LOG_I(PHY,"check_skiphalf : rb %d, subframe_offset %d,l %d, nsymb %d\n",rb,subframe_offset,l,nsymb);
 
   if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
 
@@ -2333,19 +2333,19 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   re_allocated=0;
 
 
-  //  printf("num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
+  //  LOG_I(PHY,"num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
   for (l=num_pdcch_symbols; l<nsymb; l++) {
 
   if (dlsch0 != NULL ) {
 #ifdef DEBUG_DLSCH_MODULATION
-    printf("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc0 %lx, mod0 %d, mod1 %d, rb_alloc[0] %d) in %d\n",
+    LOG_I(PHY,"Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc0 %lx, mod0 %d, mod1 %d, rb_alloc[0] %d)\n",
             harq_pid,
             dlsch0_harq->mimo_mode,
             pmi2hex_2Ar2(dlsch0_harq->pmi_alloc),
             mod_order0,
             mod_order1,
-            rb_alloc[0],
-            len);
+            rb_alloc[0]
+            );
 #endif
   }
 
@@ -2395,6 +2395,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 	for (eNB_id=0;eNB_id<ru->num_eNB;eNB_id++){
 	  if (phy_vars_eNB == ru->eNB_list[eNB_id]) {
 	    for (aa=0;aa<ru->nb_tx;aa++){
+              LOG_I(PHY,"ru_id:%d eNB_id:%d aa:%d memcpy(ru->beam_weights, dlsch0->ue_spec_bf_weights[ru_id][0],)\n", ru_id, eNB_id, aa);
 	      memcpy(ru->beam_weights[eNB_id][5][aa],
 		     dlsch0->ue_spec_bf_weights[ru_id][0],
 		     frame_parms->ofdm_symbol_size*sizeof(int32_t));
@@ -2412,7 +2413,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
     if (pilots>0) {  // compute pilot arrays, could be done statically if performance suffers
       if (frame_parms->nb_antenna_ports_eNB == 1) {
-	//	printf("l %d, nushift %d, offset %d\n",l,frame_parms->nushift,offset);
+	//	LOG_I(PHY,"l %d, nushift %d, offset %d\n",l,frame_parms->nushift,offset);
 	for (i=0,i2=0;i<12;i++) {
 	  if ((i!=(frame_parms->nushift+offset)) && (i!=((frame_parms->nushift+6+offset)%12)))
 	    P1_SHIFT[i2++]=1;
@@ -2539,7 +2540,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
     //for (aa=0;aa<frame_parms->nb_antennas_tx;aa++)
     //memset(&txdataF[aa][symbol_offset],0,frame_parms->ofdm_symbol_size<<2);
-    //printf("symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,subframe_offset,pilots);
+    //LOG_I(PHY,"symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,subframe_offset,pilots);
     for (rb=0; rb<frame_parms->N_RB_DL; rb++) {
 
       if (rb < 32)
@@ -2570,7 +2571,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
       if (dlsch1) {
         if (dlsch1_harq->Nlayers>1) {
-          printf("Nlayers %d: re_offset %d, symbol %d offset %d\n",dlsch0_harq->Nlayers,re_offset,l,symbol_offset);
+          LOG_I(PHY,"Nlayers %d: re_offset %d, symbol %d offset %d\n",dlsch0_harq->Nlayers,re_offset,l,symbol_offset);
           return(-1);
         }
       }
@@ -2578,7 +2579,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
 
       if (rb_alloc_ind > 0) {
-        //    printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
+        //    LOG_I(PHY,"Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
 
       if (dlsch0 != NULL) {
         get_pmi_temp = get_pmi(frame_parms->N_RB_DL,
@@ -2618,7 +2619,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
             mprime +=3+frame_parms->Ncp;
       }
       else {
-        //      printf("Unallocated rb %d/symbol %d, re_offset %d, jj %d\n",rb,l,re_offset,jj);
+        //      LOG_I(PHY,"Unallocated rb %d/symbol %d, re_offset %d, jj %d\n",rb,l,re_offset,jj);
       }
       re_offset+=12; // go to next RB
 
@@ -2635,9 +2636,9 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
 #ifdef DEBUG_DLSCH_MODULATION
   if (dlsch0 != NULL){
-    printf("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch0_harq->nb_rb,dlsch0_harq->rb_alloc,mod_order0,Nl0,2,0,subframe_offset));
+    LOG_I(PHY,"generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch0_harq->nb_rb,dlsch0_harq->rb_alloc,mod_order0,Nl0,2,0,subframe_offset,1));
   }else{
-    printf("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch1_harq->nb_rb,dlsch1_harq->rb_alloc,mod_order1,Nl1,2,0,subframe_offset));
+    LOG_I(PHY,"generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch1_harq->nb_rb,dlsch1_harq->rb_alloc,mod_order1,Nl1,2,0,subframe_offset,1));
   }
 #endif
 
@@ -2692,7 +2693,7 @@ int dlsch_modulation_SIC(int32_t **sic_buffer,
 
       jj = jj + 1;
 
-      //printf("recon %d,%d\n",((int16_t*)&sic_buffer[0][i])[0],((int16_t*)&sic_buffer[0][i])[1]);
+      //LOG_I(PHY,"recon %d,%d\n",((int16_t*)&sic_buffer[0][i])[0],((int16_t*)&sic_buffer[0][i])[1]);
       i++;
 
       break;
@@ -2779,7 +2780,7 @@ int dlsch_modulation_SIC(int32_t **sic_buffer,
 
 
 #ifdef DEBUG_DLSCH_MODULATION
-  printf("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch0_harq->nb_rb,dlsch0_harq->rb_alloc,mod_order0,Nl0,2,0,subframe_offset,1/*transmission mode*/));
+  LOG_I(PHY,"generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch0_harq->nb_rb,dlsch0_harq->rb_alloc,mod_order0,Nl0,2,0,subframe_offset,1/*transmission mode*/));
 #endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_MODULATION, VCD_FUNCTION_OUT);
@@ -2817,11 +2818,11 @@ int mch_modulation(int32_t **txdataF,
   jj=0;
   re_allocated=0;
 
-  //  printf("num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
+  //  LOG_I(PHY,"num_pdcch_symbols %d, nsymb %d\n",num_pdcch_symbols,nsymb);
   for (l=2; l<nsymb_pmch; l++) {
 
 #ifdef DEBUG_DLSCH_MODULATION
-    printf("Generating MCH (mod %d) in subframe %d for symbol %d\n",mod_order, subframe_offset,l);
+    LOG_I(PHY,"Generating MCH (mod %d) in subframe %d for symbol %d\n",mod_order, subframe_offset,l);
 #endif
 
     re_offset = frame_parms->first_carrier_offset;
@@ -2846,7 +2847,7 @@ int mch_modulation(int32_t **txdataF,
       else
         qam_table_s = NULL;
 
-      //printf("Allocated rb %d, subframe_offset %d,amp %d\n",rb,subframe_offset,amp);
+      //LOG_I(PHY,"Allocated rb %d, subframe_offset %d,amp %d\n",rb,subframe_offset,amp);
       allocate_REs_in_RB_MCH(txdataF,
                              &jj,
                              re_offset,
@@ -2873,7 +2874,7 @@ int mch_modulation(int32_t **txdataF,
   }
 
 #ifdef DEBUG_DLSCH_MODULATION
-  printf("generate_dlsch(MCH) : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->rb_alloc,mod_order,1,2,0,subframe_offset,1/*transmission mode*/));
+  LOG_I(PHY,"generate_dlsch(MCH) : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->rb_alloc,mod_order,1,2,0,subframe_offset,1/*transmission mode*/));
 #endif
 
   return (re_allocated);

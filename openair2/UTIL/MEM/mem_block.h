@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -31,9 +31,7 @@
 #ifndef __MEM_BLOCK_H__
 #    define __MEM_BLOCK_H__
 
-#ifdef USER_MODE
 #include <stdint.h>
-#endif
 #ifdef MEM_BLOCK_C
 #    define public_mem_block(x) x
 #    define private_mem_block(x) x
@@ -63,19 +61,8 @@ public_mem_block(mem_block_t *copy_mem_block (mem_block_t * leP, mem_block_t * d
 public_mem_block(void         display_mem_load (void);)
 
 public_mem_block(void         check_mem_area (void);)
-#    ifdef USER_MODE
 private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
-#    endif
-#ifdef USER_MODE
-//#    define MEM_SCALE MAX_MOBILES_PER_ENB*NB_RB_MAX
 #    define MEM_SCALE MAX_MOBILES_PER_ENB
-#else
-#    ifdef NODE_RG
-#        define MEM_SCALE 2
-#    else
-#        define MEM_SCALE 1
-#    endif
-#endif
 // definition of the size of the allocated memory area
 #    define MEM_MNGT_MB0_BLOCK_SIZE     64
 // 64

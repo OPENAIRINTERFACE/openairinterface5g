@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -74,8 +74,13 @@ extern uint16_t N310[8];
 extern uint16_t N311[8];
 extern uint32_t T304[8];
 extern uint32_t timeToTrigger_ms[16];
-extern float RSRP_meas_mapping[100];
-extern float RSRQ_meas_mapping[33];
+extern float RSRP_meas_mapping[98];
+extern float RSRQ_meas_mapping[35];
+
+extern UE_PF_PO_t UE_PF_PO[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+extern pthread_mutex_t ue_pf_po_mutex;
+
+extern uint16_t reestablish_rnti_map[NUMBER_OF_UE_MAX][2];
 
 #endif
 

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -40,6 +40,7 @@
 #include "PHY/impl_defs_top.h"
 #include "PHY/impl_defs_lte.h"
 #include "RRC/LITE/defs.h"
+#include "flexran_agent_defs.h"
 
 #include "gtpv1u.h"
 #include "NwGtpv1u.h"
@@ -47,6 +48,8 @@
 #include "NwGtpv1uPrivate.h"
 #include "gtpv1u_eNB_defs.h"
 
+#include "PHY/defs_L1_NB_IoT.h"
+#include "RRC/LITE/defs_NB_IoT.h"
 typedef struct {
   /// RAN context config file name
   char *config_file_name;
@@ -54,22 +57,36 @@ typedef struct {
   int nb_inst;
   /// Number of Component Carriers per instance in this node
   int *nb_CC;
+  /// Number of NB_IoT instances in this node
+  int nb_nb_iot_rrc_inst;
   /// Number of MACRLC instances in this node
   int nb_macrlc_inst;
+  /// Number of NB_IoT MACRLC instances in this node
+  int nb_nb_iot_macrlc_inst;
   /// Number of component carriers per instance in this node
   int *nb_mac_CC;
   /// Number of L1 instances in this node
   int nb_L1_inst;
+  /// Number of NB_IoT L1 instances in this node
+  int nb_nb_iot_L1_inst;
   /// Number of Component Carriers per instance in this node
   int *nb_L1_CC;
   /// Number of RU instances in this node
   int nb_RU;
+  /// FlexRAN context variables
+  flexran_agent_info_t **flexran;
   /// eNB context variables
   struct PHY_VARS_eNB_s ***eNB;
+  /// NB_IoT L1 context variables
+  struct PHY_VARS_eNB_NB_IoT_s **L1_NB_IoT;
   /// RRC context variables
   struct eNB_RRC_INST_s **rrc;
-  /// RRC context variables
+  /// NB_IoT RRC context variables
+  //struct eNB_RRC_INST_NB_IoT_s **nb_iot_rrc;
+  /// MAC context variables
   struct eNB_MAC_INST_s **mac;
+  /// NB_IoT MAC context variables
+  struct eNB_MAC_INST_NB_IoT_s **nb_iot_mac;
   /// GTPu descriptor 
   gtpv1u_data_t *gtpv1u_data_g;
   /// RU descriptors. These describe what each radio unit is supposed to do and contain the necessary functions for fronthaul interfaces

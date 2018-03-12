@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -26,7 +26,8 @@
 /* External declaration of L2L1 task that depend on the target */
 extern void *l2l1_task(void *arg);
 
-int create_tasks(uint32_t enb_nb, uint32_t ue_nb);
+int create_tasks(uint32_t enb_nb);
+int create_tasks_ue(uint32_t ue_nb);
 #endif
 
 #endif /* CREATE_TASKS_H_ */

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -100,6 +100,10 @@ int parse_mac_config(mid_t mod_id, yaml_parser_t *parser);
 int parse_dl_scheduler_config(mid_t mod_id, yaml_parser_t *parser);
 
 int parse_dl_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser);
+
+int parse_ul_scheduler_config(mid_t mod_id, yaml_parser_t *parser);
+
+int parse_ul_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser);
 
 int load_dl_scheduler_function(mid_t mod_id, const char *function_name);
 

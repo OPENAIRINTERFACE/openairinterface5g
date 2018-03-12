@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -40,48 +40,16 @@
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-#include "pgm_link.h"
-
 extern unsigned int Master_list_rx;
 
 extern unsigned char NB_INST;
 //#define DEBUG_CONTROL 1
 //#define DEBUG_EMU   1
 
-#if defined(ENABLE_PGM_TRANSPORT)
-extern unsigned int pgm_would_block;
-#endif
-
 void emu_transport_sync(void)
 {
   LOG_D(EMU, "Entering EMU transport SYNC is primary master %d\n",
         oai_emulation.info.is_primary_master);
-
-#if defined(ENABLE_PGM_TRANSPORT)
-
-  if (oai_emulation.info.is_primary_master == 0) {
-    bypass_tx_data(WAIT_SM_TRANSPORT,0,0);
-    // just wait to recieve the  master 0 msg
-    Master_list_rx = oai_emulation.info.master_list - 1;
-    bypass_rx_data(0,0,0,1);
-  } else {
-    bypass_rx_data(0,0,0,0);
-    bypass_tx_data(WAIT_PM_TRANSPORT,0,0);
-  }
-
-  if (oai_emulation.info.master_list != 0) {
-    bypass_tx_data(SYNC_TRANSPORT,0,0);
-    bypass_rx_data(0,0,0,0);
-
-    // i received the sync from all secondary masters
-    if (emu_rx_status == SYNCED_TRANSPORT) {
-      emu_tx_status = SYNCED_TRANSPORT;
-    }
-
-    LOG_D(EMU,"TX secondary master SYNC_TRANSPORT state \n");
-  }
-
-#else
 
   if (oai_emulation.info.is_primary_master == 0) {
 retry:
@@ -114,8 +82,6 @@ retry2:
 
     LOG_D(EMU,"TX secondary master SYNC_TRANSPORT state \n");
   }
-
-#endif
 
   LOG_D(EMU, "Leaving EMU transport SYNC is primary master %d\n",
         oai_emulation.info.is_primary_master);
@@ -154,9 +120,6 @@ void emu_transport(unsigned int frame, unsigned int last_slot,
     }
   }
 
-#if defined(ENABLE_PGM_TRANSPORT)
-  pgm_would_block = 0;
-#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(
     VCD_SIGNAL_DUMPER_FUNCTIONS_EMU_TRANSPORT, VCD_FUNCTION_OUT);
 }

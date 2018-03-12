@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -29,11 +29,7 @@
 
 #include <stdint.h>
 
-#ifndef NO_OPENAIR1
 #include "PHY/defs.h"
-#else
-#include "PHY/TOOLS/time_meas.h"
-#endif
 
 #define CRC24_A 0
 #define CRC24_B 1
@@ -41,7 +37,7 @@
 #define CRC8 3
 
 #define MAX_TURBO_ITERATIONS_MBSFN 8
-#define MAX_TURBO_ITERATIONS 4
+#define MAX_TURBO_ITERATIONS max_turbo_iterations
 
 #define LTE_NULL 2
 
@@ -296,25 +292,9 @@ void ccodedot11_init(void);
 \brief This function initializes the trellis structure for decoding an 802.11 convolutional code.*/
 void ccodedot11_init_inv(void);
 
-/*!\fn void teillis_table_init(void)
-\brief This function initializes the trellis structure for 3GPP LTE Turbo code.*/
-void treillis_table_init(void);
 
-/*\fn void threegpplte_turbo_encoder(uint8_t *input,uint16_t input_length_bytes,uint8_t *output,uint8_t F,uint16_t interleaver_f1,uint16_t interleaver_f2)
-\brief This function implements a rate 1/3 8-state parralel concatenated turbo code (3GPP-LTE).
-@param input Pointer to input buffer
-@param input_length_bytes Number of bytes to encode
-@param output Pointer to output buffer
-@param F Number of filler bits at input
-@param interleaver_f1 F1 generator
-@param interleaver_f2 F2 generator
-*/
-void threegpplte_turbo_encoder(uint8_t *input,
-                               uint16_t input_length_bytes,
-                               uint8_t *output,
-                               uint8_t F,
-                               uint16_t interleaver_f1,
-                               uint16_t interleaver_f2);
+
+
 
 
 /** \fn void ccodelte_encode(int32_t numbits,uint8_t add_crc, uint8_t *inPtr,uint8_t *outPtr,uint16_t rnti)
@@ -356,25 +336,7 @@ void ccodedab_init_inv(void);
 \brief This function initializes the different crc tables.*/
 void crcTableInit (void);
 
-/*!\fn void init_td8(void)
-\brief This function initializes the tables for 8-bit LLR Turbo decoder.*/
-void init_td8 (void);
 
-
-/*!\fn void init_td16(void)
-\brief This function initializes the tables for 16-bit LLR Turbo decoder.*/
-void init_td16 (void);
-
-#ifdef __AVX2__
-/*!\fn void init_td8(void)
-\brief This function initializes the tables for 8-bit LLR Turbo decoder (AVX2).*/
-void init_td8avx2 (void);
-
-
-/*!\fn void init_td16(void)
-\brief This function initializes the tables for 16-bit LLR Turbo decoder (AVX2).*/
-void init_td16avx2 (void);
-#endif
 
 /*!\fn uint32_t crc24a(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 24-bit crc ('a' variant for overall transport block)
@@ -464,95 +426,7 @@ int32_t rate_matching_lte(uint32_t N_coded,
                           uint32_t off);
 
 
-/*!
-\brief This routine performs max-logmap detection for the 3GPP turbo code (with termination).  It is optimized for SIMD processing and 16-bit
-LLR arithmetic, and requires SSE2,SSSE3 and SSE4.1 (gcc >=4.3 and appropriate CPU)
-@param y LLR input (16-bit precision)
-@param decoded_bytes Pointer to decoded output
-@param n number of coded bits (including tail bits)
-@param max_iterations The maximum number of iterations to perform
-@param interleaver_f1 F1 generator
-@param interleaver_f2 F2 generator
-@param crc_type Length of 3GPPLTE crc (CRC24a,CRC24b,CRC16,CRC8)
-@param F Number of filler bits at start of packet
-@returns number of iterations used (this is 1+max if incorrect crc or if crc_len=0)
-*/
-uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
-                                        uint8_t *decoded_bytes,
-                                        uint16_t n,
-                                        uint16_t interleaver_f1,
-                                        uint16_t interleaver_f2,
-                                        uint8_t max_iterations,
-                                        uint8_t crc_type,
-                                        uint8_t F,
-                                        time_stats_t *init_stats,
-                                        time_stats_t *alpha_stats,
-                                        time_stats_t *beta_stats,
-                                        time_stats_t *gamma_stats,
-                                        time_stats_t *ext_stats,
-                                        time_stats_t *intl1_stats,
-                                        time_stats_t *intl2_stats);
 
-uint8_t phy_threegpplte_turbo_decoder16avx2(int16_t *y,
-					    int16_t *y2,
-					    uint8_t *decoded_bytes,
-					    uint8_t *decoded_bytes2,
-					    uint16_t n,
-					    uint16_t interleaver_f1,
-					    uint16_t interleaver_f2,
-					    uint8_t max_iterations,
-					    uint8_t crc_type,
-					    uint8_t F,
-					    time_stats_t *init_stats,
-					    time_stats_t *alpha_stats,
-					    time_stats_t *beta_stats,
-					    time_stats_t *gamma_stats,
-					    time_stats_t *ext_stats,
-					    time_stats_t *intl1_stats,
-					    time_stats_t *intl2_stats);
-
-/*!
-\brief This routine performs max-logmap detection for the 3GPP turbo code (with termination).  It is optimized for SIMD processing and 8-bit
-LLR arithmetic, and requires SSE2,SSSE3 and SSE4.1 (gcc >=4.3 and appropriate CPU)
-@param y LLR input (16-bit precision)
-@param decoded_bytes Pointer to decoded output
-@param n number of coded bits (including tail bits)
-@param max_iterations The maximum number of iterations to perform
-@param interleaver_f1 F1 generator
-@param interleaver_f2 F2 generator
-@param crc_type Length of 3GPPLTE crc (CRC24a,CRC24b,CRC16,CRC8)
-@param F Number of filler bits at start of packet
-@returns number of iterations used (this is 1+max if incorrect crc or if crc_len=0)
-*/
-uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
-                                       uint8_t *decoded_bytes,
-                                       uint16_t n,
-                                       uint16_t interleaver_f1,
-                                       uint16_t interleaver_f2,
-                                       uint8_t max_iterations,
-                                       uint8_t crc_type,
-                                       uint8_t F,
-                                       time_stats_t *init_stats,
-                                       time_stats_t *alpha_stats,
-                                       time_stats_t *beta_stats,
-                                       time_stats_t *gamma_stats,
-                                       time_stats_t *ext_stats,
-                                       time_stats_t *intl1_stats,
-                                       time_stats_t *intl2_stats);
-
-uint8_t phy_threegpplte_turbo_decoder_scalar(int16_t *y,
-    uint8_t *decoded_bytes,
-    uint16_t n,
-    uint16_t interleaver_f1,
-    uint16_t interleaver_f2,
-    uint8_t max_iterations,
-    uint8_t crc_type,
-    uint8_t F,
-    uint8_t inst);
-
-
-
-/** @} */
 
 uint32_t crcbit (uint8_t * ,
                  int32_t,

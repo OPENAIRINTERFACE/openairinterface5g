@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -185,14 +185,18 @@ void free_ul_ref_sigs(void)
 
   unsigned int u,v,Msc_RS;
 
-  for (Msc_RS=2; Msc_RS<33; Msc_RS++) {
+  for (Msc_RS=0; Msc_RS<33; Msc_RS++) {
     for (u=0; u<30; u++) {
       for (v=0; v<2; v++) {
-        if (ul_ref_sigs[u][v][Msc_RS])
+        if (ul_ref_sigs[u][v][Msc_RS]) {
           free16(ul_ref_sigs[u][v][Msc_RS],2*sizeof(int16_t)*dftsizes[Msc_RS]);
+          ul_ref_sigs[u][v][Msc_RS] = NULL;
+        }
 
-        if (ul_ref_sigs_rx[u][v][Msc_RS])
+        if (ul_ref_sigs_rx[u][v][Msc_RS]) {
           free16(ul_ref_sigs_rx[u][v][Msc_RS],4*sizeof(int16_t)*dftsizes[Msc_RS]);
+          ul_ref_sigs_rx[u][v][Msc_RS] = NULL;
+        }
       }
     }
   }

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -25,9 +25,7 @@
 #include "platform_types.h"
 #include "platform_constants.h"
 //-----------------------------------------------------------------------------
-#if USER_MODE
 #include <assert.h>
-#endif
 #include "assertions.h"
 #include "msc.h"
 #include "list.h"
@@ -174,7 +172,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         test_pdu_remaining_size = 0;
         test_remaining_size_to_substract = 0;
         test_remaining_num_li_to_substract = 0;
-        pdu_remaining_size = pdu_remaining_size - (test_li_length_in_bytes ^ 3);
+        //pdu_remaining_size = pdu_remaining_size - (test_li_length_in_bytes ^ 3);
       } else if ((sdu_mngt_p->sdu_remaining_size + (test_li_length_in_bytes ^ 3)) < test_pdu_remaining_size ) {
         test_num_li += 1;
         num_fill_sdu += 1;
@@ -367,11 +365,9 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
 #endif
-#if USER_MODE
-#if !EXMIMO
-        assert(1!=1);
-#endif
-#endif
+//#if !EXMIMO
+//        assert(1!=1);
+//#endif
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
         // reduce the size of the PDU
         continue_fill_pdu_with_sdu = 0;
@@ -754,9 +750,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
 #endif
-#if USER_MODE
         assert(1!=1);
-#endif
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
         // reduce the size of the PDU
         continue_fill_pdu_with_sdu = 0;

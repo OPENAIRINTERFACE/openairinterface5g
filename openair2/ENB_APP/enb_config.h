@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -46,6 +46,8 @@
 #else
 #include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
 #endif
+#include "intertask_interface_types.h"
+#include "RRC/LITE/defs.h"
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\
             struct in_addr inp;\
@@ -92,6 +94,7 @@ typedef struct ru_config_s {
 } ru_config_t;
 
 extern void RCconfig_RU(void);
+extern void RCconfig_flexran(void);
 extern void RCconfig_L1(void);
 extern void RCconfig_macrlc(void);
 extern int  RCconfig_gtpu(void );
@@ -99,6 +102,9 @@ extern void RCConfig(void);
 
 void                          enb_config_display(void);
 void                          ru_config_display(void);
+
+int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc);
+int RCconfig_S1(MessageDef *msg_p, uint32_t i);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */

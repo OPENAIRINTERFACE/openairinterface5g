@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -38,11 +38,7 @@
  ***************************************************************************/
 #define LIST2_C
 #include "list.h"
-#ifdef USER_MODE
 #include "assertions.h"
-#else
-#define NULL 0
-#endif
 
 #include <string.h>
 
@@ -336,9 +332,7 @@ list2_display (list2_t * listP)
           nb_elements++;
         }
         msg (" found nb_elements %d nb_elements %d\n", nb_elements, listP->nb_elements);
-  #ifdef USER_MODE
         AssertFatal(nb_elements == listP->nb_elements, "Bad count of elements %d != %d", nb_elements, listP->nb_elements);
-  #endif
       }
     }*/
 }

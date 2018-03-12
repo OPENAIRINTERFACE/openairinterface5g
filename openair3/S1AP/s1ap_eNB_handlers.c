@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -81,6 +81,20 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t               assoc_id,
 					uint32_t               stream,
 					struct s1ap_message_s *s1ap_message_p);
 
+static
+int s1ap_eNB_handle_paging(uint32_t               assoc_id,
+    uint32_t               stream,
+    struct s1ap_message_s *message_p);
+
+static
+int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
+    uint32_t               stream,
+    struct s1ap_message_s *s1ap_message_p);
+
+static
+int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
+    uint32_t               stream,
+    struct s1ap_message_s *s1ap_message_p);
 
 /* Handlers matrix. Only eNB related procedure present here */
 s1ap_message_decoded_callback messages_callback[][3] = {
@@ -90,11 +104,11 @@ s1ap_message_decoded_callback messages_callback[][3] = {
   { 0, 0, 0 }, /* PathSwitchRequest */
   { 0, 0, 0 }, /* HandoverCancel */
   { s1ap_eNB_handle_e_rab_setup_request, 0, 0 }, /* E_RABSetup */
-  { 0, 0, 0 }, /* E_RABModify */
-  { 0, 0, 0 }, /* E_RABRelease */
+  { s1ap_eNB_handle_e_rab_modify_request, 0, 0 }, /* E_RABModify */
+  { s1ap_eNB_handle_e_rab_release_command, 0, 0 }, /* E_RABRelease */
   { 0, 0, 0 }, /* E_RABReleaseIndication */
   { s1ap_eNB_handle_initial_context_request, 0, 0 }, /* InitialContextSetup */
-  { 0, 0, 0 }, /* Paging */
+  { s1ap_eNB_handle_paging, 0, 0 }, /* Paging */
   { s1ap_eNB_handle_nas_downlink, 0, 0 }, /* downlinkNASTransport */
   { 0, 0, 0 }, /* initialUEMessage */
   { 0, 0, 0 }, /* uplinkNASTransport */
@@ -950,7 +964,7 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t               assoc_id,
       S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.buffer = NULL;
       
       S1AP_WARN("NAS PDU is not provided, generate a E_RAB_SETUP Failure (TBD) back to MME \n");
-      return -1;
+      // return -1;
     }
 
     /* Set the transport layer address */
@@ -983,4 +997,382 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t               assoc_id,
   return 0;
 }
 
+static
+int s1ap_eNB_handle_paging(uint32_t               assoc_id,
+    uint32_t               stream,
+    struct s1ap_message_s *s1ap_message_p)
+{
+  S1ap_PagingIEs_t *paging_p;
+  s1ap_eNB_mme_data_t   *mme_desc_p        = NULL;
+  s1ap_eNB_instance_t   *s1ap_eNB_instance = NULL;
+  MessageDef            *message_p         = NULL;
 
+  DevAssert(s1ap_message_p != NULL);
+  // received Paging Message from MME
+  S1AP_DEBUG("[SCTP %d] Received Paging Message From MME\n",assoc_id);
+
+  paging_p = &s1ap_message_p->msg.s1ap_PagingIEs;
+
+  /* Paging procedure -> stream != 0 */
+  if (stream == 0) {
+    S1AP_ERROR("[SCTP %d] Received Paging procedure on stream (%d)\n",
+               assoc_id, stream);
+    return -1;
+  }
+
+  if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
+    S1AP_ERROR("[SCTP %d] Received Paging for non "
+               "existing MME context\n", assoc_id);
+    return -1;
+  }
+
+  s1ap_eNB_instance = mme_desc_p->s1ap_eNB_instance;
+  if (s1ap_eNB_instance == NULL) {
+    S1AP_ERROR("[SCTP %d] Received Paging for non existing MME context : s1ap_eNB_instance is NULL\n",
+               assoc_id);
+    return -1;
+  }
+
+  message_p = itti_alloc_new_message(TASK_S1AP, S1AP_PAGING_IND);
+
+  /* convert S1ap_PagingIEs_t to s1ap_paging_ind_t */
+  /* convert UE Identity Index value */
+  S1AP_PAGING_IND(message_p).ue_index_value  = BIT_STRING_to_uint32(&paging_p->ueIdentityIndexValue);
+  S1AP_DEBUG("[SCTP %d] Received Paging ue_index_value (%d)\n",
+            assoc_id,(uint32_t)S1AP_PAGING_IND(message_p).ue_index_value);
+
+  S1AP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.mme_code = 0;
+  S1AP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.m_tmsi = 0;
+
+  /* convert UE Paging Identity */
+  if (paging_p->uePagingID.present == S1ap_UEPagingID_PR_s_TMSI) {
+      S1AP_PAGING_IND(message_p).ue_paging_identity.presenceMask = UE_PAGING_IDENTITY_s_tmsi;
+      OCTET_STRING_TO_INT8(&paging_p->uePagingID.choice.s_TMSI.mMEC, S1AP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.mme_code);
+      OCTET_STRING_TO_INT32(&paging_p->uePagingID.choice.s_TMSI.m_TMSI, S1AP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.m_tmsi);
+  } else if (paging_p->uePagingID.present == S1ap_UEPagingID_PR_iMSI) {
+      S1AP_PAGING_IND(message_p).ue_paging_identity.presenceMask = UE_PAGING_IDENTITY_imsi;
+      S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length = 0;
+      for (int i = 0; i < paging_p->uePagingID.choice.iMSI.size; i++) {
+          S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i] = (uint8_t)(paging_p->uePagingID.choice.iMSI.buf[i] & 0x0F );
+          S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length++;
+          S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i+1] = (uint8_t)((paging_p->uePagingID.choice.iMSI.buf[i]>>4) & 0x0F);
+          LOG_D(S1AP,"paging : i %d %d imsi %d %d \n",2*i,2*i+1,S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i], S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i+1]);
+          if (S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i+1] == 0x0F) {
+              if(i != paging_p->uePagingID.choice.iMSI.size - 1){
+                  /* invalid paging_p->uePagingID.choise.iMSI.buffer */
+                  S1AP_ERROR("[SCTP %d] Received Paging : uePagingID.choise.iMSI error(i %d 0x0F)\n", assoc_id,i);
+                  return -1;
+              }
+          } else {
+              S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length++;
+          }
+      }
+      if (S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length >= S1AP_IMSI_LENGTH) {
+          /* invalid paging_p->uePagingID.choise.iMSI.size */
+          S1AP_ERROR("[SCTP %d] Received Paging : uePagingID.choise.iMSI.size(%d) is over IMSI length(%d)\n", assoc_id, S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length, S1AP_IMSI_LENGTH);
+          return -1;
+      }  
+} else {
+      /* invalid paging_p->uePagingID.present */
+      S1AP_ERROR("[SCTP %d] Received Paging : uePagingID.present(%d) is unknown\n", assoc_id, paging_p->uePagingID.present);
+      return -1;
+  }
+
+#if 0
+  /* convert Paging DRX(optional) */
+  if (paging_p->presenceMask & S1AP_PAGINGIES_PAGINGDRX_PRESENT) {
+      switch(paging_p->pagingDRX) {
+        case S1ap_PagingDRX_v32:
+          S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_32;
+         break;
+        case S1ap_PagingDRX_v64:
+          S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_64;
+        break;
+        case S1ap_PagingDRX_v128:
+          S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_128;
+        break;
+        case S1ap_PagingDRX_v256:
+          S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_256;
+        break;
+        default:
+          // when UE Paging DRX is no value
+          S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_256;
+        break;
+      }
+  }
+#endif
+  S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_256;
+
+  /* convert cnDomain */
+  if (paging_p->cnDomain == S1ap_CNDomain_ps) {
+      S1AP_PAGING_IND(message_p).cn_domain = CN_DOMAIN_PS;
+  } else if (paging_p->cnDomain == S1ap_CNDomain_cs) {
+      S1AP_PAGING_IND(message_p).cn_domain = CN_DOMAIN_CS;
+  } else {
+      /* invalid paging_p->cnDomain */
+      S1AP_ERROR("[SCTP %d] Received Paging : cnDomain(%ld) is unknown\n", assoc_id, paging_p->cnDomain);
+      return -1;
+  }
+
+  memset (&S1AP_PAGING_IND(message_p).plmn_identity[0], 0, sizeof(plmn_identity_t)*256);
+  memset (&S1AP_PAGING_IND(message_p).tac[0], 0, sizeof(int16_t)*256);
+  S1AP_PAGING_IND(message_p).tai_size = 0;
+
+  for (int i = 0; i < paging_p->taiList.s1ap_TAIItem.count; i++) {
+     S1AP_INFO("[SCTP %d] Received Paging taiList: i %d, count %d\n", assoc_id, i, paging_p->taiList.s1ap_TAIItem.count);
+     S1ap_TAIItem_t s1ap_TAIItem;
+     memset (&s1ap_TAIItem, 0, sizeof(S1ap_TAIItem_t));
+
+     memcpy(&s1ap_TAIItem, paging_p->taiList.s1ap_TAIItem.array[i], sizeof(S1ap_TAIItem_t));
+
+     TBCD_TO_MCC_MNC(&s1ap_TAIItem.tAI.pLMNidentity, S1AP_PAGING_IND(message_p).plmn_identity[i].mcc,
+              S1AP_PAGING_IND(message_p).plmn_identity[i].mnc,
+              S1AP_PAGING_IND(message_p).plmn_identity[i].mnc_digit_length);
+     OCTET_STRING_TO_INT16(&s1ap_TAIItem.tAI.tAC, S1AP_PAGING_IND(message_p).tac[i]);
+     S1AP_PAGING_IND(message_p).tai_size++;
+     S1AP_DEBUG("[SCTP %d] Received Paging: MCC %d, MNC %d, TAC %d\n", assoc_id, S1AP_PAGING_IND(message_p).plmn_identity[i].mcc, S1AP_PAGING_IND(message_p).plmn_identity[i].mnc, S1AP_PAGING_IND(message_p).tac[i]);
+  }
+
+#if 0
+ // CSG Id(optional) List is not used
+  if (paging_p->presenceMask & S1AP_PAGINGIES_CSG_IDLIST_PRESENT) {
+      // TODO
+  }
+
+  /* convert pagingPriority (optional) if has value */
+  if (paging_p->presenceMask & S1AP_PAGINGIES_PAGINGPRIORITY_PRESENT) {
+      switch(paging_p->pagingPriority) {
+      case S1ap_PagingPriority_priolevel1:
+          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL1;
+        break;
+      case S1ap_PagingPriority_priolevel2:
+          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL2;
+        break;
+      case S1ap_PagingPriority_priolevel3:
+          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL3;
+        break;
+      case S1ap_PagingPriority_priolevel4:
+          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL4;
+        break;
+      case S1ap_PagingPriority_priolevel5:
+          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL5;
+        break;
+      case S1ap_PagingPriority_priolevel6:
+          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL6;
+        break;
+      case S1ap_PagingPriority_priolevel7:
+          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL7;
+        break;
+      case S1ap_PagingPriority_priolevel8:
+          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL8;
+        break;
+      default:
+        /* invalid paging_p->pagingPriority */
+        S1AP_ERROR("[SCTP %d] Received paging : pagingPriority(%ld) is invalid\n", assoc_id, paging_p->pagingPriority);
+        return -1;
+      }
+  }
+#endif
+  //paging parameter values
+  S1AP_DEBUG("[SCTP %d] Received Paging parameters: ue_index_value %d  cn_domain %d paging_drx %d paging_priority %d\n",assoc_id,
+          S1AP_PAGING_IND(message_p).ue_index_value, S1AP_PAGING_IND(message_p).cn_domain,
+          S1AP_PAGING_IND(message_p).paging_drx, S1AP_PAGING_IND(message_p).paging_priority);
+  S1AP_DEBUG("[SCTP %d] Received Paging parameters(ue): presenceMask %d  s_tmsi.m_tmsi %d s_tmsi.mme_code %d IMSI length %d (0-5) %d%d%d%d%d%d\n",assoc_id,
+          S1AP_PAGING_IND(message_p).ue_paging_identity.presenceMask, S1AP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.m_tmsi,
+          S1AP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.mme_code, S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length,
+          S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[0], S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[1],
+          S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2], S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[3],
+          S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[4], S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[5]);
+
+  /* send message to RRC */
+  itti_send_msg_to_task(TASK_RRC_ENB, s1ap_eNB_instance->instance, message_p);
+  
+   return 0;
+}
+
+static
+int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
+          uint32_t               stream,
+          struct s1ap_message_s *s1ap_message_p) {
+
+  int i;
+
+  s1ap_eNB_mme_data_t   *mme_desc_p       = NULL;
+  s1ap_eNB_ue_context_t *ue_desc_p        = NULL;
+  MessageDef            *message_p        = NULL;
+  int nb_of_e_rabs_failed = 0;
+
+  S1ap_E_RABModifyRequestIEs_t         *s1ap_E_RABModifyRequest;
+  DevAssert(s1ap_message_p != NULL);
+
+  s1ap_E_RABModifyRequest = &s1ap_message_p->msg.s1ap_E_RABModifyRequestIEs;
+
+  if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
+    S1AP_ERROR("[SCTP %d] Received E-RAB modify request for non "
+               "existing MME context\n", assoc_id);
+    return -1;
+  }
+
+
+  if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
+                   s1ap_E_RABModifyRequest->eNB_UE_S1AP_ID)) == NULL) {
+    S1AP_ERROR("[SCTP %d] Received E-RAB modify request for non "
+               "existing UE context 0x%06lx\n", assoc_id,
+               s1ap_E_RABModifyRequest->eNB_UE_S1AP_ID);
+    return -1;
+  }
+
+  /* E-RAB modify request = UE-related procedure -> stream != 0 */
+  if (stream == 0) {
+    S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+               assoc_id, stream);
+    return -1;
+  }
+
+  ue_desc_p->rx_stream = stream;
+
+  if ( ue_desc_p->mme_ue_s1ap_id != s1ap_E_RABModifyRequest->mme_ue_s1ap_id){
+    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%d != %ld)",
+        ue_desc_p->mme_ue_s1ap_id, s1ap_E_RABModifyRequest->mme_ue_s1ap_id);
+    message_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_E_RAB_MODIFY_RESP);
+
+    S1AP_E_RAB_MODIFY_RESP (message_p).eNB_ue_s1ap_id = s1ap_E_RABModifyRequest->eNB_UE_S1AP_ID;
+//        S1AP_E_RAB_MODIFY_RESP (msg_fail_p).e_rabs[S1AP_MAX_E_RAB];
+    S1AP_E_RAB_MODIFY_RESP (message_p).nb_of_e_rabs = 0;
+
+    for(nb_of_e_rabs_failed = 0; nb_of_e_rabs_failed < s1ap_E_RABModifyRequest->e_RABToBeModifiedListBearerModReq.s1ap_E_RABToBeModifiedItemBearerModReq.count; nb_of_e_rabs_failed++) {
+      S1AP_E_RAB_MODIFY_RESP (message_p).e_rabs_failed[nb_of_e_rabs_failed].e_rab_id =
+            ((S1ap_E_RABToBeModifiedItemBearerModReq_t *)s1ap_E_RABModifyRequest->e_RABToBeModifiedListBearerModReq.s1ap_E_RABToBeModifiedItemBearerModReq.array[nb_of_e_rabs_failed])->e_RAB_ID;
+      S1AP_E_RAB_MODIFY_RESP (message_p).e_rabs_failed[nb_of_e_rabs_failed].cause = S1AP_CAUSE_RADIO_NETWORK;
+      S1AP_E_RAB_MODIFY_RESP (message_p).e_rabs_failed[nb_of_e_rabs_failed].cause_value = 13;//S1ap_CauseRadioNetwork_unknown_mme_ue_s1ap_id;
+    }
+    S1AP_E_RAB_MODIFY_RESP (message_p).nb_of_e_rabs_failed = nb_of_e_rabs_failed;
+
+    s1ap_eNB_e_rab_modify_resp(mme_desc_p->s1ap_eNB_instance->instance,
+                               &S1AP_E_RAB_MODIFY_RESP(message_p));
+
+    message_p = NULL;
+    return -1;
+  }
+
+  message_p        = itti_alloc_new_message(TASK_S1AP, S1AP_E_RAB_MODIFY_REQ);
+
+  S1AP_E_RAB_MODIFY_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
+
+  S1AP_E_RAB_MODIFY_REQ(message_p).mme_ue_s1ap_id  = s1ap_E_RABModifyRequest->mme_ue_s1ap_id;
+  S1AP_E_RAB_MODIFY_REQ(message_p).eNB_ue_s1ap_id  = s1ap_E_RABModifyRequest->eNB_UE_S1AP_ID;
+
+  S1AP_E_RAB_MODIFY_REQ(message_p).nb_e_rabs_tomodify =
+    s1ap_E_RABModifyRequest->e_RABToBeModifiedListBearerModReq.s1ap_E_RABToBeModifiedItemBearerModReq.count;
+
+  for (i = 0; i < s1ap_E_RABModifyRequest->e_RABToBeModifiedListBearerModReq.s1ap_E_RABToBeModifiedItemBearerModReq.count; i++) {
+    S1ap_E_RABToBeModifiedItemBearerModReq_t *item_p;
+
+    item_p = (S1ap_E_RABToBeModifiedItemBearerModReq_t *)s1ap_E_RABModifyRequest->e_RABToBeModifiedListBearerModReq.s1ap_E_RABToBeModifiedItemBearerModReq.array[i];
+
+    S1AP_E_RAB_MODIFY_REQ(message_p).e_rab_modify_params[i].e_rab_id = item_p->e_RAB_ID;
+
+    // check for the NAS PDU
+    if (item_p->nAS_PDU.size > 0 ) {
+      S1AP_E_RAB_MODIFY_REQ(message_p).e_rab_modify_params[i].nas_pdu.length = item_p->nAS_PDU.size;
+
+      S1AP_E_RAB_MODIFY_REQ(message_p).e_rab_modify_params[i].nas_pdu.buffer = malloc(sizeof(uint8_t) * item_p->nAS_PDU.size);
+
+      memcpy(S1AP_E_RAB_MODIFY_REQ(message_p).e_rab_modify_params[i].nas_pdu.buffer,
+             item_p->nAS_PDU.buf, item_p->nAS_PDU.size);
+    } else {
+      S1AP_E_RAB_MODIFY_REQ(message_p).e_rab_modify_params[i].nas_pdu.length = 0;
+      S1AP_E_RAB_MODIFY_REQ(message_p).e_rab_modify_params[i].nas_pdu.buffer = NULL;
+      continue;
+    }
+
+    /* Set the QOS informations */
+    S1AP_E_RAB_MODIFY_REQ(message_p).e_rab_modify_params[i].qos.qci = item_p->e_RABLevelQoSParameters.qCI;
+
+    S1AP_E_RAB_MODIFY_REQ(message_p).e_rab_modify_params[i].qos.allocation_retention_priority.priority_level =
+      item_p->e_RABLevelQoSParameters.allocationRetentionPriority.priorityLevel;
+    S1AP_E_RAB_MODIFY_REQ(message_p).e_rab_modify_params[i].qos.allocation_retention_priority.pre_emp_capability =
+      item_p->e_RABLevelQoSParameters.allocationRetentionPriority.pre_emptionCapability;
+    S1AP_E_RAB_MODIFY_REQ(message_p).e_rab_modify_params[i].qos.allocation_retention_priority.pre_emp_vulnerability =
+      item_p->e_RABLevelQoSParameters.allocationRetentionPriority.pre_emptionVulnerability;
+
+  }
+
+  itti_send_msg_to_task(TASK_RRC_ENB, ue_desc_p->eNB_instance->instance, message_p);
+
+  return 0;
+}
+// handle e-rab release command and send it to rrc_end
+static
+int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
+                                          uint32_t               stream,
+                                          struct s1ap_message_s *s1ap_message_p) {
+
+  int i;
+
+  s1ap_eNB_mme_data_t   *mme_desc_p       = NULL;
+  s1ap_eNB_ue_context_t *ue_desc_p        = NULL;
+  MessageDef            *message_p        = NULL;
+
+  S1ap_E_RABReleaseCommandIEs_t         *s1ap_E_RABReleaseCommand;
+  DevAssert(s1ap_message_p != NULL);
+  s1ap_E_RABReleaseCommand = &s1ap_message_p->msg.s1ap_E_RABReleaseCommandIEs;
+  
+  if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
+    S1AP_ERROR("[SCTP %d] Received E-RAB release command for non existing MME context\n", assoc_id);
+    return -1;
+  }
+  if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
+          s1ap_E_RABReleaseCommand->eNB_UE_S1AP_ID)) == NULL) {
+    S1AP_ERROR("[SCTP %d] Received E-RAB release command for non existing UE context 0x%06lx\n", assoc_id,
+               s1ap_E_RABReleaseCommand->eNB_UE_S1AP_ID);
+    return -1;
+  }
+
+  /* Initial context request = UE-related procedure -> stream != 0 */
+  if (stream == 0) {
+    S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+               assoc_id, stream);
+    return -1;
+  }
+
+  ue_desc_p->rx_stream = stream;
+
+  if ( ue_desc_p->mme_ue_s1ap_id != s1ap_E_RABReleaseCommand->mme_ue_s1ap_id){
+    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%d != %ld)",
+          ue_desc_p->mme_ue_s1ap_id, s1ap_E_RABReleaseCommand->mme_ue_s1ap_id);
+  }
+
+  S1AP_DEBUG("[SCTP %d] Received E-RAB release command for eNB_UE_S1AP_ID %ld mme_ue_s1ap_id %ld\n",
+          assoc_id, s1ap_E_RABReleaseCommand->eNB_UE_S1AP_ID, s1ap_E_RABReleaseCommand->mme_ue_s1ap_id);
+
+  message_p        = itti_alloc_new_message(TASK_S1AP, S1AP_E_RAB_RELEASE_COMMAND);
+
+  S1AP_E_RAB_RELEASE_COMMAND(message_p).eNB_ue_s1ap_id = s1ap_E_RABReleaseCommand->eNB_UE_S1AP_ID;
+  S1AP_E_RAB_RELEASE_COMMAND(message_p).mme_ue_s1ap_id = s1ap_E_RABReleaseCommand->mme_ue_s1ap_id;
+  if(s1ap_E_RABReleaseCommand->nas_pdu.size > 0 ){
+    S1AP_E_RAB_RELEASE_COMMAND(message_p).nas_pdu.length = s1ap_E_RABReleaseCommand->nas_pdu.size;
+
+    S1AP_E_RAB_RELEASE_COMMAND(message_p).nas_pdu.buffer =
+      malloc(sizeof(uint8_t) * s1ap_E_RABReleaseCommand->nas_pdu.size);
+
+    memcpy(S1AP_E_RAB_RELEASE_COMMAND(message_p).nas_pdu.buffer,
+    		s1ap_E_RABReleaseCommand->nas_pdu.buf,
+    		s1ap_E_RABReleaseCommand->nas_pdu.size);
+  } else {
+	  S1AP_E_RAB_RELEASE_COMMAND(message_p).nas_pdu.length = 0;
+	  S1AP_E_RAB_RELEASE_COMMAND(message_p).nas_pdu.buffer = NULL;
+  }
+
+  S1AP_E_RAB_RELEASE_COMMAND(message_p).nb_e_rabs_torelease = s1ap_E_RABReleaseCommand->e_RABToBeReleasedList.s1ap_E_RABItem.count;
+  for(i=0; i < s1ap_E_RABReleaseCommand->e_RABToBeReleasedList.s1ap_E_RABItem.count; i++){
+	  S1ap_E_RABItem_t *item_p;
+	  item_p = (S1ap_E_RABItem_t*)s1ap_E_RABReleaseCommand->e_RABToBeReleasedList.s1ap_E_RABItem.array[i];
+	  S1AP_E_RAB_RELEASE_COMMAND(message_p).e_rab_release_params[i].e_rab_id = item_p->e_RAB_ID;
+	  S1AP_DEBUG("[SCTP] Received E-RAB release command for e-rab id %ld\n", item_p->e_RAB_ID);
+  }
+
+  itti_send_msg_to_task(TASK_RRC_ENB, ue_desc_p->eNB_instance->instance, message_p);
+
+  return 0;
+}

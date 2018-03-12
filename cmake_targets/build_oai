@@ -4,7 +4,7 @@
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
 # * The OpenAirInterface Software Alliance licenses this file to You under
-# * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
 # * except in compliance with the License.
 # * You may obtain a copy of the License at
 # *
@@ -42,7 +42,6 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 MSC_GEN="False"
 XFORMS="True"
-FLEXRAN_AGENT_SB_IF="True"
 PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
@@ -66,6 +65,7 @@ UE_AUTOTEST_TRACE="False"
 UE_DEBUG_TRACE="False"
 UE_TIMING_TRACE="False"
 DISABLE_LOG_X="False"
+USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 trap handle_ctrl_c INT
 
@@ -99,10 +99,6 @@ Options
    Specify conf_nvram_path (default \"$conf_nvram_path\")
 --UE-gen-nvram [output path]
    Specify gen_nvram_path (default \"$gen_nvram_path\")
---RRH
-   Makes the RRH
--a | --agent
-   Enables agent for software-defined control of the eNB
 -r | --3gpp-release
    default is Rel14,
    Rel8 limits the implementation to 3GPP Release 8 version
@@ -158,6 +154,8 @@ Options
    Disable all LOG_* macros
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
+--usrp-recplay
+   Build for I/Q record-playback modes
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I  --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I  --eNB -x --install-system-files
@@ -196,15 +194,14 @@ function main() {
             GDB=1
             CMAKE_BUILD_TYPE="Debug"
             echo_info "Will Compile with gdb symbols and disable compiler optimization"
-            CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug"
+            CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug --trace-expand"
             shift;;
        --eNB)
             eNB=1
             echo_info "Will compile eNB"
             shift;;
        -a | --agent)
-	    FLEXRAN_AGENT=1
-	    echo_info "Will compile eNB with agent support"
+	    echo_info "FlexRAN support is always compiled into the eNB"
 	    shift;;
        --UE)
             UE=1
@@ -216,10 +213,6 @@ function main() {
         --UE-gen-nvram)
             gen_nvram_path=$(readlink -f $2)
             shift 2;;
-       --RRH)
-            RRH=1
-            echo_info "Will compile RRH"
-            shift;;
        -r | --3gpp-release)
             REL=$2
             echo_info "Setting release to: $REL"
@@ -350,6 +343,10 @@ function main() {
             BUILD_TELNETSRV=1
             echo_info "Build embedded telnet server"
             shift ;;			
+        --usrp-recplay)
+            USRP_REC_PLAY="True"
+            echo_info "Enabling USRP record playback mode"
+            shift 1;;
         -h | --help)
             print_help
             exit 1;;
@@ -362,9 +359,13 @@ function main() {
   
   CMAKE_CMD="$CMAKE_CMD .."
   echo_info "CMAKE_CMD=$CMAKE_CMD"
-  
+  if [ "$eNB" = "1" ] && [ "$UE" = "1" ]; then
+    echo_error "Cannot build UE and eNB on one build_oai execution"
+    echo_error "use 2 build_oai invocations"
+    exit
+  fi  
   #########################################################
-  # check validity of HW and TP parameters for RRH and eNB
+  # check validity of HW and TP parameters for eNB
   #########################################################
   # to be discussed
   
@@ -380,15 +381,6 @@ function main() {
       fi
   fi
   
-  if [ "$RRH" = "1" ] ; then
-      if [ "$TP" = "None" ] ; then
-	  echo_fatal "A transport protocol (e.g. -t ETHERNET) must be defined!"
-      fi
-      if [ "$HW" = "None" ] ; then
-	  echo_info "No radio head has been selected (HW set to $HW)"	
-      fi
-  fi
-
   echo_info "RF HW set to $HW" 
   #Now we set flags to enable deadline scheduler settings
   #By default: USRP: disable, 
@@ -473,11 +465,9 @@ function main() {
         flash_firmware_bladerf
       fi
     fi
-    if [ "$FLEXRAN_AGENT" == "1" ] ; then
-      echo_info "installing protobuf/protobuf-c for flexran agent support"
-      install_protobuf_from_source
-      install_protobuf_c_from_source
-    fi
+    echo_info "installing protobuf/protobuf-c for flexran agent support"
+    install_protobuf_from_source
+    install_protobuf_c_from_source
   fi
 
   if [ "$INSTALL_OPTIONAL" = "1" ] ; then
@@ -502,10 +492,20 @@ function main() {
   DIR=$OPENAIR_DIR/cmake_targets
   if [ "$NOS1" =  "1" ] ; then
       lte_build_dir=lte_noS1_build_oai
-      lte_exec=lte-softmodem-nos1
+      if [ "$eNB" = "1" ] ; then
+         lte_exec=lte-softmodem-nos1
+      fi
+      if [ "$UE" = "1" ] ; then
+         lte_exec=lte-uesoftmodem-nos1
+      fi
   else
       lte_build_dir=lte_build_oai
-      lte_exec=lte-softmodem
+      if [ "$eNB" = "1" ] ; then
+         lte_exec=lte-softmodem
+      fi
+      if [ "$UE" = "1" ] ; then
+         lte_exec=lte-uesoftmodem
+      fi
   fi
 
 # configuration module libraries, one currently available, using libconfig 
@@ -525,9 +525,6 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
-    if [ "$FLEXRAN_AGENT" = "1" ] ; then
-	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
-    fi
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
@@ -540,6 +537,7 @@ function main() {
     echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"        >>  $cmake_file
     echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"        >>  $cmake_file
     echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"        >>  $cmake_file
+    echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"        >>  $cmake_file
     if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
      echo_info "Compiling UE S1 build : enabling Linux and NETLINK"
      echo "set (LINUX True )"              >>  $cmake_file
@@ -560,6 +558,9 @@ function main() {
     compilations \
 	  $lte_build_dir $config_libconfig_shlib \
 	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+    compilations \
+          $lte_build_dir coding \
+          libcoding.so $dbin/libcoding.so
 	  
     if [ "$NOS1" = "1" ] ; then
 	compilations \
@@ -686,9 +687,6 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
-    if [ "$FLEXRAN_AGENT" = "1" ] ; then
-	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
-    fi
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
@@ -769,9 +767,6 @@ function main() {
     cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
-    if [ "$FLEXRAN_AGENT" = "1" ] ; then
-	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
-    fi
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file
@@ -785,61 +780,20 @@ function main() {
 	#  oaisim_mme $dbin/oaisim_mme.$REL
   fi
 
-  # RRH compilation
-  #####################
-  if [ "$RRH" = "1" ] ; then
-
-     rrh_exec=rrh_gw
-     rrh_build_dir=rrh_gw
-     
-     echo_info "Compiling $rrh_exec ..."
-    
-     [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build 
-     mkdir -p $DIR/$rrh_build_dir/build
-     cmake_file=$DIR/$rrh_build_dir/CMakeLists.txt
-     echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
-     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
-     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
-     echo "set ( ENABLE_ITTI False )"     		 >>  $cmake_file
-     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
-     echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
-     echo 'set ( PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
-     echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
-     echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"    >>$cmake_file
-     echo "set ( T_TRACER $T_TRACER )"            >>  $cmake_file
-     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
-     cd $DIR/$rrh_build_dir/build
-     eval $CMAKE_CMD
-     compilations \
-	 rrh_gw rrh_gw \
-	 rrh_gw $dbin/rrh_gw
-
-  fi
   # Telnet server compilation
   #####################
   if [ "$BUILD_TELNETSRV" = "1" ] ; then
-
-     telnetsrv_build_dir=telnetsrv
-     mkdir -p $DIR/$telnetsrv_build_dir/build
-     cd $DIR/$telnetsrv_build_dir/build   
-     echo_info "Compiling telnet server library ..."
-    
-     [ "$CLEAN" = "1" ] && rm -rf $DIR/$telnetsrv_build_dir 
-     cmake_file=$OPENAIR_DIR/common/utils/$telnetsrv_build_dir/CMakeLists.txt   
-     cd $DIR/$telnetsrv_build_dir/build
-     eval  "$CMAKE_CMD $OPENAIR_DIR/common/utils/$telnetsrv_build_dir/"
-     make
+              build_dir=$lte_build_dir
+              compilations \
+                  $build_dir telnetsrv \
+                  libtelnetsrv.so $dbin/libtelnetsrv.so
 
   fi  
   # build RF device and transport protocol libraries
   #####################################
-  if [ "$eNB" = "1" -o "$UE" = "1" -o  "$RRH" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
 
-      if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
-	  build_dir=$lte_build_dir	  
-      else
-	  build_dir=$rrh_build_dir	 
-      fi
+      build_dir=$lte_build_dir	  
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then
@@ -856,9 +810,9 @@ function main() {
 	      ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
-		  compilations \
-		      $build_dir oai_usrpdevif \
-		      liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
+              compilations \
+                  $build_dir oai_usrpdevif \
+                  liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
 
 	      ln -sf liboai_usrpdevif.so liboai_device.so
 	      ln -sf $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so

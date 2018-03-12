@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -70,7 +70,7 @@ typedef enum {
 
 void init_UE_threads(int);
 void *UE_thread(void *arg);
-void init_UE(int nb_inst,int,int);
+void init_UE(int nb_inst,int,int,int);
 
 int32_t **rxdata;
 int32_t **txdata;
@@ -202,7 +202,7 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
 
 }
 
-void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in) {
+void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction) {
 
   PHY_VARS_UE *UE;
   int         inst;
@@ -218,6 +218,8 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in) {
 
     LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
     PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
+    // turn off timing control loop in UE
+    PHY_vars_UE_g[inst][0]->no_timing_correction = timing_correction;
 
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     init_UE_threads(inst);
@@ -303,6 +305,7 @@ static void *UE_thread_synch(void *arg)
     } while (ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]));
   
     if (found == 0) {
+      LOG_E(PHY,"Can't find EUTRA band for frequency %d",UE->frame_parms.dl_CarrierFreq);
       exit_fun("Can't find EUTRA band for frequency");
       return &UE_thread_synch_retval;
     }
@@ -851,14 +854,19 @@ void *UE_thread(void *arg) {
                         writeBlockSize=UE->frame_parms.samples_per_tti;
                     } else {
                         // set TO compensation to zero
+
                         UE->rx_offset_diff = 0;
+
                         // compute TO compensation that should be applied for this frame
-                        if ( UE->rx_offset < 5*UE->frame_parms.samples_per_tti  &&
-                                UE->rx_offset > 0 )
+
+			if (UE->no_timing_correction == 0) {
+			  if ( UE->rx_offset < 5*UE->frame_parms.samples_per_tti  &&
+			       UE->rx_offset > 0 )
                             UE->rx_offset_diff = -1 ;
-                        if ( UE->rx_offset > 5*UE->frame_parms.samples_per_tti &&
-                                UE->rx_offset < 10*UE->frame_parms.samples_per_tti )
+			  if ( UE->rx_offset > 5*UE->frame_parms.samples_per_tti &&
+			       UE->rx_offset < 10*UE->frame_parms.samples_per_tti )
                             UE->rx_offset_diff = 1;
+			}
 
                         LOG_D(PHY,"AbsSubframe %d.%d SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,sub_frame,UE->rx_offset_diff,UE->rx_offset);
                         readBlockSize=UE->frame_parms.samples_per_tti -

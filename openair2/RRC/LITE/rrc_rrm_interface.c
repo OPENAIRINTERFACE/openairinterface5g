@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -292,10 +292,5 @@ int send_msg_fifo(int *s, msg_t *fmsg)
 
 int send_msg(void *s, msg_t *smsg)
 {
-#ifdef USER_MODE
   send_msg_sock((sock_rrm_t *)s, smsg);
-#else
-  send_msg_fifo((int *)s,smsg);
-#endif
-
 }

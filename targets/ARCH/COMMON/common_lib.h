@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -36,9 +36,9 @@
 #include <sys/types.h>
 
 /* name of shared library implementing the radio front end */
-#define OAI_RF_LIBNAME        "liboai_device.so"
+#define OAI_RF_LIBNAME        "oai_device"
 /* name of shared library implementing the transport */
-#define OAI_TP_LIBNAME        "liboai_transpro.so"
+#define OAI_TP_LIBNAME        "oai_transpro"
 
 /* flags for BBU to determine whether the attached radio head is local or remote */
 #define RAU_LOCAL_RADIO_HEAD  0
@@ -207,6 +207,15 @@ typedef struct {
   int iq_rxrescale;
   //! Configuration file for LMS7002M
   char *configFilename;
+#if defined(USRP_REC_PLAY)
+  unsigned short sf_mode;           // 1=record, 2=replay
+  char           sf_filename[1024]; // subframes file path
+  unsigned int   sf_max;            // max number of recorded subframes
+  unsigned int   sf_loops;          // number of loops in replay mode
+  unsigned int   sf_read_delay;     // read delay in replay mode
+  unsigned int   sf_write_delay;    // write delay in replay mode
+  unsigned int   eth_mtu;           // ethernet MTU
+#endif  
 } openair0_config_t;
 
 /*! \brief RF mapping */ 

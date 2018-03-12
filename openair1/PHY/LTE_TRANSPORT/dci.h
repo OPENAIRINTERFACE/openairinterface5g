@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -482,8 +482,8 @@ typedef struct DCI1A_20MHz_FDD DCI1A_20MHz_FDD_t;
 
 /// DCI Format Type 1 (1.5 MHz, TDD, 23 bits)
 struct DCI1_1_5MHz_TDD {
-  /// Dummy bits to align to 32-bits
-  uint32_t dummy:9;
+  /// padding bits to align to 32-bits
+  uint32_t padding:9;
   /// DAI (TDD)
   uint32_t dai:2;
   /// Power Control
@@ -507,8 +507,8 @@ typedef struct DCI1_1_5MHz_TDD DCI1_1_5MHz_TDD_t;
 
 /// DCI Format Type 1 (5 MHz, TDD, 30 bits)
 struct DCI1_5MHz_TDD {
-  /// Dummy bits to align to 32-bits
-  uint32_t dummy:2;
+  /// padding bits to align to 32-bits
+  uint32_t padding:2;
   /// DAI (TDD)
   uint32_t dai:2;
   /// Power Control
@@ -532,8 +532,8 @@ typedef struct DCI1_5MHz_TDD DCI1_5MHz_TDD_t;
 
 /// DCI Format Type 1 (10 MHz, TDD, 34 bits)
 struct DCI1_10MHz_TDD {
-  /// Dummy bits to align to 64-bits
-  uint64_t dummy:30;
+  /// padding bits to align to 64-bits
+  uint64_t padding:30;
   /// DAI (TDD)
   uint64_t dai:2;
   /// Power Control
@@ -557,8 +557,8 @@ typedef struct DCI1_10MHz_TDD DCI1_10MHz_TDD_t;
 
 /// DCI Format Type 1 (20 MHz, TDD, 42 bits)
 struct DCI1_20MHz_TDD {
-  /// Dummy bits to align to 64-bits
-  uint64_t dummy:22;
+  /// padding bits to align to 64-bits
+  uint64_t padding:22;
   /// DAI (TDD)
   uint64_t dai:2;
   /// Power Control
@@ -582,8 +582,8 @@ typedef struct DCI1_20MHz_TDD DCI1_20MHz_TDD_t;
 
 /// DCI Format Type 1 (1.5 MHz, FDD, 21 bits)
 struct DCI1_1_5MHz_FDD {
-  /// Dummy bits to align to 32-bits
-  uint32_t dummy:11;
+  /// padding bits to align to 32-bits
+  uint32_t padding:11;
   /// Power Control
   uint32_t TPC:2;
   /// Redundancy version
@@ -605,8 +605,8 @@ typedef struct DCI1_1_5MHz_FDD DCI1_1_5MHz_FDD_t;
 
 /// DCI Format Type 1 (5 MHz, FDD, 27 bits)
 struct DCI1_5MHz_FDD {
-  /// dummy bits (not transmitted)
-  uint32_t dummy:5;
+  /// padding its (not transmitted)
+  uint32_t padding:5;
   /// Power Control
   uint32_t TPC:2;
   /// Redundancy version
@@ -628,8 +628,8 @@ typedef struct DCI1_5MHz_FDD DCI1_5MHz_FDD_t;
 
 /// DCI Format Type 1 (10 MHz, FDD, 31 bits)
 struct DCI1_10MHz_FDD {
-  /// dummy bits (not transmitted)
-  uint32_t dummy:1;
+  /// padding bits (not transmitted)
+  uint32_t padding:1;
   /// Power Control
   uint32_t TPC:2;
   /// Redundancy version
@@ -651,8 +651,8 @@ typedef struct DCI1_10MHz_FDD DCI1_10MHz_FDD_t;
 
 /// DCI Format Type 1 (20 MHz, FDD, 39 bits)
 struct DCI1_20MHz_FDD {
-  /// dummy bits (not transmitted)
-  uint64_t dummy:25;
+  /// padding bits (not transmitted)
+  uint64_t padding:25;
   /// Power Control
   uint64_t TPC:2;
   /// Redundancy version
@@ -674,10 +674,8 @@ typedef struct DCI1_20MHz_FDD DCI1_20MHz_FDD_t;
 
 /// DCI Format Type 1A (5 MHz, TDD, frame 1-6, 27 bits)
 struct DCI1A_RA_5MHz_TDD_1_6 {
-  /// Dummy bits to align to 32-bits
-  uint32_t dummy:5;
-  /// Padding
-  uint32_t padding:6;
+  /// padding bits to align to 32-bits
+  uint32_t padding:11;
   /// PRACH mask index
   uint32_t prach_mask_index:4;
   /// Preamble Index
@@ -822,7 +820,7 @@ typedef struct DCI1B_5MHz_4A_TDD DCI1B_5MHz_4A_TDD_t;
 struct DCI1C_1_5MHz
 {
   /// padding to 32bits
-  uint32_t padding32:24;
+  uint32_t padding:24;
   uint32_t mcs:5;
   uint32_t rballoc:3;  // N_RB_step = 2, Ngap=Ngap1=3, NDLVRBGap = 6, ceil(log2((3*4)/2)) = 3
 } __attribute__ ((__packed__));
@@ -836,7 +834,7 @@ typedef struct DCI1C_1_5MHz DCI1C_1_5MHz_t;
 struct DCI1C_5MHz
 {
   /// padding to 32bits
-  uint32_t padding32:20;
+  uint32_t padding:20;
   uint32_t mcs:5;
   uint32_t rballoc:7;   // N_RB_step = 2, Ngap1=Ngap2=12, NDLVRBGap = 24, ceil(log2((12*13)/2)) = 7
 } __attribute__ ((__packed__));
@@ -848,7 +846,7 @@ typedef struct DCI1C_5MHz DCI1C_5MHz_t;
 struct DCI1C_10MHz
 {
   /// padding to 32bits
-  uint32_t padding32:19;
+  uint32_t padding:19;
   uint32_t mcs:5;
   uint32_t rballoc:7;  // N_RB_step = 4, Ngap1=27, NDLVRBGap = 46, ceil(log2(((11*12)/2)) = 7
   uint32_t Ngap:1;
@@ -861,7 +859,7 @@ typedef struct DCI1C_10MHz DCI1C_10MHz_t;
 struct DCI1C_15MHz
 {
   /// padding to 32bits
-  uint32_t padding32:18;
+  uint32_t padding:18;
   uint32_t mcs:5;
   uint32_t rballoc:8; // N_RB_step = 4, Ngap1=64, ceil(log2((16*17)/2)) = 8
   uint32_t Ngap:1;
@@ -874,7 +872,7 @@ typedef struct DCI1C_15MHz DCI1C_15MHz_t;
 struct DCI1C_20MHz
 {
   /// padding to 32bits
-  uint32_t padding32:17;
+  uint32_t padding:17;
   uint32_t mcs:5;
   uint32_t rballoc:9; // N_RB_step = 4, Ngap1=48, ceil(log2((24*25)/2)) = 9
   uint32_t Ngap:1;
@@ -1006,7 +1004,7 @@ typedef struct DCI1D_5MHz_4A_TDD DCI1D_5MHz_4A_TDD_t;
 /// DCI Format Type 1E (5 MHz, TDD, 2 Antenna Ports, more than 10 PRBs, 34 bits)
 struct DCI1E_5MHz_2A_M10PRB_TDD {
   /// padding to 64bits
-  uint64_t padding64:30;
+  uint64_t padding:30;
   /// Redundancy version 2
   ///uint64_t rv2:2;
   /// New Data Indicator 2
@@ -1045,7 +1043,7 @@ typedef struct DCI1E_5MHz_2A_M10PRB_TDD DCI1E_5MHz_2A_M10PRB_TDD_t;
 /// DCI Format Type 2 (1.5 MHz, TDD, 2 Antenna Ports, 34 bits)
 struct DCI2_1_5MHz_2A_TDD {
   /// padding to 64bits
-  uint64_t padding64:30;
+  uint64_t padding:30;
   /// TPMI information for precoding
   uint64_t tpmi:3;
   /// Redundancy version 2
@@ -1078,7 +1076,7 @@ typedef struct DCI2_1_5MHz_2A_TDD DCI2_1_5MHz_2A_TDD_t;
 /// DCI Format Type 2 (1.5 MHz, TDD, 4 Antenna Ports, 37 bits)
 struct DCI2_1_5MHz_4A_TDD {
   /// padding for 64-bit
-  uint64_t padding64:27;
+  uint64_t padding:27;
   /// TPMI information for precoding
   uint64_t tpmi:6;
   /// Redundancy version 2
@@ -1111,7 +1109,7 @@ typedef struct DCI2_1_5MHz_4A_TDD DCI2_1_5MHz_4A_TDD_t;
 /// DCI Format Type 2 (5 MHz, TDD, 2 Antenna Ports, 42 bits)
 struct DCI2_5MHz_2A_TDD {
   /// padding to 64bits
-  uint64_t padding64:22;
+  uint64_t padding:22;
   /// TPMI information for precoding
   uint64_t tpmi:3;
   /// Redundancy version 2
@@ -1146,7 +1144,7 @@ typedef struct DCI2_5MHz_2A_TDD DCI2_5MHz_2A_TDD_t;
 /// DCI Format Type 2 (5 MHz, TDD, 4 Antenna Ports, 45 bits)
 struct DCI2_5MHz_4A_TDD {
   /// padding for 64-bit
-  uint64_t padding64:19;
+  uint64_t padding:19;
   /// TPMI information for precoding
   uint64_t tpmi:6;
   /// Redundancy version 2
@@ -1181,7 +1179,7 @@ typedef struct DCI2_5MHz_4A_TDD DCI2_5MHz_4A_TDD_t;
 /// DCI Format Type 2 (10 MHz, TDD, 2 Antenna Ports, 46 bits)
 struct DCI2_10MHz_2A_TDD {
   /// padding to 64bits
-  uint64_t padding64:18;
+  uint64_t padding:18;
   /// TPMI information for precoding
   uint64_t tpmi:3;
   /// Redundancy version 2
@@ -1216,7 +1214,7 @@ typedef struct DCI2_10MHz_2A_TDD DCI2_10MHz_2A_TDD_t;
 /// DCI Format Type 2 (10 MHz, TDD, 4 Antenna Ports, 49 bits)
 struct DCI2_10MHz_4A_TDD {
   /// padding for 64-bit
-  uint64_t padding64:15;
+  uint64_t padding:15;
   /// TPMI information for precoding
   uint64_t tpmi:6;
   /// Redundancy version 2
@@ -1251,7 +1249,7 @@ typedef struct DCI2_10MHz_4A_TDD DCI2_10MHz_4A_TDD_t;
 /// DCI Format Type 2 (20 MHz, TDD, 2 Antenna Ports, 54 bits)
 struct DCI2_20MHz_2A_TDD {
   /// padding to 64bits
-  uint64_t padding64:10;
+  uint64_t padding:10;
   /// TPMI information for precoding
   uint64_t tpmi:3;
   /// Redundancy version 2
@@ -1286,7 +1284,7 @@ typedef struct DCI2_20MHz_2A_TDD DCI2_20MHz_2A_TDD_t;
 /// DCI Format Type 2 (20 MHz, TDD, 4 Antenna Ports, 57 bits)
 struct DCI2_20MHz_4A_TDD {
   /// padding for 64-bit
-  uint64_t padding64:7;
+  uint64_t padding:7;
   /// TPMI information for precoding
   uint64_t tpmi:6;
   /// Redundancy version 2
@@ -1321,7 +1319,7 @@ typedef struct DCI2_20MHz_4A_TDD DCI2_20MHz_4A_TDD_t;
 /// DCI Format Type 2 (1.5 MHz, FDD, 2 Antenna Ports, 31 bits)
 struct DCI2_1_5MHz_2A_FDD {
   //padding for 32 bits
-  uint32_t padding32:1;
+  uint32_t padding:1;
   /// precoding bits
   uint32_t tpmi:3;
   /// Redundancy version 2
@@ -1352,7 +1350,7 @@ typedef struct DCI2_1_5MHz_2A_FDD DCI2_1_5MHz_2A_FDD_t;
 /// DCI Format Type 2 (1.5 MHz, FDD, 4 Antenna Ports, 34 bits)
 struct DCI2_1_5MHz_4A_FDD {
   /// padding for 32 bits
-  uint64_t padding64:30;
+  uint64_t padding:30;
   /// precoding bits
   uint64_t tpmi:6;
   /// Redundancy version 2
@@ -1383,7 +1381,7 @@ typedef struct DCI2_1_5MHz_4A_FDD DCI2_1_5MHz_4A_FDD_t;
 /// DCI Format Type 2 (5 MHz, FDD, 2 Antenna Ports, 39 bits)
 struct DCI2_5MHz_2A_FDD {
   /// padding for 64-bit
-  uint64_t padding64:25;
+  uint64_t padding:25;
   /// TPMI information for precoding
   uint64_t tpmi:3;
   /// Redundancy version 2
@@ -1416,7 +1414,7 @@ typedef struct DCI2_5MHz_2A_FDD DCI2_5MHz_2A_FDD_t;
 /// DCI Format Type 2 (5 MHz, TDD, 4 Antenna Ports, 42 bits)
 struct DCI2_5MHz_4A_FDD {
   /// padding for 64-bit
-  uint64_t padding64:21;
+  uint64_t padding:21;
   /// TPMI information for precoding
   uint64_t tpmi:6;
   /// Redundancy version 2
@@ -1448,7 +1446,7 @@ typedef struct DCI2_5MHz_4A_FDD DCI2_5MHz_4A_FDD_t;
 /// DCI Format Type 2 (10 MHz, FDD, 2 Antenna Ports, 43 bits)
 struct DCI2_10MHz_2A_FDD {
   /// padding for 64-bit
-  uint64_t padding64:21;
+  uint64_t padding:21;
   /// TPMI information for precoding
   uint64_t tpmi:3;
   /// Redundancy version 2
@@ -1481,7 +1479,7 @@ typedef struct DCI2_10MHz_2A_FDD DCI2_10MHz_2A_FDD_t;
 /// DCI Format Type 2 (5 MHz, TDD, 4 Antenna Ports, 46 bits)
 struct DCI2_10MHz_4A_FDD {
   /// padding for 64-bit
-  uint64_t padding64:18;
+  uint64_t padding:18;
   /// TPMI information for precoding
   uint64_t tpmi:6;
   /// Redundancy version 2
@@ -1513,7 +1511,7 @@ typedef struct DCI2_10MHz_4A_FDD DCI2_10MHz_4A_FDD_t;
 /// DCI Format Type 2 (20 MHz, FDD, 2 Antenna Ports, 51 bits)
 struct DCI2_20MHz_2A_FDD {
   /// padding for 64-bit
-  uint64_t padding64:13;
+  uint64_t padding:13;
   /// TPMI information for precoding
   uint64_t tpmi:3;
   /// Redundancy version 2
@@ -1546,7 +1544,7 @@ typedef struct DCI2_20MHz_2A_FDD DCI2_20MHz_2A_FDD_t;
 /// DCI Format Type 2 (20 MHz, FDD, 4 Antenna Ports, 54 bits)
 struct DCI2_20MHz_4A_FDD {
   /// padding for 64-bit
-  uint64_t padding64:10;
+  uint64_t padding:10;
   /// TPMI information for precoding
   uint64_t tpmi:6;
   /// Redundancy version 2
@@ -2083,7 +2081,7 @@ typedef struct DCI2A_20MHz_4A_FDD DCI2A_20MHz_4A_FDD_t;
 // *******************************************************************
 /// DCI Format Type 2B (1.5 MHz, TDD,  33 bits)
 struct DCI2B_1_5MHz_TDD {
-  uint64_t padding64:31;
+  uint64_t padding:31;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2109,7 +2107,7 @@ struct DCI2B_1_5MHz_TDD {
   /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
   uint64_t rballoc:6;
   /// Padding for ambiguity
-  uint64_t padding:1;
+  uint64_t padding0:1;
 } __attribute__ ((__packed__));
 
 typedef struct DCI2B_1_5MHz_TDD DCI2B_1_5MHz_TDD_t;
@@ -2118,7 +2116,7 @@ typedef struct DCI2B_1_5MHz_TDD DCI2B_1_5MHz_TDD_t;
 /// DCI Format Type 2B (5 MHz, TDD,  39 bits)
 struct DCI2B_5MHz_TDD {
   /// padding to 64bits
-  uint64_t padding64:25;
+  uint64_t padding:25;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2153,7 +2151,7 @@ typedef struct DCI2B_5MHz_TDD DCI2B_5MHz_TDD_t;
 /// DCI Format Type 2B (10 MHz, TDD,  43 bits)
 struct DCI2B_10MHz_TDD {
   /// padding to 64bits
-  uint64_t padding64:21;
+  uint64_t padding:21;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2188,7 +2186,7 @@ typedef struct DCI2B_10MHz_TDD DCI2B_10MHz_TDD_t;
 /// DCI Format Type 2B (20 MHz, TDD,  51 bits)
 struct DCI2B_20MHz_TDD {
   /// padding to 64bits
-  uint64_t padding64:13;
+  uint64_t padding:13;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2223,7 +2221,7 @@ typedef struct DCI2B_20MHz_TDD DCI2B_20MHz_TDD_t;
 /// DCI Format Type 2B (1.5 MHz, FDD,  28 bits)
 struct DCI2B_1_5MHz_FDD {
   //padding for 32 bits
-  uint32_t padding32:4;
+  uint32_t padding:4;
   /// Redundancy version 2
   uint32_t rv2:2;
   /// New Data Indicator 2
@@ -2252,7 +2250,7 @@ typedef struct DCI2B_1_5MHz_FDD DCI2B_1_5MHz_FDD_t;
 /// DCI Format Type 2B (5 MHz, FDD,  36 bits)
 struct DCI2B_5MHz_FDD {
   /// padding for 64-bit
-  uint64_t padding64:28;
+  uint64_t padding:28;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2283,7 +2281,7 @@ typedef struct DCI2B_5MHz_FDD DCI2B_5MHz_FDD_t;
 /// DCI Format Type 2B (10 MHz, FDD,  41 bits)
 struct DCI2B_10MHz_FDD {
   /// padding for 64-bit
-  uint64_t padding64:23;
+  uint64_t padding:23;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2307,7 +2305,7 @@ struct DCI2B_10MHz_FDD {
   /// Resource Allocation Header
   uint64_t rah:1;
   /// Padding for ambiguity
-  uint64_t padding:1;
+  uint64_t padding0:1;
 } __attribute__ ((__packed__));
 
 #define sizeof_DCI2B_10MHz_FDD_t 41
@@ -2316,7 +2314,7 @@ typedef struct DCI2B_10MHz_FDD DCI2B_10MHz_FDD_t;
 /// DCI Format Type 2B (20 MHz, FDD,  48 bits)
 struct DCI2B_20MHz_FDD {
   /// padding for 64-bit
-  uint64_t padding64:16;
+  uint64_t padding:16;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2350,7 +2348,7 @@ typedef struct DCI2B_20MHz_FDD DCI2B_20MHz_FDD_t;
 
 /// DCI Format Type 2C (1.5 MHz, TDD,  34 bits)
 struct DCI2C_1_5MHz_TDD {
-  uint64_t padding64:30;
+  uint64_t padding:30;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2383,7 +2381,7 @@ typedef struct DCI2C_1_5MHz_TDD DCI2C_1_5MHz_TDD_t;
 /// DCI Format Type 2C (5 MHz, TDD,  41 bits)
 struct DCI2C_5MHz_TDD {
   /// padding to 64bits
-  uint64_t padding64:23;
+  uint64_t padding:23;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2418,7 +2416,7 @@ typedef struct DCI2C_5MHz_TDD DCI2C_5MHz_TDD_t;
 /// DCI Format Type 2C (10 MHz, TDD,  45 bits)
 struct DCI2C_10MHz_TDD {
   /// padding to 64bits
-  uint64_t padding64:19;
+  uint64_t padding:19;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2453,7 +2451,7 @@ typedef struct DCI2C_10MHz_TDD DCI2C_10MHz_TDD_t;
 /// DCI Format Type 2C (20 MHz, TDD,  53 bits)
 struct DCI2C_20MHz_TDD {
   /// padding to 64bits
-  uint64_t padding64:11;
+  uint64_t padding:11;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2488,7 +2486,7 @@ typedef struct DCI2C_20MHz_TDD DCI2C_20MHz_TDD_t;
 /// DCI Format Type 2C (1.5 MHz, FDD,  30 bits)
 struct DCI2C_1_5MHz_FDD {
   //padding for 32 bits
-  uint32_t padding32:2;
+  uint32_t padding:2;
   /// Redundancy version 2
   uint32_t rv2:2;
   /// New Data Indicator 2
@@ -2517,7 +2515,7 @@ typedef struct DCI2C_1_5MHz_FDD DCI2C_1_5MHz_FDD_t;
 /// DCI Format Type 2C (5 MHz, FDD,  38 bits)
 struct DCI2C_5MHz_FDD {
   /// padding for 64-bit
-  uint64_t padding64:26;
+  uint64_t padding:26;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2548,7 +2546,7 @@ typedef struct DCI2C_5MHz_FDD DCI2C_5MHz_FDD_t;
 /// DCI Format Type 2C (10 MHz, FDD,  42 bits)
 struct DCI2C_10MHz_FDD {
   /// padding for 64-bit
-  uint64_t padding64:22;
+  uint64_t padding:22;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2579,7 +2577,7 @@ typedef struct DCI2C_10MHz_FDD DCI2C_10MHz_FDD_t;
 /// DCI Format Type 2C (20 MHz, FDD,  50 bits)
 struct DCI2C_20MHz_FDD {
   /// padding for 64-bit
-  uint64_t padding64:14;
+  uint64_t padding:14;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -2613,7 +2611,7 @@ typedef struct DCI2C_20MHz_FDD DCI2C_20MHz_FDD_t;
 
 /// DCI Format Type 2D (1.5 MHz, TDD,  36 bits)
 struct DCI2D_1_5MHz_TDD {
-  uint64_t padding64:28;
+  uint64_t padding:28;
   /// PDSCH REsource Mapping and Quasi-Co-Location Indicator
   uint64_t REMQCL:2;
   /// Redundancy version 2
@@ -2648,7 +2646,7 @@ typedef struct DCI2D_1_5MHz_TDD DCI2D_1_5MHz_TDD_t;
 /// DCI Format Type 2D (5 MHz, TDD,  43 bits)
 struct DCI2D_5MHz_TDD {
   /// padding to 64bits
-  uint64_t padding64:21;
+  uint64_t padding:21;
   /// PDSCH REsource Mapping and Quasi-Co-Location Indicator
   uint64_t REMQCL:2;
   /// Redundancy version 2
@@ -2685,7 +2683,7 @@ typedef struct DCI2D_5MHz_TDD DCI2D_5MHz_TDD_t;
 /// DCI Format Type 2D (10 MHz, TDD,  47 bits)
 struct DCI2D_10MHz_TDD {
   /// padding to 64bits
-  uint64_t padding64:17;
+  uint64_t padding:17;
   /// PDSCH REsource Mapping and Quasi-Co-Location Indicator
   uint64_t REMQCL:2;
   /// Redundancy version 2
@@ -2722,7 +2720,7 @@ typedef struct DCI2D_10MHz_TDD DCI2D_10MHz_TDD_t;
 /// DCI Format Type 2D (20 MHz, TDD,  55 bits)
 struct DCI2D_20MHz_TDD {
   /// padding to 64bits
-  uint64_t padding64:9;
+  uint64_t padding:9;
   /// PDSCH REsource Mapping and Quasi-Co-Location Indicator
   uint64_t REMQCL:2;
   /// Redundancy version 2
@@ -2759,7 +2757,7 @@ typedef struct DCI2D_20MHz_TDD DCI2D_20MHz_TDD_t;
 /// DCI Format Type 2D (1.5 MHz, FDD,  33 bits)
 struct DCI2D_1_5MHz_FDD {
   //padding for 33 bits
-  uint64_t padding64:31;
+  uint64_t padding:31;
   /// PDSCH REsource Mapping and Quasi-Co-Location Indicator
   uint64_t REMQCL:2;
   /// Redundancy version 2
@@ -2783,7 +2781,7 @@ struct DCI2D_1_5MHz_FDD {
   /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
   uint64_t rballoc:6;
   /// padding for ambiguity
-  uint64_t padding;
+  uint64_t padding0;
 } __attribute__ ((__packed__));
 
 typedef struct DCI2D_1_5MHz_FDD DCI2D_1_5MHz_FDD_t;
@@ -2792,7 +2790,7 @@ typedef struct DCI2D_1_5MHz_FDD DCI2D_1_5MHz_FDD_t;
 /// DCI Format Type 2D (5 MHz, FDD,  41 bits)
 struct DCI2D_5MHz_FDD {
   /// padding for 64-bit
-  uint64_t padding64:23;
+  uint64_t padding:23;
   /// PDSCH REsource Mapping and Quasi-Co-Location Indicator
   uint64_t REMQCL:2;
   /// Redundancy version 2
@@ -2818,7 +2816,7 @@ struct DCI2D_5MHz_FDD {
   /// Resource Allocation Header
   uint64_t rah:1;
   /// padding for ambiguity
-  uint64_t padding:1;
+  uint64_t padding0:1;
 } __attribute__ ((__packed__));
 
 #define sizeof_DCI2D_5MHz_FDD_t 41
@@ -2827,7 +2825,7 @@ typedef struct DCI2D_5MHz_FDD DCI2D_5MHz_FDD_t;
 /// DCI Format Type 2D (10 MHz, FDD,  45 bits)
 struct DCI2D_10MHz_FDD {
   /// padding for 64-bit
-  uint64_t padding64:19;
+  uint64_t padding:19;
   /// PDSCH REsource Mapping and Quasi-Co-Location Indicator
   uint64_t REMQCL:2;
   /// Redundancy version 2
@@ -2853,7 +2851,7 @@ struct DCI2D_10MHz_FDD {
   /// Resource Allocation Header
   uint64_t rah:1;
   /// padding for ambiguity
-  uint64_t padding:1;
+  uint64_t padding0:1;
 } __attribute__ ((__packed__));
 
 #define sizeof_DCI2D_10MHz_FDD_t 45
@@ -2862,7 +2860,7 @@ typedef struct DCI2D_10MHz_FDD DCI2D_10MHz_FDD_t;
 /// DCI Format Type 2D (20 MHz, FDD,  52 bits)
 struct DCI2D_20MHz_FDD {
   /// padding for 64-bit
-  uint64_t padding64:12;
+  uint64_t padding:12;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2

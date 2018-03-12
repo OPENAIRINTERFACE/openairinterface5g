@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -33,6 +33,8 @@
 
 #include "RRC/LITE/defs.h"
 
+#include "flexran_agent_extern.h"
+
 //main.c
 int rrc_init_global_param(void);
 int L3_xface_init(void);
@@ -54,7 +56,22 @@ void rrc_config_buffer(SRB_INFO *srb_info, uint8_t Lchan_type, uint8_t Role);
 void
 openair_rrc_on(
   const protocol_ctxt_t* const ctxt_pP);
+void
+openair_rrc_on_ue(
+  const protocol_ctxt_t* const ctxt_pP);
+
 void rrc_top_cleanup(void);
+
+/** \brief Function to update eNB timers every subframe.  
+@param ctxt_pP  running context
+@param enb_index
+@param CC_id
+*/
+RRC_status_t
+rrc_rx_tx(
+  protocol_ctxt_t* const ctxt_pP,
+  const int          CC_id
+);
 
 /** \brief Function to update timers every subframe.  For UE it updates T300,T304 and T310.
 @param ctxt_pP  running context
@@ -62,7 +79,7 @@ void rrc_top_cleanup(void);
 @param CC_id
 */
 RRC_status_t
-rrc_rx_tx(
+rrc_rx_tx_ue(
   protocol_ctxt_t* const ctxt_pP,
   const uint8_t      enb_index,
   const int          CC_id
@@ -254,11 +271,34 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   const uint8_t                ho_state
 );
 
+
+void
+flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(
+							     const protocol_ctxt_t* const ctxt_pP,
+							     rrc_eNB_ue_context_t* const ue_context_pP,
+							     const uint8_t ho_state,
+							     agent_reconf_rrc * trig_param
+							     );
+
+int freq_to_arfcn10(int band, unsigned long freq);
+
 void
 rrc_eNB_generate_dedeicatedRRCConnectionReconfiguration(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
   const uint8_t                ho_state
+);
+
+/**\brief release Data Radio Bearer between ENB and UE
+   \param ctxt_pP Running context
+   \param ue_context_pP UE context of UE receiving the message*/
+void
+rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(
+  const protocol_ctxt_t*   const ctxt_pP,
+  rrc_eNB_ue_context_t*    const ue_context_pP,
+  uint8_t                  xid,
+  uint32_t                 nas_length,
+  uint8_t*                 nas_buffer
 );
 
 void 
@@ -296,8 +336,6 @@ mac_rrc_data_req(
   const rb_id_t     Srb_id,
   const uint8_t     Nb_tb,
   uint8_t*    const buffer_pP,
-  const eNB_flag_t  enb_flagP,
-  const uint8_t     eNB_index,
   const uint8_t     mbsfn_sync_area
 );
 
@@ -311,7 +349,31 @@ mac_rrc_data_ind(
   const rb_id_t         srb_idP,
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
-  const eNB_flag_t      eNB_flagP,
+  const uint8_t         mbsfn_sync_areaP
+);
+
+int8_t
+mac_rrc_data_req_ue(
+  const module_id_t Mod_idP,
+  const int         CC_id,
+  const frame_t     frameP,
+  const rb_id_t     Srb_id,
+  const uint8_t     Nb_tb,
+  uint8_t*    const buffer_pP,
+  const mac_enb_index_t eNB_indexP,
+  const uint8_t     mbsfn_sync_area
+);
+
+int8_t
+mac_rrc_data_ind_ue(
+  const module_id_t     module_idP,
+  const int         CC_id,
+  const frame_t         frameP,
+  const sub_frame_t     sub_frameP,
+  const rnti_t          rntiP,
+  const rb_id_t         srb_idP,
+  const uint8_t*        sduP,
+  const sdu_size_t      sdu_lenP,
   const mac_enb_index_t eNB_indexP,
   const uint8_t         mbsfn_sync_areaP
 );
@@ -323,6 +385,12 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
 			    const frame_t frameP,
 			    const sub_frame_t subframeP,
 			    const rnti_t rnti);
+
+void mac_eNB_rrc_uplane_failure(const module_id_t Mod_instP,
+                const int CC_id,
+                const frame_t frameP,
+                const sub_frame_t subframeP,
+                const rnti_t rnti);
 
 void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP, 
 			    const int CC_id, 
@@ -340,6 +408,19 @@ rrc_data_req(
   uint8_t*                 const buffer_pP,
   const pdcp_transmission_mode_t modeP
 );
+
+uint8_t
+
+rrc_data_req_ue(
+  const protocol_ctxt_t*   const ctxt_pP,
+  const rb_id_t                  rb_idP,
+  const mui_t                    muiP,
+  const confirm_t                confirmP,
+  const sdu_size_t               sdu_sizeP,
+  uint8_t*                 const buffer_pP,
+  const pdcp_transmission_mode_t modeP
+);
+
 
 void
 rrc_data_ind(
@@ -408,7 +489,7 @@ rrc_eNB_generate_SecurityModeCommand(
 void
 rrc_eNB_process_MeasurementReport(
   const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
+  rrc_eNB_ue_context_t*        ue_context_pP,
   const MeasResults_t*   const measResults2
 );
 
@@ -462,4 +543,12 @@ long binary_search_int(int elements[], long numElem, int value);
 long binary_search_float(float elements[], long numElem, float value);
 
 void openair_rrc_top_init_eNB(int eMBMS_active,uint8_t HO_active);
+
+void openair_rrc_top_init_ue(
+                        int eMBMS_active,
+                        char* uecap_xer,
+                        uint8_t cba_group_active,
+                        uint8_t HO_active
+);
+
 /** @}*/

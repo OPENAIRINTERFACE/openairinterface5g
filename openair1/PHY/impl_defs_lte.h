@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -144,8 +144,6 @@ typedef struct {
   uint8_t prach_hopping_offset[4];
 } PRACH_eMTC_CONFIG_INFO;
 
-#endif
-
 /// PRACH-ConfigSIB or PRACH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
@@ -153,8 +151,12 @@ typedef struct {
   /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
   uint8_t prach_Config_enabled;
   /// PRACH Configuration Information
+#ifdef Rel14
   PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
+#endif  
 } PRACH_eMTC_CONFIG_COMMON;
+
+#endif
 
 /// Enumeration for parameter \f$N_\text{ANRep}\f$ \ref PUCCH_CONFIG_DEDICATED::repetitionFactor.
 typedef enum {
@@ -817,7 +819,7 @@ typedef struct {
   uint8_t narrowband;
   /// number of PRB pairs for MPDCCH
   uint8_t number_of_prb_pairs;
-  /// mpdcch resource assignement (combinatorial index r)
+  /// mpdcch resource assignment (combinatorial index r)
   uint8_t resource_block_assignment;
   /// transmission type (0=localized,1=distributed) 
   uint8_t transmission_type;

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -54,7 +54,7 @@ static pthread_mutex_t mtex = PTHREAD_MUTEX_INITIALIZER;
 //#define DEBUG_MEM_MNGT_ALLOC_SIZE
 //#define DEBUG_MEM_MNGT_ALLOC
 //-----------------------------------------------------------------------------
-#if defined(USER_MODE) && defined(DEBUG_MEM_MNGT_ALLOC)
+#if defined(DEBUG_MEM_MNGT_ALLOC)
 uint32_t             counters[14] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 #endif
 //-----------------------------------------------------------------------------
@@ -269,10 +269,8 @@ get_free_mem_block (uint32_t sizeP, const char* caller)
 
 #ifdef DEBUG_MEM_MNGT_ALLOC
     LOG_E (RLC,"[MEM_MNGT][ERROR][MINOR] memory pool %d is empty trying next pool alloc count = %d\n", pool_selected, counters[pool_selected]);
-#ifdef USER_MODE
     //    display_mem_load ();
     //    check_mem_area ((void *)&mem_block_var);
-#endif
 #endif
   } while (pool_selected++ < 12);
 

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -44,6 +44,8 @@
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
 #include <errno.h>
+
+#include "openair1/PHY/defs.h"
 
 static int latency_target_fd = -1;
 static int32_t latency_target_value = 0;
@@ -344,6 +346,8 @@ void thread_top_init(char *thread_name,
     perror("pthread_getschedparam : ");
     exit_fun("Error getting thread priority");
   }
+
+  pthread_setname_np(pthread_self(), thread_name);
 
   LOG_I(HW, "[SCHED][eNB] %s started on CPU %d, sched_policy = %s , priority = %d, CPU Affinity=%s \n",thread_name,sched_getcpu(),
                    (policy == SCHED_FIFO)  ? "SCHED_FIFO" :

@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -22,9 +22,7 @@
 #define RLC_AM_MODULE 1
 #define RLC_AM_SEGMENT_C 1
 //-----------------------------------------------------------------------------
-#if USER_MODE
 #include <assert.h>
-#endif
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
@@ -468,9 +466,7 @@ void rlc_am_segment_10 (
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
-#if USER_MODE
         assert(1!=1);
-#endif
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
         pdu_mngt_p->payload_size += sdu_mngt_p->sdu_remaining_size;
         pdu_remaining_size = pdu_remaining_size - sdu_mngt_p->sdu_remaining_size;

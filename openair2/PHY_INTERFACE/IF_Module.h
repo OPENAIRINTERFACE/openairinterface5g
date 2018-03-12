@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -61,30 +61,30 @@ typedef struct{
   sub_frame_t subframe;
 
   /// harq indication list
-  nfapi_harq_indication_body_t harq_ind;
+  nfapi_harq_indication_t harq_ind;
 
   /// crc indication list
-  nfapi_crc_indication_body_t crc_ind;
+  nfapi_crc_indication_t crc_ind;
 
   /// SR indication list
-  nfapi_sr_indication_body_t sr_ind;
+  nfapi_sr_indication_t sr_ind;
 
   /// CQI indication list
   nfapi_cqi_indication_body_t cqi_ind;
 
   /// RACH indication list
-  nfapi_rach_indication_body_t rach_ind;
+  nfapi_rach_indication_t rach_ind;
 
 #ifdef Rel14
   /// RACH indication list for BR UEs
-  nfapi_rach_indication_body_t rach_ind_br;
+  nfapi_rach_indication_t rach_ind_br;
 #endif
 
   /// SRS indication list
   nfapi_srs_indication_body_t srs_ind;
 
   /// RX indication
-  nfapi_rx_indication_body_t rx_ind;
+  nfapi_rx_indication_t rx_ind;
 
 } UL_IND_t;
 

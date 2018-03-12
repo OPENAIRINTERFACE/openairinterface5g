@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -37,11 +37,7 @@
 #include "PHY/sse_intrin.h"
 #include "T.h"
 
-#ifndef USER_MODE
-#define NOCYGWIN_STATIC static
-#else
 #define NOCYGWIN_STATIC
-#endif
 
 /* dynamic shift for LLR computation for TM3/4
  * set as command line argument, see lte-softmodem.c
@@ -52,13 +48,10 @@ int16_t interf_unaw_shift = 13;
 
 //#define DEBUG_HARQ
 
-//#undef LOG_D
-//#define LOG_D LOG_I
-
-//#define DEBUG_PHY 1
+#define DEBUG_PHY 1
 //#define DEBUG_DLSCH_DEMOD 1
 
-
+//#define DISABLE_LOG_X
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
@@ -374,7 +367,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 
   //printf("nb_rb = %d, eNB_id %d\n",nb_rb,eNB_id);
   if (nb_rb==0) {
-    LOG_D(PHY,"dlsch_demodulation.c: nb_rb=0\n");
+    //    LOG_D(PHY,"dlsch_demodulation.c: nb_rb=0\n");
     return(-1);
   }
 
@@ -850,17 +843,19 @@ int rx_pdsch(PHY_VARS_UE *ue,
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
 
-  /*LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
-             proc->frame_rx, proc->subframe_rx,symbol,
+  LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p\n",
+             frame, subframe,symbol,
              nb_rb,dlsch0_harq->Qm,
              pdsch_vars[eNB_id]->llr_length[symbol],
              pdsch_vars[eNB_id]->llr_offset[symbol],
              (int16_t*)pdsch_vars[eNB_id]->llr[0],
-             pllr_symbol);*/
+             pllr_symbol_cw0);
 
   switch (dlsch0_harq->Qm) {
   case 2 :
     if ((rx_type==rx_standard) || (codeword_TB1 == -1)) {
+
+
         dlsch_qpsk_llr(frame_parms,
                        pdsch_vars[eNB_id]->rxdataF_comp0,
                        (int16_t*)pllr_symbol_cw0,
@@ -6027,9 +6022,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 
 //==============================================================================================
 
-#ifdef USER_MODE
-
-
 void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,unsigned int *coded_bits_per_codeword,int round,  unsigned char harq_pid)
 {
   unsigned int nsymb = (ue->frame_parms.Ncp == 0) ? 14 : 12;
@@ -6119,7 +6111,6 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,unsigned int *c
 
   //  printf("log2_maxh = %d\n",ue->pdsch_vars[eNB_id]->log2_maxh);
 }
-#endif
 
 #ifdef DEBUG_DLSCH_DEMOD
 /*

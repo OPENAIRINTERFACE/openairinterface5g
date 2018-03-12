@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -91,7 +91,6 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
                   eNB->ulsch[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
                   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
 
-#if defined(USER_MODE)
   Msc_idx_ptr = (uint16_t*) bsearch(&Msc_RS, dftsizes, 33, sizeof(uint16_t), compareints);
 
   if (Msc_idx_ptr)
@@ -101,26 +100,14 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
     return(-1);
   }
 
-#else
-  uint8_t b;
-
-  for (b=0; b<33; b++)
-    if (Msc_RS==dftsizes[b])
-      Msc_RS_idx = b;
-
-#endif
-
-  //  LOG_I(PHY,"subframe %d, Ns %d, l %d, Msc_RS = %d, Msc_RS_idx = %d, u %d, v %d, cyclic_shift %d\n",subframe,Ns,l,Msc_RS, Msc_RS_idx,u,v,cyclic_shift);
+  LOG_D(PHY,"subframe %d, Ns %d, l %d, Msc_RS = %d, Msc_RS_idx = %d, u %d, v %d, cyclic_shift %d\n",subframe,Ns,l,Msc_RS, Msc_RS_idx,u,v,cyclic_shift);
 #ifdef DEBUG_CH
-
-#ifdef USER_MODE
 
   if (Ns==0)
     write_output("drs_seq0.m","drsseq0",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
   else
     write_output("drs_seq1.m","drsseq1",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
 
-#endif
 #endif
 
 
@@ -304,7 +291,7 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
 
 #ifdef DEBUG_CH
 
-      if (aa==0) {
+      if (aa==1) {
         if (Ns == 0) {
           write_output("rxdataF_ext.m","rxF_ext",&rxdataF_ext[aa][symbol_offset],512*2,2,1);
           write_output("tmpin_ifft.m","drs_in",temp_in_ifft_0,512,1,1);
@@ -489,12 +476,10 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			   15,
 			   0);
 
-#ifdef USER_MODE
 #ifdef DEBUG_SRS
       sprintf(fname,"srs_ch_est%d.m",aa);
       sprintf(vname,"srs_est%d",aa);
       write_output(fname,vname,srs_vars->srs_ch_estimates[aa],frame_parms->ofdm_symbol_size,1,1);
-#endif
 #endif
     }
 

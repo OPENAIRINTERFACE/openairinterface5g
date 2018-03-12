@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -682,10 +682,6 @@ rlc_um_data_req (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP, mem_block_t
 {
   rlc_um_entity_t *rlc_p = (rlc_um_entity_t *) rlc_pP;
 
-#if ! USER_MODE
-  unsigned long int rlc_um_time_us;
-  int min, sec, usec;
-#endif
 #if TRACE_RLC_UM_PDU
 #if ENABLE_ITTI
   MessageDef          *msg_p;

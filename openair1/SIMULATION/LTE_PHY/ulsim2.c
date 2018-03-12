@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -29,9 +29,6 @@
 #include "MAC_INTERFACE/vars.h"
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"
-#endif
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
 #endif
 
 #define BW 10.0
@@ -68,12 +65,6 @@ int main(int argc, char **argv)
   double nf[2] = {3.0,3.0}; //currently unused
   double ip =0.0;
   double N0W, path_loss, path_loss_dB;
-
-#ifdef EMOS
-  fifo_dump_emos emos_dump;
-#endif
-
-
 
   if (argc>1)
     sigma2_dB = atoi(argv[1]);
