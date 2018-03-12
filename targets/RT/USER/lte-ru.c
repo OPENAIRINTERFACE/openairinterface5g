@@ -1552,7 +1552,7 @@ static void* ru_thread_control( void* param ) {
   RU_proc_t          *proc    = &ru->proc;
   RRU_CONFIG_msg_t   rru_config_msg;
   ssize_t	     msg_len;
-  int                len;
+  int                len, ret;
 
 
   // Start IF device if any
