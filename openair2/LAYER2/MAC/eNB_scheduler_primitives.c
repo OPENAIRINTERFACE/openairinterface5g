@@ -308,6 +308,34 @@ get_Msg3allocret(COMMON_channels_t * cc,
   }
 }
 
+uint8_t pusch_sf_to_phich_sfoffset(COMMON_channels_t * cc, sub_frame_t subframe) {
+
+   if (cc->tdd_Config == NULL) return(4);
+   else 
+     switch (cc->tdd_Config->subframeAssignment) {
+       case 0:
+         if (subframe==2 || subframe==7) return(4);
+         else if (subframe==3 || subframe==8) return(7);
+         else if (subframe==4 || subframe==9) return(6);
+         break;
+       case 1:
+         if (subframe==2 || subframe==7) return(4);
+         else return(6);
+         break;
+       case 2:
+       case 3:
+       case 4:
+       case 5:
+	return (6);
+    	break;
+       case 6:
+         if (subframe==2 || subframe==7) return(4);
+         else if (subframe==3 || subframe==4) return(6);
+         else if (subframe==8) return(7);
+         break;
+      }
+}
+
 uint8_t
 subframe2harqpid(COMMON_channels_t * cc, frame_t frame,
 		 sub_frame_t subframe)
@@ -316,9 +344,9 @@ subframe2harqpid(COMMON_channels_t * cc, frame_t frame,
 
   AssertFatal(cc != NULL, "cc is null\n");
 
-  if (cc->tdd_Config == NULL) {	// FDD
+//  if (cc->tdd_Config == NULL) {	// FDD
     ret = (((frame << 1) + subframe) & 7);
-  } else {
+ /* } else {
     switch (cc->tdd_Config->subframeAssignment) {
     case 1:
       if ((subframe == 2) ||
@@ -381,6 +409,7 @@ subframe2harqpid(COMMON_channels_t * cc, frame_t frame,
 		  (int) cc->tdd_Config->subframeAssignment);
     }
   }
+*/
   return ret;
 }
 

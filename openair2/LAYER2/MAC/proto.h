@@ -1034,6 +1034,8 @@ uint8_t getQm(uint8_t mcs);
 uint8_t subframe2harqpid(COMMON_channels_t * cc, frame_t frame,
 			 sub_frame_t subframe);
 
+uint8_t pusch_sf_to_phich_sfoffset(COMMON_channels_t * cc, sub_frame_t subframe);
+
 void get_srs_pos(COMMON_channels_t * cc, uint16_t isrs,
 		 uint16_t * psrsPeriodicity, uint16_t * psrsOffset);
 

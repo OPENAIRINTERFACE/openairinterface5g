@@ -537,7 +537,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No existing UE ULSCH for rnti %x\n",rel8->rnti);
-    LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d, modulation %d, rvidx %d\n", UE_id,rel8->rnti,frame,subframe,rel8->modulation_type,rel8->redundancy_version);
+    LOG_I(PHY,"Applying UL config for UE %d, rnti %x in frame %d, subframe %d, modulation %d, rvidx %d\n", UE_id,rel8->rnti,frame,subframe,rel8->modulation_type,rel8->redundancy_version);
 
     fill_ulsch(eNB,&ul_config_pdu->ulsch_pdu,frame,subframe);
 
@@ -655,7 +655,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   eNB->pdcch_vars[subframe&1].num_dci           = 0;
   eNB->phich_vars[subframe&1].num_hi            = 0;
 
-  LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SF:%04d%d DL_req:SFN/SF:%04d%d:dl_pdu:%d tx_req:SFN/SF:%04d%d:pdus:%d hi_dci0:SFN/SF:%04d%d:pdus:%d ul_cfg:SFN/SF:%04d%d:pdus:%d num_pdcch_symbols:%d\n",
+  LOG_I(PHY,"NFAPI: Sched_INFO:SFN/SF:%04d%d DL_req:SFN/SF:%04d%d:dl_pdu:%d tx_req:SFN/SF:%04d%d:pdus:%d hi_dci0:SFN/SF:%04d%d:pdus:%d ul_cfg:SFN/SF:%04d%d:pdus:%d num_pdcch_symbols:%d\n",
         frame,subframe,
         NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),number_dl_pdu,
         NFAPI_SFNSF2SFN(TX_req->sfn_sf),NFAPI_SFNSF2SF(TX_req->sfn_sf),TX_req->tx_request_body.number_of_pdus,
@@ -831,7 +831,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   else {
     for (i=0;i<number_ul_pdu;i++) {
       ul_config_pdu = &UL_req->ul_config_request_body.ul_config_pdu_list[i];
-      LOG_D(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
+      LOG_I(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
       AssertFatal(ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE ||
           ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE ||
           ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE ||

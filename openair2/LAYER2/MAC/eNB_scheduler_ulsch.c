@@ -224,7 +224,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 		radioResourceConfigCommon->rach_ConfigCommon.
 		maxHARQ_Msg3Tx);
 
-    LOG_D(MAC,
+    LOG_I(MAC,
 	  "[eNB %d][PUSCH %d] CC_id %d [RAPROC Msg3] Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",
 	  enb_mod_idP, harq_pid, CC_idP, ra[RA_id].msg3_round,
 	  current_rnti, RA_id, ul_cqi);
@@ -232,7 +232,7 @@ rx_sdu(const module_id_t enb_mod_idP,
     first_rb = ra->msg3_first_rb;
 
     if (sduP == NULL) {	// we've got an error on Msg3
-      LOG_D(MAC,
+      LOG_I(MAC,
 	    "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
 	    enb_mod_idP, CC_idP, RA_id,
 	    ra[RA_id].msg3_round,
@@ -704,7 +704,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   hi_dci0_req_body->number_of_hi++;
   hi_dci0_req_body->sfnsf = sfnsf_add_subframe(frameP,subframeP, 0);
   hi_dci0_req_body->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
-  hi_dci0_req->sfn_sf = sfnsf_add_subframe(frameP,subframeP, 4);
+  hi_dci0_req->sfn_sf = sfnsf_add_subframe(frameP,subframeP, pusch_sf_to_phich_sfoffset(& RC.mac[enb_mod_idP]->common_channels[CC_idP],subframeP));
   hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
 
   /* NN--> FK: we could either check the payload, or use a phy helper to detect a false msg3 */

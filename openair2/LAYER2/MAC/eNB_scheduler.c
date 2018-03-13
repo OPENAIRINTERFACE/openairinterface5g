@@ -476,7 +476,7 @@ copy_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
     nfapi_ul_config_request_pdu_t *ul_req_pdu         = ul_req->ul_config_request_body.ul_config_pdu_list;
 
     *ul_req = *ul_req_tmp;
-
+    LOG_D(MAC,"SFN.SF %d.%d: Copying %d UL pdus to UL_req (sfn_sf %d.%d)\n",frameP,subframeP,ul_req->ul_config_request_body.number_of_pdus,ul_req->sfn_sf>>4,ul_req->sfn_sf&0xf);
     // Restore the pointer
     ul_req->ul_config_request_body.ul_config_pdu_list = ul_req_pdu;
     ul_req->sfn_sf                                    = (frameP<<4) + subframeP;
@@ -484,8 +484,9 @@ copy_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 
     if (ul_req->ul_config_request_body.number_of_pdus>0)
       {
-        LOG_D(PHY, "%s() active NOW (frameP:%d subframeP:%d) pdus:%d\n", __FUNCTION__, frameP, subframeP, ul_req->ul_config_request_body.number_of_pdus);
+        LOG_D(MAC, "%s() active NOW (frameP:%d subframeP:%d) pdus:%d\n", __FUNCTION__, frameP, subframeP, ul_req->ul_config_request_body.number_of_pdus);
       }
+
 
     memcpy((void*)ul_req->ul_config_request_body.ul_config_pdu_list,
 	   (void*)ul_req_tmp->ul_config_request_body.ul_config_pdu_list,

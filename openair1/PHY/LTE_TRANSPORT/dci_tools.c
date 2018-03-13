@@ -2660,7 +2660,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
   else if(ulsch->harq_processes[harq_pid]->n_DMRS == 7)
     ulsch->harq_processes[harq_pid]->n_DMRS2 = 9;
   
-  LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d, Subframe %d Programming PUSCH with n_DMRS2 %d (cshift %d) ulsch:ndi:%d ulsch_pdu:ndi:%d new_ulsch:%d status:%d ulsch_pdu:rvidx:%d\n",
+  LOG_I(PHY,"[eNB %d][PUSCH %d] Frame %d, Subframe %d Programming PUSCH with n_DMRS2 %d (cshift %d) ulsch:ndi:%d ulsch_pdu:ndi:%d new_ulsch:%d status:%d ulsch_pdu:rvidx:%d\n",
 	eNB->Mod_id,harq_pid,frame,subframe,
         ulsch->harq_processes[harq_pid]->n_DMRS2,
         ulsch->harq_processes[harq_pid]->n_DMRS,
@@ -2692,7 +2692,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame
   else  ulsch->harq_processes[harq_pid]->round++;
 
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;
-  LOG_D(PHY,"Filling ULSCH %x (UE_id %d) (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, status %d, handled %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
+  LOG_I(PHY,"Filling ULSCH %x (UE_id %d) (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, status %d, handled %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
 	ulsch->rnti,
         UE_id,
         new_ulsch,
@@ -6465,9 +6465,9 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
 {
   uint8_t ret = 255;
 
-  if (frame_parms->frame_type == FDD) {
+//  if (frame_parms->frame_type == FDD) {
     ret = (((frame*10)+subframe)&7);
-  } else {
+ /* } else {
 
     switch (frame_parms->tdd_config) {
 
@@ -6535,6 +6535,7 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
 
   AssertFatal(ret!=255,
 	      "invalid harq_pid(%d) at SFN/SF = %d/%d\n", (int8_t)ret, frame, subframe);
+*/
   return ret;
 }
 
