@@ -22,7 +22,7 @@
 /*!\brief Initilization and reconfiguration routines for LTE PHY */
 #include "defs.h"
 #include "PHY/extern.h"
-
+#include "PHY/CODING/extern.h"
 void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 {
 
@@ -34,15 +34,12 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
   ccodelte_init();
   ccodelte_init_inv();
 
-  treillis_table_init();
+
 
   phy_generate_viterbi_tables();
   phy_generate_viterbi_tables_lte();
-  init_td8();
-  init_td16();
-#ifdef __AVX2__
-  init_td16avx2();
-#endif
+
+  load_codinglib();
   lte_sync_time_init(frame_parms);
 
   generate_ul_ref_sigs();
@@ -61,11 +58,7 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 
 void free_lte_top(void)
 {
-  free_td8();
-  free_td16();
-#ifdef __AVX2__
-  free_td16avx2();
-#endif
+  free_codinglib();
   lte_sync_time_free();
 
   /* free_ul_ref_sigs() is called in phy_free_lte_eNB() */

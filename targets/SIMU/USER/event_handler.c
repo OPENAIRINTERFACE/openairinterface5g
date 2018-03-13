@@ -685,8 +685,8 @@ void update_mac(Event_t event)
         LOG_I(EMU,"%" PRIu8 "\n",UE_list->UE_sched_ctrl[event.ue].priority[event.lcid]);
       }
     } else if(!strcmp((char *) event.key, "DCI_aggregation_min") && event.value!=NULL && validate_mac(event)) {
-      Mac_config* mac_config;// = malloc(sizeof(Mac_config)*16);
-      mac_config = (Mac_config *) event.value;
+      //Mac_config* mac_config;// = malloc(sizeof(Mac_config)*16);
+      //mac_config = (Mac_config *) event.value;
 
       LOG_I(EMU,"DCI_aggregation_min update \n");
 
@@ -706,8 +706,8 @@ void update_mac(Event_t event)
         LOG_I(EMU,"%" PRIu8 "\n",UE_list->UE_template[0][event.ue].DCI_aggregation_min);*/
       }
     } else if(!strcmp((char *) event.key, "DLSCH_dci_size_bits") && event.value!=NULL && validate_mac(event)) {
-      Mac_config* mac_config;// = malloc(sizeof(Mac_config)*16);
-      mac_config = (Mac_config *) event.value;
+      //Mac_config* mac_config;// = malloc(sizeof(Mac_config)*16);
+      //mac_config = (Mac_config *) event.value;
 
 
       LOG_I(EMU,"DLSCH_dci_size_bits update \n");

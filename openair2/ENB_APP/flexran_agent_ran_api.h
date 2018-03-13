@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -106,6 +106,81 @@ void flexran_update_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id); */
 /* Return timing advance MAC control element for a designated cell and UE */
 /* this function is broken */
 int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
+
+/*Get number of mac SDU DL*/
+uint32_t flexran_get_num_mac_sdu_tx(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Return the MAC sdu size got from logical channel lcid */
+uint32_t flexran_get_mac_sdu_size(mid_t mod_id, mid_t ue_id, int cc_id, int lcid);
+
+/*Return number of MAC SDUs obtained in MAC layer*/
+uint32_t flexran_get_num_mac_sdu_tx(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get mac sdu lcid index*/
+unsigned char flexran_get_mac_sdu_lcid_index(mid_t mod_id, mid_t ue_id, int cc_id, int index);
+
+/*Get MAC size sdus length dl*/
+uint32_t flexran_get_size_dl_mac_sdus(mid_t mod_id, int cc_id);
+
+/*Get MAC size sdus length ul */
+uint32_t flexran_get_size_ul_mac_sdus(mid_t mod_id, int cc_id);
+
+/*Get total size DL MAC SDUS*/
+uint32_t flexran_get_total_size_dl_mac_sdus(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get total size of UL mac SDUS*/
+uint32_t flexran_get_total_size_ul_mac_sdus(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get total number of PDU DL*/
+uint32_t flexran_get_total_num_pdu_dl(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get total number of PDU UL*/
+uint32_t flexran_get_total_num_pdu_ul(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get total PRB dl TODO Should be changed*/
+uint32_t flexran_get_total_prb_dl_tx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get total PRB ul TODO Should be changed*/
+uint32_t flexran_get_total_prb_ul_rx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get number of prb for tx per UE DL*/
+uint16_t flexran_get_num_prb_dl_tx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get number of prb for rx per UE UL*/
+uint16_t flexran_get_num_prb_ul_rx_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get number of prb for retx per UE UL*/
+uint32_t flexran_get_num_prb_retx_ul_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get number of prb for retx per UE*/
+uint16_t flexran_get_num_prb_retx_dl_per_ue(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*MCS before rate adaptation DL*/
+uint8_t flexran_get_mcs1_dl(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*MCS after rate adaptation DL*/
+uint8_t flexran_get_mcs2_dl(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*MCS before rate adaptation UL*/
+uint8_t flexran_get_mcs1_ul(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*MCS after rate adaptation UL*/
+uint8_t flexran_get_mcs2_ul(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get downlink TBS*/
+uint32_t flexran_get_TBS_dl(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get uplink TBS */
+uint32_t flexran_get_TBS_ul(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get total TBS DL*/
+uint64_t flexran_get_total_TBS_dl(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/*Get total TBS DL*/
+uint64_t flexran_get_total_TBS_ul(mid_t mod_id, mid_t ue_id, int cc_id);
+
+/* Get the current HARQ round for UE ue_id */
+int flexran_get_harq_round(mid_t mod_id, uint8_t cc_id, mid_t ue_id);
 
 /* Get the number of active component carriers for a specific UE */
 int flexran_get_active_CC(mid_t mod_id, mid_t ue_id);

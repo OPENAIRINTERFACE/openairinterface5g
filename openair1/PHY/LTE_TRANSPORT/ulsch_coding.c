@@ -371,13 +371,13 @@ uint32_t ulsch_encoding(uint8_t *a,
         printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
         start_meas(te_stats);
-        threegpplte_turbo_encoder(ulsch->harq_processes[harq_pid]->c[r],
-                                  Kr>>3,
-                                  &ulsch->harq_processes[harq_pid]->d[r][96],
-                                  (r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
-                                  f1f2mat_old[iind*2],   // f1 (see 36212-820, page 14)
-                                  f1f2mat_old[(iind*2)+1]  // f2 (see 36212-820, page 14)
-                                 );
+        encoder(ulsch->harq_processes[harq_pid]->c[r],
+        	Kr>>3,
+        	&ulsch->harq_processes[harq_pid]->d[r][96],
+        	(r==0) ? ulsch->harq_processes[harq_pid]->F : 0,
+        	f1f2mat_old[iind*2],   // f1 (see 36212-820, page 14)
+        	f1f2mat_old[(iind*2)+1]  // f2 (see 36212-820, page 14)
+               );
         stop_meas(te_stats);
 #ifdef DEBUG_ULSCH_CODING
 

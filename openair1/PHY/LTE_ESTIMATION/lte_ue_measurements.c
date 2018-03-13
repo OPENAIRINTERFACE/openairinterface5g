@@ -207,10 +207,8 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
              ((ue->frame_parms.frame_type == TDD) && ((subframe == 1) || (subframe == 6)))
                 )
         {  // FDD PSS/SSS, compute noise in DTX REs
-
-          if (ue->frame_parms.Ncp==NORMAL) {
+          if (ue->frame_parms.Ncp == NORMAL) {
             for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
-
           if(ue->frame_parms.frame_type == FDD)
           {
 	      rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[aarx][(5*ue->frame_parms.ofdm_symbol_size)];
@@ -266,7 +264,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
         ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot/(12*aarx));
         ue->measurements.n0_power_tot_dBm = ue->measurements.n0_power_tot_dB - ue->rx_total_gain_dB - dB_fixed(ue->frame_parms.ofdm_symbol_size);
         } else {
-            LOG_E(PHY, "Not yet implemented: noise power calculation when prefix length = EXTENDED\n");
+            LOG_E(PHY, "Not yet implemented: noise power calculation when prefix length == EXTENDED\n");
         }
         }
         else if ((ue->frame_parms.frame_type == TDD) &&

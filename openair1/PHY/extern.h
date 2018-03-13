@@ -126,6 +126,6 @@ extern unsigned short Nb_81_110[8][4];
 
 extern uint16_t hundred_times_log10_NPRB[100];
 extern uint8_t alpha_lut[8];
-
+extern uint8_t max_turbo_iterations;
 #endif /*__PHY_EXTERN_H__ */
 

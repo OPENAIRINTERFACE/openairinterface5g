@@ -54,6 +54,7 @@ MESSAGE_DEF(RRC_STATE_IND,              MESSAGE_PRIORITY_MED,       RrcStateInd,
 //-------------------------------------------------------------------------------------------//
 // eNB: ENB_APP -> RRC messages
 MESSAGE_DEF(RRC_CONFIGURATION_REQ,      MESSAGE_PRIORITY_MED,       RrcConfigurationReq,        rrc_configuration_req)
+MESSAGE_DEF(NBIOTRRC_CONFIGURATION_REQ, MESSAGE_PRIORITY_MED,       NbIoTRrcConfigurationReq,   nbiotrrc_configuration_req)
 
 // UE: NAS -> RRC messages
 MESSAGE_DEF(NAS_KENB_REFRESH_REQ,       MESSAGE_PRIORITY_MED,       NasKenbRefreshReq,          nas_kenb_refresh_req)
