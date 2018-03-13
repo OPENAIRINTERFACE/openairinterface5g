@@ -48,7 +48,11 @@ float     slice_percentage_current[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
 float     slice_percentage_total = 0;
 float     slice_percentage_total_current = 0;
 float     slice_percentage_avg = 0.25;
+
 int       slice_isolation[MAX_NUM_SLICES] = {0, 0, 0, 0};
+int       slice_isolation_current[MAX_NUM_SLICES] = {0, 0, 0, 0};
+int       slice_priority[MAX_NUM_SLICES] = {10, 5, 2, 0};
+int       slice_priority_current[MAX_NUM_SLICES] = {10, 5, 2, 0};
 
 // Frequency ranges for slice positioning
 int       slice_position[MAX_NUM_SLICES*2]         = {0, N_RBG_MAX, 0, N_RBG_MAX, 0, N_RBG_MAX, 0, N_RBG_MAX};
@@ -59,12 +63,12 @@ int       slice_maxmcs[MAX_NUM_SLICES]         = { 28, 28, 28, 28 };
 int       slice_maxmcs_current[MAX_NUM_SLICES] = { 28, 28, 28, 28 };
 
 // The lists of criteria that enforce the sorting policies of the slices
-uint32_t  slice_sorting_policy[MAX_NUM_SLICES]         = {0x01234, 0x01234, 0x01234, 0x01234};
-uint32_t  slice_sorting_policy_current[MAX_NUM_SLICES] = {0x01234, 0x01234, 0x01234, 0x01234};
+uint32_t  slice_sorting[MAX_NUM_SLICES]         = {0x012345, 0x012345, 0x012345, 0x012345};
+uint32_t  slice_sorting_current[MAX_NUM_SLICES] = {0x012345, 0x012345, 0x012345, 0x012345};
 
 // Accounting policy (just greedy(1) or fair(0) setting for now)
-int       slice_accounting_policy[MAX_NUM_SLICES]         = {0, 0, 0, 0};
-int       slice_accounting_policy_current[MAX_NUM_SLICES] = {0, 0, 0, 0};
+int       slice_accounting[MAX_NUM_SLICES]         = {0, 0, 0, 0};
+int       slice_accounting_current[MAX_NUM_SLICES] = {0, 0, 0, 0};
 
 int       update_dl_scheduler[MAX_NUM_SLICES]         = { 1, 1, 1, 1 };
 int       update_dl_scheduler_current[MAX_NUM_SLICES] = { 1, 1, 1, 1 };

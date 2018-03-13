@@ -260,9 +260,15 @@ void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
                                                       uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
                                                       uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
+void slice_priority_sort(int slice_list[MAX_NUM_SLICES]);
+
 void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
                                              int frameP,
                                              sub_frame_t subframeP);
+
+void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id,
+                                      int frameP,
+                                      sub_frame_t subframeP);
 
 void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
                                             int UE_id,

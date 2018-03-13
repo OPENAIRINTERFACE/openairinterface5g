@@ -70,6 +70,7 @@ extern RAN_CONTEXT_t RC;
 extern uint8_t nfapi_mode;
 extern pre_processor_results_t pre_processor_results[MAX_NUM_SLICES];
 extern int slice_isolation[MAX_NUM_SLICES];
+extern int slice_priority[MAX_NUM_SLICES];
 
 //------------------------------------------------------------------------------
 void
@@ -534,23 +535,44 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
     }
 
     // Check for new sorting policy
-    if (slice_sorting_policy_current[i] != slice_sorting_policy[i]) {
+    if (slice_sorting_current[i] != slice_sorting[i]) {
       LOG_I(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: UE sorting policy has changed (%x-->%x)\n",
-            module_idP, i, frameP, subframeP, slice_sorting_policy_current[i], slice_sorting_policy[i]);
-      slice_sorting_policy_current[i] = slice_sorting_policy[i];
+            module_idP, i, frameP, subframeP, slice_sorting_current[i], slice_sorting[i]);
+      slice_sorting_current[i] = slice_sorting[i];
+    }
+
+    // Check for new slice isolation
+    if (slice_isolation_current[i] != slice_isolation[i]) {
+      if (slice_isolation[i] != 1 && slice_isolation[i] != 0) {
+        LOG_W(MAC,
+              "[eNB %d][SLICE %d][DL] frame %d subframe %d: invalid slice isolation setting (%d), revert to its previous value (%d)\n",
+              module_idP, i, frameP, subframeP, slice_isolation[i], slice_isolation_current[i]);
+        slice_isolation[i] = slice_isolation_current[i];
+      } else {
+        LOG_I(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: slice isolation setting has changed (%x-->%x)\n",
+              module_idP, i, frameP, subframeP, slice_isolation_current[i], slice_isolation[i]);
+        slice_isolation_current[i] = slice_isolation[i];
+      }
+    }
+
+    // Check for new slice priority
+    if (slice_priority_current[i] != slice_priority[i]) {
+      LOG_I(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: slice priority setting has changed (%x-->%x)\n",
+            module_idP, i, frameP, subframeP, slice_priority_current[i], slice_priority[i]);
+      slice_priority_current[i] = slice_priority[i];
     }
 
     // Check for new accounting policy
-    if (slice_accounting_policy_current[i] != slice_accounting_policy[i]) {
-      if (slice_accounting_policy[i] > 1 || slice_accounting_policy[i] < 0) {
+    if (slice_accounting_current[i] != slice_accounting[i]) {
+      if (slice_accounting[i] > 1 || slice_accounting[i] < 0) {
         LOG_W(MAC,
               "[eNB %d][SLICE %d][DL] frame %d subframe %d: invalid accounting policy (%d), revert to its previous value (%d)\n",
-              module_idP, i, frameP, subframeP, slice_accounting_policy[i], slice_accounting_policy_current[i]);
-        slice_accounting_policy[i] = slice_accounting_policy_current[i];
+              module_idP, i, frameP, subframeP, slice_accounting[i], slice_accounting_current[i]);
+        slice_accounting[i] = slice_accounting_current[i];
       } else {
         LOG_N(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: UE sorting policy has changed (%x-->%x)\n",
-              module_idP, i, frameP, subframeP, slice_accounting_policy_current[i], slice_accounting_policy[i]);
-        slice_accounting_policy_current[i] = slice_accounting_policy[i];
+              module_idP, i, frameP, subframeP, slice_accounting_current[i], slice_accounting[i]);
+        slice_accounting_current[i] = slice_accounting[i];
       }
     }
 
@@ -1570,6 +1592,7 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id, int frameP, sub
   COMMON_channels_t *cc;
   int N_RBG[NFAPI_CC_MAX];
 
+  int slice_sorted_list[MAX_NUM_SLICES], slice_id;
   int8_t free_rbgs_map[NFAPI_CC_MAX][N_RBG_MAX];
   int has_traffic[NFAPI_CC_MAX][MAX_NUM_SLICES];
   uint8_t allocation_mask[NFAPI_CC_MAX][N_RBG_MAX];
@@ -1613,7 +1636,7 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id, int frameP, sub
     }
   }
 
-  // TODO: Sort slices by priority and use the sorted list in the code below (For now we assume 0 = max_priority)
+  slice_priority_sort(slice_sorted_list);
 
   // MULTIPLEXING
   // This part is an adaptation of dlsch_scheduler_pre_processor_allocate() code
@@ -1623,8 +1646,9 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id, int frameP, sub
     min_rb_unit = get_min_rb_unit(Mod_id, CC_id);
 
     for (i = 0; i < n_active_slices; ++i) {
+      slice_id = slice_sorted_list[i];
 
-      if (has_traffic[CC_id][i] == 0) continue;
+      if (has_traffic[CC_id][slice_id] == 0) continue;
 
       // Build an ad-hoc allocation mask fo the slice
       for (rbg = 0; rbg < N_RBG[CC_id]; ++rbg) {
@@ -1644,12 +1668,13 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id, int frameP, sub
 
       // Sort UE again
       // (UE list gets sorted every time pre_processor is called so it is probably dirty at this point)
-      sort_UEs(Mod_id, (slice_id_t) i, frameP, subframeP);
+      // FIXME: There is only one UE_list for all slices, so it must be sorted again each time we use it
+      sort_UEs(Mod_id, (slice_id_t) slice_id, frameP, subframeP);
 
-      nb_rbs_remaining = pre_processor_results[i].nb_rbs_remaining;
-      nb_rbs_required = pre_processor_results[i].nb_rbs_required;
-      rballoc_sub = pre_processor_results[i].slice_allocated_rbgs;
-      MIMO_mode_indicator = pre_processor_results[i].MIMO_mode_indicator;
+      nb_rbs_remaining = pre_processor_results[slice_id].nb_rbs_remaining;
+      nb_rbs_required = pre_processor_results[slice_id].nb_rbs_required;
+      rballoc_sub = pre_processor_results[slice_id].slice_allocated_rbgs;
+      MIMO_mode_indicator = pre_processor_results[slice_id].MIMO_mode_indicator;
 
       // Allocation
       for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -1698,6 +1723,32 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id, int frameP, sub
     }
   }
 }
+
+//------------------------------------------------------------------------------
+void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id, int frameP, sub_frame_t subframeP)
+//------------------------------------------------------------------------------
+{
+  int UE_id, CC_id, i;
+  UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
+  UE_sched_ctrl *ue_sched_ctl;
+
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; ++CC_id) {
+    for (i = 0; i < n_active_slices; ++i) {
+
+      // Sort UE again
+      // FIXME: There is only one UE_list for all slices, so it must be sorted again each time we use it
+      sort_UEs(Mod_id, (slice_id_t) i, frameP, subframeP);
+
+      for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+        ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+
+        // TODO: Do something here
+        ue_sched_ctl->pre_nb_available_rbs[CC_id];
+      }
+    }
+  }
+}
+
 
 //------------------------------------------------------------------------------
 void
@@ -2251,4 +2302,25 @@ void schedule_PCH(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
   /* this might be misleading when pcch is inactive */
   stop_meas(&eNB->schedule_pch);
   return;
+}
+
+static int slice_priority_compare(const void *_a, const void *_b) {
+
+  int slice_id1 = *(const int *) _a;
+  int slice_id2 = *(const int *) _b;
+
+  if (slice_priority[slice_id1] > slice_priority[slice_id2]) {
+    return -1;
+  }
+  return 1;
+}
+
+void slice_priority_sort(int slice_list[MAX_NUM_SLICES]) {
+
+  int i;
+  for (i = 0; i < MAX_NUM_SLICES; ++i) {
+    slice_list[i] = i;
+  }
+
+  qsort(slice_list, MAX_NUM_SLICES, sizeof(int), slice_priority_compare);
 }
