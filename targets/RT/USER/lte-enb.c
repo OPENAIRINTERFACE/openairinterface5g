@@ -446,6 +446,8 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
 {
   eNB_proc_t *proc           = &eNB->proc;
   eNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[0];
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  RU_proc_t *ru_proc=&ru->proc;
 
   proc->frame_rx    = frame_rx;
   proc->subframe_rx = subframe_rx;
@@ -453,14 +455,16 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
   if (!oai_exit) {
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
 
-    proc_rxtx->subframe_rx = proc->subframe_rx;
-    proc_rxtx->frame_rx    = proc->frame_rx;
-    proc_rxtx->subframe_tx = (proc->subframe_rx+sf_ahead)%10;
-    proc_rxtx->frame_tx    = (proc->subframe_rx>(9-sf_ahead)) ? (1+proc->frame_rx)&1023 : proc->frame_rx;
-    proc->frame_tx         = proc_rxtx->frame_tx;
-    proc_rxtx->timestamp_tx = proc->timestamp_tx;
+    proc_rxtx->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
+    proc_rxtx->frame_rx     = ru_proc->frame_rx;
+    proc_rxtx->subframe_rx  = ru_proc->subframe_rx;
+    proc_rxtx->frame_tx     = (proc_rxtx->subframe_rx > (9-sf_ahead)) ? (proc_rxtx->frame_rx+1)&1023 : proc_rxtx->frame_rx;
+    proc_rxtx->subframe_tx  = (proc_rxtx->subframe_rx + sf_ahead)%10;
 
     if (rxtx(eNB,proc_rxtx,string) < 0) LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
+    ru_proc->timestamp_tx = proc_rxtx->timestamp_tx;
+    ru_proc->subframe_tx  = proc_rxtx->subframe_tx;
+    ru_proc->frame_tx     = proc_rxtx->frame_tx;
   }
 }
 
@@ -511,7 +515,6 @@ int wakeup_tx(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc) {
   eNB_rxtx_proc_t *proc_rxtx1=&proc->proc_rxtx[1];//*proc_rxtx=&proc->proc_rxtx[proc->frame_rx&1];
   eNB_rxtx_proc_t *proc_rxtx0=&proc->proc_rxtx[0];
 
-  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   
   struct timespec wait;
   wait.tv_sec=0;
@@ -1034,12 +1037,9 @@ void kill_eNB_proc(int inst) {
     kill_td_thread(eNB);
     kill_te_thread(eNB);
     LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
-    proc_rxtx[0].instance_cnt_rxtx = 0; // FIXME data race!
-    proc_rxtx[1].instance_cnt_rxtx = 0; // FIXME data race!
     for (i=0; i<2; i++) {
       pthread_mutex_lock(&proc_rxtx[i].mutex_rxtx);
       proc_rxtx[i].instance_cnt_rxtx = 0;
-      pthread_cond_signal( &proc_rxtx[i].cond_rxtx );
       pthread_mutex_unlock(&proc_rxtx[i].mutex_rxtx);
     }
     proc->instance_cnt_prach = 0;
@@ -1064,7 +1064,6 @@ void kill_eNB_proc(int inst) {
     LOG_I(PHY, "Destroying UL_INFO mutex\n");
     pthread_mutex_destroy(&eNB->UL_INFO_mutex);
     for (i=0;i<2;i++) {
-      pthread_cond_signal( &proc_rxtx[i].cond_rxtx );
       LOG_I(PHY, "Joining rxtx[%d] mutex/cond\n",i);
       pthread_join( proc_rxtx[i].pthread_rxtx, (void**)&status );
       LOG_I(PHY, "Destroying rxtx[%d] mutex/cond\n",i);

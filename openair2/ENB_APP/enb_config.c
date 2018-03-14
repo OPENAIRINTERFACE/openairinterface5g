@@ -210,8 +210,8 @@ void RCconfig_macrlc() {
     mac_top_init_eNB();   
     for (j=0;j<RC.nb_macrlc_inst;j++) {
 
-      RC.mac[j]->phy_test = *(MacRLC_ParamList.paramarray[j][MACRLC_PHY_TEST_IDX].iptr);
-      printf("PHY_TEST = %d,%d\n", RC.mac[j]->phy_test, j);
+      //RC.mac[j]->phy_test = *(MacRLC_ParamList.paramarray[j][MACRLC_PHY_TEST_IDX].iptr);
+      //printf("PHY_TEST = %d,%d\n", RC.mac[j]->phy_test, j);
 
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
 	// check number of instances is same as RRC/PDCP
