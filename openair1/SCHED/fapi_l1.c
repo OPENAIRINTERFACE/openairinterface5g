@@ -137,8 +137,12 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   int harq_pid;
 
   UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
-  AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
+  if( (UE_id<0) || (UE_id>=NUMBER_OF_UE_MAX) ){
+    LOG_E(PHY,"illegal UE_id found!!! rnti %04x UE_id %d\n",rel8->rnti,UE_id);
+    return;
+  }
+  //AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
+  //AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
 
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
@@ -176,9 +180,14 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
 
   if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
-    AssertFatal(sdu!=NULL,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
-                proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
-                dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
+    if(sdu == NULL) {
+      LOG_E(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
+        proc->frame_tx, proc->subframe_tx, rel8->rnti, UE_id, harq_pid, dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
+      return;
+    }
+    //AssertFatal(sdu!=NULL,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
+    //            proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
+    //            dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
     if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
                                     proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
     if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;

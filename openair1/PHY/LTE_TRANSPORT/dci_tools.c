@@ -1054,8 +1054,12 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci
   if ((rel8->rnti_type == 2 ) && (rel8->rnti != SI_RNTI) && (rel8->rnti != P_RNTI)) dci_alloc->ra_flag = 1;
 
   UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
-  AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
+  if( (UE_id<0) || (UE_id>=NUMBER_OF_UE_MAX) ){
+    LOG_E(PHY,"illegal UE_id found!!! rnti %04x UE_id %d\n",rel8->rnti,UE_id);
+    return;
+  }
+  //AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
+  //AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
 
@@ -2298,8 +2302,12 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
   if (rel13->rnti_type == 2 ) dci_alloc->ra_flag = 1;
 
   UE_id = find_dlsch(rel13->rnti,eNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
-  AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
+  if( (UE_id<0) || (UE_id>=NUMBER_OF_UE_MAX) ){
+    LOG_E(PHY,"illegal UE_id found!!! rnti %04x UE_id %d\n",rel13->rnti,UE_id);
+    return;
+  }
+  //AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
+  //AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch0_harq                               = dlsch0->harq_processes[rel13->harq_process];
 
