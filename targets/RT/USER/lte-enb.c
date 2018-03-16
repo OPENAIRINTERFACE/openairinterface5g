@@ -1040,6 +1040,8 @@ void kill_eNB_proc(int inst) {
     for (i=0; i<2; i++) {
       pthread_mutex_lock(&proc_rxtx[i].mutex_rxtx);
       proc_rxtx[i].instance_cnt_rxtx = 0;
+      proc_rxtx[i].pipe_ready = 0;
+      pthread_cond_signal( &proc_rxtx[i].cond_rxtx );
       pthread_mutex_unlock(&proc_rxtx[i].mutex_rxtx);
     }
     proc->instance_cnt_prach = 0;

@@ -428,6 +428,7 @@ void *td_thread(void *param) {
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_td,&proc->cond_td,&proc->instance_cnt_td,"td thread")<0) break;  
+    if(oai_exit) break;
 
     ((td_params*)param)->ret = ulsch_decoding_data_2thread0((td_params*)param);
 

@@ -368,6 +368,7 @@ void *te_thread(void *param) {
   while (!oai_exit) {
 
     if (wait_on_condition(&tep->mutex_te,&tep->cond_te,&tep->instance_cnt_te,"te thread")<0) break;
+    if(oai_exit) break;
 
     dlsch_encoding_2threads0(tep);
 

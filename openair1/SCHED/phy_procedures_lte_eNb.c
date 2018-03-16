@@ -1415,8 +1415,8 @@ void kill_te_thread(PHY_VARS_eNB *eNB) {
     proc->tep[i].instance_cnt_te         = 0;
     pthread_cond_signal(&proc->tep[i].cond_te);
     pthread_join(proc->tep[i].pthread_te, NULL);
-    pthread_mutex_init( &proc->tep[i].mutex_te, NULL);
-    pthread_cond_init( &proc->tep[i].cond_te, NULL);
+    pthread_mutex_destroy( &proc->tep[i].mutex_te);
+    pthread_cond_destroy( &proc->tep[i].cond_te);
   }
 }
 
