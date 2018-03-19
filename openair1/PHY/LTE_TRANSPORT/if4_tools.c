@@ -67,7 +67,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
   if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
 
   if (packet_type == IF4p5_PDLFFT) {
-    //LOG_D(PHY,"send DL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
+    LOG_D(PHY,"send DL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
 
     if (subframe_select(fp,subframe)==SF_S)
       nsym=fp->dl_symbols_in_S_subframe;
@@ -124,6 +124,8 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
     db_halflength = (db_fulllength)>>1;
     slotoffsetF = 0;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
+
+    LOG_D(PHY,"send UL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
 
     if (subframe_select(fp,subframe)==SF_S) {
       nsym=fp->ul_symbols_in_S_subframe;
@@ -410,7 +412,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
     for (idx=0;idx<ru->num_eNB;idx++) ru->wakeup_prach_eNB(ru->eNB_list[idx],ru,*frame,*subframe);
 
   } else if (*packet_type == IF4p5_PULTICK) {
-
+    if (ru->idx==0) LOG_D(PHY,"UL_IF4p5: RU %d : frame %d, subframe %d, PULTICK\n",ru->idx,*frame,*subframe);
   } else {
     AssertFatal(1==0, "recv_IF4p5 - Unknown packet_type %x", *packet_type);            
   }

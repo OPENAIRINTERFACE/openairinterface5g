@@ -160,8 +160,8 @@ rx_sdu(const module_id_t enb_mod_idP,
 
   if (UE_id != -1) {
     LOG_D(MAC,
-	  "[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
-	  enb_mod_idP, harq_pid, CC_idP,
+	  "[eNB %d][PUSCH %d] SFN.SF %d.%d : CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
+	  enb_mod_idP, harq_pid, frameP,subframeP, CC_idP,
 	  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 	  current_rnti, UE_id, ul_cqi);
 
@@ -225,8 +225,8 @@ rx_sdu(const module_id_t enb_mod_idP,
 		maxHARQ_Msg3Tx);
 
     LOG_I(MAC,
-	  "[eNB %d][PUSCH %d] CC_id %d [RAPROC Msg3] Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",
-	  enb_mod_idP, harq_pid, CC_idP, ra[RA_id].msg3_round,
+	  "[eNB %d][PUSCH %d] SFN.SF %d.%d CC_id %d [RAPROC Msg3] : Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",
+	  enb_mod_idP, harq_pid, frameP,subframeP,CC_idP, ra[RA_id].msg3_round,
 	  current_rnti, RA_id, ul_cqi);
 
     first_rb = ra->msg3_first_rb;
@@ -247,9 +247,15 @@ rx_sdu(const module_id_t enb_mod_idP,
 	first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
 	ra[RA_id].msg3_round++;
 	// prepare handling of retransmission
-	ra[RA_id].Msg3_frame    = (ra[RA_id].Msg3_frame + ((ra[RA_id].Msg3_subframe > 1) ? 1 : 0)) % 1024;
-	ra[RA_id].Msg3_subframe = (ra[RA_id].Msg3_subframe + 8) % 10;
-	add_msg3(enb_mod_idP, CC_idP, &ra[RA_id], frameP, subframeP);
+	if (RC.mac[enb_mod_idP]->common_channels[CC_idP].tdd_Config == NULL) {
+	  ra[RA_id].Msg3_frame    = (ra[RA_id].Msg3_frame + ((ra[RA_id].Msg3_subframe > 1) ? 1 : 0)) % 1024;
+	  ra[RA_id].Msg3_subframe = (ra[RA_id].Msg3_subframe + 8) % 10;
+	}
+	else {
+	  ra[RA_id].Msg3_frame++; 
+	  ra[RA_id].Msg3_frame&=1023;
+	}
+	//	add_msg3(enb_mod_idP, CC_idP, &ra[RA_id], frameP, subframeP);
       }
       return;
     }
@@ -561,9 +567,10 @@ rx_sdu(const module_id_t enb_mod_idP,
 
 
 	  // Program Msg4 PDCCH+DLSCH/MPDCCH transmission 4 subframes from now, // Check if this is ok for BL/CE, or if the rule is different
+	  // make sure this works for all TDD configurations!
 	  ra->Msg4_frame = frameP + ((subframeP > 5) ? 1 : 0);
 	  ra->Msg4_subframe = (subframeP + 4) % 10;
-
+	  
 	}		// if process is active
       }			// loop on RA processes
 

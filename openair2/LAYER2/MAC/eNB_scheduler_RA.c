@@ -1053,11 +1053,17 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 		      "Frame %d, Subframe %d: Preparing for Msg4 retransmission currently %d.%d\n",
 		      frameP, subframeP, ra->Msg4_frame,
 		      ra->Msg4_subframe);
-		if (ra->Msg4_subframe > 1)
+		if (cc[CC_idP].tdd_Config == NULL) {
+		  if (ra->Msg4_subframe > 1)
 		    ra->Msg4_frame++;
-		ra->Msg4_frame &= 1023;
-		ra->Msg4_subframe = (ra->Msg4_subframe + 8) % 10;
-		LOG_D(MAC,
+		  ra->Msg4_frame &= 1023;
+		  ra->Msg4_subframe = (ra->Msg4_subframe + 8) % 10;
+		}
+		else {
+		  ra->Msg4_frame++;
+		  ra->Msg4_frame &= 1023;
+		}
+		LOG_I(MAC,
 		      "Frame %d, Subframe %d: Msg4 retransmission in %d.%d\n",
 		      frameP, subframeP, ra->Msg4_frame,
 		      ra->Msg4_subframe);
@@ -1132,7 +1138,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 
                 dl_req->sfn_sf = mac->TX_req[CC_idP].sfn_sf;
 
-		LOG_D(MAC, "Filling UCI ACK/NAK information, cce_idx %d\n",
+		LOG_I(MAC, "Filling UCI ACK/NAK information, cce_idx %d\n",
 		      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.cce_idx);
 		// Program PUCCH1a for ACK/NAK
 		// Program ACK/NAK for Msg4 PDSCH
@@ -1321,20 +1327,24 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 				      dci_dl_pdu_rel8.cce_idx);
 
 		// prepare frame for retransmission
-		if (ra->Msg4_subframe > 1)
+		if (cc->tdd_Config==NULL) {
+		  if (ra->Msg4_subframe > 1)
 		    ra->Msg4_frame++;
-		ra->Msg4_frame &= 1023;
-		ra->Msg4_subframe = (ra->Msg4_subframe + 8) % 10;
-
+		  ra->Msg4_frame &= 1023;
+		  ra->Msg4_subframe = (ra->Msg4_subframe + 8) % 10;
+		}
+		else ra->Msg4_frame++;
+		
 		LOG_W(MAC,
 		      "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Msg4 not acknowledged, adding ue specific dci (rnti %x) for RA (Msg4 Retransmission round %d in %d.%d)\n",
 		      module_idP, CC_idP, frameP, subframeP, ra->rnti,
 		      round, ra->Msg4_frame, ra->Msg4_subframe);
+		AssertFatal(1==0,"Shouldn't happen exit\n");
 
 	    }			// Msg4 frame/subframe
 	}			// regular LTE case
     } else {
-	LOG_D(MAC,
+	LOG_I(MAC,
 	      "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",
 	      module_idP, CC_idP, frameP, subframeP);
 	ra->state = IDLE;
@@ -1370,7 +1380,7 @@ schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 
 	    ra = (RA_t *) & cc[CC_id].ra[i];
 
-            LOG_I(MAC,"RA[state:%d]\n",ra->state);
+            LOG_D(MAC,"RA[state:%d]\n",ra->state);
 
 	    if (ra->state == MSG2)
 		generate_Msg2(module_idP, CC_id, frameP, subframeP, ra);

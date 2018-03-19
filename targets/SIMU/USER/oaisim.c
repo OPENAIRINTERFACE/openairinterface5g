@@ -740,8 +740,8 @@ l2l1_task (void *args_p)
         while (all_done==0) {
 
           pthread_mutex_lock(&subframe_mutex);
-          int subframe_ru_mask_local = subframe_ru_mask; //((1<<NB_RU)-1));
-          int subframe_UE_mask_local  = subframe_UE_mask;
+          int subframe_ru_mask_local  = (subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_UL) ? subframe_ru_mask : ((1<<NB_RU)-1);
+          int subframe_UE_mask_local  = (subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_DL) ? subframe_UE_mask : ((1<<NB_UE_INST)-1);
           pthread_mutex_unlock(&subframe_mutex);
           LOG_D(EMU,"Frame %d, Subframe %d, NB_RU %d, NB_UE %d: Checking masks %x,%x\n",frame,sf,NB_RU,NB_UE_INST,subframe_ru_mask_local,subframe_UE_mask_local);
           if ((subframe_ru_mask_local == ((1<<NB_RU)-1)) &&

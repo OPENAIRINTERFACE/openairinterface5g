@@ -839,22 +839,24 @@ typedef struct {
   uint8_t dci_pdu[8];
 } mDCI_ALLOC_t;
 
-
+#define MAX_NUM_PDCCH 32
 typedef struct {
   uint8_t     num_dci;
   uint8_t     num_pdcch_symbols; 
-  DCI_ALLOC_t dci_alloc[32];
+  DCI_ALLOC_t dci_alloc[MAX_NUM_PDCCH];
 } LTE_eNB_PDCCH;
 
 typedef struct {
+  uint16_t absSF;
+  uint16_t active;
   uint8_t hi;
   uint8_t first_rb;
   uint8_t n_DMRS;
 } phich_config_t;
 
+#define MAX_NUM_PHICH 32
 typedef struct {
-  uint8_t num_hi;
-  phich_config_t config[32];
+  phich_config_t config[MAX_NUM_PHICH];
 } LTE_eNB_PHICH;
 
 typedef struct {

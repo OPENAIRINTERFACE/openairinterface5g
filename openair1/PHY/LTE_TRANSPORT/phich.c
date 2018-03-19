@@ -1512,6 +1512,7 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
   uint32_t pusch_frame;
   int subframe = proc->subframe_tx;
   phich_config_t *phich;
+  int absSF = subframe+(proc->frame_tx*10);
 
   // compute Ngroup_PHICH (see formula at beginning of Section 6.9 in 36-211
 
@@ -1523,16 +1524,20 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
   if (frame_parms->Ncp == 1)
     NSF_PHICH = 2;
 
-  if (eNB->phich_vars[subframe&1].num_hi > 0) {
+
+ 
+
+  for (i=0; i<MAX_NUM_PHICH; i++) {
+
+    phich = &eNB->phich_vars.config[i];
+    if (phich->active == 0 || phich->absSF != absSF)  continue;
+
     pusch_frame = phich_frame2_pusch_frame(frame_parms,proc->frame_tx,subframe);
     pusch_subframe = phich_subframe2_pusch_subframe(frame_parms,subframe);
     harq_pid = subframe2harq_pid(frame_parms,pusch_frame,pusch_subframe);
-  }
+ 
+    phich->active = 0;
 
-  for (i=0; i<eNB->phich_vars[subframe&1].num_hi; i++) {
-
-    phich = &eNB->phich_vars[subframe&1].config[i];
-    
     ngroup_PHICH = (phich->first_rb +
 		    phich->n_DMRS)%Ngroup_PHICH;
     
@@ -1565,6 +1570,6 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
 		   phich->hi,
 		   subframe,
 		   txdataF);
-  }//  for (i=0; i<eNB->phich_vars[subframe&1].num_hi; i++) { 
-  eNB->phich_vars[subframe&1].num_hi=0;
+  }
+
 }

@@ -95,7 +95,8 @@ void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_r
 void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
                                  nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
 {
-  LTE_eNB_PHICH *phich = &eNB->phich_vars[subframe&1];
+  LTE_eNB_PHICH *phich = &eNB->phich_vars;
+  int i;
 
   // copy dci configuration in to eNB structure
   LOG_D(PHY,"Received HI PDU with value %d (rbstart %d,cshift %d)\n",
@@ -104,11 +105,14 @@ void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rx
         hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms);
 
   // DJP - TODO FIXME - transmission power ignored
-  phich->config[phich->num_hi].hi       = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.hi_value;
-  phich->config[phich->num_hi].first_rb = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.resource_block_start;
-  phich->config[phich->num_hi].n_DMRS   = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms;
-  phich->num_hi++;
-  AssertFatal(phich->num_hi<32,"Maximum number of phich reached in subframe\n");
+  for (i=0;i<32;i++) if (phich->config[i].active==0) break;
+  AssertFatal(i<32,"no free PHICH allocation\n");
+
+  phich->config[i].active   = 0;
+  phich->config[i].absSF    = (frame*10)+subframe;
+  phich->config[i].hi       = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.hi_value;
+  phich->config[i].first_rb = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.resource_block_start;
+  phich->config[i].n_DMRS   = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms;
 }
 
 void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
@@ -488,7 +492,7 @@ void handle_uci_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu
 {
   LTE_eNB_UCI *uci = &eNB->uci_vars[UE_id];
 
-  LOG_D(PHY,"Frame %d, Subframe %d: Programming UCI_HARQ process (type %d)\n",frame,subframe,HARQ);
+  LOG_I(PHY,"Frame %d, Subframe %d: Programming UCI_HARQ process (type %d)\n",frame,subframe,HARQ);
   uci->frame             = frame;
   uci->subframe          = subframe;
   uci->rnti              = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti;
@@ -537,7 +541,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No existing UE ULSCH for rnti %x\n",rel8->rnti);
-    LOG_I(PHY,"Applying UL config for UE %d, rnti %x in frame %d, subframe %d, modulation %d, rvidx %d\n", UE_id,rel8->rnti,frame,subframe,rel8->modulation_type,rel8->redundancy_version);
+    LOG_D(PHY,"Applying UL config for UE %d, rnti %x in frame %d, subframe %d, modulation %d, rvidx %d\n", UE_id,rel8->rnti,frame,subframe,rel8->modulation_type,rel8->redundancy_version);
 
     fill_ulsch(eNB,&ul_config_pdu->ulsch_pdu,frame,subframe);
 
@@ -653,7 +657,6 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
 
   eNB->pdcch_vars[subframe&1].num_pdcch_symbols = number_pdcch_ofdm_symbols;
   eNB->pdcch_vars[subframe&1].num_dci           = 0;
-  eNB->phich_vars[subframe&1].num_hi            = 0;
 
   LOG_I(PHY,"NFAPI: Sched_INFO:SFN/SF:%04d%d DL_req:SFN/SF:%04d%d:dl_pdu:%d tx_req:SFN/SF:%04d%d:pdus:%d hi_dci0:SFN/SF:%04d%d:pdus:%d ul_cfg:SFN/SF:%04d%d:pdus:%d num_pdcch_symbols:%d\n",
         frame,subframe,

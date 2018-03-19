@@ -1020,7 +1020,7 @@ typedef struct PHY_VARS_eNB_s {
 #endif
   Sched_Rsp_t          Sched_INFO;
   LTE_eNB_PDCCH        pdcch_vars[2];
-  LTE_eNB_PHICH        phich_vars[2];
+  LTE_eNB_PHICH        phich_vars;
 #ifdef Rel14
   LTE_eNB_EPDCCH       epdcch_vars[2];
   LTE_eNB_MPDCCH       mpdcch_vars[2];

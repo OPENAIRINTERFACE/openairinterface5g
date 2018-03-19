@@ -1648,8 +1648,8 @@ static void* ru_thread_control( void* param ) {
 		}
 
 		
-		AssertFatal((ru->rfdevice.trx_config_func(&ru->rfdevice,&ru->openair0_cfg)==0), 
-				"Failed to configure RF device for RU %d\n",ru->idx);
+		if (ru->rfdevice.trx_config_func) AssertFatal((ru->rfdevice.trx_config_func(&ru->rfdevice,&ru->openair0_cfg)==0), 
+							      "Failed to configure RF device for RU %d\n",ru->idx);
 
 
 
@@ -1907,7 +1907,6 @@ static void* ru_thread( void* param ) {
 
         LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",
               ru->idx,frame,subframe);
-
 
         if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
   	  wakeup_prach_ru(ru);

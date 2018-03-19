@@ -627,7 +627,7 @@ uint16_t get_pucch1_absSF(COMMON_channels_t * cc, uint16_t dlsch_absSF)
     case 3:
       if ((sf == 5) || (sf == 6) || (sf == 7) || (sf == 8)
 	  || (sf == 9))
-	return ((10 * nextf) + (sf >> 1));	// ACK/NAK in 2,3,4 resp. next frame
+	return ((10 * nextf) + ((sf-1) >> 1));	// ACK/NAK in 2,3,4 resp. next frame
       else if (sf == 1)
 	return ((10 * nextf) + 2);	// ACK/NAK in 2 next frame
       else if (sf == 0)
@@ -1380,7 +1380,7 @@ fill_nfapi_uci_acknak(module_id_t module_idP,
 			      rntiP,
 			      absSFP,
 			      &ul_config_pdu->uci_harq_pdu.harq_information, cce_idxP);
-  LOG_D(MAC,
+  LOG_I(MAC,
 	"Filled in UCI HARQ request for rnti %x SF %d.%d acknakSF %d.%d, cce_idxP %d-> n1_pucch %d\n",
 	rntiP, absSFP / 10, absSFP % 10, ackNAK_absSF / 10,
 	ackNAK_absSF % 10, cce_idxP,
@@ -3255,14 +3255,89 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
       AssertFatal(numCC == 1,
 		  "numCC %d > 1, should not be using Format1a/b\n",
 		  numCC);
+
+    uint8_t harq_pid = ((10 * frameP) + subframeP + 10236) & 7;
+
+    LOG_I(MAC,"frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",frameP,subframeP,harq_pid,harq_indication_fdd->mode,tmode[0],num_ack_nak,sched_ctl->round[CC_idP][harq_pid]);
+
+    AssertFatal(numCC == 1,
+		"numCC %d > 1, should not be using Format1a/b\n",
+		numCC);
+    
+    
+    if (tmode[0] == 1 || tmode[0] == 2 || tmode[0] == 5 || tmode[0] == 6 || tmode[0] == 7) {	// NOTE: have to handle the case of TM9-10 with 1 antenna port
+      // single ACK/NAK bit
+      AssertFatal(num_ack_nak == 1,
+		  "num_ack_nak %d > 1 for 1 CC and single-layer transmission frame:%d subframe:%d\n",
+		  num_ack_nak,frameP,subframeP);
+      AssertFatal(sched_ctl->round[CC_idP][harq_pid] < 8,
+		  "Got ACK/NAK for inactive harq_pid %d for UE %d/%x\n",
+		  harq_pid, UE_id, rnti);
+      AssertFatal(pdu[0] == 1 || pdu[0] == 2
+		  || pdu[0] == 4,
+		  "Received ACK/NAK %d which is not 1 or 2 for harq_pid %d from UE %d/%x\n",
+		  pdu[0], harq_pid, UE_id, rnti);
+      LOG_D(MAC, "Received %d for harq_pid %d\n", pdu[0],
+	    harq_pid);
+      
+      pdu                 = &harq_indication_fdd->harq_data[0].bundling.value_0;
+      if (pdu[0] == 1) {	// ACK
+	sched_ctl->round[CC_idP][harq_pid] = 8;	// release HARQ process
+	sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+      } else if (pdu[0] == 2 || pdu[0] == 4)	// NAK (treat DTX as NAK)
+	sched_ctl->round[CC_idP][harq_pid]++;	// increment round
+    } else {
+      // one or two ACK/NAK bits
+      AssertFatal(num_ack_nak <= 2,
+		  "num_ack_nak %d > 2 for 1 CC and TM3/4/8/9/10\n",
+		  num_ack_nak);
+      if ((num_ack_nak == 2)
+	  && (sched_ctl->round[CC_idP][harq_pid] < 8)
+	  && (sched_ctl->tbcnt[CC_idP][harq_pid] == 1)
+	  && (pdu[0] == 1) && (pdu[1] == 1)) {
+	sched_ctl->round[CC_idP][harq_pid] = 8;
+	sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+      }
+      if ((num_ack_nak == 2)
+	  && (sched_ctl->round[CC_idP][harq_pid] < 8)
+	  && (sched_ctl->tbcnt[CC_idP][harq_pid] == 1)
+	  && (pdu[0] == 2) && (pdu[1] == 2))
+	sched_ctl->round[CC_idP][harq_pid]++;
+      else if (((num_ack_nak == 2)
+		&& (sched_ctl->round[CC_idP][harq_pid] < 8)
+		&& (sched_ctl->tbcnt[0][harq_pid] == 2)
+		&& (pdu[0] == 1) && (pdu[1] == 2))
+	       || ((num_ack_nak == 2)
+		   && (sched_ctl->round[CC_idP][harq_pid] < 8)
+		   && (sched_ctl->tbcnt[CC_idP][harq_pid] == 2)
+		   && (pdu[0] == 2) && (pdu[1] == 1))) {
+	sched_ctl->round[CC_idP][harq_pid]++;
+	sched_ctl->tbcnt[CC_idP][harq_pid] = 1;
+      } else if ((num_ack_nak == 2)
+		 && (sched_ctl->round[CC_idP][harq_pid] < 8)
+		 && (sched_ctl->tbcnt[CC_idP][harq_pid] == 2)
+		 && (pdu[0] == 2) && (pdu[1] == 2))
+	sched_ctl->round[CC_idP][harq_pid]++;
+      else
+	AssertFatal(1 == 0,
+		    "Illegal ACK/NAK/round combination (%d,%d,%d,%d,%d) for harq_pid %d, UE %d/%x\n",
+		    num_ack_nak,
+		    sched_ctl->round[CC_idP][harq_pid],
+		    sched_ctl->round[CC_idP][harq_pid], pdu[0],
+		    pdu[1], harq_pid, UE_id, rnti);
+    }
+    break;
+    case 1:		// Channel Selection 
+      AssertFatal(1==0,"Can't do channel selection yet in TDD\n");
       break;
-    case 1:		// Channel Selection
+    case 2:		// Format 2
+      AssertFatal(1==0,"Can't do Format 2 yet in TDD\n");
       break;
-    case 2:		// Format 3
-      break;
-    case 3:		// Format 4
+    case 3:		// Format 3
+      AssertFatal(1==0,"Can't do Format 3 yet in TDD\n");
       break;
     case 4:		// Format 5
+      AssertFatal(1==0,"Can't do Format 4 yet in TDD\n");
       break;
     }
   } else {
@@ -3272,7 +3347,7 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 
     uint8_t harq_pid = ((10 * frameP) + subframeP + 10236) & 7;
 
-    LOG_D(MAC,"frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",frameP,subframeP,harq_pid,harq_indication_fdd->mode,tmode[0],num_ack_nak,sched_ctl->round[CC_idP][harq_pid]);
+    LOG_I(MAC,"frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",frameP,subframeP,harq_pid,harq_indication_fdd->mode,tmode[0],num_ack_nak,sched_ctl->round[CC_idP][harq_pid]);
 
     switch (harq_indication_fdd->mode) {
     case 0:		// Format 1a/b (10.1.2.1)
@@ -4026,8 +4101,12 @@ static int nack_or_dtx_reported(
   int i;
 
   if (cc->tdd_Config) {
-    AssertFatal(0==1, "TDD to be done. FAPI structures (see nfapi_harq_indication_tdd_rel13_t) are not clean. To be cleaned as well?\n");
-    abort();
+    LOG_W(MAC,"FAPI structures (see nfapi_harq_indication_tdd_rel13_t) are not clean. To be cleaned as well?\n");
+    nfapi_harq_indication_tdd_rel13_t *hi = &harq_pdu->harq_indication_tdd_rel13;
+    for (i = 0; i < hi->number_of_ack_nack; hi++)
+      if (hi->harq_data[i].bundling.value_0 != 1)
+        return 1;
+    return 0;
   } else {
     nfapi_harq_indication_fdd_rel13_t *hi = &harq_pdu->harq_indication_fdd_rel13;
     for (i = 0; i < hi->number_of_ack_nack; hi++)
@@ -4054,7 +4133,7 @@ harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
   // extract HARQ Information
-  LOG_D(MAC,
+  LOG_I(MAC,
 	"Frame %d, subframe %d: Received harq indication (%d) from UE %d/%x, ul_cqi %d\n",
 	frameP, subframeP, channel, UE_id, rnti, ul_cqi);
   if (cc->tdd_Config)

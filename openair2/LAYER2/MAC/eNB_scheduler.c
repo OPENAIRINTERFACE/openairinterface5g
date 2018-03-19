@@ -108,8 +108,7 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       if ((1 << tmp) & deltaTSFC) {
 	// This is an SRS subframe, loop over UEs
 	for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-	  if (RC.mac[module_idP]->UE_list.active[UE_id] != TRUE)
-	    continue;
+	  if (RC.mac[module_idP]->UE_list.active[UE_id] != TRUE) continue;
 	  ul_req = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
 	  // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
 	  if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
@@ -124,6 +123,7 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 			  soundingRS_UL_ConfigDedicated->choice.
 			  setup.srs_ConfigIndex,
 			  &srsPeriodicity, &srsOffset);
+
 	      if (((10 * frameP + subframeP) % srsPeriodicity) == srsOffset) {
 		// Program SRS
 		ul_req->srs_present = 1;
@@ -262,7 +262,7 @@ schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       ul_req_body   = &ul_req->ul_config_request_body;
 
       // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
-      if (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
+      //if (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
 
       AssertFatal(UE_list->
 		  UE_template[CC_id][UE_id].physicalConfigDedicated!= NULL,

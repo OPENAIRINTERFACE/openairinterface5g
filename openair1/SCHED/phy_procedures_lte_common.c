@@ -841,7 +841,7 @@ lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subfr
 uint8_t phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t subframe)
 {
 
-  LOG_I(PHY,"phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
+  LOG_D(PHY,"phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
   return(subframe2harq_pid(frame_parms,
                            phich_frame2_pusch_frame(frame_parms,frame,subframe),
                            phich_subframe2_pusch_subframe(frame_parms,subframe)));
