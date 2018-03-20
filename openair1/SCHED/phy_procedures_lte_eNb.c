@@ -551,6 +551,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
         else
         {
           // generate pdsch
+//printf("%d.%d pdsch_procedures ue rnti %d\n", frame, subframe, dlsch0->rnti);///////////////////////////////////**********************
           pdsch_procedures(eNB,
               proc,
               harq_pid,

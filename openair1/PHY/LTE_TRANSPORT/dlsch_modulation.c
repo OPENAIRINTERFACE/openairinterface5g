@@ -2289,7 +2289,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   amp_rho_b = (int16_t)(((int32_t)amp*dlsch1->sqrt_rho_b)>>13);
   }
 
-  if(mod_order0 == 2)
+  /*if(mod_order0 == 2)
   {
     for(i=0;i<2;i++)
     {
@@ -2297,7 +2297,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       qpsk_table_b0[i] = (int16_t)(((int32_t)qpsk_table[i]*amp_rho_b)>>15);
     }
   }
-  else if (mod_order0 == 4)
+  else*/ if (mod_order0 == 4)
     for (i=0;i<4; i++) {
       qam16_table_a0[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_a)>>15);
       qam16_table_b0[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_b)>>15);
@@ -2308,14 +2308,14 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       qam64_table_b0[i] = (int16_t)(((int32_t)qam64_table[i]*amp_rho_b)>>15);
     }
 
-  if (mod_order1 == 2)
+  /*if (mod_order1 == 2)
   {
     for (i=0; i<2; i++) {
       qpsk_table_a1[i] = (int16_t)(((int32_t)qpsk_table[i]*amp_rho_a)>>15);
       qpsk_table_b1[i] = (int16_t)(((int32_t)qpsk_table[i]*amp_rho_b)>>15);
     }
   }
-  else if (mod_order1 == 4)
+  else*/ if (mod_order1 == 4)
     for (i=0; i<4; i++) {
       qam16_table_a1[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_a)>>15);
       qam16_table_b1[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_b)>>15);
@@ -2444,11 +2444,11 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
     switch (mod_order0) {
     case 2:
-      //qam_table_s0 = NULL;
-      if (pilots) {
+      qam_table_s0 = NULL;
+      /*if (pilots) {
         qam_table_s0 = qpsk_table_b0;
 #ifdef NEW_ALLOC_RE
-        /* TODO: remove this code? */
+        // TODO: remove this code? //
         allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
           allocate_REs_in_RB_pilots_QPSK_siso :
           allocate_REs_in_RB;
@@ -2457,13 +2457,13 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       else {
         qam_table_s0 = qpsk_table_a0;
 #ifdef NEW_ALLOC_RE
-        /* TODO: remove this code? */
+        // TODO: remove this code? //
         allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
           allocate_REs_in_RB_no_pilots_QPSK_siso :
           allocate_REs_in_RB;
 #endif
 
-      }
+      }*/
       break;
     case 4:
       if (pilots) {
@@ -2512,12 +2512,17 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
     switch (mod_order1) {
     case 2:
-      if (pilots) {
+      qam_table_s1 = NULL;
+#ifdef NEW_ALLOC_RE
+        /* TODO: remove this code? */
+      allocate_REs = allocate_REs_in_RB;
+#endif
+      /*if (pilots) {
         qam_table_s1 = qpsk_table_b1;
       }
       else {
         qam_table_s1 = qpsk_table_a1;
-      }
+      }*/
       break;
     case 4:
       if (pilots) {
@@ -2593,7 +2598,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
                                rb);
 
 
-      allocate_REs(phy_vars_eNB,
+      allocate_REs_in_RB(phy_vars_eNB,
                          txdataF,
                          &jj,
                          &jj2,

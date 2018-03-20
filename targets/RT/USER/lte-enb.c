@@ -240,7 +240,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   if(get_nprocs() >= 8){
     wakeup_tx(eNB,eNB->proc.ru_proc);
   }
-  else if(get_nprocs() > 4){
+  else if(get_nprocs() >= 4){
   
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
     wakeup_txfh(proc,eNB->proc.ru_proc);
@@ -1041,7 +1041,7 @@ void kill_eNB_proc(int inst) {
       pthread_mutex_lock(&proc_rxtx[i].mutex_rxtx);
       proc_rxtx[i].instance_cnt_rxtx = 0;
       proc_rxtx[i].pipe_ready = 0;
-      pthread_cond_signal( &proc_rxtx[i].cond_rxtx );
+      pthread_cond_signal(&proc_rxtx[i].cond_rxtx);
       pthread_mutex_unlock(&proc_rxtx[i].mutex_rxtx);
     }
     proc->instance_cnt_prach = 0;

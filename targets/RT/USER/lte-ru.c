@@ -1181,7 +1181,7 @@ void wakeup_eNBs(RU_t *ru) {
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
 
-  if (ru->num_eNB==1 && ru->eNB_top!=0 && get_nprocs() <= 4) {
+  if (ru->num_eNB==1 && ru->eNB_top!=0 && get_nprocs() < 4) {
     // call eNB function directly
   
     char string[20];
@@ -1645,7 +1645,7 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
     
-    if(get_nprocs() <= 4){
+    if(get_nprocs() < 4){
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);
       
@@ -1859,7 +1859,7 @@ void init_RU_proc(RU_t *ru) {
   if(emulate_rf)
     pthread_create( &proc->pthread_emulateRF, attr_emulateRF, emulatedRF_thread, (void*)proc );
 
-  if (get_nprocs() > 4)
+  if (get_nprocs() >= 4)
     pthread_create( &proc->pthread_FH1, attr_FH1, ru_thread_tx, (void*)ru );
 
   if (ru->function == NGFI_RRU_IF4p5) {
@@ -1958,7 +1958,7 @@ void kill_RU_proc(int inst)
       pthread_join(proc->pthread_asynch_rxtx, NULL);
     }
   }
-  if (get_nprocs() >= 2 && fepw) {
+  if (get_nprocs() > 2 && fepw) {
     if (ru->feprx) {
       pthread_mutex_lock(&proc->mutex_fep);
       proc->instance_cnt_fep = 0;
@@ -2250,8 +2250,8 @@ void set_function_spec_param(RU_t *ru)
     }
     else if (ru->function == eNodeB_3GPP) {
       ru->do_prach             = 0;                       // no prach processing in RU
-      ru->feprx                = (get_nprocs()<=2) ? fep_full : ru_fep_full_2thread;                // RX DFTs
-      ru->feptx_ofdm           = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;              // this is fep with idft and precoding
+      ru->feprx                = (get_nprocs()<=2 || !fepw) ? fep_full : ru_fep_full_2thread;                // RX DFTs
+      ru->feptx_ofdm           = (get_nprocs()<=2 || !fepw) ? feptx_ofdm : feptx_ofdm_2thread;              // this is fep with idft and precoding
       ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
       ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
       ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north

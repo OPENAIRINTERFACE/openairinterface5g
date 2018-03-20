@@ -2265,7 +2265,7 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
   y[0] = &yseq0[0];
   y[1] = &yseq1[0];
 
-#if 1
+#if 0
   // reset all bits to <NIL>, here we set <NIL> elements as 2
   // memset(e, 2, DCI_BITS_MAX);
   // here we interpret NIL as a random QPSK sequence. That makes power estimation easier.
@@ -2276,7 +2276,7 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
   /* clear all bits, the above code may generate too much false detections
    * (not sure about this, to be checked somehow)
    */
-  // memset(e, 0, DCI_BITS_MAX);
+  memset(e, 0, DCI_BITS_MAX);
 
   e_ptr = e;
 
