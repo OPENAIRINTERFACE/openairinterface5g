@@ -52,6 +52,15 @@
 //extern uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
 //extern uint16_t pcfich_reg[4];
 
+#define CCEBITS 72
+#define CCEPERSYMBOL 33  // This is for 1200 RE
+#define CCEPERSYMBOL0 22  // This is for 1200 RE
+#define DCI_BITS_MAX ((2*CCEPERSYMBOL+CCEPERSYMBOL0)*CCEBITS)
+#define Msymb (DCI_BITS_MAX/2)
+//#define Mquad (Msymb/4)
+
+static uint32_t bitrev_cc_dci[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
+
 uint32_t check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,uint32_t kprime,uint8_t lprime,uint8_t mi)
 {
 

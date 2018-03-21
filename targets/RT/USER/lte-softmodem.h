@@ -134,7 +134,7 @@
 }
 
 #define DEFAULT_DLF 2680000000
-//extern int16_t dlsch_demod_shift;
+
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                                                */
 /*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
