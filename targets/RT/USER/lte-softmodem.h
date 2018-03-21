@@ -130,10 +130,11 @@
 {"ue-scan-carrier",  	       CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL,	iptr:&UE_scan_carrier,  	    defintval:0,    TYPE_INT,	   0},     \
 {"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:90,   TYPE_INT,	   0},     \
 {"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT8,    0},     \
+{"dlsch-demod-shift",     	 CONFIG_HLP_DLSHIFT,	0,		  iptr:(int32_t *)&dlsch_demod_shift,	defintval:0,			   TYPE_INT,	  0},			   \
 }
 
 #define DEFAULT_DLF 2680000000
-extern int16_t dlsch_demod_shift;
+//extern int16_t dlsch_demod_shift;
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                                                */
 /*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
@@ -153,7 +154,6 @@ extern int16_t dlsch_demod_shift;
 {"threadThreeSubframe",    	 NULL,  		0,		  iptr:&(threads.three),  		defintval:1,			   TYPE_INT,	  0},			   \
 {"threadSlot1ProcOne",     	 NULL,  		0,		  iptr:&(threads.slot1_proc_one),      	defintval:1,			   TYPE_INT,	  0},			   \
 {"threadSlot1ProcTwo",    	 NULL,  		0,		  iptr:&(threads.slot1_proc_two),      	defintval:1,			   TYPE_INT,	  0},			   \
-{"dlsch-demod-shift",     	 CONFIG_HLP_DLSHIFT,	0,		  iptr:(int32_t *)&dlsch_demod_shift,	defintval:0,			   TYPE_INT,	  0},			   \
 {"A" ,  		  	 CONFIG_HLP_TADV,	0,		  uptr:&timing_advance, 		defintval:0,			   TYPE_UINT,	  0},			   \
 {"C" ,  		  	 CONFIG_HLP_DLF,	0,		  uptr:&(downlink_frequency[0][0]),	defuintval:DEFAULT_DLF,  	   TYPE_UINT,	  0},			   \
 {"a" ,  		  	 CONFIG_HLP_CHOFF,	0,		  iptr:&chain_offset,			defintval:0,			   TYPE_INT,	  0},			   \

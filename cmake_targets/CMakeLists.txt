@@ -967,7 +967,7 @@ add_library(SECU_CN ${SECU_CN_SRC})
 set(SCHED_SRC
   ${OPENAIR1_DIR}/SCHED/fapi_l1.c
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_eNb.c
-  ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_ue.c
+  #${OPENAIR1_DIR}/SCHED/phy_procedures_lte_ue.c
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_common.c
   ${OPENAIR1_DIR}/SCHED/prach_procedures.c
   ${OPENAIR1_DIR}/SCHED/ru_procedures.c
@@ -1066,10 +1066,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pilots_mbsfn.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_coding.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_modulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_demodulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_llr_computation.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/power_control.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_decoding.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_scrambling.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci_tools.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/uci_tools.c
@@ -1085,10 +1082,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/group_hopping.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/srs_modulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/drs_modulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_modulation.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_demodulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_coding.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_decoding.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/rar_tools.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/print_stats.c
@@ -1130,7 +1124,6 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/CODING/viterbi_lte.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_init.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_init_ru.c
-  ${OPENAIR1_DIR}/PHY/INIT/lte_init_ue.c
   ${OPENAIR1_DIR}/PHY/INIT/init_top.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_parms.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_param_init.c
@@ -1152,41 +1145,49 @@ set(PHY_SRC_UE
   # depend on code generation from asn1c
   ${RRC_FULL_DIR}/asn1_constants.h
   # actual source
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pss.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/sss.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pilots.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pilots_mbsfn.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_coding.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_modulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_demodulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_llr_computation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/power_control.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_decoding.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_scrambling.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci_tools.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/uci_tools.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_mcs.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pbch.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/edci.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/phich.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pcfich.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pucch.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pch.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/group_hopping.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/srs_modulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/drs_modulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_modulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_demodulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_coding.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_decoding.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/rar_tools.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/print_stats.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/initial_sync.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if4_tools.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if5_tools.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pss.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/sss.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pilots.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pilots_mbsfn.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_coding.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_modulation.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/power_control.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_scrambling.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci_tools.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/uci_tools.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_mcs.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pbch.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/edci.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/phich.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pcfich.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pucch.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pch.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/group_hopping.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/srs_modulation.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_demodulation.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_decoding.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/rar_tools.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/print_stats.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/initial_sync.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if4_tools.c
+ #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if5_tools.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dci_tools_ue.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dci_ue.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_decoding.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/drs_modulation.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/pbch_ue.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/pcfich_ue.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/pch_ue.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/phich_ue.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/pmch_ue.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/ulsch_coding.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/ulsch_modulation.c
   ${OPENAIR1_DIR}/PHY/MODULATION/ofdm_mod.c
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep.c
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep_mbsfn.c
@@ -1197,7 +1198,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/freq_equalization.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_time.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_timefreq.c
-  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_adjust_sync.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_adjust_sync_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_bf_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_mbsfn_channel_estimation.c
@@ -1245,8 +1246,7 @@ if (${SMBV})
 endif  (${SMBV})
 
 if (${COMPILATION_AVX2} STREQUAL "True")
-  set(PHY_SRC ${PHY_SRC} ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_llr_computation_avx2.c)
-  set(PHY_SRC_UE ${PHY_SRC_UE} ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_llr_computation_avx2.c)
+  set(PHY_SRC_UE ${PHY_SRC_UE} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
 endif ()
 
 add_library(PHY ${PHY_SRC})
@@ -1352,12 +1352,12 @@ set(L2_SRC_UE
 set (MAC_SRC
   ${PHY_INTERFACE_DIR}/IF_Module.c
   ${MAC_DIR}/main.c
-  ${MAC_DIR}/main_ue.c
-  ${MAC_DIR}/ue_procedures.c
-  ${MAC_DIR}/ra_procedures.c
+  #${MAC_DIR}/main_ue.c
+  #${MAC_DIR}/ue_procedures.c
+  #${MAC_DIR}/ra_procedures.c
   ${MAC_DIR}/l1_helpers.c
   ${MAC_DIR}/rar_tools.c
-  ${MAC_DIR}/rar_tools_ue.c
+  #${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/eNB_scheduler.c
   ${MAC_DIR}/eNB_scheduler_dlsch.c
   ${MAC_DIR}/eNB_scheduler_ulsch.c
@@ -1367,7 +1367,7 @@ set (MAC_SRC
   ${MAC_DIR}/eNB_scheduler_RA.c
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
-  ${MAC_DIR}/config_ue.c
+  #${MAC_DIR}/config_ue.c
  )
 
 set (MAC_SRC_UE
