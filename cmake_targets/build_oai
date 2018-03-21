@@ -67,6 +67,7 @@ UE_TIMING_TRACE="False"
 DISABLE_LOG_X="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
+NR="False"
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -92,7 +93,11 @@ Options
 -h | --help
    Print this help
 --eNB
-   Makes the LTE softmodem
+  Makes the LTE softmodem
+--gNB
+  Makes the NR softmodem
+--nrUE
+  Makes the NR UE softmodem
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
 --UE-conf-nvram [configuration file]
@@ -200,12 +205,22 @@ function main() {
             eNB=1
             echo_info "Will compile eNB"
             shift;;
+       --gNB)
+            gNB=1
+            NR="True"
+            echo_info "Will compile gNB"
+            shift;;
        -a | --agent)
-	    echo_info "FlexRAN support is always compiled into the eNB"
-	    shift;;
+            echo_info "FlexRAN support is always compiled into the eNB"
+            shift;;
        --UE)
             UE=1
             echo_info "Will compile UE"
+            shift;;
+       --nrUE)
+            nrUE=1
+            NR="True"
+            echo_info "Will compile NR UE"
             shift;;
        --UE-conf-nvram)
             conf_nvram_path=$(readlink -f "$1")
@@ -359,17 +374,18 @@ function main() {
   
   CMAKE_CMD="$CMAKE_CMD .."
   echo_info "CMAKE_CMD=$CMAKE_CMD"
-  if [ "$eNB" = "1" ] && [ "$UE" = "1" ]; then
-    echo_error "Cannot build UE and eNB on one build_oai execution"
+  if [ "$eNB" = "1" -o "$gNB" = "1" ] && [ "$UE" = "1" -o "$nrUE" = "1" ]; then
+    echo_error "Cannot build UE/nrUE and eNB/gNB on one build_oai execution"
     echo_error "use 2 build_oai invocations"
     exit
-  fi  
+  fi
+
   #########################################################
-  # check validity of HW and TP parameters for eNB
+  # check validity of HW and TP parameters for eNB / gNB
   #########################################################
   # to be discussed
   
-  if [ "$eNB" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$gNB" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	  echo_fatal "Define a local radio head (e.g. -w EXMIMO) or a transport protocol (e.g. -t ETHERNET) to communicate with a remote radio head!"
       fi
@@ -490,37 +506,58 @@ function main() {
   echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
-  if [ "$NOS1" =  "1" ] ; then
-      lte_build_dir=lte_noS1_build_oai
-      if [ "$eNB" = "1" ] ; then
-         lte_exec=lte-softmodem-nos1
-      fi
-      if [ "$UE" = "1" ] ; then
-         lte_exec=lte-uesoftmodem-nos1
-      fi
+  if [ "$NR" = "True" ]
+  then
+    if [ "$NOS1" =  "1" ] ; then
+        build_dir=nr_noS1_build_oai
+        if [ "$gNB" = "1" ] ; then
+           exec=nr-softmodem-nos1
+        fi
+        if [ "$nrUE" = "1" ] ; then
+           exec=nr-uesoftmodem-nos1
+        fi
+    else
+        build_dir=nr_build_oai
+        if [ "$gNB" = "1" ] ; then
+           exec=nr-softmodem
+        fi
+        if [ "$nrUE" = "1" ] ; then
+           exec=nr-uesoftmodem
+        fi
+    fi
   else
-      lte_build_dir=lte_build_oai
-      if [ "$eNB" = "1" ] ; then
-         lte_exec=lte-softmodem
-      fi
-      if [ "$UE" = "1" ] ; then
-         lte_exec=lte-uesoftmodem
-      fi
+    if [ "$NOS1" =  "1" ] ; then
+        build_dir=lte_noS1_build_oai
+        if [ "$eNB" = "1" ] ; then
+           exec=lte-softmodem-nos1
+        fi
+        if [ "$UE" = "1" ] ; then
+           exec=lte-uesoftmodem-nos1
+        fi
+    else
+        build_dir=lte_build_oai
+        if [ "$eNB" = "1" ] ; then
+           exec=lte-softmodem
+        fi
+        if [ "$UE" = "1" ] ; then
+           exec=lte-uesoftmodem
+        fi
+    fi
   fi
 
 # configuration module libraries, one currently available, using libconfig 
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$HW" = "EXMIMO" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
 
-    # LTE softmodem compilation
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/$lte_build_dir/build
-    mkdir -p $DIR/$lte_build_dir/build
-    cmake_file=$DIR/$lte_build_dir/CMakeLists.txt
+    # softmodem compilation
+    [ "$CLEAN" = "1" ] && rm -rf $DIR/$build_dir/build
+    mkdir -p $DIR/$build_dir/build
+    cmake_file=$DIR/$build_dir/CMakeLists.txt
     echo "cmake_minimum_required(VERSION 2.8)"   >  $cmake_file
     if [ "$NOS1" = "1" ] ; then
-	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
+	cat  $DIR/$build_dir/CMakeLists.template >>  $cmake_file
     fi
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
@@ -529,7 +566,7 @@ function main() {
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
     echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
-    echo "set(PACKAGE_NAME \"${lte_exec}\")"       >>  $cmake_file
+    echo "set(PACKAGE_NAME \"${exec}\")"       >>  $cmake_file
     echo "set (DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
     echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"      >>$cmake_file
     echo "set ( T_TRACER $T_TRACER )"              >>  $cmake_file
@@ -544,30 +581,30 @@ function main() {
      echo "set (PDCP_USE_NETLINK True )"   >>  $cmake_file
     fi
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-    cd  $DIR/$lte_build_dir/build
+    cd  $DIR/$build_dir/build
     eval $CMAKE_CMD
   fi
 
-  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
-    echo_info "Compiling $lte_exec"
+  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" ] ; then
+    echo_info "Compiling $exec"
     compilations \
-	  $lte_build_dir $lte_exec \
-	  $lte_exec $dbin/$lte_exec.$REL
+	  $build_dir $exec \
+	  $exec $dbin/$exec.$REL
 
 # mandatory shared lib
     compilations \
-	  $lte_build_dir $config_libconfig_shlib \
+	  $build_dir $config_libconfig_shlib \
 	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
     compilations \
-          $lte_build_dir coding \
+          $build_dir coding \
           libcoding.so $dbin/libcoding.so
 	  
     if [ "$NOS1" = "1" ] ; then
 	compilations \
-	    $lte_build_dir nasmesh \
+	    $build_dir nasmesh \
 	    CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
 	compilations \
-	    $lte_build_dir rb_tool \
+	    $build_dir rb_tool \
 	    rb_tool $dbin/rb_tool
 	cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
     fi
@@ -577,7 +614,7 @@ function main() {
     # ue_ip driver compilation
     echo_info "Compiling UE specific part"
     compilations \
-      $lte_build_dir ue_ip \
+      $build_dir ue_ip \
       CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
 
 #    mkdir -p $DIR/at_commands/build
@@ -605,10 +642,10 @@ function main() {
     # generate USIM data
     if [ -f $dbin/conf2uedata ]; then
       install_nas_tools $conf_nvram_path $gen_nvram_path
-      echo_info "Copying UE specific part to $DIR/$lte_build_dir/build"
-      cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$lte_build_dir/build
-      cp -Rvf $dbin/.ue.nvram0 $DIR/$lte_build_dir/build
-      cp -Rvf $dbin/.usim.nvram0 $DIR/$lte_build_dir/build
+      echo_info "Copying UE specific part to $DIR/$build_dir/build"
+      cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$build_dir/build
+      cp -Rvf $dbin/.ue.nvram0 $DIR/$build_dir/build
+      cp -Rvf $dbin/.usim.nvram0 $DIR/$build_dir/build
     else
       echo_warning "not generated UE NAS files: binaries not found"
     fi
@@ -653,14 +690,14 @@ function main() {
     
     echo_info "Compiling Express MIMO 2 board drivers"
     compilations \
-        $lte_build_dir openair_rf \
+        $build_dir openair_rf \
         CMakeFiles/openair_rf/openair_rf.ko $dbin/openair_rf.ko
     compilations \
-	  $lte_build_dir updatefw \
+	  $build_dir updatefw \
 	  updatefw $dbin/updatefw
     echo_info "Compiling oarf tools. The logfile for compilation is here: $dlog/oarf.txt"
-    make -C $OPENAIR_DIR/cmake_targets/$lte_build_dir/build oarf > $dlog/oarf.txt 2>&1
-    cp $OPENAIR_DIR/cmake_targets/$lte_build_dir/build/*.oct $dbin
+    make -C $OPENAIR_DIR/cmake_targets/$build_dir/build oarf > $dlog/oarf.txt 2>&1
+    cp $OPENAIR_DIR/cmake_targets/$build_dir/build/*.oct $dbin
     if [ -s $dbin/oarf_config_exmimo.oct ] ; then
 	echo_success "oarf tools compiled"
     else
@@ -783,7 +820,7 @@ function main() {
   # Telnet server compilation
   #####################
   if [ "$BUILD_TELNETSRV" = "1" ] ; then
-              build_dir=$lte_build_dir
+              build_dir=$build_dir
               compilations \
                   $build_dir telnetsrv \
                   libtelnetsrv.so $dbin/libtelnetsrv.so
@@ -791,9 +828,9 @@ function main() {
   fi  
   # build RF device and transport protocol libraries
   #####################################
-  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" ] ; then
 
-      build_dir=$lte_build_dir	  
+      build_dir=$build_dir
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then
