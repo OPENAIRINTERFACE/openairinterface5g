@@ -60,37 +60,121 @@
 
 extern uint16_t sf_ahead;
 
-
 void RCconfig_flexran()
 {
-  int i;
+  uint16_t i;
+  uint16_t num_enbs;
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  /* this will possibly truncate the cell id (RRC assumes int32_t).
+   * Both Nid_cell and enb_id are signed in RRC case, but we use unsigned for
+   * the bitshifting to work properly */
+  int32_t Nid_cell = 0;
+  uint16_t Nid_cell_tr = 0;
+  uint32_t enb_id = 0;
+
+  /*
+   * the only reason for all these variables is, that they are "hard-encoded"
+   * into the CCPARAMS_DESC macro and we need it for the Nid_cell variable ...
+   */
+  char *frame_type, *prefix_type, *pbch_repetition, *prach_high_speed,
+    *pusch_hoppingMode, *pusch_enable64QAM, *pusch_groupHoppingEnabled,
+    *pusch_sequenceHoppingEnabled, *phich_duration, *phich_resource,
+    *srs_enable, *srs_ackNackST, *srs_MaxUpPts, *pusch_alpha,
+    *pucch_deltaF_Format1, *pucch_deltaF_Format1b, *pucch_deltaF_Format2,
+    *pucch_deltaF_Format2a, *pucch_deltaF_Format2b,
+    *rach_preamblesGroupAConfig, *rach_messagePowerOffsetGroupB, *pcch_nB;
+  long long int     downlink_frequency;
+  int32_t tdd_config, tdd_config_s, eutra_band, uplink_frequency_offset,
+    Nid_cell_mbsfn, N_RB_DL, nb_antenna_ports, prach_root, prach_config_index,
+    prach_zero_correlation, prach_freq_offset, pucch_delta_shift,
+    pucch_nRB_CQI, pucch_nCS_AN, pucch_n1_AN, pdsch_referenceSignalPower,
+    pdsch_p_b, pusch_n_SB, pusch_hoppingOffset, pusch_groupAssignment,
+    pusch_nDMRS1, srs_BandwidthConfig, srs_SubframeConfig, pusch_p0_Nominal,
+    pucch_p0_Nominal, msg3_delta_Preamble, rach_numberOfRA_Preambles,
+    rach_sizeOfRA_PreamblesGroupA, rach_messageSizeGroupA,
+    rach_powerRampingStep, rach_preambleInitialReceivedTargetPower,
+    rach_preambleTransMax, rach_raResponseWindowSize,
+    rach_macContentionResolutionTimer, rach_maxHARQ_Msg3Tx,
+    pcch_defaultPagingCycle, bcch_modificationPeriodCoeff,
+    ue_TimersAndConstants_t300, ue_TimersAndConstants_t301,
+    ue_TimersAndConstants_t310, ue_TimersAndConstants_t311,
+    ue_TimersAndConstants_n310, ue_TimersAndConstants_n311,
+    ue_TransmissionMode;
+
+  /* get number of eNBs */
+  paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
+  config_get(ENBSParams, sizeof(ENBSParams)/sizeof(paramdef_t), NULL);
+  num_enbs = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
+
+  /* for eNB ID */
+  paramdef_t ENBParams[]  = ENBPARAMS_DESC;
+  paramlist_def_t ENBParamList = {ENB_CONFIG_STRING_ENB_LIST, NULL, 0};
+
+  /* for Nid_cell */
+  checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
+  paramdef_t CCsParams[] = CCPARAMS_DESC;
+  paramlist_def_t CCsParamList = {ENB_CONFIG_STRING_COMPONENT_CARRIERS, NULL, 0};
+  /* map parameter checking array instances to parameter definition array instances */
+  for (int I = 0; I < (sizeof(CCsParams) / sizeof(paramdef_t)); I++) {
+    CCsParams[I].chkPptr = &(config_check_CCparams[I]);
+  }
 
   paramdef_t flexranParams[] = FLEXRANPARAMS_DESC;
   config_get(flexranParams, sizeof(flexranParams)/sizeof(paramdef_t), CONFIG_STRING_NETWORK_CONTROLLER_CONFIG);
 
   if (!RC.flexran) {
-    RC.flexran = calloc(RC.nb_L1_inst, sizeof(flexran_agent_info_t*));
-    AssertFatal(RC.flexran != NULL,
+    RC.flexran = calloc(num_enbs, sizeof(flexran_agent_info_t*));
+    AssertFatal(RC.flexran,
                 "can't ALLOCATE %zu Bytes for %d flexran agent info with size %zu\n",
-                RC.nb_L1_inst * sizeof(flexran_agent_info_t*),
-                RC.nb_L1_inst, sizeof(flexran_agent_info_t*));
+                num_enbs * sizeof(flexran_agent_info_t*),
+                num_enbs, sizeof(flexran_agent_info_t*));
   }
 
-  /* For all agent instance, fill in the same controller configuration. */
-  for (i = 0; i < RC.nb_L1_inst; i++) {
+  for (i = 0; i < num_enbs; i++) {
     RC.flexran[i] = calloc(1, sizeof(flexran_agent_info_t));
-    AssertFatal(RC.flexran[i] != NULL,
+    AssertFatal(RC.flexran[i],
                 "can't ALLOCATE %zu Bytes for flexran agent info (iteration %d/%d)\n",
-                sizeof(flexran_agent_info_t), i + 1, RC.nb_L1_inst);
+                sizeof(flexran_agent_info_t), i + 1, num_enbs);
     /* if config says "yes", enable Agent, in all other cases it's like "no" */
-    RC.flexran[i]->enabled          = strcmp(*(flexranParams[FLEXRAN_ENABLED].strptr), "yes") == 0;
+    RC.flexran[i]->enabled          = strcasecmp(*(flexranParams[FLEXRAN_ENABLED].strptr), "yes") == 0;
     RC.flexran[i]->interface_name   = strdup(*(flexranParams[FLEXRAN_INTERFACE_NAME_IDX].strptr));
     //inet_ntop(AF_INET, &(enb_properties->properties[mod_id]->flexran_agent_ipv4_address), in_ip, INET_ADDRSTRLEN);
     RC.flexran[i]->remote_ipv4_addr = strdup(*(flexranParams[FLEXRAN_IPV4_ADDRESS_IDX].strptr));
     RC.flexran[i]->remote_port      = *(flexranParams[FLEXRAN_PORT_IDX].uptr);
     RC.flexran[i]->cache_name       = strdup(*(flexranParams[FLEXRAN_CACHE_IDX].strptr));
-    RC.flexran[i]->node_ctrl_state  = strcmp(*(flexranParams[FLEXRAN_AWAIT_RECONF_IDX].strptr), "yes") == 0 ? ENB_WAIT : ENB_NORMAL_OPERATION;
-    RC.flexran[i]->enb_id           = i;
+    RC.flexran[i]->node_ctrl_state  = strcasecmp(*(flexranParams[FLEXRAN_AWAIT_RECONF_IDX].strptr), "yes") == 0 ? ENB_WAIT : ENB_NORMAL_OPERATION;
+
+    config_getlist(&ENBParamList, ENBParams, sizeof(ENBParams)/sizeof(paramdef_t),NULL);
+    /* eNB ID from configuration, as read in by RCconfig_RRC() */
+    if (!ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr) {
+      // Calculate a default eNB ID
+# if defined(ENABLE_USE_MME)
+      enb_id = i + (s1ap_generate_eNB_id () & 0xFFFF8);
+# else
+      enb_id = i;
+# endif
+    } else {
+        enb_id = *(ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr);
+    }
+
+    /* cell ID */
+    sprintf(aprefix, "%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, i);
+    config_getlist(&CCsParamList, NULL, 0, aprefix);
+    if (CCsParamList.numelt > 0) {
+      sprintf(aprefix, "%s.[%i].%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, i, ENB_CONFIG_STRING_COMPONENT_CARRIERS, 0);
+      config_get(CCsParams, sizeof(CCsParams)/sizeof(paramdef_t), aprefix);
+      Nid_cell_tr = (uint16_t) Nid_cell;
+    }
+
+    RC.flexran[i]->mod_id   = i;
+    RC.flexran[i]->agent_id = (((uint64_t)i) << 48) | (((uint64_t)enb_id) << 16) | ((uint64_t)Nid_cell_tr);
+
+    /* assume for the moment the monolithic case, i.e. agent can provide
+     * information for all layers */
+    RC.flexran[i]->capability_mask = FLEXRAN_CAP_LOPHY | FLEXRAN_CAP_HIPHY
+                                   | FLEXRAN_CAP_LOMAC | FLEXRAN_CAP_HIMAC
+                                   | FLEXRAN_CAP_RLC   | FLEXRAN_CAP_PDCP
+                                   | FLEXRAN_CAP_SDAP  | FLEXRAN_CAP_RRC;
   }
 }
 
