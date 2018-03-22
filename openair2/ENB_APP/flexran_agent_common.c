@@ -866,26 +866,25 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 	cell_conf[i]->phich_duration = PROTOCOL__FLEX_PHICH_DURATION__FLPD_EXTENDED;
       }
       cell_conf[i]->has_phich_duration = 1;
-      //TODO: Fill in with actual value, See TS 36.211, section 6.9
       cell_conf[i]->init_nr_pdcch_ofdm_sym = flexran_get_num_pdcch_symb(mod_id,i);
-      cell_conf[i]->has_init_nr_pdcch_ofdm_sym = 0;
-      //TODO: Fill in with actual value
-      /* Protocol__FlexSiConfig *si_config; */
-      /* si_config = malloc(sizeof(Protocol__FlexSiConfig)); */
-      /* if(si_config == NULL) */
-      /* 	goto error; */
-      /* protocol__flex_si_config__init(si_config); */
-      /* //TODO: Fill in with actual value, Frame number to apply the SI configuration */
-      /* si_config->sfn = 1; */
-      /* si_config->has_sfn = 1; */
-      /* //TODO: Fill in with actual value, the length of SIB1 in bytes */
-      /* si_config->sib1_length = get_sib1_length(mod_id,i); */
-      /* si_config->has_sib1_length = 1; */
-      /* //TODO: Fill in with actual value, Scheduling window for all SIs in SF */
-      /* si_config->si_window_length = (uint32_t) get_si_window_length(mod_id,i); */
-      /* si_config->has_si_window_length = 1; */
-      /* //TODO: Fill in with actual value, the number of SI messages */
-      /* si_config->n_si_message=1; */
+      cell_conf[i]->has_init_nr_pdcch_ofdm_sym = 1;
+      Protocol__FlexSiConfig *si_config;
+      si_config = malloc(sizeof(Protocol__FlexSiConfig));
+      if(si_config == NULL)
+        goto error;
+      protocol__flex_si_config__init(si_config);
+
+      si_config->sfn = flexran_get_current_system_frame_num(mod_id);
+      si_config->has_sfn = 1;
+
+      si_config->sib1_length = flexran_get_sib1_length(mod_id,i);
+      si_config->has_sib1_length = 1;
+
+      si_config->si_window_length = (uint32_t) flexran_get_si_window_length(mod_id, i);
+      si_config->has_si_window_length = 1;
+
+      si_config->n_si_message = 0;
+
       /* Protocol__FlexSiMessage **si_message; */
       /* si_message = malloc(sizeof(Protocol__FlexSiMessage *) * si_config->n_si_message); */
       /* if(si_message == NULL) */
@@ -905,8 +904,9 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       /* if(si_config->n_si_message > 0){ */
       /* 	si_config->si_message = si_message; */
       /* } */
-      /* cell_conf[i]->si_config = si_config; */
-      
+
+      cell_conf[i]->si_config = si_config;
+
       cell_conf[i]->dl_bandwidth = flexran_get_N_RB_DL(mod_id,i);
       cell_conf[i]->has_dl_bandwidth = 1;
 
@@ -927,8 +927,7 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       }
 
       cell_conf[i]->has_dl_cyclic_prefix_length = 1;
-      //TODO: Fill in with actual value, number of cell specific antenna ports. Currently single port support
-      cell_conf[i]->antenna_ports_count = 1;
+      cell_conf[i]->antenna_ports_count = flexran_get_antenna_ports(mod_id, i);
       cell_conf[i]->has_antenna_ports_count = 1;
 
       if (flexran_get_duplex_mode(mod_id,i) == 1) {
@@ -937,12 +936,10 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 	cell_conf[i]->duplex_mode = PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD;
       }
       cell_conf[i]->has_duplex_mode = 1;
-      //TODO: Fill in with actual value, DL/UL subframe assignment. TDD only
       cell_conf[i]->subframe_assignment = flexran_get_subframe_assignment(mod_id, i);
-      cell_conf[i]->has_subframe_assignment = 0;
-      //TODO: Fill in with actual value, TDD only. See TS 36.211, table 4.2.1
+      cell_conf[i]->has_subframe_assignment = 1;
       cell_conf[i]->special_subframe_patterns = flexran_get_special_subframe_assignment(mod_id,i);
-      cell_conf[i]->has_special_subframe_patterns = 0;
+      cell_conf[i]->has_special_subframe_patterns = 1;
       //TODO: Fill in with actual value, The MBSFN radio frame period
       cell_conf[i]->n_mbsfn_subframe_config_rfperiod = 0;
       uint32_t *elem_rfperiod;
