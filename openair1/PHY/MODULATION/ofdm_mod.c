@@ -67,7 +67,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
                  )
 {
 
-  short temp[2048*4] __attribute__((aligned(32)));
+  short temp[4096*4] __attribute__((aligned(32)));
   unsigned short i,j;
   short k;
 
@@ -100,6 +100,12 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   case 2048:
     idft = idft2048;
     break;
+
+  case 3072:
+    idft = idft3072;
+
+  case 4096:
+    idft = idft4096;
 
   default:
     idft = idft512;

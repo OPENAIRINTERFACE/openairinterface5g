@@ -66,11 +66,20 @@ int nr_init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
         case 189:
 
         case 217: //80 MHz
-          frame_parms->ofdm_symbol_size = 4096;
-          frame_parms->samples_per_tti = 61440;
-          frame_parms->first_carrier_offset = 2794; //4096 - 1302
-          frame_parms->nb_prefix_samples0 = 320;
-          frame_parms->nb_prefix_samples = 288;
+          if (frame_parms->threequarter_fs) {
+            frame_parms->ofdm_symbol_size = 3072;
+            frame_parms->samples_per_tti = 46080;
+            frame_parms->first_carrier_offset = 1770; //3072 - 1302
+            frame_parms->nb_prefix_samples0 = 240;
+            frame_parms->nb_prefix_samples = 216;
+          }
+          else {
+            frame_parms->ofdm_symbol_size = 4096;
+            frame_parms->samples_per_tti = 61440;
+            frame_parms->first_carrier_offset = 2794; //4096 - 1302
+            frame_parms->nb_prefix_samples0 = 320;
+            frame_parms->nb_prefix_samples = 288;
+          }
           break;
 
         case 245:
