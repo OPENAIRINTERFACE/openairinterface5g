@@ -24,4 +24,15 @@
 
 #include "PHY/defs.h"
 
+typedef enum {
+  NR_MU_0=0,
+  NR_MU_1,
+  NR_MU_2,
+  NR_MU_3,
+  NR_MU_4,
+} nr_numerology_index_e;
+
+/// Subcarrier spacings in Hz indexed by numerology index
+uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
+
 #endif
