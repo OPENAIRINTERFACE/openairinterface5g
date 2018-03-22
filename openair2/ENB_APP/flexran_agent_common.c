@@ -804,7 +804,6 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
   xid = (enb_config_req_msg->header)->xid;
   
   int i, j;
-  int enb_id = mod_id;
   
   Protocol__FlexEnbConfigReply *enb_config_reply_msg;
   enb_config_reply_msg = malloc(sizeof(Protocol__FlexEnbConfigReply));
@@ -816,10 +815,10 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
     goto error;
   
   enb_config_reply_msg->header = header;
-  
-  enb_config_reply_msg->enb_id = mod_id;
-  
-  
+
+  enb_config_reply_msg->enb_id = RC.flexran[mod_id]->agent_id;
+  enb_config_reply_msg->has_enb_id = 1;
+
   enb_config_reply_msg->n_cell_config = MAX_NUM_CCs;
   
   Protocol__FlexCellConfig **cell_conf;
@@ -832,43 +831,43 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       protocol__flex_cell_config__init(cell_conf[i]);
 
       cell_conf[i]->phy_cell_id = 1;
-      cell_conf[i]->has_phy_cell_id = flexran_get_cell_id(enb_id,i);
+      cell_conf[i]->has_phy_cell_id = flexran_get_cell_id(mod_id,i);
 
       cell_conf[i]->cell_id = i;
       cell_conf[i]->has_cell_id = 1;
 
-      cell_conf[i]->pusch_hopping_offset = flexran_get_hopping_offset(enb_id,i);
+      cell_conf[i]->pusch_hopping_offset = flexran_get_hopping_offset(mod_id,i);
       cell_conf[i]->has_pusch_hopping_offset = 1;
 
-      if (flexran_get_hopping_mode(enb_id,i) == 0) {
+      if (flexran_get_hopping_mode(mod_id,i) == 0) {
 	cell_conf[i]->hopping_mode = PROTOCOL__FLEX_HOPPING_MODE__FLHM_INTER;
-      } else if(flexran_get_hopping_mode(enb_id,i) == 1) {
+      } else if(flexran_get_hopping_mode(mod_id,i) == 1) {
 	cell_conf[i]->hopping_mode = PROTOCOL__FLEX_HOPPING_MODE__FLHM_INTERINTRA;
       }
       cell_conf[i]->has_hopping_mode = 1;
 
-      cell_conf[i]->n_sb = flexran_get_n_SB(enb_id,i);
+      cell_conf[i]->n_sb = flexran_get_n_SB(mod_id,i);
       cell_conf[i]->has_n_sb = 1;
 
-      if (flexran_get_phich_resource(enb_id,i) == 0) {
+      if (flexran_get_phich_resource(mod_id,i) == 0) {
 	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_ONE_SIXTH; //0
-      } else if (flexran_get_phich_resource(enb_id,i) == 1) {
+      } else if (flexran_get_phich_resource(mod_id,i) == 1) {
 	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_HALF; //1
-      } else if (flexran_get_phich_resource(enb_id,i) == 2) {
+      } else if (flexran_get_phich_resource(mod_id,i) == 2) {
 	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_ONE; // 2
-      } else if (flexran_get_phich_resource(enb_id,i) == 3) {
+      } else if (flexran_get_phich_resource(mod_id,i) == 3) {
 	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_TWO;//3
       }
       cell_conf[i]->has_phich_resource = 1;
 
-      if (flexran_get_phich_duration(enb_id,i) == 0) {
+      if (flexran_get_phich_duration(mod_id,i) == 0) {
     	cell_conf[i]->phich_duration = PROTOCOL__FLEX_PHICH_DURATION__FLPD_NORMAL;
-      } else if(flexran_get_phich_duration(enb_id,i) == 1) {
+      } else if(flexran_get_phich_duration(mod_id,i) == 1) {
 	cell_conf[i]->phich_duration = PROTOCOL__FLEX_PHICH_DURATION__FLPD_EXTENDED;
       }
       cell_conf[i]->has_phich_duration = 1;
       //TODO: Fill in with actual value, See TS 36.211, section 6.9
-      cell_conf[i]->init_nr_pdcch_ofdm_sym = flexran_get_num_pdcch_symb(enb_id,i);
+      cell_conf[i]->init_nr_pdcch_ofdm_sym = flexran_get_num_pdcch_symb(mod_id,i);
       cell_conf[i]->has_init_nr_pdcch_ofdm_sym = 0;
       //TODO: Fill in with actual value
       /* Protocol__FlexSiConfig *si_config; */
@@ -880,10 +879,10 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       /* si_config->sfn = 1; */
       /* si_config->has_sfn = 1; */
       /* //TODO: Fill in with actual value, the length of SIB1 in bytes */
-      /* si_config->sib1_length = get_sib1_length(enb_id,i); */
+      /* si_config->sib1_length = get_sib1_length(mod_id,i); */
       /* si_config->has_sib1_length = 1; */
       /* //TODO: Fill in with actual value, Scheduling window for all SIs in SF */
-      /* si_config->si_window_length = (uint32_t) get_si_window_length(enb_id,i); */
+      /* si_config->si_window_length = (uint32_t) get_si_window_length(mod_id,i); */
       /* si_config->has_si_window_length = 1; */
       /* //TODO: Fill in with actual value, the number of SI messages */
       /* si_config->n_si_message=1; */
@@ -908,22 +907,22 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       /* } */
       /* cell_conf[i]->si_config = si_config; */
       
-      cell_conf[i]->dl_bandwidth = flexran_get_N_RB_DL(enb_id,i);
+      cell_conf[i]->dl_bandwidth = flexran_get_N_RB_DL(mod_id,i);
       cell_conf[i]->has_dl_bandwidth = 1;
 
-      cell_conf[i]->ul_bandwidth = flexran_get_N_RB_UL(enb_id,i);
+      cell_conf[i]->ul_bandwidth = flexran_get_N_RB_UL(mod_id,i);
       cell_conf[i]->has_ul_bandwidth = 1;
 
-      if (flexran_get_ul_cyclic_prefix_length(enb_id, i) == 0) {
+      if (flexran_get_ul_cyclic_prefix_length(mod_id, i) == 0) {
 	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_NORMAL;
-      } else if(flexran_get_ul_cyclic_prefix_length(enb_id, i) == 1) {
-	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_EXTENDED;      
+      } else if(flexran_get_ul_cyclic_prefix_length(mod_id, i) == 1) {
+	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_EXTENDED;
       }
       cell_conf[i]->has_ul_cyclic_prefix_length = 1;
 
-      if (flexran_get_ul_cyclic_prefix_length(enb_id,i) == 0) {
+      if (flexran_get_ul_cyclic_prefix_length(mod_id,i) == 0) {
 	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_DL_CYCLIC_PREFIX_LENGTH__FLDCPL_NORMAL;
-      } else if (flexran_get_ul_cyclic_prefix_length(enb_id,i) == 1) {
+      } else if (flexran_get_ul_cyclic_prefix_length(mod_id,i) == 1) {
 	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_DL_CYCLIC_PREFIX_LENGTH__FLDCPL_EXTENDED;
       }
 
@@ -932,17 +931,17 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       cell_conf[i]->antenna_ports_count = 1;
       cell_conf[i]->has_antenna_ports_count = 1;
 
-      if (flexran_get_duplex_mode(enb_id,i) == 1) {
+      if (flexran_get_duplex_mode(mod_id,i) == 1) {
 	cell_conf[i]->duplex_mode = PROTOCOL__FLEX_DUPLEX_MODE__FLDM_FDD;
-      } else if(flexran_get_duplex_mode(enb_id,i) == 0) {
+      } else if(flexran_get_duplex_mode(mod_id,i) == 0) {
 	cell_conf[i]->duplex_mode = PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD;
       }
       cell_conf[i]->has_duplex_mode = 1;
       //TODO: Fill in with actual value, DL/UL subframe assignment. TDD only
-      cell_conf[i]->subframe_assignment = flexran_get_subframe_assignment(enb_id, i);
+      cell_conf[i]->subframe_assignment = flexran_get_subframe_assignment(mod_id, i);
       cell_conf[i]->has_subframe_assignment = 0;
       //TODO: Fill in with actual value, TDD only. See TS 36.211, table 4.2.1
-      cell_conf[i]->special_subframe_patterns = flexran_get_special_subframe_assignment(enb_id,i);
+      cell_conf[i]->special_subframe_patterns = flexran_get_special_subframe_assignment(mod_id,i);
       cell_conf[i]->has_special_subframe_patterns = 0;
       //TODO: Fill in with actual value, The MBSFN radio frame period
       cell_conf[i]->n_mbsfn_subframe_config_rfperiod = 0;
@@ -954,7 +953,7 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 	elem_rfperiod[j] = 1;
       }
       cell_conf[i]->mbsfn_subframe_config_rfperiod = elem_rfperiod;
-      
+
       //TODO: Fill in with actual value, The MBSFN radio frame offset
       cell_conf[i]->n_mbsfn_subframe_config_rfoffset = 0;
       uint32_t *elem_rfoffset;
@@ -965,7 +964,7 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 	elem_rfoffset[j] = 1;
       }
       cell_conf[i]->mbsfn_subframe_config_rfoffset = elem_rfoffset;
-      
+
       //TODO: Fill in with actual value, Bitmap indicating the MBSFN subframes
       cell_conf[i]->n_mbsfn_subframe_config_sfalloc = 0;
       uint32_t *elem_sfalloc;
@@ -976,63 +975,62 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 	elem_sfalloc[j] = 1;
       }
       cell_conf[i]->mbsfn_subframe_config_sfalloc = elem_sfalloc;
-      
-      cell_conf[i]->prach_config_index = flexran_get_prach_ConfigIndex(enb_id,i);
+
+      cell_conf[i]->prach_config_index = flexran_get_prach_ConfigIndex(mod_id,i);
       cell_conf[i]->has_prach_config_index = 1;
 
-      cell_conf[i]->prach_freq_offset = flexran_get_prach_FreqOffset(enb_id,i);
+      cell_conf[i]->prach_freq_offset = flexran_get_prach_FreqOffset(mod_id,i);
       cell_conf[i]->has_prach_freq_offset = 1;
 
-      cell_conf[i]->ra_response_window_size = flexran_get_ra_ResponseWindowSize(enb_id,i);
+      cell_conf[i]->ra_response_window_size = flexran_get_ra_ResponseWindowSize(mod_id,i);
       cell_conf[i]->has_ra_response_window_size = 1;
 
-      cell_conf[i]->mac_contention_resolution_timer = flexran_get_mac_ContentionResolutionTimer(enb_id,i);
+      cell_conf[i]->mac_contention_resolution_timer = flexran_get_mac_ContentionResolutionTimer(mod_id,i);
       cell_conf[i]->has_mac_contention_resolution_timer = 1;
 
-      cell_conf[i]->max_harq_msg3tx = flexran_get_maxHARQ_Msg3Tx(enb_id,i);
+      cell_conf[i]->max_harq_msg3tx = flexran_get_maxHARQ_Msg3Tx(mod_id,i);
       cell_conf[i]->has_max_harq_msg3tx = 1;
 
-      cell_conf[i]->n1pucch_an = flexran_get_n1pucch_an(enb_id,i);
+      cell_conf[i]->n1pucch_an = flexran_get_n1pucch_an(mod_id,i);
       cell_conf[i]->has_n1pucch_an = 1;
 
-      cell_conf[i]->deltapucch_shift = flexran_get_deltaPUCCH_Shift(enb_id,i);
+      cell_conf[i]->deltapucch_shift = flexran_get_deltaPUCCH_Shift(mod_id,i);
       cell_conf[i]->has_deltapucch_shift = 1;
 
-      cell_conf[i]->nrb_cqi = flexran_get_nRB_CQI(enb_id,i);
+      cell_conf[i]->nrb_cqi = flexran_get_nRB_CQI(mod_id,i);
       cell_conf[i]->has_nrb_cqi = 1;
 
-      cell_conf[i]->srs_subframe_config = flexran_get_srs_SubframeConfig(enb_id,i);
+      cell_conf[i]->srs_subframe_config = flexran_get_srs_SubframeConfig(mod_id,i);
       cell_conf[i]->has_srs_subframe_config = 1;
 
-      cell_conf[i]->srs_bw_config = flexran_get_srs_BandwidthConfig(enb_id,i);
+      cell_conf[i]->srs_bw_config = flexran_get_srs_BandwidthConfig(mod_id,i);
       cell_conf[i]->has_srs_bw_config = 1;
 
-      cell_conf[i]->srs_mac_up_pts = flexran_get_srs_MaxUpPts(enb_id,i);
+      cell_conf[i]->srs_mac_up_pts = flexran_get_srs_MaxUpPts(mod_id,i);
       cell_conf[i]->has_srs_mac_up_pts = 1;
 
-      cell_conf[i]->dl_freq = flexran_agent_get_operating_dl_freq (enb_id,i);
+      cell_conf[i]->dl_freq = flexran_agent_get_operating_dl_freq (mod_id,i);
       cell_conf[i]->has_dl_freq = 1;
 
-      cell_conf[i]->ul_freq = flexran_agent_get_operating_ul_freq (enb_id, i);
+      cell_conf[i]->ul_freq = flexran_agent_get_operating_ul_freq (mod_id, i);
       cell_conf[i]->has_ul_freq = 1;
 
-      cell_conf[i]->eutra_band = flexran_agent_get_operating_eutra_band (enb_id,i);
+      cell_conf[i]->eutra_band = flexran_agent_get_operating_eutra_band (mod_id,i);
       cell_conf[i]->has_eutra_band = 1;
 
-      cell_conf[i]->dl_pdsch_power = flexran_agent_get_operating_pdsch_refpower(enb_id, i);
+      cell_conf[i]->dl_pdsch_power = flexran_agent_get_operating_pdsch_refpower(mod_id, i);
       cell_conf[i]->has_dl_pdsch_power = 1;
 
-      cell_conf[i]->ul_pusch_power = flexran_agent_get_operating_pusch_p0 (enb_id,i);
+      cell_conf[i]->ul_pusch_power = flexran_agent_get_operating_pusch_p0 (mod_id,i);
       cell_conf[i]->has_ul_pusch_power = 1;
- 
 
-      if (flexran_get_enable64QAM(enb_id,i) == 0) {
+      if (flexran_get_enable64QAM(mod_id,i) == 0) {
 	cell_conf[i]->enable_64qam = PROTOCOL__FLEX_QAM__FLEQ_MOD_16QAM;
-      } else if(flexran_get_enable64QAM(enb_id,i) == 1) {
+      } else if(flexran_get_enable64QAM(mod_id,i) == 1) {
 	cell_conf[i]->enable_64qam = PROTOCOL__FLEX_QAM__FLEQ_MOD_64QAM;
       }
       cell_conf[i]->has_enable_64qam = 1;
-      
+
       cell_conf[i]->carrier_index = i;
       cell_conf[i]->has_carrier_index = 1;
     }
