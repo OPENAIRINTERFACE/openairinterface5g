@@ -506,43 +506,28 @@ function main() {
   echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
-  if [ "$NR" = "True" ]
-  then
-    if [ "$NOS1" =  "1" ] ; then
-        build_dir=nr_noS1_build_oai
-        if [ "$gNB" = "1" ] ; then
-           exec=nr-softmodem-nos1
-        fi
-        if [ "$nrUE" = "1" ] ; then
-           exec=nr-uesoftmodem-nos1
-        fi
-    else
-        build_dir=nr_build_oai
-        if [ "$gNB" = "1" ] ; then
-           exec=nr-softmodem
-        fi
-        if [ "$nrUE" = "1" ] ; then
-           exec=nr-uesoftmodem
-        fi
-    fi
+  if [ "$NOS1" = "1" ] ; then
+      build_dir=noS1_build_ran
+      if [ "$gNB" = "1" ] ; then
+         exec=nr-softmodem-nos1
+       elif [ "$nrUE" = "1" ] ; then
+         exec=nr-uesoftmodem-nos1
+       elif [ "$eNB" = "1" ] ; then
+         exec=lte-softmodem-nos1
+       elif [ "$UE" = "1" ] ; then
+         exec=lte-uesoftmodem-nos1
+       fi
   else
-    if [ "$NOS1" =  "1" ] ; then
-        build_dir=lte_noS1_build_oai
-        if [ "$eNB" = "1" ] ; then
-           exec=lte-softmodem-nos1
-        fi
-        if [ "$UE" = "1" ] ; then
-           exec=lte-uesoftmodem-nos1
-        fi
-    else
-        build_dir=lte_build_oai
-        if [ "$eNB" = "1" ] ; then
-           exec=lte-softmodem
-        fi
-        if [ "$UE" = "1" ] ; then
-           exec=lte-uesoftmodem
-        fi
-    fi
+      build_dir=build_ran
+      if [ "$gNB" = "1" ] ; then
+         exec=nr-softmodem
+       elif [ "$nrUE" = "1" ] ; then
+         exec=nr-uesoftmodem
+       elif [ "$eNB" = "1" ] ; then
+         exec=lte-softmodem
+       elif [ "$UE" = "1" ] ; then
+         exec=lte-uesoftmodem
+       fi
   fi
 
 # configuration module libraries, one currently available, using libconfig 

@@ -1232,6 +1232,53 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   )
 
+  set(PHY_NR_SRC
+  # depend on code generation from asn1c
+  ${RRC_FULL_DIR}/asn1_constants.h
+  # actual source
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if4_tools.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if5_tools.c
+  ${OPENAIR1_DIR}/PHY/MODULATION/ofdm_mod.c
+  ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep.c
+  ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cmult_sv.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cmult_vv.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cdot_prod.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/dB_routines.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/sqrt.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
+  )
+
+  set(PHY_NR_UE_SRC
+  # depend on code generation from asn1c
+  ${RRC_FULL_DIR}/asn1_constants.h
+  # actual source
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if4_tools.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if5_tools.c
+  ${OPENAIR1_DIR}/PHY/MODULATION/ofdm_mod.c
+  ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep.c
+  ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cmult_sv.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cmult_vv.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cdot_prod.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/dB_routines.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/sqrt.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
+  )
+
+
 if (${SMBV})
   set(PHY_SRC "${PHY_SRC} ${OPENAIR1_DIR}/PHY/TOOLS/smbv.c")
 endif  (${SMBV})
@@ -1242,6 +1289,8 @@ endif ()
 
 add_library(PHY ${PHY_SRC})
 add_library(PHY_UE ${PHY_SRC_UE})
+add_library(PHY_NR ${PHY_NR_SRC})
+add_library(PHY_NR_UE ${PHY_NR_UE_SRC})
 
 #Layer 2 library
 #####################
@@ -1940,7 +1989,7 @@ add_definitions(-DASN1_MINIMUM_VERSION=924)
 # add executables for operation
 #################################
 
-# lte-softmodem is both eNB and UE implementation
+# lte-softmodem is eNB implementation
 ###################################################
 
 add_executable(lte-softmodem
@@ -1980,7 +2029,7 @@ target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CR
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem ${T_LIB})
 
-# lte-softmodem-nos1 is both eNB and UE implementation
+# lte-softmodem-nos1 is eNB implementation
 ###################################################
 add_executable(lte-softmodem-nos1
   ${rrc_h}
@@ -2053,7 +2102,7 @@ target_link_libraries (lte-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${
 target_link_libraries (lte-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem ${T_LIB})
 
-# lte-softmodem-nos1 is both eNB and UE implementation
+# lte-softmodem-nos1 is UE implementation
 ###################################################
 add_executable(lte-uesoftmodem-nos1
   ${rrc_h}
@@ -2086,6 +2135,43 @@ target_link_libraries (lte-uesoftmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-uesoftmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-uesoftmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem-nos1 ${T_LIB})
+
+# nr-softmodem
+###################################################
+
+add_executable(nr-softmodem
+  #${rrc_h}
+  #${s1ap_h}
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
+  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  #${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
+  ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${GTPU_need_ITTI}
+  ${XFORMS_SOURCE}
+  ${XFORMS_SOURCE_SOFTMODEM}
+  ${T_SOURCE}
+  ${CONFIG_SOURCES}
+  ${SHLIB_LOADER_SOURCES}
+  )
+
+target_link_libraries (nr-softmodem
+  -Wl,--start-group
+  UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY_NR LFDS GTPV1U SECU_CN SECU_OSA
+  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB}
+  #RRC_LIB S1AP_LIB S1AP_ENB L2
+  #NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
+  -Wl,--end-group z dl)
+
+target_link_libraries (nr-softmodem ${LIBXML2_LIBRARIES})
+target_link_libraries (nr-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
+target_link_libraries (nr-softmodem ${T_LIB})
 
 # USIM process
 #################
