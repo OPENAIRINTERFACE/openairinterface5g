@@ -114,6 +114,11 @@ typedef enum {
     CR_NUM   = 6
 } sorting_criterion_t;
 
+typedef enum {
+    POL_FAIR   = 0,
+    POL_GREEDY = 1,
+    POL_NUM    = 2
+} accounting_policy_t;
 //-----------------------------------------------------------------------------
 // PHY TYPES
 //-----------------------------------------------------------------------------

@@ -1582,6 +1582,10 @@ typedef struct {
     uint8_t  slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX];
     uint8_t  slice_allocated_rbgs[NFAPI_CC_MAX][N_RBG_MAX];
     uint8_t  MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX];
+
+    uint32_t bytes_lcid[MAX_MOBILES_PER_ENB][MAX_NUM_LCID];
+    uint32_t wb_pmi[MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
+    uint8_t  mcs[MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
 } pre_processor_results_t;
 
 #include "mac_proto.h"

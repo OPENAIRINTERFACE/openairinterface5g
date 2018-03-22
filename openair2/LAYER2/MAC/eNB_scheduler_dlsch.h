@@ -42,6 +42,11 @@ int       n_active_slices = 1;
 int       n_active_slices_current = 1;
 int       slice_counter = 0;
 
+int       intraslice_share_active = 1;
+int       intraslice_share_active_current = 1;
+int       interslice_share_active = 1;
+int       interslice_share_active_current = 1;
+
 // RB share for each slice for past and current time
 float     slice_percentage[MAX_NUM_SLICES]         = {1.0, 0.0, 0.0, 0.0};
 float     slice_percentage_current[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
