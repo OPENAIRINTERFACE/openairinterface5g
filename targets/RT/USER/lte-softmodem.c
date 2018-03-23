@@ -904,7 +904,6 @@ int main( int argc, char **argv )
   int ret;
 #endif
 
-  start_background_system();
   if ( load_configmodule(argc,argv) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   } 
