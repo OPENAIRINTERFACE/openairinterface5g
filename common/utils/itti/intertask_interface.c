@@ -325,8 +325,11 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
   /* Increment the global message number */
   message_number = itti_increment_message_number ();
 
+#if 0
+  /* itti dump is disabled */
   itti_dump_queue_message (origin_task_id, message_number, message, itti_desc.messages_info[message_id].name,
                            sizeof(MessageHeader) + message->ittiMsgHeader.ittiMsgSize);
+#endif
 
   if (destination_task_id != TASK_UNKNOWN) {
 
@@ -421,8 +424,11 @@ int itti_try_send_msg_to_task(task_id_t destination_task_id, instance_t instance
   /* Increment the global message number */
   message_number = itti_increment_message_number ();
 
+#if 0
+  /* itti dump is disabled */
   itti_dump_queue_message (origin_task_id, message_number, message, itti_desc.messages_info[message_id].name,
                            sizeof(MessageHeader) + message->ittiMsgHeader.ittiMsgSize);
+#endif
 
   if (destination_task_id != TASK_UNKNOWN) {
 
@@ -716,8 +722,11 @@ void itti_mark_task_ready(task_id_t task_id)
 
   AssertFatal (thread_id < itti_desc.thread_max, "Thread id (%d) is out of range (%d)!\n", thread_id, itti_desc.thread_max);
 
+#if 0
+  /* itti dump is disabled */
   /* Register the thread in itti dump */
   itti_dump_thread_use_ring_buffer();
+#endif
 
   /* Mark the thread as using LFDS queue */
   lfds611_queue_use(itti_desc.tasks[task_id].message_queue);
@@ -848,7 +857,10 @@ int itti_init(task_id_t task_max, thread_id_t thread_max, MessagesIds messages_i
   itti_desc.wait_tasks = 0;
   itti_desc.created_tasks = 0;
   itti_desc.ready_tasks = 0;
+#if 0
+  /* itti dump is disabled */
   itti_dump_init (messages_definition_xml, dump_file_name);
+#endif
 
   CHECK_INIT_RETURN(timer_init ());
 
@@ -915,7 +927,10 @@ void itti_wait_tasks_end(void)
     exit (0);
   }
 
+#if 0
+  /* itti dump is disabled */
   itti_dump_exit();
+#endif
 }
 
 void itti_send_terminate_message(task_id_t task_id)
