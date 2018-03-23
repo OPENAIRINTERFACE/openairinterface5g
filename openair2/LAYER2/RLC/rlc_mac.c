@@ -299,6 +299,7 @@ void mac_rlc_data_ind     (
   switch (rlc_mode) {
   case RLC_MODE_NONE:
     //handle_event(WARNING,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : no radio bearer configured :%d\n", __FILE__, __LINE__, channel_idP);
+    list_free (&data_ind.data);
     break;
 
   case RLC_MODE_AM:

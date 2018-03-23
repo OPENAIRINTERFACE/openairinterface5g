@@ -421,6 +421,7 @@ rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, void *argP, struct mac_data_ind
     LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE %02X hex\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,l_rlc_p),
           l_rlc_p->protocol_state);
+    list_free (&data_indP.data);
   }
 }
 
