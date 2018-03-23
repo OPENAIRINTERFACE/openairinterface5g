@@ -137,6 +137,9 @@ void RCconfig_flexran()
                 sizeof(flexran_agent_info_t), i + 1, num_enbs);
     /* if config says "yes", enable Agent, in all other cases it's like "no" */
     RC.flexran[i]->enabled          = strcasecmp(*(flexranParams[FLEXRAN_ENABLED].strptr), "yes") == 0;
+    /* if not enabled, simply skip the rest, it is not needed anyway */
+    if (!RC.flexran[i]->enabled)
+      continue;
     RC.flexran[i]->interface_name   = strdup(*(flexranParams[FLEXRAN_INTERFACE_NAME_IDX].strptr));
     //inet_ntop(AF_INET, &(enb_properties->properties[mod_id]->flexran_agent_ipv4_address), in_ip, INET_ADDRSTRLEN);
     RC.flexran[i]->remote_ipv4_addr = strdup(*(flexranParams[FLEXRAN_IPV4_ADDRESS_IDX].strptr));
