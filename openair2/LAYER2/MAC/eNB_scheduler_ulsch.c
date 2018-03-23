@@ -1788,12 +1788,12 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
               VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SCHEDULED,UE_sched_ctrl->ul_scheduled);
 
             // adjust total UL buffer status by TBS, wait for UL sdus to do final update
-            LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,UE_template->TBS_UL[harq_pid]);
+            /*LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,UE_template->TBS_UL[harq_pid]);
             if (UE_template->ul_total_buffer > UE_template->TBS_UL[harq_pid])
               UE_template->ul_total_buffer -= UE_template->TBS_UL[harq_pid];
             else
               UE_template->ul_total_buffer = 0;
-            LOG_D(MAC,"ul_total_buffer, new %d\n", UE_template->ul_total_buffer);
+            LOG_D(MAC,"ul_total_buffer, new %d\n", UE_template->ul_total_buffer);*/
             // Cyclic shift for DM RS
             cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
             // save it for a potential retransmission
@@ -1868,6 +1868,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             // increment first rb for next UE allocation
             first_rb[CC_id]+=rb_table[rb_table_index];
             if(ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_FIRST) {
+              LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,UE_template->TBS_UL[harq_pid]);
                 if(ulsch_ue_select[CC_id].list[ulsch_ue_num].ul_total_buffer > 0){
                     if (UE_template->ul_total_buffer > UE_template->TBS_UL[harq_pid])
                       UE_template->ul_total_buffer -= UE_template->TBS_UL[harq_pid];
@@ -1876,6 +1877,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                 } else {
                     UE_template->ul_SR = 0;
                 }
+              LOG_D(MAC,"ul_total_buffer, new %d\n", UE_template->ul_total_buffer);
             }
             if((ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_INACTIVE) && (ULSCH_first_end == 0)) {
                 ULSCH_first_end = 1;
