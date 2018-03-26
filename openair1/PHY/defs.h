@@ -562,6 +562,8 @@ typedef struct eNB_proc_t_s {
   int RU_mask[10];
   /// time measurements for RU arrivals
   struct timespec t[10];
+  /// Timing statistics (RU_arrivals)
+  time_stats_t ru_arrival_time;
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach;
 #ifdef Rel14

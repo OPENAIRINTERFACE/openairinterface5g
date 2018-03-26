@@ -1159,7 +1159,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   
   harq_pid = ((10*frame) + subframe)&7;
 
-  LOG_I(PHY,"Running eNB pusch procedures in %d.%d, harq_pid %d\n",frame,subframe,harq_pid);
+  LOG_D(PHY,"Running eNB pusch procedures in %d.%d, harq_pid %d\n",frame,subframe,harq_pid);
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     ulsch = eNB->ulsch[i];
     ulsch_harq = ulsch->harq_processes[harq_pid];

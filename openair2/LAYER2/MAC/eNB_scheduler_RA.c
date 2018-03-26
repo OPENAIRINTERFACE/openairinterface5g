@@ -1370,7 +1370,7 @@ schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 
 	    ra = (RA_t *) & cc[CC_id].ra[i];
 
-            LOG_I(MAC,"RA[state:%d]\n",ra->state);
+            LOG_D(MAC,"RA[state:%d]\n",ra->state);
 
 	    if (ra->state == MSG2)
 		generate_Msg2(module_idP, CC_id, frameP, subframeP, ra);
