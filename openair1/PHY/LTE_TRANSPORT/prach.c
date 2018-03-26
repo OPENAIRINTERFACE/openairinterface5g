@@ -38,8 +38,11 @@
 #include "SCHED/extern.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-//#define PRACH_DEBUG 1
+#define PRACH_DEBUG 1
 //#define PRACH_WRITE_OUTPUT_DEBUG 1
+
+#undef LOG_I
+#define LOG_I(A,B,C...) printf(B,C)
 
 uint16_t NCS_unrestricted[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
 uint16_t NCS_restricted[15]   = {15,18,22,26,32,38,46,55,68,82,100,128,158,202,237}; // high-speed case
@@ -1202,6 +1205,10 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   int16_t *prach[nb_rx];
   uint8_t prach_fmt = get_prach_fmt(prach_ConfigIndex,frame_type);
   uint16_t N_ZC = (prach_fmt <4)?839:139;
+
+#ifdef PRACH_DEBUG
+  int en;
+#endif
   
   if (eNB) {
 #ifdef Rel14
@@ -1275,7 +1282,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 #ifdef PRACH_DEBUG
       int32_t en0=signal_energy((int32_t*)prach[aa],fp->samples_per_tti);
       int8_t dbEn0 = dB_fixed(en0);
-      int8_t rach_dBm = dbEn0 - eNB->rx_total_gain_dB;
+      int8_t rach_dBm = dbEn0 - ru->rx_total_gain_dB;
 
 #ifdef PRACH_WRITE_OUTPUT_DEBUG
         if (dbEn0>32 && prach[0]!= NULL)
@@ -1885,9 +1892,9 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
   }
 
 
-#ifdef PRACH_DEBUG
-  LOG_I( PHY, "compute_prach_seq: done init prach_tables\n" );
-#endif
+  //#ifdef PRACH_DEBUG
+  //  LOG_I( PHY, "compute_prach_seq: done init prach_tables\n" );
+  //#endif
 
   if (highSpeedFlag== 0) {
 

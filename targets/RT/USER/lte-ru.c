@@ -1097,6 +1097,7 @@ static void* ru_thread_prach( void* param ) {
 		       );
     }
     else {
+      LOG_I(PHY,"Running rx_prach in %d.%d\n",proc->frame_prach,proc->subframe_prach);
       rx_prach(NULL,
 	       ru,
 	       NULL,
@@ -1905,10 +1906,11 @@ static void* ru_thread( void* param ) {
       }
       else {
 
-        LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",
+        LOG_I(PHY,"RU thread %d, frame %d, subframe %d \n",
               ru->idx,frame,subframe);
 
         if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
+	  LOG_I(PHY,"Waking up prach for %d.%d\n",proc->frame_rx,proc->subframe_rx);
   	  wakeup_prach_ru(ru);
         }
 #ifdef Rel14

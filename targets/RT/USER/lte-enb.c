@@ -630,7 +630,7 @@ static void* eNB_thread_prach( void* param ) {
     
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
 
-    LOG_D(PHY,"Running eNB prach procedures\n");
+    LOG_I(PHY,"Running eNB prach procedures\n");
     prach_procedures(eNB
 #ifdef Rel14
 		     ,0

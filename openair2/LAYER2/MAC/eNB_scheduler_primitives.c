@@ -3280,7 +3280,7 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
       LOG_D(MAC, "Received %d for harq_pid %d\n", pdu[0],
 	    harq_pid);
       
-      pdu                 = &harq_indication_fdd->harq_data[0].bundling.value_0;
+      pdu                 = &harq_indication_tdd->harq_data[0].bundling.value_0;
       if (pdu[0] == 1) {	// ACK
 	sched_ctl->round[CC_idP][harq_pid] = 8;	// release HARQ process
 	sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
