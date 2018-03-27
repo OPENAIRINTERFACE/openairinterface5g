@@ -19,7 +19,17 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
-#include "defs_NR.h"
-#include "assertions.h"
-#include <math.h>
+#include "../defs_NR.h"
+
+int phy_init_nr_gNB(nfapi_param_t* nfapi_params)
+{
+
+  nfapi_params->pnf_phy_rel15.number_of_phys = 1;
+  nfapi_params->pnf_phy_rel15.phy[0].mu =1;
+  nfapi_params->subframe_config.duplex_mode.value = 1; //FDD
+  nfapi_params->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
+  nfapi_params->rf_config.dl_channel_bandwidth.value = 106;
+  nfapi_params->rf_config.ul_channel_bandwidth.value = 106;
+
+  return 0;
+}

@@ -19,33 +19,39 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
-#include "defs_NR.h"
+#include "../defs_NR.h"
 #include "log.h"
 
+/// Subcarrier spacings in Hz indexed by numerology index
+uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
 
-int nr_init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
+int nr_init_frame_parms(nfapi_param_t nfapi_params,
+                        NR_DL_FRAME_PARMS *frame_parms)
 {
 
+  int N_RB = nfapi_params.rf_config.dl_channel_bandwidth.value;
+  int Ncp = nfapi_params.subframe_config.dl_cyclic_prefix_type.value;
+  int mu = nfapi_params.pnf_phy_rel15.phy[0].mu;
+
 #if DISABLE_LOG_X
-  printf("Initializing frame parms for mu %d, N_RB_DL %d, Ncp %d, osf %d\n",frame_parms->N_RB_DL,frame_parms->Ncp,osf);
+  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
 #else
-  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB_DL %d, Ncp %d, osf %d\n",frame_parms->N_RB_DL,frame_parms->Ncp,osf);
+  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
 #endif
 
-  if (frame_parms->Ncp == EXTENDED)
-    AssertFatal(frame_parms->mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", frame_parms->Ncp, frame_parms->mu);
+  if (Ncp == 1) //EXTENDED, to be modified after lte defs are properly linked
+    AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
 
-  switch(frame_parms->mu) {
+  switch(mu) {
 
     case NR_MU_0: //15kHz scs
-      frame_parms->scs = nr_subcarrier_spacing[NR_MU_0];
+      frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_0];
       break;
 
     case NR_MU_1: //30kHz scs
-      frame_parms->scs = nr_subcarrier_spacing[NR_MU_1];
+      frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_1];
 
-      switch(frame_parms->N_RB_DL){
+      switch(N_RB){
         case 11:
         case 24:
         case 38:
@@ -85,14 +91,14 @@ int nr_init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
         case 245:
         case 273:
       default:
-        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", frame_parms->N_RB_DL, frame_parms->mu, frame_parms);
+        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", N_RB, mu, frame_parms);
       }
       break;
 
     case NR_MU_2: //60kHz scs
-      frame_parms->scs = nr_subcarrier_spacing[NR_MU_2];
+      frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_2];
 
-      switch(frame_parms->N_RB_DL){ //FR1 bands only
+      switch(N_RB){ //FR1 bands only
         case 11:
         case 18:
         case 38:
@@ -106,30 +112,28 @@ int nr_init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
         case 121:
         case 135:
       default:
-        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", frame_parms->N_RB_DL, frame_parms->mu, frame_parms);
+        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", N_RB, mu, frame_parms);
       }
       break;
 
     case NR_MU_3:
-      frame_parms->scs = nr_subcarrier_spacing[NR_MU_3];
+      frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
       break;
 
     case NR_MU_4:
-      frame_parms->scs = nr_subcarrier_spacing[NR_MU_4];
+      frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_4];
       break;
 
   default:
-    AssertFatal(1==0,"Invalid numerology index %d", frame_parms->mu);
+    AssertFatal(1==0,"Invalid numerology index %d", mu);
   }
 
   return 0;
 }
 
-void nr_dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
+void nr_dump_frame_parms(NR_DL_FRAME_PARMS *frame_parms)
 {
-  LOG_I(PHY,"frame_parms->mu=%d\n",frame_parms->mu);
-  LOG_I(PHY,"frame_parms->scs=%d\n",frame_parms->scs);
-  LOG_I(PHY,"frame_parms->N_RB_DL=%d\n",frame_parms->N_RB_DL);
+  LOG_I(PHY,"frame_parms->scs=%d\n",frame_parms->subcarrier_spacing);
   LOG_I(PHY,"frame_parms->ofdm_symbol_size=%d\n",frame_parms->ofdm_symbol_size);
   LOG_I(PHY,"frame_parms->samples_per_tti=%d\n",frame_parms->samples_per_tti);
   LOG_I(PHY,"frame_parms->nb_prefix_samples0=%d\n",frame_parms->nb_prefix_samples0);
