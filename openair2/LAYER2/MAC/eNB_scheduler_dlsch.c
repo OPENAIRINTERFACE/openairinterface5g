@@ -440,11 +440,11 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
     if (intraslice_share_active != 1 && intraslice_share_active != 0) {
       LOG_W(MAC,
             "[eNB %d][DL] frame %d subframe %d: invalid intraslice sharing status (%d), revert to its previous value (%d)\n",
-            module_idP, i, frameP, subframeP, intraslice_share_active, intraslice_share_active_current);
+            module_idP, frameP, subframeP, intraslice_share_active, intraslice_share_active_current);
       intraslice_share_active = intraslice_share_active_current;
     } else {
       LOG_N(MAC, "[eNB %d][DL] frame %d subframe %d: intraslice sharing status has changed (%x-->%x)\n",
-            module_idP, i, frameP, subframeP, intraslice_share_active_current, intraslice_share_active);
+            module_idP, frameP, subframeP, intraslice_share_active_current, intraslice_share_active);
       intraslice_share_active_current = intraslice_share_active;
     }
   }
@@ -454,11 +454,11 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
     if (interslice_share_active != 1 && interslice_share_active != 0) {
       LOG_W(MAC,
             "[eNB %d][DL] frame %d subframe %d: invalid interslice sharing status (%d), revert to its previous value (%d)\n",
-            module_idP, i, frameP, subframeP, interslice_share_active, interslice_share_active_current);
+            module_idP, frameP, subframeP, interslice_share_active, interslice_share_active_current);
       interslice_share_active = interslice_share_active_current;
     } else {
       LOG_N(MAC, "[eNB %d][DL] frame %d subframe %d: interslice sharing status has changed (%x-->%x)\n",
-            module_idP, i, frameP, subframeP, interslice_share_active_current, interslice_share_active);
+            module_idP, frameP, subframeP, interslice_share_active_current, interslice_share_active);
       interslice_share_active_current = interslice_share_active;
     }
   }
@@ -1773,7 +1773,7 @@ void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id, int frameP, sub_frame_
         ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
         // TODO: Do something here
-        ue_sched_ctl->pre_nb_available_rbs[CC_id];
+        // ue_sched_ctl->pre_nb_available_rbs[CC_id];
       }
     }
   }
