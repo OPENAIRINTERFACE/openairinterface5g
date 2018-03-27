@@ -94,7 +94,7 @@ function patch_rrc()
   case "$version" in
     Rel14 )
       echo "patching RRC files release 14"
-      apply_patches "$directory" RRC_Rel14 ${#RRC_Rel14[*]}
+      # apply_patches "$directory" RRC_Rel14 ${#RRC_Rel14[*]}
       ;;
     Rel10 )
       echo "patching RRC files release 10"
@@ -115,6 +115,8 @@ function patch_x2ap()
   local version="$2"
 
   case "$version" in
+    R14 )
+      ;;
     R11 )
       echo "patching X2AP files release 11.2"
       apply_patches "$directory" X2AP_Rel11_2 ${#X2AP_Rel11_2[*]}
@@ -131,6 +133,8 @@ function patch_s1ap()
   local version="$2"
 
   case "$version" in
+    R14 )
+      ;;
     R10 )
       #nothing to do anymore (fixes went to asn1c)
       ;;

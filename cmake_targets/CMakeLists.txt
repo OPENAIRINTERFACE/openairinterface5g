@@ -280,6 +280,7 @@ set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
 # RRC
 ######
+
 add_list2_option(RRC_ASN1_VERSION "Rel14" "ASN.1 version of RRC interface" "Rel8" "Rel10" "Rel14" "CBA")
 
 if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
@@ -292,7 +293,7 @@ else()
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/RRC-e30.asn)
 endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 
-set (RRC_FULL_DIR ${asn1_generated_dir}/${RRC_ASN1_VERSION})
+set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
 if(NOT EXISTS ${asn1c_call})
   message( FATAL_ERROR "The script ${asn1c_call} must be present" )
 endif(NOT EXISTS ${asn1c_call})
@@ -331,10 +332,14 @@ add_custom_command (
 # Same limitation as described in RRC: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(S1AP_VERSION R10 "S1AP Asn.1 grammar version" R8 R9 R10)
+add_list1_option(S1AP_VERSION R14 "S1AP Asn.1 grammar version" R8 R9 R10 R14)
 
 set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
-if (${S1AP_VERSION} STREQUAL "R10")
+if (${S1AP_VERSION} STREQUAL "R14")
+  set (ASN1RELDIR R14.4)
+  add_definitions("-DUPDATE_RELEASE_9 -DUPDATE_RELEASE_10 -DUPDATE_RELEASE_14")
+  set(S1AP_ASN_FILES s1ap-14.4.0.asn1)
+elseif (${S1AP_VERSION} STREQUAL "R10")
   set (ASN1RELDIR R10.5)
   add_definitions("-DUPDATE_RELEASE_9 -DUPDATE_RELEASE_10")
 elseif (${S1AP_VERSION} STREQUAL "R9")
@@ -342,52 +347,28 @@ elseif (${S1AP_VERSION} STREQUAL "R9")
   add_definitions("-DUPDATE_RELEASE_9")
 else(${S1AP_VERSION} STREQUAL "R8")
   set (ASN1RELDIR R8.10)
-endif(${S1AP_VERSION} STREQUAL "R10")
+endif(${S1AP_VERSION} STREQUAL "R14")
 set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
-set(S1AP_ASN_FILES
-  ${S1AP_ASN_DIR}/S1AP-CommonDataTypes.asn
-  ${S1AP_ASN_DIR}/S1AP-Constants.asn
-  ${S1AP_ASN_DIR}/S1AP-IEs.asn
-  ${S1AP_ASN_DIR}/S1AP-PDU.asn
-  )
-set(S1AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
-#message("calling ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}")
-execute_process(COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}
+set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${ASN1RELDIR})
+message("calling ASN1C_PREFIX=S1AP_ asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}")
+execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
+                COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
                 RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${asn1c_call}: error")
-endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND python ${S1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f${S1AP_ASN_DIR}/S1AP-PDU-Contents.asn -o${S1AP_C_DIR}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "asn1tostruct.py: error")
-endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND ${fix_asn1c_call} ${S1AP_C_DIR} S1AP ${S1AP_VERSION}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${fix_asn1c_call}: error")
+  message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
 file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 
-set(S1AP_OAI_generated
-  ${S1AP_C_DIR}/s1ap_decoder.c
-  ${S1AP_C_DIR}/s1ap_encoder.c
-  ${S1AP_C_DIR}/s1ap_xer_print.c
-  ${S1AP_C_DIR}/s1ap_compare.c
-  ${S1AP_C_DIR}/s1ap_ies_defs.h
-  )
 file(GLOB s1ap_h ${S1AP_C_DIR}/*.h)
 set(s1ap_h ${s1ap_h} )
 
 add_custom_command (
-  OUTPUT ${S1AP_OAI_generated}
-  COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}
-  COMMAND python ${S1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f${S1AP_ASN_DIR}/S1AP-PDU-Contents.asn -o${S1AP_C_DIR}
-  COMMAND ${fix_asn1c_call} ${S1AP_C_DIR} S1AP ${S1AP_VERSION}
-  DEPENDS ${S1AP_ASN_FILES}
-  )
+  OUTPUT ${S1AP_C_DIR}/S1AP_asn_constant.h
+  COMMAND mkdir -p ${S1AP_C_DIR}
+  COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
+  DEPENDS ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
+)
 add_library(S1AP_LIB
-  ${S1AP_OAI_generated}
   ${S1AP_source}
   ${S1AP_DIR}/s1ap_common.c
   )
@@ -396,10 +377,9 @@ include_directories ("${S1AP_C_DIR}")
 include_directories ("${S1AP_DIR}")
 
 add_library(S1AP_ENB
-  ${S1AP_C_DIR}/s1ap_ies_defs.h
+  # ${S1AP_C_DIR}/s1ap_ies_defs.h
   ${S1AP_DIR}/s1ap_eNB.c
   ${S1AP_DIR}/s1ap_eNB_context_management_procedures.c
-  ${S1AP_DIR}/s1ap_eNB_decoder.c
   ${S1AP_DIR}/s1ap_eNB_encoder.c
   ${S1AP_DIR}/s1ap_eNB_handlers.c
   ${S1AP_DIR}/s1ap_eNB_itti_messaging.c
@@ -409,6 +389,7 @@ add_library(S1AP_ENB
   ${S1AP_DIR}/s1ap_eNB_overload.c
   ${S1AP_DIR}/s1ap_eNB_trace.c
   ${S1AP_DIR}/s1ap_eNB_ue_context.c
+  ${S1AP_DIR}/s1ap_eNB_decoder.c
   )
 
 
@@ -417,61 +398,39 @@ add_library(S1AP_ENB
 # Same limitation as described in RRC/S1AP: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(X2AP_VERSION R11 "X2AP Asn.1 grammar version" R10 R11)
+add_list1_option(X2AP_VERSION R14 "X2AP Asn.1 grammar version" R10 R11 R14)
 set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
-if (${X2AP_VERSION} STREQUAL "R11")
+if (${X2AP_VERSION} STREQUAL "R14")
+  set (ASN1RELDIR R14.5)
+  set (X2AP_ASN_FILES x2ap-14.5.0.asn1)
+elseif (${X2AP_VERSION} STREQUAL "R11")
   set (ASN1RELDIR R11.2)
 elseif (${X2AP_VERSION} STREQUAL "R10")
   set (ASN1RELDIR R.UNKNOWN)
-endif(${X2AP_VERSION} STREQUAL "R11")
+endif(${X2AP_VERSION} STREQUAL "R14")
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
-set(X2AP_ASN_FILES
-  ${X2AP_ASN_DIR}/X2AP-CommonDataTypes.asn
-  ${X2AP_ASN_DIR}/X2AP-Constants.asn
-  ${X2AP_ASN_DIR}/X2AP-IEs.asn
-  ${X2AP_ASN_DIR}/X2AP-PDU.asn
-  ${X2AP_ASN_DIR}/X2AP-Containers.asn
-  )
 
-set(X2AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
-#message("calling ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}")
-execute_process(COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}
+set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${ASN1RELDIR})
+message("calling asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}")
+execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
+                COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
                 RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND python ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "asn1tostruct.py: error")
-endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_VERSION}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${fix_asn1c_call}: error")
-endif (NOT ${ret} STREQUAL 0)
 file(GLOB X2AP_source ${X2AP_C_DIR}/*.c)
 
-set(X2AP_OAI_generated
-  ${X2AP_C_DIR}/x2ap_decoder.c
-  ${X2AP_C_DIR}/x2ap_encoder.c
-  ${X2AP_C_DIR}/x2ap_xer_print.c
-  ${X2AP_C_DIR}/x2ap_ies_defs.h
-  )
 file(GLOB x2ap_h ${X2AP_C_DIR}/*.h)
 set(x2ap_h ${x2ap_h} )
 
-#message("calling ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}")
 add_custom_command (
-  OUTPUT ${X2AP_OAI_generated}
-  COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}
-  COMMAND python ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}
-  COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_VERSION}
-  DEPENDS ${X2AP_ASN_FILES}
+  OUTPUT ${X2AP_C_DIR}/X2AP_asn_constant.h
+  COMMAND mkdir -p ${X2AP_C_DIR}
+  COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
+  DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
   )
 
 add_library(X2AP_LIB
-  ${X2AP_OAI_generated}
   ${X2AP_source}
   ${X2AP_DIR}/x2ap_common.c
   )

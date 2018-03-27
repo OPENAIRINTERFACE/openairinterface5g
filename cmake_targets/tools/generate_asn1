@@ -99,7 +99,7 @@ echo done with asnfix
 
 echo running asn1c
 
-asn1c -gen-PER -fcompound-names fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+asn1c -gen-PER -fcompound-names -no-gen-example fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
 
 rm -f fixed_grammar.asn
 
@@ -107,7 +107,7 @@ echo asn1c done
 
 else
 
-asn1c -gen-PER -fcompound-names $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
 
 fi
 
