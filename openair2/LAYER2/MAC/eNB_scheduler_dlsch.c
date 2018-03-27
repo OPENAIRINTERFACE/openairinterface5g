@@ -55,10 +55,6 @@
 #include "intertask_interface.h"
 #endif
 
-#include "ENB_APP/flexran_agent_defs.h"
-#include "flexran_agent_ran_api.h"
-#include "header.pb-c.h"
-#include "flexran.pb-c.h"
 #include <dlfcn.h>
 
 #include "T.h"
