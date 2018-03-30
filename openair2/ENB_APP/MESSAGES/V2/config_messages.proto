@@ -43,6 +43,19 @@ message flex_cell_config {
 	optional uint32 eutra_band= 37;       // operating band 
 	optional int32 dl_pdsch_power = 38;       // operating downlink power 
 	optional int32 ul_pusch_power = 39;       // operating uplink power
+
+	// whether remaining RBs after first intra-slice allocation will
+	// be allocated to UEs of the same slice
+	optional bool   intraslice_share_active = 40;
+	// whether remaining RBs after slice allocation will be allocated
+	// to UEs of another slice. Isolated slices will be ignored.
+	optional bool   interslice_share_active = 41;
+	optional flex_slice_config slice_config = 42;
+}
+
+message flex_slice_config {
+	repeated flex_dl_slice dl = 1;
+	repeated flex_ul_slice ul = 2;
 }
 
 message flex_ue_config {
@@ -82,6 +95,8 @@ message flex_ue_config {
 	repeated flex_scell_config scell_config = 28;  // Secondary cells configuration
 	optional uint32 scell_deactivation_timer = 29;// Deactivation timer for secondary cell
 	optional uint64 imsi = 30;
+	optional uint32 dl_slice_id = 31;
+	optional uint32 ul_slice_id = 32;
 }
 
 message flex_lc_ue_config {
