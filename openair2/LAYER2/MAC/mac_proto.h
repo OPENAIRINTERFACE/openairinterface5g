@@ -36,22 +36,6 @@
  *  @{
  */
 
-/**
- * slice specific scheduler
- */
-typedef void (*slice_scheduler_dl)(module_id_t mod_id,
-				   slice_id_t  slice_id,
-				   frame_t     frame,
-				   sub_frame_t subframe,
-				   int        *mbsfn_flag);
-
-typedef void (*slice_scheduler_ul)(module_id_t mod_id,
-                                   slice_id_t  slice_id,
-				   frame_t       frame,
-				   sub_frame_t   subframe,
-				   unsigned char sched_subframe,
-                                   uint16_t     *first_rb);
-
 /** \fn void schedule_mib(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 \brief MIB scheduling for PBCH. This function requests the MIB from RRC and provides it to L1.
 @param Mod_id Instance ID of eNB
@@ -260,7 +244,7 @@ void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
                                                       uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
                                                       uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
-void slice_priority_sort(int slice_list[MAX_NUM_SLICES]);
+void slice_priority_sort(module_id_t Mod_id, int slice_list[MAX_NUM_SLICES]);
 
 void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
                                              int frameP,
@@ -1278,7 +1262,7 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
 
 /*Slice related functions */
 uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
-int ue_slice_membership(int UE_id, int slice_id);
+int ue_slice_membership(int UE_id, int slice_id, int n_active_slices);
 
 /* from here: prototypes to get rid of compilation warnings: doc to be written by function author */
 uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);

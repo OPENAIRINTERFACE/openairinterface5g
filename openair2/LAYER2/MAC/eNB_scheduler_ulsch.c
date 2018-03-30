@@ -48,7 +48,6 @@
 
 #include "assertions.h"
 //#include "LAYER2/MAC/pre_processor.c"
-#include "eNB_scheduler_ulsch.h"
 #include "pdcp.h"
 
 #if defined(ENABLE_ITTI)
@@ -63,6 +62,9 @@
 #include <dlfcn.h>
 
 #include "T.h"
+
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
@@ -923,6 +925,7 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
   uint16_t first_rb[NFAPI_CC_MAX], i;
   int CC_id;
   eNB_MAC_INST *mac = RC.mac[module_idP];
+  slice_info_t *sli = &RC.mac[module_idP]->slice_info;
   COMMON_channels_t *cc;
 
   start_meas(&mac->schedule_ulsch);
@@ -1037,112 +1040,112 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
 
   // perform slice-specifc operations
 
-  total_slice_percentage_uplink=0;
-  avg_slice_percentage_uplink=1.0/n_active_slices_uplink;
+  sli->tot_pct_ul = 0;
+  sli->avg_pct_ul = 1.0 / sli->n_ul;
 
   // reset the slice percentage for inactive slices
-  for (i = n_active_slices_uplink; i< MAX_NUM_SLICES; i++) {
-    slice_percentage_uplink[i]=0;
+  for (i = sli->n_ul; i< MAX_NUM_SLICES; i++) {
+    sli->ul[i].pct = 0;
   }
-  for (i = 0; i < n_active_slices_uplink; i++) {
-    if (slice_percentage_uplink[i] < 0 ){
+  for (i = 0; i < sli->n_ul; i++) {
+    if (sli->ul[i].pct < 0 ){
       LOG_W(MAC, "[eNB %d] frame %d subframe %d:invalid slice %d percentage %f. resetting to zero",
-            module_idP, frameP, subframeP, i, slice_percentage_uplink[i]);
-      slice_percentage_uplink[i]=0;
+            module_idP, frameP, subframeP, i, sli->ul[i].pct);
+      sli->ul[i].pct = 0;
     }
-    total_slice_percentage_uplink+=slice_percentage_uplink[i];
+    sli->tot_pct_ul += sli->ul[i].pct;
   }
 
-  for (i = 0; i < n_active_slices_uplink; i++) {
+  for (i = 0; i < sli->n_ul; i++) {
 
     // Load any updated functions
-    if (update_ul_scheduler[i] > 0 ) {
-      slice_sched_ul[i] = dlsym(NULL, ul_scheduler_type[i]);
-      update_ul_scheduler[i] = 0;
-      update_ul_scheduler_current[i] = 0;
-      //slice_percentage_current_uplink[i]= slice_percentage_uplink[i];
-      //total_slice_percentage_current_uplink+=slice_percentage_uplink[i];
-      //if (total_slice_percentage_current_uplink> 1)
-      //total_slice_percentage_current_uplink=1;
+    if (sli->ul[i].update_sched > 0 ) {
+      sli->ul[i].sched_cb = dlsym(NULL, sli->ul[i].sched_name);
+      sli->ul[i].update_sched = 0;
+      sli->ul[i].update_sched_current = 0;
+      //sli->ul[i].pct_current = sli->ul[i].pct;
+      //sli->tot_pct_ul_current += sli->ul[i].pct;
+      //if (sli->tot_pct_ul_current > 1)
+      //sli->tot_pct_ul_current = 1;
       LOG_I(MAC,"update ul scheduler slice %d\n", i);
     }
     // the new total RB share is within the range
-    if (total_slice_percentage_uplink <= 1.0){
+    if (sli->tot_pct_ul <= 1.0){
 
       // check if the number of slices has changed, and log
-      if (n_active_slices_current_uplink != n_active_slices_uplink ){
-        if ((n_active_slices_uplink > 0) && (n_active_slices_uplink <= MAX_NUM_SLICES)) {
+      if (sli->n_ul_current != sli->n_ul ){
+        if ((sli->n_ul > 0) && (sli->n_ul <= MAX_NUM_SLICES)) {
           LOG_I(MAC,"[eNB %d]frame %d subframe %d: number of active UL slices has changed: %d-->%d\n",
-                module_idP, frameP, subframeP, n_active_slices_current_uplink, n_active_slices_uplink);
-          n_active_slices_current_uplink = n_active_slices_uplink;
+                module_idP, frameP, subframeP, sli->n_ul_current, sli->n_ul);
+          sli->n_ul_current = sli->n_ul;
         } else {
           LOG_W(MAC,"invalid number of UL slices %d, revert to the previous value %d\n",
-                n_active_slices_uplink, n_active_slices_current_uplink);
-          n_active_slices_uplink = n_active_slices_current_uplink;
+                sli->n_ul, sli->n_ul_current);
+          sli->n_ul = sli->n_ul_current;
         }
       }
 
       // check if the slice rb share has changed, and log the console
-      if (slice_percentage_current_uplink[i] != slice_percentage_uplink[i]){
+      if (sli->ul[i].pct_current != sli->ul[i].pct){
         LOG_I(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
-              module_idP, i, frameP, subframeP, total_slice_percentage_current_uplink,
-              total_slice_percentage_uplink, slice_percentage_current_uplink[i], slice_percentage_uplink[i]);
-        total_slice_percentage_current_uplink = total_slice_percentage_uplink;
-        slice_percentage_current_uplink[i] = slice_percentage_uplink[i];
+              module_idP, i, frameP, subframeP, sli->tot_pct_ul_current,
+              sli->tot_pct_ul, sli->ul[i].pct_current, sli->ul[i].pct);
+        sli->tot_pct_ul_current = sli->tot_pct_ul;
+        sli->ul[i].pct_current = sli->ul[i].pct;
       }
 
       // check if the slice max MCS, and log the console
-      if (slice_maxmcs_current_uplink[i] != slice_maxmcs_uplink[i]){
-        if ((slice_maxmcs_uplink[i] >= 0) && (slice_maxmcs_uplink[i] <= 16)){
+      if (sli->ul[i].maxmcs_current != sli->ul[i].maxmcs){
+        if ((sli->ul[i].maxmcs >= 0) && (sli->ul[i].maxmcs <= 16)){
           LOG_I(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
-                module_idP, i, frameP, subframeP, slice_maxmcs_current_uplink[i], slice_maxmcs_uplink[i]);
-          slice_maxmcs_current_uplink[i] = slice_maxmcs_uplink[i];
+                module_idP, i, frameP, subframeP, sli->ul[i].maxmcs_current, sli->ul[i].maxmcs);
+          sli->ul[i].maxmcs_current = sli->ul[i].maxmcs;
         } else {
           LOG_W(MAC,"[eNB %d][SLICE %d][UL] invalid slice max mcs %d, revert the previous value %d\n",
-                module_idP, i, slice_maxmcs_uplink[i],slice_maxmcs_current_uplink[i]);
-          slice_maxmcs_uplink[i] = slice_maxmcs_current_uplink[i];
+                module_idP, i, sli->ul[i].maxmcs, sli->ul[i].maxmcs_current);
+          sli->ul[i].maxmcs = sli->ul[i].maxmcs_current;
         }
       }
 
-      if (slice_first_rb_current[i] != slice_first_rb[i]){
-        if (slice_first_rb[i] >= 0){ // FIXME: Max limit is checked in the scheduler
+      if (sli->ul[i].first_rb_current != sli->ul[i].first_rb){
+        if (sli->ul[i].first_rb >= 0){ // FIXME: Max limit is checked in the scheduler
           LOG_N(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: slice first rb has changed: %d-->%d\n",
-                module_idP, i, frameP, subframeP, slice_first_rb_current[i], slice_first_rb[i]);
-          slice_first_rb_current[i] = slice_first_rb[i];
+                module_idP, i, frameP, subframeP, sli->ul[i].first_rb_current, sli->ul[i].first_rb);
+          sli->ul[i].first_rb_current = sli->ul[i].first_rb;
         } else {
           LOG_W(MAC,"[eNB %d][SLICE %d][UL] invalid slice first rb %d, revert the previous value %d\n",
-                module_idP, i, slice_first_rb[i],slice_first_rb_current[i]);
-          slice_first_rb[i] = slice_first_rb_current[i];
+                module_idP, i, sli->ul[i].first_rb, sli->ul[i].first_rb_current);
+          sli->ul[i].first_rb = sli->ul[i].first_rb_current;
         }
       }
 
       // check if a new scheduler, and log the console
-      if (update_ul_scheduler_current[i] != update_ul_scheduler[i]){
+      if (sli->ul[i].update_sched_current != sli->ul[i].update_sched) {
         LOG_I(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: UL scheduler for this slice is updated: %s \n",
-              module_idP, i, frameP, subframeP, ul_scheduler_type[i]);
-        update_ul_scheduler_current[i] = update_ul_scheduler[i];
+              module_idP, i, frameP, subframeP, sli->ul[i].sched_name);
+        sli->ul[i].update_sched_current = sli->ul[i].update_sched;
       }
     } else {
-      if (n_active_slices_uplink == n_active_slices_current_uplink) {
+      if (sli->n_ul == sli->n_ul_current) {
         LOG_W(MAC,"[eNB %d][SLICE %d][UL] invalid total RB share (%f->%f), reduce proportionally the RB share by 0.1\n",
-              module_idP, i, total_slice_percentage_current_uplink, total_slice_percentage_uplink);
-        if (slice_percentage_uplink[i] > avg_slice_percentage_uplink) {
-          slice_percentage_uplink[i] -= 0.1;
-          total_slice_percentage_uplink -= 0.1;
+              module_idP, i, sli->tot_pct_ul_current, sli->tot_pct_ul);
+        if (sli->ul[i].pct > sli->avg_pct_ul) {
+          sli->ul[i].pct -= 0.1;
+          sli->tot_pct_ul -= 0.1;
         }
       } else {
         // here we can correct the values, e.g. reduce proportionally
         LOG_W(MAC,"[eNB %d][SLICE %d][UL] invalid total RB share (%f->%f), revert the  number of slice to its previous value (%d->%d)\n",
-              module_idP, i, total_slice_percentage_current_uplink,
-              total_slice_percentage_uplink, n_active_slices_uplink,
-              n_active_slices_current_uplink);
-        n_active_slices_uplink = n_active_slices_current_uplink;
-        slice_percentage_uplink[i] = slice_percentage_current_uplink[i];
+              module_idP, i, sli->tot_pct_ul_current,
+              sli->tot_pct_ul, sli->n_ul,
+              sli->n_ul_current);
+        sli->n_ul = sli->n_ul_current;
+        sli->ul[i].pct = sli->ul[i].pct_current;
       }
     }
 
     // Run each enabled slice-specific schedulers one by one
-    slice_sched_ul[i](module_idP, i, frameP, subframeP, sched_subframe, first_rb);
+    sli->ul[i].sched_cb(module_idP, i, frameP, subframeP, sched_subframe, first_rb);
   }
 
   stop_meas(&mac->schedule_ulsch);
@@ -1172,6 +1175,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
   eNB_MAC_INST *mac = RC.mac[module_idP];
   COMMON_channels_t *cc = mac->common_channels;
   UE_list_t *UE_list = &mac->UE_list;
+  slice_info_t *sli = &RC.mac[module_idP]->slice_info;
   UE_TEMPLATE *UE_template;
   UE_sched_ctrl *UE_sched_ctrl;
   int sched_frame = frameP;
@@ -1193,7 +1197,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 
 	for (CC_id = 0; CC_id < NFAPI_CC_MAX; ++CC_id) {
     N_RB_UL = to_prb(cc[CC_id].ul_Bandwidth);
-		UE_list->first_rb_offset[CC_id][slice_id] = cmin(N_RB_UL, slice_first_rb[slice_id]);
+		UE_list->first_rb_offset[CC_id][slice_id] = cmin(N_RB_UL, sli->ul[slice_id].first_rb);
 	}
 
   //LOG_D(MAC, "entering ulsch preprocesor\n");
@@ -1210,7 +1214,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
   for (UE_id = UE_list->head_ul; UE_id >= 0;
        UE_id = UE_list->next_ul[UE_id]) {
 
-    if (!ue_slice_membership(UE_id, slice_id))
+    if (!ue_slice_membership(UE_id, slice_id, sli->n_ul))
         continue;
 
     // don't schedule if Msg4 is not received yet
@@ -1398,7 +1402,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	    UE_template->oldNDI_UL[harq_pid] = ndi;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power = normalized_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power = target_rx_power;
-		UE_template->mcs_UL[harq_pid] = cmin(UE_template->pre_assigned_mcs_ul, slice_maxmcs_uplink[slice_id]);
+		UE_template->mcs_UL[harq_pid] = cmin(UE_template->pre_assigned_mcs_ul, sli->ul[slice_id].maxmcs);
 		UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1= UE_template->mcs_UL[harq_pid];
 		//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
 	    if (UE_template->pre_allocated_rb_table_index_ul >= 0) {
