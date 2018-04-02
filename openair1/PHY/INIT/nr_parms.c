@@ -36,7 +36,8 @@ int nr_init_frame_parms(nfapi_param_t nfapi_params,
 #if DISABLE_LOG_X
   printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
 #else
-  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
+  //LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
+  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
 #endif
 
   if (Ncp == 1) //EXTENDED, to be modified after lte defs are properly linked
@@ -133,9 +134,14 @@ int nr_init_frame_parms(nfapi_param_t nfapi_params,
 
 void nr_dump_frame_parms(NR_DL_FRAME_PARMS *frame_parms)
 {
-  LOG_I(PHY,"frame_parms->scs=%d\n",frame_parms->subcarrier_spacing);
+  /*LOG_I(PHY,"frame_parms->scs=%d\n",frame_parms->subcarrier_spacing);
   LOG_I(PHY,"frame_parms->ofdm_symbol_size=%d\n",frame_parms->ofdm_symbol_size);
   LOG_I(PHY,"frame_parms->samples_per_tti=%d\n",frame_parms->samples_per_tti);
   LOG_I(PHY,"frame_parms->nb_prefix_samples0=%d\n",frame_parms->nb_prefix_samples0);
-  LOG_I(PHY,"frame_parms->nb_prefix_samples=%d\n",frame_parms->nb_prefix_samples);
+  LOG_I(PHY,"frame_parms->nb_prefix_samples=%d\n",frame_parms->nb_prefix_samples);*/
+  printf("frame_parms->scs=%d\n",frame_parms->subcarrier_spacing);
+  printf("frame_parms->ofdm_symbol_size=%d\n",frame_parms->ofdm_symbol_size);
+  printf("frame_parms->samples_per_tti=%d\n",frame_parms->samples_per_tti);
+  printf("frame_parms->nb_prefix_samples0=%d\n",frame_parms->nb_prefix_samples0);
+  printf("frame_parms->nb_prefix_samples=%d\n",frame_parms->nb_prefix_samples);
 }

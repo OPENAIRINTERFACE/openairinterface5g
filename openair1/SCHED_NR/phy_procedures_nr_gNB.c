@@ -19,20 +19,28 @@
  *      contact@openairinterface.org
  */
 
-#include "../defs_NR.h"
+#include "PHY/defs_NR.h"
+//#include "PHY/extern.h"
+#include "SCHED/defs.h"
+#include "SCHED/extern.h"
+//#include "nfapi_interface.h"
+//#include "fapi_l1.h"
+#include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
-int phy_init_nr_gNB(nfapi_param_t* nfapi_params)
-{
+#include "T.h"
 
-  nfapi_params->pnf_phy_rel15.number_of_phys = 1;
-  nfapi_params->pnf_phy_rel15.phy[0].mu =1;
-  nfapi_params->subframe_config.duplex_mode.value = 1; //FDD
-  nfapi_params->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-  nfapi_params->rf_config.dl_channel_bandwidth.value = 106;
-  nfapi_params->rf_config.ul_channel_bandwidth.value = 106;
-  nfapi_params->rf_config.tx_antenna_ports.value = 1;
+#include "assertions.h"
+#include "msc.h"
 
-  nfapi_params->sch_config.physical_cell_id.value = 0;
+#include <time.h>
 
-  return 0;
+#if defined(ENABLE_ITTI)
+#   include "intertask_interface.h"
+#endif
+
+
+void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
+
+  
 }

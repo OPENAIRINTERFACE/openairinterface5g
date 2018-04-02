@@ -1238,6 +1238,8 @@ set(PHY_SRC_UE
   # actual source
   ${OPENAIR1_DIR}/PHY/INIT/nr_init.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_pss.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_sss.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c

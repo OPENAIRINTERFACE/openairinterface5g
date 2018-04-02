@@ -21,8 +21,6 @@
 
 #include "nr-softmodem.h"
 #include "PHY/types.h"
-#include "../../nfapi/open-nFAPI/nfapi/public_inc/nfapi_interface_nr_extension.h"
-//#include "PHY/defs.h"
 #include "PHY/defs_NR.h"
 
 //Temporary main function
@@ -52,11 +50,26 @@ void exit_fun(const char* s)
 int main( int argc, char **argv )
 {
   nfapi_param_t nfapi_params;
-  NR_DL_FRAME_PARMS frame_parms;
+  NR_DL_FRAME_PARMS* frame_parms = malloc(sizeof(NR_DL_FRAME_PARMS));
+  int16_t amp;
+  //malloc to move
+  int16_t** txdataF = (int16_t **)malloc(2048*2*14*2*2* sizeof(int16_t));
+  int16_t* d_pss = malloc(NR_PSS_LENGTH * sizeof(int16_t));
+  int16_t *d_sss = malloc(NR_SSS_LENGTH * sizeof(int16_t));
+
+  //logInit();
 
   phy_init_nr_gNB(&nfapi_params);
-  nr_init_frame_parms(nfapi_params, &frame_parms);
-  nr_dump_frame_parms(&frame_parms);
+  nr_init_frame_parms(nfapi_params, frame_parms);
+  nr_dump_frame_parms(frame_parms);
+
+  amp = 32767; //1_Q_15
+  //nr_generate_pss(d_pss, txdataF, amp, 0, 0, nfapi_params, frame_parms);
+  nr_generate_sss(d_sss, txdataF, amp, 0, 0, nfapi_params, frame_parms);
+
+  free(txdataF);
+  free(d_pss);
+  free(d_sss);
 
   return 0;
 }

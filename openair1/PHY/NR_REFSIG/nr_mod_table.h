@@ -19,20 +19,6 @@
  *      contact@openairinterface.org
  */
 
-#include "../defs_NR.h"
-
-int phy_init_nr_gNB(nfapi_param_t* nfapi_params)
-{
-
-  nfapi_params->pnf_phy_rel15.number_of_phys = 1;
-  nfapi_params->pnf_phy_rel15.phy[0].mu =1;
-  nfapi_params->subframe_config.duplex_mode.value = 1; //FDD
-  nfapi_params->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-  nfapi_params->rf_config.dl_channel_bandwidth.value = 106;
-  nfapi_params->rf_config.ul_channel_bandwidth.value = 106;
-  nfapi_params->rf_config.tx_antenna_ports.value = 1;
-
-  nfapi_params->sch_config.physical_cell_id.value = 0;
-
-  return 0;
-}
+#define MOD_TABLE_SIZE_SHORT 6
+#define MOD_TABLE_BPSK_OFFSET 1
+short nr_mod_table[MOD_TABLE_SIZE_SHORT] = {0,0,768,768,-768,-768};

@@ -19,20 +19,33 @@
  *      contact@openairinterface.org
  */
 
-#include "../defs_NR.h"
+#ifndef __PHY_IMPLEMENTATION_DEFS_LTE_H__
+#define __PHY_IMPLEMENTATION_DEFS_LTE_H__
 
-int phy_init_nr_gNB(nfapi_param_t* nfapi_params)
-{
 
-  nfapi_params->pnf_phy_rel15.number_of_phys = 1;
-  nfapi_params->pnf_phy_rel15.phy[0].mu =1;
-  nfapi_params->subframe_config.duplex_mode.value = 1; //FDD
-  nfapi_params->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-  nfapi_params->rf_config.dl_channel_bandwidth.value = 106;
-  nfapi_params->rf_config.ul_channel_bandwidth.value = 106;
-  nfapi_params->rf_config.tx_antenna_ports.value = 1;
+#include "types.h"
+//#include "nfapi_interface.h"
+//#include "defs.h"
+#include "openair2/COMMON/platform_types.h"
 
-  nfapi_params->sch_config.physical_cell_id.value = 0;
 
-  return 0;
-}
+
+
+typedef struct {
+  /// \brief Pointers (dynamic) to the received data in the time domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **rxdata;
+  /// \brief Pointers (dynamic) to the received data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  int32_t **rxdataF;
+  /// \brief holds the transmit data in the frequency domain.
+  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
+  /// - first index: eNB id [0..2] (hard coded)
+  /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
+  /// - third index: sample [0..]
+  int32_t **txdataF;
+} NR_gNB_COMMON;
+
+#endif
