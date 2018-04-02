@@ -25,13 +25,13 @@
 /// Subcarrier spacings in Hz indexed by numerology index
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
 
-int nr_init_frame_parms(nfapi_param_t nfapi_params,
+int nr_init_frame_parms(nfapi_config_request_t config,
                         NR_DL_FRAME_PARMS *frame_parms)
 {
 
-  int N_RB = nfapi_params.rf_config.dl_channel_bandwidth.value;
-  int Ncp = nfapi_params.subframe_config.dl_cyclic_prefix_type.value;
-  int mu = nfapi_params.pnf_phy_rel15.phy[0].mu;
+  int N_RB = config.rf_config.dl_channel_bandwidth.value;
+  int Ncp = config.subframe_config.dl_cyclic_prefix_type.value;
+  int mu = config.subframe_config.numerology_index_mu.value;
 
 #if DISABLE_LOG_X
   printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);

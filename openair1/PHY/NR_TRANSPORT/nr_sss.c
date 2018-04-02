@@ -30,7 +30,7 @@ int nr_generate_sss(  int16_t *d_sss,
                       int16_t amp,
                       int16_t ssb_first_subcarrier,
                       uint8_t slot_offset,
-                      nfapi_param_t nfapi_params,
+                      nfapi_config_request_t config,
                       NR_DL_FRAME_PARMS *frame_parms)
 {
   int i,m,k;
@@ -42,10 +42,10 @@ int nr_generate_sss(  int16_t *d_sss,
   const int x0_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
   const int x1_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
 
-  uint8_t Nsymb = (nfapi_params.subframe_config.dl_cyclic_prefix_type.value == 0)? 14 : 12;
+  uint8_t Nsymb = (config.subframe_config.dl_cyclic_prefix_type.value == 0)? 14 : 12;
 
   // Binary sequence generation
-  Nid = nfapi_params.sch_config.physical_cell_id.value;
+  Nid = config.sch_config.physical_cell_id.value;
   Nid2 = Nid % 3;
   Nid1 = (Nid - Nid2)/3;
 
@@ -69,14 +69,14 @@ int nr_generate_sss(  int16_t *d_sss,
   }
 
   // BPSK modulation and resource mapping
-  a = (nfapi_params.rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
+  a = (config.rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
   for (i = 0; i <  NR_SSS_LENGTH; i++)
   {
     sss_mod[2*i] =  nr_mod_table[ 2 * (MOD_TABLE_BPSK_OFFSET + d_sss[i]) ];
     sss_mod[2*i + 1] = nr_mod_table[ 2 * (MOD_TABLE_BPSK_OFFSET + d_sss[i]) + 1];
   }
 
-  for (aa = 0; aa < nfapi_params.rf_config.tx_antenna_ports.value; aa++)
+  for (aa = 0; aa < config.rf_config.tx_antenna_ports.value; aa++)
   {
 
     // SSS occupies a predefined position (symbol 2, subcarriers 56-182) within the SSB block starting from

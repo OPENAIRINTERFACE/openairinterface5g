@@ -49,7 +49,7 @@ void exit_fun(const char* s)
 
 int main( int argc, char **argv )
 {
-  nfapi_param_t nfapi_params;
+  nfapi_config_request_t config;
   NR_DL_FRAME_PARMS* frame_parms = malloc(sizeof(NR_DL_FRAME_PARMS));
   int16_t amp;
   //malloc to move
@@ -59,13 +59,13 @@ int main( int argc, char **argv )
 
   //logInit();
 
-  phy_init_nr_gNB(&nfapi_params);
-  nr_init_frame_parms(nfapi_params, frame_parms);
+  phy_init_nr_gNB(&config);
+  nr_init_frame_parms(config, frame_parms);
   nr_dump_frame_parms(frame_parms);
 
   amp = 32767; //1_Q_15
-  //nr_generate_pss(d_pss, txdataF, amp, 0, 0, nfapi_params, frame_parms);
-  nr_generate_sss(d_sss, txdataF, amp, 0, 0, nfapi_params, frame_parms);
+  //nr_generate_pss(d_pss, txdataF, amp, 0, 0, config, frame_parms);
+  nr_generate_sss(d_sss, txdataF, amp, 0, 0, config, frame_parms);
 
   free(txdataF);
   free(d_pss);
