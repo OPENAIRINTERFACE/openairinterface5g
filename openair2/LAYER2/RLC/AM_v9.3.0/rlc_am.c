@@ -509,6 +509,7 @@ rlc_am_rx (
 
   default:
     LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE 0x%02X\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc), rlc->protocol_state);
+    list_free (&data_indP.data);
   }
 }
 

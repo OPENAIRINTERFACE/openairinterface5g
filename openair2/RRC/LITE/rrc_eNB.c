@@ -930,6 +930,7 @@ void release_UE_in_freeList(module_id_t mod_id)
     int i, j , CC_id, pdu_number;
     protocol_ctxt_t                           ctxt;
     LTE_eNB_ULSCH_t                          *ulsch = NULL;
+    LTE_eNB_DLSCH_t                          *dlsch = NULL;
     nfapi_ul_config_request_body_t           *ul_req_tmp = NULL;
     PHY_VARS_eNB                             *eNB_PHY = NULL;
     struct rrc_eNB_ue_context_s              *ue_context_pP = NULL;
@@ -969,10 +970,12 @@ void release_UE_in_freeList(module_id_t mod_id)
                   memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
                 }
               }
-              ulsch = eNB_PHY->ulsch[i];
-              if((ulsch != NULL) && (ulsch->rnti == rnti)){
-                  LOG_I(RRC, "clean_eNb_ulsch ulsch[%d] UE %x\n", i, rnti);
-                  clean_eNb_ulsch(ulsch);
+              for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+                dlsch = eNB_PHY->dlsch[i][0];
+                if((dlsch != NULL) && (dlsch->rnti == rnti)){
+                  LOG_I(RRC, "clean_eNb_dlsch dlsch[%d] UE %x \n", i, rnti);
+                  clean_eNb_dlsch(dlsch);
+                }
               }
 
               for(j = 0; j < 10; j++){
