@@ -1844,7 +1844,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
       LOG_D(MAC,"[eNB %d] Frame %d subframe %d: PCCH->PCH CC_id %d UE_id %d, Received %d bytes \n", module_idP, frameP, subframeP, CC_id,i, pcch_sdu_length);
 #ifdef FORMAT1C
       //NO SIB
-      if ((subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
+      if ((subframeP == 0 || subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
         (subframeP == 5 && ((frameP % 2) != 0 && (frameP % 8) != 1))) {
         switch (n_rb_dl) {
 #if 0
@@ -1963,7 +1963,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
       }
 #else
       //NO SIB
-      if ((subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
+      if ((subframeP == 0 || subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
         (subframeP == 5 && ((frameP % 2) != 0 && (frameP % 8) != 1))) {
         switch (n_rb_dl) {
         case 25:
@@ -2051,6 +2051,10 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
         LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for P_RNTI\n", frameP,subframeP);
         dl_req->number_dci++;
         dl_req->number_pdu++;
+        dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+        eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
+        eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
+
         dl_config_pdu                                                                  = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
         memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
         dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
@@ -2091,6 +2095,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
         TX_req->num_segments                                                           = 1;
         TX_req->segments[0].segment_length                                             = pcch_sdu_length;
         TX_req->segments[0].segment_data                                               = cc[CC_id].PCCH_pdu.payload;
+        eNB->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
         eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
       } else {
         LOG_E(MAC,"[eNB %d] CCid %d Frame %d, subframe %d : Cannot add DCI 1A/1C for Paging\n",module_idP, CC_id, frameP, subframeP);
