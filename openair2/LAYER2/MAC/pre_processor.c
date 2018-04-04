@@ -1182,10 +1182,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 	    CC_id = UE_list->ordered_CCids[ii][UE_id];
 	    ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 	    cc = &RC.mac[Mod_id]->common_channels[ii];
-	    if (cc->tdd_Config)
-		harq_pid = ((frameP * 10) + subframeP) % 10;
-	    else
-		harq_pid = ((frameP * 10) + subframeP) & 7;
+	    harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
 	    round = ue_sched_ctl->round[CC_id][harq_pid];
 
 	    average_rbs_per_user[CC_id] = 0;

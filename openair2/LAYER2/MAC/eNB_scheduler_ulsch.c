@@ -1489,6 +1489,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 			cqi_req;
 		    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index =
 			UE_template->DAI_ul[sched_subframeP];
+            hi_dci0_pdu->dci_pdu.dci_pdu_rel8.harq_pid                          = harq_pid;
 
                     hi_dci0_req_body->number_of_dci++;
                     hi_dci0_req_body->sfnsf = sfnsf_add_subframe(sched_frame, sched_subframeP, 0); //(frameP, subframeP, 4)
@@ -1554,7 +1555,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
                     uint16_t ul_sched_frame = sched_frame;
                     uint16_t ul_sched_subframeP = sched_subframeP;
 
-                    add_subframe(&ul_sched_frame, &ul_sched_subframeP, 2);
+             //       add_subframe(&ul_sched_frame, &ul_sched_subframeP, 2);
                     ul_req_tmp->sfn_sf = ul_sched_frame<<4|ul_sched_subframeP;
 
 		    add_ue_ulsch_info(module_idP,
@@ -1641,7 +1642,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
                 ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type = NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE;
                 ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_INITIAL_TRANSMISSION_PARAMETERS_REL8_TAG;
                 ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.n_srs_initial = 0;  // last symbol not punctured
-                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = rb_table[rb_table_index];
+                ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.initial_transmission_parameters.initial_transmission_parameters_rel8.initial_number_of_resource_blocks = UE_template->nb_rb_ul[harq_pid];
                 fill_nfapi_ulsch_harq_information(module_idP, CC_id,rnti,  &ul_req_tmp_body->ul_config_pdu_list[ul_req_index].ulsch_harq_pdu.harq_information,subframeP);
             }else{
                 ul_req_tmp_body->number_of_pdus++;
