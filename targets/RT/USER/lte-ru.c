@@ -1906,7 +1906,7 @@ static void* ru_thread( void* param ) {
       }
       else {
 
-        LOG_I(PHY,"RU thread %d, frame %d, subframe %d \n",
+        LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",
               ru->idx,frame,subframe);
 
         if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
