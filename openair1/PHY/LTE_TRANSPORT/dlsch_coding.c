@@ -646,9 +646,9 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
 		}
 	}
 
-	if(C >= 8 && get_nprocs()>8 && codingw)//one main three worker
-	{
-		encoding_return =
+    if(C >= 8 && get_nprocs()>=16 && codingw)//one main three worker
+    {
+        encoding_return =
 		dlsch_encoding_2threads(eNB,
 				   a,
                    num_pdcch_symbols,
@@ -663,8 +663,8 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    te_wakeup_stats1,
                    i_stats,
                    3);
-	}
-    else if(C >= 6 && get_nprocs()>=6 && codingw)//one main two worker
+    }
+    else if(C >= 6 && get_nprocs()>=8 && codingw)//one main two worker
     {
         encoding_return =
 		dlsch_encoding_2threads(eNB,

@@ -359,6 +359,11 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
       &eNB->dlsch_turbo_encoding_wakeup_stats1,
 	  &eNB->dlsch_interleaving_stats);
     stop_meas(&eNB->dlsch_encoding_stats);
+  //////////////////////////////////////////////////*******************************************
+  if(eNB->dlsch_encoding_stats.diff_now>500*3000 && opp_enabled == 1)
+  {
+    print_meas_now(&eNB->dlsch_encoding_stats,"total coding",stderr);
+  }
   // 36-211
     start_meas(&eNB->dlsch_scrambling_stats);
     dlsch_scrambling(fp,
@@ -394,6 +399,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
   dlsch->active = 0;
   dlsch_harq->round++;
+//printf("  dlsch_harq ++ %p %d.%d harq %d rnti %d\n", dlsch_harq, frame, subframe, harq_pid, dlsch->rnti);
 
   LOG_D(PHY,"Generating DLSCH/PDSCH dlsch_harq[round:%d]\n",dlsch_harq->round);
 }
@@ -513,7 +519,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   //LOG_D(PHY,"Before generate_dci_top num_pdcch_symbols:%d num_dci:%d dci_alloc:dci_length:%d\n", num_pdcch_symbols, num_dci, eNB->pdcch_vars[subframe&1].dci_alloc[0].dci_length);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
-
+//printf("//////////************before generate_dci_top UL %d.%d TX %d.%d \n", ul_frame, ul_subframe, frame, subframe);
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     generate_dci_top(num_pdcch_symbols,
         num_dci,
@@ -1641,6 +1647,9 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
       // release DLSCH if needed
       if (ulsch_harq->o_ACK[i] == 1) release_harq(eNB,UE_id,i,frame,subframe,0xffff);
 
+//if (ulsch_harq->o_ACK[i] != 1)
+//printf("got NACK %d.%d rnti %d harq %d\n", frame, subframe, rnti, eNB->dlsch[UE_id][0]->harq_ids[(subframe+6)%10]);
+
 #if T_TRACER
       /* TODO: get correct harq pid */
       if (ulsch_harq->o_ACK[i] != 1)
@@ -1734,6 +1743,9 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
       pdu->harq_indication_fdd_rel13.harq_tb_n[0] = harq_ack[0];
       // release DLSCH if needed
       if (harq_ack[0] == 1) release_harq(eNB,UE_id,0,frame,subframe,0xffff);
+
+//if (harq_ack[0] != 1)
+//printf("got NACK %d.%d rnti %d harq %d\n", frame, subframe, uci->rnti, eNB->dlsch[UE_id][0]->harq_ids[(subframe+6)%10]);
 
 #if T_TRACER
       if (harq_ack[0] != 1)

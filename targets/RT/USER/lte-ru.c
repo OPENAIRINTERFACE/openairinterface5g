@@ -1181,7 +1181,7 @@ void wakeup_eNBs(RU_t *ru) {
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
 
-  if (ru->num_eNB==1 && ru->eNB_top!=0 && get_nprocs() < 4) {
+  if (ru->num_eNB==1 && ru->eNB_top!=0 && get_nprocs() <= 4) {
     // call eNB function directly
   
     char string[20];
@@ -1556,9 +1556,13 @@ static void* ru_thread( void* param ) {
   pthread_cond_signal(&RC.ru_cond);
   pthread_mutex_unlock(&RC.ru_mutex);
   
-  wait_sync("ru_thread");
   
+  pthread_mutex_lock(&proc->mutex_FH1);
+  proc->instance_cnt_FH1 = 0;
+  pthread_mutex_unlock(&proc->mutex_FH1);
+  pthread_cond_signal(&proc->cond_FH1);
 
+  wait_sync("ru_thread");
 
   if(!emulate_rf){
     // Start RF device if any
@@ -1584,10 +1588,7 @@ static void* ru_thread( void* param ) {
     if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
   }
 
-  pthread_mutex_lock(&proc->mutex_FH1);
-  proc->instance_cnt_FH1 = 0;
-  pthread_mutex_unlock(&proc->mutex_FH1);
-  pthread_cond_signal(&proc->cond_FH1);
+
 
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
@@ -1645,7 +1646,7 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
     
-    if(get_nprocs() < 4){
+    if(get_nprocs() <= 4){
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);
       
@@ -1859,7 +1860,7 @@ void init_RU_proc(RU_t *ru) {
   if(emulate_rf)
     pthread_create( &proc->pthread_emulateRF, attr_emulateRF, emulatedRF_thread, (void*)proc );
 
-  if (get_nprocs() >= 4)
+  if (get_nprocs() > 4)
     pthread_create( &proc->pthread_FH1, attr_FH1, ru_thread_tx, (void*)ru );
 
   if (ru->function == NGFI_RRU_IF4p5) {

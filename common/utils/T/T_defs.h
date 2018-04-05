@@ -8,10 +8,10 @@
 #define T_MAX_ARGS 16
 
 /* maximum size of a message - increase if needed */
-#define T_BUFFER_MAX (1024*64)
+#define T_BUFFER_MAX (10) /*(1024*64)*/
 
 /* size of the local cache for messages (must be pow(2,something)) */
-#define T_CACHE_SIZE (8192 * 2)
+#define T_CACHE_SIZE (1)  /*(8192 * 2)*/
 
 /* maximum number of bytes a message can contain */
 #ifdef T_SEND_TIME

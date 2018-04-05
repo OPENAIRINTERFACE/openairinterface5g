@@ -2183,6 +2183,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
 
 #endif
     
+//printf("DCI %d.%d rnti %d harq %d TBS %d\n", frame, subframe, rel8->rnti, rel8->harq_process, dlsch0_harq->TBS);
 #if T_TRACER
   if (dlsch0->active)
     T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(0), T_INT(frame), T_INT(subframe),

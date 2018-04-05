@@ -928,7 +928,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 
 	      eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
 	      eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
-
+//printf("doing retransmission for fill_nfapi_dlsch_config frame %d subframe %d rnti = %d harq_pid = %d\n", frameP, subframeP, rnti, harq_pid);
 	      fill_nfapi_dlsch_config(eNB, dl_req, TBS, -1
 				      /* retransmission, no pdu_index */
 				      , rnti, 0,	// type 0 allocation from 7.1.6 in 36.213
@@ -1455,7 +1455,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 			"physicalConfigDedicated is NULL\n");
 	    AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->pdsch_ConfigDedicated != NULL,
 			"physicalConfigDedicated->pdsch_ConfigDedicated is NULL\n");
-
+//printf("mac DL transmition with frame = %d, subframe = %d, rnti = %d, pdu_index = %p\n", frameP, subframeP, rnti, eNB->pdu_index);
 	    fill_nfapi_dlsch_config(eNB, dl_req, TBS, eNB->pdu_index[CC_id], rnti, 0,	// type 0 allocation from 7.1.6 in 36.213
 				    0,	// virtual_resource_block_assignment_flag, unused here
 				    0,	// resource_block_coding, to be filled in later
