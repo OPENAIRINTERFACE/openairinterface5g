@@ -2139,14 +2139,24 @@ target_link_libraries (lte-uesoftmodem-nos1 ${T_LIB})
 ###################################################
 
 add_executable(nr-softmodem
-  #${rrc_h}
-  #${s1ap_h}
+  ${rrc_h}
+  ${s1ap_h}
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
+  ${OPENAIR_TARGETS}/RT/USER/nr-gnb.c
+  ${OPENAIR_TARGETS}/RT/USER/nr-ru.c
   ${OPENAIR_TARGETS}/RT/USER/nr-softmodem.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
+  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
-  #${GTPU_need_ITTI}
-  #${XFORMS_SOURCE}
-  #${XFORMS_SOURCE_SOFTMODEM}
+  ${GTPU_need_ITTI}
+  ${XFORMS_SOURCE}
+  ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
@@ -2154,9 +2164,9 @@ add_executable(nr-softmodem
 
 target_link_libraries (nr-softmodem
   -Wl,--start-group
-  UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY_NR LFDS GTPV1U SECU_CN SECU_OSA
+  UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY_NR PHY LFDS GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB}
-  #RRC_LIB S1AP_LIB S1AP_ENB L2
+  RRC_LIB S1AP_LIB S1AP_ENB L2
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 

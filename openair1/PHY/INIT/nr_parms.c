@@ -24,6 +24,7 @@
 
 /// Subcarrier spacings in Hz indexed by numerology index
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
+uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 16, 32};
 
 int nr_init_frame_parms(nfapi_config_request_t config,
                         NR_DL_FRAME_PARMS *frame_parms)
@@ -36,8 +37,7 @@ int nr_init_frame_parms(nfapi_config_request_t config,
 #if DISABLE_LOG_X
   printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
 #else
-  //LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
-  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
+  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
 #endif
 
   if (Ncp == 1) //EXTENDED, to be modified after lte defs are properly linked
@@ -47,10 +47,12 @@ int nr_init_frame_parms(nfapi_config_request_t config,
 
     case NR_MU_0: //15kHz scs
       frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_0];
+      frame_parms->slots_per_subframe = nr_slots_per_subframe[NR_MU_0];
       break;
 
     case NR_MU_1: //30kHz scs
       frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_1];
+      frame_parms->slots_per_subframe = nr_slots_per_subframe[NR_MU_1];
 
       switch(N_RB){
         case 11:
@@ -62,7 +64,7 @@ int nr_init_frame_parms(nfapi_config_request_t config,
 
         case 106: //40 MHz
           frame_parms->ofdm_symbol_size = 2048;
-          frame_parms->samples_per_tti = 30720;
+          //frame_parms->samples_per_tti = 30720;
           frame_parms->first_carrier_offset = 1412; //2048 - 636
           frame_parms->nb_prefix_samples0 = 160;
           frame_parms->nb_prefix_samples = 144;
@@ -75,14 +77,14 @@ int nr_init_frame_parms(nfapi_config_request_t config,
         case 217: //80 MHz
           if (frame_parms->threequarter_fs) {
             frame_parms->ofdm_symbol_size = 3072;
-            frame_parms->samples_per_tti = 46080;
+            //frame_parms->samples_per_tti = 46080;
             frame_parms->first_carrier_offset = 1770; //3072 - 1302
             frame_parms->nb_prefix_samples0 = 240;
             frame_parms->nb_prefix_samples = 216;
           }
           else {
             frame_parms->ofdm_symbol_size = 4096;
-            frame_parms->samples_per_tti = 61440;
+            //frame_parms->samples_per_tti = 61440;
             frame_parms->first_carrier_offset = 2794; //4096 - 1302
             frame_parms->nb_prefix_samples0 = 320;
             frame_parms->nb_prefix_samples = 288;
@@ -98,6 +100,7 @@ int nr_init_frame_parms(nfapi_config_request_t config,
 
     case NR_MU_2: //60kHz scs
       frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_2];
+      frame_parms->slots_per_subframe = nr_slots_per_subframe[NR_MU_2];
 
       switch(N_RB){ //FR1 bands only
         case 11:
@@ -119,29 +122,32 @@ int nr_init_frame_parms(nfapi_config_request_t config,
 
     case NR_MU_3:
       frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
+      frame_parms->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
       break;
 
     case NR_MU_4:
       frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_4];
+      frame_parms->slots_per_subframe = nr_slots_per_subframe[NR_MU_4];
       break;
 
   default:
     AssertFatal(1==0,"Invalid numerology index %d", mu);
   }
 
+  frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * ((Ncp == 0)? 14 : 12) * frame_parms->slots_per_subframe;
+  frame_parms->samples_per_frame_wCP = 10 * frame_parms->samples_per_subframe_wCP;
+
+
   return 0;
 }
 
 void nr_dump_frame_parms(NR_DL_FRAME_PARMS *frame_parms)
 {
-  /*LOG_I(PHY,"frame_parms->scs=%d\n",frame_parms->subcarrier_spacing);
+  LOG_I(PHY,"frame_parms->scs=%d\n",frame_parms->subcarrier_spacing);
   LOG_I(PHY,"frame_parms->ofdm_symbol_size=%d\n",frame_parms->ofdm_symbol_size);
-  LOG_I(PHY,"frame_parms->samples_per_tti=%d\n",frame_parms->samples_per_tti);
   LOG_I(PHY,"frame_parms->nb_prefix_samples0=%d\n",frame_parms->nb_prefix_samples0);
-  LOG_I(PHY,"frame_parms->nb_prefix_samples=%d\n",frame_parms->nb_prefix_samples);*/
-  printf("frame_parms->scs=%d\n",frame_parms->subcarrier_spacing);
-  printf("frame_parms->ofdm_symbol_size=%d\n",frame_parms->ofdm_symbol_size);
-  printf("frame_parms->samples_per_tti=%d\n",frame_parms->samples_per_tti);
-  printf("frame_parms->nb_prefix_samples0=%d\n",frame_parms->nb_prefix_samples0);
-  printf("frame_parms->nb_prefix_samples=%d\n",frame_parms->nb_prefix_samples);
+  LOG_I(PHY,"frame_parms->nb_prefix_samples=%d\n",frame_parms->nb_prefix_samples);
+  LOG_I(PHY,"frame_parms->slots_per_subframe=%d\n",frame_parms->slots_per_subframe);
+  LOG_I(PHY,"frame_parms->samples_per_subframe_wCP=%d\n",frame_parms->samples_per_subframe_wCP);
+  LOG_I(PHY,"frame_parms->samples_per_frame_wCP=%d\n",frame_parms->samples_per_frame_wCP);
 }

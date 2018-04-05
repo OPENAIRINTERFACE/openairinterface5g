@@ -19,16 +19,11 @@
  *      contact@openairinterface.org
  */
 
-#ifndef __PHY_IMPLEMENTATION_DEFS_LTE_H__
-#define __PHY_IMPLEMENTATION_DEFS_LTE_H__
+#ifndef __PHY_IMPLEMENTATION_DEFS_NR_H__
+#define __PHY_IMPLEMENTATION_DEFS_NR_H__
 
 
-#include "types.h"
-//#include "nfapi_interface.h"
-//#include "defs.h"
-#include "openair2/COMMON/platform_types.h"
-
-
+#include "impl_defs_lte.h"
 
 
 typedef struct {

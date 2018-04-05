@@ -28,23 +28,20 @@ extern short nr_mod_table[MOD_TABLE_SIZE_SHORT];
 int nr_generate_sss(  int16_t *d_sss,
                       int32_t **txdataF,
                       int16_t amp,
-                      int16_t ssb_first_subcarrier,
-                      uint8_t slot_offset,
+                      int16_t ssb_start_subcarrier,
+                      uint8_t ssb_start_symbol,
                       nfapi_config_request_t config,
                       NR_DL_FRAME_PARMS *frame_parms)
 {
-  int i,m,k;
+  int i,m,k,l;
   int m0, m1;
   int Nid, Nid1, Nid2;
   int16_t a, aa;
   int16_t x0[NR_SSS_LENGTH], x1[NR_SSS_LENGTH];
-  int16_t sss_mod[2* NR_SSS_LENGTH];
   const int x0_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
   const int x1_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
 
-  uint8_t Nsymb = (config.subframe_config.dl_cyclic_prefix_type.value == 0)? 14 : 12;
-
-  // Binary sequence generation
+  /// Sequence generation
   Nid = config.sch_config.physical_cell_id.value;
   Nid2 = Nid % 3;
   Nid1 = (Nid - Nid2)/3;
@@ -63,28 +60,22 @@ int nr_generate_sss(  int16_t *d_sss,
   m1 = Nid1 % 112;
 
   for (i = 0; i < NR_SSS_LENGTH ; i++) {
-    d_sss[i] = (1 - 2*x0[(i + m0) % NR_SSS_LENGTH] ) * (1 - 2*x1[(i + m1) % NR_SSS_LENGTH] );
-    if (d_sss[i] == -1) // This step -1 -> 0 is necessary to use nr_mod_table for the next step
-      d_sss[i] = 0;
+    d_sss[i] = (1 - 2*x0[(i + m0) % NR_SSS_LENGTH] ) * (1 - 2*x1[(i + m1) % NR_SSS_LENGTH] ) * 32767;
   }
 
-  // BPSK modulation and resource mapping
+  /// Resource mapping
   a = (config.rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
-  for (i = 0; i <  NR_SSS_LENGTH; i++)
-  {
-    sss_mod[2*i] =  nr_mod_table[ 2 * (MOD_TABLE_BPSK_OFFSET + d_sss[i]) ];
-    sss_mod[2*i + 1] = nr_mod_table[ 2 * (MOD_TABLE_BPSK_OFFSET + d_sss[i]) + 1];
-  }
 
   for (aa = 0; aa < config.rf_config.tx_antenna_ports.value; aa++)
   {
 
-    // SSS occupies a predefined position (symbol 2, subcarriers 56-182) within the SSB block starting from
-    k = frame_parms->first_carrier_offset + ssb_first_subcarrier + 56; // to be retrieved from ssb scheduling function
+    // SSS occupies a predefined position (subcarriers 56-182, symbol 2) within the SSB block starting from
+    k = frame_parms->first_carrier_offset + ssb_start_subcarrier + 56; //and
+    l = ssb_start_symbol + 2;
 
     for (m = 0; m < NR_SSS_LENGTH; m++) {
-      ((int16_t*)txdataF[aa])[2*(slot_offset*Nsymb*frame_parms->ofdm_symbol_size + 2*frame_parms->ofdm_symbol_size + k)] = (a * sss_mod[2*m]) >> 15;
-      ((int16_t*)txdataF[aa])[2*(slot_offset*Nsymb*frame_parms->ofdm_symbol_size + 2*frame_parms->ofdm_symbol_size + k) + 1] = (a * sss_mod[2*m + 1]) >> 15;
+      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_sss[2*m]) >> 15;
+      //((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k) + 1] = (a * sss_mod[2*m + 1]) >> 15;
       k+=1;
 
       if (k >= frame_parms->ofdm_symbol_size) {

@@ -77,6 +77,8 @@ typedef struct {
   flexran_agent_info_t **flexran;
   /// eNB context variables
   struct PHY_VARS_eNB_s ***eNB;
+  /// gNB context variables
+  struct PHY_VARS_gNB_s ***gNB;
   /// NB_IoT L1 context variables
   struct PHY_VARS_eNB_NB_IoT_s **L1_NB_IoT;
   /// RRC context variables

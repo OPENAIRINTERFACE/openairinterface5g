@@ -1,12 +1,12 @@
 /*
  * Copyright 2017 Cisco Systems, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,7 +15,8 @@
  */
 
 
-#ifndef _NFAPI_INTERFACE_H_
+#ifndef _NFAPI_INTERFACE_NR_EXTENSION_H_
+#define _NFAPI_INTERFACE_NR_EXTENSION_H_
 #define _NFAPI_INTERFACE_H_
 
 #include "stddef.h"
@@ -30,7 +31,7 @@
 // These may be changed if desired. They are used in the encoder to make sure 
 // that the user has not specified a 'count' larger than the max array, and also
 // used by the decoder when decode an array. If the 'count' received is larger
-// than the array it is to be stored in the decode fails. 
+// than the array it is to be stored in the decode fails.
 #define NFAPI_MAX_NUM_ANTENNAS 8
 #define NFAPI_MAX_NUM_SUBBANDS 13
 #define NFAPI_MAX_BF_VECTORS 8

@@ -20,11 +20,11 @@
  */
 
 #include "PHY/defs_NR.h"
-//#include "PHY/extern.h"
+#include "PHY/extern.h"
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
-//#include "nfapi_interface.h"
-//#include "fapi_l1.h"
+#include "nfapi_interface.h"
+#include "fapi_l1.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
