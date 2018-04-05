@@ -1087,7 +1087,7 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
     
     subframe = (last_ru_rx_timestamp[ru_id][CC_id]/RC.ru[ru_id]->frame_parms.samples_per_tti)%10;
-    if (subframe_select(&RC.ru[ru_id]->frame_parms,subframe) != SF_DL) { 
+    if (subframe_select(&RC.ru[ru_id]->frame_parms,subframe) != SF_DL || RC.ru[ru_id]->frame_parms.frame_type == FDD) { 
       LOG_D(EMU,"RU_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
 	    subframe,(unsigned long long)*ptimestamp,
 	    (unsigned long long)current_ru_rx_timestamp[ru_id][CC_id]);
