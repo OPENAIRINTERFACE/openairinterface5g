@@ -773,12 +773,13 @@ void wait_eNBs(void) {
 /*
  * helper function to terminate a certain ITTI task
  */
-void terminate_task(task_id_t task_id, module_id_t mod_id)
+void terminate_task(module_id_t mod_id, task_id_t from, task_id_t to)
 {
-  LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
+  LOG_I(ENB_APP, "sending TERMINATE_MESSAGE from task %s (%d) to task %s (%d)\n",
+      itti_get_task_name(from), from, itti_get_task_name(to), to);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
-  itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
+  msg = itti_alloc_new_message (from, TERMINATE_MESSAGE);
+  itti_send_msg_to_task (to, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
 extern void  free_transport(PHY_VARS_eNB *);
@@ -814,8 +815,8 @@ int stop_L1L2(module_id_t enb_id)
   }
 
   /* these tasks need to pick up new configuration */
-  terminate_task(TASK_RRC_ENB, enb_id);
-  terminate_task(TASK_L2L1, enb_id);
+  terminate_task(enb_id, TASK_ENB_APP, TASK_RRC_ENB);
+  terminate_task(enb_id, TASK_ENB_APP, TASK_L2L1);
   LOG_I(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
   kill_eNB_proc(enb_id);
   LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", enb_id);
