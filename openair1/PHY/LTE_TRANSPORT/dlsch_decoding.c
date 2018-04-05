@@ -37,8 +37,8 @@
 #include "SCHED/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
 //#define DEBUG_DLSCH_DECODING
+//#define UE_DEBUG_TRACE 1
 
-extern double cpuf;
 
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch)
 {
@@ -205,21 +205,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 		    time_stats_t *);
 
 #endif
-  uint8_t (*tc)(int16_t *y,
-                uint8_t *,
-                uint16_t,
-                uint16_t,
-                uint16_t,
-                uint8_t,
-                uint8_t,
-                uint8_t,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *);
+decoder_if_t tc;
 
 
 
@@ -254,13 +240,13 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #if 0
     tc_2cw = phy_threegpplte_turbo_decoder16avx2;
 #endif
-    tc = phy_threegpplte_turbo_decoder16;
+    tc = decoder16;
   }
   else
   {
 	  AssertFatal (harq_process->TBS >= 256 , "Mismatch flag nbRB=%d TBS=%d mcs=%d Qm=%d RIV=%d round=%d \n",
 			  harq_process->nb_rb, harq_process->TBS,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
-	    tc = phy_threegpplte_turbo_decoder8;
+	    tc = decoder8;
   }
 
 
@@ -489,7 +475,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
       LOG_D(PHY,"AbsSubframe %d.%d Start turbo segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
       ret = tc
             (&harq_process->d[r][96],
+             NULL,
              harq_process->c[r],
+             NULL,
              Kr,
              f1f2mat_old[iind*2],
              f1f2mat_old[(iind*2)+1],

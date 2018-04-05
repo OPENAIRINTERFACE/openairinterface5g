@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -40,15 +40,18 @@
 #define CONFIG_MAX_OOPT_PARAMS    10     // maximum number of parameters in the -O option (-O <cfgmode>:P1:P2...
 #define CONFIG_MAX_ALLOCATEDPTRS  1024   // maximum number of parameters that can be dynamicaly allocated in the config module
 
+/* default values for configuration module parameters */
+#define DEFAULT_CFGMODE           "libconfig"  // use libconfig file
+#define DEFAULT_CFGFILENAME       "oai.conf"   // default config file
+
 /* rtflags bit position definitions */
-#define CONFIG_PRINTPARAMS    1        // print parameters values while processing
-#define CONFIG_DEBUGPTR       2        // print memory allocation/free debug messages
-#define CONFIG_DEBUGCMDLINE   4        // print command line processing messages
-#define CONFIG_HELP           8        // print help message
-#define CONFIG_ABORT          16       // config failed,abort execution 
-#define CONFIG_NOOOPT         32       // no -O option found when parsing command line 
-
-
+#define CONFIG_PRINTPARAMS    1               // print parameters values while processing
+#define CONFIG_DEBUGPTR       1<<1            // print memory allocation/free debug messages
+#define CONFIG_DEBUGCMDLINE   1<<2            // print command line processing messages
+#define CONFIG_NOABORTONCHKF  1<<3            // disable abort execution when parameter checking function fails
+#define CONFIG_HELP           1<<20           // print help message
+#define CONFIG_ABORT          1<<21           // config failed,abort execution 
+#define CONFIG_NOOOPT         1<<22           // no -O option found when parsing command line
 typedef int(*configmodule_initfunc_t)(char *cfgP[],int numP);
 typedef int(*configmodule_getfunc_t)(paramdef_t *,int numparams, char *prefix);
 typedef int(*configmodule_getlistfunc_t)(paramlist_def_t *, paramdef_t *,int numparams, char *prefix);

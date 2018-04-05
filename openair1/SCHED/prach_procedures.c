@@ -36,6 +36,7 @@
 #include "SCHED/extern.h"
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
+#include "nfapi_pnf.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
@@ -52,8 +53,11 @@
 
 extern uint32_t nfapi_mode;
 
-void prach_procedures(PHY_VARS_eNB *eNB,
+extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
+
+void prach_procedures(PHY_VARS_eNB *eNB
 #ifdef Rel14
+                      ,
 		      int br_flag
 #endif
 		      ) {

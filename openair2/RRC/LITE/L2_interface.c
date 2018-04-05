@@ -53,6 +53,8 @@ extern UE_MAC_INST *UE_mac_inst;
 # include "intertask_interface.h"
 #endif
 
+#include "flexran_agent_extern.h"
+
 //#define RRC_DATA_REQ_DEBUG
 //#define DEBUG_RRC 1
 
@@ -465,6 +467,11 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
   }
   else {
     LOG_W(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
+  }
+  if (rrc_agent_registered[Mod_instP]) {
+    agent_rrc_xface[Mod_instP]->flexran_agent_notify_ue_state_change(Mod_instP,
+								     rntiP,
+								     PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
   }
 //  rrc_mac_remove_ue(Mod_instP,rntiP);
 }

@@ -182,3 +182,126 @@ message flex_noise_interference_report {
 	optional int32 p0_nominal_pucch = 4;
 }
 
+//
+// RRC Measurements Primitives
+//
+
+
+message flex_rrc_measurements {
+	// Measurement identifier.
+	optional int32 measid = 1;
+	// Primary Cell Reference Signal Received Power (RSRP).
+	optional int32 pcell_rsrp = 2;
+	// Primary Cell Reference Signal Received Quality (RSRQ).
+	optional int32 pcell_rsrq = 3;
+	// Neighboring cells measurements performed by UE.
+	optional flex_neigh_cells_measurements neigh_meas = 4;
+}
+
+message flex_neigh_cells_measurements {
+	// Neighboring EUTRA cells measurements.
+	repeated flex_eutra_measurements eutra_meas = 1;
+}
+
+message flex_eutra_measurements {
+	// Physical Cell identifier.
+	optional int32 phys_cell_id = 1;
+	// EUTRA Cell Global Identity (CGI) measurement.
+	optional flex_eutra_cgi_measurements cgi_meas = 2;
+	// EUTRA nearby cell reference signal measurement.
+	optional flex_eutra_ref_signal_meas meas_result = 3;
+}
+
+message flex_eutra_cgi_measurements {
+	// EUTRA Cell Global Identity (CGI).
+	optional flex_cell_global_eutra_id cgi = 1;
+	// Tracking area code of the neighbor cell.
+	optional uint32 tracking_area_code = 2;
+	// Public land mobile network identifiers of neighbor cell.
+	repeated flex_plmn_identity plmn_id = 3;
+}
+
+message flex_cell_global_eutra_id {
+	// Public land mobile network identifier of neighbor cell.
+	optional flex_plmn_identity plmn_id = 1;
+	// Cell identifier of neighbor cell.
+	optional uint32 cell_id = 2;
+}
+
+message flex_plmn_identity {
+	// Mobile Network Code (MNC).
+	repeated uint32 mnc = 1;
+	// Mobile Country Code (MCC).
+	repeated uint32 mcc = 2;
+	// tracking area code 
+	repeated uint32 tac = 3;
+}
+
+message flex_eutra_ref_signal_meas {
+	// Neighboring Cell RSRP
+	optional int32 rsrp = 1;
+	// Neighboring Cell RSRQ	
+	optional int32 rsrq = 2;
+}
+
+//
+// PDCP Statistics
+//
+
+message flex_pdcp_stats {
+
+	optional uint32 pkt_tx = 1;
+	optional uint32 pkt_tx_bytes = 2;
+	optional uint32 pkt_tx_sn = 3;
+	optional uint32 pkt_tx_w = 4;
+	optional uint32 pkt_tx_bytes_w = 5;
+	optional uint32 pkt_tx_aiat = 7;
+	optional uint32 pkt_tx_aiat_w = 8;
+	
+	optional uint32 pkt_rx = 9;
+	optional uint32 pkt_rx_bytes = 10;
+	optional uint32 pkt_rx_sn = 11;
+	optional uint32 pkt_rx_w = 12;
+	optional uint32 pkt_rx_bytes_w = 13;
+	optional uint32 pkt_rx_aiat = 14;
+	optional uint32 pkt_rx_aiat_w = 15;
+	optional uint32 pkt_rx_oo = 16;
+
+	optional uint64 sfn=17;
+}
+
+//
+// MAC Stats
+//
+
+message flex_mac_stats {
+
+    optional uint32 tbs_dl = 1;
+    optional uint32 tbs_ul = 2;
+    optional uint32 prb_retx_dl = 3;
+    optional uint32 prb_retx_ul = 4;
+    optional uint32 prb_dl = 5;
+    optional uint32 prb_ul = 6;
+    optional uint32 mcs1_dl = 7;
+    optional uint32 mcs2_dl = 8;
+    optional uint32 mcs1_ul = 9;
+    optional uint32 mcs2_ul = 10;
+    optional uint32 total_bytes_sdus_ul = 11;
+    optional uint32 total_bytes_sdus_dl = 12;
+    optional uint32 total_prb_retx_dl = 13;
+    optional uint32 total_prb_retx_ul = 14;
+    optional uint32 total_prb_dl = 15;
+    optional uint32 total_prb_ul = 16;
+    optional uint32 total_pdu_dl = 17;
+    optional uint32 total_pdu_ul = 18;
+    optional uint32 total_tbs_dl = 19;
+    optional uint32 total_tbs_ul = 20;
+    repeated flex_mac_sdus_dl mac_sdus_dl = 21;
+    optional uint32 harq_round = 22;
+}
+
+message flex_mac_sdus_dl {
+    
+    optional uint32 sdu_length = 1; 
+    optional uint32 lcid = 2;
+}

@@ -189,7 +189,7 @@ int proto_agent_compare_channel(struct proto_agent_channel_s *a, struct proto_ag
   return 0;
 }
 
-proto_agent_channel_t * get_channel(int channel_id) {
+proto_agent_channel_t * proto_agent_get_channel(int channel_id) {
   
   struct proto_agent_channel_s search;
   memset(&search, 0, sizeof(struct proto_agent_channel_s));

@@ -19,33 +19,40 @@
  *      contact@openairinterface.org
  */
 
-/*! \file flexran_dci_conversions.h
- * \brief Conversion helpers from flexran messages to OAI formats DCI  
- * \author Xenofon Foukas
- * \date 2016
+/*! \file openair2/ENB_APP/NB_IoT_interface.c
+ * \brief: load library implementing coding/decoding algorithms
+ * \date 2018
  * \version 0.1
+ * \note
+ * \warning
  */
+#define _GNU_SOURCE 
+#include <sys/types.h>
 
-#ifndef LAYER2_MAC_FLEXRAN_DCI_CONVERISIONS_H__
-#define LAYER2_MAC_DCI_FLEXRAN_CONVERISIONS_H__
 
-#define FILL_DCI_FDD_1(TYPE, DCI, FLEXRAN_DCI) \
-  ((TYPE*)DCI)->harq_pid = FLEXRAN_DCI->harq_process; \
-  ((TYPE*)DCI)->rv = FLEXRAN_DCI->rv[0]; \
-  ((TYPE*)DCI)->rballoc = FLEXRAN_DCI->rb_bitmap; \
-  ((TYPE*)DCI)->rah = FLEXRAN_DCI->res_alloc; \
-  ((TYPE*)DCI)->mcs = FLEXRAN_DCI->mcs[0]; \
-  ((TYPE*)DCI)->TPC = FLEXRAN_DCI->tpc; \
-  ((TYPE*)DCI)->ndi = FLEXRAN_DCI->ndi[0];
+#include "openair1/PHY/extern.h"
+#include "common/utils/load_module_shlib.h" 
+#define NBIOT_INTERFACE_SOURCE
+#include "NB_IoT_interface.h"
 
-#define FILL_DCI_TDD_1(TYPE, DCI, FLEXRAN_DCI) \
-  ((TYPE*)DCI)->harq_pid = FLEXRAN_DCI->harq_process; \
-  ((TYPE*)DCI)->rv = FLEXRAN_DCI->rv[0]; \
-  ((TYPE*)DCI)->dai = FLEXRAN_DCI->dai; \
-  ((TYPE*)DCI)->rballoc = FLEXRAN_DCI->rb_bitmap; \
-  ((TYPE*)DCI)->rah = FLEXRAN_DCI->res_alloc; \
-  ((TYPE*)DCI)->mcs = FLEXRAN_DCI->mcs[0]; \
-  ((TYPE*)DCI)->TPC = FLEXRAN_DCI->tpc; \
-  ((TYPE*)DCI)->ndi = FLEXRAN_DCI->ndi[0];
 
-#endif
+
+
+int load_NB_IoT(void) {
+ int ret;
+ RCConfig_NbIoT_f_t RCConfig;
+ loader_shlibfunc_t shlib_fdesc[]=NBIOT_INTERFACE_FLIST; 
+
+     ret=load_module_shlib(NBIOT_MODULENAME,shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t));
+     if (ret) {
+        return ret;
+     }
+     RCConfig = get_shlibmodule_fptr(NBIOT_MODULENAME,NBIOT_RCCONFIG_FNAME );
+     if (RCConfig == NULL) {
+        return -1;
+     } 
+ 
+     RCConfig(&RC);
+return 0;
+}
+

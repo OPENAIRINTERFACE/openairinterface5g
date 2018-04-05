@@ -53,27 +53,41 @@ flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, c
    * create a message queue
    */ 
   // Set size of queues statically for now
-  channel->send_queue = new_message_queue(500);
+//  channel->send_queue = new_message_queue(500);
+  // not using the circular buffer: affects the PDCP split
+  channel->send_queue = new_message_queue();
+
   if (channel->send_queue == NULL) goto error;
-  channel->receive_queue = new_message_queue(500);
+  // not using the circular buffer: affects the PDCP split
+  //channel->receive_queue = new_message_queue(500);
+  channel->send_queue = new_message_queue();
   if (channel->receive_queue == NULL) goto error;
   
    /* 
    * create a link manager 
    */  
-  channel->manager = create_link_manager(channel->send_queue, channel->receive_queue, channel->link);
+
+  // PDCP split interface ASYNC_IF link manager is using more arguments
+
+//  channel->manager = create_link_manager(channel->send_queue, channel->receive_queue, channel->link);
+
+  // Hardcoded fix: TODO: Fix this
+  uint8_t type = 1;
+  char *peer_addr = strdup("127.0.0.1");
+  uint32_t port = 10000;
+  create_link_manager(channel->send_queue, channel->receive_queue, channel->link, type, peer_addr, port);
   if (channel->manager == NULL) goto error;
   
   return channel;
 
  error:
   LOG_I(FLEXRAN_AGENT,"there was an error\n");
-  return 1;
+  return NULL;
 }
 
 int flexran_agent_async_msg_send(void *data, int size, int priority, void *channel_info) {
   flexran_agent_async_channel_t *channel;
-  channel = (flexran_agent_channel_t *)channel_info;
+  channel = (flexran_agent_async_channel_t *)channel_info;
 
   return message_put(channel->send_queue, data, size, priority);
 }

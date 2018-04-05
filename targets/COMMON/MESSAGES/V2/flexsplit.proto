@@ -1,7 +1,28 @@
 package protocol;
 
-import "header.proto";
-import "flexsplit-messages.proto";
+
+message fsp_header {
+        optional uint32 version = 1;
+        optional uint32 type = 2;
+        optional uint32 xid = 4;
+}
+
+enum fsp_type {
+     // Discovery and maintenance messages
+     FSPT_HELLO = 0;
+     FSPT_ECHO_REQUEST = 1;
+     FSPT_ECHO_REPLY = 2;
+     FSPT_RLC_DATA_REQ = 3;
+     FSPT_RLC_DATA_REQ_ACK = 4;
+     FSPT_PDCP_DATA_IND = 5;
+     FSPT_PDCP_DATA_IND_ACK = 6;
+}
+
+enum f1u_type {
+     // Discovery and maintenance messages
+     F1U_DL_DATA = 0;
+     F1U_DL_STATUS = 1;
+}
 
 
 message f1u_message{
@@ -50,6 +71,32 @@ enum flexsplit_err {
 	
 	// other erros
 	UNEXPECTED = -100;	
+}
+
+message fsp_ctxt {
+        optional uint32 fsp_mod_id = 1;
+        optional bool fsp_enb_flag = 2;
+        optional uint32 fsp_instance = 3;
+        optional uint32 fsp_rnti = 4;
+        optional uint32 fsp_frame = 5;
+        optional uint32 fsp_subframe = 6;
+        optional uint32 fsp_eNB_index = 7;
+
+}
+
+message fspRlcPdu {
+        optional bytes fsp_pdu_data = 1; // Maximum PDU to be transfered
+}
+
+message fspRlcData {
+        optional fsp_ctxt fsp_ctxt = 1;
+        optional bool fsp_srb_flag = 2;
+        optional bool fsp_mbms_flag = 3;
+        optional uint32 fsp_rb_id = 4;
+        optional uint32 fsp_muip = 5;
+        optional uint32 fsp_confirm = 6;
+        optional int32 fsp_sdu_buffer_size = 7;
+        optional fspRlcPdu fsp_pdu = 8;
 }
 
 //

@@ -42,7 +42,6 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 MSC_GEN="False"
 XFORMS="True"
-FLEXRAN_AGENT_SB_IF="True"
 PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
@@ -206,8 +205,7 @@ function main() {
             echo_info "Will compile eNB"
             shift;;
        -a | --agent)
-	    FLEXRAN_AGENT=1
-	    echo_info "Will compile eNB with agent support"
+	    echo_info "FlexRAN support is always compiled into the eNB"
 	    shift;;
        --pdcp-split)
 	    PDCP_SPLIT=1
@@ -369,7 +367,11 @@ function main() {
   
   CMAKE_CMD="$CMAKE_CMD .."
   echo_info "CMAKE_CMD=$CMAKE_CMD"
-  
+  if [ "$eNB" = "1" ] && [ "$UE" = "1" ]; then
+    echo_error "Cannot build UE and eNB on one build_oai execution"
+    echo_error "use 2 build_oai invocations"
+    exit
+  fi  
   #########################################################
   # check validity of HW and TP parameters for eNB
   #########################################################
@@ -505,10 +507,20 @@ function main() {
   DIR=$OPENAIR_DIR/cmake_targets
   if [ "$NOS1" =  "1" ] ; then
       lte_build_dir=lte_noS1_build_oai
-      lte_exec=lte-softmodem-nos1
+      if [ "$eNB" = "1" ] ; then
+         lte_exec=lte-softmodem-nos1
+      fi
+      if [ "$UE" = "1" ] ; then
+         lte_exec=lte-uesoftmodem-nos1
+      fi
   else
       lte_build_dir=lte_build_oai
-      lte_exec=lte-softmodem
+      if [ "$eNB" = "1" ] ; then
+         lte_exec=lte-softmodem
+      fi
+      if [ "$UE" = "1" ] ; then
+         lte_exec=lte-uesoftmodem
+      fi
   fi
 
 # configuration module libraries, one currently available, using libconfig 
@@ -528,9 +540,6 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
-    if [ "$FLEXRAN_AGENT" = "1" ] ; then
-	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
-    fi
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
@@ -564,6 +573,9 @@ function main() {
     compilations \
 	  $lte_build_dir $config_libconfig_shlib \
 	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+    compilations \
+          $lte_build_dir coding \
+          libcoding.so $dbin/libcoding.so
 	  
     if [ "$NOS1" = "1" ] ; then
 	compilations \
@@ -629,12 +641,17 @@ function main() {
   if [ "$SIMUS_PHY" = "1" ] ; then
     # lte unitary simulators compilation
     echo_info "Compiling unitary tests simulators"
-    simlist="dlsim_tm4 dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
+    # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim
+    #simlist="dlsim_tm4 dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
+    simlist="dlsim ulsim"
     for f in $simlist ; do
       compilations \
       lte-simulators $f \
 	  $f $dbin/$f.$REL
     done
+    compilations \
+          lte-simulators coding \
+          libcoding.so $dbin/libcoding.so
   fi
 
   # Core simulators
@@ -774,9 +791,6 @@ function main() {
     cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
-    if [ "$FLEXRAN_AGENT" = "1" ] ; then
-	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
-    fi
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file
@@ -793,17 +807,10 @@ function main() {
   # Telnet server compilation
   #####################
   if [ "$BUILD_TELNETSRV" = "1" ] ; then
-
-     telnetsrv_build_dir=telnetsrv
-     mkdir -p $DIR/$telnetsrv_build_dir/build
-     cd $DIR/$telnetsrv_build_dir/build   
-     echo_info "Compiling telnet server library ..."
-    
-     [ "$CLEAN" = "1" ] && rm -rf $DIR/$telnetsrv_build_dir 
-     cmake_file=$OPENAIR_DIR/common/utils/$telnetsrv_build_dir/CMakeLists.txt   
-     cd $DIR/$telnetsrv_build_dir/build
-     eval  "$CMAKE_CMD $OPENAIR_DIR/common/utils/$telnetsrv_build_dir/"
-     make
+              build_dir=$lte_build_dir
+              compilations \
+                  $build_dir telnetsrv \
+                  libtelnetsrv.so $dbin/libtelnetsrv.so
 
   fi  
   # build RF device and transport protocol libraries

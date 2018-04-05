@@ -35,10 +35,12 @@
  */
 #ifndef PROTO_AGENT_NET_COMM_H_
 #define PROTO_AGENT_NET_COMM_H_
+#include "ENB_APP/flexran_agent_defs.h"
 
 #include "proto_agent_defs.h"
 
 #include "tree.h"
+#define ENB_AGENT_MAX 9
 
 /*Channel related information used for Tx/Rx of protocol messages*/
 typedef struct proto_agent_channel_s {
@@ -78,7 +80,7 @@ int proto_agent_create_channel(void *channel_info,
 int proto_agent_destroy_channel(int channel_id);
 
 /*Return an agent communication channel based on its id*/
-proto_agent_channel_t * get_channel(int channel_id);
+proto_agent_channel_t * proto_agent_get_channel(int channel_id);
 
 /*Should be called before performing any channel operations*/
 err_code_t proto_agent_init_channel_container(void);

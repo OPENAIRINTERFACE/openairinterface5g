@@ -24,6 +24,7 @@
 
 #include "PHY/types.h"
 #include "PHY/defs.h"
+#include "common/ran_context.h"
 
 char* namepointer_chMag ;
 char fmageren_name2[512];
@@ -148,5 +149,5 @@ int16_t unscrambling_lut[65536*16] __attribute__((aligned(32)));
 /// lookup table for scrambling in TX
 uint8_t scrambling_lut[65536*16] __attribute__((aligned(32)));
 
-
+uint8_t max_turbo_iterations=4;
 #endif /*__PHY_VARS_H__ */

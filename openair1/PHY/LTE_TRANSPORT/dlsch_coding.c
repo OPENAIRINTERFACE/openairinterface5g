@@ -56,42 +56,20 @@
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
 {
-  int i;
-  int r;
+  int i, r, aa, layer;
 
   if (dlsch) {
-#ifdef DEBUG_DLSCH_FREE
-    printf("Freeing dlsch %p\n",dlsch);
-#endif
-
+    for (layer=0; layer<4; layer++) {
+      for (aa=0; aa<64; aa++) free16(dlsch->ue_spec_bf_weights[layer][aa], OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+      free16(dlsch->ue_spec_bf_weights[layer], 64*sizeof(int32_t*));
+    }
     for (i=0; i<dlsch->Mdlharq; i++) {
-#ifdef DEBUG_DLSCH_FREE
-      printf("Freeing dlsch process %d\n",i);
-#endif
-
       if (dlsch->harq_processes[i]) {
-#ifdef DEBUG_DLSCH_FREE
-        printf("Freeing dlsch process %d (%p)\n",i,dlsch->harq_processes[i]);
-#endif
-
         if (dlsch->harq_processes[i]->b) {
           free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
           dlsch->harq_processes[i]->b = NULL;
-#ifdef DEBUG_DLSCH_FREE
-          printf("Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
-#endif
         }
-
-#ifdef DEBUG_DLSCH_FREE
-        printf("Freeing dlsch process %d c (%p)\n",i,dlsch->harq_processes[i]->c);
-#endif
-
         for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++) {
-
-#ifdef DEBUG_DLSCH_FREE
-          printf("Freeing dlsch process %d c[%d] (%p)\n",i,r,dlsch->harq_processes[i]->c[r]);
-#endif
-
           if (dlsch->harq_processes[i]->c[r]) {
             free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
             dlsch->harq_processes[i]->c[r] = NULL;
@@ -100,17 +78,14 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
             free16(dlsch->harq_processes[i]->d[r],(96+12+3+(3*6144)));
             dlsch->harq_processes[i]->d[r] = NULL;
           }
-
 	}
 	free16(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
 	dlsch->harq_processes[i] = NULL;
       }
     }
-
     free16(dlsch,sizeof(LTE_eNB_DLSCH_t));
     dlsch = NULL;
-    }
-
+  }
 }
 
 LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t Nsoft,unsigned char N_RB_DL, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS* frame_parms)
@@ -311,13 +286,13 @@ int dlsch_encoding_2threads0(te_params *tep) {
 
 
 
-      threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
-                                Kr>>3,
-                                &dlsch->harq_processes[harq_pid]->d[r][96],
-                                (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-                                f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-                                f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
-                               );
+      encoder(dlsch->harq_processes[harq_pid]->c[r],
+              Kr>>3,
+              &dlsch->harq_processes[harq_pid]->d[r][96],
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
+              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+             );
       dlsch->harq_processes[harq_pid]->RTC[r] =
         sub_block_interleaving_turbo(4+(Kr_bytes*8),
                                      &dlsch->harq_processes[harq_pid]->d[r][96],
@@ -483,13 +458,13 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
 
       start_meas(te_stats);
-      threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
-                                Kr>>3,
-                                &dlsch->harq_processes[harq_pid]->d[r][96],
-                                (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-                                f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-                                f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
-                               );
+      encoder(dlsch->harq_processes[harq_pid]->c[r],
+              Kr>>3,
+              &dlsch->harq_processes[harq_pid]->d[r][96],
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
+              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+             );
       stop_meas(te_stats);
 
       start_meas(i_stats);
@@ -604,7 +579,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
 #ifdef DEBUG_DLSCH_CODING
-  printf("encoding thinks this is a new packet \n");
+    printf("encoding thinks this is a new packet for harq_pid %d (%p) \n",harq_pid,dlsch->harq_processes[harq_pid]->b);
 #endif
     /*
     int i;
@@ -614,6 +589,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
     printf("\n");
     */
     // Add 24-bit crc (polynomial A) to payload
+
     crc = crc24a(a,
                  A)>>8;
     a[A>>3] = ((uint8_t*)&crc)[2];
@@ -675,13 +651,13 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
       printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
       start_meas(te_stats);
-      threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
-                                Kr>>3,
-                                &dlsch->harq_processes[harq_pid]->d[r][96],
-                                (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-                                f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-                                f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
-                               );
+      encoder(dlsch->harq_processes[harq_pid]->c[r],
+              Kr>>3,
+              &dlsch->harq_processes[harq_pid]->d[r][96],
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
+              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+             );
       stop_meas(te_stats);
 #ifdef DEBUG_DLSCH_CODING
 
@@ -857,13 +833,13 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
       printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
       start_meas(te_stats);
-      threegpplte_turbo_encoder(dlsch->harq_processes[harq_pid]->c[r],
-                                Kr>>3,
-                                &dlsch->harq_processes[harq_pid]->d[r][96],
-                                (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-                                f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-                                f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
-                               );
+      encoder(dlsch->harq_processes[harq_pid]->c[r],
+              Kr>>3,
+              &dlsch->harq_processes[harq_pid]->d[r][96],
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
+              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
+              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+             );
       stop_meas(te_stats);
 #ifdef DEBUG_DLSCH_CODING
 

@@ -39,7 +39,7 @@
 #include "log.h"
 #include "assertions.h"
 
-proto_agent_message_decoded_callback agent_messages_callback[][3] = {
+proto_agent_message_decoded_callback proto_agent_messages_callback[][3] = {
   {proto_agent_hello, 0, 0},
   {proto_agent_echo_reply, 0, 0},
   {0, just_print, 0},
@@ -49,7 +49,7 @@ proto_agent_message_decoded_callback agent_messages_callback[][3] = {
   {0, just_print, 0},
 };
 
-proto_agent_message_destruction_callback message_destruction_callback[] = {
+proto_agent_message_destruction_callback proto_message_destruction_callback[] = {
   proto_agent_destroy_hello,
   proto_agent_destroy_echo_request,
   proto_agent_destroy_echo_reply,
@@ -88,7 +88,7 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
     LOG_D(PROTO_AGENT, "Deserialized MSG type is %d and %u\n", decoded_message->msg_case, decoded_message->msg_dir);
    }
 
-  if ((decoded_message->msg_case > sizeof(agent_messages_callback) / (3*sizeof(proto_agent_message_decoded_callback))) || 
+  if ((decoded_message->msg_case > sizeof(proto_agent_messages_callback) / (3*sizeof(proto_agent_message_decoded_callback))) || 
       (decoded_message->msg_dir > PROTOCOL__FLEXSPLIT_DIRECTION__UNSUCCESSFUL_OUTCOME))
   {
       err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_NOT_HANDLED;
@@ -96,7 +96,7 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
       goto error;
   }
   
-  err_code = ((*agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
+  err_code = ((*proto_agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
 
   if ( err_code < 0 )
   {
@@ -129,7 +129,7 @@ void * proto_agent_pack_message(Protocol__FlexsplitMessage *msg,
   
   //TODO call proper destroy function
   
-  err_code = ((*message_destruction_callback[msg->msg_case-1])(msg));
+  err_code = ((*proto_message_destruction_callback[msg->msg_case-1])(msg));
   
   DevAssert(buffer !=NULL);
   
@@ -143,5 +143,5 @@ void * proto_agent_pack_message(Protocol__FlexsplitMessage *msg,
 }
 
 err_code_t proto_agent_destroy_flexsplit_message(Protocol__FlexsplitMessage *msg) {
-  return ((*message_destruction_callback[msg->msg_case-1])(msg));
+  return ((*proto_message_destruction_callback[msg->msg_case-1])(msg));
 }

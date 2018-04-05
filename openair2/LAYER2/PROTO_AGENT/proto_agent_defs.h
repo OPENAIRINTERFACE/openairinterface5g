@@ -49,7 +49,7 @@
 #define DEFAULT_PROTO_AGENT_PORT          2210
 #define DEFAULT_PROTO_AGENT_CACHE        "/mnt/oai_agent_cache"
 
-typedef enum {
+/*typedef enum {
   
   PROTO_AGENT_DEFAULT=0,
   
@@ -64,46 +64,37 @@ typedef enum {
 
   ENB_AGENT_MAX=9,
     
-} agent_id_t;
+} agent_id_t;*/
 
+/*
 typedef enum {
-  /* no action  */
   ENB_AGENT_ACTION_NONE = 0x0,
 
-  /* send action  */
   ENB_AGENT_ACTION_SEND = 0x1,
 
- /* apply action  */
   ENB_AGENT_ACTION_APPLY = 0x2,
 
-  /* clear action  */
   ENB_AGENT_ACTION_CLEAR = 0x4,
 
-  /* write action  */
   ENB_AGENT_ACTION_WRITE = 0x8,
 
-  /* filter action  */
   ENB_AGENT_ACTION_FILTER = 0x10,
 
-  /* preprocess action  */
   ENB_AGENT_ACTION_PREPROCESS = 0x20,
 
-  /* meter action  */
   ENB_AGENT_ACTION_METER = 0x40,
   
-  /* Max number of states available */
   ENB_AGENT_ACTION_MAX = 0x7f,
 } agent_action_t;
-
-
+*/
+/*
 typedef enum {
   
   RAN_LTE_OAI= 0,
   
- /* Max number of states available */
  RAN_NAME_MAX = 0x7f,
 } ran_name_t;
-
+*/
 typedef uint8_t xid_t;  
 typedef uint8_t mid_t;  // module or enb id 
 typedef uint8_t lcid_t;

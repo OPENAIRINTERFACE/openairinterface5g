@@ -217,11 +217,11 @@ int dump_eNB_l2_stats(char *buffer, int length)
                        UE_list->eNB_UE_stats[CC_id][UE_id].num_errors_rx);
 
         len+= sprintf(&buffer[len],"[MAC] Received PHR PH = %d (db)\n", UE_list->UE_template[CC_id][UE_id].phr_info);
-        len+= sprintf(&buffer[len],"[MAC] Received BSR LCGID[0][1][2][3] = %u %u %u %u\n",
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID0],
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID1],
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID2],
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID3]
+        len+= sprintf(&buffer[len],"[MAC] Estimated size LCGID[0][1][2][3] = %u %u %u %u\n",
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID0],
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID1],
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID2],
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID3]
                      );
       }
       

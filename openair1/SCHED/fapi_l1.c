@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -63,6 +63,7 @@ void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
 }
 
 #ifdef Rel14
+
 void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
                              eNB_rxtx_proc_t *proc,
                              nfapi_dl_config_request_pdu_t *dl_config_pdu)
@@ -76,6 +77,7 @@ void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
   // copy dci configuration into eNB structure
   fill_mdci_and_dlsch(eNB,proc,&mpdcch_vars->mdci_alloc[mpdcch_vars->num_dci],pdu);
 }
+
 #endif
 
 void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
@@ -188,12 +190,12 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
   eNB->pdsch_config_dedicated[UE_id].p_a = rel8->pa;
 
   if (dlsch0->active){
-    computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch0,dlsch0_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
-    computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
+    computeRhoA_eNB(rel8->pa, dlsch0,dlsch0_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
+    computeRhoB_eNB(rel8->pa,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
   }
   if (dlsch1->active){
-    computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch1,dlsch1_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
-    computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
+    computeRhoA_eNB(rel8->pa, dlsch1,dlsch1_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
+    computeRhoB_eNB(rel8->pa,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
   }
 
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[subframe & 1].num_pdcch_symbols;
@@ -265,14 +267,21 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
     dlsch0_harq->codeword           = 0;
     dlsch0_harq->pdsch_start        = rel10->pdsch_start;
   }
-#endif
   dlsch0->i0               = rel13->initial_transmission_sf_io;
+#endif
 
+#ifdef Rel14
   LOG_D(PHY,"dlsch->i0:%04x dlsch0_harq[pdsch_start:%d nb_rb:%d vrb_type:%d rvidx:%d Nl:%d mimo_mode:%d dl_power_off:%d round:%d status:%d TBS:%d Qm:%d codeword:%d rb_alloc:%d] rel8[length:%d]\n", 
       dlsch0->i0, 
       dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->round, dlsch0_harq->status, dlsch0_harq->TBS, dlsch0_harq->Qm, dlsch0_harq->codeword, dlsch0_harq->rb_alloc[0],
       rel8->length
       );
+#else
+  LOG_D(PHY,"dlsch0_harq[pdsch_start:%d nb_rb:%d vrb_type:%d rvidx:%d Nl:%d mimo_mode:%d dl_power_off:%d round:%d status:%d TBS:%d Qm:%d codeword:%d rb_alloc:%d] rel8[length:%d]\n", 
+      dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->round, dlsch0_harq->status, dlsch0_harq->TBS, dlsch0_harq->Qm, dlsch0_harq->codeword, dlsch0_harq->rb_alloc[0],
+      rel8->length
+      );
+#endif
 }
 
 uint16_t to_beta_offset_harqack[16]={16,20,25,32,40,50,64,80,101,127,160,248,400,640,1008,8};
@@ -528,7 +537,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No existing UE ULSCH for rnti %x\n",rel8->rnti);
-    //LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d\n", UE_id,rel8->rnti,frame,subframe);
+    LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d, modulation %d, rvidx %d\n", UE_id,rel8->rnti,frame,subframe,rel8->modulation_type,rel8->redundancy_version);
 
     fill_ulsch(eNB,&ul_config_pdu->ulsch_pdu,frame,subframe);
 
@@ -620,7 +629,8 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   fp          = &eNB->frame_parms;
   proc        = &eNB->proc.proc_rxtx[0];
 
-  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
+  /* TODO: check that following line is correct - in the meantime it is disabled */
+  //if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
   ul_subframe = pdcch_alloc2ul_subframe(fp,subframe);
   ul_frame    = pdcch_alloc2ul_frame(fp,frame,subframe);
@@ -655,8 +665,10 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
 
   int do_oai =0;
   int dont_send =0;
-  if ((ul_subframe<10)&&
-      (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is an ul_subframe that can be configured here
+  /* TODO: check the following test - in the meantime it is put back as it was before */
+  //if ((ul_subframe<10)&&
+  //    (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is an ul_subframe that can be configured here
+  if (ul_subframe<10) { // This means that there is an ul_subframe that can be configured here
     LOG_D(PHY,"NFAPI: Clearing dci allocations for potential UL subframe %d\n",ul_subframe);
   
     harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
@@ -764,8 +776,10 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
       break;
 #ifdef Rel14
     case NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE:
+#ifdef Rel14
       handle_nfapi_mpdcch_pdu(eNB,proc,dl_config_pdu);
       eNB->mpdcch_vars[subframe&1].num_dci++;
+#endif
       break;
 #endif    
     }

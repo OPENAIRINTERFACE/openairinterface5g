@@ -41,7 +41,6 @@
 
 #include <time.h>
 
-#include "header.pb-c.h"
 #include "flexsplit.pb-c.h"
 
 // Do not need these
@@ -141,12 +140,6 @@ struct _dl_data_args{
   mem_block_t *sdu_p;
 };
 
-
-/****************************
- * get generic info from RAN
- ****************************/
-
-void set_enb_vars(mid_t mod_id, ran_name_t ran);
 
 #endif
 

@@ -325,8 +325,11 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
   /* Increment the global message number */
   message_number = itti_increment_message_number ();
 
+#if 0
+  /* itti dump is disabled */
   itti_dump_queue_message (origin_task_id, message_number, message, itti_desc.messages_info[message_id].name,
                            sizeof(MessageHeader) + message->ittiMsgHeader.ittiMsgSize);
+#endif
 
   if (destination_task_id != TASK_UNKNOWN) {
 
@@ -359,6 +362,106 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
       /* Enqueue message in destination task queue */
       if (lfds611_queue_enqueue(itti_desc.tasks[destination_task_id].message_queue, new) == 0) {
         AssertFatal(0, "Error: lfds611_queue_enqueue returns 0, queue is full, exiting\n");
+      }
+
+      {
+        /* Only use event fd for tasks, subtasks will pool the queue */
+        if (TASK_GET_PARENT_TASK_ID(destination_task_id) == TASK_UNKNOWN) {
+          ssize_t write_ret;
+          eventfd_t sem_counter = 1;
+
+          /* Call to write for an event fd must be of 8 bytes */
+          write_ret = write (itti_desc.threads[destination_thread_id].task_event_fd, &sem_counter, sizeof(sem_counter));
+          AssertFatal (write_ret == sizeof(sem_counter), "Write to task message FD (%d) failed (%d/%d)\n",
+                       destination_thread_id, (int) write_ret, (int) sizeof(sem_counter));
+        }
+      }
+
+      ITTI_DEBUG(ITTI_DEBUG_SEND, " Message %s, number %lu with priority %d successfully sent from %s to queue (%u:%s)\n",
+                 itti_desc.messages_info[message_id].name,
+                 message_number,
+                 priority,
+                 itti_get_task_name(origin_task_id),
+                 destination_task_id,
+                 itti_get_task_name(destination_task_id));
+    }
+  } else {
+    /* This is a debug message to TASK_UNKNOWN, we can release safely release it */
+    int result = itti_free(origin_task_id, message);
+    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+  }
+
+  return 0;
+}
+
+/* same as itti_send_msg_to_task but returns -1 in case of failure instead of crashing */
+/* TODO: this is a hack - the whole logic needs a proper rework. */
+/* look for HACK_RLC_UM_LIMIT for others places related to the hack. Please do not remove this comment. */
+int itti_try_send_msg_to_task(task_id_t destination_task_id, instance_t instance, MessageDef *message)
+{
+  thread_id_t destination_thread_id;
+  task_id_t origin_task_id;
+  message_list_t *new;
+  uint32_t priority;
+  message_number_t message_number;
+  uint32_t message_id;
+
+  AssertFatal (message != NULL, "Message is NULL!\n");
+  AssertFatal (destination_task_id < itti_desc.task_max, "Destination task id (%d) is out of range (%d)\n", destination_task_id, itti_desc.task_max);
+
+  destination_thread_id = TASK_GET_THREAD_ID(destination_task_id);
+  message->ittiMsgHeader.destinationTaskId = destination_task_id;
+  message->ittiMsgHeader.instance = instance;
+  message->ittiMsgHeader.lte_time.frame = itti_desc.lte_time.frame;
+  message->ittiMsgHeader.lte_time.slot = itti_desc.lte_time.slot;
+  message_id = message->ittiMsgHeader.messageId;
+  AssertFatal (message_id < itti_desc.messages_id_max, "Message id (%d) is out of range (%d)!\n", message_id, itti_desc.messages_id_max);
+
+  origin_task_id = ITTI_MSG_ORIGIN_ID(message);
+
+  priority = itti_get_message_priority (message_id);
+
+  /* Increment the global message number */
+  message_number = itti_increment_message_number ();
+
+#if 0
+  /* itti dump is disabled */
+  itti_dump_queue_message (origin_task_id, message_number, message, itti_desc.messages_info[message_id].name,
+                           sizeof(MessageHeader) + message->ittiMsgHeader.ittiMsgSize);
+#endif
+
+  if (destination_task_id != TASK_UNKNOWN) {
+
+    if (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_ENDED) {
+      ITTI_DEBUG(ITTI_DEBUG_ISSUES, " Message %s, number %lu with priority %d can not be sent from %s to queue (%u:%s), ended destination task!\n",
+                 itti_desc.messages_info[message_id].name,
+                 message_number,
+                 priority,
+                 itti_get_task_name(origin_task_id),
+                 destination_task_id,
+                 itti_get_task_name(destination_task_id));
+    } else {
+      /* We cannot send a message if the task is not running */
+      AssertFatal (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_READY,
+                   "Task %s Cannot send message %s (%d) to thread %d, it is not in ready state (%d)!\n",
+                   itti_get_task_name(origin_task_id),
+                   itti_desc.messages_info[message_id].name,
+                   message_id,
+                   destination_thread_id,
+                   itti_desc.threads[destination_thread_id].task_state);
+
+      /* Allocate new list element */
+      new = (message_list_t *) itti_malloc (origin_task_id, destination_task_id, sizeof(struct message_list_s));
+
+      /* Fill in members */
+      new->msg = message;
+      new->message_number = message_number;
+      new->message_priority = priority;
+
+      /* Enqueue message in destination task queue */
+      if (lfds611_queue_enqueue(itti_desc.tasks[destination_task_id].message_queue, new) == 0) {
+        itti_free(origin_task_id, new);
+        return -1;
       }
 
       {
@@ -619,8 +722,11 @@ void itti_mark_task_ready(task_id_t task_id)
 
   AssertFatal (thread_id < itti_desc.thread_max, "Thread id (%d) is out of range (%d)!\n", thread_id, itti_desc.thread_max);
 
+#if 0
+  /* itti dump is disabled */
   /* Register the thread in itti dump */
   itti_dump_thread_use_ring_buffer();
+#endif
 
   /* Mark the thread as using LFDS queue */
   lfds611_queue_use(itti_desc.tasks[task_id].message_queue);
@@ -637,6 +743,19 @@ void itti_mark_task_ready(task_id_t task_id)
 
 void itti_exit_task(void)
 {
+  task_id_t task_id = itti_get_current_task_id();
+  thread_id_t thread_id = TASK_GET_THREAD_ID(task_id);
+
+#if defined(OAI_EMU) || defined(RTAI)
+  if (task_id > TASK_UNKNOWN) {
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_RECV_MSG,
+                                            __sync_and_and_fetch (&itti_desc.vcd_receive_msg, ~(1L << task_id)));
+  }
+#endif
+
+  itti_desc.threads[thread_id].task_state = TASK_STATE_NOT_CONFIGURED;
+  itti_desc.created_tasks--;
+  ITTI_DEBUG(ITTI_DEBUG_EXIT, "Thread for task %s (%d) exits\n", itti_get_task_name(task_id), task_id);
   pthread_exit (NULL);
 }
 
@@ -738,7 +857,10 @@ int itti_init(task_id_t task_max, thread_id_t thread_max, MessagesIds messages_i
   itti_desc.wait_tasks = 0;
   itti_desc.created_tasks = 0;
   itti_desc.ready_tasks = 0;
+#if 0
+  /* itti dump is disabled */
   itti_dump_init (messages_definition_xml, dump_file_name);
+#endif
 
   CHECK_INIT_RETURN(timer_init ());
 
@@ -805,7 +927,10 @@ void itti_wait_tasks_end(void)
     exit (0);
   }
 
+#if 0
+  /* itti dump is disabled */
   itti_dump_exit();
+#endif
 }
 
 void itti_send_terminate_message(task_id_t task_id)

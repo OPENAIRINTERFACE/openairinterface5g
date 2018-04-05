@@ -36,9 +36,9 @@
 #include <sys/types.h>
 
 /* name of shared library implementing the radio front end */
-#define OAI_RF_LIBNAME        "liboai_device.so"
+#define OAI_RF_LIBNAME        "oai_device"
 /* name of shared library implementing the transport */
-#define OAI_TP_LIBNAME        "liboai_transpro.so"
+#define OAI_TP_LIBNAME        "oai_transpro"
 
 /* flags for BBU to determine whether the attached radio head is local or remote */
 #define RAU_LOCAL_RADIO_HEAD  0

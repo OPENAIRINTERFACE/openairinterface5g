@@ -241,7 +241,7 @@ openair_rrc_on_ue(
 //-----------------------------------------------------------------------------
 {
   unsigned short i;
-  int            CC_id;
+
 
     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" UE?:OPENAIR RRC IN....\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
@@ -4312,6 +4312,7 @@ void *rrc_ue_task( void *args_p )
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
+      LOG_W(RRC, " *** Exiting RRC thread\n");
       itti_exit_task ();
       break;
 
@@ -4841,10 +4842,6 @@ rrc_rx_tx_ue(
 )
 //-----------------------------------------------------------------------------
 {
-  //uint8_t        UE_id;
-  int32_t        current_timestamp_ms, ref_timestamp_ms;
-  struct timeval ts;
-  struct rrc_eNB_ue_context_s   *ue_context_p = NULL,*ue_to_be_removed = NULL;
 
 #ifdef LOCALIZATION
   double                         estimated_distance;

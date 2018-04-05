@@ -33,7 +33,7 @@
  * \date 2016
  * \version 0.1
  */
-
+#include "ENB_APP/flexran_agent_defs.h"
 #include "proto_agent_common.h"
 #include "log.h"
 #include "proto_agent.h"
@@ -41,6 +41,7 @@
 #include "proto_agent_net_comm.h"
 #include "proto_agent_async.h" 
 
+#define  ENB_AGENT_MAX 9
 
 proto_agent_instance_t proto_agent[MAX_DU];
 proto_agent_instance_t proto_server[MAX_DU];
@@ -50,7 +51,7 @@ static uint16_t in_port;
 char local_cache[40];
 
 void *send_thread(void *args);
-void *receive_thread(void *args);
+//void *receive_thread(void *args);
 pthread_t new_thread(void *(*f)(void *), void *b);
 pthread_t cu_thread[MAX_DU], du_thread;
 Protocol__FlexsplitMessage *proto_agent_timeout_fsp(void* args);
@@ -70,14 +71,14 @@ char *link_type = NULL;
 #define ECHO
 
 /* Thread continuously listening for incomming packets */
-
+/*
 void *receive_thread(void *args) {
 
   proto_agent_instance_t         *d = args;
   void                  *data;
   int                   size;
   int                   priority;
-  err_code_t             err_code;
+  err_code_t             err_code = 0;
 
   Protocol__FlexsplitMessage *msg;
 
@@ -111,9 +112,10 @@ error:
   LOG_E(PROTO_AGENT, "receive_thread: error %d occured\n",err_code);
   return NULL;
 }
-
+*/
 
 /* utility function to create a thread */
+/*
 pthread_t new_thread(void *(*f)(void *), void *b) {
   pthread_t t;
   pthread_attr_t att;
@@ -137,7 +139,7 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
 
   return t;
 }
-
+*/
 /* Function to be called as a thread: 
    it is calling the proto_agent_server with 
    the appropriate arguments 
@@ -242,7 +244,7 @@ int proto_server_start(mid_t mod_id, const cudu_params_t* cudu){
     goto error;
   }
 
-  proto_agent_channel_t *channel = get_channel(channel_id);
+  proto_agent_channel_t *channel = proto_agent_get_channel(channel_id);
   
     
   if (tcp == 1) channel->type = 0;
@@ -392,7 +394,7 @@ int proto_agent_start(uint8_t enb_id, mid_t cu_id, uint8_t type_id, cudu_params_
     goto error;
   }
 
-  proto_agent_channel_t *channel = get_channel(channel_id);
+  proto_agent_channel_t *channel = proto_agent_get_channel(channel_id);
 
   if (channel == NULL) {
     goto error;

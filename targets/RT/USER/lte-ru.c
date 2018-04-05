@@ -95,6 +95,10 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "enb_config.h"
 //#include "PHY/TOOLS/time_meas.h"
 
+/* these variables have to be defined before including ENB_APP/enb_paramdef.h */
+static int DEFBANDS[] = {7};
+static int DEFENBS[] = {0};
+
 #include "ENB_APP/enb_paramdef.h"
 #include "common/config/config_userapi.h"
 
@@ -117,9 +121,10 @@ extern volatile int                    oai_exit;
 
 
 extern void  phy_init_RU(RU_t*);
+extern void  phy_free_RU(RU_t*);
 
 void init_RU(char*);
-void stop_RU(RU_t *ru);
+void stop_RU(int nb_ru);
 void do_ru_sync(RU_t *ru);
 
 void configure_ru(int idx,
@@ -1273,8 +1278,8 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
     cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
 
-    cfg->tx_gain[i] = (double)fp->att_tx;
-    cfg->rx_gain[i] = ru->max_rxgain-(double)fp->att_rx;
+    cfg->tx_gain[i] = ru->att_tx;
+    cfg->rx_gain[i] = ru->max_rxgain-ru->att_rx;
 
     cfg->configFilename = rf_config_file;
     printf("channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
@@ -1518,7 +1523,13 @@ static void* ru_thread( void* param ) {
   
 
   printf( "Exiting ru_thread \n");
- 
+
+  if (ru->stop_rf != NULL) {
+    if (ru->stop_rf(ru) != 0)
+      LOG_E(HW,"Could not stop the RF device\n");
+    else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+  }
+
   ru_thread_status = 0;
   return &ru_thread_status;
 
@@ -1597,8 +1608,6 @@ void *ru_thread_synch(void *arg) {
     if (release_thread(&ru->proc.mutex_synch,&ru->proc.instance_cnt_synch,"ru_synch_thread") < 0) break;
   } // oai_exit
 
-  lte_sync_time_free();
-
   ru_thread_synch_status = 0;
   return &ru_thread_synch_status;
 
@@ -1612,6 +1621,12 @@ int start_if(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB) {
 
 int start_rf(RU_t *ru) {
   return(ru->rfdevice.trx_start_func(&ru->rfdevice));
+}
+
+int stop_rf(RU_t *ru)
+{
+  ru->rfdevice.trx_end_func(&ru->rfdevice);
+  return 0;
 }
 
 extern void fep_full(RU_t *ru);
@@ -1656,11 +1671,13 @@ void init_RU_proc(RU_t *ru) {
   pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
   pthread_mutex_init( &proc->mutex_synch,NULL);
   pthread_mutex_init( &proc->mutex_FH,NULL);
+  pthread_mutex_init( &proc->mutex_eNBs, NULL);
   
   pthread_cond_init( &proc->cond_prach, NULL);
   pthread_cond_init( &proc->cond_FH, NULL);
   pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
   pthread_cond_init( &proc->cond_synch,NULL);
+  pthread_cond_init( &proc->cond_eNBs, NULL);
   
   pthread_attr_init( &proc->attr_FH);
   pthread_attr_init( &proc->attr_prach);
@@ -1714,6 +1731,116 @@ void init_RU_proc(RU_t *ru) {
   } 
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void*)ru); 
   
+}
+
+void kill_RU_proc(int inst)
+{
+  RU_t *ru = RC.ru[inst];
+  RU_proc_t *proc = &ru->proc;
+
+  pthread_mutex_lock(&proc->mutex_FH);
+  proc->instance_cnt_FH = 0;
+  pthread_mutex_unlock(&proc->mutex_FH);
+  pthread_cond_signal(&proc->cond_FH);
+
+  pthread_mutex_lock(&proc->mutex_prach);
+  proc->instance_cnt_prach = 0;
+  pthread_mutex_unlock(&proc->mutex_prach);
+  pthread_cond_signal(&proc->cond_prach);
+
+#ifdef Rel14
+  pthread_mutex_lock(&proc->mutex_prach_br);
+  proc->instance_cnt_prach_br = 0;
+  pthread_mutex_unlock(&proc->mutex_prach_br);
+  pthread_cond_signal(&proc->cond_prach_br);
+#endif
+
+  pthread_mutex_lock(&proc->mutex_synch);
+  proc->instance_cnt_synch = 0;
+  pthread_mutex_unlock(&proc->mutex_synch);
+  pthread_cond_signal(&proc->cond_synch);
+
+  pthread_mutex_lock(&proc->mutex_eNBs);
+  proc->instance_cnt_eNBs = 0;
+  pthread_mutex_unlock(&proc->mutex_eNBs);
+  pthread_cond_signal(&proc->cond_eNBs);
+
+  pthread_mutex_lock(&proc->mutex_asynch_rxtx);
+  proc->instance_cnt_asynch_rxtx = 0;
+  pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
+  pthread_cond_signal(&proc->cond_asynch_rxtx);
+
+  LOG_D(PHY, "Joining pthread_FH\n");
+  pthread_join(proc->pthread_FH, NULL);
+  if (ru->function == NGFI_RRU_IF4p5) {
+    LOG_D(PHY, "Joining pthread_prach\n");
+    pthread_join(proc->pthread_prach, NULL);
+#ifdef Rel14
+    LOG_D(PHY, "Joining pthread_prach_br\n");
+    pthread_join(proc->pthread_prach_br, NULL);
+#endif
+    if (ru->is_slave) {
+      LOG_D(PHY, "Joining pthread_\n");
+      pthread_join(proc->pthread_synch, NULL);
+    }
+
+    if ((ru->if_timing == synch_to_other) ||
+        (ru->function == NGFI_RRU_IF5) ||
+        (ru->function == NGFI_RRU_IF4p5)) {
+      LOG_D(PHY, "Joining pthread_asynch_rxtx\n");
+      pthread_join(proc->pthread_asynch_rxtx, NULL);
+    }
+  }
+  if (get_nprocs() >= 2) {
+    if (ru->feprx) {
+      pthread_mutex_lock(&proc->mutex_fep);
+      proc->instance_cnt_fep = 0;
+      pthread_mutex_unlock(&proc->mutex_fep);
+      pthread_cond_signal(&proc->cond_fep);
+      LOG_D(PHY, "Joining pthread_fep\n");
+      pthread_join(proc->pthread_fep, NULL);
+      pthread_mutex_destroy(&proc->mutex_fep);
+      pthread_cond_destroy(&proc->cond_fep);
+    }
+    if (ru->feptx_ofdm) {
+      pthread_mutex_lock(&proc->mutex_feptx);
+      proc->instance_cnt_feptx = 0;
+      pthread_mutex_unlock(&proc->mutex_feptx);
+      pthread_cond_signal(&proc->cond_feptx);
+      LOG_D(PHY, "Joining pthread_feptx\n");
+      pthread_join(proc->pthread_feptx, NULL);
+      pthread_mutex_destroy(&proc->mutex_feptx);
+      pthread_cond_destroy(&proc->cond_feptx);
+    }
+  }
+  if (opp_enabled) {
+    LOG_D(PHY, "Joining ru_stats_thread\n");
+    pthread_join(ru->ru_stats_thread, NULL);
+  }
+
+  pthread_mutex_destroy(&proc->mutex_prach);
+  pthread_mutex_destroy(&proc->mutex_asynch_rxtx);
+  pthread_mutex_destroy(&proc->mutex_synch);
+  pthread_mutex_destroy(&proc->mutex_FH);
+  pthread_mutex_destroy(&proc->mutex_eNBs);
+
+  pthread_cond_destroy(&proc->cond_prach);
+  pthread_cond_destroy(&proc->cond_FH);
+  pthread_cond_destroy(&proc->cond_asynch_rxtx);
+  pthread_cond_destroy(&proc->cond_synch);
+  pthread_cond_destroy(&proc->cond_eNBs);
+
+  pthread_attr_destroy(&proc->attr_FH);
+  pthread_attr_destroy(&proc->attr_prach);
+  pthread_attr_destroy(&proc->attr_synch);
+  pthread_attr_destroy(&proc->attr_asynch_rxtx);
+  pthread_attr_destroy(&proc->attr_fep);
+
+#ifdef Rel14
+  pthread_mutex_destroy(&proc->mutex_prach_br);
+  pthread_cond_destroy(&proc->cond_prach_br);
+  pthread_attr_destroy(&proc->attr_prach_br);
+#endif
 }
 
 int check_capabilities(RU_t *ru,RRU_capabilities_t *cap) {
@@ -1772,7 +1899,6 @@ void configure_ru(int idx,
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t*)arg;
   int ret;
-  int i;
 
   LOG_I(PHY, "Received capabilities from RRU %d\n",idx);
 
@@ -1807,6 +1933,7 @@ void configure_ru(int idx,
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
     
 #ifdef Rel14
+    int i;
     for (i=0;i<4;i++) {
       config->emtc_prach_CElevel_enable[0][i]  = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i];
       config->emtc_prach_FreqOffset[0][i]      = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i];
@@ -1897,13 +2024,162 @@ void init_precoding_weights(PHY_VARS_eNB *eNB) {
   }
 }
 
+void set_function_spec_param(RU_t *ru)
+{
+  int ret;
+
+  switch (ru->if_south) {
+  case LOCAL_RF:   // this is an RU with integrated RF (RRU, eNB)
+    if (ru->function ==  NGFI_RRU_IF5) {                 // IF5 RRU
+      ru->do_prach              = 0;                      // no prach processing in RU
+      ru->fh_north_in           = NULL;                   // no shynchronous incoming fronthaul from north
+      ru->fh_north_out          = fh_if5_north_out;       // need only to do send_IF5  reception
+      ru->fh_south_out          = tx_rf;                  // send output to RF
+      ru->fh_north_asynch_in    = fh_if5_north_asynch_in; // TX packets come asynchronously
+      ru->feprx                 = NULL;                   // nothing (this is a time-domain signal)
+      ru->feptx_ofdm            = NULL;                   // nothing (this is a time-domain signal)
+      ru->feptx_prec            = NULL;                   // nothing (this is a time-domain signal)
+      ru->start_if              = start_if;               // need to start the if interface for if5
+      ru->ifdevice.host_type    = RRU_HOST;
+      ru->rfdevice.host_type    = RRU_HOST;
+      ru->ifdevice.eth_params   = &ru->eth_params;
+      reset_meas(&ru->rx_fhaul);
+      reset_meas(&ru->tx_fhaul);
+      reset_meas(&ru->compression);
+      reset_meas(&ru->transport);
+
+      ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
+      printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+      if (ret<0) {
+        printf("Exiting, cannot initialize transport protocol\n");
+        exit(-1);
+      }
+    }
+    else if (ru->function == NGFI_RRU_IF4p5) {
+      ru->do_prach              = 1;                        // do part of prach processing in RU
+      ru->fh_north_in           = NULL;                     // no synchronous incoming fronthaul from north
+      ru->fh_north_out          = fh_if4p5_north_out;       // send_IF4p5 on reception
+      ru->fh_south_out          = tx_rf;                    // send output to RF
+      ru->fh_north_asynch_in    = fh_if4p5_north_asynch_in; // TX packets come asynchronously
+      ru->feprx                 = (get_nprocs()<=2) ? fep_full :ru_fep_full_2thread;                 // RX DFTs
+      ru->feptx_ofdm            = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;               // this is fep with idft only (no precoding in RRU)
+      ru->feptx_prec            = NULL;
+      ru->start_if              = start_if;                 // need to start the if interface for if4p5
+      ru->ifdevice.host_type    = RRU_HOST;
+      ru->rfdevice.host_type    = RRU_HOST;
+      ru->ifdevice.eth_params   = &ru->eth_params;
+      reset_meas(&ru->rx_fhaul);
+      reset_meas(&ru->tx_fhaul);
+      reset_meas(&ru->compression);
+      reset_meas(&ru->transport);
+
+      ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
+      printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+      if (ret<0) {
+        printf("Exiting, cannot initialize transport protocol\n");
+        exit(-1);
+      }
+      malloc_IF4p5_buffer(ru);
+    }
+    else if (ru->function == eNodeB_3GPP) {
+      ru->do_prach             = 0;                       // no prach processing in RU
+      ru->feprx                = (get_nprocs()<=2) ? fep_full : ru_fep_full_2thread;                // RX DFTs
+      ru->feptx_ofdm           = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;              // this is fep with idft and precoding
+      ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
+      ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
+      ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
+      ru->start_if             = NULL;                    // no if interface
+      ru->rfdevice.host_type   = RAU_HOST;
+    }
+    ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
+    ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
+    ru->start_rf               = start_rf;                            // need to start the local RF interface
+    ru->stop_rf                = stop_rf;
+    printf("configuring ru_id %d (start_rf %p)\n", ru->idx, start_rf);
+/*
+    if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
+      fill_rf_config(ru,rf_config_file);
+      init_frame_parms(&ru->frame_parms,1);
+      phy_init_RU(ru);
+    }
+
+    ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+    if (setup_RU_buffers(ru)!=0) {
+      printf("Exiting, cannot initialize RU Buffers\n");
+      exit(-1);
+    }*/
+    break;
+
+  case REMOTE_IF5: // the remote unit is IF5 RRU
+    ru->do_prach               = 0;
+    ru->feprx                  = (get_nprocs()<=2) ? fep_full : fep_full;                   // this is frequency-shift + DFTs
+    ru->feptx_prec             = feptx_prec;                 // need to do transmit Precoding + IDFTs
+    ru->feptx_ofdm             = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;                 // need to do transmit Precoding + IDFTs
+    if (ru->if_timing == synch_to_other) {
+      ru->fh_south_in          = fh_slave_south_in;                  // synchronize to master
+      ru->fh_south_out         = fh_if5_mobipass_south_out;          // use send_IF5 for mobipass
+      ru->fh_south_asynch_in   = fh_if5_south_asynch_in_mobipass;    // UL is asynchronous
+    }
+    else {
+      ru->fh_south_in          = fh_if5_south_in;     // synchronous IF5 reception
+      ru->fh_south_out         = fh_if5_south_out;    // synchronous IF5 transmission
+      ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
+    }
+    ru->start_rf               = NULL;                 // no local RF
+    ru->stop_rf                = NULL;
+    ru->start_if               = start_if;             // need to start if interface for IF5
+    ru->ifdevice.host_type     = RAU_HOST;
+    ru->ifdevice.eth_params    = &ru->eth_params;
+    ru->ifdevice.configure_rru = configure_ru;
+
+    ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
+    printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+    if (ret<0) {
+      printf("Exiting, cannot initialize transport protocol\n");
+      exit(-1);
+    }
+    break;
+
+  case REMOTE_IF4p5:
+    ru->do_prach               = 0;
+    ru->feprx                  = NULL;                // DFTs
+    ru->feptx_prec             = feptx_prec;          // Precoding operation
+    ru->feptx_ofdm             = NULL;                // no OFDM mod
+    ru->fh_south_in            = fh_if4p5_south_in;   // synchronous IF4p5 reception
+    ru->fh_south_out           = fh_if4p5_south_out;  // synchronous IF4p5 transmission
+    ru->fh_south_asynch_in     = (ru->if_timing == synch_to_other) ? fh_if4p5_south_in : NULL;                // asynchronous UL if synch_to_other
+    ru->fh_north_out           = NULL;
+    ru->fh_north_asynch_in     = NULL;
+    ru->start_rf               = NULL;                // no local RF
+    ru->stop_rf                = NULL;
+    ru->start_if               = start_if;            // need to start if interface for IF4p5
+    ru->ifdevice.host_type     = RAU_HOST;
+    ru->ifdevice.eth_params    = &ru->eth_params;
+    ru->ifdevice.configure_rru = configure_ru;
+
+    ret = openair0_transport_load(&ru->ifdevice, &ru->openair0_cfg, &ru->eth_params);
+    printf("openair0_transport_init returns %d for ru_id %d\n", ret, ru->idx);
+    if (ret<0) {
+      printf("Exiting, cannot initialize transport protocol\n");
+      exit(-1);
+    }
+
+    malloc_IF4p5_buffer(ru);
+
+    break;
+
+  default:
+    LOG_E(PHY,"RU with invalid or unknown southbound interface type %d\n",ru->if_south);
+    break;
+  } // switch on interface type
+}
+
 extern void RCconfig_RU(void);
 
 void init_RU(char *rf_config_file) {
   
   int ru_id;
   RU_t *ru;
-  int ret;
   PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
   int i;
   int CC_id;
@@ -1971,152 +2247,7 @@ void init_RU(char *rf_config_file) {
     }
     //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
 
-
-    LOG_D(PHY,"ru->if_south:%d\n", ru->if_south);
-
-    switch (ru->if_south) {
-    case LOCAL_RF:   // this is an RU with integrated RF (RRU, eNB)
-      if (ru->function ==  NGFI_RRU_IF5) {                 // IF5 RRU
-	ru->do_prach              = 0;                      // no prach processing in RU
-	ru->fh_north_in           = NULL;                   // no shynchronous incoming fronthaul from north
-	ru->fh_north_out          = fh_if5_north_out;       // need only to do send_IF5  reception
-	ru->fh_south_out          = tx_rf;                  // send output to RF
-	ru->fh_north_asynch_in    = fh_if5_north_asynch_in; // TX packets come asynchronously 
-	ru->feprx                 = NULL;                   // nothing (this is a time-domain signal)
-	ru->feptx_ofdm            = NULL;                   // nothing (this is a time-domain signal)
-	ru->feptx_prec            = NULL;                   // nothing (this is a time-domain signal)
-	ru->start_if              = start_if;               // need to start the if interface for if5
-	ru->ifdevice.host_type    = RRU_HOST;
-	ru->rfdevice.host_type    = RRU_HOST;
-	ru->ifdevice.eth_params   = &ru->eth_params;
-    reset_meas(&ru->rx_fhaul);
-    reset_meas(&ru->tx_fhaul);
-    reset_meas(&ru->compression);
-    reset_meas(&ru->transport);
-
-	ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-	printf("openair0_transport_init returns %d for ru_id %d\n",ret,ru_id);
-	if (ret<0) {
-	  printf("Exiting, cannot initialize transport protocol\n");
-	  exit(-1);
-	}
-      }
-      else if (ru->function == NGFI_RRU_IF4p5) {
-	ru->do_prach              = 1;                        // do part of prach processing in RU
-	ru->fh_north_in           = NULL;                     // no synchronous incoming fronthaul from north
-	ru->fh_north_out          = fh_if4p5_north_out;       // send_IF4p5 on reception
-	ru->fh_south_out          = tx_rf;                    // send output to RF
-	ru->fh_north_asynch_in    = fh_if4p5_north_asynch_in; // TX packets come asynchronously
-	ru->feprx                 = (get_nprocs()<=2) ? fep_full :ru_fep_full_2thread;                 // RX DFTs
-	ru->feptx_ofdm            = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;               // this is fep with idft only (no precoding in RRU)
-	ru->feptx_prec            = NULL;
-	ru->start_if              = start_if;                 // need to start the if interface for if4p5
-	ru->ifdevice.host_type    = RRU_HOST;
-	ru->rfdevice.host_type    = RRU_HOST;
-	ru->ifdevice.eth_params   = &ru->eth_params;
-    reset_meas(&ru->rx_fhaul);
-    reset_meas(&ru->tx_fhaul);
-    reset_meas(&ru->compression);
-    reset_meas(&ru->transport);
-
-	ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-	printf("openair0_transport_init returns %d for ru_id %d\n",ret,ru_id);
-	if (ret<0) {
-	  printf("Exiting, cannot initialize transport protocol\n");
-	  exit(-1);
-	}
-	malloc_IF4p5_buffer(ru);
-      }
-      else if (ru->function == eNodeB_3GPP) {  
-	ru->do_prach             = 0;                       // no prach processing in RU            
-	ru->feprx                = (get_nprocs()<=2) ? fep_full : ru_fep_full_2thread;                // RX DFTs
-	ru->feptx_ofdm           = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;              // this is fep with idft and precoding
-	ru->feptx_prec           = feptx_prec;              // this is fep with idft and precoding
-	ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
-	ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
-	ru->start_if             = NULL;                    // no if interface
-	ru->rfdevice.host_type   = RAU_HOST;
-      }
-      ru->fh_south_in            = rx_rf;                               // local synchronous RF RX
-      ru->fh_south_out           = tx_rf;                               // local synchronous RF TX
-      ru->start_rf               = start_rf;                            // need to start the local RF interface
-      printf("configuring ru_id %d (start_rf %p)\n",ru_id,start_rf);
-/*
-      if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
-	fill_rf_config(ru,rf_config_file);      
-	init_frame_parms(&ru->frame_parms,1);
-	phy_init_RU(ru);
-      }
-
-      ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-      if (setup_RU_buffers(ru)!=0) {
-	printf("Exiting, cannot initialize RU Buffers\n");
-	exit(-1);
-      }
-      */
-      break;
-
-    case REMOTE_IF5: // the remote unit is IF5 RRU
-      ru->do_prach               = 0;
-      ru->feprx                  = (get_nprocs()<=2) ? fep_full : fep_full;                   // this is frequency-shift + DFTs
-      ru->feptx_prec             = feptx_prec;                 // need to do transmit Precoding + IDFTs 
-      ru->feptx_ofdm             = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;                 // need to do transmit Precoding + IDFTs 
-      if (ru->if_timing == synch_to_other) {
-	ru->fh_south_in          = fh_slave_south_in;                  // synchronize to master
-	ru->fh_south_out         = fh_if5_mobipass_south_out;          // use send_IF5 for mobipass
-	ru->fh_south_asynch_in   = fh_if5_south_asynch_in_mobipass;    // UL is asynchronous
-      }
-      else {
-	ru->fh_south_in          = fh_if5_south_in;     // synchronous IF5 reception
-	ru->fh_south_out         = fh_if5_south_out;    // synchronous IF5 transmission
-	ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
-      }
-      ru->start_rf               = NULL;                 // no local RF
-      ru->start_if               = start_if;             // need to start if interface for IF5 
-      ru->ifdevice.host_type     = RAU_HOST;
-      ru->ifdevice.eth_params    = &ru->eth_params;
-      ru->ifdevice.configure_rru = configure_ru;
-
-      ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-      printf("openair0_transport_init returns %d for ru_id %d\n",ret,ru_id);
-      if (ret<0) {
-	printf("Exiting, cannot initialize transport protocol\n");
-	exit(-1);
-      }
-      break;
-
-    case REMOTE_IF4p5:
-      ru->do_prach               = 0;
-      ru->feprx                  = NULL;                // DFTs
-      ru->feptx_prec             = feptx_prec;          // Precoding operation
-      ru->feptx_ofdm             = NULL;                // no OFDM mod
-      ru->fh_south_in            = fh_if4p5_south_in;   // synchronous IF4p5 reception
-      ru->fh_south_out           = fh_if4p5_south_out;  // synchronous IF4p5 transmission
-      ru->fh_south_asynch_in     = (ru->if_timing == synch_to_other) ? fh_if4p5_south_in : NULL;                // asynchronous UL if synch_to_other
-      ru->fh_north_out           = NULL;
-      ru->fh_north_asynch_in     = NULL;
-      ru->start_rf               = NULL;                // no local RF
-      ru->start_if               = start_if;            // need to start if interface for IF4p5 
-      ru->ifdevice.host_type     = RAU_HOST;
-      ru->ifdevice.eth_params    = &ru->eth_params;
-      ru->ifdevice.configure_rru = configure_ru;
-
-      ret = openair0_transport_load(&ru->ifdevice, &ru->openair0_cfg, &ru->eth_params);
-      printf("openair0_transport_init returns %d for ru_id %d\n",ret,ru_id);
-      if (ret<0) {
-	printf("Exiting, cannot initialize transport protocol\n");
-	exit(-1);
-      }
-      
-      malloc_IF4p5_buffer(ru);
-      
-      break;
-
-    default:
-      LOG_E(PHY,"RU with invalid or unknown southbound interface type %d\n",ru->if_south);
-      break;
-    } // switch on interface type 
-
+    set_function_spec_param(ru);
     LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
 
     init_RU_proc(ru);
@@ -2134,10 +2265,12 @@ void init_RU(char *rf_config_file) {
 
 
 
-void stop_ru(RU_t *ru) {
-
-  printf("Stopping RU %p processing threads\n",(void*)ru);
-  
+void stop_RU(int nb_ru)
+{
+  for (int inst = 0; inst < nb_ru; inst++) {
+    LOG_I(PHY, "Stopping RU %d processing threads\n", inst);
+    kill_RU_proc(inst);
+  }
 }
 
 
@@ -2256,13 +2389,13 @@ void RCconfig_RU(void) {
 	  RC.ru[j]->if_timing                    = synch_to_other;
 	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF5_MOBIPASS;
 	}
-	RC.ru[j]->att_tx                         = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr); 
-	RC.ru[j]->att_rx                         = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr); 
       }  /* strcmp(local_rf, "yes") != 0 */
 
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
       RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       
+      RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
+      RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
     }// j=0..num_rus
   } else {
     RC.nb_RU = 0;	    
