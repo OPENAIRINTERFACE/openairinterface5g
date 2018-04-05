@@ -449,46 +449,22 @@ void *l2l1_task(void *arg) {
   itti_set_task_real_time(TASK_L2L1);
   itti_mark_task_ready(TASK_L2L1);
 
-    /* Wait for the initialize message */
-    printf("Wait for the ITTI initialize message\n");
-    do {
-      if (message_p != NULL) {
-	result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-	AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-      }
-
-      itti_receive_msg (TASK_L2L1, &message_p);
-
-      switch (ITTI_MSG_ID(message_p)) {
-      case INITIALIZE_MESSAGE:
-	/* Start eNB thread */
-	printf("L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
-	start_eNB = 1;
-	break;
-
-      case TERMINATE_MESSAGE:
-	printf("received terminate message\n");
-	oai_exit=1;
-        start_eNB = 0;
-	itti_exit_task ();
-	break;
-
-      default:
-	printf("Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-	break;
-      }
-    } while (ITTI_MSG_ID(message_p) != INITIALIZE_MESSAGE);
-
-    result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-/* ???? no else but seems to be UE only ??? 
-  do {
-    // Wait for a message
+  /* Wait for the initialize message */
+  printf("Wait for the ITTI initialize message\n");
+  while (1) {
     itti_receive_msg (TASK_L2L1, &message_p);
 
     switch (ITTI_MSG_ID(message_p)) {
+    case INITIALIZE_MESSAGE:
+      /* Start eNB thread */
+      LOG_D(PHY, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
+      start_eNB = 1;
+      break;
+
     case TERMINATE_MESSAGE:
+      LOG_W(PHY, " *** Exiting L2L1 thread\n");
       oai_exit=1;
+      start_eNB = 0;
       itti_exit_task ();
       break;
 
@@ -511,8 +487,9 @@ void *l2l1_task(void *arg) {
 
     result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-  } while(!oai_exit);
-*/
+    message_p = NULL;
+  };
+
   return NULL;
 }
 #endif
@@ -788,7 +765,6 @@ extern void  phy_free_RU(RU_t*);
 int stop_L1L2(module_id_t enb_id)
 {
   LOG_W(ENB_APP, "stopping lte-softmodem\n");
-  oai_exit = 1;
 
   if (!RC.ru) {
     LOG_UI(ENB_APP, "no RU configured\n");
