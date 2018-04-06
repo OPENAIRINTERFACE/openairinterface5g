@@ -1104,6 +1104,9 @@ typedef struct {
     uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
     uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
 
+    slice_id_t assoc_dl_slice[MAX_MOBILES_PER_ENB];
+    slice_id_t assoc_ul_slice[MAX_MOBILES_PER_ENB];
+
 } UE_list_t;
 
 /*! \brief deleting control information*/

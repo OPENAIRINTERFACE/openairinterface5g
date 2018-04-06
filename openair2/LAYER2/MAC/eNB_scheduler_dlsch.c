@@ -763,7 +763,7 @@ schedule_ue_spec(module_id_t module_idP, slice_id_t slice_idP,
         continue_flag = 1;
       }
 
-      if (!ue_slice_membership(UE_id, slice_idP, RC.mac[module_idP]->slice_info.n_dl))
+      if (!ue_dl_slice_membership(module_idP, UE_id, slice_idP))
         continue;
 
       if (continue_flag != 1) {

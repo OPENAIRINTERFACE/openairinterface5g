@@ -1262,7 +1262,8 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
 
 /*Slice related functions */
 uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
-int ue_slice_membership(int UE_id, int slice_id, int n_active_slices);
+int ue_dl_slice_membership(module_id_t mod_id, int UE_id, slice_id_t slice_id);
+int ue_ul_slice_membership(module_id_t mod_id, int UE_id, slice_id_t slice_id);
 
 /* from here: prototypes to get rid of compilation warnings: doc to be written by function author */
 uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);
