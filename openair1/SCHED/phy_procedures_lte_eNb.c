@@ -399,7 +399,6 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
   dlsch->active = 0;
   dlsch_harq->round++;
-//printf("  dlsch_harq ++ %p %d.%d harq %d rnti %d\n", dlsch_harq, frame, subframe, harq_pid, dlsch->rnti);
 
   LOG_D(PHY,"Generating DLSCH/PDSCH dlsch_harq[round:%d]\n",dlsch_harq->round);
 }
@@ -519,7 +518,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   //LOG_D(PHY,"Before generate_dci_top num_pdcch_symbols:%d num_dci:%d dci_alloc:dci_length:%d\n", num_pdcch_symbols, num_dci, eNB->pdcch_vars[subframe&1].dci_alloc[0].dci_length);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
-//printf("//////////************before generate_dci_top UL %d.%d TX %d.%d \n", ul_frame, ul_subframe, frame, subframe);
+
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     generate_dci_top(num_pdcch_symbols,
         num_dci,
@@ -557,7 +556,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
         else
         {
           // generate pdsch
-//printf("%d.%d pdsch_procedures ue rnti %d\n", frame, subframe, dlsch0->rnti);///////////////////////////////////**********************
+
           pdsch_procedures(eNB,
               proc,
               harq_pid,
@@ -1662,8 +1661,6 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
       // release DLSCH if needed
       release_harq(eNB,UE_id,i,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
 
-//if (ulsch_harq->o_ACK[i] != 1)
-//printf("got NACK %d.%d rnti %d harq %d\n", frame, subframe, rnti, eNB->dlsch[UE_id][0]->harq_ids[(subframe+6)%10]);
 
 #if T_TRACER
       /* TODO: get correct harq pid */
@@ -1763,8 +1760,6 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
       // release DLSCH if needed
       release_harq(eNB,UE_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
 
-//if (harq_ack[0] != 1)
-//printf("got NACK %d.%d rnti %d harq %d\n", frame, subframe, uci->rnti, eNB->dlsch[UE_id][0]->harq_ids[(subframe+6)%10]);
 
 #if T_TRACER
       if (harq_ack[0] != 1)

@@ -148,7 +148,6 @@ int background_system(char *command)
 
 void start_background_system(void)
 {
-  return;
   int p[2];
   pid_t son;
 

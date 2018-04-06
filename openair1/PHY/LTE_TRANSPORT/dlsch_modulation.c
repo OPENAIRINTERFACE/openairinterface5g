@@ -2175,8 +2175,8 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   uint8_t mod_order0 = 0;
   uint8_t mod_order1 = 0;
   int16_t amp_rho_a, amp_rho_b;
-  int16_t qpsk_table_a0[2],qam16_table_a0[4],qam64_table_a0[8],qpsk_table_b0[2],qam16_table_b0[4],qam64_table_b0[8];
-  int16_t qpsk_table_a1[2],qam16_table_a1[4],qam64_table_a1[8],qpsk_table_b1[2],qam16_table_b1[4],qam64_table_b1[8];
+  int16_t qam16_table_a0[4],qam64_table_a0[8],qam16_table_b0[4],qam64_table_b0[8];//qpsk_table_a0[2],qpsk_table_b0[2]
+  int16_t qam16_table_a1[4],qam64_table_a1[8],qam16_table_b1[4],qam64_table_b1[8];//qpsk_table_a1[2],qpsk_table_b1[2]
 
   int16_t *qam_table_s0=NULL,*qam_table_s1=NULL;
 #ifdef NEW_ALLOC_RE
