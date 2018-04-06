@@ -1065,6 +1065,7 @@ void set_UE_defaults(int nb_ue) {
 	PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[i][0]->agregationLevel      = 0xFF;
       }
       PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
+      PHY_vars_UE_g[UE_id][CC_id]->tx_power_max_dBm = 23;
     }
   }
 }
