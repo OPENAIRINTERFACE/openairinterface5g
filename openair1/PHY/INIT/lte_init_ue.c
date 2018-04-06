@@ -853,6 +853,9 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
       (*pdcch_vars_th)[th_id][eNB_id]->rho                 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
       (*pdcch_vars_th)[th_id][eNB_id]->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
       (*pdcch_vars_th)[th_id][eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+
+      (*pdcch_vars_th)[th_id][eNB_id]->dciFormat = 0;
+      (*pdcch_vars_th)[th_id][eNB_id]->agregationLevel = 0xFF;
     }
     
     for (i=0; i<fp->nb_antennas_rx; i++) {

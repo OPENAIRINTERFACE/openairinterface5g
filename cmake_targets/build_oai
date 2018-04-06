@@ -208,7 +208,7 @@ function main() {
             echo_info "Will compile UE"
             shift;;
        --UE-conf-nvram)
-            conf_nvram_path=$(readlink -f "$1")
+            conf_nvram_path=$(readlink -f $2)
             shift 2;;
         --UE-gen-nvram)
             gen_nvram_path=$(readlink -f $2)

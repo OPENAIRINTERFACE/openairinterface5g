@@ -843,7 +843,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
 
-  LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p\n",
+  LOG_D(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p\n",
              frame, subframe,symbol,
              nb_rb,dlsch0_harq->Qm,
              pdsch_vars[eNB_id]->llr_length[symbol],
@@ -1185,7 +1185,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 #if DISABLE_LOG_X
     printf("[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 // Please keep it: useful for debugging

@@ -5027,7 +5027,7 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
 
     pdsch_vars->llr_offset[pdcch_vars->num_pdcch_symbols] = 0;
 
-    LOG_I(PHY,"compute_llr_offset:  nb RB %d - Qm %d \n", nb_rb_alloc, dlsch0_harq->Qm);
+    LOG_D(PHY,"compute_llr_offset:  nb RB %d - Qm %d \n", nb_rb_alloc, dlsch0_harq->Qm);
 
     //dlsch0_harq->rb_alloc_even;
     //dlsch0_harq->rb_alloc_odd;
@@ -5057,14 +5057,12 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
         if(symbol < (frame_parms->symbols_per_tti-1))
           pdsch_vars->llr_offset[symbol+1] = pdsch_vars->llr_offset[symbol] + llr_offset;
 
-	LOG_I(PHY,"Granted Re subframe %d / symbol %d => %d (%d RBs)\n", subframe, symbol_mod, granted_re,dlsch0_harq->nb_rb);
-	LOG_I(PHY,"Pbch/PSS/SSS Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, pbch_pss_sss_re);
-	LOG_I(PHY,"CRS Re Per PRB subframe %d / symbol %d => %d \n", subframe, symbol_mod, crs_re);
-	LOG_I(PHY,"Data Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, data_re);
+	LOG_D(PHY,"Granted Re subframe %d / symbol %d => %d (%d RBs)\n", subframe, symbol_mod, granted_re,dlsch0_harq->nb_rb);
+	LOG_D(PHY,"Pbch/PSS/SSS Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, pbch_pss_sss_re);
+	LOG_D(PHY,"CRS Re Per PRB subframe %d / symbol %d => %d \n", subframe, symbol_mod, crs_re);
+	LOG_D(PHY,"Data Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, data_re);
 
-
-
-        LOG_I(PHY,"Data Re subframe %d-symbol %d => llr length %d, llr offset %d \n", subframe, symbol,
+        LOG_D(PHY,"Data Re subframe %d-symbol %d => llr length %d, llr offset %d \n", subframe, symbol,
               pdsch_vars->llr_length[symbol], pdsch_vars->llr_offset[symbol]);
     }
 }
