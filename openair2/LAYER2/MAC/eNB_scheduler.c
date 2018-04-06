@@ -424,12 +424,15 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
     }
   }				// ul_failure_timer>0
 
+#if 0
+  /* U-plane inactivity timer is disabled. Uncomment to re-enable. */
   UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer++;
   if(UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer > (U_PLANE_INACTIVITY_VALUE*subframe_num(&RC.eNB[module_idP][CC_id]->frame_parms))){
     LOG_D(MAC,"UE %d rnti %x: U-Plane Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti); 
     mac_eNB_rrc_uplane_failure(module_idP,CC_id,frameP,subframeP,rnti);
     UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer  = 0;
   }// time > 60s
+#endif
 }
 
 void

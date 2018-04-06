@@ -734,7 +734,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
 
       // control channel or retransmission
       /* TODO: do we have to check for retransmission? */
-      if (mac_eNB_get_rrc_status(Mod_id, rnti) < RRC_RECONFIGURED || round > 0) {
+      if (mac_eNB_get_rrc_status(Mod_id, rnti) < RRC_RECONFIGURED || round != 8) {
         nb_rbs_required_remaining_1[CC_id][UE_id] =
                 nb_rbs_required[CC_id][UE_id];
       } else {

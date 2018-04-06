@@ -35,6 +35,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "COMMON/s1ap_messages_types.h"
+#include "COMMON/rrc_messages_types.h"
+
 #include "collection/tree.h"
 #include "rrc_types_NB_IoT.h"
 #include "COMMON/platform_constants.h"
