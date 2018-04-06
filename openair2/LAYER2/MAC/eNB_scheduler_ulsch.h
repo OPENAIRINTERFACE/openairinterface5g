@@ -52,6 +52,9 @@ float total_slice_percentage_current_uplink = 0;
 int slice_maxmcs_uplink[MAX_NUM_SLICES] = {20, 20, 20, 20};
 int slice_maxmcs_current_uplink[MAX_NUM_SLICES] = {20,20,20,20};
 
+int slice_first_rb[MAX_NUM_SLICES] = {0, 0, 0, 0};
+int slice_first_rb_current[MAX_NUM_SLICES] = {0,0,0,0};
+
 /*resource blocks allowed*/
 uint16_t         nb_rbs_allowed_slice_uplink[NFAPI_CC_MAX][MAX_NUM_SLICES];
 /*Slice Update */

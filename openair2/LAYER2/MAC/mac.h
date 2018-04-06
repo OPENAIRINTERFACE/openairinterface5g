@@ -1102,6 +1102,7 @@ typedef struct {
 
     /// Sorting criteria for the UE list in the MAC preprocessor
     uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
+    uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
 
 } UE_list_t;
 
