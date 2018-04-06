@@ -47,7 +47,7 @@
 
 #include "PHY/types.h"
 
-#include "PHY/defs.h"
+//#include "PHY/defs.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
