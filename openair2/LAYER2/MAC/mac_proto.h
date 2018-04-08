@@ -29,7 +29,7 @@
 #ifndef __LAYER2_MAC_PROTO_H__
 #define __LAYER2_MAC_PROTO_H__
 
-#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/mac.h"
 
 /** \addtogroup _mac
  *  @{

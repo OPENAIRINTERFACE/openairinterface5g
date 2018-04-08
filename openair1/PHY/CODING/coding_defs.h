@@ -29,7 +29,7 @@
 
 #include <stdint.h>
 
-#include "PHY/defs.h"
+#include "PHY/defs_common.h"
 
 #define CRC24_A 0
 #define CRC24_B 1
@@ -75,20 +75,7 @@ int32_t lte_segmentation(uint8_t *input_buffer,
                          uint32_t *Kminus,
                          uint32_t *F);
 
-/** \fn int16_t estimate_ue_tx_power(uint32_t tbs, uint32_t nb_rb, uint8_t control_only, lte_prefix_type_t ncp, uint8_t use_srs)
-    \brief this functions calculates the delta MCS in dB based on the lte_segmentation function
-\param tbs transport block size
-\param nb_rb number of required rb
-\param control_only a flag for the type of data
-\param ncp cyclic prefix
-\param use_srs a flag indicating the use of srs in the current SF
-\returns ue_tx_power estimated ue tx power = delat_ mcs + bw_factor
-*/
-int16_t estimate_ue_tx_power(uint32_t tbs,
-                             uint32_t nb_rb,
-                             uint8_t control_only,
-                             lte_prefix_type_t ncp,
-                             uint8_t use_srs);
+
 
 /** \fn uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w)
 \brief This is the subblock interleaving algorithm from 36-212 (Release 8, 8.6 2009-03), pages 15-16.

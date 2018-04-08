@@ -107,7 +107,7 @@
  * @}
  */
 
-#include "defs.h"
+#include "defs_eNB.h"
 #include "types.h"
 
 

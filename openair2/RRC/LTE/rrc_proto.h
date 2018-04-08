@@ -31,7 +31,7 @@
  *  @{
  */
 
-#include "RRC/LITE/defs.h"
+#include "RRC/LTE/rrc_defs.h"
 
 #include "flexran_agent_extern.h"
 

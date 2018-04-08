@@ -32,10 +32,10 @@
 #ifndef __MAC_EXTERN_H__
 #define __MAC_EXTERN_H__
 
-#include "PHY/defs.h"
-#include "defs.h"
+//#include "PHY/defs_common.h"
+#include "mac.h"
 
-#include "RRC/LITE/defs.h"
+#include "RRC/LTE/rrc_defs.h"
 
 extern const uint32_t BSR_TABLE[BSR_TABLE_SIZE];
 //extern uint32_t EBSR_Level[63];
@@ -75,26 +75,5 @@ extern uint32_t RRC_CONNECTION_FLAG;
 
 extern uint8_t rb_table[34];
 
-extern DCI0_5MHz_TDD_1_6_t UL_alloc_pdu;
-
-extern DCI1A_5MHz_TDD_1_6_t RA_alloc_pdu;
-extern DCI1A_5MHz_TDD_1_6_t DLSCH_alloc_pdu1A;
-extern DCI1A_5MHz_TDD_1_6_t BCCH_alloc_pdu;
-
-extern DCI1A_5MHz_TDD_1_6_t CCCH_alloc_pdu;
-extern DCI1_5MHz_TDD_t DLSCH_alloc_pdu;
-
-extern DCI0_5MHz_FDD_t UL_alloc_pdu_fdd;
-
-extern DCI1A_5MHz_FDD_t DLSCH_alloc_pdu1A_fdd;
-extern DCI1A_5MHz_FDD_t RA_alloc_pdu_fdd;
-extern DCI1A_5MHz_FDD_t BCCH_alloc_pdu_fdd;
-
-extern DCI1A_5MHz_FDD_t CCCH_alloc_pdu_fdd;
-extern DCI1_5MHz_FDD_t DLSCH_alloc_pdu_fdd;
-
-extern DCI2_5MHz_2A_TDD_t DLSCH_alloc_pdu1;
-extern DCI2_5MHz_2A_TDD_t DLSCH_alloc_pdu2;
-extern DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
 
 #endif //DEF_H

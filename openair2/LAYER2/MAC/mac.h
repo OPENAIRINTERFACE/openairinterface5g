@@ -43,11 +43,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "PHY/defs.h"
-#include "PHY/LTE_TRANSPORT/defs.h"
+//#include "PHY/defs.h"
+//#include "PHY/LTE_TRANSPORT/defs.h"
 #include "COMMON/platform_constants.h"
 #include "BCCH-BCH-Message.h"
 #include "RadioResourceConfigCommon.h"
+#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
 #include "SchedulingInfoList.h"
@@ -1355,6 +1356,6 @@ typedef struct {
     uint8_t n_adj_cells;
 } neigh_cell_id_t;
 
-#include "proto.h"
+#include "mac_proto.h"
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

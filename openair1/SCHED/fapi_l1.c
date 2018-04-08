@@ -30,10 +30,6 @@
  * \warning
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
 

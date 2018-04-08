@@ -30,13 +30,13 @@
 * \warning
 */
 
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 #include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "defs.h"
+#include "SCHED/sched_eNB.h"
+#include "transport_eNB.h"
 
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac.h"
 
 #include "T.h"
 

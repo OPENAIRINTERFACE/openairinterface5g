@@ -47,7 +47,7 @@
 #    include "asn1_constants.h"
 #    include "UTIL/LOG/log.h"
 #    include "mem_block.h"
-#    include "PHY/defs.h"
+//#    include "PHY/defs.h"
 #    include "RLC-Config.h"
 #    include "DRB-ToAddMod.h"
 #    include "DRB-ToAddModList.h"

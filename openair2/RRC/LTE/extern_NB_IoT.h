@@ -30,7 +30,7 @@
 
 #ifndef __OPENAIR_RRC_EXTERN_NB_IOT_H__
 #define __OPENAIR_RRC_EXTERN_NB_IOT_H__
-#include "RRC/LITE/defs_NB_IoT.h"
+#include "RRC/LTE/defs_NB_IoT.h"
 #include "PHY_INTERFACE/IF_Module_NB_IoT.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LogicalChannelConfig-NB-r13.h"

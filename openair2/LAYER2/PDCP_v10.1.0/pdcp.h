@@ -67,7 +67,7 @@
 #include "UTIL/LISTS/list.h"
 #endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
-#include "RRC/LITE/defs.h"
+#include "RRC/LTE/rrc_defs.h"
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
 #include "DRB-ToAddMod.h"

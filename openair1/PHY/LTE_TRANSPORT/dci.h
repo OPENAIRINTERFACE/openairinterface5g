@@ -30,6 +30,9 @@
 * \warning
 */
 
+#ifndef __DCI__h__
+#define __DCI__h__
+
 #include <stdint.h>
 
 ///  DCI Format Type 0 (5 MHz,TDD0, 27 bits)
@@ -3014,3 +3017,5 @@ struct DCI_INFO_EXTRACTED {
     uint64_t ap_si_nl_id:3;
 };
 typedef struct DCI_INFO_EXTRACTED DCI_INFO_EXTRACTED_t;
+
+#endif

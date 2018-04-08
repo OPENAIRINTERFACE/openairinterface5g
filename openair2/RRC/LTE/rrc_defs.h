@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file RRC/LITE/defs.h
+/*! \file RRC/LTE/defs.h
 * \brief RRC struct definitions and function prototypes
 * \author Navid Nikaein and Raymond Knopp
 * \date 2010 - 2014
@@ -37,13 +37,13 @@
 
 #include "collection/tree.h"
 #include "rrc_types.h"
-#include "PHY/defs.h"
+//#include "PHY/phy_defs.h"
 #include "LAYER2/RLC/rlc.h"
 
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
 
-#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/mac.h"
 
 #include "SystemInformationBlockType1.h"
 #include "SystemInformation.h"
@@ -667,7 +667,7 @@ typedef struct UE_PF_PO_s {
   uint32_t T;  /* DRX cycle */
 } UE_PF_PO_t;
 
-#include "proto.h"
+#include "rrc_proto.h"
 
 #endif
 /** @} */

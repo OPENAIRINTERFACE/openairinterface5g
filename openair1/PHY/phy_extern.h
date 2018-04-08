@@ -22,7 +22,7 @@
 #ifndef __PHY_EXTERN_H__
 #define __PHY_EXTERN_H__
 
-#include "PHY/defs.h"
+#include "PHY/defs_common.h"
 #include "common/ran_context.h"
 
 extern  char* namepointer_chMag ;
