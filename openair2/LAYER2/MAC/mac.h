@@ -1230,7 +1230,7 @@ typedef struct {
 
 typedef struct {
     /// counter used to indicate when all slices have pre-allocated UEs
-    int      slice_counter;
+    //int      slice_counter;
 
     /// indicates whether remaining RBs after first intra-slice allocation will
     /// be allocated to UEs of the same slice

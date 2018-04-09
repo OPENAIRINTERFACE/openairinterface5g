@@ -415,7 +415,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
 
   sli->tot_pct_dl = 0;
   sli->avg_pct_dl = 1.0 / sli->n_dl;
-  sli->slice_counter = sli->n_dl;
+  //sli->slice_counter = sli->n_dl;
 
   // reset the slice percentage for inactive slices
   for (i = sli->n_dl; i < MAX_NUM_SLICES; i++) {
@@ -727,13 +727,13 @@ schedule_ue_spec(module_id_t module_idP, slice_id_t slice_idP,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_PREPROCESSOR, VCD_FUNCTION_OUT);
 
-  RC.mac[module_idP]->slice_info.slice_counter--;
+  //RC.mac[module_idP]->slice_info.slice_counter--;
   // Do the multiplexing and actual allocation only when all slices have been pre-processed.
-  if (RC.mac[module_idP]->slice_info.slice_counter > 0) {
-    stop_meas(&eNB->schedule_dlsch);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_OUT);
-    return;
-  }
+  //if (RC.mac[module_idP]->slice_info.slice_counter > 0) {
+    //stop_meas(&eNB->schedule_dlsch);
+    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_OUT);
+    //return;
+  //}
 
   if (RC.mac[module_idP]->slice_info.interslice_share_active) {
     dlsch_scheduler_interslice_multiplexing(module_idP, frameP, subframeP);
