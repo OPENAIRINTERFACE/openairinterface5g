@@ -354,7 +354,11 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
   }
 
   DevAssert(sdu_pP != NULL);
-  DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
+  //DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
+  if(sdu_sizeP <= 0) {
+    LOG_E(RLC, "sdu_sizeP %d, file %s, line %s\n", sdu_sizeP, __FILE__ ,__LINE__);
+    return RLC_OP_STATUS_BAD_PARAMETER;
+  }
 
 #if !defined(Rel10) && !defined(Rel14)
   DevCheck(MBMS_flagP == 0, MBMS_flagP, 0, 0);
@@ -608,7 +612,11 @@ rlc_module_init (void)
   rlc_rrc_data_conf = NULL;
 
   rlc_coll_p = hashtable_create ((maxDRB + 2) * 16, NULL, rb_free_rlc_union);
-  AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
+  //AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
+  if(rlc_coll_p == NULL) {
+    LOG_E(RLC, "UNRECOVERABLE error, RLC hashtable_create failed\n");
+    return -1;
+  }
 
   for (module_id1=0; module_id1 < NUMBER_OF_UE_MAX; module_id1++) {
 #if defined(Rel10) || defined(Rel14)
