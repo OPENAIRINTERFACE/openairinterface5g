@@ -78,7 +78,7 @@
 #define PCCH_PAYLOAD_SIZE_MAX 128
 #define RAR_PAYLOAD_SIZE_MAX 128
 
-#define SCH_PAYLOAD_SIZE_MAX 4096
+#define SCH_PAYLOAD_SIZE_MAX 8192
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
 #if defined(Rel10) || defined(Rel14)
