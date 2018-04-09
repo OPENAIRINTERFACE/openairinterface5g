@@ -29,12 +29,12 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/CODING/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "defs.h"
-#include "extern.h"
-#include "PHY/extern.h"
+#include "transport_eNB.h"
+#include "transport_proto.h"
+#include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 
 //#define DEBUG_PBCH 1
@@ -136,6 +136,31 @@ int allocate_pbch_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   return(0);
+}
+
+void pbch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
+                     uint8_t *pbch_e,
+                     uint32_t length)
+{
+  int i;
+  uint8_t reset;
+  uint32_t x1, x2, s=0;
+
+  reset = 1;
+  // x1 is set in lte_gold_generic
+  x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
+  //  msg("pbch_scrambling: Nid_cell = %d\n",x2);
+
+  for (i=0; i<length; i++) {
+    if ((i&0x1f)==0) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      //      printf("lte_gold[%d]=%x\n",i,s);
+      reset = 0;
+    }
+
+    pbch_e[i] = (pbch_e[i]&1) ^ ((s>>(i&0x1f))&1);
+
+  }
 }
 
 //uint8_t pbch_d[96+(3*(16+PBCH_A))], pbch_w[3*3*(16+PBCH_A)],pbch_e[1920];  //one bit per byte

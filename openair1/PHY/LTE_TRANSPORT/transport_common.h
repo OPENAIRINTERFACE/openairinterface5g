@@ -172,6 +172,16 @@ typedef enum {
   DCI_UE_SPACE
 } dci_space_t;
 
+typedef struct {
+  uint8_t f_ra;
+  uint8_t t0_ra;
+  uint8_t t1_ra;
+  uint8_t t2_ra;
+} PRACH_TDD_PREAMBLE_MAP_elem;
+typedef struct {
+  uint8_t num_prach;
+  PRACH_TDD_PREAMBLE_MAP_elem map[6];
+} PRACH_TDD_PREAMBLE_MAP;
 
 /**@}*/
 #endif

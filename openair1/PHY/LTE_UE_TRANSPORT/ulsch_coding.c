@@ -30,16 +30,13 @@
 * \warning
 */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 
-#include "PHY/CODING/defs.h"
-#include "PHY/CODING/extern.h"
+#include "PHY/CODING/coding_defs.h"
+#include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "PHY/LTE_TRANSPORT/defs.h"
-#include "defs.h"
-#include "extern.h"
-#include "SIMULATION/ETH_TRANSPORT/extern.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_ue.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 //#define DEBUG_ULSCH_CODING
@@ -107,7 +104,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag)
   case 50:
     bw_scaling =2;
     break;
-
+ 
   default:
     bw_scaling =1;
     break;

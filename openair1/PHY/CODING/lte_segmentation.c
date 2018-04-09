@@ -24,8 +24,9 @@
    author: raymond.knopp@eurecom.fr
    date: 21.10.2009
 */
-#include "PHY/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_common.h"
+#include "PHY/LTE_TRANSPORT/transport_common.h"
+#include "PHY/CODING/coding_defs.h"
 
 //#define DEBUG_SEGMENTATION
 

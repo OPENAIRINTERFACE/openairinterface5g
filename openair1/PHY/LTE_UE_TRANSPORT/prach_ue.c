@@ -30,15 +30,16 @@
  * \warning
  */
 #include "PHY/sse_intrin.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 //#include "prach.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+
+#include "SCHED_UE/sched_UE.h"
+#include "SCHED/sched_common_extern.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-#include "../LTE_TRANSPORT/prach_common.c"
+#include "../LTE_TRANSPORT/prach_extern.h"
 
 int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf )
 {

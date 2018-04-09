@@ -32,8 +32,9 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "SCHED/sched_eNB.h"
-#include "SCHED/sched_extern_eNB.h"
+#include "SCHED/sched_common.h"
 #include "nfapi_interface.h"
 
 void fill_uci_harq_indication(PHY_VARS_eNB *eNB,LTE_eNB_UCI *uci,int frame,int subframe,uint8_t *harq_ack,uint8_t tdd_mapping_mode,uint16_t tdd_multiplexing_mask);

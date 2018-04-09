@@ -22,8 +22,8 @@
 #ifndef __INIT_DEFS__H__
 #define __INIT_DEFS__H__
 
-#include "PHY/defs.h"
-
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"

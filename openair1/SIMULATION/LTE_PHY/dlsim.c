@@ -36,14 +36,15 @@
 #include <execinfo.h>
 #include <signal.h>
 
-#include "SIMULATION/TOOLS/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/vars.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_vars.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED/sched_common_vars.h"
+#include "LAYER2/MAC/mac_vars.h"
 
 #include "OCG_vars.h"
 #include "UTIL/LOG/log.h"
@@ -56,7 +57,13 @@
 
 #include "dummy_functions.c"
 
-
+#include "PHY/MODULATION/modulation_common.h"
+#include "PHY/MODULATION/modulation_eNB.h"
+#include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED_UE/sched_UE.h"
 
 double cpuf;
 
@@ -1592,7 +1599,7 @@ int main(int argc, char **argv)
 
 	    eNB->abstraction_flag=0;
 	    schedule_response(&sched_resp);
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,1);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,1);
 
 	    if (uncoded_ber_bit == NULL) {
 	      // this is for user 0 only
@@ -1634,7 +1641,7 @@ int main(int argc, char **argv)
 	    proc_eNB->subframe_tx = subframe+1;
 	    sched_resp.subframe=subframe+1;
 	    schedule_response(&sched_resp);
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,0);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,0);
 
 
 	    ru->proc.subframe_tx=(subframe+1)%10;
@@ -1723,7 +1730,7 @@ int main(int argc, char **argv)
 
 	  dci_received = UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id]->dci_received;
 
-	  phy_procedures_UE_RX(UE,proc,0,0,dci_flag,normal_txrx,no_relay,NULL);
+	  phy_procedures_UE_RX(UE,proc,0,0,dci_flag,normal_txrx);
 
 	  dci_received = dci_received - UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id]->dci_received;
 

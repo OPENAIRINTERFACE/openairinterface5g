@@ -19,6 +19,8 @@
  *      contact@openairinterface.org
  */
 
+#ifndef __UCI_COMMON__H
+#define __UCI_COMMON__H
 #include "PHY/types.h"
 
 
@@ -318,3 +320,5 @@ HLC_subband_cqi_mcs_CBA_20MHz;
 #define MAX_CQI_BYTES (sizeof(HLC_subband_cqi_rank2_2A_20MHz))
 #define MAX_ACK_PAYLOAD 18
 #define MAX_RI_PAYLOAD 6
+
+#endif

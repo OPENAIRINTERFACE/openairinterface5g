@@ -19,8 +19,14 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
+/*!\brief SCHED external variables */
 
+#ifndef __SCHED_EXTERN_H__
+#define __SCHED_EXTERN_H__
 
+#include "sched_eNB.h"
 
+extern int16_t hundred_times_delta_TF[100];
+extern uint16_t hundred_times_log10_NPRB[100];
 
+#endif /*__SCHED_EXTERN_H__ */

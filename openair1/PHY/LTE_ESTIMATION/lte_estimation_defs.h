@@ -22,7 +22,9 @@
 #ifndef __LTE_ESTIMATION_DEFS__H__
 #define __LTE_ESTIMATION_DEFS__H__
 
-#include "PHY/defs.h"
+
+#include "PHY/defs_UE.h"
+#include "PHY/defs_eNB.h"
 /** @addtogroup _PHY_PARAMETER_ESTIMATION_BLOCKS_
  * @{
  */

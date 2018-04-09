@@ -26,8 +26,8 @@
 #include <string.h>
 
 
-#include "PHY/TOOLS/defs.h"
-#include "defs.h"
+#include "PHY/TOOLS/tools_defs.h"
+#include "sim.h"
 #include "scm_corrmat.h"
 #include "UTIL/LOG/log.h"
 //#define DEBUG_CH

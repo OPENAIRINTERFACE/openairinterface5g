@@ -29,8 +29,7 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
 #ifdef DEBUG_UCI_TOOLS
 #include "PHY/vars.h"
 #endif

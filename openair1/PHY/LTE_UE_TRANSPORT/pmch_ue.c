@@ -19,9 +19,10 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 #include "PHY/sse_intrin.h"
+#include "PHY/LTE_TRANSPORT/transport_common.h"
 
 // Mask for identifying subframe for MBMS
 #define MBSFN_TDD_SF3 0x80// for TDD
@@ -29,8 +30,6 @@
 #define MBSFN_TDD_SF7 0x20
 #define MBSFN_TDD_SF8 0x10
 #define MBSFN_TDD_SF9 0x08
-
-#include "PHY/defs.h"
 
 #define MBSFN_FDD_SF1 0x80// for FDD
 #define MBSFN_FDD_SF2 0x40
@@ -88,101 +87,6 @@ void dump_mch(PHY_VARS_UE *ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,in
                  ue->frame_parms.samples_per_tti,1,1);*/
 }
 
-int is_pmch_subframe(uint32_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms)
-{
-
-  uint32_t period;
-  uint8_t i;
-
-  //  LOG_D(PHY,"is_pmch_subframe: frame %d, subframe %d, num_MBSFN_config %d\n",
-  //  frame,subframe,frame_parms->num_MBSFN_config);
-
-  for (i=0; i<frame_parms->num_MBSFN_config; i++) {  // we have at least one MBSFN configuration
-    period = 1<<frame_parms->MBSFN_config[i].radioframeAllocationPeriod;
-
-    if ((frame % period) == frame_parms->MBSFN_config[i].radioframeAllocationOffset) {
-      if (frame_parms->MBSFN_config[i].fourFrames_flag == 0) {
-        if (frame_parms->frame_type == FDD) {
-          switch (subframe) {
-
-          case 1:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_FDD_SF1) > 0)
-              return(1);
-
-            break;
-
-          case 2:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_FDD_SF2) > 0)
-              return(1);
-
-            break;
-
-          case 3:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_FDD_SF3) > 0)
-              return(1);
-
-            break;
-
-          case 6:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_FDD_SF6) > 0)
-              return(1);
-
-            break;
-
-          case 7:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_FDD_SF7) > 0)
-              return(1);
-
-            break;
-
-          case 8:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_FDD_SF8) > 0)
-              return(1);
-
-            break;
-          }
-        } else  {
-          switch (subframe) {
-          case 3:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_TDD_SF3) > 0)
-              return(1);
-
-            break;
-
-          case 4:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_TDD_SF4) > 0)
-              return(1);
-
-            break;
-
-          case 7:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_TDD_SF7) > 0)
-              return(1);
-
-            break;
-
-          case 8:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_TDD_SF8) > 0)
-              return(1);
-
-            break;
-
-          case 9:
-            if ((frame_parms->MBSFN_config[i].mbsfn_SubframeConfig & MBSFN_TDD_SF9) > 0)
-              return(1);
-
-            break;
-          }
-        }
-
-      } else { // handle 4 frames case
-
-      }
-    }
-  }
-
-  return(0);
-}
 
 void fill_UE_dlsch_MCH(PHY_VARS_UE *ue,int mcs,int ndi,int rvidx,int eNB_id)
 {
@@ -458,7 +362,7 @@ void mch_channel_compensation(int **rxdataF_ext,
       mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
       mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[1]);
       // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpD0 = _mpm_srai_epi32(mmtmpD0,output_shift);
+      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
       mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
       mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
       mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);

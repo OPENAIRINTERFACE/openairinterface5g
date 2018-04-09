@@ -19,14 +19,15 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
-#include "SCHED/defs.h"
-#include "PHY/extern.h"
-#include "SIMULATION/TOOLS/defs.h"
+#include "phy_init.h"
+#include "SCHED/sched_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
-#include "LAYER2/MAC/extern.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
@@ -720,23 +721,6 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
 */
 
 
-
-void  phy_config_cba_rnti (module_id_t Mod_id,int CC_id,eNB_flag_t eNB_flag, uint8_t index, rnti_t cba_rnti, uint8_t cba_group_id, uint8_t num_active_cba_groups)
-{
-  //   uint8_t i;
-
-  if (eNB_flag == 0 ) {
-    //LOG_D(PHY,"[UE %d] configure cba group %d with rnti %x, num active cba grp %d\n", index, index, cba_rnti, num_active_cba_groups);
-    PHY_vars_UE_g[Mod_id][CC_id]->ulsch[index]->num_active_cba_groups=num_active_cba_groups;
-    PHY_vars_UE_g[Mod_id][CC_id]->ulsch[index]->cba_rnti[cba_group_id]=cba_rnti;
-  } else {
-    //for (i=index; i < NUMBER_OF_UE_MAX; i+=num_active_cba_groups){
-    //  LOG_D(PHY,"[eNB %d] configure cba group %d with rnti %x for UE %d, num active cba grp %d\n",Mod_id, i%num_active_cba_groups, cba_rnti, i, num_active_cba_groups);
-    RC.eNB[Mod_id][CC_id]->ulsch[index]->num_active_cba_groups=num_active_cba_groups;
-    RC.eNB[Mod_id][CC_id]->ulsch[index]->cba_rnti[cba_group_id] = cba_rnti;
-    //}
-  }
-}
 
 int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
                      unsigned char is_secondary_eNB,

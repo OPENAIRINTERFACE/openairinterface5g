@@ -29,10 +29,8 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 
 void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
                     unsigned char current_subframe,
@@ -831,12 +829,7 @@ dci_detect_mode_t dci_detect_mode_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
   return ret;
 }
 
-lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subframe)
-{
 
-  return(subframe_select(&RC.eNB[Mod_id][CC_id]->frame_parms,subframe));
-
-}
 
 uint8_t phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t subframe)
 {

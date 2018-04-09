@@ -29,9 +29,10 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_UE.h"
+#include "transport_ue.h"
+#include "PHY/phy_extern_ue.h"
+#include "PHY/MODULATION/modulation_UE.h"
 
 //#define DEBUG_SSS
 

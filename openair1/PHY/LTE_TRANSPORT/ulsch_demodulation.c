@@ -30,10 +30,9 @@
 * \warning
 */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "defs.h"
-#include "extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "transport_eNB.h"
 //#define DEBUG_ULSCH
 #include "PHY/sse_intrin.h"
 

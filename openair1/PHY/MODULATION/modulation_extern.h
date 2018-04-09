@@ -10,7 +10,7 @@
  *      http://www.openairinterface.org/?page_id=698
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
+; * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -19,3 +19,20 @@
  *      contact@openairinterface.org
  */
 
+extern int16_t s6n_kHz_7_5[1920];
+extern int16_t s6e_kHz_7_5[1920];
+extern int16_t s15n_kHz_7_5[3840];
+extern int16_t s15e_kHz_7_5[3840];
+extern int16_t s25n_kHz_7_5[7680];
+extern int16_t s25e_kHz_7_5[7680];
+extern int16_t s50n_kHz_7_5[15360];
+extern int16_t s50e_kHz_7_5[15360];
+extern int16_t s75n_kHz_7_5[23040];
+extern int16_t s75e_kHz_7_5[23040];
+extern int16_t s100n_kHz_7_5[30720];
+extern int16_t s100e_kHz_7_5[30720];
+
+
+extern short conjugate75[8];
+extern short conjugate75_2[8];
+extern short negate[8];

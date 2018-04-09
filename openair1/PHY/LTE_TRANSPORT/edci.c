@@ -32,12 +32,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SIMULATION/TOOLS/defs.h" // for taus 
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "SCHED/sched_eNB.h"
+#include "SIMULATION/TOOLS/sim.h" // for taus 
 #include "PHY/sse_intrin.h"
-
+#include "transport_proto.h"
+#include "transport_common_proto.h"
 #include "assertions.h" 
 #include "T.h"
 #include "UTIL/LOG/log.h"

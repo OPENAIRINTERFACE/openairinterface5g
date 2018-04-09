@@ -19,23 +19,37 @@
  *      contact@openairinterface.org
  */
 
-/*!\brief SCHED external variables */
+/*! \file PHY_INTERFACE/defs.h
+* \brief mac phy interface primitives
+* \author Raymond Knopp and Navid Nikaein
+* \date 2011
+* \version 0.5
+* \mail navid.nikaein@eurecom.fr or openair_tech@eurecom.fr
+*/
 
-#ifndef __SCHED_EXTERN_H__
-#define __SCHED_EXTERN_H__
+#ifndef __PHY_INTERFACE_H__
+#    define __PHY_INTERFACE_H__
 
-#include "defs.h"
-//#include "dlc_engine.h"
-
-extern int openair_sched_status;
-
-//extern int exit_PHY;
-//extern int exit_PHY_ack;
-
-extern int synch_wait_cnt;
+#include "LAYER2/MAC/mac.h"
 
 
-extern int16_t hundred_times_delta_TF[100];
-extern uint16_t hundred_times_log10_NPRB[100];
+#define MAX_NUMBER_OF_MAC_INSTANCES 16
 
-#endif /*__SCHED_EXTERN_H__ */
+#define NULL_PDU 255
+#define DCI 0
+#define DLSCH 1
+#define ULSCH 2
+
+#define mac_exit_wrapper(sTRING)                                                            \
+do {                                                                                        \
+    char temp[300];                                                                         \
+    snprintf(temp, sizeof(temp), "%s in file "__FILE__" at line %d\n", sTRING, __LINE__);   \
+    mac_xface->macphy_exit(temp);                                                           \
+} while(0)
+
+
+
+#endif
+
+
+/** @} */

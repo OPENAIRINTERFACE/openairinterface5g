@@ -29,9 +29,11 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 #include "PHY/sse_intrin.h"
+#include "transport_proto_ue.h"
+
 //#define DEBUG_DRS
 
 int generate_drs_pusch(PHY_VARS_UE *ue,

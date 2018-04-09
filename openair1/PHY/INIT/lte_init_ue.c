@@ -19,19 +19,19 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
-#include "SCHED/defs.h"
-#include "PHY/extern.h"
-#include "SIMULATION/TOOLS/defs.h"
+#include "phy_init.h"
+#include "SCHED_UE/sched_UE.h"
+#include "PHY/phy_extern_ue.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
-#include "LAYER2/MAC/extern.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
-
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
@@ -651,7 +651,7 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
   int th_id;
 
   LOG_D(PHY,"Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
-  LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
+
 
 
 

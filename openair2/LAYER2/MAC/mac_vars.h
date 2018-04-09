@@ -32,8 +32,8 @@
 
 #ifndef __MAC_VARS_H__
 #define __MAC_VARS_H__
-#include "PHY/defs.h"
-#include "defs.h"
+#include "PHY/defs_common.h"
+#include "mac.h"
 #include "COMMON/mac_rrc_primitives.h"
 
 const uint32_t BSR_TABLE[BSR_TABLE_SIZE] =

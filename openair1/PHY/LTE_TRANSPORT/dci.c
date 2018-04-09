@@ -32,16 +32,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SIMULATION/TOOLS/defs.h" // for taus
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "SCHED/sched_eNB.h"
+#include "SIMULATION/TOOLS/sim.h" // for taus
 #include "PHY/sse_intrin.h"
-
+#include "transport_proto.h"
+#include "transport_common_proto.h"
 #include "assertions.h"
 #include "T.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "PHY/LTE_TRANSPORT/transport_extern.h"
 
 //#define DEBUG_DCI_ENCODING 1
 //#define DEBUG_DCI_DECODING 1
@@ -52,65 +54,7 @@
 //extern uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
 //extern uint16_t pcfich_reg[4];
 
-uint32_t check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,uint32_t kprime,uint8_t lprime,uint8_t mi)
-{
 
-  uint16_t i;
-  uint16_t Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;
-  uint16_t mprime;
-  uint16_t *pcfich_reg = frame_parms->pcfich_reg;
-
-  if ((lprime>0) && (frame_parms->Ncp==0) )
-    return(0);
-
-  //  printf("check_phich_reg : mi %d\n",mi);
-
-  // compute REG based on symbol
-  if ((lprime == 0)||
-      ((lprime==1)&&(frame_parms->nb_antenna_ports_eNB == 4)))
-    mprime = kprime/6;
-  else
-    mprime = kprime>>2;
-
-  // check if PCFICH uses mprime
-  if ((lprime==0) &&
-      ((mprime == pcfich_reg[0]) ||
-       (mprime == pcfich_reg[1]) ||
-       (mprime == pcfich_reg[2]) ||
-       (mprime == pcfich_reg[3]))) {
-#ifdef DEBUG_DCI_ENCODING
-    printf("[PHY] REG %d allocated to PCFICH\n",mprime);
-#endif
-    return(1);
-  }
-
-  // handle Special subframe case for TDD !!!
-
-  //  printf("Checking phich_reg %d\n",mprime);
-  if (mi > 0) {
-    if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
-      Ngroup_PHICH++;
-
-    if (frame_parms->Ncp == 1) {
-      Ngroup_PHICH<<=1;
-    }
-
-
-
-    for (i=0; i<Ngroup_PHICH; i++) {
-      if ((mprime == frame_parms->phich_reg[i][0]) ||
-          (mprime == frame_parms->phich_reg[i][1]) ||
-          (mprime == frame_parms->phich_reg[i][2]))  {
-#ifdef DEBUG_DCI_ENCODING
-        printf("[PHY] REG %d (lprime %d) allocated to PHICH\n",mprime,lprime);
-#endif
-        return(1);
-      }
-    }
-  }
-
-  return(0);
-}
 
 static uint8_t d[3*(MAX_DCI_SIZE_BITS + 16) + 96];
 static uint8_t w[3*3*(MAX_DCI_SIZE_BITS+16)];
@@ -226,15 +170,10 @@ uint8_t *generate_dci0(uint8_t *dci,
 
 uint32_t Y;
 
-#define CCEBITS 72
-#define CCEPERSYMBOL 33  // This is for 1200 RE
-#define CCEPERSYMBOL0 22  // This is for 1200 RE
-#define DCI_BITS_MAX ((2*CCEPERSYMBOL+CCEPERSYMBOL0)*CCEBITS)
-#define Msymb (DCI_BITS_MAX/2)
-//#define Mquad (Msymb/4)
 
-static uint32_t bitrev_cc_dci[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
-static int32_t wtemp[2][Msymb];
+
+
+
 
 void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **wbar,uint8_t n_symbols_pdcch,uint8_t mi)
 {
@@ -247,6 +186,8 @@ void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **w
 #ifdef RM_DEBUG
   int32_t nulled=0;
 #endif
+  uint32_t Msymb=(DCI_BITS_MAX/2);
+  int32_t wtemp[2][Msymb];
 
   //  printf("[PHY] PDCCH Interleaving Mquad %d (Nsymb %d)\n",Mquad,n_symbols_pdcch);
   if ((Mquad&0x1f) > 0)
@@ -347,8 +288,9 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
   uint32_t gain_lin_QPSK,kprime,kprime_mod12,mprime,nsymb,symbol_offset,tti_offset;
   int16_t re_offset;
   uint8_t mi = get_mi(frame_parms,subframe);
-  static uint8_t e[DCI_BITS_MAX];
-  static int32_t yseq0[Msymb],yseq1[Msymb],wbar0[Msymb],wbar1[Msymb];
+  uint8_t e[DCI_BITS_MAX];
+  uint32_t Msymb=(DCI_BITS_MAX/2);
+  int32_t yseq0[Msymb],yseq1[Msymb],wbar0[Msymb],wbar1[Msymb];
 
   int32_t *y[2];
   int32_t *wbar[2];
@@ -675,59 +617,4 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
   return(num_pdcch_symbols);
 }
 
-
-uint16_t get_nCCE(uint8_t num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,uint8_t mi)
-{
-  return(get_nquad(num_pdcch_symbols,frame_parms,mi)/9);
-}
-
-uint16_t get_nquad(uint8_t num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,uint8_t mi)
-{
-
-  uint16_t Nreg=0;
-  uint8_t Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;
-
-  if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
-    Ngroup_PHICH++;
-
-  if (frame_parms->Ncp == 1) {
-    Ngroup_PHICH<<=1;
-  }
-
-  Ngroup_PHICH*=mi;
-
-  if ((num_pdcch_symbols>0) && (num_pdcch_symbols<4))
-    switch (frame_parms->N_RB_DL) {
-    case 6:
-      Nreg=12+(num_pdcch_symbols-1)*18;
-      break;
-
-    case 25:
-      Nreg=50+(num_pdcch_symbols-1)*75;
-      break;
-
-    case 50:
-      Nreg=100+(num_pdcch_symbols-1)*150;
-      break;
-
-    case 100:
-      Nreg=200+(num_pdcch_symbols-1)*300;
-      break;
-
-    default:
-      return(0);
-    }
-
-  //   printf("Nreg %d (%d)\n",Nreg,Nreg - 4 - (3*Ngroup_PHICH));
-  return(Nreg - 4 - (3*Ngroup_PHICH));
-}
-
-uint16_t get_nCCE_mac(uint8_t Mod_id,uint8_t CC_id,int num_pdcch_symbols,int subframe)
-{
-
-  // check for eNB only !
-  return(get_nCCE(num_pdcch_symbols,
-		  &RC.eNB[Mod_id][CC_id]->frame_parms,
-		  get_mi(&RC.eNB[Mod_id][CC_id]->frame_parms,subframe)));
-}
 

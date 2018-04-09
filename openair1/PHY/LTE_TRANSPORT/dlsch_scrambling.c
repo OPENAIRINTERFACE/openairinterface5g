@@ -32,12 +32,12 @@
 
 //#define DEBUG_SCRAMBLING 1
 
-#include "PHY/defs.h"
-#include "PHY/CODING/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "defs.h"
-#include "extern.h"
-#include "PHY/extern.h"
+#include "transport_eNB.h"
+#include "PHY/phy_extern.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 static inline unsigned int lte_gold_scram(unsigned int *x1, unsigned int *x2, unsigned char reset) __attribute__((always_inline));
@@ -187,6 +187,20 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
 }
 
+
+
+void init_scrambling_lut() {
+
+  uint32_t s;
+  int i=0,j;
+
+  for (s=0;s<=65535;s++) {
+    for (j=0;j<16;j++) {
+      scrambling_lut[i++] = (uint8_t)((s>>j)&1);
+    }
+  }
+}
+
 void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
                         int mbsfn_flag,
                         LTE_UE_DLSCH_t *dlsch,
@@ -236,18 +250,6 @@ void init_unscrambling_lut() {
   for (s=0;s<=65535;s++) {
     for (j=0;j<16;j++) {
       unscrambling_lut[i++] = (int16_t)((((s>>j)&1)<<1)-1);
-    }
-  }
-}
-
-void init_scrambling_lut() {
-
-  uint32_t s;
-  int i=0,j;
-
-  for (s=0;s<=65535;s++) {
-    for (j=0;j<16;j++) {
-      scrambling_lut[i++] = (uint8_t)((s>>j)&1);
     }
   }
 }

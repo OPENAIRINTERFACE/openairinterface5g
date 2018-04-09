@@ -19,13 +19,8 @@
  *      contact@openairinterface.org
  */
 
-mod_sym_t qpsk_table[4];
-mod_sym_t qam16_table[16];
-mod_sym_t qam64_table[64];
+#include "kHz_7_5.h"
 
-int16_t kHz75_25PRB[1024]  = {};
-int16_t kHz75_6PRB   = {};
-int16_t kHz75_15PRB  = {};
-int16_t kHz75_50PRB  = {};
-int16_t kHz75_75PRB  = {};
-int16_t kHz75_100PRB = {};
+short conjugate75[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
+short conjugate75_2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
+short negate[8]__attribute__((aligned(16))) = {-1,-1,-1,-1,-1,-1,-1,-1};

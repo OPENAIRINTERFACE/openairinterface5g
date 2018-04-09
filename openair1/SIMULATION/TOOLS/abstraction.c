@@ -26,8 +26,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include "PHY/TOOLS/defs.h"
-#include "defs.h"
+#include "SIMULATION/TOOLS/sim.h"
+#include "PHY/TOOLS/tools_defs.h"
 
 // NEW code with lookup table for sin/cos based on delay profile (TO BE TESTED)
 

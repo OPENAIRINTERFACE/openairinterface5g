@@ -23,7 +23,8 @@
 #define __PHY_VARS_H__
 
 #include "PHY/types.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 #include "common/ran_context.h"
 
 char* namepointer_chMag ;
@@ -37,7 +38,9 @@ int16_t *primary_synch1_time;
 int16_t *primary_synch2_time;
 
 
-#include "PHY/CODING/vars.h"
+#include "PHY/CODING/coding_vars.h"
+#include "PHY/LTE_TRANSPORT/transport_vars.h"
+#include "PHY/MODULATION/modulation_vars.h"
 
 //PHY_VARS *PHY_vars;
 #ifndef OCP_FRAMEWORK
@@ -58,7 +61,7 @@ unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048]
 
 
 char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
-#include "PHY/LTE_TRANSPORT/vars.h"
+
 
 
 

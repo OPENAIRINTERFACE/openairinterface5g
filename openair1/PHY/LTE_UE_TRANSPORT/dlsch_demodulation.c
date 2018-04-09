@@ -29,11 +29,11 @@
  * \note
  * \warning
  */
-//#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "defs.h"
-#include "extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
+#include "SCHED_UE/sched_UE.h"
+#include "transport_ue.h"
+#include "transport_proto_ue.h"
 #include "PHY/sse_intrin.h"
 #include "T.h"
 

@@ -29,9 +29,11 @@ This section deals with basic functions for OFDM Modulation.
 
 */
 
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/impl_defs_top.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "modulation_common.h"
 
 //#define DEBUG_OFDM_MOD
 

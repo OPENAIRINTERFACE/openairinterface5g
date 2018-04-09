@@ -30,13 +30,10 @@
 * \warning
 */
 #include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
-#include "defs.h"
-#include "extern.h"
-
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
+#include "SCHED_UE/sched_UE.h"
+#include "transport_ue.h"
 
 #include "common_lib.h"
 extern openair0_config_t openair0_cfg[];

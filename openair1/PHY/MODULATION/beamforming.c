@@ -29,13 +29,14 @@
  * \note
  * \warning
  */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/CODING/defs.h"
-#include "PHY/CODING/extern.h"
+#include "PHY/defs_common.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/CODING/coding_defs.h"
+#include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "PHY/LTE_TRANSPORT/defs.h"
-#include "defs.h"
+#include "PHY/LTE_TRANSPORT/transport_eNB.h"
+#include "modulation_eNB.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 int beam_precoding(int32_t **txdataF,

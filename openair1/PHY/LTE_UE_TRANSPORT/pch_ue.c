@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 #include "assertions.h"
 
 const unsigned int Ttab[4] = {32,64,128,256};

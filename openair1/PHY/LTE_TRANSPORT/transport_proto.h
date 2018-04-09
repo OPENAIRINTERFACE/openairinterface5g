@@ -31,7 +31,7 @@
  */
 #ifndef __LTE_TRANSPORT_PROTO__H__
 #define __LTE_TRANSPORT_PROTO__H__
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 #include <math.h>
 #include "nfapi_interface.h"
 
@@ -106,15 +106,6 @@ int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
                        time_stats_t *te_stats,
                        time_stats_t *i_stats);
 
-int32_t dlsch_encoding_SIC(PHY_VARS_UE *ue,
-                       uint8_t *a,
-                       uint8_t num_pdcch_symbols,
-                       LTE_eNB_DLSCH_t *dlsch,
-                       int frame,
-                       uint8_t subframe,
-                       time_stats_t *rm_stats,
-                       time_stats_t *te_stats,
-                       time_stats_t *i_stats);
 
 
 

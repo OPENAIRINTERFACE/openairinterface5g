@@ -30,15 +30,13 @@
 
 #ifndef __OPENAIR_RRC_EXTERN_H__
 #define __OPENAIR_RRC_EXTERN_H__
-#include "defs.h"
+#include "rrc_defs.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
 #include "LAYER2/RLC/rlc.h"
 
 extern UE_RRC_INST *UE_rrc_inst;
 
-#include "LAYER2/MAC/extern.h"
 
 extern uint8_t DRB2LCHAN[8];
 

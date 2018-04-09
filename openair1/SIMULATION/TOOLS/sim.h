@@ -21,7 +21,7 @@
 
 #ifndef __SIMULATION_TOOLS_DEFS_H__
 #define __SIMULATION_TOOLS_DEFS_H__
-#include "PHY/defs.h"
+#include "PHY/defs_common.h"
 
 /** @defgroup _numerical_ Useful Numerical Functions
  *@{

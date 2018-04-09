@@ -29,9 +29,9 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "transport_eNB.h"
+#include "PHY/phy_extern.h"
 
 //#define DEBUG_SSS
 

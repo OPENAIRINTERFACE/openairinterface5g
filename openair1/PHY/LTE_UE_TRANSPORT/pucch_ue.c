@@ -29,16 +29,15 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/extern.h" 
-#include "LAYER2/MAC/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h" 
 
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
 
-#include "pucch_common.c"
+#include "../LTE_TRANSPORT/pucch_extern.h"
 
 
 
@@ -333,41 +332,7 @@ void generate_pucch1x(int32_t **txdataF,
 
 }
 
-void generate_pucch_emul(PHY_VARS_UE *ue,
-			 UE_rxtx_proc_t *proc,
-                         PUCCH_FMT_t format,
-                         uint8_t ncs1,
-                         uint8_t *pucch_payload,
-                         uint8_t sr)
 
-{
-
-  int subframe = proc->subframe_tx;
-
-  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_flag    = format;
-  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_Ncs1    = ncs1;
-
-
-  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.sr            = sr;
-  // the value of ue->pucch_sel[subframe] is set by get_n1_pucch
-  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_sel      = ue->pucch_sel[subframe];
-
-  // LOG_I(PHY,"subframe %d emu tx pucch_sel is %d sr is %d \n", subframe, UE_transport_info[ue->Mod_id].cntl.pucch_sel, sr);
-
-  if (format == pucch_format1a) {
-
-    ue->pucch_payload[0] = pucch_payload[0];
-    UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_payload = pucch_payload[0];
-  } else if (format == pucch_format1b) {
-    ue->pucch_payload[0] = pucch_payload[0] + (pucch_payload[1]<<1);
-    UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_payload = pucch_payload[0] + (pucch_payload[1]<<1);
-  } else if (format == pucch_format1) {
-    //    LOG_D(PHY,"[UE %d] Frame %d subframe %d Generating PUCCH for SR %d\n",ue->Mod_id,proc->frame_tx,subframe,sr);
-  }
-
-  ue->sr[subframe] = sr;
-
-}
 
 
 inline void pucch2x_scrambling(LTE_DL_FRAME_PARMS *fp,int subframe,uint16_t rnti,uint32_t B,uint8_t *btilde) __attribute__((always_inline));

@@ -30,10 +30,10 @@
  * \warning
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED/sched_common_extern.h"
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
 #include "UTIL/LOG/log.h"
@@ -51,11 +51,90 @@
 #endif
 
 extern uint8_t nfapi_mode;
+
+
+
+int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *eNB,uint8_t UE_id,uint8_t harq_pid, uint8_t bw_factor)
+{
+
+  uint32_t Nre,sumKr,MPR_x100,Kr,r;
+  uint16_t beta_offset_pusch;
+
+  DevAssert( UE_id < NUMBER_OF_UE_MAX+1 );
+  DevAssert( harq_pid < 8 );
+
+  Nre = eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_initial *
+        eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12;
+
+  sumKr = 0;
+
+  for (r=0; r<eNB->ulsch[UE_id]->harq_processes[harq_pid]->C; r++) {
+    if (r<eNB->ulsch[UE_id]->harq_processes[harq_pid]->Cminus)
+      Kr = eNB->ulsch[UE_id]->harq_processes[harq_pid]->Kminus;
+    else
+      Kr = eNB->ulsch[UE_id]->harq_processes[harq_pid]->Kplus;
+
+    sumKr += Kr;
+  }
+
+  if (Nre==0)
+    return(0);
+
+  MPR_x100 = 100*sumKr/Nre;
+  // Note: MPR=is the effective spectral efficiency of the PUSCH
+  // FK 20140908 sumKr is only set after the ulsch_encoding
+
+  beta_offset_pusch = 8;
+  //(eNB->ulsch[UE_id]->harq_processes[harq_pid]->control_only == 1) ? eNB->ulsch[UE_id]->beta_offset_cqi_times8:8;
+
+  DevAssert( UE_id < NUMBER_OF_UE_MAX );
+//#warning "This condition happens sometimes. Need more investigation" // navid
+  //DevAssert( MPR_x100/6 < 100 );
+
+  if (1==1) { //eNB->ul_power_control_dedicated[UE_id].deltaMCS_Enabled == 1) {
+    // This is the formula from Section 5.1.1.1 in 36.213 10*log10(deltaIF_PUSCH = (2^(MPR*Ks)-1)*beta_offset_pusch)
+    if (bw_factor == 1) {
+      uint8_t nb_rb = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
+      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_times10((beta_offset_pusch)>>3)) + hundred_times_log10_NPRB[nb_rb-1];
+    } else
+      return(hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_times10((beta_offset_pusch)>>3));
+  } else {
+    return(0);
+  }
+}
+
+
+int16_t get_hundred_times_delta_IF_mac(module_id_t module_idP, uint8_t CC_id, rnti_t rnti, uint8_t harq_pid)
+{
+
+  int8_t UE_id;
+
+  if ((RC.eNB == NULL) || (module_idP > RC.nb_inst) || (CC_id > RC.nb_CC[module_idP])) {
+    LOG_E(PHY,"get_UE_stats: No eNB found (or not allocated) for Mod_id %d,CC_id %d\n",module_idP,CC_id);
+    return -1;
+  }
+
+  UE_id = find_ulsch( rnti, RC.eNB[module_idP][CC_id],SEARCH_EXIST);
+
+  if (UE_id == -1) {
+    // not found
+    return 0;
+  }
+
+  return get_hundred_times_delta_IF_eNB( RC.eNB[module_idP][CC_id], UE_id, harq_pid, 0 );
+}
+
 int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 
 
+lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subframe)
+{
 
-void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn,relaying_type_t r_type) {
+  return(subframe_select(&RC.eNB[Mod_id][CC_id]->frame_parms,subframe));
+
+}
+
+void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
 
 #if defined(Rel10) || defined(Rel14)
@@ -84,50 +163,17 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn,rel
 				    proc->frame_tx,
 				    subframe);
   */
-  switch (r_type) {
-  case no_relay:
-    if ((mch_pduP->Pdu_size > 0) && (mch_pduP->sync_area == 0)) // TEST: only transmit mcch for sync area 0
-      LOG_D(PHY,"[eNB%"PRIu8"] Frame %d subframe %d : Got MCH pdu for MBSFN (MCS %"PRIu8", TBS %d) \n",
-	    eNB->Mod_id,proc->frame_tx,subframe,mch_pduP->mcs,
-	    eNB->dlsch_MCH->harq_processes[0]->TBS>>3);
-    else {
-      LOG_D(PHY,"[DeNB %"PRIu8"] Frame %d subframe %d : Do not transmit MCH pdu for MBSFN sync area %"PRIu8" (%s)\n",
-	    eNB->Mod_id,proc->frame_tx,subframe,mch_pduP->sync_area,
-	    (mch_pduP->Pdu_size == 0)? "Empty MCH PDU":"Let RN transmit for the moment");
-      mch_pduP = NULL;
-    }
+  if ((mch_pduP->Pdu_size > 0) && (mch_pduP->sync_area == 0)) // TEST: only transmit mcch for sync area 0
+    LOG_D(PHY,"[eNB%"PRIu8"] Frame %d subframe %d : Got MCH pdu for MBSFN (MCS %"PRIu8", TBS %d) \n",
+	  eNB->Mod_id,proc->frame_tx,subframe,mch_pduP->mcs,
+	  eNB->dlsch_MCH->harq_processes[0]->TBS>>3);
+  else {
+    LOG_D(PHY,"[DeNB %"PRIu8"] Frame %d subframe %d : Do not transmit MCH pdu for MBSFN sync area %"PRIu8" (%s)\n",
+	  eNB->Mod_id,proc->frame_tx,subframe,mch_pduP->sync_area,
+	  (mch_pduP->Pdu_size == 0)? "Empty MCH PDU":"Let RN transmit for the moment");
+    mch_pduP = NULL;
+  }
     
-    break;
-    
-  case multicast_relay:
-    if ((mch_pduP->Pdu_size > 0) && ((mch_pduP->mcch_active == 1) || mch_pduP->msi_active==1)) {
-      LOG_D(PHY,"[RN %"PRIu8"] Frame %d subframe %d: Got the MCH PDU for MBSFN  sync area %"PRIu8" (MCS %"PRIu8", TBS %"PRIu16")\n",
-	    rn->Mod_id,rn->frame, subframe,
-	    mch_pduP->sync_area,mch_pduP->mcs,mch_pduP->Pdu_size);
-    } else if (rn->mch_avtive[subframe%5] == 1) { // SF2 -> SF7, SF3 -> SF8
-      mch_pduP= &mch_pdu;
-      memcpy(&mch_pduP->payload, // could be a simple copy
-	     rn->dlsch_rn_MCH[subframe%5]->harq_processes[0]->b,
-	     rn->dlsch_rn_MCH[subframe%5]->harq_processes[0]->TBS>>3);
-      mch_pduP->Pdu_size = (uint16_t) (rn->dlsch_rn_MCH[subframe%5]->harq_processes[0]->TBS>>3);
-      mch_pduP->mcs = rn->dlsch_rn_MCH[subframe%5]->harq_processes[0]->mcs;
-      LOG_D(PHY,"[RN %"PRIu8"] Frame %d subframe %d: Forward the MCH PDU for MBSFN received on SF %d sync area %"PRIu8" (MCS %"PRIu8", TBS %"PRIu16")\n",
-	    rn->Mod_id,rn->frame, subframe,subframe%5,
-	    rn->sync_area[subframe%5],mch_pduP->mcs,mch_pduP->Pdu_size);
-    } else {
-      mch_pduP=NULL;
-    }
-    
-    rn->mch_avtive[subframe]=0;
-    break;
-    
-  default:
-    LOG_W(PHY,"[eNB %"PRIu8"] Frame %d subframe %d: unknown relaying type %d \n",
-	  eNB->Mod_id,proc->frame_tx,subframe,r_type);
-    mch_pduP=NULL;
-    break;
-  }// switch
-  
   if (mch_pduP) {
     fill_eNB_dlsch_MCH(eNB,mch_pduP->mcs,1,0);
     // Generate PMCH
@@ -398,11 +444,8 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
 void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 			   eNB_rxtx_proc_t *proc,
-                           relaying_type_t r_type,
-			   PHY_VARS_RN *rn,
 			   int do_meas)
 {
-  UNUSED(rn);
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
   uint32_t i,aa;
@@ -433,7 +476,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     if (is_pmch_subframe(frame,subframe,fp)) {
-      pmch_procedures(eNB,proc,rn,r_type);
+      pmch_procedures(eNB,proc);
     }
     else {
       // this is not a pmch subframe, so generate PSS/SSS/PBCH
@@ -1879,7 +1922,7 @@ void fill_crc_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe,uint
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
-void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type)
+void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 {
   //RX processing for ue-specific resources (i
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;

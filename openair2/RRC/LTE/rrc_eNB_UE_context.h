@@ -30,7 +30,7 @@
 #ifndef __RRC_ENB_UE_CONTEXT_H__
 #include "collection/tree.h"
 #include "COMMON/platform_types.h"
-#include "defs.h"
+#include "rrc_defs.h"
 
 
 void

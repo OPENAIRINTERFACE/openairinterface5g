@@ -32,23 +32,21 @@ extern  char fmageren_name2[512];
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 
-#include "PHY/LTE_TRANSPORT/extern.h"
-#include "SIMULATION/ETH_TRANSPORT/extern.h"
+#include "PHY/LTE_TRANSPORT/transport_extern.h"
+//#include "SIMULATION/ETH_TRANSPORT/extern.h"
 
 extern unsigned int DAQ_MBOX;
 extern int number_of_cards;
 
 
 #ifndef OCP_FRAMEWORK
-extern PHY_VARS_UE ***PHY_vars_UE_g;
 //extern PHY_VARS_eNB ***PHY_vars_eNB_g;
 extern RAN_CONTEXT_t RC;
-extern PHY_VARS_RN **PHY_vars_RN_g;
 extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 #else
 #define MAX_UE 10
 #define MAX_eNB 20
-extern PHY_VARS_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs];
+
 extern PHY_VARS_eNB * PHY_vars_eNB_g[MAX_eNB][MAX_NUM_CCs];
 #endif
 
@@ -70,7 +68,7 @@ extern int flagMag;
 
 extern char mode_string[4][20];
 
-#include "PHY/LTE_TRANSPORT/extern.h"
+
 
 extern unsigned char NB_RU;
 

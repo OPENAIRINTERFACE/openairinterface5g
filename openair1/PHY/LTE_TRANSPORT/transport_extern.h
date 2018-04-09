@@ -48,3 +48,5 @@ extern int16_t d0_sss[504*62],d5_sss[504*62];
 
 extern uint8_t wACK[5][4];
 extern int8_t wACK_RX[5][4];
+
+extern uint32_t bitrev_cc_dci[32];

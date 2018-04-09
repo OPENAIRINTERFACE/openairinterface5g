@@ -22,8 +22,8 @@
 //#define DEBUG_DAC 1
 #include <math.h>
 #include <stdio.h>
-#include "PHY/TOOLS/defs.h"
-
+#include "PHY/TOOLS/tools_defs.h"
+#include "rf.h"
 void dac(double *s_re[2],
          double *s_im[2],
          uint32_t **input,

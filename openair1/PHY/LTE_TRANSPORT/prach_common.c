@@ -30,16 +30,11 @@
  * \warning
  */
 #include "PHY/sse_intrin.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-//#include "prach.h"
-#include "PHY/LTE_TRANSPORT/if4_tools.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_common.h"
+#include "PHY/phy_extern.h"
+#include "PHY/phy_extern_ue.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-//#define PRACH_DEBUG 1
-//#define PRACH_WRITE_OUTPUT_DEBUG 1
 
 uint16_t NCS_unrestricted[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
 uint16_t NCS_restricted[15]   = {15,18,22,26,32,38,46,55,68,82,100,128,158,202,237}; // high-speed case
@@ -48,17 +43,6 @@ uint16_t NCS_4[7]             = {2,4,6,8,10,12,15};
 int16_t ru[2*839]; // quantized roots of unity
 uint32_t ZC_inv[839]; // multiplicative inverse for roots u
 uint16_t du[838];
-
-typedef struct {
-  uint8_t f_ra;
-  uint8_t t0_ra;
-  uint8_t t1_ra;
-  uint8_t t2_ra;
-} PRACH_TDD_PREAMBLE_MAP_elem;
-typedef struct {
-  uint8_t num_prach;
-  PRACH_TDD_PREAMBLE_MAP_elem map[6];
-} PRACH_TDD_PREAMBLE_MAP;
 
 // This is table 5.7.1-4 from 36.211
 PRACH_TDD_PREAMBLE_MAP tdd_preamble_map[64][7] = {
@@ -747,3 +731,41 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_OUT);
 
 }
+
+void init_prach_tables(int N_ZC)
+{
+
+  int i,m;
+
+  // Compute the modular multiplicative inverse 'iu' of u s.t. iu*u = 1 mod N_ZC
+  ZC_inv[0] = 0;
+  ZC_inv[1] = 1;
+
+  for (i=2; i<N_ZC; i++) {
+    for (m=2; m<N_ZC; m++)
+      if (((i*m)%N_ZC) == 1) {
+        ZC_inv[i] = m;
+        break;
+      }
+
+#ifdef PRACH_DEBUG
+
+    if (i<16)
+      printf("i %d : inv %d\n",i,ZC_inv[i]);
+
+#endif
+  }
+
+  // Compute quantized roots of unity
+  for (i=0; i<N_ZC; i++) {
+    ru[i<<1]     = (int16_t)(floor(32767.0*cos(2*M_PI*(double)i/N_ZC)));
+    ru[1+(i<<1)] = (int16_t)(floor(32767.0*sin(2*M_PI*(double)i/N_ZC)));
+#ifdef PRACH_DEBUG
+
+    if (i<16)
+      printf("i %d : runity %d,%d\n",i,ru[i<<1],ru[1+(i<<1)]);
+
+#endif
+  }
+}
+

@@ -23,7 +23,8 @@
 /* Author R. Knopp / EURECOM / OpenAirInterface.org */
 #ifndef __LTE_REFSIG_DEFS__H__
 #define __LTE_REFSIG_DEFS__H__
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 
 /** @ingroup _PHY_REF_SIG
  * @{

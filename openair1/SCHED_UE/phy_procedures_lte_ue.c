@@ -33,22 +33,19 @@
 #define _GNU_SOURCE
 
 #include "assertions.h"
-#include "defs.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 #include <sched.h>
 #include "targets/RT/USER/lte-softmodem.h"
-
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "SCHED_UE/sched_UE.h"
 #define DEBUG_PHY_PROC
 
 #ifndef PUCCH
 #define PUCCH
 #endif
 
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/mac.h"
 #include "UTIL/LOG/log.h"
 
 #include "UTIL/LOG/vcd_signal_dumper.h"
@@ -58,13 +55,13 @@
 # include "intertask_interface.h"
 #endif
 
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
 
-#include "PHY/CODING/extern.h"
+#include "PHY/CODING/coding_extern.h"
 
 #include "T.h"
 
-#include "PHY/TOOLS/defs.h"
+#include "PHY/TOOLS/tools_defs.h"
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
 #define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 23/25 RBs)
@@ -1389,7 +1386,6 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 						frame_tx,
 						eNB_id,
 						subframe_tx);
-      LOG_D(PHY,"Got prach_resources for eNB %d address %p, RRCCommon %p\n",eNB_id,ue->prach_resources[eNB_id],UE_mac_inst[ue->Mod_id].radioResourceConfigCommon);
       LOG_D(PHY,"Prach resources %p\n",ue->prach_resources[eNB_id]);
     }
   }
@@ -2333,7 +2329,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
 }
 
-void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type) {
+void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode) {
 
 
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
@@ -2452,7 +2448,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
 #endif
 }
 
-void phy_procedures_UE_S_TX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag,relaying_type_t r_type)
+void phy_procedures_UE_S_TX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag)
 {
   int aa;//i,aa;
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
@@ -4138,8 +4134,7 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 
 #ifdef UE_SLOT_PARALLELISATION
 int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
-        uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,
-        relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn)  {
+        uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode)  {
 
     int l,l2;
     int pmch_flag=0;
@@ -4189,8 +4184,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *pr
     }
 
 #ifdef DEBUG_PHY_PROC
-    LOG_D(PHY,"[%s %d] Frame %d subframe %d: Doing phy_procedures_UE_RX\n",
-            (r_type == multicast_relay) ? "RN/UE" : "UE",
+    LOG_D(PHY,"[UE %d] Frame %d subframe %d: Doing phy_procedures_UE_RX\n",
                     ue->Mod_id,frame_rx, subframe_rx);
 #endif
 
@@ -4655,8 +4649,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *pr
 
 
 int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
-			 uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,
-			 relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn) {
+			 uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode) {
 
   int l,l2;
   int pilot1;
@@ -4705,8 +4698,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
   }
 
 #ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[%s %d] Frame %d subframe %d: Doing phy_procedures_UE_RX\n",
-  (r_type == multicast_relay) ? "RN/UE" : "UE",
+  LOG_D(PHY,"[UE %d] Frame %d subframe %d: Doing phy_procedures_UE_RX\n",
   ue->Mod_id,frame_rx, subframe_rx);
 #endif
 
@@ -5131,38 +5123,9 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
   return (0);
 }
 
-#if defined(Rel10) || defined(Rel14)
 
-int phy_procedures_RN_UE_RX(uint8_t slot_rx, uint8_t next_slot, relaying_type_t r_type)
-{
 
-  int do_proc =0; // do nothing by default
-
-  switch(r_type) {
-  case no_relay:
-    do_proc=no_relay; // perform the normal UE operation
-    break;
-
-  case multicast_relay:
-    if (slot_rx > 12)
-      do_proc = 0; // do nothing
-    else // SF#1, SF#2, SF3, SF#3, SF#4, SF#5, SF#6(do rx slot 12)
-      do_proc = multicast_relay ; // do PHY procedures UE RX
-
-    break;
-
-  default: // should'not be here
-    LOG_W(PHY,"Not supported relay type %d, do nothing \n", r_type);
-    do_proc= 0;
-    break;
-  }
-
-  return do_proc;
-}
-#endif
-
-void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,
-			   relaying_type_t r_type, PHY_VARS_RN *phy_vars_rn)
+void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode)
 {
 #if defined(ENABLE_ITTI)
   MessageDef   *msg_p;
@@ -5224,30 +5187,22 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
 
     if ((subframe_select(&ue->frame_parms,subframe_tx)==SF_UL)||
   (ue->frame_parms.frame_type == FDD)) {
-      phy_procedures_UE_TX(ue,proc,eNB_id,abstraction_flag,mode,r_type);
+      phy_procedures_UE_TX(ue,proc,eNB_id,abstraction_flag,mode);
     }
 
     if ((subframe_select(&ue->frame_parms,subframe_rx)==SF_DL) ||
-  (ue->frame_parms.frame_type == FDD)) {
-#if defined(Rel10) || defined(Rel14)
-
-      if (phy_procedures_RN_UE_RX(subframe_rx, subframe_tx, r_type) != 0 )
-#endif
-	phy_procedures_UE_RX(ue,proc,eNB_id,abstraction_flag,do_pdcch_flag,mode,r_type,phy_vars_rn);
+	(ue->frame_parms.frame_type == FDD)) {
+      phy_procedures_UE_RX(ue,proc,eNB_id,abstraction_flag,do_pdcch_flag,mode);
     }
 
     if ((subframe_select(&ue->frame_parms,subframe_tx)==SF_S) &&
   (slot==1)) {
-      phy_procedures_UE_S_TX(ue,eNB_id,abstraction_flag,r_type);
+      phy_procedures_UE_S_TX(ue,eNB_id,abstraction_flag);
     }
 
     if ((subframe_select(&ue->frame_parms,subframe_rx)==SF_S) &&
-  (slot==0)) {
-#if defined(Rel10) || defined(Rel14)
-
-      if (phy_procedures_RN_UE_RX(subframe_rx, subframe_tx, r_type) != 0 )
-#endif
-	phy_procedures_UE_RX(ue,proc,eNB_id,abstraction_flag,do_pdcch_flag,mode,r_type,phy_vars_rn);
+	(slot==0)) {
+	phy_procedures_UE_RX(ue,proc,eNB_id,abstraction_flag,do_pdcch_flag,mode);
     }
 
     if (ue->mac_enabled==1) {

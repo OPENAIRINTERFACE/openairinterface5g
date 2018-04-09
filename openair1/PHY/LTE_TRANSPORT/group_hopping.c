@@ -29,7 +29,7 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
+#include "PHY/defs_common.h"
 
 //#define DEBUG_GROUPHOP 1
 

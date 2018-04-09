@@ -29,8 +29,8 @@
 * \note
 * \warning
 */
-//#include "defs.h"
-#include "PHY/defs.h"
+
+#include "PHY/defs_eNB.h"
 
 
 int generate_mbsfn_pilot(PHY_VARS_eNB *eNB,

@@ -30,14 +30,13 @@
  * \warning
  */
 #include "PHY/sse_intrin.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
 //#include "prach.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "SCHED/sched_eNB.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-#include "prach_common.c"
+#include "prach_extern.h"
 
 //#define PRACH_DEBUG 1
 //#define PRACH_WRITE_OUTPUT_DEBUG 1

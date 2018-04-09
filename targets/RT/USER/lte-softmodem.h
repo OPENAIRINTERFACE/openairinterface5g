@@ -28,7 +28,7 @@
 #include "assertions.h"
 #include "msc.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
 #include "flexran_agent.h"

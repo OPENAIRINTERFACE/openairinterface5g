@@ -20,9 +20,7 @@
  */
 
 #include <string.h>
-#include "defs.h"
-#include "SCHED/defs.h"
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
 #include "filt96_32.h"
 #include "T.h"
 //#define DEBUG_CH

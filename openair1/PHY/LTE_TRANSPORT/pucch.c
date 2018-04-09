@@ -29,9 +29,9 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/extern.h" 
-#include "LAYER2/MAC/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h" 
+#include "LAYER2/MAC/mac.h"
 
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
@@ -42,7 +42,7 @@
 //#define DEBUG_PUCCH_TXS
 //#define DEBUG_PUCCH_RX
 
-#include "pucch_common.c"
+#include "pucch_extern.h"
 
 int16_t cfo_pucch_np[24*7] = {20787,-25330,27244,-18205,31356,-9512,32767,0,31356,9511,27244,18204,20787,25329,
                               27244,-18205,30272,-12540,32137,-6393,32767,0,32137,6392,30272,12539,27244,18204,

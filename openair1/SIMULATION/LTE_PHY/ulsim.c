@@ -33,16 +33,22 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include "SIMULATION/TOOLS/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/vars.h"
+#include "PHY/defs_common.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_vars.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
+
+#include "SCHED/sched_common_vars.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED_UE/sched_UE.h"
+#include "LAYER2/MAC/mac_vars.h"
 #include "OCG_vars.h"
-#include "intertask_interface_init.h"
+
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 
 #include "unitary_defs.h"
 
@@ -873,6 +879,7 @@ int main(int argc, char **argv)
   // NN: N_RB_UL has to be defined in ulsim
   for (int k=0;k<NUMBER_OF_UE_MAX;k++) eNB->ulsch[k] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
+  printf("ULSCH %p\n",UE->ulsch[0]);
 
   if (parallel_flag == 1) {
     extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
@@ -946,34 +953,6 @@ int main(int argc, char **argv)
 
   UE->ulsch_Msg3_active[eNB_id] = 0;
   UE->ul_power_control_dedicated[eNB_id].accumulationEnabled=1;
-  /*
-  generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
-                                    14,
-                                    proc_rxtx->subframe_tx,
-                                    format0,
-                                    UE,
-				    proc_rxtx_ue,
-                                    SI_RNTI,
-                                    0,
-                                    P_RNTI,
-                                    CBA_RNTI,
-                                    0,
-                                    srs_flag);
-
-  //  printf("RIV %d\n",UL_alloc_pdu.rballoc);
-
-  generate_eNB_ulsch_params_from_dci(eNB,proc_rxtx,
-				     (void *)&UL_alloc_pdu,
-                                     14,
-                                     format0,
-                                     0,
-				     SI_RNTI,
-                                     0,
-                                     P_RNTI,
-                                     CBA_RNTI,
-                                     srs_flag);
-  */
-
   coded_bits_per_codeword = nb_rb * (12 * get_Qm_ul(mcs)) * nsymb;
 
   if (cqi_flag == 1) coded_bits_per_codeword-=UE->ulsch[0]->O;
@@ -1211,7 +1190,7 @@ int main(int argc, char **argv)
 	    proc_rxtx_ue->subframe_tx = proc_rxtx->subframe_rx;
 	    proc_rxtx_ue->subframe_rx = proc_rxtx->subframe_tx;
 
-	    phy_procedures_UE_TX(UE,proc_rxtx_ue,0,0,normal_txrx,no_relay);
+	    phy_procedures_UE_TX(UE,proc_rxtx_ue,0,0,normal_txrx);
 
 
 	    tx_lev = signal_energy(&UE->common_vars.txdata[0][eNB->frame_parms.samples_per_tti*subframe],
@@ -1339,7 +1318,7 @@ int main(int argc, char **argv)
 
 
 	  ru->feprx(ru);
-	  phy_procedures_eNB_uespec_RX(eNB,proc_rxtx,no_relay);
+	  phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
 
 
           if (cqi_flag > 0) {

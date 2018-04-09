@@ -29,12 +29,12 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/CODING/defs.h"
-#include "PHY/CODING/extern.h"
-#include "PHY/LTE_TRANSPORT/defs.h"
-#include "defs.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
+#include "PHY/CODING/coding_defs.h"
+#include "PHY/CODING/coding_extern.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_ue.h"
+#include "PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 
@@ -381,7 +381,7 @@ void ulsch_modulation(int32_t **txdataF,
 
   DevAssert(frame_parms);
 
-  int re_offset,re_offset0,i,Msymb,j,k,nsymb,Msc_PUSCH,l;
+  int re_offset,re_offset0,i,ulsch_Msymb,j,k,nsymb,Msc_PUSCH,l;
   //  uint8_t harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   uint8_t harq_pid = subframe2harq_pid(frame_parms,frame,subframe);
   uint8_t Q_m;
@@ -470,12 +470,12 @@ void ulsch_modulation(int32_t **txdataF,
 
   // Modulation
 
-  Msymb = G/Q_m;
+  ulsch_Msymb = G/Q_m;
 
   if(ulsch->cooperation_flag == 2)
     // For Distributed Alamouti Scheme in Collabrative Communication
   {
-    for (i=0,j=Q_m; i<Msymb; i+=2,j+=2*Q_m) {
+    for (i=0,j=Q_m; i<ulsch_Msymb; i+=2,j+=2*Q_m) {
 
       switch (Q_m) {
 
@@ -609,7 +609,7 @@ void ulsch_modulation(int32_t **txdataF,
     }//for
   }//cooperation_flag == 2
   else {
-    for (i=0,j=0; i<Msymb; i++,j+=Q_m) {
+    for (i=0,j=0; i<ulsch_Msymb; i++,j+=Q_m) {
 
       switch (Q_m) {
 
@@ -685,7 +685,7 @@ void ulsch_modulation(int32_t **txdataF,
 
 #ifdef OFDMA_ULSCH
 
-  for (i=0; i<Msymb; i++) {
+  for (i=0; i<ulsch_Msymb; i++) {
     ulsch->z[i] = ulsch->d[i];
   }
 

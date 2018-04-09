@@ -20,8 +20,7 @@
  */
 
 #include <string.h>
-#include "defs.h"
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
 
 //#define DEBUG_CH
 int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,

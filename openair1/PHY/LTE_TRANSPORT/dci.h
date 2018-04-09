@@ -35,6 +35,13 @@
 
 #include <stdint.h>
 
+#define CCEBITS 72
+#define CCEPERSYMBOL 33  // This is for 1200 RE
+#define CCEPERSYMBOL0 22  // This is for 1200 RE
+#define DCI_BITS_MAX ((2*CCEPERSYMBOL+CCEPERSYMBOL0)*CCEBITS)
+
+//#define Mquad (Msymb/4)
+
 ///  DCI Format Type 0 (5 MHz,TDD0, 27 bits)
 struct DCI0_5MHz_TDD0 {
   /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A

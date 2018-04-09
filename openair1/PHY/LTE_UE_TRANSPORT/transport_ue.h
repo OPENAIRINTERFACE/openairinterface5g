@@ -31,11 +31,11 @@
 */
 #ifndef __TRANSPORT_UE__H__
 #define __TRANSPORT_UE__H__
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
 #include "PHY/impl_defs_lte.h"
-#include "dci.h"
-#include "mdci.h"
-#include "uci_common.h"
+#include "../LTE_TRANSPORT/dci.h"
+#include "../LTE_TRANSPORT/mdci.h"
+#include "../LTE_TRANSPORT/uci_common.h"
 #ifndef STANDALONE_COMPILE
 #include "UTIL/LISTS/list.h"
 #endif
