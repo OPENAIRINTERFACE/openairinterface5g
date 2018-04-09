@@ -1064,12 +1064,18 @@ set(PHY_TURBOSRC
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_16bit.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_avx2_16bit.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder.c
+  )
+set(PHY_LDPCSRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder2.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_generate_coefficient.c
 )
 set(PHY_TURBOIF
   ${OPENAIR1_DIR}/PHY/CODING/coding_load.c
 )
 
-add_library(coding MODULE ${PHY_TURBOSRC} )
+add_library(coding MODULE ${PHY_TURBOSRC} ${PHY_LDPCSRC})
 set(PHY_SRC
   # depend on code generation from asn1c
   ${RRC_FULL_DIR}/asn1_constants.h
