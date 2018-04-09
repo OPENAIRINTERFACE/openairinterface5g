@@ -1990,6 +1990,7 @@ inline int check_skip_dc(int rb,LTE_DL_FRAME_PARMS *frame_parms) {
 int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
                      int32_t **txdataF,
                      int16_t amp,
+                     int frame,
                      uint32_t subframe_offset,
                      uint8_t num_pdcch_symbols,
                      LTE_eNB_DLSCH_t *dlsch0,
@@ -2062,7 +2063,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   if ((dlsch0 != NULL) && (dlsch1 != NULL)){
 
-    harq_pid = dlsch0->harq_ids[subframe_offset];
+    harq_pid = dlsch0->harq_ids[frame%2][subframe_offset];
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
     mimo_mode = dlsch0_harq->mimo_mode;
     mod_order0 = dlsch0_harq->Qm;
@@ -2079,7 +2080,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   }else if ((dlsch0 != NULL) && (dlsch1 == NULL)){
 
-    harq_pid = dlsch0->harq_ids[subframe_offset];
+    harq_pid = dlsch0->harq_ids[frame%2][subframe_offset];
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
     mimo_mode = dlsch0_harq->mimo_mode;
     mod_order0 = dlsch0_harq->Qm;
@@ -2096,7 +2097,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   }else if ((dlsch0 == NULL) && (dlsch1 != NULL)){
 
-    harq_pid = dlsch1->harq_ids[subframe_offset];
+    harq_pid = dlsch1->harq_ids[frame%2][subframe_offset];
     dlsch1_harq = dlsch1->harq_processes[harq_pid];
     mimo_mode = dlsch1_harq->mimo_mode;
     mod_order0 = dlsch1_harq->Qm;

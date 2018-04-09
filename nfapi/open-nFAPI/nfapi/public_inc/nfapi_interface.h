@@ -2218,6 +2218,7 @@ typedef struct {
 	uint8_t dl_assignment_index;
 	uint32_t tpc_bitmap;
 	uint16_t transmission_power;
+	uint8_t harq_pid;
 } nfapi_hi_dci0_dci_pdu_rel8_t;
 #define NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG 0x2020
 

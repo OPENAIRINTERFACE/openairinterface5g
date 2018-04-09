@@ -667,7 +667,7 @@ typedef struct {
     /// mcs from last UL scheduling
     uint8_t mcs_UL[8];
     /// TBS from last UL scheduling
-    uint8_t TBS_UL[8];
+    uint16_t TBS_UL[8];
     /// Flag to indicate UL has been scheduled at least once
     boolean_t ul_active;
     /// Flag to indicate UE has been configured (ACK from RRCConnectionSetup received)
@@ -1094,9 +1094,9 @@ typedef struct eNB_MAC_INST_s {
     nfapi_ul_config_request_t UL_req_tmp[MAX_NUM_CCs][10];
     /// Preallocated HI_DCI0 pdu list 
     nfapi_hi_dci0_request_pdu_t
-	hi_dci0_pdu_list[MAX_NUM_CCs][MAX_NUM_HI_DCI0_PDU];
+	hi_dci0_pdu_list[MAX_NUM_CCs][10][MAX_NUM_HI_DCI0_PDU];
     /// NFAPI HI/DCI0 Config Request Structure
-    nfapi_hi_dci0_request_t HI_DCI0_req[MAX_NUM_CCs];
+    nfapi_hi_dci0_request_t HI_DCI0_req[MAX_NUM_CCs][10];
     /// Prealocated TX pdu list
     nfapi_tx_request_pdu_t
 	tx_request_pdu[MAX_NUM_CCs][MAX_NUM_TX_REQUEST_PDU];

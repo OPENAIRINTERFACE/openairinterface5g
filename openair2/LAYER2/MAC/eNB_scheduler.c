@@ -541,13 +541,14 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
 		  "UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",
 		  UE_id, rnti,
 		  UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
-	    if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer % 40) == 0)
-		UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 0;	// resend every 4 frames
+	    if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer % 80) == 0)
+		UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 0;	// resend every 8 frames
 	}
 
 	UE_list->UE_sched_ctrl[UE_id].ul_failure_timer++;
 	// check threshold
-	if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 20000) {
+	if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 4000) {
+	    // note: probably ul_failure_timer is should be less than UE radio link failure time(see T310/N310/N311)
 	    // inform RRC of failure and clear timer
 	    LOG_I(MAC,
 		  "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",
@@ -573,7 +574,7 @@ clear_nfapi_information(eNB_MAC_INST * eNB, int CC_idP,
 {
     nfapi_dl_config_request_t *DL_req = &eNB->DL_req[0];
     nfapi_ul_config_request_t *UL_req = &eNB->UL_req[0];
-    nfapi_hi_dci0_request_t *HI_DCI0_req = &eNB->HI_DCI0_req[0];
+    nfapi_hi_dci0_request_t *HI_DCI0_req = &eNB->HI_DCI0_req[CC_idP][subframeP];
     nfapi_tx_request_t *TX_req = &eNB->TX_req[0];
 
     eNB->pdu_index[CC_idP] = 0;
@@ -586,8 +587,8 @@ clear_nfapi_information(eNB_MAC_INST * eNB, int CC_idP,
       DL_req[CC_idP].dl_config_request_body.number_pdsch_rnti                   = 0;
       DL_req[CC_idP].dl_config_request_body.transmission_power_pcfich           = 6000;
 
-      HI_DCI0_req[CC_idP].hi_dci0_request_body.sfnsf                            = subframeP + (frameP<<4);
-      HI_DCI0_req[CC_idP].hi_dci0_request_body.number_of_dci                    = 0;
+      HI_DCI0_req->hi_dci0_request_body.sfnsf                            = subframeP + (frameP<<4);
+      HI_DCI0_req->hi_dci0_request_body.number_of_dci                    = 0;
 
 
       UL_req[CC_idP].ul_config_request_body.number_of_pdus                      = 0;
@@ -817,9 +818,10 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 
     // Allocate CCEs for good after scheduling is done
 
-    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
-	allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
-
+    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++){
+        if(cc[CC_id].tdd_Config == NULL || !(is_UL_sf(&cc[CC_id],subframeP)))
+          allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
+}
 
     stop_meas(&RC.mac[module_idP]->eNB_scheduler);
 

@@ -167,8 +167,8 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
 
        }*/
 
-    for (i=0; i<10; i++)
-      dlsch->harq_ids[i] = Mdlharq;
+    for (i=0; i<20; i++)
+      dlsch->harq_ids[i/10][i%10] = Mdlharq;
 
     for (i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (LTE_DL_eNB_HARQ_t *)malloc16(sizeof(LTE_DL_eNB_HARQ_t));
@@ -254,8 +254,8 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch)
 #endif
     dlsch->harq_mask = 0;
 
-    for (i=0; i<10; i++)
-      dlsch->harq_ids[i] = Mdlharq;
+    for (i=0; i<20; i++)
+      dlsch->harq_ids[i/10][i%10] = Mdlharq;
 
     for (i=0; i<Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
@@ -399,7 +399,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   unsigned int crc=1;
   unsigned short iind;
 
-  unsigned char harq_pid = dlsch->harq_ids[subframe];
+  unsigned char harq_pid = dlsch->harq_ids[frame%2][subframe];
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int A;
   unsigned char mod_order;
@@ -583,7 +583,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   unsigned short iind;
 
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  unsigned char harq_pid = dlsch->harq_ids[subframe];
+  unsigned char harq_pid = dlsch->harq_ids[frame%2][subframe];
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int A;
   unsigned char mod_order;

@@ -1267,6 +1267,10 @@ do_RRCConnectionSetup(
 
   RRCConnectionSetup_t* rrcConnectionSetup = NULL;
 
+#ifdef UE_EXPANSION
+  LTE_DL_FRAME_PARMS *frame_parms = &RC.eNB[ctxt_pP->module_id][CC_id]->frame_parms;
+#endif
+
   memset((void *)&dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
   dl_ccch_msg.message.present           = DL_CCCH_MessageType_PR_c1;
   dl_ccch_msg.message.choice.c1.present = DL_CCCH_MessageType__c1_PR_rrcConnectionSetup;
@@ -1533,7 +1537,28 @@ do_RRCConnectionSetup(
 
   physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
 #ifdef UE_EXPANSION
-  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 31 - ue_context_pP->local_uid/10;//ue_context_pP->local_uid;
+  if (carrier->sib1->tdd_Config == NULL) {
+    physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 31 - ue_context_pP->local_uid/10;//ue_context_pP->local_uid;
+  } else {
+      switch (carrier->sib1->tdd_Config->subframeAssignment) {
+      case 1:
+          switch(frame_parms->N_RB_UL){
+          case 25:
+              physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 15 - ue_context_pP->local_uid/4;
+              break;
+          case 50:
+              physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 31 - ue_context_pP->local_uid/4;
+              break;
+          case 100:
+              physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 63 - ue_context_pP->local_uid/4;
+              break;
+          }
+          break;
+      default:
+          physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 71 - ue_context_pP->local_uid/10;//ue_context_pP->local_uid;
+          break;
+      }
+  }
 #else
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 71 - ue_context_pP->local_uid/10;//ue_context_pP->local_uid;
 #endif

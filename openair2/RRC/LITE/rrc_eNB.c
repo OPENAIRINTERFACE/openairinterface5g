@@ -825,7 +825,7 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
     LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", enb_mod_idP, rnti);
 
 #if defined(ENABLE_USE_MME)
-   if( ue_context_pP->ue_context.ul_failure_timer >= 8 ) {
+   if( ue_context_pP->ue_context.ul_failure_timer >= 20000 ) {
     LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ RNTI %x\n", enb_mod_idP, rnti);
     rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); // send cause 21: connection with ue lost
     /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
@@ -844,15 +844,24 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
         ulsch = eNB_PHY->ulsch[i];
         if((ulsch != NULL) && (ulsch->rnti == rnti)){
           LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
-          clean_eNb_ulsch(ulsch);
+          //clean_eNb_ulsch(ulsch);
+          ulsch->rnti = 0;
         }
-      }
-      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
         dlsch = eNB_PHY->dlsch[i][0];
         if((dlsch != NULL) && (dlsch->rnti == rnti)){
           LOG_I(RRC, "clean_eNb_dlsch UE %x \n", rnti);
           clean_eNb_dlsch(dlsch);
         }
+        if(eNB_PHY->uci_vars[i].rnti == rnti){
+          LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
+          memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
+        }
+      }
+      ulsch = eNB_PHY->ulsch[i];
+      if((ulsch != NULL) && (ulsch->rnti == rnti)){
+        LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
+        //clean_eNb_ulsch(ulsch);
+        ulsch->rnti = 0;
       }
 
       for(j = 0; j < 10; j++){
@@ -860,12 +869,16 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
         if(ul_req_tmp){
           pdu_number = ul_req_tmp->number_of_pdus;
           for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
-            if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti){
-              LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
-              if(pdu_index < pdu_number -1){
-                memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
-              }
-              ul_req_tmp->number_of_pdus--;
+            if((ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti) ||
+               (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
+               (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_cqi_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
+               (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_sr_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
+               (ul_req_tmp->ul_config_pdu_list[pdu_index].srs_pdu.srs_pdu_rel8.rnti == rnti)){
+                LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
+                if(pdu_index < pdu_number -1){
+                  memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+                }
+                ul_req_tmp->number_of_pdus--;
             }
           }
         }
@@ -917,6 +930,7 @@ void release_UE_in_freeList(module_id_t mod_id)
     int i, j , CC_id, pdu_number;
     protocol_ctxt_t                           ctxt;
     LTE_eNB_ULSCH_t                          *ulsch = NULL;
+    LTE_eNB_DLSCH_t                          *dlsch = NULL;
     nfapi_ul_config_request_body_t           *ul_req_tmp = NULL;
     PHY_VARS_eNB                             *eNB_PHY = NULL;
     struct rrc_eNB_ue_context_s              *ue_context_pP = NULL;
@@ -945,12 +959,23 @@ void release_UE_in_freeList(module_id_t mod_id)
             PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, rnti, 0, 0,mod_id);
             for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
               eNB_PHY = RC.eNB[mod_id][CC_id];
-              for (i=0; i<=NUMBER_OF_UE_MAX; i++) {
+              for (i=0; i<NUMBER_OF_UE_MAX; i++) {
                 ulsch = eNB_PHY->ulsch[i];
                 if((ulsch != NULL) && (ulsch->rnti == rnti)){
-                    LOG_I(RRC, "clean_eNb_ulsch ulsch[%d] UE %x\n", i, rnti);
-                    clean_eNb_ulsch(ulsch);
-                 }
+                  LOG_I(RRC, "clean_eNb_ulsch ulsch[%d] UE %x\n", i, rnti);
+                  clean_eNb_ulsch(ulsch);
+                }
+                if(eNB_PHY->uci_vars[i].rnti == rnti){
+                  LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
+                  memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
+                }
+              }
+              for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+                dlsch = eNB_PHY->dlsch[i][0];
+                if((dlsch != NULL) && (dlsch->rnti == rnti)){
+                  LOG_I(RRC, "clean_eNb_dlsch dlsch[%d] UE %x \n", i, rnti);
+                  clean_eNb_dlsch(dlsch);
+                }
               }
 
               for(j = 0; j < 10; j++){
@@ -958,12 +983,16 @@ void release_UE_in_freeList(module_id_t mod_id)
                 if(ul_req_tmp){
                   pdu_number = ul_req_tmp->number_of_pdus;
                   for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
-                    if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti){
-                      LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
-                      if(pdu_index < pdu_number -1){
-                        memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
-                      }
-                      ul_req_tmp->number_of_pdus--;
+                    if((ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti) ||
+                       (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
+                       (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_cqi_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
+                       (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_sr_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
+                       (ul_req_tmp->ul_config_pdu_list[pdu_index].srs_pdu.srs_pdu_rel8.rnti == rnti)){
+                        LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
+                        if(pdu_index < pdu_number -1){
+                          memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+                        }
+                        ul_req_tmp->number_of_pdus--;
                     }
                   }
                 }
@@ -1371,8 +1400,10 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
   // get old configuration of SRB2
   if (*SRB_configList2 != NULL) {
-    LOG_D(RRC, "SRB_configList2(%p) count is %d\n           SRB_configList2->list.array[0] addr is %p",
+    if((*SRB_configList2)->list.count!=0){
+      LOG_D(RRC, "SRB_configList2(%p) count is %d\n           SRB_configList2->list.array[0] addr is %p",
           SRB_configList2, (*SRB_configList2)->list.count,  (*SRB_configList2)->list.array[0]);
+    }
     for (i = 0; (i < (*SRB_configList2)->list.count) && (i < 3); i++) {
       if ((*SRB_configList2)->list.array[i]->srb_Identity == 2 ){
         LOG_D(RRC, "get SRB2_config from (ue_context_pP->ue_context.SRB_configList2[%d])\n", xid);
@@ -1384,9 +1415,13 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[next_xid];
   DRB_configList2 = &ue_context_pP->ue_context.DRB_configList2[next_xid];
 
-  if (*SRB_configList2) {
-    free(*SRB_configList2);
-    LOG_D(RRC, "free(ue_context_pP->ue_context.SRB_configList2[%d])\n", next_xid);
+  if(SRB_configList2!=NULL){
+    if (*SRB_configList2) {
+      free(*SRB_configList2);
+      LOG_D(RRC, "free(ue_context_pP->ue_context.SRB_configList2[%d])\n", next_xid);
+    }
+  }else{
+      LOG_E(RRC, "SRB_configList2 is null\n");
   }
   *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
   if (SRB2_config != NULL) {
@@ -1406,9 +1441,13 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
 
 
 
-  if (*DRB_configList2) {
-    free(*DRB_configList2);
-    LOG_D(RRC, "free(ue_context_pP->ue_context.DRB_configList2[%d])\n", next_xid);
+  if(DRB_configList2!=NULL){
+    if (*DRB_configList2) {
+      free(*DRB_configList2);
+      LOG_D(RRC, "free(ue_context_pP->ue_context.DRB_configList2[%d])\n", next_xid);
+    }
+  }else{
+      LOG_E(RRC, "DRB_configList2 is null\n");
   }
   *DRB_configList2 = CALLOC(1, sizeof(**DRB_configList2));
 
@@ -1448,7 +1487,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
 
   for (j = 0, i = 0; i < NB_RB_MAX; i++) {
-    if (ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED) {
+    if (ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED || ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_DONE) {
       create_tunnel_req.eps_bearer_id[j]       = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
       create_tunnel_req.sgw_S1u_teid[j]        = ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
 
@@ -1863,35 +1902,39 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   }
 
 #endif
+  if(size==65535){
+    LOG_E(RRC,"RRC decode err!!! do_RRCConnectionReconfiguration\n");
+    put_UE_in_freelist(ctxt_pP->module_id, reestablish_rnti, 0);
+    return;
+  }else{
+    LOG_I(RRC,
+          "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
+          ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
 
-  LOG_I(RRC,
-        "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
-        ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
+    LOG_D(RRC,
+          "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
+          ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_eNB_mui, ctxt_pP->module_id, DCCH);
 
-  LOG_D(RRC,
-        "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
-        ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_eNB_mui, ctxt_pP->module_id, DCCH);
+    MSC_LOG_TX_MESSAGE(
+      MSC_RRC_ENB,
+      MSC_RRC_UE,
+      buffer,
+      size,
+      MSC_AS_TIME_FMT" rrcConnectionReconfiguration UE %x MUI %d size %u",
+      MSC_AS_TIME_ARGS(ctxt_pP),
+      ue_context_pP->ue_context.rnti,
+      rrc_eNB_mui,
+      size);
 
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_ENB,
-    MSC_RRC_UE,
-    buffer,
-    size,
-    MSC_AS_TIME_FMT" rrcConnectionReconfiguration UE %x MUI %d size %u",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_context.rnti,
-    rrc_eNB_mui,
-    size);
-
-  rrc_data_req(
-         ctxt_pP,
-         DCCH,
-         rrc_eNB_mui++,
-         SDU_CONFIRM_NO,
-         size,
-         buffer,
-         PDCP_TRANSMISSION_MODE_CONTROL);
-
+    rrc_data_req(
+           ctxt_pP,
+           DCCH,
+           rrc_eNB_mui++,
+           SDU_CONFIRM_NO,
+           size,
+           buffer,
+           PDCP_TRANSMISSION_MODE_CONTROL);
+  }
   // delete UE data of prior RNTI.  UE use current RNTI.
 //  protocol_ctxt_t ctxt_prior = *ctxt_pP;
 //  ctxt_prior.rnti = reestablish_rnti;
@@ -6251,7 +6294,7 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
                              ue_context_p,
                              ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
           }
-	}else {
+  }else if(dedicated_DRB == 0){
           if(ue_context_p->ue_context.reestablishment_cause == ReestablishmentCause_spare1){
 	    rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP,
 						       ue_context_p);
@@ -6265,7 +6308,15 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
               }
             }
           }
-	}
+  }else if(dedicated_DRB == 2){
+             for (uint8_t e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+               if (ue_context_p->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+                 ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
+               } else {
+                 ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
+               }
+             }
+         }
       }    
 #else  // establish a dedicated bearer 
       if (dedicated_DRB == 0 ) {

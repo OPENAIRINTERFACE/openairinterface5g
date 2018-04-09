@@ -348,7 +348,7 @@ rrc_rx_tx(
       }
       if (ue_context_p->ue_context.ul_failure_timer>0) {
 	ue_context_p->ue_context.ul_failure_timer++;
-	if (ue_context_p->ue_context.ul_failure_timer >= 8) {
+	if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
 	  // remove UE after 20 seconds after MAC has indicated UL failure
 	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
 	  ue_to_be_removed = ue_context_p;
@@ -513,14 +513,14 @@ rrc_rx_tx(
       }
     }
     if (ue_to_be_removed) {
-      if(ue_to_be_removed->ue_context.ul_failure_timer >= 8) {
+      if(ue_to_be_removed->ue_context.ul_failure_timer >= 20000) {
           ue_to_be_removed->ue_context.ue_release_timer_s1 = 1;
           ue_to_be_removed->ue_context.ue_release_timer_thres_s1 = 200;
           ue_to_be_removed->ue_context.ue_release_timer = 0;
           ue_to_be_removed->ue_context.ue_reestablishment_timer = 0;
       }
       rrc_eNB_free_UE(ctxt_pP->module_id,ue_to_be_removed);
-      if(ue_to_be_removed->ue_context.ul_failure_timer >= 8){
+      if(ue_to_be_removed->ue_context.ul_failure_timer >= 20000){
         ue_to_be_removed->ue_context.ul_failure_timer = 0;
       }
     }

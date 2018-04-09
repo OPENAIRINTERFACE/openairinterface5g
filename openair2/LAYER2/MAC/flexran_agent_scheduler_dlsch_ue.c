@@ -1277,7 +1277,7 @@ flexran_schedule_ue_spec_common(mid_t mod_id,
 		    PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD) {
 		    UE_list->UE_template[CC_id][UE_id].DAI++;
 		    update_ul_dci(mod_id, CC_id, rnti,
-				  UE_list->UE_template[CC_id][UE_id].DAI);
+				  UE_list->UE_template[CC_id][UE_id].DAI,subframe);
 		    LOG_D(MAC,
 			  "DAI update: CC_id %d subframeP %d: UE %d, DAI %d\n",
 			  CC_id, subframe, UE_id,
@@ -1642,7 +1642,7 @@ flexran_schedule_ue_spec_common(mid_t mod_id,
 			//#warning only for 5MHz channel
 			update_ul_dci(mod_id, CC_id, rnti,
 				      UE_list->UE_template[CC_id][UE_id].
-				      DAI);
+				      DAI,frame);
 		    }
 		    // do PUCCH power control
 		    // this is the normalized RX power

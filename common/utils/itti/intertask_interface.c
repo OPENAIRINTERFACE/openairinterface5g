@@ -650,6 +650,15 @@ void itti_mark_task_ready(task_id_t task_id)
   /* Mark the thread as using LFDS queue */
   lfds611_queue_use(itti_desc.tasks[task_id].message_queue);
 
+#if defined(UE_EXPANSION) || defined(RTAI)
+  /* Assign low priority to created threads */
+  {
+    struct sched_param sched_param;
+    sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
+    sched_setscheduler(0, SCHED_FIFO, &sched_param);
+  }
+#endif
+
   itti_desc.threads[thread_id].task_state = TASK_STATE_READY;
   itti_desc.ready_tasks ++;
 

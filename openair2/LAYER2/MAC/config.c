@@ -251,7 +251,7 @@ void config_mib(int                 Mod_idP,
   cfg->rf_config.dl_channel_bandwidth.value        = to_prb(dl_BandwidthP);
   cfg->rf_config.dl_channel_bandwidth.tl.tag = NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG;
   cfg->num_tlv++;
-LOG_E(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, dl_BandwidthP);
+LOG_D(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, dl_BandwidthP);
 
   cfg->rf_config.ul_channel_bandwidth.value        = to_prb(dl_BandwidthP);
   cfg->rf_config.ul_channel_bandwidth.tl.tag = NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG;
@@ -762,7 +762,7 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
 
-  LOG_E(MAC, "RC.mac:%p mib:%p\n", RC.mac, mib);
+  LOG_D(MAC, "RC.mac:%p mib:%p\n", RC.mac, mib);
 
   if (mib != NULL) {
     if (RC.mac == NULL)
@@ -997,7 +997,7 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
 #endif
 
-    LOG_E(MAC, "%s() %s:%d RC.mac[Mod_idP]->if_inst->PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.mac[Mod_idP]->if_inst->PHY_config_req);
+    LOG_D(MAC, "%s() %s:%d RC.mac[Mod_idP]->if_inst->PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.mac[Mod_idP]->if_inst->PHY_config_req);
 
     // if in nFAPI mode 
     if (

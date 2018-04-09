@@ -839,7 +839,7 @@ int pnf_phy_dl_config_req(nfapi_pnf_p7_config_t* pnf_p7, nfapi_dl_config_request
         AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
         LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
         //LTE_eNB_DLSCH_t *dlsch1 = eNB->dlsch[UE_id][1];
-        int harq_pid = dlsch0->harq_ids[sf];
+        int harq_pid = dlsch0->harq_ids[sfn%2][sf];
         uint8_t *dlsch_sdu = tx_pdus[UE_id][harq_pid];
         
         memcpy(dlsch_sdu, tx_pdu->segments[0].segment_data, tx_pdu->segments[0].segment_length);

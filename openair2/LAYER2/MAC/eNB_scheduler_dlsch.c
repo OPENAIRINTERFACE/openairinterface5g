@@ -338,6 +338,7 @@ set_ul_DAI(int module_idP, int UE_idP, int CC_idP, int frameP,
 
 	case 1:
 	    switch (subframeP) {
+	    case 0:
 	    case 1:
 		UE_list->UE_template[CC_idP][UE_idP].DAI_ul[7] = DAI;
 		break;
@@ -346,6 +347,7 @@ set_ul_DAI(int module_idP, int UE_idP, int CC_idP, int frameP,
 		UE_list->UE_template[CC_idP][UE_idP].DAI_ul[8] = DAI;
 		break;
 
+	    case 5:
 	    case 6:
 		UE_list->UE_template[CC_idP][UE_idP].DAI_ul[2] = DAI;
 		break;
@@ -499,8 +501,7 @@ schedule_ue_spec(module_id_t module_idP,
 	    break;
 	case 6:
 	case 7:
-	    if ((tdd_sfa != 1) && (tdd_sfa != 2) && (tdd_sfa != 4)
-		&& (tdd_sfa != 5))
+	    if ((tdd_sfa != 3)&& (tdd_sfa != 4) && (tdd_sfa != 5))
 		return;
 	    break;
 	case 8:
@@ -509,8 +510,7 @@ schedule_ue_spec(module_id_t module_idP,
 		return;
 	    break;
 	case 9:
-	    if ((tdd_sfa != 1) && (tdd_sfa != 3) && (tdd_sfa != 4)
-		&& (tdd_sfa != 6))
+	    if (tdd_sfa == 0)
 		return;
 	    break;
 
@@ -689,10 +689,7 @@ schedule_ue_spec(module_id_t module_idP,
 
 	    nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
 
-	    if (cc->tdd_Config)
-		harq_pid = ((frameP * 10) + subframeP) % 10;
-	    else
-		harq_pid = ((frameP * 10) + subframeP) & 7;
+	    harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
 
 	    round = ue_sched_ctl->round[CC_id][harq_pid];
 
@@ -758,7 +755,7 @@ schedule_ue_spec(module_id_t module_idP,
 			UE_list->UE_template[CC_id][UE_id].DAI++;
 			update_ul_dci(module_idP, CC_id, rnti,
 				      UE_list->UE_template[CC_id][UE_id].
-				      DAI);
+				      DAI,subframeP);
 			LOG_D(MAC,
 			      "DAI update: CC_id %d subframeP %d: UE %d, DAI %d\n",
 			      CC_id, subframeP, UE_id,
@@ -1389,7 +1386,7 @@ schedule_ue_spec(module_id_t module_idP,
 
           if (cc[CC_id].tdd_Config != NULL) { // TDD
             UE_list->UE_template[CC_id][UE_id].DAI++;
-            update_ul_dci(module_idP,CC_id,rnti,UE_list->UE_template[CC_id][UE_id].DAI);
+            update_ul_dci(module_idP,CC_id,rnti,UE_list->UE_template[CC_id][UE_id].DAI,subframeP);
           }
 
 	  // do PUCCH power control
@@ -1609,8 +1606,7 @@ fill_DLSCH_dci(
         // clear scheduling flag
         eNB_dlsch_info[module_idP][CC_id][UE_id].status = S_DL_WAITING;
         rnti = UE_RNTI(module_idP,UE_id);
-	if (cc->tdd_Config) harq_pid = ((frameP*10)+subframeP)%10;
-	else harq_pid = ((frameP*10)+subframeP)&7;
+        harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
         nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
 
 
@@ -1691,12 +1687,12 @@ unsigned char *get_dlsch_sdu(module_id_t module_idP,
 //------------------------------------------------------------------------------
 void
 update_ul_dci(module_id_t module_idP,
-	      uint8_t CC_idP, rnti_t rntiP, uint8_t daiP)
+	      uint8_t CC_idP, rnti_t rntiP, uint8_t daiP, sub_frame_t subframe)
 //------------------------------------------------------------------------------
 {
 
     nfapi_hi_dci0_request_t *HI_DCI0_req =
-	&RC.mac[module_idP]->HI_DCI0_req[CC_idP];
+	&RC.mac[module_idP]->HI_DCI0_req[CC_idP][subframe];
     nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu =
 	&HI_DCI0_req->hi_dci0_request_body.hi_dci0_pdu_list[0];
     COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_idP];
@@ -1707,7 +1703,7 @@ update_ul_dci(module_id_t module_idP,
 	for (i = 0;
 	     i <
 	     HI_DCI0_req->hi_dci0_request_body.number_of_dci +
-	     HI_DCI0_req->hi_dci0_request_body.number_of_dci; i++) {
+	     HI_DCI0_req->hi_dci0_request_body.number_of_hi; i++) {
 
 	    if ((hi_dci0_pdu[i].pdu_type == NFAPI_HI_DCI0_DCI_PDU_TYPE) &&
 		(hi_dci0_pdu[i].dci_pdu.dci_pdu_rel8.rnti == rntiP))
@@ -1848,7 +1844,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
       LOG_D(MAC,"[eNB %d] Frame %d subframe %d: PCCH->PCH CC_id %d UE_id %d, Received %d bytes \n", module_idP, frameP, subframeP, CC_id,i, pcch_sdu_length);
 #ifdef FORMAT1C
       //NO SIB
-      if ((subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
+      if ((subframeP == 0 || subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
         (subframeP == 5 && ((frameP % 2) != 0 && (frameP % 8) != 1))) {
         switch (n_rb_dl) {
 #if 0
@@ -1967,7 +1963,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
       }
 #else
       //NO SIB
-      if ((subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
+      if ((subframeP == 0 || subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
         (subframeP == 5 && ((frameP % 2) != 0 && (frameP % 8) != 1))) {
         switch (n_rb_dl) {
         case 25:
@@ -2055,6 +2051,10 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
         LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for P_RNTI\n", frameP,subframeP);
         dl_req->number_dci++;
         dl_req->number_pdu++;
+        dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+        eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
+        eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
+
         dl_config_pdu                                                                  = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
         memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
         dl_config_pdu->pdu_type                                                        = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
@@ -2095,6 +2095,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
         TX_req->num_segments                                                           = 1;
         TX_req->segments[0].segment_length                                             = pcch_sdu_length;
         TX_req->segments[0].segment_data                                               = cc[CC_id].PCCH_pdu.payload;
+        eNB->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
         eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
       } else {
         LOG_E(MAC,"[eNB %d] CCid %d Frame %d, subframe %d : Cannot add DCI 1A/1C for Paging\n",module_idP, CC_id, frameP, subframeP);

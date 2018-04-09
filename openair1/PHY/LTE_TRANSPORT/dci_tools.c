@@ -1052,8 +1052,12 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
   if ((rel8->rnti_type == 2 ) && (rel8->rnti != SI_RNTI) && (rel8->rnti != P_RNTI)) dci_alloc->ra_flag = 1;
 
   UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
-  AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
+  if( (UE_id<0) || (UE_id>=NUMBER_OF_UE_MAX) ){
+    LOG_E(PHY,"illegal UE_id found!!! rnti %04x UE_id %d\n",rel8->rnti,UE_id);
+    return;
+  }
+  //AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
+  //AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
 
@@ -1266,14 +1270,14 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     dlsch0_harq->mcs             = rel8->mcs_1;
     dlsch0_harq->Qm              = 2;
     dlsch0_harq->TBS             = TBStable[I_mcs][NPRB-1];
-    dlsch0->harq_ids[subframe]   = rel8->harq_process;
+    dlsch0->harq_ids[frame%2][subframe]   = rel8->harq_process;
 #ifdef UE_EXPANSION
     dlsch0->active[subframe]     = 1;
 #else
     dlsch0->active               = 1;
 #endif
     dlsch0->rnti                 = rel8->rnti;
-    dlsch0->harq_ids[subframe]   = rel8->harq_process;
+    //dlsch0->harq_ids[subframe]   = rel8->harq_process;
     if (dlsch0_harq->round == 0)
       dlsch0_harq->status = ACTIVE;
 
@@ -1454,7 +1458,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     }
 
     LOG_D(PHY,"DCI: Set harq_ids[%d] to %d (%p)\n",subframe,rel8->harq_process,dlsch0);
-    dlsch0->harq_ids[subframe] = rel8->harq_process;
+    dlsch0->harq_ids[frame%2][subframe] = rel8->harq_process;
 
     dlsch0->harq_mask          |= (1<<rel8->harq_process);
 
@@ -1621,8 +1625,8 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
 
     dlsch0->subframe_tx[subframe] = 1;
 
-    dlsch0->harq_ids[subframe] = rel8->harq_process;
-    dlsch1->harq_ids[subframe] = rel8->harq_process;
+    dlsch0->harq_ids[frame%2][subframe] = rel8->harq_process;
+    dlsch1->harq_ids[frame%2][subframe] = rel8->harq_process;
     //    printf("Setting DLSCH harq id %d to subframe %d\n",harq_pid,subframe);
 
 
@@ -2076,11 +2080,11 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     if (dlsch0 != NULL){
       dlsch0->subframe_tx[subframe] = 1;
 
-      dlsch0->harq_ids[subframe] = rel8->harq_process;
+      dlsch0->harq_ids[frame%2][subframe] = rel8->harq_process;
     }
 
     if (dlsch1_harq != NULL){
-      dlsch1->harq_ids[subframe] = rel8->harq_process;
+      dlsch1->harq_ids[frame%2][subframe] = rel8->harq_process;
     }
 
 
@@ -2290,6 +2294,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
   LTE_DL_eNB_HARQ_t *dlsch0_harq=NULL;
   int UE_id;
   int subframe = proc->subframe_tx;
+  int frame = proc->frame_tx;
 
   dci_alloc->firstCCE                   = rel13->ecce_index;
   dci_alloc->L                          = rel13->aggregation_level;
@@ -2308,8 +2313,12 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
   if (rel13->rnti_type == 2 ) dci_alloc->ra_flag = 1;
 
   UE_id = find_dlsch(rel13->rnti,eNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
-  AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
+  if( (UE_id<0) || (UE_id>=NUMBER_OF_UE_MAX) ){
+    LOG_E(PHY,"illegal UE_id found!!! rnti %04x UE_id %d\n",rel13->rnti,UE_id);
+    return;
+  }
+  //AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
+  //AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch0_harq                               = dlsch0->harq_processes[rel13->harq_process];
 
@@ -2533,7 +2542,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
     
   }
   
-  dlsch0->harq_ids[subframe] = rel13->harq_process;
+  dlsch0->harq_ids[frame%2][subframe] = rel13->harq_process;
   
   
   
@@ -2563,6 +2572,8 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
 				pdu->dci_pdu_rel8.number_of_resource_block);
 
   uint32_t ndi     = pdu->dci_pdu_rel8.new_data_indication_1;
+
+  uint16_t UE_id   = -1;
 
 #ifdef T_TRACER
   T(T_ENB_PHY_ULSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
@@ -2709,6 +2720,13 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
     DevParam (frame_parms->N_RB_DL, 0, 0);
     break;
   }
+
+  if(frame_parms->frame_type == TDD){
+     UE_id = find_ulsch(pdu->dci_pdu_rel8.rnti, eNB,SEARCH_EXIST_OR_FREE);
+     if(UE_id != -1){
+       eNB->ulsch[UE_id]->harq_processes[pdu->dci_pdu_rel8.harq_pid]->V_UL_DAI = dai +1;
+     }
+  }
 }
 
 void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe)
@@ -2773,6 +2791,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
 	ulsch->harq_processes[harq_pid]->ndi, ulsch_pdu->ulsch_pdu_rel8.new_data_indication, new_ulsch, ulsch->harq_processes[harq_pid]->status);
   
   ulsch->harq_processes[harq_pid]->rvidx = ulsch_pdu->ulsch_pdu_rel8.redundancy_version;
+  if(ulsch_pdu->ulsch_pdu_rel8.modulation_type!=0)
   ulsch->harq_processes[harq_pid]->Qm    = ulsch_pdu->ulsch_pdu_rel8.modulation_type;
   // Set O_ACK to 0 by default, will be set of DLSCH is scheduled and needs to be 
   ulsch->harq_processes[harq_pid]->O_ACK         = 0;
@@ -6586,12 +6605,7 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
   } else {
 
     switch (frame_parms->tdd_config) {
-
     case 1:
-      if ((subframe==2) ||
-          (subframe==3) ||
-          (subframe==7) ||
-          (subframe==8))
         switch (subframe) {
         case 2:
         case 3:
@@ -6659,10 +6673,13 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n)
   uint8_t ul_subframe = 255;
 
   if ((frame_parms->frame_type == TDD) &&
-      (frame_parms->tdd_config == 1) &&
-      ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
-    ul_subframe = ((n+6)%10);
-  else if ((frame_parms->frame_type == TDD) &&
+      (frame_parms->tdd_config == 1)) {
+    if ((n==1)||(n==6)) { // tdd_config 0,1 SF 1,5
+      ul_subframe = ((n+6)%10);
+    } else if ((n==4)||(n==9)) {
+      ul_subframe = ((n+4)%10);
+    }
+  } else if ((frame_parms->frame_type == TDD) &&
            (frame_parms->tdd_config == 6) &&
            ((n==0)||(n==1)||(n==5)||(n==6)))
     ul_subframe = ((n+7)%10);
@@ -6682,10 +6699,13 @@ uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n)
 uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n)
 {
   if ((frame_parms->frame_type == TDD) &&
-      (frame_parms->tdd_config == 1) &&
-      ((n==7)||(n==2))) // tdd_config 0,1 SF 1,5
-    return((n==7)? 1 : 6);
-  else if ((frame_parms->frame_type == TDD) &&
+      (frame_parms->tdd_config == 1)) {
+    if ((n==7)||(n==2)) { // tdd_config 0,1 SF 1,5
+      return((n==7)? 1 : 6);
+    } else if ((n==3)||(n==8)) {
+      return((n==3)? 9 : 4);
+    }
+  } else if ((frame_parms->frame_type == TDD) &&
            (frame_parms->tdd_config == 6) &&
            ((n==7)||(n==8)||(n==2)||(n==3)))
     return((n+3)%10);
@@ -6699,13 +6719,14 @@ uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
 
 uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n)
 {
-  uint32_t ul_frame;
+  uint32_t ul_frame = frame;
 
   if ((frame_parms->frame_type == TDD) &&
-      (frame_parms->tdd_config == 1) &&
-      ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
-    ul_frame = (frame + (n==1 ? 0 : 1));
-  else if ((frame_parms->frame_type == TDD) &&
+      (frame_parms->tdd_config == 1)) {
+    if ((n==1)||(n==6)||(n==4)||(n==9)) { // tdd_config 0,1 SF 1,5
+      ul_frame = (frame + (n < 5 ? 0 : 1));
+    }
+  } else if ((frame_parms->frame_type == TDD) &&
            (frame_parms->tdd_config == 6) &&
            ((n==0)||(n==1)||(n==5)||(n==6)))
     ul_frame = (frame + (n>=5 ? 1 : 0));

@@ -154,31 +154,35 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
   int harq_pid;
 
   UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
-  AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
+  if( (UE_id<0) || (UE_id>=NUMBER_OF_UE_MAX) ){
+    LOG_E(PHY,"illegal UE_id found!!! rnti %04x UE_id %d\n",rel8->rnti,UE_id);
+    return;
+  }
+  //AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
+  //AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
 
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
 
 #ifdef Rel14
-  if ((rel13->pdsch_payload_type < 2) && (rel13->ue_type>0)) dlsch0->harq_ids[subframe] = 0;
+  if ((rel13->pdsch_payload_type < 2) && (rel13->ue_type>0)) dlsch0->harq_ids[frame%2][subframe] = 0;
 #endif
 
-  harq_pid        = dlsch0->harq_ids[subframe];
+  harq_pid        = dlsch0->harq_ids[frame%2][subframe];
   AssertFatal((harq_pid>=0) && (harq_pid<8),"harq_pid %d not in 0...7 frame:%d subframe:%d subframe(TX):%d rnti:%x UE_id:%d dlsch0[harq_ids:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d]\n",
       harq_pid,
       frame,subframe,
       proc->subframe_tx,rel8->rnti,UE_id,
-      dlsch0->harq_ids[0],
-      dlsch0->harq_ids[1],
-      dlsch0->harq_ids[2],
-      dlsch0->harq_ids[3],
-      dlsch0->harq_ids[4],
-      dlsch0->harq_ids[5],
-      dlsch0->harq_ids[6],
-      dlsch0->harq_ids[7],
-      dlsch0->harq_ids[8],
-      dlsch0->harq_ids[9]
+      dlsch0->harq_ids[frame%2][0],
+      dlsch0->harq_ids[frame%2][1],
+      dlsch0->harq_ids[frame%2][2],
+      dlsch0->harq_ids[frame%2][3],
+      dlsch0->harq_ids[frame%2][4],
+      dlsch0->harq_ids[frame%2][5],
+      dlsch0->harq_ids[frame%2][6],
+      dlsch0->harq_ids[frame%2][7],
+      dlsch0->harq_ids[frame%2][8],
+      dlsch0->harq_ids[frame%2][9]
       );
   dlsch0_harq     = dlsch0->harq_processes[harq_pid];
   dlsch1_harq     = dlsch1->harq_processes[harq_pid];
@@ -207,12 +211,16 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[subframe & 1].num_pdcch_symbols;
 
   if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
-    AssertFatal(sdu!=NULL,"NFAPI: SFN/SF:%04d%d proc:TX:[frame %d subframe %d]: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d dlsch0_harq[round:%d SFN/SF:%d%d pdu:%p mcs:%d ndi:%d pdschstart:%d]\n",
-                frame,subframe,
-                proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
-                dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe,dlsch0_harq->pdu,dlsch0_harq->mcs,dlsch0_harq->ndi,dlsch0_harq->pdsch_start);
-    if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: SFN/SF:%04d%d proc:TX:[frame %d, subframe %d]: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
-                                    frame,subframe,proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
+    if(sdu == NULL) {
+      LOG_E(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
+        proc->frame_tx, proc->subframe_tx, rel8->rnti, UE_id, harq_pid, dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
+      return;
+    }
+    //AssertFatal(sdu!=NULL,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
+    //            proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
+    //            dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index);
+    if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
+                                    proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid);
     if (codeword_index == 0) dlsch0_harq->pdu                    = sdu;
     else                     dlsch1_harq->pdu                    = sdu;
   }
@@ -331,6 +339,9 @@ void handle_ulsch_harq_pdu(
   ulsch_harq->subframe                   = subframe;
   ulsch_harq->O_ACK                      = harq_information->harq_information_rel10.harq_size;
   ulsch->beta_offset_harqack_times8      = to_beta_offset_harqack[harq_information->harq_information_rel10.delta_offset_harq];
+  if (harq_information->harq_information_rel10.ack_nack_mode==0) //bundling
+      ulsch->bundling = 1;
+
 }
 
 uint16_t to_beta_offset_ri[16]={9,13,16,20,25,32,40,50,64,80,101,127,160,0,0,0};
@@ -678,13 +689,19 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   eNB->pdcch_vars[subframe&1].num_dci           = 0;
   eNB->phich_vars[subframe&1].num_hi            = 0;
 
-  LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SF:%04d%d DL_req:SFN/SF:%04d%d:dl_pdu:%d tx_req:SFN/SF:%04d%d:pdus:%d hi_dci0:SFN/SF:%04d%d:pdus:%d ul_cfg:SFN/SF:%04d%d:pdus:%d num_pdcch_symbols:%d\n",
-        frame,subframe,
-        NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),number_dl_pdu,
-        NFAPI_SFNSF2SFN(TX_req->sfn_sf),NFAPI_SFNSF2SF(TX_req->sfn_sf),TX_req->tx_request_body.number_of_pdus,
-        NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),number_hi_dci0_pdu,
-        NFAPI_SFNSF2SFN(UL_req->sfn_sf),NFAPI_SFNSF2SF(UL_req->sfn_sf),number_ul_pdu, 
-        eNB->pdcch_vars[subframe&1].num_pdcch_symbols);
+  LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SF:%04d%d DL_req:SFN/SF:%04d%d:dl_pdu:%d tx_req:SFN/SF:%04d%d:pdus:%d\n",
+       frame,subframe,
+       NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),number_dl_pdu,
+       NFAPI_SFNSF2SFN(TX_req->sfn_sf),NFAPI_SFNSF2SF(TX_req->sfn_sf),TX_req->tx_request_body.number_of_pdus
+       );
+  LOG_D(PHY,"NFAPI: hi_dci0:SFN/SF:%04d%d:pdus:%d\n",
+        NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),number_hi_dci0_pdu
+       );
+  if(UL_req!=NULL)
+    LOG_D(PHY,"NFAPI: ul_cfg:SFN/SF:%04d%d:pdus:%d num_pdcch_symbols:%d\n",
+          NFAPI_SFNSF2SFN(UL_req->sfn_sf),NFAPI_SFNSF2SF(UL_req->sfn_sf),number_ul_pdu,
+          eNB->pdcch_vars[subframe&1].num_pdcch_symbols);
+
 
   int do_oai =0;
   int dont_send =0;
