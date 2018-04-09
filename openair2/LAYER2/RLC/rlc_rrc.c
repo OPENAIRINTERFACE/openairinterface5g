@@ -373,7 +373,10 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                           rb_id,
                           lc_id,
                           RLC_MODE_UM);
-          AssertFatal(rlc_union_p != NULL, "ADD MBMS RLC UM FAILED");
+          //AssertFatal(rlc_union_p != NULL, "ADD MBMS RLC UM FAILED");
+        	if(rlc_union_p == NULL){
+	        	LOG_E(RLC, "ADD MBMS RLC UM FAILED\n");
+        	}
         }
 
         LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u\n",
@@ -511,7 +514,11 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   }
 
 
-  AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+	if(rb_idP >= NB_RB_MAX){
+		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+		return RLC_OP_STATUS_BAD_PARAMETER;
+	}
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
 
@@ -585,8 +592,17 @@ rlc_union_t* rrc_rlc_add_rlc   (
 #endif
 
   if (MBMS_flagP == FALSE) {
-    AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
-    AssertFatal (chan_idP < RLC_MAX_LC, "LC id is too high (%u/%d)!\n", chan_idP, RLC_MAX_LC);
+    //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+    //AssertFatal (chan_idP < RLC_MAX_LC, "LC id is too high (%u/%d)!\n", chan_idP, RLC_MAX_LC);
+  	if(rb_idP >= NB_RB_MAX){
+  		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  		return NULL;
+  	}
+  	if(chan_idP >= RLC_MAX_LC){
+  		LOG_E(RLC, "LC id is too high (%u/%d)!\n", chan_idP, RLC_MAX_LC);
+  		return NULL;
+  	}
+
   }
 
 #if defined(Rel10) || defined(Rel14)
@@ -623,8 +639,12 @@ rlc_union_t* rrc_rlc_add_rlc   (
           (srb_flagP) ? "SRB" : "DRB",
           rb_idP,
           (srb_flagP) ? "SRB" : "DRB");
-    AssertFatal(rlc_union_p->mode == rlc_modeP, "Error rrc_rlc_add_rlc , already exist but RLC mode differ");
-    return rlc_union_p;
+    //AssertFatal(rlc_union_p->mode == rlc_modeP, "Error rrc_rlc_add_rlc , already exist but RLC mode differ");
+  	if(rlc_union_p->mode != rlc_modeP){
+  		LOG_E(RLC, "Error rrc_rlc_add_rlc , already exist but RLC mode differ\n");
+  		return NULL;
+  	}
+  	return rlc_union_p;
   } else if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
     rlc_union_p = calloc(1, sizeof(rlc_union_t));
     h_rc = hashtable_insert(rlc_coll_p, key, rlc_union_p);
@@ -687,7 +707,11 @@ rlc_op_status_t rrc_rlc_config_req   (
         PROTOCOL_CTXT_ARGS(ctxt_pP),
         rb_idP);
 
-  AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+	if(rb_idP >= NB_RB_MAX){
+		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+		return RLC_OP_STATUS_BAD_PARAMETER;
+	}
 
   switch (actionP) {
 

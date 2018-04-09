@@ -135,7 +135,12 @@ rlc_op_status_t rlc_stat_req     (
   hash_key_t             key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
 
-  AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+	if(rb_idP >= NB_RB_MAX){
+		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+		return RLC_OP_STATUS_BAD_PARAMETER;
+	}
+	
   key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
 
@@ -348,12 +353,26 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 #endif
 
   if (MBMS_flagP) {
-    AssertFatal (rb_idP < NB_RB_MBMS_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
+    //AssertFatal (rb_idP < NB_RB_MBMS_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
+  	if(rb_idP >= NB_RB_MBMS_MAX){
+  		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
+  		return RLC_OP_STATUS_BAD_PARAMETER;
+  	}
   } else {
-    AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+    //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  	if(rb_idP >= NB_RB_MAX){
+  		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  		return RLC_OP_STATUS_BAD_PARAMETER;
+  	}
   }
 
-  DevAssert(sdu_pP != NULL);
+  //DevAssert(sdu_pP != NULL);
+	if(sdu_pP == NULL){
+		LOG_E(RLC, "sdu_pP == NULL\n");
+		return RLC_OP_STATUS_BAD_PARAMETER;
+	}
+	
+	
   DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
 
 #if !defined(Rel10) && !defined(Rel14)
@@ -386,7 +405,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    AssertFatal (0 , "RLC not configured key %ju\n", key);
+    //AssertFatal (0 , "RLC not configured key %ju\n", key);
+  	LOG_E("RLC not configured key %ju\n", key);
+  	return RLC_OP_STATUS_OUT_OF_RESSOURCES;
   }
 
   if (MBMS_flagP == 0) {
