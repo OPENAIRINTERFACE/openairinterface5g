@@ -1814,7 +1814,7 @@ static void* eNB_thread_phy_tx( void* param ) {
           AssertFatal(pthread_cond_signal(&ru->proc.cond_rf_tx) == 0, "ERROR pthread_cond_signal for rf_tx thread\n");
         }else{
           LOG_E(PHY,"rf tx thread busy, skipping\n");
-          ru->proc.instance_cnt_rf_tx++;
+          late_control=STATE_BURST_TERMINATE;
         }
         pthread_mutex_unlock( &ru->proc.mutex_rf_tx );
     }
