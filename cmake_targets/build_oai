@@ -533,7 +533,7 @@ function main() {
 
   DIR=$OPENAIR_DIR/cmake_targets
   if [ "$NOS1" = "1" ] ; then
-      build_dir=noS1_build_ran
+      build_dir=noS1_ran_build
       if [ "$gNB" = "1" ] ; then
          exec=nr-softmodem-nos1
        elif [ "$nrUE" = "1" ] ; then
@@ -544,7 +544,7 @@ function main() {
          exec=lte-uesoftmodem-nos1
        fi
   else
-      build_dir=build_ran
+      build_dir=ran_build
       if [ "$gNB" = "1" ] ; then
          exec=nr-softmodem
        elif [ "$nrUE" = "1" ] ; then

@@ -19,12 +19,11 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs_NR.h"
 #include "PHY/extern.h"
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 #include "nfapi_interface.h"
-#include "fapi_l1.h"
+#include "SCHED/fapi_l1.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
@@ -39,8 +38,44 @@
 #   include "intertask_interface.h"
 #endif
 
+extern uint8_t nfapi_mode;
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
 
-  
+  NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
+  nfapi_config_request_t *cfg = gNB->gNB_config;
+  int **txdataF = gNB->common_vars.txdataF;
+  uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
+
+  LOG_D(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe); 
+
+}
+
+void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
+			   gNB_rxtx_proc_t *proc,
+			   int do_meas)
+{
+  int aa;
+  int frame=proc->frame_tx;
+  int subframe=proc->subframe_tx;
+
+  NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
+  nfapi_config_request_t *cfg = gNB->gNB_config;
+
+  int offset = gNB->CC_id;
+
+  if ((cfg->subframe_config.duplex_mode.value == TDD) && (nr_subframe_select(cfg,subframe)==SF_UL)) return;
+
+  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
+  //if (do_meas==1) start_meas(&gNB->phy_proc_tx);
+
+  // clear the transmit data array for the current subframe
+  for (aa=0; aa<cfg->rf_config.tx_antenna_ports.value; aa++) {      
+    memset(&gNB->common_vars.txdataF[aa][subframe*fp->samples_per_subframe_wCP],
+	   0,fp->samples_per_subframe_wCP*sizeof(int32_t));
+  }
+
+  if (nfapi_mode == 0 || nfapi_mode == 1) {
+    common_signal_procedures(gNB,frame, subframe);
+  }
 }
