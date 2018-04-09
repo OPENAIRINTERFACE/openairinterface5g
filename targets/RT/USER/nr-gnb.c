@@ -44,7 +44,7 @@
 
 #include "PHY/types.h"
 
-#include "PHY/defs_NR.h"
+#include "PHY/defs.h"
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -617,14 +617,6 @@ void init_gNB_proc(int inst) {
     //    pthread_attr_init( &proc->attr_te);
     pthread_attr_init( &proc_rxtx[0].attr_rxtx);
     pthread_attr_init( &proc_rxtx[1].attr_rxtx);
-#ifndef DEADLINE_SCHEDULER
-    attr0       = &proc_rxtx[0].attr_rxtx;
-    attr1       = &proc_rxtx[1].attr_rxtx;
-    attr_prach  = &proc->attr_prach;
-
-    //    attr_td     = &proc->attr_td;
-    //    attr_te     = &proc->attr_te; 
-#endif
 
     LOG_I(PHY,"gNB->single_thread_flag:%d\n", gNB->single_thread_flag);
 
@@ -686,8 +678,8 @@ void kill_gNB_proc(int inst) {
     pthread_cond_signal( &proc->cond_asynch_rxtx );
     pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
 
-    LOG_D(PHY, "joining pthread_prach\n");
-    pthread_join( proc->pthread_prach, (void**)&status );    
+//    LOG_D(PHY, "joining pthread_prach\n");
+//    pthread_join( proc->pthread_prach, (void**)&status );    
 
     LOG_I(PHY, "Destroying prach mutex/cond\n");
     pthread_mutex_destroy( &proc->mutex_prach );
@@ -817,7 +809,8 @@ void init_transport(PHY_VARS_gNB *gNB) {
     
 } */
 
-void init_gNB_afterRU(void) {
+/// eNB kept in function name for nffapi calls, TO FIX
+void init_eNB_afterRU(void) {
 
   int inst,CC_id,ru_id,i,aa;
   PHY_VARS_gNB *gNB;
@@ -835,7 +828,7 @@ void init_gNB_afterRU(void) {
       // map antennas and PRACH signals to gNB RX
       if (0) AssertFatal(gNB->num_RU>0,"Number of RU attached to gNB %d is zero\n",gNB->Mod_id);
       LOG_I(PHY,"Mapping RX ports from %d RUs to gNB %d\n",gNB->num_RU,gNB->Mod_id);
-      gNB->gNB_config.rf_config.tx_antenna_ports.value  = 0;
+      gNB->gNB_config->rf_config.tx_antenna_ports.value  = 0;
 
       //LOG_I(PHY,"Overwriting gNB->prach_vars.rxsigF[0]:%p\n", gNB->prach_vars.rxsigF[0]);
 
@@ -844,7 +837,7 @@ void init_gNB_afterRU(void) {
       LOG_I(PHY,"gNB->num_RU:%d\n", gNB->num_RU);
 
       for (ru_id=0,aa=0;ru_id<gNB->num_RU;ru_id++) {
-	gNB->gNB_config.rf_config.tx_antenna_ports.value    += gNB->RU_list[ru_id]->nb_rx;
+	gNB->gNB_config->rf_config.tx_antenna_ports.value    += gNB->RU_list[ru_id]->nb_rx;
 
 	AssertFatal(gNB->RU_list[ru_id]->common.rxdataF!=NULL,
 		    "RU %d : common.rxdataF is NULL\n",
@@ -867,29 +860,29 @@ void init_gNB_afterRU(void) {
        * In monolithic mode, we come here with nb_antennas_rx == 0
        * (not tested in other modes).
        */
-      if (gNB->gNB_config.rf_config.tx_antenna_ports.value < 1)
+      if (gNB->gNB_config->rf_config.tx_antenna_ports.value < 1)
       {
-        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config.rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config.rf_config.tx_antenna_ports.value);
-        gNB->gNB_config.rf_config.tx_antenna_ports.value = 1;
+        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config->rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config->rf_config.tx_antenna_ports.value);
+        gNB->gNB_config->rf_config.tx_antenna_ports.value = 1;
       }
       else
       {
         //LOG_I(PHY," Delete code\n");
       }
 
-      if (gNB->gNB_config.rf_config.tx_antenna_ports.value < 1)
+      if (gNB->gNB_config->rf_config.tx_antenna_ports.value < 1)
       {
-        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config.rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config.rf_config.tx_antenna_ports.value);
-        gNB->gNB_config.rf_config.tx_antenna_ports.value = 1;
+        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config->rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config->rf_config.tx_antenna_ports.value);
+        gNB->gNB_config->rf_config.tx_antenna_ports.value = 1;
       }
       else
       {
         //LOG_I(PHY," Delete code\n");
       }
 
-      AssertFatal(gNB->gNB_config.rf_config.tx_antenna_ports.value >0,
-		  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
-      LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
+      AssertFatal(gNB->gNB_config->rf_config.tx_antenna_ports.value >0,
+		  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config->rf_config.tx_antenna_ports.value);
+      LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config->rf_config.tx_antenna_ports.value);
 /// Transport init necessary for NR synchro
       //init_transport(gNB);
       //init_precoding_weights(RC.gNB[inst][CC_id]);
@@ -901,9 +894,9 @@ void init_gNB_afterRU(void) {
 
     AssertFatal(RC.ru[ru_id]!=NULL,"ru_id %d is null\n",ru_id);
     
-    RC.ru[ru_id]->wakeup_rxtx         = wakeup_rxtx;
+    RC.ru[ru_id]->nr_wakeup_rxtx         = wakeup_rxtx;
 //    RC.ru[ru_id]->wakeup_prach_eNB    = wakeup_prach_gNB;
-    RC.ru[ru_id]->eNB_top             = gNB_top;
+    RC.ru[ru_id]->gNB_top             = gNB_top;
   }
 }
 

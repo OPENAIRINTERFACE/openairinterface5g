@@ -1280,7 +1280,7 @@ void init_eNB_proc(int inst) {
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
-    LOG_I(PHY,"Initializing eNB %d CC_id %d (%s,%s),\n",inst,CC_id,eNB_functions[eNB->node_function],eNB_timing[eNB->node_timing]);
+    LOG_I(PHY,"Initializing eNB %d CC_id %d (%s,%s),\n",inst,CC_id,NB_functions[eNB->node_function],NB_timing[eNB->node_timing]);
     proc = &eNB->proc;
 
     proc_rxtx = proc->proc_rxtx;
@@ -1682,7 +1682,7 @@ void init_RAN(RAN_CONTEXT *rc,eNB_func_t node_function[], eNB_timing_t node_timi
 	eNB->abstraction_flag   = 0;
 	eNB->single_thread_flag = single_thread_flag;
 	eNB->ts_offset          = 0;
-	LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,eNB_functions[node_function[CC_id]],eNB_timing[node_timing[CC_id]]);
+	LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,NB_functions[node_function[CC_id]],NB_timing[node_timing[CC_id]]);
 
 	switch (node_function[CC_id]) {
 	case NGFI_RRU_IF5:

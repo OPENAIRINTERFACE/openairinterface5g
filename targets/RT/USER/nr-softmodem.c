@@ -72,7 +72,7 @@ int main( int argc, char **argv )
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "PHY/types.h"
-#include "PHY/defs_NR.h"
+#include "PHY/defs.h"
 #include "PHY/vars.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
@@ -227,7 +227,7 @@ uint64_t num_missed_slots=0; // counter for the number of missed slots
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
-///extern void init_eNB_afterRU(void);
+extern void init_eNB_afterRU(void);
 
 int transmission_mode=1;
 
@@ -689,8 +689,8 @@ void init_openair0(void) {
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
-	   RC.eNB[0][0]->frame_parms.nb_antennas_tx ,
-	   RC.eNB[0][0]->frame_parms.nb_antennas_rx );
+	   RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value,
+	   RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value );
     openair0_cfg[card].Mod_id = 0;
 
     openair0_cfg[card].num_rb_dl=config[0]->rf_config.dl_channel_bandwidth.value;
@@ -698,8 +698,8 @@ void init_openair0(void) {
     openair0_cfg[card].clock_source = clock_source;
 
 
-    openair0_cfg[card].tx_num_channels=min(2,RC.eNB[0][0]->frame_parms.nb_antennas_tx );
-    openair0_cfg[card].rx_num_channels=min(2,RC.eNB[0][0]->frame_parms.nb_antennas_rx );
+    openair0_cfg[card].tx_num_channels=min(2,RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value );
+    openair0_cfg[card].rx_num_channels=min(2,RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value );
 
     for (i=0; i<4; i++) {
 
@@ -715,7 +715,7 @@ void init_openair0(void) {
 
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
-      openair0_cfg[card].rx_gain[i] = RC.eNB[0][0]->rx_total_gain_dB;
+      openair0_cfg[card].rx_gain[i] = RC.gNB[0][0]->rx_total_gain_dB;
 
 
       openair0_cfg[card].configFilename = rf_config_file;
@@ -759,7 +759,7 @@ void wait_gNBs(void) {
       printf("RC.nb_L1_CC[%d]:%d\n", i, RC.nb_L1_CC[i]);
 
       for (j=0;j<RC.nb_L1_CC[i];j++) {
-	if (RC.eNB[i][j]->configured==0) { ///gNB
+	if (RC.gNB[i][j]->configured==0) {
 	  waiting=1;
 	  break;
         } 
@@ -786,7 +786,7 @@ extern void  phy_free_RU(RU_t*);
 
 int stop_L1L2(module_id_t gnb_id)
 {
-  LOG_W(ENB_APP, "stopping lte-softmodem\n");
+  LOG_W(ENB_APP, "stopping nr-softmodem\n");
   oai_exit = 1;
 
   if (!RC.ru) {
@@ -816,13 +816,13 @@ int stop_L1L2(module_id_t gnb_id)
   /* these tasks need to pick up new configuration */
   terminate_task(TASK_RRC_ENB, gnb_id);
   terminate_task(TASK_L2L1, gnb_id);
-  LOG_I(ENB_APP, "calling kill_eNB_proc() for instance %d\n", gnb_id);
+  LOG_I(ENB_APP, "calling kill_gNB_proc() for instance %d\n", gnb_id);
   kill_gNB_proc(gnb_id);
   LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", gnb_id);
   kill_RU_proc(gnb_id);
   oai_exit = 0;
   for (int cc_id = 0; cc_id < RC.nb_CC[gnb_id]; cc_id++) {
-    //free_transport(RC.eNB[gnb_id][cc_id]);
+    //free_transport(RC.gNB[gnb_id][cc_id]);
     phy_free_nr_gNB(RC.gNB[gnb_id][cc_id]);
   }
   phy_free_RU(RC.ru[gnb_id]);
@@ -850,7 +850,7 @@ int restart_L1L2(module_id_t gnb_id)
 
   RC.ru_mask |= (1 << ru->idx);
   /* copy the changed frame parameters to the RU */
-  /* TODO this should be done for all RUs associated to this eNB */
+  /* TODO this should be done for all RUs associated to this gNB */
   memcpy(&ru->frame_parms, &RC.gNB[gnb_id][0]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[gnb_id]);
 
@@ -876,7 +876,7 @@ int restart_L1L2(module_id_t gnb_id)
   /* TODO XForms might need to be restarted, but it is currently (09/02/18)
    * broken, so we cannot test it */
 
-  wait_eNBs();
+  wait_gNBs();
   init_RU_proc(ru);
   ru->rf_map.card = 0;
   ru->rf_map.chain = 0; /* CC_id + chain_offset;*/
@@ -961,7 +961,7 @@ int main( int argc, char **argv )
 
 
   if (ouput_vcd) {
-      VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_eNB.vcd");
+      VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_gNB.vcd");
   }
 
   if (opp_enabled ==1) {
@@ -1173,11 +1173,11 @@ int main( int argc, char **argv )
     printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
     if (RC.nb_L1_inst > 0) {
       printf("Initializing gNB threads single_thread_flag:%d wait_for_sync:%d\n", single_thread_flag,wait_for_sync);
-      init_eNB(single_thread_flag,wait_for_sync);
+      init_gNB(single_thread_flag,wait_for_sync);
     }
 
     printf("wait_gNBs()\n");
-    wait_eNBs();
+    wait_gNBs();
 
     printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
     if (RC.nb_RU >0) {
@@ -1200,7 +1200,7 @@ int main( int argc, char **argv )
     printf("ALL RUs READY!\n");
     printf("RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
-    printf("ALL RUs ready - init eNBs\n");
+    printf("ALL RUs ready - init gNBs\n");
 
     if (nfapi_mode != 1 && nfapi_mode != 2)
     {
@@ -1209,10 +1209,10 @@ int main( int argc, char **argv )
     }
     else
     {
-      printf("NFAPI mode - DO NOT call init_eNB_afterRU()\n");
+      printf("NFAPI mode - DO NOT call init_gNB_afterRU()\n");
     }
     
-    printf("ALL RUs ready - ALL eNBs ready\n");
+    printf("ALL RUs ready - ALL gNBs ready\n");
   
   
   // connect the TX/RX buffers
@@ -1278,7 +1278,7 @@ int main( int argc, char **argv )
      * threads have been stopped (they partially use the same memory) */
     for (int inst = 0; inst < NB_gNB_INST; inst++) {
       for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
-        free_transport(RC.gNB[inst][cc_id]);
+        //free_transport(RC.gNB[inst][cc_id]);
         phy_free_nr_gNB(RC.gNB[inst][cc_id]);
       }
     }

@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "../defs_NR.h"
+#include "PHY/defs.h"
 #include "SCHED/defs.h"
 #include "PHY/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
@@ -530,9 +530,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) gNB->UE_stats_ptr[UE_id] = NULL;
 }
-
+/*
 void install_schedule_handlers(IF_Module_t *if_inst)
 {
   if_inst->PHY_config_req = phy_config_request;
   if_inst->schedule_response = schedule_response;
-}
+}*/

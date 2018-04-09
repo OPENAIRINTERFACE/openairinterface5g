@@ -1395,7 +1395,7 @@ static void* ru_thread( void* param ) {
   // set default return value
   thread_top_init("ru_thread",0,870000,1000000,1000000);
 
-  LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
+  LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
 
 
   // Start IF device if any
@@ -1649,7 +1649,7 @@ void init_RU_proc(RU_t *ru) {
   char name[100];
 
 #ifndef OCP_FRAMEWORK
-  LOG_I(PHY,"Initializing RU proc %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
+  LOG_I(PHY,"Initializing RU proc %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
 #endif
   proc = &ru->proc;
   memset((void*)proc,0,sizeof(RU_proc_t));
