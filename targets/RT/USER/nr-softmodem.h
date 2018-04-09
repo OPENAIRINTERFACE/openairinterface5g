@@ -252,8 +252,6 @@ extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
 
 extern void init_fep_thread(PHY_VARS_gNB *, pthread_attr_t *);
-extern void init_td_thread(PHY_VARS_gNB *, pthread_attr_t *);
-extern void init_te_thread(PHY_VARS_gNB *, pthread_attr_t *);
 
 void init_gNB_afterRU(void);
 

@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "../defs_NR.h"
+#include "../defs.h"
 #include "log.h"
 
 /// Subcarrier spacings in Hz indexed by numerology index

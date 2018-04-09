@@ -23,8 +23,7 @@
 #define __PHY_IMPLEMENTATION_DEFS_NR_H__
 
 
-#include "impl_defs_lte.h"
-
+//#include "impl_defs_lte.h"
 
 typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
@@ -42,5 +41,4 @@ typedef struct {
   /// - third index: sample [0..]
   int32_t **txdataF;
 } NR_gNB_COMMON;
-
 #endif

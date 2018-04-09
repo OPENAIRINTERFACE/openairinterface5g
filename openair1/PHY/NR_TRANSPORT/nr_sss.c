@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "../defs_NR.h"
+#include "PHY/defs.h"
 
 extern short nr_mod_table[MOD_TABLE_SIZE_SHORT];
 

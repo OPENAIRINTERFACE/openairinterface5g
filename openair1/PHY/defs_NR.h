@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#ifndef __INIT_DEFS_NR__H__
+/*#ifndef __INIT_DEFS_NR__H__
 #define __INIT_DEFS_NR__H__
 
 #define _GNU_SOURCE
@@ -42,7 +42,7 @@
 
 #include "types.h"
 #include "defs.h"
-#include "assertions.h"
+#include "assertions.h"*/
 #include "impl_defs_nr.h"
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
@@ -66,6 +66,7 @@ typedef enum {
   NR_MU_4,
 } nr_numerology_index_e;
 
+//NR types temporarily placed here
 typedef struct {
   uint32_t subcarrier_spacing;
   /// 3/4 sampling
@@ -92,187 +93,6 @@ typedef struct {
   uint32_t samples_per_frame_wCP;
 
 } NR_DL_FRAME_PARMS;
-
-
-/// Context data structure for RX/TX portion of subframe processing
-typedef struct {
-  /// Component Carrier index
-  uint8_t              CC_id;
-  /// timestamp transmitted to HW
-  openair0_timestamp timestamp_tx;
-  /// subframe to act upon for transmission
-  int subframe_tx;
-  /// subframe to act upon for reception
-  int subframe_rx;
-  /// frame to act upon for transmission
-  int frame_tx;
-  /// frame to act upon for reception
-  int frame_rx;
-  /// \brief Instance count for RXn-TXnp4 processing thread.
-  /// \internal This variable is protected by \ref mutex_rxtx.
-  int instance_cnt_rxtx;
-  /// pthread structure for RXn-TXnp4 processing thread
-  pthread_t pthread_rxtx;
-  /// pthread attributes for RXn-TXnp4 processing thread
-  pthread_attr_t attr_rxtx;
-  /// condition variable for tx processing thread
-  pthread_cond_t cond_rxtx;
-  /// mutex for RXn-TXnp4 processing thread
-  pthread_mutex_t mutex_rxtx;
-  /// scheduling parameters for RXn-TXnp4 thread
-  struct sched_param sched_param_rxtx;
-} gNB_rxtx_proc_t;
-
-
-/// Context data structure for eNB subframe processing
-typedef struct gNB_proc_t_s {
-  /// Component Carrier index
-  uint8_t              CC_id;
-  /// thread index
-  int thread_index;
-  /// timestamp received from HW
-  openair0_timestamp timestamp_rx;
-  /// timestamp to send to "slave rru"
-  openair0_timestamp timestamp_tx;
-  /// subframe to act upon for reception
-  int subframe_rx;
-  /// subframe to act upon for PRACH
-  int subframe_prach;
-  /// frame to act upon for reception
-  int frame_rx;
-  /// frame to act upon for transmission
-  int frame_tx;
-  /// frame to act upon for PRACH
-  int frame_prach;
-  /// \internal This variable is protected by \ref mutex_td.
-  int instance_cnt_td;
-  /// \internal This variable is protected by \ref mutex_te.
-  int instance_cnt_te;
-  /// \internal This variable is protected by \ref mutex_prach.
-  int instance_cnt_prach;
-
-  // instance count for over-the-air gNB synchronization
-  int instance_cnt_synch;
-  /// \internal This variable is protected by \ref mutex_asynch_rxtx.
-  int instance_cnt_asynch_rxtx;
-  /// pthread structure for eNB single processing thread
-  pthread_t pthread_single;
-  /// pthread structure for asychronous RX/TX processing thread
-  pthread_t pthread_asynch_rxtx;
-  /// flag to indicate first RX acquisition
-  int first_rx;
-  /// flag to indicate first TX transmission
-  int first_tx;
-  /// pthread attributes for parallel turbo-decoder thread
-  pthread_attr_t attr_td;
-  /// pthread attributes for parallel turbo-encoder thread
-  pthread_attr_t attr_te;
-  /// pthread attributes for single eNB processing thread
-  pthread_attr_t attr_single;
-  /// pthread attributes for prach processing thread
-  pthread_attr_t attr_prach;
-  /// pthread attributes for asynchronous RX thread
-  pthread_attr_t attr_asynch_rxtx;
-  /// scheduling parameters for parallel turbo-decoder thread
-  struct sched_param sched_param_td;
-  /// scheduling parameters for parallel turbo-encoder thread
-  struct sched_param sched_param_te;
-  /// scheduling parameters for single eNB thread
-  struct sched_param sched_param_single;
-  /// scheduling parameters for prach thread
-  struct sched_param sched_param_prach;
-  /// scheduling parameters for asynch_rxtx thread
-  struct sched_param sched_param_asynch_rxtx;
-  /// pthread structure for parallel turbo-decoder thread
-  pthread_t pthread_td;
-  /// pthread structure for parallel turbo-encoder thread
-  pthread_t pthread_te;
-  /// pthread structure for PRACH thread
-  pthread_t pthread_prach;
-  /// condition variable for parallel turbo-decoder thread
-  pthread_cond_t cond_td;
-  /// condition variable for parallel turbo-encoder thread
-  pthread_cond_t cond_te;
-  /// condition variable for PRACH processing thread;
-  pthread_cond_t cond_prach;
-  /// condition variable for asynch RX/TX thread
-  pthread_cond_t cond_asynch_rxtx;
-  /// mutex for parallel turbo-decoder thread
-  pthread_mutex_t mutex_td;
-  /// mutex for parallel turbo-encoder thread
-  pthread_mutex_t mutex_te;
-  /// mutex for PRACH thread
-  pthread_mutex_t mutex_prach;
-  /// mutex for asynch RX/TX thread
-  pthread_mutex_t mutex_asynch_rxtx;
-  /// mutex for RU access to eNB processing (PDSCH/PUSCH)
-  pthread_mutex_t mutex_RU;
-  /// mutex for RU access to eNB processing (PRACH)
-  pthread_mutex_t mutex_RU_PRACH;
-  /// mutex for RU access to eNB processing (PRACH BR)
-  pthread_mutex_t mutex_RU_PRACH_br;
-  /// mask for RUs serving eNB (PDSCH/PUSCH)
-  int RU_mask;
-  /// mask for RUs serving eNB (PRACH)
-  int RU_mask_prach;
-  /// parameters for turbo-decoding worker thread
-  td_params tdp;
-  /// parameters for turbo-encoding worker thread
-  te_params tep;
-  /// set of scheduling variables RXn-TXnp4 threads
-  gNB_rxtx_proc_t proc_rxtx[2];
-} gNB_proc_t;
-
-typedef struct {
-  // common measurements
-  //! estimated noise power (linear)
-  unsigned int   n0_power[MAX_NUM_RU_PER_eNB];
-  //! estimated noise power (dB)
-  unsigned short n0_power_dB[MAX_NUM_RU_PER_eNB];
-  //! total estimated noise power (linear)
-  unsigned int   n0_power_tot;
-  //! estimated avg noise power (dB)
-  unsigned short n0_power_tot_dB;
-  //! estimated avg noise power (dB)
-  short n0_power_tot_dBm;
-  //! estimated avg noise power per RB per RX ant (lin)
-  unsigned short n0_subband_power[MAX_NUM_RU_PER_eNB][100];
-  //! estimated avg noise power per RB per RX ant (dB)
-  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_eNB][100];
-  //! estimated avg noise power per RB (dB)
-  short n0_subband_power_tot_dB[100];
-  //! estimated avg noise power per RB (dBm)
-  short n0_subband_power_tot_dBm[100];
-  // gNB measurements (per user)
-  //! estimated received spatial signal power (linear)
-  unsigned int   rx_spatial_power[NUMBER_OF_UE_MAX][2][2];
-  //! estimated received spatial signal power (dB)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_UE_MAX][2][2];
-  //! estimated rssi (dBm)
-  short          rx_rssi_dBm[NUMBER_OF_UE_MAX];
-  //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_UE_MAX][2];
-  //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation_dB[NUMBER_OF_UE_MAX][2];
-
-  /// Wideband CQI (= SINR)
-  int            wideband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
-  /// Wideband CQI in dB (= SINR dB)
-  int            wideband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
-  /// Wideband CQI (sum of all RX antennas, in dB)
-  char           wideband_cqi_tot[NUMBER_OF_UE_MAX];
-  /// Subband CQI per RX antenna and RB (= SINR)
-  int            subband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
-  /// Total Subband CQI and RB (= SINR)
-  int            subband_cqi_tot[NUMBER_OF_UE_MAX][100];
-  /// Subband CQI in dB and RB (= SINR dB)
-  int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
-  /// Total Subband CQI and RB
-  int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
-  /// PRACH background noise level
-  int            prach_I0;
-} PHY_MEASUREMENTS_gNB;
-
 
 /// Top-level PHY Data Structure for gNB
 typedef struct PHY_VARS_gNB_s {
@@ -484,6 +304,185 @@ typedef struct PHY_VARS_gNB_s {
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
 } PHY_VARS_gNB;
+
+/// Context data structure for RX/TX portion of subframe processing
+typedef struct {
+  /// Component Carrier index
+  uint8_t              CC_id;
+  /// timestamp transmitted to HW
+  openair0_timestamp timestamp_tx;
+  /// subframe to act upon for transmission
+  int subframe_tx;
+  /// subframe to act upon for reception
+  int subframe_rx;
+  /// frame to act upon for transmission
+  int frame_tx;
+  /// frame to act upon for reception
+  int frame_rx;
+  /// \brief Instance count for RXn-TXnp4 processing thread.
+  /// \internal This variable is protected by \ref mutex_rxtx.
+  int instance_cnt_rxtx;
+  /// pthread structure for RXn-TXnp4 processing thread
+  pthread_t pthread_rxtx;
+  /// pthread attributes for RXn-TXnp4 processing thread
+  pthread_attr_t attr_rxtx;
+  /// condition variable for tx processing thread
+  pthread_cond_t cond_rxtx;
+  /// mutex for RXn-TXnp4 processing thread
+  pthread_mutex_t mutex_rxtx;
+  /// scheduling parameters for RXn-TXnp4 thread
+  struct sched_param sched_param_rxtx;
+} gNB_rxtx_proc_t;
+
+
+/// Context data structure for eNB subframe processing
+typedef struct gNB_proc_t_s {
+  /// Component Carrier index
+  uint8_t              CC_id;
+  /// thread index
+  int thread_index;
+  /// timestamp received from HW
+  openair0_timestamp timestamp_rx;
+  /// timestamp to send to "slave rru"
+  openair0_timestamp timestamp_tx;
+  /// subframe to act upon for reception
+  int subframe_rx;
+  /// subframe to act upon for PRACH
+  int subframe_prach;
+  /// frame to act upon for reception
+  int frame_rx;
+  /// frame to act upon for transmission
+  int frame_tx;
+  /// frame to act upon for PRACH
+  int frame_prach;
+  /// \internal This variable is protected by \ref mutex_td.
+  int instance_cnt_td;
+  /// \internal This variable is protected by \ref mutex_te.
+  int instance_cnt_te;
+  /// \internal This variable is protected by \ref mutex_prach.
+  int instance_cnt_prach;
+
+  // instance count for over-the-air gNB synchronization
+  int instance_cnt_synch;
+  /// \internal This variable is protected by \ref mutex_asynch_rxtx.
+  int instance_cnt_asynch_rxtx;
+  /// pthread structure for eNB single processing thread
+  pthread_t pthread_single;
+  /// pthread structure for asychronous RX/TX processing thread
+  pthread_t pthread_asynch_rxtx;
+  /// flag to indicate first RX acquisition
+  int first_rx;
+  /// flag to indicate first TX transmission
+  int first_tx;
+  /// pthread attributes for parallel turbo-decoder thread
+  pthread_attr_t attr_td;
+  /// pthread attributes for parallel turbo-encoder thread
+  pthread_attr_t attr_te;
+  /// pthread attributes for single eNB processing thread
+  pthread_attr_t attr_single;
+  /// pthread attributes for prach processing thread
+  pthread_attr_t attr_prach;
+  /// pthread attributes for asynchronous RX thread
+  pthread_attr_t attr_asynch_rxtx;
+  /// scheduling parameters for parallel turbo-decoder thread
+  struct sched_param sched_param_td;
+  /// scheduling parameters for parallel turbo-encoder thread
+  struct sched_param sched_param_te;
+  /// scheduling parameters for single eNB thread
+  struct sched_param sched_param_single;
+  /// scheduling parameters for prach thread
+  struct sched_param sched_param_prach;
+  /// scheduling parameters for asynch_rxtx thread
+  struct sched_param sched_param_asynch_rxtx;
+  /// pthread structure for parallel turbo-decoder thread
+  pthread_t pthread_td;
+  /// pthread structure for parallel turbo-encoder thread
+  pthread_t pthread_te;
+  /// pthread structure for PRACH thread
+  pthread_t pthread_prach;
+  /// condition variable for parallel turbo-decoder thread
+  pthread_cond_t cond_td;
+  /// condition variable for parallel turbo-encoder thread
+  pthread_cond_t cond_te;
+  /// condition variable for PRACH processing thread;
+  pthread_cond_t cond_prach;
+  /// condition variable for asynch RX/TX thread
+  pthread_cond_t cond_asynch_rxtx;
+  /// mutex for parallel turbo-decoder thread
+  pthread_mutex_t mutex_td;
+  /// mutex for parallel turbo-encoder thread
+  pthread_mutex_t mutex_te;
+  /// mutex for PRACH thread
+  pthread_mutex_t mutex_prach;
+  /// mutex for asynch RX/TX thread
+  pthread_mutex_t mutex_asynch_rxtx;
+  /// mutex for RU access to eNB processing (PDSCH/PUSCH)
+  pthread_mutex_t mutex_RU;
+  /// mutex for RU access to eNB processing (PRACH)
+  pthread_mutex_t mutex_RU_PRACH;
+  /// mutex for RU access to eNB processing (PRACH BR)
+  pthread_mutex_t mutex_RU_PRACH_br;
+  /// mask for RUs serving eNB (PDSCH/PUSCH)
+  int RU_mask;
+  /// mask for RUs serving eNB (PRACH)
+  int RU_mask_prach;
+  /// parameters for turbo-decoding worker thread
+  td_params tdp;
+  /// parameters for turbo-encoding worker thread
+  te_params tep;
+  /// set of scheduling variables RXn-TXnp4 threads
+  gNB_rxtx_proc_t proc_rxtx[2];
+} gNB_proc_t;
+
+typedef struct {
+  // common measurements
+  //! estimated noise power (linear)
+  unsigned int   n0_power[MAX_NUM_RU_PER_eNB];
+  //! estimated noise power (dB)
+  unsigned short n0_power_dB[MAX_NUM_RU_PER_eNB];
+  //! total estimated noise power (linear)
+  unsigned int   n0_power_tot;
+  //! estimated avg noise power (dB)
+  unsigned short n0_power_tot_dB;
+  //! estimated avg noise power (dB)
+  short n0_power_tot_dBm;
+  //! estimated avg noise power per RB per RX ant (lin)
+  unsigned short n0_subband_power[MAX_NUM_RU_PER_eNB][100];
+  //! estimated avg noise power per RB per RX ant (dB)
+  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_eNB][100];
+  //! estimated avg noise power per RB (dB)
+  short n0_subband_power_tot_dB[100];
+  //! estimated avg noise power per RB (dBm)
+  short n0_subband_power_tot_dBm[100];
+  // gNB measurements (per user)
+  //! estimated received spatial signal power (linear)
+  unsigned int   rx_spatial_power[NUMBER_OF_UE_MAX][2][2];
+  //! estimated received spatial signal power (dB)
+  unsigned short rx_spatial_power_dB[NUMBER_OF_UE_MAX][2][2];
+  //! estimated rssi (dBm)
+  short          rx_rssi_dBm[NUMBER_OF_UE_MAX];
+  //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
+  int            rx_correlation[NUMBER_OF_UE_MAX][2];
+  //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
+  int            rx_correlation_dB[NUMBER_OF_UE_MAX][2];
+
+  /// Wideband CQI (= SINR)
+  int            wideband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
+  /// Wideband CQI in dB (= SINR dB)
+  int            wideband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
+  /// Wideband CQI (sum of all RX antennas, in dB)
+  char           wideband_cqi_tot[NUMBER_OF_UE_MAX];
+  /// Subband CQI per RX antenna and RB (= SINR)
+  int            subband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
+  /// Total Subband CQI and RB (= SINR)
+  int            subband_cqi_tot[NUMBER_OF_UE_MAX][100];
+  /// Subband CQI in dB and RB (= SINR dB)
+  int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
+  /// Total Subband CQI and RB
+  int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
+  /// PRACH background noise level
+  int            prach_I0;
+} PHY_MEASUREMENTS_gNB;
 
 
 #endif
