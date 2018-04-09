@@ -980,6 +980,7 @@ add_library(SCHED_LIB ${SCHED_SRC})
 
 set(SCHED_NR_SRC
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
+  ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_gNB.c
 )
 add_library(SCHED_NR_LIB ${SCHED_NR_SRC})
 

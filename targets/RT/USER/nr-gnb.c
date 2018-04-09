@@ -234,8 +234,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_rxtx_proc_t *proc, char *thread_nam
   //if (wait_CCs(proc)<0) return(-1);
   
   if (oai_exit) return(-1);
-/// To call after common signals for NR  
-  //phy_procedures_gNB_TX(gNB, proc, no_relay, NULL, 1);
+  phy_procedures_gNB_TX(gNB, proc, 1);
 
   stop_meas( &softmodem_stats_rxtx_sf );
 

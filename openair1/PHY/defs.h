@@ -166,6 +166,9 @@ static inline void* malloc16_clear( size_t size )
 #define MAX_FRAME_NUMBER 0x400
 
 #if 1
+
+#define nr_subframe_t lte_subframe_t
+
 typedef struct {
   /// EUTRA Band
   uint8_t eutra_band;
