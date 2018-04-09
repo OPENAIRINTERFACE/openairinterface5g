@@ -642,7 +642,7 @@ void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_
 
 }
 
-
+/*
 void init_openair0(void) {
 
   int card;
@@ -725,9 +725,9 @@ void init_openair0(void) {
 	     openair0_cfg[card].tx_freq[i],
 	     openair0_cfg[card].rx_freq[i]);
     }
-  } /* for loop on cards */
+  } // for loop on cards 
 }
-
+*/
 
 void wait_RUs(void) {
 

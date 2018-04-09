@@ -627,7 +627,7 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
 }
 
-
+/*
 void init_openair0(void) {
 
   int card;
@@ -710,9 +710,9 @@ void init_openair0(void) {
 	     openair0_cfg[card].tx_freq[i],
 	     openair0_cfg[card].rx_freq[i]);
     }
-  } /* for loop on cards */
+  } // for loop on cards
 }
-
+*/
 
 void wait_RUs(void) {
 

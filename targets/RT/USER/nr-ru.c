@@ -1168,38 +1168,66 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   nfapi_config_request_t *gNB_config = ru->gNB_list[0]->gNB_config; //tmp index
   openair0_config_t *cfg   = &ru->openair0_cfg;
   int N_RB = gNB_config->rf_config.dl_channel_bandwidth.value;
+  int mu = gNB_config->subframe_config.numerology_index_mu.value;
 
-  if(N_RB == 100) {
-    if (fp->threequarter_fs) {
-      cfg->sample_rate=23.04e6;
-      cfg->samples_per_frame = 230400; 
-      cfg->tx_bw = 10e6;
-      cfg->rx_bw = 10e6;
-    }
-    else {
-      cfg->sample_rate=30.72e6;
-      cfg->samples_per_frame = 307200; 
-      cfg->tx_bw = 10e6;
-      cfg->rx_bw = 10e6;
-    }
-  } else if(N_RB == 50) {
-    cfg->sample_rate=15.36e6;
-    cfg->samples_per_frame = 153600;
-    cfg->tx_bw = 5e6;
-    cfg->rx_bw = 5e6;
-  } else if (N_RB == 25) {
-    cfg->sample_rate=7.68e6;
-    cfg->samples_per_frame = 76800;
-    cfg->tx_bw = 2.5e6;
-    cfg->rx_bw = 2.5e6;
-  } else if (N_RB == 6) {
-    cfg->sample_rate=1.92e6;
-    cfg->samples_per_frame = 19200;
-    cfg->tx_bw = 1.5e6;
-    cfg->rx_bw = 1.5e6;
+  if (mu == NR_MU_0) { //or if LTE
+     if(N_RB == 100) {
+       if (fp->threequarter_fs) {
+	 cfg->sample_rate=23.04e6;
+	 cfg->samples_per_frame = 230400; 
+	 cfg->tx_bw = 10e6;
+	 cfg->rx_bw = 10e6;
+       }
+       else {
+	 cfg->sample_rate=30.72e6;
+	 cfg->samples_per_frame = 307200; 
+	 cfg->tx_bw = 10e6;
+	 cfg->rx_bw = 10e6;
+       }
+     } else if(N_RB == 50) {
+       cfg->sample_rate=15.36e6;
+       cfg->samples_per_frame = 153600;
+       cfg->tx_bw = 5e6;
+       cfg->rx_bw = 5e6;
+     } else if (N_RB == 25) {
+       cfg->sample_rate=7.68e6;
+       cfg->samples_per_frame = 76800;
+       cfg->tx_bw = 2.5e6;
+       cfg->rx_bw = 2.5e6;
+     } else if (N_RB == 6) {
+       cfg->sample_rate=1.92e6;
+       cfg->samples_per_frame = 19200;
+       cfg->tx_bw = 1.5e6;
+       cfg->rx_bw = 1.5e6;
+     }
+     else AssertFatal(1==0,"Unknown N_RB %d\n",N_RB);
   }
-  else AssertFatal(1==0,"Unknown N_RB %d\n",N_RB);
-
+  else if (mu == NR_MU_1) {
+    if(N_RB == 217) {
+      if (fp->threequarter_fs) {
+	cfg->sample_rate=92.16e6;
+	cfg->samples_per_frame = 921600; 
+	cfg->tx_bw = 40e6;
+	cfg->rx_bw = 40e6;
+      }
+      else {
+	cfg->sample_rate=122.88e6;
+	cfg->samples_per_frame = 1228800; 
+	cfg->tx_bw = 40e6;
+	cfg->rx_bw = 40e6;
+      }
+    } else if(N_RB == 106) {
+      cfg->sample_rate=61.44e6;
+      cfg->samples_per_frame = 614400;
+      cfg->tx_bw = 20e6;
+      cfg->rx_bw = 20e6;
+    } else {
+      AssertFatal(0==1,"N_RB %d not yet supported for numerology %d\n",N_RB,mu);
+    }          
+  } else {
+    AssertFatal(0 == 1,"Numerology %d not supported for the moment\n",mu);
+  }
+  
   if (gNB_config->subframe_config.duplex_mode.value==TDD)
     cfg->duplex_mode = duplex_mode_TDD;
   else //FDD
