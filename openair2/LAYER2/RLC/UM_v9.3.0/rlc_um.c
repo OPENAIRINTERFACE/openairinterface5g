@@ -568,7 +568,11 @@ rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP,cons
       l_rlc_p->stat_tx_data_pdu   += 1;
       l_rlc_p->stat_tx_data_bytes += tb_size_in_bytes;
 
-      AssertFatal( tb_size_in_bytes > 0 , "RLC UM PDU LENGTH %d", tb_size_in_bytes);
+      //AssertFatal( tb_size_in_bytes > 0 , "RLC UM PDU LENGTH %d", tb_size_in_bytes);
+      if(tb_size_in_bytes <= 0) {
+        LOG_E(RLC, "RLC UM PDU LENGTH %d\n", tb_size_in_bytes);
+      }
+        
 #if TRACE_RLC_UM_PDU || MESSAGE_CHART_GENERATOR
       rlc_um_get_pdu_infos(ctxt_pP, l_rlc_p,(rlc_um_pdu_sn_10_t*) ((struct mac_tb_req*) (tb_p->data))->data_ptr, tb_size_in_bytes, &pdu_info, l_rlc_p->rx_sn_length);
 #endif
