@@ -455,6 +455,7 @@ void *l2l1_task(void *arg) {
 }
 #endif
 
+extern int16_t dlsch_demod_shift;
 
 static void get_options(void) {
   int CC_id;

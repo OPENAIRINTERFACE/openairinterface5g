@@ -1159,7 +1159,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/MODULATION/ul_7_5_kHz_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_time.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_timefreq.c
-  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_adjust_sync.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_adjust_sync_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_bf_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_mbsfn_channel_estimation.c
@@ -1281,12 +1281,12 @@ set(L2_SRC_UE
 set (MAC_SRC
   ${PHY_INTERFACE_DIR}/IF_Module.c
   ${MAC_DIR}/main.c
-  ${MAC_DIR}/main_ue.c
-  ${MAC_DIR}/ue_procedures.c
-  ${MAC_DIR}/ra_procedures.c
+  #${MAC_DIR}/main_ue.c
+  #${MAC_DIR}/ue_procedures.c
+  #${MAC_DIR}/ra_procedures.c
   ${MAC_DIR}/l1_helpers.c
   ${MAC_DIR}/rar_tools.c
-  ${MAC_DIR}/rar_tools_ue.c
+  #${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/eNB_scheduler.c
   ${MAC_DIR}/eNB_scheduler_dlsch.c
   ${MAC_DIR}/eNB_scheduler_ulsch.c
@@ -1296,7 +1296,7 @@ set (MAC_SRC
   ${MAC_DIR}/eNB_scheduler_RA.c
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
-  ${MAC_DIR}/config_ue.c
+  #${MAC_DIR}/config_ue.c
  )
 
 set (MAC_SRC_UE

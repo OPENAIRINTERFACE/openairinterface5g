@@ -21,10 +21,10 @@
 
 #include "PHY/types.h"
 #include "PHY/defs_UE.h"
-#include "PHY/phy_extern_ue.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation_defs.h"
+#include "PHY/impl_defs_top.h"
 
 #include "UTIL/LOG/vcd_signal_dumper.h"
-#include "lte_estimation_defs.h"
 
 #define DEBUG_PHY
 

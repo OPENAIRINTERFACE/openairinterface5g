@@ -52,7 +52,6 @@
 //#undef ALL_AGGREGATION
 
 
-
 uint16_t extract_crc(uint8_t *dci,uint8_t dci_len)
 {
 
