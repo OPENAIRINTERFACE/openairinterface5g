@@ -1940,6 +1940,8 @@ void kill_RU_proc(int inst)
 
   LOG_D(PHY, "Joining pthread_FH\n");
   pthread_join(proc->pthread_FH, NULL);
+  LOG_D(PHY, "Joining pthread_FHTX\n");
+  pthread_join(proc->pthread_FH1, NULL);
   if (ru->function == NGFI_RRU_IF4p5) {
     LOG_D(PHY, "Joining pthread_prach\n");
     pthread_join(proc->pthread_prach, NULL);
@@ -1990,15 +1992,18 @@ void kill_RU_proc(int inst)
   pthread_mutex_destroy(&proc->mutex_asynch_rxtx);
   pthread_mutex_destroy(&proc->mutex_synch);
   pthread_mutex_destroy(&proc->mutex_FH);
+  pthread_mutex_destroy(&proc->mutex_FH1);
   pthread_mutex_destroy(&proc->mutex_eNBs);
 
   pthread_cond_destroy(&proc->cond_prach);
   pthread_cond_destroy(&proc->cond_FH);
+  pthread_cond_destroy(&proc->cond_FH1);
   pthread_cond_destroy(&proc->cond_asynch_rxtx);
   pthread_cond_destroy(&proc->cond_synch);
   pthread_cond_destroy(&proc->cond_eNBs);
 
   pthread_attr_destroy(&proc->attr_FH);
+  pthread_attr_destroy(&proc->attr_FH1);
   pthread_attr_destroy(&proc->attr_prach);
   pthread_attr_destroy(&proc->attr_synch);
   pthread_attr_destroy(&proc->attr_asynch_rxtx);
