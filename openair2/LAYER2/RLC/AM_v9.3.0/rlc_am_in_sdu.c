@@ -42,8 +42,17 @@ void rlc_am_free_in_sdu(
 {
   if (index_in_bufferP <= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
 	/* BugFix:  SDU shall have been already freed during initial PDU segmentation or concatenation !! */
+//Assertion(eNB)_PRAN_DesignDocument_annex No.761
+    if(rlcP->input_sdus[index_in_bufferP].mem_block != NULL)
+    {
+      LOG_E(RLC, "RLC AM Tx SDU Conf: Data Part is not empty index=%d LcId=%d\n",
+             index_in_bufferP,rlcP->channel_id);
+      return;
+    }
+/*
 	  AssertFatal(rlcP->input_sdus[index_in_bufferP].mem_block == NULL, "RLC AM Tx SDU Conf: Data Part is not empty index=%d LcId=%d\n",
 				index_in_bufferP,rlcP->channel_id);
+*/
 	/*
     if (rlcP->input_sdus[index_in_bufferP].mem_block != NULL) {
       free_mem_block(rlcP->input_sdus[index_in_bufferP].mem_block, __func__);

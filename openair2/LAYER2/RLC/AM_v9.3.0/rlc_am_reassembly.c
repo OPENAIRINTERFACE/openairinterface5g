@@ -198,10 +198,16 @@ rlc_am_send_sdu (
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
       //msg("[RLC_AM][MOD %d] Freeing mem_block ...\n", rlc_pP->module_id);
       //free_mem_block (rlc_pP->output_sdu_in_construction, __func__);
+//Assertion(eNB)_PRAN_DesignDocument_annex No.764
+     LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" SEND SDU REQUESTED %d bytes\n",
+             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
+             rlc_pP->output_sdu_size_to_write);
+/*
       AssertFatal(3==4,
                   PROTOCOL_RLC_AM_CTXT_FMT" SEND SDU REQUESTED %d bytes",
                   PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                   rlc_pP->output_sdu_size_to_write);
+*/
     }
 
     rlc_pP->output_sdu_size_to_write = 0;
@@ -270,7 +276,9 @@ rlc_am_reassemble_pdu(
       break;
 
     default:
-      assert(0 != 0);
+//Assertion(eNB)_PRAN_DesignDocument_annex No.1428
+      LOG_E(RLC, "RLC_E_FIXED_PART_DATA_FIELD_FOLLOW error pdu_info->fi[%d]\n", pdu_info->fi);
+//      assert(0 != 0);
     }
   } else {
     switch (pdu_info->fi) {
@@ -386,7 +394,9 @@ rlc_am_reassemble_pdu(
       break;
 
     default:
-      assert(1 != 1);
+//Assertion(eNB)_PRAN_DesignDocument_annex No.1429
+      LOG_E(RLC, "not RLC_E_FIXED_PART_DATA_FIELD_FOLLOW error pdu_info->fi[%d]\n", pdu_info->fi);
+//      assert(1 != 1);
     }
   }
 
