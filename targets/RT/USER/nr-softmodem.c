@@ -760,7 +760,7 @@ void wait_gNBs(void) {
 
       for (j=0;j<RC.nb_L1_CC[i];j++) {
 	if (RC.gNB[i][j]->configured==0) {
-	  waiting=1;
+	  waiting=0; //skip gNB configuration check
 	  break;
         } 
       }
@@ -839,7 +839,7 @@ int restart_L1L2(module_id_t gnb_id)
   int cc_id;
   MessageDef *msg_p = NULL;
 
-  LOG_W(ENB_APP, "restarting lte-softmodem\n");
+  LOG_W(ENB_APP, "restarting nr-softmodem\n");
 
   /* block threads */
   sync_var = -1;
@@ -859,7 +859,7 @@ int restart_L1L2(module_id_t gnb_id)
     LOG_E(RRC, "Create task for RRC eNB failed\n");
     return -1;
   } else {
-    LOG_I(RRC, "Re-created task for RRC eNB successfully\n");
+    LOG_I(RRC, "Re-created task for RRC gNB successfully\n");
   }
   if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
     LOG_E(PDCP, "Create task for L2L1 failed\n");

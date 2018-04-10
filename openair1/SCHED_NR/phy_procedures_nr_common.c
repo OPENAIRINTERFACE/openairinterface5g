@@ -40,3 +40,42 @@ nr_subframe_t nr_subframe_select(nfapi_config_request_t *cfg,unsigned char subfr
   if (cfg->subframe_config.duplex_mode.value == FDD)
     return(SF_DL);
 }
+
+// First possible symbol is used with n=0
+int nr_get_ssb_start_symbol(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp)
+{
+  int mu = cfg->subframe_config.numerology_index_mu.value;
+  int symbol = 0;
+
+  switch(mu) {
+
+  case NR_MU_0:
+    symbol = 2;
+    break;
+
+  case NR_MU_1: // case B
+    symbol = 4;
+    break;
+
+  case NR_MU_3:
+    symbol = 4;
+    break;
+
+  case NR_MU_4:
+    symbol = 8;
+    break;
+
+  default:
+    AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
+  }
+
+  if (cfg->sch_config.half_frame_index)
+    symbol += (5 * fp->symbols_per_slot * fp->slots_per_subframe);
+
+  return symbol;
+}
+
+void nr_set_ssb_first_subcarrier(nfapi_config_request_t *cfg)
+{
+  cfg->sch_config.ssb_subcarrier_offset.value = 0;
+}

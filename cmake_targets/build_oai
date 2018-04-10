@@ -895,7 +895,7 @@ function main() {
  
   # build RF device and transport protocol libraries
   #####################################
-  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" - o "$HWLAT" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
 
       build_dir=$build_dir
 

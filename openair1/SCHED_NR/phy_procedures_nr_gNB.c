@@ -47,7 +47,16 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
 
-  LOG_D(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe); 
+  LOG_D(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe);
+
+  int ssb_start_symbol = nr_get_ssb_start_symbol(cfg, fp);
+  nr_set_ssb_first_subcarrier(cfg);
+
+  if (subframe == (cfg->sch_config.half_frame_index)? 0:5)
+  {
+    nr_generate_pss(gNB->d_pss, txdataF, AMP, ssb_start_symbol, cfg, fp);
+    nr_generate_sss(gNB->d_sss, txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
+  }
 
 }
 
@@ -66,8 +75,8 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   if ((cfg->subframe_config.duplex_mode.value == TDD) && (nr_subframe_select(cfg,subframe)==SF_UL)) return;
 
-  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
-  //if (do_meas==1) start_meas(&gNB->phy_proc_tx);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
+  if (do_meas==1) start_meas(&gNB->phy_proc_tx);
 
   // clear the transmit data array for the current subframe
   for (aa=0; aa<cfg->rf_config.tx_antenna_ports.value; aa++) {      

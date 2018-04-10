@@ -1373,11 +1373,12 @@ static void* ru_thread( void* param ) {
     AssertFatal(ret==0,"Cannot connect to radio\n");
   }
   if (ru->if_south == LOCAL_RF) { // configure RF parameters only 
-        fill_rf_config(ru,ru->rf_config_file);
-        nr_init_frame_parms(ru->gNB_list[0]->gNB_config, fp);
-        phy_init_RU(ru);
- 
-        ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+    fill_rf_config(ru,ru->rf_config_file);
+    nr_init_frame_parms(ru->gNB_list[0]->gNB_config, fp);
+    nr_dump_frame_parms(fp);
+    phy_init_RU(ru);
+
+    ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
   }
   if (setup_RU_buffers(ru)!=0) {
         printf("Exiting, cannot initialize RU Buffers\n");
@@ -1391,9 +1392,6 @@ static void* ru_thread( void* param ) {
   pthread_mutex_unlock(&RC.ru_mutex);
   
   wait_sync("ru_thread");
-  
-
-
 
   // Start RF device if any
   if (ru->start_rf) {

@@ -1972,6 +1972,10 @@ typedef struct PHY_VARS_gNB_s {
   uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
   char gNB_generate_rar;
 
+  /// NR synchronization sequences
+  int16_t d_pss[NR_PSS_LENGTH];
+  int16_t d_sss[NR_SSS_LENGTH];
+
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_UE_MAX];
 

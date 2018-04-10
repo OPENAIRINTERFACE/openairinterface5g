@@ -80,7 +80,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   // shortcuts
   NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
-  nfapi_config_request_t* cfg       = &gNB->gNB_config;
+  nfapi_config_request_t* cfg       = gNB->gNB_config;
   NR_gNB_COMMON* const common_vars  = &gNB->common_vars;
   LTE_eNB_PUSCH** const pusch_vars   = gNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = gNB->srs_vars;
@@ -469,7 +469,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
 void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 {
 //  NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
-  nfapi_config_request_t *cfg       = &gNB->gNB_config;
+  nfapi_config_request_t *cfg       = gNB->gNB_config;
   NR_gNB_COMMON* const common_vars  = &gNB->common_vars;
   LTE_eNB_PUSCH** const pusch_vars   = gNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = gNB->srs_vars;
