@@ -73,7 +73,7 @@ extern uint8_t nfapi_mode;
 // This table holds the allowable PRB sizes for ULSCH transmissions
 uint8_t rb_table[34] =
     { 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24, 25, 27, 30, 32,
-    36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80, 81, 90, 96, 100
+    36, 40, 45, 48, 50, 54, 60, 72, 75, 80, 81, 90, 96, 100, 100
 };
 extern mui_t    rrc_eNB_mui;
 
@@ -2031,12 +2031,10 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             // increment first rb for next UE allocation
             first_rb[CC_id]+=rb_table[rb_table_index];
             if(ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_FIRST) {
-              LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,UE_template->TBS_UL[harq_pid]);
+              LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,get_TBS_UL(UE_template->mcs_UL[harq_pid],rb_table[rb_table_index]));
                 if(ulsch_ue_select[CC_id].list[ulsch_ue_num].ul_total_buffer > 0){
-                    LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n",
-                               module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,UE_template->TBS_UL[harq_pid]);
-                    if (UE_template->ul_total_buffer > UE_template->TBS_UL[harq_pid])
-                      UE_template->ul_total_buffer -= UE_template->TBS_UL[harq_pid];
+                    if (UE_template->ul_total_buffer > get_TBS_UL(UE_template->mcs_UL[harq_pid],rb_table[rb_table_index]))
+                      UE_template->ul_total_buffer -= get_TBS_UL(UE_template->mcs_UL[harq_pid],rb_table[rb_table_index]);
                     else
                       UE_template->ul_total_buffer = 0;
                     LOG_D(MAC,"ul_total_buffer, new %d\n", UE_template->ul_total_buffer);
