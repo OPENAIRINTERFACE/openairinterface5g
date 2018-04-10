@@ -52,7 +52,7 @@ rlc_um_fsm_notify_event (
       LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" FSM WARNING PROTOCOL ERROR - EVENT %02X hex NOT EXPECTED FROM NULL_STATE\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
             eventP);
-      AssertFatal(1==0,"RLC-UM FSM WARNING PROTOCOL ERROR - EVENT NOT EXPECTED FROM NULL_STATE");
+      //AssertFatal(1==0,"RLC-UM FSM WARNING PROTOCOL ERROR - EVENT NOT EXPECTED FROM NULL_STATE");
       return 0;
     }
 

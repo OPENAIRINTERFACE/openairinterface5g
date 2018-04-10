@@ -135,7 +135,12 @@ rlc_op_status_t rlc_stat_req     (
   hash_key_t             key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
 
-  AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+	if(rb_idP >= NB_RB_MAX){
+		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+		return RLC_OP_STATUS_BAD_PARAMETER;
+	}
+	
   key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
 
@@ -348,13 +353,30 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 #endif
 
   if (MBMS_flagP) {
-    AssertFatal (rb_idP < NB_RB_MBMS_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
+    //AssertFatal (rb_idP < NB_RB_MBMS_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
+  	if(rb_idP >= NB_RB_MBMS_MAX){
+  		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
+  		return RLC_OP_STATUS_BAD_PARAMETER;
+  	}
   } else {
-    AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+    //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  	if(rb_idP >= NB_RB_MAX){
+  		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  		return RLC_OP_STATUS_BAD_PARAMETER;
+  	}
   }
 
-  DevAssert(sdu_pP != NULL);
-  DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
+  //DevAssert(sdu_pP != NULL);
+	if(sdu_pP == NULL){
+		LOG_E(RLC, "sdu_pP == NULL\n");
+		return RLC_OP_STATUS_BAD_PARAMETER;
+	}
+	
+  //DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
+  if(sdu_sizeP <= 0) {
+    LOG_E(RLC, "sdu_sizeP %d, file %s, line %s\n", sdu_sizeP, __FILE__ ,__LINE__);
+    return RLC_OP_STATUS_BAD_PARAMETER;
+  }
 
 #if !defined(Rel10) && !defined(Rel14)
   DevCheck(MBMS_flagP == 0, MBMS_flagP, 0, 0);
@@ -386,7 +408,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    AssertFatal (0 , "RLC not configured key %ju\n", key);
+    //AssertFatal (0 , "RLC not configured key %ju\n", key);
+  	LOG_E("RLC not configured key %ju\n", key);
+  	return RLC_OP_STATUS_OUT_OF_RESSOURCES;
   }
 
   if (MBMS_flagP == 0) {
@@ -608,7 +632,11 @@ rlc_module_init (void)
   rlc_rrc_data_conf = NULL;
 
   rlc_coll_p = hashtable_create ((maxDRB + 2) * 16, NULL, rb_free_rlc_union);
-  AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
+  //AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
+  if(rlc_coll_p == NULL) {
+    LOG_E(RLC, "UNRECOVERABLE error, RLC hashtable_create failed\n");
+    return -1;
+  }
 
   for (module_id1=0; module_id1 < NUMBER_OF_UE_MAX; module_id1++) {
 #if defined(Rel10) || defined(Rel14)

@@ -411,7 +411,11 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
 #if TRACE_RLC_PAYLOAD
     rlc_util_print_hex_octets(RLC, pdu_mem_p->data, data_pdu_size);
 #endif
-    AssertFatal( pdu_tb_req_p->tb_size > 0 , "SEGMENT10: FINAL RLC UM PDU LENGTH %d", pdu_tb_req_p->tb_size);
+    //AssertFatal( pdu_tb_req_p->tb_size > 0 , "SEGMENT10: FINAL RLC UM PDU LENGTH %d", pdu_tb_req_p->tb_size);
+    if(pdu_tb_req_p->tb_size <= 0) {
+      LOG_E(RLC, "SEGMENT10: FINAL RLC UM PDU LENGTH %d\n", pdu_tb_req_p->tb_size);
+      break;
+    }
     pdu_p = NULL;
     pdu_mem_p = NULL;
 
@@ -792,7 +796,11 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
 #if TRACE_RLC_PAYLOAD
     rlc_util_print_hex_octets(RLC, (unsigned char*)pdu_mem_p->data, data_pdu_size);
 #endif
-    AssertFatal( pdu_tb_req_p->tb_size > 0 , "SEGMENT5: FINAL RLC UM PDU LENGTH %d", pdu_tb_req_p->tb_size);
+    //AssertFatal( pdu_tb_req_p->tb_size > 0 , "SEGMENT5: FINAL RLC UM PDU LENGTH %d", pdu_tb_req_p->tb_size);
+    if(pdu_tb_req_p->tb_size <= 0) {
+      LOG_E(RLC, "SEGMENT5: FINAL RLC UM PDU LENGTH %d\n", pdu_tb_req_p->tb_size);
+      break;
+    }
 
     pdu_p = NULL;
     pdu_mem_p = NULL;
