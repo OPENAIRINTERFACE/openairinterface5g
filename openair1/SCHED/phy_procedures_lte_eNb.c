@@ -1689,7 +1689,7 @@ void release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,uint8_t subf
       frame_tx = ul_ACK_subframe2_dl_frame(&eNB->frame_parms,frame,subframe,subframe_tx);
       if (((1<<m)&mask) > 0) {
           harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx];
-	if ((harq_pid>=0) && (harq_pid<10)) {
+	if ((harq_pid>=0) && (harq_pid<dlsch0->Mdlharq)) {
 	  dlsch0_harq     = dlsch0->harq_processes[harq_pid];
 	  dlsch1_harq     = dlsch1->harq_processes[harq_pid];
 	  AssertFatal(dlsch0_harq!=NULL,"dlsch0_harq is null\n");
