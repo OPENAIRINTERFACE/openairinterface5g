@@ -787,6 +787,7 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		eNB->eNB_stats[CC_id].bcch_buffer = bcch_sdu_length;
 		eNB->eNB_stats[CC_id].total_bcch_buffer += bcch_sdu_length;
 		eNB->eNB_stats[CC_id].bcch_mcs = mcs;
+//printf("SI %d.%d\n", frameP, subframeP);/////////////////////////////////////////******************************
 	    } else {
 
 		//LOG_D(MAC,"[eNB %d] Frame %d : BCCH not active \n",Mod_id,frame);

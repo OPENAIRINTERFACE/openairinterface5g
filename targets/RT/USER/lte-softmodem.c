@@ -217,6 +217,10 @@ extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
 extern void init_eNB_afterRU(void);
 
 int transmission_mode=1;
+int emulate_rf = 0;
+int numerology = 0;
+int codingw = 0;
+int fepw = 0;
 
 
 
@@ -632,6 +636,7 @@ void init_openair0(void) {
 
   int card;
   int i;
+  
 
   for (card=0; card<MAX_CARDS; card++) {
 
@@ -639,6 +644,8 @@ void init_openair0(void) {
     openair0_cfg[card].configFilename = NULL;
 
     if(frame_parms[0]->N_RB_DL == 100) {
+	  if(numerology == 0)
+	  {
       if (frame_parms[0]->threequarter_fs) {
 	openair0_cfg[card].sample_rate=23.04e6;
 	openair0_cfg[card].samples_per_frame = 230400;
@@ -650,6 +657,22 @@ void init_openair0(void) {
 	openair0_cfg[card].tx_bw = 10e6;
 	openair0_cfg[card].rx_bw = 10e6;
       }
+	  }else if(numerology == 1)
+	  {
+		openair0_cfg[card].sample_rate=61.44e6;
+		openair0_cfg[card].samples_per_frame = 307200;
+		openair0_cfg[card].tx_bw = 20e6;
+		openair0_cfg[card].rx_bw = 20e6;
+	  }else if(numerology == 2)
+	  {
+		openair0_cfg[card].sample_rate=122.88e6;
+		openair0_cfg[card].samples_per_frame = 307200;
+		openair0_cfg[card].tx_bw = 20e6;
+		openair0_cfg[card].rx_bw = 20e6;
+	  }else
+	  {
+	    printf("Un supported numerology\n");
+	  }
     } else if(frame_parms[0]->N_RB_DL == 50) {
       openair0_cfg[card].sample_rate=15.36e6;
       openair0_cfg[card].samples_per_frame = 153600;

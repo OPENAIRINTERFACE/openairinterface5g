@@ -150,6 +150,9 @@ void schedule_dlsch(module_id_t module_idP, frame_t frameP,
 void schedule_ue_spec(module_id_t module_idP, slice_id_t slice_idP,
 		      frame_t frameP,sub_frame_t subframe, int *mbsfn_flag);
 
+void schedule_ue_spec_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
+void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
+
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE

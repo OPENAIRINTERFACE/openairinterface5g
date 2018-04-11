@@ -64,6 +64,7 @@
 #define DEBUG_eNB_SCHEDULER 1
 
 extern RAN_CONTEXT_t RC;
+extern int phy_test;
 
 uint16_t pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -640,26 +641,33 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 #endif
 
   // This schedules MIB
+
   if ((subframeP == 0) && (frameP & 3) == 0)
       schedule_mib(module_idP, frameP, subframeP);
-  // This schedules SI for legacy LTE and eMTC starting in subframeP
-  schedule_SI(module_idP, frameP, subframeP);
-  // This schedules Paging in subframeP
-  schedule_PCH(module_idP,frameP,subframeP);
-  // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
-  schedule_RA(module_idP, frameP, subframeP);
-  // copy previously scheduled UL resources (ULSCH + HARQ)
-  copy_ulreq(module_idP, frameP, subframeP);
-  // This schedules SRS in subframeP
-  schedule_SRS(module_idP, frameP, subframeP);
-  // This schedules ULSCH in subframeP (dci0)
-  schedule_ulsch(module_idP, frameP, subframeP);
-  // This schedules UCI_SR in subframeP
-  schedule_SR(module_idP, frameP, subframeP);
-  // This schedules UCI_CSI in subframeP
-  schedule_CSI(module_idP, frameP, subframeP);
-  // This schedules DLSCH in subframeP
-  schedule_dlsch(module_idP, frameP, subframeP, mbsfn_status);
+  if (phy_test == 0){
+    // This schedules SI for legacy LTE and eMTC starting in subframeP
+    schedule_SI(module_idP, frameP, subframeP);
+    // This schedules Paging in subframeP
+    schedule_PCH(module_idP,frameP,subframeP);
+    // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
+    schedule_RA(module_idP, frameP, subframeP);
+    // copy previously scheduled UL resources (ULSCH + HARQ)
+    copy_ulreq(module_idP, frameP, subframeP);
+    // This schedules SRS in subframeP
+    schedule_SRS(module_idP, frameP, subframeP);
+    // This schedules ULSCH in subframeP (dci0)
+    schedule_ulsch(module_idP, frameP, subframeP);
+    // This schedules UCI_SR in subframeP
+    schedule_SR(module_idP, frameP, subframeP);
+    // This schedules UCI_CSI in subframeP
+    schedule_CSI(module_idP, frameP, subframeP);
+    // This schedules DLSCH in subframeP
+    schedule_dlsch(module_idP, frameP, subframeP, mbsfn_status);
+  }
+  else{
+    schedule_ulsch_phy_test(module_idP,frameP,subframeP);
+    schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
+  }
 
   if (RC.flexran[module_idP]->enabled)
     flexran_agent_send_update_stats(module_idP);

@@ -43,6 +43,7 @@
 #include <getopt.h>
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
+#include <errno.h>
 
 #include "openair1/PHY/defs.h"
 
@@ -283,6 +284,7 @@ void thread_top_init(char *thread_name,
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB tx thread: sched_setattr failed\n");
+    fprintf(stderr,"sched_setattr Error = %s",strerror(errno));
     exit(1);
   }
 

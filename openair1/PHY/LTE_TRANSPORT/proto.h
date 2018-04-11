@@ -127,6 +127,20 @@ int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
                        time_stats_t *rm_stats,
                        time_stats_t *te_stats,
                        time_stats_t *i_stats);
+					   
+int32_t dlsch_encoding_all(PHY_VARS_eNB *eNB,
+                       uint8_t *a,
+                       uint8_t num_pdcch_symbols,
+                       LTE_eNB_DLSCH_t *dlsch,
+                       int frame,
+                       uint8_t subframe,
+                       time_stats_t *rm_stats,
+                       time_stats_t *te_stats,
+					   time_stats_t *te_wait_stats,
+                       time_stats_t *te_main_stats,
+                       time_stats_t *te_wakeup_stats0,
+                       time_stats_t *te_wakeup_stats1,
+                       time_stats_t *i_stats);
 
 int32_t dlsch_encoding_SIC(PHY_VARS_UE *ue,
                        uint8_t *a,
@@ -171,7 +185,12 @@ int32_t dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
                                 uint8_t subframe,
                                 time_stats_t *rm_stats,
                                 time_stats_t *te_stats,
-                                time_stats_t *i_stats);
+								time_stats_t *te_wait_stats,
+                                time_stats_t *te_main_stats,
+                                time_stats_t *te_wakeup_stats0,
+                                time_stats_t *te_wakeup_stats1,
+                                time_stats_t *i_stats,
+                                int worker_num);
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
                          uint8_t *DLSCH_pdu,
@@ -1488,6 +1507,7 @@ uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 
 void generate_64qam_table(void);
 void generate_16qam_table(void);
+void generate_qpsk_table(void);
 
 uint16_t extract_crc(uint8_t *dci,uint8_t DCI_LENGTH);
 
@@ -1897,6 +1917,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
                              uint8_t Nbundled,
                              uint8_t llr8_flag);
 
+int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,
+                        int UE_id,
+                        int harq_pid,
+                        int llr8_flag);
+							 
 /*!
   \brief Decoding of ULSCH data component from 36-212. This one spawns 1 worker thread in parallel,half of the segments in each thread.
   @param phy_vars_eNB Pointer to eNB top-level descriptor

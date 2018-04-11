@@ -130,6 +130,7 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
        {
        	case TYPE_STRING:
            
+printf("call config_lookup_string for '%s' %p\n", cfgpath, &(libconfig_privdata.cfg)); fflush(stdout);
            if ( config_lookup_string(&(libconfig_privdata.cfg),cfgpath, (const char **)&str)) {
               if ( cfgoptions[i].numelt > 0  && str != NULL && strlen(str) >= cfgoptions[i].numelt ) {
                   fprintf(stderr,"[LIBCONFIG] %s:  %s exceeds maximum length of %i bytes, value truncated\n",
