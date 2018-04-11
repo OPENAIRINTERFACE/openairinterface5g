@@ -134,8 +134,12 @@ int nr_init_frame_parms(nfapi_config_request_t config,
     AssertFatal(1==0,"Invalid numerology index %d", mu);
   }
 
-  frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * ((Ncp == 0)? 14 : 12) * frame_parms->slots_per_subframe;
+  frame_parms->symbols_per_slot = ((Ncp == 0)? 14 : 12); // to redefine for different slot formats
+  frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_slot * frame_parms->slots_per_subframe;
   frame_parms->samples_per_frame_wCP = 10 * frame_parms->samples_per_subframe_wCP;
+  frame_parms->samples_per_subframe = frame_parms->samples_per_subframe_wCP + (frame_parms->nb_prefix_samples0 * frame_parms->slots_per_subframe) +
+                                      (frame_parms->nb_prefix_samples * frame_parms->slots_per_subframe * (frame_parms->symbols_per_slot - 1));
+  frame_parms->samples_per_frame = 10 * frame_parms->samples_per_subframe;
 
 
   return 0;
@@ -150,4 +154,6 @@ void nr_dump_frame_parms(NR_DL_FRAME_PARMS *frame_parms)
   LOG_I(PHY,"frame_parms->slots_per_subframe=%d\n",frame_parms->slots_per_subframe);
   LOG_I(PHY,"frame_parms->samples_per_subframe_wCP=%d\n",frame_parms->samples_per_subframe_wCP);
   LOG_I(PHY,"frame_parms->samples_per_frame_wCP=%d\n",frame_parms->samples_per_frame_wCP);
+  LOG_I(PHY,"frame_parms->samples_per_subframe=%d\n",frame_parms->samples_per_subframe);
+  LOG_I(PHY,"frame_parms->samples_per_frame=%d\n",frame_parms->samples_per_frame);
 }
