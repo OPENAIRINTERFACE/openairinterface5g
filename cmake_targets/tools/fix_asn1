@@ -23,7 +23,7 @@ reset_color="$(tput sgr0)"
 function error()
 {
   echo -e "$red_color"ERROR: "$@""$reset_color"
-  exit 1
+  #exit 1
 }
 
 function check_sha1()

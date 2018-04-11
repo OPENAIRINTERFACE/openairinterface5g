@@ -480,6 +480,76 @@ add_library(X2AP_LIB
 include_directories ("${X2AP_C_DIR}")
 include_directories ("${X2AP_DIR}")
 
+
+
+
+#F1AP
+# Same limitation as described in RRC/S1AP: unknown generated file list
+# so we generate it at cmake time
+##############
+add_list1_option(F1AP_VERSION R15 "F1AP Asn.1 grammar version" R14 R15)
+set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
+#if (${F1AP_VERSION} STREQUAL "R14")
+  set (ASN1RELDIR R15)
+#endif(${F1AP_VERSION} STREQUAL "R14")
+set(F1AP_ASN_DIR ${F1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
+set(F1AP_ASN_FILES
+  ${F1AP_ASN_DIR}/38.473.Common-Definitions.asn
+  ${F1AP_ASN_DIR}/38.473.Constant-Definitions.asn
+  ${F1AP_ASN_DIR}/38.473.Information-Element-Definitions.asn
+  ${F1AP_ASN_DIR}/38.473.PDU-Definitions.asn
+  ${F1AP_ASN_DIR}/38.473.Elementary-Procedures.asn
+  ${F1AP_ASN_DIR}/38.473.Container-Definitions.asn
+  )
+
+set(F1AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
+execute_process(COMMAND ${asn1c_call} ${F1AP_C_DIR} ${F1AP_ASN_FILES}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
+execute_process(COMMAND python ${F1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${F1AP_ASN_DIR}/38.473.PDU-Definitions.asn -o ${F1AP_C_DIR}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "asn1tostruct.py: error")
+endif (NOT ${ret} STREQUAL 0)
+execute_process(COMMAND ${fix_asn1c_call} ${F1AP_C_DIR} F1AP ${F1AP_VERSION}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${fix_asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
+file(GLOB F1AP_source ${F1AP_C_DIR}/*.c)
+
+#set(F1AP_OAI_generated
+#  ${X2AP_C_DIR}/x2ap_decoder.c
+#  ${X2AP_C_DIR}/x2ap_encoder.c
+#  ${X2AP_C_DIR}/x2ap_xer_print.c
+#  ${X2AP_C_DIR}/x2ap_ies_defs.h
+#  )
+file(GLOB f1ap_h ${F1AP_C_DIR}/*.h)
+set(f1ap_h ${f1ap_h} )
+
+##message("calling ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}")
+#add_custom_command (
+#  OUTPUT ${F1AP_OAI_generated}
+#  COMMAND ${asn1c_call} ${F1AP_C_DIR} ${F1AP_ASN_FILES}
+#  COMMAND python ${F1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${F1AP_ASN_DIR}/38.473.PDU-Definitions.asn -o ${F1AP_C_DIR}
+#  COMMAND ${fix_asn1c_call} ${F1AP_C_DIR} F1AP ${F1AP_VERSION}
+#  DEPENDS ${F1AP_ASN_FILES}
+#  )
+
+add_library(F1AP_LIB
+  ${F1AP_OAI_generated}
+  ${F1AP_source}
+#  ${F1AP_DIR}/f1ap_common.c
+  )
+
+include_directories ("${F1AP_C_DIR}")
+include_directories ("${F1AP_DIR}")
+
+
+
+
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
