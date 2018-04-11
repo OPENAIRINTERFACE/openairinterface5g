@@ -1463,6 +1463,7 @@ static void* ru_thread_tx( void* param ) {
 	LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
 	// wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
+    if (oai_exit) break;
   	       
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);

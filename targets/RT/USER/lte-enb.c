@@ -224,11 +224,13 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 1 );
 
-  if(wait_on_condition(&proc[1].mutex_rxtx,&proc[1].cond_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX1 not ready\n",proc[1].frame_rx,proc[1].subframe_rx);
-    return(-1);
+  if(get_nprocs() >= 8){
+    if(wait_on_condition(&proc[1].mutex_rxtx,&proc[1].cond_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0) {
+      LOG_E(PHY,"Frame %d, subframe %d: TX1 not ready\n",proc[1].frame_rx,proc[1].subframe_rx);
+      return(-1);
+    }
+    if (release_thread(&proc[1].mutex_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0)  return(-1);
   }
-  if (release_thread(&proc[1].mutex_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0)  return(-1);
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
 
@@ -245,14 +247,6 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   if(oai_exit) return(-1);
   if(get_nprocs() <= 4){
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
-    pthread_mutex_lock( &proc[1].mutex_rxtx );
-    proc[1].pipe_ready++;
-    // the thread can now be woken up
-    if (pthread_cond_signal(&proc[1].cond_rxtx) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
-      exit_fun( "ERROR pthread_cond_signal" );
-    }
-    pthread_mutex_unlock( &proc[1].mutex_rxtx );
   }
 
 
@@ -417,14 +411,6 @@ static void* eNB_thread_rxtx( void* param ) {
     else
     {  
       phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
-      pthread_mutex_lock( &proc[1].mutex_rxtx );
-      proc[1].pipe_ready++;
-      // the thread can now be woken up
-      if (pthread_cond_signal(&proc[1].cond_rxtx) != 0) {
-        LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
-        exit_fun( "ERROR pthread_cond_signal" );
-      }
-      pthread_mutex_unlock( &proc->mutex_rxtx );
       wakeup_txfh(proc,eNB->proc.ru_proc);
     }
 
