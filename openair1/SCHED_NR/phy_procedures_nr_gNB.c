@@ -43,14 +43,14 @@ extern uint8_t nfapi_mode;
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
 
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
-  nfapi_config_request_t *cfg = gNB->gNB_config;
+  nfapi_config_request_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
 
   LOG_D(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe);
 
   int ssb_start_symbol = nr_get_ssb_start_symbol(cfg, fp);
-  nr_set_ssb_first_subcarrier(cfg);
+  //nr_set_ssb_first_subcarrier(cfg);
 
   if (subframe == (cfg->sch_config.half_frame_index)? 0:5)
   {
@@ -69,7 +69,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   int subframe=proc->subframe_tx;
 
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
-  nfapi_config_request_t *cfg = gNB->gNB_config;
+  nfapi_config_request_t *cfg = &gNB->gNB_config;
 
   int offset = gNB->CC_id;
 

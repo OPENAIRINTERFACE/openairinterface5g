@@ -1929,7 +1929,7 @@ typedef struct PHY_VARS_gNB_s {
   int                  rx_total_gain_dB;
   int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_gNB_s *gNB);
   uint8_t              local_flag;
-  nfapi_config_request_t  *gNB_config;
+  nfapi_config_request_t  gNB_config;
   NR_DL_FRAME_PARMS   frame_parms;
   PHY_MEASUREMENTS_gNB measurements;
   IF_Module_t          *if_inst;

@@ -689,8 +689,8 @@ void init_openair0(void) {
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
-	   RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value,
-	   RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value );
+	   RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value,
+	   RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
     openair0_cfg[card].Mod_id = 0;
 
     openair0_cfg[card].num_rb_dl=config[0]->rf_config.dl_channel_bandwidth.value;
@@ -698,8 +698,8 @@ void init_openair0(void) {
     openair0_cfg[card].clock_source = clock_source;
 
 
-    openair0_cfg[card].tx_num_channels=min(2,RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value );
-    openair0_cfg[card].rx_num_channels=min(2,RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value );
+    openair0_cfg[card].tx_num_channels=min(2,RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
+    openair0_cfg[card].rx_num_channels=min(2,RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
 
     for (i=0; i<4; i++) {
 
@@ -760,7 +760,7 @@ void wait_gNBs(void) {
 
       for (j=0;j<RC.nb_L1_CC[i];j++) {
 	if (RC.gNB[i][j]->configured==0) {
-	  waiting=0; //skip gNB configuration check
+	  waiting=1;
 	  break;
         } 
       }
