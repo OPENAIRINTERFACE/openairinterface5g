@@ -571,6 +571,8 @@ rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP,cons
       //AssertFatal( tb_size_in_bytes > 0 , "RLC UM PDU LENGTH %d", tb_size_in_bytes);
       if(tb_size_in_bytes <= 0) {
         LOG_E(RLC, "RLC UM PDU LENGTH %d\n", tb_size_in_bytes);
+        tb_p = tb_p->next;
+        continue;
       }
         
 #if TRACE_RLC_UM_PDU || MESSAGE_CHART_GENERATOR

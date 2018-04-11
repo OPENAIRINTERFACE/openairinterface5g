@@ -617,7 +617,7 @@ rlc_am_send_status_pdu(
       	}
 
     	  /* First ensure there is enough TBS for at least 1 SOStart/SOEnd, else break */
-    	  if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
+        else if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
     		  /* Init loop flags */
               /* Check lsf */
     		  segment_loop_end = (pdu_info_cursor_p->lsf == 1);
