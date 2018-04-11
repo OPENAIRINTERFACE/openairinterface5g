@@ -1257,6 +1257,7 @@ set(PHY_SRC_UE
   ${RRC_FULL_DIR}/asn1_constants.h
   # actual source
   ${OPENAIR1_DIR}/PHY/INIT/nr_init.c
+  ${OPENAIR1_DIR}/PHY/INIT/nr_init_ru.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_pss.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_sss.c

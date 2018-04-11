@@ -122,8 +122,8 @@ static int DEFENBS[] = {0};
 extern volatile int                    oai_exit;
 
 
-extern void  phy_init_RU(RU_t*);
-extern void  phy_free_RU(RU_t*);
+extern void  nr_phy_init_RU(RU_t*);
+extern void  nr_phy_free_RU(RU_t*);
 
 void init_RU(char*);
 void stop_RU(int nb_ru);
@@ -1376,7 +1376,7 @@ static void* ru_thread( void* param ) {
     fill_rf_config(ru,ru->rf_config_file);
     nr_init_frame_parms(ru->gNB_list[0]->gNB_config, fp);
     nr_dump_frame_parms(fp);
-    phy_init_RU(ru);
+    nr_phy_init_RU(ru);
 
     ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
   }
@@ -1863,7 +1863,7 @@ void configure_ru(int idx,
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);*/
 
   nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, &ru->nr_frame_parms);
-  phy_init_RU(ru);
+  nr_phy_init_RU(ru);
 }
 
 void configure_rru(int idx,
@@ -1905,7 +1905,7 @@ void configure_rru(int idx,
   fill_rf_config(ru,ru->rf_config_file);
 
 
-  phy_init_RU(ru);
+  nr_phy_init_RU(ru);
 
 }
 
@@ -2016,7 +2016,7 @@ void set_function_spec_param(RU_t *ru)
     if (ru->function == gNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
       fill_rf_config(ru,rf_config_file);
       init_frame_parms(&ru->frame_parms,1);
-      phy_init_RU(ru);
+      nr_phy_init_RU(ru);
     }
 
     ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);

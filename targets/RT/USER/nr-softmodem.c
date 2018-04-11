@@ -782,7 +782,7 @@ void terminate_task(task_id_t task_id, module_id_t mod_id)
 }
 
 //extern void  free_transport(PHY_VARS_gNB *);
-extern void  phy_free_RU(RU_t*);
+extern void  nr_phy_free_RU(RU_t*);
 
 int stop_L1L2(module_id_t gnb_id)
 {
@@ -825,7 +825,7 @@ int stop_L1L2(module_id_t gnb_id)
     //free_transport(RC.gNB[gnb_id][cc_id]);
     phy_free_nr_gNB(RC.gNB[gnb_id][cc_id]);
   }
-  phy_free_RU(RC.ru[gnb_id]);
+  nr_phy_free_RU(RC.ru[gnb_id]);
   free_lte_top();
   return 0;
 }
@@ -1283,7 +1283,7 @@ int main( int argc, char **argv )
       }
     }
     for (int inst = 0; inst < NB_RU; inst++) {
-      phy_free_RU(RC.ru[inst]);
+      nr_phy_free_RU(RC.ru[inst]);
     }
     free_lte_top();
 
