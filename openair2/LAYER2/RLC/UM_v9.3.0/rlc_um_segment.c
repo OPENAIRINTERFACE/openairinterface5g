@@ -748,13 +748,11 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         sdu_mngt_p    = NULL;
 
       } else {
-#if TRACE_RLC_UM_SEGMENT
-        LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n",
+        LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
-#endif
-        assert(1!=1);
+        //assert(1!=1);
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
         // reduce the size of the PDU
         continue_fill_pdu_with_sdu = 0;

@@ -374,7 +374,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 	
   //DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
   if(sdu_sizeP <= 0) {
-    LOG_E(RLC, "sdu_sizeP %d, file %s, line %s\n", sdu_sizeP, __FILE__ ,__LINE__);
+    LOG_E(RLC, "sdu_sizeP %d, file %s, line %d\n", sdu_sizeP, __FILE__ ,__LINE__);
     return RLC_OP_STATUS_BAD_PARAMETER;
   }
 
@@ -409,7 +409,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
   } else {
     rlc_mode = RLC_MODE_NONE;
     //AssertFatal (0 , "RLC not configured key %ju\n", key);
-  	LOG_E("RLC not configured key %ju\n", key);
+  	LOG_E(RLC, "not configured key %lu\n", key);
   	return RLC_OP_STATUS_OUT_OF_RESSOURCES;
   }
 

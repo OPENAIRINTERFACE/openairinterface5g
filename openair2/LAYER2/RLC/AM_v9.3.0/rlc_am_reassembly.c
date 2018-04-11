@@ -57,7 +57,12 @@ rlc_am_reassembly (
   if (rlc_pP->output_sdu_in_construction == NULL) {
     rlc_pP->output_sdu_in_construction = get_free_mem_block (RLC_SDU_MAX_SIZE, __func__);
     rlc_pP->output_sdu_size_to_write = 0;
-    assert(rlc_pP->output_sdu_in_construction != NULL);
+    //assert(rlc_pP->output_sdu_in_construction != NULL);
+    if(rlc_pP->output_sdu_in_construction == NULL) {
+      LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[REASSEMBLY PAYLOAD] output_sdu_in_construction is NULL\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
+      return;
+    }
   }
 
   if (rlc_pP->output_sdu_in_construction != NULL) {

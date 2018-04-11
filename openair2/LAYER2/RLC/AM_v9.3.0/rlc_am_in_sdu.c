@@ -130,8 +130,13 @@ rlc_am_pdu_sdu_data_cnf(
 
       for (pdu_sdu_index = 0; pdu_sdu_index < rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE].nb_sdus; pdu_sdu_index++) {
         sdu_index = rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE].sdus_index[pdu_sdu_index];
-        assert(sdu_index >= 0);
-        assert(sdu_index < RLC_AM_SDU_CONTROL_BUFFER_SIZE);
+        //assert(sdu_index >= 0);
+        //assert(sdu_index < RLC_AM_SDU_CONTROL_BUFFER_SIZE);
+        if(sdu_index < 0 || sdu_index >= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
+          LOG_E(RLC, "sdu_index error. sdu_index %d, pdu_sdu_index %d\n", sdu_index, pdu_sdu_index);
+          continue;
+        }
+        
         rlc_pP->input_sdus[sdu_index].nb_pdus_ack += 1;
 
         if ((rlc_pP->input_sdus[sdu_index].nb_pdus_ack == rlc_pP->input_sdus[sdu_index].nb_pdus) &&

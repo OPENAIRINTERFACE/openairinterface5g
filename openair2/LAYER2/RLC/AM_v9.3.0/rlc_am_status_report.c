@@ -154,7 +154,10 @@ rlc_am_write16_bit_field(
   signed int bits_to_writeP,
   const uint16_t valueP)
 {
-  assert(bits_to_writeP <= 16);
+  //assert(bits_to_writeP <= 16);
+  if(bits_to_writeP > 16) {
+    LOG_E(RLC, "bits_to_writeP error. %d\n", bits_to_writeP);
+  }
 
   if (bits_to_writeP > 8) {
     rlc_am_write8_bit_field(data_ppP,bit_pos_pP,  bits_to_writeP - 8, (uint8_t)(valueP >> 8));
@@ -309,8 +312,13 @@ rlc_am_receive_process_control_pdu(
     //     POLL_SN:
     //     - if t-PollRetransmit is running:
     //         - stop and reset t-PollRetransmit.
-    assert(ack_sn < RLC_AM_SN_MODULO);
-    assert(rlc_pP->control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
+    //assert(ack_sn < RLC_AM_SN_MODULO);
+    //assert(rlc_pP->control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
+    if(ack_sn >= RLC_AM_SN_MODULO || rlc_pP->control_pdu_info.num_nack >= RLC_AM_MAX_NACK_IN_STATUS_PDU) {
+      LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" illegal ack_sn %d, num_nack %d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), ack_sn, rlc_pP->control_pdu_info.num_nack);
+      return;
+    }
 
     /* Note : ackSn can be equal to current vtA only in case the status pdu contains a list of nack_sn with same value = vtA with SOStart/SOEnd */
     /* and meaning the report is not complete due to not enough ressources to fill all SOStart/SOEnd of this NACK_SN */

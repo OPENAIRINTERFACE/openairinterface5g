@@ -1649,7 +1649,8 @@ list2_insert_before_element (
 
     return element_to_insert_pP;
   } else {
-    assert(2==1);
+    //assert(2==1);
+    LOG_E(RLC, "list2_insert_before_element error. element_to_insert_pP %p, element_pP %p\n", element_to_insert_pP,element_pP);
     return NULL;
   }
 }
@@ -1676,7 +1677,8 @@ list2_insert_after_element (
 
     return element_to_insert_pP;
   } else {
-    assert(2==1);
+    //assert(2==1);
+    LOG_E(RLC, "list2_insert_after_element error. element_to_insert_pP %p, element_pP %p\n", element_to_insert_pP,element_pP);
     return NULL;
   }
 }
@@ -1726,7 +1728,8 @@ rlc_am_rx_list_display (
       //if (cursor_p == cursor_p->next) {
       //    rlc_am_v9_3_0_test_print_trace();
       //}
-      assert(cursor_p != cursor_p->next);
+      //assert(cursor_p != cursor_p->next);
+      LOG_E(RLC, "rlc_am_rx_list_display error. cursor_p %p, cursor_p->next %p\n", cursor_p, cursor_p->next);
       cursor_p = cursor_p->next;
       loop++;
     }

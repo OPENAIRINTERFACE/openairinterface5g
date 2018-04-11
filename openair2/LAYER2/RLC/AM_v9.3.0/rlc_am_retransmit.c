@@ -60,10 +60,14 @@ boolean_t rlc_am_nack_pdu (
   sdu_size_t pdu_data_to_retx = 0;
 
   if (mb_p != NULL) {
-    assert(so_startP <= so_endP);
-
+    //assert(so_startP <= so_endP);
+    if(so_startP > so_endP) {
+      LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[NACK-PDU] ERROR NACK MISSING PDU, so_startP %d, so_endP %d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),so_startP, so_endP);
+      status = FALSE;
+    }
     // Handle full PDU NACK first
-    if ((so_startP == 0) && (so_endP == 0x7FFF)) {
+    else if ((so_startP == 0) && (so_endP == 0x7FFF)) {
     	if ((prev_nack_snP != snP) && (tx_data_pdu_buffer_p->flags.ack == 0) && (tx_data_pdu_buffer_p->flags.max_retransmit == 0)) {
     		pdu_data_to_retx = tx_data_pdu_buffer_p->payload_size;
             /* Increment VtReTxNext if this is the first NACK or if some segments have already been transmitted */
@@ -82,12 +86,17 @@ boolean_t rlc_am_nack_pdu (
                   snP,
                   so_stopP);
         #endif
-            assert(tx_data_pdu_buffer_p->nack_so_start < tx_data_pdu_buffer_p->payload_size);
+            //assert(tx_data_pdu_buffer_p->nack_so_start < tx_data_pdu_buffer_p->payload_size);
+    	      if(tx_data_pdu_buffer_p->nack_so_start >= tx_data_pdu_buffer_p->payload_size){
+              LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[NACK-PDU] ERROR NACK MISSING PDU, nack_so_start %d, payload_size %d\n",
+                    PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),tx_data_pdu_buffer_p->nack_so_start, tx_data_pdu_buffer_p->payload_size);
+    	        status = FALSE;
+    	      }
     	}
     	else {
     		status = FALSE;
     	}
-      }
+    }
     else if (tx_data_pdu_buffer_p->flags.max_retransmit == 0) {
     	// Handle Segment offset
 		if (so_endP == 0x7FFF) {
@@ -230,7 +239,7 @@ void rlc_am_ack_pdu (
       {
         LOG_E(RLC, "RLC AM Rx Status Report sn=%d acked twice but is pending for Retx vtA=%d vtS=%d LcId=%d\n",
               snP, rlc_pP->vt_a,rlc_pP->vt_s,rlc_pP->channel_id);
-         return NULL;
+         return;
       }
 /*
     	AssertFatal (tx_data_pdu_buffer->flags.ack == 0,
@@ -1264,7 +1273,11 @@ void rlc_am_tx_buffer_display (
         LOG_D(RLC, "SO:%04d->%04d)\t", tx_data_pdu_buffer_p->nack_so_start, tx_data_pdu_buffer_p->nack_so_stop);
       } else {
         for (i=0; i<tx_data_pdu_buffer_p->num_holes; i++) {
-          assert(i < RLC_AM_MAX_HOLES_REPORT_PER_PDU);
+          //assert(i < RLC_AM_MAX_HOLES_REPORT_PER_PDU);
+          if(i >= RLC_AM_MAX_HOLES_REPORT_PER_PDU) {
+            LOG_E(RLC, "num_holes error. %d %d %d\n", tx_data_pdu_buffer_p->num_holes, i, RLC_AM_MAX_HOLES_REPORT_PER_PDU);
+            break;
+          }
           LOG_D(RLC, "SO:%04d->%04d)\t", tx_data_pdu_buffer_p->hole_so_start[i], tx_data_pdu_buffer_p->hole_so_stop[i]);
         }
       }

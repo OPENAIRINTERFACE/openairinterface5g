@@ -430,7 +430,7 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
   /* Then this function is called during MAC multiplexing ue_get_sdu(), and it may be call several times for the same bearer if it is in AM mode and there are several PDU types to transmit */
   //AssertFatal(enb_flagP == FALSE,"RLC Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%d\n", channel_idP);
 	if(enb_flagP != FALSE){
-		LOG_E("RLC Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%d\n", channel_idP);
+		LOG_E(RLC, "Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%u\n", channel_idP);
 		return 0;
 	}
 	
