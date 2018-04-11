@@ -89,6 +89,8 @@ nfapi_tx_request_pdu_t tx_pdu_list[MAX_NUM_TX_REQUEST_PDU];
 nfapi_tx_request_t TX_req;
 Sched_Rsp_t sched_resp;
 
+int codingw = 0;
+
 void
 fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
 				uint8_t                        cqi_req,

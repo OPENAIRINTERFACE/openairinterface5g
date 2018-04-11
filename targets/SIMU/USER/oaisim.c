@@ -195,6 +195,11 @@ time_stats_t oaisim_stats_f;
 time_stats_t dl_chan_stats;
 time_stats_t ul_chan_stats;
 
+int emulate_rf = 0;
+int numerology = 0;
+int codingw = 0;
+int fepw = 0;
+
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
 mapping small_scale_names[] = { 
   { "custom", custom }, { "SCM_A", SCM_A },

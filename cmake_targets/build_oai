@@ -712,6 +712,12 @@ function main() {
     compilations \
 	  $oaisim_build_dir $oaisim_exec \
 	  $oaisim_exec $dbin/$oaisim_exec.$REL
+    compilations \
+	  $oaisim_build_dir $config_libconfig_shlib \
+	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+    compilations \
+          $oaisim_build_dir coding \
+          libcoding.so $dbin/libcoding.so
 
     if [ "$NOS1" != "1" ] ; then
 

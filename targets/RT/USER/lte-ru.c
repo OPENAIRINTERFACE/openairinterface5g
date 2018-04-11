@@ -2235,8 +2235,8 @@ void set_function_spec_param(RU_t *ru)
       ru->fh_north_out          = fh_if4p5_north_out;       // send_IF4p5 on reception
       ru->fh_south_out          = tx_rf;                    // send output to RF
       ru->fh_north_asynch_in    = fh_if4p5_north_asynch_in; // TX packets come asynchronously
-      ru->feprx                 = (get_nprocs()<=2) ? fep_full :ru_fep_full_2thread;                 // RX DFTs
-      ru->feptx_ofdm            = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;               // this is fep with idft only (no precoding in RRU)
+      ru->feprx                 = (get_nprocs()<=2 || !fepw) ? fep_full :ru_fep_full_2thread;                 // RX DFTs
+      ru->feptx_ofdm            = (get_nprocs()<=2 || !fepw) ? feptx_ofdm : feptx_ofdm_2thread;               // this is fep with idft only (no precoding in RRU)
       ru->feptx_prec            = NULL;
       ru->start_if              = start_if;                 // need to start the if interface for if4p5
       ru->ifdevice.host_type    = RRU_HOST;
@@ -2286,9 +2286,9 @@ void set_function_spec_param(RU_t *ru)
 
   case REMOTE_IF5: // the remote unit is IF5 RRU
     ru->do_prach               = 0;
-    ru->feprx                  = (get_nprocs()<=2) ? fep_full : fep_full;                   // this is frequency-shift + DFTs
+    ru->feprx                  = (get_nprocs()<=2 || !fepw) ? fep_full : fep_full;                   // this is frequency-shift + DFTs
     ru->feptx_prec             = feptx_prec;                 // need to do transmit Precoding + IDFTs
-    ru->feptx_ofdm             = (get_nprocs()<=2) ? feptx_ofdm : feptx_ofdm_2thread;                 // need to do transmit Precoding + IDFTs
+    ru->feptx_ofdm             = (get_nprocs()<=2 || !fepw) ? feptx_ofdm : feptx_ofdm_2thread;                 // need to do transmit Precoding + IDFTs
     if (ru->if_timing == synch_to_other) {
       ru->fh_south_in          = fh_slave_south_in;                  // synchronize to master
       ru->fh_south_out         = fh_if5_mobipass_south_out;          // use send_IF5 for mobipass
