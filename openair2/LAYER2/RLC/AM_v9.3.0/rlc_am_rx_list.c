@@ -1729,7 +1729,11 @@ rlc_am_rx_list_display (
       //    rlc_am_v9_3_0_test_print_trace();
       //}
       //assert(cursor_p != cursor_p->next);
-      LOG_E(RLC, "rlc_am_rx_list_display error. cursor_p %p, cursor_p->next %p\n", cursor_p, cursor_p->next);
+      if(cursor_p == cursor_p->next)
+      {
+        LOG_E(RLC, "rlc_am_rx_list_display error. cursor_p %p, cursor_p->next %p\n", cursor_p, cursor_p->next);
+        break;
+      }
       cursor_p = cursor_p->next;
       loop++;
     }
