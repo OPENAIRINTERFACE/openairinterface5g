@@ -1373,10 +1373,9 @@ static void* ru_thread( void* param ) {
     else ret = attach_rru(ru);
     AssertFatal(ret==0,"Cannot connect to radio\n");
   }
-  if (ru->if_south == LOCAL_RF) { // configure RF parameters only 
+  if (ru->if_south == LOCAL_RF) { // configure RF parameters only
     fill_rf_config(ru,ru->rf_config_file);
-    nr_phy_config_request(ru->gNB_list[0]);
-    nr_init_frame_parms(ru->gNB_list[0]->gNB_config, fp);
+    nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, fp);
     nr_dump_frame_parms(fp);
     nr_phy_init_RU(ru);
 
@@ -1901,10 +1900,8 @@ void configure_rru(int idx,
     ru->nr_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0]; */
 
   }
-
   fill_rf_config(ru,ru->rf_config_file);
-  nr_phy_config_request(ru->gNB_list[0]);
-  nr_init_frame_parms(ru->gNB_list[0]->gNB_config, &ru->nr_frame_parms);
+  nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, &ru->nr_frame_parms);
 
   nr_phy_init_RU(ru);
 

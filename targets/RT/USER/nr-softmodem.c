@@ -118,14 +118,14 @@ unsigned short config_frames[4] = {2,9,11,13};
 #ifdef XFORMS
 // current status is that every UE has a DL scope for a SINGLE eNB (gnb_id=0)
 // at eNB 0, an UL scope for every UE
-/*
+
 FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
 FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
 unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
-*/
+
 #endif //XFORMS
 
 pthread_cond_t nfapi_sync_cond;
@@ -388,7 +388,7 @@ void reset_stats(FL_OBJECT *button, long arg)
     }
   }
 }
-/*
+
 static void *scope_thread(void *arg) {
  
 # ifdef ENABLE_XFORMS_WRITE_STATS
@@ -438,7 +438,7 @@ static void *scope_thread(void *arg) {
 # endif
 
   pthread_exit((void*)arg);
-}*/
+}
 #endif
 
 
@@ -831,7 +831,7 @@ int stop_L1L2(module_id_t gnb_id)
 }
 
 /*
- * Restart the lte-softmodem after it has been soft-stopped with stop_L1L2()
+ * Restart the nr-softmodem after it has been soft-stopped with stop_L1L2()
  */
 int restart_L1L2(module_id_t gnb_id)
 {
@@ -851,7 +851,7 @@ int restart_L1L2(module_id_t gnb_id)
   RC.ru_mask |= (1 << ru->idx);
   /* copy the changed frame parameters to the RU */
   /* TODO this should be done for all RUs associated to this gNB */
-  memcpy(&ru->frame_parms, &RC.gNB[gnb_id][0]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
+  memcpy(&ru->nr_frame_parms, &RC.gNB[gnb_id][0]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[gnb_id]);
 
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
@@ -1096,7 +1096,7 @@ int main( int argc, char **argv )
   pthread_mutex_init(&sync_mutex, NULL);
   
 #ifdef XFORMS
-/*
+
   int UE_id;
   
   printf("XFORMS\n");
@@ -1132,7 +1132,7 @@ int main( int argc, char **argv )
     
     printf("Scope thread created, ret=%d\n",ret);
   }
-*/  
+  
 #endif
   
   rt_sleep_ns(10*100000000ULL);

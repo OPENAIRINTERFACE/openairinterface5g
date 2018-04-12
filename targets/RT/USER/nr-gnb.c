@@ -923,11 +923,6 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
       LOG_I(PHY,"Initializing gNB %d CC_id %d\n",inst,CC_id);
 #endif
 
-/*
-      gNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-      gNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;*/
-
-      
       LOG_I(PHY,"Registering with MAC interface module\n");
       AssertFatal((gNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
       gNB->if_inst->schedule_response   = schedule_response;

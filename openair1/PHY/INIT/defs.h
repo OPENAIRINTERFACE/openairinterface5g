@@ -372,6 +372,8 @@ void phy_config_request(PHY_Config_t *phy_config);
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
+int nr_init_frame_parms(nfapi_config_request_t* config,
+                        NR_DL_FRAME_PARMS *frame_parms);
 void nr_phy_config_request(PHY_VARS_gNB *gNB);
 
 /** @} */
