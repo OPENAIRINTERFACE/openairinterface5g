@@ -1281,7 +1281,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 
 	  // this is the normalized RX power and this should be constant (regardless of mcs
 	  normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
-	  target_rx_power = 158;
+	  target_rx_power = 178;
 
 	  // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
