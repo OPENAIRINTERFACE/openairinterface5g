@@ -152,9 +152,17 @@ tbs_size_t mac_rlc_data_req(
 #endif // DEBUG_MAC_INTERFACE
 
   if (MBMS_flagP) {
-    AssertFatal (channel_idP < RLC_MAX_MBMS_LC,        "channel id is too high (%u/%d)!\n",     channel_idP, RLC_MAX_MBMS_LC);
+    //AssertFatal (channel_idP < RLC_MAX_MBMS_LC,        "channel id is too high (%u/%d)!\n",     channel_idP, RLC_MAX_MBMS_LC);
+  	if(channel_idP >= RLC_MAX_MBMS_LC){
+  		LOG_E(RLC, "channel id is too high (%u/%d)!\n", channel_idP, RLC_MAX_MBMS_LC);
+  		return 0;
+  	}
   } else {
-    AssertFatal (channel_idP < NB_RB_MAX,        "channel id is too high (%u/%d)!\n",     channel_idP, NB_RB_MAX);
+    //AssertFatal (channel_idP < NB_RB_MAX,        "channel id is too high (%u/%d)!\n",     channel_idP, NB_RB_MAX);
+  	if(channel_idP >= NB_RB_MAX){
+  		LOG_E(RLC, "channel id is too high (%u/%d)!\n", channel_idP, NB_RB_MAX);
+  		return 0;
+  	}
   }
 
   if (MBMS_flagP) {
@@ -174,7 +182,8 @@ tbs_size_t mac_rlc_data_req(
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    AssertFatal (0 , "RLC not configured lcid %u RNTI %x!\n", channel_idP, rntiP);
+    //AssertFatal (0 , "RLC not configured lcid %u RNTI %x!\n", channel_idP, rntiP);
+  	LOG_E(RLC, "RLC not configured lcid %u RNTI %x!\n", channel_idP, rntiP);
   }
 
   switch (rlc_mode) {
@@ -419,8 +428,12 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
   /* Assumptions : for UE only */
   /* At each TTI, Buffer Occupancy is first computed in mac_rlc_status_ind called by MAC ue_scheduler() function */
   /* Then this function is called during MAC multiplexing ue_get_sdu(), and it may be call several times for the same bearer if it is in AM mode and there are several PDU types to transmit */
-  AssertFatal(enb_flagP == FALSE,"RLC Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%d\n", channel_idP);
-
+  //AssertFatal(enb_flagP == FALSE,"RLC Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%d\n", channel_idP);
+	if(enb_flagP != FALSE){
+		LOG_E(RLC, "Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%u\n", channel_idP);
+		return 0;
+	}
+	
 
   key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
 

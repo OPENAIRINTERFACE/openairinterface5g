@@ -299,7 +299,12 @@ void rlc_am_segment_10 (
 
       pdu_mngt_p->sdus_index[pdu_mngt_p->nb_sdus++] = sdu_buffer_index;
       sdu_mngt_p->pdus_index[sdu_mngt_p->nb_pdus++] = rlc_pP->vt_s % RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE;
-      assert(sdu_mngt_p->nb_pdus < RLC_AM_MAX_SDU_FRAGMENTS);
+      //assert(sdu_mngt_p->nb_pdus < RLC_AM_MAX_SDU_FRAGMENTS);
+      if(sdu_mngt_p->nb_pdus >= RLC_AM_MAX_SDU_FRAGMENTS) {
+        LOG_E(RLC,PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] loop error. %d %d\n",
+          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), sdu_mngt_p->nb_pdus, RLC_AM_MAX_SDU_FRAGMENTS);
+        break;
+      }
       sdu_buffer_index = (sdu_buffer_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
     }
 
@@ -462,11 +467,11 @@ void rlc_am_segment_10 (
           rlc_pP->current_sdu_index = (rlc_pP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
         }
       } else {
-        LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n",
+        LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
-        assert(1!=1);
+        //assert(1!=1);
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
         pdu_mngt_p->payload_size += sdu_mngt_p->sdu_remaining_size;
         pdu_remaining_size = pdu_remaining_size - sdu_mngt_p->sdu_remaining_size;
@@ -520,7 +525,11 @@ void rlc_am_segment_10 (
     pdu_tb_req_p->data_ptr        = (unsigned char*)pdu_p;
     pdu_tb_req_p->tb_size         = data_pdu_size - pdu_remaining_size;
 //#warning "why 3000: changed to RLC_SDU_MAX_SIZE "
-    assert(pdu_tb_req_p->tb_size < RLC_SDU_MAX_SIZE );
+    //assert(pdu_tb_req_p->tb_size < RLC_SDU_MAX_SIZE );
+    if(pdu_tb_req_p->tb_size >= RLC_SDU_MAX_SIZE) {
+      LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] tb_size error. %d, %d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_tb_req_p->tb_size, RLC_SDU_MAX_SIZE);
+    }
     rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_p, pdu_mngt_p->payload_size,true);
 
     //list_add_tail_eurecom (pdu_mem_p, &rlc_pP->segmentation_pdu_list);

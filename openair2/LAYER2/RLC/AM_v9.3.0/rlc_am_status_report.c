@@ -154,7 +154,10 @@ rlc_am_write16_bit_field(
   signed int bits_to_writeP,
   const uint16_t valueP)
 {
-  assert(bits_to_writeP <= 16);
+  //assert(bits_to_writeP <= 16);
+  if(bits_to_writeP > 16) {
+    LOG_E(RLC, "bits_to_writeP error. %d\n", bits_to_writeP);
+  }
 
   if (bits_to_writeP > 8) {
     rlc_am_write8_bit_field(data_ppP,bit_pos_pP,  bits_to_writeP - 8, (uint8_t)(valueP >> 8));
@@ -314,8 +317,13 @@ rlc_am_receive_process_control_pdu(
     //     POLL_SN:
     //     - if t-PollRetransmit is running:
     //         - stop and reset t-PollRetransmit.
-    assert(ack_sn < RLC_AM_SN_MODULO);
-    assert(rlc_pP->control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
+    //assert(ack_sn < RLC_AM_SN_MODULO);
+    //assert(rlc_pP->control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
+    if(ack_sn >= RLC_AM_SN_MODULO || rlc_pP->control_pdu_info.num_nack >= RLC_AM_MAX_NACK_IN_STATUS_PDU) {
+      LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" illegal ack_sn %d, num_nack %d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), ack_sn, rlc_pP->control_pdu_info.num_nack);
+      return;
+    }
 
     /* Note : ackSn can be equal to current vtA only in case the status pdu contains a list of nack_sn with same value = vtA with SOStart/SOEnd */
     /* and meaning the report is not complete due to not enough ressources to fill all SOStart/SOEnd of this NACK_SN */
@@ -618,10 +626,13 @@ rlc_am_send_status_pdu(
 
       /* Now process all Segments of sn_cursor if PDU not fully received */
       if ((!status_report_completed) && (all_segments_received == 0) && (sn_cursor != rlc_pP->vr_ms)) {
-    	  AssertFatal (sn_nack == sn_cursor, "RLC AM Tx Status PDU Data sn_nack=%d and sn_cursor=%d should be equal LcId=%d\n",sn_nack,sn_cursor, rlc_pP->channel_id);
+    	  //AssertFatal (sn_nack == sn_cursor, "RLC AM Tx Status PDU Data sn_nack=%d and sn_cursor=%d should be equal LcId=%d\n",sn_nack,sn_cursor, rlc_pP->channel_id);
+      	if(sn_nack != sn_cursor){
+      		LOG_E(RLC, "RLC AM Tx Status PDU Data sn_nack=%d and sn_cursor=%d should be equal LcId=%d\n",sn_nack,sn_cursor, rlc_pP->channel_id);
+      	}
 
     	  /* First ensure there is enough TBS for at least 1 SOStart/SOEnd, else break */
-    	  if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
+        else if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
     		  /* Init loop flags */
               /* Check lsf */
     		  segment_loop_end = (pdu_info_cursor_p->lsf == 1);
@@ -764,8 +775,14 @@ rlc_am_send_status_pdu(
     } // End main while NACK_SN
 
     /* Clear E1 of last nack_sn entry */
-	AssertFatal ((control_pdu_info.num_nack) || (all_segments_received == 0), "RLC AM Tx Status PDU Data Error no NACK_SN vrR=%d vrMS=%d lastSN_NACK=%d Completed=%d NbBytesAvailable=%d LcId=%d\n",
-	        rlc_pP->vr_r,rlc_pP->vr_ms,sn_nack,status_report_completed,(nb_bits_to_transmit >> 3),rlc_pP->channel_id);
+//	AssertFatal ((control_pdu_info.num_nack) || (all_segments_received == 0), "RLC AM Tx Status PDU Data Error no NACK_SN vrR=%d vrMS=%d lastSN_NACK=%d Completed=%d NbBytesAvailable=%d LcId=%d\n",
+//	        rlc_pP->vr_r,rlc_pP->vr_ms,sn_nack,status_report_completed,(nb_bits_to_transmit >> 3),rlc_pP->channel_id);
+  	if (!((control_pdu_info.num_nack) || (all_segments_received == 0))){
+  		LOG_E(RLC, "RLC AM Tx Status PDU Data Error no NACK_SN vrR=%d vrMS=%d lastSN_NACK=%d Completed=%d NbBytesAvailable=%d LcId=%d\n",
+		        rlc_pP->vr_r,rlc_pP->vr_ms,sn_nack,status_report_completed,(nb_bits_to_transmit >> 3),rlc_pP->channel_id);
+  		return;
+  	}
+  	
 	if (control_pdu_info.num_nack) {
 	    control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 0;
 	}
@@ -803,8 +820,13 @@ rlc_am_send_status_pdu(
 
   /* encode the control pdu */
   pdu_size = (nb_bits_transmitted + 7) >> 3;
-  AssertFatal (pdu_size <= rlc_pP->nb_bytes_requested_by_mac, "RLC AM Tx Status PDU Data size=%d bigger than remaining TBS=%d nb_bits_transmitted=%d LcId=%d\n",
+//  AssertFatal (pdu_size <= rlc_pP->nb_bytes_requested_by_mac, "RLC AM Tx Status PDU Data size=%d bigger than remaining TBS=%d nb_bits_transmitted=%d LcId=%d\n",
+//		  pdu_size,rlc_pP->nb_bytes_requested_by_mac,nb_bits_transmitted, rlc_pP->channel_id);
+	if(pdu_size > rlc_pP->nb_bytes_requested_by_mac){
+		LOG_E(RLC, "RLC AM Tx Status PDU Data size=%d bigger than remaining TBS=%d nb_bits_transmitted=%d LcId=%d\n",
 		  pdu_size,rlc_pP->nb_bytes_requested_by_mac,nb_bits_transmitted, rlc_pP->channel_id);
+		return;
+	}
 
 
 #if TRACE_RLC_AM_STATUS_CREATION
@@ -833,8 +855,14 @@ rlc_am_send_status_pdu(
         nb_bits_to_transmit >> 3);
 #endif
 
-  AssertFatal (pdu_size == ((nb_bits_transmitted + 7) >> 3), "RLC AM Tx Status PDU Data encoding size=%d different than expected=%d LcId=%d\n",
+//  AssertFatal (pdu_size == ((nb_bits_transmitted + 7) >> 3), "RLC AM Tx Status PDU Data encoding size=%d different than expected=%d LcId=%d\n",
+//  		  pdu_size,((nb_bits_transmitted + 7) >> 3), rlc_pP->channel_id);
+	if(pdu_size != ((nb_bits_transmitted + 7) >> 3)){
+		LOG_E(RLC, "RLC AM Tx Status PDU Data encoding size=%d different than expected=%d LcId=%d\n",
   		  pdu_size,((nb_bits_transmitted + 7) >> 3), rlc_pP->channel_id);
+		pdu_size = 0;
+		return;
+	}
 
   // remaining bytes to transmit for RLC (retrans pdus and new data pdus)
   rlc_pP->nb_bytes_requested_by_mac = rlc_pP->nb_bytes_requested_by_mac - pdu_size;
