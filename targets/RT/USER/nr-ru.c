@@ -124,6 +124,7 @@ extern volatile int                    oai_exit;
 
 extern void  nr_phy_init_RU(RU_t*);
 extern void  nr_phy_free_RU(RU_t*);
+extern void  nr_phy_config_request(PHY_VARS_gNB *gNB);
 
 void init_RU(char*);
 void stop_RU(int nb_ru);
@@ -1374,6 +1375,7 @@ static void* ru_thread( void* param ) {
   }
   if (ru->if_south == LOCAL_RF) { // configure RF parameters only 
     fill_rf_config(ru,ru->rf_config_file);
+    nr_phy_config_request(ru->gNB_list[0]);
     nr_init_frame_parms(ru->gNB_list[0]->gNB_config, fp);
     nr_dump_frame_parms(fp);
     nr_phy_init_RU(ru);
@@ -1899,11 +1901,10 @@ void configure_rru(int idx,
     ru->nr_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0]; */
 
   }
-  
-  nr_init_frame_parms(ru->gNB_list[0]->gNB_config, &ru->nr_frame_parms);
 
   fill_rf_config(ru,ru->rf_config_file);
-
+  nr_phy_config_request(ru->gNB_list[0]);
+  nr_init_frame_parms(ru->gNB_list[0]->gNB_config, &ru->nr_frame_parms);
 
   nr_phy_init_RU(ru);
 

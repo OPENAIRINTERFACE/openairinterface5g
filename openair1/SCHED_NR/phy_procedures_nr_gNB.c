@@ -85,6 +85,6 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   }
 
   if (nfapi_mode == 0 || nfapi_mode == 1) {
-    common_signal_procedures(gNB,frame, subframe);
+    nr_common_signal_procedures(gNB,frame, subframe);
   }
 }
