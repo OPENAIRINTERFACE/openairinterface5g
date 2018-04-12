@@ -1042,19 +1042,19 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
   AssertFatal(prach_fmt<4,
 	      "prach_fmt4 not fully implemented" );
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   int j;
   int overflow = prach_start + prach_len - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*ue->frame_parms.samples_per_tti;
   LOG_I( PHY, "prach_start=%d, overflow=%d\n", prach_start, overflow );
   
   for (i=prach_start,j=0; i<min(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,prach_start+prach_len); i++,j++) {
-    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j]<<4;
-    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
+    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j];
+    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
   }
   
   for (i=0; i<overflow; i++,j++) {
-    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j]<<4;
-    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
+    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j];
+    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
   }
 #if defined(EXMIMO)
   // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
