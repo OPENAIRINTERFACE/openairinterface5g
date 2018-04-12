@@ -144,8 +144,7 @@ static char                     threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
-
-
+char logmem_filename[1024] = {0};
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;
 #endif
@@ -604,6 +603,12 @@ static void get_options(void) {
   }
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
+  }
+  if (strlen(logmem_filename) > 0) {
+    log_mem_filename = &logmem_filename[0];
+    log_mem_flag = 1;
+    printf("Enabling OPT for log save at memory %s\n",log_mem_filename);
+    logInit_log_mem();
   }
 
   
