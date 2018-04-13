@@ -201,8 +201,8 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
   dlsch0_harq->pdsch_start = eNB->pdcch_vars[subframe & 1].num_pdcch_symbols;
 
   if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
-    AssertFatal(sdu!=NULL,"sdu==%d, NFAPI: SFN/SF:%04d%d proc:TX:[frame %d subframe %d]: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d dlsch0_harq[round:%d SFN/SF:%d%d pdu:%p mcs:%d ndi:%d pdschstart:%d]\n",
-                *sdu,frame,subframe,
+    AssertFatal(sdu!=NULL,"NFAPI: SFN/SF:%04d%d proc:TX:[frame %d subframe %d]: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d dlsch0_harq[round:%d SFN/SF:%d%d pdu:%p mcs:%d ndi:%d pdschstart:%d]\n",
+                frame,subframe,
                 proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
                 dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe,dlsch0_harq->pdu,dlsch0_harq->mcs,dlsch0_harq->ndi,dlsch0_harq->pdsch_start);
     if (rel8->rnti != 0xFFFF) LOG_D(PHY,"NFAPI: SFN/SF:%04d%d proc:TX:[frame %d, subframe %d]: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d\n",
