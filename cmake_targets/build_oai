@@ -48,6 +48,7 @@ DEADLINE_SCHEDULER_FLAG_USER="False"
 FORCE_DEADLINE_SCHEDULER_FLAG_USER=""
 CPU_AFFINITY_FLAG_USER="False" #Only valid when lowlatecy flag is set to False
 REL="Rel14"
+NR_REL="Rel15"
 HW="None"
 TP="None"
 NOS1=0
@@ -574,6 +575,7 @@ function main() {
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
+    echo "set ( NR_RRC_ASN1_VERSION \"${NR_REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
     echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file

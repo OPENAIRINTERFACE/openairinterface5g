@@ -327,6 +327,57 @@ add_custom_command (
   DEPENDS ${RRC_GRAMMAR}
   )
 
+
+#NR RRC
+
+add_list2_option(NR_RRC_ASN1_VERSION "Rel15" "ASN.1 version of NR_RRC interface")
+
+if (${NR_RRC_ASN1_VERSION} STREQUAL "Rel15")
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/ans1c/ASN1_files/NR-RRC-Definitions.asn)
+endif  (${NR_RRC_ASN1_VERSION} STREQUAL "Rel15")
+
+set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
+
+if(NOT EXISTS ${asn1c_call})
+  message( FATAL_ERROR "The script ${asn1c_call} must be present" )
+endif(NOT EXISTS ${asn1c_call})
+
+execute_process(COMMAND ${asn1c_call}  
+			${NR_RRC_FULL_DIR} 
+			${RRC_GRAMMAR}
+                        RESULT_VARIABLE ret)
+
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
+
+if(NOT EXISTS ${fix_asn1c_call})
+  message( FATAL_ERROR "The script ${fix_asn1c_call} must be present" )
+endif(NOT EXISTS ${fix_asn1c_call})
+execute_process(COMMAND ${fix_asn1c_call} ${NR_RRC_FULL_DIR} NR_RRC ${NR_RRC_ASN1_VERSION}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${fix_asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
+
+file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
+file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
+set(nr_rrc_h ${nr_rrc_h} ${NR_RRC_FULL_DIR}/asn1_constants.h)
+set_source_files_properties(${nr_rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
+add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source}
+    ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
+include_directories ("${NR_RRC_FULL_DIR}")
+
+# add the command to generate the source code
+# Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
+add_custom_command (
+  OUTPUT ${NR_RRC_FULL_DIR}/asn1_constants.h
+  COMMAND ${asn1c_call}  ${NR_RRC_FULL_DIR} ${RRC_GRAMMAR}
+  COMMAND ${fix_asn1c_call}  ${NR_RRC_FULL_DIR} RRC ${NR_RRC_ASN1_VERSION}
+  DEPENDS ${RRC_GRAMMAR}
+  )
+
+
 # S1AP
 # Same limitation as described in RRC: unknown generated file list
 # so we generate it at cmake time

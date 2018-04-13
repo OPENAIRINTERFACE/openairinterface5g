@@ -109,6 +109,22 @@ function patch_rrc()
   esac
 }
 
+function patch_nr_rrc()
+{
+  local directory="$1"
+  local version="$2"
+
+  case "$version" in
+    Rel15 )
+      echo "patching NR_RRC files release 15"
+      apply_patches "$directory" NR_RRC_Rel15 ${#NR_RRC_Rel15[*]}
+      ;;
+    * )
+      error unknwon/unhandled NR_RRC version \'"$version"\'
+      ;;
+  esac
+}
+
 function patch_x2ap()
 {
   local directory="$1"
@@ -160,6 +176,9 @@ function main()
   case "$module" in
     RRC )
       patch_rrc "$directory" "$version"
+      ;;
+    NR_RRC )
+      patch_nr_rrc "$directory" "$version"
       ;;
     X2AP )
       patch_x2ap "$directory" "$version"
