@@ -50,15 +50,20 @@
 
 #include "PHY/defs_L1_NB_IoT.h"
 #include "RRC/LITE/defs_NB_IoT.h"
+#include "RRC/NR/defs_NR.h"
 typedef struct {
   /// RAN context config file name
   char *config_file_name;
   /// Number of RRC instances in this node
   int nb_inst;
+  /// Number of NB_IoT RRC instances in this node
+  int nb_nb_iot_rrc_inst;
+  /// Number of NR RRC instances in this node
+  int nb_nr_inst;
   /// Number of Component Carriers per instance in this node
   int *nb_CC;
-  /// Number of NB_IoT instances in this node
-  int nb_nb_iot_rrc_inst;
+  /// Number of NR Component Carriers per instance in this node
+  int *nb_nr_CC;
   /// Number of MACRLC instances in this node
   int nb_macrlc_inst;
   /// Number of NB_IoT MACRLC instances in this node
@@ -85,6 +90,8 @@ typedef struct {
   struct eNB_RRC_INST_s **rrc;
   /// NB_IoT RRC context variables
   //struct eNB_RRC_INST_NB_IoT_s **nb_iot_rrc;
+  /// NR RRC context variables
+  struct gNB_RRC_INST_s **nr_rrc;
   /// MAC context variables
   struct eNB_MAC_INST_s **mac;
   /// NB_IoT MAC context variables
