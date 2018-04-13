@@ -496,7 +496,7 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
   uint16_t packet_type;
   uint32_t symbol_number,symbol_mask,prach_rx;
-  uint32_t got_prach_info=0;
+//  uint32_t got_prach_info=0;
 
   symbol_number = 0;
   symbol_mask   = (1<<(fp->symbols_per_slot * fp->slots_per_subframe))-1;
@@ -505,10 +505,10 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *subframe) {
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
     recv_IF4p5(ru, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
     // grab first prach information for this new subframe
-    if (got_prach_info==0) {
+    /*if (got_prach_info==0) {
       prach_rx       = is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx);
       got_prach_info = 1;
-    }
+    }*/
     if (proc->first_rx != 0) {
       *frame = proc->frame_rx;
       *subframe = proc->subframe_rx;
@@ -781,9 +781,9 @@ void tx_rf(RU_t *ru) {
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(proc->frame_tx), T_INT(proc->subframe_tx),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->subframe_tx * fp->samples_per_subframe], fp->samples_per_subframe * 4));
 
-  lte_subframe_t SF_type     = nr_subframe_select(cfg,proc->subframe_tx%10);
-  lte_subframe_t prevSF_type = nr_subframe_select(cfg,(proc->subframe_tx+9)%10);
-  lte_subframe_t nextSF_type = nr_subframe_select(cfg,(proc->subframe_tx+1)%10);
+  nr_subframe_t SF_type     = nr_subframe_select(cfg,proc->subframe_tx%10);
+  /*nr_subframe_t prevSF_type = nr_subframe_select(cfg,(proc->subframe_tx+9)%10);
+  nr_subframe_t nextSF_type = nr_subframe_select(cfg,(proc->subframe_tx+1)%10);*/
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
@@ -966,7 +966,7 @@ static void* ru_thread_prach( void* param ) {
     if (oai_exit) break;
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 1 );      
-    if (ru->gNB_list[0]){
+    /*if (ru->gNB_list[0]){
       prach_procedures(
         ru->gNB_list[0]
 #ifdef Rel14
@@ -987,7 +987,7 @@ static void* ru_thread_prach( void* param ) {
 #endif
 	        );
     } 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 );      
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 ); */     
     if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
   }
 
@@ -1441,7 +1441,7 @@ static void* ru_thread( void* param ) {
         proc->frame_tx,proc->subframe_tx,
         RC.gNB[0][0]->proc.frame_rx,RC.gNB[0][0]->proc.subframe_rx,
         RC.gNB[0][0]->proc.frame_tx);
-
+/*
       LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
           ru->do_prach,
           is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
@@ -1449,7 +1449,7 @@ static void* ru_thread( void* param ) {
 
     if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
       wakeup_prach_ru(ru);
-    }
+    }*/
 
     // adjust for timing offset between RU
     if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
@@ -1597,10 +1597,10 @@ void init_RU_proc(RU_t *ru) {
    
   int i=0;
   RU_proc_t *proc;
-  pthread_attr_t *attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_synch=NULL;
+  pthread_attr_t *attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL;// *attr_synch=NULL;
   //pthread_attr_t *attr_fep=NULL;
 #ifdef Rel14
-  pthread_attr_t *attr_prach_br=NULL;
+  //pthread_attr_t *attr_prach_br=NULL;
 #endif
   char name[100];
 
@@ -1645,7 +1645,7 @@ void init_RU_proc(RU_t *ru) {
 #ifndef DEADLINE_SCHEDULER
   attr_FH        = &proc->attr_FH;
   attr_prach     = &proc->attr_prach;
-  attr_synch     = &proc->attr_synch;
+  //attr_synch     = &proc->attr_synch;
   attr_asynch    = &proc->attr_asynch_rxtx;
 #endif
   

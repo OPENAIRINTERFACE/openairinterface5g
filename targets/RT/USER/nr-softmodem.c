@@ -19,36 +19,6 @@
  *      contact@openairinterface.org
  */
 
-#if 0
-//Temporary main function
-int main( int argc, char **argv )
-{
-  nfapi_config_request_t config;
-  NR_DL_FRAME_PARMS* frame_parms = malloc(sizeof(NR_DL_FRAME_PARMS));
-  int16_t amp;
-
-  int16_t** txdataF = (int16_t **)malloc(2048*2*14*2*2* sizeof(int16_t));
-  int16_t* d_pss = malloc(NR_PSS_LENGTH * sizeof(int16_t));
-  int16_t *d_sss = malloc(NR_SSS_LENGTH * sizeof(int16_t));
-
-  //logInit();
-
-  phy_init_nr_gNB(&config);
-  nr_init_frame_parms(config, frame_parms);
-  nr_dump_frame_parms(frame_parms);
-
-  amp = 32767; //1_Q_15
-  nr_generate_pss(d_pss, txdataF, amp, 0, 0, config, frame_parms);
-  nr_generate_sss(d_sss, txdataF, amp, 0, 0, config, frame_parms);
-
-  free(txdataF);
-  free(d_pss);
-  free(d_sss);
-
-  return 0;
-}
-#endif
-
 
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
@@ -215,7 +185,7 @@ int                             otg_enabled;
 //int                             number_of_cards =   1;
 
 
-static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
+//static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 static nfapi_config_request_t *config[MAX_NUM_CCs];
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
@@ -910,7 +880,7 @@ int main( int argc, char **argv )
 {
   int i;
 #if defined (XFORMS)
-  void *status;
+  //void *status;
 #endif
 
   int CC_id;

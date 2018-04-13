@@ -339,7 +339,8 @@ void nr_phy_config_request(PHY_VARS_gNB *gNB)
 
   //overwrite for new NR parameters
   gNB_config->subframe_config.numerology_index_mu.value = 1;
-  gNB_config->subframe_config.duplex_mode.value = 1;//FDD
+  gNB_config->subframe_config.duplex_mode.value = FDD;
+  gNB_config->rf_config.tx_antenna_ports.value = 1;
   gNB_config->rf_config.dl_channel_bandwidth.value = 106;
   gNB_config->rf_config.ul_channel_bandwidth.value = 106;
   gNB_config->sch_config.half_frame_index = 0;

@@ -40,7 +40,7 @@ int nr_init_frame_parms(nfapi_config_request_t* config,
   LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
 #endif
 
-  if (Ncp == 1) //EXTENDED, to be modified after lte defs are properly linked
+  if (Ncp == EXTENDED)
     AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
 
   switch(mu) {
@@ -63,11 +63,18 @@ int nr_init_frame_parms(nfapi_config_request_t* config,
         case 65:
 
         case 106: //40 MHz
-          frame_parms->ofdm_symbol_size = 2048;
-          //frame_parms->samples_per_tti = 30720;
-          frame_parms->first_carrier_offset = 1412; //2048 - 636
-          frame_parms->nb_prefix_samples0 = 160;
-          frame_parms->nb_prefix_samples = 144;
+          if (frame_parms->threequarter_fs) {
+            frame_parms->ofdm_symbol_size = 1536;
+            frame_parms->first_carrier_offset = 900; //1536 - 636
+            frame_parms->nb_prefix_samples0 = 132;
+            frame_parms->nb_prefix_samples = 108;
+          }
+          else {
+            frame_parms->ofdm_symbol_size = 2048;
+            frame_parms->first_carrier_offset = 1412; //2048 - 636
+            frame_parms->nb_prefix_samples0 = 176;
+            frame_parms->nb_prefix_samples = 144;
+          }
           break;
 
         case 133:
@@ -77,16 +84,14 @@ int nr_init_frame_parms(nfapi_config_request_t* config,
         case 217: //80 MHz
           if (frame_parms->threequarter_fs) {
             frame_parms->ofdm_symbol_size = 3072;
-            //frame_parms->samples_per_tti = 46080;
             frame_parms->first_carrier_offset = 1770; //3072 - 1302
-            frame_parms->nb_prefix_samples0 = 240;
+            frame_parms->nb_prefix_samples0 = 264;
             frame_parms->nb_prefix_samples = 216;
           }
           else {
             frame_parms->ofdm_symbol_size = 4096;
-            //frame_parms->samples_per_tti = 61440;
             frame_parms->first_carrier_offset = 2794; //4096 - 1302
-            frame_parms->nb_prefix_samples0 = 320;
+            frame_parms->nb_prefix_samples0 = 352;
             frame_parms->nb_prefix_samples = 288;
           }
           break;
@@ -134,7 +139,7 @@ int nr_init_frame_parms(nfapi_config_request_t* config,
     AssertFatal(1==0,"Invalid numerology index %d", mu);
   }
 
-  frame_parms->symbols_per_slot = ((Ncp == 0)? 14 : 12); // to redefine for different slot formats
+  frame_parms->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_slot * frame_parms->slots_per_subframe;
   frame_parms->samples_per_frame_wCP = 10 * frame_parms->samples_per_subframe_wCP;
   frame_parms->samples_per_subframe = frame_parms->samples_per_subframe_wCP + (frame_parms->nb_prefix_samples0 * frame_parms->slots_per_subframe) +

@@ -573,7 +573,8 @@ void init_gNB_proc(int inst) {
   PHY_VARS_gNB *gNB;
   gNB_proc_t *proc;
   gNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL;
+  //*attr_prach=NULL;
 
   LOG_I(PHY,"%s(inst:%d) RC.nb_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_CC[inst]);
 
