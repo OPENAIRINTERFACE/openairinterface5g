@@ -285,7 +285,7 @@ mac_rrc_data_req(
       return (Sdu_size);
     }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     if((Srb_id & RAB_OFFSET) == MCCH) {
       if(RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESS[mbsfn_sync_area].Active==0) {
@@ -338,9 +338,9 @@ mac_rrc_data_req(
       //return(0);
     }
 
-#endif //Rel10 || Rel14
+#endif // #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     if ((Srb_id & RAB_OFFSET) == BCCH_SIB1_BR){
         memcpy(&buffer_pP[0],
                RC.rrc[Mod_idP]->carrier[CC_id].SIB1_BR,

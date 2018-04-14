@@ -254,7 +254,7 @@ typedef struct {
   uint8_t decode_phich;
 } LTE_UL_UE_HARQ_t; 
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 typedef enum {
   CEmodeA = 0,
   CEmodeB = 1
@@ -302,7 +302,7 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
   uint8_t sib1_br_flag;
   /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
@@ -534,7 +534,7 @@ typedef enum {
   HARQ_SR_CQI  
 } UCI_type_t;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 typedef enum {
   NOCE,
   CEMODEA,
@@ -572,7 +572,7 @@ typedef struct {
   uint8_t     tdd_bundling;
   /// Received Energy
   uint32_t stat;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// non BL/CE, CEmodeA, CEmodeB
   UE_type_t ue_type;
   /// Indicates the symbols that are left empty due to eMTC retuning.

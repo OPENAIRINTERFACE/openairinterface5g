@@ -275,7 +275,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
 void initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 		      sub_frame_t subframeP, uint16_t preamble_index,
 		      int16_t timing_offset, uint16_t rnti
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		      , uint8_t rach_resource_type
 #endif
     );
@@ -294,7 +294,7 @@ unsigned short fill_rar(const module_id_t module_idP,
 			const uint16_t N_RB_UL,
 			const uint8_t input_buffer_length);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 unsigned short fill_rar_br(eNB_MAC_INST * eNB,
 			   int CC_id,
 			   RA_t * ra,
@@ -521,7 +521,7 @@ void ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frame,
 		 uint8_t CH_index);
 
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /* \brief Called by PHY to transfer MCH transport block to ue MAC.
 @param Mod_id Index of module instance
 @param frame Frame index
@@ -645,7 +645,7 @@ int l2_init(LTE_DL_FRAME_PARMS * frame_parms, int eMBMS_active,
 	    char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active);
 int mac_init(void);
 int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	       , uint8_t rach_resource_type
 #endif
     );
@@ -896,20 +896,20 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
 			   int p_eNB,
 			   int Ncp,
 			   int eutra_band, uint32_t dl_CarrierFreq,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			   int pbch_repetition,
 #endif
 			   rnti_t rntiP,
 			   BCCH_BCH_Message_t * mib,
 			   RadioResourceConfigCommonSIB_t *
 			   radioResourceConfigCommon,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			   RadioResourceConfigCommonSIB_t *
 			   radioResourceConfigCommon_BR,
 #endif
 			   struct PhysicalConfigDedicated
 			   *physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			   SCellToAddMod_r10_t * sCellToAddMod_r10,
 			   //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -927,13 +927,13 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
 			   additionalSpectrumEmission,
 			   struct MBSFN_SubframeConfigList
 			   *mbsfn_SubframeConfigList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			   ,
 			   uint8_t MBMS_Flag,
 			   MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
 			   PMCH_InfoList_r9_t * pmch_InfoList
 #endif
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 			   ,
 			   SystemInformationBlockType1_v1310_IEs_t *
 			   sib1_ext_r13
@@ -967,7 +967,7 @@ int rrc_mac_config_req_ue(module_id_t module_idP,
 			  radioResourceConfigCommon,
 			  struct PhysicalConfigDedicated
 			  *physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			  SCellToAddMod_r10_t * sCellToAddMod_r10,
 			  //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -986,7 +986,7 @@ int rrc_mac_config_req_ue(module_id_t module_idP,
 			  additionalSpectrumEmission,
 			  struct MBSFN_SubframeConfigList
 			  *mbsfn_SubframeConfigList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			  ,
 			  uint8_t MBMS_Flag,
 			  MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
@@ -1087,7 +1087,7 @@ void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *
 					  uint8_t current_tx_nb,
 					  uint8_t n_srs, uint16_t size);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void fill_nfapi_ulsch_config_request_emtc(nfapi_ul_config_request_pdu_t *
 					  ul_config_pdu, uint8_t ue_type,
 					  uint16_t
@@ -1163,7 +1163,7 @@ uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP);
 uint8_t get_ul_req_index(module_id_t module_idP, int CC_idP,
 			 sub_frame_t subframeP);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int get_numnarrowbandbits(long dl_Bandwidth);
 
 int mpdcch_sf_condition(eNB_MAC_INST * eNB, int CC_id, frame_t frameP,

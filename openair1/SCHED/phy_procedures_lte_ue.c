@@ -3108,7 +3108,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
   int subframe_rx = proc->subframe_rx;
   int frame_rx = proc->frame_rx;
   int pmch_mcs=-1;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   int CC_id = ue->CC_id;
 #endif
   uint8_t sync_area=255;
@@ -3121,7 +3121,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
 
     LOG_D(PHY,"[UE %d] Frame %d, subframe %d: Querying for PMCH demodulation\n",
     ue->Mod_id,(subframe_rx==9?-1:0)+frame_rx,subframe_rx);
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     pmch_mcs = ue_query_mch(ue->Mod_id,
 			    CC_id,
@@ -3212,7 +3212,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
 	//	if (subframe_rx==9)
 	//  mac_xface->macphy_exit("Why are we exiting here?");
       } else { // decoding successful
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 	
 	if (mcch_active == 1) {
 	  ue_send_mch_sdu(ue->Mod_id,
@@ -3235,7 +3235,7 @@ void ue_pmch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,int eNB_id,int abs
 	  
 	}
 
-#endif // Rel10 || Rel14
+#endif // #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
       } // decoding sucessful
     } // pmch_mcs>=0
   } // is_pmch_subframe=true
@@ -5131,7 +5131,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
   return (0);
 }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
 int phy_procedures_RN_UE_RX(uint8_t slot_rx, uint8_t next_slot, relaying_type_t r_type)
 {
@@ -5229,7 +5229,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
 
     if ((subframe_select(&ue->frame_parms,subframe_rx)==SF_DL) ||
   (ue->frame_parms.frame_type == FDD)) {
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
       if (phy_procedures_RN_UE_RX(subframe_rx, subframe_tx, r_type) != 0 )
 #endif
@@ -5243,7 +5243,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
 
     if ((subframe_select(&ue->frame_parms,subframe_rx)==SF_S) &&
   (slot==0)) {
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
       if (phy_procedures_RN_UE_RX(subframe_rx, subframe_tx, r_type) != 0 )
 #endif

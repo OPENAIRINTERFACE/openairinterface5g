@@ -211,7 +211,7 @@ schedule_CSI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	    ul_req->number_of_pdus++;
 	    ul_req->tl.tag                                                                   = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 	    // PUT rel10-13 UCI options here
 #endif
 	  } else
@@ -314,7 +314,7 @@ schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       LOG_D(MAC,"Frame %d, Subframe %d : Scheduling SR for UE %d/%x is_harq:%d\n",frameP,subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].rnti, is_harq);
 
       // check Rel10 or Rel8 SR
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
       if ((UE_list-> UE_template[CC_id][UE_id].physicalConfigDedicated->ext2)
 	  && (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020)
 	  && (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020)) {
@@ -527,7 +527,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     memset(cc[CC_id].vrb_map_UL, 0, 100);
 
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     cc[CC_id].mcch_active        = 0;
 #endif
 
@@ -628,7 +628,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 
   rrc_rx_tx(&ctxt, CC_id);
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     if (cc[CC_id].MBMS_flag > 0) {

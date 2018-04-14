@@ -105,7 +105,7 @@ void phy_procedures_eNB_lte(uint8_t subframe,PHY_VARS_eNB **phy_vars_eNB,uint8_t
 */
 void phy_procedures_UE_lte(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \brief Top-level entry routine for relay node procedures when acting as eNB. This proc will make us of the existing eNB procs.
   @param last_slot Index of last slot (0-19)
   @param next_slot Index of next_slot (0-19)
@@ -208,7 +208,7 @@ void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,re
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param br_flag indicator for eMTC PRACH
 */
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void prach_procedures(PHY_VARS_eNB *eNB,
 		      int br_flag);
 #else

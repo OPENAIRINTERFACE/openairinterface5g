@@ -187,7 +187,7 @@ do_RRCConnectionReconfiguration(
     RSRP_Range_t                       *rsrp,
     C_RNTI_t                           *cba_rnti,
   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList* dedicatedInfoNASList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     , SCellToAddMod_r10_t  *SCell_config
 #endif
                                         );
@@ -250,7 +250,7 @@ uint8_t do_RRCConnectionRelease(uint8_t Mod_id, uint8_t *buffer,int Transaction_
  * @returns Size of encoded bit stream in bytes
 */
 uint8_t do_MCCHMessage(uint8_t *buffer);
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /***
  * \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
  * @param buffer Pointer to PER-encoded ASN.1 description of MCCH-Message PDU

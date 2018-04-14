@@ -547,7 +547,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 	    if ((UE_id = add_new_ue(enb_mod_idP, CC_idP,
 				    mac->common_channels[CC_idP].
 				    ra[ii].rnti, harq_pid
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				    ,
 				    mac->common_channels[CC_idP].
 				    ra[ii].rach_resource_type
@@ -1438,7 +1438,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 						  mcs_UL[harq_pid],
 						  rb_table
 						  [rb_table_index]));
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	    if (UE_template->rach_resource_type > 0) {	// This is a BL/CE UE allocation
 	      fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_tmp_body->number_of_pdus], UE_template->rach_resource_type > 2 ? 2 : 1, 1,	//total_number_of_repetitions
 						   1,	//repetition_number
@@ -1521,7 +1521,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 						 0,	// n_srs
 						 UE_template->
 						 TBS_UL[harq_pid]);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	    if (UE_template->rach_resource_type > 0) {	// This is a BL/CE UE allocation
 	      fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_tmp_body->number_of_pdus], UE_template->rach_resource_type > 2 ? 2 : 1, 1,	//total_number_of_repetitions
 						   1,	//repetition_number

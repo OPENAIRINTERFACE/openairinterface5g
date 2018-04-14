@@ -36,7 +36,7 @@
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 #include "PRACH-ConfigSIB-v1310.h"
 #endif
 #include "MeasGapConfig.h"
@@ -50,7 +50,7 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 #include "common/ran_context.h"
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-AreaInfo-r9.h"
 #include "MBSFN-SubframeConfigList.h"
@@ -194,7 +194,7 @@ void config_mib(int                 Mod_idP,
 		int                 p_eNBP,
 		uint32_t            dl_CarrierFreqP,
 		uint32_t            ul_CarrierFreqP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                 ,
 		uint32_t            pbch_repetitionP
 #endif
@@ -266,14 +266,14 @@ void config_mib(int                 Mod_idP,
   cfg->sch_config.physical_cell_id.tl.tag = NFAPI_SCH_CONFIG_PHYSICAL_CELL_ID_TAG;
   cfg->num_tlv++;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   cfg->emtc_config.pbch_repetitions_enable_r13.value                 = pbch_repetitionP;
   cfg->emtc_config.pbch_repetitions_enable_r13.tl.tag = NFAPI_EMTC_CONFIG_PBCH_REPETITIONS_ENABLE_R13_TAG;
   cfg->num_tlv++;
 #endif  
   LOG_I(MAC,
 	"%s() NFAPI_CONFIG_REQUEST(num_tlv:%u) DL_BW:%u UL_BW:%u Ncp %d,p_eNB %d,earfcn %d,band %d,phich_resource %u phich_duration %u phich_power_offset %u PSS %d SSS %d PCI %d"
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	
 	" PBCH repetition %d"
 #endif  
@@ -291,7 +291,7 @@ void config_mib(int                 Mod_idP,
 	,cfg->sch_config.primary_synchronization_signal_epre_eprers.value
 	,cfg->sch_config.secondary_synchronization_signal_epre_eprers.value
 	,cfg->sch_config.physical_cell_id.value
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	,cfg->emtc_config.pbch_repetitions_enable_r13.value
 #endif  
       );
@@ -330,7 +330,7 @@ void
 config_sib2(int Mod_idP,
 	    int CC_idP,
 	    RadioResourceConfigCommonSIB_t * radioResourceConfigCommonP,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	    RadioResourceConfigCommonSIB_t * radioResourceConfigCommon_BRP,
 #endif
             ARFCN_ValueEUTRA_t *ul_CArrierFreqP,
@@ -446,7 +446,7 @@ config_sib2(int Mod_idP,
     cfg->num_tlv++;
   }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.schedulingInfoSIB1_BR_r13 > 0) {
     AssertFatal(radioResourceConfigCommon_BRP != NULL, "radioResource rou is missing\n");
     AssertFatal(radioResourceConfigCommon_BRP->ext4 != NULL, "ext4 is missing\n");
@@ -677,20 +677,20 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 		       int physCellId,
 		       int p_eNB,
 		       int Ncp, int eutra_band, uint32_t dl_CarrierFreq,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		       int pbch_repetition,
 #endif
 		       rnti_t rntiP,
 		       BCCH_BCH_Message_t * mib,
 		       RadioResourceConfigCommonSIB_t *
 		       radioResourceConfigCommon,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		       RadioResourceConfigCommonSIB_t *
 		       radioResourceConfigCommon_BR,
 #endif
 		       struct PhysicalConfigDedicated
 		       *physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 		       SCellToAddMod_r10_t * sCellToAddMod_r10,
 		       //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -708,12 +708,12 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 		       additionalSpectrumEmission,
 		       struct MBSFN_SubframeConfigList
 		       *mbsfn_SubframeConfigList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 		       , uint8_t MBMS_Flag,
 		       MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
 		       PMCH_InfoList_r9_t * pmch_InfoList
 #endif
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 		       ,
 		       SystemInformationBlockType1_v1310_IEs_t *
 		       sib1_v13ext
@@ -764,7 +764,7 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 	       p_eNB,
 	       dl_CarrierFreq,
 	       ul_CarrierFreq
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	       , pbch_repetition
 #endif
 	       );
@@ -776,7 +776,7 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
       RC.mac[Mod_idP]->common_channels[CC_idP].schedulingInfoList = schedulingInfoList;    
       config_sib1(Mod_idP,CC_idP,tdd_Config);
     }
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
     if (sib1_v13ext != NULL) {
       RC.mac[Mod_idP]->common_channels[CC_idP].sib1_v13ext = sib1_v13ext;
     }
@@ -835,7 +835,7 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 	  dl_Bandwidth;
 
       config_sib2(Mod_idP, CC_idP, radioResourceConfigCommon,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		  radioResourceConfigCommon_BR,
 #endif
 		  NULL, ul_Bandwidth, additionalSpectrumEmission,
@@ -877,7 +877,7 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
   }
 
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (sCellToAddMod_r10 != NULL) {
     UE_id = find_UE_id(Mod_idP, rntiP);
@@ -910,11 +910,11 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 	    subframeAllocation.choice.oneFrame.buf[0]);
     }
 
-#ifdef Rel10
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     RC.mac[Mod_idP]->common_channels[0].MBMS_flag = MBMS_Flag;
 #endif
   }
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (mbsfn_AreaInfoList != NULL) {
     // One eNB could be part of multiple mbsfn syc area, this could change over time so reset each time

@@ -211,7 +211,7 @@ mac_rrc_data_ind_ue(
       }
     }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     if ((srb_idP & RAB_OFFSET) == MCCH) {
       LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %d from eNB %d\n",
@@ -242,7 +242,7 @@ mac_rrc_data_ind_ue(
 #endif
     }
 
-#endif // Rel10 || Rel14
+#endif // #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   return(0);
 

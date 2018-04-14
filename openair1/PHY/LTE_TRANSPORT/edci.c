@@ -46,7 +46,7 @@
 //#define DEBUG_DCI_DECODING 1
 //#define DEBUG_PHY
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void generate_edci_top(PHY_VARS_eNB *eNB, int frame, int subframe) {
 
 }
