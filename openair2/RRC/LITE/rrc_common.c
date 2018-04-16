@@ -333,6 +333,7 @@ rrc_rx_tx(
 
     // check for UL failure
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
+      ctxt_pP->rnti = ue_context_p->ue_id_rnti;
       if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe==0)) {
 	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
 	  LOG_I(RRC,"UE rnti %x:S-TMSI %x failure timer %d/8\n",
