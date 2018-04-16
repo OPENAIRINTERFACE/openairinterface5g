@@ -423,8 +423,8 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
   }
   for (i = 0; i < sli->n_dl; i++) {
     if (sli->dl[i].pct < 0) {
-      LOG_W(MAC, "[eNB %d] frame %d subframe %d:invalid slice %d percentage %f. resetting to zero",
-            module_idP, frameP, subframeP, i, sli->dl[i].pct);
+      LOG_W(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: invalid percentage %f. resetting to zero",
+            module_idP, sli->dl[i].id, frameP, subframeP, sli->dl[i].pct);
       sli->dl[i].pct = 0;
     }
     sli->tot_pct_dl += sli->dl[i].pct;
@@ -465,7 +465,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       sli->dl[i].sched_cb = dlsym(NULL, sli->dl[i].sched_name);
       sli->dl[i].update_sched = 0;
       sli->dl[i].update_sched_current = 0;
-      LOG_I(MAC, "update dl scheduler slice %d\n", i);
+      LOG_I(MAC, "update dl scheduler slice index %d ID %d\n", i, sli->dl[i].id);
     }
 
     if (sli->tot_pct_dl <= 1.0) { // the new total RB share is within the range
@@ -487,7 +487,8 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       if (sli->dl[i].pct_current != sli->dl[i].pct) { // new slice percentage
         LOG_I(MAC,
               "[eNB %d][SLICE %d][DL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
-              module_idP, i, frameP, subframeP, sli->tot_pct_dl_current, sli->tot_pct_dl,
+              module_idP, sli->dl[i].id, frameP, subframeP,
+              sli->tot_pct_dl_current, sli->tot_pct_dl,
               sli->dl[i].pct_current, sli->dl[i].pct);
         sli->tot_pct_dl_current = sli->tot_pct_dl;
         sli->dl[i].pct_current = sli->dl[i].pct;
@@ -497,11 +498,12 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       if (sli->dl[i].maxmcs_current != sli->dl[i].maxmcs) {
         if ((sli->dl[i].maxmcs >= 0) && (sli->dl[i].maxmcs < 29)) {
           LOG_I(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
-                module_idP, i, frameP, subframeP, sli->dl[i].maxmcs_current, sli->dl[i].maxmcs);
+                module_idP, sli->dl[i].id, frameP, subframeP,
+                sli->dl[i].maxmcs_current, sli->dl[i].maxmcs);
           sli->dl[i].maxmcs_current = sli->dl[i].maxmcs;
         } else {
           LOG_W(MAC, "[eNB %d][SLICE %d][DL] invalid slice max mcs %d, revert the previous value %d\n",
-                module_idP, i, sli->dl[i].maxmcs, sli->dl[i].maxmcs_current);
+                module_idP, sli->dl[i].id, sli->dl[i].maxmcs, sli->dl[i].maxmcs_current);
           sli->dl[i].maxmcs = sli->dl[i].maxmcs_current;
         }
       }
@@ -509,7 +511,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       // check if a new scheduler, and log the console
       if (sli->dl[i].update_sched_current != sli->dl[i].update_sched) {
         LOG_I(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: DL scheduler for this slice is updated: %s \n",
-              module_idP, i, frameP, subframeP, sli->dl[i].sched_name);
+              module_idP, sli->dl[i].id, frameP, subframeP, sli->dl[i].sched_name);
         sli->dl[i].update_sched_current = sli->dl[i].update_sched;
       }
 
@@ -519,7 +521,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       if (sli->n_dl == sli->n_dl_current) {
         LOG_W(MAC,
               "[eNB %d][SLICE %d][DL] invalid total RB share (%f->%f), reduce proportionally the RB share by 0.1\n",
-              module_idP, i, sli->tot_pct_dl_current, sli->tot_pct_dl);
+              module_idP, sli->dl[i].id, sli->tot_pct_dl_current, sli->tot_pct_dl);
         if (sli->dl[i].pct >= sli->avg_pct_dl) {
           sli->dl[i].pct -= 0.1;
           sli->tot_pct_dl -= 0.1;
@@ -527,7 +529,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       } else {
         LOG_W(MAC,
               "[eNB %d][SLICE %d][DL] invalid total RB share (%f->%f), revert the number of slice to its previous value (%d->%d)\n",
-              module_idP, i, sli->tot_pct_dl_current, sli->tot_pct_dl,
+              module_idP, sli->dl[i].id, sli->tot_pct_dl_current, sli->tot_pct_dl,
               sli->n_dl, sli->n_dl_current);
         sli->n_dl = sli->n_dl_current;
         sli->dl[i].pct = sli->dl[i].pct_current;
@@ -539,7 +541,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
         sli->dl[i].pos_low < 0 ||
         sli->dl[i].pos_high > N_RBG_MAX) {
       LOG_W(MAC, "[eNB %d][SLICE %d][DL] invalid slicing position (%d-%d), using previous values (%d-%d)\n",
-            module_idP, i,
+            module_idP, sli->dl[i].id,
             sli->dl[i].pos_low, sli->dl[i].pos_high,
             sli->dl[i].pos_low_current, sli->dl[i].pos_high_current);
       sli->dl[i].pos_low = sli->dl[i].pos_low_current;
@@ -547,12 +549,12 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
     } else {
       if (sli->dl[i].pos_low_current != sli->dl[i].pos_low) {
         LOG_N(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: start frequency has changed (%d-->%d)\n",
-              module_idP, i, frameP, subframeP, sli->dl[i].pos_low_current, sli->dl[i].pos_low);
+              module_idP, sli->dl[i].id, frameP, subframeP, sli->dl[i].pos_low_current, sli->dl[i].pos_low);
         sli->dl[i].pos_low_current = sli->dl[i].pos_low;
       }
       if (sli->dl[i].pos_high_current != sli->dl[i].pos_high) {
         LOG_N(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: end frequency has changed (%d-->%d)\n",
-              module_idP, i, frameP, subframeP, sli->dl[i].pos_high_current, sli->dl[i].pos_high);
+              module_idP, sli->dl[i].id, frameP, subframeP, sli->dl[i].pos_high_current, sli->dl[i].pos_high);
         sli->dl[i].pos_high_current = sli->dl[i].pos_high;
       }
     }
@@ -560,7 +562,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
     // Check for new sorting policy
     if (sli->dl[i].sorting_current != sli->dl[i].sorting) {
       LOG_I(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: UE sorting policy has changed (%x-->%x)\n",
-            module_idP, i, frameP, subframeP, sli->dl[i].sorting_current, sli->dl[i].sorting);
+            module_idP, sli->dl[i].id, frameP, subframeP, sli->dl[i].sorting_current, sli->dl[i].sorting);
       sli->dl[i].sorting_current = sli->dl[i].sorting;
     }
 
@@ -569,11 +571,11 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       if (sli->dl[i].isol != 1 && sli->dl[i].isol != 0) {
         LOG_W(MAC,
               "[eNB %d][SLICE %d][DL] frame %d subframe %d: invalid slice isolation setting (%d), revert to its previous value (%d)\n",
-              module_idP, i, frameP, subframeP, sli->dl[i].isol, sli->dl[i].isol_current);
+              module_idP, sli->dl[i].id, frameP, subframeP, sli->dl[i].isol, sli->dl[i].isol_current);
         sli->dl[i].isol = sli->dl[i].isol_current;
       } else {
         LOG_I(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: slice isolation setting has changed (%x-->%x)\n",
-              module_idP, i, frameP, subframeP, sli->dl[i].isol_current, sli->dl[i].isol);
+              module_idP, sli->dl[i].id, frameP, subframeP, sli->dl[i].isol_current, sli->dl[i].isol);
         sli->dl[i].isol_current = sli->dl[i].isol;
       }
     }
@@ -581,7 +583,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
     // Check for new slice priority
     if (sli->dl[i].prio_current != sli->dl[i].prio) {
       LOG_I(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: slice priority setting has changed (%d-->%d)\n",
-            module_idP, i, frameP, subframeP, sli->dl[i].prio_current, sli->dl[i].prio);
+            module_idP, sli->dl[i].id, frameP, subframeP, sli->dl[i].prio_current, sli->dl[i].prio);
       sli->dl[i].prio_current = sli->dl[i].prio;
     }
 
@@ -590,11 +592,13 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       if (sli->dl[i].accounting > 1 || sli->dl[i].accounting < 0) {
         LOG_W(MAC,
               "[eNB %d][SLICE %d][DL] frame %d subframe %d: invalid accounting policy (%d), revert to its previous value (%d)\n",
-              module_idP, i, frameP, subframeP, sli->dl[i].accounting, sli->dl[i].accounting_current);
+              module_idP, sli->dl[i].id, frameP, subframeP,
+              sli->dl[i].accounting, sli->dl[i].accounting_current);
         sli->dl[i].accounting = sli->dl[i].accounting_current;
       } else {
         LOG_N(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: UE sorting policy has changed (%x-->%x)\n",
-              module_idP, i, frameP, subframeP, sli->dl[i].accounting_current, sli->dl[i].accounting);
+              module_idP, sli->dl[i].id, frameP, subframeP,
+              sli->dl[i].accounting_current, sli->dl[i].accounting);
         sli->dl[i].accounting_current = sli->dl[i].accounting;
       }
     }
@@ -609,7 +613,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
 
 //------------------------------------------------------------------------------
 void
-schedule_ue_spec(module_id_t module_idP, slice_id_t slice_idP,
+schedule_ue_spec(module_id_t module_idP, int slice_idxP,
                  frame_t frameP, sub_frame_t subframeP, int *mbsfn_flag)
 //------------------------------------------------------------------------------
 {
@@ -719,7 +723,7 @@ schedule_ue_spec(module_id_t module_idP, slice_id_t slice_idP,
 
   start_meas(&eNB->schedule_dlsch_preprocessor);
   dlsch_scheduler_pre_processor(module_idP,
-                                slice_idP,
+                                slice_idxP,
                                 frameP,
                                 subframeP,
                                 mbsfn_flag);
@@ -763,7 +767,7 @@ schedule_ue_spec(module_id_t module_idP, slice_id_t slice_idP,
         continue_flag = 1;
       }
 
-      if (!ue_dl_slice_membership(module_idP, UE_id, slice_idP))
+      if (!ue_dl_slice_membership(module_idP, UE_id, slice_idxP))
         continue;
 
       if (continue_flag != 1) {
@@ -838,7 +842,7 @@ schedule_ue_spec(module_id_t module_idP, slice_id_t slice_idP,
         eNB_UE_stats->dlsch_mcs1 = 10; // cqi_to_mcs[ue_sched_ctl->dl_cqi[CC_id]];
       } else { // this operation is also done in the preprocessor
         eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,
-                                        RC.mac[module_idP]->slice_info.dl[slice_idP].maxmcs);  // cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
+                                        RC.mac[module_idP]->slice_info.dl[slice_idxP].maxmcs);  // cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
       }
 
       // Store stats
@@ -1618,7 +1622,8 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id, int frameP, sub
   COMMON_channels_t *cc;
   int N_RBG[NFAPI_CC_MAX];
 
-  int slice_sorted_list[MAX_NUM_SLICES], slice_id;
+  int slice_sorted_list[MAX_NUM_SLICES];
+  int slice_idx;
   int8_t free_rbgs_map[NFAPI_CC_MAX][N_RBG_MAX];
   int has_traffic[NFAPI_CC_MAX][MAX_NUM_SLICES];
   uint8_t allocation_mask[NFAPI_CC_MAX][N_RBG_MAX];
@@ -1672,9 +1677,9 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id, int frameP, sub
     min_rb_unit = get_min_rb_unit(Mod_id, CC_id);
 
     for (i = 0; i < sli->n_dl; ++i) {
-      slice_id = slice_sorted_list[i];
+      slice_idx = slice_sorted_list[i];
 
-      if (has_traffic[CC_id][slice_id] == 0) continue;
+      if (has_traffic[CC_id][slice_idx] == 0) continue;
 
       // Build an ad-hoc allocation mask fo the slice
       for (rbg = 0; rbg < N_RBG[CC_id]; ++rbg) {
@@ -1695,12 +1700,12 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id, int frameP, sub
       // Sort UE again
       // (UE list gets sorted every time pre_processor is called so it is probably dirty at this point)
       // FIXME: There is only one UE_list for all slices, so it must be sorted again each time we use it
-      sort_UEs(Mod_id, (slice_id_t) slice_id, frameP, subframeP);
+      sort_UEs(Mod_id, slice_idx, frameP, subframeP);
 
-      nb_rbs_remaining = sli->pre_processor_results[slice_id].nb_rbs_remaining;
-      nb_rbs_required = sli->pre_processor_results[slice_id].nb_rbs_required;
-      rballoc_sub = sli->pre_processor_results[slice_id].slice_allocated_rbgs;
-      MIMO_mode_indicator = sli->pre_processor_results[slice_id].MIMO_mode_indicator;
+      nb_rbs_remaining = sli->pre_processor_results[slice_idx].nb_rbs_remaining;
+      nb_rbs_required = sli->pre_processor_results[slice_idx].nb_rbs_required;
+      rballoc_sub = sli->pre_processor_results[slice_idx].slice_allocated_rbgs;
+      MIMO_mode_indicator = sli->pre_processor_results[slice_idx].MIMO_mode_indicator;
 
       // Allocation
       for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -1764,7 +1769,7 @@ void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id, int frameP, sub_frame_
 
       // Sort UE again
       // FIXME: There is only one UE_list for all slices, so it must be sorted again each time we use it
-      sort_UEs(Mod_id, (slice_id_t) i, frameP, subframeP);
+      sort_UEs(Mod_id, (uint8_t)i, frameP, subframeP);
 
       for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
         ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];

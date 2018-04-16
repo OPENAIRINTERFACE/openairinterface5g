@@ -88,7 +88,7 @@ int phy_stats_exist(module_id_t Mod_id, int rnti)
 // This function stores the downlink buffer for all the logical channels
 void
 store_dlsch_buffer(module_id_t Mod_id,
-                   slice_id_t slice_id,
+                   int slice_idx,
                    frame_t frameP,
                    sub_frame_t subframeP) {
 
@@ -102,7 +102,7 @@ store_dlsch_buffer(module_id_t Mod_id,
     if (UE_list->active[UE_id] != TRUE)
 	    continue;
 
-    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_id))
+    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_idx))
       continue;
 
     UE_template = &UE_list->UE_template[UE_PCCID(Mod_id, UE_id)][UE_id];
@@ -146,8 +146,8 @@ store_dlsch_buffer(module_id_t Mod_id,
       if (UE_template->dl_buffer_info[lcid] > 0)
         LOG_D(MAC,
               "[eNB %d][SLICE %d] Frame %d Subframe %d : RLC status for UE %d in LCID%d: total of %d pdus and size %d, head sdu queuing time %d, remaining size %d, is segmeneted %d \n",
-              Mod_id, slice_id, frameP, subframeP, UE_id,
-              lcid, UE_template->dl_pdus_in_buffer[lcid],
+              Mod_id, RC.mac[Mod_id]->slice_info.dl[slice_idx].id, frameP,
+              subframeP, UE_id, lcid, UE_template->dl_pdus_in_buffer[lcid],
               UE_template->dl_buffer_info[lcid],
               UE_template->dl_buffer_head_sdu_creation_time[lcid],
               UE_template->dl_buffer_head_sdu_remaining_size_to_send[lcid],
@@ -174,7 +174,7 @@ int cqi2mcs(int cqi) {
 // This function returns the estimated number of RBs required by each UE for downlink scheduling
 void
 assign_rbs_required(module_id_t Mod_id,
-                    slice_id_t slice_id,
+                    int slice_idx,
                     frame_t frameP,
                     sub_frame_t subframe,
                     int min_rb_unit[NFAPI_CC_MAX],
@@ -192,7 +192,7 @@ assign_rbs_required(module_id_t Mod_id,
   // clear rb allocations across all CC_id
   for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
     if (UE_list->active[UE_id] != TRUE) continue;
-    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_id)) continue;
+    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_idx)) continue;
     pCCid = UE_PCCID(Mod_id, UE_id);
 
     //update CQI information across component carriers
@@ -200,8 +200,8 @@ assign_rbs_required(module_id_t Mod_id,
 
       CC_id = UE_list->ordered_CCids[n][UE_id];
       eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
-//      eNB_UE_stats->dlsch_mcs1 = cmin(cqi_to_mcs[UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id]], sli->dl[slice_id].maxmcs);
-      eNB_UE_stats->dlsch_mcs1 = cmin(cqi2mcs(UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id]), sli->dl[slice_id].maxmcs);
+//      eNB_UE_stats->dlsch_mcs1 = cmin(cqi_to_mcs[UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id]], sli->dl[slice_idx].maxmcs);
+      eNB_UE_stats->dlsch_mcs1 = cmin(cqi2mcs(UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id]), sli->dl[slice_idx].maxmcs);
 
     }
 
@@ -243,16 +243,16 @@ assign_rbs_required(module_id_t Mod_id,
 
         N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
-        UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_id] =
-                nb_rbs_allowed_slice(sli->dl[slice_id].pct, N_RB_DL);
+        UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_idx] =
+                nb_rbs_allowed_slice(sli->dl[slice_idx].pct, N_RB_DL);
 
         /* calculating required number of RBs for each UE */
         while (TBS < UE_list->UE_template[pCCid][UE_id].dl_buffer_total) {
           nb_rbs_required[CC_id][UE_id] += min_rb_unit[CC_id];
 
-          if (nb_rbs_required[CC_id][UE_id] > UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_id]) {
-            TBS = get_TBS_DL(eNB_UE_stats->dlsch_mcs1, UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_id]);
-            nb_rbs_required[CC_id][UE_id] = UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_id];
+          if (nb_rbs_required[CC_id][UE_id] > UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_idx]) {
+            TBS = get_TBS_DL(eNB_UE_stats->dlsch_mcs1, UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_idx]);
+            nb_rbs_required[CC_id][UE_id] = UE_list->UE_sched_ctrl[UE_id].max_rbs_allowed_slice[CC_id][slice_idx];
             break;
           }
           TBS = get_TBS_DL(eNB_UE_stats->dlsch_mcs1, nb_rbs_required[CC_id][UE_id]);
@@ -264,7 +264,7 @@ assign_rbs_required(module_id_t Mod_id,
               nb_rbs_required[CC_id][UE_id], TBS,
               eNB_UE_stats->dlsch_mcs1);
 
-        sli->pre_processor_results[slice_id].mcs[CC_id][UE_id] = eNB_UE_stats->dlsch_mcs1;
+        sli->pre_processor_results[slice_idx].mcs[CC_id][UE_id] = eNB_UE_stats->dlsch_mcs1;
       }
     }
   }
@@ -332,7 +332,7 @@ struct sort_ue_dl_params {
     int Mod_idP;
     int frameP;
     int subframeP;
-    int slice_id;
+    int slice_idx;
 };
 
 static int ue_dl_compare(const void *_a, const void *_b, void *_params)
@@ -341,7 +341,7 @@ static int ue_dl_compare(const void *_a, const void *_b, void *_params)
   UE_list_t *UE_list = &RC.mac[params->Mod_idP]->UE_list;
 
   int i;
-  int slice_id = params->slice_id;
+  int slice_idx = params->slice_idx;
   int UE_id1 = *(const int *) _a;
   int UE_id2 = *(const int *) _b;
 
@@ -360,7 +360,7 @@ static int ue_dl_compare(const void *_a, const void *_b, void *_params)
   long lcgid2 = min_lcgidpriority(params->Mod_idP, UE_id2);
 
   for (i = 0; i < CR_NUM; ++i) {
-    switch (UE_list->sorting_criteria[slice_id][i]) {
+    switch (UE_list->sorting_criteria[slice_idx][i]) {
 
       case CR_ROUND :
         if (round1 > round2)
@@ -421,28 +421,31 @@ static int ue_dl_compare(const void *_a, const void *_b, void *_params)
     return 0;
 }
 
-void decode_sorting_policy(module_id_t Mod_idP, slice_id_t slice_id) {
+void decode_sorting_policy(module_id_t Mod_idP, int slice_idx) {
   int i;
 
   UE_list_t *UE_list = &RC.mac[Mod_idP]->UE_list;
-  uint32_t policy = RC.mac[Mod_idP]->slice_info.dl[slice_id].sorting;
+  uint32_t policy = RC.mac[Mod_idP]->slice_info.dl[slice_idx].sorting;
   uint32_t mask = 0x0000000F;
   uint16_t criterion;
 
   for (i = 0; i < CR_NUM; ++i) {
     criterion = (uint16_t) (policy >> 4 * (CR_NUM - 1 - i) & mask);
     if (criterion >= CR_NUM) {
-      LOG_W(MAC, "Invalid criterion in slice %d policy, revert to default policy \n", slice_id);
-      RC.mac[Mod_idP]->slice_info.dl[slice_id].sorting = 0x12345;
+      LOG_W(MAC,
+            "Invalid criterion in slice index %d ID %d policy, revert to default policy \n",
+            slice_idx, RC.mac[Mod_idP]->slice_info.dl[slice_idx].id);
+      RC.mac[Mod_idP]->slice_info.dl[slice_idx].sorting = 0x12345;
       break;
     }
-    UE_list->sorting_criteria[slice_id][i] = criterion;
+    UE_list->sorting_criteria[slice_idx][i] = criterion;
   }
 }
 
 void decode_slice_positioning(module_id_t Mod_idP,
-                              slice_id_t slice_id,
-                              uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX]) {
+                              int slice_idx,
+                              uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX])
+{
   uint8_t CC_id;
   int RBG, start_frequency, end_frequency;
 
@@ -453,8 +456,8 @@ void decode_slice_positioning(module_id_t Mod_idP,
     }
   }
 
-  start_frequency = RC.mac[Mod_idP]->slice_info.dl[slice_id].pos_low;
-  end_frequency = RC.mac[Mod_idP]->slice_info.dl[slice_id].pos_high;
+  start_frequency = RC.mac[Mod_idP]->slice_info.dl[slice_idx].pos_low;
+  end_frequency = RC.mac[Mod_idP]->slice_info.dl[slice_idx].pos_high;
   for (CC_id = 0; CC_id < NFAPI_CC_MAX; ++CC_id) {
     for (RBG = start_frequency; RBG <= end_frequency; ++RBG) {
       slice_allocation_mask[CC_id][RBG] = 1;
@@ -464,12 +467,12 @@ void decode_slice_positioning(module_id_t Mod_idP,
 
 
 // This fuction sorts the UE in order their dlsch buffer and CQI
-void sort_UEs(module_id_t Mod_idP, slice_id_t slice_id, int frameP, sub_frame_t subframeP)
+void sort_UEs(module_id_t Mod_idP, int slice_idx, int frameP, sub_frame_t subframeP)
 {
   int i;
   int list[MAX_MOBILES_PER_ENB];
   int list_size = 0;
-  struct sort_ue_dl_params params = {Mod_idP, frameP, subframeP, slice_id};
+  struct sort_ue_dl_params params = {Mod_idP, frameP, subframeP, slice_idx};
 
   UE_list_t *UE_list = &RC.mac[Mod_idP]->UE_list;
 
@@ -478,13 +481,13 @@ void sort_UEs(module_id_t Mod_idP, slice_id_t slice_id, int frameP, sub_frame_t 
     if (UE_list->active[i] == FALSE) continue;
     if (UE_RNTI(Mod_idP, i) == NOT_A_RNTI) continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1) continue;
-    if (!ue_dl_slice_membership(Mod_idP, i, slice_id)) continue;
+    if (!ue_dl_slice_membership(Mod_idP, i, slice_idx)) continue;
 
     list[list_size] = i;
     list_size++;
   }
 
-  decode_sorting_policy(Mod_idP, slice_id);
+  decode_sorting_policy(Mod_idP, slice_idx);
 
   qsort_r(list, list_size, sizeof(int), ue_dl_compare, &params);
 
@@ -571,8 +574,9 @@ void sort_UEs(module_id_t Mod_idP, slice_id_t slice_id, int frameP, sub_frame_t 
 }
 
 void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
-                                                slice_id_t slice_id,
-                                                const uint8_t rbs_retx[NFAPI_CC_MAX]) {
+                                                int slice_idx,
+                                                const uint8_t rbs_retx[NFAPI_CC_MAX])
+{
   int UE_id, CC_id, N_RB_DL, i;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   UE_sched_ctrl *ue_sched_ctl;
@@ -582,24 +586,24 @@ void dlsch_scheduler_pre_processor_partitioning(module_id_t Mod_id,
 
     if (UE_RNTI(Mod_id, UE_id) == NOT_A_RNTI) continue;
     if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
-    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_id)) continue;
+    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_idx)) continue;
 
     ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
     for (i = 0; i < UE_num_active_CC(UE_list, UE_id); ++i) {
       CC_id = UE_list->ordered_CCids[i][UE_id];
       N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
-      available_rbs = nb_rbs_allowed_slice(RC.mac[Mod_id]->slice_info.dl[slice_id].pct, N_RB_DL);
+      available_rbs = nb_rbs_allowed_slice(RC.mac[Mod_id]->slice_info.dl[slice_idx].pct, N_RB_DL);
       if (rbs_retx[CC_id] < available_rbs)
-        ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id] = available_rbs - rbs_retx[CC_id];
+        ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_idx] = available_rbs - rbs_retx[CC_id];
       else
-        ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id] = 0;
+        ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_idx] = 0;
     }
   }
 }
 
 void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
-                                              slice_id_t slice_id,
+                                              int slice_idx,
                                               frame_t frameP,
                                               sub_frame_t subframeP,
                                               int min_rb_unit[NFAPI_CC_MAX],
@@ -640,7 +644,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
     rnti = UE_RNTI(Mod_id, UE_id);
     if (rnti == NOT_A_RNTI) continue;
     if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
-    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_id)) continue;
+    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_idx)) continue;
 
     for (i = 0; i < UE_num_active_CC(UE_list, UE_id); ++i) {
       CC_id = UE_list->ordered_CCids[i][UE_id];
@@ -670,9 +674,9 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
 
   // PARTITIONING
   // Reduces the available RBs according to slicing configuration
-  dlsch_scheduler_pre_processor_partitioning(Mod_id, slice_id, rbs_retx);
+  dlsch_scheduler_pre_processor_partitioning(Mod_id, slice_idx, rbs_retx);
 
-  switch (RC.mac[Mod_id]->slice_info.dl[slice_id].accounting) {
+  switch (RC.mac[Mod_id]->slice_info.dl[slice_idx].accounting) {
 
     // If greedy scheduling, try to account all the required RBs
     case POL_GREEDY:
@@ -680,7 +684,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
         rnti = UE_RNTI(Mod_id, UE_id);
         if (rnti == NOT_A_RNTI) continue;
         if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
-        if (!ue_dl_slice_membership(Mod_id, UE_id, slice_id)) continue;
+        if (!ue_dl_slice_membership(Mod_id, UE_id, slice_idx)) continue;
 
         for (i = 0; i < UE_num_active_CC(UE_list, UE_id); i++) {
           CC_id = UE_list->ordered_CCids[i][UE_id];
@@ -700,13 +704,13 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
 
         if (rnti == NOT_A_RNTI) continue;
         if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
-        if (!ue_dl_slice_membership(Mod_id, UE_id, slice_id)) continue;
+        if (!ue_dl_slice_membership(Mod_id, UE_id, slice_idx)) continue;
 
         for (i = 0; i < UE_num_active_CC(UE_list, UE_id); ++i) {
 
           CC_id = UE_list->ordered_CCids[i][UE_id];
           ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-          available_rbs = ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_id];
+          available_rbs = ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_idx];
 
           if (ue_count_newtx[CC_id] == 0) {
             average_rbs_per_user[CC_id] = 0;
@@ -725,7 +729,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
         rnti = UE_RNTI(Mod_id, UE_id);
         if (rnti == NOT_A_RNTI) continue;
         if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
-        if (!ue_dl_slice_membership(Mod_id, UE_id, slice_id)) continue;
+        if (!ue_dl_slice_membership(Mod_id, UE_id, slice_idx)) continue;
 
         for (i = 0; i < UE_num_active_CC(UE_list, UE_id); i++) {
           CC_id = UE_list->ordered_CCids[i][UE_id];
@@ -744,7 +748,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
     rnti = UE_RNTI(Mod_id, UE_id);
     if (rnti == NOT_A_RNTI) continue;
     if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
-    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_id)) continue;
+    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_idx)) continue;
 
     for (i = 0; i < UE_num_active_CC(UE_list, UE_id); i++) {
       CC_id = UE_list->ordered_CCids[i][UE_id];
@@ -763,7 +767,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
 }
 
 void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
-                                               slice_id_t slice_id,
+                                               int slice_idx,
                                                int min_rb_unit[NFAPI_CC_MAX],
                                                uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
                                                uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
@@ -780,7 +784,7 @@ void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
 
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
 
-  decode_slice_positioning(Mod_id, slice_id, slice_allocation_mask);
+  decode_slice_positioning(Mod_id, slice_idx, slice_allocation_mask);
 
   for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
     COMMON_channels_t *cc = &RC.mac[Mod_id]->common_channels[CC_id];
@@ -792,7 +796,7 @@ void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
 
     if (UE_RNTI(Mod_id, UE_id) == NOT_A_RNTI) continue;
     if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
-    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_id)) continue;
+    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_idx)) continue;
 
     for (i = 0; i < UE_num_active_CC(UE_list, UE_id); i++) {
       CC_id = UE_list->ordered_CCids[i][UE_id];
@@ -990,23 +994,23 @@ void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
 }
 
 void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
-                                                      slice_id_t slice_id,
+                                                      int slice_idx,
                                                       int min_rb_unit[NFAPI_CC_MAX],
                                                       uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
                                                       uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
                                                       uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
                                                       uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-                                                      uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]) {
-
+                                                      uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX])
+{
   int UE_id, CC_id;
   int i;
   uint8_t transmission_mode;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   int N_RBG[NFAPI_CC_MAX];
   slice_info_t *sli = &RC.mac[Mod_id]->slice_info;
-  uint8_t (*slice_allocation_mask)[N_RBG_MAX] = sli->pre_processor_results[slice_id].slice_allocation_mask;
+  uint8_t (*slice_allocation_mask)[N_RBG_MAX] = sli->pre_processor_results[slice_idx].slice_allocation_mask;
 
-  decode_slice_positioning(Mod_id, slice_id, slice_allocation_mask);
+  decode_slice_positioning(Mod_id, slice_idx, slice_allocation_mask);
 
   for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
     COMMON_channels_t *cc = &RC.mac[Mod_id]->common_channels[CC_id];
@@ -1018,7 +1022,7 @@ void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
 
     if (UE_RNTI(Mod_id, UE_id) == NOT_A_RNTI) continue;
     if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1) continue;
-    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_id)) continue;
+    if (!ue_dl_slice_membership(Mod_id, UE_id, slice_idx)) continue;
 
     for (i = 0; i < UE_num_active_CC(UE_list, UE_id); i++) {
       CC_id = UE_list->ordered_CCids[i][UE_id];
@@ -1221,7 +1225,7 @@ void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
 // This function assigns pre-available RBS to each UE in specified sub-bands before scheduling is done
 void
 dlsch_scheduler_pre_processor(module_id_t Mod_id,
-                              slice_id_t slice_id,
+                              int slice_idx,
                               frame_t frameP,
                               sub_frame_t subframeP,
                               int *mbsfn_flag)
@@ -1233,11 +1237,11 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   int min_rb_unit[NFAPI_CC_MAX];
 
   slice_info_t *sli = &RC.mac[Mod_id]->slice_info;
-  uint16_t (*nb_rbs_required)[MAX_MOBILES_PER_ENB]  = sli->pre_processor_results[slice_id].nb_rbs_required;
-  uint16_t (*nb_rbs_accounted)[MAX_MOBILES_PER_ENB] = sli->pre_processor_results[slice_id].nb_rbs_accounted;
-  uint16_t (*nb_rbs_remaining)[MAX_MOBILES_PER_ENB] = sli->pre_processor_results[slice_id].nb_rbs_remaining;
-  uint8_t  (*rballoc_sub)[N_RBG_MAX]             = sli->pre_processor_results[slice_id].slice_allocated_rbgs;
-  uint8_t  (*MIMO_mode_indicator)[N_RBG_MAX]     = sli->pre_processor_results[slice_id].MIMO_mode_indicator;
+  uint16_t (*nb_rbs_required)[MAX_MOBILES_PER_ENB]  = sli->pre_processor_results[slice_idx].nb_rbs_required;
+  uint16_t (*nb_rbs_accounted)[MAX_MOBILES_PER_ENB] = sli->pre_processor_results[slice_idx].nb_rbs_accounted;
+  uint16_t (*nb_rbs_remaining)[MAX_MOBILES_PER_ENB] = sli->pre_processor_results[slice_idx].nb_rbs_remaining;
+  uint8_t  (*rballoc_sub)[N_RBG_MAX]             = sli->pre_processor_results[slice_idx].slice_allocated_rbgs;
+  uint8_t  (*MIMO_mode_indicator)[N_RBG_MAX]     = sli->pre_processor_results[slice_idx].MIMO_mode_indicator;
 
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   UE_sched_ctrl *ue_sched_ctl;
@@ -1255,9 +1259,9 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 #endif
 
   // Initialize scheduling information for all active UEs
-  memset(&sli->pre_processor_results[slice_id], 0, sizeof(sli->pre_processor_results));
+  memset(&sli->pre_processor_results[slice_idx], 0, sizeof(sli->pre_processor_results));
   // FIXME: After the memset above, some of the resets in reset() are redundant
-  dlsch_scheduler_pre_processor_reset(Mod_id, slice_id, frameP, subframeP,
+  dlsch_scheduler_pre_processor_reset(Mod_id, slice_idx, frameP, subframeP,
                                       min_rb_unit,
                                       nb_rbs_required,
                                       rballoc_sub,
@@ -1266,25 +1270,25 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 
   // STATUS
   // Store the DLSCH buffer for each logical channel
-  store_dlsch_buffer(Mod_id, slice_id, frameP, subframeP);
+  store_dlsch_buffer(Mod_id, slice_idx, frameP, subframeP);
 
   // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
-  assign_rbs_required(Mod_id, slice_id, frameP, subframeP,
+  assign_rbs_required(Mod_id, slice_idx, frameP, subframeP,
                       min_rb_unit,
                       nb_rbs_required);
 
   // Sorts the user on the basis of dlsch logical channel buffer and CQI
-  sort_UEs(Mod_id, slice_id, frameP, subframeP);
+  sort_UEs(Mod_id, slice_idx, frameP, subframeP);
 
   // ACCOUNTING
   // This procedure decides the number of RBs to allocate
-  dlsch_scheduler_pre_processor_accounting(Mod_id, slice_id, frameP, subframeP,
+  dlsch_scheduler_pre_processor_accounting(Mod_id, slice_idx, frameP, subframeP,
                                            min_rb_unit,
                                            nb_rbs_required,
                                            nb_rbs_accounted);
   // POSITIONING
   // This procedure does the main allocation of the RBs
-  dlsch_scheduler_pre_processor_positioning(Mod_id, slice_id,
+  dlsch_scheduler_pre_processor_positioning(Mod_id, slice_idx,
                                             min_rb_unit,
                                             nb_rbs_required,
                                             nb_rbs_accounted,
@@ -1295,7 +1299,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   // SHARING
   // If there are available RBs left in the slice, allocate them to the highest priority UEs
   if (RC.mac[Mod_id]->slice_info.intraslice_share_active) {
-    dlsch_scheduler_pre_processor_intraslice_sharing(Mod_id, slice_id,
+    dlsch_scheduler_pre_processor_intraslice_sharing(Mod_id, slice_idx,
                                                      min_rb_unit,
                                                      nb_rbs_required,
                                                      nb_rbs_accounted,
@@ -1369,7 +1373,8 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 
         //PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = pre_nb_available_rbs[CC_id][UE_id];
         LOG_D(MAC, "[eNB %d][SLICE %d]Total RBs allocated for UE%d = %d\n",
-              Mod_id, slice_id, UE_id, ue_sched_ctl->pre_nb_available_rbs[CC_id]);
+              Mod_id, RC.mac[Mod_id]->slice_info.dl[slice_idx].id, UE_id,
+              ue_sched_ctl->pre_nb_available_rbs[CC_id]);
       }
     }
   }
@@ -1379,7 +1384,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 
 void
 dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
-                                    slice_id_t slice_id,
+                                    int slice_idx,
                                     frame_t frameP,
                                     sub_frame_t subframeP,
                                     int min_rb_unit[NFAPI_CC_MAX],
@@ -1432,7 +1437,7 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
       if (UE_list->active[UE_id] != TRUE)
         continue;
 
-      if (!ue_dl_slice_membership(module_idP, UE_id, slice_id))
+      if (!ue_dl_slice_membership(module_idP, UE_id, slice_idx))
         continue;
 
       vrb_map = RC.mac[module_idP]->common_channels[CC_id].vrb_map;
@@ -1660,7 +1665,7 @@ dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
 /// ULSCH PRE_PROCESSOR
 
 void ulsch_scheduler_pre_processor(module_id_t module_idP,
-                                   slice_id_t slice_id,
+                                   int slice_idx,
                                    int frameP,
                                    sub_frame_t subframeP,
                                    unsigned char sched_subframeP,
@@ -1684,7 +1689,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
     LOG_D(MAC, "In ulsch_preprocessor: assign max mcs min rb\n");
     // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
-    assign_max_mcs_min_rb(module_idP, slice_id, frameP, subframeP, first_rb);
+    assign_max_mcs_min_rb(module_idP, slice_idx, frameP, subframeP, first_rb);
 
     LOG_D(MAC, "In ulsch_preprocessor: sort ue \n");
     // sort ues
@@ -1706,9 +1711,9 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
         // This is the actual CC_id in the list
         CC_id = UE_list->ordered_ULCCids[n][i];
         UE_template = &UE_list->UE_template[CC_id][i];
-        if (!ue_ul_slice_membership(module_idP, i, slice_id))
+        if (!ue_ul_slice_membership(module_idP, i, slice_idx))
           continue;
-        if (UE_template->pre_allocated_nb_rb_ul[slice_id] > 0) {
+        if (UE_template->pre_allocated_nb_rb_ul[slice_idx] > 0) {
           total_ue_count[CC_id] += 1;
         }
       }
@@ -1727,7 +1732,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
         continue;
 
-      if (!ue_ul_slice_membership(module_idP, UE_id, slice_id))
+      if (!ue_ul_slice_membership(module_idP, UE_id, slice_idx))
           continue;
 
       LOG_D(MAC, "In ulsch_preprocessor: handling UE %d/%x\n", UE_id,
@@ -1751,11 +1756,11 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
         N_RB_UL = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
         ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-        ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_id] =
-                nb_rbs_allowed_slice(sli->ul[slice_id].pct, N_RB_UL);
+        ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx] =
+                nb_rbs_allowed_slice(sli->ul[slice_idx].pct, N_RB_UL);
 
-        first_rb_offset = UE_list->first_rb_offset[CC_id][slice_id];
-        available_rbs = cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_id],
+        first_rb_offset = UE_list->first_rb_offset[CC_id][slice_idx];
+        available_rbs = cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx],
                              N_RB_UL - first_rb[CC_id] - first_rb_offset);
 
         if (total_ue_count[CC_id] == 0) {
@@ -1784,7 +1789,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
         continue;
       if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
         continue;
-      if (!ue_ul_slice_membership(module_idP, i, slice_id))
+      if (!ue_ul_slice_membership(module_idP, i, slice_idx))
         continue;
 
 
@@ -1803,7 +1808,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
           nb_allocated_rbs[CC_id][UE_id] = UE_list->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid];
         } else {
           nb_allocated_rbs[CC_id][UE_id] =
-                  cmin(UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul[slice_id],
+                  cmin(UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul[slice_idx],
                        average_rbs_per_user[CC_id]);
         }
 
@@ -1825,7 +1830,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
         continue;
       if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
         continue;
-      if (!ue_ul_slice_membership(module_idP, i, slice_id))
+      if (!ue_ul_slice_membership(module_idP, i, slice_idx))
         continue;
 
       UE_id = i;
@@ -1836,8 +1841,8 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
         CC_id = UE_list->ordered_ULCCids[n][UE_id];
         UE_template = &UE_list->UE_template[CC_id][UE_id];
         N_RB_UL = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
-        first_rb_offset = UE_list->first_rb_offset[CC_id][slice_id];
-        available_rbs = cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_id],
+        first_rb_offset = UE_list->first_rb_offset[CC_id][slice_idx];
+        available_rbs = cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx],
                              N_RB_UL - first_rb[CC_id] - first_rb_offset);
         total_remaining_rbs[CC_id] = available_rbs - total_allocated_rbs[CC_id];
 
@@ -1846,17 +1851,17 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
         }
 
         if (r == 0) {
-          while ((UE_template->pre_allocated_nb_rb_ul[slice_id] > 0)
-                 && (nb_allocated_rbs[CC_id][UE_id] < UE_template->pre_allocated_nb_rb_ul[slice_id])
+          while ((UE_template->pre_allocated_nb_rb_ul[slice_idx] > 0)
+                 && (nb_allocated_rbs[CC_id][UE_id] < UE_template->pre_allocated_nb_rb_ul[slice_idx])
                  && (total_remaining_rbs[CC_id] > 0)) {
             nb_allocated_rbs[CC_id][UE_id] =
                     cmin(nb_allocated_rbs[CC_id][UE_id] + 1,
-                         UE_template->pre_allocated_nb_rb_ul[slice_id]);
+                         UE_template->pre_allocated_nb_rb_ul[slice_idx]);
             total_remaining_rbs[CC_id]--;
             total_allocated_rbs[CC_id]++;
           }
         } else {
-          UE_template->pre_allocated_nb_rb_ul[slice_id] =
+          UE_template->pre_allocated_nb_rb_ul[slice_idx] =
                   nb_allocated_rbs[CC_id][UE_id];
           LOG_D(MAC,
                 "******************UL Scheduling Information for UE%d CC_id %d ************************\n",
@@ -1864,7 +1869,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
           LOG_D(MAC,
                 "[eNB %d] total RB allocated for UE%d CC_id %d  = %d\n",
                 module_idP, UE_id, CC_id,
-                UE_template->pre_allocated_nb_rb_ul[slice_id]);
+                UE_template->pre_allocated_nb_rb_ul[slice_idx]);
         }
       }
     }
@@ -1872,7 +1877,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 }
 
 void
-assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
+assign_max_mcs_min_rb(module_id_t module_idP, int slice_idx, int frameP,
 		      sub_frame_t subframeP, uint16_t * first_rb)
 {
 
@@ -1902,16 +1907,16 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
-    if (!ue_ul_slice_membership(module_idP, i, slice_id))
+    if (!ue_ul_slice_membership(module_idP, i, slice_idx))
       continue;
 
     if (UE_list->UE_sched_ctrl[i].phr_received == 1) {
       /* if we've received the power headroom information the UE, we can go to
        * maximum mcs */
-      mcs = cmin(20, sli->ul[slice_id].maxmcs);
+      mcs = cmin(20, sli->ul[slice_idx].maxmcs);
     } else {
       /* otherwise, limit to QPSK PUSCH */
-      mcs = cmin(10, sli->ul[slice_id].maxmcs);
+      mcs = cmin(10, sli->ul[slice_idx].maxmcs);
     }
 
     UE_id = i;
@@ -1933,8 +1938,8 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 
       Ncp = RC.mac[module_idP]->common_channels[CC_id].Ncp;
       N_RB_UL = to_prb(RC.mac[module_idP]->common_channels[CC_id].ul_Bandwidth);
-      ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_id] =
-              nb_rbs_allowed_slice(sli->ul[slice_id].pct, N_RB_UL);
+      ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx] =
+              nb_rbs_allowed_slice(sli->ul[slice_idx].pct, N_RB_UL);
 
       int bytes_to_schedule = UE_template->estimated_ul_buffer - UE_template->scheduled_ul_bytes;
       if (bytes_to_schedule < 0) bytes_to_schedule = 0;
@@ -1957,8 +1962,8 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
           tx_power = estimate_ue_tx_power(tbs, rb_table[rb_table_index], 0, Ncp, 0);   // fixme: set use_srs
         }
 
-        first_rb_offset = UE_list->first_rb_offset[CC_id][slice_id];
-        available_rbs = cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_id],
+        first_rb_offset = UE_list->first_rb_offset[CC_id][slice_idx];
+        available_rbs = cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx],
                              N_RB_UL - first_rb[CC_id] - first_rb_offset);
 
         while ((tbs < bits_to_schedule)
@@ -1979,13 +1984,13 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
         }
 
         UE_template->pre_allocated_rb_table_index_ul = rb_table_index;
-        UE_template->pre_allocated_nb_rb_ul[slice_id] = rb_table[rb_table_index];
+        UE_template->pre_allocated_nb_rb_ul[slice_idx] = rb_table[rb_table_index];
         LOG_D(MAC,
               "[eNB %d] frame %d subframe %d: for UE %d CC %d: pre-assigned mcs %d, pre-allocated rb_table[%d]=%d RBs (phr %d, tx power %d)\n",
               module_idP, frameP, subframeP, UE_id, CC_id,
               UE_template->pre_assigned_mcs_ul,
               UE_template->pre_allocated_rb_table_index_ul,
-              UE_template->pre_allocated_nb_rb_ul[slice_id],
+              UE_template->pre_allocated_nb_rb_ul[slice_idx],
               UE_template->phr_info, tx_power);
       } else {
         /* if UE has pending scheduling request then pre-allocate 3 RBs */
@@ -1994,11 +1999,11 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
           /* use QPSK mcs */
           UE_template->pre_assigned_mcs_ul = 10;
           UE_template->pre_allocated_rb_table_index_ul = 2;
-          UE_template->pre_allocated_nb_rb_ul[slice_id] = 3;
+          UE_template->pre_allocated_nb_rb_ul[slice_idx] = 3;
         } else {
           UE_template->pre_assigned_mcs_ul = 0;
           UE_template->pre_allocated_rb_table_index_ul = -1;
-          UE_template->pre_allocated_nb_rb_ul[slice_id] = 0;
+          UE_template->pre_allocated_nb_rb_ul[slice_idx] = 0;
         }
       }
     }
