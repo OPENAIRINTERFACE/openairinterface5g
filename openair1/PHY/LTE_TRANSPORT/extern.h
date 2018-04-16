@@ -30,7 +30,7 @@ extern short *ul_ref_sigs_rx[30][2][33];
 extern unsigned short dftsizes[33];
 extern unsigned short ref_primes[33];
 
-extern int qam64_table[8],qam16_table[4];
+extern int qam64_table[8],qam16_table[4],qpsk_table[2];
 
 extern unsigned char cs_ri_normal[4];
 extern unsigned char cs_ri_extended[4];

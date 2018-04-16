@@ -201,8 +201,8 @@ void oai_create_enb(void) {
   eNB->CC_id   = bodge_counter;
   eNB->abstraction_flag   = 0;
   eNB->single_thread_flag = 0;//single_thread_flag;
-  eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-  eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+  eNB->td                   = ulsch_decoding_data_all;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+  eNB->te                   = dlsch_encoding_all;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 
   RC.nb_CC[bodge_counter] = 1;
 
