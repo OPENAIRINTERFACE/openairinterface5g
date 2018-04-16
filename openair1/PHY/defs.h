@@ -798,10 +798,10 @@ typedef struct RU_t_s{
   void                 (*feptx_prec)(struct RU_t_s *ru);
   /// function pointer to wakeup routine in lte-enb/nr-gnb.
   int (*wakeup_rxtx)(struct PHY_VARS_eNB_s *eNB, struct RU_t_s *ru);
-  int (*nr_wakeup_rxtx)(struct PHY_VARS_gNB_s *eNB, struct RU_t_s *ru);
+  int (*nr_wakeup_rxtx)(struct PHY_VARS_gNB_s *gNB, struct RU_t_s *ru);
   /// function pointer to wakeup routine in lte-enb/nr-gnb.
   void (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
-  void (*wakeup_prach_gNB)(struct PHY_VARS_gNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
+  void (*wakeup_prach_gNB)(struct PHY_VARS_gNB_s *gNB,struct RU_t_s *ru,int frame,int subframe);
   #ifdef Rel14
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
