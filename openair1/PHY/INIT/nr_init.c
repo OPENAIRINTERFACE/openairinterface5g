@@ -338,6 +338,8 @@ void nr_phy_config_request(PHY_VARS_gNB *gNB)
   nfapi_config_request_t *gNB_config = &gNB->gNB_config;
 
   //overwrite for new NR parameters
+  gNB_config->nfapi_config.rf_bands.rf_band[0] = 22;
+  gNB_config->nfapi_config.earfcn.value = 6600;
   gNB_config->subframe_config.numerology_index_mu.value = 1;
   gNB_config->subframe_config.duplex_mode.value = FDD;
   gNB_config->rf_config.tx_antenna_ports.value = 1;
@@ -349,6 +351,8 @@ void nr_phy_config_request(PHY_VARS_gNB *gNB)
 
   gNB->mac_enabled     = 1;
 
+  fp->dl_CarrierFreq = from_earfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.earfcn.value);
+  fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   fp->threequarter_fs                    = 0;
 
   nr_init_frame_parms(gNB_config, fp);
