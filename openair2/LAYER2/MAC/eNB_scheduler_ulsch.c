@@ -231,6 +231,11 @@ rx_sdu(const module_id_t enb_mod_idP,
     payload_ptr =
 	parse_ulsch_header(sduP, &num_ce, &num_sdu, rx_ces, rx_lcids,
 			   rx_lengths, sdu_lenP);
+    if(payload_ptr == NULL){
+      LOG_E(MAC,"[eNB %d][PUSCH %d] CC_id %d ulsch header unknown lcid(rnti %x, UE_id %d)\n",
+                 enb_mod_idP, harq_pid, CC_idP,current_rnti, UE_id);
+      return;
+    }
 
     T(T_ENB_MAC_UE_UL_PDU, T_INT(enb_mod_idP), T_INT(CC_idP),
       T_INT(current_rnti), T_INT(frameP), T_INT(subframeP),
@@ -944,7 +949,9 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 		    ce_len++;
 		} else {
 		    LOG_E(MAC, "unknown CE %d \n", lcid);
-		    AssertFatal(1 == 0, "unknown CE");
+                    //RM894
+		    //AssertFatal(1 == 0, "unknown CE");
+                    return NULL;
 		}
 	    }
 	}
