@@ -6537,18 +6537,22 @@ rrc_eNB_decode_dcch(
           present ==
           RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8) {
 	/*NN: revise the condition */
+	/*FK: left the condition as is for the case MME is used (S1 mode) but setting  dedicated_DRB = 1 otherwise (noS1 mode) so that no second RRCReconfiguration message activationg more DRB is sent as this causes problems with the nasmesh driver.*/
+#if defined(ENABLE_USE_MME)
         if (ue_context_p->ue_context.Status == RRC_RECONFIGURED){
 	  dedicated_DRB = 1;
-	  LOG_I(RRC,
-		PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
-		PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-	}else {
+	} else {
 	  dedicated_DRB = 0;
 	  ue_context_p->ue_context.Status = RRC_RECONFIGURED;
-	  LOG_I(RRC,
-		PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
-		PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
 	}
+#else
+	dedicated_DRB = 1;
+	ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+#endif
+	LOG_I(RRC,
+	    PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
+	    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+	
 	rrc_eNB_process_RRCConnectionReconfigurationComplete(
           ctxt_pP,
           ue_context_p,
