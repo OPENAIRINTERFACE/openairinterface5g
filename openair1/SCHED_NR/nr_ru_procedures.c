@@ -236,7 +236,7 @@ void nr_feptx_ofdm(RU_t *ru) {
                           fp);
 	// if S-subframe generate first slot only
 	if (subframe_select(fp,subframe) == SF_DL) 
-	  normal_prefix_mod(&ru->common.txdataF_BF[aa][slot_offset_F+slot_sizeF],
+	  nr_normal_prefix_mod(&ru->common.txdataF_BF[aa][slot_offset_F+slot_sizeF],
 			    dummy_tx_b+(fp->samples_per_subframe / fp->slots_per_subframe),
 			    14,
 			    fp);

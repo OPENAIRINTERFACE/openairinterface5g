@@ -58,6 +58,22 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
   
 }
 
+void nr_normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,NR_DL_FRAME_PARMS *frame_parms)
+{
+  PHY_ofdm_mod(txdataF,        // input
+	       txdata,         // output
+	       frame_parms->ofdm_symbol_size,                
+	       1,                 // number of symbols
+	       frame_parms->nb_prefix_samples0,               // number of prefix samples
+	       CYCLIC_PREFIX);
+  PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size,        // input
+	       txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0,         // output
+	       frame_parms->ofdm_symbol_size,                
+	       nsymb - 1,
+	       frame_parms->nb_prefix_samples,               // number of prefix samples
+	       CYCLIC_PREFIX);  
+}
+
 void PHY_ofdm_mod(int *input,                       /// pointer to complex input
                   int *output,                      /// pointer to complex output
                   int fftsize,            /// FFT_SIZE
