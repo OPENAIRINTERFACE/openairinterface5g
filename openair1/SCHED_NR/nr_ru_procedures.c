@@ -83,7 +83,7 @@ void nr_feptx0(RU_t *ru,int slot) {
 					                      12,
 					                      fp->nb_prefix_samples,
 					                      CYCLIC_PREFIX);
-    else                     normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
+    else                     nr_normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
 					                           (int*)&ru->common.txdata[aa][slot_offset],
 					                           14,
 					                           fp);
@@ -230,12 +230,12 @@ void nr_feptx_ofdm(RU_t *ru) {
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
       } else {
-        normal_prefix_mod(&ru->common.txdataF_BF[aa][slot_offset_F],
+        nr_normal_prefix_mod(&ru->common.txdataF_BF[aa][slot_offset_F],
                           dummy_tx_b,
                           14,
                           fp);
 	// if S-subframe generate first slot only
-	if (subframe_select(fp,subframe) == SF_DL) 
+	if (nr_subframe_select(fp,subframe) == SF_DL) 
 	  nr_normal_prefix_mod(&ru->common.txdataF_BF[aa][slot_offset_F+slot_sizeF],
 			    dummy_tx_b+(fp->samples_per_subframe / fp->slots_per_subframe),
 			    14,

@@ -1241,7 +1241,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   
   for (i=0; i<ru->nb_tx; i++) {
     
-    cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
+    cfg->tx_freq[i] = (double)gNB_config->nfapi_config.earfcn.value; //fp->dl_CarrierFreq;
     cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
 
     cfg->tx_gain[i] = ru->att_tx;
