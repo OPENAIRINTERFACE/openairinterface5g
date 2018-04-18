@@ -2066,7 +2066,7 @@ rrc_eNB_generate_RRCConnectionRelease(
 //  ue_context_pP->ue_context.ue_release_timer_thres_rrc = 100;
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
-  ue_context_pP->ue_context.ue_release_timer_s1 = 0;
+  //ue_context_pP->ue_context.ue_release_timer_s1 = 0;
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
