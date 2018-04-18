@@ -259,6 +259,20 @@ void ru_fep_full_2thread(RU_t *ru) {
   stop_meas(&ru->ofdm_demod_stats);
 }*/
 
+void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
+
+  RU_proc_t *proc = &ru->proc;
+
+  proc->instance_cnt_feptx         = -1;
+    
+  pthread_mutex_init( &proc->mutex_feptx, NULL);
+  pthread_cond_init( &proc->cond_feptx, NULL);
+
+  pthread_create(&proc->pthread_feptx, attr_feptx, nr_feptx_thread, (void*)ru);
+
+
+}
+
 
 void nr_feptx_ofdm(RU_t *ru) {
      

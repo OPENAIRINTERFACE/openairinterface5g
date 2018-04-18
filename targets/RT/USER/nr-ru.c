@@ -1591,7 +1591,7 @@ extern void nr_feptx_ofdm(RU_t *ru);
 extern void nr_feptx_ofdm_2thread(RU_t *ru);
 extern void feptx_prec(RU_t *ru);
 extern void init_fep_thread(RU_t *ru,pthread_attr_t *attr);
-extern void init_feptx_thread(RU_t *ru,pthread_attr_t *attr);
+extern void init_nr_feptx_thread(RU_t *ru,pthread_attr_t *attr);
 
 void init_RU_proc(RU_t *ru) {
    
@@ -1672,7 +1672,7 @@ void init_RU_proc(RU_t *ru) {
 
   if (get_nprocs()>=2) { 
     if (ru->feprx) init_fep_thread(ru,NULL); 
-    if (ru->feptx_ofdm) init_feptx_thread(ru,NULL);
+    if (ru->feptx_ofdm) nr_init_feptx_thread(ru,NULL);
   } 
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void*)ru); 
   
