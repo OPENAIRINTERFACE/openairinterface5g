@@ -33,7 +33,7 @@ This section deals with basic functions for OFDM Modulation.
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-//#define DEBUG_OFDM_MOD
+#define DEBUG_OFDM_MOD
 
 
 void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRAME_PARMS *frame_parms)
@@ -67,7 +67,7 @@ void nr_normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,NR_DL_F
 	       frame_parms->nb_prefix_samples0,               // number of prefix samples
 	       CYCLIC_PREFIX);
   PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size,        // input
-	       txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0,         // output
+	       txdata + frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples0,         // output
 	       frame_parms->ofdm_symbol_size,                
 	       nsymb - 1,
 	       frame_parms->nb_prefix_samples,               // number of prefix samples

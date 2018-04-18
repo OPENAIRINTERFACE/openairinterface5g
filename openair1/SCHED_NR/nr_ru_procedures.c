@@ -178,13 +178,86 @@ void nr_feptx_ofdm_2thread(RU_t *ru) {
 
   // call first slot in this thread
   nr_feptx0(ru,0);
-  wait_on_busy_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread");  
+  wait_on_busy_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"NR feptx thread");
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
 
   stop_meas(&ru->ofdm_mod_stats);
 
 }
+
+static void *nr_feptx_thread(void *param) {
+
+  RU_t *ru = (RU_t *)param;
+  RU_proc_t *proc  = &ru->proc;
+
+  thread_top_init("nr_feptx_thread",0,870000,1000000,1000000);
+
+  while (!oai_exit) {
+
+    if (wait_on_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"NR feptx thread")<0) break;
+    nr_feptx0(ru,1);
+    if (release_thread(&proc->mutex_feptx,&proc->instance_cnt_feptx,"NR feptx thread")<0) break;
+
+    if (pthread_cond_signal(&proc->cond_feptx) != 0) {
+      printf("[gNB] ERROR pthread_cond_signal for NR feptx thread exit\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+      return NULL;
+    }
+  }
+  return(NULL);
+}
+
+/*
+void ru_fep_full_2thread(RU_t *ru) {
+
+  RU_proc_t *proc = &ru->proc;
+
+  struct timespec wait;
+
+  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+
+  if ((fp->frame_type == TDD) &&
+     (subframe_select(fp,proc->subframe_rx) != SF_UL)) return;
+
+  if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
+
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
+
+  start_meas(&ru->ofdm_demod_stats);
+
+  if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
+    printf("[RU] ERROR pthread_mutex_lock for fep thread (IC %d)\n", proc->instance_cnt_fep);
+    exit_fun( "error locking mutex_fep" );
+    return;
+  }
+
+  if (proc->instance_cnt_fep==0) {
+    printf("[RU] FEP thread busy\n");
+    exit_fun("FEP thread busy");
+    pthread_mutex_unlock( &proc->mutex_fep );
+    return;
+  }
+  
+  ++proc->instance_cnt_fep;
+
+
+  if (pthread_cond_signal(&proc->cond_fep) != 0) {
+    printf("[RU] ERROR pthread_cond_signal for fep thread\n");
+    exit_fun( "ERROR pthread_cond_signal" );
+    return;
+  }
+  
+  pthread_mutex_unlock( &proc->mutex_fep );
+
+  // call second slot in this symbol
+  fep0(ru,1);
+
+  wait_on_busy_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread");  
+
+  stop_meas(&ru->ofdm_demod_stats);
+}*/
 
 
 void nr_feptx_ofdm(RU_t *ru) {
@@ -243,17 +316,10 @@ void nr_feptx_ofdm(RU_t *ru) {
       }
 
       // if S-subframe generate first slot only
-      if (subframe_select(fp,subframe) == SF_S)
+      if (nr_subframe_select(fp,subframe) == SF_S)
 	len = fp->samples_per_subframe / fp->slots_per_subframe;
       else
 	len = fp->samples_per_subframe;
-      /*
-      for (i=0;i<len;i+=4) {
-	dummy_tx_b[i] = 0x100;
-	dummy_tx_b[i+1] = 0x01000000;
-	dummy_tx_b[i+2] = 0xff00;
-	dummy_tx_b[i+3] = 0xff000000;
-	}*/
       
       if (slot_offset<0) {
 	txdata = (int16_t*)&ru->common.txdata[aa][(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe)+tx_offset];
