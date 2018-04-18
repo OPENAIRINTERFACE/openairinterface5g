@@ -1259,7 +1259,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 #endif
 
   // Initialize scheduling information for all active UEs
-  memset(&sli->pre_processor_results[slice_idx], 0, sizeof(sli->pre_processor_results));
+  memset(&sli->pre_processor_results[slice_idx], 0, sizeof(sli->pre_processor_results[slice_idx]));
   // FIXME: After the memset above, some of the resets in reset() are redundant
   dlsch_scheduler_pre_processor_reset(Mod_id, slice_idx, frameP, subframeP,
                                       min_rb_unit,
