@@ -159,57 +159,6 @@ static void *nr_feptx_thread(void *param) {
   return(NULL);
 }
 
-/*
-void ru_fep_full_2thread(RU_t *ru) {
-
-  RU_proc_t *proc = &ru->proc;
-
-  struct timespec wait;
-
-  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
-
-  if ((fp->frame_type == TDD) &&
-     (subframe_select(fp,proc->subframe_rx) != SF_UL)) return;
-
-  if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
-
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
-
-  start_meas(&ru->ofdm_demod_stats);
-
-  if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
-    printf("[RU] ERROR pthread_mutex_lock for fep thread (IC %d)\n", proc->instance_cnt_fep);
-    exit_fun( "error locking mutex_fep" );
-    return;
-  }
-
-  if (proc->instance_cnt_fep==0) {
-    printf("[RU] FEP thread busy\n");
-    exit_fun("FEP thread busy");
-    pthread_mutex_unlock( &proc->mutex_fep );
-    return;
-  }
-  
-  ++proc->instance_cnt_fep;
-
-
-  if (pthread_cond_signal(&proc->cond_fep) != 0) {
-    printf("[RU] ERROR pthread_cond_signal for fep thread\n");
-    exit_fun( "ERROR pthread_cond_signal" );
-    return;
-  }
-  
-  pthread_mutex_unlock( &proc->mutex_fep );
-
-  // call second slot in this symbol
-  fep0(ru,1);
-
-  wait_on_busy_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread");  
-
-  stop_meas(&ru->ofdm_demod_stats);
-}*/
-
 void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
 
   RU_proc_t *proc = &ru->proc;

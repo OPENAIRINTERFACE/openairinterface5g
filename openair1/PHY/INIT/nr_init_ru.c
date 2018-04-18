@@ -49,10 +49,10 @@ int nr_phy_init_RU(RU_t *ru) {
 
     for (i=0; i<ru->nb_tx; i++) {
       // Allocate 10 subframes of I/Q TX signal data (time) if not
-      ru->common.txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_frame_wCP*sizeof(int32_t) );
+      ru->common.txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_frame*sizeof(int32_t) );
 
       LOG_I(PHY,"[INIT] common.txdata[%d] = %p (%lu bytes)\n",i,ru->common.txdata[i],
-	     fp->samples_per_subframe_wCP*sizeof(int32_t));
+	     fp->samples_per_subframe*sizeof(int32_t));
 
     }
     for (i=0;i<ru->nb_rx;i++) {
@@ -69,7 +69,7 @@ int nr_phy_init_RU(RU_t *ru) {
     LOG_I(PHY,"nb_tx %d\n",ru->nb_tx);
     ru->common.rxdata_7_5kHz = (int32_t**)malloc16(ru->nb_rx*sizeof(int32_t*) );
     for (i=0;i<ru->nb_rx;i++) {
-      ru->common.rxdata_7_5kHz[i] = (int32_t*)malloc16_clear( 2*fp->samples_per_subframe_wCP*2*sizeof(int32_t) );
+      ru->common.rxdata_7_5kHz[i] = (int32_t*)malloc16_clear( 2*fp->samples_per_subframe*2*sizeof(int32_t) );
       LOG_I(PHY,"rxdata_7_5kHz[%d] %p for RU %d\n",i,ru->common.rxdata_7_5kHz[i],ru->idx);
     }
   
