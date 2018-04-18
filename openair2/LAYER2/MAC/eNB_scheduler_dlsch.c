@@ -465,7 +465,8 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
       sli->dl[i].sched_cb = dlsym(NULL, sli->dl[i].sched_name);
       sli->dl[i].update_sched = 0;
       sli->dl[i].update_sched_current = 0;
-      LOG_I(MAC, "update dl scheduler slice index %d ID %d\n", i, sli->dl[i].id);
+      LOG_I(MAC, "update dl scheduler (%s) slice index %d ID %d\n",
+            sli->dl[i].sched_name, i, sli->dl[i].id);
     }
 
     if (sli->tot_pct_dl <= 1.0) { // the new total RB share is within the range

@@ -1068,7 +1068,8 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
       //sli->tot_pct_ul_current += sli->ul[i].pct;
       //if (sli->tot_pct_ul_current > 1)
       //sli->tot_pct_ul_current = 1;
-      LOG_I(MAC,"update ul scheduler slice %d\n", i);
+      LOG_I(MAC,"update ul scheduler (%s) slice index %d ID %d\n",
+                sli->ul[i].sched_name, i, sli->ul[i].id);
     }
     // the new total RB share is within the range
     if (sli->tot_pct_ul <= 1.0){
@@ -1097,7 +1098,7 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
 
       // check if the slice max MCS, and log the console
       if (sli->ul[i].maxmcs_current != sli->ul[i].maxmcs){
-        if ((sli->ul[i].maxmcs >= 0) && (sli->ul[i].maxmcs <= 16)){
+        if ((sli->ul[i].maxmcs >= 0) && (sli->ul[i].maxmcs <= 20)){
           LOG_I(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
                 module_idP, sli->ul[i].id, frameP, subframeP,
                 sli->ul[i].maxmcs_current, sli->ul[i].maxmcs);
