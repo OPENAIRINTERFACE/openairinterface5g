@@ -52,11 +52,11 @@ int nr_phy_init_RU(RU_t *ru) {
       ru->common.txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_frame*sizeof(int32_t) );
 
       LOG_I(PHY,"[INIT] common.txdata[%d] = %p (%lu bytes)\n",i,ru->common.txdata[i],
-	     fp->samples_per_subframe*sizeof(int32_t));
+	     fp->samples_per_frame*sizeof(int32_t));
 
     }
     for (i=0;i<ru->nb_rx;i++) {
-      ru->common.rxdata[i] = (int32_t*)malloc16_clear( fp->samples_per_frame_wCP*sizeof(int32_t) );
+      ru->common.rxdata[i] = (int32_t*)malloc16_clear( fp->samples_per_frame*sizeof(int32_t) );
     }
   } // IF5 or local RF
   else {
