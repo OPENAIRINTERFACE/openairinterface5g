@@ -61,12 +61,10 @@ extern int oai_exit;
 void nr_feptx0(RU_t *ru,int slot) {
 
   NR_DL_FRAME_PARMS *fp = &ru->nr_frame_parms;
-  nfapi_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
 
   unsigned int aa,slot_offset;
   int i, tx_offset;
-  int slot_sizeF = (fp->ofdm_symbol_size)*
-                   ((cfg->subframe_config.dl_cyclic_prefix_type.value == 1) ? 12 : 14);
+  int slot_sizeF = fp->ofdm_symbol_size * fp->symbols_per_slot;
   int subframe = ru->proc.subframe_tx;
 
 
@@ -77,58 +75,11 @@ void nr_feptx0(RU_t *ru,int slot) {
   LOG_I(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d\n",ru->proc.frame_tx, ru->proc.subframe_tx,slot);
 
   for (aa=0; aa<ru->nb_tx; aa++) {
-    if (cfg->subframe_config.dl_cyclic_prefix_type.value == 1) PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
-					                      (int*)&ru->common.txdata[aa][slot_offset],
-					                      fp->ofdm_symbol_size,
-					                      12,
-					                      fp->nb_prefix_samples,
-					                      CYCLIC_PREFIX);
-    else                     nr_normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
-					                           (int*)&ru->common.txdata[aa][slot_offset],
-					                           14,
-					                           fp);
-    
-   /* 
-    len = fp->samples_per_subframe / fp->slots_per_subframe;
+     nr_normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
+                       (int*)&ru->common.txdata[aa][slot_offset],
+                       fp->symbols_per_slot,
+                       fp);
 
-    
-    if ((slot_offset+len)>(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe)) {
-      tx_offset = (int)slot_offset;
-      txdata = (int16_t*)&ru->common.txdata[aa][tx_offset];
-      len2 = -tx_offset+LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
-      for (i=0; i<(len2<<1); i++) {
-	txdata[i] = ((int16_t*)dummy_tx_b)[i];
-      }
-      txdata = (int16_t*)&ru->common.txdata[aa][0];
-      for (j=0; i<(len<<1); i++,j++) {
-	txdata[j++] = ((int16_t*)dummy_tx_b)[i];
-      }
-    }
-    else {
-      tx_offset = (int)slot_offset;
-      txdata = (int16_t*)&ru->common.txdata[aa][tx_offset];
-      memcpy((void*)txdata,(void*)dummy_tx_b,len<<2);   
-    }
-*/
-    // TDD: turn on tx switch N_TA_offset before by setting buffer in these samples to 0    
-    /*if ((slot == 0) &&
-        (fp->frame_type == TDD) && 
-        ((fp->tdd_config==0) ||
-         (fp->tdd_config==1) ||
-         (fp->tdd_config==2) ||
-         (fp->tdd_config==6)) &&  
-        ((subframe==0) || (subframe==5))) {
-      for (i=0; i<ru->N_TA_offset; i++) {
-	tx_offset = (int)slot_offset+i-ru->N_TA_offset/2;
-	if (tx_offset<0)
-	  tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
-	
-	if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti))
-	  tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
-	
-	ru->common.txdata[aa][tx_offset] = 0x00000000;
-      }
-    }*/
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+slot , 0);
 }
