@@ -2353,9 +2353,10 @@ static int slice_priority_compare(const void *_a, const void *_b, void *_c)
 void slice_priority_sort(module_id_t Mod_id, int slice_list[MAX_NUM_SLICES])
 {
   int i;
-  for (i = 0; i < MAX_NUM_SLICES; ++i) {
+  for (i = 0; i < RC.mac[Mod_id]->slice_info.n_dl; ++i) {
     slice_list[i] = i;
   }
 
-  qsort_r(slice_list, MAX_NUM_SLICES, sizeof(int), slice_priority_compare, &Mod_id);
+  qsort_r(slice_list, RC.mac[Mod_id]->slice_info.n_dl, sizeof(int),
+          slice_priority_compare, &Mod_id);
 }
