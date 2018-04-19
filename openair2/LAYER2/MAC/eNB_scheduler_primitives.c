@@ -4489,7 +4489,6 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 		curbyte++;
 	    }
 	}
-        LOG_I(MAC, "RM884 UE_id %d, frame %d, subframe %d, aperiodic_wideband_cqi0 %d, dl_cqi %d\n", frameP, subframeP, sched_ctl->aperiodic_wideband_cqi0[CC_idP], sched_ctl->dl_cqi[CC_idP]);
         if (sched_ctl->aperiodic_wideband_cqi0[CC_idP] > 0) {
 	  sched_ctl->dl_cqi[CC_idP] =
 	    sched_ctl->aperiodic_wideband_cqi0[CC_idP];
