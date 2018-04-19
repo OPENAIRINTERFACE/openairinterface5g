@@ -621,7 +621,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
   int total_ue_count[NFAPI_CC_MAX];
   int ue_count_newtx[NFAPI_CC_MAX];
   int ue_count_retx[NFAPI_CC_MAX];
-  uint8_t ue_retx_flag[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+  //uint8_t ue_retx_flag[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
 
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   UE_sched_ctrl *ue_sched_ctl;
@@ -634,9 +634,9 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
     ue_count_retx[CC_id] = 0;
     rbs_retx[CC_id] = 0;
     average_rbs_per_user[CC_id] = 0;
-    for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; ++UE_id) {
-      ue_retx_flag[CC_id][UE_id] = 0;
-    }
+    //for (UE_id = 0; UE_id < NFAPI_CC_MAX; ++UE_id) {
+    //  ue_retx_flag[CC_id][UE_id] = 0;
+    //}
   }
 
   // Find total UE count, and account the RBs required for retransmissions
@@ -665,7 +665,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
         nb_rbs_required[CC_id][UE_id] = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
         rbs_retx[CC_id] += nb_rbs_required[CC_id][UE_id];
         ue_count_retx[CC_id]++;
-        ue_retx_flag[CC_id][UE_id] = 1;
+        //ue_retx_flag[CC_id][UE_id] = 1;
       } else {
         ue_count_newtx[CC_id]++;
       }
@@ -777,11 +777,11 @@ void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
 {
   int UE_id, CC_id;
   int i;
+#ifdef TM5
   uint8_t transmission_mode;
-
+#endif
   uint8_t slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX];
   int N_RBG[NFAPI_CC_MAX];
-
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
 
   decode_slice_positioning(Mod_id, slice_idx, slice_allocation_mask);
@@ -801,7 +801,9 @@ void dlsch_scheduler_pre_processor_positioning(module_id_t Mod_id,
     for (i = 0; i < UE_num_active_CC(UE_list, UE_id); i++) {
       CC_id = UE_list->ordered_CCids[i][UE_id];
       nb_rbs_remaining[CC_id][UE_id] = nb_rbs_accounted[CC_id][UE_id];
+#ifdef TM5
       transmission_mode = get_tmode(Mod_id, CC_id, UE_id);
+#endif
 
       if (nb_rbs_required[CC_id][UE_id] > 0)
         LOG_D(MAC,
@@ -1004,7 +1006,9 @@ void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
 {
   int UE_id, CC_id;
   int i;
+#ifdef TM5
   uint8_t transmission_mode;
+#endif
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   int N_RBG[NFAPI_CC_MAX];
   slice_info_t *sli = &RC.mac[Mod_id]->slice_info;
@@ -1030,7 +1034,9 @@ void dlsch_scheduler_pre_processor_intraslice_sharing(module_id_t Mod_id,
               nb_rbs_required[CC_id][UE_id] - nb_rbs_accounted[CC_id][UE_id] + nb_rbs_remaining[CC_id][UE_id];
       if (nb_rbs_remaining[CC_id][UE_id] < 0)
         abort();
+#ifdef TM5
       transmission_mode = get_tmode(Mod_id, CC_id, UE_id);
+#endif
 
       if (nb_rbs_required[CC_id][UE_id] > 0)
         LOG_D(MAC,

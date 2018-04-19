@@ -1763,7 +1763,7 @@ void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id, int frameP, sub_frame_
   int UE_id, CC_id, i;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
   slice_info_t *sli = &RC.mac[Mod_id]->slice_info;
-  UE_sched_ctrl *ue_sched_ctl;
+  //UE_sched_ctrl *ue_sched_ctl;
 
   for (CC_id = 0; CC_id < NFAPI_CC_MAX; ++CC_id) {
     for (i = 0; i < sli->n_dl; ++i) {
@@ -1773,7 +1773,7 @@ void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id, int frameP, sub_frame_
       sort_UEs(Mod_id, (uint8_t)i, frameP, subframeP);
 
       for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
-        ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+        //ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
         // TODO: Do something here
         // ue_sched_ctl->pre_nb_available_rbs[CC_id];
