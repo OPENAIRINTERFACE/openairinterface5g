@@ -4489,8 +4489,10 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 		curbyte++;
 	    }
 	}
-	sched_ctl->dl_cqi[CC_idP] =
+        if (sched_ctl->aperiodic_wideband_cqi0[CC_idP] > 0) {
+	  sched_ctl->dl_cqi[CC_idP] =
 	    sched_ctl->aperiodic_wideband_cqi0[CC_idP];
+        }
 	break;
     case CQI_ReportModeAperiodic_rm31:
 	AssertFatal(0 == 1, "to be fixed, don't use p but pdu directly\n");
