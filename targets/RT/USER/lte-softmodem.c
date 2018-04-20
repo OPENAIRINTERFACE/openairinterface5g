@@ -793,10 +793,11 @@ int stop_L1L2(module_id_t enb_id)
   /* these tasks need to pick up new configuration */
   terminate_task(enb_id, TASK_ENB_APP, TASK_RRC_ENB);
   terminate_task(enb_id, TASK_ENB_APP, TASK_L2L1);
+  oai_exit = 1;
   LOG_I(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
   kill_eNB_proc(enb_id);
   LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", enb_id);
-  kill_RU_proc(enb_id);
+  kill_RU_proc(RC.ru[enb_id]);
   oai_exit = 0;
   for (int cc_id = 0; cc_id < RC.nb_CC[enb_id]; cc_id++) {
     free_transport(RC.eNB[enb_id][cc_id]);
@@ -1241,25 +1242,20 @@ int main( int argc, char **argv )
 
   printf("stopping MODEM threads\n");
 
-  // cleanup
-  for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
-    stop_ru(RC.ru[ru_id]);
+  stop_eNB(NB_eNB_INST);
+  stop_RU(RC.nb_RU);
+  /* release memory used by the RU/eNB threads (incomplete), after all
+   * threads have been stopped (they partially use the same memory) */
+  for (int inst = 0; inst < NB_eNB_INST; inst++) {
+    for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
+      free_transport(RC.eNB[inst][cc_id]);
+      phy_free_lte_eNB(RC.eNB[inst][cc_id]);
+    }
   }
-
-    stop_eNB(NB_eNB_INST);
-    stop_RU(RC.nb_RU);
-    /* release memory used by the RU/eNB threads (incomplete), after all
-     * threads have been stopped (they partially use the same memory) */
-    for (int inst = 0; inst < NB_eNB_INST; inst++) {
-      for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
-        free_transport(RC.eNB[inst][cc_id]);
-        phy_free_lte_eNB(RC.eNB[inst][cc_id]);
-      }
-    }
-    for (int inst = 0; inst < RC.nb_RU; inst++) {
-      phy_free_RU(RC.ru[inst]);
-    }
-    free_lte_top();
+  for (int inst = 0; inst < RC.nb_RU; inst++) {
+    phy_free_RU(RC.ru[inst]);
+  }
+  free_lte_top();
 
   printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   end_configmodule();
