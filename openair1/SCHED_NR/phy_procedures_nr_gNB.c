@@ -46,14 +46,16 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
   nfapi_config_request_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
+  int ss_subframe = (cfg->sch_config.half_frame_index.value)? 0:5;
 
-  LOG_D(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe);
+  LOG_I(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe);
 
   int ssb_start_symbol = nr_get_ssb_start_symbol(cfg, fp);
   //nr_set_ssb_first_subcarrier(cfg);
 
-  if (subframe == (cfg->sch_config.half_frame_index)? 0:5)
+  if (subframe == ss_subframe)
   {
+    LOG_I(PHY,"SS TX: frame %d, subframe %d\n",frame,subframe);
     nr_generate_pss(gNB->d_pss, txdataF, AMP, ssb_start_symbol, cfg, fp);
     nr_generate_sss(gNB->d_sss, txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
   }

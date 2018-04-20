@@ -75,6 +75,9 @@
 #define NFAPI_VERSION_3_0_11	0x000
 #define NFAPI_VERSION_3_0_12    0x001
 
+#define NFAPI_HALF_FRAME_INDEX_FIRST_HALF 0
+#define NFAPI_HALF_FRAME_INDEX_SECOND_HALF 1
+
 // The IANA agreed port definition of the P5 SCTP VNF enpoint 
 // http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=7701
 #define NFAPI_P5_SCTP_PORT		7701
@@ -671,16 +674,12 @@ typedef struct {
 #define NFAPI_PHICH_CONFIG_PHICH_DURATION_TAG 0x0015
 #define NFAPI_PHICH_CONFIG_PHICH_POWER_OFFSET_TAG 0x0016
 
-typedef enum {
-  NFAPI_HALF_FRAME_INDEX_FIRST_HALF = 0,
-  NFAPI_HALF_FRAME_INDEX_SECOND_HALF = 1
-} nfapi_half_frame_index_e;
 
 typedef struct {
 	nfapi_uint16_tlv_t primary_synchronization_signal_epre_eprers;
 	nfapi_uint16_tlv_t secondary_synchronization_signal_epre_eprers;
 	nfapi_uint16_tlv_t physical_cell_id;
-  nfapi_half_frame_index_e half_frame_index;
+  nfapi_uint16_tlv_t half_frame_index;
   nfapi_uint16_tlv_t ssb_subcarrier_offset;
   nfapi_uint16_tlv_t ssb_position_in_burst;
   nfapi_uint16_tlv_t ssb_periodicity;

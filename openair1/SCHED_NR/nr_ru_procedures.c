@@ -72,7 +72,7 @@ void nr_feptx0(RU_t *ru,int slot) {
 
   slot_offset = subframe*fp->samples_per_subframe + (slot*(fp->samples_per_subframe / fp->slots_per_subframe));
 
-  LOG_I(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d\n",ru->proc.frame_tx, ru->proc.subframe_tx,slot);
+  LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d\n",ru->proc.frame_tx, ru->proc.subframe_tx,slot);
 
   for (aa=0; aa<ru->nb_tx; aa++) {
      nr_normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],

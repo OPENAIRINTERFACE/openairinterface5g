@@ -345,7 +345,7 @@ void nr_phy_config_request(PHY_VARS_gNB *gNB)
   gNB_config->rf_config.tx_antenna_ports.value = 1;
   gNB_config->rf_config.dl_channel_bandwidth.value = 106;
   gNB_config->rf_config.ul_channel_bandwidth.value = 106;
-  gNB_config->sch_config.half_frame_index = 0;
+  gNB_config->sch_config.half_frame_index.value = 0;
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
 
 
