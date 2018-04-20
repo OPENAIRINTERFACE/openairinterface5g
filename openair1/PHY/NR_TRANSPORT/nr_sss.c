@@ -62,6 +62,10 @@ int nr_generate_sss(  int16_t *d_sss,
     d_sss[i] = (1 - 2*x0[(i + m0) % NR_SSS_LENGTH] ) * (1 - 2*x1[(i + m1) % NR_SSS_LENGTH] ) * 768;
   }
 
+#ifdef NR_SSS_DEBUG
+  write_output("d_sss.m", "d_sss", (void*)d_sss, NR_SSS_LENGTH, 1, 3);
+#endif
+
   /// Resource mapping
   a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
@@ -82,6 +86,9 @@ int nr_generate_sss(  int16_t *d_sss,
       }
     }
   }
+#ifdef NR_SSS_DEBUG
+  write_output("sss_0.m", "sss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 3);
+#endif
 
   return (0);
 }

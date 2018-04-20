@@ -46,9 +46,9 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
   nfapi_config_request_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
-  int ss_subframe = (cfg->sch_config.half_frame_index.value)? 0:5;
+  int ss_subframe = (cfg->sch_config.half_frame_index.value)? 5 : 0;
 
-  LOG_I(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe);
+  LOG_D(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe);
 
   int ssb_start_symbol = nr_get_ssb_start_symbol(cfg, fp);
   //nr_set_ssb_first_subcarrier(cfg);

@@ -52,6 +52,10 @@ int nr_generate_pss(  int16_t *d_pss,
     d_pss[i] = (1 - 2*x[m]) * 768;
   }
 
+#ifdef NR_PSS_DEBUG
+  write_output("d_pss.m", "d_pss", (void*)d_pss, NR_PSS_LENGTH, 1, 3);
+#endif
+
   /// Resource mapping
   a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
@@ -63,7 +67,7 @@ int nr_generate_pss(  int16_t *d_pss,
     l = ssb_start_symbol;
 
     for (m = 0; m < NR_PSS_LENGTH; m++) {
-      ((short*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_pss[m]) >> 15;
+      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_pss[m]) >> 15;
       k+=1;
 
       if (k >= frame_parms->ofdm_symbol_size) {
@@ -72,6 +76,10 @@ int nr_generate_pss(  int16_t *d_pss,
       }
     }
   }
+
+#ifdef NR_PSS_DEBUG
+  write_output("pss_0.m", "pss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 3);
+#endif
 
   return (0);
 }
