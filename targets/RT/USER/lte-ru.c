@@ -1080,8 +1080,8 @@ static void* ru_thread_prach( void* param ) {
 
   while (!oai_exit) {
     
-    if (oai_exit) break;
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
+    if (oai_exit) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 1 );      
     if (ru->eNB_list[0]){
       prach_procedures(
@@ -1130,8 +1130,8 @@ static void* ru_thread_prach_br( void* param ) {
 
   while (!oai_exit) {
     
-    if (oai_exit) break;
     if (wait_on_condition(&proc->mutex_prach_br,&proc->cond_prach_br,&proc->instance_cnt_prach_br,"ru_prach_thread_br") < 0) break;
+    if (oai_exit) break;
     rx_prach(NULL,
 	     ru,
 	     NULL,

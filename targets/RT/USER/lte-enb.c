@@ -783,10 +783,10 @@ static void* eNB_thread_prach( void* param ) {
 
   while (!oai_exit) {
     
-    if (oai_exit) break;
 
     
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
+    if (oai_exit) break;
 
     LOG_D(PHY,"Running eNB prach procedures\n");
     prach_procedures(eNB
@@ -824,10 +824,10 @@ static void* eNB_thread_prach_br( void* param ) {
 
   while (!oai_exit) {
     
-    if (oai_exit) break;
     
 
     if (wait_on_condition(&proc->mutex_prach_br,&proc->cond_prach_br,&proc->instance_cnt_prach_br,"eNB_prach_thread_br") < 0) break;
+    if (oai_exit) break;
 
     LOG_D(PHY,"Running eNB prach procedures for BL/CE UEs\n");
     prach_procedures(eNB,1);
