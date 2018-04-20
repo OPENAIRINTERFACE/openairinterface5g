@@ -1101,8 +1101,9 @@ schedule_ue_spec(module_id_t module_idP,
 		header_len_dtch_last = 0;	// the header length of the last mac sdu
 		// lcid has to be sorted before the actual allocation (similar struct as ue_list).
 #if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-		lcid = DTCH;
-		{
+//		lcid = DTCH;
+//		{
+                for (lcid = DTCH; lcid >= DTCH; lcid--) {
 #else
 		for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--) {
 #endif
@@ -1196,13 +1197,15 @@ schedule_ue_spec(module_id_t module_idP,
 		    }
 
 		    mcs = eNB_UE_stats->dlsch_mcs1;
-
+#ifdef UE_EXPANSION
+                    nb_rb = min_rb_unit[CC_id];
+#else
 		    if (mcs == 0) {
 			nb_rb = 4;	// don't let the TBS get too small
 		    } else {
 			nb_rb = min_rb_unit[CC_id];
 		    }
-
+#endif
 		    TBS = get_TBS_DL(mcs, nb_rb);
 
 		    while (TBS <
