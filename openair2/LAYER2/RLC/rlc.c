@@ -29,7 +29,7 @@
 #define RLC_C
 #include "rlc.h"
 #include "mem_block.h"
-#include "../MAC/extern.h"
+#include "../MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"

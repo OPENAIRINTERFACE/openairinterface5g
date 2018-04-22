@@ -30,6 +30,7 @@
 #define __LAYER2_MAC_PROTO_H__
 
 #include "LAYER2/MAC/mac.h"
+#include "PHY/defs_common.h" // for PRACH_RESOURCES_t and lte_subframe_t
 
 /** \addtogroup _mac
  *  @{
@@ -207,13 +208,13 @@ void dlsch_scheduler_pre_processor_reset(int module_idP, int UE_id,
 					 int subframeP,
 					 int N_RBG,
 					 uint16_t
-					 nb_rbs_required[MAX_NUM_CCs]
-					 [NUMBER_OF_UE_MAX],
+					 nb_rbs_required[NFAPI_CC_MAX]
+					 [MAX_MOBILES_PER_ENB],
 					 unsigned char
-					 rballoc_sub[MAX_NUM_CCs]
+					 rballoc_sub[NFAPI_CC_MAX]
 					 [N_RBG_MAX],
 					 unsigned char
-					 MIMO_mode_indicator[MAX_NUM_CCs]
+					 MIMO_mode_indicator[NFAPI_CC_MAX]
 					 [N_RBG_MAX]);
 
 // eNB functions
@@ -229,7 +230,7 @@ void dlsch_scheduler_pre_processor(module_id_t module_idP,
 				   slice_id_t slice_idP,
 				   frame_t frameP,
 				   sub_frame_t subframe,
-				   int N_RBG[MAX_NUM_CCs],
+				   int N_RBG[NFAPI_CC_MAX],
 				   int *mbsfn_flag);
 
 
@@ -240,19 +241,10 @@ void dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
 					    int transmission_mode,
 					    int min_rb_unit,
 					    uint8_t N_RB_DL,
-					    uint16_t
-					    nb_rbs_required[MAX_NUM_CCs]
-					    [NUMBER_OF_UE_MAX],
-					    uint16_t
-					    nb_rbs_required_remaining
-					    [MAX_NUM_CCs]
-					    [NUMBER_OF_UE_MAX],
-					    unsigned char
-					    rballoc_sub[MAX_NUM_CCs]
-					    [N_RBG_MAX],
-					    unsigned char
-					    MIMO_mode_indicator
-					    [MAX_NUM_CCs][N_RBG_MAX]);
+					    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+					    uint16_t nb_rbs_required_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+					    unsigned char rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
+					    unsigned char MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
 
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
    and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f. 
@@ -638,8 +630,6 @@ uint8_t *parse_ulsch_header(uint8_t * mac_header,
 
 int to_prb(int);
 int to_rbg(int);
-int l2_init(LTE_DL_FRAME_PARMS * frame_parms, int eMBMS_active,
-	    char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active);
 int mac_init(void);
 int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid
 #ifdef Rel14

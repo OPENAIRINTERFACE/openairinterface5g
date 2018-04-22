@@ -925,6 +925,200 @@ uint32_t get_rballoc(vrb_t vrb_type,uint16_t rb_alloc_dci)
 
 }
 
+uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t subframe)
+{
+  uint8_t ret = 255;
+
+  if (frame_parms->frame_type == FDD) {
+    ret = (((frame*10)+subframe)&7);
+  } else {
+
+    switch (frame_parms->tdd_config) {
+
+    case 1:
+      if ((subframe==2) ||
+          (subframe==3) ||
+          (subframe==7) ||
+          (subframe==8))
+        switch (subframe) {
+        case 2:
+        case 3:
+          ret = (subframe-2);
+          break;
+
+        case 7:
+        case 8:
+          ret = (subframe-5);
+          break;
+
+        default:
+          LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+          ret = (255);
+          break;
+        }
+
+      break;
+
+    case 2:
+      if ((subframe!=2) && (subframe!=7)) {
+	LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+	ret=255;
+      }
+      else ret = (subframe/7);
+      break;
+
+    case 3:
+      if ((subframe<2) || (subframe>4)) {
+        LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+        ret = (255);
+      }
+      else ret = (subframe-2);
+      break;
+
+    case 4:
+      if ((subframe<2) || (subframe>3)) {
+        LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+        ret = (255);
+      }
+      else ret = (subframe-2);
+      break;
+
+    case 5:
+      if (subframe!=2) {
+        LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
+        ret = (255);
+      }
+      else ret = (subframe-2);
+      break;
+
+    default:
+      LOG_E(PHY,"subframe2_harq_pid, Unsupported TDD mode %d\n",frame_parms->tdd_config);
+      ret = (255);
+    }
+  }
+
+  AssertFatal(ret!=255,
+	      "invalid harq_pid(%d) at SFN/SF = %d/%d\n", (int8_t)ret, frame, subframe);
+  return ret;
+}
+
+uint8_t pdcch_alloc2ul_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n)
+{
+  uint8_t ul_subframe = 255;
+
+  if ((frame_parms->frame_type == TDD) &&
+      (frame_parms->tdd_config == 1) &&
+      ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
+    ul_subframe = ((n+6)%10);
+  else if ((frame_parms->frame_type == TDD) &&
+           (frame_parms->tdd_config == 6) &&
+           ((n==0)||(n==1)||(n==5)||(n==6)))
+    ul_subframe = ((n+7)%10);
+  else if ((frame_parms->frame_type == TDD) &&
+           (frame_parms->tdd_config == 6) &&
+           (n==9)) // tdd_config 6 SF 9
+    ul_subframe = ((n+5)%10);
+  else 
+    ul_subframe = ((n+4)%10);
+
+  AssertFatal(frame_parms->frame_type == FDD || subframe_select(frame_parms,ul_subframe) == SF_UL,"illegal ul_subframe %d (n %d)\n",ul_subframe,n);
+
+  LOG_D(PHY, "subframe %d: PUSCH subframe = %d\n", n, ul_subframe);
+  return ul_subframe;
+}
+
+uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n)
+{
+  if ((frame_parms->frame_type == TDD) &&
+      (frame_parms->tdd_config == 1) &&
+      ((n==7)||(n==2))) // tdd_config 0,1 SF 1,5
+    return((n==7)? 1 : 6);
+  else if ((frame_parms->frame_type == TDD) &&
+           (frame_parms->tdd_config == 6) &&
+           ((n==7)||(n==8)||(n==2)||(n==3)))
+    return((n+3)%10);
+  else if ((frame_parms->frame_type == TDD) &&
+           (frame_parms->tdd_config == 6) &&
+           (n==4)) // tdd_config 6 SF 9
+    return(9);
+  else
+    return((n+6)%10);
+}
+
+uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n)
+{
+  uint32_t ul_frame;
+
+  if ((frame_parms->frame_type == TDD) &&
+      (frame_parms->tdd_config == 1) &&
+      ((n==1)||(n==6))) // tdd_config 0,1 SF 1,5
+    ul_frame = (frame + (n==1 ? 0 : 1));
+  else if ((frame_parms->frame_type == TDD) &&
+           (frame_parms->tdd_config == 6) &&
+           ((n==0)||(n==1)||(n==5)||(n==6)))
+    ul_frame = (frame + (n>=5 ? 1 : 0));
+  else if ((frame_parms->frame_type == TDD) &&
+           (frame_parms->tdd_config == 6) &&
+           (n==9)) // tdd_config 6 SF 9
+    ul_frame = (frame+1);
+  else
+    ul_frame = (frame+(n>=6 ? 1 : 0));
+
+  LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, n, ul_frame);
+  return ul_frame % 1024;
+}
+
+uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi, uint8_t rank)
+{
+
+  uint8_t i,wideband_pmi2;
+  uint32_t pmi_ex = 0;
+
+  if (frame_parms->N_RB_DL!=25) {
+    LOG_E(PHY,"pmi_extend not yet implemented for anything else than 25PRB\n");
+    return(-1);
+  }
+
+  if (rank==0) {
+    wideband_pmi2=wideband_pmi&3;
+    for (i=0; i<14; i+=2)
+      pmi_ex|=(wideband_pmi2<<i);
+  }
+  else if (rank==1) {
+    wideband_pmi2=wideband_pmi&1;
+    for (i=0; i<7; i++)
+      pmi_ex|=(wideband_pmi2<<i);
+  }
+  else {
+    LOG_E(PHY,"unsupported rank\n");
+    return(-1);
+  }
+
+  return(pmi_ex);
+}
+
+uint64_t pmi2hex_2Ar1(uint32_t pmi)
+{
+
+  uint64_t pmil = (uint64_t)pmi;
+
+  return ((pmil&3) + (((pmil>>2)&3)<<4) + (((pmil>>4)&3)<<8) + (((pmil>>6)&3)<<12) +
+          (((pmil>>8)&3)<<16) + (((pmil>>10)&3)<<20) + (((pmil>>12)&3)<<24) +
+          (((pmil>>14)&3)<<28) + (((pmil>>16)&3)<<32) + (((pmil>>18)&3)<<36) +
+          (((pmil>>20)&3)<<40) + (((pmil>>22)&3)<<44) + (((pmil>>24)&3)<<48));
+}
+
+uint64_t pmi2hex_2Ar2(uint32_t pmi)
+{
+
+  uint64_t pmil = (uint64_t)pmi;
+  return ((pmil&1) + (((pmil>>1)&1)<<4) + (((pmil>>2)&1)<<8) + (((pmil>>3)&1)<<12) +
+          (((pmil>>4)&1)<<16) + (((pmil>>5)&1)<<20) + (((pmil>>6)&1)<<24) +
+          (((pmil>>7)&1)<<28) + (((pmil>>8)&1)<<32) + (((pmil>>9)&1)<<36) +
+          (((pmil>>10)&1)<<40) + (((pmil>>11)&1)<<44) + (((pmil>>12)&1)<<48));
+}
+
+
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
 {
   switch (dci->format) {

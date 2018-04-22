@@ -39,7 +39,7 @@
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 
-#include "RRC/LITE/defs.h"
+#include "RRC/LTE/rrc_defs.h"
 
 /*
  * The variant of the above function which dumps the BASIC-XER (XER_F_BASIC)

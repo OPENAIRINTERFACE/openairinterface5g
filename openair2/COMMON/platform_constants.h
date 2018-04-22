@@ -69,10 +69,10 @@
 
 #ifdef LARGE_SCALE
 #    define MAX_MOBILES_PER_ENB         128
-//#    define MAX_RG                      2
+#    define MAX_eNB                      2
 #else
 #    define MAX_MOBILES_PER_ENB         16
-//#    define MAX_RG                      2
+#    define MAX_eNB                      2
 #endif
 
 #define MAX_MANAGED_ENB_PER_MOBILE  2

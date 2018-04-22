@@ -29,20 +29,17 @@
 
  */
 
-#include "defs.h"
-#include "proto.h"
-#include "extern.h"
+#include "mac.h"
+#include "mac_proto.h"
+#include "mac_extern.h"
 #include "assertions.h"
-#include "PHY_INTERFACE/extern.h"
-#include "PHY/defs.h"
-#include "SCHED/defs.h"
+//#include "PHY_INTERFACE/phy_extern.h"
+//#include "PHY/defs_eNB.h"
+//#include "SCHED/sched_eNB.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
-#include "RRC/LITE/defs.h"
+#include "RRC/LTE/rrc_defs.h"
 #include "UTIL/LOG/log.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-
-#include "SCHED/defs.h"
-
 
 #include "common/ran_context.h"
 

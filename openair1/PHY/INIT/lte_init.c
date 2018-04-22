@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#include "PHY/defs_eNB.h"
 #include "phy_init.h"
 #include "SCHED/sched_eNB.h"
 #include "PHY/phy_extern.h"

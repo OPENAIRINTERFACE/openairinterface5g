@@ -46,10 +46,10 @@ extern int otg_enabled;
 #define rtf_put write
 #define rtf_get read
 
-#include "../MAC/extern.h"
+#include "../MAC/mac_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "NETWORK_DRIVER/LITE/constant.h"
-#include "SIMULATION/ETH_TRANSPORT/extern.h"
+//#include "SIMULATION/ETH_TRANSPORT/extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
 #include "UTIL/LOG/log.h"

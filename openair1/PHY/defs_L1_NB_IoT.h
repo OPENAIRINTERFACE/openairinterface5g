@@ -40,7 +40,7 @@
 #include <math.h>
 #include "common_lib.h"
 #include "openair2/PHY_INTERFACE/IF_Module_NB_IoT.h"
-
+#include "defs_eNB.h"
 //#include <complex.h>
 #include "assertions.h"
 #ifdef MEX

@@ -29,7 +29,7 @@
 #ifndef PHY_MESSAGES_TYPES_H_
 #define PHY_MESSAGES_TYPES_H_
 
-#include "PHY/defs_eNB.h"
+#include "PHY/defs_common.h"
 
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.

@@ -34,7 +34,7 @@
 #include "flexran_agent_timer.h"
 #include "flexran_agent_ran_api.h"
 
-#include "LAYER2/MAC/proto.h"
+#include "LAYER2/MAC/mac_proto.h"
 
 #include "liblfds700.h"
 

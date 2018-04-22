@@ -174,7 +174,7 @@ typedef struct {
 //-----------------------------------------------------------------------------
 
 #define  RLC_MAX_MBMS_LC (maxSessionPerPMCH * maxServiceCount)
-#define  RLC_MAX_LC  ((max_val_DRB_Identity+1)* NUMBER_OF_UE_MAX)
+#define  RLC_MAX_LC  ((max_val_DRB_Identity+1)* MAX_MOBILES_PER_ENB)
 
 protected_rlc(void (*rlc_rrc_data_ind)(
                 const protocol_ctxt_t* const ctxtP,
@@ -236,8 +236,8 @@ typedef struct rlc_mbms_id_s {
 #endif
 //public_rlc(rlc_mbms_t           rlc_mbms_array_ue[NUMBER_OF_UE_MAX][maxServiceCount][maxSessionPerPMCH];)   // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 //public_rlc(rlc_mbms_t           rlc_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH];) // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
-public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_ue[NUMBER_OF_UE_MAX][RLC_MAX_MBMS_LC];)    // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
-public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[NUMBER_OF_eNB_MAX][RLC_MAX_MBMS_LC];)  // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
+public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_ue[MAX_MOBILES_PER_ENB][RLC_MAX_MBMS_LC];)    // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
+public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[MAX_eNB][RLC_MAX_MBMS_LC];)  // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 
 #define rlc_mbms_enb_get_lcid_by_rb_id(Enb_mOD,rB_iD) rlc_mbms_rbid2lcid_eNB[Enb_mOD][rB_iD]
 ;
@@ -253,8 +253,8 @@ public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[NUMBER_OF_e
             rlc_mbms_rbid2lcid_ue[uE_mOD][rB_iD] = lOG_cH_iD; \
         } while (0);
 
-public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_ue [NUMBER_OF_UE_MAX][NB_RB_MBMS_MAX];)              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
-public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[NUMBER_OF_eNB_MAX][NB_RB_MBMS_MAX];)              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_ue [MAX_MOBILES_PER_ENB][NB_RB_MBMS_MAX];)              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];)              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
 
 
 #define RLC_COLL_KEY_VALUE(eNB_iD, rNTI, iS_eNB, rB_iD, iS_sRB) \

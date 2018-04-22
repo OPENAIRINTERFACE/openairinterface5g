@@ -34,6 +34,7 @@
 #include "PHY/defs_eNB.h"
 #include <math.h>
 #include "nfapi_interface.h"
+#include "transport_common_proto.h"
 
 // Functions below implement 36-211 and 36-212
 

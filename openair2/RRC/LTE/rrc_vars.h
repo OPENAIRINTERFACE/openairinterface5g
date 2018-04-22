@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file vars.hles
+/*! \file rrc_vars.h
 * \brief rrc variables
 * \author Raymond Knopp and Navid Nikaein
 * \date 2013
@@ -31,15 +31,15 @@
 
 #ifndef __OPENAIR_RRC_VARS_H__
 #define __OPENAIR_RRC_VARS_H__
-#include "defs.h"
+#include "rrc_defs.h"
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/mac.h"
 
 UE_PF_PO_t UE_PF_PO[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 pthread_mutex_t ue_pf_po_mutex;
 UE_RRC_INST *UE_rrc_inst;
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 #define MAX_U32 0xFFFFFFFF
 
 uint8_t DRB2LCHAN[8];

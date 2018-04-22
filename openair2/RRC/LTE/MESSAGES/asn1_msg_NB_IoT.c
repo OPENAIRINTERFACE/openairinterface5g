@@ -53,7 +53,7 @@
 #include "RRCConnectionSetup-NB.h"
 #include "SRB-ToAddModList-NB-r13.h"
 #include "DRB-ToAddModList-NB-r13.h"
-#include "RRC/LITE/defs_NB_IoT.h"
+#include "RRC/LTE/defs_NB_IoT.h"
 #include "RRCConnectionSetupComplete-NB.h"
 #include "RRCConnectionReconfigurationComplete-NB.h"
 #include "RRCConnectionReconfiguration-NB.h"

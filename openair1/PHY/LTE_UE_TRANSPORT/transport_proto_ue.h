@@ -1302,8 +1302,8 @@ void ulsch_modulation(int32_t **txdataF,
 
 
 
-uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);
-uint8_t subframe2harq_pid_eNBrx(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
+
+
 
 int generate_ue_dlsch_params_from_dci(int frame,
                                       uint8_t subframe,
@@ -1448,21 +1448,12 @@ int32_t pmi_convert_rank1_from_rank2(uint16_t pmi_alloc, int tpmi, int nb_rb);
 
 uint16_t quantize_subband_pmi2(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t a_id,int nb_subbands);
 
-uint64_t pmi2hex_2Ar1(uint32_t pmi);
 
-uint64_t pmi2hex_2Ar2(uint32_t pmi);
 
 uint64_t cqi2hex(uint32_t cqi);
 
 uint16_t computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 
-/** \brief  This routine expands a single (wideband) PMI to subband PMI bitmap similar to the one used in the UCI and in the dlsch_modulation routine
-    @param frame_parms Pointer to DL frame configuration parameters
-    @param wideband_pmi (0,1,2,3 for rank 0 and 0,1 for rank 1)
-    @param rank (0 or 1)
-    @returns subband PMI bitmap
-*/
-uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi, uint8_t rank);
 
 /** \brief  This routine extracts a single subband PMI from a bitmap coming from UCI or the pmi_extend function
     @param N_RB_DL number of resource blocks
@@ -1659,7 +1650,7 @@ uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
 
-uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
+
 
 
 

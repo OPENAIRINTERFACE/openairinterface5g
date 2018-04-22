@@ -34,24 +34,19 @@
 
 #include "assertions.h"
 #include "platform_types.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
 #include "msc.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-
-#include "LAYER2/MAC/proto.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
@@ -61,9 +56,13 @@
 #include "intertask_interface.h"
 #endif
 
-#include "SIMULATION/TOOLS/defs.h"	// for taus
+#include "SIMULATION/TOOLS/sim.h"	// for taus
 
 #include "T.h"
+
+#include "common/ran_context.h"
+
+extern RAN_CONTEXT_t RC;
 
 extern uint8_t nfapi_mode;
 extern int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req);

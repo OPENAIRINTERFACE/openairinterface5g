@@ -30,17 +30,17 @@
 #define RRC_ENB
 #define RRC_ENB_C
 
-#include "defs.h"
-#include "extern.h"
+#include "rrc_defs.h"
+#include "rrc_extern.h"
 #include "assertions.h"
 #include "common/ran_context.h"
 #include "asn1_conversions.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
-#include "LAYER2/MAC/proto.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "UTIL/LOG/log.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "RRC/LITE/MESSAGES/asn1_msg.h"
+#include "RRC/LTE/MESSAGES/asn1_msg.h"
 #include "RRCConnectionRequest.h"
 #include "RRCConnectionReestablishmentRequest.h"
 //#include "ReestablishmentCause.h"
@@ -52,7 +52,6 @@
 #include "TDD-Config.h"
 #include "HandoverCommand.h"
 #include "rlc.h"
-#include "SIMULATION/ETH_TRANSPORT/extern.h"
 #include "rrc_eNB_UE_context.h"
 #include "platform_types.h"
 #include "msc.h"
@@ -93,7 +92,7 @@
 #   include "rrc_eNB_ral.h"
 #endif
 
-#include "SIMULATION/TOOLS/defs.h" // for taus
+#include "SIMULATION/TOOLS/sim.h" // for taus
 
 //#define XER_PRINT
 

@@ -45,9 +45,9 @@
 #endif
 #include "sctp_default_values.h"
 #include "SystemInformationBlockType2.h"
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/proto.h"
-#include "PHY/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "PHY/phy_extern.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"

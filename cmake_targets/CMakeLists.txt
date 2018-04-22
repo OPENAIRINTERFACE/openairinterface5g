@@ -708,7 +708,7 @@ include_directories("${OPENAIR_BIN_DIR}")
 # add directories to find all include files
 # the internal rule is to use generic names such as defs.h
 # but to make it uniq name as adding the relative path in the include directtive
-# example: #include "RRC/LTE/defs.h"
+# example: #include "RRC/LTE/rrc_defs.h"
 #find_path (include_dirs_all *.h ${OPENAIR_DIR})
 #find_path (include_dirs_all *.h PATHS /usr/include NO_CMAKE_PATH)
 #include_directories("${include_dirs_all}")
@@ -1063,6 +1063,7 @@ set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach_common.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pucch_common.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_scrambling.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/srs_modulation.c
   ${OPENAIR1_DIR}/PHY/MODULATION/ofdm_mod.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_time.c
   ${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_dl_cell_spec.c
@@ -1148,7 +1149,6 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/prach_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/pmch_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/pch_ue.c
-  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/srs_modulation.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/drs_modulation.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/ulsch_modulation.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/ulsch_coding.c
@@ -1891,7 +1891,6 @@ add_executable(lte-softmodem
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -1923,14 +1922,13 @@ target_link_libraries (lte-softmodem ${T_LIB})
 add_executable(lte-softmodem-nos1
   ${rrc_h}
   ${s1ap_h}
-#  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
@@ -1966,7 +1964,6 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2001,7 +1998,6 @@ add_executable(lte-uesoftmodem-nos1
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
@@ -2063,7 +2059,6 @@ add_executable(oaisim
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
-  ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c
   ${OPENAIR_TARGETS}/SIMU/USER/sinr_sim.c
   ${OPENAIR_TARGETS}/SIMU/USER/cor_SF_sim.c
@@ -2110,7 +2105,6 @@ add_executable(oaisim_nos1
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
-  ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c
   ${OPENAIR_TARGETS}/SIMU/USER/sinr_sim.c
   ${OPENAIR_TARGETS}/SIMU/USER/cor_SF_sim.c

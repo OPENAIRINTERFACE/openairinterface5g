@@ -28,7 +28,7 @@
 #include "rlc.h"
 #include "rlc_am.h"
 #include "list.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 
 

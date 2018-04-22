@@ -1,3 +1,43 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+/*! \file PHY/LTE_TRANSPORT/transport_proto.h
+ * \brief Function prototypes for eNB PHY physical/transport channel processing and generation V8.6 2009-03
+ * \author R. Knopp, F. Kaltenberger
+ * \date 2011
+ * \version 0.1
+ * \company Eurecom
+ * \email: knopp@eurecom.fr
+ * \note
+ * \warning
+ */
+#ifndef __LTE_TRANSPORT_COMMON_PROTO__H__
+#define __LTE_TRANSPORT_COMMON_PROTO__H__
+#include "PHY/defs_common.h"
+
+
+
+
+// Functions below implement minor procedures from 36-211 and 36-212
+
 /** \brief Compute Q (modulation order) based on I_MCS PDSCH.  Implements table 7.1.7.1-1 from 36.213.
     @param I_MCS */
 uint8_t get_Qm(uint8_t I_MCS);
@@ -215,6 +255,18 @@ void init_prach_tables(int N_ZC);
 int is_pmch_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parms);
 
 
+/** \brief  This routine expands a single (wideband) PMI to subband PMI bitmap similar to the one used in the UCI and in the dlsch_modulation routine
+    @param frame_parms Pointer to DL frame configuration parameters
+    @param wideband_pmi (0,1,2,3 for rank 0 and 0,1 for rank 1)
+    @param rank (0 or 1)
+    @returns subband PMI bitmap
+*/
+uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi, uint8_t rank);
+
+uint64_t pmi2hex_2Ar1(uint32_t pmi);
+
+uint64_t pmi2hex_2Ar2(uint32_t pmi);
+
 // DL power control functions
 double get_pa_dB(uint8_t pa);
 
@@ -223,8 +275,11 @@ uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
 
+uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);
 uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
 
 uint32_t conv_1C_RIV(int32_t rballoc,uint32_t N_RB_DL);
 
 void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t *rb_alloc2);
+
+#endif

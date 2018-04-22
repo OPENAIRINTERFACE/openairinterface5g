@@ -44,7 +44,12 @@
 
 #include "PHY/types.h"
 
-#include "PHY/defs.h"
+#include "PHY/INIT/phy_init.h"
+
+#include "PHY/defs_eNB.h"
+#include "SCHED/sched_eNB.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -55,22 +60,14 @@
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#include "PHY/extern.h"
-#include "SCHED/extern.h"
-#include "LAYER2/MAC/extern.h"
+#include "PHY/phy_extern.h"
 
-#include "../../SIMU/USER/init_lte.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
-#include "PHY_INTERFACE/defs.h"
-#ifdef SMBV
-#include "PHY/TOOLS/smbv.h"
-unsigned short config_frames[4] = {2,9,11,13};
-#endif
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
@@ -78,7 +75,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
-//#include "PHY/TOOLS/time_meas.h"
+
 
 #ifndef OPENAIR2
 #include "UTIL/OTG/otg_extern.h"
@@ -218,7 +215,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) {
-    phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
+    phy_procedures_eNB_uespec_RX(eNB, proc);
   }
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
@@ -241,7 +238,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   
   if (oai_exit) return(-1);
   
-  phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
+  phy_procedures_eNB_TX(eNB, proc, 1);
 
   stop_meas( &softmodem_stats_rxtx_sf );
 

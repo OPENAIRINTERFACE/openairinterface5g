@@ -57,8 +57,8 @@
 //#define MRB1 1
 #endif
 
-#include "RRC/LITE/defs.h"
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_defs.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRCConnectionSetupComplete.h"
 #include "RRCConnectionReconfigurationComplete.h"
 #include "RRCConnectionReconfiguration.h"
@@ -71,7 +71,7 @@
 
 #include "BCCH-DL-SCH-Message.h"
 
-#include "PHY/defs.h"
+//#include "PHY/defs.h"
 
 #include "MeasObjectToAddModList.h"
 #include "ReportConfigToAddModList.h"

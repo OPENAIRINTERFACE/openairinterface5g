@@ -28,9 +28,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #endif
-#include "PHY/defs_common.h"
+#include "PHY/defs_eNB.h"
 #include "PHY/LTE_TRANSPORT/transport_common.h"
-#include "assertions.h"
 
 //#define cmin(a,b) ((a)<(b) ? (a) : (b))
 

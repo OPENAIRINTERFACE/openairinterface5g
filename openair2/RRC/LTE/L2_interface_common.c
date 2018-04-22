@@ -29,25 +29,13 @@
  */
 
 #include "platform_types.h"
-//#include "openair_defs.h"
-//#include "openair_proto.h"
-#include "defs.h"
-#include "extern.h"
-//#include "mac_lchan_interface.h"
-//#include "openair_rrc_utils.h"
-//#include "openair_rrc_main.h"
+#include "rrc_defs.h"
+#include "rrc_extern.h"
 #include "UTIL/LOG/log.h"
 #include "rrc_eNB_UE_context.h"
 #include "pdcp.h"
 #include "msc.h"
 #include "common/ran_context.h"
-
-#ifdef PHY_EMUL
-#include "SIMULATION/simulation_defs.h"
-extern EMULATION_VARS *Emul_vars;
-extern eNB_MAC_INST *eNB_mac_inst;
-extern UE_MAC_INST *UE_mac_inst;
-#endif
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"

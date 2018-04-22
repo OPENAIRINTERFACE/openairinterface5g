@@ -43,8 +43,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#include "PHY/defs.h"
-//#include "PHY/LTE_TRANSPORT/defs.h"
 #include "COMMON/platform_constants.h"
 #include "BCCH-BCH-Message.h"
 #include "RadioResourceConfigCommon.h"
@@ -68,6 +66,12 @@
 
 #include "nfapi_interface.h"
 #include "PHY_INTERFACE/IF_Module.h"
+
+#include "PHY/TOOLS/time_meas.h"
+
+#include "PHY/defs_common.h" // for PRACH_RESOURCES_t
+
+#include "targets/ARCH/COMMON/common_lib.h"
 
 /** @defgroup _mac  MAC
  * @ingroup _oai2
@@ -393,7 +397,6 @@ typedef struct {
     uint16_t Pdu_size;
 } __attribute__ ((__packed__)) ULSCH_PDU;
 
-#include "PHY/impl_defs_top.h"
 
 /*!\brief RA process state*/
 typedef enum {
@@ -817,8 +820,8 @@ typedef struct {
     ///Contention resolution timer used during random access
     uint8_t mac_ContentionResolutionTimer;
 
-    uint16_t max_rbs_allowed_slice[MAX_NUM_CCs][MAX_NUM_SLICES];
-    uint16_t max_rbs_allowed_slice_uplink[MAX_NUM_CCs][MAX_NUM_SLICES];
+    uint16_t max_rbs_allowed_slice[NFAPI_CC_MAX][MAX_NUM_SLICES];
+    uint16_t max_rbs_allowed_slice_uplink[NFAPI_CC_MAX][MAX_NUM_SLICES];
 
     uint8_t max_mcs[MAX_NUM_LCID];
 
@@ -827,14 +830,14 @@ typedef struct {
     // resource scheduling information
 
     /// Current DL harq round per harq_pid on each CC
-    uint8_t round[MAX_NUM_CCs][10];
+    uint8_t round[NFAPI_CC_MAX][10];
     /// Current Active TBs per harq_pid on each CC
-    uint8_t tbcnt[MAX_NUM_CCs][10];
+    uint8_t tbcnt[NFAPI_CC_MAX][10];
     /// Current UL harq round per harq_pid on each CC
-    uint8_t round_UL[MAX_NUM_CCs][8];
-    uint8_t dl_pow_off[MAX_NUM_CCs];
-    uint16_t pre_nb_available_rbs[MAX_NUM_CCs];
-    unsigned char rballoc_sub_UE[MAX_NUM_CCs][N_RBG_MAX];
+    uint8_t round_UL[NFAPI_CC_MAX][8];
+    uint8_t dl_pow_off[NFAPI_CC_MAX];
+    uint16_t pre_nb_available_rbs[NFAPI_CC_MAX];
+    unsigned char rballoc_sub_UE[NFAPI_CC_MAX][N_RBG_MAX];
     uint16_t ta_timer;
     int16_t ta_update;
     uint16_t ul_consecutive_errors;
@@ -939,7 +942,7 @@ typedef struct {
 
 /*! \brief subband bitmap confguration (for ALU icic algo purpose), in test phase */
 typedef struct {
-    uint8_t sbmap[NUMBER_OF_SUBBANDS_MAX];	//13 = number of SB MAX for 100 PRB
+    uint8_t sbmap[13];	//13 = number of SB MAX for 100 PRB
     uint8_t periodicity;
     uint8_t first_subframe;
     uint8_t sb_size;
@@ -949,34 +952,34 @@ typedef struct {
 typedef struct {
     /// Dedicated information for UEs
     struct PhysicalConfigDedicated
-	*physicalConfigDedicated[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+	*physicalConfigDedicated[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
     /// DLSCH pdu
-    DLSCH_PDU DLSCH_pdu[MAX_NUM_CCs][2][NUMBER_OF_UE_MAX];
+    DLSCH_PDU DLSCH_pdu[NFAPI_CC_MAX][2][MAX_MOBILES_PER_ENB];
     /// DCI template and MAC connection parameters for UEs
-    UE_TEMPLATE UE_template[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+    UE_TEMPLATE UE_template[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
     /// DCI template and MAC connection for RA processes
-    int pCC_id[NUMBER_OF_UE_MAX];
+    int pCC_id[MAX_MOBILES_PER_ENB];
     /// sorted downlink component carrier for the scheduler
-    int ordered_CCids[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+    int ordered_CCids[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
     /// number of downlink active component carrier
-    int numactiveCCs[NUMBER_OF_UE_MAX];
+    int numactiveCCs[MAX_MOBILES_PER_ENB];
     /// sorted uplink component carrier for the scheduler
-    int ordered_ULCCids[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+    int ordered_ULCCids[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
     /// number of uplink active component carrier
-    int numactiveULCCs[NUMBER_OF_UE_MAX];
+    int numactiveULCCs[MAX_MOBILES_PER_ENB];
     /// number of downlink active component carrier
-    uint8_t dl_CC_bitmap[NUMBER_OF_UE_MAX];
+    uint8_t dl_CC_bitmap[MAX_MOBILES_PER_ENB];
     /// eNB to UE statistics
-    eNB_UE_STATS eNB_UE_stats[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+    eNB_UE_STATS eNB_UE_stats[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
     /// scheduling control info
-    UE_sched_ctrl UE_sched_ctrl[NUMBER_OF_UE_MAX];
-    int next[NUMBER_OF_UE_MAX];
+    UE_sched_ctrl UE_sched_ctrl[MAX_MOBILES_PER_ENB];
+    int next[MAX_MOBILES_PER_ENB];
     int head;
-    int next_ul[NUMBER_OF_UE_MAX];
+    int next_ul[MAX_MOBILES_PER_ENB];
     int head_ul;
     int avail;
     int num_UEs;
-    boolean_t active[NUMBER_OF_UE_MAX];
+    boolean_t active[MAX_MOBILES_PER_ENB];
 
     /// Sorting criteria for the UE list in the MAC preprocessor
     uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
@@ -1057,82 +1060,82 @@ typedef struct {
 /*! \brief top level eNB MAC structure */
 typedef struct eNB_MAC_INST_s {
     /// Ethernet parameters for northbound midhaul interface
-    eth_params_t eth_params_n;
-    /// Ethernet parameters for fronthaul interface
-    eth_params_t eth_params_s;
-    ///
-    module_id_t Mod_id;
-    /// frame counter
-    frame_t frame;
-    /// subframe counter
-    sub_frame_t subframe;
-    /// Pointer to IF module instance for PHY
-    IF_Module_t *if_inst;
-    /// Common cell resources
-    COMMON_channels_t common_channels[MAX_NUM_CCs];
-    /// current PDU index (BCH,MCH,DLSCH)
-    uint16_t pdu_index[MAX_NUM_CCs];
-
-    /// NFAPI Config Request Structure
-    nfapi_config_request_t config[MAX_NUM_CCs];
-    /// Preallocated DL pdu list
-    nfapi_dl_config_request_pdu_t
-	dl_config_pdu_list[MAX_NUM_CCs][MAX_NUM_DL_PDU];
-    /// NFAPI DL Config Request Structure
-    nfapi_dl_config_request_t DL_req[MAX_NUM_CCs];
-    /// Preallocated UL pdu list
-    nfapi_ul_config_request_pdu_t
-	ul_config_pdu_list[MAX_NUM_CCs][MAX_NUM_UL_PDU];
-    /// Preallocated UL pdu list for ULSCH (n+k delay)
-    nfapi_ul_config_request_pdu_t
-	ul_config_pdu_list_tmp[MAX_NUM_CCs][10][MAX_NUM_UL_PDU];
-    /// NFAPI UL Config Request Structure, send to L1 4 subframes before processing takes place
-    nfapi_ul_config_request_t UL_req[MAX_NUM_CCs];
-    /// NFAPI "Temporary" UL Config Request Structure, holds future UL_config requests
-    nfapi_ul_config_request_t UL_req_tmp[MAX_NUM_CCs][10];
-    /// Preallocated HI_DCI0 pdu list
-    nfapi_hi_dci0_request_pdu_t
-	hi_dci0_pdu_list[MAX_NUM_CCs][MAX_NUM_HI_DCI0_PDU];
-    /// NFAPI HI/DCI0 Config Request Structure
-    nfapi_hi_dci0_request_t HI_DCI0_req[MAX_NUM_CCs];
-    /// Prealocated TX pdu list
-    nfapi_tx_request_pdu_t
-	tx_request_pdu[MAX_NUM_CCs][MAX_NUM_TX_REQUEST_PDU];
-    /// NFAPI DL PDU structure
-    nfapi_tx_request_t TX_req[MAX_NUM_CCs];
-    /// UL handle
-    uint32_t ul_handle;
-    UE_list_t UE_list;
-
-    ///subband bitmap configuration
-    SBMAP_CONF sbmap_conf;
-    /// CCE table used to build DCI scheduling information
-    int CCE_table[MAX_NUM_CCs][800];
-    ///  active flag for Other lcid
-    uint8_t lcid_active[NB_RB_MAX];
-    /// eNB stats
-    eNB_STATS eNB_stats[MAX_NUM_CCs];
-    // MAC function execution peformance profiler
-    /// processing time of eNB scheduler
-    time_stats_t eNB_scheduler;
-    /// processing time of eNB scheduler for SI
-    time_stats_t schedule_si;
-    /// processing time of eNB scheduler for Random access
-    time_stats_t schedule_ra;
-    /// processing time of eNB ULSCH scheduler
-    time_stats_t schedule_ulsch;
-    /// processing time of eNB DCI generation
-    time_stats_t fill_DLSCH_dci;
-    /// processing time of eNB MAC preprocessor
-    time_stats_t schedule_dlsch_preprocessor;
-    /// processing time of eNB DLSCH scheduler
-    time_stats_t schedule_dlsch;	// include rlc_data_req + MAC header + preprocessor
-    /// processing time of eNB MCH scheduler
-    time_stats_t schedule_mch;
-    /// processing time of eNB ULSCH reception
-    time_stats_t rx_ulsch_sdu;	// include rlc_data_ind
-    /// processing time of eNB PCH scheduler
-    time_stats_t schedule_pch;
+  eth_params_t eth_params_n;
+  /// Ethernet parameters for fronthaul interface
+  eth_params_t eth_params_s;
+  ///
+  module_id_t Mod_id;
+  /// frame counter
+  frame_t frame;
+  /// subframe counter
+  sub_frame_t subframe;
+  /// Pointer to IF module instance for PHY
+  IF_Module_t *if_inst;
+  /// Common cell resources
+  COMMON_channels_t common_channels[NFAPI_CC_MAX];
+  /// current PDU index (BCH,MCH,DLSCH)
+  uint16_t pdu_index[NFAPI_CC_MAX];
+  
+  /// NFAPI Config Request Structure
+  nfapi_config_request_t config[NFAPI_CC_MAX];
+  /// Preallocated DL pdu list
+  nfapi_dl_config_request_pdu_t
+  dl_config_pdu_list[NFAPI_CC_MAX][MAX_NUM_DL_PDU];
+  /// NFAPI DL Config Request Structure
+  nfapi_dl_config_request_t DL_req[NFAPI_CC_MAX];
+  /// Preallocated UL pdu list
+  nfapi_ul_config_request_pdu_t
+  ul_config_pdu_list[NFAPI_CC_MAX][MAX_NUM_UL_PDU];
+  /// Preallocated UL pdu list for ULSCH (n+k delay)
+  nfapi_ul_config_request_pdu_t
+  ul_config_pdu_list_tmp[NFAPI_CC_MAX][10][MAX_NUM_UL_PDU];
+  /// NFAPI UL Config Request Structure, send to L1 4 subframes before processing takes place
+  nfapi_ul_config_request_t UL_req[NFAPI_CC_MAX];
+  /// NFAPI "Temporary" UL Config Request Structure, holds future UL_config requests
+  nfapi_ul_config_request_t UL_req_tmp[NFAPI_CC_MAX][10];
+  /// Preallocated HI_DCI0 pdu list
+  nfapi_hi_dci0_request_pdu_t
+  hi_dci0_pdu_list[NFAPI_CC_MAX][MAX_NUM_HI_DCI0_PDU];
+  /// NFAPI HI/DCI0 Config Request Structure
+  nfapi_hi_dci0_request_t HI_DCI0_req[NFAPI_CC_MAX];
+  /// Prealocated TX pdu list
+  nfapi_tx_request_pdu_t
+  tx_request_pdu[NFAPI_CC_MAX][MAX_NUM_TX_REQUEST_PDU];
+  /// NFAPI DL PDU structure
+  nfapi_tx_request_t TX_req[NFAPI_CC_MAX];
+  /// UL handle
+  uint32_t ul_handle;
+  UE_list_t UE_list;
+  
+  ///subband bitmap configuration
+  SBMAP_CONF sbmap_conf;
+  /// CCE table used to build DCI scheduling information
+  int CCE_table[NFAPI_CC_MAX][800];
+  ///  active flag for Other lcid
+  uint8_t lcid_active[NB_RB_MAX];
+  /// eNB stats
+  eNB_STATS eNB_stats[NFAPI_CC_MAX];
+  // MAC function execution peformance profiler
+  /// processing time of eNB scheduler
+  time_stats_t eNB_scheduler;
+  /// processing time of eNB scheduler for SI
+  time_stats_t schedule_si;
+  /// processing time of eNB scheduler for Random access
+  time_stats_t schedule_ra;
+  /// processing time of eNB ULSCH scheduler
+  time_stats_t schedule_ulsch;
+  /// processing time of eNB DCI generation
+  time_stats_t fill_DLSCH_dci;
+  /// processing time of eNB MAC preprocessor
+  time_stats_t schedule_dlsch_preprocessor;
+  /// processing time of eNB DLSCH scheduler
+  time_stats_t schedule_dlsch;	// include rlc_data_req + MAC header + preprocessor
+  /// processing time of eNB MCH scheduler
+  time_stats_t schedule_mch;
+  /// processing time of eNB ULSCH reception
+  time_stats_t rx_ulsch_sdu;	// include rlc_data_ind
+  /// processing time of eNB PCH scheduler
+  time_stats_t schedule_pch;
 } eNB_MAC_INST;
 
 /*
@@ -1264,7 +1267,7 @@ typedef struct {
     /// Outgoing RAR pdu for PHY
     RAR_PDU RAR_pdu;
     /// Incoming DLSCH pdu for PHY
-    DLSCH_PDU DLSCH_pdu[NUMBER_OF_UE_MAX][2];
+    DLSCH_PDU DLSCH_pdu[MAX_MOBILES_PER_ENB][2];
     /// number of attempt for rach
     uint8_t RA_attempt_number;
     /// Random-access procedure flag
@@ -1305,7 +1308,7 @@ typedef struct {
     /// power backoff due to power management (as allowed by P-MPRc) for this cell
     uint8_t PHR_reporting_active;
     /// power backoff due to power management (as allowed by P-MPRc) for this cell
-    uint8_t power_backoff_db[NUMBER_OF_eNB_MAX];
+    uint8_t power_backoff_db[MAX_eNB];
     /// BSR report falg management
     uint8_t BSR_reporting_active;
     /// retxBSR-Timer expires flag

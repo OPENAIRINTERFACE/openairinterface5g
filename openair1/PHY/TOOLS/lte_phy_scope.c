@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include "lte_phy_scope.h"
+#include "PHY/defs_common.h"
 
 #define TPUT_WINDOW_LENGTH 100
 int otg_enabled;

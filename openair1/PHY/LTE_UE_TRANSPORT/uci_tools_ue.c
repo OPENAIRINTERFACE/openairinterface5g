@@ -37,26 +37,6 @@
 
 //#define DEBUG_UCI 1
 
-uint64_t pmi2hex_2Ar1(uint32_t pmi)
-{
-
-  uint64_t pmil = (uint64_t)pmi;
-
-  return ((pmil&3) + (((pmil>>2)&3)<<4) + (((pmil>>4)&3)<<8) + (((pmil>>6)&3)<<12) +
-          (((pmil>>8)&3)<<16) + (((pmil>>10)&3)<<20) + (((pmil>>12)&3)<<24) +
-          (((pmil>>14)&3)<<28) + (((pmil>>16)&3)<<32) + (((pmil>>18)&3)<<36) +
-          (((pmil>>20)&3)<<40) + (((pmil>>22)&3)<<44) + (((pmil>>24)&3)<<48));
-}
-
-uint64_t pmi2hex_2Ar2(uint32_t pmi)
-{
-
-  uint64_t pmil = (uint64_t)pmi;
-  return ((pmil&1) + (((pmil>>1)&1)<<4) + (((pmil>>2)&1)<<8) + (((pmil>>3)&1)<<12) +
-          (((pmil>>4)&1)<<16) + (((pmil>>5)&1)<<20) + (((pmil>>6)&1)<<24) +
-          (((pmil>>7)&1)<<28) + (((pmil>>8)&1)<<32) + (((pmil>>9)&1)<<36) +
-          (((pmil>>10)&1)<<40) + (((pmil>>11)&1)<<44) + (((pmil>>12)&1)<<48));
-}
 
 uint64_t cqi2hex(uint32_t cqi)
 {

@@ -47,7 +47,7 @@ extern RAN_CONTEXT_t RC;
 #include "fapi_stub.h"
 //#include "fapi_l1.h"
 #include "UTIL/LOG/log.h"
-#include "openair2/LAYER2/MAC/proto.h"
+#include "openair2/LAYER2/MAC/mac_proto.h"
 
 #define NUM_P5_PHY 2
 

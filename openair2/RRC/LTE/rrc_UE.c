@@ -34,16 +34,15 @@
 #include "assertions.h"
 #include "hashtable.h"
 #include "asn1_conversions.h"
-#include "defs.h"
-#include "PHY/TOOLS/dB_routines.h"
-#include "extern.h"
+#include "rrc_defs.h"
+#include "rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #ifndef CELLULAR
-#include "RRC/LITE/MESSAGES/asn1_msg.h"
+#include "RRC/LTE/MESSAGES/asn1_msg.h"
 #endif
 #include "RRCConnectionRequest.h"
 #include "RRCConnectionReconfiguration.h"
@@ -80,7 +79,7 @@
 # include "intertask_interface.h"
 #endif
 
-#include "SIMULATION/TOOLS/defs.h" // for taus
+#include "SIMULATION/TOOLS/sim.h" // for taus
 
 
 #ifdef PHY_EMUL
@@ -94,7 +93,7 @@ extern void *bigphys_malloc(int);
 
 //#define XER_PRINT
 
-//extern int8_t dB_fixed2(uint32_t x,uint32_t y);
+
 
 extern void pdcp_config_set_security(
   const protocol_ctxt_t* const  ctxt_pP,

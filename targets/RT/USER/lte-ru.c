@@ -60,7 +60,7 @@
 
 #include "PHY/types.h"
 
-#include "PHY/defs.h"
+#include "PHY/defs_common.h"
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 
@@ -70,22 +70,16 @@
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#include "PHY/extern.h"
-#include "SCHED/extern.h"
-#include "LAYER2/MAC/extern.h"
+#include "PHY/phy_extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 
-#include "../../SIMU/USER/init_lte.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
 
-#ifdef SMBV
-#include "PHY/TOOLS/smbv.h"
-unsigned short config_frames[4] = {2,9,11,13};
-#endif
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"

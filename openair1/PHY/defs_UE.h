@@ -58,7 +58,7 @@
 #include "msc.h"
 
 #include "defs_common.h"
-
+#include "impl_defs_top.h"
 
 #include "PHY/TOOLS/time_meas.h"
 #include "PHY/CODING/coding_defs.h"
@@ -67,7 +67,7 @@
 #include "PHY/LTE_UE_TRANSPORT/transport_ue.h"
 #include "PHY/LTE_TRANSPORT/transport_eNB.h" // for SIC
 #include <pthread.h>
-
+#include "assertions.h"
 
 
 /// Context data structure for RX/TX portion of subframe processing
