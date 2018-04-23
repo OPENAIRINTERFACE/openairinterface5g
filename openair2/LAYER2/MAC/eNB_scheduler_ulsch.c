@@ -1837,6 +1837,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
       else if (UE_sched_ctrl->cqi_req_timer>30) {
         cqi_req = 1;
         UE_sched_ctrl->cqi_req_timer=0;
+        UE_sched_ctrl->cqi_req_flag=1;
       }
       else
         cqi_req = 0;
@@ -1894,7 +1895,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
               UE_template->mcs_UL[harq_pid]=10;//cmin (10, openair_daq_vars.target_ue_ul_mcs);
               rb_table_index=5; // for PHR
             }
-
             UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2=UE_template->mcs_UL[harq_pid];
 
             UE_template->TBS_UL[harq_pid] = get_TBS_UL(UE_template->mcs_UL[harq_pid],rb_table[rb_table_index]);
@@ -2070,6 +2070,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             }
             UE_template->TBS_UL[harq_pid] = get_TBS_UL(UE_template->mcs_UL[harq_pid],ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb);
             UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_TBS=UE_template->TBS_UL[harq_pid];
+
 
             if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
               LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",

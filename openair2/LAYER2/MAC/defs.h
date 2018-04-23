@@ -864,6 +864,7 @@ typedef struct {
     uint8_t dl_cqi[NFAPI_CC_MAX];
     int32_t uplane_inactivity_timer;
     uint8_t crnti_reconfigurationcomplete_flag;
+    uint8_t cqi_req_flag;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {
