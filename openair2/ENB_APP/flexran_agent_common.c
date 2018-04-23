@@ -37,6 +37,7 @@
 #include "flexran_agent_ran_api.h"
 //#include "PHY/extern.h"
 #include "common/utils/LOG/log.h"
+#include "flexran_agent_mac_internal.h"
 
 //#include "SCHED/defs.h"
 #include "RRC/LTE/rrc_extern.h"
@@ -290,6 +291,8 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
     free(reply->cell_config[i]);
   }
   free(reply->cell_config);
+  /* don't free the slice_config, it is maintained internally during
+   * the liftetime of the agent */
   free(reply);
   free(msg);
   
@@ -1030,6 +1033,10 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
 
       cell_conf[i]->carrier_index = i;
       cell_conf[i]->has_carrier_index = 1;
+
+      /* get a pointer to the config which is maintained in the agent throughout
+      * its lifetime */
+      cell_conf[i]->slice_config = flexran_agent_get_slice_config(mod_id);
     }
     enb_config_reply_msg->cell_config=cell_conf;
   }
