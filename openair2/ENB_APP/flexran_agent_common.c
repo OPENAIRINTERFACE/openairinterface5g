@@ -594,6 +594,10 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
       ue_config[i]->has_rnti = 1;
       ue_config[i]->imsi = flexran_get_ue_imsi(mod_id, i);
       ue_config[i]->has_imsi = 1;
+      ue_config[i]->dl_slice_id = flexran_get_ue_dl_slice_id(mod_id, i);
+      ue_config[i]->has_dl_slice_id = 1;
+      ue_config[i]->ul_slice_id = flexran_get_ue_ul_slice_id(mod_id, i);
+      ue_config[i]->has_ul_slice_id = 1;
       //TODO: Set the DRX configuration (optional)
       //Not supported for now, so we do not set it
 
