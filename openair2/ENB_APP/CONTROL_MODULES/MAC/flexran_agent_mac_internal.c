@@ -38,6 +38,7 @@ extern Protocol__FlexSliceConfig *sc_update[NUM_MAX_ENB];
 extern int perform_slice_config_update_count;
 extern Protocol__FlexUeConfig *ue_slice_assoc_update[NUM_MAX_UE];
 extern int n_ue_slice_assoc_updates;
+extern pthread_mutex_t sc_update_mtx;
 
 Protocol__FlexranMessage * flexran_agent_generate_diff_mac_stats_report(Protocol__FlexranMessage *new_message,
 									Protocol__FlexranMessage *old_message) {
@@ -1228,6 +1229,9 @@ void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *slice)
     LOG_E(FLEXRAN_AGENT, "Can not update slice policy (no existing slice profile)\n");
     return;
   }
+
+  pthread_mutex_lock(&sc_update_mtx);
+
   if (slice->n_dl == 0)
     LOG_I(FLEXRAN_AGENT, "[%d] no DL slice configuration in flex_slice_config message\n", mod_id);
   for (int i = 0; i < slice->n_dl; i++)
@@ -1237,6 +1241,8 @@ void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *slice)
     LOG_I(FLEXRAN_AGENT, "[%d] no UL slice configuration in flex_slice_config message\n", mod_id);
   for (int i = 0; i < slice->n_ul; i++)
     prepare_update_slice_config_ul(mod_id, slice->ul[i]);
+
+  pthread_mutex_unlock(&sc_update_mtx);
 
   /* perform the slice configuration reads a couple of times. If there are
    * inconsistencies (i.e. the MAC refuses a configuration), we will have a
@@ -1395,7 +1401,6 @@ int apply_ue_slice_assoc_update(mid_t mod_id)
 {
   int i;
   int changes = 0;
-  /* TODO should lock structure */
   for (i = 0; i < n_ue_slice_assoc_updates; i++) {
     int ue_id = find_UE_id(mod_id, ue_slice_assoc_update[i]->rnti);
     if (ue_slice_assoc_update[i]->has_dl_slice_id) {

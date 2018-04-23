@@ -61,6 +61,8 @@ int perform_slice_config_update_count = 1;
 /* queue of incoming new UE<>slice association commands */
 Protocol__FlexUeConfig *ue_slice_assoc_update[NUM_MAX_UE];
 int n_ue_slice_assoc_updates = 0;
+/* mutex for sc_update: do not receive new config and write it at the same time */
+pthread_mutex_t sc_update_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 
 int flexran_agent_mac_stats_reply(mid_t mod_id,
@@ -1446,10 +1448,13 @@ void flexran_agent_slice_update(mid_t mod_id)
   if (perform_slice_config_update_count <= 0) return;
   perform_slice_config_update_count--;
 
+  pthread_mutex_lock(&sc_update_mtx);
+
   if (!slice_config[mod_id]) {
     /* if the configuration does not exist for agent, create from eNB structure
      * and exit */
     flexran_create_config_structures(mod_id);
+    pthread_mutex_unlock(&sc_update_mtx);
     return;
   }
 
@@ -1479,6 +1484,7 @@ void flexran_agent_slice_update(mid_t mod_id)
       LOG_W(FLEXRAN_AGENT, "[%d] reverting to original number of %ld UL slices\n",
             mod_id, sc_update[mod_id]->n_ul);
     }
+    pthread_mutex_unlock(&sc_update_mtx);
     return;
   }
 
@@ -1514,6 +1520,7 @@ void flexran_agent_slice_update(mid_t mod_id)
   if (changes > 0)
     LOG_I(FLEXRAN_AGENT, "[%d] slice configuration: applied %d changes\n", mod_id, changes);
 
+  pthread_mutex_unlock(&sc_update_mtx);
 }
 
 Protocol__FlexSliceConfig *flexran_agent_get_slice_config(mid_t mod_id)
