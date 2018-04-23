@@ -167,4 +167,11 @@ void flexran_agent_send_update_stats(mid_t mod_id);
 err_code_t flexran_agent_enable_cont_stats_update(mid_t mod_id, xid_t xid, stats_request_config_t *stats_req) ;
 err_code_t flexran_agent_disable_cont_stats_update(mid_t mod_id);
 
+/* Handle a received eNB config reply message as an "order" to reconfigure. It
+ * does not come as a reconfiguration message as this is a "structured"
+ * ProtoBuf message (as opposed to "unstructured" YAML). There is no destructor
+ * since we do not reply to this message (yet). Instead, the controller has to
+ * issue another eNB config request message. */
+int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void* params, Protocol__FlexranMessage **msg);
+
 #endif
