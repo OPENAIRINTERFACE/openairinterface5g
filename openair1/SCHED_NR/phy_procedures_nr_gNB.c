@@ -55,7 +55,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
 
   if (subframe == ss_subframe)
   {
-    LOG_I(PHY,"SS TX: frame %d, subframe %d\n",frame,subframe);
+    LOG_I(PHY,"SS TX: frame %d, subframe %d, start_symbol %d\n",frame,subframe, ssb_start_symbol);
     nr_generate_pss(gNB->d_pss, txdataF, AMP, ssb_start_symbol, cfg, fp);
     nr_generate_sss(gNB->d_sss, txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
   }
@@ -88,5 +88,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     nr_common_signal_procedures(gNB,frame, subframe);
+    //if (frame == 9)
+      //write_output("txdataF.m","txdataF",gNB->common_vars.txdataF[aa],fp->samples_per_frame_wCP, 1, 1);
   }
 }

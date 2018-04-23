@@ -49,11 +49,11 @@ int nr_generate_pss(  int16_t *d_pss,
 
   for (i=0; i < NR_PSS_LENGTH; i++) {
     m = (i + 43*Nid2)%(NR_PSS_LENGTH);
-    d_pss[i] = (1 - 2*x[m]) * 768;
+    d_pss[i] = (1 - 2*x[m]) * 32767;
   }
 
 #ifdef NR_PSS_DEBUG
-  write_output("d_pss.m", "d_pss", (void*)d_pss, NR_PSS_LENGTH, 1, 3);
+  write_output("d_pss.m", "d_pss", (void*)d_pss, NR_PSS_LENGTH, 1, 1);
 #endif
 
   /// Resource mapping
@@ -78,7 +78,7 @@ int nr_generate_pss(  int16_t *d_pss,
   }
 
 #ifdef NR_PSS_DEBUG
-  write_output("pss_0.m", "pss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 3);
+  write_output("pss_0.m", "pss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
 #endif
 
   return (0);

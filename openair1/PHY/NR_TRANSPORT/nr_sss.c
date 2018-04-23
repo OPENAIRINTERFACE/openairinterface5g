@@ -59,11 +59,11 @@ int nr_generate_sss(  int16_t *d_sss,
   m1 = Nid1 % 112;
 
   for (i = 0; i < NR_SSS_LENGTH ; i++) {
-    d_sss[i] = (1 - 2*x0[(i + m0) % NR_SSS_LENGTH] ) * (1 - 2*x1[(i + m1) % NR_SSS_LENGTH] ) * 768;
+    d_sss[i] = (1 - 2*x0[(i + m0) % NR_SSS_LENGTH] ) * (1 - 2*x1[(i + m1) % NR_SSS_LENGTH] ) * 32767;
   }
 
 #ifdef NR_SSS_DEBUG
-  write_output("d_sss.m", "d_sss", (void*)d_sss, NR_SSS_LENGTH, 1, 3);
+  write_output("d_sss.m", "d_sss", (void*)d_sss, NR_SSS_LENGTH, 1, 1);
 #endif
 
   /// Resource mapping
@@ -87,7 +87,7 @@ int nr_generate_sss(  int16_t *d_sss,
     }
   }
 #ifdef NR_SSS_DEBUG
-  write_output("sss_0.m", "sss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 3);
+  write_output("sss_0.m", "sss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
 #endif
 
   return (0);
