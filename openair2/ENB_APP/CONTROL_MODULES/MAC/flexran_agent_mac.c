@@ -52,6 +52,16 @@ struct lfds700_misc_prng_state ps[NUM_MAX_ENB];
 struct lfds700_ringbuffer_element *dl_mac_config_array[NUM_MAX_ENB];
 struct lfds700_ringbuffer_state ringbuffer_state[NUM_MAX_ENB];
 
+/* the slice config as kept in the underlying system */
+Protocol__FlexSliceConfig *slice_config[NUM_MAX_ENB];
+/* a structure that keeps updates which will be reflected in slice_config later */
+Protocol__FlexSliceConfig *sc_update[NUM_MAX_ENB];
+/* indicates whether sc_update contains new data */
+int perform_slice_config_update_count = 1;
+/* queue of incoming new UE<>slice association commands */
+Protocol__FlexUeConfig *ue_slice_assoc_update[NUM_MAX_UE];
+int n_ue_slice_assoc_updates = 0;
+
 
 int flexran_agent_mac_stats_reply(mid_t mod_id,
           const report_config_t *report_config,
@@ -1372,8 +1382,141 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   return 0;
 }
 
+void flexran_create_config_structures(mid_t mod_id)
+{
+  int i;
+  int n_dl = flexran_get_num_dl_slices(mod_id);
+  int m_ul = flexran_get_num_ul_slices(mod_id);
+  slice_config[mod_id] = flexran_agent_create_slice_config(n_dl, m_ul);
+  sc_update[mod_id] = flexran_agent_create_slice_config(n_dl, m_ul);
+  if (!slice_config[mod_id] || !sc_update[mod_id]) return;
 
+  for (i = 0; i < n_dl; i++) {
+    flexran_agent_read_slice_dl_config(mod_id, i, slice_config[mod_id]->dl[i]);
+    flexran_agent_read_slice_dl_config(mod_id, i, sc_update[mod_id]->dl[i]);
+  }
+  for (i = 0; i < m_ul; i++) {
+    flexran_agent_read_slice_ul_config(mod_id, i, slice_config[mod_id]->ul[i]);
+    flexran_agent_read_slice_ul_config(mod_id, i, sc_update[mod_id]->ul[i]);
+  }
+}
 
+void flexran_check_and_remove_slices(mid_t mod_id)
+{
+  int i;
+  Protocol__FlexDlSlice **dl = sc_update[mod_id]->dl;
+  size_t n_dl = sc_update[mod_id]->n_dl;
+  for (i = 0; i < n_dl; i++) {
+    /* remove slices whose percentage is zero */
+    if (dl[i]->percentage > 0) continue;
+    if (flexran_remove_dl_slice(mod_id, i) < 1) {
+      LOG_W(FLEXRAN_AGENT, "[%d] can not remove slice index %d ID %d\n",
+            mod_id, i, dl[i]->id);
+      continue;
+    }
+    LOG_I(FLEXRAN_AGENT, "[%d] removed slice index %d ID %d\n",
+          mod_id, i, dl[i]->id);
+    /* don't update slice_config, it will be read in below */
+    /* we need to memcpy the higher slice to the position we just deleted */
+    memcpy(dl[i], dl[n_dl-1], sizeof(*dl[n_dl-1]));
+    --sc_update[mod_id]->n_dl;
+  }
+  Protocol__FlexUlSlice **ul = sc_update[mod_id]->ul;
+  size_t n_ul = sc_update[mod_id]->n_ul;
+  for (i = 0; i < n_ul; i++) {
+    if (ul[i]->percentage > 0) continue;
+    if (flexran_remove_ul_slice(mod_id, i) < 1) {
+      LOG_W(FLEXRAN_AGENT, "[%d] can not remove slice index %d ID %d\n",
+            mod_id, i, ul[i]->id);
+      continue;
+    }
+    LOG_I(FLEXRAN_AGENT, "[%d] removed slice index %d ID %d\n",
+          mod_id, i, ul[i]->id);
+    /* see DL remarks */
+    memcpy(ul[i], ul[n_ul-1], sizeof(*ul[n_ul-1]));
+    --sc_update[mod_id]->n_ul;
+  }
+}
 
+void flexran_agent_slice_update(mid_t mod_id)
+{
+  int i;
+  int changes = 0;
 
+  if (perform_slice_config_update_count <= 0) return;
+  perform_slice_config_update_count--;
 
+  if (!slice_config[mod_id]) {
+    /* if the configuration does not exist for agent, create from eNB structure
+     * and exit */
+    flexran_create_config_structures(mod_id);
+    return;
+  }
+
+  /********* read existing config *********/
+  /* simply update slice_config all the time and write new config
+   * (apply_new_slice_dl_config() only updates if changes are necessary) */
+  slice_config[mod_id]->n_dl = flexran_get_num_dl_slices(mod_id);
+  slice_config[mod_id]->n_ul = flexran_get_num_ul_slices(mod_id);
+  for (i = 0; i < slice_config[mod_id]->n_dl; i++) {
+    flexran_agent_read_slice_dl_config(mod_id, i, slice_config[mod_id]->dl[i]);
+  }
+  for (i = 0; i < slice_config[mod_id]->n_ul; i++) {
+    flexran_agent_read_slice_ul_config(mod_id, i, slice_config[mod_id]->ul[i]);
+  }
+
+  /* in case we tried to add a slice and it failed (e.g. due to high sum
+   * percentage being too high), revert to the correct number of slices.
+   * Also, do not write if we try the last time */
+  if (perform_slice_config_update_count == 1) {
+    if (slice_config[mod_id]->n_dl != sc_update[mod_id]->n_dl) {
+      sc_update[mod_id]->n_dl = slice_config[mod_id]->n_dl;
+      LOG_W(FLEXRAN_AGENT, "[%d] reverting to original number of %ld DL slices\n",
+            mod_id, sc_update[mod_id]->n_dl);
+    }
+    if (slice_config[mod_id]->n_ul != sc_update[mod_id]->n_ul) {
+      sc_update[mod_id]->n_ul = slice_config[mod_id]->n_ul;
+      LOG_W(FLEXRAN_AGENT, "[%d] reverting to original number of %ld UL slices\n",
+            mod_id, sc_update[mod_id]->n_ul);
+    }
+    return;
+  }
+
+  /********* write new config *********/
+  /* check for removal (sc_update[X]->dl[Y].percentage == 0)
+   * and update sc_update & slice_config accordingly */
+  flexran_check_and_remove_slices(mod_id);
+
+  /* create new DL and UL slices if necessary */
+  for (i = slice_config[mod_id]->n_dl; i < sc_update[mod_id]->n_dl; i++) {
+    flexran_create_dl_slice(mod_id, sc_update[mod_id]->dl[i]->id, 0);
+    slice_config[mod_id]->n_dl = flexran_get_num_dl_slices(mod_id);
+    flexran_agent_read_slice_dl_config(mod_id, i, slice_config[mod_id]->dl[i]);
+  }
+  for (i = slice_config[mod_id]->n_ul; i < sc_update[mod_id]->n_ul; i++) {
+    flexran_create_ul_slice(mod_id, sc_update[mod_id]->ul[i]->id, 0);
+    slice_config[mod_id]->n_ul = flexran_get_num_ul_slices(mod_id);
+    flexran_agent_read_slice_ul_config(mod_id, i, slice_config[mod_id]->ul[i]);
+  }
+  for (i = 0; i < slice_config[mod_id]->n_dl; i++) {
+    changes += apply_new_slice_dl_config(mod_id,
+                                         slice_config[mod_id]->dl[i],
+                                         sc_update[mod_id]->dl[i]);
+  }
+  for (i = 0; i < slice_config[mod_id]->n_ul; i++) {
+    changes += apply_new_slice_ul_config(mod_id,
+                                         slice_config[mod_id]->ul[i],
+                                         sc_update[mod_id]->ul[i]);
+  }
+  if (n_ue_slice_assoc_updates > 0) {
+    changes += apply_ue_slice_assoc_update(mod_id);
+  }
+  if (changes > 0)
+    LOG_I(FLEXRAN_AGENT, "[%d] slice configuration: applied %d changes\n", mod_id, changes);
+
+}
+
+Protocol__FlexSliceConfig *flexran_agent_get_slice_config(mid_t mod_id)
+{
+  return slice_config[mod_id];
+}

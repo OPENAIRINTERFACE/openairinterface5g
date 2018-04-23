@@ -703,6 +703,10 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
       allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
   }
 
+  if (mac_agent_registered[module_idP] && subframeP == 9) {
+    flexran_agent_slice_update(module_idP);
+  }
+
   stop_meas(&RC.mac[module_idP]->eNB_scheduler);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME

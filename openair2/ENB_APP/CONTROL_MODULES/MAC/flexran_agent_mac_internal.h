@@ -107,4 +107,37 @@ int parse_ul_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser);
 
 int load_dl_scheduler_function(mid_t mod_id, const char *function_name);
 
+/*** Functions for handling a slice config ***/
+
+/* allocate memory for a Protocol__FlexSliceConfig structure with n_dl DL slice
+ * configs and m_ul UL slice configs */
+Protocol__FlexSliceConfig *flexran_agent_create_slice_config(int n_dl, int m_ul);
+
+/* read the DL slice config via the RAN into a given Protocol__FlexDlSlice
+ * struct */
+void flexran_agent_read_slice_dl_config(mid_t mod_id, int slice_idx, Protocol__FlexDlSlice *dl_slice);
+
+/* read the UL slice config via the RAN into a given Protocol__FlexUlSlice
+ * struct */
+void flexran_agent_read_slice_ul_config(mid_t mod_id, int slice_idx, Protocol__FlexUlSlice *ul_slice);
+
+/* reads content of slice over the sc_update structure, so that it can be
+ * applied later by performing a diff between slice_config and sc_update */
+void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *slice);
+
+/* apply new configuration of slice in DL if there are changes between the
+ * parameters. Returns the number of changed parameters. */
+int apply_new_slice_dl_config(mid_t mod_id, Protocol__FlexDlSlice *oldc, Protocol__FlexDlSlice *newc);
+
+/* apply new configuration of slice in UL if there are changes between the
+ * parameters. Returns the number of changed parameters. */
+int apply_new_slice_ul_config(mid_t mod_id, Protocol__FlexUlSlice *oldc, Protocol__FlexUlSlice *newc);
+
+/* inserts a new ue_config into the structure keeping ue to slice association
+ * updates and marks so it can be applied */
+void prepare_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig *ue_config);
+
+/* apply a new association between a UE and a slice (both DL and UL) */
+int apply_ue_slice_assoc_update(mid_t mod_id);
+
 #endif /*FLEXRAN_AGENT_MAC_INTERNAL_H_*/

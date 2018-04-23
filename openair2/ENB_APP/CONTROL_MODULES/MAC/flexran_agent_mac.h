@@ -87,4 +87,14 @@ int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface);
 /*Unregister technology specific callbacks*/
 int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface*xface);
 
+/***************************************
+ * FlexRAN agent - slice configuration *
+ ***************************************/
+
+/* Inform controller about possibility to update slice configuration */
+void flexran_agent_slice_update(mid_t mod_id);
+
+/* return a pointer to the current config */
+Protocol__FlexSliceConfig *flexran_agent_get_slice_config(mid_t mod_id);
+
 #endif
