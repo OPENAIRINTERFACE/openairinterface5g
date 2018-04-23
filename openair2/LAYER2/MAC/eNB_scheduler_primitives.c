@@ -4625,7 +4625,7 @@ cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 	    extract_pusch_csi(mod_idP, CC_idP, UE_id, frameP, subframeP,
 			      pdu, rel9->length);
 
-	    LOG_D(MAC,"Frame %d Subframe %d update CQI:%d\n",frameP,subframeP,sched_ctl->dl_cqi);
+	    LOG_D(MAC,"Frame %d Subframe %d update CQI:%d\n",frameP,subframeP,sched_ctl->dl_cqi[CC_idP]);
 	}
 
 	// timing advance
