@@ -159,7 +159,7 @@
 #define MIN_MAC_HDR_RLC_SIZE    (1 + MIN_RLC_PDU_SIZE)
 
 /*!\brief maximum number of slices / groups */
-#define MAX_NUM_SLICES 4
+#define MAX_NUM_SLICES 10
 
 
 #define U_PLANE_INACTIVITY_VALUE 6000
