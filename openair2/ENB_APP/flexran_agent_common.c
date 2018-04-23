@@ -1123,3 +1123,16 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
   *msg = NULL;
   return 0;
 }
+
+int flexran_agent_handle_ue_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg)
+{
+  int i;
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
+  Protocol__FlexUeConfigReply *ue_config_reply = input->ue_config_reply_msg;
+
+  for (i = 0; i < ue_config_reply->n_ue_config; i++)
+    prepare_ue_slice_assoc_update(mod_id, ue_config_reply->ue_config[i]);
+
+  *msg = NULL;
+  return 0;
+}

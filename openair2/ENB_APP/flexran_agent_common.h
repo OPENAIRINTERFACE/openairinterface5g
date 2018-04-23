@@ -174,4 +174,12 @@ err_code_t flexran_agent_disable_cont_stats_update(mid_t mod_id);
  * issue another eNB config request message. */
 int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void* params, Protocol__FlexranMessage **msg);
 
+/* Handle a received UE config reply message as an "order" to reconfigure the
+ * association of a UE to a slice.  It does not come as a reconfiguration
+ * message as this is a "structured" ProtoBuf message (as opposed to
+ * "unstructured" YAML). There is no destructor since we do not reply to this
+ * message (yet). Instead, the controller has to issue another eNB config
+ * request message. */
+int flexran_agent_handle_ue_config_reply(mid_t mod_id, const void* params, Protocol__FlexranMessage **msg);
+
 #endif
