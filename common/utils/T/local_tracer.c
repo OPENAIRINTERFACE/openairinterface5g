@@ -335,7 +335,7 @@ static void init_shm(void)
     { perror(T_SHM_FILENAME); abort(); }
   T_local_cache = mmap(NULL, T_CACHE_SIZE * sizeof(T_cache_t),
                        PROT_READ | PROT_WRITE, MAP_SHARED, s, 0);
-  if (T_local_cache == NULL)
+  if (T_local_cache == MAP_FAILED)
     { perror(T_SHM_FILENAME); abort(); }
   close(s);
 

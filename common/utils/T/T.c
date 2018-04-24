@@ -147,7 +147,7 @@ void T_init(int remote_port, int wait_for_tracer, int dont_fork)
   if (T_shm_fd == -1) { perror(T_SHM_FILENAME); abort(); }
   T_cache = mmap(NULL, T_CACHE_SIZE * sizeof(T_cache_t),
                  PROT_READ | PROT_WRITE, MAP_SHARED, T_shm_fd, 0);
-  if (T_cache == NULL)
+  if (T_cache == MAP_FAILED)
     { perror(T_SHM_FILENAME); abort(); }
   close(T_shm_fd);
 
