@@ -139,6 +139,8 @@ void nr_feptx_ofdm_2thread(RU_t *ru) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
 
+  //write_output
+
   stop_meas(&ru->ofdm_mod_stats);
 
 }

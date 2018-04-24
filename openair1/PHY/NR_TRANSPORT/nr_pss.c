@@ -21,7 +21,7 @@
 
 #include "PHY/defs.h"
 
-#define NR_PSS_DEBUG
+//#define NR_PSS_DEBUG
 
 //short nr_mod_table[MOD_TABLE_SIZE_SHORT] = {0,0,768,768,-768,-768};
 
