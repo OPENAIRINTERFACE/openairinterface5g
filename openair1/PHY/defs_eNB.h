@@ -234,145 +234,6 @@ typedef struct RU_proc_t_s {
   int ru_tx_ready;
 } RU_proc_t;
 
-/// Context data structure for eNB subframe processing
-typedef struct eNB_proc_t_s {
-  /// Component Carrier index
-  uint8_t              CC_id;
-  /// thread index
-  int thread_index;
-  /// timestamp received from HW
-  openair0_timestamp timestamp_rx;
-  /// timestamp to send to "slave rru"
-  openair0_timestamp timestamp_tx;
-  /// subframe to act upon for reception
-  int subframe_rx;
-  /// subframe to act upon for PRACH
-  int subframe_prach;
-#ifdef Rel14
-  /// subframe to act upon for reception of prach BL/CE UEs
-  int subframe_prach_br;
-#endif
-  /// frame to act upon for reception
-  int frame_rx;
-  /// frame to act upon for transmission
-  int frame_tx;
-  /// frame to act upon for PRACH
-  int frame_prach;
-#ifdef Rel14
-  /// frame to act upon for PRACH BL/CE UEs
-  int frame_prach_br;
-#endif
-  /// \internal This variable is protected by \ref mutex_td.
-  int instance_cnt_td;
-  /// \internal This variable is protected by \ref mutex_te.
-  //int instance_cnt_te[3];
-  /// \internal This variable is protected by \ref mutex_prach.
-  int instance_cnt_prach;
-#ifdef Rel14
-  /// \internal This variable is protected by \ref mutex_prach for BL/CE UEs.
-  int instance_cnt_prach_br;
-#endif
-  // instance count for over-the-air eNB synchronization
-  int instance_cnt_synch;
-  /// \internal This variable is protected by \ref mutex_asynch_rxtx.
-  int instance_cnt_asynch_rxtx;
-  /// pthread structure for eNB single processing thread
-  pthread_t pthread_single;
-  /// pthread structure for asychronous RX/TX processing thread
-  pthread_t pthread_asynch_rxtx;
-  /// flag to indicate first RX acquisition
-  int first_rx;
-  /// flag to indicate first TX transmission
-  int first_tx;
-  /// pthread attributes for parallel turbo-decoder thread
-  pthread_attr_t attr_td;
-  /// pthread attributes for parallel turbo-encoder thread
-  //pthread_attr_t attr_te[3];
-  /// pthread attributes for single eNB processing thread
-  pthread_attr_t attr_single;
-  /// pthread attributes for prach processing thread
-  pthread_attr_t attr_prach;
-#ifdef Rel14
-  /// pthread attributes for prach processing thread BL/CE UEs
-  pthread_attr_t attr_prach_br;
-#endif
-  /// pthread attributes for asynchronous RX thread
-  pthread_attr_t attr_asynch_rxtx;
-  /// scheduling parameters for parallel turbo-decoder thread
-  struct sched_param sched_param_td;
-  /// scheduling parameters for parallel turbo-encoder thread
-  //struct sched_param sched_param_te[3];
-  /// scheduling parameters for single eNB thread
-  struct sched_param sched_param_single;
-  /// scheduling parameters for prach thread
-  struct sched_param sched_param_prach;
-#ifdef Rel14
-  /// scheduling parameters for prach thread
-  struct sched_param sched_param_prach_br;
-#endif
-  /// scheduling parameters for asynch_rxtx thread
-  struct sched_param sched_param_asynch_rxtx;
-  /// pthread structure for parallel turbo-decoder thread
-  pthread_t pthread_td;
-  /// pthread structure for parallel turbo-encoder thread
-  //pthread_t pthread_te[3];
-  /// pthread structure for PRACH thread
-  pthread_t pthread_prach;
-#ifdef Rel14
-  /// pthread structure for PRACH thread BL/CE UEs
-  pthread_t pthread_prach_br;
-#endif
-  /// condition variable for parallel turbo-decoder thread
-  pthread_cond_t cond_td;
-  /// condition variable for parallel turbo-encoder thread
-  //pthread_cond_t cond_te[3];
-  /// condition variable for PRACH processing thread;
-  pthread_cond_t cond_prach;
-#ifdef Rel14
-  /// condition variable for PRACH processing thread BL/CE UEs;
-  pthread_cond_t cond_prach_br;
-#endif
-  /// condition variable for asynch RX/TX thread
-  pthread_cond_t cond_asynch_rxtx;
-  /// mutex for parallel turbo-decoder thread
-  pthread_mutex_t mutex_td;
-  /// mutex for parallel turbo-encoder thread
-  //pthread_mutex_t mutex_te[3];
-  /// mutex for PRACH thread
-  pthread_mutex_t mutex_prach;
-#ifdef Rel14
-  /// mutex for PRACH thread for BL/CE UEs
-  pthread_mutex_t mutex_prach_br;
-#endif
-  /// mutex for asynch RX/TX thread
-  pthread_mutex_t mutex_asynch_rxtx;
-  /// mutex for RU access to eNB processing (PDSCH/PUSCH)
-  pthread_mutex_t mutex_RU;
-  /// mutex for RU access to eNB processing (PRACH)
-  pthread_mutex_t mutex_RU_PRACH;
-  /// mutex for RU access to eNB processing (PRACH BR)
-  pthread_mutex_t mutex_RU_PRACH_br;
-  /// mask for RUs serving eNB (PDSCH/PUSCH)
-  int RU_mask;
-  /// mask for RUs serving eNB (PRACH)
-  int RU_mask_prach;
-#ifdef Rel14
-  /// mask for RUs serving eNB (PRACH)
-  int RU_mask_prach_br;
-#endif
-  /// parameters for turbo-decoding worker thread
-  td_params tdp;
-  /// parameters for turbo-encoding worker thread
-  te_params tep[3];
-  /// set of scheduling variables RXn-TXnp4 threads
-  eNB_rxtx_proc_t proc_rxtx[2];
-  /// stats thread pthread descriptor
-  pthread_t process_stats_thread;
-  /// for waking up tx procedure
-  RU_proc_t *ru_proc;
-} eNB_proc_t;
-
-
 
 
 
@@ -483,6 +344,14 @@ typedef struct RU_t_s{
   time_stats_t ofdm_demod_stats;
   /// Timing statistics (TX)
   time_stats_t ofdm_mod_stats;
+  /// Timing wait statistics
+  time_stats_t ofdm_demod_wait_stats;
+  /// Timing wakeup statistics
+  time_stats_t ofdm_demod_wakeup_stats;
+  /// Timing wait statistics (TX)
+  time_stats_t ofdm_mod_wait_stats;
+  /// Timing wakeup statistics (TX)
+  time_stats_t ofdm_mod_wakeup_stats;
   /// Timing statistics (RX Fronthaul + Compression)
   time_stats_t rx_fhaul;
   /// Timing statistics (TX Fronthaul + Compression)
@@ -508,6 +377,7 @@ typedef struct RU_t_s{
   RU_proc_t            proc;
   /// stats thread pthread descriptor
   pthread_t            ru_stats_thread;
+
 } RU_t;
 
 
@@ -779,6 +649,20 @@ typedef struct {
   LTE_eNB_DLSCH_t *dlsch;
   int G;
   int harq_pid;
+  int total_worker;
+  int current_worker;
+  /// \internal This variable is protected by \ref mutex_te.
+  int instance_cnt_te;
+  /// pthread attributes for parallel turbo-encoder thread
+  pthread_attr_t attr_te;
+  /// scheduling parameters for parallel turbo-encoder thread
+  struct sched_param sched_param_te;
+  /// pthread structure for parallel turbo-encoder thread
+  pthread_t pthread_te;
+  /// condition variable for parallel turbo-encoder thread
+  pthread_cond_t cond_te;
+  /// mutex for parallel turbo-encoder thread
+  pthread_mutex_t mutex_te;
 } te_params;
 
 /// Context data structure for eNB subframe processing
@@ -910,9 +794,13 @@ typedef struct eNB_proc_t_s {
   /// parameters for turbo-decoding worker thread
   td_params tdp;
   /// parameters for turbo-encoding worker thread
-  te_params tep;
+  te_params tep[3];
   /// set of scheduling variables RXn-TXnp4 threads
   eNB_rxtx_proc_t proc_rxtx[2];
+  /// stats thread pthread descriptor
+  pthread_t process_stats_thread;
+  /// for waking up tx procedure
+  RU_proc_t *ru_proc;
 } eNB_proc_t;
 
 

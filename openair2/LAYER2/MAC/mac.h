@@ -1060,7 +1060,6 @@ typedef struct {
 /*! \brief top level eNB MAC structure */
 typedef struct eNB_MAC_INST_s {
     /// Ethernet parameters for northbound midhaul interface
-<<<<<<< HEAD:openair2/LAYER2/MAC/mac.h
   eth_params_t eth_params_n;
   /// Ethernet parameters for fronthaul interface
   eth_params_t eth_params_s;

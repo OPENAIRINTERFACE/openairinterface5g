@@ -28,6 +28,7 @@
 
 #include "SIMULATION/TOOLS/sim.h"
 #include "PHY/TOOLS/tools_defs.h"
+#include "assertions.h"
 
 // NEW code with lookup table for sin/cos based on delay profile (TO BE TESTED)
 
