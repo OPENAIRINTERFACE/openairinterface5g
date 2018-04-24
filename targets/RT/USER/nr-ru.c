@@ -814,10 +814,10 @@ void tx_rf(RU_t *ru) {
     for (i=0; i<ru->nb_tx; i++)
       txp[i] = (void*)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_subframe)-sf_extension];
 
-    if (proc->subframe_tx == 9){
+    /*if (proc->subframe_tx == 9){
       write_output("txdataF_frame.m","txdataF_frame",&ru->common.txdataF_BF[i],fp->samples_per_frame_wCP, 1, 1);
       write_output("txdata_frame.m","txdata_frame",&ru->common.txdata[i],fp->samples_per_frame, 1, 1);
-    }
+    }*/
     
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
