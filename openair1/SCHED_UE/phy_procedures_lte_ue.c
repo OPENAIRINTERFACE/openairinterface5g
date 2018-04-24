@@ -37,9 +37,10 @@
 #include "PHY/phy_extern_ue.h"
 #include <sched.h>
 #include "targets/RT/USER/lte-softmodem.h"
+
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "SCHED_UE/sched_UE.h"
-#define DEBUG_PHY_PROC
+//#define DEBUG_PHY_PROC
 
 #ifndef PUCCH
 #define PUCCH
@@ -78,7 +79,7 @@ extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
 #endif
 
 
-#define UE_DEBUG_TRACE 1
+//#define UE_DEBUG_TRACE 1
 
 void dump_dlsch(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid)
 {

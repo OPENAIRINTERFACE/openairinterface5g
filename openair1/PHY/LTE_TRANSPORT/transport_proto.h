@@ -450,6 +450,11 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
               uint8_t UE_id);
 
 
+int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,
+                        int UE_id,
+                        int harq_pid,
+                        int llr8_flag);
+
 /*!
   \brief Decoding of PUSCH/ACK/RI/ACK from 36-212.
   @param phy_vars_eNB Pointer to eNB top-level descriptor

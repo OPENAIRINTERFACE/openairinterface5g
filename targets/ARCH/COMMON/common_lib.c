@@ -117,7 +117,7 @@ int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cf
   rc=load_lib(device, openair0_cfg, NULL,RAU_LOCAL_RADIO_HEAD );
 
   if ( rc >= 0) {       
-    if ( set_device(device) < 0) {
+	if ( set_device(device) < 0) {
       fprintf(stderr, "%s %d:Unsupported radio head\n",__FILE__, __LINE__);
       return -1;		   
     }   

@@ -71,6 +71,7 @@
 
 #include "openair2/PHY_INTERFACE/IF_Module.h"
 
+
 typedef struct RU_proc_t_s {
   /// Pointer to associated RU descriptor
   struct RU_t_s *ru;
@@ -105,6 +106,7 @@ typedef struct RU_proc_t_s {
   /// \brief Instance count for FH processing thread.
   /// \internal This variable is protected by \ref mutex_FH.
   int instance_cnt_FH;
+  int instance_cnt_FH1;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
 #ifdef Rel14
@@ -120,10 +122,13 @@ typedef struct RU_proc_t_s {
   int instance_cnt_asynch_rxtx;
   /// \internal This variable is protected by \ref mutex_fep
   int instance_cnt_fep;
-  /// \internal This variable is protected by \ref mutex_fep
+  /// \internal This variable is protected by \ref mutex_feptx
   int instance_cnt_feptx;
+  /// This varible is protected by \ref mutex_emulatedRF
+  int instance_cnt_emulateRF;
   /// pthread structure for RU FH processing thread
   pthread_t pthread_FH;
+  pthread_t pthread_FH1;
   /// pthread structure for RU prach processing thread
   pthread_t pthread_prach;
 #ifdef Rel14
@@ -134,8 +139,10 @@ typedef struct RU_proc_t_s {
   pthread_t pthread_synch;
   /// pthread struct for RU RX FEP worker thread
   pthread_t pthread_fep;
-  /// pthread struct for RU RX FEPTX worker thread
+  /// pthread struct for RU TX FEP worker thread
   pthread_t pthread_feptx;
+  /// pthread struct for emulated RF
+  pthread_t pthread_emulateRF;
   /// pthread structure for asychronous RX/TX processing thread
   pthread_t pthread_asynch_rxtx;
   /// flag to indicate first RX acquisition
@@ -144,6 +151,7 @@ typedef struct RU_proc_t_s {
   int first_tx;
   /// pthread attributes for RU FH processing thread
   pthread_attr_t attr_FH;
+  pthread_attr_t attr_FH1;
   /// pthread attributes for RU prach
   pthread_attr_t attr_prach;
 #ifdef Rel14
@@ -158,8 +166,11 @@ typedef struct RU_proc_t_s {
   pthread_attr_t attr_fep;
   /// pthread attributes for worker feptx thread
   pthread_attr_t attr_feptx;
+  /// pthread attributes for emulated RF
+  pthread_attr_t attr_emulateRF;
   /// scheduling parameters for RU FH thread
   struct sched_param sched_param_FH;
+  struct sched_param sched_param_FH1;
   /// scheduling parameters for RU prach thread
   struct sched_param sched_param_prach;
 #ifdef Rel14
@@ -172,6 +183,7 @@ typedef struct RU_proc_t_s {
   struct sched_param sched_param_asynch_rxtx;
   /// condition variable for RU FH thread
   pthread_cond_t cond_FH;
+  pthread_cond_t cond_FH1;
   /// condition variable for RU prach thread
   pthread_cond_t cond_prach;
 #ifdef Rel14
@@ -182,14 +194,17 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_synch;
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
-  /// condition varaible for RU RX FEP thread
+  /// condition varible for RU RX FEP thread
   pthread_cond_t cond_fep;
-  /// condition varaible for RU RX FEPTX thread
+  /// condition varible for RU TX FEP thread
   pthread_cond_t cond_feptx;
+  /// condition varible for emulated RF
+  pthread_cond_t cond_emulateRF;
   /// condition variable for eNB signal
   pthread_cond_t cond_eNBs;
   /// mutex for RU FH
   pthread_mutex_t mutex_FH;
+  pthread_mutex_t mutex_FH1;
   /// mutex for RU prach
   pthread_mutex_t mutex_prach;
 #ifdef Rel14
@@ -206,13 +221,158 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_fep;
   /// mutex for fep TX worker thread
   pthread_mutex_t mutex_feptx;
+  /// mutex for emulated RF thread
+  pthread_mutex_t mutex_emulateRF;
   /// symbol mask for IF4p5 reception per subframe
   uint32_t symbol_mask[10];
   /// number of slave threads
   int                  num_slaves;
   /// array of pointers to slaves
   struct RU_proc_t_s           **slave_proc;
+  /// pipeline ready state
+  int ru_rx_ready;
+  int ru_tx_ready;
 } RU_proc_t;
+
+/// Context data structure for eNB subframe processing
+typedef struct eNB_proc_t_s {
+  /// Component Carrier index
+  uint8_t              CC_id;
+  /// thread index
+  int thread_index;
+  /// timestamp received from HW
+  openair0_timestamp timestamp_rx;
+  /// timestamp to send to "slave rru"
+  openair0_timestamp timestamp_tx;
+  /// subframe to act upon for reception
+  int subframe_rx;
+  /// subframe to act upon for PRACH
+  int subframe_prach;
+#ifdef Rel14
+  /// subframe to act upon for reception of prach BL/CE UEs
+  int subframe_prach_br;
+#endif
+  /// frame to act upon for reception
+  int frame_rx;
+  /// frame to act upon for transmission
+  int frame_tx;
+  /// frame to act upon for PRACH
+  int frame_prach;
+#ifdef Rel14
+  /// frame to act upon for PRACH BL/CE UEs
+  int frame_prach_br;
+#endif
+  /// \internal This variable is protected by \ref mutex_td.
+  int instance_cnt_td;
+  /// \internal This variable is protected by \ref mutex_te.
+  //int instance_cnt_te[3];
+  /// \internal This variable is protected by \ref mutex_prach.
+  int instance_cnt_prach;
+#ifdef Rel14
+  /// \internal This variable is protected by \ref mutex_prach for BL/CE UEs.
+  int instance_cnt_prach_br;
+#endif
+  // instance count for over-the-air eNB synchronization
+  int instance_cnt_synch;
+  /// \internal This variable is protected by \ref mutex_asynch_rxtx.
+  int instance_cnt_asynch_rxtx;
+  /// pthread structure for eNB single processing thread
+  pthread_t pthread_single;
+  /// pthread structure for asychronous RX/TX processing thread
+  pthread_t pthread_asynch_rxtx;
+  /// flag to indicate first RX acquisition
+  int first_rx;
+  /// flag to indicate first TX transmission
+  int first_tx;
+  /// pthread attributes for parallel turbo-decoder thread
+  pthread_attr_t attr_td;
+  /// pthread attributes for parallel turbo-encoder thread
+  //pthread_attr_t attr_te[3];
+  /// pthread attributes for single eNB processing thread
+  pthread_attr_t attr_single;
+  /// pthread attributes for prach processing thread
+  pthread_attr_t attr_prach;
+#ifdef Rel14
+  /// pthread attributes for prach processing thread BL/CE UEs
+  pthread_attr_t attr_prach_br;
+#endif
+  /// pthread attributes for asynchronous RX thread
+  pthread_attr_t attr_asynch_rxtx;
+  /// scheduling parameters for parallel turbo-decoder thread
+  struct sched_param sched_param_td;
+  /// scheduling parameters for parallel turbo-encoder thread
+  //struct sched_param sched_param_te[3];
+  /// scheduling parameters for single eNB thread
+  struct sched_param sched_param_single;
+  /// scheduling parameters for prach thread
+  struct sched_param sched_param_prach;
+#ifdef Rel14
+  /// scheduling parameters for prach thread
+  struct sched_param sched_param_prach_br;
+#endif
+  /// scheduling parameters for asynch_rxtx thread
+  struct sched_param sched_param_asynch_rxtx;
+  /// pthread structure for parallel turbo-decoder thread
+  pthread_t pthread_td;
+  /// pthread structure for parallel turbo-encoder thread
+  //pthread_t pthread_te[3];
+  /// pthread structure for PRACH thread
+  pthread_t pthread_prach;
+#ifdef Rel14
+  /// pthread structure for PRACH thread BL/CE UEs
+  pthread_t pthread_prach_br;
+#endif
+  /// condition variable for parallel turbo-decoder thread
+  pthread_cond_t cond_td;
+  /// condition variable for parallel turbo-encoder thread
+  //pthread_cond_t cond_te[3];
+  /// condition variable for PRACH processing thread;
+  pthread_cond_t cond_prach;
+#ifdef Rel14
+  /// condition variable for PRACH processing thread BL/CE UEs;
+  pthread_cond_t cond_prach_br;
+#endif
+  /// condition variable for asynch RX/TX thread
+  pthread_cond_t cond_asynch_rxtx;
+  /// mutex for parallel turbo-decoder thread
+  pthread_mutex_t mutex_td;
+  /// mutex for parallel turbo-encoder thread
+  //pthread_mutex_t mutex_te[3];
+  /// mutex for PRACH thread
+  pthread_mutex_t mutex_prach;
+#ifdef Rel14
+  /// mutex for PRACH thread for BL/CE UEs
+  pthread_mutex_t mutex_prach_br;
+#endif
+  /// mutex for asynch RX/TX thread
+  pthread_mutex_t mutex_asynch_rxtx;
+  /// mutex for RU access to eNB processing (PDSCH/PUSCH)
+  pthread_mutex_t mutex_RU;
+  /// mutex for RU access to eNB processing (PRACH)
+  pthread_mutex_t mutex_RU_PRACH;
+  /// mutex for RU access to eNB processing (PRACH BR)
+  pthread_mutex_t mutex_RU_PRACH_br;
+  /// mask for RUs serving eNB (PDSCH/PUSCH)
+  int RU_mask;
+  /// mask for RUs serving eNB (PRACH)
+  int RU_mask_prach;
+#ifdef Rel14
+  /// mask for RUs serving eNB (PRACH)
+  int RU_mask_prach_br;
+#endif
+  /// parameters for turbo-decoding worker thread
+  td_params tdp;
+  /// parameters for turbo-encoding worker thread
+  te_params tep[3];
+  /// set of scheduling variables RXn-TXnp4 threads
+  eNB_rxtx_proc_t proc_rxtx[2];
+  /// stats thread pthread descriptor
+  pthread_t process_stats_thread;
+  /// for waking up tx procedure
+  RU_proc_t *ru_proc;
+} eNB_proc_t;
+
+
 
 
 
@@ -223,6 +383,7 @@ typedef enum {
   REMOTE_IF4p5    =3,
   REMOTE_IF1pp    =4,
   MAX_RU_IF_TYPES =5
+  //EMULATE_RF      =6
 } RU_if_south_t;
 
 typedef struct RU_t_s{
@@ -831,7 +992,7 @@ typedef struct PHY_VARS_eNB_s {
   eth_params_t         eth_params;
   int                  rx_total_gain_dB;
   int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
-  int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *);
+  int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *);
   int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB);
   uint8_t              local_flag;
   LTE_DL_FRAME_PARMS   frame_parms;
@@ -1010,7 +1171,14 @@ typedef struct PHY_VARS_eNB_s {
   time_stats_t dlsch_modulation_stats;
   time_stats_t dlsch_scrambling_stats;
   time_stats_t dlsch_rate_matching_stats;
+  time_stats_t dlsch_turbo_encoding_preperation_stats;
+  time_stats_t dlsch_turbo_encoding_segmentation_stats;
   time_stats_t dlsch_turbo_encoding_stats;
+  time_stats_t dlsch_turbo_encoding_waiting_stats;
+  time_stats_t dlsch_turbo_encoding_signal_stats;
+  time_stats_t dlsch_turbo_encoding_main_stats;
+  time_stats_t dlsch_turbo_encoding_wakeup_stats0;
+  time_stats_t dlsch_turbo_encoding_wakeup_stats1;
   time_stats_t dlsch_interleaving_stats;
 
   time_stats_t rx_dft_stats;

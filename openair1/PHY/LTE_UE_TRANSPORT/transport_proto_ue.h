@@ -64,6 +64,7 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
 
 LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
 
+
 int rx_pmch(PHY_VARS_UE *phy_vars_ue,
             unsigned char eNB_id,
             uint8_t subframe,
@@ -1097,6 +1098,7 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
 void generate_64qam_table(void);
 void generate_16qam_table(void);
+void generate_qpsk_table(void);
 
 uint16_t extract_crc(uint8_t *dci,uint8_t DCI_LENGTH);
 
@@ -1399,6 +1401,7 @@ uint32_t ulsch_encoding(uint8_t *a,
                         uint8_t tmode,
                         uint8_t control_only_flag,
                         uint8_t Nbundled);
+
 
 
 

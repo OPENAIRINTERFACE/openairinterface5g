@@ -72,7 +72,11 @@ extern struct nlmsghdr *nas_nlh_tx;
 extern struct nlmsghdr *nas_nlh_rx;
 extern struct iovec nas_iov_tx;
 extern struct iovec nas_iov_rx;
+#ifdef UE_NAS_USE_TUN
+extern int nas_sock_fd[NUMBER_OF_UE_MAX];
+#else
 extern int nas_sock_fd;
+#endif
 extern struct msghdr nas_msg_tx;
 extern struct msghdr nas_msg_rx;
 
@@ -239,7 +243,11 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
           nas_nlh_tx->nlmsg_len += pdcp_output_sdu_bytes_to_write;
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE_PDCP_FLUSH_SIZE, pdcp_output_sdu_bytes_to_write);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH_BUFFER, 1 );
+#ifdef UE_NAS_USE_TUN
+          ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]), pdcp_output_sdu_bytes_to_write);
+#else
           ret = sendmsg(nas_sock_fd,&nas_msg_tx,0);
+#endif
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_FLUSH_BUFFER, 0 );
           VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_UE_PDCP_FLUSH_ERR, ret );
 
@@ -372,6 +380,62 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 //-----------------------------------------------------------------------------
 int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 {
+#ifdef UE_NAS_USE_TUN
+  protocol_ctxt_t ctxt = *ctxt_pP;
+  hash_key_t key = HASHTABLE_NOT_A_KEY_VALUE;
+  hashtable_rc_t h_rc;
+  pdcp_t* pdcp_p = NULL;
+  int len;
+  rb_id_t rab_id = DEFAULT_RAB_ID;
+
+  do {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 1 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 1 );
+    len = read(nas_sock_fd[ctxt_pP->module_id], &nl_rx_buf, NL_MAX_PAYLOAD);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 0 );
+
+    if (len<=0) continue;
+    LOG_D(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
+          ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
+    key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
+    h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
+    if (h_rc == HASH_TABLE_OK) {
+      LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d on Rab %d \n",
+            ctxt.frame, ctxt.instance, len, rab_id);
+
+      LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %u][RB %u]\n",
+            ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
+            ctxt.rnti, rab_id);
+      MSC_LOG_RX_MESSAGE((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
+                         (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
+                         NULL, 0,
+                         MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
+                         MSC_AS_TIME_ARGS(ctxt_pP),
+                         ctxt.instance, rab_id, rab_id, len);
+
+      pdcp_data_req(&ctxt, SRB_FLAG_NO, rab_id, RLC_MUI_UNDEFINED,
+                    RLC_SDU_CONFIRM_NO, len, nl_rx_buf,
+                    PDCP_TRANSMISSION_MODE_DATA);
+    } else {
+      MSC_LOG_RX_DISCARDED_MESSAGE(
+      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
+      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
+      NULL,
+      0,
+      MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
+      MSC_AS_TIME_ARGS(ctxt_pP),
+      ctxt.instance, rab_id, rab_id, len);
+      LOG_D(PDCP,
+            "[FRAME %5u][UE][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %u] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
+            ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
+            ctxt.rnti, rab_id, key);
+    }
+  } while (len > 0);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 0 );
+  return len;
+
+#else /* UE_NAS_USE_TUN */
+
 #ifdef PDCP_USE_NETLINK
   protocol_ctxt_t                ctxt_cpy = *ctxt_pP;
   protocol_ctxt_t                ctxt;
@@ -764,6 +828,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 #else // neither PDCP_USE_NETLINK nor PDCP_USE_RT_FIFO
   return 0;
 #endif // PDCP_USE_NETLINK
+#endif /* #else UE_NAS_USE_TUN */
 }
 
 
