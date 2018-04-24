@@ -88,7 +88,7 @@ static void new_thread(void *(*f)(void *), void *data)
 
 /* defined in local_tracer.c */
 void T_local_tracer_main(int remote_port, int wait_for_tracer,
-    int local_socket);
+    int local_socket, char *shm_file);
 
 /* We monitor the tracee and the local tracer processes.
  * When one dies we forcefully kill the other.
@@ -113,6 +113,9 @@ void T_init(int remote_port, int wait_for_tracer, int dont_fork)
   int s;
   int T_shm_fd;
   int child1, child2;
+  char shm_file[128];
+
+  sprintf(shm_file, "/%s%d", T_SHM_FILENAME, getpid());
 
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, socket_pair))
     { perror("socketpair"); abort(); }
@@ -122,7 +125,8 @@ void T_init(int remote_port, int wait_for_tracer, int dont_fork)
   child1 = fork(); if (child1 == -1) abort();
   if (child1 == 0) {
     close(socket_pair[1]);
-    T_local_tracer_main(remote_port, wait_for_tracer, socket_pair[0]);
+    T_local_tracer_main(remote_port, wait_for_tracer, socket_pair[0],
+                        shm_file);
     exit(0);
   }
   close(socket_pair[0]);
@@ -142,13 +146,13 @@ void T_init(int remote_port, int wait_for_tracer, int dont_fork)
   T_socket = s;
 
   /* setup shared memory */
-  T_shm_fd = shm_open(T_SHM_FILENAME, O_RDWR /*| O_SYNC*/, 0666);
-  shm_unlink(T_SHM_FILENAME);
-  if (T_shm_fd == -1) { perror(T_SHM_FILENAME); abort(); }
+  T_shm_fd = shm_open(shm_file, O_RDWR /*| O_SYNC*/, 0666);
+  shm_unlink(shm_file);
+  if (T_shm_fd == -1) { perror(shm_file); abort(); }
   T_cache = mmap(NULL, T_CACHE_SIZE * sizeof(T_cache_t),
                  PROT_READ | PROT_WRITE, MAP_SHARED, T_shm_fd, 0);
   if (T_cache == MAP_FAILED)
-    { perror(T_SHM_FILENAME); abort(); }
+    { perror(shm_file); abort(); }
   close(T_shm_fd);
 
   new_thread(T_receive_thread, NULL);

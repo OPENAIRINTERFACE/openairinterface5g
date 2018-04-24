@@ -326,17 +326,17 @@ static void wait_message(void)
   while (T_local_cache[T_busylist_head].busy == 0) usleep(1000);
 }
 
-static void init_shm(void)
+static void init_shm(char *shm_file)
 {
   int i;
-  int s = shm_open(T_SHM_FILENAME, O_RDWR | O_CREAT /*| O_SYNC*/, 0666);
-  if (s == -1) { perror(T_SHM_FILENAME); abort(); }
+  int s = shm_open(shm_file, O_RDWR | O_CREAT /*| O_SYNC*/, 0666);
+  if (s == -1) { perror(shm_file); abort(); }
   if (ftruncate(s, T_CACHE_SIZE * sizeof(T_cache_t)))
-    { perror(T_SHM_FILENAME); abort(); }
+    { perror(shm_file); abort(); }
   T_local_cache = mmap(NULL, T_CACHE_SIZE * sizeof(T_cache_t),
                        PROT_READ | PROT_WRITE, MAP_SHARED, s, 0);
   if (T_local_cache == MAP_FAILED)
-    { perror(T_SHM_FILENAME); abort(); }
+    { perror(shm_file); abort(); }
   close(s);
 
   /* let's garbage the memory to catch some potential problems
@@ -347,7 +347,7 @@ static void init_shm(void)
 }
 
 void T_local_tracer_main(int remote_port, int wait_for_tracer,
-    int local_socket)
+    int local_socket, char *shm_file)
 {
   int s;
   int port = remote_port;
@@ -357,7 +357,7 @@ void T_local_tracer_main(int remote_port, int wait_for_tracer,
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
   if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
 
-  init_shm();
+  init_shm(shm_file);
   s = local_socket;
 
   if (dont_wait) {
