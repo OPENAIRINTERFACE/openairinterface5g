@@ -1446,14 +1446,6 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
       if (!ue_dl_slice_membership(module_idP, UE_id, slice_idx))
         continue;
 
-      vrb_map = RC.mac[module_idP]->common_channels[CC_id].vrb_map;
-      N_RB_DL = to_prb(RC.mac[module_idP]->common_channels[CC_id].mib->message.dl_Bandwidth);
-
-#ifdef SF0_LIMIT
-      sf0_lower = -1;
-      sf0_upper = -1;
-#endif
-
       LOG_D(MAC, "Running preprocessor for UE %d (%x)\n", UE_id, rnti);
       // initialize harq_pid and round
       if (ue_sched_ctl->ta_timer)
@@ -1522,91 +1514,97 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
       ue_sched_ctl->pre_nb_available_rbs[CC_id] = 0;
       ue_sched_ctl->dl_pow_off[CC_id] = 2;
 
-      switch (N_RB_DL) {
-        case 6:
-          RBGsize = 1;
-          RBGsize_last = 1;
-          break;
-        case 15:
-          RBGsize = 2;
-          RBGsize_last = 1;
-          break;
-        case 25:
-          RBGsize = 2;
-          RBGsize_last = 1;
-          break;
-        case 50:
-          RBGsize = 3;
-          RBGsize_last = 2;
-          break;
-        case 75:
-          RBGsize = 4;
-          RBGsize_last = 3;
-          break;
-        case 100:
-          RBGsize = 4;
-          RBGsize_last = 4;
-          break;
-        default:
-          AssertFatal(1 == 0, "unsupported RBs (%d)\n", N_RB_DL);
-      }
-
-#ifdef SF0_LIMIT
-      switch (N_RBG[CC_id]) {
-        case 6:
-          sf0_lower = 0;
-          sf0_upper = 5;
-          break;
-        case 8:
-          sf0_lower = 2;
-          sf0_upper = 5;
-          break;
-        case 13:
-          sf0_lower = 4;
-          sf0_upper = 7;
-          break;
-        case 17:
-          sf0_lower = 7;
-          sf0_upper = 9;
-          break;
-        case 25:
-          sf0_lower = 11;
-          sf0_upper = 13;
-          break;
-        default:
-          AssertFatal(1 == 0, "unsupported RBs (%d)\n", N_RB_DL);
-      }
-#endif
-
-      // Initialize Subbands according to VRB map
       for (i = 0; i < N_RBG[CC_id]; i++) {
-        int rb_size = i == N_RBG[CC_id] - 1 ? RBGsize_last : RBGsize;
-
         ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 0;
-        rballoc_sub[CC_id][i] = 0;
+      }
+    }
+
+    N_RB_DL = to_prb(RC.mac[module_idP]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
 #ifdef SF0_LIMIT
-        // for avoiding 6+ PRBs around DC in subframe 0 (avoid excessive errors)
-        /* TODO: make it proper - allocate those RBs, do not "protect" them, but
-         * compute number of available REs and limit MCS according to the
-         * TBS table 36.213 7.1.7.2.1-1 (can be done after pre-processor)
-         */
-        if (subframeP == 0 && i >= sf0_lower && i <= sf0_upper)
-          rballoc_sub[CC_id][i] = 1;
+    switch (N_RBG[CC_id]) {
+      case 6:
+        sf0_lower = 0;
+        sf0_upper = 5;
+        break;
+      case 8:
+        sf0_lower = 2;
+        sf0_upper = 5;
+        break;
+      case 13:
+        sf0_lower = 4;
+        sf0_upper = 7;
+        break;
+      case 17:
+        sf0_lower = 7;
+        sf0_upper = 9;
+        break;
+      case 25:
+        sf0_lower = 11;
+        sf0_upper = 13;
+        break;
+      default:
+        AssertFatal(1 == 0, "unsupported RBs (%d)\n", N_RB_DL);
+    }
 #endif
 
-        // for SI-RNTI,RA-RNTI and P-RNTI allocations
-        for (j = 0; j < rb_size; j++) {
-          if (vrb_map[j + (i*RBGsize)] != 0) {
-            rballoc_sub[CC_id][i] = 1;
-            LOG_D(MAC, "Frame %d, subframe %d : vrb %d allocated\n", frameP, subframeP, j + (i*RBGsize));
-            break;
-          }
+    switch (N_RB_DL) {
+      case 6:
+        RBGsize = 1;
+        RBGsize_last = 1;
+        break;
+      case 15:
+        RBGsize = 2;
+        RBGsize_last = 1;
+        break;
+      case 25:
+        RBGsize = 2;
+        RBGsize_last = 1;
+        break;
+      case 50:
+        RBGsize = 3;
+        RBGsize_last = 2;
+        break;
+      case 75:
+        RBGsize = 4;
+        RBGsize_last = 3;
+        break;
+      case 100:
+        RBGsize = 4;
+        RBGsize_last = 4;
+        break;
+      default:
+        AssertFatal(1 == 0, "unsupported RBs (%d)\n", N_RB_DL);
+    }
+
+    vrb_map = RC.mac[module_idP]->common_channels[CC_id].vrb_map;
+    // Initialize Subbands according to VRB map
+    for (i = 0; i < N_RBG[CC_id]; i++) {
+      int rb_size = i == N_RBG[CC_id] - 1 ? RBGsize_last : RBGsize;
+      rballoc_sub[CC_id][i] = 0;
+
+
+#ifdef SF0_LIMIT
+      // for avoiding 6+ PRBs around DC in subframe 0 (avoid excessive errors)
+      /* TODO: make it proper - allocate those RBs, do not "protect" them, but
+        * compute number of available REs and limit MCS according to the
+        * TBS table 36.213 7.1.7.2.1-1 (can be done after pre-processor)
+        */
+      if (subframeP == 0 && i >= sf0_lower && i <= sf0_upper)
+        rballoc_sub[CC_id][i] = 1;
+#endif
+
+      // for SI-RNTI,RA-RNTI and P-RNTI allocations
+      for (j = 0; j < rb_size; j++) {
+        if (vrb_map[j + (i*RBGsize)] != 0) {
+          rballoc_sub[CC_id][i] = 1;
+          LOG_D(MAC, "Frame %d, subframe %d : vrb %d allocated\n", frameP, subframeP, j + (i*RBGsize));
+          break;
         }
-        LOG_D(MAC, "Frame %d Subframe %d CC_id %d RBG %i : rb_alloc %d\n",
-              frameP, subframeP, CC_id, i, rballoc_sub[CC_id][i]);
-        MIMO_mode_indicator[CC_id][i] = 2;
       }
+      LOG_D(MAC, "Frame %d Subframe %d CC_id %d RBG %i : rb_alloc %d\n",
+            frameP, subframeP, CC_id, i, rballoc_sub[CC_id][i]);
+      MIMO_mode_indicator[CC_id][i] = 2;
     }
   }
 }
