@@ -31,8 +31,7 @@
 */
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "SCHED_NR/defs.h"
 
 
 nr_subframe_t nr_subframe_select(nfapi_config_request_t *cfg,unsigned char subframe)
@@ -75,7 +74,8 @@ int nr_get_ssb_start_symbol(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp)
   return symbol;
 }
 
-void nr_set_ssb_first_subcarrier(nfapi_config_request_t *cfg)
+void nr_set_ssb_first_subcarrier(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp)
 {
-  cfg->sch_config.ssb_subcarrier_offset.value = 0;
+  int start_rb = cfg->sch_config.n_ssb_crb.value / pow(2,cfg->subframe_config.numerology_index_mu.value);
+  fp->ssb_start_subcarrier = 12 * start_rb + cfg->sch_config.ssb_subcarrier_offset.value;
 }

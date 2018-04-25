@@ -51,7 +51,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
   LOG_D(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe);
 
   int ssb_start_symbol = nr_get_ssb_start_symbol(cfg, fp);
-  //nr_set_ssb_first_subcarrier(cfg);
+  nr_set_ssb_first_subcarrier(cfg, fp);
 
   if (subframe == ss_subframe)
   {

@@ -204,6 +204,8 @@ typedef struct {
   uint32_t samples_per_subframe_wCP;
   /// Number of samples in a radio frame without CP
   uint32_t samples_per_frame_wCP;
+  /// Start in Subcarrier index of the SSB block
+  uint16_t ssb_start_subcarrier;
 
 } NR_DL_FRAME_PARMS;
 struct PHY_VARS_gNB_s;

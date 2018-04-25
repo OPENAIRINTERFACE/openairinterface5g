@@ -73,7 +73,7 @@ int nr_generate_sss(  int16_t *d_sss,
   {
 
     // SSS occupies a predefined position (subcarriers 56-182, symbol 2) within the SSB block starting from
-    k = frame_parms->first_carrier_offset + config->sch_config.ssb_subcarrier_offset.value + 56; //and
+    k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
     l = ssb_start_symbol + 2;
 
     for (m = 0; m < NR_SSS_LENGTH; m++) {

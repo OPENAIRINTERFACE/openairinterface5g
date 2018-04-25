@@ -684,6 +684,7 @@ typedef struct {
   nfapi_uint16_tlv_t ssb_position_in_burst;
   nfapi_uint16_tlv_t ssb_periodicity;
   nfapi_uint16_tlv_t ss_pbch_block_power;
+  nfapi_uint16_tlv_t n_ssb_crb;
 } nfapi_sch_config_t;
 
 #define NFAPI_SCH_CONFIG_PRIMARY_SYNCHRONIZATION_SIGNAL_EPRE_EPRERS_TAG 0x001E
@@ -694,6 +695,7 @@ typedef struct {
 #define NFAPI_SCH_CONFIG_SSB_POSITION_IN_BURST 0x0023
 #define NFAPI_SCH_CONFIG_SSB_PERIODICITY 0x0024
 #define NFAPI_SCH_CONFIG_SS_PBCH_BLOCK_POWER 0x0025
+#define NFAPI_SCH_CONFIG_N_SSB_CRB 0x0025
 
 typedef struct {
 	nfapi_uint16_tlv_t configuration_index;
