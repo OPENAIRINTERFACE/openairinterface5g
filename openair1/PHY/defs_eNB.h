@@ -339,7 +339,7 @@ typedef struct RU_t_s{
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
 #endif
   /// function pointer to eNB entry routine
-  void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string);
+  void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);
   /// Timing statistics
   time_stats_t ofdm_demod_stats;
   /// Timing statistics (TX)
@@ -634,6 +634,8 @@ typedef struct {
   pthread_mutex_t mutex_rxtx;
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
+  /// pipeline ready state
+  int pipe_ready;
 } eNB_rxtx_proc_t;
 
 typedef struct {

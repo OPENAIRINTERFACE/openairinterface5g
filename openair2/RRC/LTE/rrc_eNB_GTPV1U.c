@@ -28,9 +28,9 @@
  */
 
 #if defined(ENABLE_USE_MME)
-# include "defs.h"
-# include "extern.h"
-# include "RRC/LITE/MESSAGES/asn1_msg.h"
+# include "rrc_defs.h"
+# include "rrc_extern.h"
+# include "RRC/LTE/MESSAGES/asn1_msg.h"
 # include "rrc_eNB_GTPV1U.h"
 # include "rrc_eNB_UE_context.h"
 # include "msc.h"

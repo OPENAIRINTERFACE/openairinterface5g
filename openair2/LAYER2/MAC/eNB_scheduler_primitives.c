@@ -983,6 +983,8 @@ get_rel8_dl_cqi_pmi_size(UE_sched_ctrl * sched_ctl, int CC_idP,
 	      cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present);
 }
 
+
+
 void
 fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t *dl_config_pdu,
 		     uint8_t                       aggregation_level,

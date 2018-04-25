@@ -27,13 +27,11 @@
  * \company Eurecom
  * \email: navid.nikaein@eurecom.fr
  */
-
 #if defined(ENABLE_USE_MME)
-# include "defs.h"
-# include "extern.h"
+# include "rrc_defs.h"
+# include "rrc_extern.h"
 # include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-# include "RRC/LITE/MESSAGES/asn1_msg.h"
-# include "RRC/LITE/defs.h"
+# include "RRC/LTE/MESSAGES/asn1_msg.h"
 # include "rrc_eNB_UE_context.h"
 # include "rrc_eNB_S1AP.h"
 # include "enb_config.h"
@@ -57,7 +55,7 @@
 #include "UERadioAccessCapabilityInformation.h"
 
 #include "gtpv1u_eNB_task.h"
-#include "RRC/LITE/rrc_eNB_GTPV1U.h"
+#include "RRC/LTE/rrc_eNB_GTPV1U.h"
 
 #include "TLVDecoder.h"
 #include "S1ap-NAS-PDU.h"

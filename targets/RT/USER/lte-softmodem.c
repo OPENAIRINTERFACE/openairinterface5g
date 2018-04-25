@@ -140,7 +140,8 @@ static int8_t                     threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
-
+// This is a dummy declaration (dlsch_demodulation.c is no longer compiled for eNodeB)
+int16_t dlsch_demod_shift = 0;
 
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;

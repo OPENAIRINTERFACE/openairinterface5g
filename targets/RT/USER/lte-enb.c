@@ -323,7 +323,7 @@ static void* tx_thread(void* param) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_ENB,proc->frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_ENB,proc->frame_rx);
     
-    phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
+    phy_procedures_eNB_TX(eNB, proc, 1);
     if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
 	
     pthread_mutex_lock( &proc->mutex_rxtx );
@@ -406,7 +406,7 @@ static void* eNB_thread_rxtx( void* param ) {
     if(get_nprocs() >= 8)      wakeup_tx(eNB,eNB->proc.ru_proc);
     else
     {  
-      phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
+      phy_procedures_eNB_TX(eNB, proc, 1);
       wakeup_txfh(proc,eNB->proc.ru_proc);
     }
 

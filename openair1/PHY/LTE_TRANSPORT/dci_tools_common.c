@@ -99,6 +99,7 @@ uint16_t RIV2nb_rb_LUT100[6000];
 uint16_t RIV2first_rb_LUT100[6000];
 uint16_t RIV_max100=0;
 
+extern RAN_CONTEXT_t RC;
 
 extern uint32_t current_dlsch_cqi;
 
@@ -162,6 +163,49 @@ int8_t delta_PUSCH_abs[4] = {-4,-1,1,4};
 int8_t delta_PUSCH_acc[4] = {-1,0,1,3};
 
 int8_t *delta_PUCCH_lut = delta_PUSCH_acc;
+
+uint8_t get_pmi(uint8_t N_RB_DL, MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb)
+{
+  /*
+  MIMO_mode_t mode   = dlsch_harq->mimo_mode;
+  uint32_t pmi_alloc = dlsch_harq->pmi_alloc;
+  */
+
+  switch (N_RB_DL) {
+    case 6:   // 1 PRB per subband
+      if (mode <= PUSCH_PRECODING1)
+        return((pmi_alloc>>(rb<<1))&3);
+      else
+        return((pmi_alloc>>rb)&1);
+
+      break;
+
+    default:
+    case 25:  // 4 PRBs per subband
+      if (mode <= PUSCH_PRECODING1)
+        return((pmi_alloc>>((rb>>2)<<1))&3);
+      else
+        return((pmi_alloc>>(rb>>2))&1);
+
+      break;
+
+    case 50: // 6 PRBs per subband
+      if (mode <= PUSCH_PRECODING1)
+        return((pmi_alloc>>((rb/6)<<1))&3);
+      else
+        return((pmi_alloc>>(rb/6))&1);
+
+      break;
+
+    case 100: // 8 PRBs per subband
+      if (mode <= PUSCH_PRECODING1)
+        return((pmi_alloc>>((rb>>3)<<1))&3);
+      else
+        return((pmi_alloc>>(rb>>3))&1);
+
+      break;
+  }
+}
 
 uint32_t check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,uint32_t kprime,uint8_t lprime,uint8_t mi)
 {

@@ -1886,7 +1886,7 @@ add_definitions(-DASN1_MINIMUM_VERSION=924)
 add_executable(lte-softmodem
   ${rrc_h}
   ${s1ap_h}
-#  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c

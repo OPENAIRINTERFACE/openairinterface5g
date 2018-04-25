@@ -81,15 +81,8 @@
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
-
-#ifdef PHY_EMUL
-extern EMULATION_VARS *Emul_vars;
-#endif
-extern eNB_MAC_INST *eNB_mac_inst;
-extern UE_MAC_INST *UE_mac_inst;
-#ifdef BIGPHYSAREA
-extern void *bigphys_malloc(int);
-#endif
+// for malloc_clear
+#include "PHY/defs_UE.h"
 
 //#define XER_PRINT
 
