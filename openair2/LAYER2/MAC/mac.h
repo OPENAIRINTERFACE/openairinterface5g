@@ -1131,7 +1131,6 @@ typedef struct {
     uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
     uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
     uint8_t  slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX];
-    uint8_t  slice_allocated_rbgs[NFAPI_CC_MAX][N_RBG_MAX];
     uint8_t  MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX];
 
     uint32_t bytes_lcid[MAX_MOBILES_PER_ENB][MAX_NUM_LCID];
@@ -1264,6 +1263,9 @@ typedef struct {
     slice_sched_conf_ul_t ul[MAX_NUM_SLICES];
 
     pre_processor_results_t pre_processor_results[MAX_NUM_SLICES];
+
+    /// common rb allocation list between slices
+    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX];
 } slice_info_t;
 
 /*! \brief eNB common channels */

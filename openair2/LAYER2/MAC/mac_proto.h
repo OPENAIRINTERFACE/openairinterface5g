@@ -203,7 +203,8 @@ void dlsch_scheduler_pre_processor(module_id_t module_idP,
                                    int slice_idxP,
                                    frame_t frameP,
                                    sub_frame_t subframe,
-                                   int *mbsfn_flag);
+                                   int *mbsfn_flag,
+                                   uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
                                          int slice_idx,
@@ -249,7 +250,8 @@ void slice_priority_sort(module_id_t Mod_id, int slice_list[MAX_NUM_SLICES]);
 
 void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
                                              int frameP,
-                                             sub_frame_t subframeP);
+                                             sub_frame_t subframeP,
+                                             uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id,
                                       int frameP,

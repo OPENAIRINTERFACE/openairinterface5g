@@ -1234,7 +1234,8 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
                               int slice_idx,
                               frame_t frameP,
                               sub_frame_t subframeP,
-                              int *mbsfn_flag)
+                              int *mbsfn_flag,
+                              uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX])
 {
   int UE_id;
   uint8_t CC_id;
@@ -1246,7 +1247,6 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   uint16_t (*nb_rbs_required)[MAX_MOBILES_PER_ENB]  = sli->pre_processor_results[slice_idx].nb_rbs_required;
   uint16_t (*nb_rbs_accounted)[MAX_MOBILES_PER_ENB] = sli->pre_processor_results[slice_idx].nb_rbs_accounted;
   uint16_t (*nb_rbs_remaining)[MAX_MOBILES_PER_ENB] = sli->pre_processor_results[slice_idx].nb_rbs_remaining;
-  uint8_t  (*rballoc_sub)[N_RBG_MAX]             = sli->pre_processor_results[slice_idx].slice_allocated_rbgs;
   uint8_t  (*MIMO_mode_indicator)[N_RBG_MAX]     = sli->pre_processor_results[slice_idx].MIMO_mode_indicator;
 
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
@@ -1581,7 +1581,6 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
     // Initialize Subbands according to VRB map
     for (i = 0; i < N_RBG[CC_id]; i++) {
       int rb_size = i == N_RBG[CC_id] - 1 ? RBGsize_last : RBGsize;
-      rballoc_sub[CC_id][i] = 0;
 
 
 #ifdef SF0_LIMIT
