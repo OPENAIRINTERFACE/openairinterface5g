@@ -68,12 +68,10 @@ int nr_generate_pss(  int16_t *d_pss,
 
     for (m = 0; m < NR_PSS_LENGTH; m++) {
       ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_pss[m]) >> 15;
-      k+=1;
+      k++;
 
-      if (k >= frame_parms->ofdm_symbol_size) {
-        k++; //skip DC
+      if (k >= frame_parms->ofdm_symbol_size)
         k-=frame_parms->ofdm_symbol_size;
-      }
     }
   }
 

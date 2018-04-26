@@ -39,6 +39,79 @@
 #endif
 
 extern uint8_t nfapi_mode;
+/*
+int return_ssb_type(nfapi_config_request_t *cfg)
+{
+  int mu = cfg->subframe_config.numerology_index_mu.value;
+  nr_numerology_index_e ssb_type;
+
+  switch(mu) {
+
+  case NR_MU_0:
+    ssb_type = nr_ssb_type_A;
+    break;
+
+  case NR_MU_1:
+    ssb_type = nr_ssb_type_B;
+    break;
+
+  case NR_MU_3:
+    ssb_type = nr_ssb_type_D;
+    break;
+
+  case NR_MU_4:
+    ssb_type = nr_ssb_type_E;
+    break;
+
+  default:
+    AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
+  }
+
+  LOG_D(PHY, "SSB type %d\n", ssb_type);
+  return ssb_type;
+
+}*/
+
+// First SSB starting symbol candidate is used and type B is chosen for 30kHz SCS
+int nr_get_ssb_start_symbol(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp)
+{
+  int mu = cfg->subframe_config.numerology_index_mu.value;
+  int symbol = 0;
+
+  switch(mu) {
+
+  case NR_MU_0:
+    symbol = 2;
+    break;
+
+  case NR_MU_1: // case B
+    symbol = 4;
+    break;
+
+  case NR_MU_3:
+    symbol = 4;
+    break;
+
+  case NR_MU_4:
+    symbol = 8;
+    break;
+
+  default:
+    AssertFatal(0==1, "Invalid numerology index %d for the synchronization block\n", mu);
+  }
+
+  if (cfg->sch_config.half_frame_index.value)
+    symbol += (5 * fp->symbols_per_slot * fp->slots_per_subframe);
+
+  return symbol;
+}
+
+void nr_set_ssb_first_subcarrier(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp)
+{
+  int start_rb = cfg->sch_config.n_ssb_crb.value / pow(2,cfg->subframe_config.numerology_index_mu.value);
+  fp->ssb_start_subcarrier = 12 * start_rb + cfg->sch_config.ssb_subcarrier_offset.value;
+  LOG_D(PHY, "SSB first subcarrier %d\n", fp->ssb_start_subcarrier);
+}
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
 

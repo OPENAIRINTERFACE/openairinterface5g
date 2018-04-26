@@ -169,6 +169,14 @@ static inline void* malloc16_clear( size_t size )
 
 #define nr_subframe_t lte_subframe_t
 
+typedef enum{
+  nr_ssb_type_A = 0,
+  nr_ssb_type_B,
+  nr_ssb_type_C,
+  nr_ssb_type_D,
+  nr_ssb_type_E
+} nr_ssb_type_e;
+
 typedef struct {
   /// EUTRA Band
   uint8_t eutra_band;
@@ -204,8 +212,11 @@ typedef struct {
   uint32_t samples_per_subframe_wCP;
   /// Number of samples in a radio frame without CP
   uint32_t samples_per_frame_wCP;
+
+    //SSB related params
   /// Start in Subcarrier index of the SSB block
   uint16_t ssb_start_subcarrier;
+  nr_ssb_type_e ssb_type;
 
 } NR_DL_FRAME_PARMS;
 struct PHY_VARS_gNB_s;

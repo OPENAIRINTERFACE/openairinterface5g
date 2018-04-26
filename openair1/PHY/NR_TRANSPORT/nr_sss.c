@@ -78,12 +78,10 @@ int nr_generate_sss(  int16_t *d_sss,
 
     for (m = 0; m < NR_SSS_LENGTH; m++) {
       ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_sss[m]) >> 15;
-      k+=1;
+      k++;
 
-      if (k >= frame_parms->ofdm_symbol_size) {
-        k++; //skip DC
+      if (k >= frame_parms->ofdm_symbol_size)
         k-=frame_parms->ofdm_symbol_size;
-      }
     }
   }
 #ifdef NR_SSS_DEBUG
