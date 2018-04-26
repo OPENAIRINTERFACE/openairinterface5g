@@ -20,22 +20,10 @@
  */
 
 /*
-                                enb_app.h
-                             -------------------
-  AUTHOR  : Laurent Winckel, Sebastien ROUX, Lionel GAUTHIER, Navid Nikaein
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-*/
+ * flexran_messages_def.h
+ *
+ *  Created on: Apr 26, 2018
+ *      Author: R. Schmidt
+ */
 
-#ifndef ENB_APP_H_
-#define ENB_APP_H_
-
-#include <stdint.h>
-#include "platform_types.h"
-
-
-void *eNB_app_task(void *args_p);
-
-void handle_reconfiguration(module_id_t mod_id);
-
-#endif /* ENB_APP_H_ */
+MESSAGE_DEF(SOFT_RESTART_MESSAGE, MESSAGE_PRIORITY_MED_PLUS, IttiMsgEmpty, soft_restart_message)

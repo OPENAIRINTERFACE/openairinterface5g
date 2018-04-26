@@ -1130,10 +1130,11 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
 
   if (enb_config->n_cell_config > 1)
     LOG_W(FLEXRAN_AGENT, "ignoring slice configs for other cell except cell 0\n");
-  if (enb_config->cell_config[0]->slice_config)
+  if (enb_config->cell_config[0]->slice_config) {
     prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
-
-  /* could test for cell configs here and maybe reconfigure/soft-restart */
+  } else {
+    initiate_soft_restart(mod_id, enb_config->cell_config[0]);
+  }
 
   *msg = NULL;
   return 0;

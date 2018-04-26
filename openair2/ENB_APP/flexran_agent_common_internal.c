@@ -31,57 +31,7 @@
 
 #include "flexran_agent_common_internal.h"
 #include "flexran_agent_mac_internal.h"
-
-/* needed to soft-restart the lte-softmodem */
-#include "targets/RT/USER/lte-softmodem.h"
-
-void handle_reconfiguration(mid_t mod_id)
-{
-  struct timespec start, end;
-  clock_gettime(CLOCK_MONOTONIC, &start);
-  flexran_agent_info_t *flexran = RC.flexran[mod_id];
-
-  if (ENB_WAIT == flexran->node_ctrl_state) {
-    /* this is already waiting, just release */
-    pthread_mutex_lock(&flexran->mutex_node_ctrl);
-    flexran->node_ctrl_state = ENB_NORMAL_OPERATION;
-    pthread_mutex_unlock(&flexran->mutex_node_ctrl);
-    pthread_cond_signal(&flexran->cond_node_ctrl);
-    return;
-  }
-
-  if (stop_L1L2(mod_id) < 0) {
-    LOG_E(ENB_APP, "can not stop lte-softmodem, aborting restart\n");
-    return;
-  }
-
-  /* node_ctrl_state should have value ENB_MAKE_WAIT only if this method is not
-   * executed by the FlexRAN thread */
-  if (ENB_MAKE_WAIT == flexran->node_ctrl_state) {
-    LOG_I(ENB_APP, " * eNB %d: Waiting for FlexRAN RTController command *\n", mod_id);
-    pthread_mutex_lock(&flexran->mutex_node_ctrl);
-    flexran->node_ctrl_state = ENB_WAIT;
-    while (ENB_NORMAL_OPERATION != flexran->node_ctrl_state)
-      pthread_cond_wait(&flexran->cond_node_ctrl, &flexran->mutex_node_ctrl);
-    pthread_mutex_unlock(&flexran->mutex_node_ctrl);
-  }
-
-  if (restart_L1L2(mod_id) < 0) {
-    LOG_F(ENB_APP, "can not restart, killing lte-softmodem\n");
-    itti_terminate_tasks(TASK_PHY_ENB);
-    return;
-  }
-
-  clock_gettime(CLOCK_MONOTONIC, &end);
-  end.tv_sec -= start.tv_sec;
-  if (end.tv_nsec >= start.tv_nsec) {
-    end.tv_nsec -= start.tv_nsec;
-  } else {
-    end.tv_sec -= 1;
-    end.tv_nsec = end.tv_nsec - start.tv_nsec + 1000000000;
-  }
-  LOG_I(ENB_APP, "lte-softmodem restart succeeded in %ld.%ld s\n", end.tv_sec, end.tv_nsec / 1000000);
-}
+#include "enb_app.h"
 
 int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length) {
 
@@ -588,4 +538,33 @@ int apply_parameter_modification(void *parameter, yaml_parser_t *parser) {
   yaml_event_delete(&event);
   return -1;
   
+}
+
+void initiate_soft_restart(module_id_t mod_id, Protocol__FlexCellConfig *c)
+{
+  uint8_t cc_id = c->has_cell_id ? c->cell_id : 0;
+  if (c->has_eutra_band) {
+    flexran_agent_set_operating_eutra_band(mod_id, cc_id, c->eutra_band);
+    LOG_I(ENB_APP, "Setting eutra_band to %d\n", c->eutra_band);
+  }
+  if (c->has_dl_freq && c->has_ul_freq) {
+    flexran_agent_set_operating_dl_freq(mod_id, cc_id, c->dl_freq);
+    LOG_I(ENB_APP, "Setting dl_freq to %d\n", c->dl_freq);
+    int32_t ul_freq_offset = c->ul_freq - c->dl_freq;
+    flexran_agent_set_operating_ul_freq(mod_id, cc_id, ul_freq_offset);
+    LOG_I(ENB_APP, "Setting ul_freq to %d\n", c->ul_freq);
+  }
+  if (c->has_dl_bandwidth) {
+    flexran_agent_set_operating_bandwidth(mod_id, cc_id, c->dl_bandwidth);
+    LOG_I(ENB_APP, "Setting bandwidth to %d\n", c->dl_bandwidth);
+    if (c->has_ul_bandwidth && c->ul_bandwidth != c->dl_bandwidth)
+      LOG_W(ENB_APP, "UL/DL bandwidth mismatch, applied DL bandwidth\n");
+  } else if (c->has_ul_bandwidth) {
+    flexran_agent_set_operating_bandwidth(mod_id, cc_id, c->ul_bandwidth);
+    LOG_I(ENB_APP, "Setting bandwidth to %d\n", c->ul_bandwidth);
+  }
+
+  MessageDef *msg;
+  msg = itti_alloc_new_message(TASK_FLEXRAN_AGENT, SOFT_RESTART_MESSAGE);
+  itti_send_msg_to_task(ENB_APP, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
