@@ -817,7 +817,7 @@ void tx_rf(RU_t *ru) {
 	(prevSF_type == SF_UL) &&
 	(nextSF_type == SF_DL)) { 
       flags = 2; // start of burst
-      sf_extension = ru->N_TA_offset<<1;
+      sf_extension = ru->N_TA_offset;
     }
     
     if ((fp->frame_type == TDD) &&
@@ -825,9 +825,18 @@ void tx_rf(RU_t *ru) {
 	(prevSF_type == SF_UL) &&
 	(nextSF_type == SF_UL)) {
       flags = 4; // start of burst and end of burst (only one DL SF between two UL)
-      sf_extension = ru->N_TA_offset<<1;
+      sf_extension = ru->N_TA_offset;
     } 
-
+#if defined(__x86_64) || defined(__i386__)
+#ifdef __AVX2__
+  sf_extension = (sf_extension)&0xfffffff8;
+#else
+  sf_extension = (sf_extension)&0xfffffffc;
+#endif
+#elif defined(__arm__)
+  sf_extension = (sf_extension)&0xfffffffc;
+#endif
+    
     for (i=0; i<ru->nb_tx; i++)
       txp[i] = (void*)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_tti)-sf_extension];
     /* add fail safe for late command */
@@ -1799,9 +1808,6 @@ static void* eNB_thread_phy_tx( void* param ) {
        proc_rxtx.subframe_tx = proc->subframe_phy_tx;
        proc_rxtx.frame_tx = proc->frame_phy_tx;
        phy_procedures_eNB_TX(eNB_list[0], &proc_rxtx, no_relay, NULL, 1);
-       ru->proc.frame_tx = proc->frame_phy_tx;
-       ru->proc.subframe_tx = proc->subframe_phy_tx;
-       ru->proc.timestamp_tx = proc->timestamp_phy_tx;
        phy_tx_txdataF_end = 1;
        if(pthread_mutex_lock(&ru->proc.mutex_rf_tx) != 0){
           LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for rf tx thread (IC %d)\n", ru->proc.instance_cnt_rf_tx);
@@ -1809,6 +1815,9 @@ static void* eNB_thread_phy_tx( void* param ) {
         }
         if (ru->proc.instance_cnt_rf_tx==-1) {
           ++ru->proc.instance_cnt_rf_tx;
+          ru->proc.frame_tx = proc->frame_phy_tx;
+          ru->proc.subframe_tx = proc->subframe_phy_tx;
+          ru->proc.timestamp_tx = proc->timestamp_phy_tx;
 
           // the thread can now be woken up
           AssertFatal(pthread_cond_signal(&ru->proc.cond_rf_tx) == 0, "ERROR pthread_cond_signal for rf_tx thread\n");
