@@ -89,7 +89,7 @@
 #if defined(ENABLE_ITTI)
 #   include "intertask_interface.h"
 #endif
-
+             
 #if ENABLE_RAL
 #   include "rrc_eNB_ral.h"
 #endif
@@ -138,59 +138,54 @@ init_SI(
   const int              CC_id
 #if defined(ENABLE_ITTI)
   ,
-  RrcConfigurationReq * configuration
+  gNB_RrcConfigurationReq * configuration
 #endif
 )
 //-----------------------------------------------------------------------------
 {
-#if defined(Rel10) || defined(Rel14)
   int                                 i;
-#endif
-
-#ifdef Rel14
-  SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext=(SystemInformationBlockType1_v1310_IEs_t *)NULL;
-#endif
 
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
 
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB = (uint8_t*) malloc16(4);
   // copy basic parameters
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB           = configuration->nb_antenna_ports[CC_id];
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp             = configuration->prefix_type[CC_id];
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
-#ifdef Rel14
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition = configuration->pbch_repetition[CC_id];
-#endif
-  LOG_I(RRC, "Configuring MIB (N_RB_DL %d,phich_Resource %d,phich_Duration %d)\n", 
-	(int)configuration->N_RB_DL[CC_id],
-	(int)configuration->phich_resource[CC_id],
-	(int)configuration->phich_duration[CC_id]);
-  do_MIB(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
-#ifdef ENABLE_ITTI
-	 configuration->N_RB_DL[CC_id],
-	 configuration->phich_resource[CC_id],
-	 configuration->phich_duration[CC_id]
-#else
-	 50,0,0
-#endif
-	 ,0);
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB           = configuration->nb_antenna_ports[CC_id];
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp             = configuration->prefix_type[CC_id];
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
   
+  ///MIB
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB_NR 	= 0;
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].MIB_NR 			= (uint8_t*) malloc16(4);
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB_NR 	= do_MIB_NR(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],0,
+																			#ifdef ENABLE_ITTI
+	 																		configuration->ssb_SubcarrierOffset[CC_id],
+	 																		configuration->pdcch_ConfigSIB1[CC_id],
+	 																		configuration->subCarrierSpacingCommon[CC_id],
+	 																		configuration->dmrs_TypeA_Position[CC_id]
+																			#else
+	 																		0,0,15,2
+																			#endif
+	 																		);
 
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = 0;
+  ///SIB1
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_NR 		= 0;
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_NR 			= (uint8_t*) malloc16(32);
+  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_NR!	= NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for NR SIB1 allocated\n",PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
+  
+  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_NR		= do_SIB1_NR(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
+  																				ctxt_pP->module_id,
+  																				CC_id
+																				#if defined(ENABLE_ITTI)
+								   												, configuration
+																				#endif
+								   												);
+  
+  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.nr_rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1_NR == 255");
+
+
+/*
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 = 0;
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1 = (uint8_t*) malloc16(32);
-
-  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1 allocated\n",
-	      PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
-#if defined(ENABLE_ITTI)
-								   , configuration
-#endif
-								   );
-
-  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
 
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23 = (uint8_t*) malloc16(64);
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB23!=NULL,"cannot allocate memory for SIB");
@@ -301,7 +296,7 @@ init_SI(
 #endif
 
   LOG_D(RRC, "About to call rrc_mac_config_req_eNB\n");
-
+*/
   rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB,

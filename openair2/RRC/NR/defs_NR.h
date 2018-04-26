@@ -92,7 +92,7 @@ typedef unsigned int uid_NR_t;
 typedef struct uid_linear_allocator_NR_s {
   unsigned int   bitmap[UID_LINEAR_ALLOCATOR_BITMAP_SIZE_NR];
 } uid_allocator_NR_t;
-
+    
 
 #define PROTOCOL_RRC_CTXT_UE_FMT                PROTOCOL_CTXT_FMT
 #define PROTOCOL_RRC_CTXT_UE_ARGS(CTXT_Pp)      PROTOCOL_CTXT_ARGS(CTXT_Pp)
@@ -391,9 +391,10 @@ typedef struct {
   // buffer that contains the encoded messages
   uint8_t							                      *MIB_NR;
   uint8_t							                      sizeof_MIB_NR;
+
+  uint8_t                                   *SIB1_NR;
+  uint8_t                                   sizeof_SIB1_NR;
 /*
-  uint8_t                                   *SIB1_NB_IoT;
-  uint8_t                                   sizeof_SIB1_NB_IoT;
   uint8_t                         	        *SIB23_NB_IoT;
   uint8_t                        	          sizeof_SIB23_NB_IoT;
 */
@@ -425,7 +426,7 @@ typedef struct {
   uint32_t                                  dl_CarrierFreq; //detected by the UE
   uint32_t                                  ul_CarrierFreq; //detected by the UE
   uint16_t                                  physCellId; //not stored in the MIB-NB but is getting through NPSS/NSSS
-
+  
   //are the only static one (memory has been already allocated)
   BCCH_BCH_Message_t                        mib_NR;
   

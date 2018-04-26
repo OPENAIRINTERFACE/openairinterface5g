@@ -333,7 +333,7 @@ add_custom_command (
 add_list2_option(NR_RRC_ASN1_VERSION "Rel15" "ASN.1 version of NR_RRC interface")
 
 if (${NR_RRC_ASN1_VERSION} STREQUAL "Rel15")
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/ans1c/ASN1_files/NR-RRC-Definitions.asn)
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-Definitions.asn)
 endif  (${NR_RRC_ASN1_VERSION} STREQUAL "Rel15")
 
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
