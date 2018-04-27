@@ -1739,7 +1739,7 @@ rrc_ue_process_securityModeCommand(
     LOG_I(RRC,"[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (eNB %d)\n",
 	  ctxt_pP->module_id,ctxt_pP->frame,eNB_index);
     
-    enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+    enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, NULL,
 				     (void*)&ul_dcch_msg,
 				     buffer,
 				     100);
@@ -1853,7 +1853,7 @@ rrc_ue_process_ueCapabilityEnquiry(
 		       &ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
 		       &ue_CapabilityRAT_Container);
       
-      enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, (void*) &ul_dcch_msg, buffer, 100);
+      enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, NULL, (void*) &ul_dcch_msg, buffer, 100);
       AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
 		   enc_rval.failed_type->name, enc_rval.encoded);
       

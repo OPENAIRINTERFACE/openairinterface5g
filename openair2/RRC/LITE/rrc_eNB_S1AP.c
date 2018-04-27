@@ -680,7 +680,7 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
     return;
   }
 
-  asn_enc_rval_t ret = uper_encode_to_buffer(&asn_DEF_UECapabilityInformation, ueCapabilityInformation, buf, 4096);
+  asn_enc_rval_t ret = uper_encode_to_buffer(&asn_DEF_UECapabilityInformation, NULL, ueCapabilityInformation, buf, 4096);
   if (ret.encoded == -1) abort();
 
   memset(&rac, 0, sizeof(UERadioAccessCapabilityInformation_t));
@@ -694,7 +694,7 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
   /* 8192 is arbitrary, should be big enough */
   buf2 = malloc16(8192);
   if (buf2 == NULL) abort();
-  ret = uper_encode_to_buffer(&asn_DEF_UERadioAccessCapabilityInformation, &rac, buf2, 8192);
+  ret = uper_encode_to_buffer(&asn_DEF_UERadioAccessCapabilityInformation, NULL, &rac, buf2, 8192);
   if (ret.encoded == -1) abort();
 
   MessageDef *msg_p;

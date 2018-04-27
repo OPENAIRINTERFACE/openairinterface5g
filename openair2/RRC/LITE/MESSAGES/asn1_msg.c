@@ -238,7 +238,7 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
   mib->message.schedulingInfoSIB1_BR_r13 = 0; // turn off eMTC
 #endif
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message, NULL,
                                    (void*)mib,
                                    carrier->MIB,
                                    24);
@@ -445,7 +445,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message);
 #endif
-  enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message, NULL,
                                    (void*)bcch_message,
                                    buffer,
                                    100);
@@ -971,7 +971,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message, (void*)bcch_message);
 #endif
-  enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message, NULL,
                                    (void*)bcch_message,
                                    buffer,
                                    900);
@@ -1059,7 +1059,7 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv)
   rrcConnectionRequest->criticalExtensions.choice.rrcConnectionRequest_r8.spare.bits_unused = 7;
 
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_CCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_CCCH_Message, NULL,
                                    (void*)&ul_ccch_msg,
                                    buffer,
                                    100);
@@ -1140,7 +1140,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
     rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME->mmec.bits_unused=0;
   */
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, NULL,
                                    (void*)&ul_dcch_msg,
                                    buffer,
                                    100);
@@ -1200,7 +1200,7 @@ do_RRCConnectionReconfigurationComplete(
     RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
   rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, NULL,
                                    (void*)&ul_dcch_msg,
                                    buffer,
                                    100);
@@ -1587,7 +1587,7 @@ do_RRCConnectionSetup(
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
 #endif
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message, NULL,
                                    (void*)&dl_ccch_msg,
                                    buffer,
                                    100);
@@ -1658,7 +1658,7 @@ do_SecurityModeCommand(
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_DL_DCCH_Message, (void*)&dl_dcch_msg);
 #endif
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message, NULL,
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    100);
@@ -1734,7 +1734,7 @@ do_UECapabilityEnquiry(
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_DL_DCCH_Message, (void*)&dl_dcch_msg);
 #endif
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message, NULL,
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    100);
@@ -1894,7 +1894,7 @@ do_RRCConnectionReconfiguration(
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = dedicatedInfoNASList;
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message, NULL,
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    RRC_BUF_SIZE);
@@ -2108,6 +2108,7 @@ do_RRCConnectionReestablishment(
   xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message,
+                                   NULL,
                                    (void*)&dl_ccch_msg,
                                    buffer,
                                    100);
@@ -2165,7 +2166,7 @@ do_RRCConnectionReestablishmentReject(
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
 #endif
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message, NULL,
                                    (void*)&dl_ccch_msg,
                                    buffer,
                                    100);
@@ -2224,7 +2225,7 @@ do_RRCConnectionReject(
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
 #endif
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message, NULL,
                                    (void*)&dl_ccch_msg,
                                    buffer,
                                    100);
@@ -2286,7 +2287,7 @@ uint8_t do_RRCConnectionRelease(
   rrcConnectionRelease->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r8.nonCriticalExtension=CALLOC(1,
       sizeof(*rrcConnectionRelease->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r8.nonCriticalExtension));
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message, NULL,
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    RRC_BUF_SIZE);
@@ -2413,7 +2414,7 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
 #ifdef XER_PRINT
   xer_fprint(stdout,&asn_DEF_MCCH_Message,(void*)mcch_message);
 #endif
-  enc_rval = uper_encode_to_buffer(&asn_DEF_MCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_MCCH_Message, NULL,
                                    (void*)mcch_message,
                                    buffer,
                                    100);
@@ -2542,7 +2543,7 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
 
   measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells->choice.measResultListEUTRA=*(measResultListEUTRA2);
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, NULL,
                                    (void*)&ul_dcch_msg,
                                    buffer,
                                    100);
@@ -2676,7 +2677,7 @@ uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_pagin
   LOG_D(RRC, "[eNB %d] do_Paging paging_record: cn_Domain %ld, ue_paging_identity.presenceMask %d, PagingRecordList.count %d\n",
           Mod_id, paging_record_p->cn_Domain, ue_paging_identity.presenceMask, pcch_msg.message.choice.c1.choice.paging.pagingRecordList->list.count);
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_PCCH_Message, (void*)&pcch_msg, buffer, RRC_BUF_SIZE);
+  enc_rval = uper_encode_to_buffer(&asn_DEF_PCCH_Message, NULL, (void*)&pcch_msg, buffer, RRC_BUF_SIZE);
 
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
@@ -2848,7 +2849,7 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
 #ifdef XER_PRINT
   xer_fprint(stdout,&asn_DEF_UE_EUTRA_Capability,(void *)UE_EUTRA_Capability);
 #endif
-  enc_rval = uper_encode_to_buffer(&asn_DEF_UE_EUTRA_Capability,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_UE_EUTRA_Capability, NULL,
                                    (void*)UE_EUTRA_Capability,
                                    &UECapability.sdu[0],
                                    MAX_UE_CAPABILITY_SIZE);
