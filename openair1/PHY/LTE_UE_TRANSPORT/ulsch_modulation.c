@@ -34,9 +34,10 @@
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_ue.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 
 //#define DEBUG_ULSCH_MODULATION

@@ -33,12 +33,17 @@
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
 #include "SCHED_UE/sched_UE.h"
-#include "transport_ue.h"
-
+#include "transport_proto_ue.h"
+#include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "openair2/LAYER2/MAC/mac_proto.h"
 #include "common_lib.h"
+#include "PHY/INIT/phy_init.h"
+
 extern openair0_config_t openair0_cfg[];
 
-#define DEBUG_INITIAL_SYNCH
+//#define DEBUG_INITIAL_SYNCH
 
 int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
 {

@@ -49,12 +49,14 @@
 
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "PHY/INIT/phy_init.h"
 
 #include "unitary_defs.h"
 
 #include "PHY/TOOLS/lte_phy_scope.h"
 #include "dummy_functions.c"
 
+#include "common/config/config_load_configmodule.h"
 double cpuf;
 
 

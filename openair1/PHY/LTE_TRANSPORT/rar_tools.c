@@ -34,7 +34,7 @@
 #include "SCHED/sched_eNB.h"
 #include "LAYER2/MAC/mac.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "assertions.h"
 
 extern uint16_t RIV2nb_rb_LUT6[32];

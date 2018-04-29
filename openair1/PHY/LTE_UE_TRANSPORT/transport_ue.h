@@ -36,6 +36,7 @@
 #include "../LTE_TRANSPORT/dci.h"
 #include "../LTE_TRANSPORT/mdci.h"
 #include "../LTE_TRANSPORT/uci_common.h"
+#include "../LTE_TRANSPORT/transport_common.h"
 #ifndef STANDALONE_COMPILE
 #include "UTIL/LISTS/list.h"
 #endif

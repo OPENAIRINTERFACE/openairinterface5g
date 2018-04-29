@@ -21,6 +21,9 @@
 
 #include <string.h>
 #include "PHY/defs_UE.h"
+#include "lte_estimation.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+
 #include "filt16_32.h"
 //#define DEBUG_BF_CH
 

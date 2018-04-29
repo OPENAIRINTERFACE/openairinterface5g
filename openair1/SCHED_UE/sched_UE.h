@@ -25,10 +25,11 @@
   \email knopp@eurecom.fr
 */
 
-#ifndef __openair_SCHED_ENB_H__
-#define __openair_SCHED_ENB_H__
+#ifndef __openair_SCHED_UE_H__
+#define __openair_SCHED_UE_H__
 
 #include "PHY/defs_UE.h"
+#include "../SCHED/sched_common.h"
 
 /*! \brief Scheduling for UE TX procedures in normal subframes.
   @param phy_vars_ue Pointer to UE variables on which to act

@@ -34,7 +34,8 @@
 #include "PHY/phy_extern_ue.h"
 #include "SCHED_UE/sched_UE.h"
 #include "transport_ue.h"
-
+#include "transport_proto_ue.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 #include "LAYER2/MAC/mac.h"
 

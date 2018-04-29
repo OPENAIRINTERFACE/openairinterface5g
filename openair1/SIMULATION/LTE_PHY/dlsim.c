@@ -64,6 +64,11 @@
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_UE/sched_UE.h"
+#include "common/config/config_load_configmodule.h"
+#include "PHY/INIT/phy_init.h"
+
+void feptx_ofdm(RU_t *ru);
+void feptx_prec(RU_t *ru);
 
 double cpuf;
 
@@ -547,7 +552,6 @@ int main(int argc, char **argv)
   DCI_ALLOC_t da;
   DCI_ALLOC_t *dci_alloc = &da;
 
-  unsigned int ret;
   unsigned int coded_bits_per_codeword=0,nsymb; //,tbs=0;
 
   unsigned int tx_lev=0,tx_lev_dB=0,trials;
@@ -570,16 +574,6 @@ int main(int argc, char **argv)
   unsigned char input_trch_file=0;
   FILE *input_fd=NULL;
   unsigned char input_file=0;
-  //  char input_val_str[50],input_val_str2[50];
-
-  char input_trch_val[16];
-
-  //  unsigned char pbch_pdu[6];
-
-
-
-
-  //  FILE *rx_frame_file;
 
   int n_frames;
   int n_ch_rlz = 1;
@@ -602,7 +596,7 @@ int main(int argc, char **argv)
   // void *data;
   // int ii;
   //  int bler;
-  double blerr[4],uncoded_ber=0; //,avg_ber;
+  double blerr[4];
   short *uncoded_ber_bit=NULL;
   uint8_t N_RB_DL=25,osf=1;
   frame_t frame_type = FDD;
@@ -1607,7 +1601,7 @@ int main(int argc, char **argv)
 	      // this is for user 0 only
 	      printf("nb_rb %d, rb_alloc %x, mcs %d\n",
 		     eNB->dlsch[0][0]->harq_processes[0]->nb_rb,
-		     eNB->dlsch[0][0]->harq_processes[0]->rb_alloc,
+		     eNB->dlsch[0][0]->harq_processes[0]->rb_alloc[0],
 		     eNB->dlsch[0][0]->harq_processes[0]->mcs);
 
 	      coded_bits_per_codeword = get_G(&eNB->frame_parms,

@@ -32,6 +32,7 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h" 
 #include "LAYER2/MAC/mac.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"

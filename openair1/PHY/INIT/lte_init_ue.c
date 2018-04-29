@@ -32,6 +32,7 @@
 #include <math.h>
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 

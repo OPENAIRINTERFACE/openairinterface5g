@@ -22,7 +22,7 @@
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
 #include "PHY/sse_intrin.h"
-#include "PHY/LTE_TRANSPORT/transport_common.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 
 // Mask for identifying subframe for MBMS
 #define MBSFN_TDD_SF3 0x80// for TDD

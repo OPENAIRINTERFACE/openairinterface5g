@@ -34,6 +34,7 @@
 #include "SCHED_UE/sched_UE.h"
 #include "LAYER2/MAC/mac.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "transport_proto_ue.h"
 
 #include "assertions.h"
 
