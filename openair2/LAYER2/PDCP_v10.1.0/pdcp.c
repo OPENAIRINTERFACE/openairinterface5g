@@ -393,7 +393,7 @@ boolean_t pdcp_data_req(
    * so we return TRUE afterwards
    */
   
-  for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
+  for (pdcp_uid=0; pdcp_uid< MAX_MOBILES_PER_ENB;pdcp_uid++){
     if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti ) 
       break;
   }
@@ -808,7 +808,7 @@ pdcp_data_ind(
    * XXX Following two actions are identical, is there a merge error?
    */
   
-  for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
+  for (pdcp_uid=0; pdcp_uid< MAX_MOBILES_PER_ENB;pdcp_uid++){
     if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti ){
       break;
     }
@@ -856,7 +856,7 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
   
  // these stats are measured for both eNB and UE on per seond basis 
   for (rb_id =0; rb_id < NB_RB_MAX; rb_id ++){
-    for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
+    for (pdcp_uid=0; pdcp_uid< MAX_MOBILES_PER_ENB;pdcp_uid++){
       //printf("frame %d and subframe %d \n", pdcp_enb[ctxt_pP->module_id].frame, pdcp_enb[ctxt_pP->module_id].subframe);
       // tx stats
       if (Pdcp_stats_tx_window_ms[ctxt_pP->module_id][pdcp_uid] > 0 &&
@@ -1060,14 +1060,14 @@ pdcp_run (
 
 void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP){
   int i, ue_flag=1; //, ret=-1; to be decied later
-  for (i=0; i < NUMBER_OF_UE_MAX; i++){
+  for (i=0; i < MAX_MOBILES_PER_ENB; i++){
     if (pdcp_enb[ctxt_pP->module_id].rnti[i] == ctxt_pP->rnti) {
       ue_flag=-1;
       break;
     }
   }
   if (ue_flag == 1 ){
-    for (i=0; i < NUMBER_OF_UE_MAX ; i++){
+    for (i=0; i < MAX_MOBILES_PER_ENB ; i++){
       if (pdcp_enb[ctxt_pP->module_id].rnti[i] == 0 ){
 	pdcp_enb[ctxt_pP->module_id].rnti[i]=ctxt_pP->rnti;
 	pdcp_enb[ctxt_pP->module_id].uid[i]=i;
@@ -1095,7 +1095,7 @@ pdcp_remove_UE(
   int i; 
    // check and remove SRBs first
 
-  for(int i = 0;i<NUMBER_OF_UE_MAX;i++){
+  for(int i = 0;i<MAX_MOBILES_PER_ENB;i++){
     if(pdcp_eNB_UE_instance_to_rnti[i] == ctxt_pP->rnti){
       pdcp_eNB_UE_instance_to_rnti[i] = NOT_A_RNTI;
       break;
@@ -1116,7 +1116,7 @@ pdcp_remove_UE(
   (void)h_rc; /* remove gcc warning "set but not used" */
 
   // remove ue for pdcp enb inst
-   for (i=0; i < NUMBER_OF_UE_MAX; i++) {
+   for (i=0; i < MAX_MOBILES_PER_ENB; i++) {
     if (pdcp_enb[ctxt_pP->module_id].rnti[i] == ctxt_pP->rnti ) {
       LOG_I(PDCP, "remove uid is %d/%d %x\n", i,
 	    pdcp_enb[ctxt_pP->module_id].uid[i],
@@ -1553,16 +1553,16 @@ pdcp_config_req_asn1 (
       //pdcp_eNB_UE_instance_to_rnti[ctxtP->module_id] = ctxt_pP->rnti;
 //      pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
       if( srb_flagP == SRB_FLAG_NO ) {
-          for(int i = 0;i<NUMBER_OF_UE_MAX;i++){
+          for(int i = 0;i<MAX_MOBILES_PER_ENB;i++){
               if(pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] == NOT_A_RNTI){
                   break;
               }
-              pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % NUMBER_OF_UE_MAX;
+              pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % MAX_MOBILES_PER_ENB;
           }
           pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
-          pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % NUMBER_OF_UE_MAX;
+          pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % MAX_MOBILES_PER_ENB;
       }
-      //pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % NUMBER_OF_UE_MAX;
+      //pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % MAX_MOBILES_PER_ENB;
     } else {
       pdcp_pP->is_ue = TRUE;
       pdcp_UE_UE_module_id_to_rnti[ctxt_pP->module_id] = ctxt_pP->rnti;
@@ -2009,7 +2009,7 @@ void pdcp_layer_init(void)
   pdcp_coll_p = hashtable_create ((maxDRB + 2) * 16, NULL, pdcp_free);
   AssertFatal(pdcp_coll_p != NULL, "UNRECOVERABLE error, PDCP hashtable_create failed");
 
-  for (instance = 0; instance < NUMBER_OF_UE_MAX; instance++) {
+  for (instance = 0; instance < MAX_MOBILES_PER_ENB; instance++) {
 #if defined(Rel10) || defined(Rel14)
 
     for (service_id = 0; service_id < maxServiceCount; service_id++) {
@@ -2047,7 +2047,7 @@ void pdcp_layer_init(void)
   memset(Pdcp_stats_tx_window_ms, 0, sizeof(Pdcp_stats_tx_window_ms));
   memset(Pdcp_stats_rx_window_ms, 0, sizeof(Pdcp_stats_rx_window_ms));
   for (i =0; i< MAX_NUM_CCs ; i ++){
-    for (j=0; j< NUMBER_OF_UE_MAX;j++){
+    for (j=0; j< MAX_MOBILES_PER_ENB;j++){
       Pdcp_stats_tx_window_ms[i][j]=100;
       Pdcp_stats_rx_window_ms[i][j]=100;
     }

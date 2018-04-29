@@ -43,6 +43,7 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 //#define DEBUG_ULSCH_DECODING
 #include "targets/RT/USER/rt_wrapper.h"
+#include "transport_proto.h"
 
 extern int codingw;
 

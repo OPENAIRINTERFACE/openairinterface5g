@@ -120,7 +120,7 @@ void mac_top_init_eNB(void)
 	UE_list->head_ul = -1;
 	UE_list->avail = 0;
 
-	for (list_el = 0; list_el < NUMBER_OF_UE_MAX - 1; list_el++) {
+	for (list_el = 0; list_el < MAX_MOBILES_PER_ENB - 1; list_el++) {
 	    UE_list->next[list_el] = list_el + 1;
 	    UE_list->next_ul[list_el] = list_el + 1;
 	}
@@ -144,7 +144,7 @@ void mac_init_cell_params(int Mod_idP, int CC_idP)
     UE_template =
 	(UE_TEMPLATE *) & RC.mac[Mod_idP]->UE_list.UE_template[CC_idP][0];
 
-    for (j = 0; j < NUMBER_OF_UE_MAX; j++) {
+    for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
 	UE_template[j].rnti = 0;
 	// initiallize the eNB to UE statistics
 	memset(&RC.mac[Mod_idP]->UE_list.eNB_UE_stats[CC_idP][j], 0,

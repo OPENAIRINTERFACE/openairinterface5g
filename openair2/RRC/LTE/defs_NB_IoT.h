@@ -88,7 +88,7 @@
 /*I will change the name of the structure for compile purposes--> hope not to undo this process*/
 
 typedef unsigned int uid_NB_IoT_t;
-#define UID_LINEAR_ALLOCATOR_BITMAP_SIZE_NB_IoT (((NUMBER_OF_UE_MAX_NB_IoT/8)/sizeof(unsigned int)) + 1)
+#define UID_LINEAR_ALLOCATOR_BITMAP_SIZE_NB_IoT (((MAX_MOBILES_PER_ENB_NB_IoT/8)/sizeof(unsigned int)) + 1)
 
 typedef struct uid_linear_allocator_NB_IoT_s {
   unsigned int   bitmap[UID_LINEAR_ALLOCATOR_BITMAP_SIZE_NB_IoT];
@@ -150,7 +150,7 @@ typedef struct UE_RRC_INFO_NB_IoT_s {
 
 // HO_STATE is not supported by NB-IoT
 
-//#define NUMBER_OF_UE_MAX MAX_MOBILES_PER_RG
+//#define MAX_MOBILES_PER_ENB MAX_MOBILES_PER_RG
 #define RRM_FREE(p)       if ( (p) != NULL) { free(p) ; p=NULL ; }
 #define RRM_MALLOC(t,n)   (t *) malloc16( sizeof(t) * n )
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n)

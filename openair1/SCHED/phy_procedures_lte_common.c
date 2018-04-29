@@ -32,6 +32,7 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
 #include "SCHED/sched_common_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
                     unsigned char current_subframe,

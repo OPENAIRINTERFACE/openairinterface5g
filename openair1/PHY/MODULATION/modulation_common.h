@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifndef __MODULATION_DEFS__H__
-#define __MODULATION_DEFS__H__
+#ifndef __MODULATION_COMMON__H__
+#define __MODULATION_COMMON__H__
 #include "PHY/defs_common.h"
 /** @addtogroup _PHY_MODULATION_
  * @{

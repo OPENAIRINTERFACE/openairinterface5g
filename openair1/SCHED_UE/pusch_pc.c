@@ -35,6 +35,7 @@
 #include "PHY/defs_UE.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/phy_extern_ue.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
 int16_t get_hundred_times_delta_IF(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t harq_pid)
 {

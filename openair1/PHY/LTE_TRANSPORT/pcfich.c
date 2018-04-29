@@ -31,6 +31,7 @@
 */
 #include "PHY/impl_defs_top.h"
 #include "PHY/defs_eNB.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_PCFICH
 extern uint8_t pcfich_b[4][32];

@@ -535,6 +535,7 @@ void pdcch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
                         int8_t* llr,
                         uint32_t length);
 
+
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
                       int mbsfn_flag,
                       LTE_eNB_DLSCH_t *dlsch,
@@ -606,6 +607,9 @@ double computeRhoB_eNB(uint8_t pa,
 
 
 
+void conv_eMTC_rballoc(uint16_t resource_block_coding,
+		       uint32_t N_RB_DL,
+		       uint32_t *rb_alloc);
 
 int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 

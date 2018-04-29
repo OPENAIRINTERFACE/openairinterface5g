@@ -189,7 +189,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 
-void init_scrambling_lut() {
+void init_scrambling_lut(void) {
 
   uint32_t s;
   int i=0,j;
@@ -242,7 +242,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   }
 }
 
-void init_unscrambling_lut() {
+void init_unscrambling_lut(void) {
 
   uint32_t s;
   int i=0,j;

@@ -38,7 +38,8 @@
 #endif
 #include "assertions.h"
 #include "nfapi_interface.h"
-
+#include "transport_common_proto.h"
+#include "SCHED/sched_common.h"
 //#define DEBUG_HARQ
 
 

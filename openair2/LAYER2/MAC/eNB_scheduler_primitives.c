@@ -1667,7 +1667,7 @@ void init_ue_sched_info(void)
 
   for (i = 0; i < NUMBER_OF_eNB_MAX; i++) {
     for (k = 0; k < MAX_NUM_CCs; k++) {
-      for (j = 0; j < NUMBER_OF_UE_MAX; j++) {
+      for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
 	// init DL
 	eNB_dlsch_info[i][k][j].weight = 0;
 	eNB_dlsch_info[i][k][j].subframe = 0;
@@ -1698,7 +1698,7 @@ int find_UE_id(module_id_t mod_idP, rnti_t rntiP)
   int UE_id;
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
-  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+  for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
     if (UE_list->active[UE_id] != TRUE)
       continue;
     if (UE_list->UE_template[UE_PCCID(mod_idP, UE_id)][UE_id].rnti ==
@@ -1839,7 +1839,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
 	mod_idP, cc_idP, rntiP, UE_list->avail, UE_list->num_UEs);
   dump_ue_list(UE_list, 0);
 
-  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (UE_list->active[i] == TRUE)
       continue;
     UE_id = i;
@@ -2325,9 +2325,7 @@ int get_bw_index(module_id_t module_id, uint8_t CC_id)
 {
   int bw_index = 0;
 
-  int N_RB_DL =
-    to_prb(RC.mac[module_id]->common_channels[CC_id].mib->
-	   message.dl_Bandwidth);
+  int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
   switch (N_RB_DL) {
   case 6:			// 1.4 MHz
@@ -2360,9 +2358,7 @@ int get_bw_index(module_id_t module_id, uint8_t CC_id)
 int get_min_rb_unit(module_id_t module_id, uint8_t CC_id)
 {
   int min_rb_unit = 0;
-  int N_RB_DL =
-    to_prb(RC.mac[module_id]->common_channels[CC_id].mib->
-	   message.dl_Bandwidth);
+  int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
   switch (N_RB_DL) {
   case 6:			// 1.4 MHz

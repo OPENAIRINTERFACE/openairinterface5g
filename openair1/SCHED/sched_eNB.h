@@ -30,6 +30,7 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY_INTERFACE/phy_interface.h"
+#include "sched_common.h"
 
 enum THREAD_INDEX { OPENAIR_THREAD_INDEX = 0,
                     TOP_LEVEL_SCHEDULER_THREAD_INDEX,

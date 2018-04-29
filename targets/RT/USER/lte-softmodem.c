@@ -90,6 +90,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "create_tasks.h"
 #endif
 
+#include "PHY/INIT/phy_init.h"
+
 #include "system.h"
 
 #ifdef XFORMS
@@ -1092,7 +1094,7 @@ int main( int argc, char **argv )
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
-  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
+  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   

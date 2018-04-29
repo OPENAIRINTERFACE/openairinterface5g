@@ -34,7 +34,7 @@
 #include "SCHED_UE/sched_UE.h"
 #include "SCHED/sched_common_extern.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
-
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
 int16_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,uint8_t eNB_id,PUCCH_FMT_t pucch_fmt)
 {

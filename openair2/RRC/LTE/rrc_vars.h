@@ -36,7 +36,7 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/mac.h"
 
-UE_PF_PO_t UE_PF_PO[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+UE_PF_PO_t UE_PF_PO[MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
 pthread_mutex_t ue_pf_po_mutex;
 UE_RRC_INST *UE_rrc_inst;
 #include "LAYER2/MAC/mac_extern.h"
@@ -242,6 +242,6 @@ float RSRQ_meas_mapping[35] = {
 // [0]: current C-RNTI, [1]: prior C-RNTI
 // insert one when eNB received RRCConnectionReestablishmentRequest message
 // delete one when eNB received RRCConnectionReestablishmentComplete message
-uint16_t reestablish_rnti_map[NUMBER_OF_UE_MAX][2] = {{0}};
+uint16_t reestablish_rnti_map[MAX_MOBILES_PER_ENB][2] = {{0}};
 
 #endif

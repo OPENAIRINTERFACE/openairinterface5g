@@ -647,7 +647,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 						     (char *)
 						     &mch_buffer
 						     [sdu_length_total]);
-	    //sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,frameP, MBMS_FLAG_NO,  MTCH+(MAX_NUM_RB*(NUMBER_OF_UE_MAX+1)), (char*)&mch_buffer[sdu_length_total]);
+	    //sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,frameP, MBMS_FLAG_NO,  MTCH+(MAX_NUM_RB*(MAX_MOBILES_PER_ENB+1)), (char*)&mch_buffer[sdu_length_total]);
 	    LOG_I(MAC,
 		  "[eNB %d][MBMS USER-PLANE] CC_id %d Got %d bytes for MTCH %d\n",
 		  module_idP, CC_id, sdu_lengths[num_sdus], MTCH);

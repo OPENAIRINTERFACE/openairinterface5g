@@ -46,7 +46,7 @@
 
 //#define DEBUG_DCI
 #include "dci_tools_common_extern.h"
-
+#include "transport_proto.h"
 
 int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
 {

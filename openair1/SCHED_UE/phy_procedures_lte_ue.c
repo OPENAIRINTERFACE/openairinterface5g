@@ -40,6 +40,9 @@
 
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "SCHED_UE/sched_UE.h"
+#include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
+
 //#define DEBUG_PHY_PROC
 
 #ifndef PUCCH
@@ -1408,7 +1411,7 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
       ue->prach_resources[eNB_id]->ra_PreambleIndex = 19;
     }
     
-    LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d,PL %d,  P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
+    LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d,PL %d,  P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
 	  ue->Mod_id,
 	  frame_tx,
 	  subframe_tx,
@@ -2767,15 +2770,17 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 	   subframe_rx,
 	   eNB_id,
 	   ue->frame_parms.nb_antenna_ports_eNB==1?SISO:ALAMOUTI,
-	   ue->high_speed_flag,
-	   ue->is_secondary_ue);
+	   ue->high_speed_flag);
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_OUT);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_IN);
   
   
-  //printf("Decode SIB frame param agregation + DCI %d %d \n",agregationLevel,dciFormat);
-  
+  /*printf("Decode SIB frame param aggregation + DCI %d %d, num_pdcch_symbols %d\n",
+	 ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->agregationLevel,
+	 ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->dciFormat,
+	 ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->num_pdcch_symbols);
+  */
   //agregation level == FF means no configuration on
   if(ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->agregationLevel == 0xFF || ue->decode_SIB)
     {

@@ -836,7 +836,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   Protocol__FlexHeader *header = NULL;
   int i, j, UE_id;
 
-  int available_harq[NUMBER_OF_UE_MAX];
+  int available_harq[MAX_MOBILES_PER_ENB];
 
   const int xid = *((int *)params);
 
@@ -854,7 +854,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   frame_t frame;
   sub_frame_t subframe;
 
-  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     available_harq[i] = -1;
   }
 
@@ -878,7 +878,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
 
   sf_trigger_msg->n_dl_info = 0;
 
-  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     for (j = 0; j < 8; j++) {
       if (RC.mac && RC.mac[mod_id] && RC.mac[mod_id]->UE_list.eNB_UE_stats[UE_PCCID(mod_id,i)][i].harq_pid == 1) {
 	available_harq[i] = j;
@@ -904,7 +904,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       goto error;
     i = -1;
     //Fill the status of the current HARQ process for each UE
-    for(UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+    for(UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
       if (available_harq[UE_id] < 0) {
 	continue;
       } else {
@@ -1262,7 +1262,7 @@ void flexran_agent_init_mac_agent(mid_t mod_id) {
   //Allow RINGBUFFER_SIZE messages to be stored in the ringbuffer at any time
   dl_mac_config_array[mod_id] = malloc( sizeof(struct lfds700_ringbuffer_element) *  num_elements);
   lfds700_ringbuffer_init_valid_on_current_logical_core( &ringbuffer_state[mod_id], dl_mac_config_array[mod_id], num_elements, &ps[mod_id], NULL );
-  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     for (j = 0; j < 8; j++) {
       if (RC.mac && RC.mac[mod_id])
         RC.mac[mod_id]->UE_list.eNB_UE_stats[UE_PCCID(mod_id,i)][i].harq_pid = 0;

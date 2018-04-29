@@ -23,6 +23,9 @@
 #include "phy_init.h"
 #include "PHY/phy_extern.h"
 #include "PHY/CODING/coding_extern.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 void generate_64qam_table(void)
 {

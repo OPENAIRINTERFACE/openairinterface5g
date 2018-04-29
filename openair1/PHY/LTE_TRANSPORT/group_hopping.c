@@ -30,6 +30,7 @@
 * \warning
 */
 #include "PHY/defs_common.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_GROUPHOP 1
 

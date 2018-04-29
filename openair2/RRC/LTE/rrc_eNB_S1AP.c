@@ -1994,7 +1994,7 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
               /* insert data to UE_PF_PO or update data in UE_PF_PO */
               pthread_mutex_lock(&ue_pf_po_mutex);
               uint8_t i = 0;
-              for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+              for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
                 if ((UE_PF_PO[CC_id][i].enable_flag == TRUE && UE_PF_PO[CC_id][i].ue_index_value == (uint16_t)(S1AP_PAGING_IND(msg_p).ue_index_value))
                     || (UE_PF_PO[CC_id][i].enable_flag != TRUE)) {
                     /* set T = min(Tc,Tue) */

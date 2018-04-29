@@ -171,7 +171,7 @@
 
 //--------
 typedef unsigned int uid_t;
-#define UID_LINEAR_ALLOCATOR_BITMAP_SIZE (((NUMBER_OF_UE_MAX/8)/sizeof(unsigned int)) + 1)
+#define UID_LINEAR_ALLOCATOR_BITMAP_SIZE (((MAX_MOBILES_PER_ENB/8)/sizeof(unsigned int)) + 1)
 typedef struct uid_linear_allocator_s {
   unsigned int   bitmap[UID_LINEAR_ALLOCATOR_BITMAP_SIZE];
 } uid_allocator_t;
@@ -219,7 +219,7 @@ typedef enum HO_STATE_e {
   HO_COMPLETE // initiated by the target eNB
 } HO_STATE_t;
 
-//#define NUMBER_OF_UE_MAX MAX_MOBILES_PER_RG
+//#define MAX_MOBILES_PER_ENB MAX_MOBILES_PER_RG
 #define RRM_FREE(p)       if ( (p) != NULL) { free(p) ; p=NULL ; }
 #define RRM_MALLOC(t,n)   (t *) malloc16( sizeof(t) * n )
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n)
@@ -521,8 +521,8 @@ typedef struct {
 #endif
   SRB_INFO                          SI;
   SRB_INFO                          Srb0;
-  uint8_t                           *paging[NUMBER_OF_UE_MAX];
-  uint32_t                           sizeof_paging[NUMBER_OF_UE_MAX];
+  uint8_t                           *paging[MAX_MOBILES_PER_ENB];
+  uint32_t                           sizeof_paging[MAX_MOBILES_PER_ENB];
 } rrc_eNB_carrier_data_t;
 
 typedef struct eNB_RRC_INST_s {

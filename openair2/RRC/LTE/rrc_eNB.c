@@ -515,7 +515,7 @@ rrc_eNB_get_next_transaction_identifier(
 //
 //    AssertFatal(enb_mod_idP < NB_eNB_INST, "eNB index invalid (%d/%d)!", enb_mod_idP, NB_eNB_INST);
 //
-//    for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+//    for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
 //        if (RC.rrc[enb_mod_idP]->Info.UE_list[i] == UE_identity) {
 //            // UE_identity already registered
 //            reg = TRUE;
@@ -854,14 +854,14 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
 #endif
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       eNB_PHY = RC.eNB[enb_mod_idP][CC_id];
-      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+      for (i=0; i<MAX_MOBILES_PER_ENB; i++) {
         ulsch = eNB_PHY->ulsch[i];
         if((ulsch != NULL) && (ulsch->rnti == rnti)){
           LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
           clean_eNb_ulsch(ulsch);
         }
       }
-      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+      for (i=0; i<MAX_MOBILES_PER_ENB; i++) {
         dlsch = eNB_PHY->dlsch[i][0];
         if((dlsch != NULL) && (dlsch->rnti == rnti)){
           LOG_I(RRC, "clean_eNb_dlsch UE %x \n", rnti);
@@ -1812,7 +1812,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   eNB_MAC_INST *eNB_MAC = RC.mac[ctxt_prior.module_id];
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     eNB_PHY = RC.eNB[ctxt_prior.module_id][CC_id];
-    for (int i=0; i<NUMBER_OF_UE_MAX; i++) {
+    for (int i=0; i<MAX_MOBILES_PER_ENB; i++) {
       ulsch = eNB_PHY->ulsch[i];
       if((ulsch != NULL) && (ulsch->rnti == ctxt_prior.rnti)){
         LOG_I(RRC, "clean_eNb_ulsch UE %x \n", ctxt_prior.rnti);
@@ -5708,11 +5708,11 @@ openair_rrc_eNB_init(
   }
 #endif 
   AssertFatal(RC.rrc[enb_mod_idP] != NULL, "RC.rrc not initialized!");
-  AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
+  AssertFatal(MAX_MOBILES_PER_ENB < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
 #ifdef ENABLE_ITTI
   AssertFatal(configuration!=NULL,"configuration input is null\n");
 #endif
-  //    for (j = 0; j < NUMBER_OF_UE_MAX; j++)
+  //    for (j = 0; j < MAX_MOBILES_PER_ENB; j++)
   //        RC.rrc[ctxt.module_id].Info.UE[j].Status = RRC_IDLE;  //CH_READY;
   //
   //#if defined(ENABLE_USE_MME)
@@ -5721,7 +5721,7 @@ openair_rrc_eNB_init(
   //#endif
   //    {
   //        /* Init security parameters */
-  //        for (j = 0; j < NUMBER_OF_UE_MAX; j++) {
+  //        for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
   //            RC.rrc[ctxt.module_id].ciphering_algorithm[j] = SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
   //            RC.rrc[ctxt.module_id].integrity_algorithm[j] = SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;
   //            rrc_eNB_init_security(enb_mod_idP, j);
@@ -5735,13 +5735,13 @@ openair_rrc_eNB_init(
 
   uid_linear_allocator_init(&RC.rrc[ctxt.module_id]->uid_allocator);
   RB_INIT(&RC.rrc[ctxt.module_id]->rrc_ue_head);
-  //    for (j = 0; j < (NUMBER_OF_UE_MAX + 1); j++) {
+  //    for (j = 0; j < (MAX_MOBILES_PER_ENB + 1); j++) {
   //        RC.rrc[enb_mod_idP]->Srb2[j].Active = 0;
   //    }
 
 
-  RC.rrc[ctxt.module_id]->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
-  RC.rrc[ctxt.module_id]->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  RC.rrc[ctxt.module_id]->initial_id2_s1ap_ids = hashtable_create (MAX_MOBILES_PER_ENB * 2, NULL, NULL);
+  RC.rrc[ctxt.module_id]->s1ap_id2_s1ap_ids    = hashtable_create (MAX_MOBILES_PER_ENB * 2, NULL, NULL);
 
   memcpy(&RC.rrc[ctxt.module_id]->configuration,configuration,sizeof(RrcConfigurationReq));
 
@@ -5797,7 +5797,7 @@ openair_rrc_eNB_init(
             , configuration
 #endif
            );
-    for (int ue_id = 0; ue_id < NUMBER_OF_UE_MAX; ue_id++) {
+    for (int ue_id = 0; ue_id < MAX_MOBILES_PER_ENB; ue_id++) {
         RC.rrc[ctxt.module_id]->carrier[CC_id].sizeof_paging[ue_id] = 0;
         RC.rrc[ctxt.module_id]->carrier[CC_id].paging[ue_id] = (uint8_t*) malloc16(256);
     }
@@ -6041,7 +6041,7 @@ rrc_eNB_decode_ccch(
       ue_context_p->ue_context.ue_release_timer = 0;
 
       // insert C-RNTI to map
-      for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+      for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
         if (reestablish_rnti_map[i][0] == 0) {
           reestablish_rnti_map[i][0] = ctxt_pP->rnti;
           reestablish_rnti_map[i][1] = c_rnti;
@@ -6665,7 +6665,7 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
         RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
         rnti_t reestablish_rnti = 0;
         // select C-RNTI from map
-        for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+        for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
           if (reestablish_rnti_map[i][0] == ctxt_pP->rnti) {
             reestablish_rnti = reestablish_rnti_map[i][1];
             ue_context_p = rrc_eNB_get_ue_context(

@@ -307,7 +307,7 @@ maxround(module_id_t Mod_id, uint16_t rnti, int frame,
     UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
     COMMON_channels_t *cc;
 
-    for (CC_id = 0; CC_id < NFAPI_CC_MAX; CC_id++) {
+    for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
 
 	cc = &RC.mac[Mod_id]->common_channels[CC_id];
 
@@ -617,7 +617,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
   UE_sched_ctrl *ue_sched_ctl;
   COMMON_channels_t *cc;
 
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; CC_id++) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
     total_ue_count[CC_id] = 0;
     total_rbs_used[CC_id] = 0;
     average_rbs_per_user[CC_id] = 0;
@@ -1020,7 +1020,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   UE_sched_ctrl *ue_sched_ctl1, *ue_sched_ctl2;
 #endif
 
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; CC_id++) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
 
     if (mbsfn_flag[CC_id] > 0)    // If this CC is allocated for MBSFN skip it here
       continue;
@@ -1071,7 +1071,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 
 #ifdef TM5
   // This has to be revisited!!!!
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; CC_id++) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
   i1 = 0;
   i2 = 0;
   i3 = 0;
@@ -1428,7 +1428,7 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
 
     // we need to distribute RBs among UEs
     // step1:  reset the vars
-    for (CC_id = 0; CC_id < NFAPI_CC_MAX; CC_id++) {
+    for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
       total_allocated_rbs[CC_id] = 0;
       total_remaining_rbs[CC_id] = 0;
       average_rbs_per_user[CC_id] = 0;
@@ -1601,7 +1601,7 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
     /* this logging is wrong, ue_sched_ctl may not be valid here
      * TODO: fix
      */
-    for (CC_id = 0; CC_id < NFAPI_CC_MAX; CC_id++) {
+    for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
 
 	if (total_allocated_rbs[CC_id] > 0) {
 	    LOG_D(MAC, "[eNB %d] total RB allocated for all UEs = %d/%d\n",
@@ -1660,12 +1660,9 @@ assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
 
-      if (CC_id >= NFAPI_CC_MAX) {
-        LOG_E(MAC, "CC_id %u should be < %u, loop n=%u < numactiveULCCs[%u]=%u",
-              CC_id, NFAPI_CC_MAX, n, UE_id, UE_list->numactiveULCCs[UE_id]);
-      }
 
-      AssertFatal(CC_id < NFAPI_CC_MAX,
+
+      AssertFatal(CC_id < RC.nb_mac_CC[module_idP],
                   "CC_id %u should be < %u, loop n=%u < numactiveULCCs[%u]=%u",
                   CC_id, NFAPI_CC_MAX, n, UE_id,
                   UE_list->numactiveULCCs[UE_id]);

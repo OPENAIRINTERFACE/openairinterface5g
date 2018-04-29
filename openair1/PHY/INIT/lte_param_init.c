@@ -30,6 +30,9 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern.h"
+#include "phy_init.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 extern PHY_VARS_eNB *eNB;
 extern PHY_VARS_UE *UE;

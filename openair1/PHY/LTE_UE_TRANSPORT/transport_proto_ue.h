@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/proto.h
+/*! \file PHY/LTE_UE_TRANSPORT/transport_proto_ue.h
  * \brief Function prototypes for PHY physical/transport channel processing and generation V8.6 2009-03
  * \author R. Knopp, F. Kaltenberger
  * \date 2011
@@ -32,6 +32,7 @@
 #ifndef __LTE_TRANSPORT_PROTO_UE__H__
 #define __LTE_TRANSPORT_PROTO_UE__H__
 #include "PHY/defs_UE.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 #include <math.h>
 #include "nfapi_interface.h"
 
@@ -64,6 +65,7 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
 
 LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
 
+void fill_UE_dlsch_MCH(PHY_VARS_UE *ue,int mcs,int ndi,int rvidx,int eNB_id);
 
 int rx_pmch(PHY_VARS_UE *phy_vars_ue,
             unsigned char eNB_id,
@@ -1026,8 +1028,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
                  uint8_t subframe,
                  uint8_t eNB_id,
                  MIMO_mode_t mimo_mode,
-                 uint32_t high_speed_flag,
-                 uint8_t is_secondary_ue);
+                 uint32_t high_speed_flag);
 
 /*! \brief Extract PSS and SSS resource elements
   @param phy_vars_ue Pointer to UE variables

@@ -1207,7 +1207,7 @@ void flexran_set_pdcp_rx_stat_window(const mid_t mod_id, const mid_t ue_id, uint
 
 /*PDCP num tx pdu status flexRAN*/
 uint32_t flexran_get_pdcp_tx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  if (mod_id <0 || mod_id> MAX_NUM_CCs || ue_id<0 || ue_id> NUMBER_OF_UE_MAX || lcid<0 || lcid>NB_RB_MAX)
+  if (mod_id <0 || mod_id> MAX_NUM_CCs || ue_id<0 || ue_id> MAX_MOBILES_PER_ENB || lcid<0 || lcid>NB_RB_MAX)
     return -1;
   return Pdcp_stats_tx[mod_id][ue_id][lcid];
 }

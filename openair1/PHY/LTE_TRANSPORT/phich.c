@@ -34,6 +34,8 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/impl_defs_top.h"
 #include "T.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "transport_common_proto.h"
 
 //#define DEBUG_PHICH 1
 

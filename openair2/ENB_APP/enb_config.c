@@ -48,6 +48,7 @@
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "PHY/phy_extern.h"
+#include "PHY/INIT/phy_init.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
@@ -295,8 +296,10 @@ void RCconfig_macrlc() {
 
     RC.nb_macrlc_inst=MacRLC_ParamList.numelt; 
     mac_top_init_eNB();   
-    for (j=0;j<RC.nb_macrlc_inst;j++) {
+    RC.nb_mac_CC = (int*)malloc(RC.nb_macrlc_inst*sizeof(int));
 
+    for (j=0;j<RC.nb_macrlc_inst;j++) {
+      RC.nb_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
       //RC.mac[j]->phy_test = *(MacRLC_ParamList.paramarray[j][MACRLC_PHY_TEST_IDX].iptr);
       //printf("PHY_TEST = %d,%d\n", RC.mac[j]->phy_test, j);
 

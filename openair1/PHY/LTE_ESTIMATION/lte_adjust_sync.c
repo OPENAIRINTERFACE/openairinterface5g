@@ -24,7 +24,7 @@
 #include "PHY/phy_extern_ue.h"
 
 #include "UTIL/LOG/vcd_signal_dumper.h"
-#include "lte_estimation_defs.h"
+#include "lte_estimation.h"
 
 #define DEBUG_PHY
 

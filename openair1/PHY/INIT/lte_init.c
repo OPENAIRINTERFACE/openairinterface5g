@@ -25,6 +25,7 @@
 #include "PHY/phy_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"

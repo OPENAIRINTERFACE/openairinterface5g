@@ -33,9 +33,10 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
 #include "SCHED/sched_eNB.h"
-
+#include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "UTIL/LOG/log.h"

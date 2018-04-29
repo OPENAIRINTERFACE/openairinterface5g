@@ -140,7 +140,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
   start_meas(&mac->rx_ulsch_sdu);
 
-  if ((UE_id > NUMBER_OF_UE_MAX) || (UE_id == -1))
+  if ((UE_id > MAX_MOBILES_PER_ENB) || (UE_id == -1))
     for (ii = 0; ii < NB_RB_MAX; ii++) {
       rx_lengths[ii] = 0;
     }

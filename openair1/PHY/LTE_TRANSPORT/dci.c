@@ -44,6 +44,7 @@
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "PHY/LTE_TRANSPORT/transport_extern.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_DCI_ENCODING 1
 //#define DEBUG_DCI_DECODING 1

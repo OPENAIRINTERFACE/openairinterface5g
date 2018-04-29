@@ -1773,7 +1773,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
     vrb_map         = (void*)&cc->vrb_map;
     n_rb_dl         = to_prb(cc->mib->message.dl_Bandwidth);
     dl_req          = &eNB->DL_req[CC_id].dl_config_request_body;
-    for (uint16_t i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    for (uint16_t i = 0; i < MAX_MOBILES_PER_ENB; i++) {
       if (UE_PF_PO[CC_id][i].enable_flag != TRUE) {
         continue;
       }

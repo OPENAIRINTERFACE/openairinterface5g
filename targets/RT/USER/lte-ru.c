@@ -72,7 +72,10 @@
 
 #include "PHY/phy_extern.h"
 #include "LAYER2/MAC/mac_extern.h"
-
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "SCHED/sched_eNB.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
+#include "PHY/INIT/phy_init.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"

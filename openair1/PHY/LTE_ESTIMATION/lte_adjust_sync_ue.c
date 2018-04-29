@@ -21,7 +21,7 @@
 
 #include "PHY/types.h"
 #include "PHY/defs_UE.h"
-#include "PHY/LTE_ESTIMATION/lte_estimation_defs.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/impl_defs_top.h"
 
 #include "UTIL/LOG/vcd_signal_dumper.h"

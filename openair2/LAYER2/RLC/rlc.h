@@ -234,7 +234,7 @@ typedef struct rlc_mbms_id_s {
 #        define maxSessionPerPMCH 1
 #    endif
 #endif
-//public_rlc(rlc_mbms_t           rlc_mbms_array_ue[NUMBER_OF_UE_MAX][maxServiceCount][maxSessionPerPMCH];)   // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
+//public_rlc(rlc_mbms_t           rlc_mbms_array_ue[MAX_MOBILES_PER_ENB][maxServiceCount][maxSessionPerPMCH];)   // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 //public_rlc(rlc_mbms_t           rlc_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH];) // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_ue[MAX_MOBILES_PER_ENB][RLC_MAX_MBMS_LC];)    // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[MAX_eNB][RLC_MAX_MBMS_LC];)  // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h

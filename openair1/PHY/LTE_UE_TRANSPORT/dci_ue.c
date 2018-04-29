@@ -39,6 +39,8 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 #include "PHY/sse_intrin.h"
 #include "PHY/LTE_TRANSPORT/transport_extern.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "SCHED/sched_common.h"
 
 #include "assertions.h"
 #include "T.h"
@@ -155,11 +157,11 @@ void pdcch_demapping(uint16_t *llr,uint16_t *wbar,LTE_DL_FRAME_PARMS *frame_parm
 
       // if REG is allocated to PHICH, skip it
       if (check_phich_reg(frame_parms,kprime,lprime,mi) == 1) {
-	//        printf("dci_demapping : skipping REG %d (RE %d)\n",(lprime==0)?kprime/6 : kprime>>2,kprime);
+//	        printf("dci_demapping : skipping REG %d (RE %d)\n",(lprime==0)?kprime/6 : kprime>>2,kprime);
 	if ((lprime == 0)&&((kprime%6)==0))
 	  re_offset0+=4;
       } else { // not allocated to PHICH/PCFICH
-	//        printf("dci_demapping: REG %d\n",(lprime==0)?kprime/6 : kprime>>2);
+	//	        printf("dci_demapping: REG %d\n",(lprime==0)?kprime/6 : kprime>>2);
         if (lprime == 0) {
           // first symbol, or second symbol+4 TX antennas skip pilots
           kprime_mod12 = kprime%12;
@@ -170,7 +172,7 @@ void pdcch_demapping(uint16_t *llr,uint16_t *wbar,LTE_DL_FRAME_PARMS *frame_parm
             for (i=0; i<4; i++) {
               wbar[mprime] = llr[tti_offset0+i];
 #ifdef DEBUG_DCI_DECODING
-//              LOG_I(PHY,"PDCCH demapping mprime %d.%d <= llr %d (symbol %d re %d) -> (%d,%d)\n",mprime/4,i,tti_offset0+i,symbol_offset,re_offset0,*(char*)&wbar[mprime],*(1+(char*)&wbar[mprime]));
+              LOG_I(PHY,"PDCCH demapping mprime %d.%d <= llr %d (symbol %d re %d) -> (%d,%d)\n",mprime/4,i,tti_offset0+i,symbol_offset,re_offset0,*(char*)&wbar[mprime],*(1+(char*)&wbar[mprime]));
 #endif
               mprime++;
               re_offset0++;
@@ -335,7 +337,7 @@ int32_t pdcch_llr(LTE_DL_FRAME_PARMS *frame_parms,
     else
       *pdcch_llr8 = (char)(*rxF);
 
-    //    printf("%d %d => %d\n",i,*rxF,*pdcch_llr8);
+    //    printf("rxF->llr : %d %d => %d\n",i,*rxF,*pdcch_llr8);
     rxF++;
     pdcch_llr8++;
   }
@@ -396,7 +398,7 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
                              ((int32_t*)&avg128P)[2] +
                              ((int32_t*)&avg128P)[3])/(nb_rb*12);
 
-      //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+      //      printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -510,7 +512,6 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
 
   int nushiftmod3 = frame_parms->nushift%3;
   uint8_t symbol_mod;
-
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 #ifdef DEBUG_DCI_DECODING
   LOG_I(PHY, "extract_rbs_single: symbol_mod %d\n",symbol_mod);
@@ -563,9 +564,9 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
                 (i!=(nushiftmod3+6)) &&
                 (i!=(nushiftmod3+9))) {
               rxF_ext[j]=rxF[i];
-              //                        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+	      //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
               dl_ch0_ext[j++]=dl_ch0[i];
-              //                printf("ch %d => (%d,%d)\n",i,*(short *)&dl_ch0[i],*(1+(short*)&dl_ch0[i]));
+	      //printf("ch %d => (%d,%d)\n",i,*(short *)&dl_ch0[i],*(1+(short*)&dl_ch0[i]));
             }
           }
 
@@ -1289,8 +1290,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
                  uint8_t subframe,
                  uint8_t eNB_id,
                  MIMO_mode_t mimo_mode,
-                 uint32_t high_speed_flag,
-                 uint8_t is_secondary_ue)
+                 uint32_t high_speed_flag)
 {
 
   LTE_UE_COMMON *common_vars      = &ue->common_vars;
@@ -1302,34 +1302,26 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
   uint8_t n_pdcch_symbols;
   uint8_t mi = get_mi(frame_parms,subframe);
 
-  //printf("In rx_pdcch, subframe %d, eNB_id %d, pdcch_vars %d \n",subframe,eNB_id,pdcch_vars);
+  //  printf("In rx_pdcch, subframe %d, eNB_id %d, pdcch_vars %d, handling symbol 0 \n",subframe,eNB_id,pdcch_vars);
   // procress ofdm symbol 0
-    if (is_secondary_ue == 1) {
-      pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
-                               common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id+1], //add 1 to eNB_id to compensate for the shifted B/F'd pilots from the SeNB
-                               pdcch_vars[eNB_id]->rxdataF_ext,
-                               pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                               0,
-                               high_speed_flag,
-                               frame_parms);
-    } else if (frame_parms->nb_antenna_ports_eNB>1) {
-      pdcch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
-                             common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id],
-                             pdcch_vars[eNB_id]->rxdataF_ext,
-                             pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                             0,
-                             high_speed_flag,
-                             frame_parms);
-    } else {
-      pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
-                               common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id],
-                               pdcch_vars[eNB_id]->rxdataF_ext,
-                               pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                               0,
-                               high_speed_flag,
-                               frame_parms);
-    }
-
+  if (frame_parms->nb_antenna_ports_eNB>1) {
+    pdcch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
+			   common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id],
+			   pdcch_vars[eNB_id]->rxdataF_ext,
+			   pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+			   0,
+			   high_speed_flag,
+			   frame_parms);
+  } else {
+    pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
+			     common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id],
+			     pdcch_vars[eNB_id]->rxdataF_ext,
+			     pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+			     0,
+			     high_speed_flag,
+			     frame_parms);
+  }
+  
 
   // compute channel level based on ofdm symbol 0
   pdcch_channel_level(pdcch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -1345,7 +1337,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 
   log2_maxh = (log2_approx(avgs)/2) + 5;  //+frame_parms->nb_antennas_rx;
 #ifdef UE_DEBUG_TRACE
-  LOG_D(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
+  LOG_I(PHY,"subframe %d: pdcch log2_maxh = %d (%d,%d)\n",subframe,log2_maxh,avgP[0],avgs);
 #endif
 
   T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id),  T_INT(frame%1024), T_INT(subframe),
@@ -1363,9 +1355,10 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 
 #ifdef DEBUG_PHY
 
-  if (subframe==5)
-      write_output("rxF_comp_d.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-
+    if (subframe==5) {
+      printf("Writing output s0\n");
+      write_output("rxF_comp_d0.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][0*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+    }
 #endif
 
   if (frame_parms->nb_antennas_rx > 1) {
@@ -1379,6 +1372,10 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
   else
       pdcch_alamouti(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,0);
 
+  pdcch_llr(frame_parms,
+	    pdcch_vars[eNB_id]->rxdataF_comp,
+	    (char *)pdcch_vars[eNB_id]->llr,
+	    0);
 
 
   // decode pcfich here and find out pdcch ofdm symbol number
@@ -1387,6 +1384,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
                               pdcch_vars[eNB_id],
                               mimo_mode);
 
+  //  printf("In rx_pdcch, subframe %d, num_pdcch_symbols %d \n",subframe,n_pdcch_symbols);
 
   if (n_pdcch_symbols>3)
     n_pdcch_symbols=1;
@@ -1400,54 +1398,47 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 
 #ifdef DEBUG_DCI_DECODING
 
-  LOG_I(PHY,"demapping: subframe %d, mi %d, tdd_config %d\n",subframe,get_mi(frame_parms,subframe),frame_parms->tdd_config);
+    if (subframe==5) LOG_I(PHY,"demapping: subframe %d, num_pdcch_symbols %d\n",subframe,n_pdcch_symbols);
 #endif
 
   // process pdcch ofdm symbol 1 and 2 if necessary
-  for (int s=1; s<n_pdcch_symbols; s++){
-      if (is_secondary_ue == 1) {
-          pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
-                  common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id+1], //add 1 to eNB_id to compensate for the shifted B/F'd pilots from the SeNB
-                  pdcch_vars[eNB_id]->rxdataF_ext,
-                  pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                  s,
-                  high_speed_flag,
-                  frame_parms);
-      } else if (frame_parms->nb_antenna_ports_eNB>1) {
-          pdcch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
-                  common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id],
-                  pdcch_vars[eNB_id]->rxdataF_ext,
-                  pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                  s,
-                  high_speed_flag,
-                  frame_parms);
+    for (int s=1; s<n_pdcch_symbols; s++){
+      //      printf("In rx_pdcch, subframe %d, eNB_id %d, pdcch_vars %d, handling symbol %d \n",subframe,eNB_id,pdcch_vars,s);
+      if (frame_parms->nb_antenna_ports_eNB>1) {
+	pdcch_extract_rbs_dual(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
+			       common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id],
+			       pdcch_vars[eNB_id]->rxdataF_ext,
+			       pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+			       s,
+			       high_speed_flag,
+			       frame_parms);
       } else {
-          pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
-                  common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id],
-                  pdcch_vars[eNB_id]->rxdataF_ext,
-                  pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-                  s,
-                  high_speed_flag,
-                  frame_parms);
+	pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF,
+				 common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id],
+				 pdcch_vars[eNB_id]->rxdataF_ext,
+				 pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+				 s,
+				 high_speed_flag,
+				 frame_parms);
       }
-
-
+      
+      
       pdcch_channel_compensation(pdcch_vars[eNB_id]->rxdataF_ext,
-              pdcch_vars[eNB_id]->dl_ch_estimates_ext,
-              pdcch_vars[eNB_id]->rxdataF_comp,
-              (aatx>1) ? pdcch_vars[eNB_id]->rho : NULL,
-                      frame_parms,
-                      s,
-                      log2_maxh); // log2_maxh+I0_shift
-
-
+				 pdcch_vars[eNB_id]->dl_ch_estimates_ext,
+				 pdcch_vars[eNB_id]->rxdataF_comp,
+				 (aatx>1) ? pdcch_vars[eNB_id]->rho : NULL,
+				 frame_parms,
+				 s,
+				 log2_maxh); // log2_maxh+I0_shift
+      
+      
 #ifdef DEBUG_PHY
-      
-      if (subframe==5)
-	write_output("rxF_comp_d.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-      
+	
+      if (subframe==5) {
+	write_output("rxF_comp_ds.m","rxF_c_ds",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+      }
 #endif
-      
+	
       
       
       if (frame_parms->nb_antennas_rx > 1) {
@@ -1456,44 +1447,44 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 			    s);
 	
       }
-
- if (mimo_mode == SISO)
-   pdcch_siso(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,s);
- else
-   pdcch_alamouti(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,s);
- 
-
-
-    pdcch_llr(frame_parms,
-            pdcch_vars[eNB_id]->rxdataF_comp,
-            (char *)pdcch_vars[eNB_id]->llr,
-            s);
-    /*#ifdef DEBUG_PHY
+      
+      if (mimo_mode == SISO)
+	pdcch_siso(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,s);
+      else
+	pdcch_alamouti(frame_parms,pdcch_vars[eNB_id]->rxdataF_comp,s);
+      
+      
+      //      printf("subframe %d computing llrs for symbol %d : %p\n",subframe,s,pdcch_vars[eNB_id]->llr);
+      pdcch_llr(frame_parms,
+		pdcch_vars[eNB_id]->rxdataF_comp,
+		(char *)pdcch_vars[eNB_id]->llr,
+		s);
+      /*#ifdef DEBUG_PHY
         write_output("llr8_seq.m","llr8",&pdcch_vars[eNB_id]->llr[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
         #endif*/
+    }
+  
+    pdcch_demapping(pdcch_vars[eNB_id]->llr,
+		    pdcch_vars[eNB_id]->wbar,
+		    frame_parms,
+		    n_pdcch_symbols,
+		    get_mi(frame_parms,subframe));
+    
+    pdcch_deinterleaving(frame_parms,
+			 (uint16_t*)pdcch_vars[eNB_id]->e_rx,
+			 pdcch_vars[eNB_id]->wbar,
+			 n_pdcch_symbols,
+			 mi);
+    
+    pdcch_unscrambling(frame_parms,
+		       subframe,
+		       pdcch_vars[eNB_id]->e_rx,
+		       get_nCCE(n_pdcch_symbols,frame_parms,mi)*72);
+    
+    pdcch_vars[eNB_id]->num_pdcch_symbols = n_pdcch_symbols;
 
-  }
-
-  pdcch_demapping(pdcch_vars[eNB_id]->llr,
-                  pdcch_vars[eNB_id]->wbar,
-                  frame_parms,
-                  n_pdcch_symbols,
-                  get_mi(frame_parms,subframe));
-
-  pdcch_deinterleaving(frame_parms,
-                       (uint16_t*)pdcch_vars[eNB_id]->e_rx,
-                       pdcch_vars[eNB_id]->wbar,
-                       n_pdcch_symbols,
-                       mi);
-
-  pdcch_unscrambling(frame_parms,
-                     subframe,
-                     pdcch_vars[eNB_id]->e_rx,
-                     get_nCCE(n_pdcch_symbols,frame_parms,mi)*72);
-
-  pdcch_vars[eNB_id]->num_pdcch_symbols = n_pdcch_symbols;
-
-  return(0);
+    //    if ((frame&1) ==0 && subframe==5) exit(-1);
+    return(0);
 }
 
 
@@ -1520,10 +1511,10 @@ void pdcch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
     }
 
 
-    //    printf("unscrambling %d : e %d, c %d => ",i,llr[i],((s>>(i&0x1f))&1));
+    //    if (subframe == 5) printf("unscrambling %d : e %d, c %d => ",i,llr[i],((s>>(i&0x1f))&1));
     if (((s>>(i%32))&1)==0)
       llr[i] = -llr[i];
-    //    printf("%d\n",llr[i]);
+    //    if (subframe == 5) printf("%d\n",llr[i]);
 
   }
 }
@@ -1637,7 +1628,7 @@ void dci_decoding(uint8_t DCI_LENGTH,
 
 
 #ifdef DEBUG_DCI_DECODING
-  LOG_I(PHY," Doing DCI Rate Matching RCC %d, w %p\n",RCC,w);
+  LOG_I(PHY," Doing DCI Rate Matching RCC %d, w %p\n",RCC,w_rx);
 #endif
 
   lte_rate_matching_cc_rx(RCC,coded_bits,w_rx,dummy_w_rx,e);
@@ -1647,10 +1638,10 @@ void dci_decoding(uint8_t DCI_LENGTH,
                               &w_rx[0]);
 
 #ifdef DEBUG_DCI_DECODING
-
-  for (i=0; i<16+DCI_LENGTH; i++)
-    LOG_I(PHY," DCI %d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
-
+  if (DCI_LENGTH==27 && ((1<<aggregation_level) == 4))
+    for (int i=0; i<16+DCI_LENGTH; i++)
+      LOG_I(PHY," DCI %d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
+  
 #endif
   memset(decoded_output,0,2+((16+DCI_LENGTH)>>3));
 

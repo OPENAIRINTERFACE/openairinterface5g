@@ -69,9 +69,11 @@
 
 #ifdef LARGE_SCALE
 #    define MAX_MOBILES_PER_ENB         128
+#    define MAX_MOBILES_PER_ENB_NB_IoT  128
 #    define MAX_eNB                      2
 #else
 #    define MAX_MOBILES_PER_ENB         16
+#    define MAX_MOBILES_PER_ENB_NB_IoT  16
 #    define MAX_eNB                      2
 #endif
 

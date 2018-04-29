@@ -34,6 +34,7 @@
 #include "PHY/phy_extern.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED/sched_common_extern.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
 #include "UTIL/LOG/log.h"
@@ -139,7 +140,6 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
 #if defined(Rel10) || defined(Rel14)
   MCH_PDU *mch_pduP=NULL;
-  MCH_PDU  mch_pdu;
   //  uint8_t sync_area=255;
 #endif
 
