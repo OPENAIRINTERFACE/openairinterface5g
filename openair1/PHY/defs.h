@@ -134,6 +134,7 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/CODING/defs.h"
 #include "PHY/TOOLS/defs.h"
 #include "platform_types.h"
+
 #define MAX_NUM_RU_PER_eNB 64 
 
 #include "PHY/LTE_TRANSPORT/defs.h"
@@ -168,6 +169,9 @@ static inline void* malloc16_clear( size_t size )
 #if 1
 
 #define nr_subframe_t lte_subframe_t
+
+#define NR_PBCH_DMRS_LENGTH 144
+#define NR_PBCH_DMRS_LENGTH_DWORD 5 // roundup(NR_PBCH_DMRS_LENGTH/32)
 
 typedef enum{
   nr_ssb_type_A = 0,
@@ -1988,6 +1992,9 @@ typedef struct PHY_VARS_gNB_s {
   /// NR synchronization sequences
   int16_t d_pss[NR_PSS_LENGTH];
   int16_t d_sss[NR_SSS_LENGTH];
+
+  /// PBCH DMRS sequence
+  uint32_t nr_gold_pbch_dmrs[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
 
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_UE_MAX];

@@ -3,9 +3,6 @@
 % 0        .. "0"
 % 1,2      .. BPSK(0),BPSK(1)
 
-% 2^15 /sqrt(2) K = 768;
-K = 768*sqrt(2)/2^15;
-
 % Amplitude for BPSK (\f$ 2^15 \times 1/\sqrt{2}\f$)
 BPSK = 23170;
 
@@ -14,7 +11,7 @@ for b = 0:1
 bpsk_table(b+1) = (1 - 2*b)*BPSK + 1j*(1-2*b)*BPSK;
 end
 
-table = round(K * [ 0; bpsk_table(:) ]);
+table = [ 0; bpsk_table(:) ];
 
 save mod_table.mat table
 

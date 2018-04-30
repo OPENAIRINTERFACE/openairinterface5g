@@ -45,6 +45,11 @@ int nr_generate_sss(  int16_t *d_sss,
                       uint8_t ssb_start_symbol,
                       nfapi_config_request_t* config,
                       NR_DL_FRAME_PARMS *frame_parms);
+int nr_generate_pbch_dmrs(uint32_t gold_sequence,
+                          int32_t **txdataF,
+                          int16_t amp,
+                          nfapi_config_request_t* config,
+                          NR_DL_FRAME_PARMS *frame_parms);
 void nr_set_ssb_first_subcarrier(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
 
 #endif

@@ -112,6 +112,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
         );*/
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_gNB][MOD %02"PRIu8"][]\n", gNB->Mod_id);
 
+  nr_init_pbch_dmrs(gNB);
 /*
   lte_gold(fp,gNB->lte_gold_table,fp->Nid_cell);
   generate_pcfich_reg_mapping(fp);
@@ -120,7 +121,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     gNB->first_run_timing_advance[UE_id] =
       1; ///This flag used to be static. With multiple gNBs this does no longer work, hence we put it in the structure. However it has to be initialized with 1, which is performed here.
-    
+
     // clear whole structure
     bzero( &gNB->UE_stats[UE_id], sizeof(LTE_eNB_UE_stats) );
     

@@ -126,11 +126,14 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
   int ssb_start_symbol = nr_get_ssb_start_symbol(cfg, fp);
   nr_set_ssb_first_subcarrier(cfg, fp);
 
+
   if (subframe == ss_subframe)
   {
+    // Current implementation is based on SSB in first half frame, first candidate
     LOG_I(PHY,"SS TX: frame %d, subframe %d, start_symbol %d\n",frame,subframe, ssb_start_symbol);
     nr_generate_pss(gNB->d_pss, txdataF, AMP, ssb_start_symbol, cfg, fp);
     nr_generate_sss(gNB->d_sss, txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
+    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][0],txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
   }
 
 }
