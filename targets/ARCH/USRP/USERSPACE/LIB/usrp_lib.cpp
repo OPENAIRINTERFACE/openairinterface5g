@@ -982,15 +982,20 @@ extern "C" {
             // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
             args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
 
-//    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
-
             //    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
             uhd::device_addrs_t device_adds = uhd::device::find(args);
 
             if(device_adds.size() == 0) {
-                std::cerr<<"No USRP Device Found. " << std::endl;
-                free(s);
-                return -1;
+		args += ",addr=192.168.30.2";
+
+            	uhd::device_addrs_t device_adds = uhd::device::find(args);
+
+ 	        if(device_adds.size() == 0) {
+ 
+                	std::cerr<<"No USRP Device Found. " << std::endl;
+                	free(s);
+                	return -1;
+		}
             }
             LOG_I(PHY,"Found USRP X300\n");
             s->usrp = uhd::usrp::multi_usrp::make(args);
@@ -1016,18 +1021,20 @@ extern "C" {
             LOG_I(PHY,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
 
             switch ((int)openair0_cfg[0].sample_rate) {
-	    case 122880000:
+
+            case 122880000:
                 // from usrp_time_offset
                 //openair0_cfg[0].samples_per_packet    = 2048;
- 	        openair0_cfg[0].tx_sample_advance     = 15; //to be checked
+                openair0_cfg[0].tx_sample_advance     = 15; //to be checked
                 openair0_cfg[0].tx_bw                 = 80e6;
                 openair0_cfg[0].rx_bw                 = 80e6;
                 break;
-	    case 92160000:
- 	        openair0_cfg[0].tx_sample_advance     = 15; //to be checked
+            case 92160000:
+                openair0_cfg[0].tx_sample_advance     = 15; //to be checked
                 openair0_cfg[0].tx_bw                 = 80e6;
                 openair0_cfg[0].rx_bw                 = 80e6;
-		break;
+                break;
+
             case 61440000:
                 // from usrp_time_offset
                 //openair0_cfg[0].samples_per_packet    = 2048;
@@ -1035,11 +1042,13 @@ extern "C" {
                 openair0_cfg[0].tx_bw                 = 40e6;
                 openair0_cfg[0].rx_bw                 = 40e6;
                 break;
-	    case 46080000:
+
+            case 46080000:
                 openair0_cfg[0].tx_sample_advance     = 15;
                 openair0_cfg[0].tx_bw                 = 40e6;
                 openair0_cfg[0].rx_bw                 = 40e6;
                 break;
+
             case 30720000:
                 // from usrp_time_offset
                 //openair0_cfg[0].samples_per_packet    = 2048;
@@ -1047,7 +1056,7 @@ extern "C" {
                 openair0_cfg[0].tx_bw                 = 20e6;
                 openair0_cfg[0].rx_bw                 = 20e6;
                 break;
-	    case 23040000:
+            case 23040000:
                 openair0_cfg[0].tx_sample_advance     = 15;
                 openair0_cfg[0].tx_bw                 = 20e6;
                 openair0_cfg[0].rx_bw                 = 20e6;

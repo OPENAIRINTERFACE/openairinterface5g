@@ -56,7 +56,7 @@
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 #include "platform_constants.h"
-#include "PHY/defs.h"
+//#include "PHY/defs.h"
 
 //-----------------------------------------------------------------------------
 /*! \fn rlc_am_rx_pdu_status_t rlc_am_rx_list_check_duplicate_insert_pdu(const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t* const rlc_pP,mem_block_t* const tb_pP)

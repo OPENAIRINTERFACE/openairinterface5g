@@ -69,6 +69,8 @@ DISABLE_LOG_X="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
+UE_NAS_USE_TUN="False"
+
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -164,6 +166,8 @@ Options
    Build eclipse project files. Paths are auto corrected by fixprj.sh
 --usrp-recplay
    Build for I/Q record-playback modes
+--ue-nas-use-tun
+   Use TUN devices for the UEs instead of ue_ip.ko
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I  --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I  --eNB -x --install-system-files
@@ -375,6 +379,10 @@ function main() {
         --usrp-recplay)
             USRP_REC_PLAY="True"
             echo_info "Enabling USRP record playback mode"
+            shift 1;;
+        --ue-nas-use-tun)
+            UE_NAS_USE_TUN="True"
+            echo_info "Enabling UE NAS TUN device usage instead of ue_ip.ko"
             shift 1;;
         -h | --help)
             print_help
@@ -674,12 +682,17 @@ function main() {
   if [ "$SIMUS_PHY" = "1" ] ; then
     # lte unitary simulators compilation
     echo_info "Compiling unitary tests simulators"
-    simlist="dlsim_tm4 dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
+    # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim
+    #simlist="dlsim_tm4 dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
+    simlist="dlsim ulsim"
     for f in $simlist ; do
       compilations \
       lte-simulators $f \
 	  $f $dbin/$f.$REL
     done
+    compilations \
+          lte-simulators coding \
+          libcoding.so $dbin/libcoding.so
   fi
 
   # Core simulators
@@ -739,6 +752,7 @@ function main() {
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo "set ( T_TRACER $T_TRACER )"          >>  $cmake_file
+    echo "set ( UE_NAS_USE_TUN $UE_NAS_USE_TUN )" >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     [ "$CLEAN" = "1" ] && rm -rf $DIR/$oaisim_build_dir/build
     mkdir -p $DIR/$oaisim_build_dir/build
@@ -747,6 +761,12 @@ function main() {
     compilations \
 	  $oaisim_build_dir $oaisim_exec \
 	  $oaisim_exec $dbin/$oaisim_exec.$REL
+    compilations \
+	  $oaisim_build_dir $config_libconfig_shlib \
+	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+    compilations \
+          $oaisim_build_dir coding \
+          libcoding.so $dbin/libcoding.so
 
     if [ "$NOS1" != "1" ] ; then
 

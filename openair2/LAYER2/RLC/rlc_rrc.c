@@ -43,7 +43,7 @@
 #include "PMCH-InfoList-r9.h"
 #endif
 
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "assertions.h"
 //-----------------------------------------------------------------------------
 rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,

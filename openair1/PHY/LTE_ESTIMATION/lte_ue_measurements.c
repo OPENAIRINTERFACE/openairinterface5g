@@ -21,10 +21,8 @@
 
 // this function fills the PHY_vars->PHY_measurement structure
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 #include "log.h"
 #include "PHY/sse_intrin.h"
 
@@ -454,6 +452,558 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
 }
 
+void conjch0_mult_ch1(int *ch0,
+                      int *ch1,
+                      int32_t *ch0conj_ch1,
+                      unsigned short nb_rb,
+                      unsigned char output_shift0)
+{
+  //This function is used to compute multiplications in Hhermitian * H matrix
+  unsigned short rb;
+  __m128i *dl_ch0_128,*dl_ch1_128, *ch0conj_ch1_128, mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
+
+  dl_ch0_128 = (__m128i *)ch0;
+  dl_ch1_128 = (__m128i *)ch1;
+
+  ch0conj_ch1_128 = (__m128i *)ch0conj_ch1;
+
+  for (rb=0; rb<3*nb_rb; rb++) {
+
+    mmtmpD0 = _mm_madd_epi16(dl_ch0_128[0],dl_ch1_128[0]);
+    mmtmpD1 = _mm_shufflelo_epi16(dl_ch0_128[0],_MM_SHUFFLE(2,3,0,1));
+    mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
+    mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)&conjugate[0]);
+    mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch1_128[0]);
+    mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
+    mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift0);
+    mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+    mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+
+    ch0conj_ch1_128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
+
+#ifdef DEBUG_RANK_EST
+    printf("\n Computing conjugates \n");
+    print_shorts("ch0:",(int16_t*)&dl_ch0_128[0]);
+    print_shorts("ch1:",(int16_t*)&dl_ch1_128[0]);
+    print_shorts("pack:",(int16_t*)&ch0conj_ch1_128[0]);
+#endif
+
+    dl_ch0_128+=1;
+    dl_ch1_128+=1;
+    ch0conj_ch1_128+=1;
+  }
+  _mm_empty();
+  _m_empty();
+}
+
+void construct_HhH_elements(int *ch0conj_ch0, //00_00
+                            int *ch1conj_ch1,//01_01
+                            int *ch2conj_ch2,//11_11
+                            int *ch3conj_ch3,//10_10
+                            int *ch0conj_ch1,//00_01
+                            int *ch1conj_ch0,//01_00
+                            int *ch2conj_ch3,//10_11
+                            int *ch3conj_ch2,//11_10
+                            int32_t *after_mf_00,
+                            int32_t *after_mf_01,
+                            int32_t *after_mf_10,
+                            int32_t *after_mf_11,
+                            unsigned short nb_rb)
+{
+  unsigned short rb;
+  __m128i *ch0conj_ch0_128, *ch1conj_ch1_128, *ch2conj_ch2_128, *ch3conj_ch3_128;
+  __m128i *ch0conj_ch1_128, *ch1conj_ch0_128, *ch2conj_ch3_128, *ch3conj_ch2_128;
+  __m128i *after_mf_00_128, *after_mf_01_128, *after_mf_10_128, *after_mf_11_128;
+
+  ch0conj_ch0_128 = (__m128i *)ch0conj_ch0;
+  ch1conj_ch1_128 = (__m128i *)ch1conj_ch1;
+  ch2conj_ch2_128 = (__m128i *)ch2conj_ch2;
+  ch3conj_ch3_128 = (__m128i *)ch3conj_ch3;
+  ch0conj_ch1_128 = (__m128i *)ch0conj_ch1;
+  ch1conj_ch0_128 = (__m128i *)ch1conj_ch0;
+  ch2conj_ch3_128 = (__m128i *)ch2conj_ch3;
+  ch3conj_ch2_128 = (__m128i *)ch3conj_ch2;
+  after_mf_00_128 = (__m128i *)after_mf_00;
+  after_mf_01_128 = (__m128i *)after_mf_01;
+  after_mf_10_128 = (__m128i *)after_mf_10;
+  after_mf_11_128 = (__m128i *)after_mf_11;
+
+  for (rb=0; rb<3*nb_rb; rb++) {
+
+    after_mf_00_128[0] =_mm_adds_epi16(ch0conj_ch0_128[0],ch3conj_ch3_128[0]);// _mm_adds_epi32(ch0conj_ch0_128[0], ch3conj_ch3_128[0]); //00_00 + 10_10
+    after_mf_11_128[0] =_mm_adds_epi16(ch1conj_ch1_128[0], ch2conj_ch2_128[0]); //01_01 + 11_11
+    after_mf_01_128[0] =_mm_adds_epi16(ch0conj_ch1_128[0], ch2conj_ch3_128[0]);//00_01 + 10_11
+    after_mf_10_128[0] =_mm_adds_epi16(ch1conj_ch0_128[0], ch3conj_ch2_128[0]);//01_00 + 11_10
+
+#ifdef DEBUG_RANK_EST
+    printf(" \n construct_HhH_elements \n");
+    print_shorts("ch0conj_ch0_128:",(int16_t*)&ch0conj_ch0_128[0]);
+    print_shorts("ch1conj_ch1_128:",(int16_t*)&ch1conj_ch1_128[0]);
+    print_shorts("ch2conj_ch2_128:",(int16_t*)&ch2conj_ch2_128[0]);
+    print_shorts("ch3conj_ch3_128:",(int16_t*)&ch3conj_ch3_128[0]);
+    print_shorts("ch0conj_ch1_128:",(int16_t*)&ch0conj_ch1_128[0]);
+    print_shorts("ch1conj_ch0_128:",(int16_t*)&ch1conj_ch0_128[0]);
+    print_shorts("ch2conj_ch3_128:",(int16_t*)&ch2conj_ch3_128[0]);
+    print_shorts("ch3conj_ch2_128:",(int16_t*)&ch3conj_ch2_128[0]);
+    print_shorts("after_mf_00_128:",(int16_t*)&after_mf_00_128[0]);
+    print_shorts("after_mf_01_128:",(int16_t*)&after_mf_01_128[0]);
+    print_shorts("after_mf_10_128:",(int16_t*)&after_mf_10_128[0]);
+    print_shorts("after_mf_11_128:",(int16_t*)&after_mf_11_128[0]);
+#endif
+
+    ch0conj_ch0_128+=1;
+    ch1conj_ch1_128+=1;
+    ch2conj_ch2_128+=1;
+    ch3conj_ch3_128+=1;
+    ch0conj_ch1_128+=1;
+    ch1conj_ch0_128+=1;
+    ch2conj_ch3_128+=1;
+    ch3conj_ch2_128+=1;
+
+    after_mf_00_128+=1;
+    after_mf_01_128+=1;
+    after_mf_10_128+=1;
+    after_mf_11_128+=1;
+  }
+  _mm_empty();
+  _m_empty();
+}
+
+
+void squared_matrix_element(int32_t *Hh_h_00,
+                            int32_t *Hh_h_00_sq,
+                            unsigned short nb_rb)
+{
+   unsigned short rb;
+  __m128i *Hh_h_00_128,*Hh_h_00_sq_128;
+
+  Hh_h_00_128 = (__m128i *)Hh_h_00;
+  Hh_h_00_sq_128 = (__m128i *)Hh_h_00_sq;
+
+  for (rb=0; rb<3*nb_rb; rb++) {
+
+    Hh_h_00_sq_128[0] = _mm_madd_epi16(Hh_h_00_128[0],Hh_h_00_128[0]);
+
+#ifdef DEBUG_RANK_EST
+    printf("\n Computing squared_matrix_element \n");
+    print_shorts("Hh_h_00_128:",(int16_t*)&Hh_h_00_128[0]);
+    print_ints("Hh_h_00_sq_128:",(int32_t*)&Hh_h_00_sq_128[0]);
+#endif
+
+    Hh_h_00_sq_128+=1;
+    Hh_h_00_128+=1;
+  }
+  _mm_empty();
+  _m_empty();
+}
+
+
+
+void det_HhH(int32_t *after_mf_00,
+             int32_t *after_mf_01,
+             int32_t *after_mf_10,
+             int32_t *after_mf_11,
+             int32_t *det_fin,
+             unsigned short nb_rb)
+
+{
+  unsigned short rb;
+  __m128i *after_mf_00_128,*after_mf_01_128, *after_mf_10_128, *after_mf_11_128, ad_re_128, bc_re_128;
+  __m128i *det_fin_128, det_128;
+
+  after_mf_00_128 = (__m128i *)after_mf_00;
+  after_mf_01_128 = (__m128i *)after_mf_01;
+  after_mf_10_128 = (__m128i *)after_mf_10;
+  after_mf_11_128 = (__m128i *)after_mf_11;
+
+  det_fin_128 = (__m128i *)det_fin;
+
+  for (rb=0; rb<3*nb_rb; rb++) {
+
+    ad_re_128 = _mm_madd_epi16(after_mf_00_128[0],after_mf_11_128[0]);
+    bc_re_128 = _mm_madd_epi16(after_mf_01_128[0],after_mf_01_128[0]);
+    det_128 = _mm_sub_epi32(ad_re_128, bc_re_128);
+    det_fin_128[0] = _mm_abs_epi32(det_128);
+
+#ifdef DEBUG_RANK_EST
+    printf("\n Computing denominator \n");
+    print_shorts("after_mf_00_128:",(int16_t*)&after_mf_00_128[0]);
+    print_shorts("after_mf_01_128:",(int16_t*)&after_mf_01_128[0]);
+    print_shorts("after_mf_10_128:",(int16_t*)&after_mf_10_128[0]);
+    print_shorts("after_mf_11_128:",(int16_t*)&after_mf_11_128[0]);
+    print_ints("ad_re_128:",(int32_t*)&ad_re_128);
+    print_ints("bc_re_128:",(int32_t*)&bc_re_128);
+    print_ints("det_fin_128:",(int32_t*)&det_fin_128[0]);
+#endif
+
+    det_fin_128+=1;
+    after_mf_00_128+=1;
+    after_mf_01_128+=1;
+    after_mf_10_128+=1;
+    after_mf_11_128+=1;
+  }
+  _mm_empty();
+  _m_empty();
+}
+
+void numer(int32_t *Hh_h_00_sq,
+           int32_t *Hh_h_01_sq,
+           int32_t *Hh_h_10_sq,
+           int32_t *Hh_h_11_sq,
+           int32_t *num_fin,
+           unsigned short nb_rb)
+
+{
+  unsigned short rb;
+  __m128i *h_h_00_sq_128, *h_h_01_sq_128, *h_h_10_sq_128, *h_h_11_sq_128;
+  __m128i *num_fin_128, sq_a_plus_sq_d_128, sq_b_plus_sq_c_128;
+
+  h_h_00_sq_128 = (__m128i *)Hh_h_00_sq;
+  h_h_01_sq_128 = (__m128i *)Hh_h_01_sq;
+  h_h_10_sq_128 = (__m128i *)Hh_h_10_sq;
+  h_h_11_sq_128 = (__m128i *)Hh_h_11_sq;
+
+  num_fin_128 = (__m128i *)num_fin;
+
+  for (rb=0; rb<3*nb_rb; rb++) {
+
+    sq_a_plus_sq_d_128 = _mm_add_epi32(h_h_00_sq_128[0],h_h_11_sq_128[0]);
+    sq_b_plus_sq_c_128 = _mm_add_epi32(h_h_01_sq_128[0],h_h_10_sq_128[0]);
+    num_fin_128[0] = _mm_add_epi32(sq_a_plus_sq_d_128, sq_b_plus_sq_c_128);
+
+#ifdef DEBUG_RANK_EST
+    printf("\n Computing numerator \n");
+    print_ints("h_h_00_sq_128:",(int32_t*)&h_h_00_sq_128[0]);
+    print_ints("h_h_01_sq_128:",(int32_t*)&h_h_01_sq_128[0]);
+    print_ints("h_h_10_sq_128:",(int32_t*)&h_h_10_sq_128[0]);
+    print_ints("h_h_11_sq_128:",(int32_t*)&h_h_11_sq_128[0]);
+    print_shorts("sq_a_plus_sq_d_128:",(int16_t*)&sq_a_plus_sq_d_128);
+    print_shorts("sq_b_plus_sq_c_128:",(int16_t*)&sq_b_plus_sq_c_128);
+    print_shorts("num_fin_128:",(int16_t*)&num_fin_128[0]);
+#endif
+
+    num_fin_128+=1;
+    h_h_00_sq_128+=1;
+    h_h_01_sq_128+=1;
+    h_h_10_sq_128+=1;
+    h_h_11_sq_128+=1;
+  }
+  _mm_empty();
+  _m_empty();
+}
+
+void dlsch_channel_level_TM34_meas(int *ch00,
+                                   int *ch01,
+                                   int *ch10,
+                                   int *ch11,
+                                   int *avg_0,
+                                   int *avg_1,
+                                   unsigned short nb_rb)
+{
+
+#if defined(__x86_64__)||defined(__i386__)
+
+  short rb;
+  unsigned char nre=12;
+  __m128i *ch00_128, *ch01_128, *ch10_128, *ch11_128;
+  __m128i avg_0_row0_128D, avg_1_row0_128D, avg_0_row1_128D, avg_1_row1_128D;
+  __m128i ch00_128_tmp, ch01_128_tmp, ch10_128_tmp, ch11_128_tmp;
+
+  avg_0[0] = 0;
+  avg_0[1] = 0;
+  avg_1[0] = 0;
+  avg_1[1] = 0;
+
+  ch00_128 = (__m128i *)ch00;
+  ch01_128 = (__m128i *)ch01;
+  ch10_128 = (__m128i *)ch10;
+  ch11_128 = (__m128i *)ch11;
+
+  avg_0_row0_128D = _mm_setzero_si128();
+  avg_1_row0_128D = _mm_setzero_si128();
+  avg_0_row1_128D = _mm_setzero_si128();
+  avg_1_row1_128D = _mm_setzero_si128();
+
+  for (rb=0; rb<3*nb_rb; rb++) {
+    ch00_128_tmp = _mm_load_si128(&ch00_128[0]);
+    ch01_128_tmp = _mm_load_si128(&ch01_128[0]);
+    ch10_128_tmp = _mm_load_si128(&ch10_128[0]);
+    ch11_128_tmp = _mm_load_si128(&ch11_128[0]);
+
+    avg_0_row0_128D = _mm_add_epi32(avg_0_row0_128D,_mm_madd_epi16(ch00_128_tmp,ch00_128_tmp));
+    avg_1_row0_128D = _mm_add_epi32(avg_1_row0_128D,_mm_madd_epi16(ch01_128_tmp,ch01_128_tmp));
+    avg_0_row1_128D = _mm_add_epi32(avg_0_row1_128D,_mm_madd_epi16(ch10_128_tmp,ch10_128_tmp));
+    avg_1_row1_128D = _mm_add_epi32(avg_1_row1_128D,_mm_madd_epi16(ch11_128_tmp,ch11_128_tmp));
+
+    ch00_128+=1;
+    ch01_128+=1;
+    ch10_128+=1;
+    ch11_128+=1;
+  }
+
+  avg_0[0] = (((int*)&avg_0_row0_128D)[0])/(nb_rb*nre) +
+           (((int*)&avg_0_row0_128D)[1])/(nb_rb*nre) +
+           (((int*)&avg_0_row0_128D)[2])/(nb_rb*nre) +
+           (((int*)&avg_0_row0_128D)[3])/(nb_rb*nre);
+
+  avg_1[0] = (((int*)&avg_1_row0_128D)[0])/(nb_rb*nre) +
+           (((int*)&avg_1_row0_128D)[1])/(nb_rb*nre) +
+           (((int*)&avg_1_row0_128D)[2])/(nb_rb*nre) +
+           (((int*)&avg_1_row0_128D)[3])/(nb_rb*nre);
+
+  avg_0[1] = (((int*)&avg_0_row1_128D)[0])/(nb_rb*nre) +
+           (((int*)&avg_0_row1_128D)[1])/(nb_rb*nre) +
+           (((int*)&avg_0_row1_128D)[2])/(nb_rb*nre) +
+           (((int*)&avg_0_row1_128D)[3])/(nb_rb*nre);
+
+  avg_1[1] = (((int*)&avg_1_row1_128D)[0])/(nb_rb*nre) +
+           (((int*)&avg_1_row1_128D)[1])/(nb_rb*nre) +
+           (((int*)&avg_1_row1_128D)[2])/(nb_rb*nre) +
+           (((int*)&avg_1_row1_128D)[3])/(nb_rb*nre);
+
+  avg_0[0] = avg_0[0] + avg_0[1];
+  avg_1[0] = avg_1[0] + avg_1[1];
+  avg_0[0] = min (avg_0[0], avg_1[0]);
+  avg_1[0] = avg_0[0];
+
+  _mm_empty();
+  _m_empty();
+
+#elif defined(__arm__)
+
+#endif
+}
+
+uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the order of channel estimates
+                                 int *dl_ch_estimates_01,
+                                 int *dl_ch_estimates_10,
+                                 int *dl_ch_estimates_11,
+                                 unsigned short nb_rb)
+{
+
+  int i=0;
+  int rank=0;
+  int N_RB=nb_rb;
+  int *ch00_rank, *ch01_rank, *ch10_rank, *ch11_rank;
+
+  int32_t shift;
+  int avg_0[2];
+  int avg_1[2];
+
+  int count=0;
+
+  /* we need at least alignment to 16 bytes, let's put 32 to be sure
+   * (maybe not necessary but doesn't hurt)
+   */
+  int32_t conjch00_ch01[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch01_ch00[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch10_ch11[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch11_ch10[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch00_ch00[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch01_ch01[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch10_ch10[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch11_ch11[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_00[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_00_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_01_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_10_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_11_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_01[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_10[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_11[12*N_RB] __attribute__((aligned(32)));
+  int32_t determ_fin[12*N_RB] __attribute__((aligned(32)));
+  int32_t denum_db[12*N_RB] __attribute__((aligned(32)));
+  int32_t numer_fin[12*N_RB] __attribute__((aligned(32)));
+  int32_t numer_db[12*N_RB] __attribute__((aligned(32)));
+  int32_t cond_db[12*N_RB] __attribute__((aligned(32)));
+
+  ch00_rank = dl_ch_estimates_00;
+  ch01_rank = dl_ch_estimates_01;
+  ch10_rank = dl_ch_estimates_10;
+  ch11_rank = dl_ch_estimates_11;
+
+  dlsch_channel_level_TM34_meas(ch00_rank,
+                                ch01_rank,
+                                ch10_rank,
+                                ch11_rank,
+                                avg_0,
+                                avg_1,
+                                N_RB);
+
+  avg_0[0] = (log2_approx(avg_0[0])/2);
+  shift = cmax(avg_0[0],0);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n shift %d \n" , shift);
+  printf("\n conj(ch00)ch01 \n");
+#endif
+
+  conjch0_mult_ch1(ch00_rank,
+                   ch01_rank,
+                   conjch00_ch01,
+                   N_RB,
+                   shift); // this is an arbitrary shift to avoid overflow. can be changed.
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch01)ch00 \n");
+#endif
+
+  conjch0_mult_ch1(ch01_rank,
+                   ch00_rank,
+                   conjch01_ch00,
+                   N_RB,
+                   shift);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch10)ch11 \n");
+#endif
+
+
+  conjch0_mult_ch1(ch10_rank,
+                   ch11_rank,
+                   conjch10_ch11,
+                   N_RB,
+                   shift);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch11)ch10 \n");
+#endif
+
+  conjch0_mult_ch1(ch11_rank,
+                   ch10_rank,
+                   conjch11_ch10,
+                   N_RB,
+                   shift);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch00)ch00 \n");
+#endif
+
+  conjch0_mult_ch1(ch00_rank,
+                   ch00_rank,
+                   conjch00_ch00,
+                   N_RB,
+                   shift);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch01)ch01 \n");
+#endif
+
+  conjch0_mult_ch1(ch01_rank,
+                   ch01_rank,
+                   conjch01_ch01,
+                   N_RB,
+                   shift);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch10)ch10 \n");
+#endif
+
+  conjch0_mult_ch1(ch10_rank,
+                   ch10_rank,
+                   conjch10_ch10,
+                   N_RB,
+                   shift);
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch11)ch11 \n");
+#endif
+
+  conjch0_mult_ch1(ch11_rank,
+                   ch11_rank,
+                   conjch11_ch11,
+                   N_RB,
+                   shift);
+
+  construct_HhH_elements(conjch00_ch00,
+                         conjch01_ch01,
+                         conjch11_ch11,
+                         conjch10_ch10,
+                         conjch00_ch01,
+                         conjch01_ch00,
+                         conjch10_ch11,
+                         conjch11_ch10,
+                         af_mf_00,
+                         af_mf_01,
+                         af_mf_10,
+                         af_mf_11,
+                         N_RB);
+#ifdef DEBUG_RANK_EST
+  printf("\n |HhH00|^2 \n");
+#endif
+
+  squared_matrix_element(af_mf_00,
+                         af_mf_00_sq,
+                         N_RB);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n |HhH01|^2 \n");
+#endif
+
+  squared_matrix_element(af_mf_01,
+                         af_mf_01_sq,
+                         N_RB);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n |HhH10|^2 \n");
+#endif
+
+  squared_matrix_element(af_mf_10,
+                         af_mf_10_sq,
+                         N_RB);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n |HhH11|^2 \n");
+#endif
+
+  squared_matrix_element(af_mf_11,
+                         af_mf_11_sq,
+                         N_RB);
+
+  det_HhH(af_mf_00,
+          af_mf_01,
+          af_mf_10,
+          af_mf_11,
+          determ_fin,
+          N_RB);
+
+  numer(af_mf_00_sq,
+        af_mf_01_sq,
+        af_mf_10_sq,
+        af_mf_11_sq,
+        numer_fin,
+        N_RB);
+
+  for (i=1; i<12*N_RB; i++)
+  {
+    denum_db[i]=dB_fixed(determ_fin[i]);
+    numer_db[i]=dB_fixed(numer_fin[i]);
+    cond_db[i]=(numer_db[i]-denum_db[i]);
+    if (cond_db[i] < cond_num_threshold)
+      count++;
+#ifdef DEBUG_RANK_EST
+    printf("cond_num_threshold =%d \n", cond_num_threshold);
+    printf("i %d  numer_db[i] = %d \n", i, numer_db[i]);
+    printf("i %d  denum_db[i] = %d \n", i, denum_db[i]);
+    printf("i %d  cond_db[i] =  %d \n", i, cond_db[i]);
+    printf("i %d counter = %d \n", i, count);
+#endif
+  }
+
+  if (count >= 6*N_RB) // conditional number is lower 10dB in half on more Res Blocks
+    rank=1;
+
+#ifdef DEBUG_RANK_EST
+    printf(" rank = %d \n", rank);
+#endif
+   return(rank);
+}
+
+
+
+
+
+
+
 void lte_ue_measurements(PHY_VARS_UE *ue,
                          unsigned int subframe_offset,
                          unsigned char N0_symbol,
@@ -834,552 +1384,4 @@ void lte_ue_measurements_emul(PHY_VARS_UE *ue,uint8_t subframe,uint8_t eNB_id)
 }
 
 
-uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the order of channel estimates
-                                 int *dl_ch_estimates_01,
-                                 int *dl_ch_estimates_10,
-                                 int *dl_ch_estimates_11,
-                                 unsigned short nb_rb)
-{
 
-  int i=0;
-  int rank=0;
-  int N_RB=nb_rb;
-  int *ch00_rank, *ch01_rank, *ch10_rank, *ch11_rank;
-
-  int32_t shift;
-  int avg_0[2];
-  int avg_1[2];
-
-  int count=0;
-
-  /* we need at least alignment to 16 bytes, let's put 32 to be sure
-   * (maybe not necessary but doesn't hurt)
-   */
-  int32_t conjch00_ch01[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch01_ch00[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch10_ch11[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch11_ch10[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch00_ch00[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch01_ch01[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch10_ch10[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch11_ch11[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_00[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_00_sq[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_01_sq[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_10_sq[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_11_sq[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_01[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_10[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_11[12*N_RB] __attribute__((aligned(32)));
-  int32_t determ_fin[12*N_RB] __attribute__((aligned(32)));
-  int32_t denum_db[12*N_RB] __attribute__((aligned(32)));
-  int32_t numer_fin[12*N_RB] __attribute__((aligned(32)));
-  int32_t numer_db[12*N_RB] __attribute__((aligned(32)));
-  int32_t cond_db[12*N_RB] __attribute__((aligned(32)));
-
-  ch00_rank = dl_ch_estimates_00;
-  ch01_rank = dl_ch_estimates_01;
-  ch10_rank = dl_ch_estimates_10;
-  ch11_rank = dl_ch_estimates_11;
-
-  dlsch_channel_level_TM34_meas(ch00_rank,
-                                ch01_rank,
-                                ch10_rank,
-                                ch11_rank,
-                                avg_0,
-                                avg_1,
-                                N_RB);
-
-  avg_0[0] = (log2_approx(avg_0[0])/2);
-  shift = cmax(avg_0[0],0);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n shift %d \n" , shift);
-  printf("\n conj(ch00)ch01 \n");
-#endif
-
-  conjch0_mult_ch1(ch00_rank,
-                   ch01_rank,
-                   conjch00_ch01,
-                   N_RB,
-                   shift); // this is an arbitrary shift to avoid overflow. can be changed.
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch01)ch00 \n");
-#endif
-
-  conjch0_mult_ch1(ch01_rank,
-                   ch00_rank,
-                   conjch01_ch00,
-                   N_RB,
-                   shift);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch10)ch11 \n");
-#endif
-
-
-  conjch0_mult_ch1(ch10_rank,
-                   ch11_rank,
-                   conjch10_ch11,
-                   N_RB,
-                   shift);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch11)ch10 \n");
-#endif
-
-  conjch0_mult_ch1(ch11_rank,
-                   ch10_rank,
-                   conjch11_ch10,
-                   N_RB,
-                   shift);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch00)ch00 \n");
-#endif
-
-  conjch0_mult_ch1(ch00_rank,
-                   ch00_rank,
-                   conjch00_ch00,
-                   N_RB,
-                   shift);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch01)ch01 \n");
-#endif
-
-  conjch0_mult_ch1(ch01_rank,
-                   ch01_rank,
-                   conjch01_ch01,
-                   N_RB,
-                   shift);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch10)ch10 \n");
-#endif
-
-  conjch0_mult_ch1(ch10_rank,
-                   ch10_rank,
-                   conjch10_ch10,
-                   N_RB,
-                   shift);
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch11)ch11 \n");
-#endif
-
-  conjch0_mult_ch1(ch11_rank,
-                   ch11_rank,
-                   conjch11_ch11,
-                   N_RB,
-                   shift);
-
-  construct_HhH_elements(conjch00_ch00,
-                         conjch01_ch01,
-                         conjch11_ch11,
-                         conjch10_ch10,
-                         conjch00_ch01,
-                         conjch01_ch00,
-                         conjch10_ch11,
-                         conjch11_ch10,
-                         af_mf_00,
-                         af_mf_01,
-                         af_mf_10,
-                         af_mf_11,
-                         N_RB);
-#ifdef DEBUG_RANK_EST
-  printf("\n |HhH00|^2 \n");
-#endif
-
-  squared_matrix_element(af_mf_00,
-                         af_mf_00_sq,
-                         N_RB);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n |HhH01|^2 \n");
-#endif
-
-  squared_matrix_element(af_mf_01,
-                         af_mf_01_sq,
-                         N_RB);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n |HhH10|^2 \n");
-#endif
-
-  squared_matrix_element(af_mf_10,
-                         af_mf_10_sq,
-                         N_RB);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n |HhH11|^2 \n");
-#endif
-
-  squared_matrix_element(af_mf_11,
-                         af_mf_11_sq,
-                         N_RB);
-
-  det_HhH(af_mf_00,
-          af_mf_01,
-          af_mf_10,
-          af_mf_11,
-          determ_fin,
-          N_RB);
-
-  numer(af_mf_00_sq,
-        af_mf_01_sq,
-        af_mf_10_sq,
-        af_mf_11_sq,
-        numer_fin,
-        N_RB);
-
-  for (i=1; i<12*N_RB; i++)
-  {
-    denum_db[i]=dB_fixed(determ_fin[i]);
-    numer_db[i]=dB_fixed(numer_fin[i]);
-    cond_db[i]=(numer_db[i]-denum_db[i]);
-    if (cond_db[i] < cond_num_threshold)
-      count++;
-#ifdef DEBUG_RANK_EST
-    printf("cond_num_threshold =%d \n", cond_num_threshold);
-    printf("i %d  numer_db[i] = %d \n", i, numer_db[i]);
-    printf("i %d  denum_db[i] = %d \n", i, denum_db[i]);
-    printf("i %d  cond_db[i] =  %d \n", i, cond_db[i]);
-    printf("i %d counter = %d \n", i, count);
-#endif
-  }
-
-  if (count >= 6*N_RB) // conditional number is lower 10dB in half on more Res Blocks
-    rank=1;
-
-#ifdef DEBUG_RANK_EST
-    printf(" rank = %d \n", rank);
-#endif
-   return(rank);
-}
-
-void conjch0_mult_ch1(int *ch0,
-                      int *ch1,
-                      int32_t *ch0conj_ch1,
-                      unsigned short nb_rb,
-                      unsigned char output_shift0)
-{
-  //This function is used to compute multiplications in Hhermitian * H matrix
-  unsigned short rb;
-  __m128i *dl_ch0_128,*dl_ch1_128, *ch0conj_ch1_128, mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
-
-  dl_ch0_128 = (__m128i *)ch0;
-  dl_ch1_128 = (__m128i *)ch1;
-
-  ch0conj_ch1_128 = (__m128i *)ch0conj_ch1;
-
-  for (rb=0; rb<3*nb_rb; rb++) {
-
-    mmtmpD0 = _mm_madd_epi16(dl_ch0_128[0],dl_ch1_128[0]);
-    mmtmpD1 = _mm_shufflelo_epi16(dl_ch0_128[0],_MM_SHUFFLE(2,3,0,1));
-    mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-    mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)&conjugate[0]);
-    mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch1_128[0]);
-    mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
-    mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift0);
-    mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-    mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
-
-    ch0conj_ch1_128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-
-#ifdef DEBUG_RANK_EST
-    printf("\n Computing conjugates \n");
-    print_shorts("ch0:",(int16_t*)&dl_ch0_128[0]);
-    print_shorts("ch1:",(int16_t*)&dl_ch1_128[0]);
-    print_shorts("pack:",(int16_t*)&ch0conj_ch1_128[0]);
-#endif
-
-    dl_ch0_128+=1;
-    dl_ch1_128+=1;
-    ch0conj_ch1_128+=1;
-  }
-  _mm_empty();
-  _m_empty();
-}
-
-void construct_HhH_elements(int *ch0conj_ch0, //00_00
-                            int *ch1conj_ch1,//01_01
-                            int *ch2conj_ch2,//11_11
-                            int *ch3conj_ch3,//10_10
-                            int *ch0conj_ch1,//00_01
-                            int *ch1conj_ch0,//01_00
-                            int *ch2conj_ch3,//10_11
-                            int *ch3conj_ch2,//11_10
-                            int32_t *after_mf_00,
-                            int32_t *after_mf_01,
-                            int32_t *after_mf_10,
-                            int32_t *after_mf_11,
-                            unsigned short nb_rb)
-{
-  unsigned short rb;
-  __m128i *ch0conj_ch0_128, *ch1conj_ch1_128, *ch2conj_ch2_128, *ch3conj_ch3_128;
-  __m128i *ch0conj_ch1_128, *ch1conj_ch0_128, *ch2conj_ch3_128, *ch3conj_ch2_128;
-  __m128i *after_mf_00_128, *after_mf_01_128, *after_mf_10_128, *after_mf_11_128;
-
-  ch0conj_ch0_128 = (__m128i *)ch0conj_ch0;
-  ch1conj_ch1_128 = (__m128i *)ch1conj_ch1;
-  ch2conj_ch2_128 = (__m128i *)ch2conj_ch2;
-  ch3conj_ch3_128 = (__m128i *)ch3conj_ch3;
-  ch0conj_ch1_128 = (__m128i *)ch0conj_ch1;
-  ch1conj_ch0_128 = (__m128i *)ch1conj_ch0;
-  ch2conj_ch3_128 = (__m128i *)ch2conj_ch3;
-  ch3conj_ch2_128 = (__m128i *)ch3conj_ch2;
-  after_mf_00_128 = (__m128i *)after_mf_00;
-  after_mf_01_128 = (__m128i *)after_mf_01;
-  after_mf_10_128 = (__m128i *)after_mf_10;
-  after_mf_11_128 = (__m128i *)after_mf_11;
-
-  for (rb=0; rb<3*nb_rb; rb++) {
-
-    after_mf_00_128[0] =_mm_adds_epi16(ch0conj_ch0_128[0],ch3conj_ch3_128[0]);// _mm_adds_epi32(ch0conj_ch0_128[0], ch3conj_ch3_128[0]); //00_00 + 10_10
-    after_mf_11_128[0] =_mm_adds_epi16(ch1conj_ch1_128[0], ch2conj_ch2_128[0]); //01_01 + 11_11
-    after_mf_01_128[0] =_mm_adds_epi16(ch0conj_ch1_128[0], ch2conj_ch3_128[0]);//00_01 + 10_11
-    after_mf_10_128[0] =_mm_adds_epi16(ch1conj_ch0_128[0], ch3conj_ch2_128[0]);//01_00 + 11_10
-
-#ifdef DEBUG_RANK_EST
-    printf(" \n construct_HhH_elements \n");
-    print_shorts("ch0conj_ch0_128:",(int16_t*)&ch0conj_ch0_128[0]);
-    print_shorts("ch1conj_ch1_128:",(int16_t*)&ch1conj_ch1_128[0]);
-    print_shorts("ch2conj_ch2_128:",(int16_t*)&ch2conj_ch2_128[0]);
-    print_shorts("ch3conj_ch3_128:",(int16_t*)&ch3conj_ch3_128[0]);
-    print_shorts("ch0conj_ch1_128:",(int16_t*)&ch0conj_ch1_128[0]);
-    print_shorts("ch1conj_ch0_128:",(int16_t*)&ch1conj_ch0_128[0]);
-    print_shorts("ch2conj_ch3_128:",(int16_t*)&ch2conj_ch3_128[0]);
-    print_shorts("ch3conj_ch2_128:",(int16_t*)&ch3conj_ch2_128[0]);
-    print_shorts("after_mf_00_128:",(int16_t*)&after_mf_00_128[0]);
-    print_shorts("after_mf_01_128:",(int16_t*)&after_mf_01_128[0]);
-    print_shorts("after_mf_10_128:",(int16_t*)&after_mf_10_128[0]);
-    print_shorts("after_mf_11_128:",(int16_t*)&after_mf_11_128[0]);
-#endif
-
-    ch0conj_ch0_128+=1;
-    ch1conj_ch1_128+=1;
-    ch2conj_ch2_128+=1;
-    ch3conj_ch3_128+=1;
-    ch0conj_ch1_128+=1;
-    ch1conj_ch0_128+=1;
-    ch2conj_ch3_128+=1;
-    ch3conj_ch2_128+=1;
-
-    after_mf_00_128+=1;
-    after_mf_01_128+=1;
-    after_mf_10_128+=1;
-    after_mf_11_128+=1;
-  }
-  _mm_empty();
-  _m_empty();
-}
-
-
-void squared_matrix_element(int32_t *Hh_h_00,
-                            int32_t *Hh_h_00_sq,
-                            unsigned short nb_rb)
-{
-   unsigned short rb;
-  __m128i *Hh_h_00_128,*Hh_h_00_sq_128;
-
-  Hh_h_00_128 = (__m128i *)Hh_h_00;
-  Hh_h_00_sq_128 = (__m128i *)Hh_h_00_sq;
-
-  for (rb=0; rb<3*nb_rb; rb++) {
-
-    Hh_h_00_sq_128[0] = _mm_madd_epi16(Hh_h_00_128[0],Hh_h_00_128[0]);
-
-#ifdef DEBUG_RANK_EST
-    printf("\n Computing squared_matrix_element \n");
-    print_shorts("Hh_h_00_128:",(int16_t*)&Hh_h_00_128[0]);
-    print_ints("Hh_h_00_sq_128:",(int32_t*)&Hh_h_00_sq_128[0]);
-#endif
-
-    Hh_h_00_sq_128+=1;
-    Hh_h_00_128+=1;
-  }
-  _mm_empty();
-  _m_empty();
-}
-
-
-
-void det_HhH(int32_t *after_mf_00,
-             int32_t *after_mf_01,
-             int32_t *after_mf_10,
-             int32_t *after_mf_11,
-             int32_t *det_fin,
-             unsigned short nb_rb)
-
-{
-  unsigned short rb;
-  __m128i *after_mf_00_128,*after_mf_01_128, *after_mf_10_128, *after_mf_11_128, ad_re_128, bc_re_128;
-  __m128i *det_fin_128, det_128;
-
-  after_mf_00_128 = (__m128i *)after_mf_00;
-  after_mf_01_128 = (__m128i *)after_mf_01;
-  after_mf_10_128 = (__m128i *)after_mf_10;
-  after_mf_11_128 = (__m128i *)after_mf_11;
-
-  det_fin_128 = (__m128i *)det_fin;
-
-  for (rb=0; rb<3*nb_rb; rb++) {
-
-    ad_re_128 = _mm_madd_epi16(after_mf_00_128[0],after_mf_11_128[0]);
-    bc_re_128 = _mm_madd_epi16(after_mf_01_128[0],after_mf_01_128[0]);
-    det_128 = _mm_sub_epi32(ad_re_128, bc_re_128);
-    det_fin_128[0] = _mm_abs_epi32(det_128);
-
-#ifdef DEBUG_RANK_EST
-    printf("\n Computing denominator \n");
-    print_shorts("after_mf_00_128:",(int16_t*)&after_mf_00_128[0]);
-    print_shorts("after_mf_01_128:",(int16_t*)&after_mf_01_128[0]);
-    print_shorts("after_mf_10_128:",(int16_t*)&after_mf_10_128[0]);
-    print_shorts("after_mf_11_128:",(int16_t*)&after_mf_11_128[0]);
-    print_ints("ad_re_128:",(int32_t*)&ad_re_128);
-    print_ints("bc_re_128:",(int32_t*)&bc_re_128);
-    print_ints("det_fin_128:",(int32_t*)&det_fin_128[0]);
-#endif
-
-    det_fin_128+=1;
-    after_mf_00_128+=1;
-    after_mf_01_128+=1;
-    after_mf_10_128+=1;
-    after_mf_11_128+=1;
-  }
-  _mm_empty();
-  _m_empty();
-}
-
-void numer(int32_t *Hh_h_00_sq,
-           int32_t *Hh_h_01_sq,
-           int32_t *Hh_h_10_sq,
-           int32_t *Hh_h_11_sq,
-           int32_t *num_fin,
-           unsigned short nb_rb)
-
-{
-  unsigned short rb;
-  __m128i *h_h_00_sq_128, *h_h_01_sq_128, *h_h_10_sq_128, *h_h_11_sq_128;
-  __m128i *num_fin_128, sq_a_plus_sq_d_128, sq_b_plus_sq_c_128;
-
-  h_h_00_sq_128 = (__m128i *)Hh_h_00_sq;
-  h_h_01_sq_128 = (__m128i *)Hh_h_01_sq;
-  h_h_10_sq_128 = (__m128i *)Hh_h_10_sq;
-  h_h_11_sq_128 = (__m128i *)Hh_h_11_sq;
-
-  num_fin_128 = (__m128i *)num_fin;
-
-  for (rb=0; rb<3*nb_rb; rb++) {
-
-    sq_a_plus_sq_d_128 = _mm_add_epi32(h_h_00_sq_128[0],h_h_11_sq_128[0]);
-    sq_b_plus_sq_c_128 = _mm_add_epi32(h_h_01_sq_128[0],h_h_10_sq_128[0]);
-    num_fin_128[0] = _mm_add_epi32(sq_a_plus_sq_d_128, sq_b_plus_sq_c_128);
-
-#ifdef DEBUG_RANK_EST
-    printf("\n Computing numerator \n");
-    print_ints("h_h_00_sq_128:",(int32_t*)&h_h_00_sq_128[0]);
-    print_ints("h_h_01_sq_128:",(int32_t*)&h_h_01_sq_128[0]);
-    print_ints("h_h_10_sq_128:",(int32_t*)&h_h_10_sq_128[0]);
-    print_ints("h_h_11_sq_128:",(int32_t*)&h_h_11_sq_128[0]);
-    print_shorts("sq_a_plus_sq_d_128:",(int16_t*)&sq_a_plus_sq_d_128);
-    print_shorts("sq_b_plus_sq_c_128:",(int16_t*)&sq_b_plus_sq_c_128);
-    print_shorts("num_fin_128:",(int16_t*)&num_fin_128[0]);
-#endif
-
-    num_fin_128+=1;
-    h_h_00_sq_128+=1;
-    h_h_01_sq_128+=1;
-    h_h_10_sq_128+=1;
-    h_h_11_sq_128+=1;
-  }
-  _mm_empty();
-  _m_empty();
-}
-
-
-
-
-
-void dlsch_channel_level_TM34_meas(int *ch00,
-                                   int *ch01,
-                                   int *ch10,
-                                   int *ch11,
-                                   int *avg_0,
-                                   int *avg_1,
-                                   unsigned short nb_rb)
-{
-
-#if defined(__x86_64__)||defined(__i386__)
-
-  short rb;
-  unsigned char nre=12;
-  __m128i *ch00_128, *ch01_128, *ch10_128, *ch11_128;
-  __m128i avg_0_row0_128D, avg_1_row0_128D, avg_0_row1_128D, avg_1_row1_128D;
-  __m128i ch00_128_tmp, ch01_128_tmp, ch10_128_tmp, ch11_128_tmp;
-
-  avg_0[0] = 0;
-  avg_0[1] = 0;
-  avg_1[0] = 0;
-  avg_1[1] = 0;
-
-  ch00_128 = (__m128i *)ch00;
-  ch01_128 = (__m128i *)ch01;
-  ch10_128 = (__m128i *)ch10;
-  ch11_128 = (__m128i *)ch11;
-
-  avg_0_row0_128D = _mm_setzero_si128();
-  avg_1_row0_128D = _mm_setzero_si128();
-  avg_0_row1_128D = _mm_setzero_si128();
-  avg_1_row1_128D = _mm_setzero_si128();
-
-  for (rb=0; rb<3*nb_rb; rb++) {
-    ch00_128_tmp = _mm_load_si128(&ch00_128[0]);
-    ch01_128_tmp = _mm_load_si128(&ch01_128[0]);
-    ch10_128_tmp = _mm_load_si128(&ch10_128[0]);
-    ch11_128_tmp = _mm_load_si128(&ch11_128[0]);
-
-    avg_0_row0_128D = _mm_add_epi32(avg_0_row0_128D,_mm_madd_epi16(ch00_128_tmp,ch00_128_tmp));
-    avg_1_row0_128D = _mm_add_epi32(avg_1_row0_128D,_mm_madd_epi16(ch01_128_tmp,ch01_128_tmp));
-    avg_0_row1_128D = _mm_add_epi32(avg_0_row1_128D,_mm_madd_epi16(ch10_128_tmp,ch10_128_tmp));
-    avg_1_row1_128D = _mm_add_epi32(avg_1_row1_128D,_mm_madd_epi16(ch11_128_tmp,ch11_128_tmp));
-
-    ch00_128+=1;
-    ch01_128+=1;
-    ch10_128+=1;
-    ch11_128+=1;
-  }
-
-  avg_0[0] = (((int*)&avg_0_row0_128D)[0])/(nb_rb*nre) +
-           (((int*)&avg_0_row0_128D)[1])/(nb_rb*nre) +
-           (((int*)&avg_0_row0_128D)[2])/(nb_rb*nre) +
-           (((int*)&avg_0_row0_128D)[3])/(nb_rb*nre);
-
-  avg_1[0] = (((int*)&avg_1_row0_128D)[0])/(nb_rb*nre) +
-           (((int*)&avg_1_row0_128D)[1])/(nb_rb*nre) +
-           (((int*)&avg_1_row0_128D)[2])/(nb_rb*nre) +
-           (((int*)&avg_1_row0_128D)[3])/(nb_rb*nre);
-
-  avg_0[1] = (((int*)&avg_0_row1_128D)[0])/(nb_rb*nre) +
-           (((int*)&avg_0_row1_128D)[1])/(nb_rb*nre) +
-           (((int*)&avg_0_row1_128D)[2])/(nb_rb*nre) +
-           (((int*)&avg_0_row1_128D)[3])/(nb_rb*nre);
-
-  avg_1[1] = (((int*)&avg_1_row1_128D)[0])/(nb_rb*nre) +
-           (((int*)&avg_1_row1_128D)[1])/(nb_rb*nre) +
-           (((int*)&avg_1_row1_128D)[2])/(nb_rb*nre) +
-           (((int*)&avg_1_row1_128D)[3])/(nb_rb*nre);
-
-  avg_0[0] = avg_0[0] + avg_0[1];
-  avg_1[0] = avg_1[0] + avg_1[1];
-  avg_0[0] = min (avg_0[0], avg_1[0]);
-  avg_1[0] = avg_0[0];
-
-  _mm_empty();
-  _m_empty();
-
-#elif defined(__arm__)
-
-#endif
-}

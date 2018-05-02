@@ -36,14 +36,13 @@
 
 
 #include "enb_config.h"
-#include "LAYER2/MAC/extern.h"
 #include "LAYER2/RLC/rlc.h"
-#include "SCHED/defs.h"
+#include "SCHED/sched_eNB.h"
 #include "pdcp.h"
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-#include "RRC/LITE/rrc_eNB_UE_context.h"
-#include "PHY/extern.h"
+#include "RRC/LTE/rrc_eNB_UE_context.h"
+#include "PHY/phy_extern.h"
 #include "log.h"
 
 /****************************

@@ -36,9 +36,11 @@
 #     include "lteRALue.h"
 #     include "lteRALenb.h"
 #   endif
-#   include "RRC/LITE/defs.h"
+#   include "RRC/LTE/rrc_defs.h"
 # endif
 # include "enb_app.h"
+
+extern int emulate_rf;
 
 int create_tasks(uint32_t enb_nb)
 {
@@ -69,10 +71,11 @@ int create_tasks(uint32_t enb_nb)
           LOG_E(S1AP, "Create task for S1AP failed\n");
           return -1;
         }
-
-        if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
-          LOG_E(UDP_, "Create task for UDP failed\n");
-          return -1;
+        if(!emulate_rf){
+          if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
+            LOG_E(UDP_, "Create task for UDP failed\n");
+            return -1;
+          }
         }
 
         if (itti_create_task (TASK_GTPV1_U, &gtpv1u_eNB_task, NULL) < 0) {

@@ -29,7 +29,7 @@
 #endif
 #include <stdint.h>
 #include <stdio.h>
-#include "PHY/CODING/defs.h"
+#include "PHY/CODING/coding_defs.h"
 #include "extern_3GPPinterleaver.h"
 
 //#define DEBUG_TURBO_ENCODER 1

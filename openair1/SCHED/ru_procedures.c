@@ -30,16 +30,15 @@
  * \warning
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
-
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "SCHED/sched_eNB.h"
+#include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/mac.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
@@ -138,12 +137,22 @@ static void *feptx_thread(void *param) {
 
   RU_t *ru = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  
+  thread_top_init("feptx_thread",1,85000,120000,500000);
+  pthread_setname_np( pthread_self(),"feptx processing");
+  LOG_I(PHY,"thread feptx created id=%ld\n", syscall(__NR_gettid));
+  //CPU_SET(6, &cpuset);
+  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //wait_sync("feptx_thread");
 
-  thread_top_init("feptx_thread",0,870000,1000000,1000000);
+  
 
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread")<0) break;  
+    //stop_meas(&ru->ofdm_mod_wakeup_stats);
     feptx0(ru,1);
     if (release_thread(&proc->mutex_feptx,&proc->instance_cnt_feptx,"feptx thread")<0) break;
 
@@ -152,6 +161,10 @@ static void *feptx_thread(void *param) {
       exit_fun( "ERROR pthread_cond_signal" );
       return NULL;
     }
+	/*if(opp_enabled == 1 && ru->ofdm_mod_wakeup_stats.diff_now>30*3000){
+      print_meas_now(&ru->ofdm_mod_wakeup_stats,"fep wakeup",stderr);
+      printf("delay in fep wakeup in frame_tx: %d  subframe_rx: %d \n",proc->frame_tx,proc->subframe_tx);
+    }*/
   }
 
 
@@ -168,7 +181,7 @@ void feptx_ofdm_2thread(RU_t *ru) {
 
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
   start_meas(&ru->ofdm_mod_stats);
 
   if (subframe_select(fp,subframe) == SF_UL) return;
@@ -198,17 +211,25 @@ void feptx_ofdm_2thread(RU_t *ru) {
       exit_fun( "ERROR pthread_cond_signal" );
       return;
     }
+	//start_meas(&ru->ofdm_mod_wakeup_stats);
     
     pthread_mutex_unlock( &proc->mutex_feptx );
   }
 
   // call first slot in this thread
   feptx0(ru,0);
+  start_meas(&ru->ofdm_mod_wait_stats);
   wait_on_busy_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread");  
+  stop_meas(&ru->ofdm_mod_wait_stats);
+  /*if(opp_enabled == 1 && ru->ofdm_mod_wait_stats.diff_now>30*3000){
+    print_meas_now(&ru->ofdm_mod_wait_stats,"fep wakeup",stderr);
+    printf("delay in feptx wait on codition in frame_rx: %d  subframe_rx: %d \n",proc->frame_tx,proc->subframe_tx);
+  }*/
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
 
   stop_meas(&ru->ofdm_mod_stats);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
 
 }
 
@@ -426,12 +447,23 @@ static void *fep_thread(void *param) {
   RU_t *ru = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
 
-  thread_top_init("fep_thread",0,870000,1000000,1000000);
+  thread_top_init("fep_thread",1,100000,120000,5000000);
+  pthread_setname_np( pthread_self(),"fep processing");
+  LOG_I(PHY,"thread fep created id=%ld\n", syscall(__NR_gettid));
+
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  //CPU_SET(2, &cpuset);
+  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //wait_sync("fep_thread");
 
   while (!oai_exit) {
 
-    if (wait_on_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread")<0) break;  
+    if (wait_on_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread")<0) break; 
+	//stop_meas(&ru->ofdm_demod_wakeup_stats);
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX1, 1 ); 
     fep0(ru,0);
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX1, 0 ); 
     if (release_thread(&proc->mutex_fep,&proc->instance_cnt_fep,"fep thread")<0) break;
 
     if (pthread_cond_signal(&proc->cond_fep) != 0) {
@@ -439,6 +471,10 @@ static void *fep_thread(void *param) {
       exit_fun( "ERROR pthread_cond_signal" );
       return NULL;
     }
+    /*if(opp_enabled == 1 && ru->ofdm_demod_wakeup_stats.diff_now>30*3000){
+      print_meas_now(&ru->ofdm_demod_wakeup_stats,"fep wakeup",stderr);
+      printf("delay in fep wakeup in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
+    }*/
   }
 
 
@@ -489,6 +525,7 @@ void ru_fep_full_2thread(RU_t *ru) {
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
   start_meas(&ru->ofdm_demod_stats);
 
   if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
@@ -512,15 +549,23 @@ void ru_fep_full_2thread(RU_t *ru) {
     exit_fun( "ERROR pthread_cond_signal" );
     return;
   }
+  //start_meas(&ru->ofdm_demod_wakeup_stats);
   
   pthread_mutex_unlock( &proc->mutex_fep );
 
   // call second slot in this symbol
   fep0(ru,1);
 
+  start_meas(&ru->ofdm_demod_wait_stats);
   wait_on_busy_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread");  
+  stop_meas(&ru->ofdm_demod_wait_stats);
+  if(opp_enabled == 1 && ru->ofdm_demod_wakeup_stats.diff_now>30*3000){
+    print_meas_now(&ru->ofdm_demod_wakeup_stats,"fep wakeup",stderr);
+    printf("delay in fep wait on codition in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
+  }
 
   stop_meas(&ru->ofdm_demod_stats);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 0 );
 }
 
 

@@ -29,29 +29,25 @@
 
  */
 
-#include "assertions.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
-
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/proto.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#include "SIMULATION/TOOLS/defs.h"	// for taus
+#include "SIMULATION/TOOLS/sim.h"	// for taus
+
+#include "assertions.h"
 
 #if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
@@ -1777,7 +1773,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
     vrb_map         = (void*)&cc->vrb_map;
     n_rb_dl         = to_prb(cc->mib->message.dl_Bandwidth);
     dl_req          = &eNB->DL_req[CC_id].dl_config_request_body;
-    for (uint16_t i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    for (uint16_t i = 0; i < MAX_MOBILES_PER_ENB; i++) {
       if (UE_PF_PO[CC_id][i].enable_flag != TRUE) {
         continue;
       }

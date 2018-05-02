@@ -30,24 +30,20 @@
  * \warning
  */
 
-#include "extern.h"
-#include "defs.h"
-#include "proto.h"
+#include "mac_extern.h"
+#include "mac.h"
+#include "mac_proto.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-#include "PHY_INTERFACE/extern.h"
-#include "SCHED/defs.h"
+#include "PHY_INTERFACE/phy_interface_extern.h"
+#include "SCHED_UE/sched_UE.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
-#ifdef PHY_EMUL
-#include "SIMULATION/simulation_defs.h"
-#endif
-
-#include "SIMULATION/TOOLS/defs.h"	// for taus
+#include "SIMULATION/TOOLS/sim.h"	// for taus
 
 /// This routine implements Section 5.1.2 (UE Random Access Resource Selection) from 36.321
 void

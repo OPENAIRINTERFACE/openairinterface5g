@@ -47,7 +47,7 @@
 
 #include "PHY/types.h"
 
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
@@ -59,22 +59,18 @@
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "PHY/vars.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
-
+#include "PHY/phy_vars_ue.h"
+#include "PHY/LTE_TRANSPORT/transport_vars.h"
+#include "SCHED/sched_common_vars.h"
+#include "PHY/MODULATION/modulation_vars.h"
 #include "../../SIMU/USER/init_lte.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/vars.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/vars.h"
-#include "PHY_INTERFACE/vars.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_vars.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_vars.h"
+#include "PHY_INTERFACE/phy_interface_vars.h"
 
-#ifdef SMBV
-#include "PHY/TOOLS/smbv.h"
-unsigned short config_frames[4] = {2,9,11,13};
-#endif
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
@@ -100,6 +96,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "stats.h"
 #endif
 #include "lte-softmodem.h"
+
+RAN_CONTEXT_t RC;
 
 /* temporary compilation wokaround (UE/eNB split */
 uint16_t sf_ahead;
@@ -213,7 +211,10 @@ extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
 
 int transmission_mode=1;
 
-
+int emulate_rf = 0;
+int numerology = 0;
+int codingw = 0;
+int fepw = 0;
 
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
@@ -383,7 +384,7 @@ static void *scope_thread(void *arg) {
 #endif
 
   while (!oai_exit) {
-      dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
+    //      dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
       //fl_set_object_label(form_stats->stats_text, stats_buffer);
       fl_clear_browser(form_stats->stats_text);
       fl_add_browser_line(form_stats->stats_text, stats_buffer);

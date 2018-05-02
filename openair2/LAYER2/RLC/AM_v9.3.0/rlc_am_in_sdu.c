@@ -30,7 +30,7 @@
 #define RLC_AM_IN_SDU_C 1
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 
 #define TRACE_RLC_AM_FREE_SDU 0

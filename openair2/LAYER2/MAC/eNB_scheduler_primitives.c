@@ -30,23 +30,18 @@
  */
 
 #include "assertions.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-
-#include "LAYER2/MAC/proto.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
@@ -60,6 +55,10 @@
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
+
+#include "common/ran_context.h"
+
+extern RAN_CONTEXT_t RC;
 
 extern int n_active_slices;
 
@@ -984,6 +983,8 @@ get_rel8_dl_cqi_pmi_size(UE_sched_ctrl * sched_ctl, int CC_idP,
 	      cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present);
 }
 
+
+
 void
 fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t *dl_config_pdu,
 		     uint8_t                       aggregation_level,
@@ -1666,7 +1667,7 @@ void init_ue_sched_info(void)
 
   for (i = 0; i < NUMBER_OF_eNB_MAX; i++) {
     for (k = 0; k < MAX_NUM_CCs; k++) {
-      for (j = 0; j < NUMBER_OF_UE_MAX; j++) {
+      for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
 	// init DL
 	eNB_dlsch_info[i][k][j].weight = 0;
 	eNB_dlsch_info[i][k][j].subframe = 0;
@@ -1697,7 +1698,7 @@ int find_UE_id(module_id_t mod_idP, rnti_t rntiP)
   int UE_id;
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
-  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+  for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
     if (UE_list->active[UE_id] != TRUE)
       continue;
     if (UE_list->UE_template[UE_PCCID(mod_idP, UE_id)][UE_id].rnti ==
@@ -1838,7 +1839,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
 	mod_idP, cc_idP, rntiP, UE_list->avail, UE_list->num_UEs);
   dump_ue_list(UE_list, 0);
 
-  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (UE_list->active[i] == TRUE)
       continue;
     UE_id = i;
@@ -2324,9 +2325,7 @@ int get_bw_index(module_id_t module_id, uint8_t CC_id)
 {
   int bw_index = 0;
 
-  int N_RB_DL =
-    to_prb(RC.mac[module_id]->common_channels[CC_id].mib->
-	   message.dl_Bandwidth);
+  int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
   switch (N_RB_DL) {
   case 6:			// 1.4 MHz
@@ -2359,9 +2358,7 @@ int get_bw_index(module_id_t module_id, uint8_t CC_id)
 int get_min_rb_unit(module_id_t module_id, uint8_t CC_id)
 {
   int min_rb_unit = 0;
-  int N_RB_DL =
-    to_prb(RC.mac[module_id]->common_channels[CC_id].mib->
-	   message.dl_Bandwidth);
+  int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
   switch (N_RB_DL) {
   case 6:			// 1.4 MHz
@@ -3268,8 +3265,13 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	if (pdu[0] == 1) {	// ACK
 	  sched_ctl->round[CC_idP][harq_pid] = 8;	// release HARQ process
 	  sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
-	} else if (pdu[0] == 2 || pdu[0] == 4)	// NAK (treat DTX as NAK)
+	} else if (pdu[0] == 2 || pdu[0] == 4) {	// NAK (treat DTX as NAK)
 	  sched_ctl->round[CC_idP][harq_pid]++;	// increment round
+          if (sched_ctl->round[CC_idP][harq_pid] == 4) {
+	    sched_ctl->round[CC_idP][harq_pid] = 8;	// release HARQ process
+	    sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+          }
+        }
       } else {
 	// one or two ACK/NAK bits
 	AssertFatal(num_ack_nak <= 2,
@@ -3285,8 +3287,13 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	if ((num_ack_nak == 2)
 	    && (sched_ctl->round[CC_idP][harq_pid] < 8)
 	    && (sched_ctl->tbcnt[CC_idP][harq_pid] == 1)
-	    && (pdu[0] == 2) && (pdu[1] == 2))
+	    && (pdu[0] == 2) && (pdu[1] == 2)) {
 	  sched_ctl->round[CC_idP][harq_pid]++;
+          if (sched_ctl->round[CC_idP][harq_pid] == 4) {
+            sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
+            sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+          }
+        }
 	else if (((num_ack_nak == 2)
 		  && (sched_ctl->round[CC_idP][harq_pid] < 8)
 		  && (sched_ctl->tbcnt[0][harq_pid] == 2)
@@ -3297,11 +3304,20 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 		     && (pdu[0] == 2) && (pdu[1] == 1))) {
 	  sched_ctl->round[CC_idP][harq_pid]++;
 	  sched_ctl->tbcnt[CC_idP][harq_pid] = 1;
+          if (sched_ctl->round[CC_idP][harq_pid] == 4) {
+            sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
+            sched_ctl->tbcnt[CC_idP][harq_pid] = 0;  /* TODO: do we have to set it to 0? */
+          }
 	} else if ((num_ack_nak == 2)
 		   && (sched_ctl->round[CC_idP][harq_pid] < 8)
 		   && (sched_ctl->tbcnt[CC_idP][harq_pid] == 2)
-		   && (pdu[0] == 2) && (pdu[1] == 2))
+		   && (pdu[0] == 2) && (pdu[1] == 2)) {
 	  sched_ctl->round[CC_idP][harq_pid]++;
+          if (sched_ctl->round[CC_idP][harq_pid] == 4) {
+            sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
+            sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+          }
+        }
 	else
 	  AssertFatal(1 == 0,
 		      "Illegal ACK/NAK/round combination (%d,%d,%d,%d,%d) for harq_pid %d, UE %d/%x\n",
@@ -3327,12 +3343,18 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 		    pdu[1]);
 	if (pdu[0] == 1)
 	  sched_ctl->round[pCCid][harq_pid] = 8;
-	else
+	else {
 	  sched_ctl->round[pCCid][harq_pid]++;
+          if (sched_ctl->round[pCCid][harq_pid] == 4)
+	    sched_ctl->round[pCCid][harq_pid] = 8;
+        }
 	if (pdu[1] == 1)
 	  sched_ctl->round[1 - pCCid][harq_pid] = 8;
-	else
+	else {
 	  sched_ctl->round[1 - pCCid][harq_pid]++;
+	  if (sched_ctl->round[1 - pCCid][harq_pid] == 4)
+	    sched_ctl->round[1 - pCCid][harq_pid] = 8;
+        }
       }			// A=2
       else if ((num_ack_nak == 3)
 	       && (sched_ctl->round[pCCid][harq_pid] < 8)
@@ -3358,13 +3380,26 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 		   ((pdu[0] == 1) && (pdu[1] == 2))) {
 	  sched_ctl->round[pCCid][harq_pid]++;
 	  sched_ctl->tbcnt[pCCid][harq_pid] = 1;
-	} else
+	  if (sched_ctl->round[pCCid][harq_pid] == 4) {
+	    sched_ctl->round[pCCid][harq_pid] = 8;
+	    sched_ctl->tbcnt[pCCid][harq_pid] = 0; /* TODO: do we have to set it to 0? */
+          }
+	} else {
 	  sched_ctl->round[pCCid][harq_pid]++;
+	  if (sched_ctl->round[pCCid][harq_pid] == 4) {
+	    sched_ctl->round[pCCid][harq_pid] = 8;
+	    sched_ctl->tbcnt[pCCid][harq_pid] = 0;
+          }
+        }
 
 	if (pdu[2] == 1)
 	  sched_ctl->round[1 - pCCid][harq_pid] = 8;
-	else
+	else {
 	  sched_ctl->round[1 - pCCid][harq_pid]++;
+	  if (sched_ctl->round[1 - pCCid][harq_pid] == 4) {
+	    sched_ctl->round[1 - pCCid][harq_pid] = 8;
+          }
+        }
       }			// A=3 primary cell has 2 TBs
       else if ((num_ack_nak == 3)
 	       && (sched_ctl->round[1 - pCCid][harq_pid] < 8)
@@ -3390,13 +3425,26 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 		   || ((pdu[0] == 1) && (pdu[1] >= 2))) {	// one ACK
 	  sched_ctl->round[1 - pCCid][harq_pid]++;
 	  sched_ctl->tbcnt[1 - pCCid][harq_pid] = 1;
-	} else		// both NAK/DTX
+	  if (sched_ctl->round[1 - pCCid][harq_pid] == 4) {
+	    sched_ctl->round[1 - pCCid][harq_pid] = 8;
+	    sched_ctl->tbcnt[1 - pCCid][harq_pid] = 0;
+          }
+	} else {		// both NAK/DTX
 	  sched_ctl->round[1 - pCCid][harq_pid]++;
+	  if (sched_ctl->round[1 - pCCid][harq_pid] == 4) {
+	    sched_ctl->round[1 - pCCid][harq_pid] = 8;
+	    sched_ctl->tbcnt[1 - pCCid][harq_pid] = 0;
+          }
+        }
 
 	if (pdu[2] == 1)
 	  sched_ctl->round[pCCid][harq_pid] = 8;
-	else
+	else {
 	  sched_ctl->round[pCCid][harq_pid]++;
+	  if (sched_ctl->round[pCCid][harq_pid] == 4) {
+	    sched_ctl->round[pCCid][harq_pid] = 8;
+          }
+        }
       }			// A=3 secondary cell has 2 TBs
 #if MAX_NUM_CCs>1
       else if ((num_ack_nak == 4)
@@ -3425,8 +3473,17 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 		   || ((pdu[0] == 1) && (pdu[1] >= 2))) {	// one ACK
 	  sched_ctl->round[0][harq_pid]++;
 	  sched_ctl->tbcnt[0][harq_pid] = 1;
-	} else		// both NAK/DTX
+	  if (sched_ctl->round[0][harq_pid] == 4) {
+	    sched_ctl->round[0][harq_pid] = 8;
+	    sched_ctl->tbcnt[0][harq_pid] = 0;
+          }
+	} else {		// both NAK/DTX
 	  sched_ctl->round[0][harq_pid]++;
+	  if (sched_ctl->round[0][harq_pid] == 4) {
+	    sched_ctl->round[0][harq_pid] = 8;
+	    sched_ctl->tbcnt[0][harq_pid] = 0;
+          }
+        }
 
 	if ((pdu[2] == 1) && (pdu[3] == 1)) {	// both ACK
 	  sched_ctl->round[1][harq_pid] = 8;
@@ -3435,8 +3492,17 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 		   || ((pdu[2] == 1) && (pdu[3] >= 2))) {	// one ACK
 	  sched_ctl->round[1][harq_pid]++;
 	  sched_ctl->tbcnt[1][harq_pid] = 1;
-	} else		// both NAK/DTX
+	  if (sched_ctl->round[1][harq_pid] == 4) {
+	    sched_ctl->round[1][harq_pid] = 8;
+	    sched_ctl->tbcnt[1][harq_pid] = 0;
+          }
+	} else {		// both NAK/DTX
 	  sched_ctl->round[1][harq_pid]++;
+	  if (sched_ctl->round[1][harq_pid] == 4) {
+	    sched_ctl->round[1][harq_pid] = 8;
+	    sched_ctl->tbcnt[1][harq_pid] = 0;
+          }
+        }
       }			// A=4 both serving cells have 2 TBs
 #endif
       break;
@@ -3451,8 +3517,13 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	    if (pdu[j] == 1) {
 	      sched_ctl->round[i][harq_pid] = 8;
 	      sched_ctl->tbcnt[i][harq_pid] = 0;
-	    } else if (pdu[j] == 2)
+	    } else if (pdu[j] == 2) {
 	      sched_ctl->round[i][harq_pid]++;
+	      if (sched_ctl->round[i][harq_pid] == 4) {
+	        sched_ctl->round[i][harq_pid] = 8;
+	        sched_ctl->tbcnt[i][harq_pid] = 0;
+              }
+            }
 	    else
 	      AssertFatal(1 == 0,
 			  "Illegal harq_ack value for CC %d harq_pid %d (%d) UE %d/%x\n",
@@ -3467,13 +3538,25 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 		       && (pdu[j] == 1) && (pdu[j + 1] == 2)) {
 	      sched_ctl->round[i][harq_pid]++;
 	      sched_ctl->tbcnt[i][harq_pid] = 1;
+	      if (sched_ctl->round[i][harq_pid] == 4) {
+	        sched_ctl->round[i][harq_pid] = 8;
+	        sched_ctl->tbcnt[i][harq_pid] = 0;
+              }
 	    } else if ((sched_ctl->tbcnt[i][harq_pid] == 2)
 		       && (pdu[j] == 2) && (pdu[j + 1] == 1)) {
 	      sched_ctl->round[i][harq_pid]++;
 	      sched_ctl->tbcnt[i][harq_pid] = 1;
+	      if (sched_ctl->round[i][harq_pid] == 4) {
+	        sched_ctl->round[i][harq_pid] = 8;
+	        sched_ctl->tbcnt[i][harq_pid] = 0;
+              }
 	    } else if ((sched_ctl->tbcnt[i][harq_pid] == 2)
 		       && (pdu[j] == 2) && (pdu[j + 1] == 2)) {
 	      sched_ctl->round[i][harq_pid]++;
+	      if (sched_ctl->round[i][harq_pid] == 4) {
+	        sched_ctl->round[i][harq_pid] = 8;
+	        sched_ctl->tbcnt[i][harq_pid] = 0;
+              }
 	    } else
 	      AssertFatal(1 == 0,
 			  "Illegal combination for CC %d harq_pid %d (%d,%d,%d) UE %d/%x\n",
@@ -3487,6 +3570,10 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	      sched_ctl->tbcnt[i][harq_pid] = 0;
 	    } else if (pdu[j] == 2) {
 	      sched_ctl->round[i][harq_pid]++;
+	      if (sched_ctl->round[i][harq_pid] == 4) {
+	        sched_ctl->round[i][harq_pid] = 8;
+	        sched_ctl->tbcnt[i][harq_pid] = 0;
+              }
 	    } else
 	      AssertFatal(1 == 0,
 			  "Illegal hack_nak value %d for CC %d harq_pid %d UE %d/%x\n",

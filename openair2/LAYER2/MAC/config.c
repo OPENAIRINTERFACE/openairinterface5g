@@ -32,7 +32,6 @@
 
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
-#include "SCHED/defs.h"
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
@@ -43,9 +42,9 @@
 #include "MeasObjectToAddModList.h"
 #include "TDD-Config.h"
 #include "MAC-MainConfig.h"
-#include "defs.h"
-#include "proto.h"
-#include "extern.h"
+#include "mac.h"
+#include "mac_proto.h"
+#include "mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 

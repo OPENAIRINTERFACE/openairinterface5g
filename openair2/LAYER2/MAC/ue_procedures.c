@@ -33,29 +33,21 @@
 #include <pthread.h>
 #endif
 
-#include "extern.h"
-#include "defs.h"
-#include "proto.h"
-#ifdef PHY_EMUL
-#include "SIMULATION/PHY_EMULATION/impl_defs.h"
-#else
-#include "SCHED/defs.h"
+#include "mac_extern.h"
+#include "mac.h"
+#include "mac_proto.h"
+#include "SCHED_UE/sched_UE.h"
 #include "PHY/impl_defs_top.h"
-#endif
-#include "PHY_INTERFACE/extern.h"
+#include "PHY_INTERFACE/phy_interface_extern.h"
 #include "COMMON/mac_rrc_primitives.h"
 
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
-
-#ifdef PHY_EMUL
-#include "SIMULATION/simulation_defs.h"
-#endif
 #include "pdcp.h"
 
 #if defined(ENABLE_ITTI)
@@ -64,7 +56,7 @@
 
 #include "assertions.h"
 
-#include "SIMULATION/TOOLS/defs.h"	// for taus
+#include "SIMULATION/TOOLS/sim.h"	// for taus
 
 #define DEBUG_HEADER_PARSING 1
 #define ENABLE_MAC_PAYLOAD_DEBUG 1
