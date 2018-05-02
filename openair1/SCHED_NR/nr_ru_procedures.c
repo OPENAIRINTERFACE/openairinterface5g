@@ -62,7 +62,6 @@ void nr_feptx0(RU_t *ru,int slot) {
   NR_DL_FRAME_PARMS *fp = &ru->nr_frame_parms;
 
   unsigned int aa,slot_offset;
-  int i, tx_offset;
   int slot_sizeF = fp->ofdm_symbol_size * fp->symbols_per_slot;
   int subframe = ru->proc.subframe_tx;
 
