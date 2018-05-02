@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/pbch.c
-* \brief Top-level routines for generating and decoding  the PBCH/BCH physical/transport channel V8.6 2009-03
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
+/*! \file PHY/NR_TRANSPORT/nr_pbch.c
+* \brief Top-level routines for generating and decoding  the PBCH/BCH physical/transport channel V15.1 03/2018
+* \author G. De Souza
+* \date 2018
 * \version 0.1
 * \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger.fr
+* \email: desouza@eurecom.fr
 * \note
 * \warning
 */
@@ -45,6 +45,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           int32_t **txdataF,
                           int16_t amp,
                           uint8_t ssb_start_symbol,
+                          uint8_t nu,
                           nfapi_config_request_t* config,
                           NR_DL_FRAME_PARMS *frame_parms)
 {
@@ -55,10 +56,10 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 
   /// BPSK modulation
   for (m=0; m<NR_PBCH_DMRS_LENGTH; m++) {
-    mod_dmrs[2*m] = nr_mod_table[2*(1 + (*(gold_pbch_dmrs + m/32))&(1<<(m&0xf)) )];
-    mod_dmrs[2*m + 1] = nr_mod_table[2*(1 + (*(gold_pbch_dmrs + m/32))&(1<<(m&0xf)) ) + 1];
+    mod_dmrs[2*m] = nr_mod_table[2*(1 + ((gold_pbch_dmrs[m>>5])&(1<<(m&0x1f))) )];
+    mod_dmrs[2*m + 1] = nr_mod_table[2*(1 + ((gold_pbch_dmrs[m>>5])&(1<<(m&0x1f))) ) + 1];
 #ifdef DEBUG_PBCH
-  printf("m %d  mod_dmrs %d %d", m, mod_dmrs[2*m], mod_dmrs[2*m + 1]);
+  printf("m %d  mod_dmrs %d %d\n", m, mod_dmrs[2*m], mod_dmrs[2*m + 1]);
 #endif
   }
 
@@ -68,22 +69,60 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
   for (aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
   {
 
-    // PBCH DMRS are mapped
-    k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
+    // PBCH DMRS are mapped  within the SSB block on every fourth subcarrier starting from nu of symbols 1, 2, 3
+      ///symbol 1  [0+nu:4:236+nu] -- 60 mod symbols
+    k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + nu;
     l = ssb_start_symbol + 1;
 
-    for (m = 0; m < NR_PBCH_DMRS_LENGTH; m++) {
+    for (m = 0; m < 60; m++) {
+#ifdef DEBUG_PBCH
+      LOG_I(PHY,"Mapping modulated symbol %d at k %d of OFDM symbol %d\n", m, k, l);
+#endif
       ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * mod_dmrs[2*m]) >> 15;
       ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k) + 1] = (a * mod_dmrs[2*m + 1]) >> 15;
-#ifdef DEBUG_PBCH
-  int idx = 2*(l*frame_parms->ofdm_symbol_size + k);
-  printf("aa %d m %d  txdataF  %d %d %d", aa, m, txdataF[aa][idx], txdataF[aa][idx+1]);
-#endif
-      k++;
+      k+=4;
 
       if (k >= frame_parms->ofdm_symbol_size)
         k-=frame_parms->ofdm_symbol_size;
     }
+
+      ///symbol 2  [0+u:4:44+nu ; 192+nu:4:236+nu] -- 24 mod symbols
+    k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + nu;
+    l++;
+
+    for (m = 60; m < 84; m++) {
+#ifdef DEBUG_PBCH
+      LOG_I(PHY,"Mapping modulated symbol %d at k %d of OFDM symbol %d\n", m, k, l);
+#endif
+      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * mod_dmrs[2*m]) >> 15;
+      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k) + 1] = (a * mod_dmrs[2*m + 1]) >> 15;
+      k+=(m==71)?148:4; // Jump from 44+nu to 192+nu
+
+      if (k >= frame_parms->ofdm_symbol_size)
+        k-=frame_parms->ofdm_symbol_size;
+    }
+
+      ///symbol 3  [0+nu:4:236+nu] -- 60 mod symbols
+    k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + nu;
+    l++;
+
+    for (m = 84; m < NR_PBCH_DMRS_LENGTH; m++) {
+#ifdef DEBUG_PBCH
+      LOG_I(PHY,"Mapping modulated symbol %d at k %d of OFDM symbol %d\n", m, k, l);
+#endif
+      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * mod_dmrs[2*m]) >> 15;
+      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k) + 1] = (a * mod_dmrs[2*m + 1]) >> 15;
+      k+=4;
+
+      if (k >= frame_parms->ofdm_symbol_size)
+        k-=frame_parms->ofdm_symbol_size;
+    }
+
   }
+
+
+#ifdef DEBUG_PBCH
+  write_output("pbch_dmrsF.m", "pbch_dmrsF", txdataF[0][2*(ssb_start_symbol+1)*frame_parms->ofdm_symbol_size], 3*frame_parms->ofdm_symbol_size, 1, 1);
+#endif
   return (0);
 }
