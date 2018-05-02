@@ -1,6 +1,7 @@
 #ifndef _EVENT_H_
 #define _EVENT_H_
 
+#include "utils.h"
 #include "../T_defs.h"
 #ifdef T_SEND_TIME
 #include <time.h>
@@ -37,7 +38,7 @@ typedef struct {
   int ecount;
 } event;
 
-event get_event(int s, char *v, void *d);
+event get_event(int s, OBUF *v, void *d);
 
 #ifdef T_SEND_TIME
 event new_event(struct timespec sending_time, int type,

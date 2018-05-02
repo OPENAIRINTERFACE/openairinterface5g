@@ -99,10 +99,11 @@ int main(int n, char **v)
 
   found = 0;
 
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   while (1) {
-    char v[T_BUFFER_MAX];
     event e;
-    e = get_event(fd, v, database);
+    e = get_event(fd, &ebuf, database);
     if (e.type == -1) break;
     if (e.type != input_event_id) continue;
     for (i = 0; i < filter_count; i++)
