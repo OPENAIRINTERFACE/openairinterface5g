@@ -51,13 +51,14 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 {
   int m,k,l;
   int a, aa;
-  uint16_t mod_dmrs[2 * NR_PBCH_DMRS_LENGTH];
+  int16_t mod_dmrs[2 * NR_PBCH_DMRS_LENGTH];
 
+  LOG_I(PHY, "PBCH DMRS mapping started at symbol %d shift %d\n", ssb_start_symbol+1, nu);
 
   /// BPSK modulation
   for (m=0; m<NR_PBCH_DMRS_LENGTH; m++) {
-    mod_dmrs[2*m] = nr_mod_table[2*(1 + ((gold_pbch_dmrs[m>>5])&(1<<(m&0x1f))) )];
-    mod_dmrs[2*m + 1] = nr_mod_table[2*(1 + ((gold_pbch_dmrs[m>>5])&(1<<(m&0x1f))) ) + 1];
+    mod_dmrs[m<<1] = nr_mod_table[((1 + ((gold_pbch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1)];
+    mod_dmrs[m<<1 + 1] = nr_mod_table[((1 + ((gold_pbch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1) + 1];
 #ifdef DEBUG_PBCH
   printf("m %d  mod_dmrs %d %d\n", m, mod_dmrs[2*m], mod_dmrs[2*m + 1]);
 #endif
@@ -76,10 +77,10 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 
     for (m = 0; m < 60; m++) {
 #ifdef DEBUG_PBCH
-      LOG_I(PHY,"Mapping modulated symbol %d at k %d of OFDM symbol %d\n", m, k, l);
+  printf("Mapping m %d: %d  %d at k %d of l %d\n", m,(a * mod_dmrs[m<<1]) >> 15, (a * mod_dmrs[m<<1 + 1]) >> 15, k, l);
 #endif
-      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * mod_dmrs[2*m]) >> 15;
-      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k) + 1] = (a * mod_dmrs[2*m + 1]) >> 15;
+      ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
+      ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1 + 1] = (a * mod_dmrs[m<<1 + 1]) >> 15;
       k+=4;
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -92,10 +93,10 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 
     for (m = 60; m < 84; m++) {
 #ifdef DEBUG_PBCH
-      LOG_I(PHY,"Mapping modulated symbol %d at k %d of OFDM symbol %d\n", m, k, l);
+  printf("Mapping m %d: %d  %d at k %d of l %d\n", m,(a * mod_dmrs[m<<1]) >> 15, (a * mod_dmrs[m<<1 + 1]) >> 15, k, l);
 #endif
-      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * mod_dmrs[2*m]) >> 15;
-      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k) + 1] = (a * mod_dmrs[2*m + 1]) >> 15;
+      ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
+      ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1 + 1] = (a * mod_dmrs[m<<1 + 1]) >> 15;
       k+=(m==71)?148:4; // Jump from 44+nu to 192+nu
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -108,10 +109,10 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 
     for (m = 84; m < NR_PBCH_DMRS_LENGTH; m++) {
 #ifdef DEBUG_PBCH
-      LOG_I(PHY,"Mapping modulated symbol %d at k %d of OFDM symbol %d\n", m, k, l);
+  printf("Mapping m %d: %d  %d at k %d of l %d\n", m,(a * mod_dmrs[m<<1]) >> 15, (a * mod_dmrs[m<<1 + 1]) >> 15, k, l);
 #endif
-      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * mod_dmrs[2*m]) >> 15;
-      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k) + 1] = (a * mod_dmrs[2*m + 1]) >> 15;
+      ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
+      ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1 + 1] = (a * mod_dmrs[m<<1 + 1]) >> 15;
       k+=4;
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -122,7 +123,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 
 
 #ifdef DEBUG_PBCH
-  write_output("pbch_dmrsF.m", "pbch_dmrsF", txdataF[0][2*(ssb_start_symbol+1)*frame_parms->ofdm_symbol_size], 3*frame_parms->ofdm_symbol_size, 1, 1);
+  write_output("txdataF.m", "txdataF", txdataF[0], frame_parms->samples_per_frame_wCP, 1, 1);
 #endif
   return (0);
 }
