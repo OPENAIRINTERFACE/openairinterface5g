@@ -692,6 +692,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
           exit_fun("noting to add");
         }
         proc->instance_cnt_rxtx--;
+#if BASIC_SIMULATOR
+        if (pthread_cond_signal(&proc->cond_rxtx) != 0) abort();
+#endif
         if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
           LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RXTX\n" );
           exit_fun("noting to add");
@@ -751,6 +754,12 @@ void *UE_thread(void *arg) {
         AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
 
         if (is_synchronized == 0) {
+#if BASIC_SIMULATOR
+            while (!((instance_cnt_synch = UE->proc.instance_cnt_synch) < 0)) {
+              printf("ue sync not ready\n");
+              usleep(500*1000);
+            }
+#endif
             if (instance_cnt_synch < 0) {  // we can invoke the synch
                 // grab 10 ms of signal and wakeup synch thread
                 for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -833,6 +842,17 @@ void *UE_thread(void *arg) {
                 // update thread index for received subframe
                 UE->current_thread_id[sub_frame] = thread_idx;
 
+#if BASIC_SIMULATOR
+                {
+                  int t;
+                  for (t = 0; t < 2; t++) {
+                        UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[t];
+                        pthread_mutex_lock(&proc->mutex_rxtx);
+                        while (proc->instance_cnt_rxtx >= 0) pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
+                        pthread_mutex_unlock(&proc->mutex_rxtx);
+                  }
+                }
+#endif
                 LOG_D(PHY,"Process Subframe %d thread Idx %d \n", sub_frame, UE->current_thread_id[sub_frame]);
 
                 thread_idx++;
