@@ -1043,8 +1043,10 @@ void kill_eNB_proc(int inst) {
       pthread_cond_signal(&proc_rxtx[i].cond_rxtx);
       pthread_mutex_unlock(&proc_rxtx[i].mutex_rxtx);
     }
+    pthread_mutex_lock(&proc->mutex_prach);
     proc->instance_cnt_prach = 0;
     pthread_cond_signal( &proc->cond_prach );
+    pthread_mutex_unlock(&proc->mutex_prach);
 
     pthread_cond_signal( &proc->cond_asynch_rxtx );
     pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
@@ -1071,6 +1073,16 @@ void kill_eNB_proc(int inst) {
       pthread_mutex_destroy( &proc_rxtx[i].mutex_rxtx );
       pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
     }
+
+    pthread_attr_destroy(&proc->attr_prach);
+    pthread_attr_destroy(&proc->attr_asynch_rxtx);
+    pthread_attr_destroy(&proc_rxtx[0].attr_rxtx);
+    pthread_attr_destroy(&proc_rxtx[1].attr_rxtx);
+#ifdef Rel14
+    pthread_mutex_destroy(&proc->mutex_RU_PRACH_br);
+    pthread_attr_destroy(&proc->attr_prach_br);
+#endif
+
   }
 }
 
