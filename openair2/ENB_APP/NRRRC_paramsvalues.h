@@ -32,21 +32,19 @@
 #ifndef __NRRRC_PARAMSVALUES__H__
 #define __NRRRC_PARAMSVALUES__H__
 /*    cell configuration section name */
-#define GNB_CONFIG_STRING_GNB_LIST								"gNBs"
+#define GNB_CONFIG_STRING_GNB_LIST                    "gNBs"
 /* component carriers configuration section name */		
-#define GNB_CONFIG_STRING_COMPONENT_CARRIERS					"component_carriers"		 
+#define GNB_CONFIG_STRING_COMPONENT_CARRIERS          "component_carriers"		 
 
-#define GNB_CONFIG_STRING_FRAME_TYPE							"frame_type"
-#define GNB_CONFIG_STRING_TDD_CONFIG							"tdd_config"
-#define GNB_CONFIG_STRING_TDD_CONFIG_S							"tdd_config_s"
-#define GNB_CONFIG_STRING_PREFIX_TYPE							"prefix_type"
-#define GNB_CONFIG_STRING_PREFIX_TYPE_UL						"prefix_type_UL"
-#define GNB_CONFIG_STRING_EUTRA_BAND							"eutra_band"
-#define GNB_CONFIG_STRING_DOWNLINK_FREQUENCY					"downlink_frequency"
-#define GNB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET				"uplink_frequency_offset"
-#define GNB_CONFIG_STRING_NID_CELL								"Nid_cell"
-#define GNB_CONFIG_STRING_N_RB_DL								"N_RB_DL"
-#define GNB_CONFIG_STRING_CELL_MBSFN							"Nid_cell_mbsfn"
+#define GNB_CONFIG_STRING_FRAME_TYPE                  "frame_type"
+#define GNB_CONFIG_STRING_DL_PREFIX_TYPE              "DL_prefix_type"
+#define GNB_CONFIG_STRING_UL_PREFIX_TYPE           	  "UL_prefix_type"
+#define GNB_CONFIG_STRING_EUTRA_BAND                  "eutra_band"
+#define GNB_CONFIG_STRING_DOWNLINK_FREQUENCY          "downlink_frequency"
+#define GNB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET     "uplink_frequency_offset"
+#define GNB_CONFIG_STRING_NID_CELL                    "Nid_cell"
+#define GNB_CONFIG_STRING_N_RB_DL                     "N_RB_DL"
+#define GNB_CONFIG_STRING_CELL_MBSFN                  "Nid_cell_mbsfn"
 
 
 #define FRAMETYPE_OKVALUES                                      {"FDD","TDD"}

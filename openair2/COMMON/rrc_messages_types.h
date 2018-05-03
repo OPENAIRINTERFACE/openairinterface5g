@@ -253,7 +253,8 @@ typedef struct NRRrcConfigurationReq_s {
   lte_frame_type_t        frame_type[MAX_NUM_CCs];
   uint8_t                 tdd_config[MAX_NUM_CCs];
   uint8_t                 tdd_config_s[MAX_NUM_CCs];
-  lte_prefix_type_t       prefix_type[MAX_NUM_CCs];
+  lte_prefix_type_t       DL_prefix_type[MAX_NUM_CCs];
+  lte_prefix_type_t       UL_prefix_type[MAX_NUM_CCs];
   int16_t                 eutra_band[MAX_NUM_CCs];
   uint32_t                downlink_frequency[MAX_NUM_CCs];
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
@@ -262,6 +263,15 @@ typedef struct NRRrcConfigurationReq_s {
   int                     nb_antenna_ports[MAX_NUM_CCs];
 
   ///NR
+  //MIB
+  long                    MIB_subCarrierSpacingCommon[MAX_NUM_CCs]; 
+  long                    MIB_dmrs_TypeA_Position[MAX_NUM_CCs];
+  uint32_t                pdcch_ConfigSIB1[MAX_NUM_CCs];
+
+  //SIB1
+  long                    SIB1_frequencyOffsetSSB[MAX_NUM_CCs]; 
+  long                    SIB1_ssb_PeriodicityServingCell[MAX_NUM_CCs];
+  long                    SIB1_ss_PBCH_BlockPower[MAX_NUM_CCs];
   //NR FrequencyInfoDL
   long                    absoluteFrequencySSB[MAX_NUM_CCs];
   uint32_t                ssb_SubcarrierOffset[MAX_NUM_CCs];
@@ -275,8 +285,7 @@ typedef struct NRRrcConfigurationReq_s {
   uint32_t                DL_carrierBandwidth[MAX_NUM_CCs];
 
   //NR BWP-DownlinkCommon
-  uint32_t                DL_locationAndBandwidth[MAX_NUM_CCs];
-  //NR_prefix_type_t      DL_prefix_type[MAX_NUM_CCs];     
+  uint32_t                DL_locationAndBandwidth[MAX_NUM_CCs];    
 
   //NR FrequencyInfoUL
   long                    UL_FreqBandIndicatorNR[MAX_NUM_CCs];
@@ -292,13 +301,11 @@ typedef struct NRRrcConfigurationReq_s {
 
   // NR BWP-UplinkCommon
   uint32_t                UL_locationAndBandwidth[MAX_NUM_CCs];
-  //NR_prefix_type_t      UL_prefix_type[MAX_NUM_CCs]; 
 
-
-  long                    ssb_periodicityServingCell[MAX_NUM_CCs];
-  long                    dmrs_TypeA_Position[MAX_NUM_CCs];
-  long                    NIA_SubcarrierSpacing[MAX_NUM_CCs]; ///ServingCellConfigCommon Used only for non-initial access
-  long                    ss_PBCH_BlockPower[MAX_NUM_CCs];
+  long                    ServingCellConfigCommon_ssb_periodicityServingCell[MAX_NUM_CCs]; //ServingCellConfigCommon
+  long                    ServingCellConfigCommon_dmrs_TypeA_Position[MAX_NUM_CCs];        //ServingCellConfigCommon
+  long                    NIA_SubcarrierSpacing[MAX_NUM_CCs];      //ServingCellConfigCommon Used only for non-initial access
+  long                    ServingCellConfigCommon_ss_PBCH_BlockPower[MAX_NUM_CCs];         //ServingCellConfigCommon
 
 
   //NR TDD-UL-DL-ConfigCommon

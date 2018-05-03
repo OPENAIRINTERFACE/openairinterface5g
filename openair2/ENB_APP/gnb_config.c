@@ -32,184 +32,193 @@
 
 int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
-  int                 num_gnbs                                                      = 0;
-  int                 num_component_carriers                                        = 0;
-  int                 j,k                                                           = 0;
-  int32_t             gnb_id                                                        = 0;
+  int                    num_gnbs                                                      = 0;
+  int                    num_component_carriers                                        = 0;
+  int                    j,k                                                           = 0;
+  int32_t                gnb_id                                                        = 0;
 
-  int                 nb_cc                                                         = 0;
-  char*       		    frame_type                                                    = NULL;
-  char*               prefix_type                                                   = NULL;
+  int                    nb_cc                                                         = 0;
+  char*                  frame_type                                                    = NULL;
+  char*                  DL_prefix_type                                                = NULL;
+  char*                  UL_prefix_type                                                = NULL;
 
-  int32_t             eutra_band                                                    = 0;
-  long long int       downlink_frequency                                            = 0;
-  int32_t             uplink_frequency_offset                                       = 0;
-  int32_t             Nid_cell                                                      = 0;
-//  int32_t             Nid_cell_mbsfn                                          = 0;
-  int32_t             N_RB_DL                                                       = 0;
-  int32_t             nb_antenna_ports                                              = 0;
+  int32_t                eutra_band                                                    = 0;
+  long long int          downlink_frequency                                            = 0;
+  int32_t                uplink_frequency_offset                                       = 0;
+  int32_t                Nid_cell                                                      = 0;
+  int32_t                N_RB_DL                                                       = 0;
+  int32_t                nb_antenna_ports                                              = 0;
 
   ///NR
+  //MIB
+  int32_t                MIB_subCarrierSpacingCommon                                   = 0;
+  int32_t                MIB_dmrs_TypeA_Position                                       = 0;
+  uint32_t               pdcch_ConfigSIB1                                              = 0;
+
+  //SIB1
+  int32_t                SIB1_frequencyOffsetSSB                                       = 0; 
+  int32_t                SIB1_ssb_PeriodicityServingCell                               = 0;
+  int32_t                SIB1_ss_PBCH_BlockPower                                       = 0;
   //NR FrequencyInfoDL
-  long                absoluteFrequencySSB                                          = 0;
-  uint32_t            ssb_SubcarrierOffset                                          = 0;
-  long                DL_FreqBandIndicatorNR                                        = 0;
-  long                DL_absoluteFrequencyPointA                                    = 0;
+  int32_t                absoluteFrequencySSB                                          = 0;
+  uint32_t               ssb_SubcarrierOffset                                          = 0;
+  int32_t                DL_FreqBandIndicatorNR                                        = 0;
+  int32_t                DL_absoluteFrequencyPointA                                    = 0;
 
   //NR DL SCS-SpecificCarrier
-  uint32_t            DL_offsetToCarrier                                            = 0;
-  long                DL_SubcarrierSpacing                                          = 0;
-  long                DL_SCS_SpecificCarrier_k0                                     = 0;
-  uint32_t            DL_carrierBandwidth                                           = 0;
+  uint32_t               DL_offsetToCarrier                                            = 0;
+  int32_t                DL_SubcarrierSpacing                                          = 0;
+  int32_t                DL_SCS_SpecificCarrier_k0                                     = 0;
+  uint32_t               DL_carrierBandwidth                                           = 0;
 
   // NR BWP-DownlinkCommon
-  uint32_t            DL_locationAndBandwidth                                       = 0;
-  //NR_prefix_type_t    DL_prefix_type[MAX_NUM_CCs];     
+  uint32_t               DL_locationAndBandwidth                                       = 0;   
 
   //NR FrequencyInfoUL
-  long                UL_FreqBandIndicatorNR                                        = 0;
-  long                UL_absoluteFrequencyPointA                                    = 0;
-  long                FrequencyInfoUL_p_Max                                         = 0;
-  long                frequencyShift7p5khz                                          = 0;
+  int32_t                UL_FreqBandIndicatorNR                                        = 0;
+  int32_t                UL_absoluteFrequencyPointA                                    = 0;
+  int32_t                FrequencyInfoUL_p_Max                                         = 0;
+  int32_t                frequencyShift7p5khz                                          = 0;
 
   //NR UL SCS-SpecificCarrier
-  uint32_t            UL_offsetToCarrier                                            = 0;
-  long                UL_SubcarrierSpacing                                          = 0;
-  long                UL_SCS_SpecificCarrier_k0                                     = 0;
-  uint32_t            UL_carrierBandwidth                                           = 0;
+  uint32_t               UL_offsetToCarrier                                            = 0;
+  int32_t                UL_SubcarrierSpacing                                          = 0;
+  int32_t                UL_SCS_SpecificCarrier_k0                                     = 0;
+  uint32_t               UL_carrierBandwidth                                           = 0;
 
   // NR BWP-UplinkCommon
-  uint32_t            UL_locationAndBandwidth                                       = 0;
-  //NR_prefix_type_t    UL_prefix_type; 
+  uint32_t               UL_locationAndBandwidth                                       = 0;
 
-
-  long                ssb_periodicityServingCell                                    = 0;
-  long                dmrs_TypeA_Position                                           = 0;
-  long                NIA_SubcarrierSpacing                                         = 0; 
-  long                ss_PBCH_BlockPower                                            = 0;
+  int32_t                subCarrierSpacingCommon                                       = 0;
+  uint32_t               pdcch_ConfigSIB1                                              = 0;
+  int32_t                frequencyOffsetSSB                                            = 0;
+  int32_t                ServingCellConfigCommon_ssb_periodicityServingCell            = 0;
+  int32_t                ServingCellConfigCommon_dmrs_TypeA_Position                   = 0;
+  int32_t                NIA_SubcarrierSpacing                                         = 0; 
+  int32_t                ServingCellConfigCommon_ss_PBCH_BlockPower                    = 0;
 
   //NR TDD-UL-DL-ConfigCommon
-  long                referenceSubcarrierSpacing                                    = 0;
-  long                dl_UL_TransmissionPeriodicity                                 = 0;
-  long                nrofDownlinkSlots                                             = 0;
-  long                nrofDownlinkSymbols                                           = 0;
-  long                nrofUplinkSlots                                               = 0;
-  long                nrofUplinkSymbols                                             = 0;
+  int32_t                referenceSubcarrierSpacing                                    = 0;
+  int32_t                dl_UL_TransmissionPeriodicity                                 = 0;
+  int32_t                nrofDownlinkSlots                                             = 0;
+  int32_t                nrofDownlinkSymbols                                           = 0;
+  int32_t                nrofUplinkSlots                                               = 0;
+  int32_t                nrofUplinkSymbols                                             = 0;
 
   //NR RACH-ConfigCommon
-  long                rach_totalNumberOfRA_Preambles                                = 0;
-  long                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice         = 0;
-  long                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth      = 0;
-  long                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth      = 0;
-  long                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf        = 0;
-  long                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one            = 0;
-  long                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two            = 0;
-  uint32_t            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four           = 0;
-  uint32_t            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight          = 0;
-  uint32_t            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen        = 0;
-  char*               rach_groupBconfigured                                         = NULL;
-  long                rach_ra_Msg3SizeGroupA                                        = 0;
-  long                rach_messagePowerOffsetGroupB                                 = 0;
-  long                rach_numberOfRA_PreamblesGroupA                               = 0;
-  long                rach_ra_ContentionResolutionTimer                             = 0;
-  long                rsrp_ThresholdSSB                                             = 0;
-  long                rsrp_ThresholdSSB_SUL                                         = 0;
-  long                prach_RootSequenceIndex_choice                                = 0;
-  uint32_t            prach_RootSequenceIndex_l839                                  = 0;
-  uint32_t            prach_RootSequenceIndex_l139                                  = 0;
-  long                prach_msg1_SubcarrierSpacing                                  = 0;
-  long                restrictedSetConfig                                           = 0;
-  long                msg3_transformPrecoding                                       = 0;
+  int32_t                rach_totalNumberOfRA_Preambles                                = 0;
+  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice         = 0;
+  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth      = 0;
+  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth      = 0;
+  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf        = 0;
+  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one            = 0;
+  int32_t                rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two            = 0;
+  uint32_t               rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four           = 0;
+  uint32_t               rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight          = 0;
+  uint32_t               rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen        = 0;
+  char*                  rach_groupBconfigured                                         = NULL;
+  int32_t                rach_ra_Msg3SizeGroupA                                        = 0;
+  int32_t                rach_messagePowerOffsetGroupB                                 = 0;
+  int32_t                rach_numberOfRA_PreamblesGroupA                               = 0;
+  int32_t                rach_ra_ContentionResolutionTimer                             = 0;
+  int32_t                rsrp_ThresholdSSB                                             = 0;
+  int32_t                rsrp_ThresholdSSB_SUL                                         = 0;
+  int32_t                prach_RootSequenceIndex_choice                                = 0;
+  uint32_t               prach_RootSequenceIndex_l839                                  = 0;
+  uint32_t               prach_RootSequenceIndex_l139                                  = 0;
+  int32_t                prach_msg1_SubcarrierSpacing                                  = 0;
+  int32_t                restrictedSetConfig                                           = 0;
+  int32_t                msg3_transformPrecoding                                       = 0;
   //ssb-perRACH-OccasionAndCB-PreamblesPerSSB not sure
 
   //NR RACH-ConfigGeneric
-  long                prach_ConfigurationIndex                                      = 0;
-  long                prach_msg1_FDM                                                = 0;
-  long                prach_msg1_FrequencyStart                                     = 0;
-  long                zeroCorrelationZoneConfig                                     = 0;
-  long                preambleReceivedTargetPower                                   = 0;
-  long                preambleTransMax                                              = 0;
-  long                powerRampingStep                                              = 0;
-  long                ra_ResponseWindow                                             = 0;
+  int32_t                prach_ConfigurationIndex                                      = 0;
+  int32_t                prach_msg1_FDM                                                = 0;
+  int32_t                prach_msg1_FrequencyStart                                     = 0;
+  int32_t                zeroCorrelationZoneConfig                                     = 0;
+  int32_t                preambleReceivedTargetPower                                   = 0;
+  int32_t                preambleTransMax                                              = 0;
+  int32_t                powerRampingStep                                              = 0;
+  int32_t                ra_ResponseWindow                                             = 0;
 
   //PUSCH-ConfigCommon
-  char*               groupHoppingEnabledTransformPrecoding                         = NULL;
-  long                msg3_DeltaPreamble                                            = 0;
-  long                p0_NominalWithGrant                                           = 0;
+  char*                  groupHoppingEnabledTransformPrecoding                         = NULL;
+  int32_t                msg3_DeltaPreamble                                            = 0;
+  int32_t                p0_NominalWithGrant                                           = 0;
 
   ///PUSCH-TimeDomainResourceAllocation
-  long                PUSCH_TimeDomainResourceAllocation_k2                         = 0;
-  long                PUSCH_TimeDomainResourceAllocation_mappingType                = 0;
+  int32_t                PUSCH_TimeDomainResourceAllocation_k2                         = 0;
+  int32_t                PUSCH_TimeDomainResourceAllocation_mappingType                = 0;
 
   //PUCCH-ConfigCommon
-  long                pucch_GroupHopping                                            = 0;
-  long                p0_nominal                                                    = 0;
+  int32_t                pucch_GroupHopping                                            = 0;
+  int32_t                p0_nominal                                                    = 0;
 
   //PDSCH-ConfigCOmmon
   //PDSCH-TimeDomainResourceAllocation
-  long                PDSCH_TimeDomainResourceAllocation_k0                         = 0;
-  long                PDSCH_TimeDomainResourceAllocation_mappingType                = 0;
+  int32_t                PDSCH_TimeDomainResourceAllocation_k0                         = 0;
+  int32_t                PDSCH_TimeDomainResourceAllocation_mappingType                = 0;
 
   //RateMatchPattern  is used to configure one rate matching pattern for PDSCH
-  long                rateMatchPatternId                                            = 0;
-  long                RateMatchPattern_patternType                                  = 0;
-  long                symbolsInResourceBlock                                        = 0;
-  long                periodicityAndPattern                                         = 0;
-  long                RateMatchPattern_controlResourceSet                           = 0;
-  long                RateMatchPattern_subcarrierSpacing                            = 0;
-  long                RateMatchPattern_mode                                         = 0;
+  int32_t                rateMatchPatternId                                            = 0;
+  int32_t                RateMatchPattern_patternType                                  = 0;
+  int32_t                symbolsInResourceBlock                                        = 0;
+  int32_t                periodicityAndPattern                                         = 0;
+  int32_t                RateMatchPattern_controlResourceSet                           = 0;
+  int32_t                RateMatchPattern_subcarrierSpacing                            = 0;
+  int32_t                RateMatchPattern_mode                                         = 0;
 
   //PDCCH-ConfigCommon
-  long                searchSpaceSIB1                                               = 0;
-  long                searchSpaceOtherSystemInformation                             = 0;
-  long                pagingSearchSpace                                             = 0;
-  long                ra_SearchSpace                                                = 0;
-  long                rach_ra_ControlResourceSet                                    = 0;
+  int32_t                searchSpaceSIB1                                               = 0;
+  int32_t                searchSpaceOtherSystemInformation                             = 0;
+  int32_t                pagingSearchSpace                                             = 0;
+  int32_t                ra_SearchSpace                                                = 0;
+  int32_t                rach_ra_ControlResourceSet                                    = 0;
   //NR PDCCH-ConfigCommon commonControlResourcesSets
-  long                PDCCH_common_controlResourceSetId                             = 0;
-  long                PDCCH_common_ControlResourceSet_duration                      = 0;
-  long                PDCCH_cce_REG_MappingType                                     = 0;
-  long                PDCCH_reg_BundleSize                                          = 0;
-  long                PDCCH_interleaverSize                                         = 0;
-  long                PDCCH_shiftIndex                                              = 0;  
-  long                PDCCH_precoderGranularity                                     = 0;
-  char*               tci_PresentInDCI                                              = NULL;
+  int32_t                PDCCH_common_controlResourceSetId                             = 0;
+  int32_t                PDCCH_common_ControlResourceSet_duration                      = 0;
+  int32_t                PDCCH_cce_REG_MappingType                                     = 0;
+  int32_t                PDCCH_reg_BundleSize                                          = 0;
+  int32_t                PDCCH_interleaverSize                                         = 0;
+  int32_t                PDCCH_shiftIndex                                              = 0;  
+  int32_t                PDCCH_precoderGranularity                                     = 0;
+  char*                  tci_PresentInDCI                                              = NULL;
 
   //NR PDCCH-ConfigCommon commonSearchSpaces
-  long                SearchSpaceId                                                 = 0;
-  long                commonSearchSpaces_controlResourceSetId                       = 0;
-  long                SearchSpace_monitoringSlotPeriodicityAndOffset_choice         = 0;
-  long                SearchSpace_monitoringSlotPeriodicityAndOffset_sl1            = 0;
-  long                SearchSpace_monitoringSlotPeriodicityAndOffset_sl2            = 0;
-  long                SearchSpace_monitoringSlotPeriodicityAndOffset_sl4            = 0;
-  long                SearchSpace_monitoringSlotPeriodicityAndOffset_sl5            = 0;
-  long                SearchSpace_monitoringSlotPeriodicityAndOffset_sl8            = 0;
-  long                SearchSpace_monitoringSlotPeriodicityAndOffset_sl10           = 0;
-  long                SearchSpace_monitoringSlotPeriodicityAndOffset_sl16           = 0;
-  long                SearchSpace_monitoringSlotPeriodicityAndOffset_sl20           = 0;
-  long                SearchSpace_nrofCandidates_aggregationLevel1                  = 0;
-  long                SearchSpace_nrofCandidates_aggregationLevel2                  = 0;
-  long                SearchSpace_nrofCandidates_aggregationLevel4                  = 0;
-  long                SearchSpace_nrofCandidates_aggregationLevel8                  = 0;
-  long                SearchSpace_nrofCandidates_aggregationLevel16                 = 0;
-  long                SearchSpace_searchSpaceType                                   = 0;
-  long                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1     = 0;
-  long                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2     = 0;
-  long                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4     = 0;
-  long                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8     = 0;
-  long                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16    = 0; 
-  long                Common_dci_Format2_3_monitoringPeriodicity                    = 0;
-  long                Common_dci_Format2_3_nrofPDCCH_Candidates                     = 0;
-  long                ue_Specific__dci_Formats                                      = 0;
+  int32_t                SearchSpaceId                                                 = 0;
+  int32_t                commonSearchSpaces_controlResourceSetId                       = 0;
+  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_choice         = 0;
+  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl1            = 0;
+  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl2            = 0;
+  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl4            = 0;
+  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl5            = 0;
+  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl8            = 0;
+  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl10           = 0;
+  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl16           = 0;
+  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl20           = 0;
+  int32_t                SearchSpace_nrofCandidates_aggregationLevel1                  = 0;
+  int32_t                SearchSpace_nrofCandidates_aggregationLevel2                  = 0;
+  int32_t                SearchSpace_nrofCandidates_aggregationLevel4                  = 0;
+  int32_t                SearchSpace_nrofCandidates_aggregationLevel8                  = 0;
+  int32_t                SearchSpace_nrofCandidates_aggregationLevel16                 = 0;
+  int32_t                SearchSpace_searchSpaceType                                   = 0;
+  int32_t                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1     = 0;
+  int32_t                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2     = 0;
+  int32_t                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4     = 0;
+  int32_t                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8     = 0;
+  int32_t                Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16    = 0; 
+  int32_t                Common_dci_Format2_3_monitoringPeriodicity                    = 0;
+  int32_t                Common_dci_Format2_3_nrofPDCCH_Candidates                     = 0;
+  int32_t                ue_Specific__dci_Formats                                      = 0;
 
 
-  int32_t     		my_int;
+  int32_t             my_int;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
-  
+  ////////// Identification parameters
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
-
+  ////////// Physical parameters
   checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
   paramdef_t CCsParams[] = CCPARAMS_DESC;
   paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
@@ -217,7 +226,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramdef_t SRB1Params[] = SRB1PARAMS_DESC;  
 
   /* get global parameters, defined outside any section in the config file */
-  
+ 
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
   num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
   AssertFatal (i<num_gnbs,"Failed to parse config file no %ith element in %s \n",i, GNB_CONFIG_STRING_ACTIVE_GNBS);
@@ -241,7 +250,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   #endif
 
   if (num_gnbs>0) {
-    // Output a list of all gNBs.
+    // Output a list of all gNBs. ////////// Identification parameters
     config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
 
     if (GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr == NULL) {
@@ -316,17 +325,29 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             //             "Failed to parse gNB configuration file %s, gnb %d illegal tdd_config_s %d (should be 0-%d)!",
             //             RC.config_file_name, i, tdd_config_s, TDD_Config__specialSubframePatterns_ssp8);
 
-            if (!prefix_type){
+            if (!DL_prefix_type){
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d define %s: NORMAL,EXTENDED!\n",
-                           RC.config_file_name, i, GNB_CONFIG_STRING_PREFIX_TYPE);
-            }else if (strcmp(prefix_type, "NORMAL") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = NORMAL;
-            }else if (strcmp(prefix_type, "EXTENDED") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = EXTENDED;
+                           RC.config_file_name, i, GNB_CONFIG_STRING_DL_PREFIX_TYPE);
+            }else if (strcmp(DL_prefix_type, "NORMAL") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_prefix_type[j] = NORMAL;
+            }else if (strcmp(DL_prefix_type, "EXTENDED") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_prefix_type[j] = EXTENDED;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
-                           RC.config_file_name, i, prefix_type);
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for DL_prefix_type choice: NORMAL or EXTENDED !\n",
+                           RC.config_file_name, i, DL_prefix_type);
             }
+
+            if (!UL_prefix_type){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d define %s: NORMAL,EXTENDED!\n",
+                           RC.config_file_name, i, GNB_CONFIG_STRING_UL_PREFIX_TYPE);
+            }else if (strcmp(UL_prefix_type, "NORMAL") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_prefix_type[j] = NORMAL;
+            }else if (strcmp(UL_prefix_type, "EXTENDED") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_prefix_type[j] = EXTENDED;
+            }else {
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_prefix_type choice: NORMAL or EXTENDED !\n",
+                           RC.config_file_name, i, UL_prefix_type);
+            }            
 
             NRRRC_CONFIGURATION_REQ (msg_p).eutra_band[j] = eutra_band;
             NRRRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint32_t) downlink_frequency;
@@ -388,11 +409,57 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             ////////////////////////////////////////////////////////////////////////////////
             //---------------------------NR--------Configuration--------------------------//
             ////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////MIB///////////////////////////////
+            NRRRC_CONFIGURATION_REQ (msg_p).MIB_subCarrierSpacingCommon[j] = MIB_subCarrierSpacingCommon;
+            if ((MIB_subCarrierSpacingCommon !=15) && (MIB_subCarrierSpacingCommon !=30) && (MIB_subCarrierSpacingCommon !=60) && (MIB_subCarrierSpacingCommon !=120)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for MIB_subCarrierSpacingCommon choice: 15,30,60,120 !\n",
+                           RC.config_file_name, i, MIB_subCarrierSpacingCommon);
+            }
+
+            NRRRC_CONFIGURATION_REQ (msg_p).MIB_dmrs_TypeA_Position[j] = MIB_dmrs_TypeA_Position;
+            if ((MIB_dmrs_TypeA_Position !=2) && (MIB_dmrs_TypeA_Position !=3)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for MIB_dmrs_TypeA_Position choice:2,3 !\n",
+                           RC.config_file_name, i, MIB_dmrs_TypeA_Position);
+            }          
+
+            NRRRC_CONFIGURATION_REQ (msg_p).pdcch_ConfigSIB1[j] = pdcch_ConfigSIB1;
+            if ((pdcch_ConfigSIB1 <0) || (pdcch_ConfigSIB1 > 255)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for pdcch_ConfigSIB1 choice: 0..3279165 !\n",
+                           RC.config_file_name, i, pdcch_ConfigSIB1);
+            }
+            
+            ////////////////////////////////SIB1//////////////////////////////
+
+            if (strcmp(SIB1_frequencyOffsetSSB , "khz-5") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).SIB1_frequencyOffsetSSB[j] = -5;                    
+            }else if (strcmp(SIB1_frequencyOffsetSSB , "khz5") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).SIB1_frequencyOffsetSSB[j] = 5;
+            }else {
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SIB1_frequencyOffsetSSB !\n",
+                           RC.config_file_name, i, SIB1_frequencyOffsetSSB);
+            }
+
+            NRRRC_CONFIGURATION_REQ (msg_p).SIB1_ssb_PeriodicityServingCell[j] = SIB1_ssb_PeriodicityServingCell;
+            if ((SIB1_ssb_PeriodicityServingCell !=5)  && 
+                (SIB1_ssb_PeriodicityServingCell !=10) && 
+                (SIB1_ssb_PeriodicityServingCell !=20) && 
+                (SIB1_ssb_PeriodicityServingCell !=40) &&
+                (SIB1_ssb_PeriodicityServingCell !=80) &&
+                (SIB1_ssb_PeriodicityServingCell !=160)&&){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SIB1_ssb_PeriodicityServingCell choice: 5,10,20,40,80,160 !\n",
+                           RC.config_file_name, i, SIB1_ssb_PeriodicityServingCell);
+            }            
+
+            NRRRC_CONFIGURATION_REQ (msg_p).SIB1_ss_PBCH_BlockPower[j] = SIB1_ss_PBCH_BlockPower;
+            if ((SIB1_ss_PBCH_BlockPower < -60) || (SIB1_ss_PBCH_BlockPower > 50)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SIB1_ss_PBCH_BlockPower choice: -60..50 !\n",
+              RC.config_file_name, i, SIB1_ss_PBCH_BlockPower);
+            }
 
             ////////////////////////////////NR FrequencyInfoDL//////////////////////////////
             NRRRC_CONFIGURATION_REQ (msg_p).absoluteFrequencySSB[j] = absoluteFrequencySSB;
             if ((absoluteFrequencySSB <0) || (absoluteFrequencySSB > 3279165)){
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for FreqBandIndicatorNR choice: 0..3279165 !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for absoluteFrequencySSB choice: 0..3279165 !\n",
                            RC.config_file_name, i, absoluteFrequencySSB);
             }
 
@@ -556,49 +623,50 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               RC.config_file_name, i, UL_locationAndBandwidth);
             }
 
-            switch (ssb_periodicityServingCell) {
+            switch (ServingCellConfigCommon_ssb_periodicityServingCell) {
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms5;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms5;
                 break;
 
               case 10:
-                NRRRC_CONFIGURATION_REQ (msg_p).ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms10;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms10;
                 break;
 
               case 20:
-                NRRRC_CONFIGURATION_REQ (msg_p).ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms20;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms20;
                 break;
               
               case 40:
-                NRRRC_CONFIGURATION_REQ (msg_p).ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms40;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms40;
                 break;
                           
               case 80:
-                NRRRC_CONFIGURATION_REQ (msg_p).ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms80;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms80;
                 break;
 
               case 160:
-                NRRRC_CONFIGURATION_REQ (msg_p).ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms160;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms160;
                 break;
 
                default:
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ssb_periodicityServingCell choice: -6,0,6 !\n",
-                             RC.config_file_name, i, ssb_periodicityServingCell);
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ServingCellConfigCommon_ssb_periodicityServingCell choice: -6,0,6 !\n",
+                             RC.config_file_name, i, ServingCellConfigCommon_ssb_periodicityServingCell);
                 break;
             }
 
-            switch (dmrs_TypeA_Position) {
+
+            switch (ServingCellConfigCommon_dmrs_TypeA_Position) {
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).dmrs_TypeA_Position[j] =  ServingCellConfigCommon__dmrs_TypeA_Position_pos2;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_dmrs_TypeA_Position[j] =  ServingCellConfigCommon__dmrs_TypeA_Position_pos2;
                 break;
 
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).dmrs_TypeA_Position[j] =  ServingCellConfigCommon__dmrs_TypeA_Position_pos3;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_dmrs_TypeA_Position[j] =  ServingCellConfigCommon__dmrs_TypeA_Position_pos3;
                 break;
 
                default:
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for dmrs_TypeA_Position choice: -6,0,6 !\n",
-                             RC.config_file_name, i, dmrs_TypeA_Position);
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ServingCellConfigCommon_dmrs_TypeA_Position choice: -6,0,6 !\n",
+                             RC.config_file_name, i, ServingCellConfigCommon_dmrs_TypeA_Position);
                 break;
             }
 
@@ -616,10 +684,10 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               RC.config_file_name, i, NIA_SubcarrierSpacing);
             }
 
-            NRRRC_CONFIGURATION_REQ (msg_p).ss_PBCH_BlockPower[j] = ss_PBCH_BlockPower;
-            if ((ss_PBCH_BlockPower < -60) || (ss_PBCH_BlockPower > 50)){
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ss_PBCH_BlockPower choice: 0..11 !\n",
-              RC.config_file_name, i, ss_PBCH_BlockPower);
+            NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ss_PBCH_BlockPower[j] = ServingCellConfigCommon_ss_PBCH_BlockPower;
+            if ((ServingCellConfigCommon_ss_PBCH_BlockPower < -60) || (ServingCellConfigCommon_ss_PBCH_BlockPower > 50)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ServingCellConfigCommon_ss_PBCH_BlockPower choice: 0..11 !\n",
+              RC.config_file_name, i, ServingCellConfigCommon_ss_PBCH_BlockPower);
             }
 
             /////////////////////////////////NR TDD-UL-DL-ConfigCommon///////////////////////////
@@ -1937,7 +2005,7 @@ void NRRCConfig(void) {
     for (int i=0;i<RC.nb_nr_inst;i++) {
       sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,i);
       config_getlist( &CCsParamList,NULL,0, aprefix);
-      RC.nb_CC[i]		 = CCsParamList.numelt;
+      RC.nb_CC[i]   = CCsParamList.numelt;
     }
   }
 
