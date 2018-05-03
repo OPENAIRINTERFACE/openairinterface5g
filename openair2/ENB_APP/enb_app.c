@@ -335,6 +335,8 @@ void handle_reconfiguration(module_id_t mod_id)
   clock_gettime(CLOCK_MONOTONIC, &start);
   flexran_agent_info_t *flexran = RC.flexran[mod_id];
 
+  LOG_N(ENB_APP, "lte-softmodem soft-restart requested\n");
+
   if (ENB_WAIT == flexran->node_ctrl_state) {
     /* this is already waiting, just release */
     pthread_mutex_lock(&flexran->mutex_node_ctrl);
@@ -352,7 +354,7 @@ void handle_reconfiguration(module_id_t mod_id)
   /* node_ctrl_state should have value ENB_MAKE_WAIT only if this method is not
    * executed by the FlexRAN thread */
   if (ENB_MAKE_WAIT == flexran->node_ctrl_state) {
-    LOG_I(ENB_APP, " * eNB %d: Waiting for FlexRAN RTController command *\n", mod_id);
+    LOG_N(ENB_APP, " * eNB %d: Waiting for FlexRAN RTController command *\n", mod_id);
     pthread_mutex_lock(&flexran->mutex_node_ctrl);
     flexran->node_ctrl_state = ENB_WAIT;
     while (ENB_NORMAL_OPERATION != flexran->node_ctrl_state)
@@ -361,7 +363,7 @@ void handle_reconfiguration(module_id_t mod_id)
   }
 
   if (restart_L1L2(mod_id) < 0) {
-    LOG_F(ENB_APP, "can not restart, killing lte-softmodem\n");
+    LOG_E(ENB_APP, "can not restart, killing lte-softmodem\n");
     itti_terminate_tasks(TASK_PHY_ENB);
     return;
   }
@@ -374,5 +376,5 @@ void handle_reconfiguration(module_id_t mod_id)
     end.tv_sec -= 1;
     end.tv_nsec = end.tv_nsec - start.tv_nsec + 1000000000;
   }
-  LOG_I(ENB_APP, "lte-softmodem restart succeeded in %ld.%ld s\n", end.tv_sec, end.tv_nsec / 1000000);
+  LOG_N(ENB_APP, "lte-softmodem restart succeeded in %ld.%ld s\n", end.tv_sec, end.tv_nsec / 1000000);
 }
