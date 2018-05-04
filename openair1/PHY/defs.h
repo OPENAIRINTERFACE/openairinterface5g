@@ -434,6 +434,8 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_ru;
   /// symbol mask for IF4p5 reception per subframe
   uint32_t symbol_mask[10];
+  /// time measurements for each subframe
+  struct timespec t[10];
   /// number of slave threads
   int                  num_slaves;
   /// array of pointers to slaves
@@ -715,6 +717,8 @@ typedef struct RU_t_s{
   int rx_offset;        
   /// flag to indicate the RU is a slave to another source
   int is_slave;
+  /// flag to indicate if the RU has a control channel
+  int has_ctrl_prt;
   /// counter to delay start of processing of RU until HW settles
   int wait_cnt;
   /// Total gain of receive chain
