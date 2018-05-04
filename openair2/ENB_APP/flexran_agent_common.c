@@ -414,8 +414,14 @@ int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol_
   
   FILE *f;
   f = fopen(target, "wb");
-  fwrite(control_delegation_msg->payload.data, control_delegation_msg->payload.len, 1, f);
-  fclose(f);
+  if (f) {
+    fwrite(control_delegation_msg->payload.data, control_delegation_msg->payload.len, 1, f);
+    fclose(f);
+  }
+  else {
+    LOG_W(FLEXRAN_AGENT, "[%d] can not write control delegation data to %s\n",
+          mod_id, target);
+  }
 
   //  long time_elapsed_nanos = timer_end(vartime);
   *msg = NULL;
