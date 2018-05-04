@@ -334,7 +334,7 @@ static int trx_usrp_start(openair0_device *device) {
     LOG_I(PHY,"Time in secs now: %llu \n", s->usrp->get_time_now().to_ticks(s->sample_rate));
     LOG_I(PHY,"Time in secs last pps: %llu \n", s->usrp->get_time_last_pps().to_ticks(s->sample_rate));
 
-    if (s->use_gps == 1) {
+    if (s->use_gps == 1 || device->openair0_cfg[0].time_source == external) {
       s->wait_for_first_pps = 1;
       cmd.time_spec = s->usrp->get_time_last_pps() + uhd::time_spec_t(1.0);    
     }
