@@ -129,7 +129,10 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *
   int ret = 0;
   int lib_idx = -1;
 
-  AssertFatal(modname, "no library name given\n");
+  if (!modname) {
+    fprintf(stderr, "[LOADER] load_module_shlib(): no library name given\n");
+    return -1;
+  }
 
   if (!loader_data.shlibpath) {
      loader_init();
@@ -148,9 +151,12 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *
   if (lib_idx < 0) {
     lib_idx = loader_data.numshlibs;
     ++loader_data.numshlibs;
-    AssertFatal(loader_data.numshlibs <= loader_data.maxshlibs,
-                "shared lib loader: can not load more than %d shlibs\n",
-                loader_data.maxshlibs);
+    if (loader_data.numshlibs > loader_data.maxshlibs) {
+      fprintf(stderr, "[LOADER] can not load more than %d shlibs\n",
+              loader_data.maxshlibs);
+      ret = -1;
+      goto load_module_shlib_exit;
+    }
     loader_data.shlibs[lib_idx].name = strdup(modname);
     loader_data.shlibs[lib_idx].thisshlib_path = strdup(shlib_path);
   }
@@ -174,9 +180,12 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *
   if (fpc) {
     int chkver_ret = fpc(loader_data.mainexec_buildversion,
                          &(loader_data.shlibs[lib_idx].shlib_buildversion));
-    AssertFatal(chkver_ret >= 0,
-                "[LOADER]  %s %d lib %s, version mismatch",
-                __FILE__, __LINE__, modname);
+    if (chkver_ret < 0) {
+      fprintf(stderr, "[LOADER]  %s %d lib %s, version mismatch",
+              __FILE__, __LINE__, modname);
+      ret = -1;
+      goto load_module_shlib_exit;
+    }
   }
   sprintf(afname,"%s_autoinit",modname);
   fpi = dlsym(lib_handle,afname);
@@ -188,13 +197,21 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *
   if (farray) {
     if (!loader_data.shlibs[lib_idx].funcarray) {
       loader_data.shlibs[lib_idx].funcarray = malloc(numf*sizeof(loader_shlibfunc_t));
-      AssertFatal(loader_data.shlibs[lib_idx].funcarray, "unable to allocate memory\n");
+      if (!loader_data.shlibs[lib_idx].funcarray) {
+        fprintf(stderr, "[LOADER] load_module_shlib(): unable to allocate memory\n");
+        ret = -1;
+        goto load_module_shlib_exit;
+      }
     }
     loader_data.shlibs[lib_idx].numfunc = 0;
     for (int i = 0; i < numf; i++) {
       farray[i].fptr = dlsym(lib_handle,farray[i].fname);
-      AssertFatal(farray[i].fptr, "%s: function not found %s\n",
-                  dlerror(), farray[i].fname);
+      if (!farray[i].fptr) {
+        fprintf(stderr, "[LOADER] load_module_shlib(): function %s not found: %s\n",
+                  farray[i].fname, dlerror());
+        ret = -1;
+        goto load_module_shlib_exit;
+      }
       loader_data.shlibs[lib_idx].funcarray[i].fname=strdup(farray[i].fname);
       loader_data.shlibs[lib_idx].funcarray[i].fptr = farray[i].fptr;
       loader_data.shlibs[lib_idx].numfunc++;
