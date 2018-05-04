@@ -733,7 +733,7 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
     if (RC.mac == NULL)
       l2_init_eNB();
 
-    mac_top_init_eNB();
+    //mac_top_init_eNB();
 
     RC.mac[Mod_idP]->common_channels[CC_idP].mib = mib;
     RC.mac[Mod_idP]->common_channels[CC_idP].physCellId = physCellId;
