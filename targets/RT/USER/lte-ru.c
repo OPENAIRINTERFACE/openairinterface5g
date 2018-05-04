@@ -1540,7 +1540,7 @@ static void* ru_stats_thread(void* param) {
   while (!oai_exit) {
     sleep(1);
     if (opp_enabled == 1) {
-      print_meas(&proc->ru_arrival_time,"ru_arrival_time",NULL,NULL);
+     // print_meas(&proc->ru_arrival_time,"ru_arrival_time",NULL,NULL);
       if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
       if (ru->feptx_ofdm) print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
       if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
