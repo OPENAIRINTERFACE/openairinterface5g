@@ -1324,6 +1324,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
                       cqi_req = 0;
                     } else {
                       cqi_req = 1;
+                      UE_sched_ctrl->cqi_req_flag |= 1 << sched_subframeP;
                     }
 		    UE_sched_ctrl->cqi_req_timer = 0;
 		} else
@@ -1857,7 +1858,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
       else if (UE_sched_ctrl->cqi_req_timer>30) {
         cqi_req = 1;
         UE_sched_ctrl->cqi_req_timer=0;
-        UE_sched_ctrl->cqi_req_flag=1;
+        UE_sched_ctrl->cqi_req_flag |= 1 << sched_subframeP;
       }
       else
         cqi_req = 0;
