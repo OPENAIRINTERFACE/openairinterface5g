@@ -53,7 +53,8 @@
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTC                "remote_s_portc"
 #define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
-
+#define CONFIG_MACRLC_PUSCH10xSNR                          "puSch10xSnr"
+#define CONFIG_MACRLC_PUCCH10xSNR                          "puCch10xSnr"
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            MacRLC  configuration parameters                                                                           */
@@ -77,6 +78,8 @@
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTC,                    NULL,     0,          uptr:NULL,           defintval:50020,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_LOCAL_S_PORTD,                     NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_REMOTE_S_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
+{CONFIG_MACRLC_PUSCH10xSNR,  		                     NULL,     0,          iptr:NULL,           defintval:20,             TYPE_INT,     0},         \
+{CONFIG_MACRLC_PUCCH10xSNR,  		                     NULL,     0,          iptr:NULL,           defintval:20,             TYPE_INT,     0}         \
 }
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -95,4 +98,6 @@
 #define MACRLC_REMOTE_S_PORTC_IDX                              14
 #define MACRLC_LOCAL_S_PORTD_IDX                               15
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
+#define MACRLC_PUSCH10xSNR_IDX                                 17
+#define MACRLC_PUCCH10xSNR_IDX                                 18
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/

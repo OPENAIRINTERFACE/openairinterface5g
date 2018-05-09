@@ -1104,6 +1104,9 @@ typedef struct eNB_MAC_INST_s {
     /// UL handle
     uint32_t ul_handle;
     UE_list_t UE_list;
+    //Target UL channel SNRs (10 times)
+    int16_t puSch10xSnr;
+    int16_t puCch10xSnr;
 
     ///subband bitmap configuration
     SBMAP_CONF sbmap_conf;

@@ -61,15 +61,18 @@ void mac_top_init_eNB(void)
 	  RC.nb_macrlc_inst);
 
     if (RC.nb_macrlc_inst > 0) {
-	RC.mac =
-	    (eNB_MAC_INST **) malloc16(RC.nb_macrlc_inst *
-				       sizeof(eNB_MAC_INST *));
+      if (RC.mac == NULL){
+		RC.mac =
+			(eNB_MAC_INST **) malloc16(RC.nb_macrlc_inst *
+						   sizeof(eNB_MAC_INST *));
+        }
 	AssertFatal(RC.mac != NULL,
 		    "can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",
 		    RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *),
 		    RC.nb_macrlc_inst, sizeof(eNB_MAC_INST));
 	for (i = 0; i < RC.nb_macrlc_inst; i++) {
-	    RC.mac[i] = (eNB_MAC_INST *) malloc16(sizeof(eNB_MAC_INST));
+		if (RC.mac[i] == NULL)
+			RC.mac[i] = (eNB_MAC_INST *) malloc16(sizeof(eNB_MAC_INST));
 	    AssertFatal(RC.mac != NULL,
 			"can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",
 			RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *),
@@ -77,7 +80,8 @@ void mac_top_init_eNB(void)
 	    LOG_D(MAC,
 		  "[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",
 		  sizeof(eNB_MAC_INST), RC.nb_macrlc_inst, RC.mac);
-	    bzero(RC.mac[i], sizeof(eNB_MAC_INST));
+	    if (RC.mac[i] == NULL) bzero(RC.mac[i], sizeof(eNB_MAC_INST));
+	      // bzero(RC.mac[i], sizeof(eNB_MAC_INST));
 	    RC.mac[i]->Mod_id = i;
 	    for (j = 0; j < MAX_NUM_CCs; j++) {
 		RC.mac[i]->DL_req[j].dl_config_request_body.

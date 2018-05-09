@@ -1115,8 +1115,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
   uint8_t status = 0;
   uint8_t rb_table_index = -1;
   uint32_t cqi_req, cshift, ndi, tpc;
-  int32_t normalized_rx_power;
-  int32_t target_rx_power = -90;
+  int32_t normalized_rx_power, target_rx_power;
   static int32_t tpc_accumulated = 0;
   int n;
   int CC_id = 0;
@@ -1280,9 +1279,12 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	  //compute the expected ULSCH RX power (for the stats)
 
 	  // this is the normalized RX power and this should be constant (regardless of mcs
-	  normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
-	  target_rx_power = 178;
-
+	  //is not in dBm, unit from nfapi
+	  //normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
+	  // converting to dBm: ToDo: Noise power hard coded to 30
+	  normalized_rx_power = (5*UE_sched_ctrl->pusch_snr[CC_id]-640)/10+30;
+	  target_rx_power= mac->puSch10xSnr/10 + 30;
+	  printf("\n mac->puSch10xSnr = %d,  normalized_rx_power = %d, target_rx_power = %d \n",mac->puSch10xSnr,normalized_rx_power,target_rx_power);
 	  // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
 	  int32_t framex10psubframe = UE_template->pusch_tpc_tx_frame * 10 + UE_template->pusch_tpc_tx_subframe;
