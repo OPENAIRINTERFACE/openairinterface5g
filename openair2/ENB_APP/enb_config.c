@@ -101,6 +101,52 @@ void RCconfig_flexran()
     ue_TimersAndConstants_n310, ue_TimersAndConstants_n311,
     ue_TransmissionMode;
 
+
+    e_SL_CP_Len_r12                rxPool_sc_CP_Len;
+    e_SL_PeriodComm_r12            rxPool_sc_Period;
+    e_SL_CP_Len_r12                rxPool_data_CP_Len;
+    long                           rxPool_ResourceConfig_prb_Num;
+    long                           rxPool_ResourceConfig_prb_Start;
+    long                           rxPool_ResourceConfig_prb_End;
+    SL_OffsetIndicator_r12_PR      rxPool_ResourceConfig_offsetIndicator_present;
+    long                           rxPool_ResourceConfig_offsetIndicator_choice;
+    SubframeBitmapSL_r12_PR        rxPool_ResourceConfig_subframeBitmap_present;
+    char*                          rxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
+    long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_size;
+    long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
+
+    //SIB19
+    //for discRxPool
+    SL_CP_Len_r12_t                discRxPool_cp_Len;
+    e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPool_discPeriod;
+    long                           discRxPool_numRetx;
+    long                           discRxPool_numRepetition;
+    long                           discRxPool_ResourceConfig_prb_Num;
+    long                           discRxPool_ResourceConfig_prb_Start;
+    long                           discRxPool_ResourceConfig_prb_End;
+    SL_OffsetIndicator_r12_PR      discRxPool_ResourceConfig_offsetIndicator_present;
+    long                           discRxPool_ResourceConfig_offsetIndicator_choice;
+    SubframeBitmapSL_r12_PR        discRxPool_ResourceConfig_subframeBitmap_present;
+    char*                          discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
+    long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_size;
+    long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
+    //for discRxPoolPS
+    SL_CP_Len_r12_t                discRxPoolPS_cp_Len;
+    e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPoolPS_discPeriod;
+    long                           discRxPoolPS_numRetx;
+    long                           discRxPoolPS_numRepetition;
+    long                           discRxPoolPS_ResourceConfig_prb_Num;
+    long                           discRxPoolPS_ResourceConfig_prb_Start;
+    long                           discRxPoolPS_ResourceConfig_prb_End;
+    SL_OffsetIndicator_r12_PR      discRxPoolPS_ResourceConfig_offsetIndicator_present;
+    long                           discRxPoolPS_ResourceConfig_offsetIndicator_choice;
+    SubframeBitmapSL_r12_PR        discRxPoolPS_ResourceConfig_subframeBitmap_present;
+    char*                          discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf;
+    long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size;
+    long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
+
+
+
   /* get number of eNBs */
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
   config_get(ENBSParams, sizeof(ENBSParams)/sizeof(paramdef_t), NULL);
@@ -181,6 +227,48 @@ void RCconfig_flexran()
   }
 }
 
+
+/*void UE_config_stub_pnf(void) {
+  int               j;
+  paramdef_t L1_Params[] = L1PARAMS_DESC;
+  paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
+
+  config_getlist( &L1_ParamList,L1_Params,sizeof(L1_Params)/sizeof(paramdef_t), NULL);
+  if (L1_ParamList.numelt > 0) {
+	  for (j=0; j<L1_ParamList.numelt; j++){
+		  //nb_L1_CC = *(L1_ParamList.paramarray[j][L1_CC_IDX].uptr); // Number of component carriers is of no use for the
+	                                                            // phy_stub mode UE pnf. Maybe we can completely skip it.
+
+		  if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
+			  sf_ahead = 4; // Need 4 subframe gap between RX and TX
+			  }
+		  // Panos: Right now that we have only one UE (thread) it is ok to put the eth_params in the UE_mac_inst.
+		  // Later I think we have to change that to attribute eth_params to a global element for all the UEs.
+		  else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
+			  stub_eth_params.local_if_name            = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_IF_NAME_IDX].strptr));
+			  stub_eth_params.my_addr                  = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_ADDRESS_IDX].strptr));
+			  stub_eth_params.remote_addr              = strdup(*(L1_ParamList.paramarray[j][L1_REMOTE_N_ADDRESS_IDX].strptr));
+			  stub_eth_params.my_portc                 = *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTC_IDX].iptr);
+			  stub_eth_params.remote_portc             = *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTC_IDX].iptr);
+			  stub_eth_params.my_portd                 = *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTD_IDX].iptr);
+			  stub_eth_params.remote_portd             = *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTD_IDX].iptr);
+			  stub_eth_params.transp_preference        = ETH_UDP_MODE;
+
+
+			  sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
+			  //configure_nfapi_pnf(UE_mac_inst[0].eth_params_n.remote_addr, UE_mac_inst[0].eth_params_n.remote_portc, UE_mac_inst[0].eth_params_n.my_addr, UE_mac_inst[0].eth_params_n.my_portd, UE_mac_inst[0].eth_params_n.remote_portd);
+			  configure_nfapi_pnf(stub_eth_params.remote_addr, stub_eth_params.remote_portc, stub_eth_params.my_addr, stub_eth_params.my_portd, stub_eth_params.remote_portd);
+		  }
+		  else { // other midhaul
+		  }
+	  }
+  }
+  else {
+
+  }
+}*/
+
+
 void RCconfig_L1(void) {
   int               i,j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
@@ -196,7 +284,6 @@ void RCconfig_L1(void) {
 
   config_getlist( &L1_ParamList,L1_Params,sizeof(L1_Params)/sizeof(paramdef_t), NULL);
   if (L1_ParamList.numelt > 0) {
-
     for (j = 0; j < RC.nb_L1_inst; j++) {
       RC.nb_L1_CC[j] = *(L1_ParamList.paramarray[j][L1_CC_IDX].uptr);
 
@@ -249,6 +336,7 @@ void RCconfig_L1(void) {
         configure_nfapi_pnf(RC.eNB[j][0]->eth_params_n.remote_addr, RC.eNB[j][0]->eth_params_n.remote_portc, RC.eNB[j][0]->eth_params_n.my_addr, RC.eNB[j][0]->eth_params_n.my_portd, RC.eNB[j][0]->eth_params_n     .remote_portd);
       }
       else { // other midhaul
+        //printf("Panos-D: RCconfig_L1 12 \n");
       }	
     }// j=0..num_inst
     printf("Initializing northbound interface for L1\n");
@@ -430,6 +518,52 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   int32_t     ue_TimersAndConstants_n311    = 0;
   int32_t     ue_TransmissionMode           = 0;
 
+  //TTN - for D2D
+  //SIB18
+  const char*       rxPool_sc_CP_Len                                        = NULL;
+  const char*       rxPool_sc_Period                                        = NULL;
+  const char*       rxPool_data_CP_Len                                      = NULL;
+  libconfig_int     rxPool_ResourceConfig_prb_Num                           = 0;
+  libconfig_int     rxPool_ResourceConfig_prb_Start                         = 0;
+  libconfig_int     rxPool_ResourceConfig_prb_End                           = 0;
+  const char*       rxPool_ResourceConfig_offsetIndicator_present           = NULL;
+  libconfig_int     rxPool_ResourceConfig_offsetIndicator_choice            = 0;
+  const char*       rxPool_ResourceConfig_subframeBitmap_present            = NULL;
+  const char*       rxPool_ResourceConfig_subframeBitmap_choice_bs_buf      = NULL;
+  libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_size     = 0;
+  libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused     = 0;
+  //SIB19
+  //For discRxPool
+  const char*       discRxPool_cp_Len                                              = NULL;
+  const char*       discRxPool_discPeriod                                          = NULL;
+  libconfig_int     discRxPool_numRetx                                             = 0;
+  libconfig_int     discRxPool_numRepetition                                       = 0;
+
+  libconfig_int     discRxPool_ResourceConfig_prb_Num                              = 0;
+  libconfig_int     discRxPool_ResourceConfig_prb_Start                            = 0;
+  libconfig_int     discRxPool_ResourceConfig_prb_End                              = 0;
+  const char*       discRxPool_ResourceConfig_offsetIndicator_present              = NULL;
+  libconfig_int     discRxPool_ResourceConfig_offsetIndicator_choice               = 0;
+  const char*       discRxPool_ResourceConfig_subframeBitmap_present               = NULL;
+  const char*       discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf         = NULL;
+  libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_size        = 0;
+  libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused = 0;
+  //For discRxPoolPS
+  const char*       discRxPoolPS_cp_Len                                              = NULL;
+  const char*       discRxPoolPS_discPeriod                                          = NULL;
+  libconfig_int     discRxPoolPS_numRetx                                             = 0;
+  libconfig_int     discRxPoolPS_numRepetition                                       = 0;
+
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_Num                              = 0;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_Start                            = 0;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_End                              = 0;
+  const char*       discRxPoolPS_ResourceConfig_offsetIndicator_present              = NULL;
+  libconfig_int     discRxPoolPS_ResourceConfig_offsetIndicator_choice               = 0;
+  const char*       discRxPoolPS_ResourceConfig_subframeBitmap_present               = NULL;
+  const char*       discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf         = NULL;
+  libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size        = 0;
+  libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused = 0;
+
 
   int32_t     srb1_timer_poll_retransmit    = 0;
   int32_t     srb1_timer_reordering         = 0;
@@ -609,6 +743,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	    for (j = 0; j < CCsParamList.numelt ;j++) { 
 
 	      sprintf(ccspath,"%s.%s.[%i]",enbpath,ENB_CONFIG_STRING_COMPONENT_CARRIERS,j);
+	      LOG_I(RRC, "enb_config::RCconfig_RRC() parameter number: %d, total number of parameters: %d, ccspath: %s \n \n", j, sizeof(CCsParams)/sizeof(paramdef_t), ccspath);
 	      config_get( CCsParams,sizeof(CCsParams)/sizeof(paramdef_t),ccspath);	      
 
 
@@ -1439,6 +1574,267 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       RC.config_file_name, i, ue_TransmissionMode);
 		  break;
 		}
+
+		//TTN - for D2D
+		//SIB18
+		if (strcmp(rxPool_sc_CP_Len,"normal")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_CP_Len[j] = SL_CP_Len_r12_normal;
+		} else if (strcmp(rxPool_sc_CP_Len,"extended")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_CP_Len[j] = SL_CP_Len_r12_extended;
+		} else
+		   AssertFatal (0,
+		         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for rxPool_sc_CP_Len choice: normal,extended!\n",
+		         RC.config_file_name, i, rxPool_sc_CP_Len);
+
+		if (strcmp(rxPool_sc_Period,"sf40")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_sf40;
+		} else if (strcmp(rxPool_sc_Period,"sf60")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_sf60;
+		} else if (strcmp(rxPool_sc_Period,"sf70")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_sf70;
+		} else if (strcmp(rxPool_sc_Period,"sf80")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_sf80;
+		} else if (strcmp(rxPool_sc_Period,"sf120")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_sf120;
+		} else if (strcmp(rxPool_sc_Period,"sf140")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_sf140;
+		} else if (strcmp(rxPool_sc_Period,"sf160")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_sf160;
+		} else if (strcmp(rxPool_sc_Period,"sf240")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_sf240;
+		} else if (strcmp(rxPool_sc_Period,"sf280")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_sf280;
+		} else if (strcmp(rxPool_sc_Period,"sf320")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_sf320;
+		} else if (strcmp(rxPool_sc_Period,"spare6")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_spare6;
+		} else if (strcmp(rxPool_sc_Period,"spare5")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_spare5;
+		} else if (strcmp(rxPool_sc_Period,"spare4")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_spare4;
+		} else if (strcmp(rxPool_sc_Period,"spare3")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_spare3;
+		} else if (strcmp(rxPool_sc_Period,"spare2")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_spare2;
+		} else if (strcmp(rxPool_sc_Period,"spare")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_sc_Period[j] = SL_PeriodComm_r12_spare;
+		} else
+		   AssertFatal (0,
+		         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for rxPool_sc_Period choice: sf40,sf60,sf70,sf80,sf120,sf140,sf160,sf240,sf280,sf320,spare6,spare5,spare4,spare3,spare2,spare!\n",
+		         RC.config_file_name, i, rxPool_sc_Period);
+
+		if (strcmp(rxPool_data_CP_Len,"normal")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_data_CP_Len[j] = SL_CP_Len_r12_normal;
+		} else if (strcmp(rxPool_data_CP_Len,"extended")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_data_CP_Len[j] = SL_CP_Len_r12_extended;
+		} else
+		   AssertFatal (0,
+		         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for rxPool_data_CP_Len choice: normal,extended!\n",
+		         RC.config_file_name, i, rxPool_data_CP_Len);
+
+		RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_prb_Num[j] = rxPool_ResourceConfig_prb_Num;
+		RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_prb_Start[j] = rxPool_ResourceConfig_prb_Start;
+		RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_prb_End[j] = rxPool_ResourceConfig_prb_End;
+
+		if (strcmp(rxPool_ResourceConfig_offsetIndicator_present,"prNothing")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_offsetIndicator_present[j] = SL_OffsetIndicator_r12_PR_NOTHING;
+		} else if (strcmp(rxPool_ResourceConfig_offsetIndicator_present,"prSmall")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_offsetIndicator_present[j] = SL_OffsetIndicator_r12_PR_small_r12;
+		} else if (strcmp(rxPool_ResourceConfig_offsetIndicator_present,"prLarge")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_offsetIndicator_present[j] = SL_OffsetIndicator_r12_PR_large_r12;
+		} else
+		   AssertFatal (0,
+		         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for rxPool_ResourceConfig_offsetIndicator_present choice: prNothing,prSmal,prLarge!\n",
+		         RC.config_file_name, i, rxPool_ResourceConfig_offsetIndicator_present);
+
+		RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_offsetIndicator_choice[j] = rxPool_ResourceConfig_offsetIndicator_choice;
+
+		if (strcmp(rxPool_ResourceConfig_subframeBitmap_present,"prNothing")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_NOTHING;
+		} else if (strcmp(rxPool_ResourceConfig_subframeBitmap_present,"prBs4")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs4_r12;
+		} else if (strcmp(rxPool_ResourceConfig_subframeBitmap_present,"prBs8")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs8_r12;
+		} else if (strcmp(rxPool_ResourceConfig_subframeBitmap_present,"prBs12")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs12_r12;
+		} else if (strcmp(rxPool_ResourceConfig_subframeBitmap_present,"prBs16")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs16_r12;
+		} else if (strcmp(rxPool_ResourceConfig_subframeBitmap_present,"prBs30")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs30_r12;
+		} else if (strcmp(rxPool_ResourceConfig_subframeBitmap_present,"prBs40")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs40_r12;
+		} else if (strcmp(rxPool_ResourceConfig_subframeBitmap_present,"prBs42")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs42_r12;
+		} else
+		   AssertFatal (0,
+		         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for rxPool_ResourceConfig_subframeBitmap_present choice: prNothing,prBs4,prBs8,prBs12,prBs16,prBs30,prBs40,prBs42!\n",
+		         RC.config_file_name, i, rxPool_ResourceConfig_subframeBitmap_present);
+
+		RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[j] = rxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
+		RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_choice_bs_size[j] = rxPool_ResourceConfig_subframeBitmap_choice_bs_size;
+		RRC_CONFIGURATION_REQ (msg_p).rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[j] = rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
+
+		//SIB19 - for discRxPool
+		if (strcmp(discRxPool_cp_Len,"normal")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_cp_Len[j] = SL_CP_Len_r12_normal;
+		} else if (strcmp(discRxPool_cp_Len,"extended")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_cp_Len[j] = SL_CP_Len_r12_extended;
+		} else
+		   AssertFatal (0,
+		         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for discRxPool_cp_Len choice: normal,extended!\n",
+		         RC.config_file_name, i, discRxPool_cp_Len);
+
+
+		if (strcmp(discRxPool_discPeriod,"rf32")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf32;
+		} else if (strcmp(discRxPool_discPeriod,"rf64")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf64;
+		} else if (strcmp(discRxPool_discPeriod,"rf128")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf128;
+		} else if (strcmp(discRxPool_discPeriod,"rf256")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf256;
+		} else if (strcmp(discRxPool_discPeriod,"rf512")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf512;
+		} else if (strcmp(discRxPool_discPeriod,"rf1024")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf1024;
+		} else if (strcmp(discRxPool_discPeriod,"rf16")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf16_v1310;
+		} else if (strcmp(discRxPool_discPeriod,"spare")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_spare;
+		} else
+		   AssertFatal (0,
+		         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for discRxPool_discPeriod choice: rf32,rf64,rf128,rf512,rf1024,rf16,spare!\n",
+		         RC.config_file_name, i, discRxPool_discPeriod);
+
+
+
+		RRC_CONFIGURATION_REQ (msg_p).discRxPool_numRetx[j] = discRxPool_numRetx;
+		RRC_CONFIGURATION_REQ (msg_p).discRxPool_numRepetition[j] = discRxPool_numRepetition;
+
+
+		RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_prb_Num[j] = discRxPool_ResourceConfig_prb_Num;
+		RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_prb_Start[j] = discRxPool_ResourceConfig_prb_Start;
+		RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_prb_End[j] = discRxPool_ResourceConfig_prb_End;
+
+		if (strcmp(discRxPool_ResourceConfig_offsetIndicator_present,"prNothing")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_offsetIndicator_present[j] = SL_OffsetIndicator_r12_PR_NOTHING;
+		} else if (strcmp(discRxPool_ResourceConfig_offsetIndicator_present,"prSmall")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_offsetIndicator_present[j] = SL_OffsetIndicator_r12_PR_small_r12;
+		} else if (strcmp(discRxPool_ResourceConfig_offsetIndicator_present,"prLarge")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_offsetIndicator_present[j] = SL_OffsetIndicator_r12_PR_large_r12;
+		} else
+		   AssertFatal (0,
+		         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for discRxPool_ResourceConfig_offsetIndicator_present choice: prNothing,prSmal,prLarge!\n",
+		         RC.config_file_name, i, discRxPool_ResourceConfig_offsetIndicator_present);
+
+		RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_offsetIndicator_choice[j] = discRxPool_ResourceConfig_offsetIndicator_choice;
+
+		if (strcmp(discRxPool_ResourceConfig_subframeBitmap_present,"prNothing")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_NOTHING;
+		} else if (strcmp(discRxPool_ResourceConfig_subframeBitmap_present,"prBs4")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs4_r12;
+		} else if (strcmp(discRxPool_ResourceConfig_subframeBitmap_present,"prBs8")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs8_r12;
+		} else if (strcmp(discRxPool_ResourceConfig_subframeBitmap_present,"prBs12")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs12_r12;
+		} else if (strcmp(discRxPool_ResourceConfig_subframeBitmap_present,"prBs16")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs16_r12;
+		} else if (strcmp(discRxPool_ResourceConfig_subframeBitmap_present,"prBs30")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs30_r12;
+		} else if (strcmp(discRxPool_ResourceConfig_subframeBitmap_present,"prBs40")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs40_r12;
+		} else if (strcmp(discRxPool_ResourceConfig_subframeBitmap_present,"prBs42")==0) {
+		   RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs42_r12;
+		} else
+		   AssertFatal (0,
+		         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for discRxPool_ResourceConfig_subframeBitmap_present choice: prNothing,prBs4,prBs8,prBs12,prBs16,prBs30,prBs40,prBs42!\n",
+		         RC.config_file_name, i, discRxPool_ResourceConfig_subframeBitmap_present);
+
+		RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[j] = discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
+		RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[j] = discRxPool_ResourceConfig_subframeBitmap_choice_bs_size;
+		RRC_CONFIGURATION_REQ (msg_p).discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[j] = discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
+
+		//SIB19 - For discRxPoolPS
+      if (strcmp(discRxPoolPS_cp_Len,"normal")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_cp_Len[j] = SL_CP_Len_r12_normal;
+      } else if (strcmp(discRxPoolPS_cp_Len,"extended")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_cp_Len[j] = SL_CP_Len_r12_extended;
+      } else
+         AssertFatal (0,
+               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for discRxPoolPS_cp_Len choice: normal,extended!\n",
+               RC.config_file_name, i, discRxPoolPS_cp_Len);
+
+
+      if (strcmp(discRxPoolPS_discPeriod,"rf32")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf32;
+      } else if (strcmp(discRxPoolPS_discPeriod,"rf64")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf64;
+      } else if (strcmp(discRxPoolPS_discPeriod,"rf128")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf128;
+      } else if (strcmp(discRxPoolPS_discPeriod,"rf256")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf256;
+      } else if (strcmp(discRxPoolPS_discPeriod,"rf512")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf512;
+      } else if (strcmp(discRxPoolPS_discPeriod,"rf1024")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf1024;
+      } else if (strcmp(discRxPoolPS_discPeriod,"rf16")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_rf16_v1310;
+      } else if (strcmp(discRxPoolPS_discPeriod,"spare")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_discPeriod[j] = SL_DiscResourcePool_r12__discPeriod_r12_spare;
+      } else
+         AssertFatal (0,
+               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for discRxPoolPS_discPeriod choice: rf32,rf64,rf128,rf512,rf1024,rf16,spare!\n",
+               RC.config_file_name, i, discRxPoolPS_discPeriod);
+
+
+
+      RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_numRetx[j] = discRxPoolPS_numRetx;
+      RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_numRepetition[j] = discRxPoolPS_numRepetition;
+
+
+      RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_prb_Num[j] = discRxPoolPS_ResourceConfig_prb_Num;
+      RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_prb_Start[j] = discRxPoolPS_ResourceConfig_prb_Start;
+      RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_prb_End[j] = discRxPoolPS_ResourceConfig_prb_End;
+
+      if (strcmp(discRxPoolPS_ResourceConfig_offsetIndicator_present,"prNothing")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_offsetIndicator_present[j] = SL_OffsetIndicator_r12_PR_NOTHING;
+      } else if (strcmp(discRxPoolPS_ResourceConfig_offsetIndicator_present,"prSmall")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_offsetIndicator_present[j] = SL_OffsetIndicator_r12_PR_small_r12;
+      } else if (strcmp(discRxPoolPS_ResourceConfig_offsetIndicator_present,"prLarge")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_offsetIndicator_present[j] = SL_OffsetIndicator_r12_PR_large_r12;
+      } else
+         AssertFatal (0,
+               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for discRxPoolPS_ResourceConfig_offsetIndicator_present choice: prNothing,prSmal,prLarge!\n",
+               RC.config_file_name, i, discRxPoolPS_ResourceConfig_offsetIndicator_present);
+
+      RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_offsetIndicator_choice[j] = discRxPoolPS_ResourceConfig_offsetIndicator_choice;
+
+      if (strcmp(discRxPoolPS_ResourceConfig_subframeBitmap_present,"prNothing")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_NOTHING;
+      } else if (strcmp(discRxPoolPS_ResourceConfig_subframeBitmap_present,"prBs4")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs4_r12;
+      } else if (strcmp(discRxPoolPS_ResourceConfig_subframeBitmap_present,"prBs8")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs8_r12;
+      } else if (strcmp(discRxPoolPS_ResourceConfig_subframeBitmap_present,"prBs12")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs12_r12;
+      } else if (strcmp(discRxPoolPS_ResourceConfig_subframeBitmap_present,"prBs16")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs16_r12;
+      } else if (strcmp(discRxPoolPS_ResourceConfig_subframeBitmap_present,"prBs30")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs30_r12;
+      } else if (strcmp(discRxPoolPS_ResourceConfig_subframeBitmap_present,"prBs40")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs40_r12;
+      } else if (strcmp(discRxPoolPS_ResourceConfig_subframeBitmap_present,"prBs42")==0) {
+         RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_present[j] = SubframeBitmapSL_r12_PR_bs42_r12;
+      } else
+         AssertFatal (0,
+               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for discRxPoolPS_ResourceConfig_subframeBitmap_present choice: prNothing,prBs4,prBs8,prBs12,prBs16,prBs30,prBs40,prBs42!\n",
+               RC.config_file_name, i, discRxPoolPS_ResourceConfig_subframeBitmap_present);
+
+      RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[j] = discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf;
+      RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[j] = discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size;
+      RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[j] = discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
+
+
 	      }
 	    }
 	    char srb1path[MAX_OPTNAME_SIZE*2 + 8];

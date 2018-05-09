@@ -63,8 +63,9 @@
 #endif
 #ifdef Rel14
 #include "SystemInformationBlockType1-v1310-IEs.h"
+#include "SystemInformationBlockType18-r12.h"
 #endif
-
+#include "RadioResourceConfigCommonSIB.h"
 #include "nfapi_interface.h"
 #include "PHY_INTERFACE/IF_Module.h"
 
@@ -79,6 +80,7 @@
 #define RAR_PAYLOAD_SIZE_MAX 128
 
 #define SCH_PAYLOAD_SIZE_MAX 4096
+#define DCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
 #if defined(Rel10) || defined(Rel14)
@@ -154,6 +156,7 @@
 
 /*!\brief maximum number of slices / groups */
 #define MAX_NUM_SLICES 4
+
 
 #define U_PLANE_INACTIVITY_VALUE 6000
 
@@ -233,6 +236,75 @@ typedef struct {
     uint8_t R:2;
 } __attribute__ ((__packed__)) SCH_SUBHEADER_FIXED;
 
+
+
+/*!\brief  MAC subheader long  with 24bit DST field */
+typedef struct {
+  uint8_t   R0:4;
+  uint8_t   V:4;//Version number: Possible values "0001", "0010", "0011" based on TS36.321 section 6.2.3.
+  uint8_t  SRC07; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC815; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC1623; //Prose UE source ID. Size 24 bits.
+  uint8_t  DST07; //Prose UE destination ID. Size 24 bits.
+  uint8_t  DST815; //Prose UE destination ID. Size 24 bits.
+  uint8_t  DST1623; //Prose UE destination ID. Size 24 bits.
+  uint8_t  LCID:5;
+  uint8_t  E:1;
+  uint8_t  R1:2;
+  uint8_t  L:7;	// Length field indicating the size of the corresponding SDU in bytes.
+  uint8_t  F:1;
+}__attribute__((__packed__))SLSCH_SUBHEADER_24_Bit_DST_SHORT;
+
+/*!\brief  MAC subheader long  with 24bit DST field */
+typedef struct {
+  uint8_t   R0:4;
+  uint8_t   V:4;//Version number: Possible values "0001", "0010", "0011" based on TS36.321 section 6.2.3.
+  uint8_t  SRC07; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC815; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC1623; //Prose UE source ID. Size 24 bits.
+  uint8_t  DST07; //Prose UE destination ID. Size 24 bits.
+  uint8_t  DST815; //Prose UE destination ID. Size 24 bits.
+  uint8_t  DST1623; //Prose UE destination ID. Size 24 bits.
+  uint8_t  LCID:5;
+  uint8_t  E:1;
+  uint8_t  R1:2;
+  uint8_t  L_MSB:7;	// Length field indicating the size of the corresponding SDU in bytes.
+  uint8_t  F:1;
+  uint8_t  L_LSB:8;
+}__attribute__((__packed__))SLSCH_SUBHEADER_24_Bit_DST_LONG;
+
+/*!\brief  MAC subheader long  with 24bit DST field */
+typedef struct {
+  uint8_t   R0:4;
+  uint8_t   V:4;//Version number: Possible values "0001", "0010", "0011" based on TS36.321 section 6.2.3.
+  uint8_t  SRC07; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC815; //Prose UE source ID. Size 24 bits.
+  uint8_t  DST07; //Prose UE destination ID. Size 16 bits.
+  uint8_t  DST815; //Prose UE destination ID. Size 16 bits.
+  uint8_t  LCID:5;
+  uint8_t  E:1;
+  uint8_t  R1:2;
+  uint8_t  L:7;	// Length field indicating the size of the corresponding SDU in bytes.
+  uint8_t  F:1;
+}__attribute__((__packed__))SLSCH_SUBHEADER_16_Bit_DST_SHORT;
+
+/*!\brief  MAC subheader long  with 24bit DST field */
+typedef struct {
+  uint8_t   R0:4;
+  uint8_t   V:4;//Version number: Possible values "0001", "0010", "0011" based on TS36.321 section 6.2.3.
+  uint8_t  SRC07; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC815; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC1623; //Prose UE source ID. Size 24 bits.
+  uint8_t  DST07; //Prose UE destination ID. Size 16 bits.
+  uint8_t  DST815; //Prose UE destination ID. Size 16 bits.
+  uint8_t  LCID:5;
+  uint8_t  E:1;
+  uint8_t  R1:2;
+  uint8_t  L_MSB:7;	// Length field indicating the size of the corresponding SDU in bytes.
+  uint8_t  F:1;
+  uint8_t  L_LSB:8;
+}__attribute__((__packed__))SLSCH_SUBHEADER_16_Bit_DST_LONG;
+
 /*!\brief  mac control element: short buffer status report for a specific logical channel group ID*/
 typedef struct {
     uint8_t Buffer_size:6;	// octet 1 LSB
@@ -247,6 +319,30 @@ typedef struct {
     uint8_t Buffer_size1:6;
     uint8_t Buffer_size0:6;
 } __attribute__ ((__packed__)) BSR_LONG;
+
+// Panos:
+/*!\brief  mac control element: sidelink buffer status report */
+typedef struct {
+	uint8_t DST_1:4;
+	uint8_t LCGID_1: 2;
+	uint8_t Buffer_size_1:6;
+	uint8_t DST_2:4;
+	uint8_t LCGID_2: 2;
+	uint8_t Buffer_size_2:6;
+}__attribute__((__packed__))SL_BSR;
+
+/*!\brief  mac control element: truncated sidelink buffer status report */
+typedef struct {
+	uint8_t DST:4;
+	uint8_t LCGID: 2;
+	uint8_t Buffer_size:6;
+	uint8_t R1:1;
+	uint8_t R2:1;
+	uint8_t R3:1;
+	uint8_t R4:1;
+}__attribute__((__packed__))SL_BSR_Truncated;
+
+
 
 #define BSR_LONG_SIZE  (sizeof(BSR_LONG))
 /*!\brief  mac control element: timing advance  */
@@ -346,6 +442,9 @@ typedef struct {
 #define MCH_SCHDL_INFO 3
 /*!\brief LCID of Carrier component activation/deactivation */
 #define CC_ACT_DEACT 27
+//TTN (for D2D)
+#define SL_DISCOVERY 8 //LCID (fake)
+#define MAX_NUM_DEST 10
 #endif
 
 // ULSCH LCHAN IDs
@@ -391,6 +490,13 @@ typedef struct {
     int8_t payload[SCH_PAYLOAD_SIZE_MAX];	/*!< \brief SACH payload */
     uint16_t Pdu_size;
 } __attribute__ ((__packed__)) ULSCH_PDU;
+
+
+/*! \brief Uplink SCH PDU Structure */
+typedef struct {
+  int8_t payload[DCH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
+  uint16_t Pdu_size;
+} __attribute__ ((__packed__)) ULDCH_PDU;
 
 #include "PHY/impl_defs_top.h"
 
@@ -522,7 +628,6 @@ typedef struct {
 } eNB_STATS;
 /*! \brief eNB statistics for the connected UEs*/
 typedef struct {
-
     /// CRNTI of UE
     rnti_t crnti;		///user id (rnti) of connected UEs
     // rrc status
@@ -938,7 +1043,7 @@ typedef struct {
 
 /*! \brief subband bitmap confguration (for ALU icic algo purpose), in test phase */
 typedef struct {
-    uint8_t sbmap[NUMBER_OF_SUBBANDS_MAX];	//13 = number of SB MAX for 100 PRB
+    uint8_t sbmap[13];	//13 = number of SB MAX for 100 PRB
     uint8_t periodicity;
     uint8_t first_subframe;
     uint8_t sb_size;
@@ -1242,82 +1347,116 @@ typedef struct {
     /// pointer to RRC PHY configuration
     struct PhysicalConfigDedicated *physicalConfigDedicated;
 #if defined(Rel10) || defined(Rel14)
-    /// pointer to RRC PHY configuration SCEll
-    struct PhysicalConfigDedicatedSCell_r10
-	*physicalConfigDedicatedSCell_r10;
-#endif
-    /// pointer to TDD Configuration (NULL for FDD)
-    TDD_Config_t *tdd_Config;
-    /// Number of adjacent cells to measure
-    uint8_t n_adj_cells;
-    /// Array of adjacent physical cell ids
-    uint32_t adj_cell_id[6];
-    /// Pointer to RRC MAC configuration
-    MAC_MainConfig_t *macConfig;
-    /// Pointer to RRC Measurement gap configuration
-    MeasGapConfig_t *measGapConfig;
-    /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-    LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
-    /// Scheduling Information
-    UE_SCHEDULING_INFO scheduling_info;
-    /// Outgoing CCCH pdu for PHY
-    CCCH_PDU CCCH_pdu;
-    /// Outgoing RAR pdu for PHY
-    RAR_PDU RAR_pdu;
-    /// Incoming DLSCH pdu for PHY
-    DLSCH_PDU DLSCH_pdu[NUMBER_OF_UE_MAX][2];
-    /// number of attempt for rach
-    uint8_t RA_attempt_number;
-    /// Random-access procedure flag
-    uint8_t RA_active;
-    /// Random-access window counter
-    int8_t RA_window_cnt;
-    /// Random-access Msg3 size in bytes
-    uint8_t RA_Msg3_size;
-    /// Random-access prachMaskIndex
-    uint8_t RA_prachMaskIndex;
-    /// Flag indicating Preamble set (A,B) used for first Msg3 transmission
-    uint8_t RA_usedGroupA;
-    /// Random-access Resources
-    PRACH_RESOURCES_t RA_prach_resources;
-    /// Random-access PREAMBLE_TRANSMISSION_COUNTER
-    uint8_t RA_PREAMBLE_TRANSMISSION_COUNTER;
-    /// Random-access backoff counter
-    int16_t RA_backoff_cnt;
-    /// Random-access variable for window calculation (frame of last change in window counter)
-    uint32_t RA_tx_frame;
-    /// Random-access variable for window calculation (subframe of last change in window counter)
-    uint8_t RA_tx_subframe;
-    /// Random-access Group B maximum path-loss
-    /// Random-access variable for backoff (frame of last change in backoff counter)
-    uint32_t RA_backoff_frame;
-    /// Random-access variable for backoff (subframe of last change in backoff counter)
-    uint8_t RA_backoff_subframe;
-    /// Random-access Group B maximum path-loss
-    uint16_t RA_maxPL;
-    /// Random-access Contention Resolution Timer active flag
-    uint8_t RA_contention_resolution_timer_active;
-    /// Random-access Contention Resolution Timer count value
-    uint8_t RA_contention_resolution_cnt;
-    /// power headroom reporitng reconfigured
-    uint8_t PHR_reconfigured;
-    /// power headroom state as configured by the higher layers
-    uint8_t PHR_state;
-    /// power backoff due to power management (as allowed by P-MPRc) for this cell
-    uint8_t PHR_reporting_active;
-    /// power backoff due to power management (as allowed by P-MPRc) for this cell
-    uint8_t power_backoff_db[NUMBER_OF_eNB_MAX];
-    /// BSR report falg management
-    uint8_t BSR_reporting_active;
-    /// retxBSR-Timer expires flag
-    uint8_t retxBSRTimer_expires_flag;
-    /// periodBSR-Timer expires flag
-    uint8_t periodBSRTimer_expires_flag;
+  /// pointer to RRC PHY configuration SCEll
+  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
+  /// Preconfiguration for Sidelink
+  struct SL_Preconfiguration_r12 *SL_Preconfiguration;
+  /// RX Pool for Sidelink from SIB18
+  SL_CommRxPoolList_r12_t	 commRxPool_r12;
+  /// TX Pool Normal for Sidelink from SIB18
+  struct SL_CommTxPoolList_r12	*commTxPoolNormalCommon_r12;
+  /// TX Pool Exceptional for Sidelink from SIB18
+  struct SL_CommTxPoolList_r12	*commTxPoolExceptional_r12;
+  /// Common Sync Config for Sidelink from SIB18
+  struct SL_SyncConfigList_r12	*commSyncConfig_r12;
+  /// Dedicated Sync TX control for Sidelink
+  struct SL_SyncTxControl_r12 *sl_SyncTxControl_r12;
+  /// Dedicated Discovery TX control for Sidelink
+  struct SL_DiscConfig_r12	*sl_DiscConfig_r12;
+  /// Dedicated TX config for Sidelink
+  struct SL_CommConfig_r12	*sl_CommConfig_r12;
+  //SL sourceL2ID
+  uint32_t sourceL2Id;
+  //SL groupL2Id
+  uint32_t groupL2Id;
+  //SL destinationL2Id
+  uint32_t destinationL2Id;
+  //List of destinations
+  uint32_t destinationList[MAX_NUM_DEST];
+  uint8_t numCommFlows;
+  uint32_t  SL_LCID[MAX_NUM_LCID];
 
-    /// MBSFN_Subframe Configuration
-    struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];	// FIXME replace 8 by MAX_MBSFN_AREA?
-    /// number of subframe allocation pattern available for MBSFN sync area
-    uint8_t num_sf_allocation_pattern;
+#endif
+  /// pointer to TDD Configuration (NULL for FDD)
+  TDD_Config_t *tdd_Config;
+  /// Number of adjacent cells to measure
+  uint8_t  n_adj_cells;
+  /// Array of adjacent physical cell ids
+  uint32_t adj_cell_id[6];
+  /// Pointer to RRC MAC configuration
+  MAC_MainConfig_t *macConfig;
+  /// Pointer to RRC Measurement gap configuration
+  MeasGapConfig_t  *measGapConfig;
+  /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
+  LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
+
+  /// Scheduling Information
+  UE_SCHEDULING_INFO scheduling_info;
+  /// Outgoing CCCH pdu for PHY
+  CCCH_PDU CCCH_pdu;
+  /// Outgoing RAR pdu for PHY
+  RAR_PDU RAR_pdu;
+  /// Incoming DLSCH pdu for PHY
+  DLSCH_PDU DLSCH_pdu[NUMBER_OF_UE_MAX][2];
+#ifdef Rel14
+  int sltx_active;
+  SLSCH_t slsch;
+  SLDCH_t sldch;
+  ULSCH_PDU slsch_pdu;
+  int slsch_lcid;
+#endif
+  /// number of attempt for rach
+  uint8_t RA_attempt_number;
+  /// Random-access procedure flag
+  uint8_t RA_active;
+  /// Random-access window counter
+  int8_t RA_window_cnt;
+  /// Random-access Msg3 size in bytes
+  uint8_t RA_Msg3_size;
+  /// Random-access prachMaskIndex
+  uint8_t RA_prachMaskIndex;
+  /// Flag indicating Preamble set (A,B) used for first Msg3 transmission
+  uint8_t RA_usedGroupA;
+  /// Random-access Resources
+  PRACH_RESOURCES_t RA_prach_resources;
+  /// Random-access PREAMBLE_TRANSMISSION_COUNTER
+  uint8_t RA_PREAMBLE_TRANSMISSION_COUNTER;
+  /// Random-access backoff counter
+  int16_t RA_backoff_cnt;
+  /// Random-access variable for window calculation (frame of last change in window counter)
+  uint32_t RA_tx_frame;
+  /// Random-access variable for window calculation (subframe of last change in window counter)
+  uint8_t RA_tx_subframe;
+  /// Random-access Group B maximum path-loss
+  /// Random-access variable for backoff (frame of last change in backoff counter)
+  uint32_t RA_backoff_frame;
+  /// Random-access variable for backoff (subframe of last change in backoff counter)
+  uint8_t RA_backoff_subframe;
+  /// Random-access Group B maximum path-loss
+  uint16_t RA_maxPL;
+  /// Random-access Contention Resolution Timer active flag
+  uint8_t RA_contention_resolution_timer_active;
+  /// Random-access Contention Resolution Timer count value
+  uint8_t RA_contention_resolution_cnt;
+  /// power headroom reporitng reconfigured
+  uint8_t PHR_reconfigured;
+  /// power headroom state as configured by the higher layers
+  uint8_t PHR_state;
+  /// power backoff due to power management (as allowed by P-MPRc) for this cell
+  uint8_t PHR_reporting_active;
+  /// power backoff due to power management (as allowed by P-MPRc) for this cell
+  uint8_t power_backoff_db[NUMBER_OF_eNB_MAX];
+  /// BSR report falg management
+  uint8_t BSR_reporting_active;
+  /// retxBSR-Timer expires flag
+  uint8_t retxBSRTimer_expires_flag;
+  /// periodBSR-Timer expires flag
+  uint8_t periodBSRTimer_expires_flag;
+
+  /// MBSFN_Subframe Configuration
+  struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
+  /// number of subframe allocation pattern available for MBSFN sync area
+  uint8_t num_sf_allocation_pattern;
 #if defined(Rel10) || defined(Rel14)
     /// number of active MBSFN area
     uint8_t num_active_mbsfn_area;
@@ -1330,32 +1469,49 @@ typedef struct {
     /// MSI status
     uint8_t msi_status;		// could be an array if there are >1 MCH in one MBSFN area
 #endif
-    //#ifdef CBA
-    /// CBA RNTI for each group
-    uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
-    /// last SFN for CBA channel access
-    uint8_t cba_last_access[NUM_MAX_CBA_GROUP];
-    //#endif
-    /// total UE scheduler processing time
-    time_stats_t ue_scheduler;	// total
-    /// UE ULSCH tx  processing time inlcuding RLC interface (rlc_data_req) and mac header generation
-    time_stats_t tx_ulsch_sdu;
-    /// UE DLSCH rx  processing time inlcuding RLC interface (mac_rrc_data_ind or mac_rlc_status_ind+mac_rlc_data_ind) and mac header parser
-    time_stats_t rx_dlsch_sdu;
-    /// UE query for MCH subframe processing time
-    time_stats_t ue_query_mch;
-    /// UE MCH rx processing time
-    time_stats_t rx_mch_sdu;
-    /// UE BCCH rx processing time including RLC interface (mac_rrc_data_ind)
-    time_stats_t rx_si;
-    /// UE PCCH rx processing time including RLC interface (mac_rrc_data_ind)
-    time_stats_t rx_p;
+  //#ifdef CBA
+  /// CBA RNTI for each group
+  uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
+  /// last SFN for CBA channel access
+  uint8_t cba_last_access[NUM_MAX_CBA_GROUP];
+  //#endif
+  /// total UE scheduler processing time
+  time_stats_t ue_scheduler; // total
+  /// UE ULSCH tx  processing time inlcuding RLC interface (rlc_data_req) and mac header generation
+  time_stats_t tx_ulsch_sdu;
+  /// UE DLSCH rx  processing time inlcuding RLC interface (mac_rrc_data_ind or mac_rlc_status_ind+mac_rlc_data_ind) and mac header parser
+  time_stats_t rx_dlsch_sdu ;
+  /// UE query for MCH subframe processing time
+  time_stats_t ue_query_mch;
+  /// UE MCH rx processing time
+  time_stats_t rx_mch_sdu;
+  /// UE BCCH rx processing time including RLC interface (mac_rrc_data_ind)
+  time_stats_t rx_si;
+  /// UE PCCH rx processing time including RLC interface (mac_rrc_data_ind)
+  time_stats_t rx_p;
+  /// Panos: Mutex for nfapi UL_INFO
+  pthread_mutex_t      UL_INFO_mutex;
+  /// Panos: UE_Mode variable should be used in the case of Phy_stub operation since we won't have access to PHY_VARS_UE
+  /// where the UE_mode originally is for the full stack operation mode. The transitions between the states of the UE_Mode
+  /// will be triggered within phy_stub_ue.c in this case
+  UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
+  /// Panos: Phy_stub mode: Boolean variable to distinguish whether a Msg3 or a regular ULSCH data pdu should be generated
+  /// after the reception of NFAPI_UL_CONFIG_ULSCH_PDU_TYPE.
+  uint8_t first_ULSCH_Tx;
+  uint8_t SI_Decoded;
+  int ra_frame; 	// This variable keeps the frame in which the RA started for the specific UE. It is used in order
+                    // to make sure that different UEs RA starts within a number of frames difference.
+
+  eth_params_t         eth_params_n;
+
 } UE_MAC_INST;
 /*! \brief ID of the neighboring cells used for HO*/
 typedef struct {
     uint16_t cell_ids[6];
     uint8_t n_adj_cells;
 } neigh_cell_id_t;
+
+
 
 #include "proto.h"
 /*@}*/

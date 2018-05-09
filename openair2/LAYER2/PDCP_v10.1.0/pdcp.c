@@ -83,6 +83,10 @@ boolean_t pdcp_data_req(
   const sdu_size_t     sdu_buffer_sizeP,
   unsigned char *const sdu_buffer_pP,
   const pdcp_transmission_mode_t modeP
+#ifdef Rel14
+    ,const uint32_t * const sourceL2Id
+    ,const uint32_t * const destinationL2Id
+#endif
 )
 //-----------------------------------------------------------------------------
 {
@@ -165,7 +169,11 @@ boolean_t pdcp_data_req(
                                 (unsigned char*)&pdcp_pdu_p->data[0],
                                 sdu_buffer_sizeP);
 #endif
-      rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p);
+      rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p
+#ifdef Rel14
+                                ,NULL, NULL
+#endif
+                                );
     } else {
       rlc_status = RLC_OP_STATUS_OUT_OF_RESSOURCES;
       LOG_W(PDCP,PROTOCOL_CTXT_FMT" PDCP_DATA_REQ SDU DROPPED, OUT OF MEMORY \n",
@@ -351,7 +359,12 @@ boolean_t pdcp_data_req(
 
     LOG_F(PDCP,"\n");
 #endif
-    rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+    rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
+#ifdef Rel14
+                             ,sourceL2Id
+                             ,destinationL2Id
+#endif
+                             );
 
   }
 
@@ -780,6 +793,8 @@ pdcp_data_ind(
       } else {
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * maxDRB);
       }
+      ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+
 #ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
       static uint32_t pdcp_inst = 0;
       ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst = pdcp_inst++;
@@ -914,6 +929,7 @@ pdcp_run (
   protocol_ctxt_t  ctxt;
 #endif
 
+
   
   if (ctxt_pP->enb_flag) {
     start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_run);
@@ -965,7 +981,11 @@ pdcp_run (
                                 RRC_DCCH_DATA_REQ (msg_p).confirmp,
                                 RRC_DCCH_DATA_REQ (msg_p).sdu_size,
                                 RRC_DCCH_DATA_REQ (msg_p).sdu_p,
-                                RRC_DCCH_DATA_REQ (msg_p).mode);
+                                RRC_DCCH_DATA_REQ (msg_p).mode
+#ifdef Rel14
+                                , NULL, NULL
+#endif
+                                );
         if (result != TRUE)
           LOG_E(PDCP, "PDCP data request failed!\n");
 
@@ -1794,6 +1814,7 @@ rrc_pdcp_config_req (
 
     if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
       pdcp_p->is_ue = TRUE;
+      pdcp_UE_UE_module_id_to_rnti[ctxt_pP->module_id] = ctxt_pP->rnti;
     } else {
       pdcp_p->is_ue = FALSE;
     }
@@ -1812,9 +1833,9 @@ rrc_pdcp_config_req (
     }
 
     pdcp_p->first_missing_pdu = -1;
-      LOG_D(PDCP,PROTOCOL_PDCP_CTXT_FMT" Config request : Action ADD:  radio bearer id %d (already added) configured\n",
-            PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_p),
-            rb_idP);
+    LOG_D(PDCP,PROTOCOL_PDCP_CTXT_FMT" Config request : Action ADD:  radio bearer id %d (already added) configured\n",
+	  PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_p),
+	  rb_idP);
     break;
 
   case CONFIG_ACTION_MODIFY:
@@ -1871,10 +1892,10 @@ rrc_pdcp_config_req (
 
         if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
           pdcp_p->is_ue = TRUE;
-
+	  pdcp_UE_UE_module_id_to_rnti[ctxt_pP->module_id] = ctxt_pP->rnti;
         } else {
           pdcp_p->is_ue = FALSE;
-}
+	}
 
         pdcp_p->next_pdcp_tx_sn = 0;
         pdcp_p->next_pdcp_rx_sn = 0;

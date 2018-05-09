@@ -118,6 +118,8 @@ int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 uint8_t nfapi_mode = 0; // Default to monolithic mode
 
+uint16_t sf_ahead=4;
+
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
@@ -1149,6 +1151,13 @@ int main( int argc, char **argv )
     pthread_mutex_init(&sync_mutex, NULL);
   }
   
+  if (nfapi_mode)
+  {
+    printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
+    pthread_cond_init(&sync_cond,NULL);
+    pthread_mutex_init(&sync_mutex, NULL);
+  }
+
   const char *nfapi_mode_str = "<UNKNOWN>";
 
   switch(nfapi_mode) {

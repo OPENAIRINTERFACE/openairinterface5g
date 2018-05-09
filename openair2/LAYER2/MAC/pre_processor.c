@@ -128,13 +128,19 @@ store_dlsch_buffer(module_id_t Mod_id, slice_id_t slice_id, frame_t frameP,
 	    UE_template->dl_buffer_head_sdu_remaining_size_to_send[i] = 0;
 	}
 
+
 	rnti = UE_RNTI(Mod_id, UE_id);
 
 	for (i = 0; i < MAX_NUM_LCID; i++) {	// loop over all the logical channels
 
 	    rlc_status =
 		mac_rlc_status_ind(Mod_id, rnti, Mod_id, frameP, subframeP,
-				   ENB_FLAG_YES, MBMS_FLAG_NO, i, 0);
+				   ENB_FLAG_YES, MBMS_FLAG_NO, i, 0
+#ifdef Rel14
+                   ,0, 0
+#endif
+                   );
+
 	    UE_template->dl_buffer_info[i] = rlc_status.bytes_in_buffer;	//storing the dlsch buffer for each logical channel
 	    UE_template->dl_pdus_in_buffer[i] = rlc_status.pdus_in_buffer;
 	    UE_template->dl_buffer_head_sdu_creation_time[i] =
@@ -211,7 +217,6 @@ assign_rbs_required(module_id_t Mod_id,
 
 	//update CQI information across component carriers
 	for (n = 0; n < UE_list->numactiveCCs[UE_id]; n++) {
-
 	    CC_id = UE_list->ordered_CCids[n][UE_id];
 	    eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 
@@ -1191,7 +1196,6 @@ dlsch_scheduler_pre_processor_reset(int module_idP,
        &ue_sched_ctl->harq_pid[CC_id],
        &ue_sched_ctl->round[CC_id],
        openair_harq_DL);
-
 
        if (ue_sched_ctl->ta_timer == 0) {
 

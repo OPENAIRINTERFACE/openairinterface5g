@@ -520,6 +520,15 @@ void ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frame,
 		 sub_frame_t subframe, uint8_t * sdu, uint16_t sdu_len,
 		 uint8_t CH_index);
 
+void ue_send_sl_sdu(module_id_t module_idP,
+		    uint8_t CC_id,
+		    frame_t frameP,
+		    sub_frame_t subframeP,
+		    uint8_t* sdu,
+		    uint16_t sdu_len,
+		    uint8_t eNB_index,
+	       sl_discovery_flag_t sl_discovery_flag
+		    );
 
 #if defined(Rel10) || defined(Rel14)
 /* \brief Called by PHY to transfer MCH transport block to ue MAC.
@@ -553,12 +562,35 @@ int ue_query_mch(uint8_t Mod_id, uint8_t CC_id, uint32_t frame,
 @param eNB_id Index of eNB that UE is attached to
 @param rnti C_RNTI of UE
 @param subframe subframe number
-@returns 0 for no SR, 1 for SR
 */
 void ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 		sub_frame_t subframe, uint8_t eNB_index,
 		uint8_t * ulsch_buffer, uint16_t buflen,
 		uint8_t * access_mode);
+
+/* \brief Called by PHY to get sdu for PSBCH/SSS/PSS transmission.
+@param Mod_id Instance id of UE in machine
+@param frame_tx TX frame index
+@param subframe_tx TX subframe index
+@returns pointer to SLSS_t descriptor
+*/
+SLSS_t *ue_get_slss(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe);
+
+/* \brief Called by PHY to get sdu for PSDCH transmission.
+@param Mod_id Instance id of UE in machine
+@param frame_tx TX frame index
+@param subframe_tx TX subframe index
+@returns pointer to SLDCH_t descriptor
+*/
+SLDCH_t *ue_get_sldch(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe);
+
+/* \brief Called by PHY to get sdu for PSSCH transmission.
+@param Mod_id Instance id of UE in machine
+@param frame_tx TX frame index
+@param subframe_tx TX subframe index
+@returns pointer to SLSCH_t descriptor
+*/
+SLSCH_t *ue_get_slsch(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe);
 
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
 @param Mod_id Index of UE instance
@@ -996,7 +1028,13 @@ int rrc_mac_config_req_ue(module_id_t module_idP,
 			  ,
 			  uint8_t num_active_cba_groups, uint16_t cba_rnti
 #endif
-    );
+#if defined(Rel14)
+           ,config_action_t config_action
+           ,const uint32_t * const sourceL2Id
+           ,const uint32_t * const destinationL2Id
+#endif
+			  );
+
 
 uint16_t getRIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
 

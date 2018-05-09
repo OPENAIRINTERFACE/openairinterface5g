@@ -58,6 +58,7 @@
 #include "msc.h"
 
 #include "openair2/PHY_INTERFACE/IF_Module.h"
+//#include "openair2/PHY_INTERFACE/IF_Module_UE.h"
 
 //#include <complex.h>
 #include "assertions.h"
@@ -141,6 +142,8 @@ static inline void* malloc16_clear( size_t size )
 
 #include "targets/ARCH/COMMON/common_lib.h"
 #include "targets/COMMON/openairinterface5g_limits.h"
+
+#include "openair2/LAYER2/MAC/defs.h"
 
 #if defined(EXMIMO) || defined(OAI_USRP)
 //#define NUMBER_OF_eNB_MAX 1
@@ -694,6 +697,22 @@ typedef struct {
   /// set of scheduling variables RXn-TXnp4 threads
   UE_rxtx_proc_t proc_rxtx[RX_NB_TH];
 } UE_proc_t;
+
+
+/// Panos: Structure holding timer_thread related elements (phy_stub_UE mode)
+typedef struct{
+	pthread_t pthread_timer;
+	/// Panos: mutex for waiting SF ticking
+	pthread_mutex_t mutex_ticking;
+	/// Panos: \brief ticking var for ticking thread.
+	/// \internal This variable is protected by \ref mutex_ticking.
+	int ticking_var;
+	/// condition variable for timer_thread;
+	pthread_cond_t cond_ticking;
+	//time_stats_t timer_stats;
+}SF_ticking;
+
+
 
 typedef enum {
   LOCAL_RF        =0,
@@ -1497,6 +1516,11 @@ typedef struct {
   time_stats_t dlsch_tc_intl1_stats;
   time_stats_t dlsch_tc_intl2_stats;
   time_stats_t tx_prach;
+  time_stats_t timer_stats;
+
+  pthread_mutex_t timer_mutex;
+  pthread_cond_t timer_cond;
+  int instance_cnt_timer;
 
   /// RF and Interface devices per CC
 
@@ -1666,6 +1690,25 @@ static inline void wait_sync(char *thread_name) {
 
 }
 
+static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+
+  if (pthread_mutex_lock(mutex) != 0) {
+    LOG_E( PHY, "error locking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  *instance_cnt = *instance_cnt + 1;
+  // the thread can now be woken up
+  if (pthread_cond_signal(cond) != 0) {
+    LOG_E( PHY, "ERROR pthread_cond_signal\n");
+    exit_fun( "ERROR pthread_cond_signal" );
+    return(-1);
+  }
+  
+  pthread_mutex_unlock(mutex);
+  return(0);
+}
+
 static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
   if (pthread_mutex_lock(mutex) != 0) {
     LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
@@ -1716,6 +1759,8 @@ static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *
     exit_fun("nothing to add");
     return(-1);
   }
+
+  //LOG_D(PHY, "%s() name:%s instance_cnt:%u - about to decrement\n", __FUNCTION__, name, *instance_cnt);
 
   *instance_cnt=*instance_cnt-1;
 

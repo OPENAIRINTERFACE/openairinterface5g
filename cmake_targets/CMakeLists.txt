@@ -1084,6 +1084,9 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pch.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/slss.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/sldch.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/slsch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/group_hopping.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/srs_modulation.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/drs_modulation.c
@@ -1176,6 +1179,9 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pch.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/slss.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/sldch.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/slsch.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/group_hopping.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/srs_modulation.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/drs_modulation.c
@@ -1351,6 +1357,7 @@ set(L2_SRC_UE
   )
 
 set (MAC_SRC
+  #${PHY_INTERFACE_DIR}/phy_stub_UE.c
   ${PHY_INTERFACE_DIR}/IF_Module.c
   ${MAC_DIR}/main.c
   ${MAC_DIR}/main_ue.c
@@ -1373,6 +1380,7 @@ set (MAC_SRC
  )
 
 set (MAC_SRC_UE
+  ${PHY_INTERFACE_DIR}/phy_stub_UE.c
   ${MAC_DIR}/main_ue.c
   ${MAC_DIR}/ue_procedures.c
   ${MAC_DIR}/ra_procedures.c
@@ -1397,7 +1405,6 @@ add_library(L2_UE
   ${L2_SRC_UE}
   ${MAC_SRC_UE}
 )
-
 
 include_directories(${NFAPI_USER_DIR})
 
@@ -1968,6 +1975,8 @@ add_executable(lte-softmodem
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
@@ -2009,6 +2018,8 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
@@ -2024,7 +2035,7 @@ target_link_libraries (lte-softmodem-nos1
   -Wl,--end-group z dl )
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 
@@ -2043,6 +2054,8 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
@@ -2057,6 +2070,7 @@ target_link_libraries (lte-uesoftmodem
   -Wl,--start-group
   RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_UE_LIB PHY_UE LFDS L2_UE 
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
+  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
 target_link_libraries (lte-uesoftmodem ${LIBXML2_LIBRARIES})
@@ -2064,7 +2078,7 @@ target_link_libraries (lte-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${
 target_link_libraries (lte-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem ${T_LIB})
 
-# lte-softmodem-nos1 is both eNB and UE implementation
+# lte-uesoftmodem-nos1 is UE implementation
 ###################################################
 add_executable(lte-uesoftmodem-nos1
   ${rrc_h}
@@ -2080,6 +2094,9 @@ add_executable(lte-uesoftmodem-nos1
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
+  ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
@@ -2087,10 +2104,12 @@ add_executable(lte-uesoftmodem-nos1
   ${CONFIG_SOURCES}
   ${SHLIB_LOADER_SOURCES}
   )
+
 target_link_libraries (lte-uesoftmodem-nos1
   -Wl,--start-group
   RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_UE_LIB PHY_UE LFDS L2_UE ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} 
   ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
+  NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl )
 
 target_link_libraries (lte-uesoftmodem-nos1 ${LIBXML2_LIBRARIES})

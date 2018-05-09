@@ -1,0 +1,31 @@
+
+#Build instructions
+source oaienv
+cd cmake_targets
+
+#Create lte-uesoftmodem-nos1 (UE) and lte-softmodem-nos1 (eNB) executables
+./build_oai --UE --noS1 -x -t ETHERNET 
+
+./build_oai --eNB --noS1 -x -t ETHERNET
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Execution instuctions (Currently running eNB (VNF) and UE side (PNF) on the same machine using the loopback interface)
+cd cmake_targets/tools
+
+# Loading nasmesh
+source init_nas_nos1
+
+# Add a new loopback interface address
+sudo ifconfig lo: 127.0.0.2 netmask 255.0.0.0 up
+
+cd ..
+cd lte_noS1_build_oai/build/
+
+# Run the eNB process on one terminal (VNF)
+sudo ./lte-softmodem-nos1 -O PATH_OF:rcc.band7.tm1.50PRB.nfapi.conf
+
+# Run the UE process on the other terminal (PNF) (--L2-emul specifying the operation in nfapi-L2-emulation mode
+# and it has to be equal to 3, --num_ues specifying the number of UEs)
+sudo ./lte-uesoftmodem-nos1 -U -O PATH_OF:oaiL1.nfapi.usrpb210.conf --L2-emul 3 --num-ues 5 > debug_log.txt
+

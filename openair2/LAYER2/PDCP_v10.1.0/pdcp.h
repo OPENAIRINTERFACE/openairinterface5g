@@ -259,7 +259,12 @@ public_pdcp(boolean_t pdcp_data_req(
               const confirm_t confirmP, \
               const sdu_size_t sdu_buffer_size,
               unsigned char* const sdu_buffer,
-              const pdcp_transmission_mode_t mode));
+              const pdcp_transmission_mode_t mode
+#ifdef Rel14
+              ,const uint32_t * const sourceL2Id
+              ,const uint32_t * const destinationL2Id
+#endif
+              ));
 
 /*! \fn boolean_t pdcp_data_ind(const protocol_ctxt_t* const, srb_flag_t, MBMS_flag_t, rb_id_t, sdu_size_t, mem_block_t*, boolean_t)
 * \brief This functions handles data transfer indications coming from RLC
@@ -432,6 +437,10 @@ typedef struct pdcp_data_req_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   traffic_type;
+#ifdef Rel14
+  uint32_t sourceL2Id;
+  uint32_t destinationL2Id;
+#endif
 } pdcp_data_req_header_t;
 
 typedef struct pdcp_data_ind_header_s {
@@ -439,6 +448,10 @@ typedef struct pdcp_data_ind_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   dummy_traffic_type;
+#ifdef Rel14
+  uint32_t sourceL2Id;
+  uint32_t destinationL2Id;
+#endif
 } pdcp_data_ind_header_t;
 
 struct pdcp_netlink_element_s {
@@ -447,6 +460,43 @@ struct pdcp_netlink_element_s {
   /* Data part of the message */
   uint8_t *data;
 };
+
+//TTN for D2D (PC5S)
+#ifdef Rel14
+#define PDCP_SOCKET_PORT_NO 9999 //temporary value
+#define PC5_SIGNALLING_PAYLOAD_SIZE   100  //should be updated with a correct value
+int pdcp_pc5_sockfd;
+struct sockaddr_in prose_ctrl_addr;
+struct sockaddr_in prose_pdcp_addr;
+struct sockaddr_in pdcp_sin;
+void pdcp_pc5_socket_init(void);
+
+typedef struct  {
+   rb_id_t             rb_id;
+   sdu_size_t          data_size;
+   signed int          inst;
+   ip_traffic_type_t   traffic_type;
+   uint32_t sourceL2Id;
+   uint32_t destinationL2Id;
+} __attribute__((__packed__)) pc5s_header_t;
+
+//new PC5S-message
+typedef struct  {
+   unsigned char bytes[PC5_SIGNALLING_PAYLOAD_SIZE];
+}  __attribute__((__packed__)) PC5SignallingMessage ;
+
+//example of PC5-S messages
+typedef struct {
+   pc5s_header_t pc5s_header;
+   union {
+      uint8_t status;
+      PC5SignallingMessage pc5_signalling_message;
+   } pc5sPrimitive;
+} __attribute__((__packed__)) sidelink_pc5s_element;
+
+
+#endif
+
 
 #if 0
 /*

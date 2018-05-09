@@ -56,6 +56,9 @@
 #include "rrc_eNB_UE_context.h"
 #include "platform_types.h"
 #include "msc.h"
+#include "SL-CommConfig-r12.h"
+#include "PeriodicBSR-Timer-r12.h"
+#include "RetxBSR-Timer-r12.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
@@ -239,7 +242,7 @@ init_SI(
 	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
 	RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
 	ul_ReferenceSignalsPUSCH.cyclicShift);
-  
+
 #if defined(Rel10) || defined(Rel14)
 
   if (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MBMS_flag > 0) {
@@ -260,7 +263,7 @@ init_SI(
 	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
 	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset);
     }
-    
+
     //   SIB13
     for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count; i++) {
       LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN sync area %d/%d (partial)\n",
@@ -276,6 +279,76 @@ init_SI(
     }
   }
   else memset((void*)&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13,0,sizeof(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13));
+
+  //TTN - SIB 18
+  for (int j = 0; j < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.count; j++) {
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB18 %d/%d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           j+1,
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.count);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 rxPool_sc_CP_Len: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_CP_Len_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 sc_Period_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_Period_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 data_CP_Len_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->data_CP_Len_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Num_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Num_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Start_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Start_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_End_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_End_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 offsetIndicator: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 subframeBitmap_choice_bs_buf: %s \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf);
+
+  }
+
+  //TTN - SIB 19
+  for (int j = 0; j < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.count; j++) {
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB19 %d/%d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           j+1,
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.count);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 cp_Len_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->cp_Len_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 discPeriod_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->discPeriod_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRetx_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRetx_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRepetition_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRepetition_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Num_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Num_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Start_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Start_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_End_r12: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_End_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 offsetIndicator: %d \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 subframeBitmap_choice_bs_buf: %s \n",
+           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf);
+
+  }
+
 #endif
 
   LOG_D(RRC,
@@ -479,7 +552,12 @@ static void init_MBMS(
                             NULL, // SRB_ToAddModList
                             NULL,   // DRB_ToAddModList
                             NULL,   // DRB_ToReleaseList
-                            &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9));
+                            &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
+
+#ifdef Rel14
+                            ,0, 0
+#endif
+                            );
 
     //rrc_mac_config_req();
   }
@@ -640,6 +718,7 @@ void rrc_eNB_emulation_notify_ue_module_id(
   const uint8_t     cell_identity_byte2P,
   const uint8_t     cell_identity_byte3P)
 {
+	LOG_I(RRC, "Panos-D: rrc_eNB_emulation_notify_ue_module_id 1 \n");
   module_id_t                         enb_module_id;
   struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
   int                                 CC_id;
@@ -1747,7 +1826,9 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
                                          (struct MeasConfig__speedStatePars*)Sparams, // Sparams,
                                          (RSRP_Range_t*)rsrp, // rsrp,
                                          (C_RNTI_t*)cba_RNTI,  // cba_RNTI
-                                         (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList //dedicatedInfoNASList
+                                         (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList, //dedicatedInfoNASList
+                                         (SL_CommConfig_r12_t*)NULL,
+                                         (SL_DiscConfig_r12_t*)NULL
 #if defined(Rel10) || defined(Rel14)
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
@@ -2182,7 +2263,9 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
                                          (struct SPS_Config*)NULL,    // *sps_Config,
 					  NULL, NULL, NULL, NULL,NULL,
 					  NULL, NULL,  NULL, NULL, NULL, NULL, 
-					  (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList
+					  (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList,
+					  (SL_CommConfig_r12_t*)NULL,
+					  (SL_DiscConfig_r12_t*)NULL
 #if defined(Rel10) || defined(Rel14)
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
@@ -2441,20 +2524,22 @@ rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 
   memset(buffer, 0, RRC_BUF_SIZE);
 
-  size = do_RRCConnectionReconfiguration(ctxt_pP,
-                                          buffer,
-                                          xid,
-                                          (SRB_ToAddModList_t*)NULL,
-                                          (DRB_ToAddModList_t*)DRB_configList2,
-                                          (DRB_ToReleaseList_t*)NULL,  // DRB2_list,
-                                          (struct SPS_Config*)NULL,    // *sps_Config,
-                                          NULL, NULL, NULL, NULL,NULL,
-                                          NULL, NULL,  NULL, NULL, NULL, NULL,
-                                          (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList
+   size = do_RRCConnectionReconfiguration(ctxt_pP,
+					  buffer,
+					  xid,
+					  (SRB_ToAddModList_t*)NULL, 
+					  (DRB_ToAddModList_t*)DRB_configList2,
+					  (DRB_ToReleaseList_t*)NULL,  // DRB2_list,
+                                         (struct SPS_Config*)NULL,    // *sps_Config,
+					  NULL, NULL, NULL, NULL,NULL,
+					  NULL, NULL,  NULL, NULL, NULL, NULL, 
+					  (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList,
+					  (SL_CommConfig_r12_t*)NULL,
+					  (SL_DiscConfig_r12_t*)NULL
 #if defined(Rel10) || defined(Rel14)
-                                          , (SCellToAddMod_r10_t*)NULL
+					  , (SCellToAddMod_r10_t*)NULL
 #endif
-                                          );
+   	   	   	   	   	  );
 
 
 #ifdef RRC_MSG_PRINT
@@ -2573,7 +2658,9 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(  const protocol_
                                     NULL,
                                     NULL,
                                     NULL,
-                                    (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList
+                                    (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList,
+                                    (SL_CommConfig_r12_t*)NULL,
+                                    (SL_DiscConfig_r12_t*)NULL
 #if defined(Rel10) || defined(Rel14)
                                     , (SCellToAddMod_r10_t*)NULL
 #endif
@@ -3301,7 +3388,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
                                          (struct MeasConfig__speedStatePars*)Sparams,
                                          (RSRP_Range_t*)rsrp,
                                          (C_RNTI_t*)cba_RNTI,
-                                         (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList
+                                         (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList,
+                                         (SL_CommConfig_r12_t*)NULL,
+                                         (SL_DiscConfig_r12_t*)NULL
 #if defined(Rel10) || defined(Rel14)
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
@@ -3891,7 +3980,9 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
                                          (struct MeasConfig__speedStatePars*)Sparams,
                                          (RSRP_Range_t*)rsrp,
                                          (C_RNTI_t*)cba_RNTI,
-                                         (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList
+                                         (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList,
+                                         (SL_CommConfig_r12_t*)NULL,
+                                         (SL_DiscConfig_r12_t*)NULL
 #if defined(Rel10) || defined(Rel14)
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
@@ -3994,7 +4085,9 @@ rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
                                          (struct MeasConfig__speedStatePars*)NULL,
                                          (RSRP_Range_t*)NULL,
                                          (C_RNTI_t*)NULL,
-                                         (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)NULL
+                                         (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)NULL,
+                                         (SL_CommConfig_r12_t*)NULL,
+                                         (SL_DiscConfig_r12_t*)NULL
 
 #if defined(Rel10) || defined(Rel14)
                                          , ue_context_pP->ue_context.sCell_config
@@ -4285,7 +4378,11 @@ check_handovers(
                                SDU_CONFIRM_NO,
                                ue_context_p->ue_context.handover_info->size,
                                ue_context_p->ue_context.handover_info->buf,
-                               PDCP_TRANSMISSION_MODE_CONTROL);
+                               PDCP_TRANSMISSION_MODE_CONTROL
+#ifdef Rel14
+                               ,NULL, NULL
+#endif
+                               );
         AssertFatal(result == TRUE, "PDCP data request failed!\n");
         ue_context_p->ue_context.handover_info->ho_complete = 0xF2;
       }
@@ -5110,6 +5207,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
                           (DRB_ToAddModList_t *) NULL, (DRB_ToReleaseList_t *) NULL
 #if defined(Rel10) || defined(Rel14)
                           , (PMCH_InfoList_r9_t *) NULL
+                          , 0, 0
 #endif
                          );
 
@@ -5138,7 +5236,9 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
            Sparams,
            NULL,
            NULL,
-           dedicatedInfoNASList
+           dedicatedInfoNASList,
+           (SL_CommConfig_r12_t*)NULL,
+           (SL_DiscConfig_r12_t*)NULL
 #if defined(Rel10) || defined(Rel14)
            , NULL   // SCellToAddMod_r10_t
 #endif
@@ -5336,6 +5436,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     DRB_Release_configList2
 #if defined(Rel10) || defined(Rel14)
     , (PMCH_InfoList_r9_t *) NULL
+    , 0, 0
 #endif
   );
   
@@ -6122,7 +6223,8 @@ rrc_eNB_decode_ccch(
                               (DRB_ToAddModList_t*) NULL,
                               (DRB_ToReleaseList_t*) NULL
 #   if defined(Rel10) || defined(Rel14)
-                              , (PMCH_InfoList_r9_t *) NULL
+                              , (PMCH_InfoList_r9_t *) NULL,
+                              0,0
 #   endif
                              );
 #endif //NO_RRM
@@ -6362,6 +6464,7 @@ rrc_eNB_decode_ccch(
                               (DRB_ToReleaseList_t*) NULL
 #   if defined(Rel10) || defined(Rel14)
                               , (PMCH_InfoList_r9_t *) NULL
+                              , 0, 0
 #   endif
                              );
 #endif //NO_RRM
@@ -7027,6 +7130,53 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
     }
 
     return 0;
+    //TTN for D2D
+  } else if (ul_dcch_msg->message.present == UL_DCCH_MessageType_PR_messageClassExtension){
+     LOG_I(RRC, "THINH [UL_DCCH_MessageType_PR_messageClassExtension]\n");
+
+     switch (ul_dcch_msg->message.choice.messageClassExtension.present) {
+     case UL_DCCH_MessageType__messageClassExtension_PR_NOTHING: /* No components present */
+        break;
+     case UL_DCCH_MessageType__messageClassExtension_PR_c2: //SidelinkUEInformation
+     //case UL_DCCH_MessageType__messageClassExtension__c2_PR_sidelinkUEInformation_r12: //SidelinkUEInformation
+        LOG_I(RRC,"THINH [UL_DCCH_MessageType__messageClassExtension_PR_c2]\n");
+
+#ifdef RRC_MSG_PRINT
+        LOG_F(RRC,"[MSG] SidelinkUEInformation\n");
+
+        for (i = 0; i < sdu_sizeP; i++) {
+           LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
+        }
+
+        LOG_F(RRC,"\n");
+#endif
+
+        MSC_LOG_RX_MESSAGE(
+              MSC_RRC_ENB,
+              MSC_RRC_UE,
+              Rx_sdu,
+              sdu_sizeP,
+              MSC_AS_TIME_FMT" SidelinkUEInformation UE %x size %u",
+              MSC_AS_TIME_ARGS(ctxt_pP),
+              ue_context_p->ue_context.rnti,
+              sdu_sizeP);
+
+        LOG_I(RRC,
+              PROTOCOL_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
+              "(SidelinkUEInformation) ---> RRC_eNB\n",
+              PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+              DCCH,
+              sdu_sizeP);
+
+        rrc_eNB_process_SidelinkUEInformation(
+              ctxt_pP,
+              ue_context_p,
+              &ul_dcch_msg->message.choice.messageClassExtension.choice.c2.choice.sidelinkUEInformation_r12);
+        break;
+     default:
+        break;
+     }
+     //end TTN
   } else {
     LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Unknown error %s:%u\n",
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -7287,6 +7437,283 @@ rrc_top_cleanup_eNB(
 
 
 //-----------------------------------------------------------------------------
+//TTN - for D2D
+uint8_t
+rrc_eNB_process_SidelinkUEInformation(
+      const protocol_ctxt_t* const ctxt_pP,
+      rrc_eNB_ue_context_t*         ue_context_pP,
+      SidelinkUEInformation_r12_t * sidelinkUEInformation
+)
+//-----------------------------------------------------------------------------
+{
+   SL_DestinationInfoList_r12_t  *destinationInfoList;
+   int n_destinations = 0;
+   int ue_type = 0;
+   int n_discoveryMessages = 0;
+
+   LOG_I(RRC,
+         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing SidelinkUEInformation from UE (SRB1 Active)\n",
+         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+
+   //For SL Communication
+   if (sidelinkUEInformation->criticalExtensions.present ==  SidelinkUEInformation_r12__criticalExtensions_PR_c1){
+      if (sidelinkUEInformation->criticalExtensions.choice.c1.present == SidelinkUEInformation_r12__criticalExtensions__c1_PR_sidelinkUEInformation_r12){
+         // express its interest to receive SL communication
+         if (sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.commRxInterestedFreq_r12 !=  NULL){
+
+         }
+
+         // express its interest to transmit  non-relay one-to-many SL communication
+         if ((sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.commTxResourceReq_r12 != NULL) && (sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.commTxResourceReq_r12->carrierFreq_r12 != NULL)){
+            n_destinations = sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.commTxResourceReq_r12->destinationInfoList_r12.list.count;
+            destinationInfoList = CALLOC(1, sizeof(SL_DestinationInfoList_r12_t));
+            for (int i=0; i< n_destinations; i++ ){
+               //sl_DestinationIdentityList[i] = *(sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.commTxResourceReq_r12->destinationInfoList_r12.list.array[i]);
+               ASN_SEQUENCE_ADD(&destinationInfoList->list, sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.commTxResourceReq_r12->destinationInfoList_r12.list.array[i]);
+            }
+            //generate RRC Reconfiguration
+            rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+            return 0;
+
+         }
+
+         // express its interest to transmit  non-relay one-to-one SL communication
+         if ((sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension != NULL) && (sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceReqUC_r13 != NULL)) {
+            if (sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceReqUC_r13->carrierFreq_r12 != NULL){
+               n_destinations = sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceReqUC_r13->destinationInfoList_r12.list.count;
+               destinationInfoList = CALLOC(1, sizeof(SL_DestinationInfoList_r12_t));
+               for (int i=0; i< n_destinations; i++ ){
+                  //sl_DestinationIdentityList[i] = *(sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceReqUC_r13->destinationInfoList_r12.list.array[i]);
+                  ASN_SEQUENCE_ADD(&destinationInfoList->list,sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceReqUC_r13->destinationInfoList_r12.list.array[i]);
+               }
+               //generate RRC Reconfiguration
+               rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+               return 0;
+            }
+         }
+
+         // express its interest to transmit relay related one-to-one SL communication
+         if ((sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension != NULL) &&(sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->commTxResourceReqRelayUC_r13 != NULL)) {
+            if (sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->commTxResourceReqRelayUC_r13->destinationInfoList_r12.list.count > 0) {
+               n_destinations = sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->commTxResourceReqRelayUC_r13->destinationInfoList_r12.list.count;
+               ue_type = sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->ue_Type_r13;
+               destinationInfoList = CALLOC(1, sizeof(SL_DestinationInfoList_r12_t));
+               for (int i=0; i< n_destinations; i++ ){
+                  //sl_DestinationIdentityList[i] = *(sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->commTxResourceReqRelayUC_r13->destinationInfoList_r12.list.array[i]);
+                  ASN_SEQUENCE_ADD(&destinationInfoList->list, sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->commTxResourceReqRelayUC_r13->destinationInfoList_r12.list.array[i]);
+               }
+               //generate RRC Reconfiguration
+               rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+               return 0;
+            }
+         }
+
+         //express its interest to transmit relay related one-to-many SL communication
+         if ((sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension != NULL) && (sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13 != NULL)) {
+            if (sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->commTxResourceReqRelay_r13->destinationInfoList_r12.list.count > 0){
+               n_destinations = sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->commTxResourceReqRelay_r13->destinationInfoList_r12.list.count;
+               ue_type = sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->ue_Type_r13;
+               destinationInfoList = CALLOC(1, sizeof(SL_DestinationInfoList_r12_t));
+               for (int i=0; i< n_destinations; i++ ){
+                  //sl_DestinationIdentityList[i] = *(sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->commTxResourceReqRelay_r13->destinationInfoList_r12.list.array[i]);
+                  ASN_SEQUENCE_ADD(&destinationInfoList->list,sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->commTxResourceInfoReqRelay_r13->commTxResourceReqRelay_r13->destinationInfoList_r12.list.array[i]);
+               }
+               //generate RRC Reconfiguration
+               rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, destinationInfoList, 0);
+               return 0;
+            }
+         }
+
+         //For SL Discovery
+         //express its interest to receive SL discovery announcements
+         //express its interest to transmit non-PS related discovery announcements
+         if (sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.discTxResourceReq_r12 != NULL){
+            n_discoveryMessages = *(sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.discTxResourceReq_r12);
+            //generate RRC Reconfiguration
+            rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, NULL, n_discoveryMessages);
+            return 0;
+         }
+         //express its interest to transmit PS related discovery announcements
+         if ((sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension != NULL) && (sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->discTxResourceReqPS_r13 !=NULL)) {
+            if (sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->discTxResourceReqPS_r13->discTxResourceReq_r13 > 0){
+               n_discoveryMessages = sidelinkUEInformation->criticalExtensions.choice.c1.choice.sidelinkUEInformation_r12.nonCriticalExtension->discTxResourceReqPS_r13->discTxResourceReq_r13;
+               //generate RRC Reconfiguration
+               rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(ctxt_pP, ue_context_pP, NULL, n_discoveryMessages);
+               return 0;
+            }
+         }
+      }
+   }
+   return 0;
+}
+
+//-----------------------------------------------------------------------------
+int
+rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t* const ue_context_pP,
+  SL_DestinationInfoList_r12_t  *destinationInfoList,
+  int n_discoveryMessages
+)
+//-----------------------------------------------------------------------------
+{
+
+  uint8_t                             buffer[RRC_BUF_SIZE];
+  uint16_t                            size;
+  memset(buffer, 0, RRC_BUF_SIZE);
+
+  // allocate dedicated pools for UE -sl-CommConfig/sl-DiscConfig (sl-V2X-ConfigDedicated)
+  //populate dedicated resources for SL communication (sl-CommConfig)
+  if ((destinationInfoList != NULL) && (destinationInfoList->list.count > 0)) {
+
+     LOG_I(RRC,"[eNB %d] Frame %d, Generate RRCConnectionReconfiguration_Sidelink (bytes %d, UE id %x), number of destinations %d\n",
+            ctxt_pP->module_id,ctxt_pP->frame, size, ue_context_pP->ue_context.rnti,destinationInfoList->list.count );
+     //get dedicated resources from available pool and assign to the UE
+     SL_CommConfig_r12_t  sl_CommConfig[destinationInfoList->list.count];
+     //get a RP from the available RPs
+     sl_CommConfig[0] = rrc_eNB_get_sidelink_commTXPool(ctxt_pP, ue_context_pP, destinationInfoList);
+
+     size = do_RRCConnectionReconfiguration(ctxt_pP,
+                   buffer,
+                   rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),   //Transaction_id
+                   (SRB_ToAddModList_t*)NULL,
+                   (DRB_ToAddModList_t*)NULL,
+                   (DRB_ToReleaseList_t*)NULL,  // DRB2_list,
+                   (struct SPS_Config*)NULL,    // *sps_Config,
+                   NULL, NULL, NULL, NULL,NULL,
+                   NULL, NULL,  NULL, NULL, NULL, NULL,
+                   (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)NULL,
+                   (SL_CommConfig_r12_t*)&sl_CommConfig,
+                   (SL_DiscConfig_r12_t*)NULL
+  #if defined(Rel10) || defined(Rel14)
+                                           , (SCellToAddMod_r10_t*)NULL
+  #endif
+                                           );
+     //
+  }
+  //populate dedicated resources for SL discovery (sl-DiscConfig)
+  if (n_discoveryMessages > 0) {
+     SL_DiscConfig_r12_t sl_DiscConfig[n_discoveryMessages];
+     //get a RP from the available RPs
+     sl_DiscConfig[0] = rrc_eNB_get_sidelink_discTXPool(ctxt_pP, ue_context_pP, n_discoveryMessages );
+     size = do_RRCConnectionReconfiguration(ctxt_pP,
+                   buffer,
+                   rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),   //Transaction_id
+                   (SRB_ToAddModList_t*)NULL,
+                   (DRB_ToAddModList_t*)NULL,
+                   (DRB_ToReleaseList_t*)NULL,  // DRB2_list,
+                   (struct SPS_Config*)NULL,    // *sps_Config,
+                   NULL, NULL, NULL, NULL,NULL,
+                   NULL, NULL,  NULL, NULL, NULL, NULL,
+                   (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)NULL,
+                   (SL_CommConfig_r12_t*)NULL,
+                   (SL_DiscConfig_r12_t*)&sl_DiscConfig
+  #if defined(Rel10) || defined(Rel14)
+                                           , (SCellToAddMod_r10_t*)NULL
+  #endif
+                                           );
+  }
+
+  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration_Sidelink (bytes %d, UE id %x)\n",
+        ctxt_pP->module_id,ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
+
+  rrc_data_req(
+    ctxt_pP,
+    DCCH,
+    rrc_eNB_mui++,
+    SDU_CONFIRM_NO,
+    size,
+    buffer,
+    PDCP_TRANSMISSION_MODE_CONTROL);
+
+  // rrc_data_req();
+
+  return size;
+}
+
+SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool( const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t* const ue_context_pP,  SL_DestinationInfoList_r12_t  *destinationInfoList ){
+   // for the moment, use scheduled resource allocation
+   SL_CommConfig_r12_t  *sl_CommConfig;
+   SL_CommResourcePool_r12_t    *sc_CommTxConfig;
+
+   sl_CommConfig = CALLOC(1, sizeof(struct SL_CommConfig_r12));
+   sl_CommConfig->commTxResources_r12 = CALLOC(1, sizeof(*sl_CommConfig->commTxResources_r12));
+   sl_CommConfig->commTxResources_r12->present = SL_CommConfig_r12__commTxResources_r12_PR_setup;
+
+   sl_CommConfig->commTxResources_r12->choice.setup.present = SL_CommConfig_r12__commTxResources_r12__setup_PR_scheduled_r12;
+   sl_CommConfig->commTxResources_r12->choice.setup.choice.scheduled_r12.sl_RNTI_r12.size = 2;
+   sl_CommConfig->commTxResources_r12->choice.setup.choice.scheduled_r12.sl_RNTI_r12.buf = CALLOC(1,2);
+   sl_CommConfig->commTxResources_r12->choice.setup.choice.scheduled_r12.sl_RNTI_r12.buf[0] = 0x00;
+   sl_CommConfig->commTxResources_r12->choice.setup.choice.scheduled_r12.sl_RNTI_r12.buf[1] = 0x01;//ctxt_pP->rnti;//rnti
+   sl_CommConfig->commTxResources_r12->choice.setup.choice.scheduled_r12.sl_RNTI_r12.bits_unused = 0;
+   sl_CommConfig->commTxResources_r12->choice.setup.choice.scheduled_r12.mcs_r12 = CALLOC(1,sizeof(*sl_CommConfig->commTxResources_r12->choice.setup.choice.scheduled_r12.mcs_r12));
+   //*sl_CommConfig_test->commTxResources_r12->choice.setup.choice.scheduled_r12.mcs_r12 = 12; //Msc
+   sl_CommConfig->commTxResources_r12->choice.setup.choice.scheduled_r12.mac_MainConfig_r12.retx_BSR_TimerSL = RetxBSR_Timer_r12_sf320; //MacConfig, for testing only
+   //sl_CommConfig_test->commTxResources_r12->choice.setup.choice.scheduled_r12.sc_CommTxConfig_r12;
+
+   sc_CommTxConfig = & sl_CommConfig->commTxResources_r12->choice.setup.choice.scheduled_r12.sc_CommTxConfig_r12;
+
+   sc_CommTxConfig->sc_CP_Len_r12 = SL_CP_Len_r12_normal;
+   sc_CommTxConfig->sc_Period_r12 = SL_PeriodComm_r12_sf40;
+   sc_CommTxConfig->data_CP_Len_r12  = SL_CP_Len_r12_normal;
+   //sc_TF_ResourceConfig_r12
+   sc_CommTxConfig->sc_TF_ResourceConfig_r12.prb_Num_r12 = 20;
+   sc_CommTxConfig->sc_TF_ResourceConfig_r12.prb_Start_r12 = 5;
+   sc_CommTxConfig->sc_TF_ResourceConfig_r12.prb_End_r12 = 44;
+   sc_CommTxConfig->sc_TF_ResourceConfig_r12.offsetIndicator_r12.present = SL_OffsetIndicator_r12_PR_small_r12;
+   sc_CommTxConfig->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = 0;
+
+   sc_CommTxConfig->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present = SubframeBitmapSL_r12_PR_bs40_r12;
+   sc_CommTxConfig->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.size = 5;
+   sc_CommTxConfig->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf  = CALLOC(1,5);
+   sc_CommTxConfig->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.bits_unused = 0;
+   //dataHoppingConfig_r12
+   sc_CommTxConfig->dataHoppingConfig_r12.hoppingParameter_r12 = 0;
+   sc_CommTxConfig->dataHoppingConfig_r12.numSubbands_r12  =  SL_HoppingConfigComm_r12__numSubbands_r12_ns1;
+   sc_CommTxConfig->dataHoppingConfig_r12.rb_Offset_r12 = 0;
+   //ue_SelectedResourceConfig_r12
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12 = CALLOC (1, sizeof (*sc_CommTxConfig->ue_SelectedResourceConfig_r12));
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.prb_Num_r12 = 20;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.prb_Start_r12 = 5;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.prb_End_r12 = 44;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.offsetIndicator_r12.present = SL_OffsetIndicator_r12_PR_small_r12;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = 0 ;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.present = SubframeBitmapSL_r12_PR_bs40_r12;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = 5;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf  = CALLOC(1,5);
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.bits_unused = 0;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[0] = 0xF0;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[1] = 0xFF;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[2] = 0xFF;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[3] = 0xFF;
+   sc_CommTxConfig->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[4] = 0xFF;
+   //rxParametersNCell_r12
+   sc_CommTxConfig->rxParametersNCell_r12 = CALLOC (1, sizeof (*sc_CommTxConfig->rxParametersNCell_r12));
+   sc_CommTxConfig->rxParametersNCell_r12->tdd_Config_r12 = CALLOC (1, sizeof (*sc_CommTxConfig->rxParametersNCell_r12->tdd_Config_r12 ));
+   sc_CommTxConfig->rxParametersNCell_r12->tdd_Config_r12->subframeAssignment = 0 ;
+   sc_CommTxConfig->rxParametersNCell_r12->tdd_Config_r12->specialSubframePatterns = 0;
+   sc_CommTxConfig->rxParametersNCell_r12->syncConfigIndex_r12 = 0;
+   //txParameters_r12
+   sc_CommTxConfig->txParameters_r12 = CALLOC (1, sizeof (*sc_CommTxConfig->txParameters_r12));
+   sc_CommTxConfig->txParameters_r12->sc_TxParameters_r12.alpha_r12 = Alpha_r12_al0;
+   sc_CommTxConfig->txParameters_r12->sc_TxParameters_r12.p0_r12 = 0;
+   sc_CommTxConfig->ext1 = NULL ;
+
+   return *sl_CommConfig;
+}
+
+
+SL_DiscConfig_r12_t rrc_eNB_get_sidelink_discTXPool( const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t* const ue_context_pP,  int n_discoveryMessages ){
+   //TODO
+   SL_DiscConfig_r12_t  sl_DiscConfig;
+   sl_DiscConfig.discTxResources_r12 = CALLOC(1,sizeof(*sl_DiscConfig.discTxResources_r12));
+   sl_DiscConfig.discTxResources_r12->present = SL_DiscConfig_r12__discTxResources_r12_PR_setup;
+   sl_DiscConfig.discTxResources_r12->choice.setup.present = SL_DiscConfig_r12__discTxResources_r12__setup_PR_scheduled_r12;
+   //sl_DiscConfig.discTxResources_r12->choice.setup.choice.scheduled_r12.discHoppingConfig_r12;
+   //sl_DiscConfig.discTxResources_r12->choice.setup.choice.scheduled_r12.discTF_IndexList_r12;
+   //sl_DiscConfig.discTxResources_r12->choice.setup.choice.scheduled_r12.discTxConfig_r12;
+   return sl_DiscConfig;
+}
 RRC_status_t
 rrc_rx_tx(
   protocol_ctxt_t* const ctxt_pP,
@@ -7368,7 +7795,7 @@ rrc_rx_tx(
 	ue_context_p->ue_context.ue_release_timer++;
 	if (ue_context_p->ue_context.ue_release_timer >= 
 	    ue_context_p->ue_context.ue_release_timer_thres) {
-	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
+	  LOG_I(RRC,"Removing UE %x instance, Release timer: %d, Release timer thres.: %d \n",ue_context_p->ue_context.rnti, ue_context_p->ue_context.ue_release_timer, ue_context_p->ue_context.ue_release_timer_thres);
 	  ue_to_be_removed = ue_context_p;
 	  break;
 	}
