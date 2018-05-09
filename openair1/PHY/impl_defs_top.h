@@ -272,7 +272,7 @@ typedef struct {
 
 /// Measurement Variables
 
-#define NUMBER_OF_SUBBANDS_MAX 13
+//#define NUMBER_OF_SUBBANDS_MAX 13
 #define NUMBER_OF_HARQ_PID_MAX 8
 
 #define MAX_FRAME_NUMBER 0x400

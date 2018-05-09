@@ -34,6 +34,7 @@
 
 
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
+extern uint8_t nfapi_mode;
 
 void phy_config_sib1_ue(uint8_t Mod_id,int CC_id,
                         uint8_t eNB_id,
@@ -563,14 +564,17 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
   	phy_vars_ue->decode_SIB = 0;
   	phy_vars_ue->decode_MIB = 0;
   }
-  //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
-  if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
-      phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;
-  else
-      phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
 
-  LOG_I(PHY,"C-RNTI %x %x \n", phy_vars_ue->pdcch_vars[0][eNB_id]->crnti,
-                               phy_vars_ue->pdcch_vars[1][eNB_id]->crnti);
+  if(nfapi_mode!=3){
+    //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
+    if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
+        phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;
+    else
+        phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
+
+    LOG_I(PHY,"C-RNTI %x %x \n", phy_vars_ue->pdcch_vars[0][eNB_id]->crnti,
+                                 phy_vars_ue->pdcch_vars[1][eNB_id]->crnti);
+  }
 
 
 }

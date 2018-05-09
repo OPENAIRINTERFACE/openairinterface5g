@@ -60,6 +60,8 @@
 extern void mac_init_cell_params(int Mod_idP,int CC_idP);
 extern void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
+extern uint8_t  nfapi_mode;
+
 
 /* sec 5.9, 36.321: MAC Reset Procedure */
 void ue_mac_reset(module_id_t module_idP, uint8_t eNB_index)
@@ -134,6 +136,11 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 #endif
 #ifdef CBA
 		      , uint8_t num_active_cba_groups, uint16_t cba_rnti
+#endif
+#if defined(Rel14)
+  ,config_action_t  config_action
+  ,const uint32_t * const sourceL2Id
+  ,const uint32_t * const destinationL2Id
 #endif
 		      )
 {
@@ -228,9 +235,10 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	  (uint16_t)
 	  MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
       }
-      phy_config_harq_ue(Mod_idP, 0, eNB_index,
-			 UE_mac_inst[Mod_idP].
-			 scheduling_info.maxHARQ_Tx);
+      if(nfapi_mode!=3)
+        phy_config_harq_ue(Mod_idP, 0, eNB_index,
+			   UE_mac_inst[Mod_idP].
+			   scheduling_info.maxHARQ_Tx);
 
       if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
 	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer =
@@ -348,8 +356,9 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 
 
   if (physicalConfigDedicated != NULL) {
-    phy_config_dedicated_ue(Mod_idP, 0, eNB_index,
-			    physicalConfigDedicated);
+    if(nfapi_mode!=3)
+      phy_config_dedicated_ue(Mod_idP, 0, eNB_index,
+			      physicalConfigDedicated);
     UE_mac_inst[Mod_idP].physicalConfigDedicated = physicalConfigDedicated;	// for SR proc
   }
 #if defined(Rel10) || defined(Rel14)
@@ -579,6 +588,34 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
     (VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
+  //for D2D
+  #if defined(Rel10) || defined(Rel14)
+    switch (config_action) {
+    case CONFIG_ACTION_ADD:
+       if (sourceL2Id){
+          UE_mac_inst[Mod_idP].sourceL2Id = *sourceL2Id;
+          LOG_I(MAC,"[UE %d] Configure source L2Id 0x%08x \n", Mod_idP, *sourceL2Id );
+       }
+       if (destinationL2Id) {
+          LOG_I(MAC,"[UE %d] Configure destination L2Id 0x%08x\n", Mod_idP, *destinationL2Id );
+          int j = 0;
+          int i = 0;
+          for (i=0; i< MAX_NUM_DEST; i++) {
+             if ((UE_mac_inst[Mod_idP].destinationList[i] == 0) && (j == 0)) j = i+1;
+             if (UE_mac_inst[Mod_idP].destinationList[i] == *destinationL2Id) break; //destination already exists!
+          }
+          if ((i == MAX_NUM_DEST) && (j > 0))  UE_mac_inst[Mod_idP].destinationList[j-1] = *destinationL2Id;
+          UE_mac_inst[Mod_idP].numCommFlows++;
+       }
+       break;
+    case CONFIG_ACTION_REMOVE:
+       //TODO
+       break;
+    default:
+       break;
+    }
+
+  #endif
 
   return (0);
 }

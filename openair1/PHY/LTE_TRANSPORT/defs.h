@@ -252,7 +252,7 @@ typedef struct {
 
   // decode phich
   uint8_t decode_phich;
-} LTE_UL_UE_HARQ_t; 
+} LTE_UL_UE_HARQ_t;
 
 #ifdef Rel14
 typedef enum {
@@ -265,7 +265,7 @@ typedef struct {
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
   int32_t *txdataF[8];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
-  int32_t **ue_spec_bf_weights[4]; 
+  int32_t **ue_spec_bf_weights[4];
   /// dl channel estimates (estimated from ul channel estimates)
   int32_t **calib_dl_ch_estimates;
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
@@ -413,7 +413,7 @@ typedef struct {
   /// is done after a new scheduling
   uint16_t previous_first_rb;
   /// Current Number of RBs
-  uint16_t nb_rb; 
+  uint16_t nb_rb;
   /// Current Modulation order
   uint8_t Qm;
   /// Transport block size
@@ -531,7 +531,7 @@ typedef enum {
   HARQ_SR,
   HARQ_CQI,
   SR_CQI,
-  HARQ_SR_CQI  
+  HARQ_SR_CQI
 } UCI_type_t;
 
 #ifdef Rel14
@@ -556,7 +556,7 @@ typedef struct {
   uint8_t     srs_active;
   /// PUCCH format to use
   PUCCH_FMT_t pucch_fmt;
-  /// number of PUCCH antenna ports 
+  /// number of PUCCH antenna ports
   uint8_t     num_antenna_ports;
   /// number of PUCCH resources
   uint8_t     num_pucch_resources;
@@ -864,11 +864,105 @@ typedef enum {
 } RX_type_t;
 
 
+#ifdef Rel14
 typedef enum {
   DCI_COMMON_SPACE,
   DCI_UE_SPACE
 } dci_space_t;
 
+
+typedef struct {
+  uint16_t slss_id;
+  uint8_t *slmib;
+} SLSS_t;
+
+typedef struct {
+  // SL Configuration
+  /// Number of SL resource blocks (1-100)
+  uint32_t N_SL_RB;
+  /// prb-start (0-99)
+  uint32_t prb_Start;
+  /// prb-End (0-99)
+  uint32_t prb_End;
+  /// SL-OffsetIndicator (0-10239)
+  uint32_t SL_OffsetIndicator;
+  /// PSCCH subframe bitmap, first 64-bits (up to 40 bits for Rel 12)
+  uint64_t bitmap1;
+  /// PSCCH subframe bitmap, 2nd 64-bits (up to 100 bits for Rel 14)
+  uint64_t bitmap2;
+
+  // SCI parameters
+  /// npscch resource index
+  uint32_t n_pscch;
+  /// format of SCI (0,1)
+  uint32_t format;
+  /// SCI0 frequency hopping flag
+  uint32_t freq_hopping_flag;
+  /// SCI0 Resource Block Coding
+  uint32_t resource_block_coding;
+  /// SCI0 Time Resource Pattern for SLSCH
+  uint32_t time_resource_pattern;
+  /// SCI0 MCS for SLSCH
+  uint32_t mcs;
+  /// SCI0 Timing advance indication for SLSCH
+  uint32_t timing_advance_indication;
+  /// SCI0 Group Destination ID for SLSCH
+  uint32_t group_destination_id;
+
+  // SLSCH Parameters
+  /// Number of Subbands (36.213 14.1.1.2)
+  uint32_t Nsb;
+  /// N_RB_HO (36.213 14.1.1.2)
+  uint32_t N_RB_HO;
+  /// n_ss_PSSCH (36.211 9.2.4)
+  uint32_t n_ss_PSSCH;
+  /// n_ssf_PSSCH
+  uint32_t n_ssf_PSSCH;
+  /// cinit (36.331 hoppingParameter-r12)
+  uint32_t cinit;
+  /// redundancy version
+  uint32_t rvidx;
+  /// n_prime_VRB (36.213 14.1.1.2.1)
+  uint32_t n_prime_VRB;
+  /// M_RB_PSSCH_RP (36.213 14.1.3
+  uint32_t M_RB_PSSCH_RP;
+  /// n_prime_PRB (36.213 14.1.1.4
+  uint32_t n_prime_PRB;
+  /// m_nprime_PRB_PSSCH (36.213 14.1.3)
+  uint32_t m_nprime_PRB_PSCCH;
+  /// payload length
+  int payload_length;
+  /// pointer to payload
+  uint8_t *payload;
+} SLSCH_t;
+
+typedef struct {
+  /// payload length
+  int payload_length;
+	uint8_t payload[100];
+} SLDCH_t;
+
+#define TTI_SYNC 0
+#define SLSS 1
+#define SLDCH 2
+#define SLSCH 3
+
+typedef struct UE_tport_header_s {
+  int packet_type;
+  uint16_t absSF;
+} UE_tport_header_t;
+
+typedef struct UE_tport_s {
+  UE_tport_header_t header;
+  union {
+    SLSS_t slss;
+    SLDCH_t sldch;
+    SLSCH_t slsch;
+  };
+  uint8_t payload[1500];
+} UE_tport_t;
+
+#endif
 
 /**@}*/
 #endif

@@ -45,6 +45,131 @@
 
 #include "LAYER2/MAC/defs.h"
 
+//for D2D
+#define DEBUG_CTRL_SOCKET
+#define BUFSIZE                1024
+#define CONTROL_SOCKET_PORT_NO 8888
+#define MAX_NUM_DEST           10
+//netlink
+//#define DEBUG_PDCP
+#define UE_IP_PDCP_NETLINK_ID  31
+#define PDCP_PID               1
+#define NETLINK_HEADER_SIZE    16
+#define SL_DEFAULT_RAB_ID      3
+#define SLRB_ID                3
+
+#define MAX_PAYLOAD 1024 /* maximum payload size*/
+
+#define UE_STATE_NOTIFICATION_INTERVAL      50
+
+#define IPV4_ADDR    "%u.%u.%u.%u"
+#define IPV4_ADDR_FORMAT(aDDRESS)                 \
+      (uint8_t)((aDDRESS)  & 0x000000ff),         \
+      (uint8_t)(((aDDRESS) & 0x0000ff00) >> 8 ),  \
+      (uint8_t)(((aDDRESS) & 0x00ff0000) >> 16),  \
+      (uint8_t)(((aDDRESS) & 0xff000000) >> 24)
+
+
+//-----------------------------------------------------
+// header for Control socket
+
+//Primitives
+#define SESSION_INIT_REQ                    1
+#define UE_STATUS_INFO                      2
+#define GROUP_COMMUNICATION_ESTABLISH_REQ   3
+#define GROUP_COMMUNICATION_ESTABLISH_RSP   4
+#define DIRECT_COMMUNICATION_ESTABLISH_REQ  5
+#define DIRECT_COMMUNICATION_ESTABLISH_RSP  6
+#define GROUP_COMMUNICATION_RELEASE_REQ     7
+#define GROUP_COMMUNICATION_RELEASE_RSP     8
+#define PC5S_ESTABLISH_REQ                  9
+#define PC5S_ESTABLISH_RSP                  10
+#define PC5_DISCOVERY_MESSAGE          	  11
+
+
+#define PC5_DISCOVERY_PAYLOAD_SIZE	    29
+
+
+typedef enum {
+   UE_STATE_OFF_NETWORK,
+   UE_STATE_ON_NETWORK
+} SL_UE_STATE_t;
+
+typedef enum {
+   GROUP_COMMUNICATION_RELEASE_OK = 0,
+   GROUP_COMMUNICATION_RELEASE_FAILURE
+} Group_Communication_Status_t;
+
+struct GroupCommunicationEstablishReq {
+   uint32_t sourceL2Id;
+   uint32_t groupL2Id;
+   uint32_t groupIpAddress;
+   uint8_t pppp;
+};
+
+struct GroupCommunicationReleaseReq {
+   uint32_t sourceL2Id;
+   uint32_t groupL2Id;
+   int slrb_id;
+};
+
+struct DirectCommunicationEstablishReq {
+   uint32_t sourceL2Id;
+   uint32_t destinationL2Id;
+   uint32_t pppp;
+};
+
+struct PC5SEstablishReq{
+   uint8_t type;
+   uint32_t sourceL2Id;
+   uint32_t destinationL2Id;
+};
+
+struct PC5SEstablishRsp{
+   uint32_t slrbid_lcid28;
+   uint32_t slrbid_lcid29;
+   uint32_t slrbid_lcid30;
+};
+
+
+//PC5_DISCOVERY MESSAGE
+typedef struct  {
+   unsigned char payload[PC5_DISCOVERY_PAYLOAD_SIZE];
+   uint32_t measuredPower;
+}  __attribute__((__packed__)) PC5DiscoveryMessage ;
+
+
+struct sidelink_ctrl_element {
+   unsigned short type;
+   union {
+      struct GroupCommunicationEstablishReq group_comm_establish_req;
+      struct DirectCommunicationEstablishReq direct_comm_establish_req;
+      Group_Communication_Status_t group_comm_release_rsp;
+      //struct DirectCommunicationReleaseReq  direct_comm_release_req;
+      SL_UE_STATE_t ue_state;
+      int slrb_id;
+      struct PC5SEstablishReq pc5s_establish_req;
+      struct PC5SEstablishRsp pc5s_establish_rsp;
+      PC5DiscoveryMessage pc5_discovery_message;
+   } sidelinkPrimitive;
+};
+
+
+//global variables
+extern struct sockaddr_in clientaddr;
+extern int slrb_id;
+extern pthread_mutex_t slrb_mutex;
+
+//the thread function
+void *send_UE_status_notification(void *);
+
+
+
+//#include "COMMON/openair_defs.h"
+#ifndef USER_MODE
+//#include <rtai.h>
+#endif
+
 #include "SystemInformationBlockType1.h"
 #include "SystemInformation.h"
 #include "RRCConnectionReconfiguration.h"
@@ -54,6 +179,7 @@
 #include "RRCConnectionRequest.h"
 #include "RRCConnectionReestablishmentRequest.h"
 #include "BCCH-DL-SCH-Message.h"
+#include "SBCCH-SL-BCH-MessageType.h"
 #include "BCCH-BCH-Message.h"
 #if defined(Rel10) || defined(Rel14)
 #include "MCCH-Message.h"
@@ -64,6 +190,7 @@
 #include "AS-Context.h"
 #include "UE-EUTRA-Capability.h"
 #include "MeasResults.h"
+#include "SidelinkUEInformation-r12.h"
 
 /* for ImsiMobileIdentity_t */
 #include "MobileIdentity.h"
@@ -185,7 +312,7 @@ typedef struct uid_linear_allocator_s {
 
 #define PROTOCOL_RRC_CTXT_FMT           PROTOCOL_CTXT_FMT
 #define PROTOCOL_RRC_CTXT_ARGS(CTXT_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp)
-/** @defgroup _rrc RRC 
+/** @defgroup _rrc RRC
  * @ingroup _oai2
  * @{
  */
@@ -218,6 +345,21 @@ typedef enum HO_STATE_e {
   HO_CMD, // initiated by the src eNB
   HO_COMPLETE // initiated by the target eNB
 } HO_STATE_t;
+
+typedef enum SL_TRIGGER_e {
+  SL_RECEIVE_COMMUNICATION=0,
+  SL_TRANSMIT_RELAY_ONE_TO_ONE,
+  SL_TRANSMIT_RELAY_ONE_TO_MANY,
+  SL_TRANSMIT_NON_RELAY_ONE_TO_ONE,
+  SL_TRANSMIT_NON_RELAY_ONE_TO_MANY,
+  SL_RECEIVE_DISCOVERY,
+  SL_TRANSMIT_NON_PS_DISCOVERY,
+  SL_TRANSMIT_PS_DISCOVERY,
+  SL_RECEIVE_V2X,
+  SL_TRANSMIT_V2X,
+  SL_REQUEST_DISCOVERY_TRANSMISSION_GAPS,
+  SL_REQUEST_DISCOVERY_RECEPTION_GAPS
+} SL_TRIGGER_t;
 
 //#define NUMBER_OF_UE_MAX MAX_MOBILES_PER_RG
 #define RRM_FREE(p)       if ( (p) != NULL) { free(p) ; p=NULL ; }
@@ -355,7 +497,7 @@ typedef struct SRB_INFO_TABLE_ENTRY_s {
   SRB_INFO Srb_info;
   uint8_t Active;
   uint8_t Status;
-  uint32_t Next_check_frame; 
+  uint32_t Next_check_frame;
 } SRB_INFO_TABLE_ENTRY;
 
 typedef struct MEAS_REPORT_LIST_s {
@@ -519,6 +661,11 @@ typedef struct {
   MBSFNAreaConfiguration_r9_t       *mcch_message;
   SRB_INFO                          MCCH_MESS[8];// MAX_MBSFN_AREA
 #endif
+  //TTN - SIB 18,19,21 for D2D
+  SystemInformationBlockType18_r12_t *sib18;
+  SystemInformationBlockType19_r12_t *sib19;
+  SystemInformationBlockType21_r14_t *sib21;
+  // End - TTN
   SRB_INFO                          SI;
   SRB_INFO                          Srb0;
   uint8_t                           *paging[NUMBER_OF_UE_MAX];
@@ -610,6 +757,27 @@ typedef struct UE_RRC_INST_s {
   SystemInformationBlockType9_t *sib9[NB_CNX_UE];
   SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   SystemInformationBlockType11_t *sib11[NB_CNX_UE];
+  uint8_t                           *MIB;
+#ifdef Rel14
+  //SIB18
+  SystemInformationBlockType18_r12_t *sib18[NB_CNX_UE];
+  SystemInformationBlockType19_r12_t *sib19[NB_CNX_UE];
+  SystemInformationBlockType21_r14_t *sib21[NB_CNX_UE];
+
+  SBCCH_SL_BCH_MessageType_t   mib_sl[NB_CNX_UE];
+  /// Preconfiguration for Sidelink
+  struct SL_Preconfiguration_r12 *SL_Preconfiguration[NB_CNX_UE];
+  //source L2 Id
+  uint32_t sourceL2Id;
+  //group L2 Id
+  uint32_t groupL2Id;
+  //current destination
+  uint32_t destinationL2Id;
+  //List of destinations
+   uint32_t destinationList[MAX_NUM_DEST];
+  //sl_discovery..
+  SRB_INFO SL_Discovery[NB_CNX_UE];
+#endif
 
 #if defined(Rel10) || defined(Rel14)
   uint8_t                           MBMS_flag;
@@ -657,6 +825,11 @@ typedef struct UE_RRC_INST_s {
   /* Used integrity/ciphering algorithms */
   CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
+
+#ifdef Rel14
+  /// Used for Sidelink Preconfiguration
+  DRB_ToAddModList_t *DRB_configList;
+#endif
 } UE_RRC_INST;
 
 typedef struct UE_PF_PO_s {

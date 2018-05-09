@@ -84,7 +84,6 @@ schedule_SIB1_BR(module_id_t module_idP,
 		 frame_t frameP, sub_frame_t subframeP)
 //------------------------------------------------------------------------------
 {
-
     int8_t bcch_sdu_length;
     int CC_id;
     eNB_MAC_INST *eNB = RC.mac[module_idP];
@@ -509,7 +508,6 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
 void
 schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
-
     eNB_MAC_INST *eNB = RC.mac[module_idP];
     COMMON_channels_t *cc;
     nfapi_dl_config_request_pdu_t *dl_config_pdu;

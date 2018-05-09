@@ -1504,6 +1504,29 @@ uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
                               DCI_ALLOC_t *dci_alloc,
                               uint8_t subframe);
 
+/*! \brief Top-level generation route for Sidelink BCH,PSS and SSS
+  \param ue pointer to UE descriptor
+  \param slss pointer to SLSS configuration and payload
+  \param frame_tx Frame number
+  \param subframe_tx subframe number
+*/
+void generate_slss(PHY_VARS_UE *ue,SLSS_t *slss,int frame_tx,int subframe_tx);
+
+/*! \brief Top-level generation route for Sidelink Discovery Channel
+  \param ue pointer to UE descriptor
+  \param sldch pointer to SLDCH configuration and payload
+  \param frame_tx Frame number
+  \param subframe_tx subframe number
+*/
+void generate_sldch(PHY_VARS_UE *ue,SLDCH_t *sldch,int frame_tx,int subframe_tx);
+
+/*! \brief Top-level generation route for Sidelink Shared Channel
+  \param ue pointer to UE descriptor
+  \param slsch pointer to SLSCH configuration and payload
+  \param frame_tx Frame number
+  \param subframe_tx subframe number
+*/
+void generate_slsch(PHY_VARS_UE *ue,SLSCH_t *slss,int frame_tx,int subframe_tx);
 
 void generate_64qam_table(void);
 void generate_16qam_table(void);

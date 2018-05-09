@@ -121,7 +121,9 @@ extern int transmission_mode;
 
 extern int oaisim_flag;
 
-uint16_t sf_ahead=4;
+//uint16_t sf_ahead=4;
+extern uint16_t sf_ahead;
+
 
 //pthread_t                       main_eNB_thread;
 
@@ -353,8 +355,19 @@ static void* tx_thread(void* param) {
 static void* eNB_thread_rxtx( void* param ) {
 
   static int eNB_thread_rxtx_status;
-  eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
-  eNB_rxtx_proc_t *proc = &eNB_proc->proc_rxtx[0];
+  //eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
+  eNB_rxtx_proc_t *proc;
+
+  // Working
+  if(nfapi_mode ==2){
+	  proc = (eNB_rxtx_proc_t*)param;
+  }
+  else{
+	  eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
+	  proc = &eNB_proc->proc_rxtx[0];
+  }
+
+
   PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
   //RU_proc_t *ru_proc = NULL;
 
@@ -476,6 +489,8 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
 
 int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc) {
   
+	if(ru_proc == NULL)
+		return(0);
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
@@ -963,8 +978,17 @@ void init_eNB_proc(int inst) {
       init_td_thread(eNB);
     }
     //////////////////////////////////////need to modified////////////////*****
-	pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
-	pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
+	//pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
+
+	//pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc_rxtx );
+
+
+    // Panos: Should we also include here the case where single_thread_flag = 1 ?
+	if(nfapi_mode!=2){
+		pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
+		pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
+	}
+
 
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 

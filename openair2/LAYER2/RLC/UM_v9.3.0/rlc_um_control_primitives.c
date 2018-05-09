@@ -93,7 +93,12 @@ void config_req_rlc_um_asn1 (
   const UL_UM_RLC_t       * const ul_rlc_pP,
   const DL_UM_RLC_t       * const dl_rlc_pP,
   const rb_id_t             rb_idP,
-  const logical_chan_id_t   chan_idP)
+  const logical_chan_id_t   chan_idP
+#ifdef Rel14
+ ,const uint32_t            sourceL2Id
+ ,const uint32_t            destinationL2Id
+#endif
+                          )
 {
   uint32_t         ul_sn_FieldLength   = 0;
   uint32_t         dl_sn_FieldLength   = 0;
@@ -117,10 +122,14 @@ void config_req_rlc_um_asn1 (
                  mbms_service_idP,
                  mbms_session_idP);
     rlc_p = &rlc_union_p->rlc.um;
+  }
+  if ((sourceL2Id >0 ) && (destinationL2Id >0)){
+     key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, sourceL2Id, destinationL2Id, srb_flagP);
   } else
 #endif
   {
-    key  = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+     key  = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+  }
     h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
     AssertFatal (h_rc == HASH_TABLE_OK, "RLC NOT FOUND enb id %u ue id %i enb flag %u rb id %u, srb flag %u",
                  ctxt_pP->module_id,
@@ -129,7 +138,6 @@ void config_req_rlc_um_asn1 (
                  rb_idP,
                  srb_flagP);
     rlc_p = &rlc_union_p->rlc.um;
-  }
 
   //-----------------------------------------------------------------------------
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT"  CONFIG_REQ timer_reordering=%dms sn_field_length=   RB %u \n",

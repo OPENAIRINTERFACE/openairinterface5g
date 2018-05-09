@@ -35,6 +35,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 #include "nfapi_interface.h"
+#include "nfapi_pnf_interface.h"
 #include "fapi_l1.h"
 
 int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req);
@@ -843,4 +844,26 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
       handle_nfapi_ul_pdu(eNB,proc,ul_config_pdu,UL_req->sfn_sf>>4,UL_req->sfn_sf&0xf,UL_req->ul_config_request_body.srs_present);
     }
   }
+}
+
+/*Dummy functions*/
+
+int memcpy_dl_config_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_dl_config_request_t* req)
+{
+	return 0;
+}
+
+int memcpy_ul_config_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req)
+{
+	return 0;
+}
+
+int memcpy_hi_dci0_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_hi_dci0_request_t* req)
+{
+	return 0;
+}
+
+int memcpy_tx_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_tx_request_t* req)
+{
+	return 0;
 }

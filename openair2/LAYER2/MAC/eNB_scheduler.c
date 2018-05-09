@@ -72,8 +72,6 @@ uint16_t pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 void
 schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
-
-
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   UE_list_t *UE_list = &eNB->UE_list;
   nfapi_ul_config_request_body_t *ul_req;
@@ -92,150 +90,140 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
   uint16_t srsPeriodicity, srsOffset;
   
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    soundingRS_UL_ConfigCommon = &cc[CC_id].radioResourceConfigCommon->soundingRS_UL_ConfigCommon;
-    // check if SRS is enabled in this frame/subframe
-    if (soundingRS_UL_ConfigCommon) {
-      srs_SubframeConfig = soundingRS_UL_ConfigCommon->choice.setup.srs_SubframeConfig;
-      if (cc[CC_id].tdd_Config == NULL) {	// FDD
-	deltaTSFC = deltaTSFCTabType1[srs_SubframeConfig][0];
-	TSFC = deltaTSFCTabType1[srs_SubframeConfig][1];
-      } else {		// TDD
-	deltaTSFC = deltaTSFCTabType2[srs_SubframeConfig][0];
-	TSFC = deltaTSFCTabType2[srs_SubframeConfig][1];
-      }
-      // Sounding reference signal subframes are the subframes satisfying ns/2 mod TSFC (- deltaTSFC
-      uint16_t tmp = (subframeP % TSFC);
-      
-      if ((1 << tmp) & deltaTSFC) {
-	// This is an SRS subframe, loop over UEs
-	for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-	  if (RC.mac[module_idP]->UE_list.active[UE_id] != TRUE)
-	    continue;
-	  ul_req = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
-	  // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
-	  if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
-	  
-	  AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated != NULL,
-		      "physicalConfigDedicated is null for UE %d\n",
-		      UE_id);
-	  
-	  if ((soundingRS_UL_ConfigDedicated = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated) != NULL) {
-	    if (soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
-	      get_srs_pos(&cc[CC_id],
-			  soundingRS_UL_ConfigDedicated->choice.
-			  setup.srs_ConfigIndex,
-			  &srsPeriodicity, &srsOffset);
-	      if (((10 * frameP + subframeP) % srsPeriodicity) == srsOffset) {
-		// Program SRS
-		ul_req->srs_present = 1;
-		nfapi_ul_config_request_pdu_t * ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
-		memset((void *) ul_config_pdu, 0, sizeof(nfapi_ul_config_request_pdu_t));
-		ul_config_pdu->pdu_type =  NFAPI_UL_CONFIG_SRS_PDU_TYPE;
-		ul_config_pdu->pdu_size =  2 + (uint8_t) (2 + sizeof(nfapi_ul_config_srs_pdu));
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_SRS_PDU_REL8_TAG;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.size = (uint8_t)sizeof(nfapi_ul_config_srs_pdu);
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.rnti = UE_list->UE_template[CC_id][UE_id].rnti;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.srs_bandwidth = soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.frequency_domain_position = soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.srs_hopping_bandwidth = soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth;;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.transmission_comb = soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.i_srs = soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex;
-		ul_config_pdu->srs_pdu.srs_pdu_rel8.sounding_reference_cyclic_shift = soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;		//              ul_config_pdu->srs_pdu.srs_pdu_rel10.antenna_port                   = ;//
-		//              ul_config_pdu->srs_pdu.srs_pdu_rel13.number_of_combs                = ;//
-		RC.mac[module_idP]->UL_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
-		RC.mac[module_idP]->UL_req[CC_id].header.message_id = NFAPI_UL_CONFIG_REQUEST;
-		ul_req->number_of_pdus++;
-	      }	// if (((10*frameP+subframeP) % srsPeriodicity) == srsOffset)
-	    }	// if (soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup)
-	  }		// if ((soundingRS_UL_ConfigDedicated = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated)!=NULL)
-	}		// for (UE_id ...
-      }			// if((1<<tmp) & deltaTSFC)
-      
-    }			// SRS config
-  }
+	  soundingRS_UL_ConfigCommon = &cc[CC_id].radioResourceConfigCommon->soundingRS_UL_ConfigCommon;
+	  // check if SRS is enabled in this frame/subframe
+	  if (soundingRS_UL_ConfigCommon) {
+		  srs_SubframeConfig = soundingRS_UL_ConfigCommon->choice.setup.srs_SubframeConfig;
+		  if (cc[CC_id].tdd_Config == NULL) {	// FDD
+			  deltaTSFC = deltaTSFCTabType1[srs_SubframeConfig][0];
+			  TSFC = deltaTSFCTabType1[srs_SubframeConfig][1];
+		  } else {		// TDD
+			  deltaTSFC = deltaTSFCTabType2[srs_SubframeConfig][0];
+			  TSFC = deltaTSFCTabType2[srs_SubframeConfig][1];
+		  }
+		  // Sounding reference signal subframes are the subframes satisfying ns/2 mod TSFC (- deltaTSFC
+		  uint16_t tmp = (subframeP % TSFC);
+
+		  if ((1 << tmp) & deltaTSFC) {
+			  // This is an SRS subframe, loop over UEs
+			  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+				  if (RC.mac[module_idP]->UE_list.active[UE_id] != TRUE)
+					  continue;
+				  ul_req = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
+				  // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
+				  if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
+				  AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated != NULL,
+						  "physicalConfigDedicated is null for UE %d\n", UE_id);
+
+				  if ((soundingRS_UL_ConfigDedicated = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated) != NULL) {
+					  if (soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
+						  get_srs_pos(&cc[CC_id],soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex,&srsPeriodicity, &srsOffset);
+
+						  if (((10 * frameP + subframeP) % srsPeriodicity) == srsOffset) {
+							  // Program SRS
+							  ul_req->srs_present = 1;
+							  nfapi_ul_config_request_pdu_t * ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
+							  memset((void *) ul_config_pdu, 0, sizeof(nfapi_ul_config_request_pdu_t));
+							  ul_config_pdu->pdu_type =  NFAPI_UL_CONFIG_SRS_PDU_TYPE;
+							  ul_config_pdu->pdu_size =  2 + (uint8_t) (2 + sizeof(nfapi_ul_config_srs_pdu));
+							  ul_config_pdu->srs_pdu.srs_pdu_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_SRS_PDU_REL8_TAG;
+							  ul_config_pdu->srs_pdu.srs_pdu_rel8.size = (uint8_t)sizeof(nfapi_ul_config_srs_pdu);
+							  ul_config_pdu->srs_pdu.srs_pdu_rel8.rnti = UE_list->UE_template[CC_id][UE_id].rnti;
+							  ul_config_pdu->srs_pdu.srs_pdu_rel8.srs_bandwidth = soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth;
+							  ul_config_pdu->srs_pdu.srs_pdu_rel8.frequency_domain_position = soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;
+							  ul_config_pdu->srs_pdu.srs_pdu_rel8.srs_hopping_bandwidth = soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth;;
+							  ul_config_pdu->srs_pdu.srs_pdu_rel8.transmission_comb = soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb;
+							  ul_config_pdu->srs_pdu.srs_pdu_rel8.i_srs = soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex;
+							  ul_config_pdu->srs_pdu.srs_pdu_rel8.sounding_reference_cyclic_shift = soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;		//              ul_config_pdu->srs_pdu.srs_pdu_rel10.antenna_port                   = ;//
+							  //              ul_config_pdu->srs_pdu.srs_pdu_rel13.number_of_combs                = ;//
+							  RC.mac[module_idP]->UL_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
+							  RC.mac[module_idP]->UL_req[CC_id].header.message_id = NFAPI_UL_CONFIG_REQUEST;
+							  ul_req->number_of_pdus++;
+						  }	// if (((10*frameP+subframeP) % srsPeriodicity) == srsOffset)
+						  }	// if (soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup)
+					  }		// if ((soundingRS_UL_ConfigDedicated = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated)!=NULL)
+				  }		// for (UE_id ...
+			  }			// if((1<<tmp) & deltaTSFC)
+		  }			// SRS config
+	  }
 }
 
 void
 schedule_CSI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
-  eNB_MAC_INST                   *eNB = RC.mac[module_idP];
-  UE_list_t                      *UE_list = &eNB->UE_list;
-  COMMON_channels_t              *cc;
-  nfapi_ul_config_request_body_t *ul_req;
-  int                            CC_id, UE_id;
-  struct CQI_ReportPeriodic      *cqi_ReportPeriodic;
-  uint16_t                       Npd, N_OFFSET_CQI;
-  int                            H;
+	eNB_MAC_INST                   *eNB = RC.mac[module_idP];
+	UE_list_t                      *UE_list = &eNB->UE_list;
+	COMMON_channels_t              *cc;
+	nfapi_ul_config_request_body_t *ul_req;
+	int                            CC_id, UE_id;
+	struct CQI_ReportPeriodic      *cqi_ReportPeriodic;
+	uint16_t                       Npd, N_OFFSET_CQI;
+	int                            H;
 
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+	for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+		cc = &eNB->common_channels[CC_id];
+		for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+			if (UE_list->active[UE_id] != TRUE)
+				continue;
+			ul_req = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
+			// drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
+			if (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
+			AssertFatal(UE_list->
+					UE_template[CC_id][UE_id].physicalConfigDedicated
+					!= NULL,
+					"physicalConfigDedicated is null for UE %d\n",
+					UE_id);
+			if (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig) {
+				if ((cqi_ReportPeriodic = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic) != NULL
+						&& (cqi_ReportPeriodic->present != CQI_ReportPeriodic_PR_release)) {
+					//Rel8 Periodic CQI/PMI/RI reporting
+					get_csi_params(cc, cqi_ReportPeriodic, &Npd,
+							&N_OFFSET_CQI, &H);
+					if ((((frameP * 10) + subframeP) % Npd) == N_OFFSET_CQI) {	// CQI opportunity
+						UE_list->UE_sched_ctrl[UE_id].feedback_cnt[CC_id] = (((frameP * 10) + subframeP) / Npd) % H;
+						// Program CQI
+						nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
+						memset((void *) ul_config_pdu, 0,
+								sizeof(nfapi_ul_config_request_pdu_t));
+						ul_config_pdu->pdu_type                                                          = NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE;
+						ul_config_pdu->pdu_size                                                          = 2 + (uint8_t) (2 + sizeof(nfapi_ul_config_uci_cqi_pdu));
+						ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.tl.tag             = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
+						ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.rnti               = UE_list->UE_template[CC_id][UE_id].rnti;
+						ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.tl.tag           = NFAPI_UL_CONFIG_REQUEST_CQI_INFORMATION_REL8_TAG;
+						ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.pucch_index      = cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex;
+						ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.dl_cqi_pmi_size  = get_rel8_dl_cqi_pmi_size(&UE_list->UE_sched_ctrl[UE_id], CC_id, cc,get_tmode(module_idP, CC_id, UE_id),cqi_ReportPeriodic);
+						ul_req->number_of_pdus++;
+						ul_req->tl.tag                                                                   = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
 
-    cc = &eNB->common_channels[CC_id];
-    for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-      if (UE_list->active[UE_id] != TRUE)
-	continue;
+						#if defined(Rel10) || defined(Rel14)
+						// PUT rel10-13 UCI options here
+						#endif
+						} else
+							if ((cqi_ReportPeriodic->choice.setup.ri_ConfigIndex)
+									&& ((((frameP * 10) + subframeP) % ((H * Npd) << (*cqi_ReportPeriodic->choice.setup.ri_ConfigIndex / 161))) == N_OFFSET_CQI + (*cqi_ReportPeriodic->choice.setup.ri_ConfigIndex % 161))) {	// RI opportunity
+								// Program RI
+								nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
+								memset((void *) ul_config_pdu, 0,
+										sizeof(nfapi_ul_config_request_pdu_t));
+								ul_config_pdu->pdu_type                                                          = NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE;
+								ul_config_pdu->pdu_size                                                          = 2 + (uint8_t) (2 + sizeof(nfapi_ul_config_uci_cqi_pdu));
+								ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.tl.tag             = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
+								ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.rnti               = UE_list->UE_template[CC_id][UE_id].rnti;
+								ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.tl.tag           = NFAPI_UL_CONFIG_REQUEST_CQI_INFORMATION_REL8_TAG;
+								ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.pucch_index      = cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex;
+								ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.dl_cqi_pmi_size  = (cc->p_eNB == 2) ? 1 : 2;
+								RC.mac[module_idP]->UL_req[CC_id].sfn_sf                                         = (frameP << 4) + subframeP;
+								ul_req->number_of_pdus++;
+								ul_req->tl.tag                                                                   = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
+							}
+				}		// if ((cqi_ReportPeriodic = cqi_ReportConfig->cqi_ReportPeriodic)!=NULL) {
 
-      ul_req = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
+			}			// if (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig)
 
-      // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
-      if (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
+		}			// for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
 
-      AssertFatal(UE_list->
-		  UE_template[CC_id][UE_id].physicalConfigDedicated
-		  != NULL,
-		  "physicalConfigDedicated is null for UE %d\n",
-		  UE_id);
+	}				// for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
-      if (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig) {
-	if ((cqi_ReportPeriodic = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic) != NULL
-	    && (cqi_ReportPeriodic->present != CQI_ReportPeriodic_PR_release)) {
-	  //Rel8 Periodic CQI/PMI/RI reporting
-
-	  get_csi_params(cc, cqi_ReportPeriodic, &Npd,
-			 &N_OFFSET_CQI, &H);
-
-	  if ((((frameP * 10) + subframeP) % Npd) == N_OFFSET_CQI) {	// CQI opportunity
-	    UE_list->UE_sched_ctrl[UE_id].feedback_cnt[CC_id] = (((frameP * 10) + subframeP) / Npd) % H;
-	    // Program CQI
-	    nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
-	    memset((void *) ul_config_pdu, 0,
-		   sizeof(nfapi_ul_config_request_pdu_t));
-	    ul_config_pdu->pdu_type                                                          = NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE;
-	    ul_config_pdu->pdu_size                                                          = 2 + (uint8_t) (2 + sizeof(nfapi_ul_config_uci_cqi_pdu));
-	    ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.tl.tag             = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
-	    ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.rnti               = UE_list->UE_template[CC_id][UE_id].rnti;
-	    ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.tl.tag           = NFAPI_UL_CONFIG_REQUEST_CQI_INFORMATION_REL8_TAG;
-	    ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.pucch_index      = cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex;
-	    ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.dl_cqi_pmi_size  = get_rel8_dl_cqi_pmi_size(&UE_list->UE_sched_ctrl[UE_id], CC_id, cc,
-															get_tmode(module_idP, CC_id, UE_id),
-															cqi_ReportPeriodic);
-	    ul_req->number_of_pdus++;
-	    ul_req->tl.tag                                                                   = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
-
-#if defined(Rel10) || defined(Rel14)
-	    // PUT rel10-13 UCI options here
-#endif
-	  } else
-	    if ((cqi_ReportPeriodic->choice.setup.ri_ConfigIndex)
-		&& ((((frameP * 10) + subframeP) % ((H * Npd) << (*cqi_ReportPeriodic->choice.setup.ri_ConfigIndex / 161))) == N_OFFSET_CQI + (*cqi_ReportPeriodic->choice.setup.ri_ConfigIndex % 161))) {	// RI opportunity
-	      // Program RI
-	      nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
-	      memset((void *) ul_config_pdu, 0,
-		     sizeof(nfapi_ul_config_request_pdu_t));
-	      ul_config_pdu->pdu_type                                                          = NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE;
-	      ul_config_pdu->pdu_size                                                          = 2 + (uint8_t) (2 + sizeof(nfapi_ul_config_uci_cqi_pdu));
-	      ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.tl.tag             = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
-	      ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.rnti               = UE_list->UE_template[CC_id][UE_id].rnti;
-	      ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.tl.tag           = NFAPI_UL_CONFIG_REQUEST_CQI_INFORMATION_REL8_TAG;
-	      ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.pucch_index      = cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex;
-	      ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.dl_cqi_pmi_size  = (cc->p_eNB == 2) ? 1 : 2;
-	      RC.mac[module_idP]->UL_req[CC_id].sfn_sf                                         = (frameP << 4) + subframeP;
-	      ul_req->number_of_pdus++;
-	      ul_req->tl.tag                                                                   = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
-	    }
-	}		// if ((cqi_ReportPeriodic = cqi_ReportConfig->cqi_ReportPeriodic)!=NULL) {
-      }			// if (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig)
-    }			// for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
-  }				// for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 }
 
 void
@@ -530,6 +518,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 #if defined(Rel10) || defined(Rel14)
     cc[CC_id].mcch_active        = 0;
 #endif
+
 
     clear_nfapi_information(RC.mac[module_idP], CC_id, frameP, subframeP);
   }
