@@ -1447,9 +1447,10 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	fill_ulsch_cqi_indication(eNB,frame,subframe,
 				  ulsch_harq,
 				  ulsch->rnti);
-	        RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag = 0;
+	        RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << subframe));
       }else{
-          if(RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag==1){
+          if(RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag & (1 << subframe) ){
+              RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << subframe));
               RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_timer=30;
               LOG_D(PHY,"Frame %d,Subframe %d, We're supposed to get a cqi here. Set cqi_req_timer to 30.\n",frame,subframe);
           }
