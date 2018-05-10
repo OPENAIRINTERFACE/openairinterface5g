@@ -629,8 +629,9 @@ rx_sdu(const module_id_t enb_mod_idP,
 					ra[ii].rach_resource_type
 #endif
 			     )) == -1) {
-			    AssertFatal(1 == 0,
-					"[MAC][eNB] Max user count reached\n");
+			    LOG_E(MAC,"[MAC][eNB] Max user count reached\n");
+                            cancel_ra_proc(enb_mod_idP, CC_idP, frameP,current_rnti);
+                            break;
 			    // kill RA procedure
 			} else
 			    LOG_D(MAC,

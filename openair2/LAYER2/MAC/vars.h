@@ -155,5 +155,5 @@ uint8_t new_dlsch_ue_select_tbl_in_use;
 boolean_t pre_scd_activeUE[NUMBER_OF_UE_MAX];
 eNB_UE_STATS pre_scd_eNB_UE_stats[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 #endif
-
+mac_rlc_am_muilist_t rlc_am_mui;
 #endif
