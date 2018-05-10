@@ -668,6 +668,10 @@ void dlsch_scheduler_pre_ue_select(
         continue;
       }
 
+      if(mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED){
+        continue;
+      }
+
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 #if 0
       if (ue_sched_ctl->ul_out_of_sync == 1) {
@@ -773,6 +777,10 @@ void dlsch_scheduler_pre_ue_select(
         rnti = UE_RNTI(module_idP,UE_id);
         if (rnti == NOT_A_RNTI)
           continue;
+
+        if(mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED){
+          continue;
+        }
 
         ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 #if 0
@@ -886,6 +894,10 @@ void dlsch_scheduler_pre_ue_select(
         rnti = UE_RNTI(module_idP,UE_id);
         if (rnti == NOT_A_RNTI)
           continue;
+
+        if(mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED){
+          continue;
+        }
 
         ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 #if 0
@@ -1159,6 +1171,9 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
         dlsch_ue_select[CC_id].ue_num = i+1;
         break;
       }
+      LOG_D(MAC,"DLSCH UE Select: frame %d subframe %d pre_nb_available_rbs %d(i %d UE_id %d nb_rbs_required %d nb_rbs_required_remaining %d average_rbs_per_user %d (temp_total rbs_count %d ue_num %d) available_prbs %d)\n",
+          frameP,subframeP,ue_sched_ctl->pre_nb_available_rbs[CC_id],i,UE_id,nb_rbs_required[CC_id][UE_id],nb_rbs_required_remaining[CC_id][UE_id],
+          average_rbs_per_user[CC_id],temp_total_rbs_count,temp_total_ue_count,RC.mac[Mod_id]->eNB_stats[CC_id].available_prbs);
 #ifdef TM5
       // TODO: data channel TM5: to be re-visited
 #endif

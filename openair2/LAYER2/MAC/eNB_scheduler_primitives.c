@@ -2277,6 +2277,27 @@ int rrc_mac_remove_ue(module_id_t mod_idP, rnti_t rntiP)
       cancel_ra_proc(mod_idP, pCC_id, 0, rntiP);
     }
 
+    pthread_mutex_lock(&rrc_release_freelist);
+    if(rrc_release_info.num_UEs > 0){
+      uint16_t release_total = 0;
+      for(uint16_t release_num = 0;release_num < NUMBER_OF_UE_MAX;release_num++){
+        if(rrc_release_info.RRC_release_ctrl[release_num].flag > 0){
+          release_total++;
+        }else{
+          continue;
+        }
+        if(rrc_release_info.RRC_release_ctrl[release_num].rnti == rntiP){
+          rrc_release_info.RRC_release_ctrl[release_num].flag = 0;
+          rrc_release_info.num_UEs--;
+          release_total--;
+        }
+        if(release_total >= rrc_release_info.num_UEs){
+          break;
+        }
+      }
+    }
+    pthread_mutex_unlock(&rrc_release_freelist);
+
     return 0;
 }
 
@@ -3456,7 +3477,7 @@ allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP,
 		    for (j = 0; j <= i; j++) {
 			if (dl_config_pdu[j].pdu_type ==
 			    NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE)
-			    LOG_I(MAC,
+			    LOG_D(MAC,
 				  "DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
 				  j,
 				  DL_req->number_dci +
@@ -3850,6 +3871,7 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	     else
 	       frame_tx = subframeP < 4 ? frameP -1 : frameP;
 	     harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame_tx,subframe_tx);
+               RA_t *ra = &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
 
 	     if(num_ack_nak==1){
 	         if(harq_indication_tdd->harq_data[0].bundling.value_0==1){ //ack
@@ -3860,9 +3882,18 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	          if( sched_ctl->round[CC_idP][harq_pid]<8)
 	             sched_ctl->round[CC_idP][harq_pid]++;
               LOG_D(MAC,"frame %d subframe %d Nacking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
+            if(sched_ctl->round[CC_idP][harq_pid] == 8){
+              for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
+                if((ra[ra_i].rnti == rnti) && (ra[ra_i].state == WAITMSG4ACK)){
+                  //Msg NACK num to MAC ,remove UE
+                  // add UE info to freeList
+                  LOG_I(RRC, "put UE %x into freeList\n", rnti);
+                  put_UE_in_freelist(mod_idP, rnti, 1);
+                }
+              }
+            }
 	         }
 	       }
-               RA_t *ra = &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
                for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
                if ((ra[ra_i].rnti == rnti) && (ra[ra_i].state == MSGCRNTI_ACK) && (ra[ra_i].crnti_harq_pid == harq_pid)) {
                  LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",harq_indication_tdd->harq_data[0].bundling.value_0,rnti,sched_ctl->round[CC_idP][harq_pid],frameP,subframeP);
@@ -3936,8 +3967,19 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 		if (pdu[0] == 1) {	// ACK
 		    sched_ctl->round[CC_idP][harq_pid] = 8;	// release HARQ process
 		    sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
-		} else if (pdu[0] == 2 || pdu[0] == 4)	// NAK (treat DTX as NAK)
+		} else if (pdu[0] == 2 || pdu[0] == 4){	// NAK (treat DTX as NAK)
 		    sched_ctl->round[CC_idP][harq_pid]++;	// increment round
+                   if(sched_ctl->round[CC_idP][harq_pid] == 8){
+                     for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
+                       if((ra[ra_i].rnti == rnti) && (ra[ra_i].state == WAITMSG4ACK)){
+                         //Msg NACK num to MAC ,remove UE
+                         // add UE info to freeList
+                         LOG_I(RRC, "put UE %x into freeList\n", rnti);
+                         put_UE_in_freelist(mod_idP, rnti, 1);
+                       }
+                     }
+                   }
+                }
 	    } else {
 		// one or two ACK/NAK bits
 		AssertFatal(num_ack_nak > 2,

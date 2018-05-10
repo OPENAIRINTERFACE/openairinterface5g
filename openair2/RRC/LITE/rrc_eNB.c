@@ -831,7 +831,8 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
     LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", enb_mod_idP, rnti);
 
 #if defined(ENABLE_USE_MME)
-   if( ue_context_pP->ue_context.ul_failure_timer >= 20000 ) {
+   if((ue_context_pP->ue_context.ul_failure_timer >= 20000) &&
+      (mac_eNB_get_rrc_status(enb_mod_idP,rnti) >= RRC_CONNECTED)) {
     LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ RNTI %x\n", enb_mod_idP, rnti);
     rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); // send cause 21: connection with ue lost
     /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
@@ -2100,6 +2101,8 @@ rrc_eNB_generate_RRCConnectionRelease(
       rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt_pP->rnti;
       rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = rrc_eNB_mui;
       rrc_release_info.num_UEs++;
+      LOG_D(RRC,"Generate DLSCH Release send: index %d rnti %x mui %d flag %d \n",release_num,
+             ctxt_pP->rnti, rrc_eNB_mui,rrc_release_info.RRC_release_ctrl[release_num].flag);
       break;
     }
   }

@@ -192,6 +192,7 @@ tbs_size_t mac_rlc_data_req(
     break;
 
   case RLC_MODE_AM:
+    rlc_am_mui.rrc_mui_num = 0;
     if (!enb_flagP) rlc_am_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.am,tb_sizeP);
 	data_request = rlc_am_mac_data_request(&ctxt, &rlc_union_p->rlc.am,enb_flagP);
     ret_tb_size =mac_rlc_serialize_tb(buffer_pP, data_request.data);
@@ -372,7 +373,6 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
     mac_rlc_status_resp.head_sdu_creation_time          = status_resp.head_sdu_creation_time;
     mac_rlc_status_resp.head_sdu_remaining_size_to_send = status_resp.head_sdu_remaining_size_to_send;
     mac_rlc_status_resp.head_sdu_is_segmented           = status_resp.head_sdu_is_segmented;
-    mac_rlc_status_resp.rrc_mui                         = status_resp.rrc_mui;
     //return mac_rlc_status_resp;
     break;
 

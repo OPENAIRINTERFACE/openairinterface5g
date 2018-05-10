@@ -988,22 +988,36 @@ schedule_ue_spec(module_id_t module_idP,
 							  &dlsch_buffer
 							  [0]);
             pthread_mutex_lock(&rrc_release_freelist);
-            if(rrc_release_info.num_UEs > 0){
+            if((rrc_release_info.num_UEs > 0) && (rlc_am_mui.rrc_mui_num > 0)){
               uint16_t release_total = 0;
               for(uint16_t release_num = 0;release_num < NUMBER_OF_UE_MAX;release_num++){
+                if(rrc_release_info.RRC_release_ctrl[release_num].flag > 0){
+                  release_total++;
+                }else{
+                  continue;
+                }
+
                 if(rrc_release_info.RRC_release_ctrl[release_num].flag == 1){
-                 release_total++;
-                  if( (rrc_release_info.RRC_release_ctrl[release_num].rnti == rnti) &&
-                      (rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui == rlc_status.rrc_mui)){
-                      rrc_release_info.RRC_release_ctrl[release_num].flag = 3;
+                  if(rrc_release_info.RRC_release_ctrl[release_num].rnti == rnti){
+                    for(uint16_t mui_num = 0;mui_num < rlc_am_mui.rrc_mui_num;mui_num++){
+                      if(rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui == rlc_am_mui.rrc_mui[mui_num]){
+                        rrc_release_info.RRC_release_ctrl[release_num].flag = 3;
+                        LOG_D(MAC,"DLSCH Release send:index %d rnti %x mui %d mui_num %d flag 1->3\n",release_num,rnti,rlc_am_mui.rrc_mui[mui_num],mui_num);
+                        break;
+                       }
+                     }
                   }
                 }
                 if(rrc_release_info.RRC_release_ctrl[release_num].flag == 2){
-                    release_total++;
-                    if( (rrc_release_info.RRC_release_ctrl[release_num].rnti == rnti) &&
-                        (rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui == rlc_status.rrc_mui)){
-                        rrc_release_info.RRC_release_ctrl[release_num].flag = 4;
+                  if(rrc_release_info.RRC_release_ctrl[release_num].rnti == rnti){
+                    for(uint16_t mui_num = 0;mui_num < rlc_am_mui.rrc_mui_num;mui_num++){
+                      if(rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui == rlc_am_mui.rrc_mui[mui_num]){
+                          rrc_release_info.RRC_release_ctrl[release_num].flag = 4;
+                          LOG_D(MAC,"DLSCH Release send:index %d rnti %x mui %d mui_num %d flag 2->4\n",release_num,rnti,rlc_am_mui.rrc_mui[mui_num],mui_num);
+                          break;
+                      }
                     }
+                  }
                 }
                 if(release_total >= rrc_release_info.num_UEs)
                   break;
@@ -1013,21 +1027,24 @@ schedule_ue_spec(module_id_t module_idP,
 
             RA_t *ra = &eNB->common_channels[CC_id].ra[0];
             for (uint8_t ra_ii = 0; ra_ii < NB_RA_PROC_MAX; ra_ii++) {
-              if((ra[ra_ii].rnti == rnti) && (ra[ra_ii].state == MSGCRNTI) &&
-                 (ra[ra_ii].crnti_rrc_mui == rlc_status.rrc_mui)){
-                ra[ra_ii].crnti_harq_pid = harq_pid;
-                ra[ra_ii].state = MSGCRNTI_ACK;
-                break;
+              if((ra[ra_ii].rnti == rnti) && (ra[ra_ii].state == MSGCRNTI)){
+                for(uint16_t mui_num = 0;mui_num < rlc_am_mui.rrc_mui_num;mui_num++){
+                  if(ra[ra_ii].crnti_rrc_mui == rlc_am_mui.rrc_mui[mui_num]){
+                    ra[ra_ii].crnti_harq_pid = harq_pid;
+                    ra[ra_ii].state = MSGCRNTI_ACK;
+                    break;
+                  }
+                }
               }
             }
 			T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP),
 			  T_INT(CC_id), T_INT(rnti), T_INT(frameP),
 			  T_INT(subframeP), T_INT(harq_pid), T_INT(DCCH),
 			  T_INT(sdu_lengths[0]));
-
-			LOG_D(MAC,
-			      "[eNB %d][DCCH] CC_id %d Got %d bytes from RLC\n",
-			      module_idP, CC_id, sdu_lengths[0]);
+                       LOG_D(MAC,
+                             "[eNB %d][DCCH] CC_id %d frame %d subframe %d UE_id %d/%x Got %d bytes bytes_in_buffer %d from release_num %d\n",
+                             module_idP, CC_id, frameP, subframeP, UE_id, rnti, sdu_lengths[0],rlc_status.bytes_in_buffer,rrc_release_info.num_UEs);
+ 
 			sdu_length_total = sdu_lengths[0];
 			sdu_lcids[0] = DCCH;
 			UE_list->eNB_UE_stats[CC_id][UE_id].

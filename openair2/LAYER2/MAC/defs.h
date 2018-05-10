@@ -1413,6 +1413,12 @@ typedef struct {
     uint16_t num_UEs;
     RRC_release_ctrl RRC_release_ctrl[NUMBER_OF_UE_MAX];
 } RRC_release_list_t;
+
+typedef  struct {
+  uint8_t                      rrc_mui_num;
+  mui_t                        rrc_mui[128];
+}mac_rlc_am_muilist_t;
+
 #include "proto.h"
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

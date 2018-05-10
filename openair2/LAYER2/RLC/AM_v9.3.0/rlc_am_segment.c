@@ -358,6 +358,8 @@ void rlc_am_segment_10 (
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               pdu_remaining_size);
         //msg ("[FRAME %05d][%s][RLC_AM][MOD %u/%u][RB %u][SEGMENT] pdu_mem_p %p pdu_p %p pdu_p->data %p data %p data_sdu_p %p pdu_remaining_size %d\n", rlc_pP->module_id, rlc_pP->rb_id, ctxt_pP->frame, pdu_mem_p, pdu_p, pdu_p->data, data, data_sdu_p,pdu_remaining_size);
+        rlc_am_mui.rrc_mui[rlc_am_mui.rrc_mui_num] = sdu_mngt_p->mui;
+        rlc_am_mui.rrc_mui_num++;
 
         memcpy(data, data_sdu_p, pdu_remaining_size);
         pdu_mngt_p->payload_size += pdu_remaining_size;
@@ -376,6 +378,9 @@ void rlc_am_segment_10 (
         LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] Exactly Filling remaining PDU with %d remaining bytes of SDU\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               pdu_remaining_size);
+        rlc_am_mui.rrc_mui[rlc_am_mui.rrc_mui_num] = sdu_mngt_p->mui;
+        rlc_am_mui.rrc_mui_num++;
+
         memcpy(data, data_sdu_p, pdu_remaining_size);
         pdu_mngt_p->payload_size += pdu_remaining_size;
 
@@ -392,6 +397,8 @@ void rlc_am_segment_10 (
         continue_fill_pdu_with_sdu = 0;
         pdu_remaining_size = 0;
       } else if ((sdu_mngt_p->sdu_remaining_size + (li_length_in_bytes ^ 3)) < pdu_remaining_size ) {
+        rlc_am_mui.rrc_mui[rlc_am_mui.rrc_mui_num] = sdu_mngt_p->mui;
+        rlc_am_mui.rrc_mui_num++;
         if (fill_num_li == (RLC_AM_MAX_SDU_IN_PDU - 1)) {
           LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] [SIZE %d] REACHING RLC_AM_MAX_SDU_IN_PDU LIs -> STOP SEGMENTATION FOR THIS PDU SDU\n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -472,6 +479,9 @@ void rlc_am_segment_10 (
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
         //assert(1!=1);
+        rlc_am_mui.rrc_mui[rlc_am_mui.rrc_mui_num] = sdu_mngt_p->mui;
+        rlc_am_mui.rrc_mui_num++;
+
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
         pdu_mngt_p->payload_size += sdu_mngt_p->sdu_remaining_size;
         pdu_remaining_size = pdu_remaining_size - sdu_mngt_p->sdu_remaining_size;
