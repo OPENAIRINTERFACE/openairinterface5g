@@ -467,7 +467,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
     if (oai_exit == 1 || ru->cmd== STOP_RU) break;
     if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
     else if (packet_type == IF4p5_PULTICK) {           
-      if ((proc->first_rx==0) && (f!=*frame)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d\n",f,*frame);       
+      if ((proc->first_rx==0) && (f!=*frame)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d (RU %d)\n",f,*frame, ru->idx);       
       if ((proc->first_rx==0) && (sf!=*subframe)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d (first_rx %d)\n",sf,*subframe,proc->first_rx);       
       break;     
       
@@ -1265,7 +1265,12 @@ void do_ru_synch(RU_t *ru) {
   LOG_I(PHY,"Exiting synch routine\n");
 }
 
+int check_sync(RU_t *ru, RU_t *ru_master, int subframe){
 
+	if (fabs(ru_master->proc.t[subframe].tv_nsec - ru->proc.t[subframe].tv_nsec) > 500000)
+		return 0;
+	return 1;
+}
 
 void wakeup_eNBs(RU_t *ru) {
 
@@ -1284,33 +1289,53 @@ void wakeup_eNBs(RU_t *ru) {
     sprintf(string,"Incoming RU %d",ru->idx);
     
     pthread_mutex_lock(&proc->mutex_RU);
-    LOG_D(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
+    LOG_I(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
           ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,ru->wait_cnt,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx]);
-
-    if (proc->RU_mask[ru->proc.subframe_rx] == 0)
-      clock_gettime(CLOCK_MONOTONIC,&proc->t[ru->proc.subframe_rx]);
+    
+    clock_gettime(CLOCK_MONOTONIC,&ru->proc.t[ru->proc.subframe_rx]);
+    
+    if (proc->RU_mask[ru->proc.subframe_rx] == 0){
+      //clock_gettime(CLOCK_MONOTONIC,&proc->t[ru->proc.subframe_rx]);
+      proc->t[ru->proc.subframe_rx] = ru->proc.t[ru->proc.subframe_rx];
+      //start_meas(&proc->ru_arrival_time);
+      LOG_D(PHY,"RU %d starting timer for frame %d subframe %d\n",ru->idx, ru->proc.frame_rx,ru->proc.subframe_rx);
+    }
     for (i=0;i<eNB->num_RU;i++) {
-      LOG_D(PHY,"RU %d state %s\n",eNB->RU_list[i]->idx,ru_states[eNB->RU_list[i]->state]);
+      LOG_D(PHY,"RU %d has frame %d and subframe %d, state %s\n",eNB->RU_list[i]->idx,eNB->RU_list[i]->proc.frame_rx, eNB->RU_list[i]->proc.subframe_rx, ru_states[eNB->RU_list[i]->state]);
       if (ru == eNB->RU_list[i]) {
 //	AssertFatal((proc->RU_mask&(1<<i)) == 0, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",eNB->Mod_id,ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
         proc->RU_mask[ru->proc.subframe_rx] |= (1<<i);
-      }else if (eNB->RU_list[i]->state == RU_SYNC || eNB->RU_list[i]->wait_cnt > 0){
+      }else if (eNB->RU_list[i]->state == RU_SYNC){
       	proc->RU_mask[ru->proc.subframe_rx] |= (1<<i);
       }
+
+      if (ru->is_slave == 0 && ( (proc->RU_mask[ru->proc.subframe_rx]&(1<<i)) == 1) && eNB->RU_list[i]->state == RU_RUN) { // This is master & the RRU has already been received
+	if (check_sync(eNB->RU_list[i],eNB->RU_list[0],ru->proc.subframe_rx)  == 0)
+		LOG_E(PHY,"RU %d is not SYNC, subframe %d, time  %f this is master\n", eNB->RU_list[i]->idx, ru->proc.subframe_rx, fabs(eNB->RU_list[i]->proc.t[ru->proc.subframe_rx].tv_nsec - eNB->RU_list[0]->proc.t[ru->proc.subframe_rx].tv_nsec));
+      }else if (ru->is_slave == 1 && ru->state == RU_RUN && ( (proc->RU_mask[ru->proc.subframe_rx]&(1<<0)) == 1)){ // master already received. TODO: we assume that RU0 is master.
+	if (check_sync(ru,eNB->RU_list[0],ru->proc.subframe_rx)  == 0)
+		LOG_E(PHY,"RU %d is not SYNC time, subframe %d, time  %f\n", ru->idx, ru->proc.subframe_rx, fabs(ru->proc.t[ru->proc.subframe_rx].tv_nsec - eNB->RU_list[0]->proc.t[ru->proc.subframe_rx].tv_nsec));
+
+      }
     }
-    LOG_D(PHY,"RU mask is now %x\n",proc->RU_mask[ru->proc.subframe_rx]);
+    //clock_gettime(CLOCK_MONOTONIC,&t);
+    //LOG_I(PHY,"RU mask is now %x, time is %lu\n",proc->RU_mask[ru->proc.subframe_rx], t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
+
 
     if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) {
+      LOG_D(PHY,"Reseting mask frame %d, subframe %d, this is RU %d\n",ru->proc.frame_rx, ru->proc.subframe_rx, ru->idx);
       proc->RU_mask[ru->proc.subframe_rx] = 0;
       clock_gettime(CLOCK_MONOTONIC,&t);
+      //stop_meas(&proc->ru_arrival_time);
       AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+5000000,
-                  "Time difference for subframe %d => %lu > 5ms\n",
-                  ru->proc.subframe_rx,t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
+                  "Time difference for subframe %d (Frame %d) => %lu > 5ms, this is RU %d\n",
+                  ru->proc.subframe_rx, ru->proc.frame_rx,t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec, ru->idx);
     }
     
     pthread_mutex_unlock(&proc->mutex_RU);
     LOG_D(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
-    ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
+    if (ru->wait_cnt == 0)
+    	ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
   }
   else { // multiple eNB case for later
 
@@ -1525,11 +1550,16 @@ static void* ru_stats_thread(void* param) {
 
   RU_t               *ru      = (RU_t*)param;
 
+  PHY_VARS_eNB **eNB_list = ru->eNB_list;
+  PHY_VARS_eNB *eNB=eNB_list[0];
+  eNB_proc_t *proc = &eNB->proc;
+
   wait_sync("ru_stats_thread");
 
   while (!oai_exit) {
     sleep(1);
     if (opp_enabled == 1) {
+      print_meas(&proc->ru_arrival_time,"ru_arrival_time",NULL,NULL);
       if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
       if (ru->feptx_ofdm) print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
       if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
@@ -1539,6 +1569,7 @@ static void* ru_stats_thread(void* param) {
 	print_meas(&ru->transport,"transport",NULL,NULL);
       }
     }
+    else break;
   }
   return(NULL);
 }
@@ -1581,7 +1612,7 @@ static void* ru_thread_control( void* param ) {
 					       &rru_config_msg,
 					       msg_len))<0) {
 	LOG_D(PHY,"Waiting msg for RU %d\n", ru->idx);     
-      }
+      
       else
 	{
 	  switch(rru_config_msg.type)
@@ -1685,6 +1716,7 @@ static void* ru_thread_control( void* param ) {
 
 		// Set state to RUN for Master RU, Others on SYNC
 		ru->state = (ru->is_slave == 1) ? RU_SYNC : RU_RUN ;
+		ru->in_synch = 0;
 					
 
 		LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d) is ready in state %s\n",ru->idx,ru->is_slave,ru_states[ru->state]);
@@ -1809,13 +1841,46 @@ static void* ru_thread( void* param ) {
   LTE_DL_FRAME_PARMS *fp      = &ru->frame_parms;
   int                subframe =9;
   int                frame    =1023; 
-
+  int			resynch_done = 0;
+  PHY_VARS_eNB **eNB_list = ru->eNB_list;
+  PHY_VARS_eNB *eNB=eNB_list[0];
+  eNB_proc_t *eNBproc = &eNB->proc;
 
 
   // set default return value
   thread_top_init("ru_thread",0,870000,1000000,1000000);
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
+
+  if (ru->has_ctrl_prt == 0){
+        // There is no control port: start everything here
+        
+	if (ru->if_south == LOCAL_RF){
+        	fill_rf_config(ru,ru->rf_config_file);
+      		init_frame_parms(&ru->frame_parms,1);
+        	ru->frame_parms.nb_antennas_rx = ru->nb_rx;
+        	phy_init_RU(ru);
+
+
+                        ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+                }
+		if (setup_RU_buffers(ru)!=0) {
+                  printf("Exiting, cannot initialize RU Buffers\n");
+                  exit(-1);
+                }
+		pthread_mutex_lock(&RC.ru_mutex);
+                RC.ru_mask &= ~(1<<ru->idx);
+                pthread_cond_signal(&RC.ru_cond);
+                pthread_mutex_unlock(&RC.ru_mutex);
+        }
+	pthread_mutex_lock(&RC.ru_mutex);
+        RC.ru_mask &= ~(1<<ru->idx);
+        pthread_cond_signal(&RC.ru_cond);
+        pthread_mutex_unlock(&RC.ru_mutex);
+
+	ru->state = RU_RUN;
+
+  }
 
 	
   while (!oai_exit) {
@@ -1824,9 +1889,9 @@ static void* ru_thread( void* param ) {
     else                          ru->wait_cnt = 0;
 
     // wait to be woken up
-    if (ru->function!=eNodeB_3GPP) {
+    if (ru->function!=eNodeB_3GPP && ru->has_ctrl_prt == 1) {
       if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
-    }
+    
     else wait_sync("ru_thread");
 	  
     if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru-%d state = %s != RU_RUN\n",ru->idx,ru_states[ru->state]);
@@ -1843,7 +1908,7 @@ static void* ru_thread( void* param ) {
     // if an asnych_rxtx thread exists
     // wakeup the thread because the devices are ready at this point
 	
-    LOG_I(PHY,"Locking asynch mutex\n"); 
+    LOG_D(PHY,"Locking asynch mutex\n"); 
     if ((ru->fh_south_asynch_in)||(ru->fh_north_asynch_in)) {
       pthread_mutex_lock(&proc->mutex_asynch_rxtx);
       proc->instance_cnt_asynch_rxtx=0;
@@ -1856,7 +1921,7 @@ static void* ru_thread( void* param ) {
     if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
   
-    LOG_I(PHY,"Starting steady-state operation\n");
+    LOG_D(PHY,"Starting steady-state operation\n");
     // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
     while (ru->state == RU_RUN) {
 
@@ -1889,22 +1954,29 @@ static void* ru_thread( void* param ) {
  
       if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
-      if (ru->wait_cnt > 0) {
-         ru->wait_cnt--;
 
-         if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=10 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx) {
+      if (ru->wait_cnt > 0) {
+         
+         ru->wait_cnt--;
+        
+
+	 LOG_I(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
+
+         if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=20 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx && resynch_done == 0) {
            // Send RRU_frame adjust
            RRU_CONFIG_msg_t rru_config_msg;
            rru_config_msg.type = RRU_frame_resynch;
            rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
            ((uint16_t*)&rru_config_msg.msg[0])[0] = RC.ru[0]->proc.frame_rx;
            ru->cmd=WAIT_RESYNCH;
-           LOG_I(PHY,"Sending Frame Resynch %d to RRU %d\n", RC.ru[0]->proc.frame_rx,ru->idx);
+           LOG_D(PHY,"Sending Frame Resynch %d to RRU %d\n", RC.ru[0]->proc.frame_rx,ru->idx);
            AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU\n");
-
+	   resynch_done=1;
          }
+         wakeup_eNBs(ru);
       }
-      else {
+
+       else {
 
         LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",
               ru->idx,frame,subframe);
@@ -2793,6 +2865,8 @@ void RCconfig_RU(void) {
 	RC.ru[j]->num_eNB                           = 0;
       for (i=0;i<RC.ru[j]->num_eNB;i++) RC.ru[j]->eNB_list[i] = RC.eNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];     
 
+      RC.ru[j]->has_ctrl_prt                        = 1;
+
 
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
 	if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
@@ -2805,30 +2879,43 @@ void RCconfig_RU(void) {
           RC.ru[j]->eth_params.local_if_name            = strdup(*(RUParamList.paramarray[j][RU_LOCAL_IF_NAME_IDX].strptr));    
           RC.ru[j]->eth_params.my_addr                  = strdup(*(RUParamList.paramarray[j][RU_LOCAL_ADDRESS_IDX].strptr)); 
           RC.ru[j]->eth_params.remote_addr              = strdup(*(RUParamList.paramarray[j][RU_REMOTE_ADDRESS_IDX].strptr));
-          RC.ru[j]->eth_params.my_portc                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
-          RC.ru[j]->eth_params.remote_portc             = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
           RC.ru[j]->eth_params.my_portd                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTD_IDX].uptr);
           RC.ru[j]->eth_params.remote_portd             = *(RUParamList.paramarray[j][RU_REMOTE_PORTD_IDX].uptr);
+
+	  
+
+	  // Check if control port set
+	  if  (!(config_isparamset(RUParamList.paramarray[j],RU_REMOTE_PORTC_IDX)) ){
+                RC.ru[j]->eth_params.my_portc                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
+                RC.ru[j]->eth_params.remote_portc             = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
+
+		RC.ru[j]->has_ctrl_prt			      = 0;
+          }
+
 
 	  if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
 	    RC.ru[j]->if_south                        = LOCAL_RF;
 	    RC.ru[j]->function                        = NGFI_RRU_IF5;
 	    RC.ru[j]->eth_params.transp_preference    = ETH_UDP_MODE;
+           
 	    printf("Setting function for RU %d to NGFI_RRU_IF5 (udp)\n",j);
 	  } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
 	    RC.ru[j]->if_south                        = LOCAL_RF;
 	    RC.ru[j]->function                        = NGFI_RRU_IF5;
 	    RC.ru[j]->eth_params.transp_preference    = ETH_RAW_MODE;
+	  
 	    printf("Setting function for RU %d to NGFI_RRU_IF5 (raw)\n",j);
 	  } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_if4p5") == 0) {
 	    RC.ru[j]->if_south                        = LOCAL_RF;
 	    RC.ru[j]->function                        = NGFI_RRU_IF4p5;
 	    RC.ru[j]->eth_params.transp_preference    = ETH_UDP_IF4p5_MODE;
+	 
 	    printf("Setting function for RU %d to NGFI_RRU_IF4p5 (udp)\n",j);
 	  } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw_if4p5") == 0) {
 	    RC.ru[j]->if_south                        = LOCAL_RF;
 	    RC.ru[j]->function                        = NGFI_RRU_IF4p5;
 	    RC.ru[j]->eth_params.transp_preference    = ETH_RAW_IF4p5_MODE;
+	
 	    printf("Setting function for RU %d to NGFI_RRU_IF4p5 (raw)\n",j);
 	  }
           printf("RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
