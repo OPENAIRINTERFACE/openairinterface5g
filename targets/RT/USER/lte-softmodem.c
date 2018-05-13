@@ -134,6 +134,7 @@ volatile int             oai_exit = 0;
 
 static clock_source_t clock_source = internal,time_source=internal;
 static int wait_for_sync = 0;
+static int send_dmrssync     = 0;
 
 unsigned int                    mmapped_dma=0;
 int                             single_thread_flag=1;
@@ -1167,7 +1168,7 @@ int main( int argc, char **argv )
     printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
     if (RC.nb_RU >0) {
       printf("Initializing RU threads\n");
-      init_RU(rf_config_file,clock_source,time_source);
+      init_RU(rf_config_file,clock_source,time_source,send_dmrssync);
       for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
 	RC.ru[ru_id]->rf_map.card=0;
 	RC.ru[ru_id]->rf_map.chain=CC_id+chain_offset;

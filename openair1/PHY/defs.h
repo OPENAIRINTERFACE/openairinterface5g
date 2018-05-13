@@ -717,6 +717,8 @@ typedef struct RU_t_s{
   int rx_offset;        
   /// flag to indicate the RU is a slave to another source
   int is_slave;
+  /// flag to indicate that the RU should generate the DMRS sequence in slot 2 (subframe 1) for OTA synchronization and calibration
+  int generate_dmrs_sync;
   /// flag to indicate if the RU has a control channel
   int has_ctrl_prt;
   /// counter to delay start of processing of RU until HW settles
@@ -830,6 +832,8 @@ typedef struct RU_t_s{
   RU_proc_t            proc;
   /// stats thread pthread descriptor
   pthread_t            ru_stats_thread;
+  /// OTA synchronization signal
+  int16_t *dmrssync;
 } RU_t;
 
 

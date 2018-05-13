@@ -84,11 +84,28 @@ void feptx0(RU_t *ru,int slot) {
 					                      6,
 					                      fp->nb_prefix_samples,
 					                      CYCLIC_PREFIX);
-    else                     normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
-					                           (int*)&ru->common.txdata[aa][slot_offset],
-					                           7,
-					                           fp);
-    
+    else {
+      AssertFatal(ru->generate_dmrs_sync==1 && (fp->frame_type != TDD || ru->is_slave == 1),
+		  "ru->generate_dmrs_sync should not be set, frame_type %d, is_slave %d\n",
+		  fp->frame_type,ru->is_slave);
+
+      if (ru->generate_dmrs_sync == 1 && slot == 0 && subframe == 1 && aa==0) {
+	generate_drs_pusch((PHY_VARS_UE *)NULL,
+			   (UE_rxtx_proc_t*)NULL,
+			   fp,
+			   ru->common.txdataF_BF,
+			   0,
+			   AMP,
+			   1,
+			   0,
+			   fp->N_RB_DL,
+			   aa);
+      }
+      normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
+			(int*)&ru->common.txdata[aa][slot_offset],
+			7,
+			fp);
+    }
    /* 
     len = fp->samples_per_tti>>1;
 

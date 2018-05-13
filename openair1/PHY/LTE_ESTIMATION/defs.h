@@ -92,6 +92,15 @@ int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNb,
                            uint8_t sect_id,
                            int32_t *sync_val);
 
+
+int ru_sync_time_init(RU_t *ru);
+
+int ru_sync_time(RU_t *ru,
+		 int64_t *lev,
+		 int64_t *avg);
+
+void ru_sync_time_free(RU_t *ru);
+
 /*!
 \brief This function performs channel estimation including frequency and temporal interpolation
 \param phy_vars_ue Pointer to UE PHY variables

@@ -123,7 +123,7 @@ extern volatile int                    oai_exit;
 extern void  phy_init_RU(RU_t*);
 extern void  phy_free_RU(RU_t*);
 
-void init_RU(char*,clock_source_t clock_source,clock_source_t time_source);
+void init_RU(char*,clock_source_t clock_source,clock_source_t time_source,int generate_dmrssync);
 void stop_RU(int nb_ru);
 void do_ru_sync(RU_t *ru);
 
@@ -2042,8 +2042,8 @@ void *ru_thread_synch(void *arg) {
   RU_t *ru = (RU_t*)arg;
   LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
   int32_t sync_pos,sync_pos2;
-  uint32_t peak_val;
-  uint32_t sync_corr[307200] __attribute__((aligned(32)));
+  int64_t peak_val;
+  int64_t avg;
   static int ru_thread_synch_status=0;
   int cnt=0;
 
@@ -2052,7 +2052,7 @@ void *ru_thread_synch(void *arg) {
   wait_sync("ru_thread_synch");
 
   // initialize variables for PSS detection
-  lte_sync_time_init(&ru->frame_parms);
+  ru_sync_time_init(ru);
 
   while (!oai_exit) {
 
@@ -2064,63 +2064,22 @@ void *ru_thread_synch(void *arg) {
       // run intial synch like UE
       LOG_I(PHY,"Running initial synchronization\n");
       
-      sync_pos = lte_sync_time_eNB(ru->common.rxdata,
-				   fp,
-				   fp->samples_per_tti*5,
+      ru->rx_offset = ru_sync_time(ru,
 				   &peak_val,
-				   sync_corr);
+				   &avg);
       LOG_I(PHY,"RU synch cnt %d: %d, val %d\n",cnt,sync_pos,peak_val);
       cnt++;
       if (sync_pos >= 0) {
-	if (sync_pos >= fp->nb_prefix_samples)
-	  sync_pos2 = sync_pos - fp->nb_prefix_samples;
-	else
-	  sync_pos2 = sync_pos + (fp->samples_per_tti*10) - fp->nb_prefix_samples;
-	int sync_pos_slot;
-	if (fp->frame_type == FDD) {
-	  
-	  // PSS is hypothesized in last symbol of first slot in Frame
-	  sync_pos_slot = (fp->samples_per_tti>>1) - fp->ofdm_symbol_size - fp->nb_prefix_samples;
-	}
-	else {
-	  // PSS is hypothesized in 2nd symbol of third slot in Frame (S-subframe)
-	  sync_pos_slot = fp->samples_per_tti +
-	    (fp->ofdm_symbol_size<<1) +
-	    fp->nb_prefix_samples0 +
-	    (fp->nb_prefix_samples);
-	}	  
-	if (sync_pos2 >= sync_pos_slot)
-	  ru->rx_offset = sync_pos2 - sync_pos_slot;
-	else
-	  ru->rx_offset = (fp->samples_per_tti*10) + sync_pos2 - sync_pos_slot;
-	
-
-	LOG_I(PHY,"Estimated sync_pos %d, peak_val %d => timing offset %d\n",sync_pos,peak_val,ru->rx_offset);
-	
-	/*
-	  if ((peak_val > 300000) && (sync_pos > 0)) {
-	  //      if (sync_pos++ > 3) {
-	  write_output("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
-	  write_output("ru_rx.m","rxs",(void*)ru->ru_time.rxdata[0][0],fp->samples_per_tti*10,1,1);
-	  exit(-1);
-	  }
-	*/
+	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %d\n",ru->rx_offset,dB_fixed(peak_val),dB_fixed(ru->rx_offset));
 	ru->in_synch = 1;
 
       } // symc_pos > 0
-      else {
-	if (cnt>1000) {
-	  write_output("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
-	  write_output("ru_rx.m","rxs",(void*)ru->common.rxdata[0],fp->samples_per_tti*10,1,1);
-          exit(1);
-        } 
-      }
+      else AssertFatal(cnt<1000,"Cannot find synch reference\n");
     } // ru->in_synch==0
-
     if (release_thread(&ru->proc.mutex_synch,&ru->proc.instance_cnt_synch,"ru_synch_thread") < 0) break;
   } // oai_exit
 
-  lte_sync_time_free();
+  ru_sync_time_free(ru);
 
   ru_thread_synch_status = 0;
   return &ru_thread_synch_status;
@@ -2735,7 +2694,7 @@ void set_function_spec_param(RU_t *ru)
 
 extern void RCconfig_RU(void);
 
-void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t time_source) {
+void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t time_source,int send_dmrssync) {
   
   int ru_id;
   RU_t *ru;
