@@ -1514,7 +1514,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     else
 #endif
       send_IF4p5(ru, ru->proc.frame_prach, ru->proc.subframe_prach, IF4p5_PRACH);
-    
+    LOG_D(PHY,"SFN/SF %d.%d: Sending PRACH over IF4p5\n",ru->proc.frame_prach,ru->proc.subframe_prach);
     return;
   } else if (eNB!=NULL) {
 

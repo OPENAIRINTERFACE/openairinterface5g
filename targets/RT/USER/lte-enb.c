@@ -391,7 +391,7 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string)
     proc->frame_tx         = proc_rxtx->frame_tx;
     proc_rxtx->timestamp_tx = proc->timestamp_tx;
 
-    LOG_I(PHY,"RXTX for TX: %d.%d, RX: %d.%d\n",proc_rxtx->frame_tx,proc_rxtx->subframe_tx,proc_rxtx->frame_rx,proc_rxtx->subframe_rx);
+    LOG_D(PHY,"RXTX for TX: %d.%d, RX: %d.%d\n",proc_rxtx->frame_tx,proc_rxtx->subframe_tx,proc_rxtx->frame_rx,proc_rxtx->subframe_rx);
 
     if (rxtx(eNB,proc_rxtx,string) < 0) LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
   }
@@ -630,7 +630,7 @@ static void* eNB_thread_prach( void* param ) {
     
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
 
-    LOG_I(PHY,"Running eNB prach procedures\n");
+    LOG_D(PHY,"Running eNB prach procedures\n");
     prach_procedures(eNB
 #ifdef Rel14
 		     ,0

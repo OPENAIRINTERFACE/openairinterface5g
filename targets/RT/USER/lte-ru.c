@@ -1097,7 +1097,7 @@ static void* ru_thread_prach( void* param ) {
 		       );
     }
     else {
-      LOG_I(PHY,"Running rx_prach in %d.%d\n",proc->frame_prach,proc->subframe_prach);
+      LOG_D(PHY,"Running rx_prach in %d.%d\n",proc->frame_prach,proc->subframe_prach);
       rx_prach(NULL,
 	       ru,
 	       NULL,
@@ -1289,7 +1289,7 @@ void wakeup_eNBs(RU_t *ru) {
     sprintf(string,"Incoming RU %d",ru->idx);
     
     pthread_mutex_lock(&proc->mutex_RU);
-    LOG_I(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
+    LOG_D(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
           ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,ru->wait_cnt,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx]);
     
     clock_gettime(CLOCK_MONOTONIC,&ru->proc.t[ru->proc.subframe_rx]);
@@ -1612,7 +1612,7 @@ static void* ru_thread_control( void* param ) {
 					       &rru_config_msg,
 					       msg_len))<0) {
 	LOG_D(PHY,"Waiting msg for RU %d\n", ru->idx);     
-      
+      }
       else
 	{
 	  switch(rru_config_msg.type)
@@ -1845,7 +1845,7 @@ static void* ru_thread( void* param ) {
   PHY_VARS_eNB **eNB_list = ru->eNB_list;
   PHY_VARS_eNB *eNB=eNB_list[0];
   eNB_proc_t *eNBproc = &eNB->proc;
-
+  int ret;
 
   // set default return value
   thread_top_init("ru_thread",0,870000,1000000,1000000);
@@ -1862,8 +1862,8 @@ static void* ru_thread( void* param ) {
         	phy_init_RU(ru);
 
 
-                        ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-                }
+		ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+                
 		if (setup_RU_buffers(ru)!=0) {
                   printf("Exiting, cannot initialize RU Buffers\n");
                   exit(-1);
@@ -1891,9 +1891,9 @@ static void* ru_thread( void* param ) {
     // wait to be woken up
     if (ru->function!=eNodeB_3GPP && ru->has_ctrl_prt == 1) {
       if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
-    
+    }
     else wait_sync("ru_thread");
-	  
+    
     if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru-%d state = %s != RU_RUN\n",ru->idx,ru_states[ru->state]);
     else if (ru->is_slave == 1) AssertFatal(ru->state == RU_SYNC || ru->state == RU_RUN,"ru %d state = %s != RU_SYNC or RU_RUN\n",ru->idx,ru_states[ru->state]);  
     // Start RF device if any
@@ -1903,11 +1903,11 @@ static void* ru_thread( void* param ) {
       else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
     }
     else LOG_D(PHY,"RU %d no rf device\n",ru->idx);
-
-
+    
+    
     // if an asnych_rxtx thread exists
     // wakeup the thread because the devices are ready at this point
-	
+    
     LOG_D(PHY,"Locking asynch mutex\n"); 
     if ((ru->fh_south_asynch_in)||(ru->fh_north_asynch_in)) {
       pthread_mutex_lock(&proc->mutex_asynch_rxtx);
@@ -1916,15 +1916,15 @@ static void* ru_thread( void* param ) {
       pthread_cond_signal(&proc->cond_asynch_rxtx);
     }
     else LOG_D(PHY,"RU %d no asynch_south interface\n",ru->idx);
-
+    
     // if this is a slave RRU, try to synchronize on the DL frequency
     if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
-
-  
+    
+    
     LOG_D(PHY,"Starting steady-state operation\n");
     // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
     while (ru->state == RU_RUN) {
-
+      
       // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
       // They are set on the first rx/tx in the underly FH routines.
       if (subframe==9) { 
@@ -1934,8 +1934,8 @@ static void* ru_thread( void* param ) {
       } else {
 	subframe++;
       }      
-
-
+      
+      
       // synchronization on input FH interface, acquire signals/data and block
       if (ru->stop_rf && ru->cmd == STOP_RU) {
 	ru->stop_rf(ru);
@@ -1951,38 +1951,38 @@ static void* ru_thread( void* param ) {
 	break;
       }
       if (oai_exit == 1) break;
- 
+      
       if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
-
+      
       if (ru->wait_cnt > 0) {
-         
-         ru->wait_cnt--;
+	
+	ru->wait_cnt--;
         
-
-	 LOG_I(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
-
-         if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=20 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx && resynch_done == 0) {
-           // Send RRU_frame adjust
-           RRU_CONFIG_msg_t rru_config_msg;
-           rru_config_msg.type = RRU_frame_resynch;
-           rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
-           ((uint16_t*)&rru_config_msg.msg[0])[0] = RC.ru[0]->proc.frame_rx;
-           ru->cmd=WAIT_RESYNCH;
-           LOG_D(PHY,"Sending Frame Resynch %d to RRU %d\n", RC.ru[0]->proc.frame_rx,ru->idx);
-           AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU\n");
-	   resynch_done=1;
-         }
-         wakeup_eNBs(ru);
+	
+	LOG_I(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
+	
+	if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=20 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx && resynch_done == 0) {
+	  // Send RRU_frame adjust
+	  RRU_CONFIG_msg_t rru_config_msg;
+	  rru_config_msg.type = RRU_frame_resynch;
+	  rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
+	  ((uint16_t*)&rru_config_msg.msg[0])[0] = RC.ru[0]->proc.frame_rx;
+	  ru->cmd=WAIT_RESYNCH;
+	  LOG_D(PHY,"Sending Frame Resynch %d to RRU %d\n", RC.ru[0]->proc.frame_rx,ru->idx);
+	  AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU\n");
+	  resynch_done=1;
+	}
+	wakeup_eNBs(ru);
       }
-
-       else {
-
+      
+      else {
+	
         LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",
               ru->idx,frame,subframe);
-
+	
         if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
-	  LOG_I(PHY,"Waking up prach for %d.%d\n",proc->frame_rx,proc->subframe_rx);
+	  LOG_D(PHY,"Waking up prach for %d.%d\n",proc->frame_rx,proc->subframe_rx);
   	  wakeup_prach_ru(ru);
         }
 #ifdef Rel14
@@ -1990,14 +1990,14 @@ static void* ru_thread( void* param ) {
 	  wakeup_prach_ru_br(ru);
         }
 #endif
-
+	
         // adjust for timing offset between RU
         if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
-
+	
         // At this point, all information for subframe has been received on FH interface
         // If this proc is to provide synchronization, do so
         wakeup_slaves(proc);
-
+	
         // do RX front-end processing (frequency-shift, dft) if needed
         if (ru->feprx) ru->feprx(ru);
 
@@ -2019,18 +2019,18 @@ static void* ru_thread( void* param ) {
         if (ru->fh_north_out) ru->fh_north_out(ru);
       }
     }
-
+    
   } // while !oai_exit
   
-
+  
   printf( "Exiting ru_thread \n");
-
+  
   if (ru->stop_rf != NULL) {
     if (ru->stop_rf(ru) != 0)
       LOG_E(HW,"Could not stop the RF device\n");
     else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   }
-
+  
   return NULL;
 
 }
@@ -2886,12 +2886,16 @@ void RCconfig_RU(void) {
 
 	  // Check if control port set
 	  if  (!(config_isparamset(RUParamList.paramarray[j],RU_REMOTE_PORTC_IDX)) ){
-                RC.ru[j]->eth_params.my_portc                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
-                RC.ru[j]->eth_params.remote_portc             = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
+	        printf("Removing control port for RU %d\n",j);
 
 		RC.ru[j]->has_ctrl_prt			      = 0;
           }
-
+	  else {
+	    RC.ru[j]->eth_params.my_portc                 = *(RUParamList.paramarray[j][RU_LOCAL_PORTC_IDX].uptr);
+	    RC.ru[j]->eth_params.remote_portc             = *(RUParamList.paramarray[j][RU_REMOTE_PORTC_IDX].uptr);
+	    printf(" Control port %u \n",RC.ru[j]->eth_params.my_portc);
+	  
+	  }
 
 	  if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp") == 0) {
 	    RC.ru[j]->if_south                        = LOCAL_RF;

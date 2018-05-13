@@ -834,7 +834,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   else {
     for (i=0;i<number_ul_pdu;i++) {
       ul_config_pdu = &UL_req->ul_config_request_body.ul_config_pdu_list[i];
-      LOG_I(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
+      LOG_D(PHY,"NFAPI: ul_pdu %d : type %d\n",i,ul_config_pdu->pdu_type);
       AssertFatal(ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE ||
           ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE ||
           ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE ||
