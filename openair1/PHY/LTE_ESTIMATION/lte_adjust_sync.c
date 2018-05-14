@@ -85,6 +85,11 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   {
       diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
 
+#if BASIC_SIMULATOR
+      /* a hack without which the UE does not connect (to be fixed somehow) */
+      diff = 0;
+#endif
+
       if ( abs(diff) < SYNCH_HYST )
           ue->rx_offset = 0;
       else

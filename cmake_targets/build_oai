@@ -68,6 +68,7 @@ DISABLE_LOG_X="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 UE_NAS_USE_TUN="False"
+BASIC_SIMULATOR=0
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -159,6 +160,9 @@ Options
    Build for I/Q record-playback modes
 --ue-nas-use-tun
    Use TUN devices for the UEs instead of ue_ip.ko
+--basic-simulator
+   Generates a basic [1 UE + 1 eNB + no channel] simulator.
+   See targets/ARCH/tcp_bridge/README.tcp_bridge_oai for documentation.
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I  --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I  --eNB -x --install-system-files
@@ -353,6 +357,10 @@ function main() {
         --ue-nas-use-tun)
             UE_NAS_USE_TUN="True"
             echo_info "Enabling UE NAS TUN device usage instead of ue_ip.ko"
+            shift 1;;
+        --basic-simulator)
+            BASIC_SIMULATOR=1
+            echo_info "Compiling the basic simulator"
             shift 1;;
         -h | --help)
             print_help
@@ -918,6 +926,96 @@ fi
     wait
   else
     echo_info "10. Bypassing the Tests ..."
+  fi
+
+  # basic simulator
+  #####################
+  if [ "$BASIC_SIMULATOR" = "1" ]; then
+    echo_info "Build basic simulator"
+    [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/basic_simulator
+    mkdir -p $OPENAIR_DIR/cmake_targets/basic_simulator
+    mkdir -p $OPENAIR_DIR/cmake_targets/basic_simulator/enb
+    mkdir -p $OPENAIR_DIR/cmake_targets/basic_simulator/ue
+
+    # enb
+
+    cmake_file=$OPENAIR_DIR/cmake_targets/basic_simulator/enb/CMakeLists.txt
+    echo "cmake_minimum_required(VERSION 2.8)"         >  $cmake_file
+    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"  >> $cmake_file
+    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
+    echo "set ( RRC_ASN1_VERSION \"${REL}\")"          >>  $cmake_file
+    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"         >>  $cmake_file
+    echo "set ( XFORMS $XFORMS )"                      >>  $cmake_file
+    echo "set ( RF_BOARD \"OAI_USRP\")"                >>  $cmake_file
+    echo "set ( TRANSP_PRO \"None\")"                  >>  $cmake_file
+    echo "set(PACKAGE_NAME \"simulator_enb\")"         >>  $cmake_file
+    echo "set (DEADLINE_SCHEDULER \"False\" )"         >>  $cmake_file
+    echo "set (CPU_AFFINITY \"False\" )"               >>  $cmake_file
+    echo "set ( T_TRACER \"True\" )"                   >>  $cmake_file
+    echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)"  >>  $cmake_file
+    echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"        >>  $cmake_file
+    echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"      >>  $cmake_file
+    echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"          >>  $cmake_file
+    echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"          >>  $cmake_file
+    echo "set (BASIC_SIMULATOR \"True\" )"             >>  $cmake_file
+    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)' >> $cmake_file
+
+    echo_info "Build eNB"
+    echo_info "logs are in $dlog/basic_simulator_enb.txt"
+    {
+      cd $OPENAIR_DIR/cmake_targets/basic_simulator/enb
+      cmake .
+      make -j`nproc` coding params_libconfig tcp_bridge_oai lte-softmodem
+      ln -sf libtcp_bridge_oai.so liboai_device.so
+      cd ../..
+    } > $dlog/basic_simulator_enb.txt 2>&1
+    check_warnings "$dlog/basic_simulator_enb.txt"
+
+    # ue
+
+    echo_info "Compile conf2uedata"
+    compilations \
+        nas_sim_tools conf2uedata \
+        conf2uedata $dbin/conf2uedata
+
+    cmake_file=$OPENAIR_DIR/cmake_targets/basic_simulator/ue/CMakeLists.txt
+    echo "cmake_minimum_required(VERSION 2.8)"        >  $cmake_file
+    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
+    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
+    echo "set ( RRC_ASN1_VERSION \"${REL}\")"         >>  $cmake_file
+    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"        >>  $cmake_file
+    echo "set ( XFORMS $XFORMS )"                     >>  $cmake_file
+    echo "set ( RF_BOARD \"OAI_USRP\")"               >>  $cmake_file
+    echo "set ( TRANSP_PRO \"None\")"                 >>  $cmake_file
+    echo "set(PACKAGE_NAME \"simulator_ue\")"         >>  $cmake_file
+    echo "set (DEADLINE_SCHEDULER \"False\" )"        >>  $cmake_file
+    echo "set (CPU_AFFINITY \"False\" )"              >>  $cmake_file
+    echo "set ( T_TRACER \"False\" )"                 >>  $cmake_file
+    echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)" >>  $cmake_file
+    echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"       >>  $cmake_file
+    echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"     >>  $cmake_file
+    echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"         >>  $cmake_file
+    echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"         >>  $cmake_file
+    echo "set (LINUX True )"                          >>  $cmake_file
+    echo "set (PDCP_USE_NETLINK True )"               >>  $cmake_file
+    echo "set (BASIC_SIMULATOR \"True\" )"            >>  $cmake_file
+    echo "set (UE_NAS_USE_TUN \"True\" )"             >>  $cmake_file
+    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)' >> $cmake_file
+
+    echo_info "Build UE"
+    echo_info "logs are in $dlog/basic_simulator_ue.txt"
+    {
+      cd $OPENAIR_DIR/cmake_targets/basic_simulator/ue
+      cmake .
+      make -j`nproc` coding params_libconfig tcp_bridge_oai lte-uesoftmodem
+      ln -sf libtcp_bridge_oai.so liboai_device.so
+      cd ../..
+    } > $dlog/basic_simulator_ue.txt 2>&1
+    check_warnings "$dlog/basic_simulator_ue.txt"
+
+    echo_info "Generate UE SIM data"
+    $OPENAIR_DIR/targets/bin/conf2uedata -c $OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o $OPENAIR_DIR/cmake_targets/basic_simulator/ue
+
   fi
 }
 

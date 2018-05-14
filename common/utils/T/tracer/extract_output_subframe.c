@@ -100,10 +100,12 @@ err:
   int last_frame = -1;
   int last_subframe = -1;
   int subframe_written = 0;
+
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   while (1) {
-    char v[T_BUFFER_MAX];
     event e;
-    e = get_event(fd, v, database);
+    e = get_event(fd, &ebuf, database);
     if (e.type == -1) break;
     if (e.type != output_event_id) continue;
     if (verbose)

@@ -451,7 +451,11 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
       pdcp_data_req(&ctxt, SRB_FLAG_NO, rab_id, RLC_MUI_UNDEFINED,
                     RLC_SDU_CONFIRM_NO, len, nl_rx_buf,
-                    PDCP_TRANSMISSION_MODE_DATA);
+                    PDCP_TRANSMISSION_MODE_DATA
+#ifdef Rel14
+                    , NULL, NULL
+#endif
+                   );
     } else {
       MSC_LOG_RX_DISCARDED_MESSAGE(
       (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
