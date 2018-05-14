@@ -153,6 +153,7 @@ static void *feptx_thread(void *param) {
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_feptx,&proc->cond_feptx,&proc->instance_cnt_feptx,"feptx thread")<0) break;  
+    if (oai_exit) break;
     //stop_meas(&ru->ofdm_mod_wakeup_stats);
     feptx0(ru,1);
     if (release_thread(&proc->mutex_feptx,&proc->instance_cnt_feptx,"feptx thread")<0) break;
@@ -461,6 +462,7 @@ static void *fep_thread(void *param) {
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread")<0) break; 
+    if (oai_exit) break;
 	//stop_meas(&ru->ofdm_demod_wakeup_stats);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX1, 1 ); 
     fep0(ru,0);
@@ -510,6 +512,33 @@ void init_fep_thread(RU_t *ru,pthread_attr_t *attr_fep) {
 
 
 }
+
+extern void kill_fep_thread(RU_t *ru)
+{
+  RU_proc_t *proc = &ru->proc;
+  pthread_mutex_lock( &proc->mutex_fep );
+  proc->instance_cnt_fep         = 0;
+  pthread_cond_signal(&proc->cond_fep);
+  pthread_mutex_unlock( &proc->mutex_fep );
+  LOG_D(PHY, "Joining pthread_fep\n");
+  pthread_join(proc->pthread_fep, NULL);
+  pthread_mutex_destroy( &proc->mutex_fep );
+  pthread_cond_destroy( &proc->cond_fep );
+}
+
+extern void kill_feptx_thread(RU_t *ru)
+{
+  RU_proc_t *proc = &ru->proc;
+  pthread_mutex_lock( &proc->mutex_feptx );
+  proc->instance_cnt_feptx         = 0;
+  pthread_cond_signal(&proc->cond_feptx);
+  pthread_mutex_unlock( &proc->mutex_feptx );
+  LOG_D(PHY, "Joining pthread_feptx\n");
+  pthread_join(proc->pthread_feptx, NULL);
+  pthread_mutex_destroy( &proc->mutex_feptx );
+  pthread_cond_destroy( &proc->cond_feptx );
+}
+
 void ru_fep_full_2thread(RU_t *ru) {
 
   RU_proc_t *proc = &ru->proc;

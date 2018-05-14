@@ -945,7 +945,6 @@ void wakeup_slaves(RU_proc_t *proc) {
   wait.tv_nsec=5000000L;
   
   for (i=0;i<proc->num_slaves;i++) {
-    //printf("////////////////////calling for slave thrads\n");////////////////////////********
     RU_proc_t *slave_proc = proc->slave_proc[i];
     // wake up slave FH thread
     // lock the FH mutex and make sure the thread is ready
@@ -1197,9 +1196,14 @@ void wakeup_eNBs(RU_t *ru) {
     {
       LOG_D(PHY,"ru->wakeup_rxtx:%p\n", ru->wakeup_rxtx);
       eNB_list[i]->proc.ru_proc = &ru->proc;
-      if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
+      if(eNB_list[i]->single_thread_flag){
+        char string[20];
+        sprintf(string,"Incoming RU %d",ru->idx);
+        ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string,ru);
+      }
+      else if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
       {
-	LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
+        LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
       }
     }
   }
@@ -1623,7 +1627,8 @@ static void* ru_thread( void* param ) {
           ru->do_prach,
           is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
           proc->frame_rx,proc->subframe_rx);
-*/ 
+*/
+    if (oai_exit) break; 
     if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
       wakeup_prach_ru(ru);
     }
@@ -1666,10 +1671,12 @@ static void* ru_thread( void* param ) {
 
   printf( "Exiting ru_thread \n");
 
-  if (ru->stop_rf != NULL) {
-    if (ru->stop_rf(ru) != 0)
-      LOG_E(HW,"Could not stop the RF device\n");
-    else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+  if (!emulate_rf){
+    if (ru->stop_rf != NULL) {
+      if (ru->stop_rf(ru) != 0)
+        LOG_E(HW,"Could not stop the RF device\n");
+      else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+    }
   }
 
   ru_thread_status = 0;
@@ -1778,6 +1785,8 @@ extern void feptx_ofdm_2thread(RU_t *ru);
 extern void feptx_prec(RU_t *ru);
 extern void init_fep_thread(RU_t *ru,pthread_attr_t *attr);
 extern void init_feptx_thread(RU_t *ru,pthread_attr_t *attr);
+extern void kill_fep_thread(RU_t *ru);
+extern void kill_feptx_thread(RU_t *ru);
 
 void init_RU_proc(RU_t *ru) {
    
@@ -1901,6 +1910,17 @@ void kill_RU_proc(int inst)
   RU_t *ru = RC.ru[inst];
   RU_proc_t *proc = &ru->proc;
 
+  if (get_nprocs() > 2 && fepw) {
+    if (ru->feprx) {
+      LOG_D(PHY, "killing FEP thread\n"); 
+      kill_fep_thread(ru);
+    }
+    if (ru->feptx_ofdm){
+      LOG_D(PHY, "killing FEP TX thread\n"); 
+      kill_feptx_thread(ru);
+    }
+  }
+
   pthread_mutex_lock(&proc->mutex_FH);
   proc->instance_cnt_FH = 0;
   pthread_cond_signal(&proc->cond_FH);
@@ -1960,28 +1980,6 @@ void kill_RU_proc(int inst)
         (ru->function == NGFI_RRU_IF4p5)) {
       LOG_D(PHY, "Joining pthread_asynch_rxtx\n");
       pthread_join(proc->pthread_asynch_rxtx, NULL);
-    }
-  }
-  if (get_nprocs() > 2 && fepw) {
-    if (ru->feprx) {
-      pthread_mutex_lock(&proc->mutex_fep);
-      proc->instance_cnt_fep = 0;
-      pthread_mutex_unlock(&proc->mutex_fep);
-      pthread_cond_signal(&proc->cond_fep);
-      LOG_D(PHY, "Joining pthread_fep\n");
-      pthread_join(proc->pthread_fep, NULL);
-      pthread_mutex_destroy(&proc->mutex_fep);
-      pthread_cond_destroy(&proc->cond_fep);
-    }
-    if (ru->feptx_ofdm) {
-      pthread_mutex_lock(&proc->mutex_feptx);
-      proc->instance_cnt_feptx = 0;
-      pthread_mutex_unlock(&proc->mutex_feptx);
-      pthread_cond_signal(&proc->cond_feptx);
-      LOG_D(PHY, "Joining pthread_feptx\n");
-      pthread_join(proc->pthread_feptx, NULL);
-      pthread_mutex_destroy(&proc->mutex_feptx);
-      pthread_cond_destroy(&proc->cond_feptx);
     }
   }
   if (opp_enabled) {
@@ -2348,7 +2346,7 @@ void set_function_spec_param(RU_t *ru)
   } // switch on interface type
 }
 
-extern void RCconfig_RU(void);
+//extern void RCconfig_RU(void);
 
 void init_RU(char *rf_config_file) {
   

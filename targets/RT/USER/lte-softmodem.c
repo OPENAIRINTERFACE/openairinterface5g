@@ -136,7 +136,7 @@ static clock_source_t clock_source = internal;
 static int wait_for_sync = 0;
 
 unsigned int                    mmapped_dma=0;
-int                             single_thread_flag=1;
+int                             single_thread_flag = 0;
 
 static int8_t                     threequarter_fs=0;
 

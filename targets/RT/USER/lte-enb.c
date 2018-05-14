@@ -217,14 +217,14 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
     wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
 #endif
   }
-
+LOG_I(PHY,"eNB_uespec_RX proc RX %d.%d TX %d.%d \n", proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);/////////////*********added
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 1 );
 
-  if(get_nprocs() >= 8){
+  if(!eNB->single_thread_flag && get_nprocs() >= 8){
     if(wait_on_condition(&proc[1].mutex_rxtx,&proc[1].cond_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0) {
       LOG_E(PHY,"Frame %d, subframe %d: TX1 not ready\n",proc[1].frame_rx,proc[1].subframe_rx);
       return(-1);
@@ -238,6 +238,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   eNB->UL_INFO.subframe  = proc->subframe_rx;
   eNB->UL_INFO.module_id = eNB->Mod_id;
   eNB->UL_INFO.CC_id     = eNB->CC_id;
+LOG_I(PHY,"UL_INFO %d.%d \n", eNB->UL_INFO.frame, eNB->UL_INFO.subframe);/////////////*********added
 
   eNB->if_inst->UL_indication(&eNB->UL_INFO);
 
@@ -245,7 +246,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 0 );
   if(oai_exit) return(-1);
-  if(get_nprocs() <= 4){
+  if(eNB->single_thread_flag || get_nprocs() <= 4){
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
   }
 
@@ -327,6 +328,7 @@ static void* tx_thread(void* param) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_ENB,proc->frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_ENB,proc->frame_rx);
     
+LOG_I(PHY,"tx thread proc RX %d.%d TX %d.%d \n", proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);/////////////*********added
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
     if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
 	
@@ -408,7 +410,7 @@ static void* eNB_thread_rxtx( void* param ) {
     }
     pthread_mutex_unlock( &proc->mutex_rxtx );
     if(get_nprocs() >= 8)      wakeup_tx(eNB,eNB->proc.ru_proc);
-    else
+    else if(get_nprocs() > 4)
     {  
       phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
       wakeup_txfh(proc,eNB->proc.ru_proc);
@@ -565,7 +567,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   eNB_proc_t *proc=&eNB->proc;
   RU_proc_t *ru_proc=&ru->proc;
 
-  eNB_rxtx_proc_t *proc_rxtx0=&proc->proc_rxtx[0];//*proc_rxtx=&proc->proc_rxtx[proc->frame_rx&1];
+  eNB_rxtx_proc_t *proc_rxtx0=&proc->proc_rxtx[0];
   //eNB_rxtx_proc_t *proc_rxtx1=&proc->proc_rxtx[1];
   
 
@@ -956,21 +958,18 @@ void init_eNB_proc(int inst) {
     //    attr_td     = &proc->attr_td;
     //    attr_te     = &proc->attr_te; 
 #endif
-    //////////////////////////////////////need to modified////////////////*****
+
     if(get_nprocs() > 2 && codingw)
     {
       init_te_thread(eNB);
       init_td_thread(eNB);
     }
-    //////////////////////////////////////need to modified////////////////*****
-	pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
-	pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
 
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 
     if (eNB->single_thread_flag==0) {
-      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
-      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
+      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
+      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
     }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
 #ifdef Rel14

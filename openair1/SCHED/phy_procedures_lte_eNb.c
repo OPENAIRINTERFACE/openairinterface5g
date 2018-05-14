@@ -359,7 +359,6 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
       &eNB->dlsch_turbo_encoding_wakeup_stats1,
 	  &eNB->dlsch_interleaving_stats);
     stop_meas(&eNB->dlsch_encoding_stats);
-  //////////////////////////////////////////////////*******************************************
   if(eNB->dlsch_encoding_stats.diff_now>500*3000 && opp_enabled == 1)
   {
     print_meas_now(&eNB->dlsch_encoding_stats,"total coding",stderr);
@@ -471,6 +470,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
       harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
+LOG_I(PHY,"phy_procedures_eNB_TX %d.%d UL %d.%d harq_pid == %d \n", frame, subframe, ul_frame, ul_subframe, harq_pid);////////////********added
       if (eNB->ulsch[i]) {
 	ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
 	
@@ -536,6 +536,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
   // Now scan UE specific DLSCH
   LTE_eNB_DLSCH_t *dlsch0,*dlsch1;
+LOG_I(PHY,"phy_procedures_eNB_TX before dlsch0 %d.%d UL %d.%d harq_pid == %d \n", frame, subframe, ul_frame, ul_subframe, harq_pid);////////////********added
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
     {
       dlsch0 = eNB->dlsch[(uint8_t)UE_id][0]; 
