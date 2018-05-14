@@ -341,8 +341,6 @@ typedef struct eNB_proc_NB_IoT_t_s {
   int                     instance_cnt_asynch_rxtx;
   /// pthread structure for FH processing thread
   pthread_t               pthread_FH;
-  /// pthread structure for eNB single processing thread
-  pthread_t               pthread_single;
   /// pthread structure for asychronous RX/TX processing thread
   pthread_t               pthread_asynch_rxtx;
   /// flag to indicate first RX acquisition
