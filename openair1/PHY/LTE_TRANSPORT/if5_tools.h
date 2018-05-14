@@ -34,7 +34,7 @@
 #define __IF5_TOOLS_H__
 
 #include <stdint.h>
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 
 #define IF5_RRH_GW_DL 0x0022
 #define IF5_RRH_GW_UL 0x0023

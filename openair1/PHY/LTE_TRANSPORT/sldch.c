@@ -31,7 +31,7 @@
  */
 #ifndef __LTE_TRANSPORT_SLSS__C__
 #define __LTE_TRANSPORT_SLSS__C__
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
 
 extern int multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP);
 

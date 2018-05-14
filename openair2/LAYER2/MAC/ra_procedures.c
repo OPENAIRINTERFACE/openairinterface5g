@@ -30,75 +30,23 @@
  * \warning
  */
 
-#include "extern.h"
-#include "defs.h"
-#include "proto.h"
+#include "mac_extern.h"
+#include "mac.h"
+#include "mac_proto.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-#include "PHY_INTERFACE/extern.h"
-#include "SCHED/defs.h"
+#include "PHY_INTERFACE/phy_interface_extern.h"
+#include "SCHED_UE/sched_UE.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
-#ifdef PHY_EMUL
-#include "SIMULATION/simulation_defs.h"
-#endif
-
-#include "SIMULATION/TOOLS/defs.h"	// for taus
+#include "SIMULATION/TOOLS/sim.h"	// for taus
 
 extern uint8_t  nfapi_mode;
 extern UE_MODE_t get_ue_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
-
-
-int8_t get_DELTA_PREAMBLE(module_id_t module_idP,int CC_id)
-{
-
-    AssertFatal(CC_id == 0,
-		"Transmission on secondary CCs is not supported yet\n");
-    uint8_t prachConfigIndex =
-	UE_mac_inst[module_idP].radioResourceConfigCommon->
-	prach_Config.prach_ConfigInfo.prach_ConfigIndex;
-    uint8_t preambleformat;
-
-    if (UE_mac_inst[module_idP].tdd_Config) {	// TDD
-	if (prachConfigIndex < 20) {
-	    preambleformat = 0;
-	} else if (prachConfigIndex < 30) {
-	    preambleformat = 1;
-	} else if (prachConfigIndex < 40) {
-	    preambleformat = 2;
-	} else if (prachConfigIndex < 48) {
-	    preambleformat = 3;
-	} else {
-	    preambleformat = 4;
-	}
-    } else {			// FDD
-	preambleformat = prachConfigIndex >> 2;
-    }
-
-    switch (preambleformat) {
-    case 0:
-    case 1:
-	return (0);
-
-    case 2:
-    case 3:
-	return (-3);
-
-    case 4:
-	return (8);
-
-    default:
-	AssertFatal(1 == 0,
-		    "[UE %d] ue_procedures.c: FATAL, Illegal preambleformat %d, prachConfigIndex %d\n",
-		    module_idP, preambleformat, prachConfigIndex);
-    }
-
-}
-
 
 /// This routine implements Section 5.1.2 (UE Random Access Resource Selection) from 36.321
 void

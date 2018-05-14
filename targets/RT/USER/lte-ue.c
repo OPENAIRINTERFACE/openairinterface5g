@@ -33,23 +33,18 @@
 
 #include "rt_wrapper.h"
 
-#ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
-#include "RRC/LITE/extern.h"
-#endif
+#include "LAYER2/MAC/mac.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_stub_UE.h"
-#include "PHY_INTERFACE/extern.h"
+#include "PHY_INTERFACE/phy_interface_extern.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "PHY/extern.h"
-#include "SCHED/extern.h"
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/proto.h"
+#include "PHY/phy_extern_ue.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include <inttypes.h>
-//#include "openair2/PHY_INTERFACE/phy_stub_UE.h"
-
 
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"

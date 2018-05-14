@@ -38,7 +38,7 @@
 #include "platform_types.h"
 #include "platform_constants.h"
 #include "PHY/impl_defs_lte.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
@@ -47,7 +47,7 @@
 #include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
 #endif
 #include "intertask_interface_types.h"
-#include "RRC/LITE/defs.h"
+#include "RRC/LTE/rrc_defs.h"
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\
             struct in_addr inp;\

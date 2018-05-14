@@ -28,7 +28,8 @@
 #include "assertions.h"
 #include "msc.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
 #include "flexran_agent.h"
@@ -140,17 +141,18 @@
 {"emul-iface",                 CONFIG_HLP_EMULIFACE,  0,                strptr:&emul_iface,                  defstrval:"lo", TYPE_STRING,   100}, \
 {"L2-emul",                 	NULL,  				  0,                u8ptr:&nfapi_mode,                  defuintval:3, TYPE_UINT8,   0}, \
 {"num-ues",     	       		   NULL,		      	  0,				u8ptr:&(NB_UE_INST),	    defuintval:1,   	TYPE_UINT8,	   0},     \
-{"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT8,    0}     \
+{"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT8,    0},     \
+{"dlsch-demod-shift",     	 CONFIG_HLP_DLSHIFT,	0,		  iptr:(int32_t *)&dlsch_demod_shift,	defintval:0,			   TYPE_INT,	  0},			   \
 }
 
 #define DEFAULT_DLF 2680000000
-extern int16_t dlsch_demod_shift;
+
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                                                */
 /*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC {  \
-{"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&rf_config_file,    defstrval:NULL,                 TYPE_STRING,    sizeof(rf_config_file)},\
+{"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&rf_config_file,    defstrval:NULL,                 TYPE_STRING,    sizeof(rf_config_file)}, \
 {"ulsch-max-errors",        CONFIG_HLP_ULMAXE,      0,                      uptr:&ULSCH_max_consecutive_errors, defuintval:0,                   TYPE_UINT,      0},                     \
 {"phy-test",                CONFIG_HLP_PHYTST,      PARAMFLAG_BOOL,         iptr:&phy_test,                     defintval:0,                    TYPE_INT,       0},                     \
 {"usim-test",               CONFIG_HLP_USIM,        PARAMFLAG_BOOL,         u8ptr:&usim_test,                   defintval:0,                    TYPE_UINT8,     0},                     \
@@ -183,7 +185,7 @@ extern int16_t dlsch_demod_shift;
 {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                   defintval:0,                    TYPE_INT,       0},                     \
 {"codingw" ,                CONFIG_HLP_CODINGW,     PARAMFLAG_BOOL,         iptr:&codingw,                      defintval:0,                    TYPE_INT,       0},                     \
 {"fepw" ,                   CONFIG_HLP_FEPW,        PARAMFLAG_BOOL,         iptr:&fepw,                         defintval:0,                    TYPE_INT,       0},                     \
-{"nbiot-disable",        	 CONFIG_HLP_DISABLNBIOT,PARAMFLAG_BOOL,   iptr:&nonbiotflag,			defintval:0,			   TYPE_INT,	  0}                       \
+{"nbiot-disable",           CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,         iptr:&nonbiotflag,			defintval:0,			TYPE_INT,	0} \
 }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"

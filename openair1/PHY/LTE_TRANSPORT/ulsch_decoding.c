@@ -30,23 +30,20 @@
 * \warning
 */
 
-//#include "defs.h"
+
 #include <syscall.h>
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/CODING/extern.h"
-#include "extern.h"
-#include "SCHED/extern.h"
-#ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
-#endif
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/CODING/coding_extern.h"
+#include "SCHED/sched_eNB.h"
+#include "LAYER2/MAC/mac.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
 
 #include "UTIL/LOG/vcd_signal_dumper.h"
 //#define DEBUG_ULSCH_DECODING
 #include "targets/RT/USER/rt_wrapper.h"
+#include "transport_proto.h"
 
 extern int codingw;
 

@@ -28,10 +28,10 @@
 
  */
 
-#include "defs.h"
-#include "proto.h"
-#include "extern.h"
-#include "SIMULATION/TOOLS/defs.h"
+#include "mac.h"
+#include "mac_proto.h"
+#include "mac_extern.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "UTIL/LOG/log.h"
 #include "OCG.h"
 #include "OCG_extern.h"

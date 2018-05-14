@@ -36,8 +36,8 @@
 */
 
 //#include "defs.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 
 #if defined(__x86_64__) || defined(__i386__)
 #include "pss6144.h"

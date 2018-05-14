@@ -34,24 +34,19 @@
 
 #include "assertions.h"
 #include "platform_types.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
 #include "msc.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-
-#include "LAYER2/MAC/proto.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
@@ -61,9 +56,13 @@
 #include "intertask_interface.h"
 #endif
 
-#include "SIMULATION/TOOLS/defs.h"	// for taus
+#include "SIMULATION/TOOLS/sim.h"	// for taus
 
 #include "T.h"
+
+#include "common/ran_context.h"
+
+extern RAN_CONTEXT_t RC;
 
 extern uint8_t nfapi_mode;
 extern int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req);
@@ -1511,18 +1510,18 @@ initiate_ra_proc(module_id_t module_idP,
             /* TODO: find better procedure to allocate RNTI */
 	    do {
 #if defined(USRP_REC_PLAY) // deterministic rnti in usrp record/playback mode
-	        static int drnti[NUMBER_OF_UE_MAX] = { 0xbda7, 0x71da, 0x9c40, 0xc350, 0x2710, 0x4e20, 0x7530, 0x1388, 0x3a98, 0x61a8, 0x88b8, 0xafc8, 0xd6d8, 0x1b58, 0x4268, 0x6978 };
+	        static int drnti[MAX_MOBILES_PER_ENB] = { 0xbda7, 0x71da, 0x9c40, 0xc350, 0x2710, 0x4e20, 0x7530, 0x1388, 0x3a98, 0x61a8, 0x88b8, 0xafc8, 0xd6d8, 0x1b58, 0x4268, 0x6978 };
 	        int j = 0;
 		int nb_ue = 0;
-		for (j = 0; j < NUMBER_OF_UE_MAX; j++) {
+		for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
 		    if (UE_RNTI(module_idP, j) > 0) {
 		        nb_ue++;
 		    } else {
 		        break;
 		    }
 		}
-		if (nb_ue >= NUMBER_OF_UE_MAX) {
-		    printf("No more free RNTI available, increase NUMBER_OF_UE_MAX\n");
+		if (nb_ue >= MAX_MOBILES_PER_ENB) {
+		    printf("No more free RNTI available, increase MAX_MOBILES_PER_ENB\n");
 		    abort();
 		}
 		ra[i].rnti = drnti[nb_ue];

@@ -107,7 +107,7 @@
  * @}
  */
 
-#include "defs.h"
+#include "defs_eNB.h"
 #include "types.h"
 
 
@@ -277,8 +277,43 @@ typedef struct {
 
 #define MAX_FRAME_NUMBER 0x400
 #include "openairinterface5g_limits.h"
+#include "assertions.h"
 
+#define cmax(a,b)  ((a>b) ? (a) : (b))
+#define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))
+#define cmin(a,b)  ((a<b) ? (a) : (b))
+#define max(a,b) cmax(a,b)
+#define min(a,b) cmin(a,b)
 
+#ifndef malloc16
+#  ifdef __AVX2__
+#    define malloc16(x) memalign(32,x)
+#  else
+#    define malloc16(x) memalign(16,x)
+#  endif
+#endif
+#define free16(y,x) free(y)
+#define bigmalloc malloc
+#define bigmalloc16 malloc16
+#define openair_free(y,x) free((y))
+#define PAGE_SIZE 4096
+#define free_and_zero(PtR) do { \
+      if (PtR) {           \
+        free(PtR);         \
+        PtR = NULL;        \
+      }                    \
+    } while (0)
+static inline void* malloc16_clear( size_t size )
+{
+#ifdef __AVX2__
+  void* ptr = memalign(32, size);
+#else
+  void* ptr = memalign(16, size);
+#endif
+  DevAssert(ptr);
+  memset( ptr, 0, size );
+  return ptr;
+}
 
 #endif //__PHY_IMPLEMENTATION_DEFS_H__ 
 /**@} 

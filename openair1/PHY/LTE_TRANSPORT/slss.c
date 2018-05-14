@@ -31,7 +31,7 @@
  */
 #ifndef __LTE_TRANSPORT_SLSS__C__
 #define __LTE_TRANSPORT_SLSS__C__
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
 
 
 void generate_slss(PHY_VARS_UE *ue,SLSS_t *slss,int frame_tx,int subframe_tx) {
