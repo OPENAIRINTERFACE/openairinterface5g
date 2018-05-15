@@ -1043,6 +1043,14 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      harq_ack[0] = 0;
 	    }
         uci->stat = metric[0];
+        if(harq_ack[0] !=  1){
+          LOG_E(PHY,"PUCCH ACK/NACK(SR): frame %d subframe %d rnti %x n_pucch_1_0_sr[0] %d pucch_fmt %d harq_ack[0]:%d -> 1\n ",
+                frame,subframe,uci->rnti,uci->n_pucch_1_0_sr[0],uci->pucch_fmt,harq_ack[0]);
+          harq_ack[0] =1;
+        }else{
+            LOG_E(PHY,"PUCCH ACK/NACK(SR): frame %d subframe %d rnti %x n_pucch_1_0_sr[0] %d pucch_fmt %d\n ",
+                  frame,subframe,uci->rnti,uci->n_pucch_1_0_sr[0],uci->pucch_fmt);
+        }
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,2,0xffff); // special_bundling mode
 	  } 
 	  else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==2)){ // multiplexing + no SR, implement Table 10.1.3-5 (Rel14) for multiplexing with M=2
@@ -1310,6 +1318,14 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	    harq_ack[0] = pucch_b0b1[0][0];
 	    harq_ack[1] = pucch_b0b1[0][1];
         uci->stat = metric[0];
+        if(harq_ack[0] !=  1){
+          LOG_E(PHY,"PUCCH ACK/NACK(no SR): frame %d subframe %d rnti %x n_pucch_1[0][0] %d pucch_fmt %d harq_ack[0]:%d -> 1\n",
+                frame,subframe,uci->rnti,uci->n_pucch_1[0][0],uci->pucch_fmt,harq_ack[0]);
+          harq_ack[0] =1;
+        }else{
+            LOG_E(PHY,"PUCCH ACK/NACK(no SR): frame %d subframe %d rnti %x n_pucch_1[0][0] %d pucch_fmt %d \n",
+                  frame,subframe,uci->rnti,uci->n_pucch_1[0][0],uci->pucch_fmt);
+        }
 	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,0,0xffff); // special_bundling mode
 	  }
 	  
