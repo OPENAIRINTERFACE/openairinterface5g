@@ -5268,7 +5268,10 @@ openair_rrc_top_init_ue(
 #endif
 
 #ifdef Rel14
-  init_SL_preconfig(&UE_rrc_inst[module_id],0);
+  /* TODO: this is disabled for the moment because the standard UE
+   * crashes when calling this function.
+   */
+  //init_SL_preconfig(&UE_rrc_inst[module_id],0);
 #endif
 
   } else {

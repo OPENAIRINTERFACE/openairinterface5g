@@ -477,6 +477,11 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
   ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
 
+#if 0
+  /* TODO: this is disabled for the moment because OAI UE does
+   * not connect to OAI eNB with the current software.
+   * See also TODO comment in do_SIB23.
+   */
   //TTN - This is for SIB18
   sib_type=SIB_Type_sibType18_v1250;
   ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
@@ -486,6 +491,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   sib_type=SIB_Type_sibType19_v1250;
   ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
   ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
+#endif
 
   //  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,NULL);
 
