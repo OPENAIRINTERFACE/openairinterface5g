@@ -889,7 +889,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
         LOG_E(PHY,"Unknown number for N_RB_UL %d\n",fp->N_RB_UL);
         break;
       }
-
+      SR_payload = 0;
       switch (uci->type) {
       case SR:
       case HARQ_SR:
@@ -2010,6 +2010,7 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
  
       switch (harq_ack[0]) {
       case 0:
+      case 4:
           pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;
 	break;
       case 1: // check if M=1,4,7
@@ -2018,7 +2019,9 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
 	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
-	}
+	}else{
+          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;
+        }
 	break;
       case 2: // check if M=2,5,8
 	if (uci->num_pucch_resources == 2 || tdd_config5_sf2scheds == 2 || 
@@ -2026,7 +2029,9 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
 	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
-	}
+	}else{
+          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;
+        }
 	break;
       case 3: // check if M=3,6,9
 	if (uci->num_pucch_resources == 3 || tdd_config5_sf2scheds == 3 || 
@@ -2034,7 +2039,9 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
 	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
-	}
+	}else{
+          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;
+        }
 	break;
       }
       break;
