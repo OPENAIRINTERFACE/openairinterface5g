@@ -526,6 +526,8 @@ function main() {
 	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
     fi
     echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
+    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
+    echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
@@ -689,6 +691,8 @@ function main() {
 	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
     fi
     echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
+    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
+    echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
@@ -773,6 +777,8 @@ function main() {
 	echo "set ( FLEXRAN_AGENT_SB_IF $FLEXRAN_AGENT_SB_IF )"      >>  $cmake_file
     fi
     echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
+    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
+    echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file

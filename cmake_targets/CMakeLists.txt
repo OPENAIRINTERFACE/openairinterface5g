@@ -601,6 +601,8 @@ add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchang
 
 add_boolean_option(FLEXRAN_AGENT_SB_IF             False         "enable FlexRAN agent to inteface with a SDN controller")
 add_boolean_option(UE_EXPANSION             False         "enable UE_EXPANSION with max 256 UE")
+add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION with max 256 UE")
+add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE")
 
 ########################
 # Include order
