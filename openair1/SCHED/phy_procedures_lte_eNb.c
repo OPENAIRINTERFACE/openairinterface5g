@@ -470,7 +470,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
       harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
-LOG_I(PHY,"phy_procedures_eNB_TX %d.%d UL %d.%d harq_pid == %d \n", frame, subframe, ul_frame, ul_subframe, harq_pid);////////////********added
+//LOG_I(PHY,"phy_procedures_eNB_TX %d.%d UL %d.%d harq_pid == %d \n", frame, subframe, ul_frame, ul_subframe, harq_pid);////////////********added
       if (eNB->ulsch[i]) {
 	ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
 	
@@ -536,7 +536,7 @@ LOG_I(PHY,"phy_procedures_eNB_TX %d.%d UL %d.%d harq_pid == %d \n", frame, subfr
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
   // Now scan UE specific DLSCH
   LTE_eNB_DLSCH_t *dlsch0,*dlsch1;
-LOG_I(PHY,"phy_procedures_eNB_TX before dlsch0 %d.%d UL %d.%d harq_pid == %d \n", frame, subframe, ul_frame, ul_subframe, harq_pid);////////////********added
+//LOG_I(PHY,"phy_procedures_eNB_TX before dlsch0 %d.%d UL %d.%d harq_pid == %d \n", frame, subframe, ul_frame, ul_subframe, harq_pid);////////////********added
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
     {
       dlsch0 = eNB->dlsch[(uint8_t)UE_id][0]; 
@@ -1410,7 +1410,7 @@ void init_te_thread(PHY_VARS_eNB *eNB) {
     pthread_cond_init( &proc->tep[i].cond_te, NULL);
     pthread_attr_init( &proc->tep[i].attr_te);
     
-    printf("Creating te_thread 0\n");
+    LOG_I(PHY,"Creating te_thread %d\n",i);
     pthread_create(&proc->tep[i].pthread_te, &proc->tep[i].attr_te, te_thread, (void*)&proc->tep[i]);
   }
 }

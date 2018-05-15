@@ -167,7 +167,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
 #endif
 
   harq_pid        = dlsch0->harq_ids[subframe];
-LOG_I(PHY,"handle_nfapi_dlsch_pdu subframe = %d harq_ids = [%d:%d:%d:%d:%d:%d:%d:%d:%d:%d]\n", subframe,dlsch0->harq_ids[0],
+/*LOG_I(PHY,"handle_nfapi_dlsch_pdu subframe = %d harq_ids = [%d:%d:%d:%d:%d:%d:%d:%d:%d:%d]\n", subframe,dlsch0->harq_ids[0],
       dlsch0->harq_ids[1],
       dlsch0->harq_ids[2],
       dlsch0->harq_ids[3],
@@ -176,7 +176,7 @@ LOG_I(PHY,"handle_nfapi_dlsch_pdu subframe = %d harq_ids = [%d:%d:%d:%d:%d:%d:%d
       dlsch0->harq_ids[6],
       dlsch0->harq_ids[7],
       dlsch0->harq_ids[8],
-      dlsch0->harq_ids[9]);/////////////*********added
+      dlsch0->harq_ids[9]);*/////////////*********added
   AssertFatal((harq_pid>=0) && (harq_pid<8),"harq_pid %d not in 0...7 frame:%d subframe:%d subframe(TX):%d rnti:%x UE_id:%d dlsch0[harq_ids:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d]\n",
       harq_pid,
       frame,subframe,
@@ -681,7 +681,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
     LOG_D(PHY,"NFAPI: Clearing dci allocations for potential UL subframe %d\n",ul_subframe);
   
     harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
-LOG_I(PHY,"schedule_response %d.%d UL %d.%d harq_pid = %d\n", frame, subframe, ul_frame, ul_subframe, harq_pid);/////////////*********added
+//LOG_I(PHY,"schedule_response %d.%d UL %d.%d harq_pid = %d\n", frame, subframe, ul_frame, ul_subframe, harq_pid);/////////////*********added
 
     // clear DCI allocation maps for new subframe
 
@@ -695,7 +695,7 @@ LOG_I(PHY,"schedule_response %d.%d UL %d.%d harq_pid = %d\n", frame, subframe, u
   }
   for (i=0;i<number_dl_pdu;i++) {
     dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
-    LOG_I(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);/////////////*********LOG_D with mark out
+    //LOG_I(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);/////////////*********LOG_D with mark out
     switch (dl_config_pdu->pdu_type) {
     case NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE:
 //LOG_I(PHY,"NFAPI: dl_pdu %d : type %d executing handle_nfapi_dci_dl_pdu()\n",i,dl_config_pdu->pdu_type);/////////////*********added
@@ -748,7 +748,7 @@ LOG_I(PHY,"schedule_response %d.%d UL %d.%d harq_pid = %d\n", frame, subframe, u
                   dlsch_pdu_rel8->transport_blocks);
       if (sdu != NULL)
       {
-LOG_I(PHY,"NFAPI: executing handle_nfapi_dlsch_pdu()\n");/////////////*********added
+//LOG_I(PHY,"NFAPI: executing handle_nfapi_dlsch_pdu()\n");/////////////*********added
         handle_nfapi_dlsch_pdu(eNB,NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),proc,dl_config_pdu, dlsch_pdu_rel8->transport_blocks-1, sdu);
       }
       else

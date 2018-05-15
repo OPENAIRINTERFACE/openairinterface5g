@@ -217,7 +217,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
     wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
 #endif
   }
-LOG_I(PHY,"eNB_uespec_RX proc RX %d.%d TX %d.%d \n", proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);/////////////*********added
+//LOG_I(PHY,"eNB_uespec_RX proc RX %d.%d TX %d.%d \n", proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);/////////////*********added
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
@@ -238,7 +238,7 @@ LOG_I(PHY,"eNB_uespec_RX proc RX %d.%d TX %d.%d \n", proc->frame_rx, proc->subfr
   eNB->UL_INFO.subframe  = proc->subframe_rx;
   eNB->UL_INFO.module_id = eNB->Mod_id;
   eNB->UL_INFO.CC_id     = eNB->CC_id;
-LOG_I(PHY,"UL_INFO %d.%d \n", eNB->UL_INFO.frame, eNB->UL_INFO.subframe);/////////////*********added
+//LOG_I(PHY,"UL_INFO %d.%d \n", eNB->UL_INFO.frame, eNB->UL_INFO.subframe);/////////////*********added
 
   eNB->if_inst->UL_indication(&eNB->UL_INFO);
 
@@ -328,7 +328,7 @@ static void* tx_thread(void* param) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_ENB,proc->frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_ENB,proc->frame_rx);
     
-LOG_I(PHY,"tx thread proc RX %d.%d TX %d.%d \n", proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);/////////////*********added
+//LOG_I(PHY,"tx thread proc RX %d.%d TX %d.%d \n", proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);/////////////*********added
     phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
     if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
 	
@@ -864,20 +864,23 @@ static void* process_stats_thread(void* param) {
   wait_sync("process_stats_thread");
 
   while (!oai_exit) {
-     sleep(1);
-     if (opp_enabled == 1) {
-       if (eNB->td) print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
-       if (eNB->te)
-       {
-         print_meas(&eNB->dlsch_turbo_encoding_preperation_stats,"dlsch_coding_crc",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_segmentation_stats,"dlsch_segmentation",NULL,NULL);
-         print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_signal_stats,"coding_signal",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_main_stats,"coding_main",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_waiting_stats,"coding_wait",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats0,"coding_worker_0",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats1,"coding_worker_1",NULL,NULL);
-	   }
+    sleep(1);
+      if (opp_enabled == 1) {
+        if (eNB->td) print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
+        if (eNB->te)
+        {
+          print_meas(&eNB->dlsch_turbo_encoding_preperation_stats,"dlsch_coding_crc",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_segmentation_stats,"dlsch_segmentation",NULL,NULL);
+          print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_signal_stats,"coding_signal",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_main_stats,"coding_main",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_stats,"turbo_encoding",NULL,NULL);
+          print_meas(&eNB->dlsch_interleaving_stats,"turbo_interleaving",NULL,NULL);
+          print_meas(&eNB->dlsch_rate_matching_stats,"turbo_rate_matching",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_waiting_stats,"coding_wait",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats0,"coding_worker_0",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats1,"coding_worker_1",NULL,NULL);
+       }
        print_meas(&eNB->dlsch_modulation_stats,"dlsch_modulation",NULL,NULL);
      }
   }

@@ -666,7 +666,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   }
   else{
     schedule_ulsch_phy_test(module_idP,frameP,subframeP);
-LOG_I(MAC,"frameP = %d .subframeP = %d\n", frameP, subframeP);/////////////*********added
+//LOG_I(MAC,"frameP = %d .subframeP = %d\n", frameP, subframeP);/////////////*********added
     schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
   }
 

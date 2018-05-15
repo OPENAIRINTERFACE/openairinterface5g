@@ -69,11 +69,11 @@ schedule_ue_spec_phy_test(
 
   unsigned char                  harq_pid  = (frameP*10+subframeP)%8;
   uint16_t                       rnti      = 0x1235;
-  uint32_t                       rb_alloc  = 0x1FFFFFFF;
+  uint32_t                       rb_alloc  = 0x1FFFFF;
   int32_t                        tpc       = 1;
   int32_t                        mcs       = 28;
   int32_t                        cqi       = 15;
-  int32_t                        ndi       = 1;//(frameP*10+subframeP)/8;
+  int32_t                        ndi       = (frameP*10+subframeP)/8;
   int32_t                        dai       = 0;
 
   eNB_MAC_INST                   *eNB      = RC.mac[module_idP];
@@ -94,7 +94,7 @@ schedule_ue_spec_phy_test(
     nb_rb = conv_nprb(0,rb_alloc,N_RB_DL);
     TBS = get_TBS_DL(mcs,nb_rb);
 
-    LOG_I(MAC,"schedule_ue_spec_phy_test: subframe %d/%d: nb_rb=%d, TBS=%d, mcs=%d harq_pid=%d (rb_alloc=%x, N_RB_DL=%d) pdu_number = %d \n", frameP, subframeP, nb_rb, TBS, mcs, harq_pid, rb_alloc, N_RB_DL, dl_req->number_pdu);////////////********change into LOG_I
+    /*LOG_I(MAC,"schedule_ue_spec_phy_test: subframe %d/%d: nb_rb=%d, TBS=%d, mcs=%d harq_pid=%d (rb_alloc=%x, N_RB_DL=%d) pdu_number = %d \n", frameP, subframeP, nb_rb, TBS, mcs, harq_pid, rb_alloc, N_RB_DL, dl_req->number_pdu);*////////////********LOG_D to LOG_I
 
     dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
     memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
@@ -124,8 +124,8 @@ schedule_ue_spec_phy_test(
       LOG_D(MAC,"[eNB %d] Initial transmission CC_id %d : harq_pid %d, dai %d, mcs %d\n",
 	    module_idP,CC_id,harq_pid,dai,mcs);
     } else {
-      LOG_I(MAC,"[eNB %d] Initial transmission CC_id %d : harq_pid %d, mcs %d\n",
-	    module_idP,CC_id,harq_pid,mcs);
+      /*LOG_I(MAC,"[eNB %d] Initial transmission CC_id %d : harq_pid %d, mcs %d\n",
+	    module_idP,CC_id,harq_pid,mcs);*////////////********added
       
     }
     LOG_D(MAC,"Checking feasibility pdu %d (new sdu)\n",dl_req->number_pdu);
@@ -135,7 +135,7 @@ schedule_ue_spec_phy_test(
       //ue_sched_ctl->round[CC_id][harq_pid] = 0;
       dl_req->number_dci++;
       dl_req->number_pdu++;
-LOG_I(MAC,"phy-test DL number of dci = %d pdu = %d \n", dl_req->number_dci, dl_req->number_pdu);////////////********added
+//LOG_I(MAC,"phy-test DL number of dci = %d pdu = %d \n", dl_req->number_dci, dl_req->number_pdu);////////////********added
       eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
       //eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
       
@@ -151,7 +151,7 @@ LOG_I(MAC,"phy-test DL number of dci = %d pdu = %d \n", dl_req->number_dci, dl_r
       AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated!=NULL,"physicalConfigDedicated is NULL\n");
       AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->pdsch_ConfigDedicated!=NULL,"physicalConfigDedicated->pdsch_ConfigDedicated is NULL\n");
       */
-LOG_I(MAC,"pdu_index = %d \n", eNB->pdu_index[CC_id]);////////////********added
+//LOG_I(MAC,"pdu_index = %d \n", eNB->pdu_index[CC_id]);////////////********added
 
       
       fill_nfapi_dlsch_config(eNB,
@@ -237,7 +237,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
       UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
       harq_pid      = subframe2harqpid(&cc[CC_id],sched_frame,sched_subframe);
 
-      LOG_I(MAC,"Scheduling for frame %d, subframe %d => harq_pid %d\n",sched_frame,sched_subframe,harq_pid);
+      //LOG_I(MAC,"Scheduling for frame %d, subframe %d => harq_pid %d\n",sched_frame,sched_subframe,harq_pid);////////////********added
 
       RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->TBS_UL[harq_pid];
 
