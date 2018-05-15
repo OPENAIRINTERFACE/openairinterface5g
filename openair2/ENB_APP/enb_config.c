@@ -468,7 +468,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   int32_t     pucch_delta_shift             = 0;
   int32_t     pucch_nRB_CQI                 = 0;
   int32_t     pucch_nCS_AN                  = 0;
-//#if !defined(Rel10) && !defined(Rel14)
+//#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   int32_t     pucch_n1_AN                   = 0;
 //#endif
   int32_t     pdsch_referenceSignalPower    = 0;
@@ -781,7 +781,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
 			     RC.config_file_name, i, prefix_type);
 	      }
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	      if (!pbch_repetition)
 		AssertFatal (0,
 			     "Failed to parse eNB configuration file %s, enb %d define %s: TRUE,FALSE!\n",
@@ -946,7 +946,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
 			       RC.config_file_name, i, pucch_nCS_AN);
 
-#if !defined(Rel10) && !defined(Rel14)
+#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
 		RRC_CONFIGURATION_REQ (msg_p).pucch_n1_AN[j] = pucch_n1_AN;
 
 		if ((pucch_n1_AN <0) || (pucch_n1_AN > 2047))
@@ -1126,7 +1126,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_p0_Nominal choice: -126..24 !\n",
 			       RC.config_file_name, i, pusch_p0_Nominal);
 
-#ifndef Rel14
+#if (RRC_VERSION <= MAKE_VERSION(12, 0, 0))
 		if (strcmp(pusch_alpha,"AL0")==0) {
 		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = UplinkPowerControlCommon__alpha_al0;
 		} else if (strcmp(pusch_alpha,"AL04")==0) {
@@ -1144,7 +1144,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		} else if (strcmp(pusch_alpha,"AL1")==0) {
 		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = UplinkPowerControlCommon__alpha_al1;
 		} 
-#else
+#endif
+
+#if (RRC_VERSION >= MAKE_VERSION(12, 0, 0))
 		if (strcmp(pusch_alpha,"AL0")==0) {
 		  RRC_CONFIGURATION_REQ (msg_p).pusch_alpha[j] = Alpha_r12_al0;
 		} else if (strcmp(pusch_alpha,"AL04")==0) {
@@ -1347,7 +1349,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
 
 		switch (rach_preambleTransMax) {
-#ifndef Rel14
+#if (RRC_VERSION < MAKE_VERSION(14, 0, 0))
 		case 3:
 		  RRC_CONFIGURATION_REQ (msg_p).rach_preambleTransMax[j] =  RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3;
 		  break;

@@ -62,7 +62,7 @@
 
 #include "T.h"
 
-//#if defined(Rel10) || defined(Rel14)
+//#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #include "MeasResults.h"
 //#endif
 
@@ -144,11 +144,11 @@ init_SI(
 )
 //-----------------------------------------------------------------------------
 {
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   int                                 i;
 #endif
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 1, 0))
   SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext=(SystemInformationBlockType1_v1310_IEs_t *)NULL;
 #endif
 
@@ -161,7 +161,7 @@ init_SI(
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp             = configuration->prefix_type[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition = configuration->pbch_repetition[CC_id];
 #endif
   LOG_I(RRC, "Configuring MIB (N_RB_DL %d,phich_Resource %d,phich_Duration %d)\n", 
@@ -242,7 +242,7 @@ init_SI(
 	RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon.pusch_ConfigCommon.
 	ul_ReferenceSignalsPUSCH.cyclicShift);
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MBMS_flag > 0) {
     for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.count; i++) {
@@ -263,6 +263,7 @@ init_SI(
 	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset);
     }
 
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     //   SIB13
     for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count; i++) {
       LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN sync area %d/%d (partial)\n",
@@ -276,6 +277,7 @@ init_SI(
 	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
 	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_Offset_r9);
     }
+#endif
   }
   else memset((void*)&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13,0,sizeof(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13));
 
@@ -354,7 +356,7 @@ init_SI(
 	PROTOCOL_RRC_CTXT_FMT" RRC_UE --- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) ---> MAC_UE\n",
 	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
   if ((RC.rrc[ctxt_pP->module_id]->carrier[CC_id].mib.message.schedulingInfoSIB1_BR_r13>0) && 
       (RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR!=NULL)) {
       AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_BR->nonCriticalExtension!=NULL,
@@ -379,7 +381,7 @@ init_SI(
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->freqBandIndicator,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition,
 #endif
 			 0, // rnti
@@ -387,12 +389,12 @@ init_SI(
 			 &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].mib,
 			 (RadioResourceConfigCommonSIB_t *) &
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->radioResourceConfigCommon,
-#if defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			 (RadioResourceConfigCommonSIB_t *) &
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2_BR->radioResourceConfigCommon,
 #endif
 			 (struct PhysicalConfigDedicated *)NULL,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			 (SCellToAddMod_r10_t *)NULL,
 			 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -407,20 +409,20 @@ init_SI(
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->freqInfo.ul_Bandwidth,
 			 &RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->freqInfo.additionalSpectrumEmission,
 			 (MBSFN_SubframeConfigList_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			 ,
 			 RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MBMS_flag,
 			 (MBSFN_AreaInfoList_r9_t*) & RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9,
 			 (PMCH_InfoList_r9_t *) NULL
 #endif
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 			 , 
 			 sib1_v13ext
 #endif
 			 );
 }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*------------------------------------------------------------------------------*/
 static void
 init_MCCH(
@@ -478,17 +480,17 @@ init_MCCH(
   //  LOG_I(RRC, "DUY: session ID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
   rrc_mac_config_req_eNB(enb_mod_idP, CC_id,
 			 0,0,0,0,0,
-#ifdef Rel14 
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			 0,
 #endif
 			 0,//rnti
 			 (BCCH_BCH_Message_t *)NULL,
 			 (RadioResourceConfigCommonSIB_t *) NULL,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			 (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
 			 (struct PhysicalConfigDedicated *)NULL,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			 (SCellToAddMod_r10_t *)NULL,
 			 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -501,16 +503,16 @@ init_MCCH(
 			 (MobilityControlInfo_t *)NULL, 
 			 (SchedulingInfoList_t *) NULL, 
 			 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			 ,
 			 0,
 			 (MBSFN_AreaInfoList_r9_t *) NULL,
 			 (PMCH_InfoList_r9_t *) & (RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
-#   endif
-#   ifdef Rel14
+#endif
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 			 ,
 			 (SystemInformationBlockType1_v1310_IEs_t *)NULL
-#   endif
+#endif
 			 );
   
   //LOG_I(RRC,"DUY: lcid after rrc_mac_config_req is %02d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9);
@@ -542,9 +544,9 @@ static void init_MBMS(
                              NULL,  // key rrc encryption
                              NULL,  // key rrc integrity
                              NULL   // key encryption
-#   if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                              , &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
-#   endif
+#endif
                              ,NULL);
 
     rrc_rlc_config_asn1_req(&ctxt,
@@ -770,7 +772,7 @@ rrc_eNB_free_mem_UE_context(
         PROTOCOL_RRC_CTXT_UE_FMT" Clearing UE context 0x%p (free internal structs)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         ue_context_pP);
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_SCellToAddMod_r10, &ue_context_pP->ue_context.sCell_config[0]);
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_SCellToAddMod_r10, &ue_context_pP->ue_context.sCell_config[1]);
 #endif
@@ -1244,17 +1246,17 @@ rrc_eNB_generate_RRCConnectionReestablishment(
         rrc_mac_config_req_eNB(ctxt_pP->module_id,
                            ue_context_pP->ue_context.primaryCC_id,
                            0,0,0,0,0,
-#ifdef Rel14 
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			 0,
 #endif
                            ctxt_pP->rnti,
                            (BCCH_BCH_Message_t *) NULL, 
                            (RadioResourceConfigCommonSIB_t *) NULL,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
                            (struct PhysicalConfigDedicated* ) ue_context_pP->ue_context.physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                            (SCellToAddMod_r10_t *)NULL,
                            //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -1267,10 +1269,10 @@ rrc_eNB_generate_RRCConnectionReestablishment(
                            NULL,
                            (SchedulingInfoList_t *) NULL,
                            0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                            , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
                            ,(SystemInformationBlockType1_v1310_IEs_t *)NULL 
 #endif
         );
@@ -1828,7 +1830,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
                                          (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList, //dedicatedInfoNASList
                                          (SL_CommConfig_r12_t*)NULL,
                                          (SL_DiscConfig_r12_t*)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
                                         );
@@ -2265,7 +2267,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 					  (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList,
 					  (SL_CommConfig_r12_t*)NULL,
 					  (SL_DiscConfig_r12_t*)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
                                         );
@@ -2535,7 +2537,7 @@ rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 					  (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList,
 					  (SL_CommConfig_r12_t*)NULL,
 					  (SL_DiscConfig_r12_t*)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 					  , (SCellToAddMod_r10_t*)NULL
 #endif
    	   	   	   	   	  );
@@ -2660,7 +2662,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(  const protocol_
                                     (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList,
                                     (SL_CommConfig_r12_t*)NULL,
                                     (SL_DiscConfig_r12_t*)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                                     , (SCellToAddMod_r10_t*)NULL
 #endif
                                    );
@@ -2755,7 +2757,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
                                      *ReportConfig_A2, *ReportConfig_A3, *ReportConfig_A4, *ReportConfig_A5;
   MeasIdToAddModList_t               *MeasId_list                      = NULL;
   MeasIdToAddMod_t                   *MeasId0, *MeasId1, *MeasId2, *MeasId3, *MeasId4, *MeasId5;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   long                               *sr_ProhibitTimer_r9              = NULL;
   //     uint8_t sCellIndexToAdd = rrc_find_free_SCell_index(enb_mod_idP, ue_mod_idP, 1);
   //uint8_t                            sCellIndexToAdd = 0;
@@ -2975,7 +2977,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;  // Value dB1 =1 dB, dB3 = 3 dB
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
   *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR
   mac_MainConfig->ext1 = CALLOC(1, sizeof(struct MAC_MainConfig__ext1));
@@ -3042,7 +3044,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 	//feedback mode needs to be set as well
 	//TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
 	printf("setting cqi reporting mode to rm31\n");
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 	*((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=CQI_ReportModeAperiodic_rm31;
 #else
 	*((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=CQI_ReportConfig__cqi_ReportModeAperiodic_rm31; // HLC CQI, no PMI
@@ -3390,7 +3392,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
                                          (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList,
                                          (SL_CommConfig_r12_t*)NULL,
                                          (SL_DiscConfig_r12_t*)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
                                         );
@@ -3776,7 +3778,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   //feedback mode needs to be set as well
   //TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
   printf("setting cqi reporting mode to rm31\n");
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   *((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=CQI_ReportModeAperiodic_rm31;
 #else
   *((*physicalConfigDedicated)->cqi_ReportConfig->cqi_ReportModeAperiodic)=CQI_ReportConfig__cqi_ReportModeAperiodic_rm31; // HLC CQI, no PMI
@@ -3982,7 +3984,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
                                          (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)dedicatedInfoNASList,
                                          (SL_CommConfig_r12_t*)NULL,
                                          (SL_DiscConfig_r12_t*)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
                                         );
@@ -4052,7 +4054,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
   uint8_t size;
   uint8_t buffer[100];
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t sCellIndexToAdd = 0; //one SCell so far
 
   //   uint8_t sCellIndexToAdd;
@@ -4088,7 +4090,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
                                          (SL_CommConfig_r12_t*)NULL,
                                          (SL_DiscConfig_r12_t*)NULL
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                                          , ue_context_pP->ue_context.sCell_config
 #endif
                                         );
@@ -4171,7 +4173,7 @@ rrc_eNB_process_MeasurementReport(
      }
    }
 
-// #if defined(Rel10) || defined(Rel14)
+// #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   
 // #else
@@ -4442,7 +4444,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   // HandoverCommand_t handoverCommand;
   //uint8_t                             sourceModId =
   //  get_adjacent_cell_mod_id(ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->sourcePhysCellId);
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   long                               *sr_ProhibitTimer_r9;
 #endif
 
@@ -4686,17 +4688,17 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 			 ctxt_pP->module_id,
 			 ue_context_pP->ue_context.primaryCC_id,
 			 0,0,0,0,0,
-#ifdef Rel14 
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 0,
 #endif 
 			 ue_context_pP->ue_context.rnti,
 			 (BCCH_BCH_Message_t *) NULL,
 			 (RadioResourceConfigCommonSIB_t*) NULL,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			 (RadioResourceConfigCommonSIB_t*) NULL,
 #endif
 			 ue_context_pP->ue_context.physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			 (SCellToAddMod_r10_t *)NULL,
 			 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -4712,13 +4714,13 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 			 NULL,
 			 NULL,
 			 (MBSFN_SubframeConfigList_t *) NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#   ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 			 ,
 			 (SystemInformationBlockType1_v1310_IEs_t *)NULL
-#   endif
+#endif
 			 );
   
   // Configure target eNB SRB2
@@ -4834,7 +4836,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 
   mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;  // Value dB1 =1 dB, dB3 = 3 dB
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
   *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR
   mac_MainConfig->ext1 = CALLOC(1, sizeof(struct MAC_MainConfig__ext1));
@@ -5196,7 +5198,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   rrc_pdcp_config_asn1_req(&ctxt,
                            ue_context_pP->ue_context.SRB_configList,
                            (DRB_ToAddModList_t *) NULL, (DRB_ToReleaseList_t *) NULL, 0xff, NULL, NULL, NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                            , (PMCH_InfoList_r9_t *) NULL
 #endif
                            ,NULL);
@@ -5204,7 +5206,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   rrc_rlc_config_asn1_req(&ctxt,
                           ue_context_pP->ue_context.SRB_configList,
                           (DRB_ToAddModList_t *) NULL, (DRB_ToReleaseList_t *) NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                           , (PMCH_InfoList_r9_t *) NULL
                           , 0, 0
 #endif
@@ -5238,7 +5240,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
            dedicatedInfoNASList,
            (SL_CommConfig_r12_t*)NULL,
            (SL_DiscConfig_r12_t*)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
            , NULL   // SCellToAddMod_r10_t
 #endif
          );
@@ -5270,17 +5272,17 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 			 ctxt_pP->module_id,
 			 ue_context_pP->ue_context.primaryCC_id,
 			 0,0,0,0,0,
-#ifdef Rel14 
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			 0,
 #endif
 			 ue_context_pP->ue_context.rnti,
 			 (BCCH_BCH_Message_t *) NULL,
 			 (RadioResourceConfigCommonSIB_t *) NULL,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			 (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
 			 ue_context_pP->ue_context.physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			 (SCellToAddMod_r10_t *)NULL,
 			 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -5292,13 +5294,13 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 			 (TDD_Config_t *) NULL,
 			 (MobilityControlInfo_t *) mobilityInfo,
 			 (SchedulingInfoList_t *) NULL, 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#   ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 			 ,
 			 (SystemInformationBlockType1_v1310_IEs_t *)NULL
-#   endif
+#endif
 			 );
   
   /*
@@ -5422,7 +5424,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     kRRCenc,
     kRRCint,
     kUPenc
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     , (PMCH_InfoList_r9_t *) NULL
 #endif
     ,NULL);
@@ -5433,7 +5435,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     DRB_configList,
 //    (DRB_ToReleaseList_t *) NULL
     DRB_Release_configList2
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     , (PMCH_InfoList_r9_t *) NULL
     , 0, 0
 #endif
@@ -5543,17 +5545,17 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 				 ctxt_pP->module_id,
 				 ue_context_pP->ue_context.primaryCC_id,
 				 0,0,0,0,0,
-#ifdef Rel14 
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				 0,
 #endif
 				 ue_context_pP->ue_context.rnti,
 				 (BCCH_BCH_Message_t *) NULL,
 				 (RadioResourceConfigCommonSIB_t *) NULL,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				 (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
 				 ue_context_pP->ue_context.physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 				 (SCellToAddMod_r10_t *)NULL,
 				 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -5566,13 +5568,13 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 				 NULL,
 				 (SchedulingInfoList_t *) NULL,
 				 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 				 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#   ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 				 ,
 				 (SystemInformationBlockType1_v1310_IEs_t *)NULL
-#   endif
+#endif
 				 );
 	  
         } else {        // remove LCHAN from MAC/PHY
@@ -5598,17 +5600,17 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
           rrc_mac_config_req_eNB(ctxt_pP->module_id,
 				 ue_context_pP->ue_context.primaryCC_id,
 				 0,0,0,0,0,
-#ifdef Rel14 
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				 0,
 #endif
 				 ue_context_pP->ue_context.rnti,
 				 (BCCH_BCH_Message_t *) NULL,
 				 (RadioResourceConfigCommonSIB_t *) NULL,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				 (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
 				 ue_context_pP->ue_context.physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 				 (SCellToAddMod_r10_t *)NULL,
 				 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -5621,13 +5623,13 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 				 NULL, 
 				 (SchedulingInfoList_t *) NULL,
 				 0, NULL, NULL, NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 				 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#   ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 				 ,
 				 (SystemInformationBlockType1_v1310_IEs_t *)NULL
-#   endif
+#endif
 				 );
         }
       }
@@ -5716,17 +5718,17 @@ rrc_eNB_generate_RRCConnectionSetup(
 			       ctxt_pP->module_id,
 			       ue_context_pP->ue_context.primaryCC_id,
 			       0,0,0,0,0,
-#ifdef Rel14 
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			       0,
 #endif
 			       ue_context_pP->ue_context.rnti,
 			       (BCCH_BCH_Message_t *) NULL,
 			       (RadioResourceConfigCommonSIB_t *) NULL,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			       (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
 			       ue_context_pP->ue_context.physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			       (SCellToAddMod_r10_t *)NULL,
 			       //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -5739,13 +5741,13 @@ rrc_eNB_generate_RRCConnectionSetup(
 			       NULL,
 			       (SchedulingInfoList_t *) NULL,
 			       0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			       , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
-#   ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 			       ,
 			       (SystemInformationBlockType1_v1310_IEs_t *)NULL
-#   endif
+#endif
 			       );
         break;
       }
@@ -5850,14 +5852,14 @@ openair_rrc_eNB_init(
 
   LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Checking release \n",
         PROTOCOL_RRC_CTXT_ARGS(&ctxt));
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   // can clear it at runtime
   RC.rrc[ctxt.module_id]->carrier[0].MBMS_flag = 0;
 
   // This has to come from some top-level configuration
   // only CC_id 0 is logged
-#if defined(Rel10)
+#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
   LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Rel10 RRC detected, MBMS flag %d\n",
 #else
   LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Rel14 RRC detected, MBMS flag %d\n",
@@ -5907,7 +5909,7 @@ openair_rrc_eNB_init(
   rrc_init_global_param();
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     switch (RC.rrc[ctxt.module_id]->carrier[CC_id].MBMS_flag) {
     case 1:
     case 2:
@@ -6212,16 +6214,16 @@ rrc_eNB_decode_ccch(
                                NULL,
                                NULL,
                                NULL
-#   if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                                , (PMCH_InfoList_r9_t *) NULL
-#   endif
+#endif
                                ,NULL);
 
       rrc_rlc_config_asn1_req(ctxt_pP,
                               ue_context_p->ue_context.SRB_configList,
                               (DRB_ToAddModList_t*) NULL,
                               (DRB_ToReleaseList_t*) NULL
-#   if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                               , (PMCH_InfoList_r9_t *) NULL,
                               0,0
 #   endif
@@ -6452,19 +6454,19 @@ rrc_eNB_decode_ccch(
                                NULL,
                                NULL,
                                NULL
-#   if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                                , (PMCH_InfoList_r9_t *) NULL
-#   endif
+#endif
                                ,NULL);
 
       rrc_rlc_config_asn1_req(ctxt_pP,
                               ue_context_p->ue_context.SRB_configList,
                               (DRB_ToAddModList_t*) NULL,
                               (DRB_ToReleaseList_t*) NULL
-#   if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                               , (PMCH_InfoList_r9_t *) NULL
                               , 0, 0
-#   endif
+#endif
                              );
 #endif //NO_RRM
 
@@ -7085,7 +7087,7 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
 
       break;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 
     case UL_DCCH_MessageType__c1_PR_ueInformationResponse_r9:
       T(T_ENB_RRC_UE_INFORMATION_RESPONSE_R9, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
@@ -7098,7 +7100,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
       break;
+#endif
 
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     case UL_DCCH_MessageType__c1_PR_rnReconfigurationComplete_r10:
       T(T_ENB_RRC_RECONFIGURATION_COMPLETE_R10, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
@@ -7398,7 +7402,7 @@ openair_rrc_top_init_eNB(int eMBMS_active,uint8_t HO_active)
       RC.rrc[module_id]->HO_flag   = (uint8_t)HO_active;
     }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     LOG_I(RRC,"[eNB] eMBMS active state is %d \n", eMBMS_active);
 
     for (module_id=0; module_id<NB_eNB_INST; module_id++) {

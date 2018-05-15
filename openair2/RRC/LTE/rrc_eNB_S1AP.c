@@ -74,7 +74,7 @@ static const uint16_t S1AP_ENCRYPTION_EEA2_MASK = 0x4000;
 static const uint16_t S1AP_INTEGRITY_EIA1_MASK = 0x8000;
 static const uint16_t S1AP_INTEGRITY_EIA2_MASK = 0x4000;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 2, 0))
 # define INTEGRITY_ALGORITHM_NONE SecurityAlgorithmConfig__integrityProtAlgorithm_eia0_v920
 #else
 #ifdef EXMIMO_IOT

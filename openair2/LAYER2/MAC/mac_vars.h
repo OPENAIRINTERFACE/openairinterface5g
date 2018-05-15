@@ -124,7 +124,7 @@ DCI1A_5MHz_TDD_1_6_t BCCH_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t CCCH_alloc_pdu;
 DCI1_5MHz_TDD_t DLSCH_alloc_pdu;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 DCI1C_5MHz_t MCCH_alloc_pdu;
 #endif
 

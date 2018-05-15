@@ -54,7 +54,7 @@
 #include "DL-DCCH-Message.h"
 #include "BCCH-DL-SCH-Message.h"
 #include "PCCH-Message.h"
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #include "MCCH-Message.h"
 #endif
 #include "MeasConfig.h"
@@ -146,7 +146,7 @@ static uint8_t check_trigger_meas_event(
   Q_OffsetRange_t ofn, Q_OffsetRange_t ocn, Hysteresis_t hys,
   Q_OffsetRange_t ofs, Q_OffsetRange_t ocs, long a3_offset, TimeToTrigger_t ttt);
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
 uint8_t rrc_ue_generate_SidelinkUEInformation( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index,SL_DestinationInfoList_r12_t  *destinationInfoList, long *discTxResourceReq, SL_TRIGGER_t mode);
 #endif
@@ -282,7 +282,7 @@ static void init_SI_UE( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
   UE_rrc_inst[ctxt_pP->module_id].sib9[eNB_index] = malloc16_clear( sizeof(SystemInformationBlockType9_t) );
   UE_rrc_inst[ctxt_pP->module_id].sib10[eNB_index] = malloc16_clear( sizeof(SystemInformationBlockType10_t) );
   UE_rrc_inst[ctxt_pP->module_id].sib11[eNB_index] = malloc16_clear( sizeof(SystemInformationBlockType11_t) );
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   UE_rrc_inst[ctxt_pP->module_id].sib12[eNB_index] = malloc16_clear( sizeof(SystemInformationBlockType12_r9_t) );
   UE_rrc_inst[ctxt_pP->module_id].sib13[eNB_index] = malloc16_clear( sizeof(SystemInformationBlockType13_r9_t) );
   UE_rrc_inst[ctxt_pP->module_id].sib18[eNB_index] = malloc16_clear( sizeof(SystemInformationBlockType18_r12_t) );
@@ -298,7 +298,7 @@ static void init_SI_UE( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt    = 0;
 }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void init_SL_preconfig(UE_RRC_INST *UE, const uint8_t eNB_index )
 {
   LOG_I(RRC,"Initializing Sidelink Pre-configuration for UE\n");
@@ -472,7 +472,7 @@ void init_SL_preconfig(UE_RRC_INST *UE, const uint8_t eNB_index )
 
 #endif
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 //-----------------------------------------------------------------------------
 #if 0
 void init_MCCH_UE(module_id_t ue_mod_idP, uint8_t eNB_index)
@@ -533,7 +533,7 @@ char openair_rrc_ue_init( const module_id_t ue_mod_idP, const unsigned char eNB_
   UE_rrc_inst[ctxt.module_id].Srb2[eNB_index].Active=0;
   UE_rrc_inst[ctxt.module_id].HandoverInfoUe.measFlag=1;
   UE_rrc_inst[ctxt.module_id].ciphering_algorithm = CipheringAlgorithm_r12_eea0;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 2, 0))
   UE_rrc_inst[ctxt.module_id].integrity_algorithm = SecurityAlgorithmConfig__integrityProtAlgorithm_eia0_v920;
 #else
   UE_rrc_inst[ctxt.module_id].integrity_algorithm = SecurityAlgorithmConfig__integrityProtAlgorithm_reserved;
@@ -1066,7 +1066,7 @@ rrc_ue_process_measConfig(
     rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
 			  (RadioResourceConfigCommonSIB_t *)NULL,
 			  (struct PhysicalConfigDedicated *)NULL,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			  (SCellToAddMod_r10_t *)NULL,
 			  //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -1083,7 +1083,7 @@ rrc_ue_process_measConfig(
 			  NULL,
 			  NULL,
 			  NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			  ,0,
 			  (MBSFN_AreaInfoList_r9_t *)NULL,
 			  (PMCH_InfoList_r9_t *)NULL
@@ -1534,7 +1534,7 @@ rrc_ue_process_radioResourceConfigDedicated(
                              kRRCenc,
                              kRRCint,
                              NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                              ,(PMCH_InfoList_r9_t *)NULL
 #endif
                              ,NULL);
@@ -1544,7 +1544,7 @@ rrc_ue_process_radioResourceConfigDedicated(
                             radioResourceConfigDedicated->srb_ToAddModList,
                             (DRB_ToAddModList_t*)NULL,
                             (DRB_ToReleaseList_t*)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                             ,(PMCH_InfoList_r9_t *)NULL
                             , 0, 0
 #endif
@@ -1585,7 +1585,7 @@ rrc_ue_process_radioResourceConfigDedicated(
           rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
 				(RadioResourceConfigCommonSIB_t *)NULL,
 				UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 				(SCellToAddMod_r10_t *)NULL,
 				//struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -1602,7 +1602,7 @@ rrc_ue_process_radioResourceConfigDedicated(
 				NULL,
 				NULL,
 				NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 				,
 				0,
 				(MBSFN_AreaInfoList_r9_t *)NULL,
@@ -1649,7 +1649,7 @@ rrc_ue_process_radioResourceConfigDedicated(
           rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
 				(RadioResourceConfigCommonSIB_t *)NULL,
 				UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 				(SCellToAddMod_r10_t *)NULL,
 				//struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -1666,7 +1666,7 @@ rrc_ue_process_radioResourceConfigDedicated(
 				NULL,
 				NULL,
 				NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 				,
 				0,
 				(MBSFN_AreaInfoList_r9_t *)NULL,
@@ -1729,7 +1729,7 @@ rrc_ue_process_radioResourceConfigDedicated(
                              NULL,
                              NULL,
                              kUPenc
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                              ,(PMCH_InfoList_r9_t *)NULL
 #endif
                              , UE_rrc_inst[ctxt_pP->module_id].defaultDRB);
@@ -1739,7 +1739,7 @@ rrc_ue_process_radioResourceConfigDedicated(
                             (SRB_ToAddModList_t*)NULL,
                             radioResourceConfigDedicated->drb_ToAddModList,
                             (DRB_ToReleaseList_t*)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                             ,(PMCH_InfoList_r9_t *)NULL
                             , 0, 0
 #endif
@@ -1764,7 +1764,7 @@ rrc_ue_process_radioResourceConfigDedicated(
         rrc_mac_config_req_ue(ctxt_pP->module_id,0,eNB_index,
 			      (RadioResourceConfigCommonSIB_t *)NULL,
 			      UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			      (SCellToAddMod_r10_t *)NULL,
 			      //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -1781,7 +1781,7 @@ rrc_ue_process_radioResourceConfigDedicated(
 			      NULL,
 			      NULL,
 			      NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			      ,
 			      0,
 			      (MBSFN_AreaInfoList_r9_t *)NULL,
@@ -2324,7 +2324,7 @@ rrc_ue_process_mobilityControlInfo(
          NULL, // key rrc encryption
          NULL, // key rrc integrity
          NULL // key encryption
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
          ,NULL
 #endif
          ,NULL);
@@ -2333,7 +2333,7 @@ rrc_ue_process_mobilityControlInfo(
         NULL,// SRB_ToAddModList
         NULL,// DRB_ToAddModList
         drb2release_list // DRB_ToReleaseList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
         ,NULL
 #endif
         ,NULL);
@@ -2368,7 +2368,7 @@ rrc_ue_process_mobilityControlInfo(
 			eNB_index,
 			(RadioResourceConfigCommonSIB_t *)NULL,
 			(struct PhysicalConfigDedicated *)NULL,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			(SCellToAddMod_r10_t *)NULL,
 			//(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -2385,7 +2385,7 @@ rrc_ue_process_mobilityControlInfo(
 			NULL,
 			NULL,
 			NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			,0,
 			(MBSFN_AreaInfoList_r9_t *)NULL,
 			(PMCH_InfoList_r9_t *)NULL
@@ -2761,11 +2761,11 @@ rrc_ue_decode_dcch(
       case DL_DCCH_MessageType__c1_PR_counterCheck:
         break;
 
-#if defined(Rel10) || defined(Rel14)
-
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
       case DL_DCCH_MessageType__c1_PR_ueInformationRequest_r9:
         break;
-
+#endif
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
       case DL_DCCH_MessageType__c1_PR_loggedMeasurementConfiguration_r10:
         break;
 
@@ -2776,7 +2776,7 @@ rrc_ue_decode_dcch(
       case DL_DCCH_MessageType__c1_PR_spare1:
       case DL_DCCH_MessageType__c1_PR_spare2:
       case DL_DCCH_MessageType__c1_PR_spare3:
-#if !defined(Rel14)
+#if (RRC_VERSION < MAKE_VERSION(14, 0, 0))
       case DL_DCCH_MessageType__c1_PR_spare4:
 #endif
         break;
@@ -3254,7 +3254,7 @@ int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, 
   rrc_mac_config_req_ue(ctxt_pP->module_id, 0, eNB_index,
 			(RadioResourceConfigCommonSIB_t *)NULL,
 			(struct PhysicalConfigDedicated *)NULL,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			(SCellToAddMod_r10_t *)NULL,
 			//(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -3271,7 +3271,7 @@ int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, 
 			NULL,
 			NULL,
 			(MBSFN_SubframeConfigList_t *)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			,0,
 			(MBSFN_AreaInfoList_r9_t *)NULL,
 			(PMCH_InfoList_r9_t *)NULL
@@ -3535,7 +3535,7 @@ int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, 
   LOG_I( RRC, "radioResourceConfigCommon.ul_CyclicPrefixLength : %ld\n",
          sib2->radioResourceConfigCommon.ul_CyclicPrefixLength );
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 2, 0))
   // UplinkPowerControlCommon_v1020
   // ...
 #endif
@@ -3567,13 +3567,14 @@ int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, 
 
   LOG_I( RRC, "timeAlignmentTimerCommon : %ld\n", sib2->timeAlignmentTimerCommon );
 
-#if defined(Rel10) || defined(Rel14)
-
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   if (sib2->lateNonCriticalExtension) {
     LOG_I( RRC, "lateNonCriticalExtension : %p\n", sib2->lateNonCriticalExtension );
   } else
     LOG_I( RRC, "lateNonCriticalExtension : not defined\n" );
+#endif
 
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   if (sib2->ext1 && sib2->ext1->ssac_BarringForMMTEL_Voice_r9) {
     LOG_I( RRC, "ssac_BarringForMMTEL_Voice_r9->ac_BarringFactor       : %ld\n",
            sib2->ext1->ssac_BarringForMMTEL_Voice_r9->ac_BarringFactor );
@@ -3593,7 +3594,9 @@ int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, 
            BIT_STRING_to_uint32(&sib2->ext1->ssac_BarringForMMTEL_Video_r9->ac_BarringForSpecialAC) );
   } else
     LOG_I( RRC, "ssac_BarringForMMTEL_Video_r9 : not defined\n" );
+#endif
 
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   if (sib2->ext2 && sib2->ext2->ac_BarringForCSFB_r10) {
     LOG_I( RRC, "ac_BarringForCSFB_r10->ac_BarringFactor       : %ld\n",
            sib2->ext2->ac_BarringForCSFB_r10->ac_BarringFactor );
@@ -3836,7 +3839,7 @@ uint64_t arfcn_to_freq(long arfcn) {
 	}
       }
     }
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     if (ifcfInfo->ext1 && ifcfInfo->ext1->q_QualMin_r9)
       LOG_I(RRC,"   Q_QualMin_r9 : %ld\n",*ifcfInfo->ext1->q_QualMin_r9);
 
@@ -3849,7 +3852,7 @@ uint64_t arfcn_to_freq(long arfcn) {
 
 }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
  void dump_sib13( SystemInformationBlockType13_r9_t *sib13 )
 {
   LOG_I( RRC, "[UE] Dumping SIB13\n" );
@@ -3952,7 +3955,7 @@ uint64_t arfcn_to_freq(long arfcn) {
 	rrc_mac_config_req_ue(ctxt_pP->module_id, 0, eNB_index,
 			      &UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->radioResourceConfigCommon,
 			      (struct PhysicalConfigDedicated *)NULL,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			      (SCellToAddMod_r10_t *)NULL,
 #endif
 			      (MeasObjectToAddMod_t **)NULL,
@@ -3968,7 +3971,7 @@ uint64_t arfcn_to_freq(long arfcn) {
 			      UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.ul_Bandwidth,
 			      &UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.additionalSpectrumEmission,
 			      UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->mbsfn_SubframeConfigList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			      ,0,
 			      (MBSFN_AreaInfoList_r9_t *)NULL,
 			      (PMCH_InfoList_r9_t *)NULL
@@ -3986,7 +3989,7 @@ uint64_t arfcn_to_freq(long arfcn) {
 #endif
 			      );
 	// After SI is received, prepare RRCConnectionRequest
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
 	if (UE_rrc_inst[ctxt_pP->module_id].MBMS_flag < 3) // see -Q option
 #endif
@@ -4118,7 +4121,7 @@ uint64_t arfcn_to_freq(long arfcn) {
       }
       break;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 2, 0))
 
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib12_v920:
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&2048) == 0) {
@@ -4587,7 +4590,7 @@ void ue_measurement_report_triggering(protocol_ctxt_t* const ctxt_pP, const uint
   return 0;
 }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 //-----------------------------------------------------------------------------
 int decode_MCCH_Message( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, const uint8_t* const Sdu, const uint8_t Sdu_len, const uint8_t mbsfn_sync_area )
 {
@@ -4662,7 +4665,7 @@ int decode_MCCH_Message( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB
   rrc_mac_config_req_ue(ue_mod_idP,0,eNB_index,
 			(RadioResourceConfigCommonSIB_t *)NULL,
 			(struct PhysicalConfigDedicated *)NULL,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			(SCellToAddMod_r10_t *)NULL,
 			//(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
@@ -4679,7 +4682,7 @@ int decode_MCCH_Message( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB
 			NULL,
 			NULL,
 			(MBSFN_SubframeConfigList_t *)NULL
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			,
 			0,
 			(MBSFN_AreaInfoList_r9_t *)NULL,
@@ -4712,7 +4715,7 @@ int decode_MCCH_Message( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB
                            NULL, // key rrc encryption
                            NULL, // key rrc integrity
                            NULL // key encryption
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                            ,&(UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->pmch_InfoList_r9)
 #endif
                            ,NULL);
@@ -4721,7 +4724,7 @@ int decode_MCCH_Message( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB
                           NULL,// SRB_ToAddModList
                           NULL,// DRB_ToAddModList
                           NULL,// DRB_ToReleaseList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                           &(UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->pmch_InfoList_r9)
                           , 0, 0
 #endif
@@ -4826,7 +4829,7 @@ void *rrc_ue_task( void *args_p )
                           RRC_MAC_CCCH_DATA_IND (msg_p).enb_index);
       break;
 
-# if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     case RRC_MAC_MCCH_DATA_IND:
       LOG_D(RRC, "[UE %d] Received %s: frameP %d, eNB %d, mbsfn SA %d\n", ue_mod_id, msg_name,
@@ -5258,7 +5261,7 @@ openair_rrc_top_init_ue(
       UE_rrc_inst[module_id].UECapability_size = UECap->sdu_size;
     }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     LOG_I(RRC,"[UE] eMBMS active state is %d \n", eMBMS_active);
 
     for (module_id=0; module_id<NB_UE_INST; module_id++) {

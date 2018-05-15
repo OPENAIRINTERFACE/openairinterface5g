@@ -117,7 +117,7 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t * ra, frame_t frameP,
     AssertFatal(ra->state != IDLE, "RA is not active for RA %X\n",
 		ra->rnti);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if (ra->rach_resource_type > 0) {
 	LOG_D(MAC,
 	      "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d CE level %d is active, Msg3 in (%d,%d)\n",
@@ -266,7 +266,7 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
     dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
     N_RB_DL = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     int rmax = 0;
     int rep = 0;
     int reps = 0;
@@ -619,7 +619,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
   uint8_t                         offset;
 
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     int rmax = 0;
     int rep = 0;
     int reps = 0;
@@ -710,7 +710,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 	  module_idP, CC_idP, frameP, subframeP, UE_id, rrc_sdu_length);*/
 
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if (ra->rach_resource_type > 0) {
 
 	// Generate DCI + repetitions first
@@ -1217,7 +1217,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 
     int round;
     /*
-       #ifdef Rel14
+       #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
        COMMON_channels_t               *cc  = mac->common_channels;
 
        int rmax            = 0;
@@ -1270,7 +1270,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 
     if (round != 8) {
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	if (ra->rach_resource_type > 0) {
 	    AssertFatal(1 == 0,
 			"Msg4 Retransmissions not handled yet for BL/CE UEs\n");
@@ -1426,7 +1426,7 @@ initiate_ra_proc(module_id_t module_idP,
 		 sub_frame_t subframeP,
 		 uint16_t preamble_index,
 		 int16_t timing_offset, uint16_t ra_rnti
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		 , uint8_t rach_resource_type
 #endif
     )
@@ -1437,7 +1437,7 @@ initiate_ra_proc(module_id_t module_idP,
     COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
     RA_t *ra = &cc->ra[0];
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
     struct PRACH_ConfigSIB_v1310 *ext4_prach = NULL;
     PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 = NULL;
@@ -1448,12 +1448,12 @@ initiate_ra_proc(module_id_t module_idP,
 	prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
     }
 
-#endif /* Rel14 */
+#endif /* #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) */
 
     LOG_D(MAC,
 	  "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",
 	  module_idP, CC_id, frameP, subframeP, preamble_index);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     LOG_D(MAC,
 	  "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n",
 	  module_idP, CC_id, frameP, subframeP, rach_resource_type);
@@ -1463,7 +1463,7 @@ initiate_ra_proc(module_id_t module_idP,
     uint16_t msg2_subframe = subframeP;
     int offset;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 
     if (prach_ParametersListCE_r13 &&
 	prach_ParametersListCE_r13->list.count < rach_resource_type) {
@@ -1474,7 +1474,7 @@ initiate_ra_proc(module_id_t module_idP,
 	return;
     }
 
-#endif /* Rel14 */
+#endif /* #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) */
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
@@ -1487,7 +1487,7 @@ initiate_ra_proc(module_id_t module_idP,
 	    ra[i].state = MSG2;
 	    ra[i].timing_offset = timing_offset;
 	    ra[i].preamble_subframe = subframeP;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	    ra[i].rach_resource_type = rach_resource_type;
 	    ra[i].msg2_mpdcch_repetition_cnt = 0;
 	    ra[i].msg4_mpdcch_repetition_cnt = 0;

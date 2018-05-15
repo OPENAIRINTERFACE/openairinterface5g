@@ -36,7 +36,7 @@
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 #include "PRACH-ConfigSIB-v1310.h"
 #endif
 #include "MeasGapConfig.h"
@@ -50,7 +50,7 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 #include "common/ran_context.h"
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-AreaInfo-r9.h"
 #include "MBSFN-SubframeConfigList.h"
@@ -110,7 +110,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 		      radioResourceConfigCommon,
 		      struct PhysicalConfigDedicated
 		      *physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 		      SCellToAddMod_r10_t * sCellToAddMod_r10,
 		      //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -129,7 +129,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 		      additionalSpectrumEmission,
 		      struct MBSFN_SubframeConfigList
 		      *mbsfn_SubframeConfigList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 		      , uint8_t MBMS_Flag,
 		      MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
 		      PMCH_InfoList_r9_t * pmch_InfoList
@@ -218,7 +218,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	  mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
       } else {
 	UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer =
-#ifndef Rel14
+#if (RRC_VERSION < MAKE_VERSION(12, 0, 0))
 	  (uint16_t)
 	  MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity
 #else
@@ -245,7 +245,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	  (uint16_t) mac_MainConfig->ul_SCH_Config->
 	  retxBSR_Timer;
       } else {
-#ifndef Rel14
+#if (RRC_VERSION < MAKE_VERSION(12, 0, 0))
 	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer =
 	  (uint16_t)
 	  MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
@@ -255,7 +255,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 #endif
       }
     }
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     if (mac_MainConfig->ext1
 	&& mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
@@ -361,7 +361,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 			      physicalConfigDedicated);
     UE_mac_inst[Mod_idP].physicalConfigDedicated = physicalConfigDedicated;	// for SR proc
   }
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (sCellToAddMod_r10 != NULL) {
 
@@ -531,7 +531,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
       //    UE_mac_inst[Mod_idP].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]);
     }
   }
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (mbsfn_AreaInfoList != NULL) {
     LOG_I(MAC, "[UE %d][CONFIG] Received %d MBSFN Area Info\n",

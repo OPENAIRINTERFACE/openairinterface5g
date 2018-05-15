@@ -58,7 +58,7 @@
 
 extern RAN_CONTEXT_t RC;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 int8_t
 get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
 		       uint8_t mbsfn_sync_area)
@@ -584,7 +584,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
     TBS =
 	get_TBS_DL(cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     // do not let mcch and mtch multiplexing when relaying is active
     // for sync area 1, so not transmit data
     //if ((i == 0) && ((RC.mac[module_idP]->MBMS_flag != multicast_relay) || (RC.mac[module_idP]->mcch_active==0))) {
@@ -675,7 +675,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	    header_len_mtch = 0;
 	}
     }
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     //  }
 #endif
 

@@ -687,7 +687,7 @@ ue_decode_p(module_id_t module_idP, int CC_id, frame_t frameP,
     }
 }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 unsigned char *parse_mch_header(unsigned char *mac_header,
 				unsigned char *num_sdu,
 				unsigned char *rx_lcids,

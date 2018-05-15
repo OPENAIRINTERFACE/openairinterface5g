@@ -54,13 +54,15 @@
 #include "RACH-ConfigCommon.h"
 #include "MeasObjectToAddModList.h"
 #include "MobilityControlInfo.h"
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "PMCH-InfoList-r9.h"
+#endif
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #include "SCellToAddMod-r10.h"
 #endif
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 #include "SystemInformationBlockType1-v1310-IEs.h"
 #include "SystemInformationBlockType18-r12.h"
 #endif
@@ -89,7 +91,7 @@
 #define DCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 // Mask for identifying subframe for MBMS
 #define MBSFN_TDD_SF3 0x80	// for TDD
@@ -383,7 +385,7 @@ typedef struct {
     uint8_t payload[PCCH_PAYLOAD_SIZE_MAX];
 } __attribute__ ((__packed__)) PCCH_PDU;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \brief MCCH payload */
 typedef struct {
     uint8_t payload[MCCH_PAYLOAD_SIZE_MAX];
@@ -440,7 +442,7 @@ typedef struct {
 /*!\brief LCID of padding LCID for DLSCH */
 #define SHORT_PADDING 31
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 // MCH LCHAN IDs (table6.2.1-4 TS36.321)
 /*!\brief LCID of MCCH for DL */
 #define MCCH_LCHANID 0
@@ -892,7 +894,7 @@ typedef struct {
     eNB_UE_estimated_distances distance;
 #endif
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     uint8_t rach_resource_type;
     uint16_t mpdcch_repetition_cnt;
     frame_t Msg2_frame;
@@ -1034,7 +1036,7 @@ typedef struct {
     int msg4_TBsize;
     /// MCS used for Msg4
     int msg4_mcs;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     uint8_t rach_resource_type;
     uint8_t msg2_mpdcch_repetition_cnt;
     uint8_t msg4_mpdcch_repetition_cnt;
@@ -1099,7 +1101,7 @@ typedef struct {
     uint32_t dl_CarrierFreq;
     BCCH_BCH_Message_t *mib;
     RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR;
 #endif
     TDD_Config_t *tdd_Config;
@@ -1130,7 +1132,7 @@ typedef struct {
     struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     /// MBMS Flag
     uint8_t MBMS_flag;
     /// Outgoing MCCH pdu for PHY
@@ -1152,7 +1154,7 @@ typedef struct {
     /// Outgoing MCH pdu for PHY
     MCH_PDU MCH_pdu;
 #endif
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
     /// Rel13 parameters from SIB1
     SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext;
     /// Counter for SIB1-BR scheduling
@@ -1347,7 +1349,7 @@ typedef struct {
     struct RACH_ConfigDedicated *rach_ConfigDedicated;
     /// pointer to RRC PHY configuration
     struct PhysicalConfigDedicated *physicalConfigDedicated;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   /// pointer to RRC PHY configuration SCEll
   struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
   /// Preconfiguration for Sidelink
@@ -1457,7 +1459,7 @@ typedef struct {
     struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];	// FIXME replace 8 by MAX_MBSFN_AREA?
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     /// number of active MBSFN area
     uint8_t num_active_mbsfn_area;
     /// MBSFN Area Info

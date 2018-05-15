@@ -123,7 +123,7 @@ typedef struct RrcConfigurationReq_s {
   long                    pucch_delta_shift[MAX_NUM_CCs];
   long                    pucch_nRB_CQI[MAX_NUM_CCs];
   long                    pucch_nCS_AN[MAX_NUM_CCs];
-#if !defined(Rel10) && !defined(Rel14)
+#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
   long                    pucch_n1_AN[MAX_NUM_CCs];
 #endif
   long                    pdsch_referenceSignalPower[MAX_NUM_CCs];

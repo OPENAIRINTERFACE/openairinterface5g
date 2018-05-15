@@ -98,7 +98,7 @@ fill_rar(const module_id_t module_idP,
     return (ra->rnti);
 }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //------------------------------------------------------------------------------
 unsigned short
 fill_rar_br(eNB_MAC_INST * eNB,

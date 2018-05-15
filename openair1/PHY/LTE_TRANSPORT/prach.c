@@ -43,7 +43,7 @@
 
 
 
-#ifndef Rel14
+#if (RRC_VERSION < MAKE_VERSION(14, 0, 0))
 #define rx_prach0 rx_prach
 #endif
 
@@ -54,7 +54,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	       uint16_t *max_preamble_delay,
 	       uint16_t Nf, 
 	       uint8_t tdd_mapindex
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	       ,uint8_t br_flag,
 	       uint8_t ce_level
 #endif
@@ -104,7 +104,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   int16_t prach_ifft_tmp[2048*2] __attribute__((aligned(32)));
   int32_t *prach_ifft=(int32_t*)NULL;
   int32_t **prach_ifftp=(int32_t **)NULL;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int prach_ifft_cnt=0;
 #endif
 #ifdef PRACH_DEBUG
@@ -123,7 +123,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   
   frame_type          = fp->frame_type;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (br_flag == 1) {
     AssertFatal(fp->prach_emtc_config_common.prach_Config_enabled==1,
 		"emtc prach_Config is not enabled\n");
@@ -158,7 +158,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   uint16_t N_ZC = (prach_fmt <4)?839:139;
   
   if (eNB) {
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if (br_flag == 1) {
       prach_ifftp         = eNB->prach_vars_br.prach_ifft[ce_level];
 #ifdef PRACH_DEBUG
@@ -192,7 +192,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       }
   }
   else {
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if (br_flag == 1) {
 #ifdef PRACH_DEBUG
         frame             = ru->proc.frame_prach_br;
@@ -455,7 +455,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   if ((eNB==NULL) && (ru!=NULL) && ru->function == NGFI_RRU_IF4p5) {
 
     /// **** send_IF4 of rxsigF to RAU **** ///
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if (br_flag == 1) send_IF4p5(ru, ru->proc.frame_prach, ru->proc.subframe_prach, IF4p5_PRACH+1+ce_level);      
 
     else
@@ -598,7 +598,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     if (new_dft == 1) {
       new_dft = 0;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       if (br_flag == 1) {
 	Xu=(int16_t*)eNB->X_u_br[ce_level][preamble_offset-first_nonzero_root_idx];
 	prach_ifft = prach_ifftp[prach_ifft_cnt++];
@@ -655,7 +655,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
     } // new dft
     
     // check energy in nth time shift, for 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if ((br_flag==0) ||
 	(eNB->prach_vars_br.repetition_number[ce_level]==
 	 eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[ce_level]))
@@ -720,7 +720,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
 }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 void rx_prach(PHY_VARS_eNB *eNB,
 	      RU_t *ru,
@@ -762,6 +762,4 @@ void rx_prach(PHY_VARS_eNB *eNB,
   }
 }
 
-#endif /* Rel14 */
-
-
+#endif /* #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) */

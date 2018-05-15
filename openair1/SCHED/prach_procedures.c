@@ -55,7 +55,7 @@ extern uint32_t nfapi_mode;
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 
 void prach_procedures(PHY_VARS_eNB *eNB
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                       ,
 		      int br_flag
 #endif
@@ -64,7 +64,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
   uint16_t i;
   int frame,subframe;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (br_flag==1) {
     subframe = eNB->proc.subframe_prach_br;
     frame = eNB->proc.frame_prach_br;
@@ -94,7 +94,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
     ru=eNB->RU_list[i];
     for (ru_aa=0,aa=0;ru_aa<ru->nb_rx;ru_aa++,aa++) {
       eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       int ce_level;
 
       if (br_flag==1)
@@ -110,7 +110,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
 	   &max_preamble_delay[0],
 	   frame,
 	   0
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	   ,br_flag
 #endif
 	   );
@@ -122,7 +122,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
         max_preamble_delay[0],
 	eNB->prach_energy_counter);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (br_flag==1) {
 
     int prach_mask;

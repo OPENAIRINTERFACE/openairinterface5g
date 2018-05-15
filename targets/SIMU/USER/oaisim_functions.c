@@ -131,7 +131,7 @@ extern channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][MAX_MOBILES_PER_ENB][MAX_NUM_CCs]
 extern channel_desc_t *UE2RU[MAX_MOBILES_PER_ENB][NUMBER_OF_RU_MAX][MAX_NUM_CCs];
 
 extern mapping small_scale_names[];
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 extern pdcp_mbms_t pdcp_mbms_array_ue[MAX_MOBILES_PER_ENB][maxServiceCount][maxSessionPerPMCH];
 extern pdcp_mbms_t pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH];
 #endif
@@ -1491,7 +1491,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
       }
     }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     mbms_service_id_t service_id;
     mbms_session_id_t session_id;
     rb_id_t           rb_id;
@@ -1526,7 +1526,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 
             // old version
                   // MBSM multicast traffic
-            #if defined(Rel10) || defined(Rel14)
+            #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
             if (frame >= 46) {// only generate when UE can receive MTCH (need to control this value)
             for (service_id = 0; service_id < 2 ; service_id++) { //maxServiceCount
             for (session_id = 0; session_id < 2; session_id++) { // maxSessionPerPMCH
