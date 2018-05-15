@@ -148,7 +148,7 @@ int last_dlsch_ue_id[MAX_NUM_CCs] = {-1};
 int last_ulsch_ue_id[MAX_NUM_CCs] = {-1};
 #endif
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
 uint16_t pre_nb_rbs_required[2][MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 uint8_t dlsch_ue_select_tbl_in_use;
 uint8_t new_dlsch_ue_select_tbl_in_use;

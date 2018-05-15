@@ -540,7 +540,7 @@ void sort_UEs(module_id_t Mod_idP, int frameP, sub_frame_t subframeP)
 #endif
 }
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
 inline uint16_t search_rbs_required(uint16_t mcs, uint16_t TBS,uint16_t NB_RB, uint16_t step_size){
   uint16_t nb_rb,i_TBS,tmp_TBS;
   i_TBS=get_I_TBS(mcs);
@@ -1078,7 +1078,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 	}
     }
 
-#if (!defined(UE_EXPANSION_SIM2)) &&(!defined(UE_EXPANSION))
+#if (!defined(PRE_SCD_THREAD))
     // Store the DLSCH buffer for each logical channel
     store_dlsch_buffer(Mod_id, frameP, subframeP);
 

@@ -191,7 +191,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
   // compute DL power control parameters
   eNB->pdsch_config_dedicated[UE_id].p_a = rel8->pa;
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   if (dlsch0->active[proc->subframe_tx]){
 # else
   if (dlsch0->active){
@@ -199,7 +199,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
     computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch0,dlsch0_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
     computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
   }
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   if (dlsch1->active[proc->subframe_tx]){
 #else
   if (dlsch1->active){
@@ -231,7 +231,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
   }
 
 #ifdef Rel14
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   dlsch0_harq->sib1_br_flag=0;
 #else
   dlsch0->sib1_br_flag=0;
@@ -243,7 +243,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
     dlsch0->Mdlharq          = 4;
     dlsch0->Nsoft            = 25344;
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     if (rel13->pdsch_payload_type == 0) dlsch0_harq->sib1_br_flag=1;
 #else
     if (rel13->pdsch_payload_type == 0) dlsch0->sib1_br_flag=1;
@@ -274,7 +274,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
       dlsch0_harq->rb_alloc[3]      = localRIV2alloc_LUT100_3[rel8->resource_block_coding];
     }
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     dlsch0->active[proc->subframe_tx]= 1;
 #else
     dlsch0->active                  = 1;
@@ -294,21 +294,21 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
     dlsch0_harq->pdsch_start        = rel10->pdsch_start;
   }
   else {
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     dlsch0_harq->i0               = 0xFFFF;
 #else
     dlsch0->i0               = 0xFFFF;
 #endif
   }
 #endif
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     dlsch0_harq->i0               = rel13->initial_transmission_sf_io;
 #else
     dlsch0->i0               = rel13->initial_transmission_sf_io;
 #endif
 
   LOG_D(PHY,"dlsch->i0:%04x dlsch0_harq[pdsch_start:%d nb_rb:%d vrb_type:%d rvidx:%d Nl:%d mimo_mode:%d dl_power_off:%d round:%d status:%d TBS:%d Qm:%d codeword:%d rb_alloc:%d] rel8[length:%d]\n", 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       dlsch0_harq->i0,
 #else
       dlsch0->i0, 
@@ -566,11 +566,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                          uint16_t frame,uint8_t subframe,uint8_t srs_present)
 {
   nfapi_ul_config_ulsch_pdu_rel8_t *rel8 = &ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8;
-#ifndef UE_EXPANSION
-  int8_t UE_id;
-#else
   int16_t UE_id;
-#endif
 
   // check if we have received a dci for this ue and ulsch descriptor is configured
 

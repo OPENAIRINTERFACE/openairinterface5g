@@ -227,7 +227,7 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
     unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
     unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX]);
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
 void pre_scd_nb_rbs_required(module_id_t     module_idP,
     frame_t         frameP,
     sub_frame_t     subframeP,

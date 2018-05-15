@@ -184,7 +184,7 @@ typedef struct {
   uint8_t first_layer;
   /// codeword this transport block is mapped to
   uint8_t codeword;
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
 #ifdef Rel14
   /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
   uint8_t sib1_br_flag;
@@ -279,7 +279,7 @@ typedef struct {
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
   uint16_t rnti;
   /// Active flag for baseband transmitter processing
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   uint8_t active[10];
 #else
   uint8_t active;
@@ -314,7 +314,7 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-#ifndef UE_EXPANSION
+#ifndef PHY_TX_THREAD
 #ifdef Rel14
   /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
   uint8_t sib1_br_flag;

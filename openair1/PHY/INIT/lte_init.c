@@ -649,11 +649,7 @@ void phy_config_sib13_eNB(module_id_t Mod_id,int CC_id,int mbsfn_Area_idx,
 
 void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
 {
-#ifndef UE_EXPANSION
-  uint8_t UE_id;
-#else
   uint16_t UE_id;
-#endif
   struct PhysicalConfigDedicated *physicalConfigDedicated;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 

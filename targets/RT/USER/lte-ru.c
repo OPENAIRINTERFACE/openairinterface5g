@@ -110,9 +110,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "T.h"
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
 #include "pdcp.h"
-#endif
 
 extern volatile int                    oai_exit;
 
@@ -736,7 +734,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   proc->timestamp_phy_tx = proc->timestamp_rx+(3*fp->samples_per_tti);
   proc->subframe_phy_tx  = (proc->subframe_rx+3)%10;
   proc->frame_phy_tx     = (proc->subframe_rx>6) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
@@ -1416,7 +1414,7 @@ static void* ru_stats_thread(void* param) {
   return(NULL);
 }
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
 int first_phy_tx = 1;
 volatile int16_t phy_tx_txdataF_end;
 volatile int16_t phy_tx_end;
@@ -1434,15 +1432,13 @@ static void* ru_thread( void* param ) {
 
   // set default return value
   ru_thread_status = 0;
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
   dlsch_ue_select_tbl_in_use = 1;
 #endif
 
-#ifdef UE_EXPANSION
   struct timespec time_req, time_rem;
   time_req.tv_sec = 0;
   time_req.tv_nsec = 10000;
-#endif
 
   // set default return value
   thread_top_init("ru_thread",0,870000,1000000,1000000);
@@ -1522,7 +1518,7 @@ static void* ru_thread( void* param ) {
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&subframe);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     if(first_phy_tx == 0)
     {
         phy_tx_end = 0;
@@ -1579,7 +1575,7 @@ static void* ru_thread( void* param ) {
     // If this proc is to provide synchronization, do so
     wakeup_slaves(proc);
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
     new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
     dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
     memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
@@ -1614,7 +1610,7 @@ static void* ru_thread( void* param ) {
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
 
 
-#ifndef UE_EXPANSION
+#ifndef PHY_TX_THREAD
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);
    
@@ -1720,7 +1716,7 @@ void *ru_thread_synch(void *arg) {
 
 }
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
 void* pre_scd_thread( void* param ){
     static int              eNB_pre_scd_status;
     protocol_ctxt_t         ctxt;
@@ -1774,7 +1770,7 @@ void* pre_scd_thread( void* param ){
 }
 #endif
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
 /*!
  * \brief The phy tx thread of eNB.
  * \param param is a \ref eNB_proc_t structure which contains the info what to process.
@@ -1952,7 +1948,7 @@ void init_RU_proc(RU_t *ru) {
   pthread_attr_init( &proc->attr_prach_br);
 #endif  
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   proc->instance_cnt_phy_tx       = -1;
   pthread_mutex_init( &proc->mutex_phy_tx, NULL);
   pthread_cond_init( &proc->cond_phy_tx, NULL);
@@ -1972,7 +1968,7 @@ void init_RU_proc(RU_t *ru) {
 #endif
   
   pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
     proc->instance_pre_scd = -1;
     pthread_mutex_init( &proc->mutex_pre_scd, NULL);
     pthread_cond_init( &proc->cond_pre_scd, NULL);
@@ -1980,7 +1976,7 @@ void init_RU_proc(RU_t *ru) {
     pthread_setname_np(proc->pthread_pre_scd, "pre_scd_thread");
 #endif
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     pthread_create( &proc->pthread_phy_tx, NULL, eNB_thread_phy_tx, (void*)ru );
     pthread_setname_np( proc->pthread_phy_tx, "phy_tx_thread" );
     pthread_create( &proc->pthread_rf_tx, NULL, rf_tx, (void*)ru );
@@ -2428,11 +2424,9 @@ void init_RU(char *rf_config_file) {
 
 
 void stop_ru(RU_t *ru) {
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-    int *status;
-#endif
+  int *status;
   printf("Stopping RU %p processing threads\n",(void*)ru);
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
   if(ru){
     ru->proc.instance_pre_scd = 0;
     pthread_cond_signal( &ru->proc.cond_pre_scd );
@@ -2441,7 +2435,7 @@ void stop_ru(RU_t *ru) {
     pthread_cond_destroy(&ru->proc.cond_pre_scd );
   }
 #endif
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   if(ru){
       ru->proc.instance_cnt_phy_tx = 0;
       pthread_cond_signal(&ru->proc.cond_phy_tx);

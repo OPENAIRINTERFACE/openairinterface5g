@@ -397,7 +397,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   
   stop_meas(&eNB->dlsch_modulation_stats);
   }
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   dlsch->active[subframe] = 0;
 #else
   dlsch->active = 0;
@@ -420,11 +420,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   int subframe=proc->subframe_tx;
   uint32_t i,aa;
   uint8_t harq_pid;
-#ifndef UE_EXPANSION
-  int8_t UE_id=0;
-#else
   int16_t UE_id=0;
-#endif
   uint8_t num_pdcch_symbols=0;
   uint8_t num_dci=0;
   uint8_t ul_subframe;
@@ -544,7 +540,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
       if ((dlsch0)&&
 	  (dlsch0->rnti>0)&&
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
 	  (dlsch0->active[subframe] == 1)) {
 #else
 	  (dlsch0->active == 1)) {
@@ -576,7 +572,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
       else if ((dlsch0)&&
 	       (dlsch0->rnti>0)&&
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
 	       (dlsch0->active[subframe] == 0)) {
 #else
            (dlsch0->active == 0)) {

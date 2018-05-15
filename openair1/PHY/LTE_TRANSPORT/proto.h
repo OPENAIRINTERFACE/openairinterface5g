@@ -2260,18 +2260,10 @@ uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
 
 uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t n);
 
-#ifndef UE_EXPANSION
-int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
-
-int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
-
-int8_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type);
-#else
 int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
 int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
 int16_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type);
-#endif
 /**@}*/
 #endif

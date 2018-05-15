@@ -1267,9 +1267,7 @@ do_RRCConnectionSetup(
 
   RRCConnectionSetup_t* rrcConnectionSetup = NULL;
 
-#ifdef UE_EXPANSION
   LTE_DL_FRAME_PARMS *frame_parms = &RC.eNB[ctxt_pP->module_id][CC_id]->frame_parms;
-#endif
 
   memset((void *)&dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
   dl_ccch_msg.message.present           = DL_CCCH_MessageType_PR_c1;
@@ -1620,17 +1618,12 @@ do_RRCConnectionSetup(
                                    (void*)&dl_ccch_msg,
                                    buffer,
                                    100);
-#ifdef UE_EXPANSION
   if(enc_rval.encoded == -1)
   {
      LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
-#else
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
-#endif
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -1699,17 +1692,12 @@ do_SecurityModeCommand(
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    100);
-#ifdef UE_EXPANSION
   if(enc_rval.encoded == -1)
   {
      LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
-#else
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
-#endif
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -1783,17 +1771,12 @@ do_UECapabilityEnquiry(
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    100);
-#ifdef UE_EXPANSION
   if(enc_rval.encoded == -1)
   {
      LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
-#else
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
-#endif
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -1951,17 +1934,12 @@ do_RRCConnectionReconfiguration(
                                    (void*)&dl_dcch_msg,
                                    buffer,
                                    RRC_BUF_SIZE);
-#ifdef UE_EXPANSION
   if(enc_rval.encoded == -1)
   {
      LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
-#else
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %zd)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
-#endif
 #ifdef XER_PRINT
   xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)&dl_dcch_msg);
 #endif
@@ -2172,17 +2150,12 @@ do_RRCConnectionReestablishment(
                                    (void*)&dl_ccch_msg,
                                    buffer,
                                    100);
-#ifdef UE_EXPANSION
   if(enc_rval.encoded == -1)
   {
      LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
-#else
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
-#endif
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2238,17 +2211,12 @@ do_RRCConnectionReestablishmentReject(
                                    (void*)&dl_ccch_msg,
                                    buffer,
                                    100);
-#ifdef UE_EXPANSION
   if(enc_rval.encoded == -1)
   {
      LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
-#else
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
-#endif
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2305,17 +2273,12 @@ do_RRCConnectionReject(
                                    (void*)&dl_ccch_msg,
                                    buffer,
                                    100);
-#ifdef UE_EXPANSION
   if(enc_rval.encoded == -1)
   {
      LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
-#else
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %ld)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
-#endif
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2502,17 +2465,12 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
                                    (void*)mcch_message,
                                    buffer,
                                    100);
-#ifdef UE_EXPANSION
   if(enc_rval.encoded == -1)
   {
      LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
-#else
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
-#endif
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2639,17 +2597,12 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
                                    (void*)&ul_dcch_msg,
                                    buffer,
                                    100);
-#ifdef UE_EXPANSION
   if(enc_rval.encoded == -1)
   {
      LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
-#else
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
-#endif
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
@@ -2775,17 +2728,12 @@ uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_pagin
           Mod_id, paging_record_p->cn_Domain, ue_paging_identity.presenceMask, pcch_msg.message.choice.c1.choice.paging.pagingRecordList->list.count);
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_PCCH_Message, (void*)&pcch_msg, buffer, RRC_BUF_SIZE);
-#ifdef UE_EXPANSION
   if(enc_rval.encoded == -1)
   {
      LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
            enc_rval.failed_type->name, enc_rval.encoded);
      return -1;
   }
-#else
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
-#endif
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_PCCH_Message, (void*)&pcch_msg);
 #endif

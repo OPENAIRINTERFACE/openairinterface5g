@@ -768,7 +768,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 
     }
 
-#if (!defined(UE_EXPANSION_SIM2)) &&(!defined(UE_EXPANSION))
+#if (!defined(PRE_SCD_THREAD))
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,
 				   NOT_A_RNTI, frameP, subframeP,
 				   module_idP);
@@ -821,7 +821,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++){
         if(cc[CC_id].tdd_Config == NULL || !(is_UL_sf(&cc[CC_id],subframeP)))
           allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
-}
+    }
 
     stop_meas(&RC.mac[module_idP]->eNB_scheduler);
 

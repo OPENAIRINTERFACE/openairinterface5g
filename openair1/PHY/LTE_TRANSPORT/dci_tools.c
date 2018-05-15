@@ -800,19 +800,11 @@ void generate_RIV_tables()
 //       n_tilde_PRB(2,3) = (3,5)
 //       n_tilde_PRB(0,1) = (0,2)
 
-#ifndef UE_EXPANSION
-int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
-#else
+
 int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
-#endif
 {
-#ifndef UE_EXPANSION
-  uint8_t i;
-  int8_t first_free_index=-1;
-#else
   uint16_t i;
   int16_t first_free_index=-1;
-#endif
 
   AssertFatal(eNB!=NULL,"eNB is null\n");
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
@@ -829,19 +821,10 @@ int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
   return first_free_index;
 }
 
-#ifndef UE_EXPANSION
-int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
-#else
 int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
-#endif
 {
-#ifndef UE_EXPANSION
-  uint8_t i;
-  int8_t first_free_index=-1;
-#else
   uint16_t i;
   int16_t first_free_index=-1;
-#endif
 
   AssertFatal(eNB!=NULL,"eNB is null\n");
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
@@ -1089,7 +1072,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
   }
   dlsch0_harq->ndi = rel8->new_data_indicator_1;
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   dlsch0->active[subframe]        = 1;
 #else
   dlsch0->active        = 1;
@@ -1271,7 +1254,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     dlsch0_harq->Qm              = 2;
     dlsch0_harq->TBS             = TBStable[I_mcs][NPRB-1];
     dlsch0->harq_ids[frame%2][subframe]   = rel8->harq_process;
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     dlsch0->active[subframe]     = 1;
 #else
     dlsch0->active               = 1;
@@ -1289,7 +1272,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
   case NFAPI_DL_DCI_FORMAT_1:
 
     dci_alloc->format           = format1;
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     dlsch0->active[subframe]    = 1;
 #else
     dlsch0->active              = 1;
@@ -1438,7 +1421,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
 
     dlsch0_harq->dl_power_off = 1;
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     dlsch0->active[subframe] = 1;
 #else
     dlsch0->active = 1;
@@ -1653,7 +1636,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     // assume both TBs are active
     dlsch0_harq->Nl        = 1;
     dlsch1_harq->Nl        = 1;
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     dlsch0->active[subframe] = 1;
     dlsch1->active[subframe] = 1;
 #else
@@ -1665,7 +1648,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
 
     // check if either TB is disabled (see 36-213 V11.3 Section )
     if ((dlsch0_harq->rvidx == 1) && (dlsch0_harq->mcs == 0)) {
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       dlsch0->active[subframe] = 0;
 #else
       dlsch0->active = 0;
@@ -1674,7 +1657,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     }
 
     if ((dlsch1_harq->rvidx == 1) && (dlsch1_harq->mcs == 0)) {
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       dlsch1->active[subframe]= 0;
 #else
       dlsch1->active = 0;
@@ -1690,7 +1673,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
       dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
       dlsch1_harq->TBS         = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch0_harq->nb_rb-1];
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       if ((dlsch0->active[subframe]==1) && (dlsch1->active[subframe]==1)) {
 #else
       if ((dlsch0->active==1) && (dlsch1->active==1)) {
@@ -1704,7 +1687,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
         dlsch1_harq->mimo_mode   = ALAMOUTI;
       }
     } else if (fp->nb_antenna_ports_eNB == 4) { // 4 antenna case
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       if ((dlsch0->active[subframe]==1) && (dlsch1->active[subframe]==1)) {
 #else
       if ((dlsch0->active==1) && (dlsch1->active==1)) {
@@ -1748,7 +1731,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
           LOG_E(PHY,"Illegal value (3) for TPMI in Format 2A DCI\n");
           break;
         }
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       } else if (dlsch0->active[subframe] == 1) {
 #else
       } else if (dlsch0->active == 1) {
@@ -1772,7 +1755,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
           LOG_E(PHY,"Illegal value %d for TPMI in Format 2A DCI with one transport block enabled\n",rel8->precoding_information);
           break;
         }
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       } else if (dlsch1->active[subframe] == 1) {
 #else
       } else if (dlsch1->active == 1) {
@@ -1802,14 +1785,14 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     }
 
     // reset HARQ process if this is the first transmission
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     if ((dlsch0->active[subframe]==1) && (dlsch0_harq->round == 0))
 #else
     if ((dlsch0->active==1) && (dlsch0_harq->round == 0))
 #endif
       dlsch0_harq->status = ACTIVE;
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     if ((dlsch1->active[subframe]==1) && (dlsch1_harq->round == 0))
 #else
     if ((dlsch1->active==1) && (dlsch1_harq->round == 0))
@@ -1987,7 +1970,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     printf("RV0 = %d, RV1 = %d. MCS0 = %d, MCS1=%d\n", rel8->redundancy_version_1, rel8->redundancy_version_2, rel8->mcs_1, rel8->mcs_2);
 #endif
     if (TB0_active && TB1_active && rel8->transport_block_to_codeword_swap_flag==0) {
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       dlsch0->active[subframe] = 1;
       dlsch1->active[subframe] = 1;
 #else
@@ -2015,7 +1998,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
     else if (TB0_active && TB1_active && rel8->transport_block_to_codeword_swap_flag==1) {
       dlsch0 = eNB->dlsch[UE_id][1];
       dlsch1 = eNB->dlsch[UE_id][0];
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       dlsch0->active[subframe] = 1;
       dlsch1->active[subframe] = 1;
 #else
@@ -2039,7 +2022,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
       dlsch1_harq->codeword=0;
     }
     else if (TB0_active && (TB1_active==0)) {
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       dlsch0->active[subframe] = 1;
 #else
       dlsch0->active = 1;
@@ -2058,7 +2041,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
 #endif
     }
     else if ((TB0_active==0) && TB1_active) {
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
       dlsch1->active[subframe] = 1;
 #else
       dlsch1->active = 1;
@@ -2330,7 +2313,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
 
   case 10:  // Format 6-1A
     dci_alloc->format     = format6_1A;
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     dlsch0->active[subframe]       = 1;
 #else
     dlsch0->active       = 1;
@@ -2390,7 +2373,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
     break;
   case 11:  // Format 6-1B
     dci_alloc->format     = format6_1B;
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     dlsch0->active[subframe]       = 1;
 #else
     dlsch0->active       = 1;
@@ -2437,7 +2420,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
     }
   case 12: // Format 6-2
     dci_alloc->format     = format6_2;
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     dlsch0->active[subframe]       = 1;
 #else
     dlsch0->active       = 1;
@@ -2525,7 +2508,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
   
   dlsch0_harq->dl_power_off = 1;
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   dlsch0->active[subframe] = 1;
 #else
   dlsch0->active = 1;
@@ -2813,15 +2796,11 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
     ulsch->harq_processes[harq_pid]->Or1           = 0;
     ulsch->harq_processes[harq_pid]->Or2           = 0;
   }
-#ifndef UE_EXPANSION
-  else  ulsch->harq_processes[harq_pid]->round++;
-#else
   else {
       ulsch->harq_processes[harq_pid]->round++;
       ulsch->harq_processes[harq_pid]->TBS           = ulsch_pdu->ulsch_pdu_rel8.size<<3;
       ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
   }
-#endif
   ulsch->rnti = ulsch_pdu->ulsch_pdu_rel8.rnti;
   LOG_D(PHY,"Filling ULSCH %x (UE_id %d) (new_ulsch %d) for Frame %d, Subframe %d : harq_pid %d, status %d, handled %d, first_rb %d, nb_rb %d, rvidx %d, Qm %d, TBS %d, round %d \n",
 	ulsch->rnti,

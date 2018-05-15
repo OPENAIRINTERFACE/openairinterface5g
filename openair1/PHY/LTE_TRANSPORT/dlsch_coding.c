@@ -246,7 +246,7 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch)
   if (dlsch) {
     Mdlharq = dlsch->Mdlharq;
     dlsch->rnti = 0;
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     for (i=0; i<10; i++)
       dlsch->active[i] = 0;
 #else
