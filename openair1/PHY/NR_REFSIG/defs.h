@@ -23,7 +23,7 @@
 /* Author R. Knopp / EURECOM / OpenAirInterface.org */
 #ifndef __NR_REFSIG_DEFS__H__
 #define __NR_REFSIG_DEFS__H__
-#include "PHY/defs.h"
+#include "PHY/defs_gNB.h"
 
 
 /*!\brief This function generates the NR Gold sequence (38-211, Sec 5.2.1) for the PBCH DMRS.

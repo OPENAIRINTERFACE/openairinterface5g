@@ -19,14 +19,13 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
-#include "SCHED/defs.h"
-#include "PHY/extern.h"
-#include "SIMULATION/TOOLS/defs.h"
+#include "phy_init.h"
+#include "SCHED/sched_common.h"
+#include "PHY/phy_extern.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
-#include "LAYER2/MAC/extern.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
@@ -34,7 +33,7 @@
 
 int nr_phy_init_RU(RU_t *ru) {
 
-  NR_DL_FRAME_PARMS *fp = &ru->nr_frame_parms;
+  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   int i,j;
   int p;
   int re;
@@ -149,6 +148,9 @@ void nr_phy_free_RU(RU_t *ru)
   int p;
 
   LOG_I(PHY, "Feeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);
+
+  free_and_zero(ru->nr_frame_parms);
+  free_and_zero(ru->frame_parms);
 
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so free memory for time-domain signals
     for (i = 0; i < ru->nb_tx; i++) free_and_zero(ru->common.txdata[i]);

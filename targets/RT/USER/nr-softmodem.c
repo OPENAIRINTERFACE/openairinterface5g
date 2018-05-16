@@ -22,14 +22,21 @@
 
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
+
+
 #include "T.h"
+
 #include "rt_wrapper.h"
+
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
 #include "msc.h"
 
+#include "PHY/types.h"
+
+#include "PHY/defs_gNB.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
@@ -41,19 +48,14 @@
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/vars.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
+#include "PHY/phy_vars.h"
+#include "SCHED/sched_common_vars.h"
+#include "LAYER2/MAC/mac_vars.h"
 
-#include "../../SIMU/USER/init_lte.h"
-
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/vars.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/vars.h"
-#include "PHY_INTERFACE/vars.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_vars.h"
+#include "PHY_INTERFACE/phy_interface_vars.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -66,7 +68,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
-#include "PHY/TOOLS/time_meas.h"
+//#include "PHY/TOOLS/time_meas.h"
 
 #ifndef OPENAIR2
 #include "UTIL/OTG/otg_vars.h"
@@ -77,6 +79,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "create_tasks.h"
 #endif
 
+#include "PHY/INIT/phy_init.h"
+
 #include "system.h"
 
 #ifdef XFORMS
@@ -84,6 +88,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "stats.h"
 #endif
 #include "nr-softmodem.h"
+#include "NB_IoT_interface.h"
 
 #ifdef XFORMS
 // current status is that every UE has a DL scope for a SINGLE eNB (gnb_id=0)
@@ -200,7 +205,10 @@ extern void print_opp_meas(void);
 extern void init_eNB_afterRU(void);
 
 int transmission_mode=1;
-
+int emulate_rf = 0;
+//int numerology = 0;
+int codingw = 0;
+//int fepw = 0;
 
 
 /* struct for ethernet specific parameters given in eNB conf file */

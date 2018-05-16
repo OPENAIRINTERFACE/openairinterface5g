@@ -28,9 +28,9 @@
 #ifndef __openair_SCHED_NR_DEFS_H__
 #define __openair_SCHED_NR_DEFS_H__
 
-#include "PHY/defs.h"
-#include "PHY_INTERFACE/defs.h"
-#include "SCHED/defs.h"
+#include "PHY/defs_gNB.h"
+#include "PHY_INTERFACE/phy_interface.h"
+#include "SCHED/sched_eNB.h"
 
 lte_subframe_t nr_subframe_select (nfapi_config_request_t *cfg, unsigned char subframe);
 int nr_generate_pss(  int16_t *d_pss,

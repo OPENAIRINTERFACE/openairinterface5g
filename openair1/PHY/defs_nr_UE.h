@@ -19,26 +19,25 @@
  *      contact@openairinterface.org
  */
 
-#ifndef __PHY_IMPLEMENTATION_DEFS_NR_H__
-#define __PHY_IMPLEMENTATION_DEFS_NR_H__
+/*! \file PHY/defs_gNB.h
+ \brief Top-level defines and structure definitions for gNB
+ \author Guy De Souza
+ \date 2018
+ \version 0.1
+ \company Eurecom
+ \email: desouza@eurecom.fr
+ \note
+ \warning
+*/
+#ifndef __PHY_DEFS_GNB__H__
+#define __PHY_DEFS_GNB__H__
 
 
-//#include "impl_defs_lte.h"
+#include "defs_nr_common.h"
 
-typedef struct {
-  /// \brief Pointers (dynamic) to the received data in the time domain.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
-  int32_t **rxdata;
-  /// \brief Pointers (dynamic) to the received data in the frequency domain.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
-  int32_t **rxdataF;
-  /// \brief holds the transmit data in the frequency domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
-  /// - third index: sample [0..]
-  int32_t **txdataF;
-} NR_gNB_COMMON;
+
+
+
+
+
 #endif

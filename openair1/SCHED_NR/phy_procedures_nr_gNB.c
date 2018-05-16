@@ -19,9 +19,10 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/phy_extern.h"
+#include "PHY/defs_gNB.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED/sched_common_extern.h"
 #include "nfapi_interface.h"
 #include "SCHED/fapi_l1.h"
 #include "UTIL/LOG/log.h"

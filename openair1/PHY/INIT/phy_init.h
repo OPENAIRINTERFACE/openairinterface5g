@@ -24,6 +24,8 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
+#include "PHY/defs_gNB.h"
+#include "PHY/defs_nr_UE.h"
 
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"

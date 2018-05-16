@@ -21,7 +21,7 @@
 
 /*! \file PHY/NR_TRANSPORT/nr_pbch.c
 * \brief Top-level routines for generating and decoding  the PBCH/BCH physical/transport channel V15.1 03/2018
-* \author G. De Souza
+* \author Guy De Souza
 * \date 2018
 * \version 0.1
 * \company Eurecom
@@ -29,12 +29,8 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/CODING/extern.h"
-#include "PHY/CODING/lte_interleaver_inline.h"
-#include "defs.h"
-#include "extern.h"
-#include "PHY/extern.h"
+#include "PHY/defs_gNB.h"
+#include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 
 #define DEBUG_PBCH

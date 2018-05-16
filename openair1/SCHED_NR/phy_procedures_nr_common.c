@@ -29,8 +29,8 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_gNB.h"
+#include "PHY/phy_extern.h"
 #include "SCHED_NR/defs.h"
 
 

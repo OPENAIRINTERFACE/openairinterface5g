@@ -38,7 +38,6 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/types.h"
 #include "PHY/impl_defs_top.h"
-#include "PHY/impl_defs_lte.h"
 #include "RRC/LTE/rrc_defs.h"
 #include "flexran_agent_defs.h"
 

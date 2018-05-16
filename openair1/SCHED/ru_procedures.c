@@ -60,7 +60,7 @@ extern int oai_exit;
 
 void feptx0(RU_t *ru,int slot) {
 
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   //int dummy_tx_b[7680*2] __attribute__((aligned(32)));
 
   unsigned int aa,slot_offset;
@@ -174,7 +174,7 @@ static void *feptx_thread(void *param) {
 
 void feptx_ofdm_2thread(RU_t *ru) {
 
-  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
   RU_proc_t *proc = &ru->proc;
   struct timespec wait;
   int subframe = ru->proc.subframe_tx;
@@ -235,7 +235,7 @@ void feptx_ofdm_2thread(RU_t *ru) {
 
 void feptx_ofdm(RU_t *ru) {
      
-  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
 
   unsigned int aa,slot_offset, slot_offset_F;
   int dummy_tx_b[7680*4] __attribute__((aligned(32)));
@@ -422,7 +422,7 @@ void feptx_prec(RU_t *ru) {
 void fep0(RU_t *ru,int slot) {
 
   RU_proc_t *proc       = &ru->proc;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   int l;
 
   //  printf("fep0: slot %d\n",slot);
@@ -515,7 +515,7 @@ void ru_fep_full_2thread(RU_t *ru) {
 
   struct timespec wait;
 
-  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
 
   if ((fp->frame_type == TDD) &&
      (subframe_select(fp,proc->subframe_rx) != SF_UL)) return;
@@ -574,7 +574,7 @@ void fep_full(RU_t *ru) {
 
   RU_proc_t *proc = &ru->proc;
   int l;
-  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
 
   if ((fp->frame_type == TDD) && 
      (subframe_select(fp,proc->subframe_rx) != SF_UL)) return;
@@ -607,7 +607,7 @@ void fep_full(RU_t *ru) {
 void do_prach_ru(RU_t *ru) {
 
   RU_proc_t *proc = &ru->proc;
-  LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
 
   // check if we have to detect PRACH first
   if (is_prach_subframe(fp,proc->frame_prach,proc->subframe_prach)>0) { 

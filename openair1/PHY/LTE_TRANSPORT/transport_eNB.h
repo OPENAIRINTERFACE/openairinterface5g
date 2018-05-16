@@ -32,8 +32,7 @@
 #ifndef __TRANSPORT_ENB__H__
 #define __TRANSPORT_ENB__H__
 #include "transport_common.h"
-//#include "PHY/defs_eNB.h"
-#include "PHY/impl_defs_lte.h"
+#include "PHY/defs_eNB.h"
 #include "dci.h"
 #include "mdci.h"
 #include "uci_common.h"

@@ -30,6 +30,7 @@ This section deals with basic functions for OFDM Modulation.
 */
 
 #include "PHY/defs_eNB.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/impl_defs_top.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"

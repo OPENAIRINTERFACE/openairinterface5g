@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
+#include "PHY/defs_gNB.h"
 
 //#define NR_PSS_DEBUG
 

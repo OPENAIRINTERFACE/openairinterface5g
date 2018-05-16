@@ -29,15 +29,9 @@
  \note
  \warning
 */
-<<<<<<< HEAD
+
 #ifndef __PHY_DEFS_COMMON__H__
 #define __PHY_DEFS_COMMON__H__
-
-#define MAX_NUM_RU_PER_eNB 64
-#define MAX_NUM_RU_PER_gNB 64
-=======
-#ifndef __PHY_DEFS_COMMON_H__
-#define __PHY_DEFS_COMMON_H__
 
 
 #define _GNU_SOURCE
@@ -64,15 +58,7 @@
 #include "common_lib.h"
 #include "msc.h"
 
-
 //#include <complex.h>
-
-
-
-
-
-
-
 #include "PHY/TOOLS/time_meas.h"
 #include "platform_types.h"
 #define MAX_NUM_RU_PER_eNB 64 
@@ -86,6 +72,8 @@
 #include "nfapi_interface.h"
 //#include "defs.h"
 #include "openair2/COMMON/platform_types.h"
+
+#include "defs_RU.h"
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2
@@ -586,7 +574,7 @@ typedef struct {
   int mbsfn_SubframeConfig;
 } MBSFN_config_t;
 
-typedef struct {
+typedef struct LTE_DL_FRAME_PARMS {
   /// Number of resource blocks (RB) in DL
   uint8_t N_RB_DL;
   /// Number of resource blocks (RB) in UL
@@ -871,7 +859,6 @@ typedef enum {
 
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
->>>>>>> develop-uedirectorysplit
 
 #define NUMBER_OF_SUBBANDS_MAX 13
 #define NUMBER_OF_HARQ_PID_MAX 8
@@ -879,10 +866,6 @@ typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 #define MAX_FRAME_NUMBER 0x400
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> develop-uedirectorysplit
 #define NUMBER_OF_RN_MAX 3
 typedef enum {no_relay=1,unicast_relay_type1,unicast_relay_type2, multicast_relay} relaying_type_t;
 
@@ -897,66 +880,6 @@ typedef enum {no_relay=1,unicast_relay_type1,unicast_relay_type2, multicast_rela
 #define NUMBER_OF_eNB_SECTORS_MAX 3
 
 #define NB_BANDS_MAX 8
-
-#define MAX_BANDS_PER_RRU 4
-
-
-#ifdef OCP_FRAMEWORK
-#include <enums.h>
-#else
-typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5,calib_prach_tx=6,rx_dump_frame=7,loop_through_memory=8} runmode_t;
-
-/*! \brief Extension Type */
-typedef enum {
-  CYCLIC_PREFIX,
-  CYCLIC_SUFFIX,
-  ZEROS,
-  NONE
-} Extension_t;
-	
-enum transmission_access_mode {
-  NO_ACCESS=0,
-  POSTPONED_ACCESS,
-  CANCELED_ACCESS,
-  UNKNOWN_ACCESS,
-  SCHEDULED_ACCESS,
-  CBA_ACCESS};
-
-typedef enum  {
-  eNodeB_3GPP=0,   // classical eNodeB function
-  NGFI_RAU_IF5,    // RAU with NGFI IF5
-  NGFI_RAU_IF4p5,  // RAU with NFGI IF4p5
-  NGFI_RRU_IF5,    // NGFI_RRU (NGFI remote radio-unit,IF5)
-  NGFI_RRU_IF4p5,  // NGFI_RRU (NGFI remote radio-unit,IF4p5)
-  MBP_RRU_IF5      // Mobipass RRU
-} node_function_t;
-
-typedef enum {
-
-  synch_to_ext_device=0,  // synch to RF or Ethernet device
-  synch_to_other,          // synch to another source_(timer, other RU)
-  synch_to_mobipass_standalone  // special case for mobipass in standalone mode
-} node_timing_t;
-#endif
-
-<<<<<<< HEAD
-typedef struct {
-  struct PHY_VARS_eNB_s *eNB;
-  int UE_id;
-  int harq_pid;
-  int llr8_flag;
-  int ret;
-} td_params;
-
-typedef struct {
-  struct PHY_VARS_eNB_s *eNB;
-  LTE_eNB_DLSCH_t *dlsch;
-  int G;
-  int harq_pid;
-} te_params;
-
-#endif
-=======
 
 void exit_fun(const char* s);
 
@@ -1089,5 +1012,4 @@ static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *
 }
 
 
-#endif //  __PHY_DEFS__H__
->>>>>>> develop-uedirectorysplit
+#endif //  __PHY_DEFS_COMMON_H__

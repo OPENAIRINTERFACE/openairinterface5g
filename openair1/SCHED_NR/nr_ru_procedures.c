@@ -30,15 +30,15 @@
  * \warning
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_gNB.h"
+#include "PHY/phy_extern.h"
 #include "SCHED_NR/defs.h"
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
@@ -59,7 +59,7 @@ extern int oai_exit;
 
 void nr_feptx0(RU_t *ru,int slot) {
 
-  NR_DL_FRAME_PARMS *fp = &ru->nr_frame_parms;
+  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
 
   unsigned int aa,slot_offset;
   int slot_sizeF = fp->ofdm_symbol_size * fp->symbols_per_slot;
@@ -84,7 +84,7 @@ void nr_feptx0(RU_t *ru,int slot) {
 
 void nr_feptx_ofdm_2thread(RU_t *ru) {
 
-  NR_DL_FRAME_PARMS *fp=&ru->nr_frame_parms;
+  NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
   RU_proc_t *proc = &ru->proc;
   struct timespec wait;
   int subframe = ru->proc.subframe_tx;
@@ -182,7 +182,7 @@ void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
 
 void nr_feptx_ofdm(RU_t *ru) {
      
-  NR_DL_FRAME_PARMS *fp=&ru->nr_frame_parms;
+  NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
   nfapi_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
 
   unsigned int aa,slot_offset, slot_offset_F;
