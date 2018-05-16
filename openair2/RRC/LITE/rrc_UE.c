@@ -1939,6 +1939,62 @@ rrc_ue_process_rrcConnectionReconfiguration(
         LOG_I(RRC,"Radio Resource Configuration is present\n");
         rrc_ue_process_radioResourceConfigDedicated(ctxt_pP,eNB_index, rrcConnectionReconfiguration_r8->radioResourceConfigDedicated);
       }
+      
+
+      void *non_criticical_ext_iterator = rrcConnectionReconfiguration_r8;
+      RCCConnectionReconfiguration_v1510_IEs_t *rrc_connection_reconfiguration_v1510_IEs = (RRCConnectionReconfiguration_v1510_IEs_t *)0;
+      // fetch EN-DC for NR_RRC here
+      // r8
+      if( ((RRCConnectionReconfiguration_r8_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension != (RRCConnectionReconfiguration_v890_IEs_t *)0){
+        non_criticical_ext_iterator = ((RRCConnectionReconfiguration_r8_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension;
+      }
+      // v89
+      if( ((RRCConnectionReconfiguration_v890_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension != (RRCConnectionReconfiguration_v920_IEs_t *)0){
+        non_criticical_ext_iterator = ((RRCConnectionReconfiguration_v890_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension;
+      }
+      // v92
+      if( ((RRCConnectionReconfiguration_v920_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension != (RRCConnectionReconfiguration_v1020_IEs_t *)0){
+        non_criticical_ext_iterator = ((RRCConnectionReconfiguration_v920_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension;
+      }
+      // v1020
+      if( ((RRCConnectionReconfiguration_v1020_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension != (RRCConnectionReconfiguration_v1130_IEs_t *)0){
+        non_criticical_ext_iterator = ((RRCConnectionReconfiguration_v1020_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension;
+      }
+      // v1130
+      if( ((RRCConnectionReconfiguration_v1130_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension != (RRCConnectionReconfiguration_v1250_IEs_t *)0){
+        non_criticical_ext_iterator = ((RRCConnectionReconfiguration_v1130_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension;
+      }
+      // v1250
+      if( ((RRCConnectionReconfiguration_v1250_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension != (RRCConnectionReconfiguration_v1310_IEs_t *)0){
+        non_criticical_ext_iterator = ((RRCConnectionReconfiguration_v1250_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension;
+      }
+      // v1310
+      if( ((RRCConnectionReconfiguration_v1310_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension != (RRCConnectionReconfiguration_v1430_IEs_t *)0){
+        non_criticical_ext_iterator = ((RRCConnectionReconfiguration_v1310_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension;
+      }
+      // v1430
+      if( ((RRCConnectionReconfiguration_v1430_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension != (RRCConnectionReconfiguration_v1510_IEs_t *)0){
+        rrc_connection_reconfiguration_v1510_IEs = ((RRCConnectionReconfiguration_v1430_IEs_t *)non_criticical_ext_iterator)->nonCriticalExtension;
+      }
+
+      if( rrc_connection_reconfiguration_v1510_IEs != (RRCConnectionReconfiguration_v1510_IEs_t *)0){ //  make sure v1510 is presented.
+        if(rrc_connection_reconfiguration_v1510_IEs->nr_Config_r15 != (struct nr_Config_r15 *)0){
+          switch(rrc_connection_reconfiguration_v1510_IEs->nr_Config_r15.present){
+            case nr_Config_r15_PR_setup:
+              //  process NR sCell config
+              if(rrc_connection_reconfiguration_v1510_IEs->nr_Config_r15.choice.setup->nr_SecondaryCellGroupConfig_r15 != (OCTET_STRING_t *)0){
+                nr_rrc_ue_decode_rrcReconfiguration(  rrc_connection_reconfiguration_v1510_IEs->nr_Config_r15.choice.setup->nr_SecondaryCellGroupConfig_r15->buffer, 
+                                                      rrc_connection_reconfiguration_v1510_IEs->nr_Config_r15.choice.setup->nr_SecondaryCellGroupConfig_r15.size); 
+              }
+             
+              break;
+            case nr_Config_r15_PR_release:
+            case nr_Config_r15_PR_NOTHING:
+            default:
+              break;
+          }
+        }
+      }
 
 #if defined(ENABLE_ITTI)
 
