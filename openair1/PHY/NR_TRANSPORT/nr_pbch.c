@@ -33,7 +33,7 @@
 #include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 
-#define DEBUG_PBCH
+//#define DEBUG_PBCH
 
 short nr_mod_table[MOD_TABLE_SIZE_SHORT] = {0,0,23170,23170,-23170,-23170};
 

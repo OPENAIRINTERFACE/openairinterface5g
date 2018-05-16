@@ -322,7 +322,7 @@ static inline void fh_if5_mobipass_south_out(RU_t *ru) {
 static inline void fh_if4p5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.subframe_tx);
-  if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) 
+  if (subframe_select(ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) 
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
 }
 
@@ -332,7 +332,7 @@ static inline void fh_if4p5_south_out(RU_t *ru) {
 // Synchronous if5 from south 
 void fh_if5_south_in(RU_t *ru,int *frame, int *subframe) {
 
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_proc_t *proc = &ru->proc;
 
   recv_IF5(ru, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL); 
@@ -363,7 +363,7 @@ void fh_if5_south_in(RU_t *ru,int *frame, int *subframe) {
 // Synchronous if4p5 from south 
 void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
 
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_proc_t *proc = &ru->proc;
   int f,sf;
 
@@ -447,7 +447,7 @@ void fh_slave_south_in(RU_t *ru,int *frame,int *subframe) {
 void fh_if5_south_asynch_in_mobipass(RU_t *ru,int *frame,int *subframe) {
 
   RU_proc_t *proc       = &ru->proc;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
 
   recv_IF5(ru, &proc->timestamp_rx, *subframe, IF5_MOBIPASS); 
   pthread_mutex_lock(&proc->mutex_asynch_rxtx);
@@ -489,7 +489,7 @@ void fh_if5_south_asynch_in_mobipass(RU_t *ru,int *frame,int *subframe) {
 // asynchronous inbound if4p5 fronthaul from south
 void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_proc_t *proc       = &ru->proc;
 
   uint16_t packet_type;
@@ -568,7 +568,7 @@ void fh_if4p5_north_in(RU_t *ru,int *frame,int *subframe) {
 
 void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_proc_t *proc        = &ru->proc;
   int subframe_tx,frame_tx;
   openair0_timestamp timestamp_tx;
@@ -594,7 +594,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
 void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_proc_t *proc        = &ru->proc;
 
   uint16_t packet_type;
@@ -664,7 +664,7 @@ void fh_if5_north_out(RU_t *ru) {
 void fh_if4p5_north_out(RU_t *ru) {
 
   RU_proc_t *proc=&ru->proc;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   const int subframe     = proc->subframe_rx;
   if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
 
@@ -711,7 +711,7 @@ static void* emulatedRF_thread(void* param) {
 void rx_rf(RU_t *ru,int *frame,int *subframe) {
 
   RU_proc_t *proc = &ru->proc;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   void *rxp[ru->nb_rx];
   unsigned int rxs;
   int i;
@@ -807,7 +807,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
 void tx_rf(RU_t *ru) {
 
   RU_proc_t *proc = &ru->proc;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   void *txp[ru->nb_tx]; 
   unsigned int txs;
   int i;
@@ -920,7 +920,7 @@ static void* ru_thread_asynch_rxtx( void* param ) {
     if (ru->fh_south_asynch_in) ru->fh_south_asynch_in(ru,&frame,&subframe);
     // asynchronous receive from north (RRU IF4/IF5)
     else if (ru->fh_north_asynch_in) {
-       if (subframe_select(&ru->frame_parms,subframe)!=SF_UL)
+       if (subframe_select(ru->frame_parms,subframe)!=SF_UL)
          ru->fh_north_asynch_in(ru,&frame,&subframe);
     }
     else AssertFatal(1==0,"Unknown function in ru_thread_asynch_rxtx\n");
@@ -1102,7 +1102,7 @@ int wakeup_synch(RU_t *ru){
 
 void do_ru_synch(RU_t *ru) {
 
-  LTE_DL_FRAME_PARMS *fp  = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp  = ru->frame_parms;
   RU_proc_t *proc         = &ru->proc;
   int i;
   void *rxp[2],*rxp2[2];
@@ -1268,7 +1268,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
 
   int i;
 
-  LTE_DL_FRAME_PARMS *fp   = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp   = ru->frame_parms;
   openair0_config_t *cfg   = &ru->openair0_cfg;
   //printf("////////////////numerology in config = %d\n",numerology);
 
@@ -1362,7 +1362,7 @@ int setup_RU_buffers(RU_t *ru) {
   LTE_DL_FRAME_PARMS *frame_parms;
   
   if (ru) {
-    frame_parms = &ru->frame_parms;
+    frame_parms = ru->frame_parms;
     printf("setup_RU_buffers: frame_parms = %p\n",frame_parms);
   } else {
     printf("RU[%d] not initialized\n", ru->idx);
@@ -2113,7 +2113,7 @@ void configure_ru(int idx,
 #endif
   }
 
-  init_frame_parms(&ru->frame_parms,1);
+  init_frame_parms(ru->frame_parms,1);
   phy_init_RU(ru);
 }
 
@@ -2156,7 +2156,7 @@ void configure_rru(int idx,
 #endif
   }
   
-  init_frame_parms(&ru->frame_parms,1);
+  init_frame_parms(ru->frame_parms,1);
 
   fill_rf_config(ru,ru->rf_config_file);
 
@@ -2270,7 +2270,7 @@ void set_function_spec_param(RU_t *ru)
 /*
     if (ru->function == eNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
       fill_rf_config(ru,rf_config_file);
-      init_frame_parms(&ru->frame_parms,1);
+      init_frame_parms(ru->frame_parms,1);
       phy_init_RU(ru);
     }
 
@@ -2418,7 +2418,7 @@ void init_RU(char *rf_config_file) {
         }
       }
     }
-        LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
+        LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],NB_timing[ru->if_timing],ru->function);
 
     set_function_spec_param(ru);
     LOG_I(PHY,"Starting ru_thread %d\n",ru_id);

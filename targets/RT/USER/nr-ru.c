@@ -1122,7 +1122,7 @@ void wakeup_gNBs(RU_t *ru) {
     char string[20];
     sprintf(string,"Incoming RU %d",ru->idx);
     LOG_D(PHY,"RU %d Call gNB_top\n",ru->idx);
-    ru->gNB_top(gNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
+    ru->gNB_top(gNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string,ru);
   }
   else {
 

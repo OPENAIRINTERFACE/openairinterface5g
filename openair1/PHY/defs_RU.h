@@ -388,8 +388,8 @@ typedef struct RU_t_s{
   #endif
 
   /// function pointer to NB entry routine
-  void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string);
-  void (*gNB_top)(struct PHY_VARS_gNB_s *eNB, int frame_rx, int subframe_rx, char *string);
+  void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);
+  void (*gNB_top)(struct PHY_VARS_gNB_s *gNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);
 
   /// Timing statistics
   time_stats_t ofdm_demod_stats;

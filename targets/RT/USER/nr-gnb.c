@@ -357,10 +357,12 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
 
 
 
-void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int subframe_rx, char *string)
+void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru)
 {
   gNB_proc_t *proc           = &gNB->proc;
   gNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[0];
+  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
+  RU_proc_t *ru_proc=&ru->proc;
 
   proc->frame_rx    = frame_rx;
   proc->subframe_rx = subframe_rx;
@@ -368,14 +370,16 @@ void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int subframe_rx, char *string)
   if (!oai_exit) {
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
 
-    proc_rxtx->subframe_rx = proc->subframe_rx;
-    proc_rxtx->frame_rx    = proc->frame_rx;
-    proc_rxtx->subframe_tx = (proc->subframe_rx+sf_ahead)%10;
-    proc_rxtx->frame_tx    = (proc->subframe_rx>(9-sf_ahead)) ? (1+proc->frame_rx)&1023 : proc->frame_rx;
-    proc->frame_tx         = proc_rxtx->frame_tx;
-    proc_rxtx->timestamp_tx = proc->timestamp_tx;
+    proc_rxtx->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
+    proc_rxtx->frame_rx     = ru_proc->frame_rx;
+    proc_rxtx->subframe_rx  = ru_proc->subframe_rx;
+    proc_rxtx->frame_tx     = (proc_rxtx->subframe_rx > (9-sf_ahead)) ? (proc_rxtx->frame_rx+1)&1023 : proc_rxtx->frame_rx;
+    proc_rxtx->subframe_tx  = (proc_rxtx->subframe_rx + sf_ahead)%10;
 
     if (rxtx(gNB,proc_rxtx,string) < 0) LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",gNB->Mod_id,gNB->CC_id);
+    ru_proc->timestamp_tx = proc_rxtx->timestamp_tx;
+    ru_proc->subframe_tx  = proc_rxtx->subframe_tx;
+    ru_proc->frame_tx     = proc_rxtx->frame_tx;
   }
 }
 
