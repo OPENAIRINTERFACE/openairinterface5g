@@ -644,6 +644,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   }
   
   pthread_mutex_unlock( &proc_rxtx0->mutex_rxtx );
+  ru_proc->emulate_rf_busy = 0;
 
   return(0);
 }

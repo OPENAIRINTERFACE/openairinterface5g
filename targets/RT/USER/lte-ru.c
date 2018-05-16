@@ -122,6 +122,7 @@ extern volatile int                    oai_exit;
 extern int emulate_rf;
 extern int numerology;
 extern int fepw;
+extern int single_thread_flag;
 
 
 extern void  phy_init_RU(RU_t*);
@@ -703,6 +704,11 @@ static void* emulatedRF_thread(void* param) {
   wait_sync("emulatedRF_thread");
   while(!oai_exit){
     nanosleep(&req, (struct timespec *)NULL);
+    if(proc->emulate_rf_busy )
+    {
+      LOG_E(PHY,"rf being delayed in emulated RF\n");
+    }
+    proc->emulate_rf_busy = 1;
     pthread_mutex_lock(&proc->mutex_emulateRF);
     ++proc->instance_cnt_emulateRF;
     pthread_mutex_unlock(&proc->mutex_emulateRF);
@@ -1652,7 +1658,7 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
     
-    if(get_nprocs() <= 4){
+    if(get_nprocs() <= 4 || single_thread_flag){
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);
       
@@ -1664,6 +1670,7 @@ static void* ru_thread( void* param ) {
         
         if (ru->fh_north_out) ru->fh_north_out(ru);
       }
+      proc->emulate_rf_busy = 0;
     }
 
   }
