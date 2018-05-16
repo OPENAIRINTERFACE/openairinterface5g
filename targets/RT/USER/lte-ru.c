@@ -2474,6 +2474,7 @@ void RCconfig_RU(void) {
       RC.ru[j]                                    = (RU_t*)malloc(sizeof(RU_t));
       memset((void*)RC.ru[j],0,sizeof(RU_t));
       RC.ru[j]->idx                                 = j;
+      RC.ru[j]->frame_parms                      = (LTE_DL_FRAME_PARMS*)malloc(sizeof(LTE_DL_FRAME_PARMS));
 
       printf("Creating RC.ru[%d]:%p\n", j, RC.ru[j]);
 
