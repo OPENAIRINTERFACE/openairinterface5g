@@ -20,7 +20,7 @@
  */
 
 /*! \file PHY/NR_TRANSPORT/nr_pbch.c
-* \brief Top-level routines for generating and decoding  the PBCH/BCH physical/transport channel V15.1 03/2018
+* \brief Top-level routines for generating the PBCH/BCH physical/transport channel V15.1 03/2018
 * \author Guy De Souza
 * \date 2018
 * \version 0.1
@@ -35,7 +35,7 @@
 
 //#define DEBUG_PBCH
 
-short nr_mod_table[MOD_TABLE_SIZE_SHORT] = {0,0,23170,23170,-23170,-23170};
+extern short *nr_mod_table;
 
 int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           int32_t **txdataF,
@@ -53,8 +53,8 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 
   /// BPSK modulation
   for (m=0; m<NR_PBCH_DMRS_LENGTH; m++) {
-    mod_dmrs[m<<1] = nr_mod_table[((1 + ((gold_pbch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1)];
-    mod_dmrs[(m<<1)+1] = nr_mod_table[((1 + ((gold_pbch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1) + 1];
+    mod_dmrs[m<<1] = nr_mod_table[((NR_MOD_TABLE_BPSK_OFFSET + ((gold_pbch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1)];
+    mod_dmrs[(m<<1)+1] = nr_mod_table[((NR_MOD_TABLE_BPSK_OFFSET + ((gold_pbch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1) + 1];
 #ifdef DEBUG_PBCH
   printf("m %d  mod_dmrs %d %d\n", m, mod_dmrs[2*m], mod_dmrs[2*m+1]);
 #endif
@@ -121,5 +121,26 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 #ifdef DEBUG_PBCH
   write_output("txdataF.m", "txdataF", txdataF[0], frame_parms->samples_per_frame_wCP>>1, 1, 1);
 #endif
-  return (0);
+  return 0;
+}
+
+#define NR_PBCH_LENGTH 1000
+
+int nr_generate_pbch(NR_gNB_PBCH *pbch,
+                     uint8_t *pbch_pdu,
+                     int32_t **txdataF,
+                     int16_t amp,
+                     uint8_t ssb_start_symbol,
+                     uint8_t nu,
+                     nfapi_config_request_t* config,
+                     NR_DL_FRAME_PARMS *frame_parms)
+{
+
+  int m,k,l;
+  int a, aa;
+  int16_t mod_payload[2 * NR_PBCH_LENGTH];
+
+  LOG_I(PHY, "PBCH generation started\n");
+
+  return 0;
 }

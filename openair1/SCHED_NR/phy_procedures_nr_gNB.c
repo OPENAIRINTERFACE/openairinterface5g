@@ -138,6 +138,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
     nr_generate_pss(gNB->d_pss, txdataF, AMP, ssb_start_symbol, cfg, fp);
     nr_generate_sss(gNB->d_sss, txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF, AMP_OVER_2, ssb_start_symbol, nu, cfg, fp);
+    nr_generate_pbch(&gNB->pbch, pbch_pdu, txdataF, AMP_OVER_2, ssb_start_symbol, nu, cfg, fp);
   }
 
 }

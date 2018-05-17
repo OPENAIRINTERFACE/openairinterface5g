@@ -21,8 +21,6 @@
 
 #include "PHY/defs_gNB.h"
 
-extern short nr_mod_table[MOD_TABLE_SIZE_SHORT];
-
 //#define NR_SSS_DEBUG
 
 int nr_generate_sss(  int16_t *d_sss,

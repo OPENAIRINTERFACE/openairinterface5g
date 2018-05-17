@@ -23,8 +23,6 @@
 
 //#define NR_PSS_DEBUG
 
-//short nr_mod_table[MOD_TABLE_SIZE_SHORT] = {0,0,768,768,-768,-768};
-
 int nr_generate_pss(  int16_t *d_pss,
                       int32_t **txdataF,
                       int16_t amp,

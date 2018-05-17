@@ -35,6 +35,7 @@
 
 
 #define MAX_BANDS_PER_RRU 4
+#define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
 
 
 #ifdef OCP_FRAMEWORK

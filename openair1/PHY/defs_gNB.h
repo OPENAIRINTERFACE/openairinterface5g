@@ -37,6 +37,10 @@
 
 
 typedef struct {
+  uint8_t pbch_d[100];
+} NR_gNB_PBCH;
+
+typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
@@ -169,9 +173,9 @@ typedef struct gNB_proc_t_s {
 typedef struct {
   // common measurements
   //! estimated noise power (linear)
-  unsigned int   n0_power[MAX_NUM_RU_PER_eNB];
+  unsigned int   n0_power[MAX_NUM_RU_PER_gNB];
   //! estimated noise power (dB)
-  unsigned short n0_power_dB[MAX_NUM_RU_PER_eNB];
+  unsigned short n0_power_dB[MAX_NUM_RU_PER_gNB];
   //! total estimated noise power (linear)
   unsigned int   n0_power_tot;
   //! estimated avg noise power (dB)
@@ -179,9 +183,9 @@ typedef struct {
   //! estimated avg noise power (dB)
   short n0_power_tot_dBm;
   //! estimated avg noise power per RB per RX ant (lin)
-  unsigned short n0_subband_power[MAX_NUM_RU_PER_eNB][100];
+  unsigned short n0_subband_power[MAX_NUM_RU_PER_gNB][100];
   //! estimated avg noise power per RB per RX ant (dB)
-  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_eNB][100];
+  unsigned short n0_subband_power_dB[MAX_NUM_RU_PER_gNB][100];
   //! estimated avg noise power per RB (dB)
   short n0_subband_power_tot_dB[100];
   //! estimated avg noise power per RB (dBm)
@@ -199,17 +203,17 @@ typedef struct {
   int            rx_correlation_dB[NUMBER_OF_UE_MAX][2];
 
   /// Wideband CQI (= SINR)
-  int            wideband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
+  int            wideband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_gNB];
   /// Wideband CQI in dB (= SINR dB)
-  int            wideband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
+  int            wideband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_gNB];
   /// Wideband CQI (sum of all RX antennas, in dB)
   char           wideband_cqi_tot[NUMBER_OF_UE_MAX];
   /// Subband CQI per RX antenna and RB (= SINR)
-  int            subband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
+  int            subband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_gNB][100];
   /// Total Subband CQI and RB (= SINR)
   int            subband_cqi_tot[NUMBER_OF_UE_MAX][100];
   /// Subband CQI in dB and RB (= SINR dB)
-  int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
+  int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_gNB][100];
   /// Total Subband CQI and RB
   int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
   /// PRACH background noise level
@@ -226,7 +230,7 @@ typedef struct PHY_VARS_gNB_s {
   int                  single_thread_flag;
   int                  abstraction_flag;
   int                  num_RU;
-  RU_t                 *RU_list[MAX_NUM_RU_PER_eNB];
+  RU_t                 *RU_list[MAX_NUM_RU_PER_gNB];
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t         eth_params_n;
   /// Ethernet parameters for fronthaul interface
@@ -262,7 +266,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_COMMON       common_vars;
   LTE_eNB_UCI          uci_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_PBCH         pbch;
+  NR_gNB_PBCH         pbch;
   LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PRACH        prach_vars;
   LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
