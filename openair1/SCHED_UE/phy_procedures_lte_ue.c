@@ -3229,25 +3229,24 @@ LOG_DEBUG_END
       } else { // decoding successful
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 	
-	if (mcch_active == 1) {
-	  ue_send_mch_sdu(ue->Mod_id,
-			  CC_id,
-			  frame_rx,
-			  ue->dlsch_MCH[0]->harq_processes[0]->b,
-			  ue->dlsch_MCH[0]->harq_processes[0]->TBS>>3,
-			  eNB_id,// not relevant in eMBMS context
-			  sync_area);
+	ue_send_mch_sdu(ue->Mod_id,
+			CC_id,
+			frame_rx,
+			ue->dlsch_MCH[0]->harq_processes[0]->b,
+			ue->dlsch_MCH[0]->harq_processes[0]->TBS>>3,
+			eNB_id,// not relevant in eMBMS context
+			sync_area);
+
+	if (mcch_active == 1)
 	  ue->dlsch_mcch_received[sync_area][0]++;
-	  
-	  
-	  if (ue->dlsch_mch_received_sf[subframe_rx%5][0] == 1 ) {
-	    ue->dlsch_mch_received_sf[subframe_rx%5][0]=0;
-	  } else {
-	    ue->dlsch_mch_received[0]+=1;
-	    ue->dlsch_mch_received_sf[subframe_rx][0]=1;
-	  }
-	  
-	  
+	else
+	  ue->dlsch_mtch_received[sync_area][0]++;
+
+	if (ue->dlsch_mch_received_sf[subframe_rx%5][0] == 1 ) {
+	  ue->dlsch_mch_received_sf[subframe_rx%5][0]=0;
+	} else {
+	  ue->dlsch_mch_received[0]+=1;
+	  ue->dlsch_mch_received_sf[subframe_rx][0]=1;
 	}
 
 #endif // #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
