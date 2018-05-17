@@ -4716,7 +4716,7 @@ LOG_DEBUG_END
 
     if (do_pdcch_flag) {
       if ((l==pilot1) ||
-	  ((pmch_flag==1)&(l==l2)))  {
+	  ((pmch_flag==1)&&(l==l2)))  {
 	LOG_D(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
 
 	//start_meas(&ue->rx_pdcch_stats[ue->current_thread_id[subframe_rx]]);
