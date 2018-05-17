@@ -700,6 +700,7 @@ static void* emulatedRF_thread(void* param) {
   sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
   policy = SCHED_FIFO ; 
   pthread_setschedparam(pthread_self(), policy, &sparam);
+  LOG_I(PHY,"/////////////////////******************** numerology = %d /////////////////////////////////***************************** \n",numerology);
   
   wait_sync("emulatedRF_thread");
   while(!oai_exit){
@@ -1210,6 +1211,9 @@ void wakeup_eNBs(RU_t *ru) {
       else if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
       {
         LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
+      }
+      if(!eNB_list[i]->single_thread_flag){
+        ru->proc.emulate_rf_busy = 0;
       }
     }
   }
