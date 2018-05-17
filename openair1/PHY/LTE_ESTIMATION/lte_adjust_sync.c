@@ -81,7 +81,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   // do not filter to have proactive timing adjustment
   max_pos_fil = max_pos;
 
-  if(subframe == 6)
+  if(subframe == 5)
   {
       diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
 
