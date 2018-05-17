@@ -700,7 +700,6 @@ static void* emulatedRF_thread(void* param) {
   sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
   policy = SCHED_FIFO ; 
   pthread_setschedparam(pthread_self(), policy, &sparam);
-  LOG_I(PHY,"/////////////////////******************** numerology = %d /////////////////////////////////***************************** \n",numerology);
   
   wait_sync("emulatedRF_thread");
   while(!oai_exit){
