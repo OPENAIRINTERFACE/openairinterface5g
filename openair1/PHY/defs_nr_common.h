@@ -35,18 +35,11 @@
 
 #include "defs_common.h"
 
-
 #define nr_subframe_t lte_subframe_t
-
-#define NR_PBCH_DMRS_LENGTH 144
-#define NR_PBCH_DMRS_LENGTH_DWORD 5 // roundup(NR_PBCH_DMRS_LENGTH/32)
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
 #define NR_SYMBOLS_PER_SLOT 14
-
-#define NR_PSS_LENGTH 127
-#define NR_SSS_LENGTH 127
 
 #define ONE_OVER_SQRT2_Q15 23170
 #define ONE_OVER_TWO_Q15 16384
@@ -54,6 +47,12 @@
 #define NR_MOD_TABLE_SIZE_SHORT 14
 #define NR_MOD_TABLE_BPSK_OFFSET 1
 #define NR_MOD_TABLE_QPSK_OFFSET 3
+
+#define NR_PSS_LENGTH 127
+#define NR_SSS_LENGTH 127
+
+#define NR_PBCH_DMRS_LENGTH 144
+#define NR_PBCH_DMRS_LENGTH_DWORD 5 // roundup(NR_PBCH_DMRS_LENGTH/32)
 
 typedef enum {
   NR_MU_0=0,

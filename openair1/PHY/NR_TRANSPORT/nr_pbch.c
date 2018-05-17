@@ -29,13 +29,14 @@
 * \note
 * \warning
 */
-#include "PHY/defs_gNB.h"
+
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 
 //#define DEBUG_PBCH
 
-extern short *nr_mod_table;
+extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
 int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           int32_t **txdataF,

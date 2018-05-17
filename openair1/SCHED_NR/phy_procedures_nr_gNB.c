@@ -21,6 +21,7 @@
 
 #include "PHY/phy_extern.h"
 #include "PHY/defs_gNB.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED/sched_common_extern.h"
 #include "nfapi_interface.h"

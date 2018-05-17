@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs_gNB.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 
 //#define NR_SSS_DEBUG
 
