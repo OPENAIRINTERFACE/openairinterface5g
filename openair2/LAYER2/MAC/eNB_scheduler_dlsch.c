@@ -418,10 +418,6 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
   sli->avg_pct_dl = 1.0 / sli->n_dl;
   //sli->slice_counter = sli->n_dl;
 
-  // reset the slice percentage for inactive slices
-  for (i = sli->n_dl; i < MAX_NUM_SLICES; i++) {
-    sli->dl[i].pct = 0;
-  }
   for (i = 0; i < sli->n_dl; i++) {
     if (sli->dl[i].pct < 0) {
       LOG_W(MAC, "[eNB %d][SLICE %d][DL] frame %d subframe %d: invalid percentage %f. resetting to zero",

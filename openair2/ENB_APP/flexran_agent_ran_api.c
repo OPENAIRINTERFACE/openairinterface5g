@@ -1487,6 +1487,7 @@ int flexran_remove_dl_slice(mid_t mod_id, int slice_idx)
   /* move last element to the position of the removed one */
   if (slice_idx != sli->n_dl)
     memcpy(&sli->dl[slice_idx], &sli->dl[sli->n_dl], sizeof(sli->dl[sli->n_dl]));
+  memset(&sli->dl[sli->n_dl], 0, sizeof(sli->dl[sli->n_dl]));
 
   /* all UEs that have been in the old slice are put into slice index 0 */
   int *assoc_list = RC.mac[mod_id]->UE_list.assoc_dl_slice_idx;
@@ -1763,6 +1764,7 @@ int flexran_remove_ul_slice(mid_t mod_id, int slice_idx)
   /* move last element to the position of the removed one */
   if (slice_idx != sli->n_ul)
     memcpy(&sli->ul[slice_idx], &sli->ul[sli->n_ul], sizeof(sli->ul[sli->n_ul]));
+  memset(&sli->ul[sli->n_ul], 0, sizeof(sli->ul[sli->n_ul]));
 
   /* all UEs that have been in the old slice are put into slice index 0 */
   int *assoc_list = RC.mac[mod_id]->UE_list.assoc_ul_slice_idx;

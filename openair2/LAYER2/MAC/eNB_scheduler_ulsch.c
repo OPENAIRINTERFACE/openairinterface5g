@@ -1043,10 +1043,6 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
   sli->tot_pct_ul = 0;
   sli->avg_pct_ul = 1.0 / sli->n_ul;
 
-  // reset the slice percentage for inactive slices
-  for (i = sli->n_ul; i< MAX_NUM_SLICES; i++) {
-    sli->ul[i].pct = 0;
-  }
   for (i = 0; i < sli->n_ul; i++) {
     if (sli->ul[i].pct < 0 ){
       LOG_W(MAC,
