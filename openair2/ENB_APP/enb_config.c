@@ -868,21 +868,10 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			     RC.config_file_name, i, prach_zero_correlation);
 	      
 	      RRC_CONFIGURATION_REQ (msg_p).prach_freq_offset[j] = prach_freq_offset;
-#ifndef UE_EXPANSION
 	      if ((prach_freq_offset <0) || (prach_freq_offset > 94))
 		AssertFatal (0,
 			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 0..94!\n",
 			     RC.config_file_name, i, prach_freq_offset);
-#else
-        if ((N_RB_DL == 25) && (prach_freq_offset != 2))
-          AssertFatal (0,
-              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 2(N_RB_DL %d)!\n",
-              RC.config_file_name, i, prach_freq_offset,N_RB_DL);
-        if (((N_RB_DL == 50) || (N_RB_DL == 100)) && (prach_freq_offset < 3))
-          AssertFatal (0,
-              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 3,4(N_RB_DL %d)!\n",
-              RC.config_file_name, i, prach_freq_offset,N_RB_DL);
-#endif
 	      
 	      RRC_CONFIGURATION_REQ (msg_p).pucch_delta_shift[j] = pucch_delta_shift-1;
 	      
@@ -1768,7 +1757,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		  break;
 		}
 
-#ifdef UE_EXPANSION
         RRC_CONFIGURATION_REQ (msg_p).ue_multiple_max[j] = ue_multiple_max;
 
         switch (N_RB_DL) {
@@ -1779,15 +1767,15 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                      RC.config_file_name, i, ue_multiple_max);
           break;
         case 50:
-          if ((ue_multiple_max < 1) || (ue_multiple_max > 6))
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 8))
             AssertFatal (0,
-                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..6!\n",
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..8!\n",
                      RC.config_file_name, i, ue_multiple_max);
           break;
         case 100:
-          if ((ue_multiple_max < 1) || (ue_multiple_max > 10))
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 16))
             AssertFatal (0,
-                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..10!\n",
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..16!\n",
                      RC.config_file_name, i, ue_multiple_max);
           break;
         default:
@@ -1796,7 +1784,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                    RC.config_file_name, i, N_RB_DL);
           break;
         }
-#endif
 	      }
 	    }
 	    char srb1path[MAX_OPTNAME_SIZE*2 + 8];

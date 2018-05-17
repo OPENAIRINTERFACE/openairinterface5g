@@ -637,9 +637,8 @@ typedef struct {
   uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[MAX_MBSFN_AREA];
-#ifdef UE_EXPANSION
+  /// for fair RR scheduler
   uint32_t ue_multiple_max;
-#endif
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {

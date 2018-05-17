@@ -793,14 +793,6 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
   (void)ue_module_id;
 #endif
   rnti_t rnti = ue_context_pP->ue_context.rnti;
-#ifndef UE_EXPANSION
-  int i, j , CC_id, pdu_number;
-  LTE_eNB_ULSCH_t *ulsch = NULL;
-  LTE_eNB_DLSCH_t *dlsch = NULL;
-  nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
-  PHY_VARS_eNB *eNB_PHY = NULL;
-  eNB_MAC_INST *eNB_MAC = RC.mac[enb_mod_idP];
-#endif
   if (enb_mod_idP >= NB_eNB_INST) {
       LOG_I(RRC, "eNB inst invalid (%d/%d) for UE %x!\n",enb_mod_idP, NB_eNB_INST,rnti);
       return;
@@ -828,66 +820,9 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
      return;
     }
 #endif
-#ifndef UE_EXPANSION
-    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      eNB_PHY = RC.eNB[enb_mod_idP][CC_id];
-      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-        ulsch = eNB_PHY->ulsch[i];
-        if((ulsch != NULL) && (ulsch->rnti == rnti)){
-          LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
-          //clean_eNb_ulsch(ulsch);
-          ulsch->rnti = 0;
-        }
-        dlsch = eNB_PHY->dlsch[i][0];
-        if((dlsch != NULL) && (dlsch->rnti == rnti)){
-          LOG_I(RRC, "clean_eNb_dlsch UE %x \n", rnti);
-          clean_eNb_dlsch(dlsch);
-        }
-        if(eNB_PHY->uci_vars[i].rnti == rnti){
-          LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n",i, rnti);
-          memset(&eNB_PHY->uci_vars[i],0,sizeof(LTE_eNB_UCI));
-        }
-      }
-      ulsch = eNB_PHY->ulsch[i];
-      if((ulsch != NULL) && (ulsch->rnti == rnti)){
-        LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
-        //clean_eNb_ulsch(ulsch);
-        ulsch->rnti = 0;
-      }
-
-      for(j = 0; j < 10; j++){
-        ul_req_tmp = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
-        if(ul_req_tmp){
-          pdu_number = ul_req_tmp->number_of_pdus;
-          for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
-            if((ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti) ||
-               (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
-               (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_cqi_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
-               (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_sr_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
-               (ul_req_tmp->ul_config_pdu_list[pdu_index].srs_pdu.srs_pdu_rel8.rnti == rnti)){
-                LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
-                if(pdu_index < pdu_number -1){
-                  memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
-                }
-                ul_req_tmp->number_of_pdus--;
-            }
-          }
-        }
-      }
-    }
-    rrc_mac_remove_ue(enb_mod_idP,rnti);
-    rrc_rlc_remove_ue(&ctxt);
-    pdcp_remove_UE(&ctxt);
-
-    rrc_eNB_remove_ue_context(
-      &ctxt,
-      RC.rrc[enb_mod_idP],
-      (struct rrc_eNB_ue_context_s*) ue_context_pP);
-#else
     // add UE info to freeList
     LOG_I(RRC, "put UE %x into freeList\n", rnti);
     put_UE_in_freelist(enb_mod_idP, rnti, 1);
-#endif
   }
 }
 

@@ -59,6 +59,9 @@
 #include "flexran_agent_mac_proto.h"
 #endif
 
+/* for fair round robin SCHED */
+#include "eNB_scheduler_fairRR.h"
+
 #if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
 #endif
@@ -806,16 +809,25 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     copy_ulreq(module_idP, frameP, subframeP);
     // This schedules SRS in subframeP
     schedule_SRS(module_idP, frameP, subframeP);
+#ifdef UE_EXPANSION
+    // This schedules ULSCH in subframeP (dci0)
+    schedule_ulsch_fairRR(module_idP, frameP, subframeP);
+#else
     // This schedules ULSCH in subframeP (dci0)
     schedule_ulsch(module_idP, frameP, subframeP);
+#endif
     // This schedules UCI_SR in subframeP
     schedule_SR(module_idP, frameP, subframeP);
     // This schedules UCI_CSI in subframeP
     schedule_CSI(module_idP, frameP, subframeP);
 
+#ifdef UE_EXPANSION
+    // This schedules DLSCH in subframeP
+    schedule_ue_spec_fairRR(module_idP, frameP, subframeP, mbsfn_status);
+#else
     // This schedules DLSCH in subframeP
     schedule_ue_spec(module_idP, frameP, subframeP, mbsfn_status);
-
+#endif
     // Allocate CCEs for good after scheduling is done
 
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++){

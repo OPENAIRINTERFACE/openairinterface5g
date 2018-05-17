@@ -97,12 +97,6 @@ extern DCI2_5MHz_2A_TDD_t DLSCH_alloc_pdu1;
 extern DCI2_5MHz_2A_TDD_t DLSCH_alloc_pdu2;
 extern DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
 
-#ifdef UE_EXPANSION
-extern DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs];
-extern int last_dlsch_ue_id[MAX_NUM_CCs];
-extern int last_ulsch_ue_id[MAX_NUM_CCs];
-#endif
-
 #if defined(PRE_SCD_THREAD)
 extern uint16_t pre_nb_rbs_required[2][MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 extern uint8_t dlsch_ue_select_tbl_in_use;
@@ -110,5 +104,6 @@ extern uint8_t new_dlsch_ue_select_tbl_in_use;
 extern boolean_t pre_scd_activeUE[NUMBER_OF_UE_MAX];
 extern eNB_UE_STATS pre_scd_eNB_UE_stats[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 #endif
+
 extern mac_rlc_am_muilist_t rlc_am_mui;
 #endif //DEF_H

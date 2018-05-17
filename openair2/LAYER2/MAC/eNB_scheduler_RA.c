@@ -64,7 +64,22 @@
 #include "SIMULATION/TOOLS/defs.h"	// for taus
 
 #include "T.h"
-
+#ifdef UE_EXPANSION
+enum SCH_UE_PRIORITY {
+  SCH_PRIORITY_NONE,
+  SCH_DL_SI,
+  SCH_DL_PAGING,
+  SCH_DL_MSG2,
+  SCH_DL_MSG4,
+  SCH_UL_PRACH,
+  SCH_UL_MSG3,
+  SCH_DL_RETRANS,
+  SCH_UL_RETRANS,
+  SCH_DL_FIRST,
+  SCH_UL_FIRST,
+  SCH_UL_INACTIVE
+};
+#endif
 extern uint8_t nfapi_mode;
 extern int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req);
 
@@ -582,11 +597,7 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 		    cc[CC_idP].RAR_pdu.payload;
 		mac->TX_req[CC_idP].tx_request_body.number_of_pdus++;
 #ifdef UE_EXPANSION
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG2;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = 4;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = -1;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = ra->rnti;
-        dlsch_ue_select[CC_idP].ue_num++;
+        set_dl_ue_select(CC_idP, SCH_DL_MSG2, 4, -1, ra->rnti);
 #endif
 	    }
 	}
@@ -720,11 +731,7 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 		    cc[CC_idP].RAR_pdu.payload;
 		mac->TX_req[CC_idP].tx_request_body.number_of_pdus++;
 #ifdef UE_EXPANSION
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG2;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = 4;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = -1;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = ra->rnti;
-        dlsch_ue_select[CC_idP].ue_num++;
+        set_dl_ue_select(CC_idP, SCH_DL_MSG2, 4, -1, ra->rnti);
 #endif
 	    }			// PDCCH CCE allocation is feasible
 	}			// Msg2 frame/subframe condition
@@ -1212,11 +1219,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 			  rrc_sdu_length);
 		}
 #ifdef UE_EXPANSION
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG4;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = 4;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = UE_id;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = ra->rnti;
-        dlsch_ue_select[CC_idP].ue_num++;
+        set_dl_ue_select(CC_idP, SCH_DL_MSG4, 4, UE_id, ra->rnti);
 #endif
 	    }			// Msg4 frame/subframe
 	}			// msg4_mpdcch_repetition_count
@@ -1420,11 +1423,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 			  rrc_sdu_length);
 		}
 #ifdef UE_EXPANSION
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG4;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = 4;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = UE_id;
-        dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = ra->rnti;
-        dlsch_ue_select[CC_idP].ue_num++;
+        set_dl_ue_select(CC_idP, SCH_DL_MSG4, 4, UE_id, ra->rnti);
 #endif
 	    }			// CCE Allocation feasible
 	}			// msg4 frame/subframe
@@ -1570,11 +1569,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 					    1,	// num_bf_prb_per_subband
 					    1);	// num_bf_vector
 #ifdef UE_EXPANSION
-          dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG4;
-          dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = 4;
-          dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = UE_id;
-          dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = ra->rnti;
-          dlsch_ue_select[CC_idP].ue_num++;
+        set_dl_ue_select(CC_idP, SCH_DL_MSG4, 4, UE_id, ra->rnti);
 #endif
 		} else
 		    LOG_D(MAC,

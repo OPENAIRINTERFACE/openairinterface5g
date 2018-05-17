@@ -934,7 +934,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
         nb_rb);
 	
   //#endif
-#ifndef UE_EXPANSION
+#ifndef UE_EXPANSION // TODO check this modified
   if (ulsch_harq->round == 0) {
 #endif
     // This is a new packet, so compute quantities regarding segmentation
