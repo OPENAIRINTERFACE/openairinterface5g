@@ -30,10 +30,10 @@ int nr_generate_sss(  int16_t *d_sss,
                       nfapi_config_request_t* config,
                       NR_DL_FRAME_PARMS *frame_parms)
 {
-  int i,m,k,l;
+  int i,k,l;
   int m0, m1;
   int Nid, Nid1, Nid2;
-  int16_t a, aa;
+  int16_t a;
   int16_t x0[NR_SSS_LENGTH], x1[NR_SSS_LENGTH];
   const int x0_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
   const int x1_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
@@ -67,14 +67,14 @@ int nr_generate_sss(  int16_t *d_sss,
   /// Resource mapping
   a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
-  for (aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
+  for (int aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
   {
 
     // SSS occupies a predefined position (subcarriers 56-182, symbol 2) within the SSB block starting from
     k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
     l = ssb_start_symbol + 2;
 
-    for (m = 0; m < NR_SSS_LENGTH; m++) {
+    for (int m = 0; m < NR_SSS_LENGTH; m++) {
       ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_sss[m]) >> 15;
       k++;
 
@@ -86,5 +86,5 @@ int nr_generate_sss(  int16_t *d_sss,
   write_output("sss_0.m", "sss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
 #endif
 
-  return (0);
+  return 0;
 }

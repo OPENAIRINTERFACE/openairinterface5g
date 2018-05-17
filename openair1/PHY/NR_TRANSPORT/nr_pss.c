@@ -30,8 +30,8 @@ int nr_generate_pss(  int16_t *d_pss,
                       nfapi_config_request_t* config,
                       NR_DL_FRAME_PARMS *frame_parms)
 {
-  int i,m,k,l;
-  int16_t a, aa;
+  int i,k,l,m;
+  int16_t a;
   int16_t x[NR_PSS_LENGTH];
   const int x_initial[7] = {0, 1, 1 , 0, 1, 1, 1};
 
@@ -57,7 +57,7 @@ int nr_generate_pss(  int16_t *d_pss,
   /// Resource mapping
   a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
-  for (aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
+  for (int aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
   {
 
     // PSS occupies a predefined position (subcarriers 56-182, symbol 0) within the SSB block starting from
@@ -77,5 +77,5 @@ int nr_generate_pss(  int16_t *d_pss,
   write_output("pss_0.m", "pss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
 #endif
 
-  return (0);
+  return 0;
 }

@@ -45,14 +45,14 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           nfapi_config_request_t* config,
                           NR_DL_FRAME_PARMS *frame_parms)
 {
-  int m,k,l;
-  int a, aa;
+  int k,l;
+  int16_t a;
   int16_t mod_dmrs[2 * NR_PBCH_DMRS_LENGTH];
 
   LOG_I(PHY, "PBCH DMRS mapping started at symbol %d shift %d\n", ssb_start_symbol+1, nu);
 
   /// BPSK modulation
-  for (m=0; m<NR_PBCH_DMRS_LENGTH; m++) {
+  for (int m=0; m<NR_PBCH_DMRS_LENGTH; m++) {
     mod_dmrs[m<<1] = nr_mod_table[((NR_MOD_TABLE_BPSK_OFFSET + ((gold_pbch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1)];
     mod_dmrs[(m<<1)+1] = nr_mod_table[((NR_MOD_TABLE_BPSK_OFFSET + ((gold_pbch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1) + 1];
 #ifdef DEBUG_PBCH
@@ -63,7 +63,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
   /// Resource mapping
   a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
-  for (aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
+  for (int aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
   {
 
     // PBCH DMRS are mapped  within the SSB block on every fourth subcarrier starting from nu of symbols 1, 2, 3
@@ -71,7 +71,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
     k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + nu;
     l = ssb_start_symbol + 1;
 
-    for (m = 0; m < 60; m++) {
+    for (int m = 0; m < 60; m++) {
 #ifdef DEBUG_PBCH
   printf("m %d at k %d of l %d\n", m, k, l);
 #endif
@@ -87,7 +87,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
     k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + nu;
     l++;
 
-    for (m = 60; m < 84; m++) {
+    for (int m = 60; m < 84; m++) {
 #ifdef DEBUG_PBCH
   printf("m %d at k %d of l %d\n", m, k, l);
 #endif
@@ -103,7 +103,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
     k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + nu;
     l++;
 
-    for (m = 84; m < NR_PBCH_DMRS_LENGTH; m++) {
+    for (int m = 84; m < NR_PBCH_DMRS_LENGTH; m++) {
 #ifdef DEBUG_PBCH
   printf("m %d at k %d of l %d\n", m, k, l);
 #endif
