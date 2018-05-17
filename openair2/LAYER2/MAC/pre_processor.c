@@ -1601,8 +1601,8 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
           break;
         }
       }
-      LOG_D(MAC, "Frame %d Subframe %d CC_id %d RBG %i : rb_alloc %d\n",
-            frameP, subframeP, CC_id, i, rballoc_sub[CC_id][i]);
+      //LOG_D(MAC, "Frame %d Subframe %d CC_id %d RBG %i : rb_alloc %d\n",
+            //frameP, subframeP, CC_id, i, rballoc_sub[CC_id][i]);
       MIMO_mode_indicator[CC_id][i] = 2;
     }
   }

@@ -758,6 +758,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
       continue;
 
     for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+      LOG_D(MAC, "doing schedule_ue_spec for CC_id %d UE %d\n", CC_id, UE_id);
       continue_flag = 0; // reset the flag to allow allocation for the remaining UEs
       rnti = UE_RNTI(module_idP, UE_id);
       eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
@@ -773,8 +774,13 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
         continue_flag = 1;
       }
 
-      if (!ue_dl_slice_membership(module_idP, UE_id, slice_idxP))
+      if (!ue_dl_slice_membership(module_idP, UE_id, slice_idxP)) {
+        LOG_D(MAC, "UE%d is not part of slice %d ID %d\n",
+              UE_id, slice_idxP, RC.mac[module_idP]->slice_info.dl[slice_idxP].id);
+        /* prevent execution of add_ue_dlsch_info(), it is done by the other
+         * slice */
         continue;
+      }
 
       if (continue_flag != 1) {
         switch (get_tmode(module_idP, CC_id, UE_id)) {
@@ -832,8 +838,10 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
       UE_list->eNB_UE_stats[CC_id][UE_id].harq_pid = harq_pid;
       UE_list->eNB_UE_stats[CC_id][UE_id].harq_round = round;
 
-      if (UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status < RRC_CONNECTED)
+      if (UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status < RRC_CONNECTED) {
+        LOG_D(MAC, "UE %d is not in RRC_CONNECTED\n", UE_id);
         continue;
+      }
 
       header_length_total = 0;
       sdu_length_total = 0;
