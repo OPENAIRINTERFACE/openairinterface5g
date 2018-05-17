@@ -432,6 +432,12 @@ typedef enum {
     CBA_RS			/// random allocation
 } CBA_POLICY;
 
+/*!\brief  scheduler mode */
+typedef enum {
+    SCHED_MODE_DEFAULT = 0,			/// default cheduler
+    SCHED_MODE_FAIR_RR			/// fair raund robin
+} SCHEDULER_MODES;
+
 
 /*! \brief temporary struct for ULSCH sched */
 typedef struct {
@@ -1138,6 +1144,9 @@ typedef struct eNB_MAC_INST_s {
     time_stats_t schedule_pch;
 
     UE_free_list_t UE_free_list;
+	/// for scheduling selection
+    SCHEDULER_MODES scheduler_mode;
+	
 } eNB_MAC_INST;
 
 /* 

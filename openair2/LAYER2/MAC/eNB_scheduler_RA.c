@@ -64,22 +64,7 @@
 #include "SIMULATION/TOOLS/defs.h"	// for taus
 
 #include "T.h"
-#ifdef UE_EXPANSION
-enum SCH_UE_PRIORITY {
-  SCH_PRIORITY_NONE,
-  SCH_DL_SI,
-  SCH_DL_PAGING,
-  SCH_DL_MSG2,
-  SCH_DL_MSG4,
-  SCH_UL_PRACH,
-  SCH_UL_MSG3,
-  SCH_DL_RETRANS,
-  SCH_UL_RETRANS,
-  SCH_DL_FIRST,
-  SCH_UL_FIRST,
-  SCH_UL_INACTIVE
-};
-#endif
+
 extern uint8_t nfapi_mode;
 extern int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req);
 
@@ -596,9 +581,9 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 		TX_req->segments[0].segment_data =
 		    cc[CC_idP].RAR_pdu.payload;
 		mac->TX_req[CC_idP].tx_request_body.number_of_pdus++;
-#ifdef UE_EXPANSION
-        set_dl_ue_select(CC_idP, SCH_DL_MSG2, 4, -1, ra->rnti);
-#endif
+		if(RC.mac[module_idP]->scheduler_mode == SCHED_MODE_FAIR_RR){
+    		set_dl_ue_select_msg2(CC_idP, 4, -1, ra->rnti);
+		}
 	    }
 	}
 
@@ -730,9 +715,9 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 		TX_req->segments[0].segment_data =
 		    cc[CC_idP].RAR_pdu.payload;
 		mac->TX_req[CC_idP].tx_request_body.number_of_pdus++;
-#ifdef UE_EXPANSION
-        set_dl_ue_select(CC_idP, SCH_DL_MSG2, 4, -1, ra->rnti);
-#endif
+		if(RC.mac[module_idP]->scheduler_mode == SCHED_MODE_FAIR_RR){
+    		set_dl_ue_select_msg2(CC_idP, 4, -1, ra->rnti);
+		}
 	    }			// PDCCH CCE allocation is feasible
 	}			// Msg2 frame/subframe condition
     }				// else BL/CE
@@ -1218,9 +1203,9 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 							      UE_id),
 			  rrc_sdu_length);
 		}
-#ifdef UE_EXPANSION
-        set_dl_ue_select(CC_idP, SCH_DL_MSG4, 4, UE_id, ra->rnti);
-#endif
+		if(RC.mac[module_idP]->scheduler_mode == SCHED_MODE_FAIR_RR){
+        	set_dl_ue_select_msg4(CC_idP, 4, UE_id, ra->rnti);
+		}
 	    }			// Msg4 frame/subframe
 	}			// msg4_mpdcch_repetition_count
     }				// rach_resource_type > 0 
@@ -1422,9 +1407,9 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 							      UE_id),
 			  rrc_sdu_length);
 		}
-#ifdef UE_EXPANSION
-        set_dl_ue_select(CC_idP, SCH_DL_MSG4, 4, UE_id, ra->rnti);
-#endif
+		if(RC.mac[module_idP]->scheduler_mode == SCHED_MODE_FAIR_RR){
+        	set_dl_ue_select_msg4(CC_idP, 4, UE_id, ra->rnti);
+		}
 	    }			// CCE Allocation feasible
 	}			// msg4 frame/subframe
     }				// else rach_resource_type
@@ -1568,9 +1553,9 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 					    (cc->p_eNB == 1) ? 1 : 2,	// transmission mode
 					    1,	// num_bf_prb_per_subband
 					    1);	// num_bf_vector
-#ifdef UE_EXPANSION
-        set_dl_ue_select(CC_idP, SCH_DL_MSG4, 4, UE_id, ra->rnti);
-#endif
+			if(RC.mac[module_idP]->scheduler_mode == SCHED_MODE_FAIR_RR){
+	        	set_dl_ue_select_msg4(CC_idP, 4, UE_id, ra->rnti);
+			}
 		} else
 		    LOG_D(MAC,
 			  "msg4 retransmission for rnti %x (round %d) fsf %d/%d CCE allocation failed!\n",

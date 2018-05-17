@@ -1021,6 +1021,7 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
     }
+    RC.mac[Mod_idP]->scheduler_mode = global_scheduler_mode;
 
     return(0);			   
 }

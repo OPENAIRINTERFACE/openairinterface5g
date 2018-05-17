@@ -75,14 +75,20 @@ eNB_UE_STATS pre_scd_eNB_UE_stats[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 #define DEBUG_HEADER_PARSING 1
 //#define DEBUG_PACKET_TRACE 1
 
-void set_dl_ue_select(int CC_idP, enum SCH_UE_PRIORITY ue_priority,uint16_t nb_rb, int UE_id, rnti_t rnti) {
-  dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = ue_priority;
+void set_dl_ue_select_msg2(int CC_idP, uint16_t nb_rb, int UE_id, rnti_t rnti) {
+  dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG2;
   dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = nb_rb;
   dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = UE_id;
   dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = rnti;
   dlsch_ue_select[CC_idP].ue_num++;
 }
-
+void set_dl_ue_select_msg4(int CC_idP, uint16_t nb_rb, int UE_id, rnti_t rnti) {
+  dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].ue_priority = SCH_DL_MSG4;
+  dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].nb_rb = nb_rb;
+  dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].UE_id = UE_id;
+  dlsch_ue_select[CC_idP].list[dlsch_ue_select[CC_idP].ue_num].rnti = rnti;
+  dlsch_ue_select[CC_idP].ue_num++;
+}
 #if defined(PRE_SCD_THREAD)
 inline uint16_t search_rbs_required(uint16_t mcs, uint16_t TBS,uint16_t NB_RB, uint16_t step_size){
   uint16_t nb_rb,i_TBS,tmp_TBS;

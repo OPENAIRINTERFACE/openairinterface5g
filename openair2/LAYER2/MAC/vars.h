@@ -143,4 +143,5 @@ DCI2_5MHz_2A_TDD_t DLSCH_alloc_pdu2;
 DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
 
 mac_rlc_am_muilist_t rlc_am_mui;
+SCHEDULER_MODES global_scheduler_mode;
 #endif

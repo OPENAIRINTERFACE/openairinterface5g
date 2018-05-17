@@ -74,7 +74,8 @@ typedef struct {
 } ULSCH_UE_SELECT;
 
 /* proto */
-void set_dl_ue_select(int CC_idP, enum SCH_UE_PRIORITY ue_priority,uint16_t nb_rb, int UE_id, rnti_t rnti);
+void set_dl_ue_select_msg2(int CC_idP, uint16_t nb_rb, int UE_id, rnti_t rnti);
+void set_dl_ue_select_msg4(int CC_idP, uint16_t nb_rb, int UE_id, rnti_t rnti);
 
 void dlsch_scheduler_pre_ue_select_fairRR(
     module_id_t     module_idP,
