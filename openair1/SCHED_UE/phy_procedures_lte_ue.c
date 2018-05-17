@@ -2982,18 +2982,18 @@ LOG_DEBUG_END
 
     else if ((ue->prach_resources[eNB_id]) &&
        (dci_alloc_rx[i].rnti == ue->prach_resources[eNB_id]->ra_RNTI) &&
-       (dci_alloc_rx[i].format == format1A)) {
+       ((dci_alloc_rx[i].format == format1A) || (dci_alloc_rx[i].format == format1C))) {
 
 LOG_DEBUG_BEGIN(DEBUG_UE_PHYPROC)
-      LOG_D(PHY,"[UE  %d][RAPROC] subframe %d: Found RA rnti %x, format 1A, dci_cnt %d\n",ue->Mod_id,subframe_rx,dci_alloc_rx[i].rnti,i);
+      LOG_D(PHY,"[UE  %d][RAPROC] subframe %d: Found RA rnti %x, format 1%s, dci_cnt %d\n",ue->Mod_id,subframe_rx,dci_alloc_rx[i].rnti,dci_alloc_rx[i].format==format1A?"A":"C",i);
 LOG_DEBUG_END
 
 
       if (generate_ue_dlsch_params_from_dci(frame_rx,
 					    subframe_rx,
-					    (DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
+					    (void *)&dci_alloc_rx[i].dci_pdu,
 					    ue->prach_resources[eNB_id]->ra_RNTI,
-					    format1A,
+					    dci_alloc_rx[i].format,
 					    ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id],
 					    ue->pdsch_vars_ra[eNB_id],
 					    &ue->dlsch_ra[eNB_id],
