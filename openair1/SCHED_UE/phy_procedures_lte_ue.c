@@ -2516,7 +2516,7 @@ void ue_measurement_procedures(
 	  T_INT((int)ue->common_vars.freq_offset));
   }
 
-  if (l==(6-ue->frame_parms.Ncp)) {
+  if (( (slot%2) == 0) && (l==(6-ue->frame_parms.Ncp))) {
 
     // make sure we have signal from PSS/SSS for N0 measurement
          // LOG_I(PHY," l==(6-ue->frame_parms.Ncp) ue_rrc_measurements\n");
@@ -4736,9 +4736,22 @@ LOG_DEBUG_END
   ue_measurement_procedures(l-1,ue,proc,eNB_id,(subframe_rx<<1),abstraction_flag,mode);
 
   LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, subframe_rx);
-    // If this is PMCH, call procedures and return
+
+  // If this is PMCH, call procedures, do channel estimation for first symbol of next DL subframe and return
   if (pmch_flag == 1) {
     ue_pmch_procedures(ue,proc,eNB_id,abstraction_flag);
+
+    int next_subframe_rx = (1+subframe_rx)%10;
+    if (subframe_select(&ue->frame_parms,next_subframe_rx) != SF_UL)
+    {
+      slot_fep(ue,
+         0,
+         (next_subframe_rx<<1),
+         0,
+         0,
+         0);
+    }
+
     return 0;
   }
 
@@ -4848,6 +4861,7 @@ LOG_DEBUG_END
       ue_measurement_procedures(l-1,ue,proc,eNB_id,1+(subframe_rx<<1),abstraction_flag,mode);
 
     } // for l=1..l2
+    ue_measurement_procedures(l-1,ue,proc,eNB_id,1+(subframe_rx<<1),abstraction_flag,mode);
 
     // do first symbol of next downlink subframe for channel estimation
     int next_subframe_rx = (1+subframe_rx)%10;
