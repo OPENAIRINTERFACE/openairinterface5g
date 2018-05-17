@@ -4185,7 +4185,7 @@ LOG_DEBUG_END
 
 
     if (subframe_select(&ue->frame_parms,subframe_rx) == SF_S) { // S-subframe, do first 5 symbols only
-        l2 = 5;
+        l2 = 4;
     } else if (pmch_flag == 1) { // do first 2 symbols only
         l2 = 1;
     } else { // normal subframe, last symbol to be processed is the first of the second slot
@@ -4671,7 +4671,7 @@ LOG_DEBUG_END
 
 
   if (subframe_select(&ue->frame_parms,subframe_rx) == SF_S) { // S-subframe, do first 5 symbols only
-    l2 = 5;
+    l2 = 4;
   } else if (pmch_flag == 1) { // do first 2 symbols only
     l2 = 1;
   } else { // normal subframe, last symbol to be processed is the first of the second slot
