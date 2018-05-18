@@ -34,10 +34,12 @@
 
 #include "defs_eNB.h"
 #include "defs_nr_common.h"
+#include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 
 
 typedef struct {
-  uint8_t pbch_d[100];
+  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS];
+  uint8_t pbch_e[NR_POLAR_PBCH_E];
 } NR_gNB_PBCH;
 
 typedef struct {

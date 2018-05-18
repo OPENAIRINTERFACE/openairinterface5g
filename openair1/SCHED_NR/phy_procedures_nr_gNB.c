@@ -122,24 +122,32 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
   int ss_subframe = (cfg->sch_config.half_frame_index.value)? 5 : 0;
-  uint8_t Lmax, nu, ssb_index=0, n_hf=0;
+  int sfn = 10*frame + subframe;
+  int frame_mod8 = frame&7;
+  uint8_t Lmax, nushift, ssb_index=0, n_hf=0;
 
   LOG_D(PHY,"common_signal_procedures: frame %d, subframe %d\n",frame,subframe);
 
   int ssb_start_symbol = nr_get_ssb_start_symbol(cfg, fp);
   nr_set_ssb_first_subcarrier(cfg, fp);
   Lmax = (fp->dl_CarrierFreq < 3e9)? 4:8;
-  nu = (Lmax < 8)? ssb_index&3 : ssb_index&7;
+  nushift = (Lmax < 8)? ssb_index&3 : ssb_index&7;
 
 
   if (subframe == ss_subframe)
   {
     // Current implementation is based on SSB in first half frame, first candidate
     LOG_I(PHY,"SS TX: frame %d, subframe %d, start_symbol %d\n",frame,subframe, ssb_start_symbol);
+
     nr_generate_pss(gNB->d_pss, txdataF, AMP, ssb_start_symbol, cfg, fp);
     nr_generate_sss(gNB->d_sss, txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
-    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF, AMP_OVER_2, ssb_start_symbol, nu, cfg, fp);
-    nr_generate_pbch(&gNB->pbch, pbch_pdu, txdataF, AMP_OVER_2, ssb_start_symbol, nu, cfg, fp);
+
+    /*if ((frame_mod8) == 0){
+      if (gNB->pbch_configured != 1)return;
+      gNB->pbch_configured = 0;
+    }*/
+    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF, AMP_OVER_2, ssb_start_symbol, nushift, cfg, fp);
+    nr_generate_pbch(&gNB->pbch, pbch_pdu, txdataF, AMP_OVER_2, ssb_start_symbol, nushift, sfn, n_hf, frame_mod8, cfg, fp);
   }
 
 }

@@ -257,8 +257,8 @@ main()
 {
   unsigned char test[] = "Thebigredfox";
   crcTableInit();
-  printf("%x\n", crcbit(test, sizeof(test) - 1, poly24a));
-  printf("%x\n", crc24a(test, (sizeof(test) - 1)*8));
+  //printf("%x\n", crcbit(test, sizeof(test) - 1, poly24a));
+  //printf("%x\n", crc24a(test, (sizeof(test) - 1)*8));
   printf("%x\n", crcbit(test, sizeof(test) - 1, poly6));
   printf("%x\n", crc6(test, (sizeof(test) - 1)*8));
 }
