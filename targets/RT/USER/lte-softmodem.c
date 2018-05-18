@@ -332,10 +332,14 @@ void exit_fun(const char* s)
 
   if (UE_flag==0) {
     for (ru_id=0; ru_id<RC.nb_RU;ru_id++) {
-      if (RC.ru[ru_id]->rfdevice.trx_end_func)
-	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
-      if (RC.ru[ru_id]->ifdevice.trx_end_func)
-	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
+      if (RC.ru[ru_id]->rfdevice.trx_end_func) {
+        RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+      }
+      if (RC.ru[ru_id]->ifdevice.trx_end_func) {
+        RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+      }
     }
   }
 
@@ -346,8 +350,10 @@ void exit_fun(const char* s)
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       if (UE_flag == 0) {
       } else {
-	if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
-	  PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+        if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func) {
+          PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+          PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func = NULL;
+        }
       }
     }
 
@@ -1473,16 +1479,21 @@ int main( int argc, char **argv )
 
   // *** Handle per CC_id openair0
   if (UE_flag==1) {
-    if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
+    if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func) {
       PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
+      PHY_vars_UE_g[0][0]->rfdevice.trx_end_func = NULL;
+    }
   }
   else {
     for(ru_id=0; ru_id<NB_RU; ru_id++) {
-      if (RC.ru[ru_id]->rfdevice.trx_end_func)
-	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);  
-      if (RC.ru[ru_id]->ifdevice.trx_end_func)
-	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
-
+      if (RC.ru[ru_id]->rfdevice.trx_end_func) {
+        RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+      }
+      if (RC.ru[ru_id]->ifdevice.trx_end_func) {
+        RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+      }
     }
   }
   if (ouput_vcd)
