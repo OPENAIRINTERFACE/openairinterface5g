@@ -550,7 +550,6 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
   // Fill in the "e"-sequence from 36-212, V8.6 2009-03, p. 16-17 (for each "e") and concatenate the
   // outputs for each code segment, see Section 5.1.5 p.20
-start_meas(rm_stats);
   for (r=0,r_offset=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
     // get information for E for the segments that are handled by the worker thread
@@ -566,7 +565,7 @@ start_meas(rm_stats);
 	r_offset += Nl*Qm * ((GpmodC==0?0:1) + (Gp/C));
     }
     else  {
-      //start_meas(rm_stats);
+      start_meas(rm_stats);
       r_offset += lte_rate_matching_turbo(dlsch->harq_processes[harq_pid]->RTC[r],
 					  G,  //G
 					  dlsch->harq_processes[harq_pid]->w[r],
@@ -581,10 +580,9 @@ start_meas(rm_stats);
 					  r,
 					  nb_rb);
       //					  m);                       // r
-      //stop_meas(rm_stats);
+      stop_meas(rm_stats);
     }
   }
-stop_meas(rm_stats);
   stop_meas(te_main_stats);
 
   start_meas(te_wait_stats);

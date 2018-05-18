@@ -281,9 +281,9 @@ rx_sdu(const module_id_t enb_mod_idP,
       return;
     }
   } else {
-    LOG_W(MAC,
+    LOG_D(MAC,
 	  "Cannot find UE or RA corresponding to ULSCH rnti %x, dropping it\n",
-	  current_rnti);
+	  current_rnti);////////////******** LOG_W into LOG_D
     return;
   }
   payload_ptr = parse_ulsch_header(sduP, &num_ce, &num_sdu, rx_ces, rx_lcids, rx_lengths, sdu_lenP);
