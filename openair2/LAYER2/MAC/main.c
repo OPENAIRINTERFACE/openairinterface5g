@@ -138,44 +138,24 @@ void mac_top_init_eNB(void)
         sli = &mac->slice_info;
 
         sli->intraslice_share_active = 1;
-        sli->intraslice_share_active_current = 1;
         sli->interslice_share_active = 1;
-        sli->interslice_share_active_current = 1;
 
         sli->n_dl = 1;
-        sli->n_dl_current = 1;
-        sli->tot_pct_dl = 1;
-        sli->tot_pct_dl_current = 1;
-        sli->avg_pct_dl = 0.25;
         memset(sli->dl, 0, sizeof(slice_sched_conf_dl_t) * MAX_NUM_SLICES);
         sli->dl[0].pct = 1.0;
-        sli->dl[0].pct_current = 1.0;
         sli->dl[0].prio = 10;
-        sli->dl[0].prio_current = 10;
         sli->dl[0].pos_high = N_RBG_MAX;
-        sli->dl[0].pos_high_current = N_RBG_MAX;
         sli->dl[0].maxmcs = 28;
-        sli->dl[0].maxmcs_current = 28;
         sli->dl[0].sorting = 0x012345;
-        sli->dl[0].sorting_current = 0x012345;
         sli->dl[0].update_sched = 1;
-        sli->dl[0].update_sched_current = 1;
         sli->dl[0].sched_name = "schedule_ue_spec";
 
         sli->n_ul = 1;
-        sli->n_ul_current = 1;
-        sli->tot_pct_ul = 1;
-        sli->tot_pct_ul_current = 1;
-        sli->avg_pct_ul = 0.25;
         memset(sli->ul, 0, sizeof(slice_sched_conf_ul_t) * MAX_NUM_SLICES);
         sli->ul[0].pct = 1.0;
-        sli->ul[0].pct_current = 1.0;
         sli->ul[0].maxmcs = 20;
-        sli->ul[0].maxmcs_current = 20;
         sli->ul[0].sorting = 0x0123;
-        sli->ul[0].sorting_current = 0x0123;
         sli->ul[0].update_sched = 1;
-        sli->ul[0].update_sched_current = 1;
         sli->ul[0].sched_name = "schedule_ulsch_rnti";
     }
 

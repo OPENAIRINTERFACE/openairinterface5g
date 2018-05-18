@@ -1151,38 +1151,29 @@ typedef void (*slice_scheduler_dl)(module_id_t mod_id,
 typedef struct {
     slice_id_t id;
 
-    /// RB share for each slice for past and current time
+    /// RB share for each slice
     float     pct;
-    float     pct_current;
 
-    /// whether this slice is isolated from the others for past and current time
+    /// whether this slice is isolated from the others
     int       isol;
-    int       isol_current;
 
     int       prio;
-    int       prio_current;
 
     /// Frequency ranges for slice positioning
     int       pos_low;
     int       pos_high;
-    int       pos_low_current;
-    int       pos_high_current;
 
-    // max mcs for each slice for past and current time
+    // max mcs for each slice
     int       maxmcs;
-    int       maxmcs_current;
 
     /// criteria for sorting policies of the slices
     uint32_t  sorting;
-    uint32_t  sorting_current;
 
     /// Accounting policy (just greedy(1) or fair(0) setting for now)
     int       accounting;
-    int       accounting_current;
 
     /// Whether the scheduler callback should be updated
     int       update_sched;
-    int       update_sched_current;
 
     /// name of available scheduler
     char     *sched_name;
@@ -1202,25 +1193,20 @@ typedef void (*slice_scheduler_ul)(module_id_t   mod_id,
 typedef struct {
     slice_id_t id;
 
-    /// RB share for each slice for past and current time
+    /// RB share for each slice
     float     pct;
-    float     pct_current;
 
-    // MAX MCS for each slice for past and current time
+    // MAX MCS for each slice
     int       maxmcs;
-    int       maxmcs_current;
 
     /// criteria for sorting policies of the slices
     uint32_t  sorting;
-    uint32_t  sorting_current;
 
     /// starting RB (RB offset) of UL scheduling
     int       first_rb;
-    int       first_rb_current;
 
     /// Slice scheduler callback update needed
     int       update_sched;
-    int       update_sched_current;
 
     /// name of available scheduler
     char     *sched_name;
@@ -1238,28 +1224,16 @@ typedef struct {
     /// indicates whether remaining RBs after first intra-slice allocation will
     /// be allocated to UEs of the same slice
     int       intraslice_share_active;
-    int       intraslice_share_active_current;
     /// indicates whether remaining RBs after slice allocation will be
     /// allocated to UEs of another slice. Isolated slices will be ignored
     int       interslice_share_active;
-    int       interslice_share_active_current;
 
-    /// number of active slices for past and current time in DL
+    /// number of active DL slices
     int      n_dl;
-    int      n_dl_current;
-    /// RB share stats for DL
-    float    tot_pct_dl;
-    float    tot_pct_dl_current;
-    float    avg_pct_dl;
     slice_sched_conf_dl_t dl[MAX_NUM_SLICES];
 
-    /// number of active slices for past and current time in UL
+    /// number of active UL slices
     int      n_ul;
-    int      n_ul_current;
-    /// RB share stats for UL
-    float    tot_pct_ul;
-    float    tot_pct_ul_current;
-    float    avg_pct_ul;
     slice_sched_conf_ul_t ul[MAX_NUM_SLICES];
 
     pre_processor_results_t pre_processor_results[MAX_NUM_SLICES];
