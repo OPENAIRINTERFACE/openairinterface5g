@@ -92,7 +92,7 @@ static void configure_nrrrc(uint32_t gnb_id)
   msg_p = itti_alloc_new_message (TASK_GNB_APP, NRRRC_CONFIGURATION_REQ);
 
   if (RC.nr_rrc[gnb_id]) {
-    RCconfig_NRRRC(msg_p,gnb_id, RC.nr_rrc[gnb_id]);
+    RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
     
 
     LOG_I(GNB_APP,"Sending configuration message to NR_RRC task\n");

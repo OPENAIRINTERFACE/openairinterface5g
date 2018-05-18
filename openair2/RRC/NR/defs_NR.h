@@ -20,11 +20,11 @@
 
 /*! \file RRC/LITE/defs_NR.h
 * \brief NR RRC struct definitions and function prototypes
-* \author Navid Nikaein, Raymond Knopp and WEI-TAI CHEN
+* \author Navid Nikaein, Raymond Knopp 
 * \date 2010 - 2014, 2018
 * \version 1.0
 * \company Eurecom
-* \email: navid.nikaein@eurecom.fr, raymond.knopp@eurecom.fr, kroempa@gmail.com.tw
+* \email: navid.nikaein@eurecom.fr, raymond.knopp@eurecom.fr
 */
 
 #ifndef __OPENAIR_RRC_DEFS_NR_H__
@@ -45,6 +45,8 @@
 #include "SIB1.h"
 //#include "SystemInformation.h"
 //#include "RRCConnectionReconfiguration.h"
+#include "RRCReconfigurationComplete.h"
+#include "RRCReconfiguration"
 //#include "RRCConnectionReconfigurationComplete.h"
 //#include "RRCConnectionSetup.h"
 //#include "RRCConnectionSetupComplete.h"
@@ -59,6 +61,7 @@
 //#include "AS-Context.h"
 #include "UE-NR-Capability.h"
 #include "MeasResults.h"
+#include "ServingCellConfigCommon.h"
 #endif
 //-------------------
 
@@ -389,77 +392,34 @@ typedef struct rrc_gNB_ue_context_s {
 typedef struct {
 
   // buffer that contains the encoded messages
-  uint8_t							                      *MIB_NR;
-  uint8_t							                      sizeof_MIB_NR;
+  uint8_t							                      *MIB;
+  uint8_t							                      sizeof_MIB;
 
-  uint8_t                                   *SIB1_NR;
-  uint8_t                                   sizeof_SIB1_NR;
-/*
-  uint8_t                         	        *SIB23_NB_IoT;
-  uint8_t                        	          sizeof_SIB23_NB_IoT;
-*/
+  uint8_t                                   *SIB1;
+  uint8_t                                   sizeof_SIB1;
 
-/*
-  //not actually implemented in OAI
-  uint8_t                                   *SIB4_NB_IoT;
-  uint8_t                                   sizeof_SIB4_NB_IoT;
-  uint8_t                                   *SIB5_NB_IoT;
-  uint8_t                                   sizeof_SIB5_NB_IoT;
-  uint8_t                                   *SIB14_NB_IoT;
-  uint8_t                                   sizeof_SIB14_NB_IoT;
-  uint8_t                                   *SIB16_NB_IoT;
-  uint8_t                                   sizeof_SIB16_NB_IoT;
-*/
-  //TS 36.331 V14.2.1
-//  uint8_t                                 *SIB15_NB;
-//  uint8_t                                 sizeof_SIB15_NB;
-//  uint8_t                                 *SIB20_NB;
-//  uint8_t                                 sizeof_SIB20_NB;
-//  uint8_t                                 *SIB22_NB;
-//  uint8_t                                 sizeof_SIB22_NB;
+  uint8_t                                   *SERVINGCELLCONFIGCOMMON;
+  uint8_t                                   sizeof_SERVINGCELLCONFIGCOMMON; 
+
 
   //implicit parameters needed
   int                                       Ncp; //cyclic prefix for DL
   int								                        Ncp_UL; //cyclic prefix for UL
-  int                                       p_eNB; //number of tx antenna port
-  int								                        p_rx_eNB; //number of receiving antenna ports
+  int                                       p_gNB; //number of tx antenna port
+  int								                        p_rx_gNB; //number of receiving antenna ports
   uint32_t                                  dl_CarrierFreq; //detected by the UE
   uint32_t                                  ul_CarrierFreq; //detected by the UE
-  uint16_t                                  physCellId; //not stored in the MIB-NB but is getting through NPSS/NSSS
+  uint16_t                                  physCellId; 
   
   //are the only static one (memory has been already allocated)
-  BCCH_BCH_Message_t                        mib_NR;
+  BCCH_BCH_Message_t                        mib;
   
-  /*
-  BCCH_DL_SCH_Message_NR_t                  siblock1_NB_IoT; //SIB1-NB
-  BCCH_DL_SCH_Message_NR_t                  systemInformation_NB_IoT; //SI
-  */
-  SIB1_t     		                            *sib1_NR;
-  /*
-  SIB2_t   	                                *sib2_NR;
-  SIB3_t   	                                *sib3_NR;
-  //not implemented yet
-  SIB4_t    	                              *sib4_NR;
-  SIB5_t     	                              *sib5_NR;
-  */
+  SIB1_t     		                            *sib1;
+  ServingCellConfigCommon_t                 *servingcellconfigcommon;
 
 
   SRB_INFO_NR                               SI;
   SRB_INFO_NR                               Srb0;
-
-  uint8_t                                   **MCCH_MESSAGE; //  probably not needed , but added to remove errors
-  uint8_t                                   sizeof_MCCH_MESSAGE[8];// but added to remove errors
-  SRB_INFO_NR                               MCCH_MESS[8];// MAX_MBSFN_AREA
-
-  /*future implementation TS 36.331 V14.2.1
-  SystemInformationBlockType15_NB_r14_t     *sib15;
-  SystemInformationBlockType20_NB_r14_t     *sib20;
-  SystemInformationBlockType22_NB_r14_t     *sib22;
-
-  uint8_t							                      SCPTM_flag;
-  uint8_t							                      sizeof_SC_MCHH_MESS[];
-  SC_MCCH_Message_NR_t				              scptm;*/
-
 
 } rrc_gNB_carrier_data_t;
 //---------------------------------------------------
@@ -484,6 +444,7 @@ typedef struct gNB_RRC_INST_s {
 #if defined(ENABLE_ITTI)
   gNB_RrcConfigurationReq                             configuration;//rrc_messages_types.h
 #endif
+
   // other PLMN parameters
   /// Mobile country code
   int mcc;

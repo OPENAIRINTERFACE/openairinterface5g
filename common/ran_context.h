@@ -91,7 +91,7 @@ typedef struct {
   /// NB_IoT RRC context variables
   //struct eNB_RRC_INST_NB_IoT_s **nb_iot_rrc;
   /// NR RRC context variables
-  struct gNB_RRC_INST_s **nr_rrc;
+  struct gNB_RRC_INST_s **nrrrc;
   /// MAC context variables
   struct eNB_MAC_INST_s **mac;
   /// NB_IoT MAC context variables

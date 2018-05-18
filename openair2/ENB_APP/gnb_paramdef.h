@@ -244,28 +244,34 @@ typedef enum {
 
   //NR DL SCS-SPECIFICCARRIER
 #define GNB_CONFIG_STRING_DL_OFFSETTOCARRIER                                           "DL_offsetToCarrier"
-#define GNB_CONFIG_STRING_DL_SUBCARRIERSPACING                                         "DL_SubcarrierSpacing"
+#define GNB_CONFIG_STRING_DL_SCS_SUBCARRIERSPACING                                     "DL_SCS_SubcarrierSpacing"
 #define GNB_CONFIG_STRING_DL_SCS_SPECIFICCARRIER_K0                                    "DL_SCS_SpecificCarrier_k0"
 #define GNB_CONFIG_STRING_DL_CARRIERBANDWIDTH                                          "DL_carrierBandwidth"
 
   // NR BWP-DOWNLINKCOMMON
 #define GNB_CONFIG_STRING_DL_LOCATIONANDBANDWIDTH                                      "DL_locationAndBandwidth"
-   
+#define GNB_CONFIG_STRING_DL_BWP_SUBCARRIERSPACING                                     "DL_BWP_SubcarrierSpacing"
+#define GNB_CONFIG_STRING_DL_BWP_PREFIX_TYPE                                           "DL_BWP_prefix_type"
+
   //NR FREQUENCYINFOUL
 #define GNB_CONFIG_STRING_UL_FREQBANDINDICATORNR                                       "UL_FreqBandIndicatorNR"
 #define GNB_CONFIG_STRING_UL_ABSOLUTEFREQUENCYPOINTA                                   "UL_absoluteFrequencyPointA"
-#define GNB_CONFIG_STRING_FREQUENCYINFOUL_P_MAX                                        "FrequencyInfoUL_p_Max"
-#define GNB_CONFIG_STRING_FREQUENCYSHIFT7P5KHZ                                         "frequencyShift7p5khz"
+#define GNB_CONFIG_STRING_UL_ADDITIONALSPECTRUMEMISSION                                "UL_additionalSpectrumEmission"
+#define GNB_CONFIG_STRING_UL_P_MAX                                                     "UL_p_Max"
+#define GNB_CONFIG_STRING_UL_FREQUENCYSHIFT7P5KHZ                                      "UL_frequencyShift7p5khz"
 
   //NR UL SCS-SPECIFICCARRIER
 #define GNB_CONFIG_STRING_UL_OFFSETTOCARRIER                                           "UL_offsetToCarrier"
-#define GNB_CONFIG_STRING_UL_SUBCARRIERSPACING                                         "UL_SubcarrierSpacing"
+#define GNB_CONFIG_STRING_UL_SCS_SUBCARRIERSPACING                                     "UL_SCS_SubcarrierSpacing"
 #define GNB_CONFIG_STRING_UL_SCS_SPECIFICCARRIER_K0                                    "UL_SCS_SpecificCarrier_k0"
 #define GNB_CONFIG_STRING_UL_CARRIERBANDWIDTH                                          "UL_carrierBandwidth"
 
   // NR BWP-UPLINKCOMMON
 #define GNB_CONFIG_STRING_UL_LOCATIONANDBANDWIDTH                                      "UL_locationAndBandwidth"
- 
+#define GNB_CONFIG_STRING_UL_BWP_SUBCARRIERSPACING                                     "UL_BWP_SubcarrierSpacing"
+#define GNB_CONFIG_STRING_UL_BWP_PREFIX_TYPE                                           "UL_BWP_prefix_type"
+
+#define GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR              "ServingCellConfigCommon_ssb_PositionsInBurst_PR"
 #define GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_PERIODICITYSERVINGCELL           "ServingCellConfigCommon_ssb_periodicityServingCell"
 #define GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_DMRS_TYPEA_POSITION                  "ServingCellConfigCommon_dmrs_TypeA_Position"
 #define GNB_CONFIG_STRING_NIA_SUBCARRIERSPACING                                        "NIA_SubcarrierSpacing"
@@ -357,6 +363,7 @@ typedef enum {
 #define GNB_CONFIG_STRING_PDCCH_INTERLEAVERSIZE                                        "PDCCH_interleaverSize"
 #define GNB_CONFIG_STRING_PDCCH_SHIFTINDEX                                             "PDCCH_shiftIndex"
 #define GNB_CONFIG_STRING_PDCCH_PRECODERGRANULARITY                                    "PDCCH_precoderGranularity"
+#define GNB_CONFIG_STRING_PDCCH_TCI_STATEID                                            "PDCCH_TCI_StateId"
 #define GNB_CONFIG_STRING_TCI_PRESENTINDCI                                             "tci_PresentInDCI"
 
   //NR PDCCH-ConfigCommon commonSearchSpaces
@@ -412,19 +419,25 @@ typedef enum {
 {GNB_CONFIG_STRING_DL_FREQBANDINDICATORNR,                                           NULL,        0,        iptr:&DL_FreqBandIndicatorNR,                                           defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_DL_ABSOLUTEFREQUENCYPOINTA,                                       NULL,        0,        iptr:&DL_absoluteFrequencyPointA,                                       defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_DL_OFFSETTOCARRIER,                                               NULL,        0,        iptr:&DL_offsetToCarrier,                                               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_SUBCARRIERSPACING,                                             NULL,        0,        iptr:&DL_SubcarrierSpacing,                                             defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DL_SCS_SUBCARRIERSPACING,                                         NULL,        0,        iptr:&DL_SCS_SubcarrierSpacing,                                         defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_DL_SCS_SPECIFICCARRIER_K0,                                        NULL,        0,        iptr:&DL_SCS_SpecificCarrier_k0,                                        defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_DL_CARRIERBANDWIDTH,                                              NULL,        0,        iptr:&DL_carrierBandwidth,                                              defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_DL_LOCATIONANDBANDWIDTH,                                          NULL,        0,        iptr:&DL_locationAndBandwidth,                                          defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DL_BWP_SUBCARRIERSPACING,                                         NULL,        0,        iptr:&DL_BWP_SubcarrierSpacing,                                         defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DL_BWP_PREFIX_TYPE,                                               NULL,        0,        iptr:&DL_BWP_prefix_type,                                               defintval:0,               TYPE_STRING,     0},  \
 {GNB_CONFIG_STRING_UL_FREQBANDINDICATORNR,                                           NULL,        0,        iptr:&UL_FreqBandIndicatorNR,                                           defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_UL_ABSOLUTEFREQUENCYPOINTA,                                       NULL,        0,        iptr:&UL_absoluteFrequencyPointA,                                       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_FREQUENCYINFOUL_P_MAX,                                            NULL,        0,        iptr:&FrequencyInfoUL_p_Max,                                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_FREQUENCYSHIFT7P5KHZ,                                             NULL,        0,        iptr:&frequencyShift7p5khz,                                             defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_ADDITIONALSPECTRUMEMISSION,                                    NULL,        0,        iptr:&UL_additionalSpectrumEmission,                                                         defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_P_MAX,                                                         NULL,        0,        iptr:&UL_p_Max,                                                         defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_FREQUENCYSHIFT7P5KHZ,                                          NULL,        0,        iptr:&UL_frequencyShift7p5khz,                                          defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_UL_OFFSETTOCARRIER,                                               NULL,        0,        iptr:&UL_offsetToCarrier,                                               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_SUBCARRIERSPACING,                                             NULL,        0,        iptr:&UL_SubcarrierSpacing,                                             defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_SCS_SUBCARRIERSPACING,                                         NULL,        0,        iptr:&UL_SCS_SubcarrierSpacing,                                         defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_UL_SCS_SPECIFICCARRIER_K0,                                        NULL,        0,        iptr:&UL_SCS_SpecificCarrier_k0,                                        defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_UL_CARRIERBANDWIDTH,                                              NULL,        0,        iptr:&UL_carrierBandwidth,                                              defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_UL_LOCATIONANDBANDWIDTH,                                          NULL,        0,        iptr:&UL_locationAndBandwidth,                                          defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_BWP_SUBCARRIERSPACING,                                         NULL,        0,        iptr:&UL_BWP_SubcarrierSpacing,                                         defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_BWP_PREFIX_TYPE,                                               NULL,        0,        iptr:&UL_BWP_prefix_type,                                               defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR,                  NULL,        0,        iptr:&ServingCellConfigCommon_ssb_PositionsInBurst_PR,                  defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_PERIODICITYSERVINGCELL,               NULL,        0,        iptr:&ServingCellConfigCommon_ssb_periodicityServingCell,               defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_DMRS_TYPEA_POSITION,                      NULL,        0,        iptr:&ServingCellConfigCommon_dmrs_TypeA_Position,                      defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_NIA_SUBCARRIERSPACING,                                            NULL,        0,        iptr:&NIA_SubcarrierSpacing,                                            defintval:0,               TYPE_UINT,       0},  \
@@ -494,6 +507,7 @@ typedef enum {
 {GNB_CONFIG_STRING_PDCCH_INTERLEAVERSIZE,                                            NULL,        0,        iptr:&PDCCH_interleaverSize,                                            defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_PDCCH_SHIFTINDEX,                                                 NULL,        0,        iptr:&PDCCH_shiftIndex,                                                 defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_PDCCH_PRECODERGRANULARITY,                                        NULL,        0,        iptr:&PDCCH_precoderGranularity,                                        defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PDCCH_TCI_STATEID,                                                NULL,        0,        iptr:&PDCCH_TCI_StateId,                                                defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_TCI_PRESENTINDCI,                                                 NULL,        0,        iptr:&tci_PresentInDCI,                                                 defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_SEARCHSPACEID,                                                    NULL,        0,        iptr:&SearchSpaceId,                                                    defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_COMMONSEARCHSPACES_CONTROLRESOURCESETID,                          NULL,        0,        iptr:&commonSearchSpaces_controlResourceSetId,                          defintval:0,               TYPE_UINT,       0},  \
@@ -551,19 +565,25 @@ typedef enum {
 #define GNB_CONFIG_DL_SUBCARRIERSPACING_IDX                                         
 #define GNB_CONFIG_DL_SCS_SPECIFICCARRIER_K0_IDX                                    
 #define GNB_CONFIG_DL_CARRIERBANDWIDTH_IDX                                          
-#define GNB_CONFIG_DL_LOCATIONANDBANDWIDTH_IDX                                      
+#define GNB_CONFIG_DL_LOCATIONANDBANDWIDTH_IDX
+#define GNB_CONFIG_DL_BWP_SUBCARRIERSPACING_IDX
+#define GNB_CONFIG_DL_BWP_PREFIX_TYPE_IDX                                      
 #define GNB_CONFIG_UL_FREQBANDINDICATORNR_IDX                                       
-#define GNB_CONFIG_UL_ABSOLUTEFREQUENCYPOINTA_IDX                                   
-#define GNB_CONFIG_FREQUENCYINFOUL_P_MAX_IDX                                        
-#define GNB_CONFIG_FREQUENCYSHIFT7P5KHZ_IDX                                         
+#define GNB_CONFIG_UL_ABSOLUTEFREQUENCYPOINTA_IDX 
+#define GNB_CONFIG_UL_ADDITIONALSPECTRUMEMISSION_IDX;                                  
+#define GNB_CONFIG_UL_P_MAX_IDX                                        
+#define GNB_CONFIG_UL_FREQUENCYSHIFT7P5KHZ_IDX                                         
 #define GNB_CONFIG_UL_OFFSETTOCARRIER_IDX                                           
-#define GNB_CONFIG_UL_SUBCARRIERSPACING_IDX                                         
+#define GNB_CONFIG_UL_SCS_SUBCARRIERSPACING_IDX                                         
 #define GNB_CONFIG_UL_SCS_SPECIFICCARRIER_K0_IDX                                    
 #define GNB_CONFIG_UL_CARRIERBANDWIDTH_IDX                                          
 #define GNB_CONFIG_UL_LOCATIONANDBANDWIDTH_IDX
+#define GNB_CONFIG_UL_BWP_SUBCARRIERSPACING_IDX
+#define GNB_CONFIG_UL_BWP_PREFIX_TYPE_IDX
 #define GNB_CONFIG_SUBCARRIERSPACINGCOMMON_IDX
 #define GNB_CONFIG_PDCCH_CONFIGSIB1_IDX
-#define GNB_CONFIG_FREQUENCYOFFSETSSB_IDX                                      
+#define GNB_CONFIG_FREQUENCYOFFSETSSB_IDX
+#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR_IDX                                      
 #define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SSB_PERIODICITYSERVINGCELL_IDX                                  
 #define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_DMRS_TYPEA_POSITION_IDX                                          
 #define GNB_CONFIG_NIA_SUBCARRIERSPACING_IDX                                        
@@ -632,7 +652,8 @@ typedef enum {
 #define GNB_CONFIG_PDCCH_REG_BUNDLESIZE_IDX                                        
 #define GNB_CONFIG_PDCCH_INTERLEAVERSIZE_IDX                                        
 #define GNB_CONFIG_PDCCH_SHIFTINDEX_IDX                                             
-#define GNB_CONFIG_PDCCH_PRECODERGRANULARITY_IDX                                    
+#define GNB_CONFIG_PDCCH_PRECODERGRANULARITY_IDX
+#define GNB_CONFIG_PDCCH_TCI_STATEID_IDX
 #define GNB_CONFIG_TCI_PRESENTINDCI_IDX                                             
 #define GNB_CONFIG_SEARCHSPACEID_IDX                                                
 #define GNB_CONFIG_COMMONSEARCHSPACES_CONTROLRESOURCESETID_IDX                      

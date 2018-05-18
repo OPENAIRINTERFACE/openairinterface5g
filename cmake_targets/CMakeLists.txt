@@ -364,9 +364,9 @@ file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
 file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
 set(nr_rrc_h ${nr_rrc_h} ${NR_RRC_FULL_DIR}/asn1_constants.h)
 set_source_files_properties(${nr_rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
-add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source}
-    ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
-include_directories ("${NR_RRC_FULL_DIR}")
+#add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source}
+#    ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
+#include_directories ("${NR_RRC_FULL_DIR}")
 
 # add the command to generate the source code
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make

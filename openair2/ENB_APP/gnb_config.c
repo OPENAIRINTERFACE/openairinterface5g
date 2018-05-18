@@ -67,31 +67,34 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
   //NR DL SCS-SpecificCarrier
   uint32_t               DL_offsetToCarrier                                            = 0;
-  int32_t                DL_SubcarrierSpacing                                          = 0;
+  int32_t                DL_SCS_SubcarrierSpacing                                      = 0;
   int32_t                DL_SCS_SpecificCarrier_k0                                     = 0;
   uint32_t               DL_carrierBandwidth                                           = 0;
 
   // NR BWP-DownlinkCommon
-  uint32_t               DL_locationAndBandwidth                                       = 0;   
+  uint32_t               DL_locationAndBandwidth                                       = 0;
+  long                   DL_BWP_SubcarrierSpacing                                      = 0;
+  char*                  DL_BWP_prefix_type                                            = NULL;  
 
   //NR FrequencyInfoUL
   int32_t                UL_FreqBandIndicatorNR                                        = 0;
   int32_t                UL_absoluteFrequencyPointA                                    = 0;
-  int32_t                FrequencyInfoUL_p_Max                                         = 0;
-  int32_t                frequencyShift7p5khz                                          = 0;
+  uint32_t               UL_additionalSpectrumEmission                                 = 0;
+  int32_t                UL_p_Max                                                      = 0;
+  int32_t                UL_frequencyShift7p5khz                                       = 0;
 
   //NR UL SCS-SpecificCarrier
   uint32_t               UL_offsetToCarrier                                            = 0;
-  int32_t                UL_SubcarrierSpacing                                          = 0;
+  int32_t                UL_SCS_SubcarrierSpacing                                      = 0;
   int32_t                UL_SCS_SpecificCarrier_k0                                     = 0;
   uint32_t               UL_carrierBandwidth                                           = 0;
 
   // NR BWP-UplinkCommon
   uint32_t               UL_locationAndBandwidth                                       = 0;
-
-  int32_t                subCarrierSpacingCommon                                       = 0;
-  uint32_t               pdcch_ConfigSIB1                                              = 0;
-  int32_t                frequencyOffsetSSB                                            = 0;
+  long                   UL_BWP_SubcarrierSpacing                                      = 0;
+  char*                  UL_BWP_prefix_type                                            = NULL; 
+  
+  int32_t                ServingCellConfigCommon_ssb_PositionsInBurst_PR               = 0;
   int32_t                ServingCellConfigCommon_ssb_periodicityServingCell            = 0;
   int32_t                ServingCellConfigCommon_dmrs_TypeA_Position                   = 0;
   int32_t                NIA_SubcarrierSpacing                                         = 0; 
@@ -489,19 +492,19 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                            RC.config_file_name, i, DL_offsetToCarrier);
             }
 
-            if (strcmp(DL_SubcarrierSpacing,"kHz15")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
-            }else if (strcmp(pusch_alpha,"kHz30")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
-            }else if (strcmp(pusch_alpha,"kHz60")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
-            }else if (strcmp(pusch_alpha,"kHz120")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
-            }else if (strcmp(pusch_alpha,"kHz240")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+            if (strcmp(DL_SCS_SubcarrierSpacing,"kHz15")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+            }else if (strcmp(DL_SCS_SubcarrierSpacing,"kHz30")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+            }else if (strcmp(DL_SCS_SubcarrierSpacing,"kHz60")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+            }else if (strcmp(DL_SCS_SubcarrierSpacing,"kHz120")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+            }else if (strcmp(DL_SCS_SubcarrierSpacing,"kHz240")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
             }else { 
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for DL_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
-                           RC.config_file_name, i, DL_SubcarrierSpacing);
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for DL_SCS_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
+                           RC.config_file_name, i, DL_SCS_SubcarrierSpacing);
             }
 
             switch (DL_SCS_SpecificCarrier_k0) {
@@ -536,6 +539,33 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               RC.config_file_name, i, DL_locationAndBandwidth);
             }
 
+            if (strcmp(DL_BWP_SubcarrierSpacing,"kHz15")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+            }else if (strcmp(DL_BWP_SubcarrierSpacing,"kHz30")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+            }else if (strcmp(DL_BWP_SubcarrierSpacing,"kHz60")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+            }else if (strcmp(DL_BWP_SubcarrierSpacing,"kHz120")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+            }else if (strcmp(DL_BWP_SubcarrierSpacing,"kHz240")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+            }else { 
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for DL_BWP_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
+                           RC.config_file_name, i, DL_BWP_SubcarrierSpacing);
+            }
+
+            if (!DL_BWP_prefix_type){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d define %s: NORMAL,EXTENDED!\n",
+                           RC.config_file_name, i, GNB_CONFIG_STRING_DL_PREFIX_TYPE);
+            }else if (strcmp(DL_BWP_prefix_type, "NORMAL") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_prefix_type[j] = NORMAL;
+            }else if (strcmp(DL_BWP_prefix_type, "EXTENDED") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_prefix_type[j] = EXTENDED;
+            }else {
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for DL_BWP_prefix_type choice: NORMAL or EXTENDED !\n",
+                           RC.config_file_name, i, DL_BWP_prefix_type);
+            }                        
+
             /////////////////////////////////NR FrequencyInfoUL//////////////////////////////
             NRRRC_CONFIGURATION_REQ (msg_p).UL_FreqBandIndicatorNR[j] = UL_FreqBandIndicatorNR;
             if ((UL_FreqBandIndicatorNR <1) || (UL_FreqBandIndicatorNR > 1024)){
@@ -549,14 +579,22 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                            RC.config_file_name, i, UL_absoluteFrequencyPointA);
             }       
 
-            NRRRC_CONFIGURATION_REQ (msg_p).FrequencyInfoUL_p_Max[j] = FrequencyInfoUL_p_Max;
-            if ((FrequencyInfoUL_p_Max <-30) || (FrequencyInfoUL_p_Max > 33)){
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for FrequencyInfoUL_p_Max choice: -30..33 !\n",
-              RC.config_file_name, i, FrequencyInfoUL_p_Max);
+            NRRRC_CONFIGURATION_REQ (msg_p).UL_additionalSpectrumEmission[j] = UL_additionalSpectrumEmission;
+            if ((UL_additionalSpectrumEmission <0) || (UL_additionalSpectrumEmission > 7)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for UL_additionalSpectrumEmission choice: 0..7 !\n",
+                           RC.config_file_name, i, UL_additionalSpectrumEmission);
+            }            
+
+            NRRRC_CONFIGURATION_REQ (msg_p).UL_p_Max[j] = UL_p_Max;
+            if ((UL_p_Max <-30) || (UL_p_Max > 33)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for UL_p_Max choice: -30..33 !\n",
+              RC.config_file_name, i, UL_p_Max);
             }
 
-            if (strcmp(frequencyShift7p5khz, "TRUE") == 0) {
-              RRC_CONFIGURATION_REQ (msg_p).frequencyShift7p5khz[j] = FrequencyInfoUL__frequencyShift7p5khz_true;
+            if (strcmp(UL_frequencyShift7p5khz, "TRUE") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).UL_frequencyShift7p5khz[j] = FrequencyInfoUL__frequencyShift7p5khz_true; //enum true = 0
+            }else if{
+              RRC_CONFIGURATION_REQ (msg_p).UL_frequencyShift7p5khz[j] = 1;//false               
             } 
 
             /////////////////////////////////NR UL SCS-SpecificCarrier///////////////////////////
@@ -566,18 +604,18 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               RC.config_file_name, i, UL_offsetToCarrier);
             }
 
-            if (strcmp(UL_SubcarrierSpacing,"kHz15")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
-            }else if (strcmp(pusch_alpha,"kHz30")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
-            }else if (strcmp(pusch_alpha,"kHz60")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
-            }else if (strcmp(pusch_alpha,"kHz120")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
-            }else if (strcmp(pusch_alpha,"kHz240")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
-            }else { AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
-              RC.config_file_name, i, UL_SubcarrierSpacing);
+            if (strcmp(UL_SCS_SubcarrierSpacing,"kHz15")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+            }else if (strcmp(UL_SCS_SubcarrierSpacing,"kHz30")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+            }else if (strcmp(UL_SCS_SubcarrierSpacing,"kHz60")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+            }else if (strcmp(UL_SCS_SubcarrierSpacing,"kHz120")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+            }else if (strcmp(UL_SCS_SubcarrierSpacing,"kHz240")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+            }else { AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_SCS_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
+              RC.config_file_name, i, UL_SCS_SubcarrierSpacing);
             }
 
             switch (UL_SCS_SpecificCarrier_k0) {
@@ -623,6 +661,47 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               RC.config_file_name, i, UL_locationAndBandwidth);
             }
 
+            if (strcmp(UL_BWP_SubcarrierSpacing,"kHz15")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+            }else if (strcmp(UL_BWP_SubcarrierSpacing,"kHz30")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+            }else if (strcmp(UL_BWP_SubcarrierSpacing,"kHz60")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+            }else if (strcmp(UL_BWP_SubcarrierSpacing,"kHz120")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+            }else if (strcmp(UL_BWP_SubcarrierSpacing,"kHz240")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+            }else { 
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_BWP_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
+                           RC.config_file_name, i, UL_BWP_SubcarrierSpacing);
+            }
+
+            if (!UL_BWP_prefix_type){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d define %s: NORMAL,EXTENDED!\n",
+                           RC.config_file_name, i, GNB_CONFIG_STRING_DL_PREFIX_TYPE);
+            }else if (strcmp(UL_BWP_prefix_type, "NORMAL") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_prefix_type[j] = NORMAL;
+            }else if (strcmp(UL_BWP_prefix_type, "EXTENDED") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_prefix_type[j] = EXTENDED;
+            }else {
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_BWP_prefix_type choice: NORMAL or EXTENDED !\n",
+                           RC.config_file_name, i, UL_BWP_prefix_type);
+            }  
+
+            if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"shortBitmap")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap;
+            }else if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"mediumBitmap")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
+            }else if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"longBitmap")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap;
+            }else if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"NOTHING")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = ServingCellConfigCommon__ssb_PositionsInBurst_PR_NOTHING;
+            }else { 
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for ServingCellConfigCommon_ssb_PositionsInBurst_PR choice !\n",
+                           RC.config_file_name, i, ServingCellConfigCommon_ssb_PositionsInBurst_PR);
+            }            
+
+
             switch (ServingCellConfigCommon_ssb_periodicityServingCell) {
               case 5:
                 NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms5;
@@ -654,7 +733,6 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                 break;
             }
 
-
             switch (ServingCellConfigCommon_dmrs_TypeA_Position) {
               case 2:
                 NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_dmrs_TypeA_Position[j] =  ServingCellConfigCommon__dmrs_TypeA_Position_pos2;
@@ -672,13 +750,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             if (strcmp(NIA_SubcarrierSpacing,"kHz15")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
-            }else if (strcmp(pusch_alpha,"kHz30")==0) {
+            }else if (strcmp(NIA_SubcarrierSpacing,"kHz30")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
-            }else if (strcmp(pusch_alpha,"kHz60")==0) {
+            }else if (strcmp(NIA_SubcarrierSpacing,"kHz60")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
-            }else if (strcmp(pusch_alpha,"kHz120")==0) {
+            }else if (strcmp(NIA_SubcarrierSpacing,"kHz120")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
-            }else if (strcmp(pusch_alpha,"kHz240")==0) {
+            }else if (strcmp(NIA_SubcarrierSpacing,"kHz240")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
             }else { AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for NIA_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
               RC.config_file_name, i, NIA_SubcarrierSpacing);
@@ -693,13 +771,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             /////////////////////////////////NR TDD-UL-DL-ConfigCommon///////////////////////////
             if (strcmp(referenceSubcarrierSpacing,"kHz15")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
-            }else if (strcmp(pusch_alpha,"kHz30")==0) {
+            }else if (strcmp(referenceSubcarrierSpacing,"kHz30")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
-            }else if (strcmp(pusch_alpha,"kHz60")==0) {
+            }else if (strcmp(referenceSubcarrierSpacing,"kHz60")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
-            }else if (strcmp(pusch_alpha,"kHz120")==0) {
+            }else if (strcmp(referenceSubcarrierSpacing,"kHz120")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
-            }else if (strcmp(pusch_alpha,"kHz240")==0) {
+            }else if (strcmp(referenceSubcarrierSpacing,"kHz240")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for referenceSubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
@@ -708,19 +786,19 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             if (strcmp(dl_UL_TransmissionPeriodicity,"ms0p5")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms0p5;
-            }else if (strcmp(pusch_alpha,"ms0p625")==0) {
+            }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms0p625")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms0p625;
-            }else if (strcmp(pusch_alpha,"ms1")==0) {
+            }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms1")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms1;
-            }else if (strcmp(pusch_alpha,"ms1p25")==0) {
+            }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms1p25")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms1p25;
-            }else if (strcmp(pusch_alpha,"ms2")==0) {
+            }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms2")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms2;
-            }else if (strcmp(pusch_alpha,"ms2p5")==0) {
+            }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms2p5")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms2p5;
-            }else if (strcmp(pusch_alpha,"ms5")==0) {
+            }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms5")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms5;
-            }else if (strcmp(pusch_alpha,"ms10")==0) {
+            }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms10")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms10;    
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for dl_UL_TransmissionPeriodicity choice: minusinfinity,ms0p5,ms0p625,ms1,ms1p25,ms2,ms2p5,ms5,ms10 !\n",
@@ -1182,13 +1260,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             if (strcmp(prach_msg1_SubcarrierSpacing,"kHz15")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
-            }else if (strcmp(pusch_alpha,"kHz30")==0) {
+            }else if (strcmp(prach_msg1_SubcarrierSpacing,"kHz30")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
-            }else if (strcmp(pusch_alpha,"kHz60")==0) {
+            }else if (strcmp(prach_msg1_SubcarrierSpacing,"kHz60")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
-            }else if (strcmp(pusch_alpha,"kHz120")==0) {
+            }else if (strcmp(prach_msg1_SubcarrierSpacing,"kHz120")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
-            }else if (strcmp(pusch_alpha,"kHz240")==0) {
+            }else if (strcmp(prach_msg1_SubcarrierSpacing,"kHz240")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for prach_msg1_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
@@ -1207,7 +1285,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(msg3_transformPrecoding , "ENABLE") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).msg3_transformPrecoding[j] = RACH_ConfigCommon__msg3_transformPrecoding_enabled;
+              NRRRC_CONFIGURATION_REQ (msg_p).msg3_transformPrecoding[j] = TRUE;
             }
 
             ////////////////////////////////NR RACH-ConfigGeneric//////////////////////////////
@@ -1334,7 +1412,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             /////////////////////////////////NR PUSCH-ConfigCommon///////////////////////////
             if (strcmp(groupHoppingEnabledTransformPrecoding , "ENABLE") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).groupHoppingEnabledTransformPrecoding[j] =  PUSCH_ConfigCommon__groupHoppingEnabledTransformPrecoding_enabled;
+              NRRRC_CONFIGURATION_REQ (msg_p).groupHoppingEnabledTransformPrecoding[j] =  TRUE;
             }
 
             NRRRC_CONFIGURATION_REQ (msg_p).msg3_DeltaPreamble[j] = msg3_DeltaPreamble;
@@ -1464,13 +1542,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             if (strcmp(RateMatchPattern_subcarrierSpacing,"kHz15")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = SubcarrierSpacing_kHz15;
-            }else if (strcmp(pusch_alpha,"kHz30")==0) {
+            }else if (strcmp(RateMatchPattern_subcarrierSpacing,"kHz30")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = SubcarrierSpacing_kHz30;
-            }else if (strcmp(pusch_alpha,"kHz60")==0) {
+            }else if (strcmp(RateMatchPattern_subcarrierSpacing,"kHz60")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = SubcarrierSpacing_kHz60;
-            }else if (strcmp(pusch_alpha,"kHz120")==0) {
+            }else if (strcmp(RateMatchPattern_subcarrierSpacing,"kHz120")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = SubcarrierSpacing_kHz120;
-            }else if (strcmp(pusch_alpha,"kHz240")==0) {
+            }else if (strcmp(RateMatchPattern_subcarrierSpacing,"kHz240")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = SubcarrierSpacing_kHz240;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for RateMatchPattern_subcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
@@ -1588,11 +1666,17 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                            RC.config_file_name, i, PDCCH_precoderGranularity);
             }            
 
-            if (strcmp(tci_PresentInDCI , "ENABLE") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).tci_PresentInDCI[j] = ControlResourceSet__tci_PresentInDCI_enabled;
+            NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_TCI_StateId[j] = PDCCH_TCI_StateId;
+            if ((PDCCH_TCI_StateId <0) || (PDCCH_TCI_StateId>63)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDCCH_TCI_StateId choice: 0..63 !\n",
+                           RC.config_file_name, i, PDCCH_TCI_StateId);
             }
 
-            //////////////////////////////////NR PDCCH commonControlResourcesSets///////////////////////////
+            if (strcmp(tci_PresentInDCI , "ENABLE") == 0){
+              NRRRC_CONFIGURATION_REQ (msg_p).tci_PresentInDCI[j] = TRUE;
+            }
+
+            //////////////////////////////////NR PDCCH commonSearchSpaces///////////////////////////
             NRRRC_CONFIGURATION_REQ (msg_p).SearchSpaceId[j] = SearchSpaceId;
             if ((SearchSpaceId <0) || (SearchSpaceId>39)){
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpaceId choice: 0..39 !\n",

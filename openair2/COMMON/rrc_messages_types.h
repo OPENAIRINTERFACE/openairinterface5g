@@ -280,28 +280,34 @@ typedef struct NRRrcConfigurationReq_s {
 
   //NR DL SCS-SpecificCarrier
   uint32_t                DL_offsetToCarrier[MAX_NUM_CCs];
-  long                    DL_SubcarrierSpacing[MAX_NUM_CCs];
+  long                    DL_SCS_SubcarrierSpacing[MAX_NUM_CCs];
   long                    DL_SCS_SpecificCarrier_k0[MAX_NUM_CCs];
   uint32_t                DL_carrierBandwidth[MAX_NUM_CCs];
 
   //NR BWP-DownlinkCommon
-  uint32_t                DL_locationAndBandwidth[MAX_NUM_CCs];    
+  uint32_t                DL_locationAndBandwidth[MAX_NUM_CCs]; 
+  long                    DL_BWP_SubcarrierSpacing[MAX_NUM_CCs];
+  lte_prefix_type_t       DL_BWP_prefix_type[MAX_NUM_CCs];   
 
   //NR FrequencyInfoUL
   long                    UL_FreqBandIndicatorNR[MAX_NUM_CCs];
   long                    UL_absoluteFrequencyPointA[MAX_NUM_CCs];
-  long                    FrequencyInfoUL_p_Max[MAX_NUM_CCs];
-  long                    frequencyShift7p5khz[MAX_NUM_CCs];
+  lte_prefix_type_t       UL_additionalSpectrumEmission[MAX_NUM_CCs]
+  long                    UL_p_Max[MAX_NUM_CCs];
+  long                    ULfrequencyShift7p5khz[MAX_NUM_CCs];
 
   //NR UL SCS-SpecificCarrier
   uint32_t                UL_offsetToCarrier[MAX_NUM_CCs];
-  long                    UL_SubcarrierSpacing[MAX_NUM_CCs];
+  long                    UL_SCS_SubcarrierSpacing[MAX_NUM_CCs];
   long                    UL_SCS_SpecificCarrier_k0[MAX_NUM_CCs];
   uint32_t                UL_carrierBandwidth[MAX_NUM_CCs];
 
   // NR BWP-UplinkCommon
   uint32_t                UL_locationAndBandwidth[MAX_NUM_CCs];
+  long                    UL_BWP_SubcarrierSpacing[MAX_NUM_CCs];
+  lte_prefix_type_t       UL_BWP_prefix_type[MAX_NUM_CCs];
 
+  long                    ServingCellConfigCommon_ssb_PositionsInBurst_PR[MAX_NUM_CCs];
   long                    ServingCellConfigCommon_ssb_periodicityServingCell[MAX_NUM_CCs]; //ServingCellConfigCommon
   long                    ServingCellConfigCommon_dmrs_TypeA_Position[MAX_NUM_CCs];        //ServingCellConfigCommon
   long                    NIA_SubcarrierSpacing[MAX_NUM_CCs];      //ServingCellConfigCommon Used only for non-initial access
@@ -394,6 +400,7 @@ typedef struct NRRrcConfigurationReq_s {
   long                    PDCCH_interleaverSize[MAX_NUM_CCs];
   long                    PDCCH_shiftIndex[MAX_NUM_CCs];  
   long                    PDCCH_precoderGranularity[MAX_NUM_CCs]; //Corresponds to L1 parameter 'CORESET-precoder-granuality'
+  long                    PDCCH_TCI_StateId[MAX_NUM_CCs];
   BOOLEAN_t               tci_PresentInDCI[MAX_NUM_CCs];
 
   //NR PDCCH-ConfigCommon commonSearchSpaces

@@ -41,7 +41,7 @@
 #include "LAYER2/MAC/proto.h"
 #include "UTIL/LOG/log.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "RRC/LITE/NR/asn1_msg.h"
+#include "RRC/NR/asn1_msg.h"
 
 ///ASN.1 header files
 //#include "RRCConnectionRequest.h"
@@ -127,10 +127,10 @@ openair_nrrrc_on(
     LOG_I(NR_RRC, PROTOCOL_RRC_CTXT_FMT" gNB:OPENAIR NR RRC IN....\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      rrc_config_buffer (&RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
-      RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
-      rrc_config_buffer (&RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
-      RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
+      rrc_config_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
+      RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
+      rrc_config_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
+      RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
     }
 }
 
@@ -153,16 +153,16 @@ init_NR_SI(
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
 
   // copy basic parameters
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB           = configuration->nb_antenna_ports[CC_id];
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp             = configuration->prefix_type[CC_id];
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB           = configuration->nb_antenna_ports[CC_id];
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Ncp             = configuration->prefix_type[CC_id];
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
   
   ///MIB
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB_NR   = 0;
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].MIB_NR          = (uint8_t*) malloc16(4);
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB_NR   = do_MIB_NR(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],0,
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB      = 0;
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].MIB             = (uint8_t*) malloc16(4);
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB      = do_MIB_NR(&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id],0,
                                                                             #ifdef ENABLE_ITTI
                                                                             configuration->ssb_SubcarrierOffset[CC_id],
                                                                             configuration->pdcch_ConfigSIB1[CC_id],
@@ -174,12 +174,12 @@ init_NR_SI(
                                                                             );
 
   ///SIB1
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_NR  = 0;
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_NR         = (uint8_t*) malloc16(32);
-  AssertFatal(RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_NR! 
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1     = 0;
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SIB1            = (uint8_t*) malloc16(32);
+  AssertFatal(RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SIB1! 
               = NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for NR SIB1 allocated\n",PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
   
-  RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_NR  = do_SIB1_NR(&RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id],
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1     = do_SIB1_NR(&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id],
                                                                              ctxt_pP->module_id,
                                                                              CC_id
                                                                              #if defined(ENABLE_ITTI)
@@ -187,17 +187,26 @@ init_NR_SI(
                                                                              #endif
                                                                              );
   
-  AssertFatal(RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.nr_rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1_NR == 255");
+  AssertFatal(RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.nrrrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
 
-  rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
-                         RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
-			 RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB,
-			 RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp,
-			 RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].sib1->freqBandIndicator,
-			 RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq,
+  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SERVINGCELLCONFIGCOMMON = do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
+                                                                                                           CC_id
+                                                                                                           #if defined(ENABLE_ITTI)
+                                                                                                           ,configuration
+                                                                                                           #endif
+                                                                                                           );
+
+  
+  
+  rrc_mac_config_req_gNB(ctxt_pP->module_id, CC_id,
+                         RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
+			 RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].p_gNB,
+			 RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Ncp,
+			 RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sib1->freqBandIndicator,
+			 RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq,
 			 0, // rnti
-			 (BCCH_BCH_Message_t *)
-			 &RC.nr_rrc[ctxt_pP->module_id]->carrier[CC_id].mib
+			 (BCCH_BCH_Message_t *)&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].mib,
+			 (ServingCellConfigCommon_t *)&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id]servingcellconfigcommon
 			 );
 }
 
@@ -206,34 +215,34 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   protocol_ctxt_t      ctxt;
   int                  CC_id;
 
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gnb_mod_idP, ENB_FLAG_YES, NOT_A_RNTI, 0, 0,gnb_mod_idP);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gnb_mod_idP, GNB_FLAG_YES, NOT_A_RNTI, 0, 0,gnb_mod_idP);
   LOG_I(NR_RRC,PROTOCOL_NRRRC_CTXT_FMT" Init...\n",PROTOCOL_NRRRC_CTXT_ARGS(&ctxt));
 
   #if OCP_FRAMEWORK
-    while ( RC.nr_rrc[gnb_mod_idP] == NULL ) {
-      LOG_E(NR_RRC, "RC.nr_rrc not yet initialized, waiting 1 second\n");
+    while ( RC.nrrrc[gnb_mod_idP] == NULL ) {
+      LOG_E(NR_RRC, "RC.nrrrc not yet initialized, waiting 1 second\n");
       sleep(1);
     }
   #endif 
-    AssertFatal(RC.nr_rrc[gnb_mod_idP] != NULL, "RC.nr_rrc not initialized!");
+    AssertFatal(RC.nrrrc[gnb_mod_idP] != NULL, "RC.nrrrc not initialized!");
     AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
   #ifdef ENABLE_ITTI
     AssertFatal(configuration!=NULL,"configuration input is null\n");
   #endif
 
-  RC.nr_rrc[ctxt.module_id]->Nb_ue = 0;
+  RC.nrrrc[ctxt.module_id]->Nb_ue = 0;
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    RC.nr_rrc[ctxt.module_id]->carrier[CC_id].Srb0.Active = 0;
+    RC.nrrrc[ctxt.module_id]->carrier[CC_id].Srb0.Active = 0;
   }
 
-  uid_linear_allocator_init(&nr_rrc.nr_rrc[ctxt.module_id]->uid_allocator);
-  RB_INIT(&RC.nr_rrc[ctxt.module_id]->rrc_ue_head);
+  uid_linear_allocator_init(&nrrrc.nrrrc[ctxt.module_id]->uid_allocator);
+  RB_INIT(&RC.nrrrc[ctxt.module_id]->rrc_ue_head);
 
-  RC.nr_rrc[ctxt.module_id]->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
-  RC.nr_rrc[ctxt.module_id]->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  RC.nrrrc[ctxt.module_id]->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  RC.nrrrc[ctxt.module_id]->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
 
-  memcpy(&RC.nr_rrc[ctxt.module_id]->configuration,configuration,sizeof(gNB_RrcConfigurationReq));
+  memcpy(&RC.nrrrc[ctxt.module_id]->configuration,configuration,sizeof(gNB_RrcConfigurationReq));
 
   /// System Information INIT
 
@@ -243,21 +252,21 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     for (j = 0; j < NUM_MAX_CBA_GROUP; j++) {
-      RC.nr_rrc[ctxt.module_id]->carrier[CC_id].cba_rnti[j] = CBA_OFFSET + j;
+      RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[j] = CBA_OFFSET + j;
     }
 
-    if (RC.nr_rrc[ctxt.module_id]->carrier[CC_id].num_active_cba_groups > NUM_MAX_CBA_GROUP) {
-      RC.nr_rrc[ctxt.module_id]->carrier[CC_id].num_active_cba_groups = NUM_MAX_CBA_GROUP;
+    if (RC.nrrrc[ctxt.module_id]->carrier[CC_id].num_active_cba_groups > NUM_MAX_CBA_GROUP) {
+      RC.nrrrc[ctxt.module_id]->carrier[CC_id].num_active_cba_groups = NUM_MAX_CBA_GROUP;
     }
 
     LOG_D(NR_RRC,
           PROTOCOL_NRRRC_CTXT_FMT" Initialization of 4 cba_RNTI values (%x %x %x %x) num active groups %d\n",
           PROTOCOL_NRRRC_CTXT_ARGS(&ctxt),
-          gnb_mod_idP, RC.nr_rrc[ctxt.module_id]->carrier[CC_id].cba_rnti[0],
-          RC.nr_rrc[ctxt.module_id]->carrier[CC_id].cba_rnti[1],
-          RC.nr_rrc[ctxt.module_id]->carrier[CC_id].cba_rnti[2],
-          RC.nr_rrc[ctxt.module_id]->carrier[CC_id].cba_rnti[3],
-          RC.nr_rrc[ctxt.module_id]->carrier[CC_id].num_active_cba_groups);
+          gnb_mod_idP, RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[0],
+          RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[1],
+          RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[2],
+          RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[3],
+          RC.nrrrc[ctxt.module_id]->carrier[CC_id].num_active_cba_groups);
   }
 
   #endif
@@ -270,8 +279,8 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
               #endif
               );
     for (int ue_id = 0; ue_id < NUMBER_OF_UE_MAX; ue_id++){
-        RC.nr_rrc[ctxt.module_id]->carrier[CC_id].sizeof_paging[ue_id] = 0;
-        RC.nr_rrc[ctxt.module_id]->carrier[CC_id].paging[ue_id] = (uint8_t*) malloc16(256);
+        RC.nrrrc[ctxt.module_id]->carrier[CC_id].sizeof_paging[ue_id] = 0;
+        RC.nrrrc[ctxt.module_id]->carrier[CC_id].paging[ue_id] = (uint8_t*) malloc16(256);
     }
 
   }//END for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
@@ -279,14 +288,14 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   //rrc_init_NR_global_param();
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    openair_rrc_top_init_gNB(RC.nr_rrc[ctxt.module_id]->carrier[CC_id].MBMS_flag,0);
+    openair_rrc_top_init_gNB(RC.nrrrc[ctxt.module_id]->carrier[CC_id].MBMS_flag,0);
   }
 
   openair_nrrrc_on(&ctxt);
 
   return 0;  
 
-}//END openair_rrc_eNB_configuration
+}//END openair_rrc_gNB_configuration
 
 
 ///---------------------------------------------------------------------------------------------------------------///
@@ -320,7 +329,7 @@ void* rrc_gnb_task(void* args_p){
       break;
 
     case MESSAGE_TEST:
-      LOG_I(RRC, "[eNB %d] Received %s\n", instance, msg_name_p);
+      LOG_I(RRC, "[gNB %d] Received %s\n", instance, msg_name_p);
       break;
 
       /* Messages from MAC */
@@ -374,16 +383,16 @@ void* rrc_gnb_task(void* args_p){
       /* Nothing to do. Apparently everything is done in S1AP processing */
       //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
       //instance, msg_name_p);
-      if (rrc_eNB_get_ue_context(RC.nr_rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)
-          && rrc_eNB_get_ue_context(RC.nr_rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc > 0) {
-        rrc_eNB_get_ue_context(RC.nr_rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc =
-        rrc_eNB_get_ue_context(RC.nr_rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_thres_rrc;
+      if (rrc_eNB_get_ue_context(RC.nrrrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)
+          && rrc_eNB_get_ue_context(RC.nrrrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc > 0) {
+        rrc_eNB_get_ue_context(RC.nrrrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc =
+        rrc_eNB_get_ue_context(RC.nrrrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_thres_rrc;
       }
       break;
 
 #endif
 
-    /* Messages from eNB app */
+    /* Messages from gNB app */
     case NRRRC_CONFIGURATION_REQ:
       LOG_I(NR_RRC, "[gNB %d] Received %s : %p\n", instance, msg_name_p,&NRRRC_CONFIGURATION_REQ(msg_p));
       openair_rrc_gNB_configuration(GNB_INSTANCE_TO_MODULE_ID(instance), &NRRRC_CONFIGURATION_REQ(msg_p));
@@ -414,35 +423,35 @@ openair_rrc_top_init_gNB(int eMBMS_active,uint8_t HO_active)
   /* for no gcc warnings */
   (void)CC_id;
 
-  LOG_D(RRC, "[OPENAIR][INIT] Init function start: NB_eNB_INST=%d\n", RC.nb_inst);
+  LOG_D(RRC, "[OPENAIR][INIT] Init function start: NB_gNB_INST=%d\n", RC.nb_nr_inst);
 
-  if (RC.nb_inst > 0) {
-    LOG_I(RRC,"[eNB] handover active state is %d \n", HO_active);
+  if (RC.nb_nr_inst > 0) {
+    LOG_I(RRC,"[gNB] handover active state is %d \n", HO_active);
 
-    for (module_id=0; module_id<NB_eNB_INST; module_id++) {
-      RC.nr_rrc[module_id]->HO_flag   = (uint8_t)HO_active;
+    for (module_id=0; module_id<NB_gNB_INST; module_id++) {
+      RC.nrrrc[module_id]->HO_flag   = (uint8_t)HO_active;
     }
 
   #if defined(Rel10) || defined(Rel14)
-    LOG_I(RRC,"[eNB] eMBMS active state is %d \n", eMBMS_active);
+    LOG_I(RRC,"[gNB] eMBMS active state is %d \n", eMBMS_active);
 
-    for (module_id=0; module_id<NB_eNB_INST; module_id++) {
+    for (module_id=0; module_id<NB_gNB_INST; module_id++) {
       for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-        RC.nr_rrc[module_id]->carrier[CC_id].MBMS_flag = (uint8_t)eMBMS_active;
+        RC.nrrrc[module_id]->carrier[CC_id].MBMS_flag = (uint8_t)eMBMS_active;
       }
     }
 
   #endif
   #ifdef CBA
 
-    for (module_id=0; module_id<RC.nb_inst; module_id++) {
+    for (module_id=0; module_id<RC.nb_nr_inst; module_id++) {
       for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-        RC.nr_rrc[module_id]->carrier[CC_id].num_active_cba_groups = cba_group_active;
+        RC.nrrrc[module_id]->carrier[CC_id].num_active_cba_groups = cba_group_active;
       }
     }
 
   #endif
 
-  }//END if (RC.nb_inst > 0)
+  }//END if (RC.nb_nr_inst > 0)
 
 }
