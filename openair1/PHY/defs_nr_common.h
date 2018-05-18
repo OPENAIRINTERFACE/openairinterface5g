@@ -34,6 +34,7 @@
 #define __PHY_DEFS_NR_COMMON__H__
 
 #include "defs_common.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
 #define nr_subframe_t lte_subframe_t
 
@@ -110,7 +111,10 @@ typedef struct NR_DL_FRAME_PARMS {
     //SSB related params
   /// Start in Subcarrier index of the SSB block
   uint16_t ssb_start_subcarrier;
+  /// SSB type
   nr_ssb_type_e ssb_type;
+  /// PBCH polar encoder params
+  t_nrPolar_params pbch_polar_params;
 
 } NR_DL_FRAME_PARMS;
 

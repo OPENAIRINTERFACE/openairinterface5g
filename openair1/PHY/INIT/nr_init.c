@@ -23,6 +23,7 @@
 #include "SCHED/sched_eNB.h"
 #include "PHY/phy_extern.h"
 #include "PHY/INIT/phy_init.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
@@ -112,7 +113,11 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
         );*/
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_gNB][MOD %02"PRIu8"][]\n", gNB->Mod_id);
 
+  // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
+  // Polar encoder init for PBCH
+  nr_polar_init(&fp->pbch_polar_params, 1);
+
 /*
   lte_gold(fp,gNB->lte_gold_table,fp->Nid_cell);
   generate_pcfich_reg_mapping(fp);

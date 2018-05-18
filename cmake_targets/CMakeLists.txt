@@ -1061,11 +1061,35 @@ set(PHY_LDPCSRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder2.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_generate_coefficient.c
 )
+set(PHY_POLARSRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_init.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/get_3GPP_info_bit_pattern.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/get_crc_generator_matrix.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/get_PC_bit_pattern.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_bitwise_operations.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_crc_byte.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_bit_insertion_2.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_bit_insertion.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_channel_interleaver_pattern.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_crc.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_decoding_tools.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_info_bit_pattern.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_interleave.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_kernal_operation.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_kronecker_power_matrices.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_matrix_and_array.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_output_length.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_rate_match.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_sequence_pattern.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_encoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_decoder.c
+)
 set(PHY_TURBOIF
   ${OPENAIR1_DIR}/PHY/CODING/coding_load.c
 )
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
+
 set(PHY_SRC_COMMON
   # depend on code generation from asn1c
   ${RRC_FULL_DIR}/asn1_constants.h
@@ -1214,6 +1238,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/sqrt.c
   ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
+  ${PHY_POLARSRC}
   )
 
   set(PHY_NR_UE_SRC
