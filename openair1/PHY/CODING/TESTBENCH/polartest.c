@@ -8,7 +8,7 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
-#include "SIMULATION/TOOLS/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
 
 int main(int argc, char *argv[]) {
 
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 	randominit(0);
 	//Default simulation values (Aim for iterations = 1000000.)
 	int itr, iterations = 1000, arguments, polarMessageType = 1; //0=DCI, 1=PBCH, 2=UCI
-	double SNRstart = -20.0, SNRstop = 20.0, SNRinc= 0.5; //dB
+	double SNRstart = -20.0, SNRstop = 0.0, SNRinc= 0.5; //dB
 
 	double SNR, SNR_lin;
 	int16_t nBitError = 0; // -1 = Decoding failed (All list entries have failed the CRC checks).
@@ -83,17 +83,19 @@ int main(int argc, char *argv[]) {
 	//Logging
 	time_t currentTime;
 	time (&currentTime);
-	char fileName[512], currentTimeInfo[25];
+	char *folderName, fileName[512], currentTimeInfo[25];
 
-	sprintf(fileName,"./polartestResults/_ListSize_%d_pmAppr_%d_Payload_%d_Itr_%d",decoderListSize,pathMetricAppr,testLength,iterations);
+	folderName=getenv("HOME");
+	strcat(folderName,"/Desktop/polartestResults");
+	sprintf(fileName,"%s/_ListSize_%d_pmAppr_%d_Payload_%d_Itr_%d",folderName,decoderListSize,pathMetricAppr,testLength,iterations);
 	strftime(currentTimeInfo, 25, "_%Y-%m-%d-%H-%M-%S.csv", localtime(&currentTime));
 	strcat(fileName,currentTimeInfo);
 
-	//Create "./polartestResults" folder if it doesn't already exist.
+	//Create "~/Desktop/polartestResults" folder if it doesn't already exist.
 	struct stat folder = {0};
-	if (stat("./polartestResults", &folder) == -1) mkdir("./polartestResults", S_IRWXU | S_IRWXO);
+	if (stat(folderName, &folder) == -1) mkdir(folderName, S_IRWXU | S_IRWXG | S_IRWXO);
 
-    FILE* logFile;
+	FILE* logFile;
     logFile = fopen(fileName, "w");
     if (logFile==NULL) {
         fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
