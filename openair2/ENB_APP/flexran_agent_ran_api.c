@@ -1435,35 +1435,13 @@ int flexran_dl_slice_exists(mid_t mod_id, int slice_idx)
   return slice_idx >= 0 && slice_idx < RC.mac[mod_id]->slice_info.n_dl;
 }
 
-int flexran_create_dl_slice(mid_t mod_id, slice_id_t slice_id, int slice_default_values_idx)
+int flexran_create_dl_slice(mid_t mod_id, slice_id_t slice_id)
 {
   if (!mac_is_present(mod_id)) return -1;
-  if (!flexran_dl_slice_exists(mod_id, slice_default_values_idx)) return -1;
   int newidx = RC.mac[mod_id]->slice_info.n_dl;
   if (newidx >= MAX_NUM_SLICES) return -1;
-
   ++RC.mac[mod_id]->slice_info.n_dl;
   flexran_set_dl_slice_id(mod_id, newidx, slice_id);
-  flexran_set_dl_slice_percentage(mod_id, newidx,
-      flexran_get_dl_slice_percentage(mod_id, slice_default_values_idx));
-  flexran_set_dl_slice_isolation(mod_id, newidx,
-      flexran_get_dl_slice_isolation(mod_id, slice_default_values_idx));
-  flexran_set_dl_slice_priority(mod_id, newidx,
-      flexran_get_dl_slice_priority(mod_id, slice_default_values_idx));
-  flexran_set_dl_slice_position_low(mod_id, newidx,
-      flexran_get_dl_slice_position_low(mod_id, slice_default_values_idx));
-  flexran_set_dl_slice_position_high(mod_id, newidx,
-      flexran_get_dl_slice_position_high(mod_id, slice_default_values_idx));
-  flexran_set_dl_slice_maxmcs(mod_id, newidx,
-      flexran_get_dl_slice_maxmcs(mod_id, slice_default_values_idx));
-  Protocol__FlexDlSorting *sorting = NULL;
-  int n = flexran_get_dl_slice_sorting(mod_id, slice_default_values_idx, &sorting);
-  flexran_set_dl_slice_sorting(mod_id, newidx, sorting, n);
-  free(sorting);
-  flexran_set_dl_slice_accounting_policy(mod_id, newidx,
-      flexran_get_dl_slice_accounting_policy(mod_id, slice_default_values_idx));
-  flexran_set_dl_slice_scheduler_name(mod_id, newidx,
-      flexran_get_dl_slice_scheduler_name(mod_id, slice_default_values_idx));
   return newidx;
 }
 
@@ -1716,33 +1694,13 @@ int flexran_set_dl_slice_scheduler(mid_t mod_id, int slice_idx, char *name)
   return RC.mac[mod_id]->slice_info.dl[slice_idx].sched_cb != NULL;
 }
 
-int flexran_create_ul_slice(mid_t mod_id, slice_id_t slice_id, int slice_default_values_idx)
+int flexran_create_ul_slice(mid_t mod_id, slice_id_t slice_id)
 {
   if (!mac_is_present(mod_id)) return -1;
-  if (!flexran_ul_slice_exists(mod_id, slice_default_values_idx)) return -1;
   int newidx = RC.mac[mod_id]->slice_info.n_ul;
   if (newidx >= MAX_NUM_SLICES) return -1;
-
   ++RC.mac[mod_id]->slice_info.n_ul;
   flexran_set_ul_slice_id(mod_id, newidx, slice_id);
-  flexran_set_ul_slice_percentage(mod_id, newidx,
-      flexran_get_ul_slice_percentage(mod_id, slice_default_values_idx));
-  /*flexran_set_ul_slice_isolation(mod_id, newidx,
-      flexran_get_ul_slice_isolation(mod_id, slice_default_values_idx));
-  flexran_set_ul_slice_priority(mod_id, newidx,
-      flexran_get_ul_slice_priority(mod_id, slice_default_values_idx));*/
-  flexran_set_ul_slice_first_rb(mod_id, newidx,
-      flexran_get_ul_slice_first_rb(mod_id, slice_default_values_idx));
-  flexran_set_ul_slice_maxmcs(mod_id, newidx,
-      flexran_get_ul_slice_maxmcs(mod_id, slice_default_values_idx));
-  /*Protocol__FlexUlSorting *sorting = NULL;
-  int n = flexran_get_ul_slice_sorting(mod_id, slice_default_values_idx, &sorting);
-  flexran_set_ul_slice_sorting(mod_id, newidx, sorting, n);
-  free(sorting);*/
-  /*flexran_set_ul_slice_accounting_policy(mod_id, newidx,
-      flexran_get_ul_slice_accounting_policy(mod_id, slice_default_values_idx));*/
-  flexran_set_ul_slice_scheduler_name(mod_id, newidx,
-      flexran_get_ul_slice_scheduler_name(mod_id, slice_default_values_idx));
   return newidx;
 }
 

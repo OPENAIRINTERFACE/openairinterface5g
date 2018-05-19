@@ -535,8 +535,8 @@ int flexran_get_num_dl_slices(mid_t mod_id);
 /* Query slice existence in DL. Return is boolean value */
 int flexran_dl_slice_exists(mid_t mod_id, int slice_idx);
 
-/* Create slice in DL with values from another slice, returns the new slice index */
-int flexran_create_dl_slice(mid_t mod_id, slice_id_t slice_id, int slice_default_values_idx);
+/* Create slice in DL, returns the new slice index */
+int flexran_create_dl_slice(mid_t mod_id, slice_id_t slice_id);
 /* Finds slice in DL with given slice_id and returns slice index */
 int flexran_find_dl_slice(mid_t mod_id, slice_id_t slice_id);
 /* Remove slice in DL, returns new number of slices or -1 on error */
@@ -599,8 +599,8 @@ int flexran_get_num_ul_slices(mid_t mod_id);
 /* Query slice existence in UL. Return is boolean value */
 int flexran_ul_slice_exists(mid_t mod_id, int slice_idx);
 
-/* Create slice in UL with values from another slice, returns the new slice index */
-int flexran_create_ul_slice(mid_t mod_id, slice_id_t slice_id, int slice_default_values_idx);
+/* Create slice in UL, returns the new slice index */
+int flexran_create_ul_slice(mid_t mod_id, slice_id_t slice_id);
 /* Finds slice in UL with given slice_id and returns slice index */
 int flexran_find_ul_slice(mid_t mod_id, slice_id_t slice_id);
 /* Remove slice in UL */
