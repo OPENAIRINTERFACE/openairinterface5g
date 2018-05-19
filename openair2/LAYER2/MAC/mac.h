@@ -1172,9 +1172,6 @@ typedef struct {
     /// Accounting policy (just greedy(1) or fair(0) setting for now)
     int       accounting;
 
-    /// Whether the scheduler callback should be updated
-    int       update_sched;
-
     /// name of available scheduler
     char     *sched_name;
 
@@ -1204,9 +1201,6 @@ typedef struct {
 
     /// starting RB (RB offset) of UL scheduling
     int       first_rb;
-
-    /// Slice scheduler callback update needed
-    int       update_sched;
 
     /// name of available scheduler
     char     *sched_name;

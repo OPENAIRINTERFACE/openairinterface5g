@@ -148,7 +148,6 @@ void mac_top_init_eNB(void)
         sli->dl[0].pos_high = N_RBG_MAX;
         sli->dl[0].maxmcs = 28;
         sli->dl[0].sorting = 0x012345;
-        sli->dl[0].update_sched = 1;
         sli->dl[0].sched_name = "schedule_ue_spec";
         sli->dl[0].sched_cb = dlsym(NULL, sli->dl[0].sched_name);
         AssertFatal(sli->dl[0].sched_cb, "DLSCH scheduler callback is NULL\n");
@@ -158,7 +157,6 @@ void mac_top_init_eNB(void)
         sli->ul[0].pct = 1.0;
         sli->ul[0].maxmcs = 20;
         sli->ul[0].sorting = 0x0123;
-        sli->ul[0].update_sched = 1;
         sli->ul[0].sched_name = "schedule_ulsch_rnti";
         sli->ul[0].sched_cb = dlsym(NULL, sli->ul[0].sched_name);
         AssertFatal(sli->ul[0].sched_cb, "ULSCH scheduler callback is NULL\n");
