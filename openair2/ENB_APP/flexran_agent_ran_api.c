@@ -26,6 +26,7 @@
  * \version 0.1
  */
 
+#include <dlfcn.h>
 #include "flexran_agent_ran_api.h"
 
 static inline int phy_is_present(mid_t mod_id, uint8_t cc_id)
@@ -1483,6 +1484,7 @@ int flexran_remove_dl_slice(mid_t mod_id, int slice_idx)
   slice_info_t *sli = &RC.mac[mod_id]->slice_info;
   if (sli->n_dl <= 1) return -1;
 
+  if (sli->dl[slice_idx].sched_name) free(sli->dl[slice_idx].sched_name);
   --sli->n_dl;
   /* move last element to the position of the removed one */
   if (slice_idx != sli->n_dl)
@@ -1701,16 +1703,17 @@ void flexran_set_dl_slice_accounting_policy(mid_t mod_id, int slice_idx, Protoco
   }
 }
 
-char *flexran_get_dl_slice_scheduler_name(mid_t mod_id, int slice_idx)
+char *flexran_get_dl_slice_scheduler(mid_t mod_id, int slice_idx)
 {
   if (!mac_is_present(mod_id)) return NULL;
   return RC.mac[mod_id]->slice_info.dl[slice_idx].sched_name;
 }
-void flexran_set_dl_slice_scheduler_name(mid_t mod_id, int slice_idx, char *name)
+int flexran_set_dl_slice_scheduler(mid_t mod_id, int slice_idx, char *name)
 {
-  if (!mac_is_present(mod_id)) return;
-  RC.mac[mod_id]->slice_info.dl[slice_idx].sched_name = name;
-  RC.mac[mod_id]->slice_info.dl[slice_idx].update_sched = 1;
+  if (!mac_is_present(mod_id)) return 0;
+  RC.mac[mod_id]->slice_info.dl[slice_idx].sched_name = strdup(name);
+  RC.mac[mod_id]->slice_info.dl[slice_idx].sched_cb = dlsym(NULL, name);
+  return RC.mac[mod_id]->slice_info.dl[slice_idx].sched_cb != NULL;
 }
 
 int flexran_create_ul_slice(mid_t mod_id, slice_id_t slice_id, int slice_default_values_idx)
@@ -1760,6 +1763,7 @@ int flexran_remove_ul_slice(mid_t mod_id, int slice_idx)
   slice_info_t *sli = &RC.mac[mod_id]->slice_info;
   if (sli->n_ul <= 1) return -1;
 
+  if (sli->dl[slice_idx].sched_name) free(sli->dl[slice_idx].sched_name);
   --sli->n_ul;
   /* move last element to the position of the removed one */
   if (slice_idx != sli->n_ul)
@@ -1832,14 +1836,15 @@ void flexran_set_ul_slice_maxmcs(mid_t mod_id, int slice_idx, int maxmcs)
   RC.mac[mod_id]->slice_info.ul[slice_idx].maxmcs = maxmcs;
 }
 
-char *flexran_get_ul_slice_scheduler_name(mid_t mod_id, int slice_idx)
+char *flexran_get_ul_slice_scheduler(mid_t mod_id, int slice_idx)
 {
   if (!mac_is_present(mod_id)) return NULL;
   return RC.mac[mod_id]->slice_info.ul[slice_idx].sched_name;
 }
-void flexran_set_ul_slice_scheduler_name(mid_t mod_id, int slice_idx, char *name)
+int flexran_set_ul_slice_scheduler(mid_t mod_id, int slice_idx, char *name)
 {
-  if (!mac_is_present(mod_id)) return;
-  RC.mac[mod_id]->slice_info.ul[slice_idx].sched_name = name;
-  RC.mac[mod_id]->slice_info.ul[slice_idx].update_sched = 1;
+  if (!mac_is_present(mod_id)) return 0;
+  RC.mac[mod_id]->slice_info.ul[slice_idx].sched_name = strdup(name);
+  RC.mac[mod_id]->slice_info.ul[slice_idx].sched_cb = dlsym(NULL, name);
+  return RC.mac[mod_id]->slice_info.ul[slice_idx].sched_cb != NULL;
 }

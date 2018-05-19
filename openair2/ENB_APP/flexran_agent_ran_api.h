@@ -589,9 +589,9 @@ Protocol__FlexDlAccountingPolicy flexran_get_dl_slice_accounting_policy(mid_t mo
 void flexran_set_dl_slice_accounting_policy(mid_t mod_id, int slice_idx, Protocol__FlexDlAccountingPolicy accounting);
 
 /* Get the scheduler name for a slice in DL */
-char *flexran_get_dl_slice_scheduler_name(mid_t mod_id, int slice_idx);
+char *flexran_get_dl_slice_scheduler(mid_t mod_id, int slice_idx);
 /* Set the scheduler name for a slice in DL */
-void flexran_set_dl_slice_scheduler_name(mid_t mod_id, int slice_idx, char *name);
+int flexran_set_dl_slice_scheduler(mid_t mod_id, int slice_idx, char *name);
 
 /* Get the number of slices in UL */
 int flexran_get_num_ul_slices(mid_t mod_id);
@@ -653,6 +653,6 @@ void flexran_set_ul_slice_maxmcs(mid_t mod_id, int slice_idx, int maxmcs);
 /*void flexran_get_ul_slice_accounting_policy(mid_t mod_id, int slice_idx, Protocol__UlAccountingPolicy accountin);*/
 
 /* Get the scheduler name for a slice in UL */
-char *flexran_get_ul_slice_scheduler_name(mid_t mod_id, int slice_idx);
+char *flexran_get_ul_slice_scheduler(mid_t mod_id, int slice_idx);
 /* Set the scheduler name for a slice in UL */
-void flexran_set_ul_slice_scheduler_name(mid_t mod_id, int slice_idx, char *name);
+int flexran_set_ul_slice_scheduler(mid_t mod_id, int slice_idx, char *name);
