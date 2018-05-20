@@ -57,40 +57,48 @@ int flexran_verify_dl_slice(mid_t mod_id, Protocol__FlexDlSlice *dls)
   /* verify parameters individualy */
   /* label is enum */
   if (!flexran_dl_slice_verify_pct(dls->percentage)) {
-    LOG_E(FLEXRAN_AGENT, "[%d] illegal DL slice percentage (%d)\n", mod_id, dls->percentage);
+    LOG_E(FLEXRAN_AGENT, "[%d][DL slice %d] illegal DL slice percentage (%d)\n",
+          mod_id, dls->id, dls->percentage);
     return 0;
   }
   /* isolation is a protobuf bool */
   if (!flexran_dl_slice_verify_priority(dls->priority)) {
-    LOG_E(FLEXRAN_AGENT, "[%d] illegal DL slice priority (%d)\n", mod_id, dls->priority);
+    LOG_E(FLEXRAN_AGENT, "[%d][DL slice %d] illegal DL slice priority (%d)\n",
+          mod_id, dls->id, dls->priority);
     return 0;
   }
   if (!flexran_dl_slice_verify_position(dls->position_low, dls->position_high)) {
-    LOG_E(FLEXRAN_AGENT, "[%d] illegal DL slice position low (%d) and/or high (%d)\n",
-          mod_id, dls->position_low, dls->position_high);
+    LOG_E(FLEXRAN_AGENT,
+          "[%d][DL slice %d] illegal DL slice position low (%d) and/or high (%d)\n",
+          mod_id, dls->id, dls->position_low, dls->position_high);
     return 0;
   }
   if (!flexran_dl_slice_verify_maxmcs(dls->maxmcs)) {
-    LOG_E(FLEXRAN_AGENT, "[%d] illegal DL slice max mcs %d\n", mod_id, dls->maxmcs);
+    LOG_E(FLEXRAN_AGENT, "[%d][DL slice %d] illegal DL slice max mcs %d\n",
+          mod_id, dls->id, dls->maxmcs);
     return 0;
   }
   if (dls->n_sorting == 0) {
-    LOG_E(FLEXRAN_AGENT, "[%d] no sorting in DL slice", mod_id);
+    LOG_E(FLEXRAN_AGENT, "[%d][DL slice %d] no sorting in DL slice\n",
+          mod_id, dls->id);
     return 0;
   }
   if (!dls->sorting) {
-    LOG_E(FLEXRAN_AGENT, "[%d] no sorting found in DL slice\n", mod_id);
+    LOG_E(FLEXRAN_AGENT, "[%d][DL slice %d] no sorting found in DL slice\n",
+          mod_id, dls->id);
     return 0;
   }
   /* sorting is an enum */
   /* accounting is an enum */
   if (!dls->scheduler_name) {
-    LOG_E(FLEXRAN_AGENT, "[%d] no scheduler name found\n", mod_id);
+    LOG_E(FLEXRAN_AGENT, "[%d][DL slice %d] no scheduler name found\n",
+          mod_id, dls->id);
     return 0;
   }
   if (strcmp(dls->scheduler_name, "schedule_ue_spec") != 0) {
-    LOG_E(FLEXRAN_AGENT, "[%d] setting the scheduler to something different "
-          "than schedule_ue_spec is currently not allowed\n", mod_id);
+    LOG_E(FLEXRAN_AGENT, "[%d][DL slice %d] setting the scheduler to something "
+          "different than schedule_ue_spec is currently not allowed\n",
+          mod_id, dls->id);
     return 0;
   }
 
@@ -125,7 +133,8 @@ int flexran_verify_group_dl_slices(mid_t mod_id, Protocol__FlexDlSlice **existin
   }
 
   if (n < 1 || n > MAX_NUM_SLICES) {
-    LOG_E(FLEXRAN_AGENT, "[%d] Illegal number of resulting slices (%d -> %d)\n", mod_id, n_ex, n);
+    LOG_E(FLEXRAN_AGENT, "[%d] Illegal number of resulting DL slices (%d -> %d)\n",
+          mod_id, n_ex, n);
     return 0;
   }
 
@@ -144,7 +153,9 @@ int flexran_verify_group_dl_slices(mid_t mod_id, Protocol__FlexDlSlice **existin
     pct += update[i]->percentage;
   }
   if (pct < 1 || pct > 100) {
-    LOG_E(FLEXRAN_AGENT, "[%d] invalid total RB share (%d%% -> %d%%)\n", mod_id, pct_orig, pct);
+    LOG_E(FLEXRAN_AGENT,
+          "[%d] invalid total RB share for DL slices (%d%% -> %d%%)\n",
+          mod_id, pct_orig, pct);
     return 0;
   }
 
@@ -162,41 +173,49 @@ int flexran_verify_ul_slice(mid_t mod_id, Protocol__FlexUlSlice *uls)
   /* verify parameters individually */
   /* label is enum */
   if (!flexran_ul_slice_verify_pct(uls->percentage)) {
-    LOG_E(FLEXRAN_AGENT, "[%d] illegal UL slice percentage (%d)\n", mod_id, uls->percentage);
+    LOG_E(FLEXRAN_AGENT, "[%d][UL slice %d] illegal UL slice percentage (%d)\n",
+          mod_id, uls->id, uls->percentage);
     return 0;
   }
   /* isolation is a protobuf bool */
   if (!flexran_ul_slice_verify_priority(uls->priority)) {
-    LOG_E(FLEXRAN_AGENT, "[%d] illegal UL slice percentage (%d)\n", mod_id, uls->priority);
+    LOG_E(FLEXRAN_AGENT, "[%d][UL slice %d] illegal UL slice percentage (%d)\n",
+          mod_id, uls->id, uls->priority);
     return 0;
   }
   if (!flexran_ul_slice_verify_first_rb(uls->first_rb)) {
-    LOG_E(FLEXRAN_AGENT, "[%d] illegal UL slice first RB (%d)\n", mod_id, uls->first_rb);
+    LOG_E(FLEXRAN_AGENT, "[%d][UL slice %d] illegal UL slice first RB (%d)\n",
+          mod_id, uls->id, uls->first_rb);
     return 0;
   }
   if (!flexran_ul_slice_verify_maxmcs(uls->maxmcs)) {
-    LOG_E(FLEXRAN_AGENT, "[%d] illegal UL slice max mcs (%d)\n", mod_id, uls->maxmcs);
+    LOG_E(FLEXRAN_AGENT, "[%d][UL slice %d] illegal UL slice max mcs (%d)\n",
+          mod_id, uls->id, uls->maxmcs);
     return 0;
   }
   /* TODO
   if (uls->n_sorting == 0) {
-    LOG_E(FLEXRAN_AGENT, "[%d] no sorting in UL slice\n", mod_id);
+    LOG_E(FLEXRAN_AGENT, "[%d][UL slice %d] no sorting in UL slice\n",
+          mod_id, uls->id);
     return 0;
   }
   if (!uls->sorting) {
-    LOG_E(FLEXRAN_AGENT, "[%d] no sorting found in UL slice\n", mod_id);
+    LOG_E(FLEXRAN_AGENT, "[%d][UL slice %d] no sorting found in UL slice\n",
+          mod_id, uls->id);
     return 0;
   }
   */
   /* sorting is an enum */
   /* accounting is an enum */
   if (!uls->scheduler_name) {
-    LOG_E(FLEXRAN_AGENT, "[%d] no scheduler name found\n", mod_id);
+    LOG_E(FLEXRAN_AGENT, "[%d][UL slice %d] no scheduler name found\n",
+          mod_id, uls->id);
     return 0;
   }
   if (strcmp(uls->scheduler_name, "schedule_ulsch_rnti") != 0) {
-    LOG_E(FLEXRAN_AGENT, "[%d] setting the scheduler to something different "
-          "than schedule_ulsch_rnti is currently not allowed\n", mod_id);
+    LOG_E(FLEXRAN_AGENT, "[%d][UL slice %d] setting the scheduler to something "
+          "different than schedule_ulsch_rnti is currently not allowed\n",
+          mod_id, uls->id);
     return 0;
   }
 
@@ -235,7 +254,8 @@ int flexran_verify_group_ul_slices(mid_t mod_id, Protocol__FlexUlSlice **existin
   }
 
   if (n < 1 || n > MAX_NUM_SLICES) {
-    LOG_E(FLEXRAN_AGENT, "[%d] Illegal number of resulting slices (%d -> %d)\n", mod_id, n_ex, n);
+    LOG_E(FLEXRAN_AGENT, "[%d] Illegal number of resulting UL slices (%d -> %d)\n",
+          mod_id, n_ex, n);
     return 0;
   }
 
@@ -254,7 +274,8 @@ int flexran_verify_group_ul_slices(mid_t mod_id, Protocol__FlexUlSlice **existin
     pct += update[i]->percentage;
   }
   if (pct < 1 || pct > 100) {
-    LOG_E(FLEXRAN_AGENT, "[%d] invalid total RB share (%d%% -> %d%%)\n", mod_id, pct_orig, pct);
+    LOG_E(FLEXRAN_AGENT, "[%d] invalid total RB share (%d%% -> %d%%)\n",
+          mod_id, pct_orig, pct);
     return 0;
   }
 
