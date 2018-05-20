@@ -1421,6 +1421,7 @@ void flexran_check_and_remove_slices(mid_t mod_id)
     /* don't update slice_config, it will be read in below */
     /* we need to memcpy the higher slice to the position we just deleted */
     memcpy(dl[i], dl[n_dl-1], sizeof(*dl[n_dl-1]));
+    memset(dl[n_dl-1], 0, sizeof(*dl[n_dl-1]));
     --sc_update[mod_id]->n_dl;
   }
   Protocol__FlexUlSlice **ul = sc_update[mod_id]->ul;
@@ -1436,6 +1437,7 @@ void flexran_check_and_remove_slices(mid_t mod_id)
           mod_id, i, ul[i]->id);
     /* see DL remarks */
     memcpy(ul[i], ul[n_ul-1], sizeof(*ul[n_ul-1]));
+    memset(ul[n_ul-1], 0, sizeof(*ul[n_ul-1]));
     --sc_update[mod_id]->n_ul;
   }
 }
