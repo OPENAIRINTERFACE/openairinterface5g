@@ -969,7 +969,7 @@ void flexran_agent_read_slice_dl_config(mid_t mod_id, int slice_idx, Protocol__F
   if (dl_slice->n_sorting < 1) dl_slice->sorting = NULL;
   dl_slice->accounting = flexran_get_dl_slice_accounting_policy(mod_id, slice_idx);
   dl_slice->has_accounting = 1;
-  dl_slice->scheduler_name = flexran_get_dl_slice_scheduler_name(mod_id, slice_idx);
+  dl_slice->scheduler_name = flexran_get_dl_slice_scheduler(mod_id, slice_idx);
 }
 
 void flexran_agent_read_slice_ul_config(mid_t mod_id, int slice_idx, Protocol__FlexUlSlice *ul_slice)
@@ -1007,7 +1007,7 @@ void flexran_agent_read_slice_ul_config(mid_t mod_id, int slice_idx, Protocol__F
   if (ul_slice->n_sorting < 1) ul_slice->sorting = NULL;*/
   /*ul_slice->accounting = flexran_get_ul_slice_accounting_policy(mod_id, slice_idx);*/
   ul_slice->has_accounting = 0;
-  ul_slice->scheduler_name = flexran_get_ul_slice_scheduler_name(mod_id, slice_idx);
+  ul_slice->scheduler_name = flexran_get_ul_slice_scheduler(mod_id, slice_idx);
 }
 
 void overwrite_slice_config_dl(Protocol__FlexDlSlice *exist, Protocol__FlexDlSlice *update)
@@ -1069,10 +1069,12 @@ void overwrite_slice_config_dl(Protocol__FlexDlSlice *exist, Protocol__FlexDlSli
           update->id, exist->accounting, update->accounting);
     exist->accounting = update->accounting;
   }
-  if (update->scheduler_name
-      && strcmp(update->scheduler_name, exist->scheduler_name) != 0) {
-    LOG_W(FLEXRAN_AGENT, "[DL slice %d] ignoring new scheduler name \"%s\"!\n",
-        update->id, update->scheduler_name);
+  if (!exist->scheduler_name
+      || strcmp(update->scheduler_name, exist->scheduler_name) != 0) {
+    LOG_I(FLEXRAN_AGENT, "[DL slice %d] update scheduler: %s -> %s\n",
+          update->id, exist->scheduler_name, update->scheduler_name);
+    /* TODO dangerous? */
+    exist->scheduler_name = update->scheduler_name;
   }
 }
 
@@ -1135,10 +1137,12 @@ void overwrite_slice_config_ul(Protocol__FlexUlSlice *exist, Protocol__FlexUlSli
           update->id, exist->accounting, update->accounting);
     exist->accounting = update->accounting;
   }
-  if (update->scheduler_name
-      && strcmp(update->scheduler_name, exist->scheduler_name) != 0) {
-    LOG_W(FLEXRAN_AGENT, "[UL slice %d] ignoring new scheduler name \"%s\"!\n",
-        update->id, update->scheduler_name);
+  if (!exist->scheduler_name
+      || strcmp(update->scheduler_name, exist->scheduler_name) != 0) {
+    LOG_I(FLEXRAN_AGENT, "[UL slice %d] update scheduler: %s -> %s\n",
+          update->id, exist->scheduler_name, update->scheduler_name);
+    /* TODO dangerous? */
+    exist->scheduler_name = update->scheduler_name;
   }
 }
 
@@ -1416,6 +1420,11 @@ int apply_new_slice_dl_config(mid_t mod_id, Protocol__FlexDlSlice *oldc, Protoco
     flexran_set_dl_slice_accounting_policy(mod_id, slice_idx, newc->accounting);
     changes++;
   }
+  if (!oldc->scheduler_name
+      || strcmp(oldc->scheduler_name, newc->scheduler_name) != 0) {
+    flexran_set_dl_slice_scheduler(mod_id, slice_idx, newc->scheduler_name);
+    changes++;
+  }
   return changes;
 }
 
@@ -1476,6 +1485,11 @@ int apply_new_slice_ul_config(mid_t mod_id, Protocol__FlexUlSlice *oldc, Protoco
      *changes++;*/
     LOG_W(FLEXRAN_AGENT, "[%d][UL slice %d] setting the accounting is not supported\n",
           mod_id, slice_idx);
+  }
+  if (!oldc->scheduler_name
+      || strcmp(oldc->scheduler_name, newc->scheduler_name) != 0) {
+    flexran_set_ul_slice_scheduler(mod_id, slice_idx, newc->scheduler_name);
+    changes++;
   }
   return changes;
 }

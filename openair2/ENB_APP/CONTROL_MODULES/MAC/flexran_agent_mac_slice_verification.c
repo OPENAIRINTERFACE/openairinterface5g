@@ -84,8 +84,13 @@ int flexran_verify_dl_slice(mid_t mod_id, Protocol__FlexDlSlice *dls)
   }
   /* sorting is an enum */
   /* accounting is an enum */
-  if (dls->scheduler_name) {
-    LOG_E(FLEXRAN_AGENT, "[%d] setting the scheduler is not allowed\n", mod_id);
+  if (!dls->scheduler_name) {
+    LOG_E(FLEXRAN_AGENT, "[%d] no scheduler name found\n", mod_id);
+    return 0;
+  }
+  if (strcmp(dls->scheduler_name, "schedule_ue_spec") != 0) {
+    LOG_E(FLEXRAN_AGENT, "[%d] setting the scheduler to something different "
+          "than schedule_ue_spec is currently not allowed\n", mod_id);
     return 0;
   }
 
@@ -183,8 +188,13 @@ int flexran_verify_ul_slice(mid_t mod_id, Protocol__FlexUlSlice *uls)
   }
   /* sorting is an enum */
   /* accounting is an enum */
-  if (uls->scheduler_name) {
-    LOG_E(FLEXRAN_AGENT, "[%d] setting the scheduler is not allowed\n", mod_id);
+  if (!uls->scheduler_name) {
+    LOG_E(FLEXRAN_AGENT, "[%d] no scheduler name found\n", mod_id);
+    return 0;
+  }
+  if (strcmp(uls->scheduler_name, "schedule_ulsch_rnti") != 0) {
+    LOG_E(FLEXRAN_AGENT, "[%d] setting the scheduler to something different "
+          "than schedule_ulsch_rnti is currently not allowed\n", mod_id);
     return 0;
   }
 

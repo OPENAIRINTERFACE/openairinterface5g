@@ -1497,12 +1497,12 @@ void flexran_agent_slice_update(mid_t mod_id)
 
   /* create new DL and UL slices if necessary */
   for (i = slice_config[mod_id]->n_dl; i < sc_update[mod_id]->n_dl; i++) {
-    flexran_create_dl_slice(mod_id, sc_update[mod_id]->dl[i]->id, 0);
+    flexran_create_dl_slice(mod_id, sc_update[mod_id]->dl[i]->id);
     slice_config[mod_id]->n_dl = flexran_get_num_dl_slices(mod_id);
     flexran_agent_read_slice_dl_config(mod_id, i, slice_config[mod_id]->dl[i]);
   }
   for (i = slice_config[mod_id]->n_ul; i < sc_update[mod_id]->n_ul; i++) {
-    flexran_create_ul_slice(mod_id, sc_update[mod_id]->ul[i]->id, 0);
+    flexran_create_ul_slice(mod_id, sc_update[mod_id]->ul[i]->id);
     slice_config[mod_id]->n_ul = flexran_get_num_ul_slices(mod_id);
     flexran_agent_read_slice_ul_config(mod_id, i, slice_config[mod_id]->ul[i]);
   }
