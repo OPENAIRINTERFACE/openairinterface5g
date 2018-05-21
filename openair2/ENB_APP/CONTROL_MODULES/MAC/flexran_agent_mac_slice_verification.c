@@ -178,6 +178,7 @@ int flexran_verify_ul_slice(mid_t mod_id, Protocol__FlexUlSlice *uls)
     LOG_E(FLEXRAN_AGENT, "[%d] illegal UL slice max mcs (%d)\n", mod_id, uls->maxmcs);
     return 0;
   }
+  /* TODO
   if (uls->n_sorting == 0) {
     LOG_E(FLEXRAN_AGENT, "[%d] no sorting in UL slice\n", mod_id);
     return 0;
@@ -186,6 +187,7 @@ int flexran_verify_ul_slice(mid_t mod_id, Protocol__FlexUlSlice *uls)
     LOG_E(FLEXRAN_AGENT, "[%d] no sorting found in UL slice\n", mod_id);
     return 0;
   }
+  */
   /* sorting is an enum */
   /* accounting is an enum */
   if (!uls->scheduler_name) {
