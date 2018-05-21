@@ -44,16 +44,16 @@ message flex_cell_config {
 	optional int32 dl_pdsch_power = 38;       // operating downlink power 
 	optional int32 ul_pusch_power = 39;       // operating uplink power
 
-	// whether remaining RBs after first intra-slice allocation will
-	// be allocated to UEs of the same slice
-	optional bool   intraslice_share_active = 40;
-	// whether remaining RBs after slice allocation will be allocated
-	// to UEs of another slice. Isolated slices will be ignored.
-	optional bool   interslice_share_active = 41;
 	optional flex_slice_config slice_config = 42;
 }
 
 message flex_slice_config {
+	// whether remaining RBs after first intra-slice allocation will
+	// be allocated to UEs of the same slice
+	optional bool   intraslice_share_active = 4;
+	// whether remaining RBs after slice allocation will be allocated
+	// to UEs of another slice. Isolated slices will be ignored.
+	optional bool   interslice_share_active = 3;
 	repeated flex_dl_slice dl = 1;
 	repeated flex_ul_slice ul = 2;
 }

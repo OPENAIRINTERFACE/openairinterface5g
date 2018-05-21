@@ -939,6 +939,14 @@ Protocol__FlexSliceConfig *flexran_agent_create_slice_config(int n_dl, int m_ul)
   return fsc;
 }
 
+void flexran_agent_read_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *s)
+{
+  s->intraslice_share_active = flexran_get_intraslice_sharing_active(mod_id);
+  s->has_intraslice_share_active = 1;
+  s->interslice_share_active = flexran_get_interslice_sharing_active(mod_id);
+  s->has_interslice_share_active = 1;
+}
+
 void flexran_agent_read_slice_dl_config(mid_t mod_id, int slice_idx, Protocol__FlexDlSlice *dl_slice)
 {
   dl_slice->id = flexran_get_dl_slice_id(mod_id, slice_idx);
@@ -1040,6 +1048,24 @@ int check_ul_sorting_update(Protocol__FlexUlSlice *old, Protocol__FlexUlSlice *n
     sorting_update = sorting_update || (new->sorting[i] != old->sorting[i]);
   }
   return sorting_update;
+}
+
+void overwrite_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *exist, Protocol__FlexSliceConfig *update)
+{
+  if (update->has_intraslice_share_active
+      && exist->intraslice_share_active != update->intraslice_share_active) {
+    LOG_I(FLEXRAN_AGENT, "[%d] update intraslice_share_active: %d -> %d\n",
+          mod_id, exist->intraslice_share_active, update->intraslice_share_active);
+    exist->intraslice_share_active = update->intraslice_share_active;
+    exist->has_intraslice_share_active = 1;
+  }
+  if (update->has_interslice_share_active
+      && exist->interslice_share_active != update->interslice_share_active) {
+    LOG_I(FLEXRAN_AGENT, "[%d] update interslice_share_active: %d -> %d\n",
+          mod_id, exist->interslice_share_active, update->interslice_share_active);
+    exist->interslice_share_active = update->interslice_share_active;
+    exist->has_interslice_share_active = 1;
+  }
 }
 
 void overwrite_slice_config_dl(mid_t mod_id, Protocol__FlexDlSlice *exist, Protocol__FlexDlSlice *update)
@@ -1333,6 +1359,11 @@ void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *sup)
   }
 
   pthread_mutex_lock(&sc_update_mtx);
+  /* no need for tests in the current state as there are only two protobuf
+    * bools for intra-/interslice sharing. The function applies new values if
+    * applicable */
+  overwrite_slice_config(mod_id, sc_update[mod_id], sup);
+
   if (sup->n_dl == 0) {
     LOG_I(FLEXRAN_AGENT, "[%d] no DL slice configuration in flex_slice_config message\n", mod_id);
   } else {
@@ -1406,6 +1437,23 @@ void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *sup)
   pthread_mutex_unlock(&sc_update_mtx);
 
   perform_slice_config_update_count = 1;
+}
+
+int apply_new_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *olds, Protocol__FlexSliceConfig *news)
+{
+  /* not setting the old configuration is intentional, as it will be picked up
+   * later when reading the configuration. There is thus a direct feedback
+   * whether it has been set. */
+  int changes = 0;
+  if (olds->intraslice_share_active != news->intraslice_share_active) {
+    flexran_set_intraslice_sharing_active(mod_id, news->intraslice_share_active);
+    changes++;
+  }
+  if (olds->interslice_share_active != news->interslice_share_active) {
+    flexran_set_interslice_sharing_active(mod_id, news->interslice_share_active);
+    changes++;
+  }
+  return changes;
 }
 
 int apply_new_slice_dl_config(mid_t mod_id, Protocol__FlexDlSlice *oldc, Protocol__FlexDlSlice *newc)

@@ -1393,6 +1393,8 @@ void flexran_create_config_structures(mid_t mod_id)
   sc_update[mod_id] = flexran_agent_create_slice_config(n_dl, m_ul);
   if (!slice_config[mod_id] || !sc_update[mod_id]) return;
 
+  flexran_agent_read_slice_config(mod_id, slice_config[mod_id]);
+  flexran_agent_read_slice_config(mod_id, sc_update[mod_id]);
   for (i = 0; i < n_dl; i++) {
     flexran_agent_read_slice_dl_config(mod_id, i, slice_config[mod_id]->dl[i]);
     flexran_agent_read_slice_dl_config(mod_id, i, sc_update[mod_id]->dl[i]);
@@ -1526,6 +1528,7 @@ void flexran_agent_slice_update(mid_t mod_id)
                                          sc_update[mod_id]->ul[i]);
     flexran_agent_read_slice_ul_config(mod_id, i, slice_config[mod_id]->ul[i]);
   }
+  flexran_agent_read_slice_config(mod_id, slice_config[mod_id]);
   if (n_ue_slice_assoc_updates > 0) {
     changes += apply_ue_slice_assoc_update(mod_id);
   }
