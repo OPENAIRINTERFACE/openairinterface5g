@@ -1365,11 +1365,7 @@ void prepare_update_slice_config(mid_t mod_id, Protocol__FlexSliceConfig *sup)
   }
   pthread_mutex_unlock(&sc_update_mtx);
 
-  /* perform the slice configuration reads a couple of times. If there are
-   * inconsistencies (i.e. the MAC refuses a configuration), we will have a
-   * couple of warnings because the current configuration and the one in
-   * sc_update will be diverged */
-  perform_slice_config_update_count = 3;
+  perform_slice_config_update_count = 1;
 }
 
 int apply_new_slice_dl_config(mid_t mod_id, Protocol__FlexDlSlice *oldc, Protocol__FlexDlSlice *newc)
