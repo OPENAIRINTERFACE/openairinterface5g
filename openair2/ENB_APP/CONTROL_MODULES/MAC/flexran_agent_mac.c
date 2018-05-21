@@ -1405,40 +1405,67 @@ void flexran_create_config_structures(mid_t mod_id)
 
 void flexran_check_and_remove_slices(mid_t mod_id)
 {
-  int i;
   Protocol__FlexDlSlice **dl = sc_update[mod_id]->dl;
-  size_t n_dl = sc_update[mod_id]->n_dl;
-  for (i = 0; i < n_dl; i++) {
+  Protocol__FlexDlSlice **dlreal = slice_config[mod_id]->dl;
+  int i = 0;
+  while (i < sc_update[mod_id]->n_dl) {
     /* remove slices whose percentage is zero */
-    if (dl[i]->percentage > 0) continue;
+    if (dl[i]->percentage > 0) {
+      ++i;
+      continue;
+    }
     if (flexran_remove_dl_slice(mod_id, i) < 1) {
       LOG_W(FLEXRAN_AGENT, "[%d] can not remove slice index %d ID %d\n",
             mod_id, i, dl[i]->id);
+      ++i;
       continue;
     }
     LOG_I(FLEXRAN_AGENT, "[%d] removed slice index %d ID %d\n",
           mod_id, i, dl[i]->id);
-    /* don't update slice_config, it will be read in below */
-    /* we need to memcpy the higher slice to the position we just deleted */
-    memcpy(dl[i], dl[n_dl-1], sizeof(*dl[n_dl-1]));
-    memset(dl[n_dl-1], 0, sizeof(*dl[n_dl-1]));
+    if (dl[i]->n_sorting > 0) free(dl[i]->sorting);
+    free(dl[i]->scheduler_name);
+    if (dlreal[i]->n_sorting > 0) {
+      dlreal[i]->n_sorting = 0;
+      free(dlreal[i]->sorting);
+    }
+    free(dlreal[i]->scheduler_name);
     --sc_update[mod_id]->n_dl;
+    --slice_config[mod_id]->n_dl;
+    const size_t last = sc_update[mod_id]->n_dl;
+    /* we need to memcpy the higher slice to the position we just deleted */
+    memcpy(dl[i], dl[last], sizeof(*dl[last]));
+    memset(dl[last], 0, sizeof(*dl[last]));
+    memcpy(dlreal[i], dlreal[last], sizeof(*dlreal[last]));
+    memset(dlreal[last], 0, sizeof(*dlreal[last]));
+    /* dont increase i but recheck the slice which has been copied to here */
   }
   Protocol__FlexUlSlice **ul = sc_update[mod_id]->ul;
-  size_t n_ul = sc_update[mod_id]->n_ul;
-  for (i = 0; i < n_ul; i++) {
-    if (ul[i]->percentage > 0) continue;
+  Protocol__FlexUlSlice **ulreal = slice_config[mod_id]->ul;
+  i = 0;
+  while (i < sc_update[mod_id]->n_ul) {
+    if (ul[i]->percentage > 0) {
+      ++i;
+      continue;
+    }
     if (flexran_remove_ul_slice(mod_id, i) < 1) {
       LOG_W(FLEXRAN_AGENT, "[%d] can not remove slice index %d ID %d\n",
             mod_id, i, ul[i]->id);
+      ++i;
       continue;
     }
     LOG_I(FLEXRAN_AGENT, "[%d] removed slice index %d ID %d\n",
           mod_id, i, ul[i]->id);
-    /* see DL remarks */
-    memcpy(ul[i], ul[n_ul-1], sizeof(*ul[n_ul-1]));
-    memset(ul[n_ul-1], 0, sizeof(*ul[n_ul-1]));
+    free(ul[i]->scheduler_name);
+    free(ulreal[i]->scheduler_name);
     --sc_update[mod_id]->n_ul;
+    --slice_config[mod_id]->n_ul;
+    const size_t last = sc_update[mod_id]->n_ul;
+    /* see DL remarks */
+    memcpy(ul[i], ul[last], sizeof(*ul[last]));
+    memset(ul[last], 0, sizeof(*ul[last]));
+    memcpy(ulreal[i], ulreal[last], sizeof(*ulreal[last]));
+    memset(ulreal[last], 0, sizeof(*ulreal[last]));
+    /* dont increase i but recheck the slice which has been copied to here */
   }
 }
 
@@ -1480,12 +1507,13 @@ void flexran_agent_slice_update(mid_t mod_id)
   /* create new DL and UL slices if necessary */
   for (i = slice_config[mod_id]->n_dl; i < sc_update[mod_id]->n_dl; i++) {
     flexran_create_dl_slice(mod_id, sc_update[mod_id]->dl[i]->id);
-    slice_config[mod_id]->n_dl = flexran_get_num_dl_slices(mod_id);
   }
   for (i = slice_config[mod_id]->n_ul; i < sc_update[mod_id]->n_ul; i++) {
     flexran_create_ul_slice(mod_id, sc_update[mod_id]->ul[i]->id);
-    slice_config[mod_id]->n_ul = flexran_get_num_ul_slices(mod_id);
   }
+  slice_config[mod_id]->n_dl = flexran_get_num_dl_slices(mod_id);
+  slice_config[mod_id]->n_ul = flexran_get_num_ul_slices(mod_id);
+  changes += apply_new_slice_config(mod_id, slice_config[mod_id], sc_update[mod_id]);
   for (i = 0; i < slice_config[mod_id]->n_dl; i++) {
     changes += apply_new_slice_dl_config(mod_id,
                                          slice_config[mod_id]->dl[i],
