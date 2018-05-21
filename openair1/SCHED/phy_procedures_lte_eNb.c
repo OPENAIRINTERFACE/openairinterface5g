@@ -973,8 +973,34 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
 	}
 	else { // frame_type == TDD
+#if 1
+	      metric[0] = rx_pucch(eNB,
+	                   uci->pucch_fmt,
+	                   i,
+	                   uci->n_pucch_1[0][0],
+	                   0, //n2_pucch
+	                   uci->srs_active, // shortened format
+	                   pucch_b0b1[0],
+	                   frame,
+	                   subframe,
+	                   PUCCH1a_THRES);
+	      if (uci->type==HARQ_SR && metric[0] > metric_SR) SR_payload = 0;
+	      else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
 
-
+	      if (uci->type==HARQ_SR && metric[0] <= metric_SR) {
+	          SR_payload = 1;
+	          metric[0] = rx_pucch(eNB,
+	                     pucch_format1b,
+	                     i,
+	                     uci->n_pucch_1_0_sr[0],
+	                     0, //n2_pucch
+	                     uci->srs_active, // shortened format
+	                     pucch_b0b1[0],
+	                     frame,
+	                     subframe,
+	                     PUCCH1a_THRES);
+	      }
+#else
 	  // if SR was detected, use the n1_pucch from SR
 	  if (SR_payload==1) {
 #ifdef DEBUG_PHY_PROC
@@ -1025,7 +1051,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
  	      LOG_D(PHY,"RNTI %x type %d SR_payload %d  Frame %d Subframe %d  pucch_b0b1[0][0] %d pucch_b0b1[0][1] %d pucch_b0b1[1][0] %d pucch_b0b1[1][1] %d  \n",
 	              uci->rnti,uci->type,SR_payload,frame,subframe,pucch_b0b1[0][0],pucch_b0b1[0][1],pucch_b0b1[1][0],pucch_b0b1[1][1]);
 #endif
-	  
+#endif
 	  if (SR_payload == 1) { // this implements Table 7.3.1 from 36.213
 	    if (pucch_b0b1[0][0] == 4) { // there isn't a likely transmission
 	      harq_ack[0] = 4; // DTX
