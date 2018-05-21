@@ -1540,5 +1540,73 @@ void flexran_agent_slice_update(mid_t mod_id)
 
 Protocol__FlexSliceConfig *flexran_agent_get_slice_config(mid_t mod_id)
 {
-  return slice_config[mod_id];
+  if (!slice_config[mod_id]) return NULL;
+  Protocol__FlexSliceConfig *config = NULL;
+
+  pthread_mutex_lock(&sc_update_mtx);
+  config = flexran_agent_create_slice_config(slice_config[mod_id]->n_dl,
+                                             slice_config[mod_id]->n_ul);
+  if (!config) {
+    pthread_mutex_unlock(&sc_update_mtx);
+    return NULL;
+  }
+  config->has_intraslice_share_active = 1;
+  config->intraslice_share_active = slice_config[mod_id]->intraslice_share_active;
+  config->has_interslice_share_active = 1;
+  config->interslice_share_active = slice_config[mod_id]->interslice_share_active;
+  for (int i = 0; i < slice_config[mod_id]->n_dl; ++i) {
+    if (!config->dl[i]) continue;
+    config->dl[i]->has_id         = 1;
+    config->dl[i]->id             = slice_config[mod_id]->dl[i]->id;
+    config->dl[i]->has_label      = 1;
+    config->dl[i]->label          = slice_config[mod_id]->dl[i]->label;
+    config->dl[i]->has_percentage = 1;
+    config->dl[i]->percentage     = slice_config[mod_id]->dl[i]->percentage;
+    config->dl[i]->has_isolation  = 1;
+    config->dl[i]->isolation      = slice_config[mod_id]->dl[i]->isolation;
+    config->dl[i]->has_priority   = 1;
+    config->dl[i]->priority       = slice_config[mod_id]->dl[i]->priority;
+    config->dl[i]->has_position_low  = 1;
+    config->dl[i]->position_low   = slice_config[mod_id]->dl[i]->position_low;
+    config->dl[i]->has_position_high = 1;
+    config->dl[i]->position_high  = slice_config[mod_id]->dl[i]->position_high;
+    config->dl[i]->has_maxmcs     = 1;
+    config->dl[i]->maxmcs         = slice_config[mod_id]->dl[i]->maxmcs;
+    config->dl[i]->n_sorting      = slice_config[mod_id]->dl[i]->n_sorting;
+    config->dl[i]->sorting        = calloc(config->dl[i]->n_sorting, sizeof(Protocol__FlexDlSorting));
+    if (!config->dl[i]->sorting) config->dl[i]->n_sorting = 0;
+    for (int j = 0; j < config->dl[i]->n_sorting; ++j)
+      config->dl[i]->sorting[j]   = slice_config[mod_id]->dl[i]->sorting[j];
+    config->dl[i]->has_accounting = 1;
+    config->dl[i]->accounting     = slice_config[mod_id]->dl[i]->accounting;
+    config->dl[i]->scheduler_name = strdup(slice_config[mod_id]->dl[i]->scheduler_name);
+  }
+  for (int i = 0; i < slice_config[mod_id]->n_ul; ++i) {
+    if (!config->ul[i]) continue;
+    config->ul[i]->has_id         = 1;
+    config->ul[i]->id             = slice_config[mod_id]->ul[i]->id;
+    config->ul[i]->has_label      = 1;
+    config->ul[i]->label          = slice_config[mod_id]->ul[i]->label;
+    config->ul[i]->has_percentage = 1;
+    config->ul[i]->percentage     = slice_config[mod_id]->ul[i]->percentage;
+    config->ul[i]->has_isolation  = 1;
+    config->ul[i]->isolation      = slice_config[mod_id]->ul[i]->isolation;
+    config->ul[i]->has_priority   = 1;
+    config->ul[i]->priority       = slice_config[mod_id]->ul[i]->priority;
+    config->ul[i]->has_first_rb   = 1;
+    config->ul[i]->first_rb       = slice_config[mod_id]->ul[i]->first_rb;
+    config->ul[i]->has_maxmcs     = 1;
+    config->ul[i]->maxmcs         = slice_config[mod_id]->ul[i]->maxmcs;
+    config->ul[i]->n_sorting      = slice_config[mod_id]->ul[i]->n_sorting;
+    config->ul[i]->sorting        = calloc(config->ul[i]->n_sorting, sizeof(Protocol__FlexUlSorting));
+    if (!config->ul[i]->sorting) config->ul[i]->n_sorting = 0;
+    for (int j = 0; j < config->ul[i]->n_sorting; ++j)
+      config->ul[i]->sorting[j]   = slice_config[mod_id]->ul[i]->sorting[j];
+    config->ul[i]->has_accounting = 1;
+    config->ul[i]->accounting     = slice_config[mod_id]->ul[i]->accounting;
+    config->ul[i]->scheduler_name = strdup(slice_config[mod_id]->ul[i]->scheduler_name);
+  }
+
+  pthread_mutex_unlock(&sc_update_mtx);
+  return config;
 }

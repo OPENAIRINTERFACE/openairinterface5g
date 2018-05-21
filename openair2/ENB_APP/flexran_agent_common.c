@@ -288,11 +288,26 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
       free(reply->cell_config[i]->si_config->si_message);
       free(reply->cell_config[i]->si_config);
     }
+    if (reply->cell_config[i]->slice_config != NULL) {
+      for (j = 0; j < reply->cell_config[i]->slice_config->n_dl; ++j) {
+        if (reply->cell_config[i]->slice_config->dl[j]->n_sorting > 0)
+          free(reply->cell_config[i]->slice_config->dl[j]->sorting);
+        free(reply->cell_config[i]->slice_config->dl[j]->scheduler_name);
+        free(reply->cell_config[i]->slice_config->dl[j]);
+      }
+      free(reply->cell_config[i]->slice_config->dl);
+      for (j = 0; j < reply->cell_config[i]->slice_config->n_ul; ++j) {
+        if (reply->cell_config[i]->slice_config->ul[j]->n_sorting > 0)
+          free(reply->cell_config[i]->slice_config->ul[j]->sorting);
+        free(reply->cell_config[i]->slice_config->ul[j]->scheduler_name);
+        free(reply->cell_config[i]->slice_config->ul[j]);
+      }
+      free(reply->cell_config[i]->slice_config->ul);
+      free(reply->cell_config[i]->slice_config);
+    }
     free(reply->cell_config[i]);
   }
   free(reply->cell_config);
-  /* don't free the slice_config, it is maintained internally during
-   * the liftetime of the agent */
   free(reply);
   free(msg);
   
