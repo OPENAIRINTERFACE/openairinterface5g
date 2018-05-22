@@ -175,6 +175,32 @@ rx_sdu(const module_id_t enb_mod_idP,
           cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
       } else
         UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]++;
+
+      first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
+
+      // Program NACK for PHICH
+      LOG_D(MAC,
+	"Programming PHICH NACK for rnti %x harq_pid %d (first_rb %d)\n",
+	current_rnti, harq_pid, first_rb);
+      nfapi_hi_dci0_request_t *hi_dci0_req;
+      uint8_t sf_ahead_dl = ul_subframe2_k_phich(&mac->common_channels[CC_idP] , subframeP);
+      hi_dci0_req = &mac->HI_DCI0_req[CC_idP][(subframeP+sf_ahead_dl)%10];
+      nfapi_hi_dci0_request_body_t *hi_dci0_req_body = &hi_dci0_req->hi_dci0_request_body;
+
+      nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu =
+        &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
+      memset((void *) hi_dci0_pdu, 0, sizeof(nfapi_hi_dci0_request_pdu_t));
+      hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_HI_PDU_TYPE;
+      hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_hi_pdu);
+      hi_dci0_pdu->hi_pdu.hi_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_HI_PDU_REL8_TAG;
+      hi_dci0_pdu->hi_pdu.hi_pdu_rel8.resource_block_start = first_rb;
+      hi_dci0_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms = 0;
+      hi_dci0_pdu->hi_pdu.hi_pdu_rel8.hi_value = 0;
+      hi_dci0_req_body->number_of_hi++;
+      hi_dci0_req_body->sfnsf = sfnsf_add_subframe(frameP,subframeP, 0);
+      hi_dci0_req_body->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
+      hi_dci0_req->sfn_sf = sfnsf_add_subframe(frameP,subframeP,sf_ahead_dl);
+      hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
 	    return;
 
 	}
@@ -1592,7 +1618,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 		      T_INT(UE_template->mcs_UL[harq_pid]),
 		      T_INT(first_rb[CC_id]),
 		      T_INT(rb_table[rb_table_index]), T_INT(round));
-
+#if 0
 		    // fill in NAK information
 
 		    hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
@@ -1620,6 +1646,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 			  UE_template->first_rb_ul[harq_pid],
 			  UE_template->nb_rb_ul[harq_pid],
 			  UE_template->TBS_UL[harq_pid], round);
+#endif
 		    // Add UL_config PDUs
 		    LOG_D(MAC,
 			  "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
@@ -2143,6 +2170,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             hi_dci0_pdu->dci_pdu.dci_pdu_rel8.harq_pid                          = harq_pid;
 
             hi_dci0_req->number_of_dci++;
+#if 0
             // fill in NAK information
             hi_dci0_pdu                                                         = &hi_dci0_req->hi_dci0_pdu_list[hi_dci0_req->number_of_dci+hi_dci0_req->number_of_hi];
             memset((void*)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
@@ -2163,6 +2191,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                   module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs_rv,
                   ulsch_ue_select[CC_id].list[ulsch_ue_num].start_rb, ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb,
                   UE_template->TBS_UL[harq_pid],round);
+#endif
             // Add UL_config PDUs
             LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",
                   harq_pid,frameP,subframeP,UE_id,rnti,sched_frame,sched_subframeP);
