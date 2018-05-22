@@ -213,7 +213,10 @@ extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
 
 int transmission_mode=1;
 
-
+int emulate_rf = 0;
+int numerology = 0;
+int codingw = 0;
+int fepw = 0;
 
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;

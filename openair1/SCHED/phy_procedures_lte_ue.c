@@ -41,7 +41,7 @@
 #include <sched.h>
 #include "targets/RT/USER/lte-softmodem.h"
 
-#define DEBUG_PHY_PROC
+//#define DEBUG_PHY_PROC
 
 #ifndef PUCCH
 #define PUCCH

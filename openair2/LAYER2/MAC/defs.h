@@ -1071,6 +1071,8 @@ typedef struct eNB_MAC_INST_s {
     COMMON_channels_t common_channels[MAX_NUM_CCs];
     /// current PDU index (BCH,MCH,DLSCH)
     uint16_t pdu_index[MAX_NUM_CCs];
+    /// flag to enable phy-test (disables the scheduler)
+    uint16_t phy_test;
 
     /// NFAPI Config Request Structure
     nfapi_config_request_t config[MAX_NUM_CCs];

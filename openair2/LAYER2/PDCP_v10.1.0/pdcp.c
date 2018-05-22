@@ -859,7 +859,8 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
     for (pdcp_uid=0; pdcp_uid< NUMBER_OF_UE_MAX;pdcp_uid++){
       //printf("frame %d and subframe %d \n", pdcp_enb[ctxt_pP->module_id].frame, pdcp_enb[ctxt_pP->module_id].subframe);
       // tx stats
-      if (pdcp_enb[ctxt_pP->module_id].sfn % Pdcp_stats_tx_window_ms[ctxt_pP->module_id][pdcp_uid] == 0){
+      if (Pdcp_stats_tx_window_ms[ctxt_pP->module_id][pdcp_uid] > 0 &&
+          pdcp_enb[ctxt_pP->module_id].sfn % Pdcp_stats_tx_window_ms[ctxt_pP->module_id][pdcp_uid] == 0){
 	// unit: bit/s
 	Pdcp_stats_tx_throughput_w[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_tx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
 	Pdcp_stats_tx_w[ctxt_pP->module_id][pdcp_uid][rb_id]= Pdcp_stats_tx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id];
@@ -875,7 +876,8 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
 	Pdcp_stats_tx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]=0;
 	
       }
-      if (pdcp_enb[ctxt_pP->module_id].sfn % Pdcp_stats_rx_window_ms[ctxt_pP->module_id][pdcp_uid] == 0){
+      if (Pdcp_stats_rx_window_ms[ctxt_pP->module_id][pdcp_uid] > 0 &&
+          pdcp_enb[ctxt_pP->module_id].sfn % Pdcp_stats_rx_window_ms[ctxt_pP->module_id][pdcp_uid] == 0){
 	// rx stats
 	Pdcp_stats_rx_goodput_w[ctxt_pP->module_id][pdcp_uid][rb_id]=Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id]*8;
 	Pdcp_stats_rx_w[ctxt_pP->module_id][pdcp_uid][rb_id]= 	Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_id];
