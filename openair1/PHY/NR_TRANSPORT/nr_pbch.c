@@ -32,7 +32,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
-#include "PHY/phy_extern.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/sse_intrin.h"
 
 //#define DEBUG_PBCH
@@ -130,6 +130,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 
 void nr_pbch_scrambling(uint32_t Nid,
                         uint8_t *pbch_a,
+                        uint8_t nushift,
                         uint32_t length)
 {
   uint8_t reset;
@@ -162,7 +163,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
                      NR_DL_FRAME_PARMS *frame_parms)
 {
 
-  int k,l,ssb_sc_idx;
+  int k,l,m;
   int16_t a;
   int16_t mod_pbch_e[NR_POLAR_PBCH_E<<1];
   uint8_t sfn_4lsb, idx=0;
@@ -188,7 +189,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #endif
 
     // Scrambling
-  nr_pbch_scrambling((uint32_t)config->sch_config.physical_cell_id.value, pbch->pbch_a, NR_POLAR_PBCH_PAYLOAD_BITS);
+  nr_pbch_scrambling((uint32_t)config->sch_config.physical_cell_id.value, nushift, pbch->pbch_a, NR_POLAR_PBCH_PAYLOAD_BITS);
 #ifdef DEBUG_PBCH_ENCODING
   
 #endif
@@ -220,21 +221,22 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
       ///symbol 1  [0:239] -- 180 mod symbols
     k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier;
     l = ssb_start_symbol + 1;
-    ssb_sc_idx = 0;
+    m = 0;
 
-    for (int m = 0; m < 180; m++) {
-#ifdef DEBUG_PBCH
-  printf("m %d at k %d of l %d\n", m, k, l);
-#endif
+    for (int ssb_sc_idx = 0; ssb_sc_idx < 240; ssb_sc_idx++) {
+
       if ((ssb_sc_idx&3) == nushift) {  //skip DMRS
         k++;
-        ssb_sc_idx++;
+        continue;
       }
       else {
+#ifdef DEBUG_PBCH
+  printf("m %d ssb_sc_idx %d at k %d of l %d\n", m, ssb_sc_idx, k, l);
+#endif
         ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_pbch_e[m<<1]) >> 15;
         ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_pbch_e[(m<<1) + 1]) >> 15;
         k++;
-        ssb_sc_idx++;
+        m++;
       }
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -244,21 +246,46 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
       ///symbol 2  [0:47 ; 192:239] -- 72 mod symbols
     k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier;
     l++;
-    ssb_sc_idx = 0;
+    m=180;
 
-    for (int m = 180; m < 252; m++) {
-#ifdef DEBUG_PBCH
-  printf("m %d at k %d of l %d\n", m, k, l);
-#endif
+    for (int ssb_sc_idx = 0; ssb_sc_idx < 48; ssb_sc_idx++) {
+
       if ((ssb_sc_idx&3) == nushift) {
-        k+=(m==47)?145:1;
-        ssb_sc_idx+=(m==47)?145:1;
+        k++;
+        continue;
       }
       else {
+#ifdef DEBUG_PBCH
+  printf("m %d ssb_sc_idx %d at k %d of l %d\n", m, ssb_sc_idx, k, l);
+#endif
         ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_pbch_e[m<<1]) >> 15;
         ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_pbch_e[(m<<1) + 1]) >> 15;
-        k+=(m==47)?145:1;
-        ssb_sc_idx+=(m==47)?145:1;
+        k++;
+        m++;
+      }
+
+      if (k >= frame_parms->ofdm_symbol_size)
+        k-=frame_parms->ofdm_symbol_size;
+    }
+
+    k+=145;
+    l++;
+    m=216;
+
+    for (int ssb_sc_idx = 192; ssb_sc_idx < 240; ssb_sc_idx++) {
+
+      if ((ssb_sc_idx&3) == nushift) {
+        k++;
+        continue;
+      }
+      else {
+#ifdef DEBUG_PBCH
+  printf("m %d ssb_sc_idx %d at k %d of l %d\n", m, ssb_sc_idx, k, l);
+#endif
+        ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_pbch_e[m<<1]) >> 15;
+        ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_pbch_e[(m<<1) + 1]) >> 15;
+        k++;
+        m++;
       }
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -268,21 +295,22 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
       ///symbol 3  [0:239] -- 180 mod symbols
     k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier;
     l++;
-    ssb_sc_idx = 0;
+    m=252;
 
-    for (int m = 252; m < NR_POLAR_PBCH_E>>1; m++) {
-#ifdef DEBUG_PBCH
-  printf("m %d at k %d of l %d\n", m, k, l);
-#endif
+    for (int ssb_sc_idx = 0; ssb_sc_idx < 240; ssb_sc_idx++) {
+
       if ((ssb_sc_idx&3) == nushift) {
         k++;
-        ssb_sc_idx++;
+        continue;
       }
       else {
+#ifdef DEBUG_PBCH
+  printf("m %d ssb_sc_idx %d at k %d of l %d\n", m, ssb_sc_idx, k, l);
+#endif
         ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_pbch_e[m<<1]) >> 15;
         ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_pbch_e[(m<<1) + 1]) >> 15;
         k++;
-        ssb_sc_idx++;
+        m++;
       }
 
       if (k >= frame_parms->ofdm_symbol_size)

@@ -20,7 +20,7 @@
  */
 
 /*! \file lte-enb.c
- * \brief Top-level threads for eNodeB
+ * \brief Top-level threads for gNodeB
  * \author R. Knopp, F. Kaltenberger, Navid Nikaein
  * \date 2012
  * \version 0.1
