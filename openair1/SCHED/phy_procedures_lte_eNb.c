@@ -990,7 +990,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	      if (uci->type==HARQ_SR && metric[0] <= metric_SR) {
 	          SR_payload = 1;
 	          metric[0] = rx_pucch(eNB,
-	                     pucch_format1b,
+	                     uci->pucch_fmt,
 	                     i,
 	                     uci->n_pucch_1_0_sr[0],
 	                     0, //n2_pucch
@@ -1052,6 +1052,15 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	              uci->rnti,uci->type,SR_payload,frame,subframe,pucch_b0b1[0][0],pucch_b0b1[0][1],pucch_b0b1[1][0],pucch_b0b1[1][1]);
 #endif
 #endif
+	  
+	  if(uci->pucch_fmt == pucch_format1a) {
+	    LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (TDD) payload %d (metric %d)\n",
+	      eNB->Mod_id,uci->rnti,frame,subframe,pucch_b0b1[0][0],metric[0]);
+	    
+	    uci->stat = metric[0];
+	    fill_uci_harq_indication(eNB,uci,frame,subframe,pucch_b0b1[0],0,0xffff);
+	  }
+	  else if(uci->pucch_fmt == pucch_format1b) {
 	  if (SR_payload == 1) { // this implements Table 7.3.1 from 36.213
 	    if (pucch_b0b1[0][0] == 4) { // there isn't a likely transmission
 	      harq_ack[0] = 4; // DTX
@@ -1350,6 +1359,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
       default:
 	AssertFatal(1==0,"Unsupported UCI type %d\n",uci->type);
 	break;
+      }
       }
     
       if (SR_payload == 1) {
