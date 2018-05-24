@@ -129,8 +129,8 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 }
 
 void nr_pbch_scrambling(uint32_t Nid,
-                        uint8_t *pbch_a,
                         uint8_t nushift,
+                        uint8_t *pbch_a,
                         uint32_t length)
 {
   uint8_t reset;
@@ -268,8 +268,10 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
         k-=frame_parms->ofdm_symbol_size;
     }
 
-    k+=145;
-    l++;
+    k += 144;
+    if (k >= frame_parms->ofdm_symbol_size)
+      k-=frame_parms->ofdm_symbol_size;
+
     m=216;
 
     for (int ssb_sc_idx = 192; ssb_sc_idx < 240; ssb_sc_idx++) {
