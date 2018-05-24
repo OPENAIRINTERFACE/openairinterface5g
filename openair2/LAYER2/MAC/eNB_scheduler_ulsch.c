@@ -165,6 +165,9 @@ rx_sdu(const module_id_t enb_mod_idP,
 		  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 		  ul_cqi);
 
+		if(ul_cqi>200){ // too high energy pattern
+		    UE_list->UE_sched_ctrl[UE_id].pusch_snr[CC_idP] = ul_cqi;
+		}
       //      AssertFatal(1==0,"ulsch in error\n");
       if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] == 3) {
         UE_list->UE_sched_ctrl[UE_id].ul_scheduled &= (~(1 << harq_pid));
