@@ -287,25 +287,25 @@ init_SI(
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            j+1,
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.count);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 rxPool_sc_CP_Len: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 rxPool_sc_CP_Len: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_CP_Len_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 sc_Period_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 sc_Period_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_Period_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 data_CP_Len_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 data_CP_Len_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->data_CP_Len_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Num_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Num_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Num_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Start_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Start_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Start_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_End_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_End_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_End_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 offsetIndicator: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 offsetIndicator: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 subframeBitmap_choice_bs_buf: %s \n",
@@ -320,28 +320,28 @@ init_SI(
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            j+1,
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.count);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 cp_Len_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 cp_Len_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->cp_Len_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 discPeriod_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 discPeriod_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->discPeriod_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRetx_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRetx_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRetx_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRepetition_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRepetition_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRepetition_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Num_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Num_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Num_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Start_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Start_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Start_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_End_r12: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_End_r12: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_End_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 offsetIndicator: %d \n",
+     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 offsetIndicator: %ld \n",
            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 subframeBitmap_choice_bs_buf: %s \n",
@@ -938,6 +938,7 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
       for (i=0; i<MAX_MOBILES_PER_ENB; i++) {
         ulsch = eNB_PHY->ulsch[i];
         if((ulsch != NULL) && (ulsch->rnti == rnti)){
+          void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
           LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
           clean_eNb_ulsch(ulsch);
         }
@@ -945,6 +946,7 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
       for (i=0; i<MAX_MOBILES_PER_ENB; i++) {
         dlsch = eNB_PHY->dlsch[i][0];
         if((dlsch != NULL) && (dlsch->rnti == rnti)){
+          void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
           LOG_I(RRC, "clean_eNb_dlsch UE %x \n", rnti);
           clean_eNb_dlsch(dlsch);
         }
@@ -1898,6 +1900,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     for (int i=0; i<MAX_MOBILES_PER_ENB; i++) {
       ulsch = eNB_PHY->ulsch[i];
       if((ulsch != NULL) && (ulsch->rnti == ctxt_prior.rnti)){
+        void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
         LOG_I(RRC, "clean_eNb_ulsch UE %x \n", ctxt_prior.rnti);
         clean_eNb_ulsch(ulsch);
         break;
@@ -7187,6 +7190,7 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
     return -1;
   }
 
+  return 0;
 }
 
 #if defined(ENABLE_ITTI)
@@ -7562,7 +7566,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
 {
 
   uint8_t                             buffer[RRC_BUF_SIZE];
-  uint16_t                            size;
+  uint16_t                            size = -1;
   memset(buffer, 0, RRC_BUF_SIZE);
 
   // allocate dedicated pools for UE -sl-CommConfig/sl-DiscConfig (sl-V2X-ConfigDedicated)

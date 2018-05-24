@@ -44,20 +44,20 @@ void generate_sldch(PHY_VARS_UE *ue,SLDCH_t *sldch,int frame_tx,int subframe_tx)
   pdu.header.absSF = (frame_tx*10)+subframe_tx;
 
 
-  AssertFatal(sldch->payload_length <=1500-sldch_header_len - sizeof(SLDCH_t) + sizeof(uint8_t*),
-                "SLDCH payload length > %d\n",
+  AssertFatal((sldch->payload_length <=1500-sldch_header_len - sizeof(SLDCH_t) + sizeof(uint8_t*)),
+                "SLDCH payload length > %zd\n",
                 1500-sldch_header_len - sizeof(SLDCH_t) + sizeof(uint8_t*));
   memcpy((void*)&pdu.sldch,
          (void*)sldch,
          sizeof(SLDCH_t));
 
-  LOG_I(PHY,"SLDCH configuration %d bytes, TBS payload %d bytes => %d bytes\n",
+  LOG_I(PHY,"SLDCH configuration %zd bytes, TBS payload %d bytes => %zd bytes\n",
         sizeof(SLDCH_t)-sizeof(uint8_t*),
         sldch->payload_length,
         sldch_header_len+sizeof(SLDCH_t)-sizeof(uint8_t*)+sldch->payload_length);
 
   multicast_link_write_sock(0,
-                            &pdu,
+                            (char *)&pdu,
                             sldch_header_len+sizeof(SLDCH_t));
 
 }

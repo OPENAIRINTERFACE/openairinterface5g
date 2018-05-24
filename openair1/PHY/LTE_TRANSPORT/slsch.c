@@ -49,19 +49,19 @@ void generate_slsch(PHY_VARS_UE *ue,SLSCH_t *slsch,int frame_tx,int subframe_tx)
     memcpy((void*)&pdu.slsch,(void*)slsch,sizeof(SLSCH_t)-sizeof(uint8_t*));
     
     AssertFatal(slsch->payload_length <=1500-slsch_header_len - sizeof(SLSCH_t) + sizeof(uint8_t*),
-		"SLSCH payload length > %d\n",
+		"SLSCH payload length > %zd\n",
 		1500-slsch_header_len - sizeof(SLSCH_t) + sizeof(uint8_t*));
     memcpy((void*)&pdu.payload[0],
 	   (void*)slsch->payload,
 	   slsch->payload_length);
     
-    LOG_I(PHY,"SLSCH configuration %d bytes, TBS payload %d bytes => %d bytes\n",
+    LOG_I(PHY,"SLSCH configuration %zd bytes, TBS payload %d bytes => %zd bytes\n",
 	  sizeof(SLSCH_t)-sizeof(uint8_t*),
 	  slsch->payload_length,
 	  slsch_header_len+sizeof(SLSCH_t)-sizeof(uint8_t*)+slsch->payload_length);
     
     multicast_link_write_sock(0, 
-			      &pdu, 
+			      (char *)&pdu,
 			      slsch_header_len+sizeof(SLSCH_t)-sizeof(uint8_t*)+slsch->payload_length);
     
   }

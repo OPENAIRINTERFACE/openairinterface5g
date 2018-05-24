@@ -110,7 +110,7 @@ rrc_ue_decode_dcch(
 int decode_SL_Discovery_Message(
   const protocol_ctxt_t* const ctxt_pP,
   const uint8_t                eNB_index,
-  uint8_t*               const Sdu,
+  const uint8_t*               Sdu,
   const uint8_t                Sdu_len);
 #endif
 

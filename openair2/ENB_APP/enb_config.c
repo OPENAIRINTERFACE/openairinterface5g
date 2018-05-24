@@ -532,7 +532,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   const char*       rxPool_ResourceConfig_offsetIndicator_present           = NULL;
   libconfig_int     rxPool_ResourceConfig_offsetIndicator_choice            = 0;
   const char*       rxPool_ResourceConfig_subframeBitmap_present            = NULL;
-  const char*       rxPool_ResourceConfig_subframeBitmap_choice_bs_buf      = NULL;
+  char*             rxPool_ResourceConfig_subframeBitmap_choice_bs_buf      = NULL;
   libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_size     = 0;
   libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused     = 0;
   //SIB19
@@ -548,7 +548,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   const char*       discRxPool_ResourceConfig_offsetIndicator_present              = NULL;
   libconfig_int     discRxPool_ResourceConfig_offsetIndicator_choice               = 0;
   const char*       discRxPool_ResourceConfig_subframeBitmap_present               = NULL;
-  const char*       discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf         = NULL;
+  char*             discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf         = NULL;
   libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_size        = 0;
   libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused = 0;
   //For discRxPoolPS
@@ -563,7 +563,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   const char*       discRxPoolPS_ResourceConfig_offsetIndicator_present              = NULL;
   libconfig_int     discRxPoolPS_ResourceConfig_offsetIndicator_choice               = 0;
   const char*       discRxPoolPS_ResourceConfig_subframeBitmap_present               = NULL;
-  const char*       discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf         = NULL;
+  char*             discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf         = NULL;
   libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size        = 0;
   libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused = 0;
 
@@ -746,7 +746,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	    for (j = 0; j < CCsParamList.numelt ;j++) { 
 
 	      sprintf(ccspath,"%s.%s.[%i]",enbpath,ENB_CONFIG_STRING_COMPONENT_CARRIERS,j);
-	      LOG_I(RRC, "enb_config::RCconfig_RRC() parameter number: %d, total number of parameters: %d, ccspath: %s \n \n", j, sizeof(CCsParams)/sizeof(paramdef_t), ccspath);
+	      LOG_I(RRC, "enb_config::RCconfig_RRC() parameter number: %d, total number of parameters: %zd, ccspath: %s \n \n", j, sizeof(CCsParams)/sizeof(paramdef_t), ccspath);
 	      config_get( CCsParams,sizeof(CCsParams)/sizeof(paramdef_t),ccspath);	      
 
 

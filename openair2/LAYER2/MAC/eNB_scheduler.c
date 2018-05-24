@@ -582,6 +582,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 	  for (int ii=0; ii<MAX_MOBILES_PER_ENB; ii++) {
 	    LTE_eNB_ULSCH_t *ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
 	    if((ulsch != NULL) && (ulsch->rnti == rnti)){
+              void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
 	      LOG_I(MAC, "clean_eNb_ulsch UE %x \n", rnti);
 	      clean_eNb_ulsch(ulsch);
 	    }
@@ -589,6 +590,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 	  for (int ii=0; ii<MAX_MOBILES_PER_ENB; ii++) {
 	    LTE_eNB_DLSCH_t *dlsch = RC.eNB[module_idP][CC_id]->dlsch[ii][0];
 	    if((dlsch != NULL) && (dlsch->rnti == rnti)){
+              void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
 	      LOG_I(MAC, "clean_eNb_dlsch UE %x \n", rnti);
 	      clean_eNb_dlsch(dlsch);
 	    }
