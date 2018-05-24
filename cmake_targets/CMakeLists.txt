@@ -1063,18 +1063,14 @@ set(PHY_LDPCSRC
 )
 set(PHY_POLARSRC
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_init.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/get_3GPP_info_bit_pattern.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/get_crc_generator_matrix.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/get_PC_bit_pattern.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_bitwise_operations.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_crc_byte.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_bit_insertion_2.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_bit_insertion.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_channel_interleaver_pattern.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_crc.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_decoding_tools.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_info_bit_pattern.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_interleave.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_interleaving_pattern.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_kernal_operation.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_kronecker_power_matrices.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_matrix_and_array.c

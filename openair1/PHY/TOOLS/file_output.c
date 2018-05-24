@@ -158,7 +158,6 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
         fprintf(fp,"\n%d,",((short *)data)[i]);
     }
 
-    printf("\n erennnnnnnnnnnnnnn: length :%d",length);
     break;
 
   case 12 : // case eren for log2_maxh real unsigned 8 bit
@@ -170,10 +169,8 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
   if (format != 10 && format !=11 && format !=12 && format != 13 && format != 15) {
     fprintf(fp,"];\n");
     fclose(fp);
-    return(0);
   } else if (format == 10 || format ==11 || format == 12 || format == 13 || format == 15) {
     fclose(fp);
-    return(0);
   }
 
   return 0;

@@ -1,5 +1,23 @@
-#include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
-#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*
  * Return values:
@@ -7,8 +25,17 @@
  * -1 --> All list entries have failed the CRC checks
  */
 
-int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_params *polarParams, uint8_t listSize,
-		double *aPrioriPayload, uint8_t pathMetricAppr){
+#include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+
+int8_t polar_decoder(
+		double *input,
+		uint8_t *output,
+		t_nrPolar_params *polarParams,
+		uint8_t listSize,
+		double *aPrioriPayload,
+		uint8_t pathMetricAppr)
+{
 
 	uint8_t ***bit = nr_alloc_uint8_t_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
 	uint8_t **bitUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
@@ -27,8 +54,6 @@ int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_params *polarPara
 		bitUpdated[i][0]=((polarParams->information_bit_pattern[i]+1) % 2);
 	}
 
-	uint8_t **crc_generator_matrix=crc24c_generator_matrix(polarParams->payloadBits); //G_P
-
 	uint8_t **extended_crc_generator_matrix = malloc(polarParams->K * sizeof(uint8_t *)); //G_P3
 	uint8_t **tempECGM = malloc(polarParams->K * sizeof(uint8_t *)); //G_P2
 	for (int i = 0; i < polarParams->K; i++){
@@ -38,7 +63,7 @@ int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_params *polarPara
 
 	for (int i=0; i<polarParams->payloadBits; i++) {
 		for (int j=0; j<polarParams->crcParityBits; j++) {
-			tempECGM[i][j]=crc_generator_matrix[i][j];
+			tempECGM[i][j]=polarParams->crc_generator_matrix[i][j];
 		}
 	}
 	for (int i=polarParams->payloadBits; i<polarParams->K; i++) {
@@ -203,9 +228,9 @@ int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_params *polarPara
 			for (uint8_t i = 0; i < currentListSize; i++) decoderIterationCheck+=crcState[i];
 			if (decoderIterationCheck==0) {
 				//perror("[SCL polar decoder] All list entries have failed the CRC checks.");
-				free(crc_generator_matrix);
 				free(d_tilde);
 				free(pathMetric);
+				free(crcState);
 				nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
 				nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
 				nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
@@ -221,34 +246,30 @@ int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_params *polarPara
 	for (uint8_t i = 0; i < 2*listSize; i++) listIndex[i]=i;
 	nr_sort_asc_double_1D_array_ind(pathMetric, listIndex, currentListSize);
 
-	uint8_t *nr_polar_uHat = malloc(sizeof(uint8_t) * polarParams->N);
-	uint8_t *nr_polar_cHat = malloc(sizeof(uint8_t) * polarParams->K);
-	uint8_t *nr_polar_bHat = malloc(sizeof(uint8_t) * polarParams->K);
 	for (uint8_t i = 0; i < fmin(listSize, (pow(2,polarParams->crcCorrectionBits)) ); i++) {
 		if ( crcState[listIndex[i]] == 1 ) {
-			for (int j = 0; j < polarParams->N; j++) nr_polar_uHat[j]=bit[j][0][listIndex[i]];
+			for (int j = 0; j < polarParams->N; j++) polarParams->nr_polar_u[j]=bit[j][0][listIndex[i]];
 
 			//Extract the information bits (û to ĉ)
-			nr_polar_info_bit_extraction(nr_polar_uHat, nr_polar_cHat, polarParams->information_bit_pattern, polarParams->N);
+			nr_polar_info_bit_extraction(polarParams->nr_polar_u, polarParams->nr_polar_cPrime, polarParams->information_bit_pattern, polarParams->N);
 
 			//Deinterleaving (ĉ to b)
-			nr_polar_deinterleaver(nr_polar_cHat, nr_polar_bHat, polarParams->interleaving_pattern, polarParams->K);
+			nr_polar_deinterleaver(polarParams->nr_polar_cPrime, polarParams->nr_polar_b, polarParams->interleaving_pattern, polarParams->K);
 
 			//Remove the CRC (â)
-			for (int j = 0; j < polarParams->payloadBits; j++) output[j]=nr_polar_bHat[j];
+			for (int j = 0; j < polarParams->payloadBits; j++) output[j]=polarParams->nr_polar_b[j];
 
 			break;
 		}
 	}
 
-	free(crc_generator_matrix);
 	free(d_tilde);
 	free(pathMetric);
-	free(nr_polar_uHat);
-	free(nr_polar_cHat);
-	free(nr_polar_bHat);
+	free(crcState);
 	nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
 	nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
 	nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
+	nr_free_uint8_t_2D_array(extended_crc_generator_matrix, polarParams->K);
+	nr_free_uint8_t_2D_array(tempECGM, polarParams->K);
 	return(0);
 }

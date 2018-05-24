@@ -1,3 +1,24 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
 static const uint16_t Q_0_Nminus1_1[2] = { 0, 1 };
@@ -14,6 +35,6 @@ static const uint16_t Q_0_Nminus1_10[1024] = { 0, 1, 2, 4, 8, 16, 32, 3, 5, 64, 
 static const uint16_t *Q_0_Nminus1[11] = { NULL, Q_0_Nminus1_1, Q_0_Nminus1_2, Q_0_Nminus1_3, Q_0_Nminus1_4,
 		Q_0_Nminus1_5, Q_0_Nminus1_6, Q_0_Nminus1_7, Q_0_Nminus1_8, Q_0_Nminus1_9, Q_0_Nminus1_10 };
 
-uint16_t* nr_polar_sequence_pattern(uint8_t n){
+const uint16_t* nr_polar_sequence_pattern(uint8_t n){
 	return Q_0_Nminus1[n];
 }
