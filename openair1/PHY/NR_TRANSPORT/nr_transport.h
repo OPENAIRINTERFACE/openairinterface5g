@@ -72,6 +72,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 @param
  */
 void nr_pbch_scrambling(uint32_t Nid,
+                        uint8_t nushift,
                         uint8_t *pbch_a,
                         uint32_t length);
 
