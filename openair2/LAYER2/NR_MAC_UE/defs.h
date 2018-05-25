@@ -72,12 +72,35 @@
 /*!\brief Top level UE MAC structure */
 typedef struct {
     
+    ////  MAC config
     drx_Config_t *drx_config;
     SchedulingRequestConfig_t *SchedulingRequestConfig;
     BSR_Config_t *BSR_Config;
     TAG_Config_t *TAG_Config;
     phr_Config_t *phr_Config;
     cs_RNTI_t *cs_RNTI;
+    ServCellIndex_t *servCellIndex;
+
+    ////  Serving cell config
+    TDD_UL_DL_ConfigDedicated_t *tdd_UL_DL_ConfigurationDedicated;
+    //  init DL BWP
+    BWP_DownlinkDedicated_t *init_DL_BWP;
+    //  DL BWP list, not default one
+    BWP_Downlink_t **BWP_Downlink_list;
+    int BWP_Downlink_count;
+    //BWP_Id_t *firstActiveDownlinkBWP_Id;
+    long *bwp_InactivityTimer;
+    BWP_Id_t *defaultDownlinkBWP_Id;
+    //struct UplinkConfig *uplinkConfig;
+    //struct UplinkConfig *supplementaryUplink;
+    PDSCH_ServingCellConfig_t *pdsch_ServingCellConfig;
+    CSI_MeasConfig_t *csi_MeasConfig;
+    //SRS_CarrierSwitching_t *carrierSwitching;
+    //long *sCellDeactivationTimer /* OPTIONAL */;
+    //struct CrossCarrierSchedulingConfig *crossCarrierSchedulingConfig   /* OPTIONAL */;
+    TAG_Id_t tag_Id;
+    //long *ue_BeamLockFunction    /* OPTIONAL */;
+    //long *pathlossReferenceLinking   /* OPTIONAL */;    
 
 } UE_MAC_INST;
 #include "proto.h"
