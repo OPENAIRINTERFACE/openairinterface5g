@@ -134,7 +134,7 @@ void configure_rru(int idx,
 		   void *arg);
 
 int attach_rru(RU_t *ru);
-
+void reset_proc(RU_t *ru);
 int connect_rau(RU_t *ru);
 
 extern uint16_t sf_ahead;
@@ -1574,8 +1574,61 @@ static void* ru_stats_thread(void* param) {
   return(NULL);
 }
 
+static void* ru_thread_tx( void* param ) {
+  RU_t *ru         = (RU_t*)param;
+  RU_proc_t *proc  = &ru->proc;
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
 
-void reset_proc(RU_t *ru);
+
+  thread_top_init("ru_thread_tx",1,400000,500000,500000);
+
+  //CPU_SET(5, &cpuset);
+  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //wait_sync("ru_thread_tx");
+
+  wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
+
+  printf( "ru_thread_tx ready\n");
+  while (!oai_exit) {
+
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_RU_THREAD_TX,sched_getcpu());
+    if (oai_exit) break;
+
+
+        LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
+        // wait until eNBs are finished subframe RX n and TX n+4
+    wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
+    if (oai_exit) break;
+
+    // do TX front-end processing if needed (precoding and/or IDFTs)
+    if (ru->feptx_prec) ru->feptx_prec(ru);
+
+    // do OFDM if needed
+    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+    if(!emulate_rf){
+      // do outgoing fronthaul (south) if needed
+      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+
+      if (ru->fh_north_out) ru->fh_north_out(ru);
+        }
+    release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
+
+    pthread_mutex_lock( &proc->mutex_eNBs );
+    proc->ru_tx_ready++;
+    // the thread can now be woken up
+    if (pthread_cond_signal(&proc->cond_eNBs) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+    }
+    pthread_mutex_unlock( &proc->mutex_eNBs );
+  }
+  release_thread(&proc->mutex_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
+  return 0;
+}
+
+
+
 
 static void* ru_thread_control( void* param ) {
 
