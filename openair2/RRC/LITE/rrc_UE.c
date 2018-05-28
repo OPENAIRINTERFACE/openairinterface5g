@@ -1815,8 +1815,8 @@ rrc_ue_process_rrcConnectionReconfiguration(
         rrc_ue_process_radioResourceConfigDedicated(ctxt_pP,eNB_index, rrcConnectionReconfiguration_r8->radioResourceConfigDedicated);
       }
       
-
-      void *non_criticical_ext_iterator = rrcConnectionReconfiguration_r8;
+      
+/*      void *non_criticical_ext_iterator = rrcConnectionReconfiguration_r8;
       RCCConnectionReconfiguration_v1510_IEs_t *rrc_connection_reconfiguration_v1510_IEs = (RRCConnectionReconfiguration_v1510_IEs_t *)0;
       // fetch EN-DC for NR_RRC here
       // r8
@@ -1869,7 +1869,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
               break;
           }
         }
-      }
+      }*/
 
 #if defined(ENABLE_ITTI)
 
