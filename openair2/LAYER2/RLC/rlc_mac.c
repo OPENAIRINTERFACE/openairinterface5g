@@ -30,7 +30,7 @@
 //-----------------------------------------------------------------------------
 #define RLC_MAC_C
 #include "rlc.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"
 #include "hashtable.h"
@@ -126,7 +126,12 @@ tbs_size_t mac_rlc_data_req(
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
   const tb_size_t         tb_sizeP,
-  char             *buffer_pP)
+  char             *buffer_pP
+#ifdef Rel14
+  ,const uint32_t sourceL2Id
+  ,const uint32_t destinationL2Id
+#endif
+   )
 {
   //-----------------------------------------------------------------------------
   struct mac_data_req    data_request;
@@ -143,7 +148,7 @@ tbs_size_t mac_rlc_data_req(
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MAC_RLC_DATA_REQ,VCD_FUNCTION_IN);
 #ifdef DEBUG_MAC_INTERFACE
-  LOG_D(RLC, PROTOCOL_CTXT_FMT" MAC_RLC_DATA_REQ channel %d (%d) MAX RB %d, Num_tb %d\n",
+  LOG_D(RLC, PROTOCOL_CTXT_FMT" MAC_RLC_DATA_REQ channel %d (%d) MAX RB %d\n",
         PROTOCOL_CTXT_ARGS((&ctxt)),
         channel_idP,
         RLC_MAX_LC,
@@ -166,6 +171,10 @@ tbs_size_t mac_rlc_data_req(
     }
   } else {
     key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
+#ifdef Rel14
+    if ((sourceL2Id > 0) && (destinationL2Id > 0))
+       key = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(module_idP, rntiP, enb_flagP, channel_idP, sourceL2Id, destinationL2Id, srb_flag);
+#endif
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
@@ -189,7 +198,7 @@ tbs_size_t mac_rlc_data_req(
     break;
 
   case RLC_MODE_UM:
-	if (!enb_flagP) rlc_um_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.um,tb_sizeP);
+    if (!enb_flagP) rlc_um_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.um,tb_sizeP);
 	data_request = rlc_um_mac_data_request(&ctxt, &rlc_union_p->rlc.um,enb_flagP);
     ret_tb_size = mac_rlc_serialize_tb(buffer_pP, data_request.data);
     break;
@@ -308,7 +317,12 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   const eNB_flag_t        enb_flagP,
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
-  const tb_size_t         tb_sizeP)
+  const tb_size_t         tb_sizeP
+#ifdef Rel14
+  ,const uint32_t sourceL2Id
+  ,const uint32_t destinationL2Id
+#endif
+  )
 {
   //-----------------------------------------------------------------------------
   mac_rlc_status_resp_t  mac_rlc_status_resp;
@@ -337,16 +351,26 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
 
     key = RLC_COLL_KEY_MBMS_VALUE(module_idP, rntiP, enb_flagP, mbms_id_p->service_id, mbms_id_p->session_id);
   } else {
+#ifdef Rel14
+    if ((sourceL2Id > 0) && (destinationL2Id > 0)) {
+       key = RLC_COLL_KEY_SOURCE_DEST_VALUE(module_idP, rntiP, enb_flagP, channel_idP, sourceL2Id, destinationL2Id, srb_flag);
+    } else
+#endif
+    {
+    	//LOG_I(RLC, "Panos-D mac_rlc_status_ind 1 enb_flagP: %d, channel_idP: %d, srb_flag: %d \n", enb_flagP, channel_idP, srb_flag);
     key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
-  }
+    }
+}
 
+  //LOG_I(RLC, "Panos-D mac_rlc_status_ind 2 enb_flagP: %d, channel_idP: %d, srb_flag: %d \n", enb_flagP, channel_idP, srb_flag);
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
 
   if (h_rc == HASH_TABLE_OK) {
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    //LOG_W(RLC , "[%s] RLC not configured rb id %u lcid %u module %u!\n", __FUNCTION__, rb_id, channel_idP, ue_module_idP);
+    //LOG_D(RLC , "Panos-D: mac_rlc_status_ind() In RLC_MODE_NONE \n");
+    //LOG_W(RLC , "[%s] RLC not configured lcid %u module %u!\n", __FUNCTION__, channel_idP, module_idP);
     //LOG_D(RLC , "[%s] RLC not configured rb id %u lcid %u module %u!\n", __FUNCTION__, rb_id, channel_idP, ue_module_idP);
   }
 

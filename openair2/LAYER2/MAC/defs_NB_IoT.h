@@ -98,7 +98,7 @@ typedef enum{
   DL
 }message_direction_t;
 
-#define MAX_NUMBER_OF_UE_MAX_NB_IoT 20
+#define MAX_MAX_MOBILES_PER_ENB_NB_IoT 20
 #define SCH_PAYLOAD_SIZE_MAX_NB_IoT 320
 #define MAX_NUMBER_OF_SIBs_NB_IoT 16
 
@@ -233,17 +233,17 @@ typedef struct{
 typedef struct {
 
   /// DCI template and MAC connection parameters for UEs
-  UE_TEMPLATE_NB_IoT UE_template_NB_IoT[MAX_NUMBER_OF_UE_MAX_NB_IoT];
+  UE_TEMPLATE_NB_IoT UE_template_NB_IoT[MAX_MAX_MOBILES_PER_ENB_NB_IoT];
 
   /// NPDCCH Period and searching space info
   NPDCCH_config_dedicated_NB_IoT_t NPDCCH_config_dedicated;
-  //int next[MAX_NUMBER_OF_UE_MAX_NB_IoT];
+  //int next[MAX_MAX_MOBILES_PER_ENB_NB_IoT];
   // -1:No UE in list
   int head;
   // -1:No UE in list
   int tail;
   int num_UEs;
-  //boolean_t active[MAX_NUMBER_OF_UE_MAX_NB_IoT];
+  //boolean_t active[MAX_MAX_MOBILES_PER_ENB_NB_IoT];
 
 } UE_list_NB_IoT_t;
 
@@ -261,7 +261,7 @@ typedef struct{
   // flag to indicate scheduling type1 NPDCCH CSS with different CE level
   uint8_t flag_type1_css[3];
   // flag to indicate scheduling NPDCCH USS with UE list
-  uint8_t flag_uss[MAX_NUMBER_OF_UE_MAX_NB_IoT];
+  uint8_t flag_uss[MAX_MAX_MOBILES_PER_ENB_NB_IoT];
   // flag to indicate scheduling sib1/MIB
   uint8_t flag_fix_scheduling;
   // number of the type2 css to schedule in this period
@@ -494,7 +494,7 @@ typedef struct eNB_MAC_INST_NB_IoT_s {
   RA_template_list_t RA_msg3_list;
   RA_template_list_t RA_msg4_list;
 
-  RA_TEMPLATE_NB_IoT RA_template[MAX_NUMBER_OF_UE_MAX_NB_IoT];
+  RA_TEMPLATE_NB_IoT RA_template[MAX_MAX_MOBILES_PER_ENB_NB_IoT];
 
   //int32_t last_tx_subframe;
 

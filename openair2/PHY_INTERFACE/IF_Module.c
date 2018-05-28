@@ -1,8 +1,8 @@
-#include "openair1/PHY/defs.h"
+#include "openair1/PHY/defs_eNB.h"
 #include "openair2/PHY_INTERFACE/IF_Module.h"
-#include "openair1/PHY/extern.h"
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/proto.h"
+#include "openair1/PHY/phy_extern.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "common/ran_context.h"
 
 #define MAX_IF_MODULES 100
@@ -33,13 +33,13 @@ void handle_rach(UL_IND_t *UL_info) {
 		     UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
 		     UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
 		     UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		     ,0
 #endif
 		     );
   }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
   if (UL_info->rach_ind_br.rach_indication_body.number_of_preambles>0) {
 
     AssertFatal(UL_info->rach_ind_br.rach_indication_body.number_of_preambles<5,"More than 4 preambles not supported\n");

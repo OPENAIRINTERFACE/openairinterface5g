@@ -52,7 +52,7 @@
 
 
 
-#define UE_IP_NB_INSTANCES_MAX       NUMBER_OF_UE_MAX
+#define UE_IP_NB_INSTANCES_MAX       NUMBER_OF_UE_MAX /*MAX_MOBILES_PER_ENB*/
 
 
 #endif

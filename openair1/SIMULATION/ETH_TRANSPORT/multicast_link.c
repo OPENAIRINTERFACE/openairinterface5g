@@ -113,7 +113,7 @@ multicast_link_init(void)
 
     if (multicast_if != NULL) {
       if (setsockopt(group_list[group].socket, SOL_SOCKET,SO_BINDTODEVICE,
-                     multicast_if, 4) < 0) {
+                     multicast_if, strlen(multicast_if)) < 0) {
         LOG_E(EMU,
               "[MULTICAST] ERROR : setsockopt:SO_BINDTODEVICE on interface %s, exiting ...\n",
               multicast_if);

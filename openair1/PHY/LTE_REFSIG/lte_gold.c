@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
+#include "lte_refsig.h"
 
 
 /* c(n) = x1(n+Nc) + x2(n+Nc) mod 2

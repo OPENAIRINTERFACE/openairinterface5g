@@ -30,9 +30,9 @@
 * \warning
 */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/LTE_TRANSPORT/proto.h"
+#include "PHY/defs_common.h"
+#include "PHY/phy_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 unsigned char get_Qm(unsigned char I_MCS)
 {

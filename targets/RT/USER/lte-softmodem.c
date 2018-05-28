@@ -47,7 +47,7 @@
 
 #include "PHY/types.h"
 
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
@@ -59,17 +59,14 @@
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "PHY/vars.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
+#include "PHY/phy_vars.h"
+#include "SCHED/sched_common_vars.h"
+#include "LAYER2/MAC/mac_vars.h"
 
-#include "../../SIMU/USER/init_lte.h"
-
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/vars.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/vars.h"
-#include "PHY_INTERFACE/vars.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_vars.h"
+#include "PHY_INTERFACE/phy_interface_vars.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -92,6 +89,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "intertask_interface_init.h"
 #include "create_tasks.h"
 #endif
+
+#include "PHY/INIT/phy_init.h"
 
 #include "system.h"
 
@@ -118,6 +117,8 @@ int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 uint8_t nfapi_mode = 0; // Default to monolithic mode
 
+uint16_t sf_ahead=4;
+
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
@@ -143,7 +144,8 @@ static int8_t                     threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
-
+// This is a dummy declaration (dlsch_demodulation.c is no longer compiled for eNodeB)
+int16_t dlsch_demod_shift = 0;
 
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;
@@ -1094,7 +1096,7 @@ int main( int argc, char **argv )
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
-  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
+  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   
@@ -1149,6 +1151,13 @@ int main( int argc, char **argv )
     pthread_mutex_init(&sync_mutex, NULL);
   }
   
+  if (nfapi_mode)
+  {
+    printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
+    pthread_cond_init(&sync_cond,NULL);
+    pthread_mutex_init(&sync_mutex, NULL);
+  }
+
   const char *nfapi_mode_str = "<UNKNOWN>";
 
   switch(nfapi_mode) {

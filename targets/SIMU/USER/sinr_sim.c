@@ -27,27 +27,26 @@
 #include <time.h>
 #include <cblas.h>
 
-#include "SIMULATION/TOOLS/defs.h"
-#include "SIMULATION/RF/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
+#include "SIMULATION/RF/rf.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern.h"
 #include "oaisim_config.h"
 
 #ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log_if.h"
 #include "UTIL/LOG/log_extern.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface_extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OMG/omg.h"
 #include "UTIL/OPT/opt.h" // to test OPT
 #endif
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
 
 #include "oaisim.h"
 

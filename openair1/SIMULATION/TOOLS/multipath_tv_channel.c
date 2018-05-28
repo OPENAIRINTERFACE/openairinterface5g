@@ -23,8 +23,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include "defs.h"
-#include "SIMULATION/RF/defs.h"
+#include "sim.h"
+#include "SIMULATION/RF/rf.h"
 #include <complex.h>
 
 void tv_channel(channel_desc_t *desc,double complex ***H,uint16_t length);
