@@ -114,12 +114,12 @@ void *receive_thread(void *args) {
   
   while (1) {
 
-    while (flexran_agent_msg_recv(d->enb_id, FLEXRAN_AGENT_DEFAULT, &data, &size, &priority) == 0) {
+    while (flexran_agent_msg_recv(d->mod_id, FLEXRAN_AGENT_DEFAULT, &data, &size, &priority) == 0) {
       
       LOG_D(FLEXRAN_AGENT,"received message with size %d\n", size);
   
       // Invoke the message handler
-      msg=flexran_agent_handle_message(d->enb_id, data, size);
+      msg=flexran_agent_handle_message(d->mod_id, data, size);
 
       free(data);
     
@@ -127,7 +127,7 @@ void *receive_thread(void *args) {
       if (msg != NULL){
 	data=flexran_agent_pack_message(msg,&size);
 
-	if (flexran_agent_msg_send(d->enb_id, FLEXRAN_AGENT_DEFAULT, data, size, priority)) {
+	if (flexran_agent_msg_send(d->mod_id, FLEXRAN_AGENT_DEFAULT, data, size, priority)) {
 	  err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
 	  goto error;
 	}
@@ -190,13 +190,6 @@ int flexran_agent_start(mid_t mod_id)
     LOG_I(FLEXRAN_AGENT, "FlexRAN Agent for eNB %d is DISABLED\n", mod_id);
     return 100;
   }
-  
-  flexran->enb_id = mod_id;
-  /* assume for the moment the monolithic case, i.e. agent can provide
-   * information for all layers */
-  flexran->capability_mask = FLEXRAN_CAP_LOL1 | FLEXRAN_CAP_HIL1
-                           | FLEXRAN_CAP_LOL2 | FLEXRAN_CAP_HIL2
-                           | FLEXRAN_CAP_PDCP | FLEXRAN_CAP_RRC;
 
   /*
    * Initialize the channel container

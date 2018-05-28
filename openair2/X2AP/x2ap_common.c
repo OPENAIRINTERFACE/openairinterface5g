@@ -29,7 +29,7 @@
 #include <stdint.h>
 
 #include "x2ap_common.h"
-#include "X2AP-PDU.h"
+#include "X2AP_X2AP-PDU.h"
 
 int asn_debug = 0;
 int asn1_xer_print = 0;
@@ -55,29 +55,27 @@ inline void ASN_DEBUG(const char *fmt, ...)
 ssize_t x2ap_generate_initiating_message(
   uint8_t               **buffer,
   uint32_t               *length,
-  X2ap_ProcedureCode_t    procedureCode,
-  X2ap_Criticality_t      criticality,
+  X2AP_ProcedureCode_t    procedureCode,
+  X2AP_Criticality_t      criticality,
   asn_TYPE_descriptor_t  *td,
   void                   *sptr)
 {
-  X2AP_PDU_t pdu;
+  X2AP_X2AP_PDU_t pdu;
   ssize_t    encoded;
-
-  memset(&pdu, 0, sizeof(X2AP_PDU_t));
-
-  pdu.present = X2AP_PDU_PR_initiatingMessage;
+  memset(&pdu, 0, sizeof(X2AP_X2AP_PDU_t));
+  pdu.present = X2AP_X2AP_PDU_PR_initiatingMessage;
   pdu.choice.initiatingMessage.procedureCode = procedureCode;
   pdu.choice.initiatingMessage.criticality   = criticality;
   ANY_fromType_aper(&pdu.choice.initiatingMessage.value, td, sptr);
 
   if (asn1_xer_print) {
-    xer_fprint(stdout, &asn_DEF_X2AP_PDU, (void *)&pdu);
+    xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, (void *)&pdu);
   }
 
   /* We can safely free list of IE from sptr */
   ASN_STRUCT_FREE_CONTENTS_ONLY(*td, sptr);
 
-  if ((encoded = aper_encode_to_new_buffer(&asn_DEF_X2AP_PDU, 0, &pdu,
+  if ((encoded = aper_encode_to_new_buffer(&asn_DEF_X2AP_X2AP_PDU, 0, &pdu,
                  (void **)buffer)) < 0) {
     return -1;
   }
@@ -89,107 +87,67 @@ ssize_t x2ap_generate_initiating_message(
 ssize_t x2ap_generate_successfull_outcome(
   uint8_t               **buffer,
   uint32_t               *length,
-  X2ap_ProcedureCode_t         procedureCode,
-  X2ap_Criticality_t           criticality,
+  X2AP_ProcedureCode_t         procedureCode,
+  X2AP_Criticality_t           criticality,
   asn_TYPE_descriptor_t  *td,
   void                   *sptr)
 {
-  X2AP_PDU_t pdu;
+  X2AP_X2AP_PDU_t pdu;
   ssize_t    encoded;
-
-  memset(&pdu, 0, sizeof(X2AP_PDU_t));
-
-  pdu.present = X2AP_PDU_PR_successfulOutcome;
+  memset(&pdu, 0, sizeof(X2AP_X2AP_PDU_t));
+  pdu.present = X2AP_X2AP_PDU_PR_successfulOutcome;
   pdu.choice.successfulOutcome.procedureCode = procedureCode;
   pdu.choice.successfulOutcome.criticality   = criticality;
   ANY_fromType_aper(&pdu.choice.successfulOutcome.value, td, sptr);
 
   if (asn1_xer_print) {
-    xer_fprint(stdout, &asn_DEF_X2AP_PDU, (void *)&pdu);
+    xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, (void *)&pdu);
   }
 
   /* We can safely free list of IE from sptr */
   ASN_STRUCT_FREE_CONTENTS_ONLY(*td, sptr);
 
-  if ((encoded = aper_encode_to_new_buffer(&asn_DEF_X2AP_PDU, 0, &pdu,
+  if ((encoded = aper_encode_to_new_buffer(&asn_DEF_X2AP_X2AP_PDU, 0, &pdu,
                  (void **)buffer)) < 0) {
     return -1;
   }
 
   *length = encoded;
-
   return encoded;
 }
 
 ssize_t x2ap_generate_unsuccessfull_outcome(
   uint8_t               **buffer,
   uint32_t               *length,
-  X2ap_ProcedureCode_t         procedureCode,
-  X2ap_Criticality_t           criticality,
+  X2AP_ProcedureCode_t         procedureCode,
+  X2AP_Criticality_t           criticality,
   asn_TYPE_descriptor_t  *td,
   void                   *sptr)
 {
-  X2AP_PDU_t pdu;
+  X2AP_X2AP_PDU_t pdu;
   ssize_t    encoded;
-
-  memset(&pdu, 0, sizeof(X2AP_PDU_t));
-
-  pdu.present = X2AP_PDU_PR_unsuccessfulOutcome;
+  memset(&pdu, 0, sizeof(X2AP_X2AP_PDU_t));
+  pdu.present = X2AP_X2AP_PDU_PR_unsuccessfulOutcome;
   pdu.choice.successfulOutcome.procedureCode = procedureCode;
   pdu.choice.successfulOutcome.criticality   = criticality;
   ANY_fromType_aper(&pdu.choice.successfulOutcome.value, td, sptr);
 
   if (asn1_xer_print) {
-    xer_fprint(stdout, &asn_DEF_X2AP_PDU, (void *)&pdu);
+    xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, (void *)&pdu);
   }
 
   /* We can safely free list of IE from sptr */
   ASN_STRUCT_FREE_CONTENTS_ONLY(*td, sptr);
 
-  if ((encoded = aper_encode_to_new_buffer(&asn_DEF_X2AP_PDU, 0, &pdu,
+  if ((encoded = aper_encode_to_new_buffer(&asn_DEF_X2AP_X2AP_PDU, 0, &pdu,
                  (void **)buffer)) < 0) {
     return -1;
   }
 
   *length = encoded;
-
   return encoded;
 }
 
-X2ap_IE_t *x2ap_new_ie(
-  X2ap_ProtocolIE_ID_t   id,
-  X2ap_Criticality_t     criticality,
-  asn_TYPE_descriptor_t *type,
-  void                  *sptr)
+void x2ap_handle_criticality(X2AP_Criticality_t criticality)
 {
-  X2ap_IE_t *buff;
-
-  if ((buff = malloc(sizeof(X2ap_IE_t))) == NULL) {
-    // Possible error on malloc
-    return NULL;
-  }
-
-  memset((void *)buff, 0, sizeof(X2ap_IE_t));
-
-  buff->id = id;
-  buff->criticality = criticality;
-
-  if (ANY_fromType_aper(&buff->value, type, sptr) < 0) {
-    fprintf(stderr, "Encoding of %s failed\n", type->name);
-    free(buff);
-    return NULL;
-  }
-
-  if (asn1_xer_print)
-    if (xer_fprint(stdout, &asn_DEF_X2ap_IE, buff) < 0) {
-      free(buff);
-      return NULL;
-    }
-
-  return buff;
-}
-
-void x2ap_handle_criticality(X2ap_Criticality_t criticality)
-{
-
 }

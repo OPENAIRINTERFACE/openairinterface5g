@@ -20,8 +20,8 @@
  */
 
 /*! \file s1ap_eNB_context_management_procedures.c
- * \brief S1AP context management procedures 
- * \author  S. Roux and Navid Nikaein 
+ * \brief S1AP context management procedures
+ * \author  S. Roux and Navid Nikaein
  * \date 2010 - 2015
  * \email: navid.nikaein@eurecom.fr
  * \version 1.0
@@ -41,7 +41,6 @@
 
 #include "s1ap_eNB_itti_messaging.h"
 
-#include "s1ap_ies_defs.h"
 #include "s1ap_eNB_encoder.h"
 #include "s1ap_eNB_nnsf.h"
 #include "s1ap_eNB_ue_context.h"
@@ -54,27 +53,22 @@
 int s1ap_ue_context_release_complete(instance_t instance,
                                      s1ap_ue_release_complete_t *ue_release_complete_p)
 {
-  s1ap_eNB_instance_t          *s1ap_eNB_instance_p = NULL;
-  struct s1ap_eNB_ue_context_s *ue_context_p        = NULL;
-
-  S1ap_UEContextReleaseCompleteIEs_t *ue_ctxt_release_complete_ies_p = NULL;
-
-  s1ap_message  message;
-
+  s1ap_eNB_instance_t                 *s1ap_eNB_instance_p = NULL;
+  struct s1ap_eNB_ue_context_s        *ue_context_p        = NULL;
+  S1AP_S1AP_PDU_t                      pdu;
+  S1AP_UEContextReleaseComplete_t     *out;
+  S1AP_UEContextReleaseComplete_IEs_t *ie;
   uint8_t  *buffer;
   uint32_t length;
-  int      ret = -1;
-
   /* Retrieve the S1AP eNB instance associated with Mod_id */
   s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance);
-
   DevAssert(ue_release_complete_p != NULL);
   DevAssert(s1ap_eNB_instance_p != NULL);
 
   /*RB_FOREACH(ue_context_p, s1ap_ue_map, &s1ap_eNB_instance_p->s1ap_ue_head) {
-	  S1AP_WARN("in s1ap_ue_map: UE context eNB_ue_s1ap_id %u mme_ue_s1ap_id %u state %u\n",
-			  ue_context_p->eNB_ue_s1ap_id, ue_context_p->mme_ue_s1ap_id,
-			  ue_context_p->ue_state);
+    S1AP_WARN("in s1ap_ue_map: UE context eNB_ue_s1ap_id %u mme_ue_s1ap_id %u state %u\n",
+        ue_context_p->eNB_ue_s1ap_id, ue_context_p->mme_ue_s1ap_id,
+        ue_context_p->ue_state);
   }*/
   if ((ue_context_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p,
                       ue_release_complete_p->eNB_ue_s1ap_id)) == NULL) {
@@ -85,20 +79,62 @@ int s1ap_ue_context_release_complete(instance_t instance,
   }
 
   /* Prepare the S1AP message to encode */
-  memset(&message, 0, sizeof(s1ap_message));
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = S1AP_S1AP_PDU_PR_successfulOutcome;
+  pdu.choice.successfulOutcome.procedureCode = S1AP_ProcedureCode_id_UEContextRelease;
+  pdu.choice.successfulOutcome.criticality = S1AP_Criticality_reject;
+  pdu.choice.successfulOutcome.value.present = S1AP_SuccessfulOutcome__value_PR_UEContextReleaseComplete;
+  out = &pdu.choice.successfulOutcome.value.choice.UEContextReleaseComplete;
+  ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID;
+  ie->criticality = S1AP_Criticality_ignore;
+  ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_MME_UE_S1AP_ID;
+  ie->value.choice.MME_UE_S1AP_ID = ue_context_p->mme_ue_s1ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID;
+  ie->criticality = S1AP_Criticality_ignore;
+  ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_ENB_UE_S1AP_ID;
+  ie->value.choice.ENB_UE_S1AP_ID = ue_release_complete_p->eNB_ue_s1ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  message.direction     = S1AP_PDU_PR_successfulOutcome;
-  message.procedureCode = S1ap_ProcedureCode_id_UEContextRelease;
-  //message.criticality   = S1ap_Criticality_reject;
+  /* optional */
+  if (0) {
+    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
+    ie->id = S1AP_ProtocolIE_ID_id_CriticalityDiagnostics;
+    ie->criticality = S1AP_Criticality_ignore;
+    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_CriticalityDiagnostics;
+    // ie->value.choice.CriticalityDiagnostics = ;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
 
-  ue_ctxt_release_complete_ies_p = &message.msg.s1ap_UEContextReleaseCompleteIEs;
+  /* release 12 */
+  if (0) {
+    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
+    ie->id = S1AP_ProtocolIE_ID_id_UserLocationInformation;
+    ie->criticality = S1AP_Criticality_ignore;
+    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_UserLocationInformation;
+    // ie->value.choice.UserLocationInformation = ;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
 
-  ue_ctxt_release_complete_ies_p->eNB_UE_S1AP_ID = ue_release_complete_p->eNB_ue_s1ap_id;
-  ue_ctxt_release_complete_ies_p->mme_ue_s1ap_id = ue_context_p->mme_ue_s1ap_id;
-  //ue_ctxt_release_complete_ies_p->criticalityDiagnostics
-  //ue_ctxt_release_complete_ies_p->presenceMask
+  /* release 13 */
+  if (0) {
+    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
+    ie->id = S1AP_ProtocolIE_ID_id_InformationOnRecommendedCellsAndENBsForPaging;
+    ie->criticality = S1AP_Criticality_ignore;
+    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_InformationOnRecommendedCellsAndENBsForPaging;
+    // ie->value.choice.InformationOnRecommendedCellsAndENBsForPaging = ;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
+    ie->id = S1AP_ProtocolIE_ID_id_CellIdentifierAndCELevelForCECapableUEs;
+    ie->criticality = S1AP_Criticality_ignore;
+    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_CellIdentifierAndCELevelForCECapableUEs;
+    // ie->value.choice.CellIdentifierAndCELevelForCECapableUEs = ;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
 
-  if (s1ap_eNB_encode_pdu(&message, &buffer, &length) < 0) {
+  if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */
     S1AP_ERROR("Failed to encode UE context release complete\n");
     return -1;
@@ -113,18 +149,12 @@ int s1ap_ue_context_release_complete(instance_t instance,
     0,0, //MSC_AS_TIME_ARGS(ctxt_pP),
     ue_ctxt_release_complete_ies_p->eNB_UE_S1AP_ID,
     ue_ctxt_release_complete_ies_p->mme_ue_s1ap_id);
-
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                    ue_context_p->mme_ref->assoc_id, buffer,
                                    length, ue_context_p->tx_stream);
-
-
   //LG s1ap_eNB_itti_send_sctp_close_association(s1ap_eNB_instance_p->instance,
   //                                 ue_context_p->mme_ref->assoc_id);
-
-
-
   // release UE context
   struct s1ap_eNB_ue_context_s *ue_context2_p = NULL;
 
@@ -137,29 +167,28 @@ int s1ap_ue_context_release_complete(instance_t instance,
     S1AP_WARN("Removing UE context eNB_ue_s1ap_id %u: did not find context\n",
               ue_context_p->eNB_ue_s1ap_id);
   }
-  /*RB_FOREACH(ue_context_p, s1ap_ue_map, &s1ap_eNB_instance_p->s1ap_ue_head) {
-	  S1AP_WARN("in s1ap_ue_map: UE context eNB_ue_s1ap_id %u mme_ue_s1ap_id %u state %u\n",
-			  ue_context_p->eNB_ue_s1ap_id, ue_context_p->mme_ue_s1ap_id,
-			  ue_context_p->ue_state);
-  }*/
 
-  return ret;
+  /*RB_FOREACH(ue_context_p, s1ap_ue_map, &s1ap_eNB_instance_p->s1ap_ue_head) {
+    S1AP_WARN("in s1ap_ue_map: UE context eNB_ue_s1ap_id %u mme_ue_s1ap_id %u state %u\n",
+        ue_context_p->eNB_ue_s1ap_id, ue_context_p->mme_ue_s1ap_id,
+        ue_context_p->ue_state);
+  }*/
+  return 0;
 }
 
 
 int s1ap_ue_context_release_req(instance_t instance,
                                 s1ap_ue_release_req_t *ue_release_req_p)
 {
-  s1ap_eNB_instance_t               *s1ap_eNB_instance_p           = NULL;
-  struct s1ap_eNB_ue_context_s      *ue_context_p                  = NULL;
-  S1ap_UEContextReleaseRequestIEs_t *ue_ctxt_release_request_ies_p = NULL;
-  s1ap_message                       message;
-  uint8_t                           *buffer                        = NULL;
-  uint32_t                           length;
-
+  s1ap_eNB_instance_t                *s1ap_eNB_instance_p           = NULL;
+  struct s1ap_eNB_ue_context_s       *ue_context_p                  = NULL;
+  S1AP_S1AP_PDU_t                     pdu;
+  S1AP_UEContextReleaseRequest_t     *out;
+  S1AP_UEContextReleaseRequest_IEs_t *ie;
+  uint8_t                            *buffer                        = NULL;
+  uint32_t                            length;
   /* Retrieve the S1AP eNB instance associated with Mod_id */
   s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance);
-
   DevAssert(ue_release_req_p != NULL);
   DevAssert(s1ap_eNB_instance_p != NULL);
 
@@ -172,50 +201,74 @@ int s1ap_ue_context_release_req(instance_t instance,
   }
 
   /* Prepare the S1AP message to encode */
-  memset(&message, 0, sizeof(s1ap_message));
-
-  message.direction     = S1AP_PDU_PR_initiatingMessage;
-  message.procedureCode = S1ap_ProcedureCode_id_UEContextReleaseRequest;
-  //message.criticality   = S1ap_Criticality_reject;
-
-  ue_ctxt_release_request_ies_p = &message.msg.s1ap_UEContextReleaseRequestIEs;
-
-  ue_ctxt_release_request_ies_p->eNB_UE_S1AP_ID = ue_release_req_p->eNB_ue_s1ap_id;
-  ue_ctxt_release_request_ies_p->mme_ue_s1ap_id = ue_context_p->mme_ue_s1ap_id;
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = S1AP_S1AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage.procedureCode = S1AP_ProcedureCode_id_UEContextReleaseRequest;
+  pdu.choice.initiatingMessage.criticality = S1AP_Criticality_ignore;
+  pdu.choice.initiatingMessage.value.present = S1AP_InitiatingMessage__value_PR_UEContextReleaseRequest;
+  out = &pdu.choice.initiatingMessage.value.choice.UEContextReleaseRequest;
+  ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID;
+  ie->criticality = S1AP_Criticality_reject;
+  ie->value.present = S1AP_UEContextReleaseRequest_IEs__value_PR_MME_UE_S1AP_ID;
+  ie->value.choice.MME_UE_S1AP_ID = ue_context_p->mme_ue_s1ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID;
+  ie->criticality = S1AP_Criticality_reject;
+  ie->value.present = S1AP_UEContextReleaseRequest_IEs__value_PR_ENB_UE_S1AP_ID;
+  ie->value.choice.ENB_UE_S1AP_ID = ue_release_req_p->eNB_ue_s1ap_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
+  ie->id = S1AP_ProtocolIE_ID_id_Cause;
+  ie->criticality = S1AP_Criticality_ignore;
+  ie->value.present = S1AP_UEContextReleaseRequest_IEs__value_PR_Cause;
 
   switch (ue_release_req_p->cause) {
-  case S1AP_CAUSE_NOTHING:
-    ue_ctxt_release_request_ies_p->cause.present = S1ap_Cause_PR_NOTHING;
-    break;
+    case S1AP_Cause_PR_radioNetwork:
+      ie->value.choice.Cause.present = S1AP_Cause_PR_radioNetwork;
+      ie->value.choice.Cause.choice.radioNetwork = ue_release_req_p->cause_value;
+      break;
 
-  case S1AP_CAUSE_RADIO_NETWORK:
-    ue_ctxt_release_request_ies_p->cause.present = S1ap_Cause_PR_radioNetwork;
-    ue_ctxt_release_request_ies_p->cause.choice.radioNetwork = ue_release_req_p->cause_value;
-    break;
+    case S1AP_Cause_PR_transport:
+      ie->value.choice.Cause.present = S1AP_Cause_PR_transport;
+      ie->value.choice.Cause.choice.transport = ue_release_req_p->cause_value;
+      break;
 
-  case S1AP_CAUSE_TRANSPORT:
-    ue_ctxt_release_request_ies_p->cause.present = S1ap_Cause_PR_transport;
-    ue_ctxt_release_request_ies_p->cause.choice.transport = ue_release_req_p->cause_value;
-    break;
+    case S1AP_Cause_PR_nas:
+      ie->value.choice.Cause.present = S1AP_Cause_PR_nas;
+      ie->value.choice.Cause.choice.nas = ue_release_req_p->cause_value;
+      break;
 
-  case S1AP_CAUSE_NAS:
-    ue_ctxt_release_request_ies_p->cause.present = S1ap_Cause_PR_nas;
-    ue_ctxt_release_request_ies_p->cause.choice.nas = ue_release_req_p->cause_value;
-    break;
+    case S1AP_Cause_PR_protocol:
+      ie->value.choice.Cause.present = S1AP_Cause_PR_protocol;
+      ie->value.choice.Cause.choice.protocol = ue_release_req_p->cause_value;
+      break;
 
-  case S1AP_CAUSE_PROTOCOL:
-    ue_ctxt_release_request_ies_p->cause.present = S1ap_Cause_PR_protocol;
-    ue_ctxt_release_request_ies_p->cause.choice.protocol = ue_release_req_p->cause_value;
-    break;
+    case S1AP_Cause_PR_misc:
+      ie->value.choice.Cause.present = S1AP_Cause_PR_misc;
+      ie->value.choice.Cause.choice.misc = ue_release_req_p->cause_value;
+      break;
 
-  case S1AP_CAUSE_MISC:
-  default:
-    ue_ctxt_release_request_ies_p->cause.present = S1ap_Cause_PR_misc;
-    ue_ctxt_release_request_ies_p->cause.choice.misc = ue_release_req_p->cause_value;
-    break;
+    case S1AP_Cause_PR_NOTHING:
+    default:
+      ie->value.choice.Cause.present = S1AP_Cause_PR_NOTHING;
+      break;
   }
 
-  if (s1ap_eNB_encode_pdu(&message, &buffer, &length) < 0) {
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* optional */
+  if (0) {
+    ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
+    ie->id = S1AP_ProtocolIE_ID_id_GWContextReleaseIndication;
+    ie->criticality = S1AP_Criticality_reject;
+    ie->value.present = S1AP_UEContextReleaseRequest_IEs__value_PR_GWContextReleaseIndication;
+    ie->value.choice.GWContextReleaseIndication = TRUE;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
+
+  if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */
     S1AP_ERROR("Failed to encode UE context release complete\n");
     return -1;
@@ -230,12 +283,10 @@ int s1ap_ue_context_release_req(instance_t instance,
     0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
     ue_ctxt_release_request_ies_p->eNB_UE_S1AP_ID,
     ue_ctxt_release_request_ies_p->mme_ue_s1ap_id);
-
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                    ue_context_p->mme_ref->assoc_id, buffer,
                                    length, ue_context_p->tx_stream);
-
   return 0;
 }
 

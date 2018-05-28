@@ -138,12 +138,14 @@ typedef enum {
   FLEXRAN_AGENT_TIMER_STATE_MAX,
 } flexran_agent_timer_state_t;
 
-#define FLEXRAN_CAP_LOL1 0x1
-#define FLEXRAN_CAP_HIL1 0x2
-#define FLEXRAN_CAP_LOL2 0x4   // is: MAC
-#define FLEXRAN_CAP_HIL2 0x8   // is: RLC
-#define FLEXRAN_CAP_PDCP 0x16
-#define FLEXRAN_CAP_RRC  0x32
+#define FLEXRAN_CAP_LOPHY 1
+#define FLEXRAN_CAP_HIPHY 2
+#define FLEXRAN_CAP_LOMAC 4
+#define FLEXRAN_CAP_HIMAC 8
+#define FLEXRAN_CAP_RLC   16
+#define FLEXRAN_CAP_PDCP  32
+#define FLEXRAN_CAP_SDAP  64
+#define FLEXRAN_CAP_RRC   128
 
 typedef enum {
   ENB_NORMAL_OPERATION = 0x0,
@@ -159,7 +161,8 @@ typedef struct {
   uint16_t remote_port;
   char    *cache_name;
 
-  int      enb_id;
+  mid_t    mod_id;
+  uint64_t agent_id;
   uint8_t  capability_mask;
 
   /* lock for waiting before starting or soft-restart */
