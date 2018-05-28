@@ -265,6 +265,7 @@ typedef struct NRRrcConfigurationReq_s {
   ///NR
   //MIB
   long                    MIB_subCarrierSpacingCommon[MAX_NUM_CCs]; 
+  uint32_t                MIB_ssb_SubcarrierOffset[MAX_NUM_CCs]; 
   long                    MIB_dmrs_TypeA_Position[MAX_NUM_CCs];
   uint32_t                pdcch_ConfigSIB1[MAX_NUM_CCs];
 
@@ -292,7 +293,7 @@ typedef struct NRRrcConfigurationReq_s {
   //NR FrequencyInfoUL
   long                    UL_FreqBandIndicatorNR[MAX_NUM_CCs];
   long                    UL_absoluteFrequencyPointA[MAX_NUM_CCs];
-  lte_prefix_type_t       UL_additionalSpectrumEmission[MAX_NUM_CCs]
+  lte_prefix_type_t       UL_additionalSpectrumEmission[MAX_NUM_CCs];
   long                    UL_p_Max[MAX_NUM_CCs];
   long                    ULfrequencyShift7p5khz[MAX_NUM_CCs];
 
@@ -430,7 +431,14 @@ typedef struct NRRrcConfigurationReq_s {
   long                    Common_dci_Format2_3_nrofPDCCH_Candidates[MAX_NUM_CCs];
   long                    ue_Specific__dci_Formats[MAX_NUM_CCs];
 
-
+  //RateMatchPatternLTE-CRS
+  uint32_t                RateMatchPatternLTE_CRS_carrierFreqDL[MAX_NUM_CCs];
+  long                    RateMatchPatternLTE_CRS_carrierBandwidthDL[MAX_NUM_CCs];
+  long                    RateMatchPatternLTE_CRS_nrofCRS_Ports[MAX_NUM_CCs];
+  long                    RateMatchPatternLTE_CRS_v_Shift[MAX_NUM_CCs];
+  long                    RateMatchPatternLTE_CRS_radioframeAllocationPeriod[MAX_NUM_CCs];
+  uint32_t                RateMatchPatternLTE_CRS_radioframeAllocationOffset[MAX_NUM_CCs];
+  long                    RateMatchPatternLTE_CRS_subframeAllocation_choice[MAX_NUM_CCs];
 
 } gNB_RrcConfigurationReq;
 

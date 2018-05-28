@@ -164,10 +164,10 @@ init_NR_SI(
   RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].MIB             = (uint8_t*) malloc16(4);
   RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB      = do_MIB_NR(&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id],0,
                                                                             #ifdef ENABLE_ITTI
-                                                                            configuration->ssb_SubcarrierOffset[CC_id],
+                                                                            configuration->MIB_ssb_SubcarrierOffset[CC_id],
                                                                             configuration->pdcch_ConfigSIB1[CC_id],
-                                                                            configuration->subCarrierSpacingCommon[CC_id],
-                                                                            configuration->dmrs_TypeA_Position[CC_id]
+                                                                            configuration->MIB_subCarrierSpacingCommon[CC_id],
+                                                                            configuration->MIB_dmrs_TypeA_Position[CC_id]
                                                                             #else
                                                                             0,0,15,2
                                                                             #endif
@@ -189,12 +189,12 @@ init_NR_SI(
   
   AssertFatal(RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.nrrrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
 
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SERVINGCELLCONFIGCOMMON = do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
-                                                                                                           CC_id
-                                                                                                           #if defined(ENABLE_ITTI)
-                                                                                                           ,configuration
-                                                                                                           #endif
-                                                                                                           );
+  do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
+                             CC_id
+                             #if defined(ENABLE_ITTI)
+                             ,configuration
+                             #endif
+                             );
 
   
   

@@ -252,29 +252,29 @@ BWP-UplinkCommon ::=				SEQUENCE {
 	genericParameters					BWP,
 	-- Configuration of cell specific random access parameters which the UE uses for contention based and contention free random access
 	-- as well as for contention based beam failure recovery. 
-	rach-ConfigCommon					SetupRelease { RACH-ConfigCommon }										OPTIONAL, 	-- Need M
+	rach-ConfigCommon					 RACH-ConfigCommon 										OPTIONAL, 	-- Need M
 	-- Cell specific parameters for the PUSCH
-	pusch-ConfigCommon					SetupRelease { PUSCH-ConfigCommon }										OPTIONAL, 	-- Need M
+	pusch-ConfigCommon					 PUSCH-ConfigCommon 										OPTIONAL, 	-- Need M
 	
 	-- Cell specific parameters for the PUCCH
-	pucch-ConfigCommon					SetupRelease { PUCCH-ConfigCommon }										OPTIONAL, 	-- Need M
+	pucch-ConfigCommon					 PUCCH-ConfigCommon 										OPTIONAL, 	-- Need M
 	...
 }
 
 BWP-UplinkDedicated ::= 	SEQUENCE {
 	-- PUCCH configuration for one BWP of the regular UL or SUL of a serving cell. If the UE is configured with SUL, the network 
 	-- configures PUCCH only on the BWPs of one of the uplinks (UL or SUL).
-	pucch-Config						SetupRelease { PUCCH-Config }											OPTIONAL, 	-- Need M
+	pucch-Config						 PUCCH-Config 											OPTIONAL, 	-- Need M
 	-- PUSCH configuration for one BWP of the regular UL or SUL of a serving cell. If the UE is configured with SUL and
 	-- if it has a PUSCH-Config for both UL and SUL, a carrier indicator field in DCI indicates for which of the two to use an UL grant.
 	-- See also L1 parameter 'dynamicPUSCHSUL' (see 38.213, section FFS_Section)
-	pusch-Config						SetupRelease { PUSCH-Config }											OPTIONAL, 	-- Need M
+	pusch-Config						 PUSCH-Config 											OPTIONAL, 	-- Need M
 	-- A Configured-Grant of typ1 or type2. It may be configured for Ul or SUL but in case of type1 [FFS also type2] not for both at a time.
-	configuredGrantConfig				SetupRelease { ConfiguredGrantConfig }									OPTIONAL, 	-- Need M
+	configuredGrantConfig				         ConfiguredGrantConfig 									        OPTIONAL, 	-- Need M
 	-- Uplink sounding reference signal configuration
-	srs-Config							SetupRelease { SRS-Config }												OPTIONAL, 	-- Need M
+	srs-Config						 SRS-Config 											OPTIONAL, 	-- Need M
 	-- Determines how the UE performs Beam Failure Recovery upon detection of a Beam Failure (see RadioLinkMonitoringConfig)
-	beamFailureRecoveryConfig			SetupRelease { BeamFailureRecoveryConfig }								OPTIONAL,	-- Need M
+	beamFailureRecoveryConfig			         BeamFailureRecoveryConfig 								        OPTIONAL,	-- Need M
 	...
 }
 
@@ -296,16 +296,16 @@ BWP-Downlink ::= 					SEQUENCE {
 
 BWP-DownlinkCommon ::=				SEQUENCE {
 	genericParameters					BWP,
-	pdcch-ConfigCommon					SetupRelease { PDCCH-ConfigCommon }										OPTIONAL,	-- Need M
-	pdsch-ConfigCommon					SetupRelease { PDSCH-ConfigCommon }										OPTIONAL,	-- Need M
+	pdcch-ConfigCommon				        PDCCH-ConfigCommon 										OPTIONAL,	-- Need M
+	pdsch-ConfigCommon					PDSCH-ConfigCommon 										OPTIONAL,	-- Need M
 	...
 }
 
 BWP-DownlinkDedicated ::= 			SEQUENCE {
-	pdcch-Config						SetupRelease { PDCCH-Config }											OPTIONAL,	-- Need M
-	pdsch-Config						SetupRelease { PDSCH-Config }											OPTIONAL,	-- Need M 
-	sps-Config							SetupRelease { SPS-Config }												OPTIONAL, 	-- Need M
-	radioLinkMonitoringConfig			SetupRelease { RadioLinkMonitoringConfig }								OPTIONAL,	-- Need M
+	pdcch-Config						PDCCH-Config 											OPTIONAL,	-- Need M
+	pdsch-Config						PDSCH-Config 											OPTIONAL,	-- Need M 
+	sps-Config						SPS-Config 											OPTIONAL, 	-- Need M
+	radioLinkMonitoringConfig			        RadioLinkMonitoringConfig 								        OPTIONAL,	-- Need M
 	...
 }
 
@@ -449,7 +449,7 @@ SpCellConfig ::=						SEQUENCE {
 	servCellIndex						ServCellIndex															OPTIONAL,	-- Cond SCG
 	-- Parameters for the synchronous reconfiguration to the target SpCell:
 	reconfigurationWithSync 			ReconfigurationWithSync 												OPTIONAL,	-- Cond ReconfWithSync
-	rlf-TimersAndConstants				SetupRelease { RLF-TimersAndConstants }									OPTIONAL,	-- Need M
+	rlf-TimersAndConstants				RLF-TimersAndConstants 									        OPTIONAL,	-- Need M
 	rlmInSyncOutOfSyncThreshold         INTEGER (0..1)                         									OPTIONAL,	-- Need M
 	spCellConfigDedicated				ServingCellConfig														OPTIONAL,	-- Need M
 	...
@@ -600,7 +600,7 @@ ConfiguredGrantConfig ::=				SEQUENCE {
 	mcs-TableTransformPrecoder		ENUMERATED {qam256}																	OPTIONAL,	-- Need S
 	-- Selection between and configuration of dynamic and semi-static beta-offset, as agreed in RAN1-AH18776
 	-- Note: For Type 1 UL data transmission without grant, "uci-on-PUSCH" should be set to semiStatic
-	uci-OnPUSCH							SetupRelease { CG-UCI-OnPUSCH },
+	uci-OnPUSCH							CG-UCI-OnPUSCH ,
 	-- Configuration of resource allocation type 0 and resource allocation type 1, as agreed in RAN1-AH18776
 	-- Note: For Type 1 UL data transmission without grant, "resourceAllocation" should be resourceAllocationType0 or resourceAllocationType1
 	resourceAllocation					ENUMERATED { resourceAllocationType0, resourceAllocationType1, dynamicSwitch },
@@ -918,8 +918,8 @@ CSI-MeasConfig ::=					SEQUENCE {
 	-- Contains trigger states for dynamically selecting one or more aperiodic and semi-persistent reporting configurations
 	-- and/or triggering one or more aperiodic CSI-RS resource sets for channel and/or interference measurement.
 	-- FFS: How to address the MAC-CE configuration
-	aperiodicTriggerStateList			SetupRelease { CSI-AperiodicTriggerStateList }											OPTIONAL, -- Need M
-	semiPersistentOnPUSCH-TriggerStateList			SetupRelease { CSI-SemiPersistentOnPUSCH-TriggerStateList }					OPTIONAL, -- Need M
+	aperiodicTriggerStateList			CSI-AperiodicTriggerStateList 											OPTIONAL, -- Need M
+	semiPersistentOnPUSCH-TriggerStateList		CSI-SemiPersistentOnPUSCH-TriggerStateList 					                                OPTIONAL, -- Need M
 	...
 }
 
@@ -1292,7 +1292,7 @@ DMRS-DownlinkConfig ::=					SEQUENCE {
 	scramblingID1							INTEGER (0..65535)													OPTIONAL, 	-- Need S
 
 	-- Configures downlink PTRS. If absent of released, the UE assumes that downlink PTRS are not present. See 38.214 section 5.1.6.3
-	phaseTrackingRS						SetupRelease { PTRS-DownlinkConfig	}									OPTIONAL,	-- Need M
+	phaseTrackingRS						        PTRS-DownlinkConfig									    OPTIONAL,	-- Need M
 
 	...
 }
@@ -1309,7 +1309,7 @@ DMRS-UplinkConfig ::=					SEQUENCE {
 	-- If the field is absent, the UE applies the value pos2.
 	dmrs-AdditionalPosition					ENUMERATED {pos0, pos1, pos3}										OPTIONAL,	-- Need R
 	-- Configures uplink PTRS (see 38.211, section x.x.x.x) FFS_Ref
-	phaseTrackingRS						SetupRelease { PTRS-UplinkConfig }										OPTIONAL,	-- Need M
+	phaseTrackingRS						 PTRS-UplinkConfig 										OPTIONAL,	-- Need M
 	-- The maximum number of OFDM symbols for UL front loaded DMRS. 'len1' corresponds to value 1. 'len2 corresponds to value 2.
 	-- If the field is absent, the UE applies value len1.
 	-- Corresponds to L1 parameter 'UL-DMRS-max-len' (see 38.214, section 6.4.1.1.2)
@@ -1508,16 +1508,16 @@ LogicalChannelConfig ::=		SEQUENCE {
 -- TAG-MAC-CELL-GROUP-CONFIG-START
 
 MAC-CellGroupConfig ::= 			SEQUENCE {
-	drx-Config							SetupRelease { DRX-Config }																OPTIONAL, -- Need M
+	drx-Config					DRX-Config 																OPTIONAL, -- Need M
 
 	schedulingRequestConfig				SchedulingRequestConfig																OPTIONAL, -- Need M
-	bsr-Config							BSR-Config																	OPTIONAL,	-- Need M
-	tag-Config							TAG-Config																	OPTIONAL,	-- Need M	
-	phr-Config							SetupRelease { PHR-Config }																OPTIONAL,	-- Need M
+	bsr-Config					BSR-Config																	OPTIONAL,	-- Need M
+	tag-Config					TAG-Config																	OPTIONAL,	-- Need M	
+	phr-Config					PHR-Config 																OPTIONAL,	-- Need M
 	-- FFS : configurable per SCell?
 	skipUplinkTxDynamic					BOOLEAN,
 	-- RNTI value for downlink SPS (see SPS-config) and uplink configured scheduling (see ConfiguredSchedulingConfig).
-	cs-RNTI								SetupRelease { RNTI-Value }															OPTIONAL	-- Need M
+	cs-RNTI						RNTI-Value 															OPTIONAL	-- Need M
 }
 
 DRX-Config ::=						SEQUENCE {
@@ -1654,7 +1654,7 @@ ReportConfigToRemoveList ::=			SEQUENCE (SIZE (1..maxReportConfigId)) OF ReportC
 --TAG-MEAS-GAP-CONFIG-START
 
 MeasGapConfig ::=				SEQUENCE {
-		gapFR2 						SetupRelease { GapConfig }				OPTIONAL,
+		gapFR2 						GapConfig 				OPTIONAL,
 		...
 }
 
@@ -1731,7 +1731,7 @@ ReferenceSignalConfig::=     			SEQUENCE {
 	-- SSB configuration for mobility (nominal SSBs, timing configuration)
 	ssb-ConfigMobility						SSB-ConfigMobility				OPTIONAL,	-- Need M
 	-- CSI-RS resources to be used for CSI-RS based RRM measurements
-	csi-rs-ResourceConfigMobility			SetupRelease { CSI-RS-ResourceConfigMobility } OPTIONAL-- Need M		
+	csi-rs-ResourceConfigMobility			CSI-RS-ResourceConfigMobility  OPTIONAL-- Need M		
 
 }
 
@@ -1743,7 +1743,7 @@ SSB-ConfigMobility::= 	SEQUENCE {
 		-- Corresponds to L1 parameter 'SSB-measured' (see FFS_Spec, section FFS_Section)
 		-- When the field is absent the UE measures on all SS-blocks 
 		-- FFS_CHECK: Is this IE placed correctly.
-		ssb-ToMeasure							SetupRelease { SSB-ToMeasure }								OPTIONAL,	-- Need M
+		ssb-ToMeasure							SSB-ToMeasure 								OPTIONAL,	-- Need M
 
 	-- Indicates whether the UE can utilize serving cell timing to derive the index of SS block transmitted by neighbour cell:
 	useServingCellTimingForSync				BOOLEAN,
@@ -2137,17 +2137,17 @@ PDCCH-Config ::= 						SEQUENCE {
 	-- Configuration of downlink preemtption indications to be monitored in this cell. 
 	-- Corresponds to L1 parameter 'Preemp-DL' (see 38.214, section 11.2)
 	-- FFS_RAN1: LS R1-1801281 indicates this is "Per Cell (but association with each configured BWP is needed)" => Unclear, keep on BWP for now.
-	downlinkPreemption						SetupRelease { DownlinkPreemption }															OPTIONAL,	-- Need M
+	downlinkPreemption					  DownlinkPreemption 															OPTIONAL,	-- Need M
 
 	-- Configuration of Slot-Format-Indicators to be monitored in this cell
 
 	-- FFS_RAN1 discusses still whether this SFI payload configuration is BWP- or Cell-Specific. 
-	slotFormatIndicator						SetupRelease { SlotFormatIndicator }															OPTIONAL,	-- Need M
+	slotFormatIndicator				          SlotFormatIndicator 															OPTIONAL,	-- Need M
 	-- Enable and configure reception of group TPC commands for PUSCH
-	tpc-PUSCH								SetupRelease { PUSCH-TPC-CommandConfig }							OPTIONAL,   -- Need M
+	tpc-PUSCH								PUSCH-TPC-CommandConfig 							OPTIONAL,   -- Need M
 
 	-- Enable and configure reception of group TPC commands fpr PUCCH
-	tpc-PUCCH								SetupRelease { PUCCH-TPC-CommandConfig }							OPTIONAL,   -- Cond PUCCH-CellOnly
+	tpc-PUCCH								PUCCH-TPC-CommandConfig 							OPTIONAL,   -- Cond PUCCH-CellOnly
 
 	...
 }
@@ -2264,9 +2264,9 @@ PDSCH-Config ::= 						SEQUENCE {
 	dataScramblingIdentityPDSCH			INTEGER (0..1007)															OPTIONAL,
 
 	-- DMRS configuration for PDSCH transmissions using PDSCH mapping type A (chosen dynamically via PDSCH-TimeDomainResourceAllocation).
-	dmrs-DownlinkForPDSCH-MappingTypeA			SetupRelease { DMRS-DownlinkConfig }										OPTIONAL,	-- Need M
+	dmrs-DownlinkForPDSCH-MappingTypeA			DMRS-DownlinkConfig 										OPTIONAL,	-- Need M
 	-- DMRS configuration for PDSCH transmissions using PDSCH mapping type B (chosen dynamically via PDSCH-TimeDomainResourceAllocation).
-	dmrs-DownlinkForPDSCH-MappingTypeB			SetupRelease { DMRS-DownlinkConfig } 							OPTIONAL,	-- Need M
+	dmrs-DownlinkForPDSCH-MappingTypeB			DMRS-DownlinkConfig  							OPTIONAL,	-- Need M
 
 
 	-- A list of Transmission Configuration Indicator (TCI) states for dynamically indicating (over DCI) a transmission configuration 
@@ -2371,7 +2371,7 @@ PDSCH-ConfigCommon ::=					SEQUENCE {
 
 PDSCH-ServingCellConfig ::= 			SEQUENCE {
 	-- Enables and configures code-block-group (CBG) based transmission (see 38.213, section 9.1.1)
-	codeBlockGroupTransmission				SetupRelease { PDSCH-CodeBlockGroupTransmission }						OPTIONAL,	-- Need M
+	codeBlockGroupTransmission				PDSCH-CodeBlockGroupTransmission 						OPTIONAL,	-- Need M
 	-- Accounts for overhead from CSI-RS, CORESET, etc. If the field is absent, the UE applies value xOh0.
 	-- Corresponds to L1 parameter 'Xoh-PDSCH' (see 38.214, section 5.1.3.2)
 	xOverhead								ENUMERATED { xOh6, xOh12, xOh18 }										OPTIONAL,	-- Need S
@@ -2496,13 +2496,13 @@ PUCCH-Config ::= 						SEQUENCE {
 	resourceToReleaseList					SEQUENCE (SIZE (1..maxNrofPUCCH-Resources)) OF PUCCH-ResourceId				OPTIONAL,	-- Need N
 
 	-- Parameters that are common for all PUCCH resources of format 1
-	format1									SetupRelease { PUCCH-FormatConfig }												OPTIONAL,	-- Need M
+	format1									PUCCH-FormatConfig 												OPTIONAL,	-- Need M
 	-- Parameters that are common for all PUCCH resources of format 2
-	format2									SetupRelease { PUCCH-FormatConfig }												OPTIONAL,	-- Need M
+	format2									PUCCH-FormatConfig 												OPTIONAL,	-- Need M
 	-- Parameters that are common for all PUCCH resources of format 3
-	format3									SetupRelease { PUCCH-FormatConfig }												OPTIONAL,	-- Need M
+	format3									PUCCH-FormatConfig 												OPTIONAL,	-- Need M
 	-- Parameters that are common for all PUCCH resources of format 4
-	format4									SetupRelease { PUCCH-FormatConfig }												OPTIONAL,	-- Need M
+	format4									PUCCH-FormatConfig 												OPTIONAL,	-- Need M
 
 	schedulingRequestResourceToAddModList	SEQUENCE (SIZE (1..maxNrofSR-Resources)) OF SchedulingRequestResourceConfig		OPTIONAL, -- Need M
 	schedulingRequestResourceToReleaseList	SEQUENCE (SIZE (1..maxNrofSR-Resources)) OF SchedulingRequestResourceId			OPTIONAL, -- Need M
@@ -2759,9 +2759,9 @@ PUSCH-Config ::= 						SEQUENCE {
 	txConfig								ENUMERATED {codebook, nonCodebook},
 
 	-- DMRS configuration for PUSCH transmissions using PUSCH mapping type A (chosen dynamically via PUSCH-TimeDomainResourceAllocation).
-	dmrs-UplinkForPUSCH-MappingTypeA		SetupRelease { DMRS-UplinkConfig }											OPTIONAL,	-- Need M
+	dmrs-UplinkForPUSCH-MappingTypeA		DMRS-UplinkConfig 											OPTIONAL,	-- Need M
 	-- DMRS configuration for PUSCH transmissions using PUSCH mapping type B (chosen dynamically via PUSCH-TimeDomainResourceAllocation)
-	dmrs-UplinkForPUSCH-MappingTypeB		SetupRelease { DMRS-UplinkConfig }									OPTIONAL,	-- Need M
+	dmrs-UplinkForPUSCH-MappingTypeB		DMRS-UplinkConfig 									OPTIONAL,	-- Need M
 
 	pusch-PowerControl						PUSCH-PowerControl															OPTIONAL, -- Need M
 	-- Configured one of two supported frequency hopping mode. If not configured frequency hopping is not configured
@@ -2807,7 +2807,7 @@ PUSCH-Config ::= 						SEQUENCE {
 	-- If the field is absent or released, the UE applies the value 'semiStatic' and the BetaOffsets according to 
 	-- FFS [BetaOffsets and/or section 9.x.x).
 	-- Corresponds to L1 parameter 'UCI-on-PUSCH' (see 38.213, section 9.3)
-	uci-OnPUSCH							SetupRelease { UCI-OnPUSCH}									OPTIONAL, -- Need M
+	uci-OnPUSCH							UCI-OnPUSCH									OPTIONAL, -- Need M
 	-- Interleaving unit configurable between 2 and 4 PRBs
 	-- Corresponds to L1 parameter 'VRB-to-PRB-interleaver' (see 38.211, section 6.3.1.6)
 	vrb-ToPRB-Interleaver					ENUMERATED {n2, n4},
@@ -2971,7 +2971,7 @@ BetaOffsets ::= 							SEQUENCE {
 
 PUSCH-ServingCellConfig ::=				SEQUENCE {
 	-- Enables and configures code-block-group (CBG) based transmission (see 38.214, section FFS_Section)
-	codeBlockGroupTransmission				SetupRelease { PUSCH-CodeBlockGroupGransmission	}							OPTIONAL,	-- Need M
+	codeBlockGroupTransmission				PUSCH-CodeBlockGroupGransmission								OPTIONAL,	-- Need M
 	-- Enables LBRM (Limited buffer rate-matching). When the field is absent the UE applies FBRM (Full buffer rate-matchingLBRM).
 	-- Corresponds to L1 parameter 'LBRM-FBRM-selection' (see 38.212, section 5.4.2)
 	rateMatching							ENUMERATED {limitedBufferRM}												OPTIONAL,	-- Need S
@@ -3897,12 +3897,12 @@ ServingCellConfig ::=		SEQUENCE {
 
 
 	-- PDSCH releated parameters that are not BWP-specific.
-	pdsch-ServingCellConfig				SetupRelease { PDSCH-ServingCellConfig }								OPTIONAL,	-- Need M
-	csi-MeasConfig						SetupRelease { CSI-MeasConfig }											OPTIONAL,	-- Need M
+	pdsch-ServingCellConfig				PDSCH-ServingCellConfig 								OPTIONAL,	-- Need M
+	csi-MeasConfig					CSI-MeasConfig 											OPTIONAL,	-- Need M
 	
 	-- Includes parameters for configuration of carrier based SRS switching
 	-- Corresponds to L1 parameter 'SRS-CarrierSwitching' (see 38,214, section FFS_Section)
-	carrierSwitching					SetupRelease { SRS-CarrierSwitching	}									OPTIONAL,	-- Need M
+	carrierSwitching				SRS-CarrierSwitching										OPTIONAL,	-- Need M
 	-- MAC parameters:
 	sCellDeactivationTimer				ENUMERATED {ms20, ms40, ms80, ms160, ms200, ms240, ms320, ms400, ms480, ms520, ms640, 
 												ms720, ms840, ms1280, spare2,spare1}				OPTIONAL,	-- Cond ServingCellWithoutPUCCH
@@ -3944,7 +3944,7 @@ UplinkConfig ::=					SEQUENCE {
 	-- Configuration that is common across the UL BWPs:
 
 	-- PUSCH related parameters that are not BWP-specific.
-	pusch-ServingCellConfig				SetupRelease { PUSCH-ServingCellConfig }								OPTIONAL,	-- Need M
+	pusch-ServingCellConfig				PUSCH-ServingCellConfig 								OPTIONAL,	-- Need M
 	...
 }
 
@@ -3980,7 +3980,7 @@ ServingCellConfigCommon ::=		SEQUENCE {
 	dmrs-TypeA-Position					ENUMERATED {pos2, pos3},
 
 	-- Parameters to determine an LTE CRS pattern that the UE shall rate match around.
-	lte-CRS-ToMatchAround					SetupRelease { RateMatchPatternLTE-CRS } 				OPTIONAL,	-- Need M
+	lte-CRS-ToMatchAround					RateMatchPatternLTE-CRS  				OPTIONAL,	-- Need M
 
 	-- Resources patterns which the UE should rate match PDSCH around. The UE rate matches around the union of all resources 
 	-- indicated in the nested bitmaps. Rate match patterns defined here on cell level apply only to PDSCH of the same numerology.

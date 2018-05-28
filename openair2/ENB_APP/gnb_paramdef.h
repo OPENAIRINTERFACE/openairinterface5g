@@ -229,6 +229,7 @@ typedef enum {
   ///NR
   //MIB
 #define GNB_CONFIG_STRING_MIB_SUBCARRIERSPACINGCOMMON                                  "MIB_subCarrierSpacingCommon"
+#define GNB_CONFIG_STRING_MIB_SSB_SUBCARRIEROFFSET                                     "MIB_ssb_SubcarrierOffset"
 #define GNB_CONFIG_STRING_MIB_DMRS_TYPEA_POSITION                                      "MIB_dmrs_TypeA_Position"
 #define GNB_CONFIG_STRING_PDCCH_CONFIGSIB1                                             "pdcch_ConfigSIB1"
 
@@ -392,7 +393,13 @@ typedef enum {
 #define GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_3_MONITORINGPERIODICITY                   "Common_dci_Format2_3_monitoringPeriodicity"
 #define GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_3_NROFPDCCH_CANDIDATES                    "Common_dci_Format2_3_nrofPDCCH_Candidates"
 #define GNB_CONFIG_STRING_UE_SPECIFIC__DCI_FORMATS                                     "ue_Specific__dci_Formats"
-
+#define GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_CARRIERFREQDL                        "RateMatchPatternLTE_CRS_carrierFreqDL"
+#define GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_CARRIERBANDWIDTHDL                   "RateMatchPatternLTE_CRS_carrierBandwidthDL"
+#define GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_NROFCRS_PORTS                        "RateMatchPatternLTE_CRS_nrofCRS_Ports"
+#define GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_V_SHIFT                              "RateMatchPatternLTE_CRS_v_Shift"
+#define GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONPERIOD           "RateMatchPatternLTE_CRS_radioframeAllocationPeriod"
+#define GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONOFFSET           "RateMatchPatternLTE_CRS_radioframeAllocationOffset"
+#define GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_SUBFRAMEALLOCATION_CHOICE            "RateMatchPatternLTE_CRS_subframeAllocation_choice"
 
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                                                             component carriers configuration parameters                                                                                                                           */
@@ -409,6 +416,7 @@ typedef enum {
 {GNB_CONFIG_STRING_N_RB_DL,                                                          NULL,        0,        iptr:&N_RB_DL,                                                          defintval:25,              TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_NB_ANT_PORTS,                                                     NULL,        0,        iptr:&nb_antenna_ports,                                                 defintval:1,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_MIB_SUBCARRIERSPACINGCOMMON,                                      NULL,        0,        iptr:&MIB_subCarrierSpacingCommon,                                      defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_MIB_SSB_SUBCARRIEROFFSET,                                         NULL,        0,        iptr:&MIB_ssb_SubcarrierOffset,                                         defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_MIB_DMRS_TYPEA_POSITION,                                          NULL,        0,        iptr:&MIB_dmrs_TypeA_Position,                                          defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_PDCCH_CONFIGSIB1,                                                 NULL,        0,        iptr:&pdcch_ConfigSIB1,                                                 defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_SIB1_FREQUENCYOFFSETSSB,                                          NULL,        0,        iptr:&SIB1_frequencyOffsetSSB,                                          defintval:0,               TYPE_UINT,       0},  \
@@ -427,7 +435,7 @@ typedef enum {
 {GNB_CONFIG_STRING_DL_BWP_PREFIX_TYPE,                                               NULL,        0,        iptr:&DL_BWP_prefix_type,                                               defintval:0,               TYPE_STRING,     0},  \
 {GNB_CONFIG_STRING_UL_FREQBANDINDICATORNR,                                           NULL,        0,        iptr:&UL_FreqBandIndicatorNR,                                           defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_UL_ABSOLUTEFREQUENCYPOINTA,                                       NULL,        0,        iptr:&UL_absoluteFrequencyPointA,                                       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_ADDITIONALSPECTRUMEMISSION,                                    NULL,        0,        iptr:&UL_additionalSpectrumEmission,                                                         defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_ADDITIONALSPECTRUMEMISSION,                                    NULL,        0,        iptr:&UL_additionalSpectrumEmission,                                    defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_UL_P_MAX,                                                         NULL,        0,        iptr:&UL_p_Max,                                                         defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_UL_FREQUENCYSHIFT7P5KHZ,                                          NULL,        0,        iptr:&UL_frequencyShift7p5khz,                                          defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_UL_OFFSETTOCARRIER,                                               NULL,        0,        iptr:&UL_offsetToCarrier,                                               defintval:0,               TYPE_UINT,       0},  \
@@ -534,6 +542,13 @@ typedef enum {
 {GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_3_MONITORINGPERIODICITY,                       NULL,        0,        iptr:&Common_dci_Format2_3_monitoringPeriodicity,                       defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_3_NROFPDCCH_CANDIDATES,                        NULL,        0,        iptr:&Common_dci_Format2_3_nrofPDCCH_Candidates,                        defintval:0,               TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_UE_SPECIFIC__DCI_FORMATS,                                         NULL,        0,        iptr:&ue_Specific__dci_Formats,                                         defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_CARRIERFREQDL,                            NULL,        0,        iptr:&RateMatchPatternLTE_CRS_carrierFreqDL,                            defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_CARRIERBANDWIDTHDL,                       NULL,        0,        iptr:&RateMatchPatternLTE_CRS_carrierBandwidthDL,                       defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_NROFCRS_PORTS,                            NULL,        0,        iptr:&RateMatchPatternLTE_CRS_nrofCRS_Ports,                            defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_V_SHIFT,                                  NULL,        0,        iptr:&RateMatchPatternLTE_CRS_v_Shift,                                  defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONPERIOD,               NULL,        0,        iptr:&RateMatchPatternLTE_CRS_radioframeAllocationPeriod,               defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONOFFSET,               NULL,        0,        iptr:&RateMatchPatternLTE_CRS_radioframeAllocationOffset,               defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_SUBFRAMEALLOCATION_CHOICE,                NULL,        0,        iptr:&RateMatchPatternLTE_CRS_subframeAllocation_choice,                defintval:0,               TYPE_UINT,       0},  \
 }
 
 
@@ -552,6 +567,7 @@ typedef enum {
 #define GNB_CONFIG_TX_GAIN_IDX                                                      
 #define GNB_CONFIG_RX_GAIN_IDX
 #define GNB_CONFIG_MIB_SUBCARRIERSPACINGCOMMON_IDX
+#define GNB_CONFIG_MIB_SSB_SUBCARRIEROFFSET_IDX 
 #define GNB_CONFIG_MIB_DMRS_TYPEA_POSITION_IDX
 #define GNB_CONFIG_PDCCH_CONFIGSIB1_IDX
 #define GNB_CONFIG_SIB1_FREQUENCYOFFSETSSB_IDX
@@ -680,3 +696,10 @@ typedef enum {
 #define GNB_CONFIG_COMMON_DCI_FORMAT2_3_MONITORINGPERIODICITY_IDX                   
 #define GNB_CONFIG_COMMON_DCI_FORMAT2_3_NROFPDCCH_CANDIDATES_IDX                   
 #define GNB_CONFIG_UE_SPECIFIC__DCI_FORMATS_IDX                                     
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_CARRIERFREQDL_IDX 
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_CARRIERBANDWIDTHDL_IDX 
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_NROFCRS_PORTS_IDX 
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_V_SHIFT_IDX 
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONPERIOD_IDX 
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONOFFSET_IDX 
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_SUBFRAMEALLOCATION_CHOICE_IDX 

@@ -41,27 +41,27 @@
 #include "COMMON/platform_types.h"
 
 //#include "COMMON/mac_rrc_primitives.h"
-#if defined(Rel15)
-#include "SIB1.h"
+#if defined(NR_Rel15)
+#include "NR_SIB1.h"
 //#include "SystemInformation.h"
 //#include "RRCConnectionReconfiguration.h"
-#include "RRCReconfigurationComplete.h"
-#include "RRCReconfiguration"
+#include "NR_RRCReconfigurationComplete.h"
+#include "NR_RRCReconfiguration.h"
 //#include "RRCConnectionReconfigurationComplete.h"
 //#include "RRCConnectionSetup.h"
 //#include "RRCConnectionSetupComplete.h"
 //#include "RRCConnectionRequest.h"
 //#include "RRCConnectionReestablishmentRequest.h"
 //#include "BCCH-DL-SCH-Message.h"
-#include "BCCH-BCH-Message.h"
+#include "NR_BCCH-BCH-Message.h"
 //#include "MCCH-Message.h"
 //#include "MBSFNAreaConfiguration-r9.h"
 //#include "SCellToAddMod-r10.h"
 //#include "AS-Config.h"
 //#include "AS-Context.h"
-#include "UE-NR-Capability.h"
-#include "MeasResults.h"
-#include "ServingCellConfigCommon.h"
+#include "NR_UE-NR-Capability.h"
+#include "NR_MeasResults.h"
+#include "NR_ServingCellConfigCommon.h"
 #endif
 //-------------------
 
@@ -90,7 +90,7 @@
 /*I will change the name of the structure for compile purposes--> hope not to undo this process*/
 
 typedef unsigned int uid_NR_t;
-#define UID_LINEAR_ALLOCATOR_BITMAP_SIZE_NR (((NUMBER_OF_UE_MAX_NR/8)/sizeof(unsigned int)) + 1)
+#define UID_LINEAR_ALLOCATOR_BITMAP_SIZE_NR (((NUMBER_OF_NR_UE_MAX/8)/sizeof(unsigned int)) + 1)
 
 typedef struct uid_linear_allocator_NR_s {
   unsigned int   bitmap[UID_LINEAR_ALLOCATOR_BITMAP_SIZE_NR];
@@ -108,29 +108,29 @@ typedef struct uid_linear_allocator_NR_s {
 #define UE_INDEX_INVALID  ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!! used to be -1
 
 typedef enum {
-  RRC_OK=0,
-  RRC_ConnSetup_failed,
-  RRC_PHY_RESYNCH,
-  RRC_Handover_failed,
-  RRC_HO_STARTED
-} RRC_status_NR_t;
+  NR_RRC_OK=0,
+  NR_RRC_ConnSetup_failed,
+  NR_RRC_PHY_RESYNCH,
+  NR_RRC_Handover_failed,
+  NR_RRC_HO_STARTED
+} NR_RRC_status_t;
 
 typedef enum UE_STATE_NR_e {
-  RRC_INACTIVE=0,
-  RRC_IDLE,
-  RRC_SI_RECEIVED,
-  RRC_CONNECTED,
-  RRC_RECONFIGURED,
-  RRC_HO_EXECUTION
-} UE_STATE_NR_t;
+  NR_RRC_INACTIVE=0,
+  NR_RRC_IDLE,
+  NR_RRC_SI_RECEIVED,
+  NR_RRC_CONNECTED,
+  NR_RRC_RECONFIGURED,
+  NR_RRC_HO_EXECUTION
+} NR_UE_STATE_t;
 
 typedef enum HO_STATE_NR_e {
-  HO_IDLE=0,
-  HO_MEASURMENT,
-  HO_PREPARE,
-  HO_CMD, // initiated by the src eNB
-  HO_COMPLETE // initiated by the target eNB
-} HO_STATE_NR_t;
+  NR_HO_IDLE=0,
+  NR_HO_MEASURMENT,
+  NR_HO_PREPARE,
+  NR_HO_CMD, // initiated by the src eNB
+  NR_HO_COMPLETE // initiated by the target eNB
+} NR_HO_STATE_t;
 
 //#define NUMBER_OF_UE_MAX MAX_MOBILES_PER_RG
 #define RRM_FREE(p)       if ( (p) != NULL) { free(p) ; p=NULL ; }
@@ -161,7 +161,7 @@ typedef struct {
 } __attribute__ ((__packed__))  LCHAN_DESC_NR;
 
 typedef struct UE_RRC_INFO_NR_s {
-  UE_STATE_NR_t                                       State;
+  NR_UE_STATE_t                                       State;
   uint8_t                                             SIB1systemInfoValueTag;
   uint32_t                                            SIStatus;
   uint32_t                                            SIcnt;
@@ -318,8 +318,8 @@ typedef struct gNB_RRC_UE_s {
 
   /* Used integrity/ciphering algorithms */
   //Specs. TS 38.331 V15.1.0 pag 432 Change position of chipering enumerative w.r.t previous version
-  e_CipheringAlgorithm                                ciphering_algorithm; 
-  e_IntegrityProtAlgorithm                            integrity_algorithm;
+  e_NR_CipheringAlgorithm                                ciphering_algorithm; 
+  e_NR_IntegrityProtAlgorithm                           integrity_algorithm;
 
   uint8_t                                             Status;
   rnti_t                                              rnti;
@@ -332,8 +332,8 @@ typedef struct gNB_RRC_UE_s {
   
   /* NR not define at this moment
   EstablishmentCause_t                             establishment_cause_NR; //different set for NB-IoT
-  
-  /* NR not define at this moment
+  */
+  /* NR not define at this moment*/
   /* Information from UE RRC ConnectionReestablishmentRequest  */
   //ReestablishmentCause_t                           reestablishment_cause_NR; //different set for NB_IoT
 
@@ -398,10 +398,6 @@ typedef struct {
   uint8_t                                   *SIB1;
   uint8_t                                   sizeof_SIB1;
 
-  uint8_t                                   *SERVINGCELLCONFIGCOMMON;
-  uint8_t                                   sizeof_SERVINGCELLCONFIGCOMMON; 
-
-
   //implicit parameters needed
   int                                       Ncp; //cyclic prefix for DL
   int								                        Ncp_UL; //cyclic prefix for UL
@@ -414,8 +410,8 @@ typedef struct {
   //are the only static one (memory has been already allocated)
   BCCH_BCH_Message_t                        mib;
   
-  SIB1_t     		                            *sib1;
-  ServingCellConfigCommon_t                 *servingcellconfigcommon;
+  NR_SIB1_t     		                            *sib1;
+  NR_ServingCellConfigCommon_t                 *servingcellconfigcommon;
 
 
   SRB_INFO_NR                               SI;
@@ -472,7 +468,7 @@ typedef struct OAI_UECapability_NR_s {
  uint8_t sdu[MAX_UE_CAPABILITY_SIZE_NR];
  uint8_t sdu_size;
 ////NR------
-  UE_NR_Capability_t  UE_Capability_NR; //replace the UE_EUTRA_Capability of LTE
+  NR_UE_NR_Capability_t  UE_Capability_NR; //replace the UE_EUTRA_Capability of LTE
 } OAI_UECapability_NR_t;
 
 
@@ -505,7 +501,6 @@ typedef struct UE_RRC_INST_NR_s {
   SystemInformation_t *si[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
   
   SystemInformationBlockType2_t *sib2[NB_CNX_UE];
-  /*
   SystemInformationBlockType3_t *sib3[NB_CNX_UE];
   SystemInformationBlockType4_t *sib4[NB_CNX_UE];
   SystemInformationBlockType5_t *sib5[NB_CNX_UE];

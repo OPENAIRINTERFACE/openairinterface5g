@@ -23,7 +23,6 @@ reset_color="$(tput sgr0)"
 function error()
 {
   echo -e "$red_color"ERROR: "$@""$reset_color"
-  exit 1
 }
 
 function check_sha1()
@@ -94,7 +93,7 @@ function patch_rrc()
   case "$version" in
     Rel14 )
       echo "patching RRC files release 14"
-      apply_patches "$directory" RRC_Rel14 ${#RRC_Rel14[*]}
+       apply_patches "$directory" RRC_Rel14 ${#RRC_Rel14[*]}
       ;;
     Rel10 )
       echo "patching RRC files release 10"
@@ -115,7 +114,7 @@ function patch_nr_rrc()
   local version="$2"
 
   case "$version" in
-    Rel15 )
+    NR_Rel15 )
       echo "patching NR_RRC files release 15"
       apply_patches "$directory" NR_RRC_Rel15 ${#NR_RRC_Rel15[*]}
       ;;
@@ -175,16 +174,16 @@ function main()
 
   case "$module" in
     RRC )
-      patch_rrc "$directory" "$version"
+      #patch_rrc "$directory" "$version"
       ;;
     NR_RRC )
-      patch_nr_rrc "$directory" "$version"
+      #patch_nr_rrc "$directory" "$version"
       ;;
     X2AP )
-      patch_x2ap "$directory" "$version"
+      #patch_x2ap "$directory" "$version"
       ;;
     S1AP )
-      patch_s1ap "$directory" "$version"
+      #patch_s1ap "$directory" "$version"
       ;;
     * )
       error unknown module "$module"

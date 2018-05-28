@@ -52,6 +52,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   ///NR
   //MIB
   int32_t                MIB_subCarrierSpacingCommon                                   = 0;
+  uint32_t               MIB_ssb_SubcarrierOffset                                      = 0;
   int32_t                MIB_dmrs_TypeA_Position                                       = 0;
   uint32_t               pdcch_ConfigSIB1                                              = 0;
 
@@ -213,7 +214,14 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int32_t                Common_dci_Format2_3_monitoringPeriodicity                    = 0;
   int32_t                Common_dci_Format2_3_nrofPDCCH_Candidates                     = 0;
   int32_t                ue_Specific__dci_Formats                                      = 0;
-
+  //NR  RateMatchPatternLTE-CRS
+  uint32_t               RateMatchPatternLTE_CRS_carrierFreqDL                         = 0;
+  int32_t                RateMatchPatternLTE_CRS_carrierBandwidthDL                    = 0;
+  int32_t                RateMatchPatternLTE_CRS_nrofCRS_Ports                         = 0;
+  int32_t                RateMatchPatternLTE_CRS_v_Shift                               = 0;
+  int32_t                RateMatchPatternLTE_CRS_radioframeAllocationPeriod            = 0;
+  uint32_t               RateMatchPatternLTE_CRS_radioframeAllocationOffset            = 0;
+  int32_t                RateMatchPatternLTE_CRS_subframeAllocation_choice             = 0;
 
   int32_t             my_int;
 
@@ -417,6 +425,12 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             if ((MIB_subCarrierSpacingCommon !=15) && (MIB_subCarrierSpacingCommon !=30) && (MIB_subCarrierSpacingCommon !=60) && (MIB_subCarrierSpacingCommon !=120)){
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for MIB_subCarrierSpacingCommon choice: 15,30,60,120 !\n",
                            RC.config_file_name, i, MIB_subCarrierSpacingCommon);
+            }
+
+            NRRRC_CONFIGURATION_REQ (msg_p).MIB_ssb_SubcarrierOffset[j] = MIB_ssb_SubcarrierOffset;
+            if ((MIB_ssb_SubcarrierOffset <0) || (MIB_ssb_SubcarrierOffset > 15)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for MIB_ssb_SubcarrierOffset choice: 1..23 !\n",
+                           RC.config_file_name, i, MIB_ssb_SubcarrierOffset);
             }
 
             NRRRC_CONFIGURATION_REQ (msg_p).MIB_dmrs_TypeA_Position[j] = MIB_dmrs_TypeA_Position;
@@ -2048,6 +2062,120 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ue_Specific__dci_Formats !\n",
                            RC.config_file_name, i, ue_Specific__dci_Formats);
+            }
+
+            //////////////////////////////////NR RateMatchPatternLTE-CRS///////////////////////////
+
+            switch(RateMatchPatternLTE_CRS_carrierBandwidthDL){
+              case 6:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n6;
+                break;
+              case 15:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n15;
+                break;
+              case 25:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n25;
+                break;
+              case 50:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n50;
+                break;
+              case 75:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n75;
+                break;
+              case 100:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n100;
+                break;
+              default:
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_carrierBandwidthDL choice: 6,15,25,50,75,100 !\n",
+                             RC.config_file_name, i, RateMatchPatternLTE_CRS_carrierBandwidthDL);
+                break;
+            }
+
+            NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] = RateMatchPatternLTE_CRS_carrierBandwidthDL;
+            if ((RateMatchPatternLTE_CRS_carrierBandwidthDL <0) || (RateMatchPatternLTE_CRS_carrierBandwidthDL>16383)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_carrierBandwidthDL choice: 0..16383 !\n",
+                           RC.config_file_name, i, RateMatchPatternLTE_CRS_carrierBandwidthDL);
+            }
+
+            switch(RateMatchPatternLTE_CRS_nrofCRS_Ports){
+              case 1:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_nrofCRS_Ports[j] =  RateMatchPatternLTE_CRS__nrofCRS_Ports_n1;
+                break;
+              case 2:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_nrofCRS_Ports[j] =  RateMatchPatternLTE_CRS__nrofCRS_Ports_n2;
+                break;
+              case 4:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_nrofCRS_Ports[j] =  RateMatchPatternLTE_CRS__nrofCRS_Ports_n4;
+                break;
+              default:
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_nrofCRS_Ports choice: 1,2,4 !\n",
+                             RC.config_file_name, i, RateMatchPatternLTE_CRS_nrofCRS_Ports);
+                break;
+            }
+
+            switch(RateMatchPatternLTE_CRS_v_Shift){
+              case 0:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n0;
+                break;
+              case 1:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n1;
+                break;
+              case 2:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n2;
+                break;
+              case 3:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n3;
+                break;
+              case 4:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n4;
+                break;
+              case 5:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n5;
+                break;
+              default:
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_v_Shift choice: 0,1,2,3,4,5 !\n",
+                             RC.config_file_name, i, RateMatchPatternLTE_CRS_v_Shift);
+                break;
+            }
+
+            switch(RateMatchPatternLTE_CRS_radioframeAllocationPeriod){
+              case 1:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n1;
+                break;
+              case 2:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n2;
+                break;
+              case 4:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n4;
+                break;
+              case 8:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n8;
+                break;
+              case 16:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n16;
+                break;
+              case 32:
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n32;
+                break;
+              default:
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_radioframeAllocationPeriod choice: 1,2,4,8,16,32 !\n",
+                             RC.config_file_name, i, RateMatchPatternLTE_CRS_radioframeAllocationPeriod);
+                break;
+            }
+
+            NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationOffset[j] = RateMatchPatternLTE_CRS_radioframeAllocationOffset;
+            if ((RateMatchPatternLTE_CRS_radioframeAllocationOffset <0) || (RateMatchPatternLTE_CRS_radioframeAllocationOffset>7)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_radioframeAllocationOffset choice: 0..7 !\n",
+                           RC.config_file_name, i, RateMatchPatternLTE_CRS_radioframeAllocationOffset);
+            }
+
+            if (strcmp(RateMatchPatternLTE_CRS_subframeAllocation_choice , "oneFrame") == 0){
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  EUTRA_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame;
+            }else if (strcmp(RateMatchPatternLTE_CRS_subframeAllocation_choice , "fourFrames") == 0){
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  EUTRA_MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames;
+            }else {
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_subframeAllocation_choice !\n",
+                           RC.config_file_name, i, RateMatchPatternLTE_CRS_subframeAllocation_choice);
             }
 
 

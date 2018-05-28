@@ -205,7 +205,7 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
 
   asn_enc_rval_t enc_rval;
 
-  BCCH_BCH_Message_t *mib=&carrier->mib_NR ;
+  BCCH_BCH_Message_t *mib=&carrier->mib
   memset(mib,0,sizeof(BCCH_BCH_Message_t));
   mib->message.present = BCCH_BCH_MessageType_PR_mib;
   
@@ -270,7 +270,7 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
   //encode MIB to data
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
                                    (void*)mib,
-                                   carrier->MIB_NR,
+                                   carrier->MIB,
                                    24);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
@@ -495,7 +495,7 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   return((enc_rval.encoded+7)/8);
 }
 
-uint8_t do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
+void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
                                    int CC_id
                                    #if defined(ENABLE_ITTI)
                                    ,gNB_RrcConfigurationReq *configuration

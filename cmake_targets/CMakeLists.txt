@@ -272,15 +272,16 @@ endif (${ENABLE_ITTI})
 # New C code source file, cmake must be re-run (instead of re-running make only)
 #############
 set(asn1c_call "${OPENAIR_CMAKE}/tools/generate_asn1")
+set(asn1c_call_NR "${OPENAIR_CMAKE}/tools/generate_asn1_NR")
 set(fix_asn1c_call "${OPENAIR_CMAKE}/tools/fix_asn1")
 set(asn1_generated_dir ${OPENAIR_BIN_DIR})
-
 set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
 set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
 # RRC
 ######
-add_list2_option(RRC_ASN1_VERSION "Rel10" "ASN.1 version of RRC interface" "Rel8" "Rel10" "CBA")
+
+add_list2_option(RRC_ASN1_VERSION "Rel14" "ASN.1 version of RRC interface" "Rel8" "Rel10" "Rel14" "CBA")
 
 if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn)
@@ -330,32 +331,45 @@ add_custom_command (
 
 #NR RRC
 
-add_list2_option(NR_RRC_ASN1_VERSION "Rel15" "ASN.1 version of NR_RRC interface")
+add_list2_option(NR_RRC_ASN1_VERSION "NR_Rel15" "ASN.1 version of NR_RRC interface")
 
-if (${NR_RRC_ASN1_VERSION} STREQUAL "Rel15")
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-Definitions.asn)
-endif  (${NR_RRC_ASN1_VERSION} STREQUAL "Rel15")
+if (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
+  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-Definitions.asn)
+endif  (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
 
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
 
-if(NOT EXISTS ${asn1c_call})
-  message( FATAL_ERROR "The script ${asn1c_call} must be present" )
-endif(NOT EXISTS ${asn1c_call})
+if(NOT EXISTS ${asn1c_call_NR})
+message( FATAL_ERROR "The script ${asn1c_call_NR} must be present" )
+endif(NOT EXISTS ${asn1c_call_NR})
 
-execute_process(COMMAND ${asn1c_call}  
+#message("calling ASN1C_PREFIX=NR_ asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
+#set (asn1_install_log ${OPENAIR_CMAKE}/log/NR_asn1c_install_log.txt)
+#execute_process(COMMAND mkdir -p ${NR_RRC_FULL_DIR}
+#		COMMAND env "ASN1C_PREFIX=NR_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
+#                RESULT_VARIABLE ret
+#                ) 
+
+ 
+execute_process(COMMAND ${asn1c_call_NR}  
 			${NR_RRC_FULL_DIR} 
-			${RRC_GRAMMAR}
+			${NR_RRC_GRAMMAR}
+			${NR_RRC_ASN1_VERSION}
                         RESULT_VARIABLE ret)
 
 if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${asn1c_call}: error")
+   message(FATAL_ERROR "${asn1c_call_NR}: error")
 endif (NOT ${ret} STREQUAL 0)
 
 if(NOT EXISTS ${fix_asn1c_call})
   message( FATAL_ERROR "The script ${fix_asn1c_call} must be present" )
 endif(NOT EXISTS ${fix_asn1c_call})
-execute_process(COMMAND ${fix_asn1c_call} ${NR_RRC_FULL_DIR} NR_RRC ${NR_RRC_ASN1_VERSION}
-                RESULT_VARIABLE ret)
+execute_process(COMMAND ${fix_asn1c_call} 
+			${NR_RRC_FULL_DIR} 
+			NR_RRC 
+			${NR_RRC_ASN1_VERSION}
+			RESULT_VARIABLE ret)
+
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${fix_asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -364,18 +378,25 @@ file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
 file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
 set(nr_rrc_h ${nr_rrc_h} ${NR_RRC_FULL_DIR}/asn1_constants.h)
 set_source_files_properties(${nr_rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
-#add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source}
-#    ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
-#include_directories ("${NR_RRC_FULL_DIR}")
+add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source}
+    ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
+include_directories ("${NR_RRC_FULL_DIR}")
 
 # add the command to generate the source code
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
+
 add_custom_command (
   OUTPUT ${NR_RRC_FULL_DIR}/asn1_constants.h
-  COMMAND ${asn1c_call}  ${NR_RRC_FULL_DIR} ${RRC_GRAMMAR}
+  COMMAND ${asn1c_call_NR}  ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
   COMMAND ${fix_asn1c_call}  ${NR_RRC_FULL_DIR} RRC ${NR_RRC_ASN1_VERSION}
   DEPENDS ${RRC_GRAMMAR}
   )
+#add_custom_command (
+#  OUTPUT ${NR_RRC_FULL_DIR}/asn1_constants.h
+#  COMMAND mkdir -p ${NR_RRC_FULL_DIR}
+#  COMMAND env "ASN1C_PREFIX=NR_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR} 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+#  DEPENDS ${NR_RRC_GRAMMAR}
+#  )
 
 
 # S1AP
@@ -419,7 +440,6 @@ if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${fix_asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
 file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
-
 set(S1AP_OAI_generated
   ${S1AP_C_DIR}/s1ap_decoder.c
   ${S1AP_C_DIR}/s1ap_encoder.c
