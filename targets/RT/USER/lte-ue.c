@@ -37,6 +37,9 @@
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_stub_UE.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
+#include "PHY/INIT/phy_init.h"
+#include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -44,6 +47,9 @@
 #include "PHY/phy_extern_ue.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
+#include "SCHED_UE/sched_UE.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+
 #include <inttypes.h>
 
 #include "UTIL/LOG/log_extern.h"
@@ -729,7 +735,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #ifdef UE_SLOT_PARALLELISATION
       phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
-      phy_procedures_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+      phy_procedures_UE_RX(UE, proc, 0, 0, 1, UE->mode);
 #endif
     }
 
@@ -775,14 +781,14 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
 	(UE->frame_parms.frame_type == FDD) )
       if (UE->mode != loop_through_memory)
-	phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
+	phy_procedures_UE_TX(UE,proc,0,0,UE->mode);
 
 
 
     if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
 	(UE->frame_parms.frame_type == TDD))
       if (UE->mode != loop_through_memory)
-	phy_procedures_UE_S_TX(UE,0,0,no_relay);
+	phy_procedures_UE_S_TX(UE,0,0);
     updateTimes(current, &t3, 10000, "Delay to process sub-frame (case 3)");
 
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
@@ -2166,7 +2172,7 @@ static void* timer_thread( void* param ) {
       pdu.header.absSF = (timer_frame*10)+timer_subframe;
       if (nfapi_mode!=3){
       multicast_link_write_sock(0,
-				&pdu,
+				(char *)&pdu,
 				sizeof(UE_tport_header_t));
       }
 

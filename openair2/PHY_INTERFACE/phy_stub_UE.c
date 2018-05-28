@@ -1012,7 +1012,7 @@ uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn) { return(0);}
 
 int32_t get_uldl_offset(int eutra_bandP) { return(0);}
 
-int l1_north_init_eNB() {
+int l1_north_init_eNB(void) {
 return 0;
 }
 

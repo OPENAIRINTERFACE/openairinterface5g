@@ -450,7 +450,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                          ctxt.instance, rab_id, rab_id, len);
 
       pdcp_data_req(&ctxt, SRB_FLAG_NO, rab_id, RLC_MUI_UNDEFINED,
-                    RLC_SDU_CONFIRM_NO, len, nl_rx_buf,
+                    RLC_SDU_CONFIRM_NO, len, (unsigned char *)nl_rx_buf,
                     PDCP_TRANSMISSION_MODE_DATA
 #ifdef Rel14
                     , NULL, NULL

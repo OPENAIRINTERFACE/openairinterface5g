@@ -44,6 +44,8 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 #include "SIMULATION/TOOLS/sim.h"	// for taus
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
 extern uint8_t  nfapi_mode;
 extern UE_MODE_t get_ue_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);

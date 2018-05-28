@@ -40,6 +40,8 @@
 #include "PHY/impl_defs_top.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
 #include "COMMON/mac_rrc_primitives.h"
+#include "PHY/INIT/phy_init.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "RRC/LTE/rrc_extern.h"
@@ -858,11 +860,11 @@ void ue_send_sl_sdu(module_id_t module_idP,
 
   if (longh->F==1) {
     rlc_sdu_len = ((longh->L_MSB<<8)&0x7F00)|(longh->L_LSB&0xFF);
-    rlc_sdu = sdu+sizeof(SLSCH_SUBHEADER_24_Bit_DST_LONG);
+    rlc_sdu = (char *)sdu+sizeof(SLSCH_SUBHEADER_24_Bit_DST_LONG);
   }
   else {
     rlc_sdu_len = ((SLSCH_SUBHEADER_24_Bit_DST_SHORT *)sdu)->L;
-    rlc_sdu = sdu+sizeof(SLSCH_SUBHEADER_24_Bit_DST_SHORT);
+    rlc_sdu = (char *)sdu+sizeof(SLSCH_SUBHEADER_24_Bit_DST_SHORT);
   }
   mac_rlc_data_ind(
 		   module_idP,
