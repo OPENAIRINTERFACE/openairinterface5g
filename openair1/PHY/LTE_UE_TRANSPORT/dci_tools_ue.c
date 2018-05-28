@@ -5158,11 +5158,3 @@ main()
 
 #endif
 
-/* HACK: this function is needed to compile the UE
- * fix it somehow
- */
-int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
-{
-  printf("you cannot read this\n");
-  abort();
-}
