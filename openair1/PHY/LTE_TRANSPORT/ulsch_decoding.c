@@ -31,7 +31,7 @@
 */
 
 //#include "defs.h"
-
+#include <syscall.h>
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "PHY/CODING/extern.h"
@@ -46,6 +46,9 @@
 
 #include "UTIL/LOG/vcd_signal_dumper.h"
 //#define DEBUG_ULSCH_DECODING
+#include "targets/RT/USER/rt_wrapper.h"
+
+extern int codingw;
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch)
 {
@@ -217,8 +220,6 @@ uint8_t extract_cqi_crc(uint8_t *cqi,uint8_t CQI_LENGTH)
   return(crc);
 
 }
-
-
 
 
 
@@ -414,13 +415,20 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 
 extern int oai_exit;
 void *td_thread(void *param) {
-  pthread_setname_np( pthread_self(), "td processing");
   PHY_VARS_eNB *eNB = ((td_params*)param)->eNB;
   eNB_proc_t *proc  = &eNB->proc;
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  
+  thread_top_init("td_thread",1,200000,250000,500000);
+  pthread_setname_np( pthread_self(),"td processing");
+  LOG_I(PHY,"thread td created id=%ld\n", syscall(__NR_gettid));
+  //wait_sync("td_thread");
 
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_td,&proc->cond_td,&proc->instance_cnt_td,"td thread")<0) break;  
+    if(oai_exit) break;
 
     ((td_params*)param)->ret = ulsch_decoding_data_2thread0((td_params*)param);
 
@@ -623,6 +631,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
       break;
     }
     stop_meas(&eNB->ulsch_turbo_decoding_stats);    
+  //printf("/////////////////////////////////////////**************************loop for %d time in ulsch_decoding main\n",r);
   }
 
    // wait for worker to finish
@@ -780,6 +789,20 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   }
 
   return(ret);
+}
+
+int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
+{
+  int ret = 0;
+  /*if(codingw)
+  {
+    ret = ulsch_decoding_data_2thread(eNB,UE_id,harq_pid,llr8_flag);
+  }
+  else*/
+  {
+    ret = ulsch_decoding_data(eNB,UE_id,harq_pid,llr8_flag);
+  }
+  return ret;
 }
 
 static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, unsigned char reset) __attribute__((always_inline));
