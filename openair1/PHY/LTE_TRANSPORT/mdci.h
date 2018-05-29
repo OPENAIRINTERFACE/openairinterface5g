@@ -30,6 +30,9 @@
  * \warning
  */
 
+#ifndef __M_DCI__H__
+#define __M_DCI__H__
+
 #include <stdint.h>
 
 
@@ -467,3 +470,4 @@ struct DCI6_2_di_20MHz {
 typedef struct DCI6_2_di_20MHz DCI6_2_di_20MHz_t;
 #define sizeof_DCI6_2_20MHz_t 13
 
+#endif

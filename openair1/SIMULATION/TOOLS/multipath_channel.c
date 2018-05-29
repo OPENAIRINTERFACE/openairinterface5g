@@ -23,8 +23,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include "defs.h"
-#include "SIMULATION/RF/defs.h"
+#include "PHY/TOOLS/tools_defs.h"
+#include "SIMULATION/RF/rf.h"
+#include "sim.h"
 
 //#define DEBUG_CH
 uint8_t multipath_channel_nosigconv(channel_desc_t *desc)

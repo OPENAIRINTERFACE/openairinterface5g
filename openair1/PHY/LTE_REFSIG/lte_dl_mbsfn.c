@@ -24,8 +24,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "defs.h"
-#include "PHY/defs.h"
+#include "lte_refsig.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/impl_defs_top.h"
 
 //extern unsigned int lte_gold_table[10][3][42];
 //#define DEBUG_DL_MBSFN

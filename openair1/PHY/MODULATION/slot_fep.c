@@ -19,8 +19,10 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
-#include "defs.h"
+#include "PHY/defs_UE.h"
+#include "modulation_UE.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
+
 //#define DEBUG_FEP
 
 #define SOFFSET 0

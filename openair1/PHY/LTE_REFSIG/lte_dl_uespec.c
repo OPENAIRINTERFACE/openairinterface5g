@@ -33,9 +33,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "defs.h"
-#include "PHY/defs.h"
+#include "lte_refsig.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 #include "log.h"
+#include "PHY/impl_defs_top.h"
 
 //extern unsigned int lte_gold_table[3][20][2][14];
 //#define DEBUG_DL_CELL_SPEC

@@ -37,7 +37,7 @@ unsigned int pdcp_agent_registered[NUM_MAX_ENB];
 /*Array containing the Agent-PDCP interfaces*/
 AGENT_PDCP_xface *agent_pdcp_xface[NUM_MAX_ENB];
 
-// NUMBER_OF_UE_MAX
+// MAX_MOBILES_PER_ENB
 
 void flexran_agent_pdcp_aggregate_stats(const mid_t mod_id,
 					const mid_t ue_id,

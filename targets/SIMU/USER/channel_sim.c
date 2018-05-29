@@ -26,31 +26,23 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "SIMULATION/TOOLS/defs.h"
-#include "SIMULATION/RF/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
+#include "SIMULATION/RF/rf.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/phy_extern_ue.h"
 
-#ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log_if.h"
 #include "UTIL/LOG/log_extern.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface_extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OPT/opt.h" // to test OPT
-#endif
 
 #include "UTIL/FIFO/types.h"
-
-#ifdef IFFT_FPGA
-#include "PHY/LTE_REFSIG/mod_table.h"
-#endif
-
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
 
 #ifdef XFORMS
 #include "forms.h"

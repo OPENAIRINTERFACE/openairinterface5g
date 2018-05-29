@@ -24,7 +24,7 @@
 #include <math.h>
 #include <time.h>
 
-#include  "defs.h"
+#include  "sim.h"
 
 static unsigned int seed, iy, ir[98];
 /*

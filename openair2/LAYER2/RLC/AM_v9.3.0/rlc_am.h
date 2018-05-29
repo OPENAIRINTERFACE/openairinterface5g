@@ -71,6 +71,7 @@
 #        include "rlc_am_reassembly.h"
 #        include "rlc_am_init.h"
 #        include "RLC-Config.h"
+#        include "assertions.h"
 //#        include "rlc_am_test.h"
 
 

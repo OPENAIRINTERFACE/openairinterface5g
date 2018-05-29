@@ -26,10 +26,10 @@
    date: 09.2012
 */
 #ifndef TC_MAIN
-#include "defs.h"
+#include "coding_defs.h"
 #include "extern_3GPPinterleaver.h"
 #else
-#include "vars.h"
+#include "coding_vars.h"
 #include <stdint.h>
 #endif
 #include <stdio.h>

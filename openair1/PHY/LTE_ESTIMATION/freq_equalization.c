@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 
 // This is 512/(1:256) in __m128i format

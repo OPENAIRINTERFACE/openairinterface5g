@@ -29,29 +29,26 @@
 
  */
 
-#include "assertions.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
-
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/proto.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#include "SIMULATION/TOOLS/defs.h"	// for taus
+#include "SIMULATION/TOOLS/sim.h"	// for taus
+
+#include "assertions.h"
 
 #if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
@@ -1007,7 +1004,11 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	// RLC data on DCCH
 	if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
 	  rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH,
-                                          TBS - ta_len - header_length_total - sdu_length_total - 3);
+                                          TBS - ta_len - header_length_total - sdu_length_total - 3
+#ifdef Rel14
+                                                    ,0, 0
+#endif
+                          );
 
 	  sdu_lengths[0] = 0;
 
@@ -1018,7 +1019,11 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 
 	    sdu_lengths[0] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH,
                                               TBS, //not used
-					      (char *)&dlsch_buffer[0]);
+					      (char *)&dlsch_buffer[0]
+#ifdef Rel14
+                          ,0, 0
+#endif
+                          );
 
 	    T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP),
 	      T_INT(CC_id), T_INT(rnti), T_INT(frameP),
@@ -1057,7 +1062,11 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	// RLC data on DCCH1
 	if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
 	  rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1,
-                                          TBS - ta_len - header_length_total - sdu_length_total - 3);
+                                          TBS - ta_len - header_length_total - sdu_length_total - 3
+#ifdef Rel14
+                                                    ,0, 0
+#endif
+                                         );
 
 	  // DCCH SDU
 	  sdu_lengths[num_sdus] = 0;
@@ -1069,7 +1078,11 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 
 	    sdu_lengths[num_sdus] += mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1,
                                                       TBS, //not used
-						      (char *)&dlsch_buffer[sdu_length_total]);
+						      (char *)&dlsch_buffer[sdu_length_total]
+#ifdef Rel14
+                          ,0, 0
+#endif
+	    );
 
 	    T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP),
 	      T_INT(CC_id), T_INT(rnti), T_INT(frameP),
@@ -1099,6 +1112,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 
 	    LOG_T(MAC, "\n");
 #endif
+
 	  }
 	}
 
@@ -1119,7 +1133,11 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 					    ENB_FLAG_YES,
 					    MBMS_FLAG_NO,
 					    lcid,
-					    TBS - ta_len - header_length_total - sdu_length_total - 3);
+					    TBS - ta_len - header_length_total - sdu_length_total - 3
+#ifdef Rel14
+                                                    ,0, 0
+#endif
+                                           );
 
 
 
@@ -1133,7 +1151,11 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 
 	      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, lcid,
                                                        TBS, //not used
-						       (char *)&dlsch_buffer[sdu_length_total]);
+						       (char *)&dlsch_buffer[sdu_length_total]
+#ifdef Rel14
+                          ,0, 0
+#endif
+	      );
 
 	      T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP),
 		T_INT(CC_id), T_INT(rnti), T_INT(frameP),
@@ -1505,7 +1527,6 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
   }				// CC_id loop
 
 
-
   fill_DLSCH_dci(module_idP, frameP, subframeP, mbsfn_flag);
 
   stop_meas(&eNB->schedule_dlsch);
@@ -1777,7 +1798,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
     vrb_map         = (void*)&cc->vrb_map;
     n_rb_dl         = to_prb(cc->mib->message.dl_Bandwidth);
     dl_req          = &eNB->DL_req[CC_id].dl_config_request_body;
-    for (uint16_t i = 0; i < NUMBER_OF_UE_MAX; i++) {
+    for (uint16_t i = 0; i < MAX_MOBILES_PER_ENB; i++) {
       if (UE_PF_PO[CC_id][i].enable_flag != TRUE) {
         continue;
       }
@@ -1992,11 +2013,15 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1                       = mcs;
 
 	// Rel10 fields
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = 3;
+#endif
 	// Rel13 fields
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 0; // regular UE
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 2; // not BR
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF;
+#endif
 
 	if (!CCE_allocation_infeasible(module_idP, CC_id, 0, subframeP, dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level, P_RNTI)) {
 	  LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for P_RNTI\n", frameP,subframeP);
