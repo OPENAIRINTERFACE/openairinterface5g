@@ -94,7 +94,7 @@ void config_req_rlc_um_asn1 (
   const DL_UM_RLC_t       * const dl_rlc_pP,
   const rb_id_t             rb_idP,
   const logical_chan_id_t   chan_idP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
  ,const uint32_t            sourceL2Id
  ,const uint32_t            destinationL2Id
 #endif

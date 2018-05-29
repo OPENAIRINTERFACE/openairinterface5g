@@ -325,7 +325,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 						 0, // n_srs
 						 get_TBS_UL(mcs,nb_rb)
 						 );
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	  if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
 	    fill_nfapi_ulsch_config_request_emtc(&ul_req->ul_config_pdu_list[ul_req->number_of_pdus],
 						   UE_template->rach_resource_type>2 ? 2 : 1,

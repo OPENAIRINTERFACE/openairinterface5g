@@ -192,7 +192,9 @@ void *send_UE_status_notification(void *);
 #include "AS-Context.h"
 #include "UE-EUTRA-Capability.h"
 #include "MeasResults.h"
+#if (RRC_VERSION >= MAKE_VERSION(12, 0, 0))
 #include "SidelinkUEInformation-r12.h"
+#endif
 
 /* for ImsiMobileIdentity_t */
 #include "MobileIdentity.h"
@@ -760,7 +762,7 @@ typedef struct UE_RRC_INST_s {
   SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   SystemInformationBlockType11_t *sib11[NB_CNX_UE];
   uint8_t                           *MIB;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   //SIB18
   SystemInformationBlockType18_r12_t *sib18[NB_CNX_UE];
   SystemInformationBlockType19_r12_t *sib19[NB_CNX_UE];
@@ -828,7 +830,7 @@ typedef struct UE_RRC_INST_s {
   CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Used for Sidelink Preconfiguration
   DRB_ToAddModList_t *DRB_configList;
 #endif

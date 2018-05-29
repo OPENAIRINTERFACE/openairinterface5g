@@ -1018,10 +1018,10 @@ int rrc_mac_config_req_ue(module_id_t module_idP,
 			  ,
 			  uint8_t num_active_cba_groups, uint16_t cba_rnti
 #endif
-#if defined(Rel14)
-           ,config_action_t config_action
-           ,const uint32_t * const sourceL2Id
-           ,const uint32_t * const destinationL2Id
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+			  ,config_action_t config_action
+			  ,const uint32_t * const sourceL2Id
+			  ,const uint32_t * const destinationL2Id
 #endif
 			  );
 

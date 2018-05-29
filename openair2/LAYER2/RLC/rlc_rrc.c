@@ -107,7 +107,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
           case RLC_Config_PR_am:
             if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_AM
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,0,
                                 0
 #endif
@@ -127,7 +127,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
           case RLC_Config_PR_um_Bi_Directional:
             if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,0,
                                 0
 #endif
@@ -141,7 +141,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                 &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.ul_UM_RLC,
                 &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC,
                 rb_id, lc_id
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,0, 0
 #endif
                );
@@ -155,7 +155,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
           case RLC_Config_PR_um_Uni_Directional_UL:
             if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                  ,0,
                                  0
 #endif
@@ -169,7 +169,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                 &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_UL.ul_UM_RLC,
                 NULL,
                 rb_id, lc_id
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,0, 0
 #endif
                );
@@ -183,7 +183,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
           case RLC_Config_PR_um_Uni_Directional_DL:
             if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                  ,0,
                                  0
 #endif
@@ -197,7 +197,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
                 NULL,
                 &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_DL.dl_UM_RLC,
                 rb_id, lc_id
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,0, 0
 #endif
                );
@@ -230,7 +230,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
           config_am_pP->ul_AM_RLC.maxRetxThreshold = UL_AM_RLC__maxRetxThreshold_t4;
 
           if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_AM
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                ,0,
                                0
 #endif
@@ -299,7 +299,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
         case RLC_Config_PR_am:
           if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_AM
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                ,0,
                                0
 #endif
@@ -315,7 +315,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
         case RLC_Config_PR_um_Bi_Directional:
           if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_UM
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                ,sourceL2Id,
                                destinationL2Id
 #endif
@@ -329,7 +329,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
               &drb_toaddmod_p->rlc_Config->choice.um_Bi_Directional.ul_UM_RLC,
               &drb_toaddmod_p->rlc_Config->choice.um_Bi_Directional.dl_UM_RLC,
               drb_id, lc_id
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
               ,sourceL2Id,
               destinationL2Id
 #endif
@@ -340,7 +340,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
         case RLC_Config_PR_um_Uni_Directional_UL:
           if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_UM
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                               ,0,
                                0
 #endif
@@ -354,7 +354,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
               &drb_toaddmod_p->rlc_Config->choice.um_Uni_Directional_UL.ul_UM_RLC,
               NULL,
               drb_id, lc_id
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,0, 0
 #endif
                );
@@ -364,7 +364,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
         case RLC_Config_PR_um_Uni_Directional_DL:
           if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_UM
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                               ,0,
                                0
 #endif
@@ -378,7 +378,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
               NULL,
               &drb_toaddmod_p->rlc_Config->choice.um_Uni_Directional_DL.dl_UM_RLC,
               drb_id, lc_id
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,0, 0
 #endif
                );
@@ -466,7 +466,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
           NULL,
           &dl_um_rlc,
           rb_id, lc_id
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
           ,0, 0
 #endif
                );
@@ -647,7 +647,7 @@ rlc_union_t* rrc_rlc_add_rlc   (
   const rb_id_t           rb_idP,
   const logical_chan_id_t chan_idP,
   const rlc_mode_t        rlc_modeP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t sourceL2Id,
   const uint32_t  destinationL2Id
 #endif
@@ -778,7 +778,7 @@ rlc_op_status_t rrc_rlc_config_req   (
 
   case CONFIG_ACTION_ADD:
     if (rrc_rlc_add_rlc(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, rb_idP, rlc_infoP.rlc_mode
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,0,
                         0
 #endif
@@ -857,7 +857,7 @@ rlc_op_status_t rrc_rlc_data_req     (
   if (sdu != NULL) {
     memcpy (sdu->data, sduP, sdu_sizeP);
     return rlc_data_req(ctxt_pP, SRB_FLAG_YES, MBMS_flagP, rb_idP, muiP, confirmP, sdu_sizeP, sdu
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,NULL, NULL
 #endif
                         );

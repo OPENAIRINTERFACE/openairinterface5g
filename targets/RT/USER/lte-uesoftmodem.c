@@ -903,7 +903,7 @@ int main( int argc, char **argv )
 #endif
 
 //TTN for D2D
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   printf ("RRC control socket\n");
   rrc_control_socket_init();
   printf ("PDCP PC5S socket\n");

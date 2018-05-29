@@ -1005,7 +1005,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
 	  rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH,
                                           TBS - ta_len - header_length_total - sdu_length_total - 3
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                           );
@@ -1020,7 +1020,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	    sdu_lengths[0] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH,
                                               TBS, //not used
 					      (char *)&dlsch_buffer[0]
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                           ,0, 0
 #endif
                           );
@@ -1063,7 +1063,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
 	  rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1,
                                           TBS - ta_len - header_length_total - sdu_length_total - 3
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                                          );
@@ -1079,7 +1079,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	    sdu_lengths[num_sdus] += mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1,
                                                       TBS, //not used
 						      (char *)&dlsch_buffer[sdu_length_total]
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                           ,0, 0
 #endif
 	    );
@@ -1134,7 +1134,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 					    MBMS_FLAG_NO,
 					    lcid,
 					    TBS - ta_len - header_length_total - sdu_length_total - 3
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                                            );
@@ -1152,7 +1152,7 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, lcid,
                                                        TBS, //not used
 						       (char *)&dlsch_buffer[sdu_length_total]
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                           ,0, 0
 #endif
 	      );

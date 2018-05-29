@@ -138,7 +138,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 #ifdef CBA
 		      , uint8_t num_active_cba_groups, uint16_t cba_rnti
 #endif
-#if defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,config_action_t  config_action
   ,const uint32_t * const sourceL2Id
   ,const uint32_t * const destinationL2Id
@@ -590,7 +590,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
     (VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
   //for D2D
-  #if defined(Rel10) || defined(Rel14)
+  #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     switch (config_action) {
     case CONFIG_ACTION_ADD:
        if (sourceL2Id){

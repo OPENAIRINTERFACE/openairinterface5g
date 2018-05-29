@@ -134,7 +134,7 @@ store_dlsch_buffer(module_id_t Mod_id, slice_id_t slice_id, frame_t frameP,
 	    rlc_status =
 		mac_rlc_status_ind(Mod_id, rnti, Mod_id, frameP, subframeP,
 				   ENB_FLAG_YES, MBMS_FLAG_NO, i, 0
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                    ,0, 0
 #endif
                    );

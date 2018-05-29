@@ -598,7 +598,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   uint8_t                           MBMS_flag     = RC.rrc[Mod_id]->carrier[CC_id].MBMS_flag;
 #endif
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   //TTN - for D2D
   SystemInformationBlockType18_r12_t     **sib18        = &RC.rrc[Mod_id]->carrier[CC_id].sib18;
   SystemInformationBlockType19_r12_t     **sib19        = &RC.rrc[Mod_id]->carrier[CC_id].sib19;
@@ -649,7 +649,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
 #endif
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   //TTN - for D2D
   sib18_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
   sib19_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
@@ -1003,7 +1003,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   // SIB13
   // fill in all elements of SIB13 if present
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 
   if (MBMS_flag > 0 ) {
     //  Notification for mcch change
@@ -1063,7 +1063,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 #endif
 
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   //TTN - for D2D
   // SIB18
   //commRxPool_r12
