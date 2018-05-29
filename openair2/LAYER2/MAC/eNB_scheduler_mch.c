@@ -29,40 +29,37 @@
 
  */
 
-#include "assertions.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
-
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/proto.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
+#include "assertions.h"
 
 #if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
 #endif
 
-#include "SIMULATION/TOOLS/defs.h"	// for taus
+#include "SIMULATION/TOOLS/sim.h"	// for taus
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
+#include "common/ran_context.h"
 
 extern RAN_CONTEXT_t RC;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 int8_t
 get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
 		       uint8_t mbsfn_sync_area)
@@ -588,7 +585,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
     TBS =
 	get_TBS_DL(cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     // do not let mcch and mtch multiplexing when relaying is active
     // for sync area 1, so not transmit data
     //if ((i == 0) && ((RC.mac[module_idP]->MBMS_flag != multicast_relay) || (RC.mac[module_idP]->mcch_active==0))) {
@@ -635,7 +632,12 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 			       module_idP, ENB_FLAG_YES, MBMS_FLAG_YES,
 			       MTCH,
 			       TBS - header_len_mcch - header_len_msi -
-			       sdu_length_total - header_len_mtch);
+			       sdu_length_total - header_len_mtch
+#ifdef Rel14
+                                    ,0, 0
+#endif
+                                    );
+
 	LOG_D(MAC,
 	      "e-MBMS log channel %u frameP %d, subframeP %d,  rlc_status.bytes_in_buffer is %d\n",
 	      MTCH, frameP, subframeP, rlc_status.bytes_in_buffer);
@@ -649,9 +651,15 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
 	    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES, MTCH, 0,	//not used
 						     (char *)
-						     &mch_buffer
-						     [sdu_length_total]);
-	    //sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,frameP, MBMS_FLAG_NO,  MTCH+(MAX_NUM_RB*(NUMBER_OF_UE_MAX+1)), (char*)&mch_buffer[sdu_length_total]);
+						     &mch_buffer[sdu_length_total]
+#ifdef Rel14
+                                ,0,
+                                 0
+#endif
+                                 );
+
+
+	    //sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,frameP, MBMS_FLAG_NO,  MTCH+(MAX_NUM_RB*(MAX_MOBILES_PER_ENB+1)), (char*)&mch_buffer[sdu_length_total]);
 	    LOG_I(MAC,
 		  "[eNB %d][MBMS USER-PLANE] CC_id %d Got %d bytes for MTCH %d\n",
 		  module_idP, CC_id, sdu_lengths[num_sdus], MTCH);
@@ -668,7 +676,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	    header_len_mtch = 0;
 	}
     }
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     //  }
 #endif
 

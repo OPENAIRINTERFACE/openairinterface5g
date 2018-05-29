@@ -19,21 +19,23 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
-#include "SCHED/defs.h"
-#include "PHY/extern.h"
-#include "SIMULATION/TOOLS/defs.h"
+#include "phy_init.h"
+#include "SCHED_UE/sched_UE.h"
+#include "PHY/phy_extern_ue.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
-#include "LAYER2/MAC/extern.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
-
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
+extern uint8_t nfapi_mode;
 
 void phy_config_sib1_ue(uint8_t Mod_id,int CC_id,
                         uint8_t eNB_id,
@@ -340,7 +342,7 @@ void phy_config_meas_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n
 
 }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    SCellToAddMod_r10_t *sCellToAddMod_r10,
@@ -563,14 +565,17 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
   	phy_vars_ue->decode_SIB = 0;
   	phy_vars_ue->decode_MIB = 0;
   }
-  //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
-  if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
-      phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;
-  else
-      phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
 
-  LOG_I(PHY,"C-RNTI %x %x \n", phy_vars_ue->pdcch_vars[0][eNB_id]->crnti,
-                               phy_vars_ue->pdcch_vars[1][eNB_id]->crnti);
+  if(nfapi_mode!=3){
+    //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
+    if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
+        phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;
+    else
+        phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
+
+    LOG_I(PHY,"C-RNTI %x %x \n", phy_vars_ue->pdcch_vars[0][eNB_id]->crnti,
+                                 phy_vars_ue->pdcch_vars[1][eNB_id]->crnti);
+  }
 
 
 }
@@ -651,7 +656,7 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
   int th_id;
 
   LOG_D(PHY,"Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
-  LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
+
 
 
 

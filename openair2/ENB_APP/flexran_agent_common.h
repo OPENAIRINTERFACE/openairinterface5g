@@ -42,7 +42,6 @@
 #include "flexran_agent_defs.h"
 #include "enb_config.h"
 
-#include "LAYER2/MAC/extern.h"
 #include "LAYER2/RLC/rlc.h"
 
 # include "tree.h"

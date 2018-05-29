@@ -29,7 +29,7 @@
 #include "mac_primitives.h"
 #include "rlc_primitives.h"
 #include "list.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 //-----------------------------------------------------------------------------
 void
 rlc_tm_send_sdu (

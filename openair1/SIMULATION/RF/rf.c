@@ -19,14 +19,13 @@
  *      contact@openairinterface.org
  */
 
-//#include "defs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
 //#include "PHY/defs.h"
-#include "SIMULATION/TOOLS/defs.h"
-
+#include "SIMULATION/TOOLS/sim.h"
+#include "rf.h"
 /*
 extern void randominit(void);
 extern double gaussdouble(double,double);

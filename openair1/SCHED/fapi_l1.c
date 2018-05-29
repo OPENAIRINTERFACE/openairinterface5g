@@ -30,11 +30,12 @@
  * \warning
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "SCHED/sched_eNB.h"
+
 #include "nfapi_interface.h"
+#include "nfapi_pnf_interface.h"
 #include "fapi_l1.h"
 
 int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req);
@@ -62,7 +63,7 @@ void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
   LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->subframe_tx, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
 }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
                              eNB_rxtx_proc_t *proc,
@@ -127,7 +128,7 @@ void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   // adjust transmit amplitude here based on NFAPI info
 }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 extern uint32_t localRIV2alloc_LUT6[32];
 extern uint32_t localRIV2alloc_LUT25[512];
 extern uint32_t localRIV2alloc_LUT50_0[1600];
@@ -144,10 +145,10 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
                             uint8_t *sdu)
 {
   nfapi_dl_config_dlsch_pdu_rel8_t *rel8 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8;
-#ifndef Rel8
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   nfapi_dl_config_dlsch_pdu_rel10_t *rel10 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10;
 #endif
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   nfapi_dl_config_dlsch_pdu_rel13_t *rel13 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13;
 #endif
   LTE_eNB_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
@@ -162,7 +163,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
   if ((rel13->pdsch_payload_type < 2) && (rel13->ue_type>0)) dlsch0->harq_ids[subframe] = 0;
 #endif
 
@@ -216,7 +217,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
                                     rel8->rnti,UE_id,harq_pid);
   }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
   dlsch0->sib1_br_flag=0;
 
   if ((rel13->pdsch_payload_type <2) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR/SI-BR
@@ -270,7 +271,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
   dlsch0->i0               = rel13->initial_transmission_sf_io;
 #endif
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LOG_D(PHY,"dlsch->i0:%04x dlsch0_harq[pdsch_start:%d nb_rb:%d vrb_type:%d rvidx:%d Nl:%d mimo_mode:%d dl_power_off:%d round:%d status:%d TBS:%d Qm:%d codeword:%d rb_alloc:%d] rel8[length:%d]\n", 
       dlsch0->i0, 
       dlsch0_harq->pdsch_start, dlsch0_harq->nb_rb, dlsch0_harq->vrb_type, dlsch0_harq->rvidx, dlsch0_harq->Nl, dlsch0_harq->mimo_mode, dlsch0_harq->dl_power_off, dlsch0_harq->round, dlsch0_harq->status, dlsch0_harq->TBS, dlsch0_harq->Qm, dlsch0_harq->codeword, dlsch0_harq->rb_alloc[0],
@@ -774,12 +775,10 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
     case NFAPI_DL_CONFIG_EPDCCH_DL_PDU_TYPE:
       //      handle_nfapi_epdcch_pdu(eNB,dl_config_pdu);
       break;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     case NFAPI_DL_CONFIG_MPDCCH_PDU_TYPE:
-#ifdef Rel14
       handle_nfapi_mpdcch_pdu(eNB,proc,dl_config_pdu);
       eNB->mpdcch_vars[subframe&1].num_dci++;
-#endif
       break;
 #endif    
     }
@@ -843,4 +842,26 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
       handle_nfapi_ul_pdu(eNB,proc,ul_config_pdu,UL_req->sfn_sf>>4,UL_req->sfn_sf&0xf,UL_req->ul_config_request_body.srs_present);
     }
   }
+}
+
+/*Dummy functions*/
+
+int memcpy_dl_config_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_dl_config_request_t* req)
+{
+	return 0;
+}
+
+int memcpy_ul_config_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_ul_config_request_t* req)
+{
+	return 0;
+}
+
+int memcpy_hi_dci0_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_hi_dci0_request_t* req)
+{
+	return 0;
+}
+
+int memcpy_tx_req (nfapi_pnf_p7_config_t* pnf_p7, nfapi_tx_request_t* req)
+{
+	return 0;
 }

@@ -19,7 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
+#include "PHY/defs_common.h"
+#include "tools_defs.h"
 #include <stdio.h>
 
 #if defined(__x86_64__) || defined(__i386__)

@@ -49,10 +49,8 @@ The current sturcture of oaisim is shown by the figure.
 #include "UTIL/OPT/opt.h" // to test OPT
 #include "UTIL/OMG/omg.h"
 #include "UTIL/CLI/cli_if.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SIMULATION/ETH_TRANSPORT/defs.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
 
 /** @defgroup _init_oai Initial oaisim
  *  @ingroup _fn
