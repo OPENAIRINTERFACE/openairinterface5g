@@ -885,7 +885,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
         LOG_E(PHY,"Unknown number for N_RB_UL %d\n",fp->N_RB_UL);
         break;
       }
-
+      SR_payload = 0;
       switch (uci->type) {
       case SR:
       case HARQ_SR:
@@ -969,8 +969,34 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 
 	}
 	else { // frame_type == TDD
+#if 1
+	      metric[0] = rx_pucch(eNB,
+	                   uci->pucch_fmt,
+	                   i,
+	                   uci->n_pucch_1[0][0],
+	                   0, //n2_pucch
+	                   uci->srs_active, // shortened format
+	                   pucch_b0b1[0],
+	                   frame,
+	                   subframe,
+	                   PUCCH1a_THRES);
+	      if (uci->type==HARQ_SR && metric[0] > metric_SR) SR_payload = 0;
+	      else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
 
-
+	      if (uci->type==HARQ_SR && metric[0] <= metric_SR) {
+	          SR_payload = 1;
+	          metric[0] = rx_pucch(eNB,
+	                     uci->pucch_fmt,
+	                     i,
+	                     uci->n_pucch_1_0_sr[0],
+	                     0, //n2_pucch
+	                     uci->srs_active, // shortened format
+	                     pucch_b0b1[0],
+	                     frame,
+	                     subframe,
+	                     PUCCH1a_THRES);
+	      }
+#else
 	  // if SR was detected, use the n1_pucch from SR
 	  if (SR_payload==1) {
 #ifdef DEBUG_PHY_PROC
@@ -1021,7 +1047,16 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
  	      LOG_D(PHY,"RNTI %x type %d SR_payload %d  Frame %d Subframe %d  pucch_b0b1[0][0] %d pucch_b0b1[0][1] %d pucch_b0b1[1][0] %d pucch_b0b1[1][1] %d  \n",
 	              uci->rnti,uci->type,SR_payload,frame,subframe,pucch_b0b1[0][0],pucch_b0b1[0][1],pucch_b0b1[1][0],pucch_b0b1[1][1]);
 #endif
+#endif
 	  
+	  if(uci->pucch_fmt == pucch_format1a) {
+	    LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (TDD) payload %d (metric %d)\n",
+	      eNB->Mod_id,uci->rnti,frame,subframe,pucch_b0b1[0][0],metric[0]);
+	    
+	    uci->stat = metric[0];
+	    fill_uci_harq_indication(eNB,uci,frame,subframe,pucch_b0b1[0],0,0xffff);
+	  }
+	  else if(uci->pucch_fmt == pucch_format1b) {
 	  if (SR_payload == 1) { // this implements Table 7.3.1 from 36.213
 	    if (pucch_b0b1[0][0] == 4) { // there isn't a likely transmission
 	      harq_ack[0] = 4; // DTX
@@ -1320,6 +1355,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
       default:
 	AssertFatal(1==0,"Unsupported UCI type %d\n",uci->type);
 	break;
+      }
       }
     
       if (SR_payload == 1) {
@@ -2006,6 +2042,7 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
  
       switch (harq_ack[0]) {
       case 0:
+      case 4:
           pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;
 	break;
       case 1: // check if M=1,4,7
@@ -2014,7 +2051,9 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
 	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
-	}
+	}else{
+          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;
+        }
 	break;
       case 2: // check if M=2,5,8
 	if (uci->num_pucch_resources == 2 || tdd_config5_sf2scheds == 2 || 
@@ -2022,7 +2061,9 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
 	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
-	}
+	}else{
+          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;
+        }
 	break;
       case 3: // check if M=3,6,9
 	if (uci->num_pucch_resources == 3 || tdd_config5_sf2scheds == 3 || 
@@ -2030,7 +2071,9 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
 	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
 	  release_harq(eNB,UE_id,0,frame,subframe,0xffff);
 	  release_harq(eNB,UE_id,1,frame,subframe,0xffff);
-	}
+	}else{
+          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;
+        }
 	break;
       }
       break;
