@@ -165,18 +165,16 @@ rx_sdu(const module_id_t enb_mod_idP,
 		  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 		  ul_cqi);
 
-	    //      AssertFatal(1==0,"ulsch in error\n");
-	    if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] ==
-		3) {
-		UE_list->UE_sched_ctrl[UE_id].ul_scheduled &=
-		    (~(1 << harq_pid));
-		UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] =
-		    0;
-		if (UE_list->UE_sched_ctrl[UE_id].
-		    ul_consecutive_errors++ == 10)
-		    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
-	    } else
-		UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]++;
+      //      AssertFatal(1==0,"ulsch in error\n");
+      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] == 3) {
+        UE_list->UE_sched_ctrl[UE_id].ul_scheduled &= (~(1 << harq_pid));
+        UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0;
+        if (UE_list->UE_sched_ctrl[UE_id].ul_consecutive_errors++ == 10)
+          UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
+        if(find_RA_id(enb_mod_idP, CC_idP, current_rnti) != -1)
+          cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
+      } else
+        UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]++;
 	    return;
 
 	}
@@ -204,7 +202,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 		  (int) mac->common_channels[CC_idP].
 		  radioResourceConfigCommon->rach_ConfigCommon.
 		  maxHARQ_Msg3Tx);
-	    if (ra[RA_id].msg3_round ==
+	    if (ra[RA_id].msg3_round >=
 		mac->common_channels[CC_idP].radioResourceConfigCommon->
 		rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
 		cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
@@ -275,7 +273,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 		int old_rnti =
 		    (((uint16_t) payload_ptr[0]) << 8) + payload_ptr[1];
 		int old_UE_id = find_UE_id(enb_mod_idP, old_rnti);
-		LOG_D(MAC,
+		LOG_I(MAC,
 		      "[eNB %d] Frame %d, Subframe %d CC_id %d MAC CE_LCID %d (ce %d/%d): CRNTI %x (UE_id %d) in Msg3\n",
 		      enb_mod_idP, frameP, subframeP, CC_idP, rx_ces[i], i,
 		      num_ce, old_rnti, old_UE_id);
@@ -307,8 +305,8 @@ rx_sdu(const module_id_t enb_mod_idP,
                                 ENB_FLAG_YES, enb_mod_idP, 0);
                 // prepare transmission of Msg4(RRCConnectionReconfiguration)
                 ra->state = MSGCRNTI;
-                LOG_D(MAC,
-                     "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)",
+                LOG_I(MAC,
+                     "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)\n",
                      enb_mod_idP, frameP, subframeP, CC_idP, old_rnti, old_UE_id);
                 //
                 UE_id = old_UE_id;
@@ -1816,12 +1814,12 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
               VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SCHEDULED,UE_sched_ctrl->ul_scheduled);
 
             // adjust total UL buffer status by TBS, wait for UL sdus to do final update
-            LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,UE_template->TBS_UL[harq_pid]);
+            /*LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,UE_template->TBS_UL[harq_pid]);
             if (UE_template->ul_total_buffer > UE_template->TBS_UL[harq_pid])
               UE_template->ul_total_buffer -= UE_template->TBS_UL[harq_pid];
             else
               UE_template->ul_total_buffer = 0;
-            LOG_D(MAC,"ul_total_buffer, new %d\n", UE_template->ul_total_buffer);
+            LOG_D(MAC,"ul_total_buffer, new %d\n", UE_template->ul_total_buffer);*/
             // Cyclic shift for DM RS
             cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
             // save it for a potential retransmission
@@ -1896,6 +1894,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             // increment first rb for next UE allocation
             first_rb[CC_id]+=rb_table[rb_table_index];
             if(ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_FIRST) {
+              LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,UE_template->TBS_UL[harq_pid]);
                 if(ulsch_ue_select[CC_id].list[ulsch_ue_num].ul_total_buffer > 0){
                     if (UE_template->ul_total_buffer > UE_template->TBS_UL[harq_pid])
                       UE_template->ul_total_buffer -= UE_template->TBS_UL[harq_pid];
@@ -1904,6 +1903,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                 } else {
                     UE_template->ul_SR = 0;
                 }
+              LOG_D(MAC,"ul_total_buffer, new %d\n", UE_template->ul_total_buffer);
             }
             if((ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_INACTIVE) && (ULSCH_first_end == 0)) {
                 ULSCH_first_end = 1;

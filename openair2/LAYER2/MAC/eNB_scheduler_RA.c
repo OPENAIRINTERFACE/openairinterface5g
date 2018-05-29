@@ -858,9 +858,13 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
     // Get RRCConnectionSetup for Piggyback
     rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 1,	// 1 transport block
 				      &cc[CC_idP].CCCH_pdu.payload[0], ENB_FLAG_YES, module_idP, 0);	// not used in this case
-
-    AssertFatal(rrc_sdu_length > 0,
-		"[MAC][eNB Scheduler] CCCH not allocated\n");
+  
+    if(rrc_sdu_length <= 0) {
+      LOG_D(MAC,"[MAC][eNB Scheduler] CCCH not allocated\n %d",rrc_sdu_length);
+      return;
+    }
+    //AssertFatal(rrc_sdu_length > 0,
+		//"[MAC][eNB Scheduler] CCCH not allocated\n");
 
 
     LOG_D(MAC,
@@ -1679,6 +1683,8 @@ initiate_ra_proc(module_id_t module_idP,
 
     struct PRACH_ConfigSIB_v1310 *ext4_prach = NULL;
     PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 = NULL;
+  
+    static uint8_t failure_cnt = 0;
 
     if (cc->radioResourceConfigCommon_BR
 	&& cc->radioResourceConfigCommon_BR->ext4) {
@@ -1780,6 +1786,7 @@ initiate_ra_proc(module_id_t module_idP,
 	    }
 	    ra[i].RA_rnti = ra_rnti;
 	    ra[i].preamble_index = preamble_index;
+	    failure_cnt = 0;
 	    LOG_D(MAC,
 		  "[eNB %d][RAPROC] CC_id %d Frame %d Activating RAR generation in Frame %d, subframe %d for process %d, rnti %x, state %d\n",
 		  module_idP, CC_id, frameP, ra[i].Msg2_frame,
@@ -1792,6 +1799,13 @@ initiate_ra_proc(module_id_t module_idP,
     LOG_E(MAC,
 	  "[eNB %d][RAPROC] FAILURE: CC_id %d Frame %d Initiating RA procedure for preamble index %d\n",
 	  module_idP, CC_id, frameP, preamble_index);
+  
+    failure_cnt++;
+    if(failure_cnt > 20) {
+      LOG_E(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Clear Random access information\n", module_idP, CC_id, frameP);
+      clear_ra_proc(module_idP, CC_id, frameP);
+    }
+  
 }
 
 void
@@ -1814,6 +1828,22 @@ cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 	  ra[i].RRC_timer = 20;
 	  ra[i].rnti = 0;
 	  ra[i].msg3_round = 0;
+    LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Canceled RA procedure for UE rnti %x\n", module_idP, CC_id, frameP, rnti);
 	}
     }
+}
+
+void clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP)
+{
+  unsigned char i;
+  RA_t *ra = (RA_t *) & RC.mac[module_idP]->common_channels[CC_id].ra[0];
+
+  for (i = 0; i < NB_RA_PROC_MAX; i++) {
+    LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Clear Random access information rnti %x\n", module_idP, CC_id, frameP, ra[i].rnti);
+    ra[i].state = IDLE;
+    ra[i].timing_offset = 0;
+    ra[i].RRC_timer = 20;
+    ra[i].rnti = 0;
+    ra[i].msg3_round = 0;
+  }
 }

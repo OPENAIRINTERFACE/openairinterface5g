@@ -84,6 +84,7 @@ fill_rar(const module_id_t module_idP,
     ra->msg3_TPC = 3;
     ra->msg3_ULdelay = 0;
     ra->msg3_cqireq = 0;
+    ra->msg3_round = 0;
     rar[2] |= ((ra->msg3_mcs & 0x8) >> 3);	// mcs 10
     rar[3] =
 	(((ra->msg3_mcs & 0x7) << 5)) | ((ra->msg3_TPC & 7) << 2) |

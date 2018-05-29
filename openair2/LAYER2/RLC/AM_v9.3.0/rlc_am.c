@@ -509,6 +509,7 @@ rlc_am_rx (
 
   default:
     LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE 0x%02X\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc), rlc->protocol_state);
+    list_free (&data_indP.data);
   }
 }
 
@@ -551,7 +552,9 @@ rlc_am_mac_status_indication (
 
   rlc->last_absolute_subframe_status_indication = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
 
-  rlc->nb_bytes_requested_by_mac = tb_sizeP;
+  if (tb_sizeP > 0) {
+    rlc->nb_bytes_requested_by_mac = tb_sizeP;
+  }
 
   status_resp.buffer_occupancy_in_bytes = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, rlc);
 

@@ -541,13 +541,14 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
 		  "UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",
 		  UE_id, rnti,
 		  UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
-	    if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer % 40) == 0)
-		UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 0;	// resend every 4 frames
+	    if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer % 80) == 0)
+		UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 0;	// resend every 8 frames
 	}
 
 	UE_list->UE_sched_ctrl[UE_id].ul_failure_timer++;
 	// check threshold
-	if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 20000) {
+	if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 4000) {
+	    // note: probably ul_failure_timer is should be less than UE radio link failure time(see T310/N310/N311)
 	    // inform RRC of failure and clear timer
 	    LOG_I(MAC,
 		  "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",

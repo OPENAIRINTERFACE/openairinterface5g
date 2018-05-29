@@ -299,6 +299,9 @@ void cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 @param Msg3_frame    frame where scheduling takes place
 @param Msg3_subframe subframe where scheduling takes place
 */
+
+void clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
+
 void set_msg3_subframe(module_id_t Mod_id,
 		       int CC_id,
 		       int frame,

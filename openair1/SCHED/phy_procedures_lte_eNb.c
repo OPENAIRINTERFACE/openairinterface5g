@@ -1754,15 +1754,11 @@ void fill_ulsch_cqi_indication(PHY_VARS_eNB *eNB,uint16_t frame,uint8_t subframe
 void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,uint16_t rnti, int frame,int subframe,int bundling)
 {
   int UE_id = find_dlsch(rnti,eNB,SEARCH_EXIST);
-  //AssertFatal(UE_id>=0,"UE_id doesn't exist\n");
-
-  if (UE_id < 0)
-  {
-    LOG_E(PHY,"%s(eNB, ulsch_harq, rnti:%04x, frame:%d, subframe:%d, bundling:%d) harq_pdus:%d - Could not find rnti - abort fill of ulsch harq ind\n", __FUNCTION__, rnti, frame, subframe, bundling,eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs);
+  if( (UE_id<0) || (UE_id>=NUMBER_OF_UE_MAX) ){
+    LOG_E(PHY,"illegal UE_id found!!! rnti %04x UE_id %d\n",rnti,UE_id);
     return;
   }
-
-  LOG_D(PHY,"%s(eNB, ulsch_harq, rnti:%04x, frame:%d, subframe:%d, bundling:%d) harq_pdus:%d O_ACK:%d\n", __FUNCTION__, rnti, frame, subframe, bundling,eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs,ulsch_harq->O_ACK);
+  //AssertFatal(UE_id>=0,"UE_id doesn't exist\n");
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   nfapi_harq_indication_pdu_t *pdu =   &eNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list[eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs];
