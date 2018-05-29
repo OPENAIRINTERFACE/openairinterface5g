@@ -144,8 +144,7 @@ static char                     threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
-
-
+char logmem_filename[1024] = {0};
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;
 #endif
@@ -333,10 +332,14 @@ void exit_fun(const char* s)
 
   if (UE_flag==0) {
     for (ru_id=0; ru_id<RC.nb_RU;ru_id++) {
-      if (RC.ru[ru_id]->rfdevice.trx_end_func)
-	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
-      if (RC.ru[ru_id]->ifdevice.trx_end_func)
-	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
+      if (RC.ru[ru_id]->rfdevice.trx_end_func) {
+        RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+      }
+      if (RC.ru[ru_id]->ifdevice.trx_end_func) {
+        RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+      }
     }
   }
 
@@ -347,8 +350,10 @@ void exit_fun(const char* s)
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       if (UE_flag == 0) {
       } else {
-	if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
-	  PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+        if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func) {
+          PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+          PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func = NULL;
+        }
       }
     }
 
@@ -604,6 +609,12 @@ static void get_options(void) {
   }
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
+  }
+  if (strlen(logmem_filename) > 0) {
+    log_mem_filename = &logmem_filename[0];
+    log_mem_flag = 1;
+    printf("Enabling OPT for log save at memory %s\n",log_mem_filename);
+    logInit_log_mem();
   }
 
   
@@ -1126,10 +1137,8 @@ int main( int argc, char **argv )
 
   printf("Runtime table\n");
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
-  cpuf=get_cpu_freq_GHz();
-  
-  
-  
+
+
 #ifndef DEADLINE_SCHEDULER
   
   printf("NO deadline scheduler\n");
@@ -1451,11 +1460,9 @@ int main( int argc, char **argv )
   // cleanup
   if (UE_flag == 1) {
   } else {
-#ifdef UE_EXPANSION
       for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
           stop_ru(RC.ru[ru_id]);
       }
-#endif
     stop_eNB(1);
   }
 
@@ -1470,16 +1477,21 @@ int main( int argc, char **argv )
 
   // *** Handle per CC_id openair0
   if (UE_flag==1) {
-    if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
+    if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func) {
       PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
+      PHY_vars_UE_g[0][0]->rfdevice.trx_end_func = NULL;
+    }
   }
   else {
     for(ru_id=0; ru_id<NB_RU; ru_id++) {
-      if (RC.ru[ru_id]->rfdevice.trx_end_func)
-	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);  
-      if (RC.ru[ru_id]->ifdevice.trx_end_func)
-	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
-
+      if (RC.ru[ru_id]->rfdevice.trx_end_func) {
+        RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+      }
+      if (RC.ru[ru_id]->ifdevice.trx_end_func) {
+        RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+      }
     }
   }
   if (ouput_vcd)

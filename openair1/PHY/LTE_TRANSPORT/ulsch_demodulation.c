@@ -1035,6 +1035,11 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 
 
 
+#if defined(__x86_64__) || defined(__i386__)
+__m128 avg128U;
+#elif defined(__arm__)
+int32x4_t avg128U;
+#endif
 
 void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
                          LTE_DL_FRAME_PARMS *frame_parms,
@@ -1045,24 +1050,21 @@ void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
   int16_t rb;
   uint8_t aarx;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i avg128U;
   __m128i *ul_ch128;
 #elif defined(__arm__)
   int16x4_t *ul_ch128;
-  int32x4_t avg128U;
 #endif
-
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     //clear average level
 #if defined(__x86_64__) || defined(__i386__)
-    avg128U = _mm_setzero_si128();
+    avg128U = _mm_setzero_ps();
     ul_ch128=(__m128i *)drs_ch_estimates_ext[aarx];
 
     for (rb=0; rb<nb_rb; rb++) {
 
-      avg128U = _mm_add_epi32(avg128U,_mm_madd_epi16(ul_ch128[0],ul_ch128[0]));
-      avg128U = _mm_add_epi32(avg128U,_mm_madd_epi16(ul_ch128[1],ul_ch128[1]));
-      avg128U = _mm_add_epi32(avg128U,_mm_madd_epi16(ul_ch128[2],ul_ch128[2]));
+      avg128U = _mm_add_ps(avg128U,_mm_cvtepi32_ps(_mm_madd_epi16(ul_ch128[0],ul_ch128[0])));
+      avg128U = _mm_add_ps(avg128U,_mm_cvtepi32_ps(_mm_madd_epi16(ul_ch128[1],ul_ch128[1])));
+      avg128U = _mm_add_ps(avg128U,_mm_cvtepi32_ps(_mm_madd_epi16(ul_ch128[2],ul_ch128[2])));
 
       ul_ch128+=3;
 
@@ -1089,10 +1091,10 @@ void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
 #endif
 
     DevAssert( nb_rb );
-    avg[aarx] = (((int*)&avg128U)[0] +
-                 ((int*)&avg128U)[1] +
-                 ((int*)&avg128U)[2] +
-                 ((int*)&avg128U)[3])/(nb_rb*12);
+    avg[aarx] = (int)((((float*)&avg128U)[0] +
+                       ((float*)&avg128U)[1] +
+                       ((float*)&avg128U)[2] +
+                       ((float*)&avg128U)[3])/(float)(nb_rb*12));
 
   }
 

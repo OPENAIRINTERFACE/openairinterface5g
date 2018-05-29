@@ -158,9 +158,10 @@ void mac_top_init_eNB(void)
 		    RC.mac[i]->UL_req_tmp[j][k].
 			ul_config_request_body.ul_config_pdu_list =
 			RC.mac[i]->ul_config_pdu_list_tmp[j][k];
-		RC.mac[i]->HI_DCI0_req[j].
-		    hi_dci0_request_body.hi_dci0_pdu_list =
-		    RC.mac[i]->hi_dci0_pdu_list[j];
+		for(int sf=0;sf<10;sf++){
+		    RC.mac[i]->HI_DCI0_req[j][sf].hi_dci0_request_body.hi_dci0_pdu_list =RC.mac[i]->hi_dci0_pdu_list[j][sf];
+		}
+
 		RC.mac[i]->TX_req[j].tx_request_body.tx_pdu_list =
 		    RC.mac[i]->tx_request_pdu[j];
 		RC.mac[i]->ul_handle = 0;

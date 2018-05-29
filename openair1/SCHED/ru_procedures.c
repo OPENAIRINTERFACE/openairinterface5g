@@ -112,7 +112,7 @@ void feptx0(RU_t *ru,int slot) {
     }
 */
     // TDD: turn on tx switch N_TA_offset before by setting buffer in these samples to 0    
-    if ((slot == 0) &&
+/*    if ((slot == 0) &&
         (fp->frame_type == TDD) && 
         ((fp->tdd_config==0) ||
          (fp->tdd_config==1) ||
@@ -129,7 +129,7 @@ void feptx0(RU_t *ru,int slot) {
 	
 	ru->common.txdata[aa][tx_offset] = 0x00000000;
       }
-    }
+    }*/
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+slot , 0);
 }

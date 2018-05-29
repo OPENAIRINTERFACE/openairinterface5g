@@ -317,7 +317,7 @@ void rlc_um_v9_3_0_test_send_sdu(rlc_um_entity_t *um_txP, int sdu_indexP)
     assert(g_send_id_write_index[um_txP->rb_id] < TEST_MAX_SEND_SDU);
   } else {
     printf("Out of memory error\n");
-    exit(-1);
+//    exit(-1);
   }
 }
 
@@ -406,9 +406,8 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind* data_indP,  struct ma
 
       if (*drop_countP == 0) {
         tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size, __func__);
-        memset(tb_dst->data, 0, sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
-
         if (tb_dst != NULL) {
+          memset(tb_dst->data, 0, sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
           //printf("[RLC-LOOP] Testing tb_dst (1)\n");
           check_free_mem_block(tb_dst, __func__);
           tb_dst->next = NULL;
@@ -427,7 +426,7 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind* data_indP,  struct ma
           check_free_mem_block(tb_dst, __func__);
         } else {
           printf("Out of memory error\n");
-          exit(-1);
+//          exit(-1);
         }
       } else {
         printf("[RLC-LOOP] DROPPING 1 TB\n");

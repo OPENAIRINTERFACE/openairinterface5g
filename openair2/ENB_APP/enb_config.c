@@ -180,6 +180,8 @@ void RCconfig_RU(void) {
 	RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
 	RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
 	RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
+	RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
+	RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
 	for (i=0;i<RC.ru[j]->num_bands;i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i]; 
       } //strcmp(local_rf, "yes") == 0
       else {
@@ -215,7 +217,7 @@ void RCconfig_RU(void) {
 	  RC.ru[j]->eth_params.transp_preference = ETH_RAW_IF5_MOBIPASS;
 	}
 	RC.ru[j]->att_tx                         = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr); 
-	RC.ru[j]->att_rx                         = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr); 
+	RC.ru[j]->att_rx                         = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
       }  /* strcmp(local_rf, "yes") != 0 */
 
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
@@ -382,7 +384,17 @@ void RCconfig_macrlc() {
         printf("**************** RETURNED FROM configure_nfapi_vnf() vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
       } else { // other midhaul
 	AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
-      }	
+      }
+      if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr), "default") == 0){
+      	global_scheduler_mode=SCHED_MODE_DEFAULT;
+      	printf("sched mode = default %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
+      }else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr), "fairRR") == 0){
+      	global_scheduler_mode=SCHED_MODE_FAIR_RR;
+      	printf("sched mode = fairRR %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
+      }else{
+      	global_scheduler_mode=SCHED_MODE_DEFAULT;
+      	printf("sched mode = default %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
+      }
     }// j=0..num_inst
   } else {// MacRLC_ParamList.numelt > 0
 	  AssertFatal (0,
@@ -866,21 +878,10 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			     RC.config_file_name, i, prach_zero_correlation);
 	      
 	      RRC_CONFIGURATION_REQ (msg_p).prach_freq_offset[j] = prach_freq_offset;
-#ifndef UE_EXPANSION
 	      if ((prach_freq_offset <0) || (prach_freq_offset > 94))
 		AssertFatal (0,
 			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 0..94!\n",
 			     RC.config_file_name, i, prach_freq_offset);
-#else
-        if ((N_RB_DL == 25) && (prach_freq_offset != 2))
-          AssertFatal (0,
-              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 2(N_RB_DL %d)!\n",
-              RC.config_file_name, i, prach_freq_offset,N_RB_DL);
-        if (((N_RB_DL == 50) || (N_RB_DL == 100)) && (prach_freq_offset != 3))
-          AssertFatal (0,
-              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 3(N_RB_DL %d)!\n",
-              RC.config_file_name, i, prach_freq_offset,N_RB_DL);
-#endif
 	      
 	      RRC_CONFIGURATION_REQ (msg_p).pucch_delta_shift[j] = pucch_delta_shift-1;
 	      
@@ -1766,7 +1767,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		  break;
 		}
 
-#ifdef UE_EXPANSION
         RRC_CONFIGURATION_REQ (msg_p).ue_multiple_max[j] = ue_multiple_max;
 
         switch (N_RB_DL) {
@@ -1777,15 +1777,15 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                      RC.config_file_name, i, ue_multiple_max);
           break;
         case 50:
-          if ((ue_multiple_max < 1) || (ue_multiple_max > 6))
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 8))
             AssertFatal (0,
-                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..6!\n",
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..8!\n",
                      RC.config_file_name, i, ue_multiple_max);
           break;
         case 100:
-          if ((ue_multiple_max < 1) || (ue_multiple_max > 10))
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 16))
             AssertFatal (0,
-                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..10!\n",
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..16!\n",
                      RC.config_file_name, i, ue_multiple_max);
           break;
         default:
@@ -1794,7 +1794,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                    RC.config_file_name, i, N_RB_DL);
           break;
         }
-#endif
 	      }
 	    }
 	    char srb1path[MAX_OPTNAME_SIZE*2 + 8];

@@ -934,9 +934,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
         nb_rb);
 	
   //#endif
-#ifndef UE_EXPANSION
-  if (ulsch_harq->round == 0) {
-#endif
+  //if (ulsch_harq->round == 0) { // delete for RB shortage pattern
     // This is a new packet, so compute quantities regarding segmentation
     ulsch_harq->B = A+24;
     lte_segmentation(NULL,
@@ -949,9 +947,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                      &ulsch_harq->Kminus,
                      &ulsch_harq->F);
     //  CLEAR LLR's HERE for first packet in process
-#ifndef UE_EXPANSION
-  }
-#endif
+  //}
   //  printf("after segmentation c[%d] = %p\n",0,ulsch_harq->c[0]);
 
   sumKr = 0;

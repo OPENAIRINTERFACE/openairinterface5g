@@ -574,18 +574,6 @@ rrc_eNB_get_next_free_ue_context(
 					ctxt_pP->rnti);
 
   if (ue_context_p == NULL) {
-#ifndef UE_EXPANSION
-    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
-      if (ue_context_p->ue_context.random_ue_identity == ue_identityP) {
-        LOG_D(RRC,
-              PROTOCOL_RRC_CTXT_UE_FMT" Cannot create new UE context, already exist rand UE id 0x%"PRIx64", uid %u\n",
-              PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-              ue_identityP,
-              ue_context_p->local_uid);
-        return NULL;
-      }
-    }
-#endif
     ue_context_p = rrc_eNB_allocate_new_UE_context(RC.rrc[ctxt_pP->module_id]);
 
     if (ue_context_p == NULL) {
@@ -805,16 +793,10 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
   (void)ue_module_id;
 #endif
   rnti_t rnti = ue_context_pP->ue_context.rnti;
-#ifndef UE_EXPANSION
-  int i, j , CC_id, pdu_number;
-  LTE_eNB_ULSCH_t *ulsch = NULL;
-  LTE_eNB_DLSCH_t *dlsch = NULL;
-  nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
-  PHY_VARS_eNB *eNB_PHY = NULL;
-  eNB_MAC_INST *eNB_MAC = RC.mac[enb_mod_idP];
-#endif
-
-  AssertFatal(enb_mod_idP < NB_eNB_INST, "eNB inst invalid (%d/%d) for UE %x!", enb_mod_idP, NB_eNB_INST, rnti);
+  if (enb_mod_idP >= NB_eNB_INST) {
+      LOG_I(RRC, "eNB inst invalid (%d/%d) for UE %x!\n",enb_mod_idP, NB_eNB_INST,rnti);
+      return;
+  }
   /*  ue_context_p = rrc_eNB_get_ue_context(
                    &RC.rrc[enb_mod_idP],
                    rntiP
@@ -825,7 +807,8 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
     LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", enb_mod_idP, rnti);
 
 #if defined(ENABLE_USE_MME)
-   if( ue_context_pP->ue_context.ul_failure_timer >= 20000 ) {
+   if((ue_context_pP->ue_context.ul_failure_timer >= 20000) &&
+      (mac_eNB_get_rrc_status(enb_mod_idP,rnti) >= RRC_CONNECTED)) {
     LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ RNTI %x\n", enb_mod_idP, rnti);
     rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); // send cause 21: connection with ue lost
     /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
@@ -837,57 +820,9 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
      return;
     }
 #endif
-#ifndef UE_EXPANSION
-    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      eNB_PHY = RC.eNB[enb_mod_idP][CC_id];
-      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-        ulsch = eNB_PHY->ulsch[i];
-        if((ulsch != NULL) && (ulsch->rnti == rnti)){
-          LOG_I(RRC, "clean_eNb_ulsch UE %x \n", rnti);
-          clean_eNb_ulsch(ulsch);
-        }
-      }
-      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-        dlsch = eNB_PHY->dlsch[i][0];
-        if((dlsch != NULL) && (dlsch->rnti == rnti)){
-          LOG_I(RRC, "clean_eNb_dlsch UE %x \n", rnti);
-          clean_eNb_dlsch(dlsch);
-        }
-      }
-
-      for(j = 0; j < 10; j++){
-        ul_req_tmp = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
-        if(ul_req_tmp){
-          pdu_number = ul_req_tmp->number_of_pdus;
-          for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
-            if((ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti) ||
-               (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
-               (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_cqi_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
-               (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_sr_pdu.ue_information.ue_information_rel8.rnti == rnti) ||
-               (ul_req_tmp->ul_config_pdu_list[pdu_index].srs_pdu.srs_pdu_rel8.rnti == rnti)){
-                LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
-                if(pdu_index < pdu_number -1){
-                  memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
-                }
-                ul_req_tmp->number_of_pdus--;
-            }
-          }
-        }
-      }
-    }
-    rrc_mac_remove_ue(enb_mod_idP,rnti);
-    rrc_rlc_remove_ue(&ctxt);
-    pdcp_remove_UE(&ctxt);
-
-    rrc_eNB_remove_ue_context(
-      &ctxt,
-      RC.rrc[enb_mod_idP],
-      (struct rrc_eNB_ue_context_s*) ue_context_pP);
-#else
     // add UE info to freeList
     LOG_I(RRC, "put UE %x into freeList\n", rnti);
     put_UE_in_freelist(enb_mod_idP, rnti, 1);
-#endif
   }
 }
 
@@ -2051,7 +1986,7 @@ rrc_eNB_generate_RRCConnectionRelease(
 //  ue_context_pP->ue_context.ue_release_timer_thres_rrc = 100;
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
-  ue_context_pP->ue_context.ue_release_timer_s1 = 0;
+  //ue_context_pP->ue_context.ue_release_timer_s1 = 0;
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -2085,6 +2020,8 @@ rrc_eNB_generate_RRCConnectionRelease(
       rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt_pP->rnti;
       rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = rrc_eNB_mui;
       rrc_release_info.num_UEs++;
+      LOG_D(RRC,"Generate DLSCH Release send: index %d rnti %x mui %d flag %d \n",release_num,
+             ctxt_pP->rnti, rrc_eNB_mui,rrc_release_info.RRC_release_ctrl[release_num].flag);
       break;
     }
   }
@@ -3922,7 +3859,11 @@ check_handovers(
                                ue_context_p->ue_context.handover_info->size,
                                ue_context_p->ue_context.handover_info->buf,
                                PDCP_TRANSMISSION_MODE_CONTROL);
-        AssertFatal(result == TRUE, "PDCP data request failed!\n");
+        if(result != TRUE)
+        {
+          LOG_I(RRC, "PDCP data request failed!\n");
+          return;
+        }
         ue_context_p->ue_context.handover_info->ho_complete = 0xF2;
       }
     }
@@ -5820,33 +5761,24 @@ rrc_eNB_decode_ccch(
         rrcConnectionRequest = &ul_ccch_msg->message.choice.c1.choice.rrcConnectionRequest.criticalExtensions.choice.rrcConnectionRequest_r8;
         {
           if (InitialUE_Identity_PR_randomValue == rrcConnectionRequest->ue_Identity.present) {
-            AssertFatal(rrcConnectionRequest->ue_Identity.choice.randomValue.size == 5,
-                        "wrong InitialUE-Identity randomValue size, expected 5, provided %d",
-                        rrcConnectionRequest->ue_Identity.choice.randomValue.size);
+          if(rrcConnectionRequest->ue_Identity.choice.randomValue.size != 5)
+          {
+            LOG_I(RRC, "wrong InitialUE-Identity randomValue size, expected 5, provided %d",
+                         rrcConnectionRequest->ue_Identity.choice.randomValue.size);
+            return -1;
+          }
             memcpy(((uint8_t*) & random_value) + 3,
                    rrcConnectionRequest->ue_Identity.choice.randomValue.buf,
                    rrcConnectionRequest->ue_Identity.choice.randomValue.size);
             /* if there is already a registered UE (with another RNTI) with this random_value,
              * the current one must be removed from MAC/PHY (zombie UE)
              */
-#ifndef UE_EXPANSION
-            if ((ue_context_p = rrc_eNB_ue_context_random_exist(ctxt_pP, random_value))) {
-              LOG_W(RRC, "new UE rnti %x (coming with random value) is already there as UE %x, removing %x from MAC/PHY\n",
-                    ctxt_pP->rnti, ue_context_p->ue_context.rnti, ctxt_pP->rnti);
-	      rrc_mac_remove_ue(ctxt_pP->module_id, ctxt_pP->rnti);
-              ue_context_p = NULL;
-              return 0;
-            } else {
-              ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
-            }
-#else
             if ((ue_context_p = rrc_eNB_ue_context_random_exist(ctxt_pP, random_value))) {
               LOG_W(RRC, "new UE rnti %x (coming with random value) is already there as UE %x, removing %x from MAC/PHY\n",
                     ctxt_pP->rnti, ue_context_p->ue_context.rnti, ue_context_p->ue_context.rnti);
               ue_context_p->ue_context.ul_failure_timer = 20000;
             }
             ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
-#endif
           } else if (InitialUE_Identity_PR_s_TMSI == rrcConnectionRequest->ue_Identity.present) {
             /* Save s-TMSI */
             S_TMSI_t   s_TMSI = rrcConnectionRequest->ue_Identity.choice.s_TMSI;
@@ -6829,9 +6761,10 @@ rrc_enb_task(
 
       LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
 	    instance,CC_id,&ctxt, RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
-      AssertFatal(RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size < RRC_BUFFER_SIZE_MAX,
-		  "CCCH message has size %d > %d\n",
-		  RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
+      if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
+          LOG_I(RRC, "CCCH message has size %d > %d\n",RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
+          break;
+      }
       memcpy(srb_info_p->Rx_buffer.Payload,
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
@@ -6859,7 +6792,10 @@ rrc_enb_task(
 
       // Message buffer has been processed, free it now.
       result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), RRC_DCCH_DATA_IND(msg_p).sdu_p);
-      AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+      if (result != EXIT_SUCCESS) {
+          LOG_I(RRC, "Failed to free memory (%d)!\n",result);
+          break;
+      }
       break;
 
 #   if defined(ENABLE_USE_MME)
@@ -6928,7 +6864,10 @@ rrc_enb_task(
     }
 
     result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
-    AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+    if (result != EXIT_SUCCESS) {
+        LOG_I(RRC, "Failed to free memory (%d)!\n",result);
+        continue;
+    }
     msg_p = NULL;
   }
 }

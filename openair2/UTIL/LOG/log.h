@@ -253,6 +253,10 @@ typedef enum log_instance_type_e {
 void log_set_instance_type (log_instance_type_t instance);
 #endif
 
+#define LOG_MEM_SIZE 100*1024*1024
+#define LOG_MEM_FILE "./logmem.log"
+int logInit_log_mem(void);
+void output_log_mem(void);
 
 /*--- INCLUDES ---------------------------------------------------------------*/
 #    include "log_if.h"

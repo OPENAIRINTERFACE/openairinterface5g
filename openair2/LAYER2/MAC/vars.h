@@ -142,18 +142,6 @@ DCI2_5MHz_2A_TDD_t DLSCH_alloc_pdu2;
 
 DCI1E_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu1E;
 
-#ifdef UE_EXPANSION
-DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs];
-int last_dlsch_ue_id[MAX_NUM_CCs] = {-1};
-int last_ulsch_ue_id[MAX_NUM_CCs] = {-1};
-#endif
-
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-uint16_t pre_nb_rbs_required[2][MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-uint8_t dlsch_ue_select_tbl_in_use;
-uint8_t new_dlsch_ue_select_tbl_in_use;
-boolean_t pre_scd_activeUE[NUMBER_OF_UE_MAX];
-eNB_UE_STATS pre_scd_eNB_UE_stats[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-#endif
-
+mac_rlc_am_muilist_t rlc_am_mui;
+SCHEDULER_MODES global_scheduler_mode;
 #endif

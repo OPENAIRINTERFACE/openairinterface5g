@@ -78,7 +78,7 @@
 #define PCCH_PAYLOAD_SIZE_MAX 128
 #define RAR_PAYLOAD_SIZE_MAX 128
 
-#define SCH_PAYLOAD_SIZE_MAX 4096
+#define SCH_PAYLOAD_SIZE_MAX 8192
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
 #if defined(Rel10) || defined(Rel14)
@@ -432,6 +432,12 @@ typedef enum {
     CBA_RS			/// random allocation
 } CBA_POLICY;
 
+/*!\brief  scheduler mode */
+typedef enum {
+    SCHED_MODE_DEFAULT = 0,			/// default cheduler
+    SCHED_MODE_FAIR_RR			/// fair raund robin
+} SCHEDULER_MODES;
+
 
 /*! \brief temporary struct for ULSCH sched */
 typedef struct {
@@ -667,7 +673,7 @@ typedef struct {
     /// mcs from last UL scheduling
     uint8_t mcs_UL[8];
     /// TBS from last UL scheduling
-    uint8_t TBS_UL[8];
+    uint16_t TBS_UL[8];
     /// Flag to indicate UL has been scheduled at least once
     boolean_t ul_active;
     /// Flag to indicate UE has been configured (ACK from RRCConnectionSetup received)
@@ -864,6 +870,7 @@ typedef struct {
     uint8_t dl_cqi[NFAPI_CC_MAX];
     int32_t uplane_inactivity_timer;
     uint8_t crnti_reconfigurationcomplete_flag;
+    uint8_t cqi_req_flag;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {
@@ -1094,9 +1101,9 @@ typedef struct eNB_MAC_INST_s {
     nfapi_ul_config_request_t UL_req_tmp[MAX_NUM_CCs][10];
     /// Preallocated HI_DCI0 pdu list 
     nfapi_hi_dci0_request_pdu_t
-	hi_dci0_pdu_list[MAX_NUM_CCs][MAX_NUM_HI_DCI0_PDU];
+	hi_dci0_pdu_list[MAX_NUM_CCs][10][MAX_NUM_HI_DCI0_PDU];
     /// NFAPI HI/DCI0 Config Request Structure
-    nfapi_hi_dci0_request_t HI_DCI0_req[MAX_NUM_CCs];
+    nfapi_hi_dci0_request_t HI_DCI0_req[MAX_NUM_CCs][10];
     /// Prealocated TX pdu list
     nfapi_tx_request_pdu_t
 	tx_request_pdu[MAX_NUM_CCs][MAX_NUM_TX_REQUEST_PDU];
@@ -1137,6 +1144,9 @@ typedef struct eNB_MAC_INST_s {
     time_stats_t schedule_pch;
 
     UE_free_list_t UE_free_list;
+	/// for scheduling selection
+    SCHEDULER_MODES scheduler_mode;
+	
 } eNB_MAC_INST;
 
 /* 
@@ -1360,47 +1370,6 @@ typedef struct {
     uint8_t n_adj_cells;
 } neigh_cell_id_t;
 
-#ifdef UE_EXPANSION
-enum SCH_UE_PRIORITY {
-  SCH_PRIORITY_NONE,
-  SCH_DL_SI,
-  SCH_DL_PAGING,
-  SCH_DL_MSG2,
-  SCH_DL_MSG4,
-  SCH_UL_PRACH,
-  SCH_UL_MSG3,
-  SCH_DL_RETRANS,
-  SCH_UL_RETRANS,
-  SCH_DL_FIRST,
-  SCH_UL_FIRST,
-  SCH_UL_INACTIVE
-};
-
-typedef struct {
-  int UE_id;
-  enum SCH_UE_PRIORITY ue_priority;
-  rnti_t rnti;
-  uint16_t nb_rb;
-} DLSCH_UE_INFO;
-
-typedef struct {
-  uint16_t    ue_num;
-  DLSCH_UE_INFO list[20];
-} DLSCH_UE_SELECT;
-
-typedef struct {
-  int     UE_id;
-  enum SCH_UE_PRIORITY ue_priority;
-  uint8_t start_rb;
-  uint8_t nb_rb;
-  uint16_t ul_total_buffer;
-} ULSCH_UE_INFO;
-
-typedef struct {
-  uint8_t ue_num;
-  ULSCH_UE_INFO list[20];
-} ULSCH_UE_SELECT;
-#endif
 
 typedef struct {
   volatile uint8_t flag;
@@ -1412,6 +1381,12 @@ typedef struct {
     uint16_t num_UEs;
     RRC_release_ctrl RRC_release_ctrl[NUMBER_OF_UE_MAX];
 } RRC_release_list_t;
+
+typedef  struct {
+  uint8_t                      rrc_mui_num;
+  mui_t                        rrc_mui[128];
+}mac_rlc_am_muilist_t;
+
 #include "proto.h"
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

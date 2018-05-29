@@ -148,7 +148,7 @@ void pdcp_rlc_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_dat
           data_indP->no_tb  += 1;
         } else {
           printf("Out of memory error\n");
-          exit(-1);
+//          exit(-1);
         }
       } else {
         printf("[RLC-LOOP] DROPPING 1 TB\n");

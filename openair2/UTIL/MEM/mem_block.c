@@ -275,9 +275,9 @@ get_free_mem_block (uint32_t sizeP, const char* caller)
   } while (pool_selected++ < 12);
 
   LOG_E(PHY, "[MEM_MNGT][ERROR][FATAL] failed allocating MEM_BLOCK size %d byes (pool_selected=%d size=%d)\n", sizeP, pool_selected, size);
-  display_mem_load();
-  AssertFatal(1==0,"get_free_mem_block failed");
-
+//  display_mem_load();
+//  AssertFatal(1==0,"get_free_mem_block failed");
+  LOG_E(MAC,"[MEM_MNGT][ERROR][FATAL] get_free_mem_block failed!!!\n");
 #ifdef MEMBLOCK_BIG_LOCK
   if (pthread_mutex_unlock(&mtex)) abort();
 #endif

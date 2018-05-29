@@ -164,13 +164,6 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 
 
 static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_name) {
-
-  static double cpu_freq_GHz = 0.0;
-
-  if (cpu_freq_GHz == 0.0)
-    cpu_freq_GHz = get_cpu_freq_GHz();
-
-
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
@@ -250,7 +243,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   //if (wait_CCs(proc)<0) return(-1);
   
   if (oai_exit) return(-1);
-#if (!defined(UE_EXPANSION_SIM2)) &&(!defined(UE_EXPANSION))
+#ifndef PHY_TX_THREAD
   phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
 #endif
   if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) return(-1);
@@ -513,7 +506,7 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
   if (is_prach_subframe(fp,frame,subframe)>0) { 
     LOG_D(PHY,"Triggering prach processing, frame %d, subframe %d\n",frame,subframe);
     if (proc->instance_cnt_prach == 0) {
-      LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH\n", frame,subframe);
+      //LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH\n", frame,subframe);
       return;
     }
     
@@ -573,7 +566,7 @@ void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
   if (is_prach_subframe(fp,frame,subframe)>0) { 
     LOG_D(PHY,"Triggering prach br processing, frame %d, subframe %d\n",frame,subframe);
     if (proc->instance_cnt_prach_br == 0) {
-      LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH BR\n", frame,subframe);
+      //LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH BR\n", frame,subframe);
       return;
     }
     
@@ -902,7 +895,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
   LOG_I(PHY, "Initialise transport\n");
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
     for (j=0; j<2; j++) {
       eNB->dlsch[i][j] = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL,0,fp);
       if (!eNB->dlsch[i][j]) {
@@ -914,7 +907,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
       }
     }
     
-    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+    LOG_D(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
     eNB->ulsch[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
     
     if (!eNB->ulsch[1+i]) {

@@ -376,6 +376,7 @@ static void trx_usrp_end(openair0_device *device) {
     s->tx_md.end_of_burst = true;
     s->tx_stream->send("", 0, s->tx_md);
     s->tx_md.end_of_burst = false;
+    sleep(1);
 #if defined(USRP_REC_PLAY)
     }
 #endif

@@ -54,9 +54,7 @@
 
 #include "signals.h"
 #include "timer.h"
-#ifdef UE_EXPANSION
 #include "log.h"
-#endif
 
 /* ITTI DEBUG groups */
 #define ITTI_DEBUG_POLL             (1<<0)
@@ -361,7 +359,6 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
 
       /* Enqueue message in destination task queue */
       if (lfds611_queue_enqueue(itti_desc.tasks[destination_task_id].message_queue, new) == 0) {
-#ifdef UE_EXPANSION
         LOG_I(UDP_, " Assertion Message %s(id:%d), number %lu with priority %d can not be sent from (%u:%s) to queue (%u:%s). discarding...\n",
                       itti_desc.messages_info[message_id].name,
                       message_id,
@@ -374,9 +371,6 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
         int result = itti_free(origin_task_id, message);
         AssertFatal( result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
         return 0;
-#else
-        AssertFatal(0, "Error: lfds611_queue_enqueue returns 0, queue is full, exiting\n");
-#endif
       }
 
       {
@@ -530,14 +524,10 @@ static inline void itti_receive_msg_internal_event_fd(task_id_t task_id, uint8_t
 
       if (lfds611_queue_dequeue (itti_desc.tasks[task_id].message_queue, (void **) &message) == 0) {
         /* No element in list -> this should not happen */
-#ifdef UE_EXPANSION
         LOG_I(UDP_, "Assertion No message in queue for task %d while there are %d events and some for the messages queue!\n", task_id, epoll_ret);
         /* Mark that the event has been processed */
         itti_desc.threads[thread_id].events[i].events &= ~EPOLLIN;
         return;
-#else
-        AssertFatal (0, "No message in queue for task %d while there are %d events and some for the messages queue!\n", task_id, epoll_ret);
-#endif
       }
 
       AssertFatal(message != NULL, "Message from message queue is NULL!\n");
@@ -650,8 +640,6 @@ void itti_mark_task_ready(task_id_t task_id)
   /* Mark the thread as using LFDS queue */
   lfds611_queue_use(itti_desc.tasks[task_id].message_queue);
 
-<<<<<<< HEAD
-=======
 #if defined(UE_EXPANSION) || defined(RTAI)
   /* Assign low priority to created threads */
   {
@@ -661,7 +649,6 @@ void itti_mark_task_ready(task_id_t task_id)
   }
 #endif
 
->>>>>>> remotes/origin/ues_test
   itti_desc.threads[thread_id].task_state = TASK_STATE_READY;
   itti_desc.ready_tasks ++;
 

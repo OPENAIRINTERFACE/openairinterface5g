@@ -110,9 +110,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "T.h"
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
 #include "pdcp.h"
-#endif
 
 extern volatile int                    oai_exit;
 
@@ -736,7 +734,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   proc->timestamp_phy_tx = proc->timestamp_rx+(3*fp->samples_per_tti);
   proc->subframe_phy_tx  = (proc->subframe_rx+3)%10;
   proc->frame_phy_tx     = (proc->subframe_rx>6) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
@@ -817,7 +815,7 @@ void tx_rf(RU_t *ru) {
 	(prevSF_type == SF_UL) &&
 	(nextSF_type == SF_DL)) { 
       flags = 2; // start of burst
-      sf_extension = ru->N_TA_offset<<1;
+      sf_extension = ru->N_TA_offset;
     }
     
     if ((fp->frame_type == TDD) &&
@@ -825,9 +823,18 @@ void tx_rf(RU_t *ru) {
 	(prevSF_type == SF_UL) &&
 	(nextSF_type == SF_UL)) {
       flags = 4; // start of burst and end of burst (only one DL SF between two UL)
-      sf_extension = ru->N_TA_offset<<1;
+      sf_extension = ru->N_TA_offset;
     } 
-
+#if defined(__x86_64) || defined(__i386__)
+#ifdef __AVX2__
+  sf_extension = (sf_extension)&0xfffffff8;
+#else
+  sf_extension = (sf_extension)&0xfffffffc;
+#endif
+#elif defined(__arm__)
+  sf_extension = (sf_extension)&0xfffffffc;
+#endif
+    
     for (i=0; i<ru->nb_tx; i++)
       txp[i] = (void*)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_tti)-sf_extension];
     /* add fail safe for late command */
@@ -1308,8 +1315,8 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
     cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
 
-    cfg->tx_gain[i] = (double)fp->att_tx;
-    cfg->rx_gain[i] = ru->max_rxgain-(double)fp->att_rx;
+    cfg->tx_gain[i] = (double)ru->att_tx;
+    cfg->rx_gain[i] = ru->max_rxgain-(double)ru->att_rx;
 
     cfg->configFilename = rf_config_file;
     printf("channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
@@ -1407,7 +1414,7 @@ static void* ru_stats_thread(void* param) {
   return(NULL);
 }
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
 int first_phy_tx = 1;
 volatile int16_t phy_tx_txdataF_end;
 volatile int16_t phy_tx_end;
@@ -1425,15 +1432,13 @@ static void* ru_thread( void* param ) {
 
   // set default return value
   ru_thread_status = 0;
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
   dlsch_ue_select_tbl_in_use = 1;
 #endif
 
-#ifdef UE_EXPANSION
   struct timespec time_req, time_rem;
   time_req.tv_sec = 0;
   time_req.tv_nsec = 10000;
-#endif
 
   // set default return value
   thread_top_init("ru_thread",0,870000,1000000,1000000);
@@ -1513,7 +1518,7 @@ static void* ru_thread( void* param ) {
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&subframe);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     if(first_phy_tx == 0)
     {
         phy_tx_end = 0;
@@ -1570,7 +1575,7 @@ static void* ru_thread( void* param ) {
     // If this proc is to provide synchronization, do so
     wakeup_slaves(proc);
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
     new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
     dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
     memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
@@ -1605,7 +1610,7 @@ static void* ru_thread( void* param ) {
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
 
 
-#ifndef UE_EXPANSION
+#ifndef PHY_TX_THREAD
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);
    
@@ -1711,7 +1716,7 @@ void *ru_thread_synch(void *arg) {
 
 }
 
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
 void* pre_scd_thread( void* param ){
     static int              eNB_pre_scd_status;
     protocol_ctxt_t         ctxt;
@@ -1765,7 +1770,7 @@ void* pre_scd_thread( void* param ){
 }
 #endif
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
 /*!
  * \brief The phy tx thread of eNB.
  * \param param is a \ref eNB_proc_t structure which contains the info what to process.
@@ -1799,9 +1804,6 @@ static void* eNB_thread_phy_tx( void* param ) {
        proc_rxtx.subframe_tx = proc->subframe_phy_tx;
        proc_rxtx.frame_tx = proc->frame_phy_tx;
        phy_procedures_eNB_TX(eNB_list[0], &proc_rxtx, no_relay, NULL, 1);
-       ru->proc.frame_tx = proc->frame_phy_tx;
-       ru->proc.subframe_tx = proc->subframe_phy_tx;
-       ru->proc.timestamp_tx = proc->timestamp_phy_tx;
        phy_tx_txdataF_end = 1;
        if(pthread_mutex_lock(&ru->proc.mutex_rf_tx) != 0){
           LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for rf tx thread (IC %d)\n", ru->proc.instance_cnt_rf_tx);
@@ -1809,12 +1811,15 @@ static void* eNB_thread_phy_tx( void* param ) {
         }
         if (ru->proc.instance_cnt_rf_tx==-1) {
           ++ru->proc.instance_cnt_rf_tx;
+          ru->proc.frame_tx = proc->frame_phy_tx;
+          ru->proc.subframe_tx = proc->subframe_phy_tx;
+          ru->proc.timestamp_tx = proc->timestamp_phy_tx;
 
           // the thread can now be woken up
           AssertFatal(pthread_cond_signal(&ru->proc.cond_rf_tx) == 0, "ERROR pthread_cond_signal for rf_tx thread\n");
         }else{
           LOG_E(PHY,"rf tx thread busy, skipping\n");
-          ru->proc.instance_cnt_rf_tx++;
+          late_control=STATE_BURST_TERMINATE;
         }
         pthread_mutex_unlock( &ru->proc.mutex_rf_tx );
     }
@@ -1943,7 +1948,7 @@ void init_RU_proc(RU_t *ru) {
   pthread_attr_init( &proc->attr_prach_br);
 #endif  
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   proc->instance_cnt_phy_tx       = -1;
   pthread_mutex_init( &proc->mutex_phy_tx, NULL);
   pthread_cond_init( &proc->cond_phy_tx, NULL);
@@ -1963,7 +1968,7 @@ void init_RU_proc(RU_t *ru) {
 #endif
   
   pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
     proc->instance_pre_scd = -1;
     pthread_mutex_init( &proc->mutex_pre_scd, NULL);
     pthread_cond_init( &proc->cond_pre_scd, NULL);
@@ -1971,7 +1976,7 @@ void init_RU_proc(RU_t *ru) {
     pthread_setname_np(proc->pthread_pre_scd, "pre_scd_thread");
 #endif
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     pthread_create( &proc->pthread_phy_tx, NULL, eNB_thread_phy_tx, (void*)ru );
     pthread_setname_np( proc->pthread_phy_tx, "phy_tx_thread" );
     pthread_create( &proc->pthread_rf_tx, NULL, rf_tx, (void*)ru );
@@ -2230,7 +2235,7 @@ void init_RU(char *rf_config_file) {
     }
     else
     {
-    LOG_E(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
+    LOG_D(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
     }
 
     eNB0             = ru->eNB_list[0];
@@ -2419,11 +2424,9 @@ void init_RU(char *rf_config_file) {
 
 
 void stop_ru(RU_t *ru) {
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
-    int *status;
-#endif
+  int *status;
   printf("Stopping RU %p processing threads\n",(void*)ru);
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
   if(ru){
     ru->proc.instance_pre_scd = 0;
     pthread_cond_signal( &ru->proc.cond_pre_scd );
@@ -2432,7 +2435,7 @@ void stop_ru(RU_t *ru) {
     pthread_cond_destroy(&ru->proc.cond_pre_scd );
   }
 #endif
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   if(ru){
       ru->proc.instance_cnt_phy_tx = 0;
       pthread_cond_signal(&ru->proc.cond_phy_tx);

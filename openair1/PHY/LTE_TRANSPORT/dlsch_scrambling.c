@@ -92,19 +92,19 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   uint8_t Nacc=4;
   uint16_t j0,j,idelta;
   uint16_t i  = (Ns>>1) + (10*frame);
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   uint16_t i0 = dlsch->harq_processes[harq_pid]->i0;
 #else
   uint16_t i0 = dlsch->i0;
 #endif
 
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   if (dlsch->harq_processes[harq_pid]->sib1_br_flag==1)                              Nacc=1;
 #else
   if (dlsch->sib1_br_flag==1)                              Nacc=1;
 #endif
   else if (dlsch->rnti == 0xFFFF || dlsch->rnti == 0xFFFE) Nacc = (frame_parms->frame_type == TDD) ? 10 : 4;
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   // Note: above SC-RNTI will also have to be added when/if implemented
   else if (dlsch->harq_processes[harq_pid]->CEmode == CEmodeA)                       Nacc=1;
   else if (dlsch->harq_processes[harq_pid]->CEmode == CEmodeB)                       Nacc = (frame_parms->frame_type == TDD) ? 10 : 4;
@@ -125,7 +125,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   // x1 is set in lte_gold_generic
   if (mbsfn_flag == 0) {
 #ifdef Rel14
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
     if (dlsch->harq_processes[harq_pid]->i0 != 0xFFFF) {
 #else
     if (dlsch->i0 != 0xFFFF) {

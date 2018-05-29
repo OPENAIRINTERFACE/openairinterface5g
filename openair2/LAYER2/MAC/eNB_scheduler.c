@@ -59,6 +59,9 @@
 #include "flexran_agent_mac_proto.h"
 #endif
 
+/* for fair round robin SCHED */
+#include "eNB_scheduler_fairRR.h"
+
 #if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
 #endif
@@ -574,7 +577,7 @@ clear_nfapi_information(eNB_MAC_INST * eNB, int CC_idP,
 {
     nfapi_dl_config_request_t *DL_req = &eNB->DL_req[0];
     nfapi_ul_config_request_t *UL_req = &eNB->UL_req[0];
-    nfapi_hi_dci0_request_t *HI_DCI0_req = &eNB->HI_DCI0_req[0];
+    nfapi_hi_dci0_request_t *HI_DCI0_req = &eNB->HI_DCI0_req[CC_idP][subframeP];
     nfapi_tx_request_t *TX_req = &eNB->TX_req[0];
 
     eNB->pdu_index[CC_idP] = 0;
@@ -587,8 +590,8 @@ clear_nfapi_information(eNB_MAC_INST * eNB, int CC_idP,
       DL_req[CC_idP].dl_config_request_body.number_pdsch_rnti                   = 0;
       DL_req[CC_idP].dl_config_request_body.transmission_power_pcfich           = 6000;
 
-      HI_DCI0_req[CC_idP].hi_dci0_request_body.sfnsf                            = subframeP + (frameP<<4);
-      HI_DCI0_req[CC_idP].hi_dci0_request_body.number_of_dci                    = 0;
+      HI_DCI0_req->hi_dci0_request_body.sfnsf                            = subframeP + (frameP<<4);
+      HI_DCI0_req->hi_dci0_request_body.number_of_dci                    = 0;
 
 
       UL_req[CC_idP].ul_config_request_body.number_of_pdus                      = 0;
@@ -768,7 +771,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 
     }
 
-#if (!defined(UE_EXPANSION_SIM2)) &&(!defined(UE_EXPANSION))
+#if (!defined(PRE_SCD_THREAD))
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,
 				   NOT_A_RNTI, frameP, subframeP,
 				   module_idP);
@@ -790,9 +793,21 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     }
 
 #endif
-#ifdef UE_EXPANSION
-  memset(dlsch_ue_select, 0, sizeof(dlsch_ue_select));
-#endif
+	static int debug_flag=0;
+	void (*schedule_ulsch_p)(module_id_t module_idP, frame_t frameP, sub_frame_t subframe);
+	void (*schedule_ue_spec_p)(module_id_t module_idP, frame_t frameP, sub_frame_t subframe, int *mbsfn_flag);
+	if(RC.mac[module_idP]->scheduler_mode == SCHED_MODE_DEFAULT){
+	  schedule_ulsch_p = schedule_ulsch;
+	  schedule_ue_spec_p = schedule_ue_spec;
+	}else if(RC.mac[module_idP]->scheduler_mode == SCHED_MODE_FAIR_RR){
+      memset(dlsch_ue_select, 0, sizeof(dlsch_ue_select));
+	  schedule_ulsch_p = schedule_ulsch_fairRR;
+	  schedule_ue_spec_p = schedule_ue_spec_fairRR;
+	}
+	if(debug_flag==0){
+		LOG_E(MAC,"SCHED_MODE=%d\n",RC.mac[module_idP]->scheduler_mode);
+		debug_flag=1;
+	}
     // This schedules MIB
     if ((subframeP == 0) && (frameP & 3) == 0)
 	schedule_mib(module_idP, frameP, subframeP);
@@ -807,20 +822,19 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     // This schedules SRS in subframeP
     schedule_SRS(module_idP, frameP, subframeP);
     // This schedules ULSCH in subframeP (dci0)
-    schedule_ulsch(module_idP, frameP, subframeP);
+    schedule_ulsch_p(module_idP, frameP, subframeP);
     // This schedules UCI_SR in subframeP
     schedule_SR(module_idP, frameP, subframeP);
     // This schedules UCI_CSI in subframeP
     schedule_CSI(module_idP, frameP, subframeP);
-
     // This schedules DLSCH in subframeP
-    schedule_ue_spec(module_idP, frameP, subframeP, mbsfn_status);
-
+    schedule_ue_spec_p(module_idP, frameP, subframeP, mbsfn_status);
     // Allocate CCEs for good after scheduling is done
 
-    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
-	allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
-
+    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++){
+        if(cc[CC_id].tdd_Config == NULL || !(is_UL_sf(&cc[CC_id],subframeP)))
+          allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
+    }
 
     stop_meas(&RC.mac[module_idP]->eNB_scheduler);
 

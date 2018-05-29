@@ -48,6 +48,26 @@
 // main log variables
 log_t *g_log;
 
+typedef struct {
+	char* buf_p;
+	int buf_index;
+  int enable_flag;
+} log_mem_cnt_t;
+
+log_mem_cnt_t log_mem_d[2];
+int log_mem_flag=0;
+int log_mem_multi=1;
+volatile int log_mem_side=0;
+pthread_mutex_t log_mem_lock;
+pthread_cond_t log_mem_notify;
+pthread_t log_mem_thread;
+int log_mem_file_cnt=0;
+volatile int log_mem_write_flag=0;
+volatile int log_mem_write_side=0;
+
+char __log_mem_filename[1024]={0};
+char * log_mem_filename = &__log_mem_filename[0];
+
 mapping log_level_names[] = {
   {"emerg", LOG_EMERG},
   {"alert", LOG_ALERT},
@@ -491,6 +511,81 @@ int logInit (void)
 
   printf("log init done\n");
 
+  return 0;
+}
+
+extern int oai_exit;
+void * log_mem_write(void)
+{
+  int *fp;
+  char f_name[1024];
+  struct timespec slp_tm;
+  slp_tm.tv_sec = 0;
+  slp_tm.tv_nsec = 10000;
+  
+  pthread_setname_np( pthread_self(), "log_mem_write");
+
+  while (!oai_exit) {
+    pthread_mutex_lock(&log_mem_lock);
+    log_mem_write_flag=0;
+    pthread_cond_wait(&log_mem_notify, &log_mem_lock);
+    log_mem_write_flag=1;
+    pthread_mutex_unlock(&log_mem_lock);
+    // write!
+    if(log_mem_d[log_mem_write_side].enable_flag==0){
+      if(log_mem_file_cnt>1){
+        log_mem_file_cnt=1;
+        printf("log over write!!!\n");
+      }
+      snprintf(f_name,1024, "%s_%d.log",log_mem_filename,log_mem_file_cnt);
+      fp=open(f_name, O_WRONLY | O_CREAT, 0666);
+      write(fp, log_mem_d[log_mem_write_side].buf_p, log_mem_d[log_mem_write_side].buf_index);
+      close(fp);
+      log_mem_file_cnt++;
+      log_mem_d[log_mem_write_side].buf_index=0;
+      log_mem_d[log_mem_write_side].enable_flag=1;
+    }else{
+      printf("If you'd like to write log, you should set enable flag to 0!!!\n");
+      nanosleep(&slp_tm,NULL);
+    }
+  }
+}
+
+int logInit_log_mem (void)
+{
+  if(log_mem_flag==1){
+    if(log_mem_multi==1){
+      printf("log-mem multi!!!\n");
+      log_mem_d[0].buf_p = malloc(LOG_MEM_SIZE);
+      log_mem_d[0].buf_index=0;
+      log_mem_d[0].enable_flag=1;
+      log_mem_d[1].buf_p = malloc(LOG_MEM_SIZE);
+      log_mem_d[1].buf_index=0;
+      log_mem_d[1].enable_flag=1;
+      log_mem_side=0;
+      if ((pthread_mutex_init (&log_mem_lock, NULL) != 0)
+          || (pthread_cond_init (&log_mem_notify, NULL) != 0)) {
+        log_mem_d[1].enable_flag=0;
+        return;
+      }
+      pthread_create(&log_mem_thread, NULL, log_mem_write, (void*)NULL);
+    }else{
+      printf("log-mem single!!!\n");
+      log_mem_d[0].buf_p = malloc(LOG_MEM_SIZE);
+      log_mem_d[0].buf_index=0;
+      log_mem_d[0].enable_flag=1;
+      log_mem_d[1].enable_flag=0;
+      log_mem_side=0;
+    }
+  }else{
+    log_mem_d[0].buf_p=NULL;
+    log_mem_d[1].buf_p=NULL;
+    log_mem_d[0].enable_flag=0;
+    log_mem_d[1].enable_flag=0;
+  }
+
+  printf("log init done\n");
+  
   return 0;
 }
 
@@ -1295,6 +1390,7 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
    * big enough so that the buffer is never full.
    */
   char log_buffer[MAX_LOG_TOTAL];
+  int temp_index;
 
   /* for no gcc warnings */
   (void)log_start;
@@ -1392,7 +1488,41 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
 
   // OAI printf compatibility
   if ((g_log->onlinelog == 1) && (level != LOG_FILE))
+  if(log_mem_flag==1){
+    if(log_mem_d[log_mem_side].enable_flag==1){
+      temp_index=log_mem_d[log_mem_side].buf_index;
+      if(temp_index+len+1 < LOG_MEM_SIZE){
+        log_mem_d[log_mem_side].buf_index+=len;
+        memcpy(&log_mem_d[log_mem_side].buf_p[temp_index],log_buffer,len);
+      }else{
+        log_mem_d[log_mem_side].enable_flag=0;
+        if(log_mem_d[1-log_mem_side].enable_flag==1){
+          temp_index=log_mem_d[1-log_mem_side].buf_index;
+          if(temp_index+len+1 < LOG_MEM_SIZE){
+            log_mem_d[1-log_mem_side].buf_index+=len;
+            log_mem_side=1-log_mem_side;
+            memcpy(&log_mem_d[log_mem_side].buf_p[temp_index],log_buffer,len);
+            /* write down !*/
+            if (pthread_mutex_lock(&log_mem_lock) != 0) {
+              return;
+            }
+            if(log_mem_write_flag==0){
+              log_mem_write_side=1-log_mem_side;
+              if(pthread_cond_signal(&log_mem_notify) != 0) {
+              }
+            }
+            if(pthread_mutex_unlock(&log_mem_lock) != 0) {
+              return;
+            }
+          }else{
+            log_mem_d[1-log_mem_side].enable_flag=0;
+          }
+        }
+      }
+    }
+  }else{
     fwrite(log_buffer, len, 1, stdout);
+  }
 
   if (g_log->syslog) {
     syslog(g_log->level, "%s", log_buffer);
@@ -1719,7 +1849,40 @@ void log_set_instance_type (log_instance_type_t instance)
   log_instance_type = instance;
 }
 #endif
+  
+void output_log_mem(void){
+  int cnt,cnt2;
+  int *fp;
+  char f_name[1024];
 
+  if(log_mem_flag==1){
+    log_mem_d[0].enable_flag=0;
+    log_mem_d[1].enable_flag=0;
+    usleep(10); // wait for log writing
+    while(log_mem_write_flag==1){
+      usleep(100);
+    }
+    if(log_mem_multi==1){
+      snprintf(f_name,1024, "%s_%d.log",log_mem_filename,log_mem_file_cnt);
+      fp=open(f_name, O_WRONLY | O_CREAT, 0666);
+      write(fp, log_mem_d[0].buf_p, log_mem_d[0].buf_index);
+      close(fp);
+      free(log_mem_d[0].buf_p);
+      
+      snprintf(f_name,1024, "%s_%d.log",log_mem_filename,log_mem_file_cnt);
+      fp=open(f_name, O_WRONLY | O_CREAT, 0666);
+      write(fp, log_mem_d[1].buf_p, log_mem_d[1].buf_index);
+      close(fp);
+      free(log_mem_d[1].buf_p);
+    }else{
+      fp=open(log_mem_filename, O_WRONLY | O_CREAT, 0666);
+      write(fp, log_mem_d[0].buf_p, log_mem_d[0].buf_index);
+      close(fp);
+      free(log_mem_d[0].buf_p);
+    }
+  }
+}
+  
 #ifdef LOG_TEST
 
 int main(int argc, char *argv[])

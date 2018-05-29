@@ -422,7 +422,7 @@ typedef struct RU_proc_t_s {
   int                  num_slaves;
   /// array of pointers to slaves
   struct RU_proc_t_s           **slave_proc;
-#ifdef UE_EXPANSION
+#ifdef PHY_TX_THREAD
   /// pthread structure for PRACH thread
   pthread_t pthread_phy_tx;
   pthread_mutex_t mutex_phy_tx;
@@ -442,7 +442,7 @@ typedef struct RU_proc_t_s {
   /// \internal This variable is protected by \ref mutex_rf_tx.
   int instance_cnt_rf_tx;
 #endif
-#if defined(UE_EXPANSION) || defined(UE_EXPANSION_SIM2)
+#if defined(PRE_SCD_THREAD)
   pthread_t pthread_pre_scd;
   /// condition variable for time processing thread
   pthread_cond_t cond_pre_scd;
