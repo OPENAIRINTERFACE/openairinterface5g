@@ -29,13 +29,14 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/CODING/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/CODING/coding_defs.h"
+#include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "defs.h"
-#include "extern.h"
-#include "PHY/extern.h"
+#include "transport_ue.h"
+#include "PHY/phy_extern_ue.h"
 #include "PHY/sse_intrin.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING

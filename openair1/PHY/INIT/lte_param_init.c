@@ -25,10 +25,14 @@
 #include <execinfo.h>
 #include <signal.h>
 
-#include "SIMULATION/TOOLS/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern.h"
+#include "phy_init.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 extern PHY_VARS_eNB *eNB;
 extern PHY_VARS_UE *UE;
@@ -113,7 +117,7 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
   UE->frame_parms = *frame_parms;
   UE->frame_parms.nb_antennas_rx=N_rx_ue;
   //  eNB->frame_parms = *frame_parms;
-  ru->frame_parms = *frame_parms;
+  ru->frame_parms = frame_parms;
   ru->nb_tx = N_tx_phy;
   ru->nb_rx = N_rx_ru;
   ru->if_south = LOCAL_RF;

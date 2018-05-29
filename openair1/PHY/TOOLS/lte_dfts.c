@@ -26,9 +26,9 @@
 #include <stdint.h>
 
 #ifndef MR_MAIN
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "defs.h"
+#include "PHY/defs_common.h"
+#include "PHY/impl_defs_top.h"
+#include "tools_defs.h"
 #else
 #include "time_meas.h"
 #include <math.h>

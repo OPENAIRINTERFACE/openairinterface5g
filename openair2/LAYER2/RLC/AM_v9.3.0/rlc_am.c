@@ -37,7 +37,7 @@
 #include "mac_primitives.h"
 #include "rlc_primitives.h"
 #include "list.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UL-AM-RLC.h"
 #include "DL-AM-RLC.h"

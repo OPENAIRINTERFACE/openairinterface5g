@@ -1,8 +1,8 @@
-#include "openair1/PHY/defs.h"
+#include "openair1/PHY/defs_eNB.h"
 #include "openair2/PHY_INTERFACE/IF_Module.h"
-#include "openair1/PHY/extern.h"
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/proto.h"
+#include "openair1/PHY/phy_extern.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "common/ran_context.h"
 
 #define MAX_IF_MODULES 100

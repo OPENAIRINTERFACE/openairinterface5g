@@ -29,10 +29,10 @@
 
 */
 
-#include "defs.h"
-#include "extern.h"
+#include "mac.h"
+#include "mac_extern.h"
 #include "UTIL/LOG/log.h"
-#include "proto.h"
+#include "mac_proto.h"
 
 int8_t get_Po_NOMINAL_PUSCH(module_id_t module_idP, uint8_t CC_id)
 {

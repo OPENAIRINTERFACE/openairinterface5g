@@ -30,10 +30,10 @@
 * \warning
 */
 
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 #include "PHY/TOOLS/alaw_lut.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
+#include "PHY/phy_extern.h"
+#include "SCHED/sched_eNB.h"
 
 //#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
@@ -43,7 +43,7 @@ const uint8_t lin2alaw_if4p5[65536] = {213, 213, 213, 213, 213, 213, 213, 213, 2
 
 void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
-  LTE_DL_FRAME_PARMS *fp     = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp     = ru->frame_parms;
   int32_t **txdataF          = ru->common.txdataF_BF;
   int32_t **rxdataF          = ru->common.rxdataF;
   int16_t **prach_rxsigF     = ru->prach_rxsigF;  
@@ -258,7 +258,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 }
 
 void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint32_t *symbol_number) {
-  LTE_DL_FRAME_PARMS *fp     = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp     = ru->frame_parms;
   int32_t **txdataF          = ru->common.txdataF_BF;
   int32_t **rxdataF          = ru->common.rxdataF;
   int16_t **prach_rxsigF     = ru->prach_rxsigF;  

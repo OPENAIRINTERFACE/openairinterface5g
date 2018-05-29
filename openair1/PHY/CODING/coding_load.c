@@ -33,8 +33,8 @@
 #include <sys/types.h>
 
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_common.h"
+#include "PHY/phy_extern.h"
 #include "common/utils/load_module_shlib.h" 
 #include "common/utils/telnetsrv/telnetsrv.h" 
 

@@ -30,22 +30,16 @@
  */
 
 #include "assertions.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
-
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/proto.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
@@ -58,6 +52,9 @@
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 
+#include "common/ran_context.h"
+
+extern RAN_CONTEXT_t RC;
 
 // NEED TO ADD schedule_SI_BR for SIB1_BR and SIB23_BR
 // CCE_allocation_infeasible to be done for EPDCCH/MPDCCH
@@ -787,6 +784,7 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		eNB->eNB_stats[CC_id].bcch_buffer = bcch_sdu_length;
 		eNB->eNB_stats[CC_id].total_bcch_buffer += bcch_sdu_length;
 		eNB->eNB_stats[CC_id].bcch_mcs = mcs;
+//printf("SI %d.%d\n", frameP, subframeP);/////////////////////////////////////////******************************
 	    } else {
 
 		//LOG_D(MAC,"[eNB %d] Frame %d : BCCH not active \n",Mod_id,frame);

@@ -30,12 +30,14 @@
 * \warning
 */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "defs.h"
-#include "extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "transport_eNB.h"
 //#define DEBUG_ULSCH
 #include "PHY/sse_intrin.h"
+#include "transport_common_proto.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
+#include "PHY/MODULATION/modulation_eNB.h"
 
 #include "T.h"
 
@@ -1104,7 +1106,7 @@ void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
 
 int ulsch_power_LUT[750];
 
-void init_ulsch_power_LUT() {
+void init_ulsch_power_LUT(void) {
   
   int i;
 

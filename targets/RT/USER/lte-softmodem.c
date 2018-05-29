@@ -47,7 +47,7 @@
 
 #include "PHY/types.h"
 
-//#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
@@ -59,17 +59,14 @@
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "PHY/vars.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
+#include "PHY/phy_vars.h"
+#include "SCHED/sched_common_vars.h"
+#include "LAYER2/MAC/mac_vars.h"
 
-#include "../../SIMU/USER/init_lte.h"
-
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/vars.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/vars.h"
-#include "PHY_INTERFACE/vars.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_vars.h"
+#include "PHY_INTERFACE/phy_interface_vars.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -92,6 +89,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "intertask_interface_init.h"
 #include "create_tasks.h"
 #endif
+
+#include "PHY/INIT/phy_init.h"
 
 #include "system.h"
 
@@ -143,7 +142,8 @@ static int8_t                     threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
-
+// This is a dummy declaration (dlsch_demodulation.c is no longer compiled for eNodeB)
+int16_t dlsch_demod_shift = 0;
 
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;
@@ -217,6 +217,10 @@ extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
 extern void init_eNB_afterRU(void);
 
 int transmission_mode=1;
+int emulate_rf = 0;
+int numerology = 0;
+int codingw = 0;
+int fepw = 0;
 
 
 
@@ -632,6 +636,7 @@ void init_openair0(void) {
 
   int card;
   int i;
+  
 
   for (card=0; card<MAX_CARDS; card++) {
 
@@ -639,6 +644,8 @@ void init_openair0(void) {
     openair0_cfg[card].configFilename = NULL;
 
     if(frame_parms[0]->N_RB_DL == 100) {
+	  if(numerology == 0)
+	  {
       if (frame_parms[0]->threequarter_fs) {
 	openair0_cfg[card].sample_rate=23.04e6;
 	openair0_cfg[card].samples_per_frame = 230400;
@@ -650,6 +657,22 @@ void init_openair0(void) {
 	openair0_cfg[card].tx_bw = 10e6;
 	openair0_cfg[card].rx_bw = 10e6;
       }
+	  }else if(numerology == 1)
+	  {
+		openair0_cfg[card].sample_rate=61.44e6;
+		openair0_cfg[card].samples_per_frame = 307200;
+		openair0_cfg[card].tx_bw = 20e6;
+		openair0_cfg[card].rx_bw = 20e6;
+	  }else if(numerology == 2)
+	  {
+		openair0_cfg[card].sample_rate=122.88e6;
+		openair0_cfg[card].samples_per_frame = 307200;
+		openair0_cfg[card].tx_bw = 20e6;
+		openair0_cfg[card].rx_bw = 20e6;
+	  }else
+	  {
+	    printf("Un supported numerology\n");
+	  }
     } else if(frame_parms[0]->N_RB_DL == 50) {
       openair0_cfg[card].sample_rate=15.36e6;
       openair0_cfg[card].samples_per_frame = 153600;
@@ -1071,7 +1094,7 @@ int main( int argc, char **argv )
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
-  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
+  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   

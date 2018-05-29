@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
+#include "tools_defs.h"
 #include "PHY/sse_intrin.h"
 
 // returns the complex dot product of x and y

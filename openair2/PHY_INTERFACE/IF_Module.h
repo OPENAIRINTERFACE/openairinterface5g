@@ -34,9 +34,10 @@
 
 
 #include <stdint.h>
-#include "openair1/PHY/LTE_TRANSPORT/defs.h"
+//#include "openair1/PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "nfapi_interface.h"
-
+#include "platform_constants.h"
+#include "platform_types.h"
 
 #define MAX_NUM_DL_PDU 100
 #define MAX_NUM_UL_PDU 100

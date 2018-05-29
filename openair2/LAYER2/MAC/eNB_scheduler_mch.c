@@ -29,36 +29,32 @@
 
  */
 
-#include "assertions.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
-
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/proto.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
+#include "assertions.h"
 
 #if defined(ENABLE_ITTI)
 #include "intertask_interface.h"
 #endif
 
-#include "SIMULATION/TOOLS/defs.h"	// for taus
+#include "SIMULATION/TOOLS/sim.h"	// for taus
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
+#include "common/ran_context.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -651,7 +647,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 						     (char *)
 						     &mch_buffer
 						     [sdu_length_total]);
-	    //sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,frameP, MBMS_FLAG_NO,  MTCH+(MAX_NUM_RB*(NUMBER_OF_UE_MAX+1)), (char*)&mch_buffer[sdu_length_total]);
+	    //sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,frameP, MBMS_FLAG_NO,  MTCH+(MAX_NUM_RB*(MAX_MOBILES_PER_ENB+1)), (char*)&mch_buffer[sdu_length_total]);
 	    LOG_I(MAC,
 		  "[eNB %d][MBMS USER-PLANE] CC_id %d Got %d bytes for MTCH %d\n",
 		  module_idP, CC_id, sdu_lengths[num_sdus], MTCH);

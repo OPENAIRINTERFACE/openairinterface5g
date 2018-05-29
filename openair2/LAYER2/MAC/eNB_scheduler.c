@@ -30,23 +30,18 @@
  */
 
 #include "assertions.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-
-#include "LAYER2/MAC/proto.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
@@ -60,10 +55,13 @@
 #include "intertask_interface.h"
 #endif
 
+#include "assertions.h"
+
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 
 extern RAN_CONTEXT_t RC;
+extern int phy_test;
 
 uint16_t pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -107,9 +105,8 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       
       if ((1 << tmp) & deltaTSFC) {
 	// This is an SRS subframe, loop over UEs
-	for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-	  if (RC.mac[module_idP]->UE_list.active[UE_id] != TRUE)
-	    continue;
+	for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
+	  if (!RC.mac[module_idP]->UE_list.active[UE_id]) continue;
 	  ul_req = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
 	  // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
 	  if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
@@ -169,9 +166,8 @@ schedule_CSI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
 
     cc = &eNB->common_channels[CC_id];
-    for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-      if (UE_list->active[UE_id] != TRUE)
-	continue;
+    for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
+      if (!UE_list->active[UE_id]) continue;
 
       ul_req = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
 
@@ -255,8 +251,8 @@ schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     RC.mac[module_idP]->UL_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
 
-    for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-      if (RC.mac[module_idP]->UE_list.active[UE_id] != TRUE) continue;
+    for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
+      if (!RC.mac[module_idP]->UE_list.active[UE_id]) continue;
 
       ul_req        = &RC.mac[module_idP]->UL_req[CC_id];
       ul_req_body   = &ul_req->ul_config_request_body;
@@ -534,91 +530,91 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   }
 
   // refresh UE list based on UEs dropped by PHY in previous subframe
-  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
-    if (UE_list->active[i] != TRUE)
-      continue;
+  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (UE_list->active[i]) {
 
-    rnti = UE_RNTI(module_idP, i);
-    CC_id = UE_PCCID(module_idP, i);
-
-    if ((frameP == 0) && (subframeP == 0)) {
-      LOG_I(MAC,
-            "UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
-            rnti,
-            UE_list->UE_sched_ctrl[i].ul_out_of_sync ==
-            0 ? "in synch" : "out of sync",
-            UE_list->UE_template[CC_id][i].phr_info,
-            UE_list->UE_sched_ctrl[i].dl_cqi[CC_id],
-            (UE_list->UE_sched_ctrl[i].pusch_snr[CC_id] - 128) / 2,
-            (UE_list->UE_sched_ctrl[i].pucch1_snr[CC_id] - 128) / 2);
-    }
-
-    RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP * 10) +
-						  subframeP] = -63;
-    if (i == UE_list->head)
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME
-	(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,
-	 RC.eNB[module_idP][CC_id]->
-	 pusch_stats_bsr[i][(frameP * 10) + subframeP]);
-    // increment this, it is cleared when we receive an sdu
-    RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
-    
-    RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer++;
-    LOG_D(MAC, "UE %d/%x : ul_inactivity %d, cqi_req %d\n", i, rnti,
-	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].
-	  ul_inactivity_timer,
-	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer);
-    check_ul_failure(module_idP, CC_id, i, frameP, subframeP);
-    
-    if (RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0) {
-      RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer++;
-      if(RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer >=
-	 RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer_thres) {
-	RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer = 0;
-	for (int ue_id_l = 0; ue_id_l < NUMBER_OF_UE_MAX; ue_id_l++) {
-	  if (reestablish_rnti_map[ue_id_l][0] == rnti) {
-	    // clear currentC-RNTI from map
-	    reestablish_rnti_map[ue_id_l][0] = 0;
-	    reestablish_rnti_map[ue_id_l][1] = 0;
-	    break;
+      rnti = UE_RNTI(module_idP, i);
+      CC_id = UE_PCCID(module_idP, i);
+      
+      if (((frameP&127) == 0) && (subframeP == 0)) {
+	LOG_I(MAC,
+	      "UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
+	      rnti,
+	      UE_list->UE_sched_ctrl[i].ul_out_of_sync ==
+	      0 ? "in synch" : "out of sync",
+	      UE_list->UE_template[CC_id][i].phr_info,
+	      UE_list->UE_sched_ctrl[i].dl_cqi[CC_id],
+	      (UE_list->UE_sched_ctrl[i].pusch_snr[CC_id] - 128) / 2,
+	      (UE_list->UE_sched_ctrl[i].pucch1_snr[CC_id] - 128) / 2);
+      }
+      
+      RC.eNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP * 10) +
+						    subframeP] = -63;
+      if (i == UE_list->head)
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME
+	  (VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,
+	   RC.eNB[module_idP][CC_id]->
+	   pusch_stats_bsr[i][(frameP * 10) + subframeP]);
+      // increment this, it is cleared when we receive an sdu
+      RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
+      
+      RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer++;
+      LOG_D(MAC, "UE %d/%x : ul_inactivity %d, cqi_req %d\n", i, rnti,
+	    RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].
+	    ul_inactivity_timer,
+	    RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer);
+      check_ul_failure(module_idP, CC_id, i, frameP, subframeP);
+      
+      if (RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0) {
+	RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer++;
+	if(RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer >=
+	   RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer_thres) {
+	  RC.mac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer = 0;
+	  for (int ue_id_l = 0; ue_id_l < MAX_MOBILES_PER_ENB; ue_id_l++) {
+	    if (reestablish_rnti_map[ue_id_l][0] == rnti) {
+	      // clear currentC-RNTI from map
+	      reestablish_rnti_map[ue_id_l][0] = 0;
+	      reestablish_rnti_map[ue_id_l][1] = 0;
+	      break;
+	    }
 	  }
-	}
-	for (int ii=0; ii<NUMBER_OF_UE_MAX; ii++) {
-	  LTE_eNB_ULSCH_t *ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
-	  if((ulsch != NULL) && (ulsch->rnti == rnti)){
-	    LOG_I(MAC, "clean_eNb_ulsch UE %x \n", rnti);
-	    clean_eNb_ulsch(ulsch);
+	  // Note: This should not be done in the MAC!
+	  for (int ii=0; ii<MAX_MOBILES_PER_ENB; ii++) {
+	    LTE_eNB_ULSCH_t *ulsch = RC.eNB[module_idP][CC_id]->ulsch[ii];
+	    if((ulsch != NULL) && (ulsch->rnti == rnti)){
+	      LOG_I(MAC, "clean_eNb_ulsch UE %x \n", rnti);
+	      clean_eNb_ulsch(ulsch);
+	    }
 	  }
-	}
-	for (int ii=0; ii<NUMBER_OF_UE_MAX; ii++) {
-	  LTE_eNB_DLSCH_t *dlsch = RC.eNB[module_idP][CC_id]->dlsch[ii][0];
-	  if((dlsch != NULL) && (dlsch->rnti == rnti)){
-	    LOG_I(MAC, "clean_eNb_dlsch UE %x \n", rnti);
-	    clean_eNb_dlsch(dlsch);
+	  for (int ii=0; ii<MAX_MOBILES_PER_ENB; ii++) {
+	    LTE_eNB_DLSCH_t *dlsch = RC.eNB[module_idP][CC_id]->dlsch[ii][0];
+	    if((dlsch != NULL) && (dlsch->rnti == rnti)){
+	      LOG_I(MAC, "clean_eNb_dlsch UE %x \n", rnti);
+	      clean_eNb_dlsch(dlsch);
+	    }
 	  }
-	}
-	
-	for(int j = 0; j < 10; j++){
-	  nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
-	  ul_req_tmp = &RC.mac[module_idP]->UL_req_tmp[CC_id][j].ul_config_request_body;
-	  if(ul_req_tmp){
-	    int pdu_number = ul_req_tmp->number_of_pdus;
-	    for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
-	      if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti){
-		LOG_I(MAC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
-		if(pdu_index < pdu_number -1){
-		  memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+	  
+	  for(int j = 0; j < 10; j++){
+	    nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
+	    ul_req_tmp = &RC.mac[module_idP]->UL_req_tmp[CC_id][j].ul_config_request_body;
+	    if(ul_req_tmp){
+	      int pdu_number = ul_req_tmp->number_of_pdus;
+	      for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
+		if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti){
+		  LOG_I(MAC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
+		  if(pdu_index < pdu_number -1){
+		    memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+		  }
+		  ul_req_tmp->number_of_pdus--;
 		}
-		ul_req_tmp->number_of_pdus--;
 	      }
 	    }
 	  }
-	}
 	rrc_mac_remove_ue(module_idP,rnti);
+	}
       }
     }
   }
-
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,
 				 NOT_A_RNTI, frameP, subframeP,
 				 module_idP);
@@ -640,26 +636,33 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 #endif
 
   // This schedules MIB
+
   if ((subframeP == 0) && (frameP & 3) == 0)
       schedule_mib(module_idP, frameP, subframeP);
-  // This schedules SI for legacy LTE and eMTC starting in subframeP
-  schedule_SI(module_idP, frameP, subframeP);
-  // This schedules Paging in subframeP
-  schedule_PCH(module_idP,frameP,subframeP);
-  // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
-  schedule_RA(module_idP, frameP, subframeP);
-  // copy previously scheduled UL resources (ULSCH + HARQ)
-  copy_ulreq(module_idP, frameP, subframeP);
-  // This schedules SRS in subframeP
-  schedule_SRS(module_idP, frameP, subframeP);
-  // This schedules ULSCH in subframeP (dci0)
-  schedule_ulsch(module_idP, frameP, subframeP);
-  // This schedules UCI_SR in subframeP
-  schedule_SR(module_idP, frameP, subframeP);
-  // This schedules UCI_CSI in subframeP
-  schedule_CSI(module_idP, frameP, subframeP);
-  // This schedules DLSCH in subframeP
-  schedule_dlsch(module_idP, frameP, subframeP, mbsfn_status);
+  if (phy_test == 0){
+    // This schedules SI for legacy LTE and eMTC starting in subframeP
+    schedule_SI(module_idP, frameP, subframeP);
+    // This schedules Paging in subframeP
+    schedule_PCH(module_idP,frameP,subframeP);
+    // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
+    schedule_RA(module_idP, frameP, subframeP);
+    // copy previously scheduled UL resources (ULSCH + HARQ)
+    copy_ulreq(module_idP, frameP, subframeP);
+    // This schedules SRS in subframeP
+    schedule_SRS(module_idP, frameP, subframeP);
+    // This schedules ULSCH in subframeP (dci0)
+    schedule_ulsch(module_idP, frameP, subframeP);
+    // This schedules UCI_SR in subframeP
+    schedule_SR(module_idP, frameP, subframeP);
+    // This schedules UCI_CSI in subframeP
+    schedule_CSI(module_idP, frameP, subframeP);
+    // This schedules DLSCH in subframeP
+    schedule_dlsch(module_idP, frameP, subframeP, mbsfn_status);
+  }
+  else{
+    schedule_ulsch_phy_test(module_idP,frameP,subframeP);
+    schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
+  }
 
   if (RC.flexran[module_idP]->enabled)
     flexran_agent_send_update_stats(module_idP);

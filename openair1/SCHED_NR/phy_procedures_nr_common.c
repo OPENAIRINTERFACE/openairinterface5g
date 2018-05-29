@@ -29,10 +29,9 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_gNB.h"
+#include "PHY/phy_extern.h"
+#include "SCHED_NR/defs.h"
 
 
 nr_subframe_t nr_subframe_select(nfapi_config_request_t *cfg,unsigned char subframe)
@@ -40,3 +39,4 @@ nr_subframe_t nr_subframe_select(nfapi_config_request_t *cfg,unsigned char subfr
   if (cfg->subframe_config.duplex_mode.value == FDD)
     return(SF_DL);
 }
+

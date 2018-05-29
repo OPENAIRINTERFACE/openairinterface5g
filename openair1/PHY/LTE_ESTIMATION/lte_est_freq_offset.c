@@ -25,7 +25,7 @@
    date: 19.11.2009
 */
 
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 //#define DEBUG_PHY
 
 #if defined(__x86_64__) || defined(__i386__)

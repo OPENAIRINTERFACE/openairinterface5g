@@ -33,8 +33,8 @@
 #include "mem_block.h"
 #include "mem_pool.h"
 #include "list.h"
-#include "LAYER2/MAC/extern.h"
-
+#include "LAYER2/MAC/mac_extern.h"
+#include "assertions.h"
 /* all function calls are protected by a mutex
  * to ensure that many threads calling them at
  * the same time don't mess up.

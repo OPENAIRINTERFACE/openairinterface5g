@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
-#include "PHY/impl_defs_lte.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 
 //#define DEBUG_PC 0
 /*
@@ -94,7 +94,6 @@ double computeRhoB_eNB(uint8_t pa,
   return(rho_b_dB);
 }
 
-
 double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
                       LTE_UE_DLSCH_t *dlsch_ue,
                       unsigned char dl_power_off,
@@ -150,3 +149,4 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 #endif
   return(rho_b_dB);
 }
+

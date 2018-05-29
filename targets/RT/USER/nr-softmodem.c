@@ -19,47 +19,24 @@
  *      contact@openairinterface.org
  */
 
-#if 0
-//Temporary main function
-int main( int argc, char **argv )
-{
-  nfapi_config_request_t config;
-  NR_DL_FRAME_PARMS* frame_parms = malloc(sizeof(NR_DL_FRAME_PARMS));
-  int16_t amp;
-
-  int16_t** txdataF = (int16_t **)malloc(2048*2*14*2*2* sizeof(int16_t));
-  int16_t* d_pss = malloc(NR_PSS_LENGTH * sizeof(int16_t));
-  int16_t *d_sss = malloc(NR_SSS_LENGTH * sizeof(int16_t));
-
-  //logInit();
-
-  phy_init_nr_gNB(&config);
-  nr_init_frame_parms(config, frame_parms);
-  nr_dump_frame_parms(frame_parms);
-
-  amp = 32767; //1_Q_15
-  nr_generate_pss(d_pss, txdataF, amp, 0, 0, config, frame_parms);
-  nr_generate_sss(d_sss, txdataF, amp, 0, 0, config, frame_parms);
-
-  free(txdataF);
-  free(d_pss);
-  free(d_sss);
-
-  return 0;
-}
-#endif
-
 
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
+
+
 #include "T.h"
+
 #include "rt_wrapper.h"
+
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
 #include "msc.h"
 
+#include "PHY/types.h"
+
+#include "PHY/defs_gNB.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
@@ -71,19 +48,14 @@ int main( int argc, char **argv )
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/vars.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
+#include "PHY/phy_vars.h"
+#include "SCHED/sched_common_vars.h"
+#include "LAYER2/MAC/mac_vars.h"
 
-#include "../../SIMU/USER/init_lte.h"
-
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/vars.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/vars.h"
-#include "PHY_INTERFACE/vars.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_vars.h"
+#include "PHY_INTERFACE/phy_interface_vars.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -96,7 +68,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
-#include "PHY/TOOLS/time_meas.h"
+//#include "PHY/TOOLS/time_meas.h"
 
 #ifndef OPENAIR2
 #include "UTIL/OTG/otg_vars.h"
@@ -107,6 +79,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "create_tasks.h"
 #endif
 
+#include "PHY/INIT/phy_init.h"
+
 #include "system.h"
 
 #ifdef XFORMS
@@ -114,18 +88,21 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "stats.h"
 #endif
 #include "nr-softmodem.h"
+#include "NB_IoT_interface.h"
 
 #ifdef XFORMS
 // current status is that every UE has a DL scope for a SINGLE eNB (gnb_id=0)
 // at eNB 0, an UL scope for every UE
-/*
+
+short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,23170,23170,-23170,-23170,23170,23170,23170,-23170,-23170,23170,-23170,-23170};
+
 FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
 FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
 unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
-*/
+
 #endif //XFORMS
 
 pthread_cond_t nfapi_sync_cond;
@@ -189,7 +166,7 @@ double bw = 10.0e6;
 
 static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
-char   rf_config_file[1024];
+char   rf_config_file[1024]="./targets/ARCH/ADRV9371_ZC706/USERSPACE/PROFILES/gnb.band7.tm1.PRB100.NR40.adrv9371-zc706_HWgain15dB.ini";
 
 int chain_offset=0;
 int phy_test = 0;
@@ -215,7 +192,7 @@ int                             otg_enabled;
 //int                             number_of_cards =   1;
 
 
-static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
+//static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 static nfapi_config_request_t *config[MAX_NUM_CCs];
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
@@ -230,7 +207,10 @@ extern void print_opp_meas(void);
 extern void init_eNB_afterRU(void);
 
 int transmission_mode=1;
-
+int emulate_rf = 0;
+//int numerology = 0;
+int codingw = 0;
+//int fepw = 0;
 
 
 /* struct for ethernet specific parameters given in eNB conf file */
@@ -388,7 +368,7 @@ void reset_stats(FL_OBJECT *button, long arg)
     }
   }
 }
-/*
+
 static void *scope_thread(void *arg) {
  
 # ifdef ENABLE_XFORMS_WRITE_STATS
@@ -438,7 +418,7 @@ static void *scope_thread(void *arg) {
 # endif
 
   pthread_exit((void*)arg);
-}*/
+}
 #endif
 
 
@@ -689,8 +669,8 @@ void init_openair0(void) {
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
-	   RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value,
-	   RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value );
+	   RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value,
+	   RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
     openair0_cfg[card].Mod_id = 0;
 
     openair0_cfg[card].num_rb_dl=config[0]->rf_config.dl_channel_bandwidth.value;
@@ -698,8 +678,8 @@ void init_openair0(void) {
     openair0_cfg[card].clock_source = clock_source;
 
 
-    openair0_cfg[card].tx_num_channels=min(2,RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value );
-    openair0_cfg[card].rx_num_channels=min(2,RC.gNB[0][0]->gNB_config->rf_config.tx_antenna_ports.value );
+    openair0_cfg[card].tx_num_channels=min(2,RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
+    openair0_cfg[card].rx_num_channels=min(2,RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
 
     for (i=0; i<4; i++) {
 
@@ -782,7 +762,7 @@ void terminate_task(task_id_t task_id, module_id_t mod_id)
 }
 
 //extern void  free_transport(PHY_VARS_gNB *);
-extern void  phy_free_RU(RU_t*);
+extern void  nr_phy_free_RU(RU_t*);
 
 int stop_L1L2(module_id_t gnb_id)
 {
@@ -825,13 +805,13 @@ int stop_L1L2(module_id_t gnb_id)
     //free_transport(RC.gNB[gnb_id][cc_id]);
     phy_free_nr_gNB(RC.gNB[gnb_id][cc_id]);
   }
-  phy_free_RU(RC.ru[gnb_id]);
+  nr_phy_free_RU(RC.ru[gnb_id]);
   free_lte_top();
   return 0;
 }
 
 /*
- * Restart the lte-softmodem after it has been soft-stopped with stop_L1L2()
+ * Restart the nr-softmodem after it has been soft-stopped with stop_L1L2()
  */
 int restart_L1L2(module_id_t gnb_id)
 {
@@ -839,7 +819,7 @@ int restart_L1L2(module_id_t gnb_id)
   int cc_id;
   MessageDef *msg_p = NULL;
 
-  LOG_W(ENB_APP, "restarting lte-softmodem\n");
+  LOG_W(ENB_APP, "restarting nr-softmodem\n");
 
   /* block threads */
   sync_var = -1;
@@ -851,7 +831,7 @@ int restart_L1L2(module_id_t gnb_id)
   RC.ru_mask |= (1 << ru->idx);
   /* copy the changed frame parameters to the RU */
   /* TODO this should be done for all RUs associated to this gNB */
-  memcpy(&ru->frame_parms, &RC.gNB[gnb_id][0]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
+  memcpy(&ru->nr_frame_parms, &RC.gNB[gnb_id][0]->frame_parms, sizeof(NR_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[gnb_id]);
 
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
@@ -859,7 +839,7 @@ int restart_L1L2(module_id_t gnb_id)
     LOG_E(RRC, "Create task for RRC eNB failed\n");
     return -1;
   } else {
-    LOG_I(RRC, "Re-created task for RRC eNB successfully\n");
+    LOG_I(RRC, "Re-created task for RRC gNB successfully\n");
   }
   if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
     LOG_E(PDCP, "Create task for L2L1 failed\n");
@@ -910,7 +890,7 @@ int main( int argc, char **argv )
 {
   int i;
 #if defined (XFORMS)
-  void *status;
+  //void *status;
 #endif
 
   int CC_id;
@@ -1096,7 +1076,7 @@ int main( int argc, char **argv )
   pthread_mutex_init(&sync_mutex, NULL);
   
 #ifdef XFORMS
-/*
+
   int UE_id;
   
   printf("XFORMS\n");
@@ -1132,7 +1112,7 @@ int main( int argc, char **argv )
     
     printf("Scope thread created, ret=%d\n",ret);
   }
-*/  
+  
 #endif
   
   rt_sleep_ns(10*100000000ULL);
@@ -1283,7 +1263,7 @@ int main( int argc, char **argv )
       }
     }
     for (int inst = 0; inst < NB_RU; inst++) {
-      phy_free_RU(RC.ru[inst]);
+      nr_phy_free_RU(RC.ru[inst]);
     }
     free_lte_top();
 

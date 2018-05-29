@@ -20,7 +20,7 @@
  */
 
 /*! \file lte-enb.c
- * \brief Top-level threads for eNodeB
+ * \brief Top-level threads for gNodeB
  * \author R. Knopp, F. Kaltenberger, Navid Nikaein
  * \date 2012
  * \version 0.1
@@ -44,7 +44,12 @@
 
 #include "PHY/types.h"
 
-#include "PHY/defs.h"
+#include "PHY/INIT/phy_init.h"
+
+#include "PHY/defs_gNB.h"
+#include "SCHED/sched_eNB.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -55,22 +60,14 @@
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#include "PHY/extern.h"
-#include "SCHED/extern.h"
-#include "LAYER2/MAC/extern.h"
+#include "PHY/phy_extern.h"
 
-#include "../../SIMU/USER/init_lte.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
-#include "PHY_INTERFACE/defs.h"
-#ifdef SMBV
-#include "PHY/TOOLS/smbv.h"
-unsigned short config_frames[4] = {2,9,11,13};
-#endif
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
@@ -78,7 +75,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
-//#include "PHY/TOOLS/time_meas.h"
+
 
 #ifndef OPENAIR2
 #include "UTIL/OTG/otg_extern.h"
@@ -360,10 +357,12 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
 
 
 
-void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int subframe_rx, char *string)
+void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru)
 {
   gNB_proc_t *proc           = &gNB->proc;
   gNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[0];
+  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
+  RU_proc_t *ru_proc=&ru->proc;
 
   proc->frame_rx    = frame_rx;
   proc->subframe_rx = subframe_rx;
@@ -371,14 +370,16 @@ void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int subframe_rx, char *string)
   if (!oai_exit) {
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
 
-    proc_rxtx->subframe_rx = proc->subframe_rx;
-    proc_rxtx->frame_rx    = proc->frame_rx;
-    proc_rxtx->subframe_tx = (proc->subframe_rx+sf_ahead)%10;
-    proc_rxtx->frame_tx    = (proc->subframe_rx>(9-sf_ahead)) ? (1+proc->frame_rx)&1023 : proc->frame_rx;
-    proc->frame_tx         = proc_rxtx->frame_tx;
-    proc_rxtx->timestamp_tx = proc->timestamp_tx;
+    proc_rxtx->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
+    proc_rxtx->frame_rx     = ru_proc->frame_rx;
+    proc_rxtx->subframe_rx  = ru_proc->subframe_rx;
+    proc_rxtx->frame_tx     = (proc_rxtx->subframe_rx > (9-sf_ahead)) ? (proc_rxtx->frame_rx+1)&1023 : proc_rxtx->frame_rx;
+    proc_rxtx->subframe_tx  = (proc_rxtx->subframe_rx + sf_ahead)%10;
 
     if (rxtx(gNB,proc_rxtx,string) < 0) LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",gNB->Mod_id,gNB->CC_id);
+    ru_proc->timestamp_tx = proc_rxtx->timestamp_tx;
+    ru_proc->subframe_tx  = proc_rxtx->subframe_tx;
+    ru_proc->frame_tx     = proc_rxtx->frame_tx;
   }
 }
 
@@ -573,7 +574,8 @@ void init_gNB_proc(int inst) {
   PHY_VARS_gNB *gNB;
   gNB_proc_t *proc;
   gNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL;
+  //*attr_prach=NULL;
 
   LOG_I(PHY,"%s(inst:%d) RC.nb_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_CC[inst]);
 
@@ -827,7 +829,7 @@ void init_eNB_afterRU(void) {
       // map antennas and PRACH signals to gNB RX
       if (0) AssertFatal(gNB->num_RU>0,"Number of RU attached to gNB %d is zero\n",gNB->Mod_id);
       LOG_I(PHY,"Mapping RX ports from %d RUs to gNB %d\n",gNB->num_RU,gNB->Mod_id);
-      gNB->gNB_config->rf_config.tx_antenna_ports.value  = 0;
+      gNB->gNB_config.rf_config.tx_antenna_ports.value  = 0;
 
       //LOG_I(PHY,"Overwriting gNB->prach_vars.rxsigF[0]:%p\n", gNB->prach_vars.rxsigF[0]);
 
@@ -836,7 +838,7 @@ void init_eNB_afterRU(void) {
       LOG_I(PHY,"gNB->num_RU:%d\n", gNB->num_RU);
 
       for (ru_id=0,aa=0;ru_id<gNB->num_RU;ru_id++) {
-	gNB->gNB_config->rf_config.tx_antenna_ports.value    += gNB->RU_list[ru_id]->nb_rx;
+	gNB->gNB_config.rf_config.tx_antenna_ports.value    += gNB->RU_list[ru_id]->nb_rx;
 
 	AssertFatal(gNB->RU_list[ru_id]->common.rxdataF!=NULL,
 		    "RU %d : common.rxdataF is NULL\n",
@@ -859,29 +861,29 @@ void init_eNB_afterRU(void) {
        * In monolithic mode, we come here with nb_antennas_rx == 0
        * (not tested in other modes).
        */
-      if (gNB->gNB_config->rf_config.tx_antenna_ports.value < 1)
+      if (gNB->gNB_config.rf_config.tx_antenna_ports.value < 1)
       {
-        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config->rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config->rf_config.tx_antenna_ports.value);
-        gNB->gNB_config->rf_config.tx_antenna_ports.value = 1;
+        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config.rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config.rf_config.tx_antenna_ports.value);
+        gNB->gNB_config.rf_config.tx_antenna_ports.value = 1;
       }
       else
       {
         //LOG_I(PHY," Delete code\n");
       }
 
-      if (gNB->gNB_config->rf_config.tx_antenna_ports.value < 1)
+      if (gNB->gNB_config.rf_config.tx_antenna_ports.value < 1)
       {
-        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config->rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config->rf_config.tx_antenna_ports.value);
-        gNB->gNB_config->rf_config.tx_antenna_ports.value = 1;
+        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config.rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config.rf_config.tx_antenna_ports.value);
+        gNB->gNB_config.rf_config.tx_antenna_ports.value = 1;
       }
       else
       {
         //LOG_I(PHY," Delete code\n");
       }
 
-      AssertFatal(gNB->gNB_config->rf_config.tx_antenna_ports.value >0,
-		  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config->rf_config.tx_antenna_ports.value);
-      LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config->rf_config.tx_antenna_ports.value);
+      AssertFatal(gNB->gNB_config.rf_config.tx_antenna_ports.value >0,
+		  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
+      LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
 /// Transport init necessary for NR synchro
       //init_transport(gNB);
       //init_precoding_weights(RC.gNB[inst][CC_id]);
@@ -923,15 +925,11 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
       LOG_I(PHY,"Initializing gNB %d CC_id %d\n",inst,CC_id);
 #endif
 
-/*
-      gNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-      gNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;*/
-
-      
       LOG_I(PHY,"Registering with MAC interface module\n");
       AssertFatal((gNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
       gNB->if_inst->schedule_response   = schedule_response;
       gNB->if_inst->PHY_config_req      = phy_config_request;
+      nr_phy_config_request(gNB);
       memset((void*)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
       memset((void*)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
       LOG_I(PHY,"Setting indication lists\n");

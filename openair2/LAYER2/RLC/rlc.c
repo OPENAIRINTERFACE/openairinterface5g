@@ -29,7 +29,7 @@
 #define RLC_C
 #include "rlc.h"
 #include "mem_block.h"
-#include "../MAC/extern.h"
+#include "../MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
@@ -615,7 +615,7 @@ rlc_module_init (void)
   rlc_coll_p = hashtable_create ((maxDRB + 2) * 16, NULL, rb_free_rlc_union);
   AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
 
-  for (module_id1=0; module_id1 < NUMBER_OF_UE_MAX; module_id1++) {
+  for (module_id1=0; module_id1 < MAX_MOBILES_PER_ENB; module_id1++) {
 #if defined(Rel10) || defined(Rel14)
 
     for (k=0; k < RLC_MAX_MBMS_LC; k++) {

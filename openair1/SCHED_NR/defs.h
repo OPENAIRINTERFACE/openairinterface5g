@@ -28,10 +28,28 @@
 #ifndef __openair_SCHED_NR_DEFS_H__
 #define __openair_SCHED_NR_DEFS_H__
 
-#include "PHY/defs.h"
-#include "PHY_INTERFACE/defs.h"
-#include "SCHED/defs.h"
+#include "PHY/defs_gNB.h"
+#include "PHY_INTERFACE/phy_interface.h"
+#include "SCHED/sched_eNB.h"
 
 lte_subframe_t nr_subframe_select (nfapi_config_request_t *cfg, unsigned char subframe);
+int nr_generate_pss(  int16_t *d_pss,
+                      int32_t **txdataF,
+                      int16_t amp,
+                      uint8_t ssb_start_symbol,
+                      nfapi_config_request_t* config,
+                      NR_DL_FRAME_PARMS *frame_parms);
+int nr_generate_sss(  int16_t *d_sss,
+                      int32_t **txdataF,
+                      int16_t amp,
+                      uint8_t ssb_start_symbol,
+                      nfapi_config_request_t* config,
+                      NR_DL_FRAME_PARMS *frame_parms);
+int nr_generate_pbch_dmrs(uint32_t gold_sequence,
+                          int32_t **txdataF,
+                          int16_t amp,
+                          nfapi_config_request_t* config,
+                          NR_DL_FRAME_PARMS *frame_parms);
+void nr_set_ssb_first_subcarrier(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
 
 #endif

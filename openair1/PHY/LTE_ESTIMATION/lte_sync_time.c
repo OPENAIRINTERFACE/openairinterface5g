@@ -26,19 +26,15 @@
 */
 
 //#include <string.h>
-#include "defs.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 #include <math.h>
 
-#ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
-#endif
-//#define DEBUG_PHY
+
+#include "LAYER2/MAC/mac.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
+
 
 int* sync_corr_ue0 = NULL;
 int* sync_corr_ue1 = NULL;
@@ -487,8 +483,6 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
 }
 
-//#define DEBUG_PHY
-
 int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
                       LTE_DL_FRAME_PARMS *frame_parms,
                       uint32_t length,
@@ -577,4 +571,7 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
   }
 
 }
+
+
+
 

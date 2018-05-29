@@ -19,26 +19,24 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
 
-#define NR_PSS_DEBUG
+#include "PHY/NR_TRANSPORT/nr_transport.h"
 
-//short nr_mod_table[MOD_TABLE_SIZE_SHORT] = {0,0,768,768,-768,-768};
+//#define NR_PSS_DEBUG
 
 int nr_generate_pss(  int16_t *d_pss,
                       int32_t **txdataF,
                       int16_t amp,
-                      int16_t ssb_start_subcarrier,
                       uint8_t ssb_start_symbol,
-                      nfapi_config_request_t config,
+                      nfapi_config_request_t* config,
                       NR_DL_FRAME_PARMS *frame_parms)
 {
-  int i,m,k,l;
-  int16_t a, aa;
+  int i,k,l,m;
+  int16_t a;
   int16_t x[NR_PSS_LENGTH];
   const int x_initial[7] = {0, 1, 1 , 0, 1, 1, 1};
 
-  uint8_t Nid2 = config.sch_config.physical_cell_id.value % 3;
+  uint8_t Nid2 = config->sch_config.physical_cell_id.value % 3;
 
   /// Sequence generation
   for (i=0; i < 7; i++)
@@ -53,27 +51,32 @@ int nr_generate_pss(  int16_t *d_pss,
     d_pss[i] = (1 - 2*x[m]) * 32767;
   }
 
-  /// Resource mapping
-  a = (config.rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
+#ifdef NR_PSS_DEBUG
+  write_output("d_pss.m", "d_pss", (void*)d_pss, NR_PSS_LENGTH, 1, 1);
+#endif
 
-  for (aa = 0; aa < config.rf_config.tx_antenna_ports.value; aa++)
+  /// Resource mapping
+  a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
+
+  for (int aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
   {
 
     // PSS occupies a predefined position (subcarriers 56-182, symbol 0) within the SSB block starting from
-    k = frame_parms->first_carrier_offset + ssb_start_subcarrier + 56; //and
+    k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
     l = ssb_start_symbol;
 
     for (m = 0; m < NR_PSS_LENGTH; m++) {
       ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_pss[m]) >> 15;
-      //((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k) + 1] = (a * pss_mod[2*m + 1]) >> 15;
-      k+=1;
+      k++;
 
-      if (k >= frame_parms->ofdm_symbol_size) {
-        k++; //skip DC
+      if (k >= frame_parms->ofdm_symbol_size)
         k-=frame_parms->ofdm_symbol_size;
-      }
     }
   }
 
-  return (0);
+#ifdef NR_PSS_DEBUG
+  write_output("pss_0.m", "pss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
+#endif
+
+  return 0;
 }
