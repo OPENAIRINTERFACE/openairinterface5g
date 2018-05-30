@@ -23,6 +23,8 @@
 #define __MODULATION_DEFS__H__
 #include "PHY/defs_common.h"
 #include "modulation_common.h"
+#include "PHY/defs_UE.h"
+#include "PHY/defs_nr_UE.h"
 /** @addtogroup _PHY_MODULATION_
  * @{
 */
@@ -40,6 +42,13 @@
 */
 
 int slot_fep(PHY_VARS_UE *phy_vars_ue,
+             unsigned char l,
+             unsigned char Ns,
+             int sample_offset,
+             int no_prefix,
+	     int reset_freq_est);
+
+int slot_fep_pbch(PHY_VARS_NR_UE *phy_vars_ue,
              unsigned char l,
              unsigned char Ns,
              int sample_offset,

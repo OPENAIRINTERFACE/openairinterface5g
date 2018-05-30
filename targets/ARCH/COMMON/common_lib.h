@@ -211,6 +211,14 @@ typedef struct {
   int iq_rxrescale;
   //! Configuration file for LMS7002M
   char *configFilename;
+  //! remote IP/MAC addr for Ethernet interface
+  char *remote_addr;
+  //! remote port number for Ethernet interface
+  unsigned int remote_port;
+  //! local IP/MAC addr for Ethernet interface (eNB/BBU, UE)
+  char *my_addr;
+  //! local port number for Ethernet interface (eNB/BBU, UE)
+  unsigned int my_port;
 #if defined(USRP_REC_PLAY)
   unsigned short sf_mode;           // 1=record, 2=replay
   char           sf_filename[1024]; // subframes file path

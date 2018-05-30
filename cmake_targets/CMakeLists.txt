@@ -1267,6 +1267,12 @@ set(PHY_SRC_UE
   # actual source
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/pss_nr.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/sss_nr.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/cic_filter_nr.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/dmrs_nr.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/srs_modulation_nr.c
+  ${OPENAIR1_DIR}/PHY/NR_REFSIG/ul_ref_seq_nr.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
@@ -2152,6 +2158,76 @@ target_link_libraries (nr-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (nr-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-softmodem ${T_LIB})
+
+# nr-uesoftmodem is  UE implementation
+#######################################
+
+add_executable(nr-uesoftmodem
+  ${rrc_h}
+  ${s1ap_h}
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
+  ${OPENAIR_TARGETS}/RT/USER/nr-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/nr-uesoftmodem.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
+  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
+  ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${XFORMS_SOURCE}
+  ${XFORMS_SOURCE_SOFTMODEM}
+  ${T_SOURCE}
+  ${CONFIG_SOURCES}
+  ${SHLIB_LOADER_SOURCES}
+  )
+
+target_link_libraries (nr-uesoftmodem
+  -Wl,--start-group
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_NR_UE PHY_COMMON PHY_UE PHY_RU LFDS L2_UE 
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
+  -Wl,--end-group z dl)
+
+target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})
+target_link_libraries (nr-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (nr-uesoftmodem ${LIB_LMS_LIBRARIES})
+target_link_libraries (nr-uesoftmodem ${T_LIB})
+
+# nr-uesoftmodem is  UE implementation
+#######################################
+
+add_executable(nr-uesoftmodem-nos1
+  ${rrc_h}
+  ${s1ap_h}
+#  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
+  ${OPENAIR_TARGETS}/RT/USER/nr-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/nr-uesoftmodem.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
+  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
+  ${OPENAIR_DIR}/common/utils/utils.c
+  ${OPENAIR_DIR}/common/utils/system.c
+  ${XFORMS_SOURCE}
+  ${XFORMS_SOURCE_SOFTMODEM}
+  ${T_SOURCE}
+  ${CONFIG_SOURCES}
+  ${SHLIB_LOADER_SOURCES}
+  )
+
+target_link_libraries (nr-uesoftmodem-nos1
+  -Wl,--start-group
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_NR_UE PHY_COMMON PHY_UE PHY_RU LFDS L2_UE 
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
+  -Wl,--end-group z dl)
+
+target_link_libraries (nr-uesoftmodem-nos1 ${LIBXML2_LIBRARIES})
+target_link_libraries (nr-uesoftmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (nr-uesoftmodem-nos1 ${LIB_LMS_LIBRARIES})
+target_link_libraries (nr-uesoftmodem-nos1 ${T_LIB})
 
 # USIM process
 #################
