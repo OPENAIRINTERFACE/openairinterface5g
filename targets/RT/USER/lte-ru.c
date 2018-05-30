@@ -456,6 +456,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   int f,sf;
 
 
+  LOG_I(PHY,"rx_fh_if4p5 CALLED\n");
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full;
@@ -466,7 +467,8 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
     symbol_mask_full = (1<<fp->symbols_per_tti)-1; 
 
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
-  do { 
+  do {
+    LOG_I(PHY,"rx_fh_if4p5: Calling recv_IF4p5\n"); 
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
     if (oai_exit == 1 || ru->cmd== STOP_RU) break;
     if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
@@ -478,7 +480,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
     } else if (packet_type == IF4p5_PRACH) {
       // nothing in RU for RAU
     }
-    LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
+    LOG_I(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
 
   //caculate timestamp_rx, timestamp_tx based on frame and subframe
@@ -1337,7 +1339,7 @@ void wakeup_eNBs(RU_t *ru) {
   eNB_proc_t *proc = &eNB->proc;
   struct timespec t;
 
-  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
+  LOG_I(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
 
   if (ru->num_eNB==1 && ru->eNB_top!=0 && get_nprocs() <= 4) {
@@ -1347,7 +1349,7 @@ void wakeup_eNBs(RU_t *ru) {
     sprintf(string,"Incoming RU %d",ru->idx);
     
     pthread_mutex_lock(&proc->mutex_RU);
-    LOG_D(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
+    LOG_I(PHY,"wakeup_eNBs: Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
           ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,ru->wait_cnt,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx]);
     
     clock_gettime(CLOCK_MONOTONIC,&ru->proc.t[ru->proc.subframe_rx]);
@@ -1395,9 +1397,9 @@ void wakeup_eNBs(RU_t *ru) {
     if (ru->wait_cnt == 0)
     	ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string, ru);
   }
-  else { // multiple eNB case for later
+  else { 
 
-    LOG_D(PHY,"ru->num_eNB:%d\n", ru->num_eNB);
+    LOG_I(PHY,"ru->num_eNB:%d\n", ru->num_eNB);
 
     for (i=0;i<ru->num_eNB;i++)
 
@@ -1679,9 +1681,10 @@ static void* ru_thread_tx( void* param ) {
     if (oai_exit) break;   
 
 
-	LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
+	LOG_I(PHY,"ru_thread_tx: Waiting for TX processing\n");
 	// wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
+    LOG_I(PHY,"ru_thread_tx: Woken from condition\n");
     if (oai_exit) break;
   	       
     // do TX front-end processing if needed (precoding and/or IDFTs)
@@ -1760,7 +1763,7 @@ static void* ru_thread( void* param ) {
   }
   else if (ru->has_ctrl_prt == 0){
         // There is no control port: start everything here
-
+	LOG_I(PHY, "RU %d has not ctrl port\n",ru->idx);
         if (ru->if_south == LOCAL_RF){
                 fill_rf_config(ru,ru->rf_config_file);
                 init_frame_parms(&ru->frame_parms,1);
@@ -1863,8 +1866,25 @@ static void* ru_thread( void* param ) {
       }
       if (oai_exit == 1) break;
 
+      LOG_I(PHY,"RU thread %d, frame %d, subframe %d \n",ru->idx, frame, subframe);
       if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
+
+
+      if (ru->stop_rf && ru->cmd == STOP_RU) {
+        ru->stop_rf(ru);
+        ru->state = RU_IDLE;
+        ru->cmd   = EMPTY;
+        LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+        break;
+      }
+      else if (ru->cmd == STOP_RU) {
+        ru->state = RU_IDLE;
+        ru->cmd   = EMPTY;
+        LOG_I(PHY,"RU %d stopped\n",ru->idx);
+        break;
+      }
+      if (oai_exit == 1) break;
 
       if (ru->wait_cnt > 0) {
 
@@ -1887,9 +1907,10 @@ static void* ru_thread( void* param ) {
         wakeup_eNBs(ru);
       }
 
+
       else {
 
-        LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",
+        LOG_I(PHY,"RU thread %d, frame %d, subframe %d \n",
               ru->idx,frame,subframe);
 
         if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
@@ -1927,7 +1948,7 @@ static void* ru_thread( void* param ) {
                 if(!emulate_rf){
         		// do outgoing fronthaul (south) if needed
         		if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-
+                        LOG_I(PHY,"Calling fh_north_out\n");
         		if (ru->fh_north_out) ru->fh_north_out(ru);
 		}
         }
