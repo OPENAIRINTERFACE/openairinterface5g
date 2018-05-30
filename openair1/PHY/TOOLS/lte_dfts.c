@@ -41,7 +41,7 @@
 
 #define ONE_OVER_SQRT3_Q15 18919
 
-#include "PHY/sse_intrin.h"
+#include "../sse_intrin.h"
 
 #define print_shorts(s,x) printf("%s %d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7])
 #define print_shorts256(s,x) printf("%s %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7],(x)[8],(x)[9],(x)[10],(x)[11],(x)[12],(x)[13],(x)[14],(x)[15])
@@ -5523,15 +5523,83 @@ void dft1536(int16_t *input, int16_t *output, int scale)
 
 }
 
+#include "twiddle3072.h"
+
 // 1024 x 3
-void dft3072(int16_t *input, int16_t *output)
-{
-
-}
-
 void idft3072(int16_t *input, int16_t *output)
 {
+  int i,i2,j;
+  uint32_t tmp[3][1024] __attribute__((aligned(32)));
+  uint32_t tmpo[3][1024] __attribute__((aligned(32)));
 
+  for (i=0,j=0; i<1024; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  idft1024((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
+  idft1024((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
+  idft1024((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
+
+  /*
+  for (i=1; i<1024; i++) {
+    tmpo[0][i] = tmpo[0][i<<1];
+    tmpo[1][i] = tmpo[1][i<<1];
+    tmpo[2][i] = tmpo[2][i<<1];
+    }*/
+
+  //  write_output("in.m","in",input,3072,1,1);
+  //  write_output("out0.m","o0",tmpo[0],1024,1,1);
+  //  write_output("out1.m","o1",tmpo[1],1024,1,1);
+  //  write_output("out2.m","o2",tmpo[2],1024,1,1);
+
+
+  for (i=0,i2=0; i<2048; i+=8,i2+=4)  {
+    ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
+    (simd_q15_t*)(output+i),(simd_q15_t*)(output+2048+i),(simd_q15_t*)(output+4096+i),
+           (simd_q15_t*)(twa3072+i),(simd_q15_t*)(twb3072+i));
+  }
+
+  _mm_empty();
+  _m_empty();
+}
+
+void dft3072(int16_t *input, int16_t *output)
+{
+  int i,i2,j;
+  uint32_t tmp[3][1024] __attribute__((aligned(32)));
+  uint32_t tmpo[3][1024] __attribute__((aligned(32)));
+
+  for (i=0,j=0; i<1024; i++) {
+    tmp[0][i] = ((uint32_t *)input)[j++];
+    tmp[1][i] = ((uint32_t *)input)[j++];
+    tmp[2][i] = ((uint32_t *)input)[j++];
+  }
+
+  dft1024((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
+  dft1024((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
+  dft1024((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
+
+  /*
+  for (i=1; i<1024; i++) {
+    tmpo[0][i] = tmpo[0][i<<1];
+    tmpo[1][i] = tmpo[1][i<<1];
+    tmpo[2][i] = tmpo[2][i<<1];
+    }*/
+
+  //  write_output("out0.m","o0",tmpo[0],1024,1,1);
+  //  write_output("out1.m","o1",tmpo[1],1024,1,1);
+  //  write_output("out2.m","o2",tmpo[2],1024,1,1);
+
+  for (i=0,i2=0; i<2048; i+=8,i2+=4) {
+    bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
+    (simd_q15_t*)(output+i),(simd_q15_t*)(output+2048+i),(simd_q15_t*)(output+4096+i),
+          (simd_q15_t*)(twa3072+i),(simd_q15_t*)(twb3072+i));
+  }
+
+  _mm_empty();
+  _m_empty();
 }
 
 #include "twiddle6144.h"
@@ -19171,6 +19239,34 @@ int main(int argc, char**argv)
   printf("\n\n2048-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   write_output("y2048.m","y2048",y,2048,1,1);
   write_output("x2048.m","x2048",x,2048,1,1);
+
+// NR 80Mhz, 217 PRB, 3/4 sampling
+  memset((void*)x, 0, 3072*sizeof(int32_t));
+  for (i=2;i<2506;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(3072-1252);i<6144;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+
+  reset_meas(&ts);
+
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    idft3072((int16_t *)x,(int16_t *)y);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n3072-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  write_output("y3072.m","y3072",y,3072,1,1);
+  write_output("x3072.m","x3072",x,3072,1,1);
+
 
   memset((void*)x,0,2048*sizeof(int32_t));
   for (i=2;i<2402;i++) {
