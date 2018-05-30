@@ -35,7 +35,6 @@
 #include "s1ap_common.h"
 #include "s1ap_eNB.h"
 #include "s1ap_mme.h"
-#include "s1ap_ies_defs.h"
 
 #include "s1ap_eNB_encoder.h"
 #include "s1ap_eNB_decoder.h"
@@ -79,27 +78,22 @@ void s1ap_test_generate_s1_setup_request(uint32_t eNB_id, uint8_t **buffer,
   SupportedTAs_Item_t ta;
   PLMNidentity_t plmnIdentity;
   uint8_t *id_p = (uint8_t *)(&eNB_id + 1);
-
   memset(&s1SetupRequest, 0, sizeof(S1SetupRequestIEs_t));
   s1SetupRequest.global_ENB_ID.eNB_ID.present = ENB_ID_PR_macroENB_ID;
   s1SetupRequest.global_ENB_ID.eNB_ID.choice.macroENB_ID.buf = id_p;
   s1SetupRequest.global_ENB_ID.eNB_ID.choice.macroENB_ID.size = 3;
   s1SetupRequest.global_ENB_ID.eNB_ID.choice.macroENB_ID.bits_unused = 4;
   OCTET_STRING_fromBuf(&s1SetupRequest.global_ENB_ID.pLMNidentity, identity, 3);
-
   s1SetupRequest.presenceMask |= S1SETUPREQUESTIES_ENBNAME_PRESENT;
   OCTET_STRING_fromBuf(&s1SetupRequest.eNBname, "ENB 1 eurecom",
                        strlen("ENB 1 eurecom"));
-
   memset(&ta, 0, sizeof(SupportedTAs_Item_t));
   memset(&plmnIdentity, 0, sizeof(PLMNidentity_t));
   OCTET_STRING_fromBuf(&ta.tAC, tac, 2);
   OCTET_STRING_fromBuf(&plmnIdentity, identity, 3);
   ASN_SEQUENCE_ADD(&ta.broadcastPLMNs, &plmnIdentity);
   ASN_SEQUENCE_ADD(&s1SetupRequest.supportedTAs, &ta);
-
   s1SetupRequest.defaultPagingDRX = PagingDRX_v64;
-
   s1ap_eNB_encode_s1_setup_request(&s1SetupRequest, buffer, length);
 }
 
@@ -109,13 +103,10 @@ int s1ap_test_generate_initial_ue_message(uint32_t eNB_UE_S1AP_ID,
 {
   InitialUEMessageIEs_t  initialUEmessageIEs;
   InitialUEMessageIEs_t *initialUEmessageIEs_p = &initialUEmessageIEs;
-
   memset(initialUEmessageIEs_p, 0, sizeof(InitialUEMessageIEs_t));
-
   initialUEmessageIEs.eNB_UE_S1AP_ID = eNB_UE_S1AP_ID & 0x00ffffff;
   initialUEmessageIEs.nas_pdu.buf = (uint8_t *)infoNAS;
   initialUEmessageIEs.nas_pdu.size = sizeof(infoNAS);
-
   initialUEmessageIEs.tai.tAC.buf = (uint8_t *)tac;
   initialUEmessageIEs.tai.tAC.size = 2;
   initialUEmessageIEs.tai.pLMNidentity.buf = (uint8_t *)identity;
@@ -125,9 +116,7 @@ int s1ap_test_generate_initial_ue_message(uint32_t eNB_UE_S1AP_ID,
   initialUEmessageIEs.eutran_cgi.cell_ID.buf = (uint8_t *)id;
   initialUEmessageIEs.eutran_cgi.cell_ID.size = 4;
   initialUEmessageIEs.eutran_cgi.cell_ID.bits_unused = 4;
-
   initialUEmessageIEs.rrC_Establishment_Cause = RRC_Establishment_Cause_mo_Data;
-
   return s1ap_eNB_encode_initial_ue_message(initialUEmessageIEs_p, buffer, length);
 }
 
@@ -140,26 +129,19 @@ int s1ap_test_generate_initial_setup_resp(uint32_t eNB_UE_S1AP_ID,
 {
   InitialContextSetupResponseIEs_t  initialResponseIEs;
   InitialContextSetupResponseIEs_t *initialResponseIEs_p = &initialResponseIEs;
-
   E_RABSetupItemCtxtSURes_t e_RABSetupItemCtxtSURes;
-
   memset(initialResponseIEs_p, 0, sizeof(InitialContextSetupResponseIEs_t));
   memset(&e_RABSetupItemCtxtSURes, 0, sizeof(E_RABSetupItemCtxtSURes_t));
-
   initialResponseIEs_p->mme_ue_s1ap_id = mme_UE_S1AP_ID;
   initialResponseIEs_p->eNB_UE_S1AP_ID = eNB_UE_S1AP_ID;
-
   e_RABSetupItemCtxtSURes.e_RAB_ID = eRAB_id;
   e_RABSetupItemCtxtSURes.transportLayerAddress.buf = (uint8_t *)&ipv4_local;
   e_RABSetupItemCtxtSURes.transportLayerAddress.size = 4;
-
   e_RABSetupItemCtxtSURes.gTP_TEID.buf = (uint8_t *)&teid;
   e_RABSetupItemCtxtSURes.gTP_TEID.size = 4;
-
   ASN_SEQUENCE_ADD(
     &initialResponseIEs_p->e_RABSetupListCtxtSURes.e_RABSetupItemCtxtSURes,
     &e_RABSetupItemCtxtSURes);
-
   return s1ap_eNB_encode_initial_context_setup_response(initialResponseIEs_p,
          buffer, length);
 }
@@ -169,19 +151,19 @@ int recv_callback(uint32_t  assocId,
                   uint8_t  *buffer,
                   uint32_t  length)
 {
-  s1ap_message message;
+  S1AP_S1AP_PDU_t pdu;
   uint8_t *buffer2;
   uint32_t len;
   int j;
 
-  if (s1ap_eNB_decode_pdu(&message, buffer, length) < 0) {
+  if (s1ap_eNB_decode_pdu(&pdu, buffer, length) < 0) {
     fprintf(stderr, "s1ap_eNB_decode_pdu returned status < 0\n");
     free(buffer);
     return -1;
   }
 
-  if (message.procedureCode == ProcedureCode_id_S1Setup
-      && message.direction == S1AP_PDU_PR_successfulOutcome) {
+  if (pdu.initiatingMessage.procedureCode == S1AP_ProcedureCode_id_S1Setup
+      && pdu.present == S1AP_S1AP_PDU_PR_successfulOutcome) {
     for (j = 0; j < nb_ue; j++) {
       s1ap_test_generate_initial_ue_message(j, &buffer2, &len);
 
@@ -194,8 +176,8 @@ int recv_callback(uint32_t  assocId,
 
       free(buffer2);
     }
-  } else if (message.procedureCode == ProcedureCode_id_InitialContextSetup
-             && message.direction == S1AP_PDU_PR_initiatingMessage) {
+  } else if (pdu.initiatingMessage.procedureCode == S1AP_ProcedureCode_id_InitialContextSetup
+             && pdu.present == S1AP_PDU_PR_initiatingMessage) {
     fprintf(stdout, "Received InitialContextSetup request\n");
     s1ap_test_generate_initial_setup_resp(
       message.msg.initialContextSetupRequestIEs.eNB_UE_S1AP_ID,
@@ -220,7 +202,6 @@ int recv_callback(uint32_t  assocId,
   }
 
   free(buffer);
-
   return 0;
 }
 
@@ -231,9 +212,7 @@ int sctp_connected(void     *args,
 {
   uint8_t *buffer;
   uint32_t len;
-
   fprintf(stdout, "New association %d\n", assocId);
-
   s1ap_test_generate_s1_setup_request(assocId * nb_eNB, &buffer, &len);
 
   if (sctp_send_msg(assocId, 0, buffer, len) < 0) {
@@ -244,7 +223,6 @@ int sctp_connected(void     *args,
   }
 
   free(buffer);
-
   connected_eNB++;
   return 0;
 }
@@ -252,12 +230,9 @@ int sctp_connected(void     *args,
 int main(int argc, char *argv[])
 {
   asn_enc_rval_t retVal;
-
   int i;
-
   SupportedTAs_Item_t ta;
   PLMNidentity_t plmnIdentity;
-
   asn_debug = 0;
   asn1_xer_print = 0;
 
@@ -278,12 +253,9 @@ int main(int argc, char *argv[])
     sleep(1);
   }
 
-
   //     generateUplinkNASTransport(&buffer, &len);
   //     sctp_send_msg(assoc[0], 0, buffer, len);
   //     s1ap_mme_decode_pdu(buffer, len);
-
   sctp_terminate();
-
   return(0);
 }
