@@ -22,6 +22,7 @@
 #include "PHY/types.h"
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
+#include "lte_estimation.h"
 
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "openair2/LAYER2/MAC/mac_proto.h"
