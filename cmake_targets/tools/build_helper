@@ -147,7 +147,7 @@ clean_all_files() {
  set_openair_env
  dir=$OPENAIR_DIR/cmake_targets
  rm -rf $dir/log $OPENAIR_DIR/targets/bin/* 
- rm -rf $dir/build_oai $dir/lte-simulators/build
+ rm -rf $dir/lte_build_oai $dir/lte-simulators/build
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
  rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build 
 }
@@ -240,36 +240,6 @@ install_protobuf_c_from_source(){
     $SUDO make install
     $SUDO ldconfig
     ) >& $protobuf_c_install_log
-}
-
-install_libiio_driver_from_source(){
-    libiio_install_log=$OPENAIR_DIR/cmake_targets/log/libiio_install_log.txt
-    echo_info "\nInstalling LibIIO driver from sources. The log file for LibIIO driver installation is here: $libiio_install_log "
-    (
-     cd /tmp
-     echo "Downloading LibIIO driver"
-     rm -rf /tmp/libiio
-     git clone https://github.com/analogdevicesinc/libiio.git
-     cd libiio
-     git checkout 2016_R2
-     cmake ./
-	 make all
-     $SUDO make install
-    ) >& $libiio_install_log
-}
-
-check_install_libiio_driver(){
-    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-   		$SUDO apt-get install -y --allow-unauthenticated libxml2
-   		$SUDO apt-get install -y --allow-unauthenticated libxml2-dev
-   		$SUDO apt-get install -y --allow-unauthenticated bison
-   		$SUDO apt-get install -y --allow-unauthenticated flex
-   		$SUDO apt-get install -y --allow-unauthenticated libcdk5-dev
-   		$SUDO apt-get install -y --allow-unauthenticated cmake 
-		$SUDO apt-get install -y --allow-unauthenticated libaio-dev
-		$SUDO apt-get install -y --allow-unauthenticated libavahi-client-dev
-		install_libiio_driver_from_source
-    fi
 }
 
 install_usrp_uhd_driver_from_source(){
@@ -689,8 +659,11 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c
-    GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    # GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    git clone https://github.com/velichkov/asn1c /tmp/asn1c
     cd /tmp/asn1c
+    git checkout s1ap
+    test -f configure || autoreconf -iv
     ./configure
     make -j`nproc`
     $SUDO make install
