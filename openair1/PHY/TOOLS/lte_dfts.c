@@ -19215,6 +19215,33 @@ int main(int argc, char**argv)
   write_output("y1024.m","y1024",y,1024,1,1);
   write_output("x1024.m","x1024",x,1024,1,1);
 
+
+  memset((void*)x,0,1536*sizeof(int32_t));
+  for (i=2;i<1202;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(1536-600);i<3072;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  reset_meas(&ts);
+
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    idft1536((int16_t *)x,(int16_t *)y,1);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n1536-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  write_output("y1536.m","y1536",y,1536,1,1);
+  write_output("x1536.m","x1536",x,1536,1,1);
+
+
   memset((void*)x,0,2048*sizeof(int32_t));
   for (i=2;i<1202;i++) {
     if ((taus() & 1)==0)
@@ -19292,6 +19319,33 @@ int main(int argc, char**argv)
   printf("\n\n4096-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   write_output("y4096.m","y4096",y,4096,1,1);
   write_output("x4096.m","x4096",x,4096,1,1);
+
+// NR 160Mhz, 434 PRB, 3/4 sampling
+  memset((void*)x, 0, 6144*sizeof(int32_t));
+  for (i=2;i<5010;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(6144-2504);i<12288;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+
+  reset_meas(&ts);
+
+  for (i=0; i<10000; i++) {
+    start_meas(&ts);
+    idft6144((int16_t *)x,(int16_t *)y);
+    stop_meas(&ts);
+  }
+
+  printf("\n\n6144-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  write_output("y6144.m","y6144",y,6144,1,1);
+  write_output("x6144.m","x6144",x,6144,1,1);
 
   memset((void*)x,0,8192*sizeof(int32_t));
   for (i=2;i<4802;i++) {
