@@ -1432,12 +1432,11 @@ int setup_RU_buffers(RU_t *ru) {
 static void* ru_stats_thread(void* param) {
 
   RU_t               *ru      = (RU_t*)param;
-
   wait_sync("ru_stats_thread");
 
   while (!oai_exit) {
      sleep(1);
-     if (opp_enabled == 1 && fepw) {
+     if (opp_enabled) {
        if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
        if (ru->feptx_ofdm) print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
        if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
@@ -1908,8 +1907,8 @@ void init_RU_proc(RU_t *ru) {
   }
 
   if (get_nprocs()> 2 && fepw) { 
-    if (ru->feprx) init_fep_thread(ru,NULL); 
-    if (ru->feptx_ofdm) init_feptx_thread(ru,NULL);
+    init_fep_thread(ru,NULL); 
+    init_feptx_thread(ru,NULL);
   } 
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void*)ru); 
   
@@ -1921,14 +1920,10 @@ void kill_RU_proc(int inst)
   RU_proc_t *proc = &ru->proc;
 
   if (get_nprocs() > 2 && fepw) {
-    if (ru->feprx) {
       LOG_D(PHY, "killing FEP thread\n"); 
       kill_fep_thread(ru);
-    }
-    if (ru->feptx_ofdm){
       LOG_D(PHY, "killing FEP TX thread\n"); 
       kill_feptx_thread(ru);
-    }
   }
 
   pthread_mutex_lock(&proc->mutex_FH);
