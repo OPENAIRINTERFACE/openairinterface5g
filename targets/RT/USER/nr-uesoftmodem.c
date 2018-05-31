@@ -167,7 +167,10 @@ uint8_t nb_antenna_rx = 1;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-int                      rx_input_level_dBm;
+int codingw = 0;
+int fepw = 0;
+
+int                      		rx_input_level_dBm;
 static int                      online_log_messages=0;
 #ifdef XFORMS
 extern int                      otg_enabled;
@@ -575,9 +578,80 @@ void *l2l1_task(void *arg) {
 #endif
 
 
-
+extern int16_t dlsch_demod_shift;
 
 static void get_options (int argc, char **argv) {
+	  int CC_id;
+	  int tddflag, nonbiotflag;
+	  char *loopfile=NULL;
+	  int dumpframe;
+	  uint32_t online_log_messages;
+	  uint32_t glog_level, glog_verbosity;
+	  uint32_t start_telnetsrv;
+
+	  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
+	  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
+
+	  //set_default_frame_parms(frame_parms);
+	  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
+
+	  if (strlen(in_path) > 0) {
+	      opt_type = OPT_PCAP;
+	      opt_enabled=1;
+	      printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
+	  }
+	  if (strlen(in_ip) > 0) {
+	      opt_enabled=1;
+	      opt_type = OPT_WIRESHARK;
+	      printf("Enabling OPT for wireshark for local interface");
+	  }
+
+	  config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
+	  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
+	      set_glog_onlinelog(online_log_messages);
+	  }
+	  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
+	      set_glog(glog_level, -1);
+	  }
+	  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGVERBO_IDX)) {
+	      set_glog(-1, glog_verbosity);
+	  }
+	  if (start_telnetsrv) {
+	     load_module_shlib("telnetsrv",NULL,0);
+	  }
+
+	  paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
+	  paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
+
+
+	  config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
+	  config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
+	  if (loopfile != NULL) {
+	      printf("Input file for hardware emulation: %s",loopfile);
+	      mode=loop_through_memory;
+	      input_fd = fopen(loopfile,"r");
+	      AssertFatal(input_fd != NULL,"Please provide a valid input file\n");
+	  }
+
+	  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
+	  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
+	  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
+	  if (cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr)
+	      if ( *(cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr) > 0) mode = debug_prach;
+	  if (cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr)
+	      if ( *(cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr) > 0)  mode = no_L2_connect;
+	  if (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr)
+	      if ( *(cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr) > 0) mode = calib_prach_tx;
+
+	  if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT))  && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
+	      // Here the configuration file is the XER encoded UE capabilities
+	      // Read it in and store in asn1c data structures
+	      sprintf(uecap_xer,"%stargets/PROJECTS/GENERIC-LTE-EPC/CONF/UE_config.xml",getenv("OPENAIR_HOME"));
+	      printf("%s\n",uecap_xer);
+	      uecap_xer_in=1;
+	    } /* UE with config file  */
+
+
     int c;
     //  char                          line[1000];
     //  int                           l;
@@ -585,7 +659,6 @@ static void get_options (int argc, char **argv) {
 #if defined(OAI_USRP) || defined(CPRIGW) || defined(OAI_ADRV9371_ZC706)
     int clock_src;
 #endif
-    int CC_id;
 
     enum long_option_e {
         LONG_OPTION_START = 0x100, /* Start after regular single char options */
