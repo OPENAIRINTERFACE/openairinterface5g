@@ -79,7 +79,7 @@ void init_UE_threads(int);
 void init_UE_threads_stub(int);
 void init_UE_single_thread_stub(int);
 void *UE_thread(void *arg);
-void init_UE(int nb_inst,int,int,int);
+void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax,int nb_rx,int nb_tx);
 void init_UE_stub(int nb_inst,int,int,char*);
 void init_UE_stub_single_thread(int nb_inst,int,int,char*);
 int init_timer_thread(void);
@@ -92,6 +92,8 @@ extern int oai_nfapi_harq_indication(nfapi_harq_indication_t *harq_ind);
 extern int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind);
 extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern int multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP);
+
+extern int simL1flag;
 
 //extern int tx_req_UE_MAC1();
 
@@ -236,7 +238,7 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
 
 }
 
-void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction) {
+void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax,int nb_rx,int nb_tx) {
 
   PHY_VARS_UE *UE;
   int         inst;
@@ -248,18 +250,58 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
 	     0,// cba_group_active
 	     0); // HO flag
 
+  if (PHY_vars_UE_g==NULL) PHY_vars_UE_g = (PHY_VARS_UE***)calloc(1+nb_inst,sizeof(PHY_VARS_UE**));
+   
   for (inst=0;inst<nb_inst;inst++) {
-
-    LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
-    PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
+    if (PHY_vars_UE_g[inst]==NULL) PHY_vars_UE_g[inst] = (PHY_VARS_UE**)calloc(1+MAX_NUM_CCs,sizeof(PHY_VARS_UE*));
+    if (simL1flag == 0) PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
+    else                PHY_vars_UE_g[inst][0] = init_ue_vars(&RC.ru[0]->frame_parms,inst,0);
     // turn off timing control loop in UE
     PHY_vars_UE_g[inst][0]->no_timing_correction = timing_correction;
 
+    UE = PHY_vars_UE_g[inst][0];
+    printf("PHY_vars_UE_g[0][0] = %p\n",UE);
+
+    if (phy_test==1)
+      UE->mac_enabled = 0;
+    else
+      UE->mac_enabled = 1;
+
+    if (UE->mac_enabled == 0) {  //set default UL parameters for testing mode
+      for (int i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
+        UE->pusch_config_dedicated[i].betaOffset_ACK_Index = 0;
+        UE->pusch_config_dedicated[i].betaOffset_RI_Index  = 0;
+        UE->pusch_config_dedicated[i].betaOffset_CQI_Index = 2;
+        
+        UE->scheduling_request_config[i].sr_PUCCH_ResourceIndex = 0;
+        UE->scheduling_request_config[i].sr_ConfigIndex = 7+(0%3);
+        UE->scheduling_request_config[i].dsr_TransMax = sr_n4;
+      }
+    }
+
+    UE->UE_scan = UE_scan;
+    UE->UE_scan_carrier = UE_scan_carrier;
+    UE->mode    = mode;
+    printf("UE->mode = %d\n",mode);
+
+    if (UE->mac_enabled == 1) {
+      UE->pdcch_vars[0][0]->crnti = 0x1234;
+      UE->pdcch_vars[1][0]->crnti = 0x1234;
+    }else {
+      UE->pdcch_vars[0][0]->crnti = 0x1235;
+      UE->pdcch_vars[1][0]->crnti = 0x1235;
+    }
+    UE->rx_total_gain_dB =  rxgain;
+    UE->tx_power_max_dBm = txpowermax;
+
+    UE->frame_parms.nb_antennas_tx = nb_tx;
+    UE->frame_parms.nb_antennas_rx = nb_rx; 
+
+    if (simL1flag == 1) init_ue_devices();
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     init_UE_threads(inst);
-    UE = PHY_vars_UE_g[inst][0];
 
-    if (oaisim_flag == 0) {
+    if (simL1flag == 0) {
       ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
       if (ret !=0){
 	exit_fun("Error loading device library");
@@ -443,9 +485,12 @@ static void *UE_thread_synch(void *arg)
     }
   }
 
+/*
   while (sync_var<0)
     pthread_cond_wait(&sync_cond, &sync_mutex);
   pthread_mutex_unlock(&sync_mutex);
+*/
+  wait_sync("UE_thread_sync");
 
   printf("Started device, unlocked sync_mutex (UE_sync_thread)\n");
 
@@ -1425,6 +1470,14 @@ void *UE_thread(void *arg) {
   init_thread(100000, 500000, FIFO_PRIORITY, &cpuset,
 	      "UHD Threads");
 
+  /*
+  while (sync_var<0)
+    pthread_cond_wait(&sync_cond, &sync_mutex);
+  pthread_mutex_unlock(&sync_mutex);
+  */
+
+  wait_sync("UE thread\n");
+  LOG_I(PHY,"UE_thread Got sync\n");
 #ifdef NAS_UE
   MessageDef *message_p;
   message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);

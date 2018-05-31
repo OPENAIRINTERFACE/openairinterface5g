@@ -212,13 +212,13 @@ int logInit (void)
   g_log->log_component[RRC].filelog = 0;
   g_log->log_component[RRC].filelog_name = "/tmp/rrc.log";
 
-  g_log->log_component[EMU].name = "EMU";
-  g_log->log_component[EMU].level = LOG_EMERG;
-  g_log->log_component[EMU].flag =  LOG_MED;
-  g_log->log_component[EMU].interval =  1;
-  g_log->log_component[EMU].fd = 0;
-  g_log->log_component[EMU].filelog = 0;
-  g_log->log_component[EMU].filelog_name = "";
+  g_log->log_component[SIM].name = "SIM";
+  g_log->log_component[SIM].level = LOG_EMERG;
+  g_log->log_component[SIM].flag =  LOG_MED;
+  g_log->log_component[SIM].interval =  1;
+  g_log->log_component[SIM].fd = 0;
+  g_log->log_component[SIM].filelog = 0;
+  g_log->log_component[SIM].filelog_name = "";
 
   g_log->log_component[OMG].name = "OMG";
   g_log->log_component[OMG].level = LOG_EMERG;
@@ -474,7 +474,7 @@ int logInit (void)
 
   if (g_log->syslog) {
 #if ! defined(CN_BUILD)
-    openlog(g_log->log_component[EMU].name, LOG_PID, g_log->config.facility);
+    openlog(g_log->log_component[SIM].name, LOG_PID, g_log->config.facility);
 #endif // ! defined(CN_BUILD)
   }
   log_getconfig(g_log);
@@ -1737,16 +1737,16 @@ int main(int argc, char *argv[])
 int test_log(void)
 {
   LOG_ENTER(MAC); // because the default level is DEBUG
-  LOG_I(EMU, "1 Starting OAI logs version %s Build date: %s on %s\n",
+  LOG_I(SIM, "1 Starting OAI logs version %s Build date: %s on %s\n",
         BUILD_VERSION, BUILD_DATE, BUILD_HOST);
   LOG_D(MAC, "1 debug  MAC \n");
   LOG_N(MAC, "1 notice MAC \n");
   LOG_W(MAC, "1 warning MAC \n");
 
-  set_comp_log(EMU, LOG_INFO, FLAG_ONLINE);
+  set_comp_log(SIM, LOG_INFO, FLAG_ONLINE);
   set_comp_log(MAC, LOG_WARNING, 0);
 
-  LOG_I(EMU, "2 Starting OAI logs version %s Build date: %s on %s\n",
+  LOG_I(SIM, "2 Starting OAI logs version %s Build date: %s on %s\n",
         BUILD_VERSION, BUILD_DATE, BUILD_HOST);
   LOG_E(MAC, "2 emerge MAC\n");
   LOG_D(MAC, "2 debug  MAC \n");
@@ -1758,7 +1758,7 @@ int test_log(void)
   set_comp_log(MAC, LOG_NOTICE, 1);
 
   LOG_ENTER(MAC);
-  LOG_I(EMU, "3 Starting OAI logs version %s Build date: %s on %s\n",
+  LOG_I(SIM, "3 Starting OAI logs version %s Build date: %s on %s\n",
         BUILD_VERSION, BUILD_DATE, BUILD_HOST);
   LOG_D(MAC, "3 debug  MAC \n");
   LOG_N(MAC, "3 notice MAC \n");
@@ -1766,10 +1766,10 @@ int test_log(void)
   LOG_I(MAC, "3 info MAC \n");
 
   set_comp_log(MAC, LOG_DEBUG,1);
-  set_comp_log(EMU, LOG_DEBUG,1);
+  set_comp_log(SIM, LOG_DEBUG,1);
 
   LOG_ENTER(MAC);
-  LOG_I(EMU, "4 Starting OAI logs version %s Build date: %s on %s\n",
+  LOG_I(SIM, "4 Starting OAI logs version %s Build date: %s on %s\n",
         BUILD_VERSION, BUILD_DATE, BUILD_HOST);
   LOG_D(MAC, "4 debug  MAC \n");
   LOG_N(MAC, "4 notice MAC \n");
@@ -1778,7 +1778,7 @@ int test_log(void)
 
 
   set_comp_log(MAC, LOG_DEBUG,0);
-  set_comp_log(EMU, LOG_DEBUG,0);
+  set_comp_log(SIM, LOG_DEBUG,0);
 
   LOG_I(LOG, "5 Starting OAI logs version %s Build date: %s on %s\n",
         BUILD_VERSION, BUILD_DATE, BUILD_HOST);
@@ -1789,7 +1789,7 @@ int test_log(void)
 
 
   set_comp_log(MAC, LOG_TRACE,0X07F);
-  set_comp_log(EMU, LOG_TRACE,0X07F);
+  set_comp_log(SIM, LOG_TRACE,0X07F);
 
   LOG_ENTER(MAC);
   LOG_I(LOG, "6 Starting OAI logs version %s Build date: %s on %s\n",

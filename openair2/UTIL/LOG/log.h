@@ -150,7 +150,7 @@ typedef enum {
     MIN_LOG_COMPONENTS = 0,
     PHY = MIN_LOG_COMPONENTS,
     MAC,
-    EMU,
+    SIM,
     OCG,
     OMG,
     OPT,

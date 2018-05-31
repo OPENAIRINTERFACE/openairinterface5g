@@ -2467,7 +2467,7 @@ void RCconfig_RU(void) {
 
 
 
-    RC.ru_mask=(1<<NB_RU) - 1;
+    RC.ru_mask=(1<<RC.nb_RU) - 1;
     printf("Set RU mask to %lx\n",RC.ru_mask);
 
     for (j = 0; j < RC.nb_RU; j++) {

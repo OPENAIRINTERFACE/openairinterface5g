@@ -621,9 +621,7 @@ add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the d
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DEADLINE_SCHEDULER True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
 add_boolean_option(CPU_AFFINITY False "Enable CPU Affinity of threads (only valid without deadline scheduler). It is enabled only with >2 CPUs")
-add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
 add_boolean_option(NAS_NETLINK False "useless ??? Must be True to compile nasmesh driver without rtai ????")
-add_boolean_option(OAISIM False "specific to oaisim")
 add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????")
 
 add_boolean_option(USE_MME False "this flag is used only one time in lte-softmodem.c")
@@ -652,9 +650,7 @@ add_boolean_option(OPENAIR_LTE             True "Seems legacy: keep it to true")
 # PHY options
 ##########################
 add_boolean_option(DRIVER2013              True "only relevant for EXMIMO")
-add_boolean_option(ENABLE_NEW_MULTICAST    False "specific to oaisim")
 add_boolean_option(EXMIMO_IOT              True "????")
-add_boolean_option(LARGE_SCALE             False "specific to oaisim: defines max eNB=2 and max UE=120")
 add_boolean_option(LOCALIZATION            False "???")
 add_integer_option(MAX_NUM_CCs             1     "????")
 add_boolean_option(MU_RECEIVER             False "????")
@@ -677,7 +673,6 @@ add_boolean_option(NAS_UE                  True  "NAS UE INSTANCE (<> NAS_MME)")
 ##########################
 # ACCESS STRATUM LAYER2 OPTIONS
 ##########################
-add_boolean_option(MAC_CONTEXT             True  "specific to oaisim")
 add_boolean_option(JUMBO_FRAME             True  "ENABLE LARGE SDU in ACCESS STRATUM (larger than common MTU)")
 
 ##########################
@@ -1720,11 +1715,13 @@ ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
 ${OPENAIR1_DIR}/SIMULATION/TOOLS/multipath_channel.c
 ${OPENAIR1_DIR}/SIMULATION/TOOLS/multipath_tv_channel.c
 ${OPENAIR1_DIR}/SIMULATION/TOOLS/abstraction.c
+${OPENAIR1_DIR}/SIMULATION/TOOLS/channel_sim.c
 ${OPENAIR1_DIR}/SIMULATION/RF/rf.c
 ${OPENAIR1_DIR}/SIMULATION/RF/dac.c
 ${OPENAIR1_DIR}/SIMULATION/RF/adc.c
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
 )
+
 
 add_library(SIMU_ETH
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -1982,6 +1979,8 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
+  ${OPENAIR_TARGETS}/RT/USER/rfsim.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
@@ -2000,13 +1999,13 @@ add_executable(lte-uesoftmodem
 
 target_link_libraries (lte-uesoftmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE 
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU 
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
 target_link_libraries (lte-uesoftmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (lte-uesoftmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem ${T_LIB})
 
@@ -2019,6 +2018,8 @@ add_executable(lte-uesoftmodem-nos1
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
+  ${OPENAIR_TARGETS}/RT/USER/rfsim.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
@@ -2038,13 +2039,13 @@ add_executable(lte-uesoftmodem-nos1
 
 target_link_libraries (lte-uesoftmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} 
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} 
   ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl )
 
 target_link_libraries (lte-uesoftmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-uesoftmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (lte-uesoftmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem-nos1  ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem-nos1 ${T_LIB})
 
@@ -2074,96 +2075,6 @@ target_link_libraries (lte-uesoftmodem-nos1 ${T_LIB})
 ###################################"
 # Addexecutables for tests
 ####################################
-
-# A all in one network simulator
-################
-add_executable(oaisim
-  ${rrc_h}
-  ${s1ap_h}
-  ${x2ap_h}
-  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-  ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
-#  ${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c
-  ${OPENAIR_TARGETS}/SIMU/USER/sinr_sim.c
-  ${OPENAIR_TARGETS}/SIMU/USER/cor_SF_sim.c
-  ${OPENAIR_TARGETS}/SIMU/USER/oaisim_functions.c
-  ${OPENAIR_TARGETS}/SIMU/USER/event_handler.c
-  ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
-  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
-  ${OPENAIR_DIR}/common/utils/utils.c
-  ${OPENAIR_DIR}/common/utils/system.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
-  ${XFORMS_SOURCE}
-  ${T_SOURCE}
-  ${CONFIG_SOURCES}
-  ${SHLIB_LOADER_SOURCES}
-)
-
-
-target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
-target_link_libraries (oaisim
-  -Wl,-ldl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE ${MSC_LIB} LIB_NAS_UE SIMU SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
-  ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
-  -Wl,--end-group z dl)
-
-target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
-target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp z
-  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
-#Force link with forms, regardless XFORMS option
-target_link_libraries (oaisim forms)
-target_link_libraries (oaisim ${T_LIB})
-
-
-# A all in one network simulator
-################
-add_executable(oaisim_nos1
-  ${rrc_h}
-  ${s1ap_h}
-  ${x2ap_h}
-  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
-  ${OPENAIR1_DIR}/SCHED/prach_procedures.c
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-  ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
-#  ${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c
-  ${OPENAIR_TARGETS}/SIMU/USER/sinr_sim.c
-  ${OPENAIR_TARGETS}/SIMU/USER/cor_SF_sim.c
-  ${OPENAIR_TARGETS}/SIMU/USER/oaisim_functions.c
-  ${OPENAIR_TARGETS}/SIMU/USER/event_handler.c
-  ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
-  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
-  ${OPENAIR_DIR}/common/utils/system.c
-  ${XFORMS_SOURCE}
-  ${T_SOURCE}
-  ${CONFIG_SOURCES}
-  ${SHLIB_LOADER_SOURCES}
-)
-target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
-target_link_libraries (oaisim_nos1
-  -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS ${MSC_LIB} ${ITTI_LIB} SIMU L2_UE ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
-  -Wl,--end-group z dl )
-
-target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
-target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  
-  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
-#Force link with forms, regardless XFORMS option
-target_link_libraries (oaisim_nos1 forms)
-
-#message("protobuflib is  ${PROTOBUF_LIB}")
-
-target_link_libraries (oaisim_nos1 ${T_LIB})
 
 
 # Unitary tests for each piece of L1: example, mbmssim is MBMS L1 simulator
@@ -2262,7 +2173,7 @@ endforeach(myExe)
 if (${T_TRACER})
   foreach(i
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
-        lte-softmodem lte-softmodem-nos1 oaisim oaisim_nos1
+        lte-softmodem lte-softmodem-nos1
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
         pdcchsim pucchsim prachsim syncsim
         #all "add_library" definitions

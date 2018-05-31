@@ -459,7 +459,7 @@ void *l2l1_task(void *arg) {
       switch (ITTI_MSG_ID(message_p)) {
       case INITIALIZE_MESSAGE:
 	/* Start eNB thread */
-	LOG_D(EMU, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
+	printf("L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
 	start_eNB = 1;
 	break;
 
@@ -471,7 +471,7 @@ void *l2l1_task(void *arg) {
 	break;
 
       default:
-	LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
+	printf("Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
 	break;
       }
     } while (ITTI_MSG_ID(message_p) != INITIALIZE_MESSAGE);
@@ -498,11 +498,11 @@ void *l2l1_task(void *arg) {
       break;
 
     case MESSAGE_TEST:
-      LOG_I(EMU, "Received %s\n", ITTI_MSG_NAME(message_p));
+      printf("Received %s\n", ITTI_MSG_NAME(message_p));
       break;
 
     default:
-      LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
+      printf("Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
       break;
     }
 
@@ -564,8 +564,7 @@ static void get_options(void) {
       /* Read RC configuration file */
       RCConfig();
       NB_eNB_INST = RC.nb_inst;
-      NB_RU	  = RC.nb_RU;
-      printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,NB_RU);
+      printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,RC.nb_RU);
       if (nonbiotflag <= 0) {
          load_NB_IoT();
          printf("               nb_nbiot_rrc_inst %d, nb_nbiot_L1_inst %d, nb_nbiot_macrlc_inst %d\n",
@@ -1285,7 +1284,7 @@ int main( int argc, char **argv )
 
   // cleanup
     stop_eNB(NB_eNB_INST);
-    stop_RU(NB_RU);
+    stop_RU(RC.nb_RU);
     /* release memory used by the RU/eNB threads (incomplete), after all
      * threads have been stopped (they partially use the same memory) */
     for (int inst = 0; inst < NB_eNB_INST; inst++) {
@@ -1294,7 +1293,7 @@ int main( int argc, char **argv )
         phy_free_lte_eNB(RC.eNB[inst][cc_id]);
       }
     }
-    for (int inst = 0; inst < NB_RU; inst++) {
+    for (int inst = 0; inst < RC.nb_RU; inst++) {
       phy_free_RU(RC.ru[inst]);
     }
     free_lte_top();
@@ -1313,7 +1312,7 @@ int main( int argc, char **argv )
 
   // *** Handle per CC_id openair0
 
-    for(ru_id=0; ru_id<NB_RU; ru_id++) {
+    for(ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       if (RC.ru[ru_id]->rfdevice.trx_end_func)
 	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);  
       if (RC.ru[ru_id]->ifdevice.trx_end_func)

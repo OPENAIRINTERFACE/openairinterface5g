@@ -52,6 +52,7 @@
 #define CONFIG_HLP_DBGUEPR       "UE run normal prach power ramping, but don't continue random-access\n"
 #define CONFIG_HLP_CALPRACH      "UE run normal prach with maximum power, but don't continue random-access\n"
 #define CONFIG_HLP_NOL2CN        "bypass L2 and upper layers\n"
+#define CONFIG_HLP_SIML1         "activate RF simulator instead of HW\n"
 #define CONFIG_HLP_UERXG         "set UE RX gain\n"
 #define CONFIG_HLP_UERXGOFF      "external UE amplifier offset\n"
 #define CONFIG_HLP_UETXG         "set UE TX gain\n"
@@ -131,6 +132,7 @@
 /*   optname                     helpstr             paramflags                      XXXptr                  defXXXval       type          numelt   */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_UEPARAMS_DESC {  \
+{"siml1",                      CONFIG_HLP_SIML1,      PARAMFLAG_BOOL,   iptr:&simL1flag,                    defintval:0,    TYPE_INT,      0}, \
 {"ue-rxgain",        	       CONFIG_HLP_UERXG,      0,		dblptr:&(rx_gain[0][0]),	    defdblval:0,    TYPE_DOUBLE,   0},     \
 {"ue-rxgain-off",    	       CONFIG_HLP_UERXGOFF,   0,		dblptr:&rx_gain_off,		    defdblval:0,    TYPE_DOUBLE,   0},     \
 {"ue-txgain",        	       CONFIG_HLP_UETXG,      0,		dblptr:&(tx_gain[0][0]),	    defdblval:0,    TYPE_DOUBLE,   0},     \
@@ -138,8 +140,8 @@
 {"ue-nb-ant-tx",     	       CONFIG_HLP_UENANTT,    0,		u8ptr:&nb_antenna_tx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-scan-carrier",  	       CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL,	iptr:&UE_scan_carrier,  	    defintval:0,    TYPE_INT,	   0},     \
 {"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:90,   TYPE_INT,	   0},     \
-{"emul-iface",                 CONFIG_HLP_EMULIFACE,  0,                strptr:&emul_iface,                  defstrval:"lo", TYPE_STRING,   100}, \
-{"L2-emul",                 	NULL,  				  0,                u8ptr:&nfapi_mode,                  defuintval:3, TYPE_UINT8,   0}, \
+{"emul-iface",                 CONFIG_HLP_EMULIFACE,  0,                strptr:&emul_iface,                 defstrval:"lo", TYPE_STRING,   100},   \
+{"L2-emul",                    NULL,  		      0,                u8ptr:&nfapi_mode,                  defuintval:3, TYPE_UINT8,   0}, \
 {"num-ues",     	       		   NULL,		      	  0,				u8ptr:&(NB_UE_INST),	    defuintval:1,   	TYPE_UINT8,	   0},     \
 {"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT8,    0},     \
 {"dlsch-demod-shift",     	 CONFIG_HLP_DLSHIFT,	0,		  iptr:(int32_t *)&dlsch_demod_shift,	defintval:0,			   TYPE_INT,	  0},			   \
@@ -272,7 +274,7 @@ extern void set_function_spec_param(RU_t *ru);
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
 
-extern void init_UE(int,int,int,int);
+extern void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax, int nb_rx, int nb_tx);
 extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char * name);
 
 extern void reset_opp_meas(void);

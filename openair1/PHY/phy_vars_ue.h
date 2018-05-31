@@ -61,7 +61,6 @@ char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
 
-unsigned char NB_RU=0;
 
 #ifndef OPENAIR2
 unsigned char NB_eNB_INST=0;
