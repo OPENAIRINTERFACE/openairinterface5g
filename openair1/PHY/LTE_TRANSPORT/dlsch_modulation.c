@@ -2598,7 +2598,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
                                rb);
 
 
-      allocate_REs_in_RB(phy_vars_eNB,
+      allocate_REs(phy_vars_eNB,
                          txdataF,
                          &jj,
                          &jj2,
