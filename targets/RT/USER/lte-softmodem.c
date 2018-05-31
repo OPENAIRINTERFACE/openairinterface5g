@@ -831,6 +831,9 @@ int restart_L1L2(module_id_t enb_id)
   /* TODO this should be done for all RUs associated to this eNB */
   memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   set_function_spec_param(RC.ru[enb_id]);
+  /* reset the list of connected UEs in the MAC, since in this process with
+   * loose all UEs (have to reconnect) */
+  init_UE_list(&RC.mac[enb_id]->UE_list);
 
   LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
   if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
