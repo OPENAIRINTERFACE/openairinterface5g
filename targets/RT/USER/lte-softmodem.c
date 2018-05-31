@@ -154,7 +154,8 @@ static char                    *itti_dump_file = NULL;
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
-
+int simL1flag;
+int snr_dB;
 FILE *input_fd=NULL;
 
 

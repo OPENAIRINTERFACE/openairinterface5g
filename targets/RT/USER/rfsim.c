@@ -151,7 +151,7 @@ void RCConfig_sim(void) {
 
   init_ru_devices();
 
-  int nframes = 100000;
+  static int nframes = 100000;
  
   AssertFatal(0 == pthread_create(&rfsim_thread,
                                   NULL,
@@ -223,7 +223,8 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
       usleep(500);
     }
 
-    
+   
+ 
     subframe = (last_ru_rx_timestamp[ru_id][CC_id]/RC.ru[ru_id]->frame_parms.samples_per_tti)%10;
     if (subframe_select(&RC.ru[ru_id]->frame_parms,subframe) != SF_DL || RC.ru[ru_id]->frame_parms.frame_type == FDD) { 
       LOG_D(SIM,"RU_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
@@ -373,7 +374,7 @@ void init_ru_devices(){
   if (RC.ru==NULL) RC.ru = (RU_t**)malloc(RC.nb_RU*sizeof(RU_t*));
 
   for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
-    LOG_I(SIM,"Initiaizing rfdevice for RU %d\n",ru_id);
+    LOG_D(SIM,"Initiaizing rfdevice for RU %d\n",ru_id);
     if (RC.ru[ru_id]==NULL) RC.ru[ru_id] = (RU_t*)malloc(sizeof(RU_t));
     ru               = RC.ru[ru_id];
     ru->rfdevice.Mod_id             = ru_id;
@@ -530,13 +531,11 @@ void init_channel_vars(void)
 
 void rfsim_top(void *n_frames) {
 
-  LOG_I(PHY,"rfsim_top: Waiting for sync\n");
 
-  while (sync_var<0)
-    pthread_cond_wait(&sync_cond, &sync_mutex);
-  pthread_mutex_unlock(&sync_mutex);
+  wait_sync("rfsim_top");
 
 
+  printf("Running rfsim with %d frames\n",*(int*)n_frames);
   for (int frame = 0;
        frame < *(int*)n_frames;
        frame++) {
@@ -544,10 +543,10 @@ void rfsim_top(void *n_frames) {
     for (int sf = 0; sf < 10; sf++) {
       int CC_id=0;
       int all_done=0;
-      printf("Running %d.%d\n",frame,sf);
       while (all_done==0) {
 	
 	pthread_mutex_lock(&subframe_mutex);
+
 	int subframe_ru_mask_local  = (subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_UL) ? subframe_ru_mask : ((1<<RC.nb_RU)-1);
 	int subframe_UE_mask_local  = (RC.ru[0]->frame_parms.frame_type == FDD || subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_DL) ? subframe_UE_mask : ((1<<NB_UE_INST)-1);
 	pthread_mutex_unlock(&subframe_mutex);

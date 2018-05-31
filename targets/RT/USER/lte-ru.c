@@ -1644,7 +1644,7 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
     
-    if(get_nprocs() <= 4){
+    if(get_nprocs() <= 4 || ru->num_eNB==0){
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);
       

@@ -254,8 +254,18 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
    
   for (inst=0;inst<nb_inst;inst++) {
     if (PHY_vars_UE_g[inst]==NULL) PHY_vars_UE_g[inst] = (PHY_VARS_UE**)calloc(1+MAX_NUM_CCs,sizeof(PHY_VARS_UE*));
+
+
     if (simL1flag == 0) PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
-    else                PHY_vars_UE_g[inst][0] = init_ue_vars(&RC.ru[0]->frame_parms,inst,0);
+    else {
+       RC.ru[0]->frame_parms.nb_antennas_rx = nb_rx;
+       RC.ru[0]->frame_parms.nb_antennas_tx = nb_tx;
+       RC.ru[0]->frame_parms.frame_type          = FDD;
+       RC.ru[0]->frame_parms.tdd_config          = 3;
+       RC.ru[0]->frame_parms.tdd_config_S        = 0;
+
+       PHY_vars_UE_g[inst][0]  = init_ue_vars(&RC.ru[0]->frame_parms,inst,0);
+    }
     // turn off timing control loop in UE
     PHY_vars_UE_g[inst][0]->no_timing_correction = timing_correction;
 
@@ -1476,8 +1486,7 @@ void *UE_thread(void *arg) {
   pthread_mutex_unlock(&sync_mutex);
   */
 
-  wait_sync("UE thread\n");
-  LOG_I(PHY,"UE_thread Got sync\n");
+  wait_sync("UE thread");
 #ifdef NAS_UE
   MessageDef *message_p;
   message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);

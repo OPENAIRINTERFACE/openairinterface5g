@@ -986,7 +986,7 @@ typedef uint8_t(*encoder_if_t)(uint8_t *input,
 
 static inline void wait_sync(char *thread_name) {
 
-  printf( "waiting for sync (%s)\n",thread_name);
+  printf( "waiting for sync (%s,%p,%p,%p)\n",thread_name,&sync_var,&sync_cond,&sync_mutex);
   pthread_mutex_lock( &sync_mutex );
   
   while (sync_var<0)

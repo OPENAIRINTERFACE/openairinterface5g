@@ -157,6 +157,8 @@ static char                    *itti_dump_file = NULL;
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 int simL1flag = 0;
+int snr_dB=15;
+
 runmode_t mode = normal_txrx;
 
 FILE *input_fd=NULL;
@@ -870,6 +872,9 @@ int main( int argc, char **argv )
 
   log_set_instance_type (LOG_INSTANCE_UE);
 
+  pthread_cond_init(&sync_cond,NULL);
+  pthread_mutex_init(&sync_mutex, NULL);
+
 
   printf("ITTI init\n");
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
@@ -1052,8 +1057,6 @@ int main( int argc, char **argv )
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   
-  pthread_cond_init(&sync_cond,NULL);
-  pthread_mutex_init(&sync_mutex, NULL);
   
 #ifdef XFORMS
   int UE_id;
@@ -1144,19 +1147,19 @@ int main( int argc, char **argv )
     }
     //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
  
-  if (simL1flag==1) init_ocm();
+  if (simL1flag==1) init_ocm((double)snr_dB,0);
  
-  printf("Sending sync to all threads\n");
+  printf("Sending sync to all threads (%p,%p,%p)\n",&sync_var,&sync_mutex,&sync_cond);
   
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);
   pthread_mutex_unlock(&sync_mutex);
-
+/*
   printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   end_configmodule();
   printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
-
+*/
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
