@@ -47,7 +47,7 @@
 //#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
-#include "RRC/LITE/vars.h"
+#include "RRC/LTE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 //#endif
 
