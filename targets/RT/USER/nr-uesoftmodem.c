@@ -190,6 +190,10 @@ uint32_t timing_advance = 0;
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
+extern PHY_VARS_NR_UE* init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
+			  uint8_t UE_id,
+			  uint8_t abstraction_flag);
+
 int transmission_mode=1;
 int numerology = 0;
 
@@ -642,20 +646,20 @@ int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
         config[CC_id]->rf_config.rx_antenna_ports.value = 1;
         config[CC_id]->sch_config.physical_cell_id.value = 0;
 
-    /*frame_parms[CC_id]->frame_type          = FDD;
+        frame_parms[CC_id]->frame_type          = FDD;
         frame_parms[CC_id]->tdd_config          = 3;
-        frame_parms[CC_id]->tdd_config_S        = 0;
+        //frame_parms[CC_id]->tdd_config_S        = 0;
         frame_parms[CC_id]->N_RB_DL             = 100;
         frame_parms[CC_id]->N_RB_UL             = 100;
         frame_parms[CC_id]->Ncp                 = NORMAL;
-        frame_parms[CC_id]->Ncp_UL              = NORMAL;
+        //frame_parms[CC_id]->Ncp_UL              = NORMAL;
         frame_parms[CC_id]->Nid_cell            = 0;
         //frame_parms[CC_id]->num_MBSFN_config    = 0;
         frame_parms[CC_id]->nb_antenna_ports_eNB  = 1;
         frame_parms[CC_id]->nb_antennas_tx      = 1;
         frame_parms[CC_id]->nb_antennas_rx      = 1;
 
-        frame_parms[CC_id]->nushift             = 0;*/
+        //frame_parms[CC_id]->nushift             = 0;
 
         ///frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
         //frame_parms[CC_id]->phich_config_common.phich_duration = normal;
