@@ -399,9 +399,7 @@ void exit_fun(const char* s) {
     sleep(1); //allow lte-softmodem threads to exit first
     itti_terminate_tasks (TASK_UNKNOWN);
 #endif
-
 }
-
 
 #ifdef XFORMS
 
@@ -453,10 +451,7 @@ static void *scope_thread(void *arg) {
 
 # ifdef ENABLE_XFORMS_WRITE_STATS
 
-    if (UE_flag==1)
-        UE_stats  = fopen("UE_stats.txt", "w");
-    else
-        eNB_stats = fopen("eNB_stats.txt", "w");
+  UE_stats  = fopen("UE_stats.txt", "w");
 
 #endif
 
@@ -483,13 +478,11 @@ static void *scope_thread(void *arg) {
 
 # ifdef ENABLE_XFORMS_WRITE_STATS
 
-    if (UE_flag==1) {
         if (UE_stats) {
             rewind (UE_stats);
             fwrite (stats_buffer, 1, len, UE_stats);
             fclose (UE_stats);
         }
-    }
 
 # endif
 
@@ -508,46 +501,13 @@ void *l2l1_task(void *arg) {
     itti_set_task_real_time(TASK_L2L1);
     itti_mark_task_ready(TASK_L2L1);
 
-    if (UE_flag == 0) {
-        /* Wait for the initialize message */
-        printf("Wait for the ITTI initialize message\n");
-        do {
-            if (message_p != NULL) {
-                result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-                AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-            }
 
-            itti_receive_msg (TASK_L2L1, &message_p);
+  do {
+    // Wait for a message
+    itti_receive_msg (TASK_L2L1, &message_p);
 
-            switch (ITTI_MSG_ID(message_p)) {
-            case INITIALIZE_MESSAGE:
-                /* Start eNB thread */
-                LOG_D(EMU, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
-                start_eNB = 1;
-                break;
-
-            case TERMINATE_MESSAGE:
-                printf("received terminate message\n");
-                oai_exit=1;
-                itti_exit_task ();
-                break;
-
-            default:
-                LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-                break;
-            }
-        } while (ITTI_MSG_ID(message_p) != INITIALIZE_MESSAGE);
-
-        result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-        AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    }
-
-    do {
-        // Wait for a message
-        itti_receive_msg (TASK_L2L1, &message_p);
-
-        switch (ITTI_MSG_ID(message_p)) {
-        case TERMINATE_MESSAGE:
+    switch (ITTI_MSG_ID(message_p)) {
+    case TERMINATE_MESSAGE:
             oai_exit=1;
             itti_exit_task ();
             break;
@@ -577,7 +537,6 @@ void *l2l1_task(void *arg) {
 }
 #endif
 
-
 extern int16_t dlsch_demod_shift;
 
 static void get_options (int argc, char **argv) {
@@ -588,11 +547,12 @@ static void get_options (int argc, char **argv) {
 	  uint32_t online_log_messages;
 	  uint32_t glog_level, glog_verbosity;
 	  uint32_t start_telnetsrv;
+	  nfapi_config_request_t *config[MAX_NUM_CCs];
 
 	  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
 	  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
 
-	  //set_default_frame_parms(frame_parms);
+	  set_default_frame_parms(config,frame_parms);
 	  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
 	  if (strlen(in_path) > 0) {
@@ -652,509 +612,10 @@ static void get_options (int argc, char **argv) {
 	    } /* UE with config file  */
 
 
-    int c;
-    //  char                          line[1000];
-    //  int                           l;
-    int k,i;//,j,k;
 #if defined(OAI_USRP) || defined(CPRIGW) || defined(OAI_ADRV9371_ZC706)
     int clock_src;
 #endif
 
-    enum long_option_e {
-        LONG_OPTION_START = 0x100, /* Start after regular single char options */
-        LONG_OPTION_RF_CONFIG_FILE,
-        LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS,
-        LONG_OPTION_CALIB_UE_RX,
-        LONG_OPTION_CALIB_UE_RX_MED,
-        LONG_OPTION_CALIB_UE_RX_BYP,
-        LONG_OPTION_DEBUG_UE_PRACH,
-        LONG_OPTION_NO_L2_CONNECT,
-        LONG_OPTION_CALIB_PRACH_TX,
-        LONG_OPTION_RXGAIN,
-        LONG_OPTION_RXGAINOFF,
-        LONG_OPTION_TXGAIN,
-	LONG_OPTION_NBRXANT,
-	LONG_OPTION_NBTXANT,
-        LONG_OPTION_SCANCARRIER,
-        LONG_OPTION_MAXPOWER,
-        LONG_OPTION_DUMP_FRAME,
-        LONG_OPTION_LOOPMEMORY,
-        LONG_OPTION_PHYTEST,
-        LONG_OPTION_USIMTEST,
-        LONG_OPTION_MMAPPED_DMA,
-        LONG_OPTION_EXTERNAL_CLOCK,
-        LONG_OPTION_WAIT_FOR_SYNC,
-        LONG_OPTION_SINGLE_THREAD_DISABLE,
-        LONG_OPTION_THREADIQ,
-        LONG_OPTION_THREADONESUBFRAME,
-        LONG_OPTION_THREADTWOSUBFRAME,
-        LONG_OPTION_THREADTHREESUBFRAME,
-        LONG_OPTION_THREADSLOT1PROCONE,
-        LONG_OPTION_THREADSLOT1PROCTWO,
-        LONG_OPTION_THREADSLOT1PROCTHREE,
-		LONG_OPTION_THREADDLSCHTDONE,
-		LONG_OPTION_THREADDLSCHTDTWO,
-		LONG_OPTION_THREADDLSCHTDTHREE,
-		LONG_OPTION_THREADDLSCHTD1ONE,
-		LONG_OPTION_THREADDLSCHTD1TWO,
-		LONG_OPTION_THREADDLSCHTD1THREE,
-        LONG_OPTION_DCIFORMAT,
-        LONG_OPTION_AGREGATIONLEVEL,
-        LONG_OPTION_DEMOD_SHIFT,
-#if T_TRACER
-        LONG_OPTION_T_PORT,
-        LONG_OPTION_T_NOWAIT,
-        LONG_OPTION_T_DONT_FORK,
-#endif
-
-    };
-
-    static const struct option long_options[] = {
-        {"rf-config-file",required_argument,  NULL, LONG_OPTION_RF_CONFIG_FILE},
-        {"ulsch-max-errors",required_argument,  NULL, LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS},
-        {"calib-ue-rx",     required_argument,  NULL, LONG_OPTION_CALIB_UE_RX},
-        {"calib-ue-rx-med", required_argument,  NULL, LONG_OPTION_CALIB_UE_RX_MED},
-        {"calib-ue-rx-byp", required_argument,  NULL, LONG_OPTION_CALIB_UE_RX_BYP},
-        {"debug-ue-prach",  no_argument,        NULL, LONG_OPTION_DEBUG_UE_PRACH},
-        {"no-L2-connect",   no_argument,        NULL, LONG_OPTION_NO_L2_CONNECT},
-        {"calib-prach-tx",   no_argument,        NULL, LONG_OPTION_CALIB_PRACH_TX},
-        {"ue-rxgain",   required_argument,  NULL, LONG_OPTION_RXGAIN},
-        {"ue-rxgain-off",   required_argument,  NULL, LONG_OPTION_RXGAINOFF},
-        {"ue-txgain",   required_argument,  NULL, LONG_OPTION_TXGAIN},
-     	{"ue-nb-ant-rx", required_argument,  NULL, LONG_OPTION_NBRXANT},
-	    {"ue-nb-ant-tx", required_argument,  NULL, LONG_OPTION_NBTXANT},
-        {"ue-scan-carrier",   no_argument,  NULL, LONG_OPTION_SCANCARRIER},
-        {"ue-max-power",   required_argument,  NULL, LONG_OPTION_MAXPOWER},
-        {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
-        {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
-        {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
-        {"usim-test", no_argument, NULL, LONG_OPTION_USIMTEST},
-        {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
-        {"external-clock", no_argument, NULL, LONG_OPTION_EXTERNAL_CLOCK},
-        {"wait-for-sync", no_argument, NULL, LONG_OPTION_WAIT_FOR_SYNC},
-        {"single-thread-disable", no_argument, NULL, LONG_OPTION_SINGLE_THREAD_DISABLE},
-        {"threadIQ",  required_argument, NULL, LONG_OPTION_THREADIQ},
-        {"threadOneSubframe",  required_argument, NULL, LONG_OPTION_THREADONESUBFRAME},
-        {"threadTwoSubframe",  required_argument, NULL, LONG_OPTION_THREADTWOSUBFRAME},
-        {"threadThreeSubframe",  required_argument, NULL, LONG_OPTION_THREADTHREESUBFRAME},
-        {"threadSlot1ProcOne",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCONE},
-        {"threadSlot1ProcTwo",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCTWO},
-        {"threadSlot1ProcThree",  required_argument, NULL, LONG_OPTION_THREADSLOT1PROCTHREE},
-		{"threadDlschTdOne",  required_argument, NULL, LONG_OPTION_THREADDLSCHTDONE},
-		{"threadDlschTdTwo",  required_argument, NULL, LONG_OPTION_THREADDLSCHTDTWO},
-		{"threadDlschTdThree",  required_argument, NULL, LONG_OPTION_THREADDLSCHTDTHREE},
-		{"threadDlschTd1One",  required_argument, NULL, LONG_OPTION_THREADDLSCHTD1ONE},
-		{"threadDlschTd1Two",  required_argument, NULL, LONG_OPTION_THREADDLSCHTD1TWO},
-		{"threadDlschTd1Three",  required_argument, NULL, LONG_OPTION_THREADDLSCHTD1THREE},
-        {"DCIformat",  required_argument, NULL, LONG_OPTION_DCIFORMAT},
-        {"AgregationLevel",  required_argument, NULL, LONG_OPTION_AGREGATIONLEVEL},
-        {"dlsch-demod-shift", required_argument,  NULL, LONG_OPTION_DEMOD_SHIFT},
-#if T_TRACER
-        {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
-        {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
-        {"T_dont_fork",            no_argument,       0, LONG_OPTION_T_DONT_FORK},
-#endif
-    {NULL, 0, NULL, 0}
-  };
-
-  while ((c = getopt_long (argc, argv, "A:a:C:dEK:g:F:G:hqO:m:n:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
-    switch (c) {
-    case LONG_OPTION_RF_CONFIG_FILE:
-      if ((strcmp("null", optarg) == 0) || (strcmp("NULL", optarg) == 0)) {
-	printf("no configuration filename is provided\n");
-      }
-      else if (strlen(optarg)<=1024){
-	strcpy(rf_config_file,optarg);
-      }else {
-	printf("Configuration filename is too long\n");
-	exit(-1);   
-      }
-      break;
-    case LONG_OPTION_MAXPOWER:
-      tx_max_power[0]=atoi(optarg);
-      for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++)
-	tx_max_power[CC_id]=tx_max_power[0];
-      break;
-    case LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS:
-      ULSCH_max_consecutive_errors = atoi(optarg);
-      printf("Set ULSCH_max_consecutive_errors = %d\n",ULSCH_max_consecutive_errors);
-      break;
-
-    case LONG_OPTION_CALIB_UE_RX:
-      mode = rx_calib_ue;
-      rx_input_level_dBm = atoi(optarg);
-      printf("Running with UE calibration on (LNA max), input level %d dBm\n",rx_input_level_dBm);
-      break;
-
-    case LONG_OPTION_CALIB_UE_RX_MED:
-      mode = rx_calib_ue_med;
-      rx_input_level_dBm = atoi(optarg);
-      printf("Running with UE calibration on (LNA med), input level %d dBm\n",rx_input_level_dBm);
-      break;
-
-    case LONG_OPTION_CALIB_UE_RX_BYP:
-      mode = rx_calib_ue_byp;
-      rx_input_level_dBm = atoi(optarg);
-      printf("Running with UE calibration on (LNA byp), input level %d dBm\n",rx_input_level_dBm);
-      break;
-
-    case LONG_OPTION_DEBUG_UE_PRACH:
-      mode = debug_prach;
-      break;
-
-    case LONG_OPTION_NO_L2_CONNECT:
-      mode = no_L2_connect;
-      break;
-
-    case LONG_OPTION_CALIB_PRACH_TX:
-      mode = calib_prach_tx;
-      printf("Setting mode to calib_prach_tx (%d)\n",mode);
-      break;
-
-    case LONG_OPTION_RXGAIN:
-      for (i=0; i<4; i++)
-        rx_gain[0][i] = atof(optarg);
-
-      break;
-
-    case LONG_OPTION_RXGAINOFF:
-      rx_gain_off = atof(optarg);
-      break;
-
-    case LONG_OPTION_TXGAIN:
-      for (i=0; i<4; i++)
-        tx_gain[0][i] = atof(optarg);
-
-      break;
-    case LONG_OPTION_NBRXANT:
-    	nb_antenna_rx = atof(optarg);
-    	break;
-    case LONG_OPTION_NBTXANT:
-    	nb_antenna_tx = atof(optarg);
-    	break;
-    case LONG_OPTION_SCANCARRIER:
-      UE_scan_carrier=1;
-
-      break;
-
-    case LONG_OPTION_LOOPMEMORY:
-      mode=loop_through_memory;
-      input_fd = fopen(optarg,"r");
-      AssertFatal(input_fd != NULL,"Please provide an input file\n");
-      break;
-
-    case LONG_OPTION_DUMP_FRAME:
-      mode = rx_dump_frame;
-      break;
-      
-    case LONG_OPTION_PHYTEST:
-      phy_test = 1;
-      break;
-
-    case LONG_OPTION_USIMTEST:
-        usim_test = 1;
-      break;
-    case LONG_OPTION_MMAPPED_DMA:
-      mmapped_dma = 1;
-      break;
-
-    case LONG_OPTION_SINGLE_THREAD_DISABLE:
-      single_thread_flag = 0;
-      break;
-
-    case LONG_OPTION_EXTERNAL_CLOCK:
-      clock_source = external;
-      break;
-
-    case LONG_OPTION_WAIT_FOR_SYNC:
-      wait_for_sync = 1;
-      break;
-
-    case LONG_OPTION_THREADIQ:
-       threads.iq=atoi(optarg);
-       break;
-    case LONG_OPTION_THREADONESUBFRAME:
-       threads.one=atoi(optarg);
-       break;
-    case LONG_OPTION_THREADTWOSUBFRAME:
-       threads.two=atoi(optarg);
-       break;
-    case LONG_OPTION_THREADTHREESUBFRAME:
-       threads.three=atoi(optarg);
-    break;
-    case LONG_OPTION_THREADSLOT1PROCONE:
-       threads.slot1_proc_one=atoi(optarg);
-       break;
-    case LONG_OPTION_THREADSLOT1PROCTWO:
-       threads.slot1_proc_two=atoi(optarg);
-       break;
-    case LONG_OPTION_THREADSLOT1PROCTHREE:
-       threads.slot1_proc_three=atoi(optarg);
-       break;
-    case LONG_OPTION_THREADDLSCHTDONE:
-       threads.dlsch_td_one=atoi(optarg);
-       break;
-	case LONG_OPTION_THREADDLSCHTDTWO:
-       threads.dlsch_td_two=atoi(optarg);
-	   break;
-	case LONG_OPTION_THREADDLSCHTDTHREE:
-       threads.dlsch_td_three=atoi(optarg);
-    break;
-    case LONG_OPTION_THREADDLSCHTD1ONE:
-    	threads.dlsch_td1_one=atoi(optarg);
-    	break;
-	case LONG_OPTION_THREADDLSCHTD1TWO:
-		threads.dlsch_td1_two=atoi(optarg);
-	   break;
-	case LONG_OPTION_THREADDLSCHTD1THREE:
-		threads.dlsch_td1_three=atoi(optarg);
-		break;
-    case LONG_OPTION_DCIFORMAT:
-        dci_Format = atoi(optarg);
-       break;
-    case LONG_OPTION_AGREGATIONLEVEL:
-        agregation_Level = atoi(optarg);
-        break;
-    case LONG_OPTION_DEMOD_SHIFT: {
-        extern int16_t dlsch_demod_shift;
-        dlsch_demod_shift = atof(optarg);
-        break;
-    }
-#if T_TRACER
-        case LONG_OPTION_T_PORT: {
-            extern int T_port;
-            if (optarg == NULL) abort();  /* should not happen */
-            T_port = atoi(optarg);
-            break;
-        }
-
-        case LONG_OPTION_T_NOWAIT: {
-            extern int T_wait;
-            T_wait = 0;
-            break;
-        }
-
-        case LONG_OPTION_T_DONT_FORK: {
-            extern int T_dont_fork;
-            T_dont_fork = 1;
-            break;
-        }
-#endif
-
-        case 'A':
-            timing_advance = atoi (optarg);
-            break;
-
-        case 'C':
-            for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-                downlink_frequency[CC_id][0] = atof(optarg); // Use float to avoid issue with frequency over 2^31.
-                downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-                downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-                downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
-                printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
-            }
-
-            UE_scan=0;
-
-            break;
-
-        case 'a':
-            chain_offset = atoi(optarg);
-            break;
-
-        case 'd':
-#ifdef XFORMS
-            do_forms=1;
-            printf("Running with XFORMS!\n");
-#endif
-            break;
-
-        case 'E':
-            threequarter_fs=1;
-            break;
-
-        case 'K':
-#if defined(ENABLE_ITTI)
-            itti_dump_file = strdup(optarg);
-#else
-            printf("-K option is disabled when ENABLE_ITTI is not defined\n");
-#endif
-            break;
-
-        case 'O':
-            conf_config_file_name = optarg;
-            break;
-
-        case 'U':
-            UE_flag = 1;
-            break;
-
-        case 'm':
-            target_dl_mcs = atoi (optarg);
-            break;
-
-        case 't':
-            target_ul_mcs = atoi (optarg);
-            break;
-
-        case 'W':
-            opt_enabled=1;
-            opt_type = OPT_WIRESHARK;
-            strncpy(in_ip, "127.0.0.1", sizeof(in_ip));
-            in_ip[sizeof(in_ip) - 1] = 0; // terminate string
-            printf("Enabling OPT for wireshark for local interface");
-            /*
-            if (optarg == NULL){
-            in_ip[0] =NULL;
-            printf("Enabling OPT for wireshark for local interface");
-            } else {
-            strncpy(in_ip, optarg, sizeof(in_ip));
-            in_ip[sizeof(in_ip) - 1] = 0; // terminate string
-            printf("Enabling OPT for wireshark with %s \n",in_ip);
-            }
-                 */
-            break;
-
-        case 'P':
-            opt_type = OPT_PCAP;
-            opt_enabled=1;
-
-            if (optarg == NULL) {
-                strncpy(in_path, "/tmp/oai_opt.pcap", sizeof(in_path));
-                in_path[sizeof(in_path) - 1] = 0; // terminate string
-                printf("Enabling OPT for PCAP with the following path /tmp/oai_opt.pcap");
-            } else {
-                strncpy(in_path, optarg, sizeof(in_path));
-                in_path[sizeof(in_path) - 1] = 0; // terminate string
-                printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
-            }
-
-            break;
-
-        case 'V':
-            ouput_vcd = 1;
-            break;
-
-        case  'q':
-            opp_enabled = 1;
-            break;
-
-        case  'R' :
-            online_log_messages =1;
-            break;
-
-        /*case 'r':
-            UE_scan = 0;
-
-            for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-                switch(atoi(optarg)) {
-                case 6:
-                    frame_parms[CC_id]->N_RB_DL=6;
-                    frame_parms[CC_id]->N_RB_UL=6;
-                    break;
-
-                case 25:
-                    frame_parms[CC_id]->N_RB_DL=25;
-                    frame_parms[CC_id]->N_RB_UL=25;
-                    break;
-
-                case 50:
-                    frame_parms[CC_id]->N_RB_DL=50;
-                    frame_parms[CC_id]->N_RB_UL=50;
-                    break;
-
-                case 100:
-                    frame_parms[CC_id]->N_RB_DL=100;
-                    frame_parms[CC_id]->N_RB_UL=100;
-                    break;
-
-                default:
-                    printf("Unknown N_RB_DL %d, switching to 25\n",atoi(optarg));
-                    break;
-                }
-            }
-
-            break;*/
-
-        case 's':
-#if defined(OAI_USRP) || defined(CPRIGW) || defined(OAI_ADRV9371_ZC706)
-
-            clock_src = atoi(optarg);
-
-            if (clock_src == 0) {
-                //  char ref[128] = "internal";
-                //strncpy(uhd_ref, ref, strlen(ref)+1);
-            } else if (clock_src == 1) {
-                //char ref[128] = "external";
-                //strncpy(uhd_ref, ref, strlen(ref)+1);
-            }
-
-#else
-            printf("Note: -s not defined for ExpressMIMO2\n");
-#endif
-            break;
-
-        case 'S':
-            exit_missed_slots=0;
-            printf("Skip exit for missed slots\n");
-            break;
-
-        case 'g':
-            glog_level=atoi(optarg); // value between 1 - 9
-            break;
-
-        case 'F':
-            break;
-
-        case 'G':
-            glog_verbosity=atoi(optarg);// value from 0, 0x5, 0x15, 0x35, 0x75
-            break;
-
-        case 'x':
-            printf("Transmission mode should be set in config file now\n");
-            exit(-1);
-            /*
-            transmission_mode = atoi(optarg);
-
-            if (transmission_mode > 7) {
-              printf("Transmission mode %d not supported for the moment\n",transmission_mode);
-              exit(-1);
-            }
-            */
-            break;
-
-        case 'T':
-            for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
-                frame_parms[CC_id]->frame_type = TDD;
-            break;
-
-        case 'n':
-	  numerology=atoi(optarg);
-	  break;
-
-        case 'h':
-            help ();
-            exit (-1);
-
-        default:
-            help ();
-            exit (-1);
-            break;
-        }
-    }
-
-    if (UE_flag == 0)
-        AssertFatal(conf_config_file_name != NULL,"Please provide a configuration file\n");
-
-    if (UE_flag == 1) {
-        if (conf_config_file_name != NULL) {
-
-            // Here the configuration file is the XER encoded UE capabilities
-            // Read it in and store in asn1c data structures
-            strcpy(uecap_xer,conf_config_file_name);
-            uecap_xer_in=1;
-        }
-    }
 }
 
 #if T_TRACER
@@ -1163,11 +624,11 @@ int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
-void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
+  void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
-    int CC_id;
+  int CC_id;
 
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
         frame_parms[CC_id] = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
         /* Set some default values that may be overwritten while reading options */
         frame_parms[CC_id] = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
@@ -1181,7 +642,7 @@ void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_
         config[CC_id]->rf_config.rx_antenna_ports.value = 1;
         config[CC_id]->sch_config.physical_cell_id.value = 0;
 
-        /*frame_parms[CC_id]->frame_type          = FDD;
+    /*frame_parms[CC_id]->frame_type          = FDD;
         frame_parms[CC_id]->tdd_config          = 3;
         frame_parms[CC_id]->tdd_config_S        = 0;
         frame_parms[CC_id]->N_RB_DL             = 100;
@@ -1198,7 +659,7 @@ void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_
 
         ///frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
         //frame_parms[CC_id]->phich_config_common.phich_duration = normal;
-        // UL RS Config
+    // UL RS Config
         /*frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 1;//n_DMRS1 set to 0
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
@@ -1229,7 +690,7 @@ void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_
     }
 
 }
-/*void init_openair0(void);
+void init_openair0(void);
 void init_openair0() {
 
     int card;
@@ -1329,7 +790,7 @@ void init_openair0() {
 
 
   }
-}*/
+}
 
 int main( int argc, char **argv ) {
     int i,j,k,aa,re;
@@ -1356,6 +817,8 @@ int main( int argc, char **argv ) {
 #endif
 
     PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
+    UE[0] = malloc(sizeof(PHY_VARS_NR_UE*));
+    //UE[1] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
 
     mode = normal_txrx;
     memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
@@ -1378,7 +841,7 @@ int main( int argc, char **argv ) {
 #endif
 
     // initialize the log (see log.h for details)
-    set_glog(glog_level, glog_verbosity);
+    //set_glog(glog_level, glog_verbosity);
 
     //randominit (0);
     set_taus_seed (0);
@@ -1453,7 +916,7 @@ int main( int argc, char **argv ) {
 #endif
 
 
-    check_clock();
+  check_clock();
 
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
@@ -1464,13 +927,13 @@ int main( int argc, char **argv ) {
   // init the parameters
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
-    if (UE_flag==1) {
+
       frame_parms[CC_id]->nb_antennas_tx     = nb_antenna_tx;
       frame_parms[CC_id]->nb_antennas_rx     = nb_antenna_rx;
       frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
 
       LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
-    }
+
 
     //init_ul_hopping(frame_parms[CC_id]);
     //nr_init_frame_parms(frame_parms[CC_id],1);
@@ -1480,26 +943,27 @@ int main( int argc, char **argv ) {
 
 
 
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
         //init prach for openair1 test
-
         // prach_fmt = get_prach_fmt(frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex, frame_parms->frame_type);
         // N_ZC = (prach_fmt <4)?839:139;
     }
 
-    if (UE_flag==1) {
-        NB_UE_INST=1;
+        /*NB_UE_INST=1;
         NB_INST=1;
-
-
         PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
-        PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*)*MAX_NUM_CCs);
+        PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*)*MAX_NUM_CCs);*/
 
         for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+        	NB_UE_INST=1;
+        	        NB_INST=1;
+        	        PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
+        	        PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*)*MAX_NUM_CCs);
 
-            //PHY_vars_UE_g[0][CC_id] = init_lte_UE(frame_parms[CC_id], 0,abstraction_flag);
-            UE[CC_id] = PHY_vars_UE_g[0][CC_id];
             printf("PHY_vars_UE_g[0][%d] = %p\n",CC_id,UE[CC_id]);
+
+            PHY_vars_UE_g[0][CC_id] = init_nr_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
+            UE[CC_id] = PHY_vars_UE_g[0][CC_id];
 
             if (phy_test==1)
                 UE[CC_id]->mac_enabled = 0;
@@ -1508,24 +972,28 @@ int main( int argc, char **argv ) {
 
             if (UE[CC_id]->mac_enabled == 0) {  //set default UL parameters for testing mode
                 for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
-                    UE[CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+                	//UE[CC_id]->pusch_config_dedicated[i] = malloc(sizeof(PUSCH_CONFIG_DEDICATED));
+
+                    //UE[CC_id]->scheduling_request_config[i] = malloc(sizeof(SCHEDULING_REQUEST_CONFIG));
+
+                    /*UE[CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
                     UE[CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
                     UE[CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
 
                     UE[CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = 0;
                     UE[CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(0%3);
-                    UE[CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+                    UE[CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;*/
                 }
             }
 
             UE[CC_id]->UE_scan = UE_scan;
             UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
             UE[CC_id]->mode    = mode;
-            printf("UE[%d]->mode = %d\n",CC_id,mode);
+            //printf("UE[%d]->mode = %d\n",CC_id,mode);
 
             for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
-                UE[CC_id]->pdcch_vars[i][0]->agregationLevel = agregation_Level;
-                UE[CC_id]->pdcch_vars[i][0]->dciFormat     = dci_Format;
+                //UE[CC_id]->pdcch_vars[i][0]->agregationLevel = agregation_Level;
+                //UE[CC_id]->pdcch_vars[i][0]->dciFormat     = dci_Format;
             }
 
             /*compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
@@ -1534,17 +1002,17 @@ int main( int argc, char **argv ) {
 
             if (UE[CC_id]->mac_enabled == 1)
             {
-                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
-                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
+                //UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
+                //UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
             }
             else
             {
-                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1235;
-                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
+                //UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1235;
+                //UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
             }
 
-            UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
-            UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
+            //UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
+            //UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
 
             if (frame_parms[CC_id]->frame_type==FDD) {
                 UE[CC_id]->N_TA_offset = 0;
@@ -1560,7 +1028,7 @@ int main( int argc, char **argv ) {
         }
 
         //  printf("tx_max_power = %d -> amp %d\n",tx_max_power,get_tx_amp(tx_max_poHwer,tx_max_power));
-    }
+  
 
     fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
     cpuf=get_cpu_freq_GHz();
@@ -1592,28 +1060,24 @@ int main( int argc, char **argv ) {
     }
 #endif
 
-    /* Check the actual affinity mask assigned to the thread */
-    s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if (s != 0) {
-        perror( "pthread_getaffinity_np");
-        exit_fun("Error getting processor affinity ");
+  /* Check the actual affinity mask assigned to the thread */
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0) {
+    perror( "pthread_getaffinity_np");
+    exit_fun("Error getting processor affinity ");
+  }
+  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
+  for (int j = 0; j < CPU_SETSIZE; j++) {
+    if (CPU_ISSET(j, &cpuset)) {
+      char temp[1024];
+      sprintf(temp, " CPU_%d ", j);
+      strcat(cpu_affinity, temp);
     }
-    memset(cpu_affinity, 0 , sizeof(cpu_affinity));
-    for (int j = 0; j < CPU_SETSIZE; j++) {
-        if (CPU_ISSET(j, &cpuset)) {
-            char temp[1024];
-            sprintf(temp, " CPU_%d ", j);
-            strcat(cpu_affinity, temp);
-        }
-    }
-    LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
+  }
+  LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
 
     openair0_cfg[0].log_level = glog_level;
-
-
-
-
     /*int eMBMS_active=0;
     if (node_function[0] <= NGFI_RAU_IF4p5) { // don't initialize L2 for RRU
         LOG_I(PHY,"Intializing L2\n");
@@ -1658,13 +1122,12 @@ int main( int argc, char **argv ) {
 #ifdef XFORMS
     int UE_id;
 
-    if (do_forms==1) {
-        fl_initialize (&argc, argv, NULL, 0, 0);
+  if (do_forms==1) {
+    fl_initialize (&argc, argv, NULL, 0, 0);
 
-        if (UE_flag==1) {
-            //form_stats = create_form_stats_form();
-            //fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
-            UE_id = 0;
+         //form_stats = create_form_stats_form();
+         //fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
+       UE_id = 0;
             form_ue[UE_id] = create_lte_phy_scope_ue();
             sprintf (title, "LTE DL SCOPE UE");
             fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
@@ -1679,7 +1142,7 @@ int main( int argc, char **argv ) {
             }*/
             fl_set_button(form_ue[UE_id]->button_0,0);
             fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
-        }
+        
 
         ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
 
@@ -1696,15 +1159,15 @@ int main( int argc, char **argv ) {
 
 
     // start the main thread
-    if (UE_flag == 1) {
+   if (UE_flag == 1) {
         init_UE(1);
         number_of_cards = 1;
 
-        for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-            PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
-            PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
-        }
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
+      PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
     }
+   }
 
     // connect the TX/RX buffers
     if (UE_flag==1) {
@@ -1715,10 +1178,10 @@ int main( int argc, char **argv ) {
 #if defined(OAI_USRP) || defined(OAI_ADRV9371_ZC706)
             UE[CC_id]->hw_timing_advance = timing_advance;
 #else
-            UE[CC_id]->hw_timing_advance = 160;
+      UE[CC_id]->hw_timing_advance = 160;
 #endif
-        }
-        if (setup_ue_buffers(UE,&openair0_cfg[0])!=0) {
+    }
+	if (setup_ue_buffers(UE,&openair0_cfg[0])!=0) {
             printf("Error setting up eNB buffer\n");
             exit(-1);
         }
@@ -1760,44 +1223,24 @@ int main( int argc, char **argv ) {
 
 #endif
 
-    // stop threads
+  // stop threads
 #ifdef XFORMS
-    printf("waiting for XFORMS thread\n");
+  printf("waiting for XFORMS thread\n");
 
-    if (do_forms==1) {
-        pthread_join(forms_thread,&status);
-        fl_hide_form(form_stats->stats_form);
-        fl_free_form(form_stats->stats_form);
-
-        if (UE_flag==1) {
-            fl_hide_form(form_ue[0]->lte_phy_scope_ue);
-            fl_free_form(form_ue[0]->lte_phy_scope_ue);
-        } else {
-            fl_hide_form(form_stats_l2->stats_form);
-            fl_free_form(form_stats_l2->stats_form);
-
-            for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
-                for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-                    fl_hide_form(form_enb[CC_id][UE_id]->lte_phy_scope_enb);
-                    fl_free_form(form_enb[CC_id][UE_id]->lte_phy_scope_enb);
-                }
-            }
-        }
-    }
+  if (do_forms==1) {
+    pthread_join(forms_thread,&status);
+    fl_hide_form(form_stats->stats_form);
+    fl_free_form(form_stats->stats_form);
+    fl_hide_form(form_ue[0]->lte_phy_scope_ue);
+    fl_free_form(form_ue[0]->lte_phy_scope_ue);
+  }
 
 #endif
 
-    printf("stopping MODEM threads\n");
+  printf("stopping MODEM threads\n");
 
-    // cleanup
-    if (UE_flag == 1) {
-    } else {
-    //    stop_eNB(1);
-    }
-
-
-    pthread_cond_destroy(&sync_cond);
-    pthread_mutex_destroy(&sync_mutex);
+  pthread_cond_destroy(&sync_cond);
+  pthread_mutex_destroy(&sync_mutex);
 
 
     // *** Handle per CC_id openair0

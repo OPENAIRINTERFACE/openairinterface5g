@@ -135,6 +135,31 @@ static const eutra_band_t eutra_bands[] = {
     {44, 703    * MHz, 803    * MHz, 703    * MHz, 803    * MHz, TDD},
 };
 
+PHY_VARS_NR_UE* init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
+			  uint8_t UE_id,
+			  uint8_t abstraction_flag)
+
+{
+
+  PHY_VARS_NR_UE* ue;
+
+  if (frame_parms!=(NR_DL_FRAME_PARMS *)NULL) { // if we want to give initial frame parms, allocate the PHY_VARS_UE structure and put them in
+    ue = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
+    memset(ue,0,sizeof(PHY_VARS_NR_UE));
+    memcpy(&(ue->frame_parms), frame_parms, sizeof(NR_DL_FRAME_PARMS));
+  }
+  else ue = PHY_vars_UE_g[UE_id][0];
+
+  ue->Mod_id      = UE_id;
+  ue->mac_enabled = 1;
+  // initialize all signal buffers
+  init_nr_ue_signal(ue,1,abstraction_flag);
+  // intialize transport
+  //init_nr_ue_transport(ue,abstraction_flag);
+
+  return(ue);
+}
+
 void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char * name) {
 
 #ifdef DEADLINE_SCHEDULER
@@ -190,6 +215,10 @@ void init_UE(int nb_inst)
   for (inst=0; inst < nb_inst; inst++) {
     //    UE->rfdevice.type      = NONE_DEV;
     PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
+    LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
+        PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
+
+
     AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
                                     &UE->proc.attr_ue,
                                     UE_thread,
