@@ -328,7 +328,6 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   return(nsamps);
 }
 
-extern double ru_amp[NUMBER_OF_RU_MAX];
 
 int ru_trx_write(openair0_device *device,openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
 
@@ -349,7 +348,7 @@ int ru_trx_write(openair0_device *device,openair0_timestamp timestamp, void **bu
   }
   ru_amp[ru_id] = sqrt(ru_amp[ru_id]);
 
-  LOG_D(SIM,"Setting amp for RU %d to %f (%d)\n",ru_id,ru_amp[ru_id], dB_fixed((double)signal_energy((int32_t*)buff[0],frame_parms->ofdm_symbol_size)));
+  LOG_I(PHY,"Setting amp for RU %d to %f (%d)\n",ru_id,ru_amp[ru_id], dB_fixed((double)signal_energy((int32_t*)buff[0],frame_parms->ofdm_symbol_size)));
   // tell top-level we are done
   pthread_mutex_lock(&subframe_mutex);
   subframe_ru_mask|=(1<<ru_id);

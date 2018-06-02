@@ -2895,7 +2895,7 @@ allocate_CCEs(int module_idP, int CC_idP, int subframeP, int test_onlyP)
     // allocate UL DCIs
     if (hi_dci0_pdu[i].pdu_type == NFAPI_HI_DCI0_DCI_PDU_TYPE) {
 
-      LOG_D(MAC,
+      LOG_I(MAC,
 	    "Trying to allocate format 0 DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
 	    idci, DL_req->number_dci + HI_DCI0_req->number_of_dci,
 	    DL_req->number_dci, HI_DCI0_req->number_of_dci,
@@ -2964,10 +2964,10 @@ allocate_CCEs(int module_idP, int CC_idP, int subframeP, int test_onlyP)
 
       // the allocation is feasible, rnti rule passes
       nCCE += hi_dci0_pdu[i].dci_pdu.dci_pdu_rel8.aggregation_level;
-      LOG_D(MAC, "Allocating at nCCE %d\n", fCCE);
+      LOG_I(MAC, "Allocating at nCCE %d\n", fCCE);
       if (test_onlyP == 0) {
 	hi_dci0_pdu[i].dci_pdu.dci_pdu_rel8.cce_index = fCCE;
-	LOG_D(MAC, "Allocate CCEs subframe %d, test %d\n",
+	LOG_I(MAC, "Allocate CCEs subframe %d, test %d\n",
 	      subframeP, test_onlyP);
       }
       idci++;

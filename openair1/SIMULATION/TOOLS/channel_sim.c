@@ -135,15 +135,16 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
     txdata = RC.ru[ru_id]->common.txdata;
     frame_parms = &RC.ru[ru_id]->frame_parms;
     
-    sf_offset = (subframe*frame_parms->samples_per_tti) + offset;
-    LOG_D(SIM,">>>>>>>>>>>>>>>>>TXPATH: RU %d : DL_sig reading TX for subframe %d (sf_offset %d, length %d) from %p\n",ru_id,subframe,sf_offset,length,txdata[0]+sf_offset); 
+    //    sf_offset = (subframe*frame_parms->samples_per_tti) + offset;
+    sf_offset = (subframe*frame_parms->samples_per_tti);
+    LOG_D(OCM,">>>>>>>>>>>>>>>>>TXPATH: RU %d : DL_sig reading TX for subframe %d (sf_offset %d, length %d) from %p\n",ru_id,subframe,sf_offset,length,txdata[0]+sf_offset); 
     int length_meas = frame_parms->ofdm_symbol_size;
     if (sf_offset+length <= frame_parms->samples_per_tti*10) {
       
       tx_pwr = dac_fixed_gain(s_re,
 			      s_im,
 			      txdata,
-			      sf_offset,
+			      sf_offset+offset,
 			      nb_antennas_tx,
 			      length,
 			      sf_offset,
@@ -185,7 +186,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 			      frame_parms->N_RB_DL*12);
     }
 #ifdef DEBUG_SIM
-    LOG_D(PHY,"[SIM][DL] subframe %d: txp (time) %d dB\n",
+    LOG_D(OCM,"[SIM][DL] subframe %d: txp (time) %d dB\n",
 	  subframe,dB_fixed(signal_energy(&txdata[0][sf_offset],length_meas)));
     
     LOG_D(OCM,"[SIM][DL] RU %d (CCid %d): tx_pwr %.1f dBm/RE (target %d dBm/RE), for subframe %d\n",

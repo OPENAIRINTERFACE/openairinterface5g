@@ -2661,6 +2661,9 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
 			  ue->UE_mode[eNB_id]==NOT_SYNCHED ? 1 : 0);
     }
 
+    // if this is the first PBCH after initial synchronization, make L1 state = PRACH
+    if (ue->UE_mode[eNB_id]==NOT_SYNCHED) ue->UE_mode[eNB_id] = PRACH;
+
     if (first_run) {
       first_run = 0;
 
@@ -2783,6 +2786,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
   uint8_t next1_thread_id = ue->current_thread_id[subframe_rx]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[subframe_rx]+1);
   uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1);
 
+  LOG_I(PHY,"DCI Decoding procedure in %d.%d\n",frame_rx,subframe_rx);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_IN);
 #if UE_TIMING_TRACE
   start_meas(&ue->dlsch_rx_pdcch_stats);
@@ -2845,7 +2849,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 
   LOG_D(PHY,"current_thread %d next1_thread %d next2_thread %d \n", ue->current_thread_id[subframe_rx], next1_thread_id, next2_thread_id);
 
-  LOG_D(PHY,"[UE  %d] AbsSubFrame %d.%d, Mode %s: DCI found %i --> rnti %x / crnti %x : format %d\n",
+  LOG_I(PHY,"[UE  %d] AbsSubFrame %d.%d, Mode %s: DCI found %i --> rnti %x / crnti %x : format %d\n",
        ue->Mod_id,frame_rx%1024,subframe_rx,mode_string[ue->UE_mode[eNB_id]],
        dci_cnt,
        dci_alloc_rx[0].rnti,
@@ -3765,6 +3769,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 	  break;
 	case SI_PDSCH:
 		// Panos: Substitute call with call to fill_dlsch_indication()
+          LOG_D(PHY,"%d.%d: Decoding SI message\n",frame_rx,subframe_rx);
 	  ue_decode_si(ue->Mod_id,
 		       CC_id,
 		       frame_rx,

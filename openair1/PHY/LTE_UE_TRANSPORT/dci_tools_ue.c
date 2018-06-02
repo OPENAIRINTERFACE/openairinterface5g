@@ -3481,13 +3481,13 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT[rballoc];
 
     if (ue->ul_power_control_dedicated[eNB_id].accumulationEnabled == 1) {
-      LOG_D(PHY,"[UE %d][PUSCH %d] Frame %d subframe %d: f_pusch (ACC) %d, adjusting by %d (TPC %d)\n",
+      LOG_I(PHY,"[UE %d][PUSCH %d] Frame %d subframe %d: f_pusch (ACC) %d, adjusting by %d (TPC %d)\n",
             ue->Mod_id,harq_pid,proc->frame_rx,subframe,ulsch->f_pusch,
             delta_PUSCH_acc[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC],
             ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC);
       ulsch->f_pusch += delta_PUSCH_acc[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC];
     } else {
-      LOG_D(PHY,"[UE %d][PUSCH %d] Frame %d subframe %d: f_pusch (ABS) %d, adjusting to %d (TPC %d)\n",
+      LOG_I(PHY,"[UE %d][PUSCH %d] Frame %d subframe %d: f_pusch (ABS) %d, adjusting to %d (TPC %d)\n",
             ue->Mod_id,harq_pid,proc->frame_rx,subframe,ulsch->f_pusch,
             delta_PUSCH_abs[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC],
             ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC);

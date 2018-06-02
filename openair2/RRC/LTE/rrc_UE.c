@@ -522,7 +522,7 @@ char openair_rrc_ue_init( const module_id_t ue_mod_idP, const unsigned char eNB_
   rrc_set_state (ue_mod_idP, RRC_STATE_INACTIVE);
   rrc_set_sub_state (ue_mod_idP, RRC_SUB_STATE_INACTIVE);
 
-  LOG_D(RRC,"[UE %d] INIT State = RRC_IDLE (eNB %d)\n",ctxt.module_id,eNB_index);
+  LOG_I(RRC,"[UE %d] INIT State = RRC_IDLE (eNB %d)\n",ctxt.module_id,eNB_index);
   UE_rrc_inst[ctxt.module_id].Info[eNB_index].State=RRC_IDLE;
   UE_rrc_inst[ctxt.module_id].Info[eNB_index].T300_active = 0;
   UE_rrc_inst[ctxt.module_id].Info[eNB_index].T304_active = 0;
@@ -3020,7 +3020,7 @@ int decode_BCCH_DLSCH_Message(
     char        message_string[15000];
     size_t      message_string_size;
 
-    //LOG_I(RRC, "Panos-D: decode_BCCH_DLSCH_Message, Before xer_sprint() \n");
+    LOG_I(RRC, "Panos-D: decode_BCCH_DLSCH_Message, Before xer_sprint() SI_status %d\n", UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus);
     if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_BCCH_DL_SCH_Message, (void *)bcch_message)) > 0) {
       MessageDef *msg_p;
 
@@ -3063,7 +3063,7 @@ int decode_BCCH_DLSCH_Message(
                 &bcch_message->message.choice.c1.choice.systemInformation,
                 sizeof(SystemInformation_t) );
 
-        LOG_D( RRC, "[UE %"PRIu8"] Decoding SI for frameP %"PRIu32"\n",
+        LOG_I( RRC, "[UE %"PRIu8"] Decoding SI for frameP %"PRIu32"\n",
                ctxt_pP->module_id,
                ctxt_pP->frame );
         //LOG_I( RRC, "Panos-D: decode_BCCH_DLSCH_Message1 BEFORE OTHER decode_SI");
@@ -3290,6 +3290,7 @@ int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, 
 #endif
 			);
 
+  LOG_I(RRC,"Setting SIStatus bit 0 to 1\n");
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus = 1;
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIB1systemInfoValueTag = sib1->systemInfoValueTag;
 

@@ -140,7 +140,7 @@
 {"ue-nb-ant-rx",     	       CONFIG_HLP_UENANTR,    0,		u8ptr:&nb_antenna_rx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-nb-ant-tx",     	       CONFIG_HLP_UENANTT,    0,		u8ptr:&nb_antenna_tx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-scan-carrier",  	       CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL,	iptr:&UE_scan_carrier,  	    defintval:0,    TYPE_INT,	   0},     \
-{"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:90,   TYPE_INT,	   0},     \
+{"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:23,   TYPE_INT,	   0},     \
 {"emul-iface",                 CONFIG_HLP_EMULIFACE,  0,                strptr:&emul_iface,                 defstrval:"lo", TYPE_STRING,   100},   \
 {"L2-emul",                    NULL,  		      0,                u8ptr:&nfapi_mode,                  defuintval:3, TYPE_UINT8,   0}, \
 {"num-ues",     	       		   NULL,		      	  0,				u8ptr:&(NB_UE_INST),	    defuintval:1,   	TYPE_UINT8,	   0},     \
@@ -184,7 +184,7 @@
 {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
 {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
 {"T" ,                      CONFIG_HLP_TDD,         PARAMFLAG_BOOL,         iptr:&tddflag,                      defintval:0,                    TYPE_INT,       0},                     \
-{"s" ,                      CONFIG_HLP_SNR,         PARAMFLAG_BOOL,         iptr:&snr_dB,                       defintval:15,                   TYPE_INT,       0},                     \
+{"s" ,                      CONFIG_HLP_SNR,         PARAMFLAG_BOOL,         iptr:&snr_dB,                       defintval:25,                   TYPE_INT,       0},                     \
 {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0},                     \
 {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                   defintval:0,                    TYPE_INT,       0},                     \
 {"codingw" ,                CONFIG_HLP_CODINGW,     PARAMFLAG_BOOL,         iptr:&codingw,                      defintval:0,                    TYPE_INT,       0},                     \

@@ -974,7 +974,7 @@ int main( int argc, char **argv )
       init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
   }
   else {
-      init_UE(1,eMBMS_active,uecap_xer_in,0,phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power,
+      init_UE(1,eMBMS_active,uecap_xer_in,0,phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
               frame_parms[0]->nb_antennas_rx,
               frame_parms[0]->nb_antennas_tx);
   }
@@ -1147,7 +1147,10 @@ int main( int argc, char **argv )
     }
     //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
  
-  if (simL1flag==1) init_ocm((double)snr_dB,0);
+  if (simL1flag==1)  {
+     init_ocm((double)snr_dB,0);
+     PHY_vars_UE_g[0][0]->no_timing_correction = 1;
+  }
  
   printf("Sending sync to all threads (%p,%p,%p)\n",&sync_var,&sync_mutex,&sync_cond);
   
