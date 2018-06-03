@@ -63,7 +63,6 @@
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "SCHED/sched_common_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
-#include "../../SIMU/USER/init_lte.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_vars.h"
