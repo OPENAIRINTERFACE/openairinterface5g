@@ -156,7 +156,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   }
 
   if (UE_id != -1) {
-    LOG_I(MAC,
+    LOG_D(MAC,
 	  "[eNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
 	  enb_mod_idP, harq_pid, CC_idP,frameP,subframeP,
 	  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
@@ -1302,7 +1302,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	  }
 	  //tpc = 1;
 	  if (tpc != 1) {
-	    LOG_I(MAC,
+	    LOG_D(MAC,
 		  "[eNB %d] ULSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
 		  module_idP, frameP, subframeP, harq_pid, tpc,
 		  tpc_accumulated, normalized_rx_power,
@@ -1459,7 +1459,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 			      CC_id, UE_id, subframeP,
 			      S_UL_SCHEDULED);
 
-	    LOG_I(MAC, "[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP, CC_id, frameP, subframeP, UE_id);
+	    LOG_D(MAC, "[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP, CC_id, frameP, subframeP, UE_id);
 	    LOG_D(MAC,"[PUSCH %d] SFN/SF:%04d%d UL_CFG:SFN/SF:%04d%d CQI:%d for UE %d/%x\n", harq_pid,frameP,subframeP,ul_sched_frame,ul_sched_subframeP,cqi_req,UE_id,rnti);
 
 	    // increment first rb for next UE allocation

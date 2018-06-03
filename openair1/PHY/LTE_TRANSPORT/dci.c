@@ -368,7 +368,7 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
 
       if (dci_alloc[i].L == (uint8_t)L) {
 
-        LOG_I(PHY,"Generating DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x), rnti %x\n",
+        LOG_D(PHY,"Generating DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x), rnti %x\n",
               i,num_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,dci_alloc[i].L,
 		*(unsigned int*)dci_alloc[i].dci_pdu,
 		dci_alloc[i].rnti);

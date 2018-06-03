@@ -79,7 +79,7 @@ pthread_t rfsim_thread;
 
 void init_ru_devices(void);
 void init_RU(const char*);
-void rfsim_top(void *n_frames);
+void *rfsim_top(void *n_frames);
 
 void wait_RUs(void)
 {
@@ -348,7 +348,7 @@ int ru_trx_write(openair0_device *device,openair0_timestamp timestamp, void **bu
   }
   ru_amp[ru_id] = sqrt(ru_amp[ru_id]);
 
-  LOG_I(PHY,"Setting amp for RU %d to %f (%d)\n",ru_id,ru_amp[ru_id], dB_fixed((double)signal_energy((int32_t*)buff[0],frame_parms->ofdm_symbol_size)));
+  LOG_D(PHY,"Setting amp for RU %d to %f (%d)\n",ru_id,ru_amp[ru_id], dB_fixed((double)signal_energy((int32_t*)buff[0],frame_parms->ofdm_symbol_size)));
   // tell top-level we are done
   pthread_mutex_lock(&subframe_mutex);
   subframe_ru_mask|=(1<<ru_id);
@@ -390,11 +390,11 @@ void init_ru_devices(){
   }
 }
 
-init_ue_devices() {
+void init_ue_devices() {
 
   AssertFatal(PHY_vars_UE_g!=NULL,"Top-level structure for UE is null\n");
   for (int UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-    AssertFatal(PHY_vars_UE_g[UE_id]!=NULL,"UE %d context is not allocated\n");
+    AssertFatal(PHY_vars_UE_g[UE_id]!=NULL,"UE %d context is not allocated\n",UE_id);
     printf("Initializing UE %d\n",UE_id);
     for (int CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
         PHY_vars_UE_g[UE_id][CC_id]->rfdevice.Mod_id               = UE_id;
@@ -469,7 +469,7 @@ void init_ocm(double snr_dB,double sinr_dB)
 	  UE2RU[UE_id][ru_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower;
 	}
 	
-	LOG_D(OCM,"Path loss from eNB %d to UE %d (CCid %d)=> %f dB (eNB TX %d, SNR %f)\n",ru_id,UE_id,CC_id,
+	LOG_I(OCM,"Path loss from eNB %d to UE %d (CCid %d)=> %f dB (eNB TX %d, SNR %f)\n",ru_id,UE_id,CC_id,
 	      RU2UE[ru_id][UE_id][CC_id]->path_loss_dB,
 	      RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower,snr_dB);
 	
@@ -528,7 +528,7 @@ void init_channel_vars(void)
 
 
 
-void rfsim_top(void *n_frames) {
+void *rfsim_top(void *n_frames) {
 
 
   wait_sync("rfsim_top");
@@ -552,7 +552,7 @@ void rfsim_top(void *n_frames) {
 	LOG_D(SIM,"Frame %d, Subframe %d, NB_RU %d, NB_UE %d: Checking masks %x,%x\n",frame,sf,RC.nb_RU,NB_UE_INST,subframe_ru_mask_local,subframe_UE_mask_local);
 	if ((subframe_ru_mask_local == ((1<<RC.nb_RU)-1)) &&
 	    (subframe_UE_mask_local == ((1<<NB_UE_INST)-1))) all_done=1;
-	else usleep(1500);
+	else usleep(100);
       }
       
       
@@ -571,8 +571,9 @@ void rfsim_top(void *n_frames) {
 	current_UE_rx_timestamp[UE_inst][CC_id] += PHY_vars_UE_g[UE_inst][CC_id]->frame_parms.samples_per_tti;
 	LOG_D(SIM,"UE %d/%d: TS %"PRIi64"\n",UE_inst,CC_id,current_UE_rx_timestamp[UE_inst][CC_id]);
       }
-      if (oai_exit == 1) return;
+      if (oai_exit == 1) return((void*)NULL);
     }
   }
 
+ return((void*)NULL); 
 }

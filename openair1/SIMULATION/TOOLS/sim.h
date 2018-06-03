@@ -373,6 +373,18 @@ void multipath_tv_channel(channel_desc_t *desc,
 double N_RB2sampling_rate(uint16_t N_RB);
 double N_RB2channel_bandwidth(uint16_t N_RB);
 
+void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs],
+               uint16_t subframe,
+               uint32_t offset,
+               uint32_t length,
+               uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *ue_frame_parms,
+               uint8_t UE_id,
+               int CC_id);
+
+void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM_CCs],
+               uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms, 
+               uint32_t frame,int ru_id,uint8_t CC_id);
+
 #endif
 
 

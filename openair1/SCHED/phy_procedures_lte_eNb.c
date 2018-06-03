@@ -544,11 +544,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 
 
-  //  num_pdcch_symbols = DCI_pdu->num_pdcch_symbols;
   num_pdcch_symbols = eNB->pdcch_vars[subframe&1].num_pdcch_symbols;
   num_dci           = eNB->pdcch_vars[subframe&1].num_dci;
-  //  LOG_D(PHY,"num_pdcch_symbols %"PRIu8",(dci common %"PRIu8", dci uespec %"PRIu8"\n",num_pdcch_symbols,
-  //        DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
   LOG_D(PHY,"num_pdcch_symbols %"PRIu8",number dci %"PRIu8"\n",num_pdcch_symbols, num_dci);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DCI_INFO,num_pdcch_symbols);
 
@@ -556,9 +553,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DCI_INFO,(frame*10)+subframe);
 
   if (num_dci > 0)
-    LOG_I(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (num_dci %"PRIu8") num_pdcch_symbols:%d\n",eNB->Mod_id,frame, subframe, num_dci, num_pdcch_symbols);
+    LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (num_dci %"PRIu8") num_pdcch_symbols:%d\n",eNB->Mod_id,frame, subframe, num_dci, num_pdcch_symbols);
 
-  //LOG_D(PHY,"Before generate_dci_top num_pdcch_symbols:%d num_dci:%d dci_alloc:dci_length:%d\n", num_pdcch_symbols, num_dci, eNB->pdcch_vars[subframe&1].dci_alloc[0].dci_length);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
 

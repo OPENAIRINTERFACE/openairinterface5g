@@ -134,7 +134,7 @@
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_UEPARAMS_DESC {  \
 {"siml1",                      CONFIG_HLP_SIML1,      PARAMFLAG_BOOL,   iptr:&simL1flag,                    defintval:0,    TYPE_INT,      0}, \
-{"ue-rxgain",        	       CONFIG_HLP_UERXG,      0,		dblptr:&(rx_gain[0][0]),	    defdblval:0,    TYPE_DOUBLE,   0},     \
+{"ue-rxgain",        	       CONFIG_HLP_UERXG,      0,		dblptr:&(rx_gain[0][0]),	    defdblval:130,    TYPE_DOUBLE,   0},     \
 {"ue-rxgain-off",    	       CONFIG_HLP_UERXGOFF,   0,		dblptr:&rx_gain_off,		    defdblval:0,    TYPE_DOUBLE,   0},     \
 {"ue-txgain",        	       CONFIG_HLP_UETXG,      0,		dblptr:&(tx_gain[0][0]),	    defdblval:0,    TYPE_DOUBLE,   0},     \
 {"ue-nb-ant-rx",     	       CONFIG_HLP_UENANTR,    0,		u8ptr:&nb_antenna_rx,		    defuintval:1,   TYPE_UINT8,    0},     \
@@ -184,7 +184,7 @@
 {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
 {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
 {"T" ,                      CONFIG_HLP_TDD,         PARAMFLAG_BOOL,         iptr:&tddflag,                      defintval:0,                    TYPE_INT,       0},                     \
-{"s" ,                      CONFIG_HLP_SNR,         PARAMFLAG_BOOL,         iptr:&snr_dB,                       defintval:25,                   TYPE_INT,       0},                     \
+{"s" ,                      CONFIG_HLP_SNR,         0,                      iptr:&snr_dB,                       defintval:25,                   TYPE_INT,       0},                     \
 {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0},                     \
 {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                   defintval:0,                    TYPE_INT,       0},                     \
 {"codingw" ,                CONFIG_HLP_CODINGW,     PARAMFLAG_BOOL,         iptr:&codingw,                      defintval:0,                    TYPE_INT,       0},                     \
@@ -288,6 +288,10 @@ extern void init_te_thread(PHY_VARS_eNB *);
 extern void kill_td_thread(PHY_VARS_eNB *);
 extern void kill_te_thread(PHY_VARS_eNB *);
 
+extern void RCConfig_sim(void);
+extern void init_ocm(double,double);
+extern void init_ue_devices(void);
+
 PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t UE_id,
                           uint8_t abstraction_flag);
@@ -295,5 +299,12 @@ void init_eNB_afterRU(void);
 
 extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
+
+
+extern void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_iface);
+
+extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
+                          uint8_t UE_id,
+                          uint8_t abstraction_flag);
 
 #endif

@@ -45,7 +45,7 @@
 #include "UTIL/FIFO/types.h"
 
 #define RF
-#define DEBUG_SIM
+//#define DEBUG_SIM
 /*
 #undef LOG_D
 #define LOG_D(A,B,C...) printf(B,C)
@@ -77,17 +77,15 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 	       int CC_id)
 {
 
-  int32_t att_eNB_id=-1;
   int32_t **txdata,**rxdata;
 
-  uint32_t eNB_id,ru_id=0;
+  uint32_t ru_id=0;
   double tx_pwr;
   double rx_pwr;
   int32_t rx_pwr2;
   uint32_t i,aa;
   uint32_t sf_offset;
 
-  double min_path_loss=-200;
   uint8_t hold_channel=0;
   uint8_t nb_antennas_rx = RU2UE[0][0][CC_id]->nb_rx; // number of rx antennas at UE
   uint8_t nb_antennas_tx = RU2UE[0][0][CC_id]->nb_tx; // number of tx antennas at eNB
@@ -460,11 +458,11 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 	       1e3/UE2RU[0][ru_id][CC_id]->sampling_rate,  // sampling time (ns)
 	       (double)RC.ru[ru_id]->max_rxgain-(double)RC.ru[ru_id]->att_rx - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
   
-  //#ifdef DEBUG_SIM
+#ifdef DEBUG_SIM
   rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,frame_parms->samples_per_tti,0);//*(double)frame_parms->ofdm_symbol_size/(12.0*frame_parms->N_RB_DL;
   LOG_D(OCM,"[SIM][UL] rx_pwr (ADC in) %f dB for subframe %d (rx_gain %f)\n",10*log10(rx_pwr),subframe,
 	(double)RC.ru[ru_id]->max_rxgain-(double)RC.ru[ru_id]->att_rx);
-  //#endif
+#endif
   
   rxdata = RC.ru[ru_id]->common.rxdata;
   sf_offset = subframe*frame_parms->samples_per_tti;

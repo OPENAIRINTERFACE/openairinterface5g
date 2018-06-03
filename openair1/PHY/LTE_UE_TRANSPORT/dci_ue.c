@@ -1899,7 +1899,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
         LOG_D(PHY,"[DCI search nPdcch %d - common] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x)\n",
                 pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask);
       else
-        LOG_I(PHY,"[DCI search nPdcch %d - ue spec %x] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x) format %d\n",
+        LOG_D(PHY,"[DCI search nPdcch %d - ue spec %x] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x) format %d\n",
 	      pdcch_vars[eNB_id]->num_pdcch_symbols,pdcch_vars[eNB_id]->crnti,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_c);
 
        dci_decoding(sizeof_bits,

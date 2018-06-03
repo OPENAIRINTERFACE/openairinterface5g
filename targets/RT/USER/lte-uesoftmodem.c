@@ -157,7 +157,7 @@ static char                    *itti_dump_file = NULL;
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 int simL1flag = 0;
-int snr_dB=15;
+int snr_dB=25;
 
 runmode_t mode = normal_txrx;
 
@@ -167,11 +167,11 @@ FILE *input_fd=NULL;
 #if MAX_NUM_CCs == 1
 rx_gain_t                rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
 double tx_gain[MAX_NUM_CCs][4] = {{20,0,0,0}};
-double rx_gain[MAX_NUM_CCs][4] = {{110,0,0,0}};
+double rx_gain[MAX_NUM_CCs][4] = {{130,0,0,0}};
 #else
 rx_gain_t                rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain},{max_gain,max_gain,max_gain,max_gain}};
 double tx_gain[MAX_NUM_CCs][4] = {{20,0,0,0},{20,0,0,0}};
-double rx_gain[MAX_NUM_CCs][4] = {{110,0,0,0},{20,0,0,0}};
+double rx_gain[MAX_NUM_CCs][4] = {{130,0,0,0},{20,0,0,0}};
 #endif
 
 double rx_gain_off = 0.0;
@@ -215,9 +215,6 @@ uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 
-extern void init_ue_devices();
-extern void reset_opp_meas(void);
-extern void print_opp_meas(void);
 extern void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_iface);
 
 extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
@@ -575,7 +572,6 @@ static void get_options(void) {
 
 
   for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++) {
-    	tx_max_power[CC_id]=tx_max_power[0];
     	rx_gain[0][CC_id] = rx_gain[0][0];
     	tx_gain[0][CC_id] = tx_gain[0][0];
   }
@@ -782,7 +778,6 @@ int restart_L1L2(module_id_t enb_id)
 
 int main( int argc, char **argv )
 {
-  int i;
 #if defined (XFORMS)
   void *status;
 #endif
@@ -812,7 +807,6 @@ int main( int argc, char **argv )
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
 
-  memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
 
   set_latency_target();
 
@@ -820,7 +814,11 @@ int main( int argc, char **argv )
 
   printf("Reading in command-line options\n");
 
+  for (int i=0;i<MAX_NUM_CCs;i++) tx_max_power[i]=23; 
   get_options ();
+
+
+
 
   printf("NFAPI_MODE value: %d \n", nfapi_mode);
 
@@ -943,7 +941,6 @@ int main( int argc, char **argv )
 	  			PHY_vars_UE_g[i] = malloc(sizeof(PHY_VARS_UE*)*MAX_NUM_CCs);
 	  			PHY_vars_UE_g[i][CC_id] = init_ue_vars(frame_parms[CC_id], i,abstraction_flag);
 
-	  			 PHY_vars_UE_g[i][CC_id];
 
 	  			if (phy_test==1)
 	  				PHY_vars_UE_g[i][CC_id]->mac_enabled = 0;
