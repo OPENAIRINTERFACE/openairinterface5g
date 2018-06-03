@@ -51,24 +51,10 @@
 #define LOG_D(A,B,C...) printf(B,C)
 */
 
-int number_rb_ul;
-int first_rbUL ;
-
-extern Signal_buffers_t *signal_buffers_g;
 
 
-double r_re_DL[NUMBER_OF_UE_MAX][2][30720];
-double r_im_DL[NUMBER_OF_UE_MAX][2][30720];
-double r_re_UL[NUMBER_OF_eNB_MAX][2][30720];
-double r_im_UL[NUMBER_OF_eNB_MAX][2][30720];
-int RU_output_mask[NUMBER_OF_UE_MAX];
-int UE_output_mask[NUMBER_OF_RU_MAX];
-pthread_mutex_t RU_output_mutex[NUMBER_OF_UE_MAX];
-pthread_mutex_t UE_output_mutex[NUMBER_OF_RU_MAX];
 
-double ru_amp[NUMBER_OF_RU_MAX];
-
-void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs],
+void do_DL_sig(sim_t *sim,
 	       uint16_t subframe,
 	       uint32_t offset,
 	       uint32_t length,
@@ -87,8 +73,8 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
   uint32_t sf_offset;
 
   uint8_t hold_channel=0;
-  uint8_t nb_antennas_rx = RU2UE[0][0][CC_id]->nb_rx; // number of rx antennas at UE
-  uint8_t nb_antennas_tx = RU2UE[0][0][CC_id]->nb_tx; // number of tx antennas at eNB
+  uint8_t nb_antennas_rx = sim->RU2UE[0][0][CC_id]->nb_rx; // number of rx antennas at UE
+  uint8_t nb_antennas_tx = sim->RU2UE[0][0][CC_id]->nb_tx; // number of tx antennas at eNB
 
   double s_re0[30720];
   double s_re1[30720];
@@ -119,15 +105,15 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
   else
     hold_channel = 1;
 
-  pthread_mutex_lock(&RU_output_mutex[UE_id]);
+  pthread_mutex_lock(&sim->RU_output_mutex[UE_id]);
   
-  if (RU_output_mask[UE_id] == 0) {  //  This is the first eNodeB for this UE, clear the buffer
+  if (sim->RU_output_mask[UE_id] == 0) {  //  This is the first eNodeB for this UE, clear the buffer
     for (aa=0; aa<nb_antennas_rx; aa++) {
-      memset((void*)r_re_DL[UE_id][aa],0,(RC.ru[0]->frame_parms.samples_per_tti)*sizeof(double));
-      memset((void*)r_im_DL[UE_id][aa],0,(RC.ru[0]->frame_parms.samples_per_tti)*sizeof(double));
+      memset((void*)sim->r_re_DL[UE_id][aa],0,(RC.ru[0]->frame_parms.samples_per_tti)*sizeof(double));
+      memset((void*)sim->r_im_DL[UE_id][aa],0,(RC.ru[0]->frame_parms.samples_per_tti)*sizeof(double));
     }
   }
-  pthread_mutex_unlock(&RU_output_mutex[UE_id]);
+  pthread_mutex_unlock(&sim->RU_output_mutex[UE_id]);
   
   for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
     txdata = RC.ru[ru_id]->common.txdata;
@@ -150,7 +136,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 			      14,
 			      frame_parms->pdsch_config_common.referenceSignalPower, // dBm/RE
 			      0,
-			      &ru_amp[ru_id],
+			      &sim->ru_amp[ru_id],
 			      frame_parms->N_RB_DL*12);
       
     }
@@ -166,7 +152,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 			      14,
 			      frame_parms->pdsch_config_common.referenceSignalPower, // dBm/RE
 			      0,
-			      &ru_amp[ru_id],
+			      &sim->ru_amp[ru_id],
 			      frame_parms->N_RB_DL*12);
       
       tx_pwr = dac_fixed_gain(s_re,
@@ -180,7 +166,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 			      14,
 			      frame_parms->pdsch_config_common.referenceSignalPower, // dBm/RE
 			      0,
-			      &ru_amp[ru_id],
+			      &sim->ru_amp[ru_id],
 			      frame_parms->N_RB_DL*12);
     }
 #ifdef DEBUG_SIM
@@ -199,26 +185,26 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 			      0)/(12.0*frame_parms->N_RB_DL);
     
     //RU2UE[eNB_id][UE_id]->path_loss_dB = 0;
-    multipath_channel(RU2UE[ru_id][UE_id][CC_id],s_re,s_im,r_re0,r_im0,
+    multipath_channel(sim->RU2UE[ru_id][UE_id][CC_id],s_re,s_im,r_re0,r_im0,
 		      length,hold_channel);
 #ifdef DEBUG_SIM
-    rx_pwr = signal_energy_fp2(RU2UE[ru_id][UE_id][CC_id]->ch[0],
-			       RU2UE[ru_id][UE_id][CC_id]->channel_length)*RU2UE[ru_id][UE_id][CC_id]->channel_length;
+    rx_pwr = signal_energy_fp2(sim->RU2UE[ru_id][UE_id][CC_id]->ch[0],
+			       sim->RU2UE[ru_id][UE_id][CC_id]->channel_length)*sim->RU2UE[ru_id][UE_id][CC_id]->channel_length;
     LOG_D(OCM,"[SIM][DL] Channel RU %d => UE %d (CCid %d): Channel gain %f dB (%f)\n",ru_id,UE_id,CC_id,10*log10(rx_pwr),rx_pwr);
 #endif
     
     
 #ifdef DEBUG_SIM
     
-    for (i=0; i<RU2UE[ru_id][UE_id][CC_id]->channel_length; i++)
-      LOG_D(OCM,"channel(%d,%d)[%d] : (%f,%f)\n",ru_id,UE_id,i,RU2UE[ru_id][UE_id][CC_id]->ch[0][i].x,RU2UE[ru_id][UE_id][CC_id]->ch[0][i].y);
+    for (i=0; i<sim->RU2UE[ru_id][UE_id][CC_id]->channel_length; i++)
+      LOG_D(OCM,"channel(%d,%d)[%d] : (%f,%f)\n",ru_id,UE_id,i,sim->RU2UE[ru_id][UE_id][CC_id]->ch[0][i].x,sim->RU2UE[ru_id][UE_id][CC_id]->ch[0][i].y);
     
 #endif
     
     LOG_D(OCM,"[SIM][DL] Channel RU %d => UE %d (CCid %d): tx_power %.1f dBm/RE, path_loss %1.f dB\n",
 	  ru_id,UE_id,CC_id,
 	  (double)frame_parms->pdsch_config_common.referenceSignalPower,
-	  RU2UE[ru_id][UE_id][CC_id]->path_loss_dB);
+	  sim->RU2UE[ru_id][UE_id][CC_id]->path_loss_dB);
     
 #ifdef DEBUG_SIM
     rx_pwr = signal_energy_fp(r_re0,r_im0,nb_antennas_rx,
@@ -233,13 +219,13 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
     
     LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr (noise) -132 dBm/RE (N0fs = %.1f dBm, N0B = %.1f dBm) for subframe %d\n",
 	  UE_id,
-	  10*log10(RU2UE[ru_id][UE_id][CC_id]->sampling_rate*1e6)-174,
-	  10*log10(RU2UE[ru_id][UE_id][CC_id]->sampling_rate*1e6*12*frame_parms->N_RB_DL/(double)frame_parms->ofdm_symbol_size)-174,
+	  10*log10(sim->RU2UE[ru_id][UE_id][CC_id]->sampling_rate*1e6)-174,
+	  10*log10(sim->RU2UE[ru_id][UE_id][CC_id]->sampling_rate*1e6*12*frame_parms->N_RB_DL/(double)frame_parms->ofdm_symbol_size)-174,
 	  subframe);
 #endif
     
-    if (RU2UE[ru_id][UE_id][CC_id]->first_run == 1)
-      RU2UE[ru_id][UE_id][CC_id]->first_run = 0;
+    if (sim->RU2UE[ru_id][UE_id][CC_id]->first_run == 1)
+      sim->RU2UE[ru_id][UE_id][CC_id]->first_run = 0;
     
     
     // RF model
@@ -252,7 +238,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 		 r_im0,
 		 nb_antennas_rx,
 		 length,
-		 1e3/RU2UE[ru_id][UE_id][CC_id]->sampling_rate,  // sampling time (ns)
+		 1e3/sim->RU2UE[ru_id][UE_id][CC_id]->sampling_rate,  // sampling time (ns)
 		 (double)PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
     
 #ifdef DEBUG_SIM
@@ -266,21 +252,21 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 #endif
     
     
-    pthread_mutex_lock(&RU_output_mutex[UE_id]);
+    pthread_mutex_lock(&sim->RU_output_mutex[UE_id]);
     for (i=0; i<frame_parms->samples_per_tti; i++) {
       for (aa=0; aa<nb_antennas_rx; aa++) {
-	r_re_DL[UE_id][aa][i]+=r_re0[aa][i];
-	r_im_DL[UE_id][aa][i]+=r_im0[aa][i];
+	sim->r_re_DL[UE_id][aa][i]+=r_re0[aa][i];
+	sim->r_im_DL[UE_id][aa][i]+=r_im0[aa][i];
       }
     }
-    RU_output_mask[UE_id] |= (1<<ru_id);
-    if (RU_output_mask[UE_id] == (1<<RC.nb_RU)-1) {
-      RU_output_mask[UE_id]=0;
+    sim->RU_output_mask[UE_id] |= (1<<ru_id);
+    if (sim->RU_output_mask[UE_id] == (1<<RC.nb_RU)-1) {
+      sim->RU_output_mask[UE_id]=0;
       
       
       
-      double *r_re_p[2] = {r_re_DL[UE_id][0],r_re_DL[UE_id][1]};
-      double *r_im_p[2] = {r_im_DL[UE_id][0],r_im_DL[UE_id][1]};
+      double *r_re_p[2] = {sim->r_re_DL[UE_id][0],sim->r_re_DL[UE_id][1]};
+      double *r_im_p[2] = {sim->r_im_DL[UE_id][0],sim->r_im_DL[UE_id][1]};
       
 #ifdef DEBUG_SIM
       rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,length<length_meas?length:length_meas,0)/(12.0*frame_parms->N_RB_DL);
@@ -311,7 +297,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 #endif
 	
     } // RU_output_mask
-    pthread_mutex_unlock(&RU_output_mutex[UE_id]);      
+    pthread_mutex_unlock(&sim->RU_output_mutex[UE_id]);      
   } // ru_id
   
 }
@@ -319,7 +305,7 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
 
 
 
-void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM_CCs],
+void do_UL_sig(sim_t *sim,
 	       uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms, 
 	       uint32_t frame,int ru_id,uint8_t CC_id)
 {
@@ -327,8 +313,8 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
   int32_t **txdata,**rxdata;
   uint8_t UE_id=0;
 
-  uint8_t nb_antennas_rx = UE2RU[0][0][CC_id]->nb_rx; // number of rx antennas at eNB
-  uint8_t nb_antennas_tx = UE2RU[0][0][CC_id]->nb_tx; // number of tx antennas at UE
+  uint8_t nb_antennas_rx = sim->UE2RU[0][0][CC_id]->nb_rx; // number of rx antennas at eNB
+  uint8_t nb_antennas_tx = sim->UE2RU[0][0][CC_id]->nb_tx; // number of tx antennas at UE
 
   double tx_pwr, rx_pwr;
   int32_t rx_pwr2;
@@ -360,15 +346,15 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
   r_re0[1] = r_re01;
   r_im0[1] = r_im01;
   
-  pthread_mutex_lock(&UE_output_mutex[ru_id]);
+  pthread_mutex_lock(&sim->UE_output_mutex[ru_id]);
   // Clear RX signal for eNB = eNB_id
   for (i=0; i<frame_parms->samples_per_tti; i++) {
     for (aa=0; aa<nb_antennas_rx; aa++) {
-      r_re_UL[ru_id][aa][i]=0.0;
-      r_im_UL[ru_id][aa][i]=0.0;
+      sim->r_re_UL[ru_id][aa][i]=0.0;
+      sim->r_im_UL[ru_id][aa][i]=0.0;
     }
   }
-  pthread_mutex_unlock(&UE_output_mutex[ru_id]);
+  pthread_mutex_unlock(&sim->UE_output_mutex[ru_id]);
   
   // Compute RX signal for eNB = eNB_id
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
@@ -377,7 +363,7 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
     AssertFatal(txdata != NULL,"txdata is null\n");
     sf_offset = subframe*frame_parms->samples_per_tti;
     if (((double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe] +
-	 UE2RU[UE_id][ru_id][CC_id]->path_loss_dB) <= -125.0) {
+	 sim->UE2RU[UE_id][ru_id][CC_id]->path_loss_dB) <= -125.0) {
       // don't simulate a UE that is too weak
       LOG_D(OCM,"[SIM][UL] ULPOWERS UE %d tx_pwr %d dBm (num_RE %d) for subframe %d (sf_offset %d)\n",
 	    UE_id,
@@ -406,20 +392,20 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 	    subframe,sf_offset);
       
       
-      multipath_channel(UE2RU[UE_id][ru_id][CC_id],s_re,s_im,r_re0,r_im0,
+      multipath_channel(sim->UE2RU[UE_id][ru_id][CC_id],s_re,s_im,r_re0,r_im0,
 			frame_parms->samples_per_tti,hold_channel);
       
       
-      rx_pwr = signal_energy_fp2(UE2RU[UE_id][ru_id][CC_id]->ch[0],
-				 UE2RU[UE_id][ru_id][CC_id]->channel_length)*UE2RU[UE_id][ru_id][CC_id]->channel_length;
+      rx_pwr = signal_energy_fp2(sim->UE2RU[UE_id][ru_id][CC_id]->ch[0],
+				 sim->UE2RU[UE_id][ru_id][CC_id]->channel_length)*sim->UE2RU[UE_id][ru_id][CC_id]->channel_length;
       
       LOG_D(OCM,"[SIM][UL] subframe %d Channel UE %d => RU %d : %f dB (hold %d,length %d, PL %f)\n",subframe,UE_id,ru_id,10*log10(rx_pwr),
-	    hold_channel,UE2RU[UE_id][ru_id][CC_id]->channel_length,
-	    UE2RU[UE_id][ru_id][CC_id]->path_loss_dB);
+	    hold_channel,sim->UE2RU[UE_id][ru_id][CC_id]->channel_length,
+	    sim->UE2RU[UE_id][ru_id][CC_id]->path_loss_dB);
       
       rx_pwr = signal_energy_fp(r_re0,r_im0,nb_antennas_rx,frame_parms->samples_per_tti,0);
       LOG_D(OCM,"[SIM][UL] RU %d (%d/%d rx antennas) : rx_pwr %f dBm (tx_pwr - PL %f) for subframe %d, sptti %d\n",
-	    ru_id,nb_antennas_rx,UE2RU[UE_id][ru_id][CC_id]->nb_rx,10*log10(rx_pwr),10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe])+UE2RU[UE_id][ru_id][CC_id]->path_loss_dB,subframe,frame_parms->samples_per_tti);
+	    ru_id,nb_antennas_rx,sim->UE2RU[UE_id][ru_id][CC_id]->nb_rx,10*log10(rx_pwr),10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe])+sim->UE2RU[UE_id][ru_id][CC_id]->path_loss_dB,subframe,frame_parms->samples_per_tti);
       /*	
 		if (abs(10*log10(rx_pwr)-10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe])-UE2RU[UE_id][ru_id][CC_id]->path_loss_dB)>3) {
 		write_output("txsig_re.m","s_re",s_re[0],frame_parms->samples_per_tti,1,7);
@@ -429,23 +415,23 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 		exit(-1);
 		}*/
       
-      if (UE2RU[UE_id][ru_id][CC_id]->first_run == 1)
-	UE2RU[UE_id][ru_id][CC_id]->first_run = 0;
+      if (sim->UE2RU[UE_id][ru_id][CC_id]->first_run == 1)
+	sim->UE2RU[UE_id][ru_id][CC_id]->first_run = 0;
       
       
-      pthread_mutex_lock(&UE_output_mutex[ru_id]);
+      pthread_mutex_lock(&sim->UE_output_mutex[ru_id]);
       for (aa=0; aa<nb_antennas_rx; aa++) {
 	for (i=0; i<frame_parms->samples_per_tti; i++) {
-	  r_re_UL[ru_id][aa][i]+=r_re0[aa][i];
-	  r_im_UL[ru_id][aa][i]+=r_im0[aa][i];
+	  sim->r_re_UL[ru_id][aa][i]+=r_re0[aa][i];
+	  sim->r_im_UL[ru_id][aa][i]+=r_im0[aa][i];
 	}
       }
-      pthread_mutex_unlock(&UE_output_mutex[ru_id]);
+      pthread_mutex_unlock(&sim->UE_output_mutex[ru_id]);
     }
   } //UE_id
   
-  double *r_re_p[2] = {r_re_UL[ru_id][0],r_re_UL[ru_id][1]};
-  double *r_im_p[2] = {r_im_UL[ru_id][0],r_im_UL[ru_id][1]};
+  double *r_re_p[2] = {sim->r_re_UL[ru_id][0],sim->r_re_UL[ru_id][1]};
+  double *r_im_p[2] = {sim->r_im_UL[ru_id][0],sim->r_im_UL[ru_id][1]};
   
   rx_pwr = signal_energy_fp(r_re_p,r_im_p,nb_antennas_rx,frame_parms->samples_per_tti,0);
   LOG_D(OCM,"[SIM][UL] RU %d (%d/%d rx antennas) : rx_pwr %f dBm (before RF) for subframe %d, gain %f\n",
@@ -455,7 +441,7 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 	       r_im_p,
 	       nb_antennas_rx,
 	       frame_parms->samples_per_tti,
-	       1e3/UE2RU[0][ru_id][CC_id]->sampling_rate,  // sampling time (ns)
+	       1e3/sim->UE2RU[0][ru_id][CC_id]->sampling_rate,  // sampling time (ns)
 	       (double)RC.ru[ru_id]->max_rxgain-(double)RC.ru[ru_id]->att_rx - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
   
 #ifdef DEBUG_SIM

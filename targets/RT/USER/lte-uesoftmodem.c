@@ -817,7 +817,11 @@ int main( int argc, char **argv )
   get_options ();
 
 
-
+  printf("Running with %d UE instances\n",NB_UE_INST);
+  if (NB_UE_INST > 1 && simL1flag != 1) {
+    printf("Running with more than 1 UE instance and simL1 is not active, this will result in undefined behaviour for now, exiting.\n");
+    abort();
+  }
 
   printf("NFAPI_MODE value: %d \n", nfapi_mode);
 
@@ -970,7 +974,7 @@ int main( int argc, char **argv )
       init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
   }
   else {
-      init_UE(1,eMBMS_active,uecap_xer_in,0,phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
+      init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
               frame_parms[0]->nb_antennas_rx,
               frame_parms[0]->nb_antennas_tx);
   }

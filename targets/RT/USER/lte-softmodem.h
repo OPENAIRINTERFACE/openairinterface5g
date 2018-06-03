@@ -53,6 +53,7 @@
 #define CONFIG_HLP_CALPRACH      "UE run normal prach with maximum power, but don't continue random-access\n"
 #define CONFIG_HLP_NOL2CN        "bypass L2 and upper layers\n"
 #define CONFIG_HLP_SIML1         "activate RF simulator instead of HW\n"
+#define CONFIG_HLP_NUMUE         "number of UE instances\n"
 #define CONFIG_HLP_UERXG         "set UE RX gain\n"
 #define CONFIG_HLP_UERXGOFF      "external UE amplifier offset\n"
 #define CONFIG_HLP_UETXG         "set UE TX gain\n"
@@ -134,6 +135,7 @@
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_UEPARAMS_DESC {  \
 {"siml1",                      CONFIG_HLP_SIML1,      PARAMFLAG_BOOL,   iptr:&simL1flag,                    defintval:0,    TYPE_INT,      0}, \
+{"U",			       CONFIG_HLP_NUMUE,      0,                u8ptr:&NB_UE_INST,                   defuintval:1,    TYPE_UINT,      0}, \
 {"ue-rxgain",        	       CONFIG_HLP_UERXG,      0,		dblptr:&(rx_gain[0][0]),	    defdblval:130,    TYPE_DOUBLE,   0},     \
 {"ue-rxgain-off",    	       CONFIG_HLP_UERXGOFF,   0,		dblptr:&rx_gain_off,		    defdblval:0,    TYPE_DOUBLE,   0},     \
 {"ue-txgain",        	       CONFIG_HLP_UETXG,      0,		dblptr:&(tx_gain[0][0]),	    defdblval:0,    TYPE_DOUBLE,   0},     \
@@ -290,7 +292,7 @@ extern void kill_te_thread(PHY_VARS_eNB *);
 
 extern void RCConfig_sim(void);
 extern void init_ocm(double,double);
-extern void init_ue_devices(void);
+extern void init_ue_devices(PHY_VARS_UE *);
 
 PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t UE_id,

@@ -254,7 +254,7 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
    
   for (inst=0;inst<nb_inst;inst++) {
     if (PHY_vars_UE_g[inst]==NULL) PHY_vars_UE_g[inst] = (PHY_VARS_UE**)calloc(1+MAX_NUM_CCs,sizeof(PHY_VARS_UE*));
-
+    LOG_I(PHY,"Allocating UE context %d\n",inst);
 
     if (simL1flag == 0) PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
     else {
@@ -307,7 +307,7 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
     UE->frame_parms.nb_antennas_tx = nb_tx;
     UE->frame_parms.nb_antennas_rx = nb_rx; 
 
-    if (simL1flag == 1) init_ue_devices();
+    if (simL1flag == 1) init_ue_devices(UE);
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     init_UE_threads(inst);
 
@@ -327,14 +327,6 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
   }
 
   printf("UE threads created by %ld\n", gettid());
-#if 0
-#if defined(ENABLE_USE_MME)
-  extern volatile int start_UE;
-  while (start_UE == 0) {
-    sleep(1);
-  }
-#endif
-#endif
 }
 
 // Panos: Initiating all UEs within a single set of threads for PHY_STUB. Future extensions -> multiple
