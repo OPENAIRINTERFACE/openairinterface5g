@@ -35,6 +35,7 @@
 #include "assertions.h"
 #include "common/ran_context.h"
 #include "asn1_conversions.h"
+#include "asn_internal.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/mac_proto.h"
