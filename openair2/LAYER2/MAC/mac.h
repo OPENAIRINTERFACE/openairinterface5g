@@ -130,7 +130,7 @@
 /*!\brief Maximum number od control elemenets */
 #define MAX_NUM_CE 5
 /*!\brief Maximum number of random access process */
-#if defined(USRP_REC_PLAY)
+#if 0 // #if defined(USRP_REC_PLAY)
 #define NB_RA_PROC_MAX 1
 #else
 #define NB_RA_PROC_MAX 4
