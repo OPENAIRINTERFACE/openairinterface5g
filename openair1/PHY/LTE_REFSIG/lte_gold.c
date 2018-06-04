@@ -44,7 +44,6 @@ N_{ID}^{cell = 0..503
 
 void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_table[20][2][14],uint16_t Nid_cell)
 {
-
   unsigned char ns,l,Ncp=1-frame_parms->Ncp;
   unsigned int n,x1,x2;//,x1tmp,x2tmp;
 
@@ -54,7 +53,7 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_table[20][2][14]
 
       x2 = Ncp +
            (Nid_cell<<1) +
-	(((1+(Nid_cell<<1))*(1 + (((frame_parms->Ncp==0)?4:3)*l) + (7*(1+ns))))<<10); //cinit
+       (((1+(Nid_cell<<1))*(1 + (((frame_parms->Ncp==0)?4:3)*l) + (7*(1+ns))))<<10); //cinit
       //x2 = frame_parms->Ncp + (Nid_cell<<1) + (1+(Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
       //n = 0
       x1 = 1+ (1<<31);
@@ -81,7 +80,7 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_table[20][2][14]
   }
 }
 
-void lte_gold_ue_spec(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_uespec_table[2][20][2][21],uint16_t Nid_cell, uint16_t *n_idDMRS)
+void lte_gold_ue_spec(uint32_t lte_gold_uespec_table[2][20][2][21],uint16_t Nid_cell, uint16_t *n_idDMRS)
 {
 
   unsigned char ns,l;
@@ -168,41 +167,6 @@ void lte_gold_ue_spec_port5(uint32_t lte_gold_uespec_port5_table[20][38],uint16_
 
   }
 }
-
-/*! \brief gold sequenquence generator
-\param x1
-\param x2 this should be set to c_init if reset=1
-\param reset resets the generator
-\return 32 bits of the gold sequence
-*/
-unsigned int lte_gold_generic(unsigned int *x1, unsigned int *x2, unsigned char reset)
-{
-  int n;
-
-  if (reset) {
-    *x1 = 1+ (1<<31);
-    *x2=*x2 ^ ((*x2 ^ (*x2>>1) ^ (*x2>>2) ^ (*x2>>3))<<31);
-
-    // skip first 50 double words (1600 bits)
-    //      printf("n=0 : x1 %x, x2 %x\n",x1,x2);
-    for (n=1; n<50; n++) {
-      *x1 = (*x1>>1) ^ (*x1>>4);
-      *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
-      *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
-      *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
-    }
-  }
-
-  *x1 = (*x1>>1) ^ (*x1>>4);
-  *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
-  *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
-  *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
-  return(*x1^*x2);
-  //  printf("n=%d : c %x\n",n,x1^x2);
-
-}
-
-
 
 #ifdef LTE_GOLD_MAIN
 main()
