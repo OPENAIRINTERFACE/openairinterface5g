@@ -142,6 +142,8 @@ typedef struct NR_DL_FRAME_PARMS {
   uint8_t nb_antenna_ports_eNB;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
+  /// shift of pilot position in one RB
+  uint8_t nushift;
   /// SRS configuration from TS 38.331 RRC
   SRS_NR srs_nr;
 

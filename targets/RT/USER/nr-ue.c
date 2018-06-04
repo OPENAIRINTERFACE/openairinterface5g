@@ -354,7 +354,7 @@ static void *UE_thread_synch(void *arg) {
 #else
             LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 #endif
-            if (initial_sync( UE, UE->mode ) == 0) {
+            if (nr_initial_sync( UE, UE->mode ) == 0) {
 
                 hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_tti;
                 printf("Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
