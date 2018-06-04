@@ -556,7 +556,7 @@ static void get_options (int argc, char **argv) {
 	  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
 	  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
 
-	  set_default_frame_parms(config,frame_parms);
+	  //set_default_frame_parms(config,frame_parms);
 	  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
 	  if (strlen(in_path) > 0) {
@@ -832,7 +832,7 @@ int main( int argc, char **argv ) {
     set_latency_target();
 
     // set default parameters
-    //set_default_frame_parms(frame_parms);
+    set_default_frame_parms(config,frame_parms);
 
     // initialize logging
     logInit();
@@ -938,9 +938,11 @@ int main( int argc, char **argv ) {
 
       LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
 
-
+      set_default_frame_parms(config[CC_id],frame_parms[CC_id]);
+      
     //init_ul_hopping(frame_parms[CC_id]);
-    //nr_init_frame_parms(frame_parms[CC_id],1);
+    nr_init_frame_parms(config[CC_id],frame_parms[CC_id]);
+    printf("after init frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
     //   phy_init_top(frame_parms[CC_id]);
     //phy_init_lte_top(frame_parms[CC_id]);
   }
@@ -965,6 +967,8 @@ int main( int argc, char **argv ) {
         	        PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*)*MAX_NUM_CCs);
 
             printf("PHY_vars_UE_g[0][%d] = %p\n",CC_id,UE[CC_id]);
+
+            printf("frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
 
             PHY_vars_UE_g[0][CC_id] = init_nr_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
             UE[CC_id] = PHY_vars_UE_g[0][CC_id];

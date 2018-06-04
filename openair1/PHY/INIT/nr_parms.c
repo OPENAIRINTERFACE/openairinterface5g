@@ -40,6 +40,19 @@ int nr_init_frame_parms(nfapi_config_request_t* config,
   LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
 #endif
 
+  frame_parms->frame_type          = FDD;
+  frame_parms->tdd_config          = 3;
+  //frame_parms[CC_id]->tdd_config_S        = 0;
+  frame_parms->N_RB_DL             = 100;
+  frame_parms->N_RB_UL             = 100;
+  frame_parms->Ncp                 = NORMAL;
+  //frame_parms[CC_id]->Ncp_UL              = NORMAL;
+  frame_parms->Nid_cell            = 0;
+  //frame_parms[CC_id]->num_MBSFN_config    = 0;
+  frame_parms->nb_antenna_ports_eNB  = 1;
+  frame_parms->nb_antennas_tx      = 1;
+  frame_parms->nb_antennas_rx      = 1;
+
   if (Ncp == EXTENDED)
     AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
 
