@@ -997,7 +997,7 @@ int main( int argc, char **argv ) {
             UE[CC_id]->UE_scan = UE_scan;
             UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
             UE[CC_id]->mode    = mode;
-            //printf("UE[%d]->mode = %d\n",CC_id,mode);
+            printf("UE[%d]->mode = %d\n",CC_id,mode);
 
             for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
                 //UE[CC_id]->pdcch_vars[i][0]->agregationLevel = agregation_Level;
@@ -1044,7 +1044,7 @@ int main( int argc, char **argv ) {
 
     //dump_frame_parms(frame_parms[0]);
 
-    //init_openair0();
+    init_openair0();
 
 
 
