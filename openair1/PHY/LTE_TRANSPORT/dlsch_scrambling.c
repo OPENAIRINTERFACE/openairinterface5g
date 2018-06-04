@@ -34,6 +34,7 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "transport_eNB.h"
