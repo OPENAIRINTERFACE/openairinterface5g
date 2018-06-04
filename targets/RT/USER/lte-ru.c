@@ -1237,7 +1237,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
     cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
 
-    cfg->tx_gain[i] = (double)fp->att_tx;
+    cfg->tx_gain[i] = 10.0;//(double)fp->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-(double)fp->att_rx;
 
     cfg->configFilename = rf_config_file;

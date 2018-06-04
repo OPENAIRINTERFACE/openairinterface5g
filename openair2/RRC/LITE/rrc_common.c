@@ -332,7 +332,7 @@ rrc_rx_tx(
 
     // check for UL failure
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
-      LOG_I(RRC,"SFN.SN %d.%d => release timer %d/%d\n",ctxt_pP->frame,ctxt_pP->subframe,
+      LOG_D(RRC,"SFN.SN %d.%d => release timer %d/%d\n",ctxt_pP->frame,ctxt_pP->subframe,
 	    ue_context_p->ue_context.ue_release_timer,ue_context_p->ue_context.ue_release_timer_thres);
       if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe==0)) {
 	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {

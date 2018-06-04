@@ -2696,18 +2696,19 @@ fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * dci
       AssertFatal(1==0,"TDD not supported for eMTC yet\n");
     } else {
       dci_alloc->dci_length = sizeof_DCI6_0A_5MHz_t;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->type = 0;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->hopping = hopping;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->rballoc = rballoc;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->mcs = mcs;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->rep = rel13->pusch_repetition_levels;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->ndi = ndi;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->rv_idx = rel13->redudency_version;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->TPC = TPC;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->csi_req = cqi_req;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->srs_req = rel13->srs_request;
-      ((DCI6_0A_10MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->type = 0;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->hopping = hopping;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->rballoc = rballoc;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->narrowband = narrowband;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->mcs = mcs;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->rep = rel13->pusch_repetition_levels;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->ndi = ndi;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->rv_idx = rel13->redudency_version;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->TPC = TPC;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->csi_req = cqi_req;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->srs_req = rel13->srs_request;
+      ((DCI6_0A_5MHz_t *) dci_pdu)->dci_rep = rel13->dci_subframe_repetition_number;
 
     }
 
@@ -2721,6 +2722,7 @@ fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * dci
       ((DCI6_0A_10MHz_t *) dci_pdu)->type = 0;
       ((DCI6_0A_10MHz_t *) dci_pdu)->hopping = hopping;
       ((DCI6_0A_10MHz_t *) dci_pdu)->rballoc = rballoc;
+      ((DCI6_0A_10MHz_t *) dci_pdu)->narrowband = narrowband;
       ((DCI6_0A_10MHz_t *) dci_pdu)->mcs = mcs;
       ((DCI6_0A_10MHz_t *) dci_pdu)->rep = rel13->pusch_repetition_levels;
       ((DCI6_0A_10MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;
@@ -2759,6 +2761,7 @@ fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * dci
       ((DCI6_0A_20MHz_t *) dci_pdu)->type = 0;
       ((DCI6_0A_20MHz_t *) dci_pdu)->hopping = hopping;
       ((DCI6_0A_20MHz_t *) dci_pdu)->rballoc = rballoc;
+      ((DCI6_0A_20MHz_t *) dci_pdu)->narrowband = narrowband;
       ((DCI6_0A_20MHz_t *) dci_pdu)->mcs = rel13->mcs;
       ((DCI6_0A_20MHz_t *) dci_pdu)->rep = rel13->pusch_repetition_levels;
       ((DCI6_0A_20MHz_t *) dci_pdu)->harq_pid = rel13->harq_process;

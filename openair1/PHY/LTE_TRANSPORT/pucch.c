@@ -2431,9 +2431,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       } // aa
 
 
-      LOG_I(PHY,"PUCCH 1a/b: SFN.SF %d.%d : stat %d,%d (pos %d)\n",
+      LOG_I(PHY,"PUCCH 1a/b: SFN.SF %d.%d : stat %d,%d (pos %d), n1_pucch %d\n",
 	    frame,subframe,stat_re,stat_im,
-	    (subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe]));
+	    (subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe]),n1_pucch);
       LOG_D(PHY,"PUCCH 1a/b: SFN.SF %d.%d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",frame,subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);      
       
       eNB->pucch1ab_stats[UE_id][(subframe<<11) + 2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_re);
@@ -2448,7 +2448,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       if (fmt==pucch_format1b)
         *(1+payload) = (stat_im<0) ? 1 : 2;
     } else { // insufficient energy on PUCCH so NAK
-      LOG_D(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
+      LOG_I(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d => DTX (n1_pucch %d)\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres,n1_pucch);
       *payload = 4;  // DTX
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);

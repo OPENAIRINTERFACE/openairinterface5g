@@ -321,10 +321,12 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
     } else
       AssertFatal(1 == 0, "Illegal combination start_symbol %d, a_index %d\n", mdci->start_symbol, a_index);
 
-    LOG_I(PHY, "mdci %d, length %d: rnti %x, L %d, prb_pairs %d, ce_mode %d, i0 %d, ss %d ,coded_bits %d\n", 
+    LOG_I(PHY, "mdci %d, length %d: rnti %x, L %d, prb_pairs %d, ce_mode %d, transmission type %s, i0 %d, ss %d ,coded_bits %d\n", 
 	  i, mdci->dci_length,mdci->rnti, 
 	  mdci->L, mdci->number_of_prb_pairs, 
-	  mdci->ce_mode, mdci->i0, mdci->start_symbol,
+	  mdci->ce_mode, 
+	  mdci->transmission_type == 1? "dist" : "loc",
+	  mdci->i0, mdci->start_symbol,
 	  coded_bits);
 
     // Note: We only have to run this every Nacc subframes during repetitions, data and scrambling are constant, but we do it for now to simplify during testing

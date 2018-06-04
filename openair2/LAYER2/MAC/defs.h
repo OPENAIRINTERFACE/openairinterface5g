@@ -650,6 +650,10 @@ typedef struct {
   uint8_t mcs_UL[8];
   /// TBS from last UL scheduling
   uint8_t TBS_UL[8];
+  /// CQI_req from last scheduling
+  uint8_t oldCQI_UL[8];
+  /// TPC from last scheduling
+  uint8_t oldTPC_UL[8];
   /// Flag to indicate UL has been scheduled at least once
   boolean_t ul_active;
   /// Flag to indicate UE has been configured (ACK from RRCConnectionSetup received)
@@ -816,6 +820,7 @@ typedef struct {
   int32_t       phr_received;
   uint8_t       periodic_ri_received[NFAPI_CC_MAX];
   uint8_t       aperiodic_ri_received[NFAPI_CC_MAX];
+  uint32_t      pucch_tpc_accumulated[NFAPI_CC_MAX];
   uint8_t       pucch1_cqi_update[NFAPI_CC_MAX];
   uint8_t       pucch1_snr[NFAPI_CC_MAX];
   uint8_t       pucch2_cqi_update[NFAPI_CC_MAX];

@@ -533,7 +533,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
   schedule_SR(module_idP,frameP,subframeP);
   // This schedules UCI_CSI in subframeP
   schedule_CSI(module_idP, frameP, subframeP);
-
+#ifdef Rel14
+  // This schedules DLSCH in subframeP
+  schedule_ue_spec_br(module_idP,frameP,subframeP);
+#endif
   // This schedules DLSCH in subframeP
   schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
 

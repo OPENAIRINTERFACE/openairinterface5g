@@ -3072,6 +3072,9 @@ void extract_harq(module_id_t mod_idP,int CC_idP,int UE_id,frame_t frameP,sub_fr
 
     uint8_t harq_pid = ((10*frameP) + subframeP + 10236)&7;
 
+    // use 1 HARQ proces of BL/CE UE for now
+    if (UE_list->UE_template[pCCid][UE_id].rach_resource_type > 0) harq_pid = 0;
+
     switch (harq_indication_fdd->mode) {
       case 0: // Format 1a/b (10.1.2.1)
         AssertFatal(numCC==1,"numCC %d > 1, should not be using Format1a/b\n",numCC);

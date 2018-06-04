@@ -1154,7 +1154,7 @@ rrc_eNB_generate_RRCConnectionRelease(
   // set release timer
   ue_context_pP->ue_context.ue_release_timer=1;
   // remove UE after 10 frames after RRCConnectionRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres=100;
+  ue_context_pP->ue_context.ue_release_timer_thres=1000;
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -3890,8 +3890,8 @@ rrc_eNB_generate_RRCConnectionSetup(
 
   // activate release timer, if RRCSetupComplete not received after 10 frames, remove UE
   ue_context_pP->ue_context.ue_release_timer=1;
-  // remove UE after 10 frames after RRCConnectionRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres=100;
+  // remove UE after 100 frames after RRCConnectionRelease is triggered
+  ue_context_pP->ue_context.ue_release_timer_thres=1000;
 }
 
 

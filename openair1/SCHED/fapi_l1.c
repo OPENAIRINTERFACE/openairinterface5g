@@ -654,7 +654,11 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
 
   if (ul_subframe<10) { // This means that there is an ul_subframe that can be configured here
     LOG_D(PHY,"NFAPI: Clearing dci allocations for potential UL\n");
-    harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
+    
+    if (eNB->ulsch[i]->ue_type == 0)
+      harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
+    else
+      harq_pid = 0;
 
     // clear DCI allocation maps for new subframe
 

@@ -328,7 +328,13 @@ phy_procedures_eNB_TX (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, relaying_type
   /* save old HARQ information needed for PHICH generation */
   if (ul_subframe < 10) {       // This means that there is a potential UL subframe that will be scheduled here
     for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
-      harq_pid = subframe2harq_pid (fp, ul_frame, ul_subframe);
+#ifdef Rel14
+      if (eNB->ulsch[i]->ue_type >0) harq_pid = 0;
+      else 
+#endif
+	harq_pid = subframe2harq_pid (fp, ul_frame, ul_subframe);
+
+
       if (eNB->ulsch[i]) {
         ulsch_harq = eNB->ulsch[i]->harq_processes[harq_pid];
 
@@ -410,6 +416,13 @@ phy_procedures_eNB_TX (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, relaying_type
 		harq_pid,
 		dlsch0->harq_processes[harq_pid]->frame,
 		dlsch0->harq_processes[harq_pid]->subframe);
+	  /*
+	  if (dlsch0->harq_processes[harq_pid]->frame > frame) { // remote stale DLSCH
+	    LOG_W(PHY,"Removing stale DLSCH\n");
+	    dlsch0->active = 0;
+	    dlsch0->harq_processes[harq_pid]->status = SCH_IDLE;
+	    dlsch0->harq_mask &= ~(1 << harq_pid);
+	    }*/
         }
         if ((dlsch0->harq_processes[harq_pid]->status == ACTIVE) && (dlsch0->harq_processes[harq_pid]->frame == frame) && (dlsch0->harq_processes[harq_pid]->subframe == subframe))
 	  pdsch_procedures (eNB, proc, harq_pid, dlsch0, dlsch1, &eNB->UE_stats[(uint32_t) UE_id], 0);
@@ -525,7 +538,7 @@ prach_procedures (PHY_VARS_eNB * eNB,
         eNB->preamble_list_br[ind].preamble_rel8.rnti = 1 + subframe + (60*(eNB->prach_vars_br.first_frame[ce_level] % 40));
         eNB->preamble_list_br[ind].instance_length = 0; //don't know exactly what this is
         eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type = 1 + ce_level;    // CE Level
-        LOG_D (PHY, "Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
+        LOG_I (PHY, "Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
                ind,
                ce_level,
                prach_mask,
@@ -541,7 +554,7 @@ prach_procedures (PHY_VARS_eNB * eNB,
 #endif
 
     {
-      if ((eNB->prach_energy_counter == 100) && (max_preamble_energy[0] > eNB->measurements.prach_I0 + 200)) {
+      if ((eNB->prach_energy_counter == 100) && (max_preamble_energy[0] > eNB->measurements.prach_I0 + 2000)) {
 
 	LOG_D (PHY, "[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
 	       eNB->Mod_id, eNB->CC_id, frame, subframe, max_preamble[0], max_preamble_energy[0] / 10, max_preamble_energy[0] % 10, max_preamble_delay[0]);
@@ -704,7 +717,7 @@ uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
         }
       case HARQ:
         if (fp->frame_type == FDD) {
-          LOG_D (PHY, "Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
+          LOG_I (PHY, "Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
                  frame, subframe, i, uci->pucch_fmt, uci->type, uci->frame, uci->subframe, uci->n_pucch_1[0][0], SR_payload);
 
           metric[0] = rx_pucch (eNB, uci->pucch_fmt, i, uci->n_pucch_1[0][0], 0,        //n2_pucch
@@ -736,7 +749,7 @@ uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
           }
 
 
-          LOG_D (PHY, "[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n", eNB->Mod_id, uci->rnti, frame, subframe, pucch_b0b1[0][0], metric[0]);
+          LOG_I (PHY, "[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n", eNB->Mod_id, uci->rnti, frame, subframe, pucch_b0b1[0][0], metric[0]);
 
           uci->stat = metric[0];
           fill_uci_harq_indication (eNB, uci, frame, subframe, pucch_b0b1[0], 0, 0xffff);
@@ -1122,26 +1135,19 @@ pusch_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
       //compute the expected ULSCH RX power (for the stats)
       ulsch_harq->delta_TF = get_hundred_times_delta_IF_eNB (eNB, i, harq_pid, 0);      // 0 means bw_factor is not considered
 
-      if (ulsch_harq->cqi_crc_status == 1) {
-#ifdef DEBUG_PHY_PROC
-        //if (((frame%10) == 0) || (frame < 50))
-        print_CQI (ulsch_harq->o, ulsch_harq->uci_format, 0, fp->N_RB_DL);
-#endif
 
-        fill_ulsch_cqi_indication (eNB, frame, subframe, ulsch_harq, ulsch->rnti);
-      }
 
       if (ret == (1 + MAX_TURBO_ITERATIONS)) {
         T (T_ENB_PHY_ULSCH_UE_NACK, T_INT (eNB->Mod_id), T_INT (frame), T_INT (subframe), T_INT (ulsch->rnti), T_INT (harq_pid));
 
         fill_crc_indication (eNB, i, frame, subframe, 1);       // indicate NAK to MAC
         fill_rx_indication (eNB, i, frame, subframe);   // indicate SDU to MAC
-
-        LOG_I (PHY, "[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
+	
+	  /*LOG_I (PHY, "[eNB %d][PUSCH %d] frame %d subframe %d UE %d Error receiving ULSCH, round %d/%d (ACK %d,%d)\n",
                eNB->Mod_id, harq_pid, frame, subframe, i, ulsch_harq->round - 1, ulsch->Mlimit, ulsch_harq->o_ACK[0], ulsch_harq->o_ACK[1]);
 	dump_ulsch(eNB,frame,subframe,i);
 	exit(-1);
-
+	*/
         if (ulsch_harq->round >= 3) {
           ulsch_harq->status = SCH_IDLE;
           ulsch_harq->handled = 0;
@@ -1190,6 +1196,15 @@ pusch_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc)
       LOG_D (PHY, "[eNB %d] Frame %d subframe %d: received ULSCH harq_pid %d for UE %d, ret = %d, CQI CRC Status %d, ACK %d,%d, ulsch_errors %d/%d\n",
              eNB->Mod_id, frame, subframe,
              harq_pid, i, ret, ulsch_harq->cqi_crc_status, ulsch_harq->o_ACK[0], ulsch_harq->o_ACK[1], eNB->UE_stats[i].ulsch_errors[harq_pid], eNB->UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
+
+      if (ulsch_harq->cqi_crc_status == 1) {
+#ifdef DEBUG_PHY_PROC
+        //if (((frame%10) == 0) || (frame < 50))
+        print_CQI (ulsch_harq->o, ulsch_harq->uci_format, 0, fp->N_RB_DL);
+#endif
+
+        fill_ulsch_cqi_indication (eNB, frame, subframe, ulsch_harq, ulsch->rnti);
+      }
     }                           //     if ((ulsch) &&
     //         (ulsch->rnti>0) &&
     //         (ulsch_harq->status == ACTIVE))

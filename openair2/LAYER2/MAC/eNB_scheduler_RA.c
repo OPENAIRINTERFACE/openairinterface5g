@@ -264,7 +264,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_prb_pairs = 6;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_assignment = 0; // Note: this can be dynamic
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_tansmission_type = 1;   // imposed (9.1.5 in 213) for Type 2 Common search space  
-      AssertFatal (cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL, "cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
+      AssertFatal (cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL, "cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;        // Note: this should be dynamic
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 24;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
@@ -348,7 +348,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version = 0;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks = 1;   // first block
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_block_to_codeword_swap_flag = 0;
-        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme = (cc->p_eNB == 1) ? 0 : 1;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme = (cc[CC_idP].p_eNB == 1) ? 0 : 1;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers = 1;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands = 1;
         //      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = ;
@@ -356,8 +356,8 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa = 4; // 0 dB
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index = 0;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ngap = 0;
-        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb = get_subbandsize (cc->mib->message.dl_Bandwidth); // ignored
-        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode = (cc->p_eNB == 1) ? 1 : 2;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb = get_subbandsize (cc[CC_idP].mib->message.dl_Bandwidth); // ignored
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode = (cc[CC_idP].p_eNB == 1) ? 1 : 2;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband = 1;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector = 1;
         //      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
@@ -440,7 +440,7 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version = 0;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks = 1;   // first block
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_block_to_codeword_swap_flag = 0;
-        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme = (cc->p_eNB == 1) ? 0 : 1;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme = (cc[CC_idP].p_eNB == 1) ? 0 : 1;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers = 1;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands = 1;
         //    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = ;
@@ -448,8 +448,8 @@ generate_Msg2 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa = 4; // 0 dB
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index = 0;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ngap = 0;
-        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb = get_subbandsize (cc->mib->message.dl_Bandwidth); // ignored
-        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode = (cc->p_eNB == 1) ? 1 : 2;
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb = get_subbandsize (cc[CC_idP].mib->message.dl_Bandwidth); // ignored
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode = (cc[CC_idP].p_eNB == 1) ? 1 : 2;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband = 1;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector = 1;
         //    dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
@@ -568,7 +568,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
 
   // set HARQ process round to 0 for this UE
 
-  if (cc->tdd_Config)
+  if (cc[CC_idP].tdd_Config)
     RA_template->harq_pid = ((frameP * 10) + subframeP) % 10;
   else
     RA_template->harq_pid = ((frameP * 10) + subframeP) & 7;
@@ -582,6 +582,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
 #ifdef Rel14
   if (RA_template->rach_resource_type > 0) {
 
+    RA_template->harq_pid = 0;
     // Generate DCI + repetitions first
     // This uses an MPDCCH Type 2 allocation according to Section 9.1.5 36-213, Type2 common allocation according to Table 7.1-8 (36-213)
     // Parameters:
@@ -622,7 +623,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.number_of_prb_pairs = 6;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.resource_block_assignment = 0; // Note: this can be dynamic
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_tansmission_type = 1;   // imposed (9.1.5 in 213) for Type 2 Common search space  
-      AssertFatal (cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL, "cc[CC_id].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
+      AssertFatal (cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL, "cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;        // Note: this should be dynamic
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 24;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
@@ -710,7 +711,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version = 0;
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks = 1;   // first block
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_block_to_codeword_swap_flag = 0;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme = (cc->p_eNB == 1) ? 0 : 1;
+      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_scheme = (cc[CC_idP].p_eNB == 1) ? 0 : 1;
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_layers = 1;
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.number_of_subbands = 1;
       //      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.codebook_index                         = ;
@@ -718,8 +719,8 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pa = 4; // 0 dB
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.delta_power_offset_index = 0;
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.ngap = 0;
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb = get_subbandsize (cc->mib->message.dl_Bandwidth); // ignored
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode = (cc->p_eNB == 1) ? 1 : 2;
+      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.nprb = get_subbandsize (cc[CC_idP].mib->message.dl_Bandwidth); // ignored
+      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode = (cc[CC_idP].p_eNB == 1) ? 1 : 2;
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband = 1;
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector = 1;
       //      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ; 
@@ -885,7 +886,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
         lcid = 0;
 
         // put HARQ process round to 0
-        if (cc->tdd_Config)
+        if (cc[CC_idP].tdd_Config)
           RA_template->harq_pid = ((frameP * 10) + subframeP) % 10;
         else
           RA_template->harq_pid = ((frameP * 10) + subframeP) & 7;
@@ -922,7 +923,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
                                  0,     // redundancy version
                                  1,     // transport_blocks
                                  0,     // transport_block_to_codeword_swap_flag (0)
-                                 (cc->p_eNB == 1) ? 0 : 1,      // transmission_scheme
+                                 (cc[CC_idP].p_eNB == 1) ? 0 : 1,      // transmission_scheme
                                  1,     // number of layers
                                  1,     // number of subbands
                                  //0,                         // codebook index 
@@ -931,7 +932,7 @@ generate_Msg4 (module_id_t module_idP, int CC_idP, frame_t frameP, sub_frame_t s
                                  0,     // delta_power_offset_index
                                  0,     // ngap
                                  1,     // NPRB = 3 like in DCI
-                                 (cc->p_eNB == 1) ? 1 : 2,      // transmission mode
+                                 (cc[CC_idP].p_eNB == 1) ? 1 : 2,      // transmission mode
                                  1,     // num_bf_prb_per_subband
                                  1);    // num_bf_vector
         LOG_D (MAC, "Filled DLSCH config, pdu number %d, non-dci pdu_index %d\n", dl_req->number_pdu, eNB->pdu_index[CC_idP]);
@@ -1022,7 +1023,8 @@ check_Msg4_retransmission (module_id_t module_idP, int CC_idP, frame_t frameP, s
   dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
   N_RB_DL = to_prb (cc[CC_idP].mib->message.dl_Bandwidth);
 
-  LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 for harq_pid %d was acknowledged (round %d)\n", module_idP, CC_idP, frameP, subframeP, RA_template->harq_pid, round);
+  LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 for harq_pid %d was acknowledged (round %d) => SFN %d.%d\n", module_idP, CC_idP, frameP, subframeP, RA_template->harq_pid, round,
+	 RA_template->Msg4_frame,RA_template->Msg4_subframe);
 
   if (round != 8) {
 
@@ -1030,6 +1032,10 @@ check_Msg4_retransmission (module_id_t module_idP, int CC_idP, frame_t frameP, s
     if (RA_template->rach_resource_type > 0) {
       if ((RA_template->Msg4_frame == frameP) && (RA_template->Msg4_subframe == subframeP)) {
 	AssertFatal (1 == 0, "Msg4 Retransmissions not handled yet for BL/CE UEs\n");
+      }
+      if (round > 0) { 
+	cancel_ra_proc (module_idP, CC_idP, frameP, RA_template->rnti);
+	rrc_mac_remove_ue(module_idP,RA_template->rnti);
       }
     } else
 #endif
@@ -1070,7 +1076,7 @@ check_Msg4_retransmission (module_id_t module_idP, int CC_idP, frame_t frameP, s
                                    round & 3,   // redundancy version
                                    1,   // transport_blocks
                                    0,   // transport_block_to_codeword_swap_flag (0)
-                                   (cc->p_eNB == 1) ? 0 : 1,    // transmission_scheme
+                                   (cc[CC_idP].p_eNB == 1) ? 0 : 1,    // transmission_scheme
                                    1,   // number of layers
                                    1,   // number of subbands
                                    //0,                         // codebook index 
@@ -1079,7 +1085,7 @@ check_Msg4_retransmission (module_id_t module_idP, int CC_idP, frame_t frameP, s
                                    0,   // delta_power_offset_index
                                    0,   // ngap
                                    1,   // NPRB = 3 like in DCI
-                                   (cc->p_eNB == 1) ? 1 : 2,    // transmission mode
+                                   (cc[CC_idP].p_eNB == 1) ? 1 : 2,    // transmission mode
                                    1,   // num_bf_prb_per_subband
                                    1);  // num_bf_vector
         } else
@@ -1137,7 +1143,7 @@ schedule_RA (module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 
       if (RA_template->RA_active == TRUE) {
 
-        LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d is active (generate RAR %d, generate_Msg4 %d, wait_ack_Msg4 %d, rnti %x)\n",
+        LOG_D (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d RA %d is active (generate RAR %d, generate_Msg4 %d, wait_ack_Msg4 %d, rnti %x)\n",
                module_idP, frameP, subframeP, CC_id, i, RA_template->generate_rar, RA_template->generate_Msg4, RA_template->wait_ack_Msg4, RA_template->rnti);
 
         if (RA_template->generate_rar == 1)
