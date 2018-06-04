@@ -850,7 +850,6 @@ int main( int argc, char **argv ) {
     //randominit (0);
     set_taus_seed (0);
 
-    if (UE_flag==1) {
         printf("configuring for UE\n");
 
         set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
@@ -866,14 +865,9 @@ int main( int argc, char **argv ) {
         set_comp_log(NAS,     LOG_INFO,   LOG_HIGH, 1);
 # endif
 #endif
-    }
 
-    if (ouput_vcd) {
-        if (UE_flag==1)
-            VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_UE.vcd");
-        else
-            VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_eNB.vcd");
-    }
+    if (ouput_vcd)
+        VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_UE.vcd");
 
     //if (opp_enabled ==1) {
     //    reset_opp_meas();
@@ -882,11 +876,7 @@ int main( int argc, char **argv ) {
 
 #if defined(ENABLE_ITTI)
 
-    if (UE_flag == 1) {
-        log_set_instance_type (LOG_INSTANCE_UE);
-    } else {
-        log_set_instance_type (LOG_INSTANCE_ENB);
-    }
+    log_set_instance_type (LOG_INSTANCE_UE);
 
     itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
 
@@ -1167,7 +1157,7 @@ int main( int argc, char **argv ) {
 
 
     // start the main thread
-   if (UE_flag == 1) {
+   //if (UE_flag == 1) {
         init_UE(1);
         number_of_cards = 1;
 
@@ -1175,7 +1165,7 @@ int main( int argc, char **argv ) {
       PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
       PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
     }
-   }
+   //}
 
     // connect the TX/RX buffers
     if (UE_flag==1) {
@@ -1252,10 +1242,9 @@ int main( int argc, char **argv ) {
 
 
     // *** Handle per CC_id openair0
-    if (UE_flag==1) {
         if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
             PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
-    }
+
     if (ouput_vcd)
         VCD_SIGNAL_DUMPER_CLOSE();
 
