@@ -51,6 +51,7 @@
 #include "common/ran_context.h"
 #include "PHY/defs_UE.h"
 #include "PHY/defs_eNB.h"
+#include "vcd_signal_dumper.h"
 
 RAN_CONTEXT_t RC;
 extern PHY_VARS_UE ***PHY_vars_UE_g;
@@ -192,7 +193,7 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
       LOG_D(SIM,"RU_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
 	    subframe,(unsigned long long)*ptimestamp,
 	    (unsigned long long)sim.current_ru_rx_timestamp[ru_id][CC_id]);
-      
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SIM_DO_UL_SIGNAL,1);      
       do_UL_sig(&sim,
 		subframe,
 		0,  // abstraction_flag
@@ -200,6 +201,7 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 		0,  // frame is only used for abstraction
 		ru_id,
 		CC_id);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SIM_DO_UL_SIGNAL,0);
     }
     sim.last_ru_rx_timestamp[ru_id][CC_id] += RC.ru[ru_id]->frame_parms.samples_per_tti;
     sample_count += RC.ru[ru_id]->frame_parms.samples_per_tti;
@@ -211,6 +213,7 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
 int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
 {
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SIM_UE_TRX_READ,1);
   int UE_id = device->Mod_id;
   int CC_id  = device->CC_id;
 
@@ -264,6 +267,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 	  UE_id,nsamps,subframe,
 	  (int)(sim.last_UE_rx_timestamp[UE_id][CC_id]%sptti));
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SIM_DO_DL_SIGNAL,1);
     do_DL_sig(&sim,
 	      subframe,
 	      sim.last_UE_rx_timestamp[UE_id][CC_id]%sptti,
@@ -272,6 +276,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 	      &PHY_vars_UE_g[UE_id][CC_id]->frame_parms,
 	      UE_id,
 	      CC_id);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SIM_DO_DL_SIGNAL,0);
     LOG_D(PHY,"UE %d: DL simulation 6: UE_trx_read @ TS %"PRIi64" (%"PRIi64")=> frame %d, subframe %d\n",
 	  UE_id, sim.current_UE_rx_timestamp[UE_id][CC_id],
 	  sim.last_UE_rx_timestamp[UE_id][CC_id],
@@ -286,7 +291,7 @@ int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
   }
 
-
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SIM_UE_TRX_READ,0);
   return(nsamps);
 }
 
