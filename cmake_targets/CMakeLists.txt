@@ -170,7 +170,7 @@ set(CMAKE_C_FLAGS
   "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC ")
 # add autotools definitions that were maybe used!
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'"
+  "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -DASN_DISABLE_OER_SUPPORT -D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'"
 )
 set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 "
@@ -281,8 +281,8 @@ endif (${ENABLE_ITTI})
 # (so creating new asn.1 objects instead of modifying the object attributes)
 # New C code source file, cmake must be re-run (instead of re-running make only)
 #############
-set(asn1c_call "${OPENAIR_CMAKE}/tools/generate_asn1")
-set(fix_asn1c_call "${OPENAIR_CMAKE}/tools/fix_asn1")
+# set(asn1c_call "${OPENAIR_CMAKE}/tools/generate_asn1")
+# set(fix_asn1c_call "${OPENAIR_CMAKE}/tools/fix_asn1")
 set(asn1_generated_dir ${OPENAIR_BIN_DIR})
 
 set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
@@ -302,28 +302,32 @@ elseif (${RRC_ASN1_VERSION} STREQUAL "CBA")
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel10")
   make_version(RRC_VERSION 10 2 0)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn)
-else()
-  make_version(RRC_VERSION 14 3 0)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/RRC-e30.asn)
+elseif (${RRC_ASN1_VERSION} STREQUAL "Rel11")
+  make_version(RRC_VERSION 11 18 0)
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-11.18.0.asn1)
+elseif (${RRC_ASN1_VERSION} STREQUAL "Rel12")
+  make_version(RRC_VERSION 12 16 0)
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-12.16.0.asn1)
+elseif (${RRC_ASN1_VERSION} STREQUAL "Rel13")
+  make_version(RRC_VERSION 13 9 1)
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-13.9.1.asn1)
+elseif (${RRC_ASN1_VERSION} STREQUAL "Rel14")
+  make_version(RRC_VERSION 14 6 2)
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-14.6.2.asn1)
+elseif (${RRC_ASN1_VERSION} STREQUAL "Rel15")
+  make_version(RRC_VERSION 15 1 0)
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.1.0.asn1)
 endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 add_definitions(-DRRC_VERSION=${RRC_VERSION})
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
-if(NOT EXISTS ${asn1c_call})
-  message( FATAL_ERROR "The script ${asn1c_call} must be present" )
-endif(NOT EXISTS ${asn1c_call})
-execute_process(COMMAND ${asn1c_call}  ${RRC_FULL_DIR} ${RRC_GRAMMAR}
+message("calling asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
+execute_process(COMMAND mkdir -p ${RRC_FULL_DIR}
+                COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
                 RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${asn1c_call}: error")
+  message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
-if(NOT EXISTS ${fix_asn1c_call})
-  message( FATAL_ERROR "The script ${fix_asn1c_call} must be present" )
-endif(NOT EXISTS ${fix_asn1c_call})
-execute_process(COMMAND ${fix_asn1c_call} ${RRC_FULL_DIR} RRC ${RRC_ASN1_VERSION}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${fix_asn1c_call}: error")
-endif (NOT ${ret} STREQUAL 0)
+
 file(GLOB rrc_source ${RRC_FULL_DIR}/*.c)
 file(GLOB rrc_h ${RRC_FULL_DIR}/*.h)
 set(rrc_h ${rrc_h} ${RRC_FULL_DIR}/asn1_constants.h)
@@ -337,8 +341,8 @@ include_directories ("${RRC_FULL_DIR}")
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 add_custom_command (
   OUTPUT ${RRC_FULL_DIR}/asn1_constants.h
-  COMMAND ${asn1c_call}  ${RRC_FULL_DIR} ${RRC_GRAMMAR}
-  COMMAND ${fix_asn1c_call}  ${RRC_FULL_DIR} RRC ${RRC_ASN1_VERSION}
+  COMMAND mkdir -p ${RRC_FULL_DIR}
+  COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
   DEPENDS ${RRC_GRAMMAR}
   )
 
@@ -346,65 +350,56 @@ add_custom_command (
 # Same limitation as described in RRC: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(S1AP_RELEASE R10 "S1AP ASN.1 grammar version" R8 R9 R10)
+add_list1_option(S1AP_RELEASE R14 "S1AP ASN.1 grammar version" R8 R9 R10 R14 R15)
 
 set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
 if (${S1AP_RELEASE} STREQUAL "R8")
   make_version(S1AP_VERSION 8 10 0)
-  set (ASN1RELDIR R8.10)
+  set(S1AP_ASN_FILES "s1ap-8.10.0.asn1")
 elseif (${S1AP_RELEASE} STREQUAL "R9")
-  make_version(S1AP_VERSION 9 8 0)
-  set (ASN1RELDIR R9.8)
+  make_version(S1AP_VERSION 9 10 0)
+  set(S1AP_ASN_FILES "s1ap-9.10.0.asn1")
 elseif (${S1AP_RELEASE} STREQUAL "R10")
-  make_version(S1AP_VERSION 10 5 0)
-  set (ASN1RELDIR R10.5)
+  make_version(S1AP_VERSION 10 9 0)
+  set(S1AP_ASN_FILES "s1ap-10.9.0.asn1")
+elseif (${S1AP_RELEASE} STREQUAL "R11")
+  make_version(S1AP_VERSION 11 8 0)
+  set(S1AP_ASN_FILES "s1ap-11.8.0.asn1")
+elseif (${S1AP_RELEASE} STREQUAL "R12")
+  make_version(S1AP_VERSION 12 7 0)
+  set(S1AP_ASN_FILES "s1ap-12.7.0.asn1")
+elseif (${S1AP_RELEASE} STREQUAL "R13")
+  make_version(S1AP_VERSION 13 6 0)
+  set(S1AP_ASN_FILES "s1ap-13.6.0.asn1")
+elseif (${S1AP_RELEASE} STREQUAL "R14")
+  make_version(S1AP_VERSION 14 5 0)
+  set(S1AP_ASN_FILES "s1ap-14.5.0.asn1")
+else (${S1AP_RELEASE} STREQUAL "R15")
+  make_version(S1AP_VERSION 15 1 0)
+  set(S1AP_ASN_FILES "s1ap-15.1.0.asn1")
 endif(${S1AP_RELEASE} STREQUAL "R8")
 add_definitions(-DS1AP_VERSION=${S1AP_VERSION})
-set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
-set(S1AP_ASN_FILES
-  ${S1AP_ASN_DIR}/S1AP-CommonDataTypes.asn
-  ${S1AP_ASN_DIR}/S1AP-Constants.asn
-  ${S1AP_ASN_DIR}/S1AP-IEs.asn
-  ${S1AP_ASN_DIR}/S1AP-PDU.asn
-  )
-set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${ASN1RELDIR})
-#message("calling ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}")
-execute_process(COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}
+set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${S1AP_RELEASE})
+set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${S1AP_RELEASE})
+message("calling ASN1C_PREFIX=S1AP_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}")
+execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
+                COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
                 RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${asn1c_call}: error")
-endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND python ${S1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f${S1AP_ASN_DIR}/S1AP-PDU-Contents.asn -o${S1AP_C_DIR}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "asn1tostruct.py: error")
-endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND ${fix_asn1c_call} ${S1AP_C_DIR} S1AP ${S1AP_RELEASE}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${fix_asn1c_call}: error")
+  message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
 file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 
-set(S1AP_OAI_generated
-  ${S1AP_C_DIR}/s1ap_decoder.c
-  ${S1AP_C_DIR}/s1ap_encoder.c
-  ${S1AP_C_DIR}/s1ap_xer_print.c
-  ${S1AP_C_DIR}/s1ap_compare.c
-  ${S1AP_C_DIR}/s1ap_ies_defs.h
-  )
 file(GLOB s1ap_h ${S1AP_C_DIR}/*.h)
-set(s1ap_h ${s1ap_h} )
+set(s1ap_h ${s1ap_h})
 
 add_custom_command (
-  OUTPUT ${S1AP_OAI_generated}
-  COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}
-  COMMAND python ${S1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f${S1AP_ASN_DIR}/S1AP-PDU-Contents.asn -o${S1AP_C_DIR}
-  COMMAND ${fix_asn1c_call} ${S1AP_C_DIR} S1AP ${S1AP_RELEASE}
-  DEPENDS ${S1AP_ASN_FILES}
-  )
+  OUTPUT ${S1AP_C_DIR}/S1AP_asn_constant.h
+  COMMAND mkdir -p ${S1AP_C_DIR}
+  COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
+  DEPENDS ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
+)
 add_library(S1AP_LIB
-  ${S1AP_OAI_generated}
   ${S1AP_source}
   ${S1AP_DIR}/s1ap_common.c
   )
@@ -413,7 +408,6 @@ include_directories ("${S1AP_C_DIR}")
 include_directories ("${S1AP_DIR}")
 
 add_library(S1AP_ENB
-  ${S1AP_C_DIR}/s1ap_ies_defs.h
   ${S1AP_DIR}/s1ap_eNB.c
   ${S1AP_DIR}/s1ap_eNB_context_management_procedures.c
   ${S1AP_DIR}/s1ap_eNB_decoder.c
@@ -428,70 +422,52 @@ add_library(S1AP_ENB
   ${S1AP_DIR}/s1ap_eNB_ue_context.c
   )
 
-
-
 #X2AP
 # Same limitation as described in RRC/S1AP: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(X2AP_RELEASE R11 "X2AP ASN.1 grammar version" R10 R11)
-set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
-if (${X2AP_RELEASE} STREQUAL "R10")
-  make_version(S1AP_VERSION 10 0 0)
-  set (ASN1RELDIR R.UNKNOWN)
-elseif (${X2AP_RELEASE} STREQUAL "R11")
-  make_version(S1AP_VERSION 11 2 0)
-  set (ASN1RELDIR R11.2)
-endif(${X2AP_RELEASE} STREQUAL "R10")
-add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
-set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
-set(X2AP_ASN_FILES
-  ${X2AP_ASN_DIR}/X2AP-CommonDataTypes.asn
-  ${X2AP_ASN_DIR}/X2AP-Constants.asn
-  ${X2AP_ASN_DIR}/X2AP-IEs.asn
-  ${X2AP_ASN_DIR}/X2AP-PDU.asn
-  ${X2AP_ASN_DIR}/X2AP-Containers.asn
-  )
+add_list1_option(X2AP_RELEASE R14 "X2AP ASN.1 grammar version" R8 R11 R12 R14 R15)
 
-set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${ASN1RELDIR})
-#message("calling ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}")
-execute_process(COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}
+set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
+if (${X2AP_RELEASE} STREQUAL "R8")
+  make_version(X2AP_VERSION 8 9 0)
+  set(X2AP_ASN_FILES x2ap-8.9.0.asn1)
+elseif (${X2AP_RELEASE} STREQUAL "R11")
+  make_version(X2AP_VERSION 11 9 0)
+  set(X2AP_ASN_FILES x2ap-11.9.0.asn1)
+elseif (${X2AP_RELEASE} STREQUAL "R12")
+  make_version(X2AP_VERSION 12 9 0)
+  set(X2AP_ASN_FILES x2ap-12.9.0.asn1)
+elseif (${X2AP_RELEASE} STREQUAL "R14")
+  make_version(X2AP_VERSION 14 6 0)
+  set(X2AP_ASN_FILES x2ap-14.6.0.asn1)
+elseif (${X2AP_RELEASE} STREQUAL "R15")
+  make_version(X2AP_VERSION 15 1 0)
+  set(X2AP_ASN_FILES x2ap-15.1.0.asn1)
+endif(${X2AP_RELEASE} STREQUAL "R8")
+add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
+set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
+set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
+message("calling ASN1C_PREFIX=X2AP_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}")
+execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
+                COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
                 RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${asn1c_call}: error")
-endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND python ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "asn1tostruct.py: error")
-endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_RELEASE}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${fix_asn1c_call}: error")
+  message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
 file(GLOB X2AP_source ${X2AP_C_DIR}/*.c)
 
-set(X2AP_OAI_generated
-  ${X2AP_C_DIR}/x2ap_decoder.c
-  ${X2AP_C_DIR}/x2ap_encoder.c
-  ${X2AP_C_DIR}/x2ap_xer_print.c
-  ${X2AP_C_DIR}/x2ap_ies_defs.h
-  )
 file(GLOB x2ap_h ${X2AP_C_DIR}/*.h)
-set(x2ap_h ${x2ap_h} )
+set(x2ap_h ${x2ap_h})
 
-#message("calling ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}")
 add_custom_command (
-  OUTPUT ${X2AP_OAI_generated}
-  COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}
-  COMMAND python ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}
-  COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_RELEASE}
-  DEPENDS ${X2AP_ASN_FILES}
+  OUTPUT ${X2AP_C_DIR}/X2AP_asn_constant.h
+  COMMAND mkdir -p ${X2AP_C_DIR}
+  COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
+  DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
   )
 
 add_library(X2AP_LIB
-  ${X2AP_OAI_generated}
   ${X2AP_source}
   ${X2AP_DIR}/x2ap_common.c
   )
@@ -2304,7 +2280,7 @@ endforeach()
 # castxml doesn't work with c11 (gcc 5 default)
 # force castxml and clang compilation with gnu89 standard
 # we can't use cXX standard as pthread_rwlock_t is gnu standard
-list(APPEND itti_compiler_options "-std=gnu89;-D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
+list(APPEND itti_compiler_options "-std=gnu89;-DASN_DISABLE_OER_SUPPORT;-D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
 set (ITTI_H ${ITTI_DIR}/intertask_interface_types.h)
 if(EXISTS /usr/bin/gccxml)
    set(xml_command gccxml ${itti_compiler_options} -fxml=${OPENAIR_BIN_DIR}/messages.xml ${ITTI_H})

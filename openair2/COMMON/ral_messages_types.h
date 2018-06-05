@@ -21,7 +21,7 @@
 
 #ifndef RAL_MESSAGES_TYPES_H_
 #define RAL_MESSAGES_TYPES_H_
-#include "asn1_constants.h"
+#include "asn_constant.h"
 #include "platform_types.h"
 #include "commonDef.h"
 /* 802.21 mappings with the RRC protocol :

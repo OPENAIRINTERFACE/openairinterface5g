@@ -99,15 +99,29 @@ void *ue_ip_interrupt(void)
 }
 #endif //NETLINK
 //---------------------------------------------------------------------------
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+void ue_ip_timer(struct timer_list *t)
+#else
 void ue_ip_timer(unsigned long dataP)
+#endif
 {
   //---------------------------------------------------------------------------
-  ue_ip_priv_t *priv_p=(ue_ip_priv_t *)dataP;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+  ue_ip_priv_t *priv_p = from_timer(priv_p, t, timer);
+#else
+  ue_ip_priv_t *priv_p = (ue_ip_priv_t *)dataP;
+#endif
+
   spin_lock(&priv_p->lock);
-  (priv_p->timer).function=ue_ip_timer;
-  (priv_p->timer).expires=jiffies+UE_IP_TIMER_TICK;
-  (priv_p->timer).data=dataP;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+  mod_timer(&priv_p->timer, jiffies + UE_IP_TIMER_TICK);
+#else
+  (priv_p->timer).function = ue_ip_timer;
+  (priv_p->timer).expires = jiffies + UE_IP_TIMER_TICK;
+  (priv_p->timer).data = dataP;
   add_timer(&priv_p->timer);
+#endif
+
   spin_unlock(&priv_p->lock);
   return;
   //  add_timer(&gpriv->timer);
@@ -137,10 +151,15 @@ int ue_ip_open(struct net_device *dev_pP)
     netif_wake_queue(dev_pP);
   }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+  timer_setup(&(priv_p->timer), ue_ip_timer, 0);
+  (priv_p->timer).expires   = jiffies+UE_IP_TIMER_TICK;
+#else
   init_timer(&priv_p->timer);
   (priv_p->timer).expires   = jiffies+UE_IP_TIMER_TICK;
   (priv_p->timer).data      = (unsigned long)priv_p;
   (priv_p->timer).function  = ue_ip_timer;
+#endif
   //add_timer(&priv_p->timer);
 
   printk("[UE_IP_DRV][%s] name = %s\n", __FUNCTION__, dev_pP->name);

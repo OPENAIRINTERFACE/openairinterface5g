@@ -29,7 +29,7 @@
  ***************************************************************************/
 
 #ifdef CMAKER
-#include "asn1_constants.h"
+#include "asn_constant.h"
 #else
 #include "RRC/LTE/MESSAGES/asn1_constants.h"
 #endif

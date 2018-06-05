@@ -7142,8 +7142,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
       LOG_I(RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
       if (ue_context_p->ue_context.UE_Capability) {
         LOG_I(RRC, "freeing old UE capabilities for UE %x\n", ctxt_pP->rnti);
-        asn_DEF_UE_EUTRA_Capability.free_struct(&asn_DEF_UE_EUTRA_Capability,
-              ue_context_p->ue_context.UE_Capability, 0);
+        ASN_STRUCT_FREE(asn_DEF_UE_EUTRA_Capability,
+                        ue_context_p->ue_context.UE_Capability);
         ue_context_p->ue_context.UE_Capability = 0;
       }
       dec_rval = uper_decode(NULL,
@@ -7163,8 +7163,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
         LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Failed to decode UE capabilities (%zu bytes)\n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
               dec_rval.consumed);
-        asn_DEF_UE_EUTRA_Capability.free_struct(&asn_DEF_UE_EUTRA_Capability,
-              ue_context_p->ue_context.UE_Capability, 0);
+        ASN_STRUCT_FREE(asn_DEF_UE_EUTRA_Capability,
+                        ue_context_p->ue_context.UE_Capability);
         ue_context_p->ue_context.UE_Capability = 0;
       }
 

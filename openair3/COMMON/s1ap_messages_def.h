@@ -32,6 +32,7 @@ MESSAGE_DEF(S1AP_INITIAL_UE_MESSAGE_LOG    , MESSAGE_PRIORITY_MED, IttiMsgText  
 MESSAGE_DEF(S1AP_UE_CONTEXT_RELEASE_REQ_LOG, MESSAGE_PRIORITY_MED, IttiMsgText                      , s1ap_ue_context_release_req_log)
 MESSAGE_DEF(S1AP_UE_CONTEXT_RELEASE_COMMAND_LOG, MESSAGE_PRIORITY_MED, IttiMsgText                  , s1ap_ue_context_release_command_log)
 MESSAGE_DEF(S1AP_UE_CONTEXT_RELEASE_LOG    , MESSAGE_PRIORITY_MED, IttiMsgText                      , s1ap_ue_context_release_log)
+MESSAGE_DEF(S1AP_ERROR_INDICATION_LOG      , MESSAGE_PRIORITY_MED, IttiMsgText                      , s1ap_error_indication_log)
 
 MESSAGE_DEF(S1AP_UE_CAPABILITIES_IND       , MESSAGE_PRIORITY_MED, s1ap_ue_cap_ind_t                , s1ap_ue_cap_ind)
 MESSAGE_DEF(S1AP_ENB_DEREGISTERED_IND      , MESSAGE_PRIORITY_MED, s1ap_eNB_deregistered_ind_t      , s1ap_eNB_deregistered_ind)
