@@ -29,7 +29,9 @@
  */
 #define RRC_ENB
 #define RRC_ENB_C
-
+#include <asn_application.h>
+#include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
+#include <per_encoder.h>
 #include "rrc_defs.h"
 #include "rrc_extern.h"
 #include "assertions.h"

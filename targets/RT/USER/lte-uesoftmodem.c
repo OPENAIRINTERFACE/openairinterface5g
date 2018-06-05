@@ -1051,9 +1051,6 @@ int main( int argc, char **argv )
     printf("ITTI tasks created\n");
 #endif
 
-  // init UE_PF_PO and mutex lock
-    //  pthread_mutex_init(&ue_pf_po_mutex, NULL);
-    //  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   
