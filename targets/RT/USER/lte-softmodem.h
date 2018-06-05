@@ -24,7 +24,7 @@
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
 #include "../../ARCH/COMMON/common_lib.h"
-#undef MALLOC
+//#undef MALLOC
 #include "assertions.h"
 #include "msc.h"
 #include "PHY/types.h"

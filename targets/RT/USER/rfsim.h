@@ -18,8 +18,8 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-#ifndef __SIM__H__
-#define __SIM__H__
+#ifndef __RFSIM__H__
+#define __RFSIM__H__
 #include "lte-softmodem.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "platform_constants.h"
