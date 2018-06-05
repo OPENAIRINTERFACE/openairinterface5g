@@ -928,3 +928,45 @@ void nr_lte_ue_transport(PHY_VARS_UE *ue,int abstraction_flag) {
   ue->dlsch_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,ue->frame_parms.N_RB_DL,0);
 
 }*/
+
+void phy_init_nr_top(NR_DL_FRAME_PARMS *frame_parms)
+{
+
+  crcTableInit();
+
+  ccodedot11_init();
+  ccodedot11_init_inv();
+
+  ccodelte_init();
+  ccodelte_init_inv();
+
+  //treillis_table_init();
+
+  phy_generate_viterbi_tables();
+  phy_generate_viterbi_tables_lte();
+
+  //init_td8();
+  //init_td16();
+#ifdef __AVX2__
+  //init_td16avx2();
+#endif
+
+  init_context_synchro_nr(frame_parms);
+
+  generate_ul_reference_signal_sequences(SHRT_MAX);
+
+  //lte_sync_time_init(frame_parms);
+
+  //generate_ul_ref_sigs();
+  //generate_ul_ref_sigs_rx();
+
+  //generate_64qam_table();
+  //generate_16qam_table();
+  //generate_RIV_tables();
+
+  //init_unscrambling_lut();
+  //init_scrambling_lut();
+  
+  //set_taus_seed(1328);
+
+}

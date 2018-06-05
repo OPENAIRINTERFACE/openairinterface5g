@@ -40,6 +40,131 @@ int nr_init_frame_parms(nfapi_config_request_t* config,
   LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
 #endif
 
+  if (Ncp == EXTENDED)
+    AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
+
+  switch(mu) {
+
+    case NR_MU_0: //15kHz scs
+      frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_0];
+      frame_parms->slots_per_subframe = nr_slots_per_subframe[NR_MU_0];
+      break;
+
+    case NR_MU_1: //30kHz scs
+      frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_1];
+      frame_parms->slots_per_subframe = nr_slots_per_subframe[NR_MU_1];
+
+      switch(N_RB){
+        case 11:
+        case 24:
+        case 38:
+        case 78:
+        case 51:
+        case 65:
+
+        case 106: //40 MHz
+          if (frame_parms->threequarter_fs) {
+            frame_parms->ofdm_symbol_size = 1536;
+            frame_parms->first_carrier_offset = 900; //1536 - 636
+            frame_parms->nb_prefix_samples0 = 132;
+            frame_parms->nb_prefix_samples = 108;
+          }
+          else {
+            frame_parms->ofdm_symbol_size = 2048;
+            frame_parms->first_carrier_offset = 1412; //2048 - 636
+            frame_parms->nb_prefix_samples0 = 176;
+            frame_parms->nb_prefix_samples = 144;
+          }
+          break;
+
+        case 133:
+        case 162:
+        case 189:
+
+        case 217: //80 MHz
+          if (frame_parms->threequarter_fs) {
+            frame_parms->ofdm_symbol_size = 3072;
+            frame_parms->first_carrier_offset = 1770; //3072 - 1302
+            frame_parms->nb_prefix_samples0 = 264;
+            frame_parms->nb_prefix_samples = 216;
+          }
+          else {
+            frame_parms->ofdm_symbol_size = 4096;
+            frame_parms->first_carrier_offset = 2794; //4096 - 1302
+            frame_parms->nb_prefix_samples0 = 352;
+            frame_parms->nb_prefix_samples = 288;
+          }
+          break;
+
+        case 245:
+        case 273:
+      default:
+        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", N_RB, mu, frame_parms);
+      }
+      break;
+
+    case NR_MU_2: //60kHz scs
+      frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_2];
+      frame_parms->slots_per_subframe = nr_slots_per_subframe[NR_MU_2];
+
+      switch(N_RB){ //FR1 bands only
+        case 11:
+        case 18:
+        case 38:
+        case 24:
+        case 31:
+        case 51:
+        case 65:
+        case 79:
+        case 93:
+        case 107:
+        case 121:
+        case 135:
+      default:
+        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", N_RB, mu, frame_parms);
+      }
+      break;
+
+    case NR_MU_3:
+      frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
+      frame_parms->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
+      break;
+
+    case NR_MU_4:
+      frame_parms->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_4];
+      frame_parms->slots_per_subframe = nr_slots_per_subframe[NR_MU_4];
+      break;
+
+  default:
+    AssertFatal(1==0,"Invalid numerology index %d", mu);
+  }
+
+
+  frame_parms->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
+  frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_slot * frame_parms->slots_per_subframe;
+  frame_parms->samples_per_frame_wCP = 10 * frame_parms->samples_per_subframe_wCP;
+  frame_parms->samples_per_subframe = (frame_parms->samples_per_subframe_wCP + (frame_parms->nb_prefix_samples0 * frame_parms->slots_per_subframe) +
+                                      (frame_parms->nb_prefix_samples * frame_parms->slots_per_subframe * (frame_parms->symbols_per_slot - 1)));
+  frame_parms->samples_per_frame = 10 * frame_parms->samples_per_subframe;
+
+
+  return 0;
+}
+
+int nr_init_frame_parms_ue(nfapi_config_request_t* config,
+                        NR_DL_FRAME_PARMS *frame_parms)
+{
+
+  int N_RB = 106;
+  int Ncp = 0;
+  int mu = 1;
+
+#if DISABLE_LOG_X
+  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
+#else
+  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
+#endif
+
   frame_parms->frame_type          = FDD;
   frame_parms->tdd_config          = 3;
   //frame_parms[CC_id]->tdd_config_S        = 0;
@@ -152,11 +277,29 @@ int nr_init_frame_parms(nfapi_config_request_t* config,
     AssertFatal(1==0,"Invalid numerology index %d", mu);
   }
 
+frame_parms->nb_prefix_samples0 = 160;
+    frame_parms->nb_prefix_samples = 144;
+    frame_parms->symbols_per_tti = 14;
+    frame_parms->numerology_index = 0;
+    frame_parms->ttis_per_subframe = 1;
+    frame_parms->slots_per_tti = 2; //only slot config 1 is supported     
+
+frame_parms->nb_prefix_samples=(frame_parms->nb_prefix_samples*3)>>2;
+      frame_parms->nb_prefix_samples0=(frame_parms->nb_prefix_samples0*3)>>2;
+frame_parms->ofdm_symbol_size = 2048;
+      frame_parms->samples_per_tti = 30720;
+//#ifdef UE_NR_PHY_DEMO
+      frame_parms->samples_per_subframe = 30720 * frame_parms->ttis_per_subframe;
+//#else
+//      frame_parms->samples_per_subframe = 30720;
+//#endif
+      frame_parms->first_carrier_offset = 2048-600;
+
   frame_parms->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_slot * frame_parms->slots_per_subframe;
   frame_parms->samples_per_frame_wCP = 10 * frame_parms->samples_per_subframe_wCP;
-  frame_parms->samples_per_subframe = frame_parms->samples_per_subframe_wCP + (frame_parms->nb_prefix_samples0 * frame_parms->slots_per_subframe) +
-                                      (frame_parms->nb_prefix_samples * frame_parms->slots_per_subframe * (frame_parms->symbols_per_slot - 1));
+  //frame_parms->samples_per_subframe = (frame_parms->samples_per_subframe_wCP + (frame_parms->nb_prefix_samples0 * frame_parms->slots_per_subframe) +
+  //                                    (frame_parms->nb_prefix_samples * frame_parms->slots_per_subframe * (frame_parms->symbols_per_slot - 1)));
   frame_parms->samples_per_frame = 10 * frame_parms->samples_per_subframe;
 
 

@@ -44,6 +44,10 @@
 #include "PHY/NR_REFSIG/sss_nr.h"
 
 extern openair0_config_t openair0_cfg[];
+static  nfapi_config_request_t config_t;
+static  nfapi_config_request_t* config =&config_t;
+/* forward declarations */
+void set_default_frame_parms_single(nfapi_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms);
 
 //#define DEBUG_INITIAL_SYNCH
 
@@ -196,6 +200,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int ret=-1;
   int aarx,rx_power=0;
+  //nfapi_config_request_t* config;
 
   /*offset parameters to be updated from higher layer */
   k_ssb =0;
@@ -208,7 +213,8 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   // First try FDD normal prefix
   frame_parms->Ncp=NORMAL;
   frame_parms->frame_type=FDD;
-  init_frame_parms(frame_parms,1);
+  set_default_frame_parms_single(config,frame_parms);
+  nr_init_frame_parms_ue(config,frame_parms);
   /*
   write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
   exit(-1);
@@ -248,7 +254,8 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     rx_sss_nr(ue,&metric_fdd_ncp,&phase_fdd_ncp);
 
-    init_frame_parms(&ue->frame_parms,1);
+    set_default_frame_parms_single(config,&ue->frame_parms);
+    nr_init_frame_parms_ue(config,&ue->frame_parms);
     //generate_dmrs_pbch(ue->dmrs_pbch_bitmap_nr, frame_parms->Nid_cell);
     ret = pbch_detection(ue,mode);
     //   write_output("rxdata2.m","rxd2",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);

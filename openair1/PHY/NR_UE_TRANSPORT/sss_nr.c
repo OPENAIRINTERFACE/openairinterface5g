@@ -589,7 +589,7 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
     }
   }
 
-#ifdef DEBUG_SSS_NR
+//#ifdef DEBUG_SSS_NR
 
 #define SSS_METRIC_FLOOR_NR   (30000)
 if (*tot_metric > SSS_METRIC_FLOOR_NR) {	
@@ -597,7 +597,7 @@ if (*tot_metric > SSS_METRIC_FLOOR_NR) {
     Nid1 = GET_NID1(frame_parms->Nid_cell);
     printf("Nid2 %d Nid1 %d tot_metric %d, phase_max %d \n", Nid2, Nid1, *tot_metric, *phase_max);
 }
-#endif
+//#endif
 
   return(0);
 }

@@ -694,6 +694,73 @@ int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
     }
 
 }
+
+void set_default_frame_parms_single(nfapi_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms) {
+
+  //int CC_id;
+
+  //for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+        frame_parms = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
+        /* Set some default values that may be overwritten while reading options */
+        frame_parms = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
+        config = (nfapi_config_request_t*) malloc(sizeof(nfapi_config_request_t));
+        config->subframe_config.numerology_index_mu.value =1;
+        config->subframe_config.duplex_mode.value = 1; //FDD
+        config->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
+        config->rf_config.dl_channel_bandwidth.value = 106;
+        config->rf_config.ul_channel_bandwidth.value = 106;
+        config->rf_config.tx_antenna_ports.value = 1;
+        config->rf_config.rx_antenna_ports.value = 1;
+        config->sch_config.physical_cell_id.value = 0;
+
+        frame_parms->frame_type          = FDD;
+        frame_parms->tdd_config          = 3;
+        //frame_parms[CC_id]->tdd_config_S        = 0;
+        frame_parms->N_RB_DL             = 100;
+        frame_parms->N_RB_UL             = 100;
+        frame_parms->Ncp                 = NORMAL;
+        //frame_parms[CC_id]->Ncp_UL              = NORMAL;
+        frame_parms->Nid_cell            = 0;
+        //frame_parms[CC_id]->num_MBSFN_config    = 0;
+        frame_parms->nb_antenna_ports_eNB  = 1;
+        frame_parms->nb_antennas_tx      = 1;
+        frame_parms->nb_antennas_rx      = 1;
+
+        //frame_parms[CC_id]->nushift             = 0;
+
+        ///frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
+        //frame_parms[CC_id]->phich_config_common.phich_duration = normal;
+    // UL RS Config
+        /*frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 1;//n_DMRS1 set to 0
+        frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+        frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+        frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+
+	frame_parms[CC_id]->pusch_config_common.n_SB = 1;
+	frame_parms[CC_id]->pusch_config_common.hoppingMode = 0;
+	frame_parms[CC_id]->pusch_config_common.pusch_HoppingOffset = 0;
+	frame_parms[CC_id]->pusch_config_common.enable64QAM = 0;
+		
+        frame_parms[CC_id]->prach_config_common.rootSequenceIndex=22;
+        frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
+        frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
+        frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
+        frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;*/
+
+        // NR: Init to legacy LTE 20Mhz params
+        frame_parms->numerology_index	= 0;
+        frame_parms->ttis_per_subframe	= 1;
+        frame_parms->slots_per_tti		= 2;
+
+        downlink_frequency[0][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
+        //downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
+        //downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
+        //downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
+        //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
+
+    //}
+
+}
 void init_openair0(void);
 void init_openair0() {
 
@@ -931,10 +998,10 @@ int main( int argc, char **argv ) {
       set_default_frame_parms(config[CC_id],frame_parms[CC_id]);
       
     //init_ul_hopping(frame_parms[CC_id]);
-    nr_init_frame_parms(config[CC_id],frame_parms[CC_id]);
+    nr_init_frame_parms_ue(config[CC_id],frame_parms[CC_id]);
     printf("after init frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
     //   phy_init_top(frame_parms[CC_id]);
-    //phy_init_lte_top(frame_parms[CC_id]);
+    phy_init_nr_top(frame_parms[CC_id]);
   }
 
 
@@ -1009,8 +1076,10 @@ int main( int argc, char **argv ) {
                 //UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
             }
 
-            //UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
-            //UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
+	    rx_gain[CC_id][0] = 81;
+
+            UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
+            UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
 
             if (frame_parms[CC_id]->frame_type==FDD) {
                 UE[CC_id]->N_TA_offset = 0;

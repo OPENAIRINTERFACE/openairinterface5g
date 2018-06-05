@@ -413,7 +413,7 @@ static void *UE_thread_synch(void *arg) {
                     //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
                     //UE->rfdevice.trx_stop_func(&UE->rfdevice);
                     // sleep(1);
-                    //nr_init_frame_parms(&UE->frame_parms);
+                    nr_init_frame_parms_ue(&UE->frame_parms);
                     /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
                         LOG_E(HW,"Could not start the device\n");
                         oai_exit=1;
@@ -733,8 +733,8 @@ void *UE_thread(void *arg) {
 
 #ifdef NAS_UE
     MessageDef *message_p;
-    message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
-    itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
+    //message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+    //itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif
 
     int tti_nr=-1;
