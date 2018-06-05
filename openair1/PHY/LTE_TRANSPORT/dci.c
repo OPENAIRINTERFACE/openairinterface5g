@@ -57,8 +57,8 @@
 
 
 
-static uint8_t d[3*(MAX_DCI_SIZE_BITS + 16) + 96];
-static uint8_t w[3*3*(MAX_DCI_SIZE_BITS+16)];
+//static uint8_t d[3*(MAX_DCI_SIZE_BITS + 16) + 96];
+//static uint8_t w[3*3*(MAX_DCI_SIZE_BITS+16)];
 
 void dci_encoding(uint8_t *a,
                   uint8_t A,
@@ -70,6 +70,8 @@ void dci_encoding(uint8_t *a,
 
   uint8_t D = (A + 16);
   uint32_t RCC;
+  uint8_t d[3*(MAX_DCI_SIZE_BITS + 16) + 96];
+  uint8_t w[3*3*(MAX_DCI_SIZE_BITS+16)];
 
 #ifdef DEBUG_DCI_ENCODING
   int32_t i;
@@ -169,7 +171,7 @@ uint8_t *generate_dci0(uint8_t *dci,
   return(e+coded_bits);
 }
 
-uint32_t Y;
+//uint32_t Y;
 
 
 
