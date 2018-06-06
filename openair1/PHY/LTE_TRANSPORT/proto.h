@@ -127,6 +127,20 @@ int32_t dlsch_encoding(PHY_VARS_eNB *eNB,
                        time_stats_t *rm_stats,
                        time_stats_t *te_stats,
                        time_stats_t *i_stats);
+					   
+int32_t dlsch_encoding_all(PHY_VARS_eNB *eNB,
+                       uint8_t *a,
+                       uint8_t num_pdcch_symbols,
+                       LTE_eNB_DLSCH_t *dlsch,
+                       int frame,
+                       uint8_t subframe,
+                       time_stats_t *rm_stats,
+                       time_stats_t *te_stats,
+					   time_stats_t *te_wait_stats,
+                       time_stats_t *te_main_stats,
+                       time_stats_t *te_wakeup_stats0,
+                       time_stats_t *te_wakeup_stats1,
+                       time_stats_t *i_stats);
 
 int32_t dlsch_encoding_SIC(PHY_VARS_UE *ue,
                        uint8_t *a,
@@ -171,7 +185,12 @@ int32_t dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
                                 uint8_t subframe,
                                 time_stats_t *rm_stats,
                                 time_stats_t *te_stats,
-                                time_stats_t *i_stats);
+								time_stats_t *te_wait_stats,
+                                time_stats_t *te_main_stats,
+                                time_stats_t *te_wakeup_stats0,
+                                time_stats_t *te_wakeup_stats1,
+                                time_stats_t *i_stats,
+                                int worker_num);
 
 void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
                          uint8_t *DLSCH_pdu,
@@ -1488,6 +1507,7 @@ uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 
 void generate_64qam_table(void);
 void generate_16qam_table(void);
+void generate_qpsk_table(void);
 
 uint16_t extract_crc(uint8_t *dci,uint8_t DCI_LENGTH);
 
@@ -1660,15 +1680,17 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
 /*!
   \brief This function generates the downlink reference signal for the PUSCH according to 36.211 v8.6.0. The DRS occuies the RS defined by rb_alloc and the symbols 2 and 8 for extended CP and 3 and 10 for normal CP.
 */
+int generate_drs_pusch(PHY_VARS_UE *ue,
+		       UE_rxtx_proc_t *proc,
+		       LTE_DL_FRAME_PARMS *frame_parms,
+		       int32_t **txdataF,
+                       uint8_t eNB_id,
+                       short amp,
+                       unsigned int subframe,
+                       unsigned int first_rb,
+                       unsigned int nb_rb,
+                       uint8_t ant);
 
-int32_t generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
-                           UE_rxtx_proc_t *proc,
-                           uint8_t eNB_id,
-                           int16_t amp,
-                           uint32_t subframe,
-                           uint32_t first_rb,
-                           uint32_t nb_rb,
-                           uint8_t ant);
 
 /*!
   \brief This function initializes the Group Hopping, Sequence Hopping and nPRS sequences for PUCCH/PUSCH according to 36.211 v8.6.0. It should be called after configuration of UE (reception of SIB2/3) and initial configuration of eNB (or after reconfiguration of cell-specific parameters).
@@ -1897,6 +1919,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
                              uint8_t Nbundled,
                              uint8_t llr8_flag);
 
+int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,
+                        int UE_id,
+                        int harq_pid,
+                        int llr8_flag);
+							 
 /*!
   \brief Decoding of ULSCH data component from 36-212. This one spawns 1 worker thread in parallel,half of the segments in each thread.
   @param phy_vars_eNB Pointer to eNB top-level descriptor

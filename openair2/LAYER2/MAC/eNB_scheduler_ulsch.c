@@ -160,8 +160,8 @@ rx_sdu(const module_id_t enb_mod_idP,
 
   if (UE_id != -1) {
     LOG_D(MAC,
-	  "[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
-	  enb_mod_idP, harq_pid, CC_idP,
+	  "[eNB %d][PUSCH %d] SFN.SF %d.%d : CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
+	  enb_mod_idP, harq_pid, frameP,subframeP, CC_idP,
 	  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 	  current_rnti, UE_id, ul_cqi);
 
@@ -212,6 +212,30 @@ rx_sdu(const module_id_t enb_mod_idP,
           UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes = 0;
       } else
 	UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid]++;
+
+      first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
+
+      // Program NACK for PHICH
+      LOG_D(MAC,
+	"Programming PHICH NACK for rnti %x harq_pid %d (first_rb %d)\n",
+	current_rnti, harq_pid, first_rb);
+      nfapi_hi_dci0_request_t *hi_dci0_req = &mac->HI_DCI0_req[CC_idP];
+      nfapi_hi_dci0_request_body_t *hi_dci0_req_body = &hi_dci0_req->hi_dci0_request_body;
+      nfapi_hi_dci0_request_pdu_t *hi_dci0_pdu =
+        &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
+      memset((void *) hi_dci0_pdu, 0, sizeof(nfapi_hi_dci0_request_pdu_t));
+      hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_HI_PDU_TYPE;
+      hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_hi_pdu);
+      hi_dci0_pdu->hi_pdu.hi_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_HI_PDU_REL8_TAG;
+      hi_dci0_pdu->hi_pdu.hi_pdu_rel8.resource_block_start = first_rb;
+      hi_dci0_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms = 0;
+      hi_dci0_pdu->hi_pdu.hi_pdu_rel8.hi_value = 0;
+      hi_dci0_req_body->number_of_hi++;
+      hi_dci0_req_body->sfnsf = sfnsf_add_subframe(frameP,subframeP, 0);
+      hi_dci0_req_body->tl.tag = NFAPI_HI_DCI0_REQUEST_BODY_TAG;
+      hi_dci0_req->sfn_sf = sfnsf_add_subframe(frameP,subframeP, 4);
+      hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
+
       return;
 
     }
@@ -225,8 +249,8 @@ rx_sdu(const module_id_t enb_mod_idP,
 		maxHARQ_Msg3Tx);
 
     LOG_I(MAC,
-	  "[eNB %d][PUSCH %d] CC_id %d [RAPROC Msg3] Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",
-	  enb_mod_idP, harq_pid, CC_idP, ra[RA_id].msg3_round,
+	  "[eNB %d][PUSCH %d] SFN.SF %d.%d CC_id %d [RAPROC Msg3] : Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",
+	  enb_mod_idP, harq_pid, frameP,subframeP,CC_idP, ra[RA_id].msg3_round,
 	  current_rnti, RA_id, ul_cqi);
 
     first_rb = ra->msg3_first_rb;
@@ -247,10 +271,19 @@ rx_sdu(const module_id_t enb_mod_idP,
 	first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
 	ra[RA_id].msg3_round++;
 	// prepare handling of retransmission
-	ra[RA_id].Msg3_frame    = (ra[RA_id].Msg3_frame + ((ra[RA_id].Msg3_subframe > 1) ? 1 : 0)) % 1024;
-	ra[RA_id].Msg3_subframe = (ra[RA_id].Msg3_subframe + 8) % 10;
-	add_msg3(enb_mod_idP, CC_idP, &ra[RA_id], frameP, subframeP);
+	if (RC.mac[enb_mod_idP]->common_channels[CC_idP].tdd_Config == NULL) {
+	  ra[RA_id].Msg3_frame    = (ra[RA_id].Msg3_frame + ((ra[RA_id].Msg3_subframe > 1) ? 1 : 0)) % 1024;
+	  ra[RA_id].Msg3_subframe = (ra[RA_id].Msg3_subframe + 8) % 10;
+	}
+	else {
+	  ra[RA_id].Msg3_frame++; 
+	  ra[RA_id].Msg3_frame&=1023;
+	}
+	//	add_msg3(enb_mod_idP, CC_idP, &ra[RA_id], frameP, subframeP);
       }
+
+      /* TODO: program NACK for PHICH? */
+
       return;
     }
   } else {
@@ -561,9 +594,10 @@ rx_sdu(const module_id_t enb_mod_idP,
 
 
 	  // Program Msg4 PDCCH+DLSCH/MPDCCH transmission 4 subframes from now, // Check if this is ok for BL/CE, or if the rule is different
+	  // make sure this works for all TDD configurations!
 	  ra->Msg4_frame = frameP + ((subframeP > 5) ? 1 : 0);
 	  ra->Msg4_subframe = (subframeP + 4) % 10;
-
+	  
 	}		// if process is active
       }			// loop on RA processes
 
@@ -1448,6 +1482,10 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	      T_INT(first_rb[CC_id]),
 	      T_INT(rb_table[rb_table_index]), T_INT(round));
 
+#if 0
+            /* This is done in rx_sdu, as it has to.
+             * Since the code is a bit different, let's keep this version here for review, in case of problem.
+             */
 	    // fill in NAK information
 
 	    hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
@@ -1471,6 +1509,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 		  UE_template->first_rb_ul[harq_pid],
 		  UE_template->nb_rb_ul[harq_pid],
 		  UE_template->TBS_UL[harq_pid], round);
+#endif
 	    // Add UL_config PDUs
 	    LOG_D(MAC,
 		  "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",

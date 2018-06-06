@@ -134,6 +134,7 @@ volatile int             oai_exit = 0;
 
 static clock_source_t clock_source = internal,time_source=internal;
 static int wait_for_sync = 0;
+static int send_dmrssync     = 0;
 
 unsigned int                    mmapped_dma=0;
 int                             single_thread_flag=1;
@@ -217,6 +218,10 @@ extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
 extern void init_eNB_afterRU(void);
 
 int transmission_mode=1;
+int emulate_rf = 0;
+int numerology = 0;
+int codingw = 0;
+int fepw = 0;
 
 
 
@@ -632,6 +637,7 @@ void init_openair0(void) {
 
   int card;
   int i;
+  
 
   for (card=0; card<MAX_CARDS; card++) {
 
@@ -639,6 +645,8 @@ void init_openair0(void) {
     openair0_cfg[card].configFilename = NULL;
 
     if(frame_parms[0]->N_RB_DL == 100) {
+	  if(numerology == 0)
+	  {
       if (frame_parms[0]->threequarter_fs) {
 	openair0_cfg[card].sample_rate=23.04e6;
 	openair0_cfg[card].samples_per_frame = 230400;
@@ -650,6 +658,22 @@ void init_openair0(void) {
 	openair0_cfg[card].tx_bw = 10e6;
 	openair0_cfg[card].rx_bw = 10e6;
       }
+	  }else if(numerology == 1)
+	  {
+		openair0_cfg[card].sample_rate=61.44e6;
+		openair0_cfg[card].samples_per_frame = 307200;
+		openair0_cfg[card].tx_bw = 20e6;
+		openair0_cfg[card].rx_bw = 20e6;
+	  }else if(numerology == 2)
+	  {
+		openair0_cfg[card].sample_rate=122.88e6;
+		openair0_cfg[card].samples_per_frame = 307200;
+		openair0_cfg[card].tx_bw = 20e6;
+		openair0_cfg[card].rx_bw = 20e6;
+	  }else
+	  {
+	    printf("Un supported numerology\n");
+	  }
     } else if(frame_parms[0]->N_RB_DL == 50) {
       openair0_cfg[card].sample_rate=15.36e6;
       openair0_cfg[card].samples_per_frame = 153600;
@@ -905,7 +929,6 @@ int main( int argc, char **argv )
   int ret;
 #endif
 
-  start_background_system();
   if ( load_configmodule(argc,argv) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   } 
@@ -1168,7 +1191,7 @@ int main( int argc, char **argv )
     printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
     if (RC.nb_RU >0) {
       printf("Initializing RU threads\n");
-      init_RU(rf_config_file,clock_source,time_source);
+      init_RU(rf_config_file,clock_source,time_source,send_dmrssync);
       for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
 	RC.ru[ru_id]->rf_map.card=0;
 	RC.ru[ru_id]->rf_map.chain=CC_id+chain_offset;
@@ -1210,9 +1233,6 @@ int main( int argc, char **argv )
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);
   pthread_mutex_unlock(&sync_mutex);
-  printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
-  end_configmodule();
-  printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
 
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
@@ -1272,6 +1292,9 @@ int main( int argc, char **argv )
     }
     free_lte_top();
 
+  printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
+  end_configmodule();
+  printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
 
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);

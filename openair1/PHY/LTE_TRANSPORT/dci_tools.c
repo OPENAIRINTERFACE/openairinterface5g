@@ -2183,6 +2183,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t
 
 #endif
     
+//printf("DCI %d.%d rnti %d harq %d TBS %d\n", frame, subframe, rel8->rnti, rel8->harq_process, dlsch0_harq->TBS);
 #if T_TRACER
   if (dlsch0->active)
     T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(0), T_INT(frame), T_INT(subframe),
@@ -5063,9 +5064,18 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
 	LOG_D(PHY,"Data Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, data_re);
 
 
+	/*
+	LOG_I(PHY,"Granted Re subframe %d / symbol %d => %d (%d RBs)\n", subframe, symbol_mod, granted_re,dlsch0_harq->nb_rb);
+	LOG_I(PHY,"Pbch/PSS/SSS Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, pbch_pss_sss_re);
+	LOG_I(PHY,"CRS Re Per PRB subframe %d / symbol %d => %d \n", subframe, symbol_mod, crs_re);
+	LOG_I(PHY,"Data Re subframe %d / symbol %d => %d \n", subframe, symbol_mod, data_re);
+	
+
+
 
         LOG_D(PHY,"Data Re subframe %d-symbol %d => llr length %d, llr offset %d \n", subframe, symbol,
               pdsch_vars->llr_length[symbol], pdsch_vars->llr_offset[symbol]);
+	*/
     }
 }
 void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,

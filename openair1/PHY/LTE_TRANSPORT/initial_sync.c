@@ -336,7 +336,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"FDD Normal prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
-    write_output("rxdata.m","rxd",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
+    //write_output("rxdata.m","rxd",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
   }
 
 
@@ -513,6 +513,18 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 
       ue->pbch_vars[0]->pdu_errors_conseq=0;
 
+      if (ue->frame_parms.frame_type==FDD) {
+	ue->N_TA_offset = 0;
+      }
+      else {
+	if (ue->frame_parms.N_RB_DL == 100)
+	  ue->N_TA_offset = 624;
+	else if (ue->frame_parms.N_RB_DL == 50)
+	  ue->N_TA_offset = 624/2;
+	else if (ue->frame_parms.N_RB_DL == 25)
+	  ue->N_TA_offset = 624/4;
+	  
+      }
     }
 
 #if DISABLE_LOG_X

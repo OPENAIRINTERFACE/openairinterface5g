@@ -64,6 +64,7 @@
 #define DEBUG_eNB_SCHEDULER 1
 
 extern RAN_CONTEXT_t RC;
+extern int phy_test;
 
 uint16_t pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -108,8 +109,7 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       if ((1 << tmp) & deltaTSFC) {
 	// This is an SRS subframe, loop over UEs
 	for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-	  if (RC.mac[module_idP]->UE_list.active[UE_id] != TRUE)
-	    continue;
+	  if (RC.mac[module_idP]->UE_list.active[UE_id] != TRUE) continue;
 	  ul_req = &RC.mac[module_idP]->UL_req[CC_id].ul_config_request_body;
 	  // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
 	  if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
@@ -124,6 +124,7 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 			  soundingRS_UL_ConfigDedicated->choice.
 			  setup.srs_ConfigIndex,
 			  &srsPeriodicity, &srsOffset);
+
 	      if (((10 * frameP + subframeP) % srsPeriodicity) == srsOffset) {
 		// Program SRS
 		ul_req->srs_present = 1;
@@ -262,7 +263,7 @@ schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       ul_req_body   = &ul_req->ul_config_request_body;
 
       // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
-      if (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
+      //if (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
 
       AssertFatal(UE_list->
 		  UE_template[CC_id][UE_id].physicalConfigDedicated!= NULL,
@@ -425,12 +426,15 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
     }
   }				// ul_failure_timer>0
 
+#if 0
+  /* U-plane inactivity timer is disabled. Uncomment to re-enable. */
   UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer++;
   if(UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer > (U_PLANE_INACTIVITY_VALUE*subframe_num(&RC.eNB[module_idP][CC_id]->frame_parms))){
     LOG_D(MAC,"UE %d rnti %x: U-Plane Failure after repeated PDCCH orders: Triggering RRC \n",UE_id,rnti); 
     mac_eNB_rrc_uplane_failure(module_idP,CC_id,frameP,subframeP,rnti);
     UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer  = 0;
   }// time > 60s
+#endif
 }
 
 void
@@ -541,7 +545,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     rnti = UE_RNTI(module_idP, i);
     CC_id = UE_PCCID(module_idP, i);
 
-    if ((frameP == 0) && (subframeP == 0)) {
+    if (((frameP&127) == 0) && (subframeP == 0)) {
       LOG_I(MAC,
             "UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
             rnti,
@@ -640,26 +644,33 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 #endif
 
   // This schedules MIB
+
   if ((subframeP == 0) && (frameP & 3) == 0)
       schedule_mib(module_idP, frameP, subframeP);
-  // This schedules SI for legacy LTE and eMTC starting in subframeP
-  schedule_SI(module_idP, frameP, subframeP);
-  // This schedules Paging in subframeP
-  schedule_PCH(module_idP,frameP,subframeP);
-  // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
-  schedule_RA(module_idP, frameP, subframeP);
-  // copy previously scheduled UL resources (ULSCH + HARQ)
-  copy_ulreq(module_idP, frameP, subframeP);
-  // This schedules SRS in subframeP
-  schedule_SRS(module_idP, frameP, subframeP);
-  // This schedules ULSCH in subframeP (dci0)
-  schedule_ulsch(module_idP, frameP, subframeP);
-  // This schedules UCI_SR in subframeP
-  schedule_SR(module_idP, frameP, subframeP);
-  // This schedules UCI_CSI in subframeP
-  schedule_CSI(module_idP, frameP, subframeP);
-  // This schedules DLSCH in subframeP
-  schedule_dlsch(module_idP, frameP, subframeP, mbsfn_status);
+  if (phy_test == 0){
+    // This schedules SI for legacy LTE and eMTC starting in subframeP
+    schedule_SI(module_idP, frameP, subframeP);
+    // This schedules Paging in subframeP
+    schedule_PCH(module_idP,frameP,subframeP);
+    // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
+    schedule_RA(module_idP, frameP, subframeP);
+    // copy previously scheduled UL resources (ULSCH + HARQ)
+    copy_ulreq(module_idP, frameP, subframeP);
+    // This schedules SRS in subframeP
+    schedule_SRS(module_idP, frameP, subframeP);
+    // This schedules ULSCH in subframeP (dci0)
+    schedule_ulsch(module_idP, frameP, subframeP);
+    // This schedules UCI_SR in subframeP
+    schedule_SR(module_idP, frameP, subframeP);
+    // This schedules UCI_CSI in subframeP
+    schedule_CSI(module_idP, frameP, subframeP);
+    // This schedules DLSCH in subframeP
+    schedule_dlsch(module_idP, frameP, subframeP, mbsfn_status);
+  }
+  else{
+    schedule_ulsch_phy_test(module_idP,frameP,subframeP);
+    schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
+  }
 
   if (RC.flexran[module_idP]->enabled)
     flexran_agent_send_update_stats(module_idP);
