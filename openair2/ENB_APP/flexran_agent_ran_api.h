@@ -73,6 +73,10 @@ uint16_t flexran_get_future_sfn_sf(mid_t mod_id, int ahead_of_time);
 /* Return the number of attached UEs */
 int flexran_get_num_ues(mid_t mod_id);
 
+/* Return the UE id of attached UE as opposed to the index [0,NUM UEs] (i.e.,
+ * the i'th active UE). Returns 0 if the i'th active UE could not be found. */
+int flexran_get_ue_id(mid_t mod_id, int i);
+
 /* Get the rnti of a UE with id ue_id */
 rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id);
 

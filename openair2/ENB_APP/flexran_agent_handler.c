@@ -210,6 +210,7 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
 
   //TODO: We do not deal with multiple CCs at the moment and eNB id is 0
   int enb_id = mod_id;
+  int UE_id;
 
   //eNB_MAC_INST *eNB = &eNB_mac_inst[enb_id];
   //UE_list_t *eNB_UE_list=  &eNB->UE_list;
@@ -249,8 +250,9 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
   goto error;
       }
       for (i = 0; i < report_config.nr_ue; i++) {
-  report_config.ue_report_type[i].ue_rnti = flexran_get_ue_crnti(enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].crnti;
-  report_config.ue_report_type[i].ue_report_flags = ue_flags;
+        UE_id = flexran_get_ue_id(mod_id, i);
+        report_config.ue_report_type[i].ue_rnti = flexran_get_ue_crnti(enb_id, UE_id); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].crnti;
+        report_config.ue_report_type[i].ue_report_flags = ue_flags;
       }
       //Set the number of CCs and create a list with the cell stats configs
       report_config.nr_cc = MAX_NUM_CCs;
@@ -359,7 +361,8 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
       goto error;
     }
     for (i = 0; i < report_config.nr_ue; i++) {
-      report_config.ue_report_type[i].ue_rnti = ue_req->rnti[i];
+      UE_id = flexran_get_ue_id(mod_id, i);
+      report_config.ue_report_type[i].ue_rnti = ue_req->rnti[UE_id];
       report_config.ue_report_type[i].ue_report_flags = ue_req->flags;
     }
     break;

@@ -113,6 +113,21 @@ int flexran_get_num_ues(mid_t mod_id)
   return RC.mac[mod_id]->UE_list.num_UEs;
 }
 
+int flexran_get_ue_id(mid_t mod_id, int i)
+{
+  int n;
+  if (!mac_is_present(mod_id)) return 0;
+  /* get the (i+1)'th active UE */
+  for (n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
+    if (RC.mac[mod_id]->UE_list.active[n] == TRUE) {
+      if (i == 0)
+        return n;
+      --i;
+    }
+  }
+  return 0;
+}
+
 rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id)
 {
   return UE_RNTI(mod_id, ue_id);

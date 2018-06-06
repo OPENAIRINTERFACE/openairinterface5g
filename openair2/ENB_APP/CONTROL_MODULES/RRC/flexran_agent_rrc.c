@@ -264,27 +264,31 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
 /* this is called by RRC as a part of rrc xface  . The controller previously requested  this*/ 
 void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults) {
 
-  int i;
+  //int i;
   // int                   priority = 0; // Warning Preventing
   // void                  *data;
   // int                   size;
   // err_code_t             err_code = -100;
   triggered_rrc = true;
-  int num;
+  //int num;
 
+  /* TODO do we need this at the current state? meas_stats is never put into a
+   * protobuf message?!
   num = flexran_get_num_ues (mod_id);
 
   meas_stats = malloc(sizeof(rrc_meas_stats) * num); 
 
   for (i = 0; i < num; i++){
-    meas_stats[i].rnti = flexran_get_ue_crnti(mod_id, i);
-    meas_stats[i].meas_id = flexran_get_rrc_pcell_measid(mod_id,i);
-    meas_stats[i].rsrp =  flexran_get_rrc_pcell_rsrp(mod_id,i) - 140;
+    UE_id = flexran_get_ue_id(mod_id, i);
+    meas_stats[i].rnti = flexran_get_ue_crnti(mod_id, UE_id);
+    meas_stats[i].meas_id = flexran_get_rrc_pcell_measid(mod_id, UE_id);
+    meas_stats[i].rsrp =  flexran_get_rrc_pcell_rsrp(mod_id, UE_id) - 140;
     // measResults->measResultPCell.rsrpResult - 140;
-    meas_stats[i].rsrq =  flexran_get_rrc_pcell_rsrq(mod_id,i)/2 - 20;
+    meas_stats[i].rsrq =  flexran_get_rrc_pcell_rsrq(mod_id, UE_id)/2 - 20;
     // (measResults->measResultPCell.rsrqResult)/2 - 20;                          
     
   }
+  */
     // repl->neigh_meas = NULL;
 
   // if (meas->measResultNeighCells != NULL) {

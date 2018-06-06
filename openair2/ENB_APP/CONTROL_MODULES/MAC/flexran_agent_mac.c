@@ -894,7 +894,6 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
     for (j = 0; j < 8; j++) {
       if (RC.mac && RC.mac[mod_id] && RC.mac[mod_id]->UE_list.eNB_UE_stats[UE_PCCID(mod_id,i)][i].harq_pid == 1) {
 	available_harq[i] = j;
-	sf_trigger_msg->n_dl_info++;
 	break;
       }
     }
@@ -903,10 +902,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
 
   //  LOG_I(FLEXRAN_AGENT, "Sending subframe trigger for frame %d and subframe %d\n", flexran_get_current_frame(mod_id), (flexran_get_current_subframe(mod_id) + 1) % 10);
 
-  /*TODO: Fill in the number of dl HARQ related info, based on the number of currently
-   *transmitting UEs
-   */
-  //  sf_trigger_msg->n_dl_info = flexran_get_num_ues(mod_id);
+  sf_trigger_msg->n_dl_info = flexran_get_num_ues(mod_id);
 
   Protocol__FlexDlInfo **dl_info = NULL;
 
@@ -916,33 +912,31 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       goto error;
     i = -1;
     //Fill the status of the current HARQ process for each UE
-    for(UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
-      if (available_harq[UE_id] < 0) {
+    for(i = 0; i < sf_trigger_msg->n_dl_info; i++) {
+      if (available_harq[i] < 0)
 	continue;
-      } else {
-	i++;
-      }
       dl_info[i] = malloc(sizeof(Protocol__FlexDlInfo));
       if(dl_info[i] == NULL)
 	goto error;
+      UE_id = flexran_get_ue_id(mod_id, i);
       protocol__flex_dl_info__init(dl_info[i]);
       dl_info[i]->rnti = flexran_get_ue_crnti(mod_id, UE_id);
       dl_info[i]->has_rnti = 1;
       /*Fill in the right id of this round's HARQ process for this UE*/
       //      uint8_t harq_id;
       //uint8_t harq_status;
-      //      flexran_get_harq(mod_id, UE_PCCID(mod_id,i), i, frame, subframe, &harq_id, &harq_status);
+      //      flexran_get_harq(mod_id, UE_PCCID(mod_id, UE_id), i, frame, subframe, &harq_id, &harq_status);
 
 
       dl_info[i]->harq_process_id = available_harq[UE_id];
       if (RC.mac && RC.mac[mod_id])
-        RC.mac[mod_id]->UE_list.eNB_UE_stats[UE_PCCID(mod_id,i)][UE_id].harq_pid = 0;
+        RC.mac[mod_id]->UE_list.eNB_UE_stats[UE_PCCID(mod_id, UE_id)][UE_id].harq_pid = 0;
       dl_info[i]->has_harq_process_id = 1;
       /* Fill in the status of the HARQ process (2 TBs)*/
       dl_info[i]->n_harq_status = 2;
       dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
       for (j = 0; j < dl_info[i]->n_harq_status; j++) {
-        dl_info[i]->harq_status[j] = RC.mac[mod_id]->UE_list.UE_sched_ctrl[i].round[UE_PCCID(mod_id,i)][j];
+        dl_info[i]->harq_status[j] = RC.mac[mod_id]->UE_list.UE_sched_ctrl[UE_id].round[UE_PCCID(mod_id, UE_id)][j];
         // TODO: This should be different per TB
       }
       //      LOG_I(FLEXRAN_AGENT, "Sending subframe trigger for frame %d and subframe %d and harq %d (round %d)\n", flexran_get_current_frame(mod_id), (flexran_get_current_subframe(mod_id) + 1) % 10, dl_info[i]->harq_process_id, dl_info[i]->harq_status[0]);
@@ -950,7 +944,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
 	//	LOG_I(FLEXRAN_AGENT, "[Frame %d][Subframe %d]Need to make a retransmission for harq %d (round %d)\n", flexran_get_current_frame(mod_id), flexran_get_current_subframe(mod_id), dl_info[i]->harq_process_id, dl_info[i]->harq_status[0]);
       }
       /*Fill in the serving cell index for this UE */
-      dl_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
+      dl_info[i]->serv_cell_index = UE_PCCID(mod_id, UE_id);
       dl_info[i]->has_serv_cell_index = 1;
     }
   }
@@ -974,18 +968,21 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       if(ul_info[i] == NULL)
 	goto error;
       protocol__flex_ul_info__init(ul_info[i]);
-      ul_info[i]->rnti = flexran_get_ue_crnti(mod_id, i);
+
+      UE_id = flexran_get_ue_id(mod_id, i);
+
+      ul_info[i]->rnti = flexran_get_ue_crnti(mod_id, UE_id);
       ul_info[i]->has_rnti = 1;
       /* Fill in the Tx power control command for this UE (if available),
        * primary carrier */
-      if(flexran_get_tpc(mod_id, i, 0) != 1){
+      if(flexran_get_tpc(mod_id, UE_id, 0) != 1){
           /* assume primary carrier */
-          ul_info[i]->tpc = flexran_get_tpc(mod_id, i, 0);
+          ul_info[i]->tpc = flexran_get_tpc(mod_id, UE_id, 0);
           ul_info[i]->has_tpc = 1;
       }
       else{
           /* assume primary carrier */
-          ul_info[i]->tpc = flexran_get_tpc(mod_id, i, 0);
+          ul_info[i]->tpc = flexran_get_tpc(mod_id, UE_id, 0);
     	  ul_info[i]->has_tpc = 0;
       }
       /*TODO: fill in the amount of data in bytes in the MAC SDU received in this subframe for the
@@ -999,7 +996,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       ul_info[i]->reception_status = PROTOCOL__FLEX_RECEPTION_STATUS__FLRS_OK;
       ul_info[i]->has_reception_status = 1;
       /*Fill in the serving cell index for this UE */
-      ul_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
+      ul_info[i]->serv_cell_index = UE_PCCID(mod_id, UE_id);
       ul_info[i]->has_serv_cell_index = 1;
     }
   }
