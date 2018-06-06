@@ -1272,8 +1272,17 @@ void flexran_agent_init_mac_agent(mid_t mod_id) {
   lfds700_misc_prng_init(&ps[mod_id]);
   int num_elements = RINGBUFFER_SIZE + 1;
   //Allow RINGBUFFER_SIZE messages to be stored in the ringbuffer at any time
-  dl_mac_config_array[mod_id] = malloc( sizeof(struct lfds700_ringbuffer_element) *  num_elements);
-  lfds700_ringbuffer_init_valid_on_current_logical_core( &ringbuffer_state[mod_id], dl_mac_config_array[mod_id], num_elements, &ps[mod_id], NULL );
+  /* lfds700_ringbuffer_init_valid_on_current_logical_core()'s second argument
+   * must be aligned to LFDS700_PAL_ATOMIC_ISOLATION_IN_BYTES. From the
+   * documentation: "Heap allocated variables however will by no means be
+   * correctly aligned and an aligned malloc must be used." Therefore, we use
+   * posix_memalign */
+  i = posix_memalign((void **)&dl_mac_config_array[mod_id],
+                    LFDS700_PAL_ATOMIC_ISOLATION_IN_BYTES,
+                    sizeof(struct lfds700_ringbuffer_element) *  num_elements);
+  AssertFatal(i == 0, "posix_memalign(): could not allocate aligned memory for lfds library\n");
+  lfds700_ringbuffer_init_valid_on_current_logical_core(&ringbuffer_state[mod_id],
+      dl_mac_config_array[mod_id], num_elements, &ps[mod_id], NULL);
   for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     for (j = 0; j < 8; j++) {
       if (RC.mac && RC.mac[mod_id])
