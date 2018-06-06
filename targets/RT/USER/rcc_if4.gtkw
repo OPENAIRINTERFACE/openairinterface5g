@@ -1,26 +1,32 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Sat Aug  6 15:00:27 2016
+[*] Fri May  4 13:17:37 2018
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Sat Aug  6 14:59:21 2016"
-[dumpfile_size] 991809002
-[savefile] "/home/fourmi/openairinterface5g/targets/RT/USER/rcc_if4.gtkw"
-[timestart] 0
-[size] 1301 716
-[pos] 309 0
+[dumpfile_mtime] "Fri May  4 13:12:37 2018"
+[dumpfile_size] 90116003
+[savefile] "/home/massive/openairinterface5g/targets/RT/USER/rcc_if4.gtkw"
+[timestart] 15824630000
+[size] 1405 882
+[pos] -5 -272
 *-19.793451 7382528436 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 284
 [signals_width] 262
 [sst_expanded] 1
-[sst_vpaned_height] 294
+[sst_vpaned_height] 383
 @24
 variables.trx_ts[63:0]
 variables.trx_tst[63:0]
 @28
-functions.recv_if4
-functions.send_if4
+functions.recv_if4(RU0)
+functions.recv_if4(RU1)
+functions.send_if4(RU0)
+functions.send_if4(RU1)
 functions.eNB_thread_rxtx0
+@24
+variables.subframe_number_RX0_RU[63:0]
+@25
+variables.frame_number_RX0_RU[63:0]
 @24
 variables.frame_number_RX0_eNB[63:0]
 variables.subframe_number_RX0_eNB[63:0]
@@ -28,7 +34,6 @@ variables.frame_number_TX0_eNB[63:0]
 variables.subframe_number_TX0_eNB[63:0]
 @28
 functions.phy_procedures_eNb_tx0
-functions.phy_procedures_eNb_rx_common0
 functions.phy_procedures_eNb_rx_uespec0
 functions.eNB_thread_rxtx1
 @24
@@ -36,13 +41,10 @@ variables.frame_number_RX1_eNB[63:0]
 variables.subframe_number_RX1_eNB[63:0]
 variables.frame_number_TX1_eNB[63:0]
 variables.subframe_number_TX1_eNB[63:0]
-@29
-functions.phy_procedures_eNb_tx1
 @28
-functions.phy_procedures_eNb_rx_common1
+functions.phy_procedures_eNb_tx1
 functions.phy_procedures_eNb_rx_uespec1
 functions.phy_enb_sfgen
-functions.phy_eNB_slot_fep
 functions.phy_enb_prach_rx
 @24
 variables.dci_info[63:0]

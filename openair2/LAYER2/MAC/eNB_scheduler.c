@@ -363,8 +363,9 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
   // check uplink failure
   if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 0) &&
       (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 0)) {
-    LOG_I(MAC, "UE %d rnti %x: UL Failure timer %d \n", UE_id, rnti,
-	  UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+    if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer&1023) == 0) 
+      LOG_I(MAC, "UE %d rnti %x: UL Failure timer %d \n", UE_id, rnti,
+	    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
     if (UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent == 0) {
       UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 1;
 
@@ -396,10 +397,11 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
 	    dl_config_pdu->dci_dl_pdu.
 	    dci_dl_pdu_rel8.resource_block_coding);
     } else {		// ra_pdcch_sent==1
-      LOG_I(MAC,
-	    "UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",
-	    UE_id, rnti,
-	    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+      if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer&1023) == 0) 
+	LOG_I(MAC,
+	      "UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",
+	      UE_id, rnti,
+	      UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
       if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer % 40) == 0) UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 0;	// resend every 4 frames
     }
 

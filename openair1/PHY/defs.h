@@ -1666,7 +1666,9 @@ static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,
   while (*instance_cnt < 0) {
     // most of the time the thread is waiting here
     // proc->instance_cnt_rxtx is -1
-    pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
+    LOG_I(PHY,"Waiting (instance_cnt %d thread : %s)\n",*instance_cnt,name);
+    AssertFatal(0==pthread_cond_wait(cond,mutex),""); // this unlocks mutex_rxtx while waiting and then locks it again
+    LOG_I(PHY,"Waking up (instance_cnt %d thread: %s)\n",*instance_cnt,name);
   }
 
   if (pthread_mutex_unlock(mutex) != 0) {

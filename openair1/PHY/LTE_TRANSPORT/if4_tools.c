@@ -64,7 +64,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
   int nsym = fp->symbols_per_tti;
   
-  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
+  if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4+ru->idx, 1 );   
 
   if (packet_type == IF4p5_PDLFFT) {
     //LOG_D(PHY,"send DL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
@@ -262,7 +262,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
     AssertFatal(1==0, "send_IF4p5 - Unknown packet_type %x", packet_type);     
   }
 
-  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );  
+  if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4+ru->idx, 0 );  
   return;  		    
 }
 
@@ -282,7 +282,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
   int idx;
 
-  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
+  if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4+ru->idx, 1 );   
   
   if (ru->function == NGFI_RRU_IF4p5) {
     db_fulllength = (12*fp->N_RB_DL)*ru->nb_tx; 
@@ -407,7 +407,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
     }
     LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
 	  dB_fixed(signal_energy((int*)&prach_rxsigF[0][0],839)));
-    for (idx=0;idx<ru->num_eNB;idx++) ru->wakeup_prach_eNB(ru->eNB_list[idx],ru,*frame,*subframe);
+      for (idx=0;idx<ru->num_eNB;idx++) ru->wakeup_prach_eNB(ru->eNB_list[idx],ru,*frame,*subframe);
 
   } else if (*packet_type == IF4p5_PULTICK) {
 
@@ -415,7 +415,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
     AssertFatal(1==0, "recv_IF4p5 - Unknown packet_type %x", *packet_type);            
   }
 
-  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );     
+  if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4+ru->idx, 0 );     
   return;   
 }
 

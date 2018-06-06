@@ -359,15 +359,18 @@ void feptx_prec(RU_t *ru) {
   int32_t ***bw;
   int subframe = ru->proc.subframe_tx;
 
+  if (ru->idx != 0) return;
+
   if (ru->num_eNB == 1) {
     eNB = eNB_list[0];
     fp  = &eNB->frame_parms;
     
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
 
+     // simple antenna port mapping rule that works both for single antenna eNB and dual antenna eNB. It maps antenna ports evenly to RUs
     for (aa=0;aa<ru->nb_tx;aa++)
       memcpy((void*)ru->common.txdataF_BF[aa],
-	     (void*)&eNB->common_vars.txdataF[aa][subframe*fp->symbols_per_tti*fp->ofdm_symbol_size],
+	     (void*)&eNB->common_vars.txdataF[(aa+ru->idx)%eNB->frame_parms.nb_antenna_ports_eNB][subframe*fp->symbols_per_tti*fp->ofdm_symbol_size],
 	     fp->symbols_per_tti*fp->ofdm_symbol_size*sizeof(int32_t));
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 0);

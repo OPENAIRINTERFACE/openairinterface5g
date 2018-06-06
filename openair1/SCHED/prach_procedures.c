@@ -217,7 +217,8 @@ void prach_procedures(PHY_VARS_eNB *eNB
             }
 
 	    pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-      
+	    /*	    write_output("prach.m","prachsig",eNB->prach_vars.rxsigF[0][0],839,1,1);
+		    exit(-1);*/
       } // max_preamble_energy > prach_I0 + 100 
       else {
          eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0*900)>>10) + ((max_preamble_energy[0]*124)>>10); 
