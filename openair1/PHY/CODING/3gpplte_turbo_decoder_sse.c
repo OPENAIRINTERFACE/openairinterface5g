@@ -2620,8 +2620,6 @@ int test_logmap8()
   test[3] = 0x92;
   test[4] = 0xfe;
 
-  crcTableInit();
-
   crc = crc24a(test,
                40)>>8;
 
