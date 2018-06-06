@@ -1077,6 +1077,7 @@ int main( int argc, char **argv ) {
             }
 
 	    rx_gain[CC_id][0] = 81;
+	    tx_max_power[CC_id] = -40;
 
             UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
             UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
@@ -1094,7 +1095,7 @@ int main( int argc, char **argv ) {
 
         }
 
-        //  printf("tx_max_power = %d -> amp %d\n",tx_max_power,get_tx_amp(tx_max_poHwer,tx_max_power));
+        //  printf("tx_max_power = %d -> amp %d\n",tx_max_power[0],get_tx_amp(tx_max_poHwer,tx_max_power));
   
 
     fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);

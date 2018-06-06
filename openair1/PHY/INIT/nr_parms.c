@@ -277,23 +277,17 @@ int nr_init_frame_parms_ue(nfapi_config_request_t* config,
     AssertFatal(1==0,"Invalid numerology index %d", mu);
   }
 
-frame_parms->nb_prefix_samples0 = 160;
+    frame_parms->nb_prefix_samples0 = 160;
     frame_parms->nb_prefix_samples = 144;
     frame_parms->symbols_per_tti = 14;
     frame_parms->numerology_index = 0;
     frame_parms->ttis_per_subframe = 1;
     frame_parms->slots_per_tti = 2; //only slot config 1 is supported     
 
-frame_parms->nb_prefix_samples=(frame_parms->nb_prefix_samples*3)>>2;
-      frame_parms->nb_prefix_samples0=(frame_parms->nb_prefix_samples0*3)>>2;
-frame_parms->ofdm_symbol_size = 2048;
-      frame_parms->samples_per_tti = 30720;
-//#ifdef UE_NR_PHY_DEMO
-      frame_parms->samples_per_subframe = 30720 * frame_parms->ttis_per_subframe;
-//#else
-//      frame_parms->samples_per_subframe = 30720;
-//#endif
-      frame_parms->first_carrier_offset = 2048-600;
+    frame_parms->ofdm_symbol_size = 2048;
+    frame_parms->samples_per_tti = 30720;
+    frame_parms->samples_per_subframe = 30720 * frame_parms->ttis_per_subframe;
+    frame_parms->first_carrier_offset = 2048-600;
 
   frame_parms->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_slot * frame_parms->slots_per_subframe;
