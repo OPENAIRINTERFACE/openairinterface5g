@@ -53,7 +53,12 @@ void polar_encoder(
 			polarParams->Q_I_N, polarParams->Q_PC_N, polarParams->n_pc);
 
 	//Encoding (u to d)
-	nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(polarParams->nr_polar_u, polarParams->G_N, polarParams->nr_polar_d, polarParams->N, polarParams->N);
+	// --- OLD ---
+	//nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(polarParams->nr_polar_u, polarParams->G_N, polarParams->nr_polar_d, polarParams->N, polarParams->N);
+	//for (uint16_t i = 0; i < polarParams->N; i++) polarParams->nr_polar_d[i] = (polarParams->nr_polar_d[i] % 2);
+	// --- NEW ---
+	nr_polar_kernal_operation(polarParams->nr_polar_u, polarParams->nr_polar_d, polarParams->N);
+
 	for (uint16_t i = 0; i < polarParams->N; i++) polarParams->nr_polar_d[i] = (polarParams->nr_polar_d[i] % 2);
 
 	//Rate matching
