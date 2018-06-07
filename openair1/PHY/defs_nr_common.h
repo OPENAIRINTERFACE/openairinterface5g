@@ -34,6 +34,7 @@
 #define __PHY_DEFS_NR_COMMON__H__
 
 #include "defs_common.h"
+#include "nfapi_interface_nr_extension.h"
 #include "impl_defs_nr.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
