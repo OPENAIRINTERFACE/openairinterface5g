@@ -78,6 +78,7 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
   
   // Protocol__FlexHeader *header;
   int i;
+  int UE_id;
   // int cc_id = 0;
  
   
@@ -85,6 +86,7 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
   if (report_config->nr_ue > 0) {
     
     for (i = 0; i < report_config->nr_ue; i++) {
+      UE_id = flexran_get_ue_id(mod_id, i);
 
       /* Check flag for creation of buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PDCP_STATS) {
@@ -95,7 +97,7 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
 	  goto error;
 	protocol__flex_pdcp_stats__init(pdcp_aggr_stats);
 	
-	flexran_agent_pdcp_aggregate_stats(mod_id, i, pdcp_aggr_stats);
+	flexran_agent_pdcp_aggregate_stats(mod_id, UE_id, pdcp_aggr_stats);
 
 	pdcp_aggr_stats->has_pkt_tx=1;
 	pdcp_aggr_stats->has_pkt_tx_bytes =1;
@@ -104,7 +106,7 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
 	pdcp_aggr_stats->has_pkt_tx_aiat =1; 
 	pdcp_aggr_stats->has_pkt_tx_aiat_w =1;
 
-	pdcp_aggr_stats->pkt_tx_sn = flexran_get_pdcp_tx_sn(mod_id, i, DEFAULT_DRB);
+	pdcp_aggr_stats->pkt_tx_sn = flexran_get_pdcp_tx_sn(mod_id, UE_id, DEFAULT_DRB);
 	pdcp_aggr_stats->has_pkt_tx_sn =1;
 	
 	pdcp_aggr_stats->has_pkt_rx =1;
@@ -115,7 +117,7 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
 	pdcp_aggr_stats->has_pkt_rx_aiat_w =1;
 	pdcp_aggr_stats->has_pkt_rx_oo =1;
 
-	pdcp_aggr_stats->pkt_rx_sn = flexran_get_pdcp_rx_sn(mod_id, i, DEFAULT_DRB);
+	pdcp_aggr_stats->pkt_rx_sn = flexran_get_pdcp_rx_sn(mod_id, UE_id, DEFAULT_DRB);
 	pdcp_aggr_stats->has_pkt_rx_sn =1;
 
 	pdcp_aggr_stats->sfn = flexran_get_pdcp_sfn(mod_id);

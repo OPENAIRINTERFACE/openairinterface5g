@@ -73,6 +73,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
   // Protocol__FlexHeader *header;
   int i, j, k;
+  int UE_id;
   int cc_id = 0;
   int enb_id = mod_id;
 
@@ -81,6 +82,8 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
 
           for (i = 0; i < report_config->nr_ue; i++) {
+
+                UE_id = flexran_get_ue_id(mod_id, i);
 
                 ue_report[i]->rnti = report_config->ue_report_type[i].ue_rnti;
                 ue_report[i]->has_rnti = 1;
@@ -103,7 +106,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                 /* Check flag for creation of PHR report */
                 if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR) {
-                        ue_report[i]->phr = flexran_get_ue_phr (enb_id, i); // eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].phr_info;
+                        ue_report[i]->phr = flexran_get_ue_phr (enb_id, UE_id); // eNB_UE_list->UE_template[UE_PCCID(enb_id,UE_id)][UE_id].phr_info;
                         ue_report[i]->has_phr = 1;
 
                 }
@@ -125,11 +128,11 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                               protocol__flex_rlc_bsr__init(rlc_reports[j]);
                               rlc_reports[j]->lc_id = j+1;
                               rlc_reports[j]->has_lc_id = 1;
-                              rlc_reports[j]->tx_queue_size = flexran_get_tx_queue_size(enb_id, i, j + 1);
+                              rlc_reports[j]->tx_queue_size = flexran_get_tx_queue_size(enb_id, UE_id, j + 1);
                               rlc_reports[j]->has_tx_queue_size = 1;
 
                               //TODO:Set tx queue head of line delay in ms
-                              rlc_reports[j]->tx_queue_hol_delay = flexran_get_hol_delay(enb_id, i, j + 1);
+                              rlc_reports[j]->tx_queue_hol_delay = flexran_get_hol_delay(enb_id, UE_id, j + 1);
                               rlc_reports[j]->has_tx_queue_hol_delay = 1;
                               //TODO:Set retransmission queue size in bytes
                               rlc_reports[j]->retransmission_queue_size = 10;
@@ -138,7 +141,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                               rlc_reports[j]->retransmission_queue_hol_delay = 100;
                               rlc_reports[j]->has_retransmission_queue_hol_delay = 0;
                               //TODO DONE:Set current size of the pending message in bytes
-                              rlc_reports[j]->status_pdu_size = flexran_get_num_pdus_buffer(enb_id , i, j + 1);
+                              rlc_reports[j]->status_pdu_size = flexran_get_num_pdus_buffer(enb_id, UE_id, j + 1);
                               rlc_reports[j]->has_status_pdu_size = 1;
 
                         }
@@ -152,7 +155,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                 /* Check flag for creation of MAC CE buffer status report */
                 if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_CE_BS) {
                         // TODO: Fill in the actual MAC CE buffer status report
-                        ue_report[i]->pending_mac_ces = (flexran_get_MAC_CE_bitmap_TA(enb_id,i,0) | (0 << 1) | (0 << 2) | (0 << 3)) & 15;
+                        ue_report[i]->pending_mac_ces = (flexran_get_MAC_CE_bitmap_TA(enb_id, UE_id, 0) | (0 << 1) | (0 << 2) | (0 << 3)) & 15;
                                       // Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
                                        // PROTOCOL__FLEX_CE_TYPE__FLPCET_ values
                                        // found in stats_common.pb-c.h. See
@@ -173,7 +176,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         dl_report->sfn_sn = flexran_get_sfn_sf(enb_id);
                         dl_report->has_sfn_sn = 1;
                         //Set the number of DL CQI reports for this UE. One for each CC
-                        dl_report->n_csi_report = flexran_get_active_CC(enb_id,i);
+                        dl_report->n_csi_report = flexran_get_active_CC(enb_id, UE_id);
                         dl_report->n_csi_report = 1 ;
                         //Create the actual CSI reports.
                         Protocol__FlexDlCsi **csi_reports;
@@ -190,7 +193,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                               csi_reports[j]->serv_cell_index = j;
                               csi_reports[j]->has_serv_cell_index = 1;
                               //The rank indicator value for this cc
-                              csi_reports[j]->ri = flexran_get_current_RI(enb_id,i,j);
+                              csi_reports[j]->ri = flexran_get_current_RI(enb_id, UE_id, j);
                               csi_reports[j]->has_ri = 1;
                               //TODO: the type of CSI report based on the configuration of the UE
                               //For now we only support type P10, which only needs a wideband value
@@ -209,7 +212,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                     protocol__flex_csi_p10__init(csi10);
                                     //TODO: set the wideband value
                                     // NN: this is also depends on cc_id
-                                    csi10->wb_cqi = flexran_get_ue_wcqi (enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].dl_cqi;
+                                    csi10->wb_cqi = flexran_get_ue_wcqi (enb_id, UE_id); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,UE_id)][UE_id].dl_cqi;
                                     csi10->has_wb_cqi = 1;
                                     //Add the type of measurements to the csi report in the proper union type
                                     csi_reports[j]->p10csi = csi10;
@@ -226,26 +229,26 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
                                     csi11->wb_cqi = malloc(sizeof(csi11->wb_cqi));
 				    csi11->n_wb_cqi = 1;
-				    csi11->wb_cqi[0] = flexran_get_ue_wcqi (enb_id, i);
+				    csi11->wb_cqi[0] = flexran_get_ue_wcqi (enb_id, UE_id);
                                     // According To spec 36.213
 
                                     if (flexran_get_antenna_ports(enb_id, j) == 2 && csi_reports[j]->ri == 1) {
                                         // TODO PMI
-                                        csi11->wb_pmi = flexran_get_ue_wpmi(enb_id, i, 0);
+                                        csi11->wb_pmi = flexran_get_ue_wpmi(enb_id, UE_id, 0);
                                         csi11->has_wb_pmi = 1;
 
                                        }
 
                                       else if (flexran_get_antenna_ports(enb_id, j) == 2 && csi_reports[j]->ri == 2){
                                         // TODO PMI
-                                        csi11->wb_pmi = flexran_get_ue_wpmi(enb_id, i, 0);
+                                        csi11->wb_pmi = flexran_get_ue_wpmi(enb_id, UE_id, 0);
                                         csi11->has_wb_pmi = 1;
 
                                       }
 
                                       else if (flexran_get_antenna_ports(enb_id, j) == 4 && csi_reports[j]->ri == 2){
                                         // TODO PMI
-                                        csi11->wb_pmi = flexran_get_ue_wpmi(enb_id, i, 0);
+                                        csi11->wb_pmi = flexran_get_ue_wpmi(enb_id, UE_id, 0);
                                         csi11->has_wb_pmi = 1;
 
 
@@ -269,7 +272,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                     goto error;
                                     protocol__flex_csi_p20__init(csi20);
 
-                                    csi20->wb_cqi = flexran_get_ue_wcqi (enb_id, i);
+                                    csi20->wb_cqi = flexran_get_ue_wcqi (enb_id, UE_id);
                                     csi20->has_wb_cqi = 1;
 
 
@@ -293,7 +296,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                   // goto error;
                                   // protocol__flex_csi_p21__init(csi21);
 
-                                  // csi21->wb_cqi = flexran_get_ue_wcqi (enb_id, i);
+                                  // csi21->wb_cqi = flexran_get_ue_wcqi (enb_id, UE_id);
 
 
                                   // csi21->wb_pmi = flexran_get_ue_pmi(enb_id); //TDO inside
@@ -321,7 +324,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                   // goto error;
                                   // protocol__flex_csi_a12__init(csi12);
 
-                                  // csi12->wb_cqi = flexran_get_ue_wcqi (enb_id, i);
+                                  // csi12->wb_cqi = flexran_get_ue_wcqi (enb_id, UE_id);
 
                                   // csi12->sb_pmi = 1 ; //TODO inside
 
@@ -336,17 +339,17 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                     // goto error;
                                     // protocol__flex_csi_a22__init(csi22);
 
-                                    // csi22->wb_cqi = flexran_get_ue_wcqi (enb_id, i);
+                                    // csi22->wb_cqi = flexran_get_ue_wcqi (enb_id, UE_id);
 
                                     // csi22->sb_cqi = 1 ; //TODO inside
 
-                                    // csi22->wb_pmi = flexran_get_ue_wcqi (enb_id, i);
+                                    // csi22->wb_pmi = flexran_get_ue_wcqi (enb_id, UE_id);
                                     // csi22->has_wb_pmi = 1;
 
                                     // csi22->sb_pmi = 1 ; //TODO inside
                                     // csi22->has_wb_pmi = 1;
 
-                                    // csi22->sb_list = flexran_get_ue_wcqi (enb_id, i);
+                                    // csi22->sb_list = flexran_get_ue_wcqi (enb_id, UE_id);
 
 
                                 }
@@ -359,7 +362,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                     // goto error;
                                     // protocol__flex_csi_a20__init(csi20);
 
-                                    // csi20->wb_cqi = flexran_get_ue_wcqi (enb_id, i);
+                                    // csi20->wb_cqi = flexran_get_ue_wcqi (enb_id, UE_id);
                                     // csi20->has_wb_cqi = 1;
 
                                     // csi20>sb_cqi = 1 ; //TODO inside
@@ -489,8 +492,8 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                       full_ul_report->pucch_dbm[j]->has_serv_cell_index = 1;
                                       full_ul_report->pucch_dbm[j]->serv_cell_index = j;
 
-                                      if(flexran_get_p0_pucch_dbm(enb_id,i, j) != -1){
-                                        full_ul_report->pucch_dbm[j]->p0_pucch_dbm = flexran_get_p0_pucch_dbm(enb_id,i,j);
+                                      if(flexran_get_p0_pucch_dbm(enb_id, UE_id, j) != -1){
+                                        full_ul_report->pucch_dbm[j]->p0_pucch_dbm = flexran_get_p0_pucch_dbm(enb_id, UE_id, j);
                                         full_ul_report->pucch_dbm[j]->has_p0_pucch_dbm = 1;
                                       }
                               }
@@ -511,69 +514,69 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                             protocol__flex_mac_stats__init(macstats);
 
 
-                            macstats->total_bytes_sdus_dl = flexran_get_total_size_dl_mac_sdus(mod_id, i, cc_id);
+                            macstats->total_bytes_sdus_dl = flexran_get_total_size_dl_mac_sdus(mod_id, UE_id, cc_id);
                             macstats->has_total_bytes_sdus_dl = 1;
 
-                            macstats->total_bytes_sdus_ul = flexran_get_total_size_ul_mac_sdus(mod_id, i, cc_id);
+                            macstats->total_bytes_sdus_ul = flexran_get_total_size_ul_mac_sdus(mod_id, UE_id, cc_id);
                             macstats->has_total_bytes_sdus_ul = 1;
 
-                            macstats->tbs_dl = flexran_get_TBS_dl(mod_id, i, cc_id);
+                            macstats->tbs_dl = flexran_get_TBS_dl(mod_id, UE_id, cc_id);
                             macstats->has_tbs_dl = 1;
 
-                            macstats->tbs_ul = flexran_get_TBS_ul(mod_id, i, cc_id);
+                            macstats->tbs_ul = flexran_get_TBS_ul(mod_id, UE_id, cc_id);
                             macstats->has_tbs_ul = 1;
 
-                            macstats->prb_retx_dl = flexran_get_num_prb_retx_dl_per_ue(mod_id, i, cc_id);
+                            macstats->prb_retx_dl = flexran_get_num_prb_retx_dl_per_ue(mod_id, UE_id, cc_id);
                             macstats->has_prb_retx_dl = 1;
 
-                            macstats->prb_retx_ul = flexran_get_num_prb_retx_ul_per_ue(mod_id, i, cc_id);
+                            macstats->prb_retx_ul = flexran_get_num_prb_retx_ul_per_ue(mod_id, UE_id, cc_id);
                             macstats->has_prb_retx_ul = 1;
 
-                            macstats->prb_dl = flexran_get_num_prb_dl_tx_per_ue(mod_id, i, cc_id);
+                            macstats->prb_dl = flexran_get_num_prb_dl_tx_per_ue(mod_id, UE_id, cc_id);
                             macstats->has_prb_dl = 1;
 
-                            macstats->prb_ul = flexran_get_num_prb_ul_rx_per_ue(mod_id, i, cc_id);
+                            macstats->prb_ul = flexran_get_num_prb_ul_rx_per_ue(mod_id, UE_id, cc_id);
                             macstats->has_prb_ul = 1;
 
-                            macstats->mcs1_dl = flexran_get_mcs1_dl(mod_id, i, cc_id);
+                            macstats->mcs1_dl = flexran_get_mcs1_dl(mod_id, UE_id, cc_id);
                             macstats->has_mcs1_dl = 1;
 
-                            macstats->mcs2_dl = flexran_get_mcs2_dl(mod_id, i, cc_id);
+                            macstats->mcs2_dl = flexran_get_mcs2_dl(mod_id, UE_id, cc_id);
                             macstats->has_mcs2_dl = 1;
 
-                            macstats->mcs1_ul = flexran_get_mcs1_ul(mod_id, i, cc_id);
+                            macstats->mcs1_ul = flexran_get_mcs1_ul(mod_id, UE_id, cc_id);
                             macstats->has_mcs1_ul = 1;
 
-                            macstats->mcs2_ul = flexran_get_mcs2_ul(mod_id, i, cc_id);
+                            macstats->mcs2_ul = flexran_get_mcs2_ul(mod_id, UE_id, cc_id);
                             macstats->has_mcs2_ul = 1;
 
-                            macstats->total_prb_dl = flexran_get_total_prb_dl_tx_per_ue(mod_id, i, cc_id);
+                            macstats->total_prb_dl = flexran_get_total_prb_dl_tx_per_ue(mod_id, UE_id, cc_id);
                             macstats->has_total_prb_dl = 1;
 
-                            macstats->total_prb_ul = flexran_get_total_prb_ul_rx_per_ue(mod_id, i, cc_id);
+                            macstats->total_prb_ul = flexran_get_total_prb_ul_rx_per_ue(mod_id, UE_id, cc_id);
                             macstats->has_total_prb_ul = 1;
 
-                            macstats->total_pdu_dl = flexran_get_total_num_pdu_dl(mod_id, i, cc_id);
+                            macstats->total_pdu_dl = flexran_get_total_num_pdu_dl(mod_id, UE_id, cc_id);
                             macstats->has_total_pdu_dl = 1;
 
-                            macstats->total_pdu_ul = flexran_get_total_num_pdu_ul(mod_id, i, cc_id);
+                            macstats->total_pdu_ul = flexran_get_total_num_pdu_ul(mod_id, UE_id, cc_id);
                             macstats->has_total_pdu_ul = 1;
 
-                            macstats->total_tbs_dl = flexran_get_total_TBS_dl(mod_id, i, cc_id);
+                            macstats->total_tbs_dl = flexran_get_total_TBS_dl(mod_id, UE_id, cc_id);
                             macstats->has_total_tbs_dl = 1;
 
-                            macstats->total_tbs_ul = flexran_get_total_TBS_ul(mod_id, i, cc_id);
+                            macstats->total_tbs_ul = flexran_get_total_TBS_ul(mod_id, UE_id, cc_id);
                             macstats->has_total_tbs_ul = 1;
 
-                            macstats->harq_round = flexran_get_harq_round(mod_id, cc_id, i);
+                            macstats->harq_round = flexran_get_harq_round(mod_id, cc_id, UE_id);
                             macstats->has_harq_round = 1;
 
                             Protocol__FlexMacSdusDl ** mac_sdus;
-                            mac_sdus = malloc(sizeof(Protocol__FlexMacSdusDl) * flexran_get_num_mac_sdu_tx(mod_id, i, cc_id));
+                            mac_sdus = malloc(sizeof(Protocol__FlexMacSdusDl) * flexran_get_num_mac_sdu_tx(mod_id, UE_id, cc_id));
                             if (mac_sdus == NULL)
                                 goto error;
 
-                            macstats->n_mac_sdus_dl = flexran_get_num_mac_sdu_tx(mod_id, i, cc_id);
+                            macstats->n_mac_sdus_dl = flexran_get_num_mac_sdu_tx(mod_id, UE_id, cc_id);
 
                             for (j = 0; j < macstats->n_mac_sdus_dl; j++){
 
@@ -581,10 +584,10 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                 mac_sdus[j] = malloc(sizeof(Protocol__FlexMacSdusDl));
                                 protocol__flex_mac_sdus_dl__init(mac_sdus[j]);
 
-                                mac_sdus[j]->lcid = flexran_get_mac_sdu_lcid_index(mod_id, i, cc_id, j);
+                                mac_sdus[j]->lcid = flexran_get_mac_sdu_lcid_index(mod_id, UE_id, cc_id, j);
                                 mac_sdus[j]->has_lcid = 1;
 
-                                mac_sdus[j]->sdu_length = flexran_get_mac_sdu_size(mod_id, i, cc_id, mac_sdus[j]->lcid);
+                                mac_sdus[j]->sdu_length = flexran_get_mac_sdu_size(mod_id, UE_id, cc_id, mac_sdus[j]->lcid);
                                 mac_sdus[j]->has_sdu_length = 1;
 
 

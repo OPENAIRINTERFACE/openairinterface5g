@@ -1209,106 +1209,158 @@ void flexran_agent_set_operating_frame_type(mid_t mod_id, uint8_t cc_id, lte_fra
 
 /*********** PDCP  *************/
 /*PDCP super frame counter flexRAN*/
-uint32_t flexran_get_pdcp_sfn(const mid_t mod_id){
+
+/* TODO the following is a hack. all the functions below should instead already
+ * receive the PDCP's uid and operate on it and the caller has the obligation
+ * to get the ID for this layer.
+ */
+static inline uint16_t flexran_get_pdcp_uid(mid_t mod_id, mid_t ue_id)
+{
+  rnti_t rnti = flexran_get_ue_crnti(mod_id, ue_id);
+  if (rnti == NOT_A_RNTI) return 0;
+
+  for (uint16_t pdcp_uid = 0; pdcp_uid < MAX_MOBILES_PER_ENB; ++pdcp_uid) {
+    if (pdcp_enb[mod_id].rnti[pdcp_uid] == rnti)
+      return pdcp_uid;
+  }
+  return 0;
+}
+
+uint32_t flexran_get_pdcp_sfn(mid_t mod_id)
+{
   return pdcp_enb[mod_id].sfn;
 }
 
 /*PDCP super frame counter flexRAN*/
-void flexran_set_pdcp_tx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window){
+void flexran_set_pdcp_tx_stat_window(mid_t mod_id, mid_t ue_id, uint16_t obs_window)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
   if (obs_window > 0 ){
-    Pdcp_stats_tx_window_ms[mod_id][ue_id]=obs_window;
+    Pdcp_stats_tx_window_ms[mod_id][uid]=obs_window;
   }
   else{
-    Pdcp_stats_tx_window_ms[mod_id][ue_id]=1000;
+    Pdcp_stats_tx_window_ms[mod_id][uid]=1000;
   }
 }
 
 /*PDCP super frame counter flexRAN*/
-void flexran_set_pdcp_rx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window){
+void flexran_set_pdcp_rx_stat_window(mid_t mod_id, mid_t ue_id, uint16_t obs_window)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
   if (obs_window > 0 ){
-    Pdcp_stats_rx_window_ms[mod_id][ue_id]=obs_window;
+    Pdcp_stats_rx_window_ms[mod_id][uid]=obs_window;
   }
   else{
-    Pdcp_stats_rx_window_ms[mod_id][ue_id]=1000;
+    Pdcp_stats_rx_window_ms[mod_id][uid]=1000;
   }
 }
 
 /*PDCP num tx pdu status flexRAN*/
-uint32_t flexran_get_pdcp_tx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  if (mod_id <0 || mod_id> MAX_NUM_CCs || ue_id<0 || ue_id> MAX_MOBILES_PER_ENB || lcid<0 || lcid>NB_RB_MAX)
+uint32_t flexran_get_pdcp_tx(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  if (mod_id < 0 || mod_id > MAX_NUM_CCs || ue_id < 0 || ue_id > MAX_MOBILES_PER_ENB
+      || lcid < 0 || lcid > NB_RB_MAX)
     return -1;
-  return Pdcp_stats_tx[mod_id][ue_id][lcid];
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_tx[mod_id][uid][lcid];
 }
 
 /*PDCP num tx bytes status flexRAN*/
-uint32_t flexran_get_pdcp_tx_bytes(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_tx_bytes[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_tx_bytes(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_tx_bytes[mod_id][uid][lcid];
 }
 
 /*PDCP number of transmit packet / second status flexRAN*/
-uint32_t flexran_get_pdcp_tx_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_tx_w[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_tx_w(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_tx_w[mod_id][uid][lcid];
 }
 
 /*PDCP throughput (bit/s) status flexRAN*/
-uint32_t flexran_get_pdcp_tx_bytes_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_tx_bytes_w[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_tx_bytes_w(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_tx_bytes_w[mod_id][uid][lcid];
 }
 
 /*PDCP tx sequence number flexRAN*/
-uint32_t flexran_get_pdcp_tx_sn(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_tx_sn[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_tx_sn(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_tx_sn[mod_id][uid][lcid];
 }
 
 /*PDCP tx aggregated packet arrival  flexRAN*/
-uint32_t flexran_get_pdcp_tx_aiat(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_tx_aiat[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_tx_aiat(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_tx_aiat[mod_id][uid][lcid];
 }
 
 /*PDCP tx aggregated packet arrival  flexRAN*/
-uint32_t flexran_get_pdcp_tx_aiat_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_tx_aiat_w[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_tx_aiat_w(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_tx_aiat_w[mod_id][uid][lcid];
 }
-
 
 /*PDCP num rx pdu status flexRAN*/
-uint32_t flexran_get_pdcp_rx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_rx[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_rx(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_rx[mod_id][uid][lcid];
 }
 
 /*PDCP num rx bytes status flexRAN*/
-uint32_t flexran_get_pdcp_rx_bytes(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_rx_bytes[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_rx_bytes(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_rx_bytes[mod_id][uid][lcid];
 }
 
 /*PDCP number of received packet / second  flexRAN*/
-uint32_t flexran_get_pdcp_rx_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_rx_w[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_rx_w(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_rx_w[mod_id][uid][lcid];
 }
 
 /*PDCP gootput (bit/s) status flexRAN*/
-uint32_t flexran_get_pdcp_rx_bytes_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_rx_bytes_w[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_rx_bytes_w(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_rx_bytes_w[mod_id][uid][lcid];
 }
 
 /*PDCP rx sequence number flexRAN*/
-uint32_t flexran_get_pdcp_rx_sn(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_rx_sn[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_rx_sn(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_rx_sn[mod_id][uid][lcid];
 }
 
 /*PDCP rx aggregated packet arrival  flexRAN*/
-uint32_t flexran_get_pdcp_rx_aiat(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_rx_aiat[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_rx_aiat(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_rx_aiat[mod_id][uid][lcid];
 }
 
 /*PDCP rx aggregated packet arrival  flexRAN*/
-uint32_t flexran_get_pdcp_rx_aiat_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_rx_aiat_w[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_rx_aiat_w(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_rx_aiat_w[mod_id][uid][lcid];
 }
 
 /*PDCP num of received outoforder pdu status flexRAN*/
-uint32_t flexran_get_pdcp_rx_oo(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  return Pdcp_stats_rx_outoforder[mod_id][ue_id][lcid];
+uint32_t flexran_get_pdcp_rx_oo(mid_t mod_id, mid_t ue_id, lcid_t lcid)
+{
+  uint16_t uid = flexran_get_pdcp_uid(mod_id, ue_id);
+  return Pdcp_stats_rx_outoforder[mod_id][uid][lcid];
 }
 
 /******************** RRC *****************************/
