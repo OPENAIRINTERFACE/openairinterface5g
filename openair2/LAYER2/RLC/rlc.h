@@ -67,6 +67,7 @@ typedef uint64_t hash_key_t;
 #define  RLC_OP_STATUS_BAD_PARAMETER     22
 #define  RLC_OP_STATUS_INTERNAL_ERROR    2
 #define  RLC_OP_STATUS_OUT_OF_RESSOURCES 3
+#define  RLC_OP_SKIPPED_FUL_BUF          4
 
 #define  RLC_MUI_UNDEFINED     (mui_t)0
 

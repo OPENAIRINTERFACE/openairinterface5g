@@ -169,6 +169,11 @@ boolean_t pdcp_data_req(
     start_meas(&UE_pdcp_stats[ctxt_pP->module_id].data_req);
   }
 
+  for (pdcp_uid = 0; pdcp_uid < MAX_MOBILES_PER_ENB; ++pdcp_uid) {
+    if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti)
+      break;
+  }
+
   // PDCP transparent mode for MBMS traffic
 
   if (modeP == PDCP_TRANSMISSION_MODE_TRANSPARENT) {
@@ -366,13 +371,24 @@ boolean_t pdcp_data_req(
     LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)pdcp_pdu_p->data,pdcp_pdu_size,
                 "[MSG] PDCP DL %s PDU on rb_id %d\n",(srb_flagP)? "CONTROL" : "DATA", rb_idP);
 
-    rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
+    /* if RLC buffer for this UE has been full, we want to skip all subsequent
+     * traffic for TM_SKIP_FULL_BUF_MS ms. Afterwards, it will be checkd again */
+    if (pdcp_enb[ctxt_pP->module_id].time_buf_full[pdcp_uid] == 0
+        || pdcp_enb[ctxt_pP->module_id].sfn - pdcp_enb[ctxt_pP->module_id].time_buf_full[pdcp_uid] >= TM_SKIP_FULL_BUF_MS) {
+      pdcp_enb[ctxt_pP->module_id].time_buf_full[pdcp_uid] = 0;
+      rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
+                                confirmP, pdcp_pdu_size, pdcp_pdu_p
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                             ,sourceL2Id
-                             ,destinationL2Id
+                                ,sourceL2Id
+                                ,destinationL2Id
 #endif
-                             );
-
+                               );
+    } else {
+      /* RLC would free pdcp_pdu_p, but since we skip it, have to do it
+       * ourselves and fake normal operation */
+      free_mem_block(pdcp_pdu_p, __func__);
+      rlc_status = RLC_OP_SKIPPED_FUL_BUF;
+    }
   }
 
   switch (rlc_status) {
@@ -392,8 +408,17 @@ boolean_t pdcp_data_req(
     break;
 
   case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+    pdcp_enb[ctxt_pP->module_id].time_buf_full[pdcp_uid] = pdcp_enb[ctxt_pP->module_id].sfn;
     LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+    int h = TM_SKIP_FULL_BUF_MS;
+    LOG_W(PDCP, "Blocking incoming traffic for %d ms\n", h);
     ret= FALSE;
+    break;
+
+  case RLC_OP_SKIPPED_FUL_BUF:
+    LOG_D(PDCP, "Skipping RLC request due to full buffer\n");
+    /* fake good return so that GTP doesn't spam us */
+    ret = TRUE;
     break;
 
   default:
@@ -406,16 +431,6 @@ boolean_t pdcp_data_req(
     stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_req);
   } else {
     stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].data_req);
-  }
-
-  /*
-   * Control arrives here only if rlc_data_req() returns RLC_OP_STATUS_OK
-   * so we return TRUE afterwards
-   */
-  
-  for (pdcp_uid=0; pdcp_uid< MAX_MOBILES_PER_ENB;pdcp_uid++){
-    if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti ) 
-      break;
   }
 
   //LOG_I(PDCP,"ueid %d lcid %d tx seq num %d\n", pdcp_uid, rb_idP+rb_offset, current_sn);
@@ -1066,6 +1081,7 @@ void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP){
       if (pdcp_enb[ctxt_pP->module_id].rnti[i] == 0 ){
 	pdcp_enb[ctxt_pP->module_id].rnti[i]=ctxt_pP->rnti;
 	pdcp_enb[ctxt_pP->module_id].uid[i]=i;
+        pdcp_enb[ctxt_pP->module_id].time_buf_full[i] = 0;
 	pdcp_enb[ctxt_pP->module_id].num_ues++;
 	printf("add new uid is %d %x\n\n", i, ctxt_pP->rnti);
 	// ret=1;
