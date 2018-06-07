@@ -354,7 +354,7 @@ static void *UE_thread_synch(void *arg) {
 #else
             LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 #endif
-            if (initial_sync( UE, UE->mode ) == 0) {
+            if (nr_initial_sync( UE, UE->mode ) == 0) {
 
                 hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_tti;
                 printf("Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
@@ -413,7 +413,7 @@ static void *UE_thread_synch(void *arg) {
                     //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
                     //UE->rfdevice.trx_stop_func(&UE->rfdevice);
                     // sleep(1);
-                    //nr_init_frame_parms(&UE->frame_parms);
+                    nr_init_frame_parms_ue(&UE->frame_parms);
                     /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
                         LOG_E(HW,"Could not start the device\n");
                         oai_exit=1;
@@ -733,8 +733,8 @@ void *UE_thread(void *arg) {
 
 #ifdef NAS_UE
     MessageDef *message_p;
-    message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
-    itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
+    //message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+    //itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif
 
     int tti_nr=-1;

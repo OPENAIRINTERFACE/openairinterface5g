@@ -846,14 +846,14 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
   LOG_I(PHY,"[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %d (%d dB)\n", pss_source, peak_position, peak_value, dB_fixed(peak_value)/2);
 
-#ifdef DEBUG_PSS_NR
+//#ifdef DEBUG_PSS_NR
 
 #define  PSS_DETECTION_FLOOR_NR     (31)
   if ((dB_fixed(peak_value)/2) > PSS_DETECTION_FLOOR_NR) {
 
     printf("[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %d (%d dB)\n", pss_source, peak_position, peak_value,dB_fixed(peak_value)/2);
   }
-#endif
+//#endif
 
 #ifdef DEBUG_PHY
 
