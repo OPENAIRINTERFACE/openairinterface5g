@@ -47,6 +47,7 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 
   generate_64qam_table();
   generate_16qam_table();
+  generate_qpsk_table();
   generate_RIV_tables();
 
   init_unscrambling_lut();

@@ -2175,8 +2175,8 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   uint8_t mod_order0 = 0;
   uint8_t mod_order1 = 0;
   int16_t amp_rho_a, amp_rho_b;
-  int16_t qam16_table_a0[4],qam64_table_a0[8],qam16_table_b0[4],qam64_table_b0[8];//qpsk_table_a0[2],qpsk_table_b0[2]
-  int16_t qam16_table_a1[4],qam64_table_a1[8],qam16_table_b1[4],qam64_table_b1[8];//qpsk_table_a1[2],qpsk_table_b1[2]
+  int16_t qam16_table_a0[4],qam64_table_a0[8],qam16_table_b0[4],qam64_table_b0[8],qpsk_table_a0[2],qpsk_table_b0[2];
+  int16_t qam16_table_a1[4],qam64_table_a1[8],qam16_table_b1[4],qam64_table_b1[8],qpsk_table_a1[2],qpsk_table_b1[2];
 
   int16_t *qam_table_s0=NULL,*qam_table_s1=NULL;
 #ifdef NEW_ALLOC_RE
@@ -2289,7 +2289,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   amp_rho_b = (int16_t)(((int32_t)amp*dlsch1->sqrt_rho_b)>>13);
   }
 
-  /*if(mod_order0 == 2)
+  if(mod_order0 == 2)
   {
     for(i=0;i<2;i++)
     {
@@ -2297,7 +2297,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       qpsk_table_b0[i] = (int16_t)(((int32_t)qpsk_table[i]*amp_rho_b)>>15);
     }
   }
-  else*/ if (mod_order0 == 4)
+  else if (mod_order0 == 4)
     for (i=0;i<4; i++) {
       qam16_table_a0[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_a)>>15);
       qam16_table_b0[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_b)>>15);
@@ -2308,14 +2308,14 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       qam64_table_b0[i] = (int16_t)(((int32_t)qam64_table[i]*amp_rho_b)>>15);
     }
 
-  /*if (mod_order1 == 2)
+  if (mod_order1 == 2)
   {
     for (i=0; i<2; i++) {
       qpsk_table_a1[i] = (int16_t)(((int32_t)qpsk_table[i]*amp_rho_a)>>15);
       qpsk_table_b1[i] = (int16_t)(((int32_t)qpsk_table[i]*amp_rho_b)>>15);
     }
   }
-  else*/ if (mod_order1 == 4)
+  else if (mod_order1 == 4)
     for (i=0; i<4; i++) {
       qam16_table_a1[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_a)>>15);
       qam16_table_b1[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_b)>>15);
@@ -2445,7 +2445,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     switch (mod_order0) {
     case 2:
       qam_table_s0 = NULL;
-      /*if (pilots) {
+      if (pilots) {
         qam_table_s0 = qpsk_table_b0;
 #ifdef NEW_ALLOC_RE
         // TODO: remove this code? //
@@ -2463,7 +2463,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
           allocate_REs_in_RB;
 #endif
 
-      }*/
+      }
       break;
     case 4:
       if (pilots) {
@@ -2517,12 +2517,12 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
         /* TODO: remove this code? */
       allocate_REs = allocate_REs_in_RB;
 #endif
-      /*if (pilots) {
+      if (pilots) {
         qam_table_s1 = qpsk_table_b1;
       }
       else {
         qam_table_s1 = qpsk_table_a1;
-      }*/
+      }
       break;
     case 4:
       if (pilots) {
