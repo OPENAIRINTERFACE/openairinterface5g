@@ -97,9 +97,6 @@ const char* eurecomVariablesNames[] = {
   "subframe_TX1_UE",
   "subframe_RX0_UE",
   "subframe_RX1_UE",
-  "missed_slot_enb",
-  "daq_mbox",
-  "rx_offset_mbox",
   "ue_rx_offset",
   "diff2",
   "hw_subframe",
@@ -230,7 +227,10 @@ const char* eurecomFunctionsNames[] = {
   "ue_lock_mutex_rxtx_for_cnt_decrement1",
   "ue_lock_mutex_rxtx_for_cnt_increment0",
   "ue_lock_mutex_rxtx_for_cnt_increment1",
-
+  /* simulation signals */
+  "do_DL_sig",
+  "do_UL_sig",
+  "UE_trx_read",
  /* RRH signals  */ 
   "eNB_tx",
   "eNB_rx",

@@ -24,11 +24,12 @@
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
 #include "../../ARCH/COMMON/common_lib.h"
-#undef MALLOC
+//#undef MALLOC
 #include "assertions.h"
 #include "msc.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
 #include "flexran_agent.h"
@@ -51,6 +52,8 @@
 #define CONFIG_HLP_DBGUEPR       "UE run normal prach power ramping, but don't continue random-access\n"
 #define CONFIG_HLP_CALPRACH      "UE run normal prach with maximum power, but don't continue random-access\n"
 #define CONFIG_HLP_NOL2CN        "bypass L2 and upper layers\n"
+#define CONFIG_HLP_SIML1         "activate RF simulator instead of HW\n"
+#define CONFIG_HLP_NUMUE         "number of UE instances\n"
 #define CONFIG_HLP_UERXG         "set UE RX gain\n"
 #define CONFIG_HLP_UERXGOFF      "external UE amplifier offset\n"
 #define CONFIG_HLP_UETXG         "set UE TX gain\n"
@@ -75,9 +78,12 @@
 #define CONFIG_HLP_DLMCS         "Set the maximum downlink MCS\n"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
 #define CONFIG_HLP_PRB           "Set the PRB, valid values: 6, 25, 50, 100  \n"    
+#define CONFIG_HLP_EMULIFACE     "Set the interface name for the multicast transport for emulation mode (e.g. eth0, lo, etc.)  \n"
+//#define CONFIG_HLP_NUMUES		 "Set the number of UEs for the emulation"
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"    
 #define CONFIG_HLP_ULMCS         "Set the maximum uplink MCS\n"
 #define CONFIG_HLP_TDD           "Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n"
+#define CONFIG_HLP_SNR           "Set average SNR in dB (for --siml1 option)\n"
 #define CONFIG_HLP_UE            "Set the lte softmodem as a UE\n"
 #define CONFIG_HLP_L2MONW        "Enable L2 wireshark messages on localhost \n"
 #define CONFIG_HLP_L2MONP        "Enable L2 pcap  messages on localhost \n"
@@ -129,24 +135,30 @@
 /*   optname                     helpstr             paramflags                      XXXptr                  defXXXval       type          numelt   */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_UEPARAMS_DESC {  \
-{"ue-rxgain",        	       CONFIG_HLP_UERXG,      0,		dblptr:&(rx_gain[0][0]),	    defdblval:0,    TYPE_DOUBLE,   0},     \
+{"siml1",                      CONFIG_HLP_SIML1,      PARAMFLAG_BOOL,   iptr:&simL1flag,                    defintval:0,    TYPE_INT,      0}, \
+{"U",			       CONFIG_HLP_NUMUE,      0,                u8ptr:&NB_UE_INST,                   defuintval:1,    TYPE_UINT,      0}, \
+{"ue-rxgain",        	       CONFIG_HLP_UERXG,      0,		dblptr:&(rx_gain[0][0]),	    defdblval:130,    TYPE_DOUBLE,   0},     \
 {"ue-rxgain-off",    	       CONFIG_HLP_UERXGOFF,   0,		dblptr:&rx_gain_off,		    defdblval:0,    TYPE_DOUBLE,   0},     \
 {"ue-txgain",        	       CONFIG_HLP_UETXG,      0,		dblptr:&(tx_gain[0][0]),	    defdblval:0,    TYPE_DOUBLE,   0},     \
 {"ue-nb-ant-rx",     	       CONFIG_HLP_UENANTR,    0,		u8ptr:&nb_antenna_rx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-nb-ant-tx",     	       CONFIG_HLP_UENANTT,    0,		u8ptr:&nb_antenna_tx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-scan-carrier",  	       CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL,	iptr:&UE_scan_carrier,  	    defintval:0,    TYPE_INT,	   0},     \
-{"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:90,   TYPE_INT,	   0},     \
+{"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:23,   TYPE_INT,	   0},     \
+{"emul-iface",                 CONFIG_HLP_EMULIFACE,  0,                strptr:&emul_iface,                 defstrval:"lo", TYPE_STRING,   100},   \
+{"L2-emul",                    NULL,  		      0,                u8ptr:&nfapi_mode,                  defuintval:3, TYPE_UINT8,   0}, \
+{"num-ues",     	       		   NULL,		      	  0,				u8ptr:&(NB_UE_INST),	    defuintval:1,   	TYPE_UINT8,	   0},     \
 {"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT8,    0},     \
+{"dlsch-demod-shift",     	 CONFIG_HLP_DLSHIFT,	0,		  iptr:(int32_t *)&dlsch_demod_shift,	defintval:0,			   TYPE_INT,	  0},			   \
 }
 
 #define DEFAULT_DLF 2680000000
-extern int16_t dlsch_demod_shift;
+
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                                                */
 /*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_PARAMS_DESC {  \
-{"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&rf_config_file,    defstrval:NULL,                 TYPE_STRING,    sizeof(rf_config_file)},\
+{"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&rf_config_file,    defstrval:NULL,                 TYPE_STRING,    sizeof(rf_config_file)}, \
 {"ulsch-max-errors",        CONFIG_HLP_ULMAXE,      0,                      uptr:&ULSCH_max_consecutive_errors, defuintval:0,                   TYPE_UINT,      0},                     \
 {"phy-test",                CONFIG_HLP_PHYTST,      PARAMFLAG_BOOL,         iptr:&phy_test,                     defintval:0,                    TYPE_INT,       0},                     \
 {"usim-test",               CONFIG_HLP_USIM,        PARAMFLAG_BOOL,         u8ptr:&usim_test,                   defintval:0,                    TYPE_UINT8,     0},                     \
@@ -175,11 +187,12 @@ extern int16_t dlsch_demod_shift;
 {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
 {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
 {"T" ,                      CONFIG_HLP_TDD,         PARAMFLAG_BOOL,         iptr:&tddflag,                      defintval:0,                    TYPE_INT,       0},                     \
+{"s" ,                      CONFIG_HLP_SNR,         0,                      iptr:&snr_dB,                       defintval:25,                   TYPE_INT,       0},                     \
 {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0},                     \
 {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                   defintval:0,                    TYPE_INT,       0},                     \
 {"codingw" ,                CONFIG_HLP_CODINGW,     PARAMFLAG_BOOL,         iptr:&codingw,                      defintval:0,                    TYPE_INT,       0},                     \
 {"fepw" ,                   CONFIG_HLP_FEPW,        PARAMFLAG_BOOL,         iptr:&fepw,                         defintval:0,                    TYPE_INT,       0},                     \
-{"nbiot-disable",        	 CONFIG_HLP_DISABLNBIOT,PARAMFLAG_BOOL,   iptr:&nonbiotflag,			defintval:0,			   TYPE_INT,	  0}                       \
+{"nbiot-disable",           CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,         iptr:&nonbiotflag,			defintval:0,			TYPE_INT,	0} \
 }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
@@ -266,7 +279,7 @@ extern void set_function_spec_param(RU_t *ru);
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
 
-extern void init_UE(int,int,int,int);
+extern void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax, int nb_rx, int nb_tx);
 extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char * name);
 
 extern void reset_opp_meas(void);
@@ -278,6 +291,10 @@ extern void init_te_thread(PHY_VARS_eNB *);
 extern void kill_td_thread(PHY_VARS_eNB *);
 extern void kill_te_thread(PHY_VARS_eNB *);
 
+extern void RCConfig_sim(void);
+extern void init_ocm(double,double);
+extern void init_ue_devices(PHY_VARS_UE *);
+
 PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t UE_id,
                           uint8_t abstraction_flag);
@@ -285,5 +302,12 @@ void init_eNB_afterRU(void);
 
 extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
+
+
+extern void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_iface);
+
+extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
+                          uint8_t UE_id,
+                          uint8_t abstraction_flag);
 
 #endif

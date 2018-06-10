@@ -30,22 +30,22 @@
  */
 
 #include "assertions.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "SCHED/sched_eNB.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/proto.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#include "SIMULATION/TOOLS/defs.h" // for taus
+#include "SIMULATION/TOOLS/sim.h" // for taus
 
 #include "T.h"
 

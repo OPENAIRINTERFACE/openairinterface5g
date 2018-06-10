@@ -31,25 +31,22 @@
 
 /* indented with: indent -kr eNB_scheduler_RA.c */
 
-#include "assertions.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/proto.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
+#include "assertions.h"
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
@@ -144,7 +141,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
   start_meas(&mac->rx_ulsch_sdu);
 
-  if ((UE_id > NUMBER_OF_UE_MAX) || (UE_id == -1))
+  if ((UE_id > MAX_MOBILES_PER_ENB) || (UE_id == -1))
     for (ii = 0; ii < NB_RB_MAX; ii++) {
       rx_lengths[ii] = 0;
     }
@@ -193,9 +190,9 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes < 0)
         UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes = 0;
     } else {		// we've got an error
-      LOG_D(MAC,
-	    "[eNB %d][PUSCH %d] CC_id %d ULSCH in error in round %d, ul_cqi %d\n",
-	    enb_mod_idP, harq_pid, CC_idP,
+      LOG_I(MAC,
+	    "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d\n",
+	    enb_mod_idP, harq_pid, CC_idP,frameP,subframeP,
 	    UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 	    ul_cqi);
 
@@ -553,7 +550,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 	    if ((UE_id = add_new_ue(enb_mod_idP, CC_idP,
 				    mac->common_channels[CC_idP].
 				    ra[ii].rnti, harq_pid
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				    ,
 				    mac->common_channels[CC_idP].
 				    ra[ii].rach_resource_type
@@ -1288,7 +1285,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 
 	  // this is the normalized RX power and this should be constant (regardless of mcs
 	  normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
-	  target_rx_power = 178;
+	  target_rx_power = 158;
 
 	  // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -1445,7 +1442,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 						  mcs_UL[harq_pid],
 						  rb_table
 						  [rb_table_index]));
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	    if (UE_template->rach_resource_type > 0) {	// This is a BL/CE UE allocation
 	      fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_tmp_body->number_of_pdus], UE_template->rach_resource_type > 2 ? 2 : 1, 1,	//total_number_of_repetitions
 						   1,	//repetition_number
@@ -1469,7 +1466,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 			      CC_id, UE_id, subframeP,
 			      S_UL_SCHEDULED);
 
-	    //LOG_D(MAC, "[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP, CC_id, frameP, subframeP, UE_id);
+	    LOG_D(MAC, "[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP, CC_id, frameP, subframeP, UE_id);
 	    LOG_D(MAC,"[PUSCH %d] SFN/SF:%04d%d UL_CFG:SFN/SF:%04d%d CQI:%d for UE %d/%x\n", harq_pid,frameP,subframeP,ul_sched_frame,ul_sched_subframeP,cqi_req,UE_id,rnti);
 
 	    // increment first rb for next UE allocation
@@ -1528,7 +1525,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 						 0,	// n_srs
 						 UE_template->
 						 TBS_UL[harq_pid]);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	    if (UE_template->rach_resource_type > 0) {	// This is a BL/CE UE allocation
 	      fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_tmp_body->number_of_pdus], UE_template->rach_resource_type > 2 ? 2 : 1, 1,	//total_number_of_repetitions
 						   1,	//repetition_number

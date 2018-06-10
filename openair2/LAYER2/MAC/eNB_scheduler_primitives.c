@@ -30,23 +30,18 @@
  */
 
 #include "assertions.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-
-#include "LAYER2/MAC/proto.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
@@ -60,6 +55,10 @@
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
+
+#include "common/ran_context.h"
+
+extern RAN_CONTEXT_t RC;
 
 extern int n_active_slices;
 
@@ -920,7 +919,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
     else if (ri >= 2 && cc->p_eNB == 4)
       return (4 + (N << 1) + 4 + (N << 1) + 4);
     break;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(12, 5, 0))
   case CQI_ReportModeAperiodic_rm32_v1250:
     AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
 		|| tmode == 10,
@@ -954,7 +953,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
       return (4 + 4 + 4);
 
     break;
-#endif /* Rel14 */
+#endif /* #if (RRC_VERSION >= MAKE_VERSION(12, 5, 0)) */
   }
   AssertFatal(1 == 0, "Shouldn't get here\n");
   return (0);
@@ -1013,6 +1012,8 @@ get_rel8_dl_cqi_pmi_size(UE_sched_ctrl * sched_ctl, int CC_idP,
 	      cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present);
 }
 
+
+
 void
 fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t *dl_config_pdu,
 		     uint8_t                       aggregation_level,
@@ -1060,7 +1061,7 @@ program_dlsch_acknak(module_id_t module_idP, int CC_idP, int UE_idP,
   nfapi_ul_config_ulsch_harq_information *ulsch_harq_information      = NULL;
   nfapi_ul_config_harq_information       *harq_information            = NULL;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 2, 0))
 
   if ((UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2)
       && (UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020)
@@ -1230,12 +1231,15 @@ fill_nfapi_ulsch_harq_information(module_id_t                            module_
 	       UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pusch_ConfigDedicated) != NULL,
 	      "physicalConfigDedicated->puschConfigDedicated for rnti %x is null\n",
 	      rntiP);
-#if defined(Rel14) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 2, 0))
   /*  if (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext2) puschConfigDedicated_v1020 =  UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext2->pusch_ConfigDedicated_v1020;
       #endif
-      #ifdef Rel14
+      #if (RRC_VERSION >= MAKE_VERSION(11, 3, 0))
       if (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext4) puschConfigDedicated_v1130 =  UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext4->pusch_ConfigDedicated_v1130;
+      #endif
+      #if (RRC_VERSION >= MAKE_VERSION(12, 5, 0))
       if (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext5) puschConfigDedicated_v1250 =  UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext5->pusch_ConfigDedicated_v1250;
+      #endif
   */
 #endif
   harq_information->harq_information_rel10.delta_offset_harq = puschConfigDedicated->betaOffset_ACK_Index;
@@ -1551,7 +1555,7 @@ fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *ul_config_pd
   }
 }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 void
 fill_nfapi_ulsch_config_request_emtc(nfapi_ul_config_request_pdu_t *
 				     ul_config_pdu, uint8_t ue_type,
@@ -1695,7 +1699,7 @@ void init_ue_sched_info(void)
 
   for (i = 0; i < NUMBER_OF_eNB_MAX; i++) {
     for (k = 0; k < MAX_NUM_CCs; k++) {
-      for (j = 0; j < NUMBER_OF_UE_MAX; j++) {
+      for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
 	// init DL
 	eNB_dlsch_info[i][k][j].weight = 0;
 	eNB_dlsch_info[i][k][j].subframe = 0;
@@ -1726,7 +1730,7 @@ int find_UE_id(module_id_t mod_idP, rnti_t rntiP)
   int UE_id;
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
-  for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
+  for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
     if (UE_list->active[UE_id] != TRUE)
       continue;
     if (UE_list->UE_template[UE_PCCID(mod_idP, UE_id)][UE_id].rnti ==
@@ -1852,7 +1856,7 @@ void dump_ue_list(UE_list_t * listP, int ul_flag)
 }
 
 int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	       , uint8_t rach_resource_type
 #endif
 	       )
@@ -1867,7 +1871,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
 	mod_idP, cc_idP, rntiP, UE_list->avail, UE_list->num_UEs);
   dump_ue_list(UE_list, 0);
 
-  for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
+  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (UE_list->active[i] == TRUE)
       continue;
     UE_id = i;
@@ -1886,7 +1890,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
     UE_list->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
 #endif    
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     UE_list->UE_template[cc_idP][UE_id].rach_resource_type =
       rach_resource_type;
 #endif
@@ -2353,9 +2357,7 @@ int get_bw_index(module_id_t module_id, uint8_t CC_id)
 {
   int bw_index = 0;
 
-  int N_RB_DL =
-    to_prb(RC.mac[module_id]->common_channels[CC_id].mib->
-	   message.dl_Bandwidth);
+  int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
   switch (N_RB_DL) {
   case 6:			// 1.4 MHz
@@ -2388,9 +2390,7 @@ int get_bw_index(module_id_t module_id, uint8_t CC_id)
 int get_min_rb_unit(module_id_t module_id, uint8_t CC_id)
 {
   int min_rb_unit = 0;
-  int N_RB_DL =
-    to_prb(RC.mac[module_id]->common_channels[CC_id].mib->
-	   message.dl_Bandwidth);
+  int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
   switch (N_RB_DL) {
   case 6:			// 1.4 MHz
@@ -3230,7 +3230,7 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
   int i, j;
   uint8_t *pdu;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
   if (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated != NULL &&
       UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL &&
       (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7)
@@ -4049,7 +4049,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     }
 
     break;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(12, 5, 0))
   case CQI_ReportModeAperiodic_rm32_v1250:
     AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8
 		|| tmode == 9
@@ -4058,6 +4058,8 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 		tmode);
     AssertFatal(1 == 0, "CQI_ReportModeAperiodic_rm32 to be done\n");
     break;
+#endif
+#if (RRC_VERSION >= MAKE_VERSION(13, 1, 0))
   case CQI_ReportModeAperiodic_rm10_v1310:
     AssertFatal(tmode == 1 || tmode == 2 || tmode == 3
 		|| tmode == 7,
@@ -4073,7 +4075,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 		tmode);
     AssertFatal(1 == 0, "CQI_ReportModeAperiodic_rm11 to be done\n");
     break;
-#endif /* Rel14 */
+#endif /* #if (RRC_VERSION >= MAKE_VERSION(13, 1, 0)) */
   }
 }
 

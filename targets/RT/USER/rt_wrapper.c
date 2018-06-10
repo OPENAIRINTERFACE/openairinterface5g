@@ -45,7 +45,7 @@
 #include "rt_wrapper.h"
 #include <errno.h>
 
-#include "openair1/PHY/defs.h"
+#include "openair1/PHY/defs_common.h"
 
 static int latency_target_fd = -1;
 static int32_t latency_target_value = 0;

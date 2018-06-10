@@ -37,7 +37,8 @@
 #include "vendor_ext.h"
 
 #include "nfapi_vnf.h"
-
+#include "PHY/defs_eNB.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
 
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;

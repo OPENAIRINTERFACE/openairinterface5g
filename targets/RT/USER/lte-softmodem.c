@@ -47,7 +47,7 @@
 
 #include "PHY/types.h"
 
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
@@ -59,17 +59,14 @@
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "PHY/vars.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
+#include "PHY/phy_vars.h"
+#include "SCHED/sched_common_vars.h"
+#include "LAYER2/MAC/mac_vars.h"
 
-#include "../../SIMU/USER/init_lte.h"
-
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/vars.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/vars.h"
-#include "PHY_INTERFACE/vars.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_vars.h"
+#include "PHY_INTERFACE/phy_interface_vars.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -92,6 +89,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "intertask_interface_init.h"
 #include "create_tasks.h"
 #endif
+
+#include "PHY/INIT/phy_init.h"
 
 #include "system.h"
 
@@ -117,6 +116,8 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 uint8_t nfapi_mode = 0; // Default to monolithic mode
+
+uint16_t sf_ahead=4;
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
@@ -144,7 +145,8 @@ static int8_t                     threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
-
+// This is a dummy declaration (dlsch_demodulation.c is no longer compiled for eNodeB)
+int16_t dlsch_demod_shift = 0;
 
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;
@@ -153,7 +155,8 @@ static char                    *itti_dump_file = NULL;
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
-
+int simL1flag;
+int snr_dB;
 FILE *input_fd=NULL;
 
 
@@ -458,7 +461,7 @@ void *l2l1_task(void *arg) {
       switch (ITTI_MSG_ID(message_p)) {
       case INITIALIZE_MESSAGE:
 	/* Start eNB thread */
-	LOG_D(EMU, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
+	printf("L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
 	start_eNB = 1;
 	break;
 
@@ -470,7 +473,7 @@ void *l2l1_task(void *arg) {
 	break;
 
       default:
-	LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
+	printf("Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
 	break;
       }
     } while (ITTI_MSG_ID(message_p) != INITIALIZE_MESSAGE);
@@ -497,11 +500,11 @@ void *l2l1_task(void *arg) {
       break;
 
     case MESSAGE_TEST:
-      LOG_I(EMU, "Received %s\n", ITTI_MSG_NAME(message_p));
+      printf("Received %s\n", ITTI_MSG_NAME(message_p));
       break;
 
     default:
-      LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
+      printf("Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
       break;
     }
 
@@ -563,8 +566,7 @@ static void get_options(void) {
       /* Read RC configuration file */
       RCConfig();
       NB_eNB_INST = RC.nb_inst;
-      NB_RU	  = RC.nb_RU;
-      printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,NB_RU);
+      printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,RC.nb_RU);
       if (nonbiotflag <= 0) {
          load_NB_IoT();
          printf("               nb_nbiot_rrc_inst %d, nb_nbiot_L1_inst %d, nb_nbiot_macrlc_inst %d\n",
@@ -1096,7 +1098,7 @@ int main( int argc, char **argv )
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
-  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
+  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   
@@ -1151,6 +1153,13 @@ int main( int argc, char **argv )
     pthread_mutex_init(&sync_mutex, NULL);
   }
   
+  if (nfapi_mode)
+  {
+    printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
+    pthread_cond_init(&sync_cond,NULL);
+    pthread_mutex_init(&sync_mutex, NULL);
+  }
+
   const char *nfapi_mode_str = "<UNKNOWN>";
 
   switch(nfapi_mode) {
@@ -1278,7 +1287,7 @@ int main( int argc, char **argv )
 
   // cleanup
     stop_eNB(NB_eNB_INST);
-    stop_RU(NB_RU);
+    stop_RU(RC.nb_RU);
     /* release memory used by the RU/eNB threads (incomplete), after all
      * threads have been stopped (they partially use the same memory) */
     for (int inst = 0; inst < NB_eNB_INST; inst++) {
@@ -1287,7 +1296,7 @@ int main( int argc, char **argv )
         phy_free_lte_eNB(RC.eNB[inst][cc_id]);
       }
     }
-    for (int inst = 0; inst < NB_RU; inst++) {
+    for (int inst = 0; inst < RC.nb_RU; inst++) {
       phy_free_RU(RC.ru[inst]);
     }
     free_lte_top();
@@ -1306,7 +1315,7 @@ int main( int argc, char **argv )
 
   // *** Handle per CC_id openair0
 
-    for(ru_id=0; ru_id<NB_RU; ru_id++) {
+    for(ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       if (RC.ru[ru_id]->rfdevice.trx_end_func)
 	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);  
       if (RC.ru[ru_id]->ifdevice.trx_end_func)

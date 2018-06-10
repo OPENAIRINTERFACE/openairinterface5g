@@ -41,8 +41,9 @@
 #include "PHY/sse_intrin.h"
 
 #ifndef TEST_DEBUG
-#include "PHY/defs.h"
-#include "PHY/CODING/defs.h"
+#include "PHY/impl_defs_top.h"
+#include "PHY/defs_common.h"
+#include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "extern_3GPPinterleaver.h"
 #else

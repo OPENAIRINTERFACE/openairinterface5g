@@ -35,11 +35,11 @@
 #include "flexran_agent_extern.h"
 #include "flexran_agent_net_comm.h"
 #include "flexran_agent_ran_api.h"
-#include "PHY/extern.h"
+//#include "PHY/extern.h"
 #include "log.h"
 
-#include "SCHED/defs.h"
-#include "RRC/LITE/extern.h"
+//#include "SCHED/defs.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rrc_eNB_UE_context.h"
 

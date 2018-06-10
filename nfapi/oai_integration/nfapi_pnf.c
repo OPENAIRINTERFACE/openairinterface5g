@@ -32,6 +32,7 @@
 #include "nfapi.h"
 #include "nfapi_pnf.h"
 #include "common/ran_context.h"
+#include "openair2/PHY_INTERFACE/phy_stub_UE.h"
 //#include "openair1/PHY/vars.h"
 extern RAN_CONTEXT_t RC;
 
@@ -47,7 +48,10 @@ extern RAN_CONTEXT_t RC;
 #include "fapi_stub.h"
 //#include "fapi_l1.h"
 #include "UTIL/LOG/log.h"
-#include "openair2/LAYER2/MAC/proto.h"
+#include "openair2/LAYER2/MAC/mac_proto.h"
+
+#include "PHY/INIT/phy_init.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
 
 #define NUM_P5_PHY 2
 
@@ -61,8 +65,10 @@ extern pthread_mutex_t nfapi_sync_mutex;
 extern int nfapi_sync_var;
 
 extern int sync_var;
+char uecap_xer_in;
 
 extern void init_eNB_afterRU(void);
+extern void init_UE_stub(int nb_inst,int,int);
 extern void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB, int frame, int subframe, eNB_rxtx_proc_t *proc, nfapi_dl_config_request_pdu_t *dl_config_pdu);
 extern void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, nfapi_ul_config_request_pdu_t *ul_config_pdu, uint16_t frame,uint8_t subframe,uint8_t srs_present);
 extern void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame, int subframe, eNB_rxtx_proc_t *proc,  nfapi_dl_config_request_pdu_t *dl_config_pdu, uint8_t codeword_index, uint8_t *sdu);
@@ -508,9 +514,31 @@ int config_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfap
 
   pnf_info* pnf = (pnf_info*)(config->user_data);
   uint8_t num_tlv = 0;
-  struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
-  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  //struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
 
+  // Panos: In the case of nfapi_mode = 3 (UE = PNF) we should not have dependency on any eNB var. So we aim
+  // to keep only the necessary just to keep the nfapi FSM rolling by sending a dummy response.
+  LTE_DL_FRAME_PARMS *fp;
+  if (nfapi_mode!=3) {
+	  struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
+	  fp = &eNB->frame_parms;
+  }
+  else{
+	  fp = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
+  }
+
+
+#if 0
+  //DJP
+  auto found = std::find_if(pnf->phys.begin(), pnf->phys.end(), [&](phy_info& item)
+      { return item.id == req->header.phy_id; });
+
+  if(found != pnf->phys.end())
+  {
+    phy_info& phy_info = (*found);
+  }
+#endif
+  //DJP 
   phy_info* phy_info = pnf->phys;
 
   if(req->nfapi_config.timing_window.tl.tag == NFAPI_NFAPI_TIMING_WINDOW_TAG) {
@@ -667,6 +695,7 @@ int config_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfap
     num_tlv++;
   }
 
+  if(nfapi_mode!=3) {
   printf("[PNF] CONFIG_REQUEST[num_tlv:%d] TLVs processed:%d\n", req->num_tlv, num_tlv);
 
   printf("[PNF] Simulating PHY CONFIG - DJP\n");
@@ -678,6 +707,7 @@ int config_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfap
   phy_config_request(&phy_config);
 
   dump_frame_parms(fp);
+  }
 
   phy_info->remote_port = req->nfapi_config.p7_vnf_port.value;
 
@@ -695,6 +725,8 @@ int config_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfap
   nfapi_resp.error_code = 0; // DJP - some value resp->error_code;
   nfapi_pnf_config_resp(config, &nfapi_resp);
   printf("[PNF] Sent NFAPI_CONFIG_RESPONSE phy_id:%d\n", phy_info->id);
+  if(nfapi_mode ==3)
+	  free(fp);
 
   return 0;
 }
@@ -1081,6 +1113,7 @@ int start_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi
   }
 
   if(phy_info->timing_info_mode & 0x2) {
+	  //printf("Panos-D: start_request () Enabling timing_info_mode_aperiodic \n");
     p7_config->timing_info_mode_aperiodic = 1;
   }
 
@@ -1090,77 +1123,110 @@ int start_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi
   p7_config->tx_req = &pnf_phy_tx_req;
   p7_config->lbt_dl_config_req = &pnf_phy_lbt_dl_config_req;
 
-  memset(&dummy_dl_config_req, 0, sizeof(dummy_dl_config_req));
-  dummy_dl_config_req.dl_config_request_body.tl.tag=NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
-  dummy_dl_config_req.dl_config_request_body.number_pdcch_ofdm_symbols=1;
-  dummy_dl_config_req.dl_config_request_body.number_dci=0;
-  dummy_dl_config_req.dl_config_request_body.number_pdu=0;
-  dummy_dl_config_req.dl_config_request_body.number_pdsch_rnti=0;
-  dummy_dl_config_req.dl_config_request_body.transmission_power_pcfich=6000;
-  dummy_dl_config_req.dl_config_request_body.dl_config_pdu_list=0;
+    if (nfapi_mode==3) {
+    	p7_config->dl_config_req = &memcpy_dl_config_req;
+    	p7_config->ul_config_req = &memcpy_ul_config_req;
+    	p7_config->hi_dci0_req = &memcpy_hi_dci0_req;
+    	p7_config->tx_req = &memcpy_tx_req;
+    }
+    else {
+    	p7_config->dl_config_req = &pnf_phy_dl_config_req;
+    	p7_config->ul_config_req = &pnf_phy_ul_config_req;
+    	p7_config->hi_dci0_req = &pnf_phy_hi_dci0_req;
+    	p7_config->tx_req = &pnf_phy_tx_req;
+    }
+    p7_config->lbt_dl_config_req = &pnf_phy_lbt_dl_config_req;
 
-  memset(&dummy_tx_req, 0, sizeof(dummy_tx_req));
-  dummy_tx_req.tx_request_body.number_of_pdus=0;
-  dummy_tx_req.tx_request_body.tl.tag=NFAPI_TX_REQUEST_BODY_TAG;
+    memset(&dummy_dl_config_req, 0, sizeof(dummy_dl_config_req));
+    dummy_dl_config_req.dl_config_request_body.tl.tag=NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+    dummy_dl_config_req.dl_config_request_body.number_pdcch_ofdm_symbols=1;
+    dummy_dl_config_req.dl_config_request_body.number_dci=0;
+    dummy_dl_config_req.dl_config_request_body.number_pdu=0;
+    dummy_dl_config_req.dl_config_request_body.number_pdsch_rnti=0;
+    dummy_dl_config_req.dl_config_request_body.transmission_power_pcfich=6000;
+    dummy_dl_config_req.dl_config_request_body.dl_config_pdu_list=0;
 
-  dummy_subframe.dl_config_req = &dummy_dl_config_req;
-  dummy_subframe.tx_req = 0;//&dummy_tx_req;
+    memset(&dummy_tx_req, 0, sizeof(dummy_tx_req));
+    dummy_tx_req.tx_request_body.number_of_pdus=0;
+    dummy_tx_req.tx_request_body.tl.tag=NFAPI_TX_REQUEST_BODY_TAG;
 
-  dummy_subframe.ul_config_req=0;
-  dummy_subframe.hi_dci0_req=0;
-  dummy_subframe.lbt_dl_config_req=0;
+    dummy_subframe.dl_config_req = &dummy_dl_config_req;
+    dummy_subframe.tx_req = 0;//&dummy_tx_req;
 
-  p7_config->dummy_subframe = dummy_subframe;
+    dummy_subframe.ul_config_req=0;
+    dummy_subframe.hi_dci0_req=0;
+    dummy_subframe.lbt_dl_config_req=0;
 
-  p7_config->vendor_ext = &pnf_phy_vendor_ext;
+    p7_config->dummy_subframe = dummy_subframe;
 
-  p7_config->allocate_p7_vendor_ext = &pnf_phy_allocate_p7_vendor_ext;
-  p7_config->deallocate_p7_vendor_ext = &pnf_phy_deallocate_p7_vendor_ext;
+    p7_config->vendor_ext = &pnf_phy_vendor_ext;
 
-  p7_config->codec_config.unpack_p7_vendor_extension = &pnf_phy_unpack_p7_vendor_extension;
-  p7_config->codec_config.pack_p7_vendor_extension = &pnf_phy_pack_p7_vendor_extension;
-  p7_config->codec_config.unpack_vendor_extension_tlv = &pnf_phy_unpack_vendor_extension_tlv;
-  p7_config->codec_config.pack_vendor_extension_tlv = &pnf_phy_pack_vendor_extention_tlv;
+    p7_config->allocate_p7_vendor_ext = &pnf_phy_allocate_p7_vendor_ext;
+    p7_config->deallocate_p7_vendor_ext = &pnf_phy_deallocate_p7_vendor_ext;
 
-  NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] Creating P7 thread %s\n", __FUNCTION__);
-  pthread_t p7_thread;
-  pthread_create(&p7_thread, NULL, &pnf_p7_thread_start, p7_config);
+    p7_config->codec_config.unpack_p7_vendor_extension = &pnf_phy_unpack_p7_vendor_extension;
+    p7_config->codec_config.pack_p7_vendor_extension = &pnf_phy_pack_p7_vendor_extension;
+    p7_config->codec_config.unpack_vendor_extension_tlv = &pnf_phy_unpack_vendor_extension_tlv;
+    p7_config->codec_config.pack_vendor_extension_tlv = &pnf_phy_pack_vendor_extention_tlv;
 
-  //((pnf_phy_user_data_t*)(phy_info->fapi->user_data))->p7_config = p7_config;
+    NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] Creating P7 thread %s\n", __FUNCTION__);
+    pthread_t p7_thread;
+    pthread_create(&p7_thread, NULL, &pnf_p7_thread_start, p7_config);
 
-  NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] Calling l1_north_init_eNB() %s\n", __FUNCTION__);
-  l1_north_init_eNB();
+    //((pnf_phy_user_data_t*)(phy_info->fapi->user_data))->p7_config = p7_config;
 
-  NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] DJP - HACK - Set p7_config global ready for subframe ind%s\n", __FUNCTION__);
-  p7_config_g = p7_config;
+    NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] Calling l1_north_init_eNB() %s\n", __FUNCTION__);
+    l1_north_init_eNB();
 
-  // Need to wait for main thread to create RU structures
-  while(config_sync_var<0) {
-    usleep(5000000);
-    printf("[PNF] waiting for OAI to be configured (eNB/RU)\n");
-  }
-  printf("[PNF] OAI eNB/RU configured\n");
+    NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] DJP - HACK - Set p7_config global ready for subframe ind%s\n", __FUNCTION__);
+    p7_config_g = p7_config;
 
-  printf("[PNF] About to call init_eNB_afterRU()\n");
-  init_eNB_afterRU();
+    //NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] Panos-D: start_request, BUFFER SIZE: %d", p7_config_g->subframe_buffer_size);
+    //printf("Panos-D: start_request, bUFFER SIZE: %d", p7_config_g->subframe_buffer_size);
 
-  // Signal to main thread that it can carry on - otherwise RU will startup too quickly and it is not initialised
-  pthread_mutex_lock(&nfapi_sync_mutex);
-  nfapi_sync_var=0;
-  pthread_cond_broadcast(&nfapi_sync_cond);
-  pthread_mutex_unlock(&nfapi_sync_mutex);
+    // Need to wait for main thread to create RU structures
+    while(config_sync_var<0)
+    {
+      usleep(5000000);
+      printf("[PNF] waiting for OAI to be configured (eNB/RU)\n");
+    }
+    printf("[PNF] OAI eNB/RU configured\n");
 
-  while(sync_var<0) {
-    usleep(5000000);
-    printf("[PNF] waiting for OAI to be started\n");
-  }
+    //printf("[PNF] About to call phy_init_RU() for RC.ru[0]:%p\n", RC.ru[0]);
+    //phy_init_RU(RC.ru[0]);
 
-  printf("[PNF] Sending PNF_START_RESP\n");
-  nfapi_send_pnf_start_resp(config, p7_config->phy_id);
+    printf("[PNF] About to call init_eNB_afterRU()\n");
 
-  printf("[PNF] Sending first P7 subframe ind\n");
-  nfapi_pnf_p7_subframe_ind(p7_config, p7_config->phy_id, 0); // DJP - SFN_SF set to zero - correct???
-  printf("[PNF] Sent first P7 subframe ind\n");
+    // Panos: Instead
+    /*if (nfapi_mode == 3) {
+    	init_UE_stub(1,0,uecap_xer_in);
+    }*/
+    //else{
+    if (nfapi_mode != 3) {
+    	// Panos
+    	init_eNB_afterRU();
+    }
+
+    // Signal to main thread that it can carry on - otherwise RU will startup too quickly and it is not initialised
+    {
+      pthread_mutex_lock(&nfapi_sync_mutex);
+      nfapi_sync_var=0;
+      pthread_cond_broadcast(&nfapi_sync_cond);
+      pthread_mutex_unlock(&nfapi_sync_mutex);
+    }
+
+    while(sync_var<0)
+    {
+      usleep(5000000);
+      printf("[PNF] waiting for OAI to be started\n");
+    }
+
+    printf("[PNF] Sending PNF_START_RESP\n");
+    nfapi_send_pnf_start_resp(config, p7_config->phy_id);
+
+    printf("[PNF] Sending first P7 subframe ind\n");
+    nfapi_pnf_p7_subframe_ind(p7_config, p7_config->phy_id, 0); // DJP - SFN_SF set to zero - correct???
+    printf("[PNF] Sent first P7 subframe ind\n");
 
   return 0;
 }
@@ -1464,7 +1530,9 @@ void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, 
 
   printf("%s() PNF\n\n\n\n\n\n", __FUNCTION__);
 
+  if(nfapi_mode!=3) {
   nfapi_mode = 1;  // PNF!
+  }
 
   nfapi_pnf_config_t* config = nfapi_pnf_config_create();
 

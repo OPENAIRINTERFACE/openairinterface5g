@@ -30,7 +30,7 @@
 #include <sys/types.h>
 
 
-#include "openair1/PHY/extern.h"
+#include "openair1/PHY/phy_extern.h"
 #include "common/utils/load_module_shlib.h" 
 #define NBIOT_INTERFACE_SOURCE
 #include "NB_IoT_interface.h"

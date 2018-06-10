@@ -42,7 +42,7 @@
    //unsigned int lte_gold_table[10][3][42];  // need 165 bytes for sequence
    //slot index x pilot within slot x sequence*/
 
-#include "defs.h"
+#include "lte_refsig.h"
 
 void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_table[10][3][42],uint16_t Nid_mbsfn)
 {

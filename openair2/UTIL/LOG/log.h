@@ -150,7 +150,7 @@ typedef enum {
     MIN_LOG_COMPONENTS = 0,
     PHY = MIN_LOG_COMPONENTS,
     MAC,
-    EMU,
+    SIM,
     OCG,
     OMG,
     OPT,
@@ -373,9 +373,9 @@ void *log_thread_function(void * list);
 /* @}*/
 
 static __inline__ uint64_t rdtsc(void) {
-  uint64_t a, d;
+  uint32_t a, d;
   __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
-  return (d<<32) | a;
+  return (((uint64_t)d)<<32) | ((uint64_t)a);
 }
 
 #define DEBUG_REALTIME 1
