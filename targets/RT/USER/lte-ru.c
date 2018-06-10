@@ -1748,6 +1748,7 @@ static void* ru_thread( void* param ) {
   int ret;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
+  char strname[100];
 
   // set default return value
 
