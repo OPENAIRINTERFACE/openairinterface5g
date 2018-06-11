@@ -21,10 +21,11 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
+/*
 // ----- New implementation ----
-uint32_t poly6 = 0x84000000; // 1000100000... -> D^6+D^5+1
-uint32_t poly11 = 0x63200000; //11000100001000... -> D^11+D^10+D^9+D^5+1
-uint32_t poly16 = 0x81080000; //100000010000100... - > D^16+D^12+D^5+1
+uint32_t poly6 = 0x84000000; // 10000100000... -> D^6+D^5+1
+uint32_t poly11 = 0xc4200000; //11000100001000... -> D^11+D^10+D^9+D^5+1
+uint32_t poly16 = 0x10210000; //00100000010000100... - > D^16+D^12+D^5+1
 uint32_t poly24a = 0x864cfb00; //100001100100110011111011 -> D^24+D^23+D^18+D^17+D^14+D^11+D^10+D^7+D^6+D^5+D^4+D^3+D+1
 uint32_t poly24b = 0x80006300; //100000000000000001100011 -> D^24+D^23+D^6+D^5+D+1
 uint32_t poly24c = 0xB2B11700; //101100101011000100010111 -> D^24...
@@ -91,7 +92,7 @@ unsigned int crcbit (unsigned char* inputptr, int octetlen, unsigned int poly)
 	
   	return crc;
 }
-/*
+
 void crcTableInit (void)
 {	
 	unsigned char c = 0;
@@ -106,7 +107,7 @@ void crcTableInit (void)
 
 	} while (++c);
 }
-*/
+
 void crcTable256Init (uint32_t poly, uint32_t* crc256Table)
 {
         unsigned char c = 0;
@@ -114,14 +115,14 @@ void crcTable256Init (uint32_t poly, uint32_t* crc256Table)
 
         do {
 		crc256Table[c] = crcbit(&c, 1, poly);
-/*
-                crc6Table[c] = crcbit(&c, 1, poly6);
-                crc11Table[c]= crcbit(&c, 1, poly11);
-                crc16Table[c] =crcbit(&c, 1, poly16);
-                crc24aTable[c]=crcbit(&c, 1, poly24a);
-                crc24bTable[c]=crcbit(&c, 1, poly24b);
-                crc24cTable[c]=crcbit(&c, 1, poly24c);
-*/
+
+//                crc6Table[c] = crcbit(&c, 1, poly6);
+  //              crc11Table[c]= crcbit(&c, 1, poly11);
+//                crc16Table[c] =crcbit(&c, 1, poly16);
+//                crc24aTable[c]=crcbit(&c, 1, poly24a);
+//                crc24bTable[c]=crcbit(&c, 1, poly24b);
+//                crc24cTable[c]=crcbit(&c, 1, poly24c);
+
         } while (++c);
 
 	//return crc256Table;
@@ -145,7 +146,7 @@ unsigned int crcPayload(unsigned char * inptr, int bitlen, uint32_t* crc256Table
         }
         return crc;
 }
-
+*/
 // ----- Old implementation ----
 uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits){
 

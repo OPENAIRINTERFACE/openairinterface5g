@@ -1091,7 +1091,7 @@ set(PHY_POLARSRC
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_crc_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_bit_insertion.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_channel_interleaver_pattern.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_crc.c
+ # ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_crc.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_decoding_tools.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_info_bit_pattern.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_interleaving_pattern.c
@@ -2367,7 +2367,7 @@ target_link_libraries (dlsim_tm4
   )
 
 add_executable(polartest ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c)
-target_link_libraries(polartest m SIMU PHY PHY_NR -lm ${ATLAS_LIBRARIES})
+target_link_libraries(polartest m SIMU PHY PHY_NR PHY_COMMON -lm ${ATLAS_LIBRARIES})
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 
