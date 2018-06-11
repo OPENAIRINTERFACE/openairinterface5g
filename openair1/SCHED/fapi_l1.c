@@ -96,8 +96,7 @@ void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_r
 void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
                                  nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
 {
-  LTE_eNB_PHICH *phich = &eNB->phich_vars;
-  int i;
+  LTE_eNB_PHICH *phich = &eNB->phich_vars[subframe&1];
 
   // copy dci configuration in to eNB structure
   LOG_D(PHY,"Received HI PDU with value %d (rbstart %d,cshift %d)\n",
@@ -105,15 +104,9 @@ void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rx
         hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.resource_block_start,
         hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms);
 
-  // DJP - TODO FIXME - transmission power ignored
-  for (i=0;i<32;i++) if (phich->config[i].active==0) break;
-  AssertFatal(i<32,"no free PHICH allocation\n");
-
-  phich->config[i].active   = 0;
-  phich->config[i].absSF    = (frame*10)+subframe;
-  phich->config[i].hi       = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.hi_value;
-  phich->config[i].first_rb = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.resource_block_start;
-  phich->config[i].n_DMRS   = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms;
+  phich->config[phich->num_hi].hi       = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.hi_value;
+  phich->config[phich->num_hi].first_rb = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.resource_block_start;
+  phich->config[phich->num_hi].n_DMRS   = hi_dci0_config_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms;
 }
 
 void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,

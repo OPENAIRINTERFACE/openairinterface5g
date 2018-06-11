@@ -62,7 +62,7 @@ sim_t sim;
 
 
 void init_ru_devices(void);
-void init_RU(const char*);
+void init_RU(const char*,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
 void *rfsim_top(void *n_frames);
 
 void wait_RUs(void)
@@ -107,7 +107,7 @@ void RCConfig_sim(void) {
   
   printf("returned with %d rus\n",RC.nb_RU);
   
-  init_RU(NULL);
+  init_RU(NULL,internal,internal,0);
 
   printf("Waiting for RUs to get set up\n"); 
   wait_RUs();
