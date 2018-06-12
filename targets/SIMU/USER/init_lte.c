@@ -29,12 +29,12 @@
 
 #include "init_lte.h"
 
-#include "PHY/extern.h"
+#include "PHY/phy_extern.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log_if.h"
-#include "PHY_INTERFACE/extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
 
 
 /*

@@ -32,12 +32,12 @@
 
 //#define DEBUG_SCRAMBLING 1
 
-#include "PHY/defs.h"
-#include "PHY/CODING/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "defs.h"
-#include "extern.h"
-#include "PHY/extern.h"
+#include "transport_eNB.h"
+#include "PHY/phy_extern.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 static inline unsigned int lte_gold_scram(unsigned int *x1, unsigned int *x2, unsigned char reset) __attribute__((always_inline));
@@ -87,7 +87,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING, VCD_FUNCTION_IN);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   // Rule for accumulation of subframes for BL/CE UEs
   uint8_t Nacc=4;
   uint16_t j0,j,idelta;
@@ -124,7 +124,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   //  reset = 1;
   // x1 is set in lte_gold_generic
   if (mbsfn_flag == 0) {
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 #ifdef PHY_TX_THREAD
     if (dlsch->harq_processes[harq_pid]->i0 != 0xFFFF) {
 #else
@@ -142,14 +142,18 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_SCRAMBLING
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   printf("scrambling: i0 %d rnti %x, q %d, Ns %d, Nid_cell %d, G %d x2 %x\n",dlsch->i0,dlsch->rnti,q,Ns,frame_parms->Nid_cell, G, x2);
+#else
+  printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, G %d x2 %x\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G, x2);
+#endif
 #endif
   s = lte_gold_scram(&x1, &x2, 1);
 
   for (n=0; n<(1+(G>>5)); n++) {
 
 #ifdef DEBUG_SCRAMBLING
-    printf("scrambling %d : %d => ",k,e[k]);
+    for (int k=0;k<32;k++) printf("scrambling %d : %d xor %d = %d\n",k+(n<<5),e[k],(s>>k)&1,e[k]^((s>>k)&1));
 #endif
 
                 
@@ -189,9 +193,8 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
     // This is not faster for some unknown reason
     //    ((__m128i *)e)[0] = _mm_xor_si128(((__m128i *)e)[0],((__m128i *)scrambling_lut)[s&65535]);
     //    ((__m128i *)e)[1] = _mm_xor_si128(((__m128i *)e)[1],((__m128i *)scrambling_lut)[s>>16]);
-#ifdef DEBUG_SCRAMBLING
-    printf("%d\n",e[k]);
-#endif
+
+
     
     
     s = lte_gold_scram(&x1, &x2, 0);
@@ -200,6 +203,20 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING, VCD_FUNCTION_OUT);
 
+}
+
+
+
+void init_scrambling_lut(void) {
+
+  uint32_t s;
+  int i=0,j;
+
+  for (s=0;s<=65535;s++) {
+    for (j=0;j<16;j++) {
+      scrambling_lut[i++] = (uint8_t)((s>>j)&1);
+    }
+  }
 }
 
 void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
@@ -231,7 +248,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   for (i=0; i<(1+(G>>5)); i++) {
     for (j=0; j<32; j++,k++) {
 #ifdef DEBUG_SCRAMBLING
-      printf("unscrambling %d : %d => ",k,llr[k]);
+    printf("unscrambling %d : %d xor %d =",k,llr[k],(s>>j)&1);
 #endif
       llr[k] = ((2*((s>>j)&1))-1)*llr[k];
 #ifdef DEBUG_SCRAMBLING
@@ -243,7 +260,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   }
 }
 
-void init_unscrambling_lut() {
+void init_unscrambling_lut(void) {
 
   uint32_t s;
   int i=0,j;
@@ -251,18 +268,6 @@ void init_unscrambling_lut() {
   for (s=0;s<=65535;s++) {
     for (j=0;j<16;j++) {
       unscrambling_lut[i++] = (int16_t)((((s>>j)&1)<<1)-1);
-    }
-  }
-}
-
-void init_scrambling_lut() {
-
-  uint32_t s;
-  int i=0,j;
-
-  for (s=0;s<=65535;s++) {
-    for (j=0;j<16;j++) {
-      scrambling_lut[i++] = (uint8_t)((s>>j)&1);
     }
   }
 }

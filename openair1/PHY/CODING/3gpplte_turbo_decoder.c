@@ -27,8 +27,8 @@
 
 */
 
-#include "PHY/defs.h"
-#include "PHY/CODING/defs.h"
+#include "PHY/defs_common.h"
+#include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/sse_intrin.h"
 
@@ -550,7 +550,7 @@ void compute_alpha_s(llr_t* alpha,llr_t* m_11,llr_t* m_10,unsigned short frame_l
 
 void compute_beta_s(llr_t* beta,llr_t *m_11,llr_t* m_10,llr_t* alpha,unsigned short frame_length,unsigned char F)
 {
-  int k,i;
+  int k;
   llr_t old0, old1, old2, old3, old4, old5, old6, old7;
   llr_t new0, new1, new2, new3, new4, new5, new6, new7;
   llr_t m_b0, m_b1, m_b2, m_b3, m_b4,m_b5, m_b6, m_b7;
@@ -874,14 +874,22 @@ void compute_ext_s(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, 
 
 
 unsigned char phy_threegpplte_turbo_decoder_scalar(llr_t *y,
+    llr_t *y2,
     unsigned char *decoded_bytes,
+    unsigned char *decoded_bytes2,
     unsigned short n,
     unsigned short f1,
     unsigned short f2,
     unsigned char max_iterations,
     unsigned char crc_type,
     unsigned char F,
-    unsigned char inst)
+    time_stats_t *init_stats,
+    time_stats_t *alpha_stats,
+    time_stats_t *beta_stats,
+    time_stats_t *gamma_stats,
+    time_stats_t *ext_stats,
+    time_stats_t *intl1_stats,
+    time_stats_t *intl2_stats)
 {
 
   /*  y is a pointer to the input
@@ -897,7 +905,7 @@ unsigned char phy_threegpplte_turbo_decoder_scalar(llr_t *y,
   unsigned char crc_len,temp;
 
   if (crc_type > 3) {
-    msg("Illegal crc length!\n");
+    fprintf(stderr,"Illegal crc length!\n");
     return 255;
   }
 

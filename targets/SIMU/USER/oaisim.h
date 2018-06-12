@@ -26,15 +26,16 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "SIMULATION/TOOLS/defs.h"
-#include "SIMULATION/RF/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
+#include "SIMULATION/RF/rf.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 #include "oaisim_config.h"
 #include "init_lte.h"
 
 #ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/mac.h"
 #include "UTIL/OMV/structures.h"
 #endif
 
@@ -48,10 +49,11 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 	       uint32_t frame,int eNB_id,uint8_t CC_id);
 
 void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs],
-               node_desc_t *enb_data[NUMBER_OF_RU_MAX],node_desc_t *ue_data[NUMBER_OF_UE_MAX],
+               node_desc_t *enb_data[NUMBER_OF_RU_MAX],
+	       node_desc_t *ue_data[NUMBER_OF_UE_MAX],
 	       uint16_t subframe,
-	       uint16_t offset,
-	       uint16_t length,
+	       uint32_t offset,
+	       uint32_t length,
 	       uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms,uint8_t UE_id,int CC_id);
 
 void init_ue(node_desc_t  *ue_data, UE_Antenna ue_ant);//Abstraction changes

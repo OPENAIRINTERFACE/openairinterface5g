@@ -31,7 +31,7 @@
 */
 
 
-#include "defs.h"
+#include "coding_defs.h"
 
 
 /*ref 36-212 v8.6.0 , pp 8-9 */
@@ -109,7 +109,7 @@ crc24a (unsigned char * inptr, int bitlen)
   resbit = (bitlen % 8);
 
   while (octetlen-- > 0) {
-    //    printf("in %x => crc %x\n",crc,*inptr);
+    //   printf("crc24a: in %x => crc %x\n",crc,*inptr);
     crc = (crc << 8) ^ crc24aTable[(*inptr++) ^ (crc >> 24)];
   }
 
@@ -128,6 +128,7 @@ unsigned int crc24b (unsigned char * inptr, int bitlen)
   resbit = (bitlen % 8);
 
   while (octetlen-- > 0) {
+    //    printf("crc24b: in %x => crc %x (%x)\n",crc,*inptr,crc24bTable[(*inptr) ^ (crc >> 24)]);
     crc = (crc << 8) ^ crc24bTable[(*inptr++) ^ (crc >> 24)];
   }
 

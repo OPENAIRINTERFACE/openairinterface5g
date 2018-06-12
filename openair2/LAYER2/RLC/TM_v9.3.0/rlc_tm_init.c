@@ -23,7 +23,7 @@
 #define RLC_TM_INIT_C 1
 //-----------------------------------------------------------------------------
 #include "rlc_tm.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 //-----------------------------------------------------------------------------
 void config_req_rlc_tm (
   const protocol_ctxt_t* const  ctxt_pP,

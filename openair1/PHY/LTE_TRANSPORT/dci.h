@@ -30,7 +30,17 @@
 * \warning
 */
 
+#ifndef __DCI__h__
+#define __DCI__h__
+
 #include <stdint.h>
+
+#define CCEBITS 72
+#define CCEPERSYMBOL 33  // This is for 1200 RE
+#define CCEPERSYMBOL0 22  // This is for 1200 RE
+#define DCI_BITS_MAX ((2*CCEPERSYMBOL+CCEPERSYMBOL0)*CCEBITS)
+
+//#define Mquad (Msymb/4)
 
 ///  DCI Format Type 0 (5 MHz,TDD0, 27 bits)
 struct DCI0_5MHz_TDD0 {
@@ -3014,3 +3024,5 @@ struct DCI_INFO_EXTRACTED {
     uint64_t ap_si_nl_id:3;
 };
 typedef struct DCI_INFO_EXTRACTED DCI_INFO_EXTRACTED_t;
+
+#endif

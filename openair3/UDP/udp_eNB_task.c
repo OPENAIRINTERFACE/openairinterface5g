@@ -270,10 +270,21 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
             n, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
 #endif
 
-      if (itti_send_msg_to_task(udp_sock_pP->task_id, INSTANCE_DEFAULT, message_p) < 0) {
+      /* TODO: this is a hack. Let's accept failures and do nothing when
+       * it happens. Since itti_send_msg_to_task crashes when the message
+       * queue is full we wrote itti_try_send_msg_to_task that returns -1
+       * if the queue is full.
+       */
+      /* look for HACK_RLC_UM_LIMIT for others places related to the hack. Please do not remove this comment. */
+      //if (itti_send_msg_to_task(udp_sock_pP->task_id, INSTANCE_DEFAULT, message_p) < 0) {
+      if (itti_try_send_msg_to_task(udp_sock_pP->task_id, INSTANCE_DEFAULT, message_p) < 0) {
+#if 0
         LOG_I(UDP_, "Failed to send message %d to task %d\n",
               UDP_DATA_IND,
               udp_sock_pP->task_id);
+#endif
+        itti_free(TASK_UDP, message_p);
+        itti_free(TASK_UDP, forwarded_buffer);
         return;
       }
     }
@@ -389,7 +400,7 @@ void *udp_eNB_task(void *args_p)
       break;
 
       case TERMINATE_MESSAGE: {
-        LOG_W(UDP_, "Received TERMINATE_MESSAGE\n");
+        LOG_W(UDP_, " *** Exiting UDP thread\n");
         itti_exit_task();
       }
       break;

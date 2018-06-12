@@ -30,71 +30,25 @@
  * \warning
  */
 
-#include "extern.h"
-#include "defs.h"
-#include "proto.h"
+#include "mac_extern.h"
+#include "mac.h"
+#include "mac_proto.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-#include "PHY_INTERFACE/extern.h"
-#include "SCHED/defs.h"
+#include "PHY_INTERFACE/phy_interface_extern.h"
+#include "SCHED_UE/sched_UE.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
-#ifdef PHY_EMUL
-#include "SIMULATION/simulation_defs.h"
-#endif
+#include "SIMULATION/TOOLS/sim.h"	// for taus
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
-#include "SIMULATION/TOOLS/defs.h"	// for taus
-
-int8_t get_DELTA_PREAMBLE(module_id_t module_idP, int CC_id)
-{
-
-    AssertFatal(CC_id == 0,
-		"Transmission on secondary CCs is not supported yet\n");
-    uint8_t prachConfigIndex =
-	UE_mac_inst[module_idP].radioResourceConfigCommon->
-	prach_Config.prach_ConfigInfo.prach_ConfigIndex;
-    uint8_t preambleformat;
-
-    if (UE_mac_inst[module_idP].tdd_Config) {	// TDD
-	if (prachConfigIndex < 20) {
-	    preambleformat = 0;
-	} else if (prachConfigIndex < 30) {
-	    preambleformat = 1;
-	} else if (prachConfigIndex < 40) {
-	    preambleformat = 2;
-	} else if (prachConfigIndex < 48) {
-	    preambleformat = 3;
-	} else {
-	    preambleformat = 4;
-	}
-    } else {			// FDD
-	preambleformat = prachConfigIndex >> 2;
-    }
-
-    switch (preambleformat) {
-    case 0:
-    case 1:
-	return (0);
-
-    case 2:
-    case 3:
-	return (-3);
-
-    case 4:
-	return (8);
-
-    default:
-	AssertFatal(1 == 0,
-		    "[UE %d] ue_procedures.c: FATAL, Illegal preambleformat %d, prachConfigIndex %d\n",
-		    module_idP, preambleformat, prachConfigIndex);
-    }
-
-}
-
+extern uint8_t  nfapi_mode;
+extern UE_MODE_t get_ue_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
 /// This routine implements Section 5.1.2 (UE Random Access Resource Selection) from 36.321
 void
@@ -105,7 +59,6 @@ get_prach_resources(module_id_t module_idP,
 		    uint8_t first_Msg3,
 		    RACH_ConfigDedicated_t * rach_ConfigDedicated)
 {
-
     uint8_t Msg3_size = UE_mac_inst[module_idP].RA_Msg3_size;
     PRACH_RESOURCES_t *prach_resources =
 	&UE_mac_inst[module_idP].RA_prach_resources;
@@ -344,9 +297,18 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 			       sub_frame_t subframeP)
 {
 
-
     uint8_t Size = 0;
-    UE_MODE_t UE_mode = get_ue_mode(module_idP, 0, eNB_indexP);
+    UE_MODE_t UE_mode;
+    // Panos: Modification for phy_stub_ue operation
+    if(nfapi_mode == 3) { // Panos: phy_stub_ue mode
+        UE_mode = UE_mac_inst[module_idP].UE_mode[0];
+        LOG_D(MAC, "ue_get_rach , UE_mode: %d", UE_mode);
+    }
+    else { // Full stack mode
+        UE_mode = get_ue_mode(module_idP,0,eNB_indexP);
+    }
+
+
     uint8_t lcid = CCCH;
     uint16_t Size16;
     struct RACH_ConfigCommon *rach_ConfigCommon =
@@ -361,6 +323,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 		"Transmission on secondary CCs is not supported yet\n");
 
     if (UE_mode == PRACH) {
+        LOG_D(MAC, "ue_get_rach 3, RA_active value: %d", UE_mac_inst[module_idP].RA_active);
 	if (UE_mac_inst[module_idP].radioResourceConfigCommon) {
 	    rach_ConfigCommon =
 		&UE_mac_inst[module_idP].
@@ -372,14 +335,14 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 	if (UE_mac_inst[module_idP].RA_active == 0) {
 	    LOG_I(MAC, "RA not active\n");
 	    // check if RRC is ready to initiate the RA procedure
-	    Size = mac_rrc_data_req(module_idP,
+	    Size = mac_rrc_data_req_ue(module_idP,
 				    CC_id,
 				    frameP,
 				    CCCH, 1,
 				    &UE_mac_inst[module_idP].
 				    CCCH_pdu.payload[sizeof
 						     (SCH_SUBHEADER_SHORT)
-						     + 1], 0, eNB_indexP,
+						     + 1], eNB_indexP,
 				    0);
 	    Size16 = (uint16_t) Size;
 
@@ -392,7 +355,6 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 		  module_idP, frameP, Size);
 
 	    if (Size > 0) {
-
 		UE_mac_inst[module_idP].RA_active = 1;
 		UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER =
 		    1;
@@ -447,7 +409,12 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 		    mac_rlc_status_ind(module_idP,
 				       UE_mac_inst[module_idP].crnti,
 				       eNB_indexP, frameP, subframeP,
-				       ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6);
+				       ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6
+#ifdef Rel14
+               ,0, 0
+#endif
+               );
+
 
 		if (UE_mac_inst[module_idP].crnti_before_ho)
 		    LOG_D(MAC,
@@ -463,7 +430,13 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 			  dcch_header_len);
 
 		sdu_lengths[0] = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti, eNB_indexP, frameP, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6,	//not used
-						  (char *) &ulsch_buff[0]);
+						  (char *) &ulsch_buff[0]
+#ifdef Rel14
+						  ,0,
+						  0
+#endif
+                                     );
+
 
 		LOG_D(MAC, "[UE %d] TX Got %d bytes for DCCH\n",
 		      module_idP, sdu_lengths[0]);

@@ -24,7 +24,8 @@
 #include <stdlib.h>
 #include <math.h>
 #endif
-#include "defs.h"
+#include "lte_refsig.h"
+#include "PHY/defs_eNB.h"
 
 uint16_t dftsizes[33] = {12,24,36,48,60,72,96,108,120,144,180,192,216,240,288,300,324,360,384,432,480,540,576,600,648,720,864,900,960,972,1080,1152,1200};
 
@@ -185,14 +186,18 @@ void free_ul_ref_sigs(void)
 
   unsigned int u,v,Msc_RS;
 
-  for (Msc_RS=2; Msc_RS<33; Msc_RS++) {
+  for (Msc_RS=0; Msc_RS<33; Msc_RS++) {
     for (u=0; u<30; u++) {
       for (v=0; v<2; v++) {
-        if (ul_ref_sigs[u][v][Msc_RS])
+        if (ul_ref_sigs[u][v][Msc_RS]) {
           free16(ul_ref_sigs[u][v][Msc_RS],2*sizeof(int16_t)*dftsizes[Msc_RS]);
+          ul_ref_sigs[u][v][Msc_RS] = NULL;
+        }
 
-        if (ul_ref_sigs_rx[u][v][Msc_RS])
+        if (ul_ref_sigs_rx[u][v][Msc_RS]) {
           free16(ul_ref_sigs_rx[u][v][Msc_RS],4*sizeof(int16_t)*dftsizes[Msc_RS]);
+          ul_ref_sigs_rx[u][v][Msc_RS] = NULL;
+        }
       }
     }
   }

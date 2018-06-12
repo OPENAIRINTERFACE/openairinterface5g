@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -34,9 +34,10 @@
 
 
 #include <stdint.h>
-#include "openair1/PHY/LTE_TRANSPORT/defs.h"
+//#include "openair1/PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "nfapi_interface.h"
-
+#include "platform_constants.h"
+#include "platform_types.h"
 
 #define MAX_NUM_DL_PDU 100
 #define MAX_NUM_UL_PDU 100
@@ -75,7 +76,7 @@ typedef struct{
   /// RACH indication list
   nfapi_rach_indication_t rach_ind;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// RACH indication list for BR UEs
   nfapi_rach_indication_t rach_ind_br;
 #endif

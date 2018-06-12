@@ -258,6 +258,17 @@ void log_set_instance_type (log_instance_type_t instance);
 int logInit_log_mem(void);
 void output_log_mem(void);
 
+#ifdef LOG_MAIN
+log_t *g_log;
+#else
+#ifdef __cplusplus
+   extern "C" {
+#endif
+extern log_t *g_log;
+#ifdef __cplusplus
+}
+#endif
+#endif
 /*--- INCLUDES ---------------------------------------------------------------*/
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
@@ -283,9 +294,9 @@ void *log_thread_function(void * list);
  *  @brief Macro used to call tr_log_full_ex with file, function and line information
  * @{*/
 #ifdef LOG_NO_THREAD
-#define logIt(component, level, format, args...) logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args)
+#define logIt(component, level, format, args...) (g_log->log_component[component].interval?logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
 #else //default
-#define logIt(component, level, format, args...) logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args)
+#define logIt(component, level, format, args...) (g_log->log_component[component].interval?logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
 #endif
 /* @}*/
 
@@ -367,9 +378,9 @@ void *log_thread_function(void * list);
 /* @}*/
 
 static __inline__ uint64_t rdtsc(void) {
-  uint64_t a, d;
+  uint32_t a, d;
   __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
-  return (d<<32) | a;
+  return (((uint64_t)d)<<32) | ((uint64_t)a);
 }
 
 #define DEBUG_REALTIME 1

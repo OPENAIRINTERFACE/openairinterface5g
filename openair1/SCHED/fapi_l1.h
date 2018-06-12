@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -30,10 +30,11 @@
  * \warning
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED/sched_common.h"
 #include "nfapi_interface.h"
 
 void fill_uci_harq_indication(PHY_VARS_eNB *eNB,LTE_eNB_UCI *uci,int frame,int subframe,uint8_t *harq_ack,uint8_t tdd_mapping_mode,uint16_t tdd_multiplexing_mask);

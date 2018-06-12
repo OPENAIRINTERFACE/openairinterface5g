@@ -34,6 +34,7 @@
 #define COMPONENT_LOG
 #define COMPONENT_LOG_IF
 #include <ctype.h>
+#define LOG_MAIN
 #include "log.h"
 #include "vcd_signal_dumper.h"
 #include "assertions.h"
@@ -46,7 +47,7 @@
 # include <string.h>
 #include "common/config/config_userapi.h"
 // main log variables
-log_t *g_log;
+
 
 typedef struct {
 	char* buf_p;
@@ -1692,7 +1693,7 @@ int set_log(int component, int level, int interval)
            component, MIN_LOG_COMPONENTS, MAX_LOG_COMPONENTS);
   DevCheck((level <= LOG_TRACE) && (level >= LOG_EMERG), level, LOG_TRACE,
            LOG_EMERG);
-  DevCheck((interval > 0) && (interval <= 0xFF), interval, 0, 0xFF);
+  DevCheck((interval >= 0) && (interval <= 0xFF), interval, 0, 0xFF);
 
   g_log->log_component[component].level = level;
 
@@ -1726,7 +1727,7 @@ int set_comp_log(int component, int level, int verbosity, int interval)
            component, MIN_LOG_COMPONENTS, MAX_LOG_COMPONENTS);
   DevCheck((level <= LOG_TRACE) && (level >= LOG_EMERG), level, LOG_TRACE,
            LOG_EMERG);
-  DevCheck((interval > 0) && (interval <= 0xFF), interval, 0, 0xFF);
+  DevCheck((interval >= 0) && (interval <= 0xFF), interval, 0, 0xFF);
 
 #if 0
   if ((verbosity == LOG_NONE) || (verbosity == LOG_LOW) ||

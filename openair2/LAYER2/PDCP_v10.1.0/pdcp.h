@@ -67,14 +67,14 @@
 #include "UTIL/LISTS/list.h"
 #endif //NON_ACCESS_STRATUM
 //-----------------------------------------------------------------------------
-#include "RRC/LITE/defs.h"
+#include "RRC/LTE/rrc_defs.h"
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
 #include "DRB-ToAddMod.h"
 #include "DRB-ToAddModList.h"
 #include "SRB-ToAddMod.h"
 #include "SRB-ToAddModList.h"
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 #include "MBMS-SessionInfoList-r9.h"
 #include "PMCH-InfoList-r9.h"
 #endif
@@ -94,15 +94,54 @@ extern int             pdcp_instance_cnt;
 int init_pdcp_thread(void);
 void cleanup_pdcp_thread(void);
 
+public_pdcp(uint32_t Pdcp_stats_tx_window_ms[MAX_NUM_CCs][MAX_MOBILES_PER_ENB]);
+public_pdcp(uint32_t Pdcp_stats_tx_bytes[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_bytes_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_bytes_tmp_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_tmp_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_sn[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_throughput_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_aiat_tmp_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_tx_iat[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
 
-public_pdcp(unsigned int Pdcp_stats_tx[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_tx_bytes[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_tx_bytes_last[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_tx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx_bytes[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx_bytes_last[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
-public_pdcp(unsigned int Pdcp_stats_rx_rate[NB_MODULES_MAX][NB_CNX_CH][NB_RAB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_window_ms[MAX_NUM_CCs][MAX_MOBILES_PER_ENB]);
+public_pdcp(uint32_t Pdcp_stats_rx[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_tmp_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_bytes[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_bytes_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_bytes_tmp_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_sn[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_goodput_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_aiat_tmp_w[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_iat[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+public_pdcp(uint32_t Pdcp_stats_rx_outoforder[MAX_NUM_CCs][MAX_MOBILES_PER_ENB][NB_RB_MAX]);
+
+public_pdcp(void pdcp_update_perioidical_stats(const protocol_ctxt_t* const  ctxt_pP));
+
+
+/*Packet Probing for agent PDCP*/
+//public_pdcp(uint64_t *pdcp_packet_counter);
+//public_pdcp(uint64_t *pdcp_size_packet);
+typedef struct pdcp_enb_s {
+  // used for eNB stats generation
+  uint16_t uid[MAX_MOBILES_PER_ENB];
+  rnti_t rnti[MAX_MOBILES_PER_ENB];
+  uint16_t num_ues;
+  
+  uint64_t sfn;
+  frame_t  frame;
+  sub_frame_t subframe;
+  
+} pdcp_enb_t; 
+
+public_pdcp(pdcp_enb_t pdcp_enb[MAX_NUM_CCs]);
 
 typedef struct pdcp_stats_s {
   time_stats_t pdcp_run;
@@ -125,7 +164,7 @@ typedef struct pdcp_s {
   boolean_t is_ue;
   boolean_t is_srb;
 
-  /* Configured security algorithms */
+   /* Configured security algorithms */
   uint8_t cipheringAlgorithm;
   uint8_t integrityProtAlgorithm;
 
@@ -184,7 +223,7 @@ typedef struct pdcp_s {
 
 } pdcp_t;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 typedef struct pdcp_mbms_s {
   boolean_t instanciated_instance;
   rb_id_t   rb_id;
@@ -220,7 +259,12 @@ public_pdcp(boolean_t pdcp_data_req(
               const confirm_t confirmP, \
               const sdu_size_t sdu_buffer_size,
               unsigned char* const sdu_buffer,
-              const pdcp_transmission_mode_t mode));
+              const pdcp_transmission_mode_t mode
+#ifdef Rel14
+              ,const uint32_t * const sourceL2Id
+              ,const uint32_t * const destinationL2Id
+#endif
+              ));
 
 /*! \fn boolean_t pdcp_data_ind(const protocol_ctxt_t* const, srb_flag_t, MBMS_flag_t, rb_id_t, sdu_size_t, mem_block_t*, boolean_t)
 * \brief This functions handles data transfer indications coming from RLC
@@ -284,7 +328,7 @@ public_pdcp(
     uint8_t                  *const kRRCenc,
     uint8_t                  *const kRRCint,
     uint8_t                  *const kUPenc
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     ,PMCH_InfoList_r9_t  *pmch_InfoList_r9
 #endif
     ,rb_id_t                 *const defaultDRB 
@@ -327,9 +371,15 @@ public_pdcp(boolean_t pdcp_config_req_asn1 (
               uint8_t         *const kRRCint,
               uint8_t         *const kUPenc));
 
-
+/*! \fn void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP)
+* \brief  Function (for RRC) to add a new UE in PDCP module
+* \param[in]  ctxt_pP           Running context.
+* \return     A status about the processing, OK or error code.
+*/
+public_pdcp(void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP));
+  
 /*! \fn boolean_t pdcp_remove_UE(const protocol_ctxt_t* const  ctxt_pP)
-* \brief  Function for RRC to configure a Radio Bearer clear all PDCP resources for a particular UE
+* \brief  Function for RRC to remove UE from PDCP module hashtable 
 * \param[in]  ctxt_pP           Running context.
 * \return     A status about the processing, OK or error code.
 */
@@ -387,6 +437,10 @@ typedef struct pdcp_data_req_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   traffic_type;
+#ifdef Rel14
+  uint32_t sourceL2Id;
+  uint32_t destinationL2Id;
+#endif
 } pdcp_data_req_header_t;
 
 typedef struct pdcp_data_ind_header_s {
@@ -394,6 +448,10 @@ typedef struct pdcp_data_ind_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   dummy_traffic_type;
+#ifdef Rel14
+  uint32_t sourceL2Id;
+  uint32_t destinationL2Id;
+#endif
 } pdcp_data_ind_header_t;
 
 struct pdcp_netlink_element_s {
@@ -402,6 +460,43 @@ struct pdcp_netlink_element_s {
   /* Data part of the message */
   uint8_t *data;
 };
+
+//TTN for D2D (PC5S)
+#ifdef Rel14
+#define PDCP_SOCKET_PORT_NO 9999 //temporary value
+#define PC5_SIGNALLING_PAYLOAD_SIZE   100  //should be updated with a correct value
+int pdcp_pc5_sockfd;
+struct sockaddr_in prose_ctrl_addr;
+struct sockaddr_in prose_pdcp_addr;
+struct sockaddr_in pdcp_sin;
+void pdcp_pc5_socket_init(void);
+
+typedef struct  {
+   rb_id_t             rb_id;
+   sdu_size_t          data_size;
+   signed int          inst;
+   ip_traffic_type_t   traffic_type;
+   uint32_t sourceL2Id;
+   uint32_t destinationL2Id;
+} __attribute__((__packed__)) pc5s_header_t;
+
+//new PC5S-message
+typedef struct  {
+   unsigned char bytes[PC5_SIGNALLING_PAYLOAD_SIZE];
+}  __attribute__((__packed__)) PC5SignallingMessage ;
+
+//example of PC5-S messages
+typedef struct {
+   pc5s_header_t pc5s_header;
+   union {
+      uint8_t status;
+      PC5SignallingMessage pc5_signalling_message;
+   } pc5sPrimitive;
+} __attribute__((__packed__)) sidelink_pc5s_element;
+
+
+#endif
+
 
 #if 0
 /*
@@ -437,19 +532,19 @@ typedef struct pdcp_missing_pdu_info_t {
 
 
 protected_pdcp(signed int             pdcp_2_nas_irq;)
-public_pdcp(pdcp_stats_t              UE_pdcp_stats[NUMBER_OF_UE_MAX];)
+public_pdcp(pdcp_stats_t              UE_pdcp_stats[MAX_MOBILES_PER_ENB];)
 public_pdcp(pdcp_stats_t              eNB_pdcp_stats[NUMBER_OF_eNB_MAX];)
-//protected_pdcp(pdcp_t                 pdcp_array_srb_ue[NUMBER_OF_UE_MAX][2];)
-//protected_pdcp(pdcp_t                 pdcp_array_drb_ue[NUMBER_OF_UE_MAX][maxDRB];)
-//public_pdcp(pdcp_t                    pdcp_array_srb_eNB[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][2];)
-//protected_pdcp(pdcp_t                 pdcp_array_drb_eNB[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX][maxDRB];)
+//protected_pdcp(pdcp_t                 pdcp_array_srb_ue[MAX_MOBILES_PER_ENB][2];)
+//protected_pdcp(pdcp_t                 pdcp_array_drb_ue[MAX_MOBILES_PER_ENB][maxDRB];)
+//public_pdcp(pdcp_t                    pdcp_array_srb_eNB[NUMBER_OF_eNB_MAX][MAX_MOBILES_PER_ENB][2];)
+//protected_pdcp(pdcp_t                 pdcp_array_drb_eNB[NUMBER_OF_eNB_MAX][MAX_MOBILES_PER_ENB][maxDRB];)
 
 // for UE code conly
-protected_pdcp(rnti_t                 pdcp_UE_UE_module_id_to_rnti[NUMBER_OF_UE_MAX];)
-protected_pdcp(rnti_t                 pdcp_eNB_UE_instance_to_rnti[NUMBER_OF_UE_MAX];) // for noS1 mode
+protected_pdcp(rnti_t                 pdcp_UE_UE_module_id_to_rnti[MAX_MOBILES_PER_ENB];)
+protected_pdcp(rnti_t                 pdcp_eNB_UE_instance_to_rnti[MAX_MOBILES_PER_ENB];) // for noS1 mode
 protected_pdcp(unsigned int           pdcp_eNB_UE_instance_to_rnti_index;)
-#if defined(Rel10) || defined(Rel14)
-public_pdcp(pdcp_mbms_t               pdcp_mbms_array_ue[NUMBER_OF_UE_MAX][maxServiceCount][maxSessionPerPMCH];)   // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+public_pdcp(pdcp_mbms_t               pdcp_mbms_array_ue[MAX_MOBILES_PER_ENB][maxServiceCount][maxSessionPerPMCH];)   // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 public_pdcp(pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH];) // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 #endif
 protected_pdcp(sdu_size_t             pdcp_output_sdu_bytes_to_write;)

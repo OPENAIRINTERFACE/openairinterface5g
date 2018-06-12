@@ -10,7 +10,6 @@
 #include "view/view.h"
 #include "gui/gui.h"
 #include "utils.h"
-#include "../T_defs.h"
 #include "event_selector.h"
 #include "config.h"
 
@@ -188,11 +187,12 @@ int main(int n, char **v)
   /* send the first message - activate selected traces */
   is_on_changed(&vcd_data);
 
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   /* read messages */
   while (1) {
-    char v[T_BUFFER_MAX];
     event e;
-    e = get_event(vcd_data.socket, v, database);
+    e = get_event(vcd_data.socket, &ebuf, database);
     if (e.type == -1) abort();
     handle_event(h, e);
   }

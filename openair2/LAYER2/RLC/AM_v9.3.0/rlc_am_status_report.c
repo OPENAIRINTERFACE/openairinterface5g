@@ -32,7 +32,6 @@
 #include "assertions.h"
 #include "list.h"
 #include "rlc_am.h"
-#include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
 #   if ENABLE_ITTI

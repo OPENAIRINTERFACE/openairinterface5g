@@ -69,6 +69,7 @@ typedef uint32_t              frame_t;
 typedef int32_t               sframe_t;
 typedef uint32_t              sub_frame_t;
 typedef uint16_t               module_id_t;
+typedef uint8_t               slice_id_t;
 typedef uint8_t               eNB_index_t;
 typedef uint16_t              ue_id_t;
 typedef int16_t               smodule_id_t;
@@ -87,6 +88,10 @@ typedef boolean_t             srb_flag_t;
 #define  SRB_FLAG_NO          FALSE
 #define  SRB_FLAG_YES         TRUE
 
+typedef boolean_t             sl_discovery_flag_t;
+#define  SL_DISCOVERY_FLAG_NO          FALSE
+#define  SL_DISCOVERY_FLAG_YES         TRUE
+
 typedef enum link_direction_e {
   UNKNOWN_DIR          = 0,
   DIR_UPLINK           = 1,
@@ -98,6 +103,15 @@ typedef enum rb_type_e {
   SIGNALLING_RADIO_BEARER     = 1,
   RADIO_ACCESS_BEARER         = 2
 } rb_type_t;
+
+typedef enum {
+    CR_ROUND = 0,
+    CR_SRB12 = 1,
+    CR_HOL   = 2,
+    CR_LC    = 3,
+    CR_CQI   = 4,
+    CR_NUM   = 5
+} sorting_criterion_t;
 
 //-----------------------------------------------------------------------------
 // PHY TYPES
@@ -154,7 +168,9 @@ typedef enum  ip_traffic_type_e {
   TRAFFIC_IPV4_TYPE_UNICAST    =  5,
   TRAFFIC_IPV4_TYPE_MULTICAST  =  6,
   TRAFFIC_IPV4_TYPE_BROADCAST  =  7,
-  TRAFFIC_IPV4_TYPE_UNKNOWN    =  8
+  TRAFFIC_IPV4_TYPE_UNKNOWN    =  8,
+  TRAFFIC_PC5S_SIGNALLING      =  9,
+  TRAFFIC_PC5S_SESSION_INIT    =  10
 } ip_traffic_type_t;
 
 //-----------------------------------------------------------------------------

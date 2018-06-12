@@ -39,8 +39,8 @@
 #include "PHY/sse_intrin.h"
 
 #ifndef TEST_DEBUG
-#include "PHY/defs.h"
-#include "PHY/CODING/defs.h"
+#include "PHY/defs_common.h"
+#include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "extern_3GPPinterleaver.h"
 #else
@@ -838,10 +838,10 @@ void free_td8(void)
   int ind;
 
   for (ind=0; ind<188; ind++) {
-    free(pi2tab8[ind]);
-    free(pi5tab8[ind]);
-    free(pi4tab8[ind]);
-    free(pi6tab8[ind]);
+    free_and_zero(pi2tab8[ind]);
+    free_and_zero(pi5tab8[ind]);
+    free_and_zero(pi4tab8[ind]);
+    free_and_zero(pi6tab8[ind]);
   }
 }
 
@@ -849,7 +849,7 @@ void free_td8(void)
 
 extern RAN_CONTEXT_t RC;
 
-void init_td8()
+void init_td8(void)
 {
 
   int ind,i,j,n,n2,pi,pi3;
@@ -898,7 +898,9 @@ void init_td8()
 }
 
 unsigned char phy_threegpplte_turbo_decoder8(short *y,
+    short y2,
     unsigned char *decoded_bytes,
+    unsigned char *decoded_bytes2,
     unsigned short n,
     unsigned short f1,
     unsigned short f2,

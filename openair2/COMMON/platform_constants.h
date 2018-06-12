@@ -69,18 +69,24 @@
 
 #ifdef LARGE_SCALE
 #    define MAX_MOBILES_PER_ENB         128
-//#    define MAX_RG                      2
+#    define MAX_MOBILES_PER_ENB_NB_IoT  128
+#    define MAX_eNB                      2
 #else
 #    define MAX_MOBILES_PER_ENB         16
-//#    define MAX_RG                      2
+#    define MAX_MOBILES_PER_ENB_NB_IoT  16
+#    define MAX_eNB                      2
 #endif
 
 #define MAX_MANAGED_ENB_PER_MOBILE  2
 
+///NB-IOT
+#define NB_RB_MAX_NB_IOT  (maxDRB_NB_r13 + 3) //MP: NB_IoT --> 2(DRB)+3(SRBs - 2 is not used) = 5
+
+
 #define DEFAULT_RAB_ID 1
 
 #define NB_RB_MAX      (maxDRB + 3) /* was 11, now 14, maxDRB comes from asn1_constants.h, + 3 because of 3 SRB, one invisible id 0, then id 1 and 2 */
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #define NB_RB_MBMS_MAX (maxSessionPerPMCH*maxServiceCount)
 #else
 // Do not allocate unused memory

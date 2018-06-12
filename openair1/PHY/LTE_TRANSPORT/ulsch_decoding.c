@@ -30,22 +30,22 @@
 * \warning
 */
 
-//#include "defs.h"
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/CODING/extern.h"
-#include "extern.h"
-#include "SCHED/extern.h"
-#ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
-#endif
+#include <syscall.h>
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/CODING/coding_extern.h"
+#include "SCHED/sched_eNB.h"
+#include "LAYER2/MAC/mac.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
 
 #include "UTIL/LOG/vcd_signal_dumper.h"
 //#define DEBUG_ULSCH_DECODING
+#include "targets/RT/USER/rt_wrapper.h"
+#include "transport_proto.h"
+
+extern int codingw;
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch)
 {
@@ -221,8 +221,6 @@ uint8_t extract_cqi_crc(uint8_t *cqi,uint8_t CQI_LENGTH)
 
 
 
-
-
 int ulsch_decoding_data_2thread0(td_params* tdp) {
 
   PHY_VARS_eNB *eNB = tdp->eNB;
@@ -242,27 +240,12 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
   uint32_t E=0;
   uint32_t Gp,GpmodC,Nl=1;
   uint32_t C = ulsch_harq->C;
-
-  uint8_t (*tc)(int16_t *y,
-                uint8_t *,
-                uint16_t,
-                uint16_t,
-                uint16_t,
-                uint8_t,
-                uint8_t,
-                uint8_t,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *);
+  decoder_if_t tc;
 
   if (llr8_flag == 0)
-    tc = phy_threegpplte_turbo_decoder16;
+    tc = decoder16;
   else
-    tc = phy_threegpplte_turbo_decoder8;
+    tc = decoder8;
 
 
 
@@ -385,7 +368,9 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
     
     
     ret = tc(&ulsch_harq->d[r][96],
+             NULL,
 	     ulsch_harq->c[r],
+             NULL,
 	     Kr,
 	     f1f2mat_old[iind*2],
 	     f1f2mat_old[(iind*2)+1],
@@ -427,13 +412,20 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 
 extern int oai_exit;
 void *td_thread(void *param) {
-  pthread_setname_np( pthread_self(), "td processing");
   PHY_VARS_eNB *eNB = ((td_params*)param)->eNB;
   eNB_proc_t *proc  = &eNB->proc;
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  
+  thread_top_init("td_thread",1,200000,250000,500000);
+  pthread_setname_np( pthread_self(),"td processing");
+  LOG_I(PHY,"thread td created id=%ld\n", syscall(__NR_gettid));
+  //wait_sync("td_thread");
 
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_td,&proc->cond_td,&proc->instance_cnt_td,"td thread")<0) break;  
+    if(oai_exit) break;
 
     ((td_params*)param)->ret = ulsch_decoding_data_2thread0((td_params*)param);
 
@@ -463,22 +455,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
   int G = ulsch_harq->G;
   unsigned int E;
   int Cby2;
-
-  uint8_t (*tc)(int16_t *y,
-                uint8_t *,
-                uint16_t,
-                uint16_t,
-                uint16_t,
-                uint8_t,
-                uint8_t,
-                uint8_t,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *);
+  decoder_if_t tc;
 
   struct timespec wait;
 
@@ -487,9 +464,9 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 
 
   if (llr8_flag == 0)
-    tc = phy_threegpplte_turbo_decoder16;
+    tc = decoder16;
   else
-    tc = phy_threegpplte_turbo_decoder8;
+    tc = decoder8;
 
   if (ulsch_harq->C>1) { // wakeup worker if more than 1 segment
     if (pthread_mutex_timedlock(&proc->mutex_td,&wait) != 0) {
@@ -608,7 +585,9 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     
     ret = tc(&ulsch_harq->d[r][96],
+             NULL,
 	     ulsch_harq->c[r],
+             NULL,
 	     Kr,
 	     f1f2mat_old[iind*2],
 	     f1f2mat_old[(iind*2)+1],
@@ -649,6 +628,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
       break;
     }
     stop_meas(&eNB->ulsch_turbo_decoding_stats);    
+  //printf("/////////////////////////////////////////**************************loop for %d time in ulsch_decoding main\n",r);
   }
 
    // wait for worker to finish
@@ -670,27 +650,12 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 
   int G = ulsch_harq->G;
   unsigned int E;
-
-  uint8_t (*tc)(int16_t *y,
-                uint8_t *,
-                uint16_t,
-                uint16_t,
-                uint16_t,
-                uint8_t,
-                uint8_t,
-                uint8_t,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *);
+  decoder_if_t tc;
 
   if (llr8_flag == 0)
-    tc = phy_threegpplte_turbo_decoder16;
+    tc = *decoder16;
   else
-    tc = phy_threegpplte_turbo_decoder8;
+    tc = *decoder8;
 
 
   for (r=0; r<ulsch_harq->C; r++) {
@@ -773,7 +738,9 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     
     ret = tc(&ulsch_harq->d[r][96],
+             NULL,
 	     ulsch_harq->c[r],
+             NULL,
 	     Kr,
 	     f1f2mat_old[iind*2],
 	     f1f2mat_old[(iind*2)+1],
@@ -819,6 +786,20 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   }
 
   return(ret);
+}
+
+int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
+{
+  int ret = 0;
+  /*if(codingw)
+  {
+    ret = ulsch_decoding_data_2thread(eNB,UE_id,harq_pid,llr8_flag);
+  }
+  else*/
+  {
+    ret = ulsch_decoding_data(eNB,UE_id,harq_pid,llr8_flag);
+  }
+  return ret;
 }
 
 static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, unsigned char reset) __attribute__((always_inline));

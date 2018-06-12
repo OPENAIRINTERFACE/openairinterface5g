@@ -32,8 +32,8 @@
 #include <inttypes.h>
 
 #include "LAYER2/RLC/rlc.h"
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "UTIL/LOG/log.h"
 #include "common/ran_context.h"
@@ -217,18 +217,18 @@ int dump_eNB_l2_stats(char *buffer, int length)
                        UE_list->eNB_UE_stats[CC_id][UE_id].num_errors_rx);
 
         len+= sprintf(&buffer[len],"[MAC] Received PHR PH = %d (db)\n", UE_list->UE_template[CC_id][UE_id].phr_info);
-        len+= sprintf(&buffer[len],"[MAC] Received BSR LCGID[0][1][2][3] = %u %u %u %u\n",
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID0],
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID1],
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID2],
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID3]
+        len+= sprintf(&buffer[len],"[MAC] Estimated size LCGID[0][1][2][3] = %u %u %u %u\n",
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID0],
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID1],
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID2],
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID3]
                      );
       }
       
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt,
 				     eNB_id,
 				     ENB_FLAG_YES,
-				     UE_list->eNB_UE_stats[UE_PCCID(eNB_id,UE_id)][UE_id].crnti, 
+				     UE_list->eNB_UE_stats[0][UE_id].crnti,//UE_PCCID(eNB_id,UE_id)][UE_id].crnti, 
 				     eNB->frame,
 				     eNB->subframe,
 				     eNB_id);

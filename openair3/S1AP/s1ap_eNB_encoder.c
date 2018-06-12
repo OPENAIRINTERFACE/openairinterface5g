@@ -470,7 +470,7 @@ int s1ap_eNB_encode_initial_ue_message(
   return s1ap_generate_initiating_message(buffer,
                                           length,
                                           S1ap_ProcedureCode_id_initialUEMessage,
-                                          S1ap_Criticality_reject,
+                                          S1ap_Criticality_ignore,
                                           &asn_DEF_S1ap_InitialUEMessage,
                                           initialUEMessage_p);
 }

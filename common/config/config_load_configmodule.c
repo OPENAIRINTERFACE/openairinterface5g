@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -197,25 +197,40 @@ int i;
    return cfgptr;
 }
 
-void end_configmodule()
+
+/* free memory allocated when reading parameters */
+/* config module could be initialized again after this call */
+void end_configmodule(void)
 { 
   if (cfgptr != NULL) {
       if (cfgptr->end != NULL) {
          printf ("[CONFIG] calling config module end function...\n"); 
          cfgptr->end();
       }
+
+      printf ("[CONFIG] free %u config value pointers\n",cfgptr->numptrs);  
+      for(int i=0; i<cfgptr->numptrs ; i++) {
+          if (cfgptr->ptrs[i] != NULL) {
+             free(cfgptr->ptrs[i]);
+             cfgptr->ptrs[i]=NULL;
+          }
+      }
+      cfgptr->numptrs=0;
+  }
+}
+
+/* free all memory used by config module */
+/* should be called only at program exit */
+void free_configmodule(void)
+{ 
+  if (cfgptr != NULL) {
+      end_configmodule();
       if( cfgptr->cfgmode != NULL) free(cfgptr->cfgmode);
       printf ("[CONFIG] free %u config parameter pointers\n",cfgptr->num_cfgP);  
       for (int i=0; i<cfgptr->num_cfgP; i++) {
           if ( cfgptr->cfgP[i] != NULL) free(cfgptr->cfgP[i]);
           }
-      printf ("[CONFIG] free %u config value pointers\n",cfgptr->numptrs);  
-      for(int i=0; i<cfgptr->numptrs ; i++) {
-          if (cfgptr->ptrs[i] != NULL) {
-             free(cfgptr->ptrs[i]);
-          }
-          cfgptr->ptrs[i]=NULL;
-      }
+
 
   free(cfgptr);
   cfgptr=NULL;

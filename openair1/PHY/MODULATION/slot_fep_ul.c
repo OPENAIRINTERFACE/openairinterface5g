@@ -19,10 +19,12 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "modulation_eNB.h"
 //#define DEBUG_FEP
+
+
 
 int slot_fep_ul(RU_t *ru,
                 unsigned char l,
@@ -134,7 +136,7 @@ int slot_fep_ul(RU_t *ru,
   }
 
 #ifdef DEBUG_FEP
-  LOG_D(PHY,"slot_fep: done\n");
+  //  LOG_D(PHY,"slot_fep: done\n");
 #endif
   return(0);
 }
