@@ -453,7 +453,6 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   int f,sf;
 
 
-  LOG_I(PHY,"rx_fh_if4p5 CALLED\n");
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full;
@@ -465,7 +464,6 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
 
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
   do {
-    LOG_I(PHY,"rx_fh_if4p5: Calling recv_IF4p5\n"); 
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
     if (oai_exit == 1 || ru->cmd== STOP_RU) break;
     if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
@@ -477,7 +475,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
     } else if (packet_type == IF4p5_PRACH) {
       // nothing in RU for RAU
     }
-    LOG_I(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
+    LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
 
   //caculate timestamp_rx, timestamp_tx based on frame and subframe
@@ -1882,7 +1880,7 @@ static void* ru_thread( void* param ) {
       }
       if (oai_exit == 1) break;
 
-      LOG_I(PHY,"RU thread %d, frame %d, subframe %d \n",ru->idx, frame, subframe);
+      LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",ru->idx, frame, subframe);
       if (ru->fh_south_in && ru->state == RU_RUN ) ru->fh_south_in(ru,&frame,&subframe);
       else AssertFatal(1==0, "No fronthaul interface at south port");
 
@@ -1925,7 +1923,7 @@ static void* ru_thread( void* param ) {
 
       else {
 
-        LOG_I(PHY,"RU thread %d, frame %d, subframe %d \n",
+        LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",
               ru->idx,frame,subframe);
 
         if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
@@ -1952,14 +1950,15 @@ static void* ru_thread( void* param ) {
 	pthread_mutex_lock(&proc->mutex_eNBs);
 	if (proc->instance_cnt_eNBs==0) proc->instance_cnt_eNBs--;
 	pthread_mutex_unlock(&proc->mutex_eNBs);
-        if (ru->num_eNB>0) wakeup_eNBs(ru);
+        if (ru->num_eNB>0) {
+            wakeup_eNBs(ru);
 
-	LOG_I(PHY,"RU %d: Waiting for eNB to complete\n",ru->idx);
+	    LOG_I(PHY,"RU %d: Waiting for eNB to complete\n",ru->idx);
         // wait until eNBs are finished subframe RX n and TX n+4
-	sprintf(strname,"ru_thread %d (condeNBs)",ru->idx);
-        wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,strname);
-	LOG_I(PHY,"RU %d: continuing\n",ru->idx);
-
+	    sprintf(strname,"ru_thread %d (condeNBs)",ru->idx);
+            wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,strname);
+	    LOG_I(PHY,"RU %d: continuing\n",ru->idx);
+        }
         if(get_nprocs() <= 4){
         	// do TX front-end processing if needed (precoding and/or IDFTs)
         	if (ru->feptx_prec) ru->feptx_prec(ru);
@@ -1970,7 +1969,7 @@ static void* ru_thread( void* param ) {
                 if(!emulate_rf){
         		// do outgoing fronthaul (south) if needed
         		if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-                        LOG_I(PHY,"Calling fh_north_out\n");
+                        LOG_D(PHY,"Calling fh_north_out\n");
         		if (ru->fh_north_out) ru->fh_north_out(ru);
 		}
         }
