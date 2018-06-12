@@ -1334,7 +1334,7 @@ void wakeup_eNBs(RU_t *ru) {
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
 
-  LOG_I(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
+  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
   if (ru->num_eNB==1 && ru->eNB_top!=0 && get_nprocs() <= 4) {
     // call eNB function directly
@@ -1377,10 +1377,10 @@ void wakeup_eNBs(RU_t *ru) {
 
 
     if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) {
-      LOG_I(PHY, "ru_mask is %d \n ", proc->RU_mask[ru->proc.subframe_rx]);
-      LOG_I(PHY, "the number of RU is %d, the current ru is RU %d \n ", (1<<eNB->num_RU)-1, ru->idx);
-      LOG_I(PHY, "ru->proc.subframe_rx is %d \n", ru->proc.subframe_rx);
-      LOG_I(PHY,"Reseting mask frame %d, subframe %d, this is RU %d\n",ru->proc.frame_rx, ru->proc.subframe_rx, ru->idx);
+      LOG_D(PHY, "ru_mask is %d \n ", proc->RU_mask[ru->proc.subframe_rx]);
+      LOG_D(PHY, "the number of RU is %d, the current ru is RU %d \n ", (1<<eNB->num_RU)-1, ru->idx);
+      LOG_D(PHY, "ru->proc.subframe_rx is %d \n", ru->proc.subframe_rx);
+      LOG_D(PHY,"Reseting mask frame %d, subframe %d, this is RU %d\n",ru->proc.frame_rx, ru->proc.subframe_rx, ru->idx);
       proc->RU_mask[ru->proc.subframe_rx] = 0;
       clock_gettime(CLOCK_MONOTONIC,&t);
       //stop_meas(&proc->ru_arrival_time);
@@ -1392,11 +1392,11 @@ void wakeup_eNBs(RU_t *ru) {
       AssertFatal(0==pthread_mutex_unlock(&proc->mutex_RU),"");
 
       // unlock RUs that are waiting for eNB processing to be completed
-      LOG_I(PHY,"RU %d wakeup eNB top for for subframe %d\n", ru->idx,ru->proc.subframe_rx);
+      LOG_D(PHY,"RU %d wakeup eNB top for for subframe %d\n", ru->idx,ru->proc.subframe_rx);
       if (ru->wait_cnt == 0) ru->eNB_top(eNB_list[0],proc->frame_rx,proc->subframe_rx,string,ru);
 
       AssertFatal(0==pthread_mutex_lock(&ruproc->mutex_eNBs),"");
-      LOG_I(PHY,"RU %d sending signal to unlock waiting ru_threads\n", ru->idx);
+      LOG_D(PHY,"RU %d sending signal to unlock waiting ru_threads\n", ru->idx);
       AssertFatal(0==pthread_cond_broadcast(&ruproc->cond_eNBs),"");
       if (ruproc->instance_cnt_eNBs==-1) ruproc->instance_cnt_eNBs++;
       AssertFatal(0==pthread_mutex_unlock(&ruproc->mutex_eNBs),"");
@@ -1953,11 +1953,11 @@ static void* ru_thread( void* param ) {
         if (ru->num_eNB>0) {
             wakeup_eNBs(ru);
 
-	    LOG_I(PHY,"RU %d: Waiting for eNB to complete\n",ru->idx);
+	    LOG_D(PHY,"RU %d: Waiting for eNB to complete\n",ru->idx);
         // wait until eNBs are finished subframe RX n and TX n+4
 	    sprintf(strname,"ru_thread %d (condeNBs)",ru->idx);
             wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,strname);
-	    LOG_I(PHY,"RU %d: continuing\n",ru->idx);
+	    LOG_D(PHY,"RU %d: continuing\n",ru->idx);
         }
         if(get_nprocs() <= 4){
         	// do TX front-end processing if needed (precoding and/or IDFTs)

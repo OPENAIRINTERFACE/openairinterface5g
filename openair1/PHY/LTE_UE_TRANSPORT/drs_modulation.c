@@ -99,7 +99,7 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
   }
 
   for (l = (3 - fp->Ncp),u=u0,v=v0,cyclic_shift=cyclic_shift0;
-       l<frame_parms->symbols_per_tti;
+       l<fp->symbols_per_tti;
        l += (7 - fp->Ncp),u=u1,v=v1,cyclic_shift=cyclic_shift1) {
 
     drs_offset = 0;
@@ -109,7 +109,7 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
 
 
     re_offset = fp->first_carrier_offset;
-    subframe_offset = subframe*fp->symbols_per_tti*frame_parms->ofdm_symbol_size;
+    subframe_offset = subframe*fp->symbols_per_tti*fp->ofdm_symbol_size;
     symbol_offset = subframe_offset + fp->ofdm_symbol_size*l;
 
 
