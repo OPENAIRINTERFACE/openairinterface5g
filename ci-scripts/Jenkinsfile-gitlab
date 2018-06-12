@@ -21,8 +21,8 @@ pipeline {
                     if ("MERGE".equals(env.gitlabActionType)) {
                         // GitLab-Jenkins pugin integration is lacking to perform the merge by itself
                         // Doing it manually --> it may have merge conflicts
-                        sh "./scripts/doGitLabMerge.sh ${env.gitlabSourceBranch} ${env.gitlabMergeRequestLastCommit} ${env.gitlabTargetBranch} ${GIT_COMMIT}"
-                        sh "./scripts/checkCodingFormattingRules.sh ${env.gitlabSourceBranch} ${env.gitlabTargetBranch}"
+                        sh "./ci-scripts/doGitLabMerge.sh ${env.gitlabSourceBranch} ${env.gitlabMergeRequestLastCommit} ${env.gitlabTargetBranch} ${GIT_COMMIT}"
+                        sh "./ci-scripts/checkCodingFormattingRules.sh ${env.gitlabSourceBranch} ${env.gitlabTargetBranch}"
                         def res=readFile('./oai_rules_result.txt').trim();
                         if ("0".equals(res)) {
                             addGitLabMRComment comment: "All Changed files in Merge Request follow OAI Formatting Rules"
@@ -32,7 +32,7 @@ pipeline {
                     } else {
                         echo "Git Branch      is ${GIT_BRANCH}"
                         echo "Git Commit      is ${GIT_COMMIT}"
-                        sh "./scripts/checkCodingFormattingRules.sh"
+                        sh "./ci-scripts/checkCodingFormattingRules.sh"
                     }
                 }
             }
