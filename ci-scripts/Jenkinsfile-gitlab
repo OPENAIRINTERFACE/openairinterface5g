@@ -40,6 +40,9 @@ pipeline {
     }
     post {
         always {
+            script {
+                echo "End of script"
+            }
         }
         success {
             script {
