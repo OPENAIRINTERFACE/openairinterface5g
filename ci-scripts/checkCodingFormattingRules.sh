@@ -2,7 +2,7 @@
 
 if [ $# -eq 0 ]
 then
-    NB_FILES_TO_FORMAT=`astyle --dry-run --options=scripts/astyle-options.txt --recursive *.c *.h | grep -c Formatted `
+    NB_FILES_TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt --recursive *.c *.h | grep -c Formatted `
     echo "Nb Files that do NOT follow OAI rules: $NB_FILES_TO_FORMAT"
     exit 0
 fi
@@ -32,7 +32,7 @@ then
         EXT="${filename##*.}"
         if [ $EXT = "c" ] || [ $EXT = "h" ] || [ $EXT = "cpp" ] || [ $EXT = "hpp" ]
         then
-            TO_FORMAT=`astyle --dry-run --options=scripts/astyle-options.txt $FULLFILE | grep -c Formatted `
+            TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt $FULLFILE | grep -c Formatted `
             NB_TO_FORMAT=$((NB_TO_FORMAT + TO_FORMAT))
         fi
     done
