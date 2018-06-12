@@ -67,8 +67,8 @@ uint16_t nr_pbch_extract(int **rxdataF,
   uint8_t i,j,aarx,aatx;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
-  int rx_offset = frame_parms->ofdm_symbol_size-3*12;
-  int ch_offset = frame_parms->N_RB_DL*6-3*12;
+  int rx_offset = frame_parms->ofdm_symbol_size-10*12;
+  int ch_offset = frame_parms->N_RB_DL*6-10*12;
   int nushiftmod4 = frame_parms->nushift%4;
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {

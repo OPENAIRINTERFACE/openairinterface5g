@@ -42,6 +42,7 @@
 
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/sss_nr.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 
 extern openair0_config_t openair0_cfg[];
 static  nfapi_config_request_t config_t;
