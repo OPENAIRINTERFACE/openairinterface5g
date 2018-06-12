@@ -258,7 +258,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     set_default_frame_parms_single(config,&ue->frame_parms);
     nr_init_frame_parms_ue(config,&ue->frame_parms);
 
-    nr_gold_pbch(ue);
+    //nr_gold_pbch(ue);
     ret = pbch_detection(ue,mode);
     //   write_output("rxdata2.m","rxd2",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 

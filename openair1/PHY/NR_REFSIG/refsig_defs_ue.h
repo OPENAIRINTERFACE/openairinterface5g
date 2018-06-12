@@ -40,4 +40,6 @@ int nr_pbch_dmrs_rx(unsigned int *nr_gold_pbch,	int32_t *output	);
 						int length_dmrs,
 						unsigned short nb_pdsch_rb);*/
 
+void nr_gold_pbch(PHY_VARS_NR_UE* ue);
+
 #endif
