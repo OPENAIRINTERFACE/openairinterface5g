@@ -42,4 +42,12 @@ int nr_pbch_dmrs_rx(unsigned int *nr_gold_pbch,	int32_t *output	);
 
 void nr_gold_pbch(PHY_VARS_NR_UE* ue);
 
+void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
+					unsigned short lbar,
+					unsigned int nr_gold_pdsch[2][20][2][21],
+					unsigned int Nid_cell,
+					unsigned short *n_idDMRS,
+					unsigned short length_dmrs);
+
+
 #endif

@@ -64,7 +64,7 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 
 }
 
-void nr_gold_pdsch(/*LTE_DL_FRAME_PARMS *frame_parms*/unsigned short lbar,unsigned int nr_gold_pdsch[2][20][2][21],unsigned int Nid_cell, unsigned short *n_idDMRS, unsigned short length_dmrs)
+void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned int nr_gold_pdsch[2][20][2][21],unsigned int Nid_cell, unsigned short *n_idDMRS, unsigned short length_dmrs)
 {
 
   unsigned char ns,l;
@@ -73,7 +73,7 @@ void nr_gold_pdsch(/*LTE_DL_FRAME_PARMS *frame_parms*/unsigned short lbar,unsign
   unsigned int nid;
 
   /// to be updated from higher layer
-  unsigned short lbar = 0;
+  //unsigned short lbar = 0;
 
   for (nscid=0; nscid<2; nscid++) {
     if (n_idDMRS)
