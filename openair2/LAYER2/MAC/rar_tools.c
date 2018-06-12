@@ -28,10 +28,10 @@
 
  */
 
-#include "defs.h"
-#include "proto.h"
-#include "extern.h"
-#include "SIMULATION/TOOLS/defs.h"
+#include "mac.h"
+#include "mac_proto.h"
+#include "mac_extern.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "UTIL/LOG/log.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -98,7 +98,7 @@ fill_rar(const module_id_t module_idP,
     return (ra->rnti);
 }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //------------------------------------------------------------------------------
 unsigned short
 fill_rar_br(eNB_MAC_INST * eNB,

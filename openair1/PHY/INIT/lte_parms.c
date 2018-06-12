@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
+#include "phy_init.h"
 #include "log.h"
 
 uint16_t dl_S_table_normal[10]={3,9,10,11,12,3,9,10,11,6};

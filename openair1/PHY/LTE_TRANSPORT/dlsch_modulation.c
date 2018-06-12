@@ -29,14 +29,14 @@
  * \note
  * \warning
  */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/CODING/defs.h"
-#include "PHY/CODING/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/CODING/coding_defs.h"
+#include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "PHY/LTE_TRANSPORT/defs.h"
-#include "defs.h"
+#include "PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
 
 //#define DEBUG_DLSCH_MODULATION
 #define NEW_ALLOC_RE
@@ -95,42 +95,7 @@ uint8_t is_not_UEspecRS(int8_t lprime, uint8_t re, uint8_t nushift, uint8_t Ncp,
   return(0);
 }
 
-void generate_64qam_table(void)
-{
 
-  int a,b,c,index;
-
-
-  for (a=-1; a<=1; a+=2)
-    for (b=-1; b<=1; b+=2)
-      for (c=-1; c<=1; c+=2) {
-        index = (1+a)*2 + (1+b) + (1+c)/2;
-        qam64_table[index] = -a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3))); // 0 1 2
-      }
-}
-
-void generate_16qam_table(void)
-{
-
-  int a,b,index;
-
-  for (a=-1; a<=1; a+=2)
-    for (b=-1; b<=1; b+=2) {
-      index = (1+a) + (1+b)/2;
-      qam16_table[index] = -a*(QAM16_n1 + (b*QAM16_n2));
-    }
-}
-
-void generate_qpsk_table(void)
-{
-
-  int a,index;
-
-  for (a=-1; a<=1; a+=2) {
-    index = (1+a)/2;
-    qpsk_table[index] = -a*QPSK;  
-  }
-}
 
 
 
@@ -1970,48 +1935,6 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
   return(0);
 }
 
-uint8_t get_pmi(uint8_t N_RB_DL, MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb)
-{
-  /*
-  MIMO_mode_t mode   = dlsch_harq->mimo_mode;
-  uint32_t pmi_alloc = dlsch_harq->pmi_alloc;
-  */
-
-  switch (N_RB_DL) {
-    case 6:   // 1 PRB per subband
-      if (mode <= PUSCH_PRECODING1)
-        return((pmi_alloc>>(rb<<1))&3);
-      else
-        return((pmi_alloc>>rb)&1);
-
-      break;
-
-    default:
-    case 25:  // 4 PRBs per subband
-      if (mode <= PUSCH_PRECODING1)
-        return((pmi_alloc>>((rb>>2)<<1))&3);
-      else
-        return((pmi_alloc>>(rb>>2))&1);
-
-      break;
-
-    case 50: // 6 PRBs per subband
-      if (mode <= PUSCH_PRECODING1)
-        return((pmi_alloc>>((rb/6)<<1))&3);
-      else
-        return((pmi_alloc>>(rb/6))&1);
-
-      break;
-
-    case 100: // 8 PRBs per subband
-      if (mode <= PUSCH_PRECODING1)
-        return((pmi_alloc>>((rb>>3)<<1))&3);
-      else
-        return((pmi_alloc>>(rb>>3))&1);
-
-      break;
-  }
-}
 
 
 inline int check_skip(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) __attribute__((always_inline));

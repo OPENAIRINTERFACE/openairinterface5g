@@ -287,11 +287,12 @@ int main(int n, char **v)
   if (signal(SIGINT, force_stop) == SIG_ERR) abort();
   if (signal(SIGTSTP, force_stop) == SIG_ERR) abort();
 
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   /* read messages */
   while (run) {
-    char v[T_BUFFER_MAX];
     event e;
-    e = get_event(socket, v, database);
+    e = get_event(socket, &ebuf, database);
     if (e.type == -1) { printf("disconnected? let's quit gently\n"); break; }
     handle_event(h, e);
   }

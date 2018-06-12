@@ -44,7 +44,12 @@
 
 #include "PHY/types.h"
 
-#include "PHY/defs.h"
+#include "PHY/INIT/phy_init.h"
+
+#include "PHY/defs_eNB.h"
+#include "SCHED/sched_eNB.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -55,22 +60,14 @@
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
-#include "PHY/extern.h"
-#include "SCHED/extern.h"
-#include "LAYER2/MAC/extern.h"
+#include "PHY/phy_extern.h"
 
-#include "../../SIMU/USER/init_lte.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
-#include "PHY_INTERFACE/defs.h"
-#ifdef SMBV
-#include "PHY/TOOLS/smbv.h"
-unsigned short config_frames[4] = {2,9,11,13};
-#endif
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
@@ -78,7 +75,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
-//#include "PHY/TOOLS/time_meas.h"
+
 
 #ifndef OPENAIR2
 #include "UTIL/OTG/otg_extern.h"
@@ -121,7 +118,9 @@ extern int transmission_mode;
 
 extern int oaisim_flag;
 
-uint16_t sf_ahead=4;
+//uint16_t sf_ahead=4;
+extern uint16_t sf_ahead;
+
 
 //pthread_t                       main_eNB_thread;
 
@@ -151,7 +150,7 @@ void stop_eNB(int nb_inst);
 int wakeup_tx(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc);
 int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc);
 void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #endif
 extern int codingw;
@@ -213,14 +212,14 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   // if this is IF5 or 3GPP_eNB
   if (eNB && eNB->RU_list && eNB->RU_list[0] && eNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
     wakeup_prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
 #endif
   }
 //LOG_I(PHY,"eNB_uespec_RX proc RX %d.%d TX %d.%d \n", proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);/////////////*********added
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) {
-    phy_procedures_eNB_uespec_RX(eNB, proc, no_relay );
+    phy_procedures_eNB_uespec_RX(eNB, proc);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 1 );
 
@@ -247,9 +246,8 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 0 );
   if(oai_exit) return(-1);
   if(eNB->single_thread_flag || get_nprocs() <= 4){
-    phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
+    phy_procedures_eNB_TX(eNB, proc, 1);
   }
-
 
   stop_meas( &softmodem_stats_rxtx_sf );
 
@@ -328,8 +326,7 @@ static void* tx_thread(void* param) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_ENB,proc->frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_ENB,proc->frame_rx);
     
-//LOG_I(PHY,"tx thread proc RX %d.%d TX %d.%d \n", proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);/////////////*********added
-    phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
+    phy_procedures_eNB_TX(eNB, proc, 1);
     if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
 	
     pthread_mutex_lock( &proc->mutex_rxtx );
@@ -355,8 +352,19 @@ static void* tx_thread(void* param) {
 static void* eNB_thread_rxtx( void* param ) {
 
   static int eNB_thread_rxtx_status;
-  eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
-  eNB_rxtx_proc_t *proc = &eNB_proc->proc_rxtx[0];
+  //eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
+  eNB_rxtx_proc_t *proc;
+
+  // Working
+  if(nfapi_mode ==2){
+	  proc = (eNB_rxtx_proc_t*)param;
+  }
+  else{
+	  eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
+	  proc = &eNB_proc->proc_rxtx[0];
+  }
+
+
   PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
   //RU_proc_t *ru_proc = NULL;
 
@@ -412,7 +420,7 @@ static void* eNB_thread_rxtx( void* param ) {
     if(get_nprocs() >= 8)      wakeup_tx(eNB,eNB->proc.ru_proc);
     else if(get_nprocs() > 4)
     {  
-      phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
+      phy_procedures_eNB_TX(eNB, proc, 1);
       wakeup_txfh(proc,eNB->proc.ru_proc);
     }
 
@@ -478,6 +486,8 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
 
 int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc) {
   
+	if(ru_proc == NULL)
+		return(0);
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
@@ -707,7 +717,7 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 
 }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 
   eNB_proc_t *proc = &eNB->proc;
@@ -796,7 +806,7 @@ static void* eNB_thread_prach( void* param ) {
 
     LOG_D(PHY,"Running eNB prach procedures\n");
     prach_procedures(eNB
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		     ,0
 #endif
 		     );
@@ -810,7 +820,7 @@ static void* eNB_thread_prach( void* param ) {
   return &eNB_thread_prach_status;
 }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 /*!
  * \brief The prach receive thread of eNB for BL/CE UEs.
  * \param param is a \ref eNB_proc_t structure which contains the info what to process.
@@ -855,7 +865,6 @@ extern void init_td_thread(PHY_VARS_eNB *);
 extern void init_te_thread(PHY_VARS_eNB *);
 extern void kill_td_thread(PHY_VARS_eNB *);
 extern void kill_te_thread(PHY_VARS_eNB *);
-//////////////////////////////////////need to modified////////////////*****
 
 static void* process_stats_thread(void* param) {
 
@@ -896,7 +905,7 @@ void init_eNB_proc(int inst) {
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
   pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   pthread_attr_t *attr_prach_br=NULL;
 #endif
 
@@ -942,7 +951,7 @@ void init_eNB_proc(int inst) {
     pthread_attr_init( &proc->attr_asynch_rxtx);
     pthread_attr_init( &proc_rxtx[0].attr_rxtx);
     pthread_attr_init( &proc_rxtx[1].attr_rxtx);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     proc->instance_cnt_prach_br    = -1;
     proc->RU_mask_prach_br=0;
     pthread_mutex_init( &proc->mutex_prach_br, NULL);
@@ -954,7 +963,7 @@ void init_eNB_proc(int inst) {
     attr0       = &proc_rxtx[0].attr_rxtx;
     attr1       = &proc_rxtx[1].attr_rxtx;
     attr_prach  = &proc->attr_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     attr_prach_br  = &proc->attr_prach_br;
 #endif
 
@@ -968,14 +977,15 @@ void init_eNB_proc(int inst) {
       init_td_thread(eNB);
     }
 
+
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 
-    if (eNB->single_thread_flag==0) {
+    if (eNB->single_thread_flag==0 && nfapi_mode!=2) {
       pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
       pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
     }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     pthread_create( &proc->pthread_prach_br, attr_prach_br, eNB_thread_prach_br, eNB );
 #endif
     char name[16];
@@ -1059,7 +1069,7 @@ void kill_eNB_proc(int inst) {
     LOG_I(PHY, "Destroying prach mutex/cond\n");
     pthread_mutex_destroy( &proc->mutex_prach );
     pthread_cond_destroy( &proc->cond_prach );
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     proc->instance_cnt_prach_br = 0;
     pthread_cond_signal( &proc->cond_prach_br );
     pthread_join( proc->pthread_prach_br, (void**)&status );    
@@ -1209,7 +1219,7 @@ void init_eNB_afterRU(void) {
       LOG_I(PHY,"Overwriting eNB->prach_vars.rxsigF[0]:%p\n", eNB->prach_vars.rxsigF[0]);
 
       eNB->prach_vars.rxsigF[0] = (int16_t**)malloc16(64*sizeof(int16_t*));
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       for (int ce_level=0;ce_level<4;ce_level++) {
         LOG_I(PHY,"Overwriting eNB->prach_vars_br.rxsigF.rxsigF[0]:%p\n", eNB->prach_vars_br.rxsigF[ce_level]);
         eNB->prach_vars_br.rxsigF[ce_level] = (int16_t**)malloc16(64*sizeof(int16_t*));
@@ -1232,7 +1242,7 @@ void init_eNB_afterRU(void) {
 	for (i=0;i<eNB->RU_list[ru_id]->nb_rx;aa++,i++) { 
 	  LOG_I(PHY,"Attaching RU %d antenna %d to eNB antenna %d\n",eNB->RU_list[ru_id]->idx,i,aa);
 	  eNB->prach_vars.rxsigF[0][aa]    =  eNB->RU_list[ru_id]->prach_rxsigF[i];
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	  for (int ce_level=0;ce_level<4;ce_level++)
 	    eNB->prach_vars_br.rxsigF[ce_level][aa] = eNB->RU_list[ru_id]->prach_rxsigF_br[ce_level][i];
 #endif
@@ -1285,7 +1295,7 @@ void init_eNB_afterRU(void) {
     
     RC.ru[ru_id]->wakeup_rxtx         = wakeup_rxtx;
     RC.ru[ru_id]->wakeup_prach_eNB    = wakeup_prach_eNB;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     RC.ru[ru_id]->wakeup_prach_eNB_br = wakeup_prach_eNB_br;
 #endif
     RC.ru[ru_id]->eNB_top             = eNB_top;

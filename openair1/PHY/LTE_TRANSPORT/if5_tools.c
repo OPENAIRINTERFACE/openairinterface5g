@@ -30,7 +30,7 @@
 * \warning
 */
 
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 #include "PHY/TOOLS/alaw_lut.h"
 
 #include "time_utils.h"

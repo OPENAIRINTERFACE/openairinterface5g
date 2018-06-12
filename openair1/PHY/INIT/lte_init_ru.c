@@ -19,14 +19,13 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
-#include "SCHED/defs.h"
-#include "PHY/extern.h"
-#include "SIMULATION/TOOLS/defs.h"
+#include "phy_init.h"
+#include "SCHED/sched_eNB.h"
+#include "PHY/phy_extern.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
-#include "LAYER2/MAC/extern.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
@@ -99,7 +98,7 @@ int phy_init_RU(RU_t *ru) {
     for (i=0; i<ru->nb_rx; i++) {
       ru->prach_rxsigF[i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
       LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       for (j=0;j<4;j++) {
 	ru->prach_rxsigF_br[j][i] = (int16_t*)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
 	LOG_D(PHY,"[INIT] prach_vars_br->rxsigF[%d] = %p\n",i,ru->prach_rxsigF_br[j][i]);
@@ -177,7 +176,7 @@ void phy_free_RU(RU_t *ru)
 
     for (i = 0; i < ru->nb_rx; i++) {
       free_and_zero(ru->prach_rxsigF[i]);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       for (j = 0; j < 4; j++) free_and_zero(ru->prach_rxsigF_br[j][i]);
 #endif
     }

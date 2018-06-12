@@ -36,7 +36,7 @@
 #ifndef __OCG_H__
 #define __OCG_H__
 
-#include "PHY/defs.h"
+#include "PHY/defs_common.h"
 #include "PHY/impl_defs_top.h"
 #include "platform_types.h"
 

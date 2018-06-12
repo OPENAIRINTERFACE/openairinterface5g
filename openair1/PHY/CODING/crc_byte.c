@@ -31,7 +31,7 @@
 */
 
 
-#include "defs.h"
+#include "coding_defs.h"
 
 
 /*ref 36-212 v8.6.0 , pp 8-9 */

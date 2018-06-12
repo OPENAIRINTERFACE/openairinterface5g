@@ -32,7 +32,7 @@
 
 #ifndef __IF4_TOOLS_H__
 #define __IF4_TOOLS_H__
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 
 /// Macro for IF4 packet type
 #define IF4p5_PACKET_TYPE 0x080A 

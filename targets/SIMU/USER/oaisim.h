@@ -26,15 +26,16 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "SIMULATION/TOOLS/defs.h"
-#include "SIMULATION/RF/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
+#include "SIMULATION/RF/rf.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 #include "oaisim_config.h"
 #include "init_lte.h"
 
 #ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/mac.h"
 #include "UTIL/OMV/structures.h"
 #endif
 

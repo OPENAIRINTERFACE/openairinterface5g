@@ -36,14 +36,15 @@
 #include <execinfo.h>
 #include <signal.h>
 
-#include "SIMULATION/TOOLS/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/vars.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_vars.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED/sched_common_vars.h"
+#include "LAYER2/MAC/mac_vars.h"
 
 #include "OCG_vars.h"
 #include "UTIL/LOG/log.h"
@@ -56,7 +57,18 @@
 
 #include "dummy_functions.c"
 
+#include "PHY/MODULATION/modulation_common.h"
+#include "PHY/MODULATION/modulation_eNB.h"
+#include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED_UE/sched_UE.h"
+#include "common/config/config_load_configmodule.h"
+#include "PHY/INIT/phy_init.h"
 
+void feptx_ofdm(RU_t *ru);
+void feptx_prec(RU_t *ru);
 
 double cpuf;
 
@@ -540,7 +552,6 @@ int main(int argc, char **argv)
   DCI_ALLOC_t da;
   DCI_ALLOC_t *dci_alloc = &da;
 
-  unsigned int ret;
   unsigned int coded_bits_per_codeword=0,nsymb; //,tbs=0;
 
   unsigned int tx_lev=0,tx_lev_dB=0,trials;
@@ -563,16 +574,6 @@ int main(int argc, char **argv)
   unsigned char input_trch_file=0;
   FILE *input_fd=NULL;
   unsigned char input_file=0;
-  //  char input_val_str[50],input_val_str2[50];
-
-  char input_trch_val[16];
-
-  //  unsigned char pbch_pdu[6];
-
-
-
-
-  //  FILE *rx_frame_file;
 
   int n_frames;
   int n_ch_rlz = 1;
@@ -595,7 +596,7 @@ int main(int argc, char **argv)
   // void *data;
   // int ii;
   //  int bler;
-  double blerr[4],uncoded_ber=0; //,avg_ber;
+  double blerr[4];
   short *uncoded_ber_bit=NULL;
   uint8_t N_RB_DL=25,osf=1;
   frame_t frame_type = FDD;
@@ -1594,13 +1595,13 @@ int main(int argc, char **argv)
 
 	    eNB->abstraction_flag=0;
 	    schedule_response(&sched_resp);
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,1);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,1);
 
 	    if (uncoded_ber_bit == NULL) {
 	      // this is for user 0 only
 	      printf("nb_rb %d, rb_alloc %x, mcs %d\n",
 		     eNB->dlsch[0][0]->harq_processes[0]->nb_rb,
-		     eNB->dlsch[0][0]->harq_processes[0]->rb_alloc,
+		     eNB->dlsch[0][0]->harq_processes[0]->rb_alloc[0],
 		     eNB->dlsch[0][0]->harq_processes[0]->mcs);
 
 	      coded_bits_per_codeword = get_G(&eNB->frame_parms,
@@ -1636,7 +1637,7 @@ int main(int argc, char **argv)
 	    proc_eNB->subframe_tx = subframe+1;
 	    sched_resp.subframe=subframe+1;
 	    schedule_response(&sched_resp);
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,0);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,0);
 
 
 	    ru->proc.subframe_tx=(subframe+1)%10;
@@ -1725,7 +1726,7 @@ int main(int argc, char **argv)
 
 	  dci_received = UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id]->dci_received;
 
-	  phy_procedures_UE_RX(UE,proc,0,0,dci_flag,normal_txrx,no_relay,NULL);
+	  phy_procedures_UE_RX(UE,proc,0,0,dci_flag,normal_txrx);
 
 	  dci_received = dci_received - UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id]->dci_received;
 

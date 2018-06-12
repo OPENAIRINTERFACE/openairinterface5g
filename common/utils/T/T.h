@@ -110,6 +110,16 @@ typedef struct {
 extern volatile int *T_freelist_head;
 extern T_cache_t *T_cache;
 
+/* When running the basic simulator, we may fill the T cache too fast.
+ * Let's not crash if it's full, just wait.
+ */
+#if BASIC_SIMULATOR
+#  define T_BASIC_SIMULATOR_WAIT \
+     while (T_cache[T_LOCAL_slot].busy) usleep(100)
+#else
+#  define T_BASIC_SIMULATOR_WAIT /* */
+#endif
+
 /* used at header of Tn, allocates buffer */
 #define T_LOCAL_DATA \
   char *T_LOCAL_buf; \
@@ -118,6 +128,7 @@ extern T_cache_t *T_cache;
   T_LOCAL_slot = __sync_fetch_and_add(T_freelist_head, 1) \
                  & (T_CACHE_SIZE - 1); \
   (void)__sync_fetch_and_and(T_freelist_head, T_CACHE_SIZE - 1); \
+  T_BASIC_SIMULATOR_WAIT; \
   if (T_cache[T_LOCAL_slot].busy) { \
     printf("%s:%d:%s: T cache is full - consider increasing its size\n", \
            __FILE__, __LINE__, __FUNCTION__); \
