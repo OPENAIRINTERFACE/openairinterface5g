@@ -64,6 +64,9 @@ int pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
         ue->rx_offset);
 #endif
 
+  int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
+  frame_parms->nb_prefix_samples0 = 0;
+
   //symbol 1
   slot_fep_pbch(ue,
     	   1,
@@ -87,6 +90,8 @@ int pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
     	   ue->rx_offset,
     	   0,
     	   1);
+
+  frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
 
   pbch_decoded = 0;
 

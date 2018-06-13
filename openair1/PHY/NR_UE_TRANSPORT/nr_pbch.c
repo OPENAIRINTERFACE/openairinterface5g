@@ -65,28 +65,30 @@ uint16_t nr_pbch_extract(int **rxdataF,
 
   uint16_t rb;
   uint8_t i,j,aarx,aatx;
-  int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
+  int32_t *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
   int rx_offset = frame_parms->ofdm_symbol_size-10*12;
   int ch_offset = frame_parms->N_RB_DL*6-10*12;
-  int nushiftmod4 = frame_parms->nushift%4;
+  int nushiftmod4 = frame_parms->nushift;
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    /*
-    printf("extract_rbs (nushift %d): symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",frame_parms->nushift,symbol_mod,
-     (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
-     LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
-    */
-
+    
+    printf("extract_rbs (nushift %d): rx_offset=%d, ch_offset=%d symbol %d\n",frame_parms->nushift,
+     (rx_offset + (symbol*(frame_parms->ofdm_symbol_size))),
+	   LTE_CE_OFFSET+ch_offset+(symbol*(frame_parms->ofdm_symbol_size)),symbol);
+    
     rxF        = &rxdataF[aarx][(rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))];
     rxF_ext    = &rxdataF_ext[aarx][symbol*(20*12)];
+#ifdef DEBUG_PBCH
+     int16_t *p = (int16_t *)rxF;
+     for (int i =0; i<240;i++){
+        printf("rxF [%d]= %d\n",i,rxF[i]);
+      printf("pbch pss %d %d @%p\n", p[2*i], p[2*i+1], &p[2*i]);
+     }
+#endif
 
     for (rb=0; rb<20; rb++) {
-      // skip DC carrier
-      if (rb==10) {
-        rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))];
-      }
-
+      
       if ((symbol==1) || (symbol==3)) {
         j=0;
 
@@ -94,7 +96,9 @@ uint16_t nr_pbch_extract(int **rxdataF,
           if ((i!=nushiftmod4) &&
               (i!=(nushiftmod4+4)) &&
               (i!=(nushiftmod4+8))) {
-            rxF_ext[j++]=rxF[i];
+            rxF_ext[j]=rxF[i];
+	    //printf("rxF ext[%d] = %d rxF [%d]= %d\n",j,rxF_ext[j],i,rxF[i]);
+	    j++;
           }
         }
 
@@ -106,10 +110,12 @@ uint16_t nr_pbch_extract(int **rxdataF,
         	if ((i!=nushiftmod4) &&
         	    (i!=(nushiftmod4+4)) &&
         	    (i!=(nushiftmod4+8))) {
-        	  rxF_ext[j++]=rxF[i];
+        	  rxF_ext[j]=rxF[i];
+		  //printf("rxF ext[%d] = %d at %p\n",j,rxF_ext[j],&rxF[i]);
+		  j++;
         	}
     	  }
-    	}
+	}
 
         rxF+=12;
         rxF_ext+=8;
@@ -125,9 +131,6 @@ uint16_t nr_pbch_extract(int **rxdataF,
       dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*(20*12)];
 
       for (rb=0; rb<20; rb++) {
-        // skip DC carrier
-        // if (rb==3) dl_ch0++;
-    	memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
         if ((symbol==1) || (symbol==3)) {
           j=0;
 
@@ -135,7 +138,9 @@ uint16_t nr_pbch_extract(int **rxdataF,
                     if ((i!=nushiftmod4) &&
                         (i!=(nushiftmod4+4)) &&
                         (i!=(nushiftmod4+8))) {
-                      rxF_ext[j++]=rxF[i];
+                           dl_ch0_ext[j]=dl_ch0[i];
+			   //printf("dl ch0 ext[%d] = %d dl_ch0 [%d]= %d\n",j,dl_ch0_ext[j],i,dl_ch0[i]);
+		           j++;
                     }
           	  }
 
@@ -145,10 +150,11 @@ uint16_t nr_pbch_extract(int **rxdataF,
         else { //symbol 2
               if ((rb < 4) && (rb >15)){
               	  for (i=0; i<12; i++) {
-                      	if ((i!=nushiftmod4) &&
-                       	    (i!=(nushiftmod4+4)) &&
-                      	    (i!=(nushiftmod4+8))) {
-                       		dl_ch0_ext[j++]=dl_ch0[i];
+                    if ((i!=nushiftmod4) &&
+                        (i!=(nushiftmod4+4)) &&
+                        (i!=(nushiftmod4+8))) {
+		           dl_ch0_ext[j]=dl_ch0[i];
+			   j++;
                        	}
                	  }
               }
@@ -507,13 +513,14 @@ static unsigned char dummy_w_rx[3*3*(16+PBCH_A)];
 static int8_t pbch_w_rx[3*3*(16+PBCH_A)],pbch_d_rx[96+(3*(16+PBCH_A))];
 
 
-uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc,
-                 NR_UE_PBCH *nr_ue_pbch_vars,
-                 NR_DL_FRAME_PARMS *frame_parms,
-                 uint8_t eNB_id,
-                 MIMO_mode_t mimo_mode,
-                 uint32_t high_speed_flag,
-                 uint8_t frame_mod4)
+uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
+		     UE_nr_rxtx_proc_t *proc,
+		     NR_UE_PBCH *nr_ue_pbch_vars,
+		     NR_DL_FRAME_PARMS *frame_parms,
+		     uint8_t eNB_id,
+		     MIMO_mode_t mimo_mode,
+		     uint32_t high_speed_flag,
+		     uint8_t frame_mod4)
 {
 
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
@@ -547,8 +554,12 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc,
   for (symbol=1; symbol<4; symbol++) {
 
 #ifdef DEBUG_PBCH
-    msg("[PBCH] starting extract\n");
+    msg("[PBCH] starting extract ofdm size %d\n",frame_parms->ofdm_symbol_size );
 #endif
+
+    printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
+write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,2,1);
+  
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,
                  nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].dl_ch_estimates[eNB_id],
                  nr_ue_pbch_vars->rxdataF_ext,
