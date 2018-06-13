@@ -190,11 +190,11 @@ int slot_fep_pbch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
         start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-      /*  nr_pbch_channel_estimation(ue,eNB_id,0,
+        nr_pbch_channel_estimation(ue,eNB_id,0,
                                   Ns,
                                   aa,
                                   l,
-                                  symbol);*/
+                                  symbol);
       }
 
 

@@ -42,6 +42,7 @@
 
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/sss_nr.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 
 extern openair0_config_t openair0_cfg[];
 static  nfapi_config_request_t config_t;
@@ -256,7 +257,8 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     set_default_frame_parms_single(config,&ue->frame_parms);
     nr_init_frame_parms_ue(config,&ue->frame_parms);
-    //generate_dmrs_pbch(ue->dmrs_pbch_bitmap_nr, frame_parms->Nid_cell);
+
+    nr_gold_pbch(ue);
     ret = pbch_detection(ue,mode);
     //   write_output("rxdata2.m","rxd2",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 

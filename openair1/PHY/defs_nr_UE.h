@@ -769,14 +769,14 @@ typedef struct {
 
 #endif
 
-  /// UE-specific reference symbols (p=5), TM 7
-  uint32_t lte_gold_uespec_port5_table[20][38];
+  /// PBCH DMRS sequence
+  uint32_t nr_gold_pbch[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
 
-  /// ue-specific reference symbols
-  uint32_t lte_gold_uespec_table[2][20][2][21];
+  /// PDSCH DMRS
+  uint32_t nr_gold_pdsch[2][20][2][21];
 
-  /// mbsfn reference symbols
-  uint32_t lte_gold_mbsfn_table[10][3][42];
+  /// PDCCH DMRS
+  uint32_t nr_gold_pdcch[10][3][42];
 
   uint32_t X_u[64][839];
 
