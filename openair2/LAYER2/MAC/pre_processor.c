@@ -1082,11 +1082,13 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
 #ifdef TM5
   // This has to be revisited!!!!
   for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; CC_id++) {
-  i1 = 0;
-  i2 = 0;
-  i3 = 0;
+    COMMON_channels_t *cc = &RC.mac[Mod_id]->common_channels[CC_id];
+    int N_RBG = to_rbg(cc->mib->message.dl_Bandwidth);
+    i1 = 0;
+    i2 = 0;
+    i3 = 0;
 
-  for (j = 0; j < N_RBG[CC_id]; j++) {
+    for (j = 0; j < N_RBG; j++) {
       if (MIMO_mode_indicator[CC_id][j] == 2) {
       i1 = i1 + 1;
       } else if (MIMO_mode_indicator[CC_id][j] == 1) {
@@ -1094,27 +1096,27 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
       } else if (MIMO_mode_indicator[CC_id][j] == 0) {
       i3 = i3 + 1;
       }
-  }
+    }
 
-  if ((i1 < N_RBG[CC_id]) && (i2 > 0) && (i3 == 0)) {
+    if ((i1 < N_RBG) && (i2 > 0) && (i3 == 0)) {
       PHY_vars_eNB_g[Mod_id][CC_id]->check_for_SUMIMO_transmissions =
       PHY_vars_eNB_g[Mod_id][CC_id]->
       check_for_SUMIMO_transmissions + 1;
-  }
+    }
 
-  if (i3 == N_RBG[CC_id] && i1 == 0 && i2 == 0) {
+    if (i3 == N_RBG && i1 == 0 && i2 == 0) {
       PHY_vars_eNB_g[Mod_id][CC_id]->FULL_MUMIMO_transmissions =
       PHY_vars_eNB_g[Mod_id][CC_id]->FULL_MUMIMO_transmissions +
       1;
-  }
+    }
 
-  if ((i1 < N_RBG[CC_id]) && (i3 > 0)) {
+    if ((i1 < N_RBG) && (i3 > 0)) {
       PHY_vars_eNB_g[Mod_id][CC_id]->check_for_MUMIMO_transmissions =
       PHY_vars_eNB_g[Mod_id][CC_id]->
       check_for_MUMIMO_transmissions + 1;
-  }
+    }
 
-  PHY_vars_eNB_g[Mod_id][CC_id]->check_for_total_transmissions =
+    PHY_vars_eNB_g[Mod_id][CC_id]->check_for_total_transmissions =
       PHY_vars_eNB_g[Mod_id][CC_id]->check_for_total_transmissions +
       1;
 
