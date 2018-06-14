@@ -527,6 +527,16 @@ static void dump_dl(Sched_Rsp_t *d)
 /* debug utility functions end                                              */
 /****************************************************************************/
 
+void DCI_indication(nr_nfapi_dci_indication_t dci_indication){
+
+}
+
+void RX_request(){
+
+}
+
+
+
 void UL_indication(UL_IND_t *UL_info)
 {
 

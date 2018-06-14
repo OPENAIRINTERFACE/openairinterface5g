@@ -61,34 +61,33 @@ typedef struct{
   sub_frame_t subframe;
 
   /// harq indication list
-  nfapi_harq_indication_t harq_ind;
+  //nfapi_harq_indication_t harq_ind;
 
   /// crc indication list
-  nfapi_crc_indication_t crc_ind;
+  //nfapi_crc_indication_t crc_ind;
 
   /// SR indication list
-  nfapi_sr_indication_t sr_ind;
+  //nfapi_sr_indication_t sr_ind;
 
   /// CQI indication list
-  nfapi_cqi_indication_body_t cqi_ind;
+  //nfapi_cqi_indication_body_t cqi_ind;
 
   /// RACH indication list
-  nfapi_rach_indication_t rach_ind;
+  //nfapi_rach_indication_t rach_ind;
 
-#ifdef Rel14
-  /// RACH indication list for BR UEs
-  nfapi_rach_indication_t rach_ind_br;
-#endif
 
   /// SRS indication list
-  nfapi_srs_indication_body_t srs_ind;
+  //nfapi_srs_indication_body_t srs_ind;
 
   /// RX indication
-  nfapi_rx_indication_t rx_ind;
+  //nfapi_rx_indication_t rx_ind;
+
 
 } UL_IND_t;
 
 // Downlink subframe P7
+
+
 
 
 typedef struct{
