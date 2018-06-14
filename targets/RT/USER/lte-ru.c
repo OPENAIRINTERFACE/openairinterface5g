@@ -1948,8 +1948,7 @@ void* pre_scd_thread( void* param ){
 
         for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
 
-          rrc_rx_tx(&ctxt, 0,     // eNB index, unused in eNB
-              CC_id);
+          rrc_rx_tx(&ctxt, CC_id);
           min_rb_unit[CC_id] = get_min_rb_unit(Mod_id, CC_id);
         }
 
@@ -2004,7 +2003,7 @@ static void* eNB_thread_phy_tx( void* param ) {
     if(ru->num_eNB == 1){
        proc_rxtx.subframe_tx = proc->subframe_phy_tx;
        proc_rxtx.frame_tx = proc->frame_phy_tx;
-       phy_procedures_eNB_TX(eNB_list[0], &proc_rxtx, no_relay, NULL, 1);
+       phy_procedures_eNB_TX(eNB_list[0], &proc_rxtx, 1);
        phy_tx_txdataF_end = 1;
        if(pthread_mutex_lock(&ru->proc.mutex_rf_tx) != 0){
           LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for rf tx thread (IC %d)\n", ru->proc.instance_cnt_rf_tx);

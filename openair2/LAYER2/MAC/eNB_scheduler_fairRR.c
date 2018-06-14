@@ -127,7 +127,11 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
         for (lc_id = DCCH; lc_id <= DTCH; lc_id++) {
             rlc_status =
                     mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP,
-                            ENB_FLAG_YES, MBMS_FLAG_NO, lc_id, 0);
+                            ENB_FLAG_YES, MBMS_FLAG_NO, lc_id, 0
+#ifdef Rel14
+                            ,0, 0
+#endif
+                    );
             UE_template.dl_buffer_total += rlc_status.bytes_in_buffer; //storing the total dlsch buffer
         }
          // end of store dlsch buffer
