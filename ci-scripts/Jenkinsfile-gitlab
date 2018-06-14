@@ -48,7 +48,7 @@ pipeline {
         stage ("Local Build") {
             steps {
                 gitlabCommitStatus(name: "Local Build") {
-                    sh "./ci-scripts/buildLocally.sh $WORKSPACE"
+                    sh "./ci-scripts/buildLocally.sh --workspace $WORKSPACE"
                 }
             }
             post {
