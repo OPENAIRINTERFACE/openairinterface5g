@@ -252,11 +252,10 @@ void nr_crc_computation(uint8_t* input, uint8_t* output, uint16_t payloadBits, u
 
         unsigned int crcBits;   
         crcBits = crcPayload(input2, payloadBits, crc256Table);
-
+	
         //create crc in byte
         unsigned int mask2=0x80000000; //100...
-        output = (uint8_t*)malloc(sizeof(uint8_t)*crcParityBits);
-
+        
         for(uint8_t ind=0; ind<crcParityBits; ind++)
         {
                 if(crcBits & mask2)
@@ -264,7 +263,7 @@ void nr_crc_computation(uint8_t* input, uint8_t* output, uint16_t payloadBits, u
                 else
                         output[ind]=0;
 
-                mask2 = mask2 >> 1;
+		mask2 = mask2 >> 1;
         }
       
 }

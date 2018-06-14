@@ -137,7 +137,6 @@ uint32_t poly24c = 0xB2B11700; //101100101011000100010111 -> D^24...
 
 	polarParams->crc256Table = malloc(sizeof(uint32_t)*256);	
 	crcTable256Init(polarParams->crc_polynomial, polarParams->crc256Table);
-
 	polarParams->Q_0_Nminus1 = nr_polar_sequence_pattern(polarParams->n);
 
 	polarParams->interleaving_pattern = malloc(sizeof(uint16_t) * polarParams->K);

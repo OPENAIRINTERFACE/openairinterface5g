@@ -121,7 +121,8 @@ int main(int argc, char *argv[]) {
 		SNR_lin = pow(10, SNR/10);
 		for (itr = 1; itr <= iterations; itr++) {
 
-		for(int i=0; i<testLength; i++) testInput[i]=(uint8_t) (rand() % 2);
+		for(int i=0; i<testLength; i++) 
+			testInput[i]=(uint8_t) (rand() % 2);
 
 		start_meas(&timeEncoder);
 		polar_encoder(testInput, encoderOutput, &nrPolar_params);

@@ -37,8 +37,10 @@ void polar_encoder(
 	//nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(input, polarParams->crc_generator_matrix,
 	//		polarParams->nr_polar_crc, polarParams->payloadBits, polarParams->crcParityBits);
 	//for (uint8_t i = 0; i < polarParams->crcParityBits; i++) polarParams->nr_polar_crc[i] = (polarParams->nr_polar_crc[i] % 2);
+	
 	// --- NEW ---
 	nr_crc_computation(input, polarParams->nr_polar_crc, polarParams->payloadBits, polarParams->crcParityBits, polarParams->crc256Table);
+	
 
 	//Attach CRC to the Transport Block. (a to b)
 	for (uint16_t i = 0; i < polarParams->payloadBits; i++) polarParams->nr_polar_b[i] = input[i];
@@ -56,10 +58,16 @@ void polar_encoder(
 	// --- OLD ---
 	//nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(polarParams->nr_polar_u, polarParams->G_N, polarParams->nr_polar_d, polarParams->N, polarParams->N);
 	//for (uint16_t i = 0; i < polarParams->N; i++) polarParams->nr_polar_d[i] = (polarParams->nr_polar_d[i] % 2);
+	//printf("\nd old: ");
+	//for (uint16_t i = 0; i < polarParams->N; i++) 
+	//printf("%i ", polarParams->nr_polar_d[i]); 
+
 	// --- NEW ---
 	nr_polar_kernal_operation(polarParams->nr_polar_u, polarParams->nr_polar_d, polarParams->N);
-
-	for (uint16_t i = 0; i < polarParams->N; i++) polarParams->nr_polar_d[i] = (polarParams->nr_polar_d[i] % 2);
+	//printf("\nd new: ");
+	//for (uint16_t i = 0; i < polarParams->N; i++) 
+	//	printf("%i ", polarParams->nr_polar_d[i]); 
+	//for (uint16_t i = 0; i < polarParams->N; i++) polarParams->nr_polar_d[i] = (polarParams->nr_polar_d[i] % 2);
 
 	//Rate matching
 	//Sub-block interleaving (d to y) and Bit selection (y to e)

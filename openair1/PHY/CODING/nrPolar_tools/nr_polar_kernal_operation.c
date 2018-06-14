@@ -16,11 +16,14 @@ void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N)
         	d[i]=0;
         	for(j=0; j<N; j++) // ... looking at all the elements of u
         	{
-            		d[i]=d[i] || ( (!(j-i)) | (!i) )*u[j];
+            		//d[i]=d[i] || ( (!(j-i)) | (!i) )*u[j];
+
+			d[i]=d[i] ^ (!( (j-i)& i ))*u[j];
         	}
 
 		//d[i]=d[i]%2; // modulo 2
     	}
+
 
 /*
 	__m256i maddReg, uReg, orReg;
