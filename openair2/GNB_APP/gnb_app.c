@@ -84,14 +84,14 @@ static void configure_phy(module_id_t enb_id, const Enb_properties_array_t* enb_
 */
 
 /*------------------------------------------------------------------------------*/
-static void configure_nrrrc(uint32_t gnb_id)
+static void configure_nr_rrc(uint32_t gnb_id)
 {
   MessageDef *msg_p = NULL;
   //  int CC_id;
 
   msg_p = itti_alloc_new_message (TASK_GNB_APP, NRRRC_CONFIGURATION_REQ);
 
-  if (RC.nr_rrc[gnb_id]) {
+  if (RC.nrrrc[gnb_id]) {
     RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
     
 
@@ -112,16 +112,16 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
 
   for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
     {
-      s1ap_register_gnb_req_t *s1ap_register_gNB;
+      s1ap_register_enb_req_t *s1ap_register_gNB; //Type Temporarily reuse
 
       /* note:  there is an implicit relationship between the data structure and the message name */
-      msg_p = itti_alloc_new_message (TASK_GNB_APP, S1AP_REGISTER_GNB_REQ);
+      msg_p = itti_alloc_new_message (TASK_GNB_APP, S1AP_REGISTER_ENB_REQ); //Message Temporarily reuse
 
       RCconfig_S1(msg_p, gnb_id);
 
       if (gnb_id == 0) RCconfig_gtpu();
 
-      s1ap_register_gNB = &S1AP_REGISTER_GNB_REQ(msg_p);
+      s1ap_register_gNB = &S1AP_REGISTER_ENB_REQ(msg_p); //Message Temporarily reuse
       LOG_I(GNB_APP,"default drx %d\n",s1ap_register_gNB->default_drx);
 
       LOG_I(GNB_APP,"[gNB %d] gNB_app_register for instance %d\n", gnb_id, GNB_MODULE_ID_TO_INSTANCE(gnb_id));
@@ -150,8 +150,8 @@ void *gNB_app_task(void *args_p)
   long                            gnb_register_retry_timer_id;
 # endif
   uint32_t                        gnb_id;
-  MessageDef                     *msg_p           = NULL;
-  const char                     *msg_name        = NULL;
+  MessageDef                      *msg_p           = NULL;
+  const char                      *msg_name        = NULL;
   instance_t                      instance;
   int                             result;
   /* for no gcc warnings */
@@ -161,9 +161,9 @@ void *gNB_app_task(void *args_p)
 
   LOG_I(PHY, "%s() Task ready initialise structures\n", __FUNCTION__);
 
-  //RCconfig_L1();
+  RCconfig_NR_L1();
 
-  //RCconfig_macrlc();
+  RCconfig_nr_macrlc();
 
   LOG_I(PHY, "%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_L1_inst);
 
@@ -175,14 +175,14 @@ void *gNB_app_task(void *args_p)
 
   LOG_I(GNB_APP,"Allocating gNB_RRC_INST for %d instances\n",RC.nb_nr_inst);
 
-  RC.rrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
-  LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.rrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.rrc);
+  RC.nrrrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
+  LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
 
   for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
-    RC.rrc[gnb_id] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-    LOG_I(PHY, "%s() Creating RRC instance RC.rrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.rrc[gnb_id], gnb_id+1, gnb_id_end);
-    memset((void *)RC.rrc[gnb_id],0,sizeof(gNB_RRC_INST));
-    configure_nrrrc(gnb_id);
+    RC.nrrrc[gnb_id] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
+    LOG_I(PHY, "%s() Creating RRC instance RC.nrrrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.nrrrc[gnb_id], gnb_id+1, gnb_id_end);
+    memset((void *)RC.nrrrc[gnb_id],0,sizeof(gNB_RRC_INST));
+    configure_nr_rrc(gnb_id);
   }
 
 # if defined(ENABLE_USE_MME)

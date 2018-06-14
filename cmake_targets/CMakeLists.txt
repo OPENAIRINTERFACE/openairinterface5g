@@ -350,7 +350,7 @@ add_custom_command (
 add_list2_option(NR_RRC_ASN1_VERSION "NR_Rel15" "ASN.1 version of NR_RRC interface")
 
 if (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
-  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-Definitions.asn)
+  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-38331-f10.asn)
 endif  (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
 
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
@@ -359,7 +359,7 @@ if(NOT EXISTS ${asn1c_call})
 message( FATAL_ERROR "The script ${asn1c_call} must be present" )
 endif(NOT EXISTS ${asn1c_call})
 
-message("calling ASN1C_PREFIX=NR_ asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
+message("calling ASN1C_PREFIX=NR_ asn1c -findirect-choice -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
 execute_process(COMMAND ${asn1c_call}  
 			${NR_RRC_FULL_DIR} 
 			${NR_RRC_GRAMMAR}
@@ -388,8 +388,10 @@ file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
 file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
 set(nr_rrc_h ${nr_rrc_h} ${NR_RRC_FULL_DIR}/asn1_constants.h)
 set_source_files_properties(${nr_rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
-add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source}
-    ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
+add_library(NR_RRC_LIB 
+	    ${nr_rrc_h} 
+	    ${nr_rrc_source}
+            ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
 include_directories ("${NR_RRC_FULL_DIR}")
 
 # add the command to generate the source code
@@ -433,6 +435,7 @@ execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
                 RESULT_VARIABLE ret)
 
+
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -447,6 +450,7 @@ add_custom_command (
   COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
   DEPENDS ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
 )
+
 
 add_library(S1AP_LIB
   ${S1AP_source}
@@ -491,10 +495,19 @@ endif(${X2AP_VERSION} STREQUAL "R14")
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
 
 set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${ASN1RELDIR})
+
 message("calling asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}")
+
 execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
                 RESULT_VARIABLE ret)
+
+#execute_process(COMMAND ${asn1c_call}  
+#			${X2AP_C_DIR} 
+#			${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
+#			X2AP
+#                       RESULT_VARIABLE ret)
+
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -509,6 +522,13 @@ add_custom_command (
   COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
   DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
   )
+
+#add_custom_command (
+#  OUTPUT ${X2AP_C_DIR}/X2AP_asn_constant.h
+#  COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES} X2AP
+#  COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_VERSION}
+#  DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
+#  )
 
 add_library(X2AP_LIB
   ${X2AP_source}
@@ -794,6 +814,7 @@ include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
+include_directories("${OPENAIR2_DIR}/GNB_APP")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP")
@@ -1299,12 +1320,15 @@ add_library(PHY_RU ${PHY_SRC_RU})
 #Layer 2 library
 #####################
 set(MAC_DIR ${OPENAIR2_DIR}/LAYER2/MAC)
+set(NR_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB)
 set(PHY_INTERFACE_DIR ${OPENAIR2_DIR}/PHY_INTERFACE)
+set(NR_PHY_INTERFACE_DIR ${OPENAIR2_DIR}/NR_PHY_INTERFACE)
 set(RLC_DIR ${OPENAIR2_DIR}/LAYER2/RLC)
 set(RLC_UM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/UM_v9.3.0)
 set(RLC_AM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/AM_v9.3.0)
 set(RLC_TM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/TM_v9.3.0)
 set(RRC_DIR ${OPENAIR2_DIR}/RRC/LTE)
+set(NR_RRC_DIR ${OPENAIR2_DIR}/RRC/NR)
 set(PDCP_DIR  ${OPENAIR2_DIR}/LAYER2/PDCP_v10.1.0)
 set(L2_SRC
   ${OPENAIR2_DIR}/LAYER2/openair2_proc.c
@@ -1350,6 +1374,8 @@ set(L2_SRC
   ${RRC_DIR}/L2_interface.c
   ${RRC_DIR}/L2_interface_common.c
   ${RRC_DIR}/L2_interface_ue.c
+  ${NR_RRC_DIR}/rrc_gNB.c
+  ${NR_RRC_DIR}/nr_rrc_common.c
   )
 
 set(L2_SRC_UE
@@ -1413,6 +1439,9 @@ set (MAC_SRC
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
   ${MAC_DIR}/config_ue.c
+  ${NR_PHY_INTERFACE_DIR}/IF_Module.c
+  ${NR_MAC_DIR}/main.c
+  ${NR_MAC_DIR}/config.c
  )
 
 set (MAC_SRC_UE
@@ -1430,10 +1459,16 @@ set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/RRC_config_tools.c
   )
 
+set (GNB_APP_SRC
+  ${OPENAIR2_DIR}/GNB_APP/gnb_app.c
+  ${OPENAIR2_DIR}/GNB_APP/gnb_config.c
+  )
+
 add_library(L2
   ${L2_SRC}
   ${MAC_SRC}
-  ${ENB_APP_SRC})
+  ${ENB_APP_SRC}
+  ${GNB_APP_SRC})
 #  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
 
 add_library(L2_UE
@@ -2124,6 +2159,7 @@ add_executable(nr-softmodem
   ${OPENAIR_TARGETS}/RT/USER/nr-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_TARGETS}/COMMON/create_nr_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
@@ -2142,7 +2178,7 @@ target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB}
-  RRC_LIB S1AP_LIB S1AP_ENB L2
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 

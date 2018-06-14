@@ -186,6 +186,10 @@ typedef enum {
     RRH,
     X2AP,
     MAX_LOG_COMPONENTS,
+    GNB_APP,
+    NR_RRC,
+    NR_MAC,
+    NR_PHY,
 }
 comp_name_t;
 

@@ -50,7 +50,7 @@
 #include "PHY/defs_L1_NB_IoT.h"
 
 #include "RRC/LTE/defs_NB_IoT.h"
-#include "RRC/NR/defs_NR.h"
+#include "RRC/NR/nr_rrc_defs.h"
 
 typedef struct {
   /// RAN context config file name
@@ -69,14 +69,20 @@ typedef struct {
   int nb_macrlc_inst;
   /// Number of NB_IoT MACRLC instances in this node
   int nb_nb_iot_macrlc_inst;
+  /// Number of NR MACRLC instances in this node
+  int nb_nr_macrlc_inst;
   /// Number of component carriers per instance in this node
   int *nb_mac_CC;
   /// Number of L1 instances in this node
   int nb_L1_inst;
   /// Number of NB_IoT L1 instances in this node
   int nb_nb_iot_L1_inst;
+  /// Number of NR L1 instances in this node
+  int nb_nr_L1_inst;  
   /// Number of Component Carriers per instance in this node
   int *nb_L1_CC;
+  /// Number of NR Component Carriers per instance in this node
+  int *nb_nr_L1_CC;
   /// Number of RU instances in this node
   int nb_RU;
   /// FlexRAN context variables
@@ -97,6 +103,8 @@ typedef struct {
   struct eNB_MAC_INST_s **mac;
   /// NB_IoT MAC context variables
   struct eNB_MAC_INST_NB_IoT_s **nb_iot_mac;
+  /// NR MAC context variables
+  struct gNB_MAC_INST_s **nrmac;
   /// GTPu descriptor 
   gtpv1u_data_t *gtpv1u_data_g;
   /// RU descriptors. These describe what each radio unit is supposed to do and contain the necessary functions for fronthaul interfaces

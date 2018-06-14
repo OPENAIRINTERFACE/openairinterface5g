@@ -76,7 +76,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #if defined(ENABLE_ITTI)
 #include "intertask_interface_init.h"
-#include "create_tasks.h"
+#include "create_nr_tasks.h"
 #endif
 
 #include "PHY/INIT/phy_init.h"
@@ -1048,7 +1048,7 @@ int main( int argc, char **argv )
   if (RC.nb_inst > 0)  {
     
     // don't create if node doesn't connect to RRC/S1/GTP
-      if (create_tasks(1) < 0) {
+      if (create_gNB_tasks(1) < 0) {
         printf("cannot create ITTI tasks\n");
         exit(-1); // need a softer mode
       }

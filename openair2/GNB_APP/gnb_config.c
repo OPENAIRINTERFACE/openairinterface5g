@@ -1,3 +1,32 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+/*
+  enb_config.c
+  -------------------
+  AUTHOR  : Lionel GAUTHIER, navid nikaein, Laurent Winckel
+  COMPANY : EURECOM
+  EMAIL   : Lionel.Gauthier@eurecom.fr, navid.nikaein@eurecom.fr
+*/
+
 #include <string.h>
 #include <inttypes.h>
 
@@ -18,7 +47,8 @@
 // #include "SystemInformationBlockType2.h"
 // #include "LAYER2/MAC/extern.h"
 // #include "LAYER2/MAC/proto.h"
-#include "PHY/extern.h"
+#include "PHY/phy_extern.h"
+#include "PHY/INIT/phy_init.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
@@ -29,6 +59,170 @@
 #include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
 
+extern uint16_t sf_ahead;
+
+void RCconfig_NR_L1(void) {
+  int               i,j;
+  paramdef_t L1_Params[] = L1PARAMS_DESC;
+  paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
+
+
+  if (RC.gNB == NULL) {
+    RC.gNB                       = (PHY_VARS_gNB ***)malloc((1+NUMBER_OF_gNB_MAX)*sizeof(PHY_VARS_gNB**));
+    LOG_I(NR_PHY,"RC.gNB = %p\n",RC.gNB);
+    memset(RC.gNB,0,(1+NUMBER_OF_gNB_MAX)*sizeof(PHY_VARS_gNB**));
+    RC.nb_nr_L1_CC = malloc((1+RC.nb_nr_L1_inst)*sizeof(int));
+  }
+
+  config_getlist( &L1_ParamList,L1_Params,sizeof(L1_Params)/sizeof(paramdef_t), NULL);
+
+  if (L1_ParamList.numelt > 0) {
+
+    for (j = 0; j < RC.nb_nr_L1_inst; j++) {
+      RC.nb_nr_L1_CC[j] = *(L1_ParamList.paramarray[j][L1_CC_IDX].uptr);
+
+      if (RC.gNB[j] == NULL) {
+        RC.gNB[j]                       = (PHY_VARS_gNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_gNB*));
+        LOG_I(NR_PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
+        memset(RC.gNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_gNB*));
+      }
+
+      for (i=0;i<RC.nb_nr_L1_CC[j];i++) {
+        if (RC.gNB[j][i] == NULL) {
+          RC.gNB[j][i] = (PHY_VARS_gNB *)malloc(sizeof(PHY_VARS_gNB));
+          memset((void*)RC.gNB[j][i],0,sizeof(PHY_VARS_gNB));
+          LOG_I(PHY,"RC.eNB[%d][%d] = %p\n",j,i,RC.gNB[j][i]);
+          RC.gNB[j][i]->Mod_id  = j;
+          RC.gNB[j][i]->CC_id   = i;
+        }
+      }
+
+      if(strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
+        sf_ahead = 4; // Need 4 subframe gap between RX and TX
+      }else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
+        RC.gNB[j][0]->eth_params_n.local_if_name            = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_IF_NAME_IDX].strptr));
+        RC.gNB[j][0]->eth_params_n.my_addr                  = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_ADDRESS_IDX].strptr));
+        RC.gNB[j][0]->eth_params_n.remote_addr              = strdup(*(L1_ParamList.paramarray[j][L1_REMOTE_N_ADDRESS_IDX].strptr));
+        RC.gNB[j][0]->eth_params_n.my_portc                 = *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTC_IDX].iptr);
+        RC.gNB[j][0]->eth_params_n.remote_portc             = *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTC_IDX].iptr);
+        RC.gNB[j][0]->eth_params_n.my_portd                 = *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTD_IDX].iptr);
+        RC.gNB[j][0]->eth_params_n.remote_portd             = *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTD_IDX].iptr);
+        RC.gNB[j][0]->eth_params_n.transp_preference        = ETH_UDP_MODE;
+
+        sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
+
+        RC.nb_nr_macrlc_inst = 1;  // This is used by mac_top_init_gNB()
+
+        // This is used by init_gNB_afterRU()
+        RC.nb_nr_CC = (int *)malloc((1+RC.nb_nr_inst)*sizeof(int));
+        RC.nb_nr_CC[0]=1;
+
+        RC.nb_nr_inst =1; // DJP - feptx_prec uses num_gNB but phy_init_RU uses nb_nr_inst
+
+        LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_inst=1 this is because phy_init_RU() uses that to index and not RC.num_gNB - why the 2 similar variables?\n", __FUNCTION__);
+        LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_CC[0]=%d for init_gNB_afterRU()\n", __FUNCTION__, RC.nb_nr_CC[0]);
+        LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_macrlc_inst:%d because used by mac_top_init_gNB()\n", __FUNCTION__, RC.nb_nr_macrlc_inst);
+
+        mac_top_init_gNB();
+
+        configure_nfapi_pnf(RC.gNB[j][0]->eth_params_n.remote_addr, RC.gNB[j][0]->eth_params_n.remote_portc, RC.gNB[j][0]->eth_params_n.my_addr, RC.gNB[j][0]->eth_params_n.my_portd, RC.gNB[j][0]->eth_params_n     .remote_portd);
+      }else { // other midhaul
+      } 
+    }// for (j = 0; j < RC.nb_nr_L1_inst; j++)
+    printf("Initializing northbound interface for L1\n");
+    l1_north_init_gNB();
+  }else{
+    LOG_I(PHY,"No " CONFIG_STRING_L1_LIST " configuration found");    
+
+    // DJP need to create some structures for VNF
+
+    j = 0;
+
+    RC.nb_nr_L1_CC = malloc((1+RC.nb_nr_L1_inst)*sizeof(int)); // DJP - 1 lot then???
+
+    RC.nb_nr_L1_CC[j]=1; // DJP - hmmm
+
+    if (RC.gNB[j] == NULL) {
+      RC.gNB[j]                       = (PHY_VARS_gNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_gNB**));
+      LOG_I(PHY,"RC.gNB[%d] = %p\n",j,RC.gNB[j]);
+      memset(RC.gNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_gNB***));
+    }
+
+    for (i=0;i<RC.nb_nr_L1_CC[j];i++) {
+      if (RC.gNB[j][i] == NULL) {
+        RC.gNB[j][i] = (PHY_VARS_gNB *)malloc(sizeof(PHY_VARS_gNB));
+        memset((void*)RC.gNB[j][i],0,sizeof(PHY_VARS_gNB));
+        LOG_I(PHY,"RC.gNB[%d][%d] = %p\n",j,i,RC.gNB[j][i]);
+        RC.gNB[j][i]->Mod_id  = j;
+        RC.gNB[j][i]->CC_id   = i;
+      }
+    } // END for (i=0;i<RC.nb_nr_L1_CC[j];i++)
+  
+  }
+}
+
+void RCconfig_nr_macrlc() {
+  int               j;
+
+  paramdef_t MacRLC_Params[] = MACRLCPARAMS_DESC;
+  paramlist_def_t MacRLC_ParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
+
+  config_getlist( &MacRLC_ParamList,MacRLC_Params,sizeof(MacRLC_Params)/sizeof(paramdef_t), NULL);    
+  
+  if ( MacRLC_ParamList.numelt > 0) {
+
+    RC.nb_macrlc_inst=MacRLC_ParamList.numelt; 
+    mac_top_init_eNB();   
+    RC.nb_mac_CC = (int*)malloc(RC.nb_macrlc_inst*sizeof(int));
+
+    for (j=0;j<RC.nb_macrlc_inst;j++) {
+      RC.nb_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
+      //RC.mac[j]->phy_test = *(MacRLC_ParamList.paramarray[j][MACRLC_PHY_TEST_IDX].iptr);
+      //printf("PHY_TEST = %d,%d\n", RC.mac[j]->phy_test, j);
+
+      if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
+  // check number of instances is same as RRC/PDCP
+  
+      } else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "cudu") == 0) {
+  RC.mac[j]->eth_params_n.local_if_name            = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
+  RC.mac[j]->eth_params_n.my_addr                  = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
+  RC.mac[j]->eth_params_n.remote_addr              = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_ADDRESS_IDX].strptr));
+  RC.mac[j]->eth_params_n.my_portc                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTC_IDX].iptr);
+  RC.mac[j]->eth_params_n.remote_portc             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTC_IDX].iptr);
+  RC.mac[j]->eth_params_n.my_portd                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTD_IDX].iptr);
+  RC.mac[j]->eth_params_n.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTD_IDX].iptr);;
+  RC.mac[j]->eth_params_n.transp_preference        = ETH_UDP_MODE;
+      } else { // other midhaul
+  AssertFatal(1==0,"MACRLC %d: %s unknown northbound midhaul\n",j, *(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr));
+      } 
+
+      if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_L1") == 0) {
+
+  
+      } else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr), "nfapi") == 0) {
+  RC.mac[j]->eth_params_s.local_if_name            = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_S_IF_NAME_IDX].strptr));
+  RC.mac[j]->eth_params_s.my_addr                  = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_S_ADDRESS_IDX].strptr));
+  RC.mac[j]->eth_params_s.remote_addr              = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_ADDRESS_IDX].strptr));
+  RC.mac[j]->eth_params_s.my_portc                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_S_PORTC_IDX].iptr);
+  RC.mac[j]->eth_params_s.remote_portc             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTC_IDX].iptr);
+  RC.mac[j]->eth_params_s.my_portd                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_S_PORTD_IDX].iptr);
+  RC.mac[j]->eth_params_s.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTD_IDX].iptr);
+  RC.mac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
+
+        sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
+
+        printf("**************** vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
+        configure_nfapi_vnf(RC.mac[j]->eth_params_s.my_addr, RC.mac[j]->eth_params_s.my_portc);
+        printf("**************** RETURNED FROM configure_nfapi_vnf() vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
+      } else { // other midhaul
+  AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
+      } 
+    }// j=0..num_inst
+  } else {// MacRLC_ParamList.numelt > 0
+    AssertFatal (0,
+           "No " CONFIG_STRING_MACRLC_LIST " configuration found");     
+  }
+}
 
 int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
@@ -186,6 +380,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int32_t                PDCCH_interleaverSize                                         = 0;
   int32_t                PDCCH_shiftIndex                                              = 0;  
   int32_t                PDCCH_precoderGranularity                                     = 0;
+  int32_t                PDCCH_TCI_StateId                                             = 0;
   char*                  tci_PresentInDCI                                              = NULL;
 
   //NR PDCCH-ConfigCommon commonSearchSpaces
@@ -223,6 +418,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   uint32_t               RateMatchPatternLTE_CRS_radioframeAllocationOffset            = 0;
   int32_t                RateMatchPatternLTE_CRS_subframeAllocation_choice             = 0;
 
+  int32_t                srb1_timer_poll_retransmit    = 0;
+  int32_t                srb1_timer_reordering         = 0;
+  int32_t                srb1_timer_status_prohibit    = 0;
+  int32_t                srb1_poll_pdu                 = 0;
+  int32_t                srb1_poll_byte                = 0;
+  int32_t                srb1_max_retx_threshold       = 0;
+
   int32_t             my_int;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
@@ -230,8 +432,8 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
   ////////// Physical parameters
-  checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
-  paramdef_t CCsParams[] = CCPARAMS_DESC;
+  checkedparam_t config_check_CCparams[] = NRCCPARAMS_CHECK;
+  paramdef_t CCsParams[] = NRCCPARAMS_DESC;
   paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
   
   paramdef_t SRB1Params[] = SRB1PARAMS_DESC;  
@@ -313,7 +515,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         sprintf(gnbpath,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k),
         config_getlist( &CCsParamList,NULL,0,gnbpath); 
     
-        LOG_I(NRRRC,"num component carriers %d \n", num_component_carriers); 
+        LOG_I(NR_RRC,"num component carriers %d \n", num_component_carriers); 
 
         if ( CCsParamList.numelt> 0) {
           
@@ -386,16 +588,28 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                            RC.config_file_name, i, frame_type);
             }
 
-            if (!prefix_type){
+            if (!DL_prefix_type){
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d define %s: NORMAL,EXTENDED!\n",
-                           RC.config_file_name, i, ENB_CONFIG_STRING_PREFIX_TYPE);
-            }else if (strcmp(prefix_type, "NORMAL") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = NORMAL;
-            }else  if (strcmp(prefix_type, "EXTENDED") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = EXTENDED;
+                           RC.config_file_name, i, GNB_CONFIG_STRING_DL_PREFIX_TYPE);
+            }else if (strcmp(DL_prefix_type, "NORMAL") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_prefix_type[j] = NORMAL;
+            }else  if (strcmp(DL_prefix_type, "EXTENDED") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_prefix_type[j] = EXTENDED;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
-                           RC.config_file_name, i, prefix_type);
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for DL_prefix_type choice: NORMAL or EXTENDED !\n",
+                           RC.config_file_name, i, DL_prefix_type);
+            }
+
+            if (!UL_prefix_type){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d define %s: NORMAL,EXTENDED!\n",
+                           RC.config_file_name, i, GNB_CONFIG_STRING_UL_PREFIX_TYPE);
+            }else if (strcmp(UL_prefix_type, "NORMAL") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_prefix_type[j] = NORMAL;
+            }else  if (strcmp(UL_prefix_type, "EXTENDED") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_prefix_type[j] = EXTENDED;
+            }else {
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_prefix_type choice: NORMAL or EXTENDED !\n",
+                           RC.config_file_name, i, UL_prefix_type);
             }
 
             NRRRC_CONFIGURATION_REQ (msg_p).eutra_band[j] = eutra_band;
@@ -462,7 +676,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                 (SIB1_ssb_PeriodicityServingCell !=20) && 
                 (SIB1_ssb_PeriodicityServingCell !=40) &&
                 (SIB1_ssb_PeriodicityServingCell !=80) &&
-                (SIB1_ssb_PeriodicityServingCell !=160)&&){
+                (SIB1_ssb_PeriodicityServingCell !=160)  ){
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SIB1_ssb_PeriodicityServingCell choice: 5,10,20,40,80,160 !\n",
                            RC.config_file_name, i, SIB1_ssb_PeriodicityServingCell);
             }            
@@ -507,15 +721,15 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(DL_SCS_SubcarrierSpacing,"kHz15")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz15;
             }else if (strcmp(DL_SCS_SubcarrierSpacing,"kHz30")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz30;
             }else if (strcmp(DL_SCS_SubcarrierSpacing,"kHz60")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz60;
             }else if (strcmp(DL_SCS_SubcarrierSpacing,"kHz120")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz120;
             }else if (strcmp(DL_SCS_SubcarrierSpacing,"kHz240")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz240;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for DL_SCS_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
                            RC.config_file_name, i, DL_SCS_SubcarrierSpacing);
@@ -523,15 +737,15 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch (DL_SCS_SpecificCarrier_k0) {
               case -6:
-                NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SpecificCarrier_k0[j] =  SCS_SpecificCarrier__k0_n_6;
+                NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n_6;
                 break;
 
               case 0:
-                NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SpecificCarrier_k0[j] =  SCS_SpecificCarrier__k0_n0;
+                NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n0;
                 break;
 
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SpecificCarrier_k0[j] =  SCS_SpecificCarrier__k0_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n6;
                 break;
 
                default:
@@ -554,15 +768,15 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(DL_BWP_SubcarrierSpacing,"kHz15")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz15;
             }else if (strcmp(DL_BWP_SubcarrierSpacing,"kHz30")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz30;
             }else if (strcmp(DL_BWP_SubcarrierSpacing,"kHz60")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz60;
             }else if (strcmp(DL_BWP_SubcarrierSpacing,"kHz120")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz120;
             }else if (strcmp(DL_BWP_SubcarrierSpacing,"kHz240")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+              NRRRC_CONFIGURATION_REQ (msg_p).DL_BWP_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz240;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for DL_BWP_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
                            RC.config_file_name, i, DL_BWP_SubcarrierSpacing);
@@ -605,10 +819,10 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               RC.config_file_name, i, UL_p_Max);
             }
 
-            if (strcmp(UL_frequencyShift7p5khz, "TRUE") == 0) {
-              RRC_CONFIGURATION_REQ (msg_p).UL_frequencyShift7p5khz[j] = FrequencyInfoUL__frequencyShift7p5khz_true; //enum true = 0
-            }else if{
-              RRC_CONFIGURATION_REQ (msg_p).UL_frequencyShift7p5khz[j] = 1;//false               
+            if (strcmp(UL_frequencyShift7p5khz,"TRUE") == 0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_frequencyShift7p5khz[j] = NR_FrequencyInfoUL__frequencyShift7p5khz_true; //enum true = 0
+            }else{
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_frequencyShift7p5khz[j] = 1;//false               
             } 
 
             /////////////////////////////////NR UL SCS-SpecificCarrier///////////////////////////
@@ -619,30 +833,30 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(UL_SCS_SubcarrierSpacing,"kHz15")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz15;
             }else if (strcmp(UL_SCS_SubcarrierSpacing,"kHz30")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz30;
             }else if (strcmp(UL_SCS_SubcarrierSpacing,"kHz60")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz60;
             }else if (strcmp(UL_SCS_SubcarrierSpacing,"kHz120")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz120;
             }else if (strcmp(UL_SCS_SubcarrierSpacing,"kHz240")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz240;
             }else { AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_SCS_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
               RC.config_file_name, i, UL_SCS_SubcarrierSpacing);
             }
 
             switch (UL_SCS_SpecificCarrier_k0) {
               case -6:
-                NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SpecificCarrier_k0[j] =  SCS_SpecificCarrier__k0_n_6;
+                NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n_6;
                 break;
 
               case 0:
-                NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SpecificCarrier_k0[j] =  SCS_SpecificCarrier__k0_n0;
+                NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n0;
                 break;
 
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SpecificCarrier_k0[j] =  SCS_SpecificCarrier__k0_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n6;
                 break;
 
                default:
@@ -658,16 +872,6 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
 
-
-            //Not Sure the value selection
-            NRRRC_CONFIGURATION_REQ (msg_p).absoluteFrequencyPointA[j] = absoluteFrequencyPointA;
-                        
-            NRRRC_CONFIGURATION_REQ (msg_p).ControlResourceSetId[j] = ControlResourceSetId;
-            if ((ControlResourceSetId <0) || (ControlResourceSetId > 11)){
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ControlResourceSetId choice: 0..11 !\n",
-              RC.config_file_name, i, ControlResourceSetId);
-            }
-
             /////////////////////////////////NR BWP-UplinkCommon///////////////////////////
             NRRRC_CONFIGURATION_REQ (msg_p).UL_locationAndBandwidth[j] = UL_locationAndBandwidth;
             if ((UL_locationAndBandwidth <0) || (UL_locationAndBandwidth > 37949)){
@@ -676,15 +880,15 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(UL_BWP_SubcarrierSpacing,"kHz15")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz15;
             }else if (strcmp(UL_BWP_SubcarrierSpacing,"kHz30")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz30;
             }else if (strcmp(UL_BWP_SubcarrierSpacing,"kHz60")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz60;
             }else if (strcmp(UL_BWP_SubcarrierSpacing,"kHz120")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz120;
             }else if (strcmp(UL_BWP_SubcarrierSpacing,"kHz240")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_BWP_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz240;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_BWP_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
                            RC.config_file_name, i, UL_BWP_SubcarrierSpacing);
@@ -703,13 +907,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }  
 
             if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"shortBitmap")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap;
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap;
             }else if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"mediumBitmap")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
             }else if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"longBitmap")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap;
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap;
             }else if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"NOTHING")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = ServingCellConfigCommon__ssb_PositionsInBurst_PR_NOTHING;
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_NOTHING;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for ServingCellConfigCommon_ssb_PositionsInBurst_PR choice !\n",
                            RC.config_file_name, i, ServingCellConfigCommon_ssb_PositionsInBurst_PR);
@@ -718,27 +922,27 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch (ServingCellConfigCommon_ssb_periodicityServingCell) {
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms5;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  NR_ServingCellConfigCommon__ssb_periodicityServingCell_ms5;
                 break;
 
               case 10:
-                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms10;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  NR_ServingCellConfigCommon__ssb_periodicityServingCell_ms10;
                 break;
 
               case 20:
-                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms20;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  NR_ServingCellConfigCommon__ssb_periodicityServingCell_ms20;
                 break;
               
               case 40:
-                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms40;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  NR_ServingCellConfigCommon__ssb_periodicityServingCell_ms40;
                 break;
                           
               case 80:
-                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms80;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  NR_ServingCellConfigCommon__ssb_periodicityServingCell_ms80;
                 break;
 
               case 160:
-                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  ServingCellConfigCommon__ssb_periodicityServingCell_ms160;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_periodicityServingCell[j] =  NR_ServingCellConfigCommon__ssb_periodicityServingCell_ms160;
                 break;
 
                default:
@@ -749,11 +953,11 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch (ServingCellConfigCommon_dmrs_TypeA_Position) {
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_dmrs_TypeA_Position[j] =  ServingCellConfigCommon__dmrs_TypeA_Position_pos2;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_dmrs_TypeA_Position[j] =  NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2;
                 break;
 
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_dmrs_TypeA_Position[j] =  ServingCellConfigCommon__dmrs_TypeA_Position_pos3;
+                NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_dmrs_TypeA_Position[j] =  NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3;
                 break;
 
                default:
@@ -763,15 +967,15 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(NIA_SubcarrierSpacing,"kHz15")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+              NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz15;
             }else if (strcmp(NIA_SubcarrierSpacing,"kHz30")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+              NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz30;
             }else if (strcmp(NIA_SubcarrierSpacing,"kHz60")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+              NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz60;
             }else if (strcmp(NIA_SubcarrierSpacing,"kHz120")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+              NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz120;
             }else if (strcmp(NIA_SubcarrierSpacing,"kHz240")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+              NRRRC_CONFIGURATION_REQ (msg_p).NIA_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz240;
             }else { AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for NIA_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
               RC.config_file_name, i, NIA_SubcarrierSpacing);
             }
@@ -784,36 +988,36 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             /////////////////////////////////NR TDD-UL-DL-ConfigCommon///////////////////////////
             if (strcmp(referenceSubcarrierSpacing,"kHz15")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+              NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz15;
             }else if (strcmp(referenceSubcarrierSpacing,"kHz30")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+              NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz30;
             }else if (strcmp(referenceSubcarrierSpacing,"kHz60")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+              NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz60;
             }else if (strcmp(referenceSubcarrierSpacing,"kHz120")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+              NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz120;
             }else if (strcmp(referenceSubcarrierSpacing,"kHz240")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+              NRRRC_CONFIGURATION_REQ (msg_p).referenceSubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz240;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for referenceSubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
                   RC.config_file_name, i, referenceSubcarrierSpacing);
             }
 
             if (strcmp(dl_UL_TransmissionPeriodicity,"ms0p5")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms0p5;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms0p5;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms0p625")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms0p625;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms0p625;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms1")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms1;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms1;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms1p25")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms1p25;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms1p25;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms2")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms2;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms2;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms2p5")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms2p5;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms2p5;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms5")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms5;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms5;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms10")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms10;    
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms10;    
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for dl_UL_TransmissionPeriodicity choice: minusinfinity,ms0p5,ms0p625,ms1,ms1p25,ms2,ms2p5,ms5,ms10 !\n",
                            RC.config_file_name, i, dl_UL_TransmissionPeriodicity);
@@ -853,55 +1057,55 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             if (strcmp(rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,"oneEighth")==0) {
               
-              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth;
+              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth;
               switch (rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth){
                 case 4:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n4;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n4;
                   break;
                 case 8:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n8;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n8;
                   break;
                 case 12:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n12;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n12;
                   break;
                 case 16:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n16;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n16;
                   break;
                 case 20:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n20;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n20;
                   break;
                 case 24:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n24;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n24;
                   break;
                 case 28:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n28;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n28;
                   break;
                 case 32:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n32;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n32;
                   break;
                 case 36:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n36;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n36;
                   break;
                 case 40:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n40;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n40;
                   break;
                 case 44:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n44;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n44;
                   break;
                 case 48:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n48;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n48;
                   break;
                 case 52:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n52;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n52;
                   break;
                 case 56:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n56;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n56;
                   break;
                 case 60:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n60;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n60;
                   break;
                 case 64:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n64;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneEighth_n64;
                   break;
                 default:
                   AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth choice: 4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64!\n",
@@ -911,55 +1115,55 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             }else if (strcmp(rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,"oneFourth")==0) {
               
-              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneFourth;
+              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneFourth;
               switch (rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth){
                 case 4:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n4;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n4;
                   break;
                 case 8:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n8;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n8;
                   break;
                 case 12:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n12;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n12;
                   break;
                 case 16:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n16;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n16;
                   break;
                 case 20:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n20;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n20;
                   break;
                 case 24:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n24;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n24;
                   break;
                 case 28:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n28;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n28;
                   break;
                 case 32:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n32;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n32;
                   break;
                 case 36:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n36;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n36;
                   break;
                 case 40:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n40;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n40;
                   break;
                 case 44:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n44;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n44;
                   break;
                 case 48:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n48;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n48;
                   break;
                 case 52:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n52;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n52;
                   break;
                 case 56:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n56;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n56;
                   break;
                 case 60:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n60;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n60;
                   break;
                 case 64:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n64;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneFourth_n64;
                   break;
                 default:
                   AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth choice: 4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64!\n",
@@ -969,55 +1173,55 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             }else if (strcmp(rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,"oneHalf")==0) {
               
-              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneHalf;
+              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneHalf;
               switch (rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf){
                 case 4:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n4;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n4;
                   break;
                 case 8:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n8;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n8;
                   break;
                 case 12:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n12;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n12;
                   break;
                 case 16:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n16;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n16;
                   break;
                 case 20:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n20;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n20;
                   break;
                 case 24:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n24;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n24;
                   break;
                 case 28:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n28;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n28;
                   break;
                 case 32:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n32;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n32;
                   break;
                 case 36:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n36;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n36;
                   break;
                 case 40:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n40;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n40;
                   break;
                 case 44:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n44;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n44;
                   break;
                 case 48:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n48;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n48;
                   break;
                 case 52:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n52;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n52;
                   break;
                 case 56:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n56;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n56;
                   break;
                 case 60:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n60;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n60;
                   break;
                 case 64:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n64;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__oneHalf_n64;
                   break;
                 default:
                   AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf choice: 4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64!\n",
@@ -1027,55 +1231,55 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             }else if (strcmp(rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,"one")==0) {
               
-              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_one;
+              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_one;
               switch (rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one){
                 case 4:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n4;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n4;
                   break;
                 case 8:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n8;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n8;
                   break;
                 case 12:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n12;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n12;
                   break;
                 case 16:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n16;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n16;
                   break;
                 case 20:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n20;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n20;
                   break;
                 case 24:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n24;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n24;
                   break;
                 case 28:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n28;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n28;
                   break;
                 case 32:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n32;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n32;
                   break;
                 case 36:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n36;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n36;
                   break;
                 case 40:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n40;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n40;
                   break;
                 case 44:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n44;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n44;
                   break;
                 case 48:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n48;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n48;
                   break;
                 case 52:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n52;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n52;
                   break;
                 case 56:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n56;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n56;
                   break;
                 case 60:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n60;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n60;
                   break;
                 case 64:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n64;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n64;
                   break;
                 default:
                   AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one choice: 4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64!\n",
@@ -1085,31 +1289,31 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             }else if (strcmp(rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,"two")==0) {
               
-              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_two;
+              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_two;
               switch (rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one){
                 case 4:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n4;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n4;
                   break;
                 case 8:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n8;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n8;
                   break;
                 case 12:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n12;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n12;
                   break;
                 case 16:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n16;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n16;
                   break;
                 case 20:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n20;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n20;
                   break;
                 case 24:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n24;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n24;
                   break;
                 case 28:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n28;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n28;
                   break;
                 case 32:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n32;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__two_n32;
                   break;
                 default:
                   AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two choice: 4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64!\n",
@@ -1119,7 +1323,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             }else if (strcmp(rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,"four")==0) {
               
-              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_four;
+              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_four;
               NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four[j] = rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four;
               if ((rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four < 1) || (rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four > 16)){
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four choice: 1..16 !\n",
@@ -1128,7 +1332,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             }else if (strcmp(rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,"eight")==0) {
               
-              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_eight;
+              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_eight;
               NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight[j] = rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight;
               if ((rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight < 1) || (rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight > 8)){
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight choice: 1..8 !\n",
@@ -1137,7 +1341,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             }else if (strcmp(rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,"sixteen")==0) {
               
-              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_sixteen;    
+              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_sixteen;    
               NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen[j] = rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen;
               if ((rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen < 1) || (rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen > 4)){
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen choice: 1..4 !\n",
@@ -1145,7 +1349,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               }//End sixteen
 
             }else if (strcmp(rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,"NOTHING")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_NOTHING;    
+              NRRRC_CONFIGURATION_REQ (msg_p).rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice[j] = NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_NOTHING;    
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice: oneEighth,oneFourth,oneHalf,one,two,four,eight,sixteen !\n",
                            RC.config_file_name, i, rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice);
@@ -1156,31 +1360,31 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
               switch (rach_ra_Msg3SizeGroupA) {
                 case 56:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b56;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = NR_RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b56;
                   break;
                 case 144:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b144;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = NR_RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b144;
                   break;
                 case 208:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b208;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = NR_RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b208;
                   break;
                 case 256:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b256;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = NR_RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b256;
                   break;
                 case 282:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b282;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = NR_RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b282;
                   break;
                 case 480:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b480;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = NR_RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b480;
                   break;
                 case 640:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b640;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = NR_RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b640;
                   break;
                 case 800:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b800;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = NR_RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b800;
                   break;
                 case 1000:
-                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b1000;
+                  NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_Msg3SizeGroupA[j] = NR_RACH_ConfigCommon__groupBconfigured__ra_Msg3SizeGroupA_b1000;
                   break;
                 default:
                   AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ra_Msg3SizeGroupA choice: 56,144,208,256,282,480,640,800,1000!\n",
@@ -1189,21 +1393,21 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               }// End switch (rach_ra_Msg3SizeGroupA)
 
               if (strcmp(rach_messagePowerOffsetGroupB,"minusinfinity")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_minusinfinity;
+                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_minusinfinity;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB0")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB0;
+                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB0;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB5")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB5;
+                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB5;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB8")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB8;
+                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB8;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB10")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB10;
+                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB10;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB12")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB12;
+                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB12;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB15")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB15;
+                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB15;
               }else if (strcmp(rach_messagePowerOffsetGroupB,"dB18")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB18;
+                RRC_CONFIGURATION_REQ (msg_p).rach_messagePowerOffsetGroupB[j] = NR_RACH_ConfigCommon__groupBconfigured__messagePowerOffsetGroupB_dB18;
               }else{
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for rach_messagePowerOffsetGroupB choice: minusinfinity,dB0,dB5,dB8,dB10,dB12,dB15,dB18!\n",
                              RC.config_file_name, i, rach_messagePowerOffsetGroupB);
@@ -1219,28 +1423,28 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch (rach_ra_ContentionResolutionTimer) {
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = RACH_ConfigCommon__ra_ContentionResolutionTimer_sf8;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = NR_RACH_ConfigCommon__ra_ContentionResolutionTimer_sf8;
                 break;
               case 16:
-                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = RACH_ConfigCommon__ra_ContentionResolutionTimer_sf16;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = NR_RACH_ConfigCommon__ra_ContentionResolutionTimer_sf16;
                 break;
               case 24:
-                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = RACH_ConfigCommon__ra_ContentionResolutionTimer_sf24;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = NR_RACH_ConfigCommon__ra_ContentionResolutionTimer_sf24;
                 break;
               case 32:
-                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = RACH_ConfigCommon__ra_ContentionResolutionTimer_sf32;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = NR_RACH_ConfigCommon__ra_ContentionResolutionTimer_sf32;
                 break;
               case 40:
-                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = RACH_ConfigCommon__ra_ContentionResolutionTimer_sf40;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = NR_RACH_ConfigCommon__ra_ContentionResolutionTimer_sf40;
                 break;
               case 48:
-                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = RACH_ConfigCommon__ra_ContentionResolutionTimer_sf48;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = NR_RACH_ConfigCommon__ra_ContentionResolutionTimer_sf48;
                 break;
               case 56:
-                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = RACH_ConfigCommon__ra_ContentionResolutionTimer_sf56;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = NR_RACH_ConfigCommon__ra_ContentionResolutionTimer_sf56;
                 break;
               case 64:
-                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = RACH_ConfigCommon__ra_ContentionResolutionTimer_sf64;
+                NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ContentionResolutionTimer[j] = NR_RACH_ConfigCommon__ra_ContentionResolutionTimer_sf64;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ra_ContentionResolutionTimer choice: 8,16,24,32,40,48,56,64!\n",
@@ -1262,37 +1466,37 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(prach_RootSequenceIndex_choice , "l839") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_RootSequenceIndex_choice[j] = RACH_ConfigCommon__prach_RootSequenceIndex_PR_l839;
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_RootSequenceIndex_choice[j] = NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l839;
               NRRRC_CONFIGURATION_REQ (msg_p).prach_RootSequenceIndex_l839[j] = prach_RootSequenceIndex_l839;              
             }else if (strcmp(prach_RootSequenceIndex_choice , "l139") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_RootSequenceIndex_choice[j] = RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139;
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_RootSequenceIndex_choice[j] = NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139;
               NRRRC_CONFIGURATION_REQ (msg_p).prach_RootSequenceIndex_l139[j] = prach_RootSequenceIndex_l139;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for prach_RootSequenceIndex !\n",
-                           RC.config_file_name, i, prach_RootSequenceIndex);
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for prach_RootSequenceIndex_choice !\n",
+                           RC.config_file_name, i, prach_RootSequenceIndex_choice);
             }
 
             if (strcmp(prach_msg1_SubcarrierSpacing,"kHz15")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz15;
             }else if (strcmp(prach_msg1_SubcarrierSpacing,"kHz30")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz30;
             }else if (strcmp(prach_msg1_SubcarrierSpacing,"kHz60")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz60;
             }else if (strcmp(prach_msg1_SubcarrierSpacing,"kHz120")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz120;
             }else if (strcmp(prach_msg1_SubcarrierSpacing,"kHz240")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_SubcarrierSpacing[j] = NR_SubcarrierSpacing_kHz240;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for prach_msg1_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
                            RC.config_file_name, i, prach_msg1_SubcarrierSpacing);
             }
 
             if (strcmp(restrictedSetConfig , "unrestrictedSet") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).restrictedSetConfig[j] = RACH_ConfigCommon__restrictedSetConfig_unrestrictedSet;                    
+              NRRRC_CONFIGURATION_REQ (msg_p).restrictedSetConfig[j] = NR_RACH_ConfigCommon__restrictedSetConfig_unrestrictedSet;                    
             }else if (strcmp(restrictedSetConfig , "restrictedSetTypeA") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).restrictedSetConfig[j] = RACH_ConfigCommon__restrictedSetConfig_restrictedSetTypeA;
+              NRRRC_CONFIGURATION_REQ (msg_p).restrictedSetConfig[j] = NR_RACH_ConfigCommon__restrictedSetConfig_restrictedSetTypeA;
             }else if (strcmp(restrictedSetConfig , "restrictedSetTypeB") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).restrictedSetConfig[j] = RACH_ConfigCommon__restrictedSetConfig_restrictedSetTypeB;
+              NRRRC_CONFIGURATION_REQ (msg_p).restrictedSetConfig[j] = NR_RACH_ConfigCommon__restrictedSetConfig_restrictedSetTypeB;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for restrictedSetConfig !\n",
                            RC.config_file_name, i, restrictedSetConfig);
@@ -1310,13 +1514,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(prach_msg1_FDM , "one") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_FDM[j] = RACH_ConfigGeneric__msg1_FDM_one;                    
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_FDM[j] = NR_RACH_ConfigGeneric__msg1_FDM_one;                    
             }else if (strcmp(prach_msg1_FDM , "two") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_FDM[j] = RACH_ConfigGeneric__msg1_FDM_two;
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_FDM[j] = NR_RACH_ConfigGeneric__msg1_FDM_two;
             }else if (strcmp(prach_msg1_FDM , "four") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_FDM[j] = RACH_ConfigGeneric__msg1_FDM_four;
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_FDM[j] = NR_RACH_ConfigGeneric__msg1_FDM_four;
             }else if (strcmp(prach_msg1_FDM , "eight") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_FDM[j] = RACH_ConfigGeneric__msg1_FDM_eight;
+              NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_FDM[j] = NR_RACH_ConfigGeneric__msg1_FDM_eight;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for prach_msg1_FDM !\n",
                            RC.config_file_name, i, prach_msg1_FDM);
@@ -1342,37 +1546,37 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch (preambleTransMax) {
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n3;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n3;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n4;
                 break;
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n5;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n5;
                 break;
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n6;
                 break;
               case 7:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n7;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n7;
                 break;
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n8;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n8;
                 break;
               case 10:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n10;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n10;
                 break;
               case 20:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n20;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n20;
                 break;
               case 50:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n50;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n50;
                 break;
               case 100:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n100;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n100;
                 break;
               case 200:
-                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  RACH_ConfigGeneric__preambleTransMax_n200;
+                NRRRC_CONFIGURATION_REQ (msg_p).preambleTransMax[j] =  NR_RACH_ConfigGeneric__preambleTransMax_n200;
                 break;
                default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for preambleTransMax choice: 3,4,5,6,7,8,10,20,50,100,200 !\n",
@@ -1381,13 +1585,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }            
 
             if (strcmp(powerRampingStep , "dB0") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).powerRampingStep[j] = RACH_ConfigGeneric__powerRampingStep_dB0;                    
+              NRRRC_CONFIGURATION_REQ (msg_p).powerRampingStep[j] = NR_RACH_ConfigGeneric__powerRampingStep_dB0;                    
             }else if (strcmp(powerRampingStep , "dB2") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).powerRampingStep[j] = RACH_ConfigGeneric__powerRampingStep_dB2;
+              NRRRC_CONFIGURATION_REQ (msg_p).powerRampingStep[j] = NR_RACH_ConfigGeneric__powerRampingStep_dB2;
             }else if (strcmp(powerRampingStep , "dB4") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).powerRampingStep[j] = RACH_ConfigGeneric__powerRampingStep_dB4;
+              NRRRC_CONFIGURATION_REQ (msg_p).powerRampingStep[j] = NR_RACH_ConfigGeneric__powerRampingStep_dB4;
             }else if (strcmp(powerRampingStep , "dB6") == 0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).powerRampingStep[j] = RACH_ConfigGeneric__powerRampingStep_dB6;
+              NRRRC_CONFIGURATION_REQ (msg_p).powerRampingStep[j] = NR_RACH_ConfigGeneric__powerRampingStep_dB6;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for powerRampingStep !\n",
                            RC.config_file_name, i, powerRampingStep);
@@ -1395,28 +1599,28 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch (ra_ResponseWindow) {
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  RACH_ConfigGeneric__ra_ResponseWindow_sl1;
+                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  RACH_ConfigGeneric__ra_ResponseWindow_sl2;
+                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  NR_RACH_ConfigGeneric__ra_ResponseWindow_sl2;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  RACH_ConfigGeneric__ra_ResponseWindow_sl4;
+                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  NR_RACH_ConfigGeneric__ra_ResponseWindow_sl4;
                 break;
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  RACH_ConfigGeneric__ra_ResponseWindow_sl8;
+                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  NR_RACH_ConfigGeneric__ra_ResponseWindow_sl8;
                 break;
               case 10:
-                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  RACH_ConfigGeneric__ra_ResponseWindow_sl10;
+                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  NR_RACH_ConfigGeneric__ra_ResponseWindow_sl10;
                 break;
               case 20:
-                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  RACH_ConfigGeneric__ra_ResponseWindow_sl20;
+                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  NR_RACH_ConfigGeneric__ra_ResponseWindow_sl20;
                 break;
               case 40:
-                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  RACH_ConfigGeneric__ra_ResponseWindow_sl40;
+                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  NR_RACH_ConfigGeneric__ra_ResponseWindow_sl40;
                 break;
               case 80:
-                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  RACH_ConfigGeneric__ra_ResponseWindow_sl80;
+                NRRRC_CONFIGURATION_REQ (msg_p).ra_ResponseWindow[j] =  NR_RACH_ConfigGeneric__ra_ResponseWindow_sl80;
                 break;
                default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ra_ResponseWindow choice: 1,2,4,8,10,20,40,80 !\n",
@@ -1449,9 +1653,9 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(PUSCH_TimeDomainResourceAllocation_mappingType , "typeA") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).PUSCH_TimeDomainResourceAllocation_mappingType[j] =  PUSCH_TimeDomainResourceAllocation__mappingType_typeA;
+              NRRRC_CONFIGURATION_REQ (msg_p).PUSCH_TimeDomainResourceAllocation_mappingType[j] =  NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA;
             }else if (strcmp(PUSCH_TimeDomainResourceAllocation_mappingType , "typeB") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).PUSCH_TimeDomainResourceAllocation_mappingType[j] =  PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
+              NRRRC_CONFIGURATION_REQ (msg_p).PUSCH_TimeDomainResourceAllocation_mappingType[j] =  NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PUSCH_TimeDomainResourceAllocation_mappingType !\n",
                            RC.config_file_name, i, PUSCH_TimeDomainResourceAllocation_mappingType);
@@ -1459,11 +1663,11 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             /////////////////////////////////NR PUCCH-ConfigCommon///////////////////////////
             if (strcmp(pucch_GroupHopping , "neither") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).pucch_GroupHopping[j] =  PUCCH_ConfigCommon__pucch_GroupHopping_neither;
+              NRRRC_CONFIGURATION_REQ (msg_p).pucch_GroupHopping[j] =  NR_PUCCH_ConfigCommon__pucch_GroupHopping_neither;
             }else if (strcmp(pucch_GroupHopping , "enable") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).pucch_GroupHopping[j] =  PUCCH_ConfigCommon__pucch_GroupHopping_enable;
+              NRRRC_CONFIGURATION_REQ (msg_p).pucch_GroupHopping[j] =  NR_PUCCH_ConfigCommon__pucch_GroupHopping_enable;
             }else if (strcmp(pucch_GroupHopping , "disable") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).pucch_GroupHopping[j] =  PUCCH_ConfigCommon__pucch_GroupHopping_disable;
+              NRRRC_CONFIGURATION_REQ (msg_p).pucch_GroupHopping[j] =  NR_PUCCH_ConfigCommon__pucch_GroupHopping_disable;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for pucch_GroupHopping !\n",
                            RC.config_file_name, i, pucch_GroupHopping);
@@ -1483,9 +1687,9 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(PDSCH_TimeDomainResourceAllocation_mappingType , "typeA") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).PDSCH_TimeDomainResourceAllocation_mappingType[j] =  PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+              NRRRC_CONFIGURATION_REQ (msg_p).PDSCH_TimeDomainResourceAllocation_mappingType[j] =  NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
             }else if (strcmp(PDSCH_TimeDomainResourceAllocation_mappingType , "typeB") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).PDSCH_TimeDomainResourceAllocation_mappingType[j] =  PDSCH_TimeDomainResourceAllocation__mappingType_typeB;
+              NRRRC_CONFIGURATION_REQ (msg_p).PDSCH_TimeDomainResourceAllocation_mappingType[j] =  NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDSCH_TimeDomainResourceAllocation_mappingType !\n",
                            RC.config_file_name, i, PDSCH_TimeDomainResourceAllocation_mappingType);
@@ -1499,22 +1703,22 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(RateMatchPattern_patternType , "NOTHING") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_patternType[j] =  RateMatchPattern__patternType_PR_NOTHING;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_patternType[j] =  NR_RateMatchPattern__patternType_PR_NOTHING;
             }else if (strcmp(RateMatchPattern_patternType , "bitmaps") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_patternType[j] =  RateMatchPattern__patternType_PR_bitmaps;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_patternType[j] =  NR_RateMatchPattern__patternType_PR_bitmaps;
             }else if (strcmp(RateMatchPattern_patternType , "controlResourceSet") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_patternType[j] =  RateMatchPattern__patternType_PR_controlResourceSet;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_patternType[j] =  NR_RateMatchPattern__patternType_PR_controlResourceSet;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPattern_patternType !\n",
                            RC.config_file_name, i, RateMatchPattern_patternType);
             }
 
             if (strcmp(symbolsInResourceBlock , "NOTHING") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).symbolsInResourceBlock[j] =  RateMatchPattern__patternType__bitmaps__symbolsInResourceBlock_PR_NOTHING;
+              NRRRC_CONFIGURATION_REQ (msg_p).symbolsInResourceBlock[j] =  NR_RateMatchPattern__patternType__bitmaps__symbolsInResourceBlock_PR_NOTHING;
             }else if (strcmp(symbolsInResourceBlock , "oneSlot") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).symbolsInResourceBlock[j] =  RateMatchPattern__patternType__bitmaps__symbolsInResourceBlock_PR_oneSlot;
+              NRRRC_CONFIGURATION_REQ (msg_p).symbolsInResourceBlock[j] =  NR_RateMatchPattern__patternType__bitmaps__symbolsInResourceBlock_PR_oneSlot;
             }else if (strcmp(symbolsInResourceBlock , "twoSlots") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).symbolsInResourceBlock[j] =  RateMatchPattern__patternType__bitmaps__symbolsInResourceBlock_PR_twoSlots;
+              NRRRC_CONFIGURATION_REQ (msg_p).symbolsInResourceBlock[j] =  NR_RateMatchPattern__patternType__bitmaps__symbolsInResourceBlock_PR_twoSlots;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for symbolsInResourceBlock !\n",
                            RC.config_file_name, i, symbolsInResourceBlock);
@@ -1522,25 +1726,25 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(periodicityAndPattern){
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n2;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n4;
                 break;
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n5;
+                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n5;
                 break;
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n8;
+                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n8;
                 break;
               case 10:
-                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n10;
+                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n10;
                 break;
               case 20:
-                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n20;
+                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n20;
                 break;
               case 40:
-                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n40;
+                NRRRC_CONFIGURATION_REQ (msg_p).periodicityAndPattern[j] =  NR_RateMatchPattern__patternType__bitmaps__periodicityAndPattern_PR_n40;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for periodicityAndPattern choice: 2,4,5,8,10,20,40 !\n",
@@ -1555,24 +1759,24 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(RateMatchPattern_subcarrierSpacing,"kHz15")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = SubcarrierSpacing_kHz15;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = NR_SubcarrierSpacing_kHz15;
             }else if (strcmp(RateMatchPattern_subcarrierSpacing,"kHz30")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = SubcarrierSpacing_kHz30;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = NR_SubcarrierSpacing_kHz30;
             }else if (strcmp(RateMatchPattern_subcarrierSpacing,"kHz60")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = SubcarrierSpacing_kHz60;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = NR_SubcarrierSpacing_kHz60;
             }else if (strcmp(RateMatchPattern_subcarrierSpacing,"kHz120")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = SubcarrierSpacing_kHz120;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = NR_SubcarrierSpacing_kHz120;
             }else if (strcmp(RateMatchPattern_subcarrierSpacing,"kHz240")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = SubcarrierSpacing_kHz240;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_subcarrierSpacing[j] = NR_SubcarrierSpacing_kHz240;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for RateMatchPattern_subcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
                            RC.config_file_name, i, RateMatchPattern_subcarrierSpacing);
             }            
             
             if (strcmp(RateMatchPattern_mode , "dynamic") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_mode[j] =  RateMatchPattern__mode_dynamic;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_mode[j] =  NR_RateMatchPattern__mode_dynamic;
             }else if (strcmp(RateMatchPattern_mode , "semiStatic") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_mode[j] =  RateMatchPattern__mode_semiStatic;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_mode[j] =  NR_RateMatchPattern__mode_semiStatic;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPattern_mode !\n",
                            RC.config_file_name, i, RateMatchPattern_mode);
@@ -1623,11 +1827,11 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }            
             
             if (strcmp(PDCCH_cce_REG_MappingType , "NOTHING") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_cce_REG_MappingType[j] =  ControlResourceSet__cce_REG_MappingType_PR_NOTHING;
+              NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_cce_REG_MappingType[j] =  NR_ControlResourceSet__cce_REG_MappingType_PR_NOTHING;
             }else if (strcmp(PDCCH_cce_REG_MappingType , "interleaved") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_cce_REG_MappingType[j] =  ControlResourceSet__cce_REG_MappingType_PR_interleaved;
+              NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_cce_REG_MappingType[j] =  NR_ControlResourceSet__cce_REG_MappingType_PR_interleaved;
             }else if (strcmp(PDCCH_cce_REG_MappingType , "nonInterleaved") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_cce_REG_MappingType[j] =  ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved;
+              NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_cce_REG_MappingType[j] =  NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDCCH_cce_REG_MappingType !\n",
                            RC.config_file_name, i, PDCCH_cce_REG_MappingType);
@@ -1635,13 +1839,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(PDCCH_reg_BundleSize){
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_reg_BundleSize[j] =  ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_reg_BundleSize[j] =  NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n2;
                 break;
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_reg_BundleSize[j] =  ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n3;
+                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_reg_BundleSize[j] =  NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n3;
                 break;
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_reg_BundleSize[j] =  ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_reg_BundleSize[j] =  NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDCCH_reg_BundleSize choice: 2,3,6 !\n",
@@ -1651,13 +1855,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(PDCCH_interleaverSize){
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_interleaverSize[j] =  ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_interleaverSize[j] =  NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n2;
                 break;
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_interleaverSize[j] =  ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n3;
+                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_interleaverSize[j] =  NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n3;
                 break;
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_interleaverSize[j] =  ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_interleaverSize[j] =  NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDCCH_interleaverSize choice: 2,3,6 !\n",
@@ -1672,9 +1876,9 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(PDCCH_precoderGranularity , "sameAsREG-bundle") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_precoderGranularity[j] =  ControlResourceSet__precoderGranularity_sameAsREG_bundle;
+              NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_precoderGranularity[j] =  NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
             }else if (strcmp(PDCCH_precoderGranularity , "allContiguousRBs") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_precoderGranularity[j] =  ControlResourceSet__precoderGranularity_allContiguousRBs;
+              NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_precoderGranularity[j] =  NR_ControlResourceSet__precoderGranularity_allContiguousRBs;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDCCH_precoderGranularity !\n",
                            RC.config_file_name, i, PDCCH_precoderGranularity);
@@ -1704,12 +1908,12 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl1") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
               
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl1[j] = NULL;                 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl2") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2;
               
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl2[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl2;
               if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl2 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl2>1)){
@@ -1718,7 +1922,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               }   
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl4") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4;
             
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl4[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl4;
               if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl4 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl4>3)){
@@ -1727,7 +1931,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               }                 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl5") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5;
             
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl5[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl5;
               if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl5 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl5>4)){
@@ -1736,7 +1940,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               }   
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl8") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8;
             
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl8[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl8;
               if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl8 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl8>7)){
@@ -1745,7 +1949,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               }   
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl10") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10;
             
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl10[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl10;
               if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl10 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl10>9)){
@@ -1754,7 +1958,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               } 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl16") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16;
             
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl16[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl16;
               if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl16 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl16>15)){
@@ -1763,7 +1967,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               } 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl20") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20;
             
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl20[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl20;
               if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl20 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl20>19)){
@@ -1772,7 +1976,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               } 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "UNABLE") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  SearchSpace__monitoringSlotPeriodicityAndOffset_PR_NOTHING;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_NOTHING;
             
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_choice !\n",
@@ -1782,28 +1986,28 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             
             switch(SearchSpace_nrofCandidates_aggregationLevel1){
               case 0:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  SearchSpace__nrofCandidates__aggregationLevel1_n0;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
                 break;
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  SearchSpace__nrofCandidates__aggregationLevel1_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel1_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  SearchSpace__nrofCandidates__aggregationLevel1_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel1_n2;
                 break;
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  SearchSpace__nrofCandidates__aggregationLevel1_n3;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel1_n3;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  SearchSpace__nrofCandidates__aggregationLevel1_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel1_n4;
                 break;
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  SearchSpace__nrofCandidates__aggregationLevel1_n5;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel1_n5;
                 break;
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  SearchSpace__nrofCandidates__aggregationLevel1_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel1_n6;
                 break;
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  SearchSpace__nrofCandidates__aggregationLevel1_n8;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel1_n8;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_nrofCandidates_aggregationLevel1 choice: 0,1,2,3,4,5,6,8 !\n",
@@ -1813,28 +2017,28 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(SearchSpace_nrofCandidates_aggregationLevel2){
               case 0:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  SearchSpace__nrofCandidates__aggregationLevel2_n0;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
                 break;
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  SearchSpace__nrofCandidates__aggregationLevel2_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel2_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  SearchSpace__nrofCandidates__aggregationLevel2_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel2_n2;
                 break;
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  SearchSpace__nrofCandidates__aggregationLevel2_n3;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel2_n3;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  SearchSpace__nrofCandidates__aggregationLevel2_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel2_n4;
                 break;
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  SearchSpace__nrofCandidates__aggregationLevel2_n5;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel2_n5;
                 break;
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  SearchSpace__nrofCandidates__aggregationLevel2_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel2_n6;
                 break;
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  SearchSpace__nrofCandidates__aggregationLevel2_n8;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel2[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel2_n8;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_nrofCandidates_aggregationLevel2 choice: 0,1,2,3,4,5,6,8 !\n",
@@ -1844,28 +2048,28 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(SearchSpace_nrofCandidates_aggregationLevel4){
               case 0:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  SearchSpace__nrofCandidates__aggregationLevel4_n0;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel4_n0;
                 break;
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  SearchSpace__nrofCandidates__aggregationLevel4_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  SearchSpace__nrofCandidates__aggregationLevel4_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel4_n2;
                 break;
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  SearchSpace__nrofCandidates__aggregationLevel4_n3;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel4_n3;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  SearchSpace__nrofCandidates__aggregationLevel4_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel4_n4;
                 break;
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  SearchSpace__nrofCandidates__aggregationLevel4_n5;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel4_n5;
                 break;
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  SearchSpace__nrofCandidates__aggregationLevel4_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel4_n6;
                 break;
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  SearchSpace__nrofCandidates__aggregationLevel4_n8;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel4[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel4_n8;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_nrofCandidates_aggregationLevel4 choice: 0,1,2,3,4,5,6,8 !\n",
@@ -1875,28 +2079,28 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(SearchSpace_nrofCandidates_aggregationLevel8){
               case 0:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  SearchSpace__nrofCandidates__aggregationLevel8_n0;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
                 break;
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  SearchSpace__nrofCandidates__aggregationLevel8_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  SearchSpace__nrofCandidates__aggregationLevel8_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel8_n2;
                 break;
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  SearchSpace__nrofCandidates__aggregationLevel8_n3;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel8_n3;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  SearchSpace__nrofCandidates__aggregationLevel8_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel8_n4;
                 break;
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  SearchSpace__nrofCandidates__aggregationLevel8_n5;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel8_n5;
                 break;
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  SearchSpace__nrofCandidates__aggregationLevel8_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel8_n6;
                 break;
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  SearchSpace__nrofCandidates__aggregationLevel8_n8;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel8[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel8_n8;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_nrofCandidates_aggregationLevel8 choice: 0,1,2,3,4,5,6,8 !\n",
@@ -1906,28 +2110,28 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(SearchSpace_nrofCandidates_aggregationLevel16){
               case 0:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  SearchSpace__nrofCandidates__aggregationLevel16_n0;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
                 break;
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  SearchSpace__nrofCandidates__aggregationLevel16_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel16_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  SearchSpace__nrofCandidates__aggregationLevel16_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel16_n2;
                 break;
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  SearchSpace__nrofCandidates__aggregationLevel16_n3;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel16_n3;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  SearchSpace__nrofCandidates__aggregationLevel16_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel16_n4;
                 break;
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  SearchSpace__nrofCandidates__aggregationLevel16_n5;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel16_n5;
                 break;
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  SearchSpace__nrofCandidates__aggregationLevel16_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel16_n6;
                 break;
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  SearchSpace__nrofCandidates__aggregationLevel16_n8;
+                NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel16[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel16_n8;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_nrofCandidates_aggregationLevel16 choice: 0,1,2,3,4,5,6,8 !\n",
@@ -1936,11 +2140,11 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(SearchSpace_searchSpaceType , "NOTHING") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_searchSpaceType[j] =  SearchSpace__searchSpaceType_PR_NOTHING;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_searchSpaceType[j] =  NR_SearchSpace__searchSpaceType_PR_NOTHING;
             }else if (strcmp(SearchSpace_searchSpaceType , "common") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_searchSpaceType[j] =  SearchSpace__searchSpaceType_PR_common;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_searchSpaceType[j] =  NR_SearchSpace__searchSpaceType_PR_common;
             }else if (strcmp(SearchSpace_searchSpaceType , "ue_Specific") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_searchSpaceType[j] =  SearchSpace__searchSpaceType_PR_ue_Specific;
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_searchSpaceType[j] =  NR_SearchSpace__searchSpaceType_PR_ue_Specific;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_searchSpaceType !\n",
                            RC.config_file_name, i, SearchSpace_searchSpaceType);
@@ -1948,10 +2152,10 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1){
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1[j] =  SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel1_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel1_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1[j] =  SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel1_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel1_n2;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1 choice: 1,2 !\n",
@@ -1961,10 +2165,10 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2){
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2[j] =  SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel2_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel2_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2[j] =  SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel2_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel2_n2;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2 choice: 1,2 !\n",
@@ -1974,10 +2178,10 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4){
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4[j] =  SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel4_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel4_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4[j] =  SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel4_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel4_n2;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4 choice: 1,2 !\n",
@@ -1987,10 +2191,10 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8){
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8[j] =  SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel8_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel8_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8[j] =  SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel8_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel8_n2;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8 choice: 1,2 !\n",
@@ -2000,10 +2204,10 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16){
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16[j] =  SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel16_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel16_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16[j] =  SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel16_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_0__nrofCandidates_SFI__aggregationLevel16_n2;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16 choice: 1,2 !\n",
@@ -2013,28 +2217,28 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(Common_dci_Format2_3_monitoringPeriodicity){
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n2;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n4;
                 break;
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n5;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n5;
                 break;
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n8;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n8;
                 break;
               case 10:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n10;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n10;
                 break;
               case 16:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n16;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n16;
                 break;
               case 20:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n20;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_monitoringPeriodicity[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__monitoringPeriodicity_n20;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for Common_dci_Format2_3_monitoringPeriodicity choice: 1,2,4,5,8,10,16,20 !\n",
@@ -2044,10 +2248,10 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(Common_dci_Format2_3_nrofPDCCH_Candidates){
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_nrofPDCCH_Candidates[j] =  SearchSpace__searchSpaceType__common__dci_Format2_3__nrofPDCCH_Candidates_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_nrofPDCCH_Candidates[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__nrofPDCCH_Candidates_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_nrofPDCCH_Candidates[j] =  SearchSpace__searchSpaceType__common__dci_Format2_3__nrofPDCCH_Candidates_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).Common_dci_Format2_3_nrofPDCCH_Candidates[j] =  NR_SearchSpace__searchSpaceType__common__dci_Format2_3__nrofPDCCH_Candidates_n2;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for Common_dci_Format2_3_nrofPDCCH_Candidates choice: 1,2 !\n",
@@ -2056,9 +2260,9 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(ue_Specific__dci_Formats , "formats0-0-And-1-0") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).ue_Specific__dci_Formats[j] =  SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0;
+              NRRRC_CONFIGURATION_REQ (msg_p).ue_Specific__dci_Formats[j] =  NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0;
             }else if (strcmp(ue_Specific__dci_Formats , "formats0-1-And-1-1") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).ue_Specific__dci_Formats[j] =  SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1;
+              NRRRC_CONFIGURATION_REQ (msg_p).ue_Specific__dci_Formats[j] =  NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ue_Specific__dci_Formats !\n",
                            RC.config_file_name, i, ue_Specific__dci_Formats);
@@ -2068,22 +2272,22 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(RateMatchPatternLTE_CRS_carrierBandwidthDL){
               case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n6;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  NR_RateMatchPatternLTE_CRS__carrierBandwidthDL_n6;
                 break;
               case 15:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n15;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  NR_RateMatchPatternLTE_CRS__carrierBandwidthDL_n15;
                 break;
               case 25:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n25;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  NR_RateMatchPatternLTE_CRS__carrierBandwidthDL_n25;
                 break;
               case 50:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n50;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  NR_RateMatchPatternLTE_CRS__carrierBandwidthDL_n50;
                 break;
               case 75:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n75;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  NR_RateMatchPatternLTE_CRS__carrierBandwidthDL_n75;
                 break;
               case 100:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  RateMatchPatternLTE_CRS__carrierBandwidthDL_n100;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] =  NR_RateMatchPatternLTE_CRS__carrierBandwidthDL_n100;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_carrierBandwidthDL choice: 6,15,25,50,75,100 !\n",
@@ -2091,21 +2295,15 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                 break;
             }
 
-            NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_carrierBandwidthDL[j] = RateMatchPatternLTE_CRS_carrierBandwidthDL;
-            if ((RateMatchPatternLTE_CRS_carrierBandwidthDL <0) || (RateMatchPatternLTE_CRS_carrierBandwidthDL>16383)){
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_carrierBandwidthDL choice: 0..16383 !\n",
-                           RC.config_file_name, i, RateMatchPatternLTE_CRS_carrierBandwidthDL);
-            }
-
             switch(RateMatchPatternLTE_CRS_nrofCRS_Ports){
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_nrofCRS_Ports[j] =  RateMatchPatternLTE_CRS__nrofCRS_Ports_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_nrofCRS_Ports[j] =  NR_RateMatchPatternLTE_CRS__nrofCRS_Ports_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_nrofCRS_Ports[j] =  RateMatchPatternLTE_CRS__nrofCRS_Ports_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_nrofCRS_Ports[j] =  NR_RateMatchPatternLTE_CRS__nrofCRS_Ports_n2;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_nrofCRS_Ports[j] =  RateMatchPatternLTE_CRS__nrofCRS_Ports_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_nrofCRS_Ports[j] =  NR_RateMatchPatternLTE_CRS__nrofCRS_Ports_n4;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_nrofCRS_Ports choice: 1,2,4 !\n",
@@ -2115,22 +2313,22 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(RateMatchPatternLTE_CRS_v_Shift){
               case 0:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n0;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  NR_RateMatchPatternLTE_CRS__v_Shift_n0;
                 break;
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  NR_RateMatchPatternLTE_CRS__v_Shift_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  NR_RateMatchPatternLTE_CRS__v_Shift_n2;
                 break;
               case 3:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n3;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  NR_RateMatchPatternLTE_CRS__v_Shift_n3;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  NR_RateMatchPatternLTE_CRS__v_Shift_n4;
                 break;
               case 5:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  RateMatchPatternLTE_CRS__v_Shift_n5;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_v_Shift[j] =  NR_RateMatchPatternLTE_CRS__v_Shift_n5;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_v_Shift choice: 0,1,2,3,4,5 !\n",
@@ -2140,22 +2338,22 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             switch(RateMatchPatternLTE_CRS_radioframeAllocationPeriod){
               case 1:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n1;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  NR_EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n1;
                 break;
               case 2:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n2;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  NR_EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n2;
                 break;
               case 4:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n4;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  NR_EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n4;
                 break;
               case 8:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n8;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  NR_EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n8;
                 break;
               case 16:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n16;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  NR_EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n16;
                 break;
               case 32:
-                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n32;
+                NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_radioframeAllocationPeriod[j] =  NR_EUTRA_MBSFN_SubframeConfig__radioframeAllocationPeriod_n32;
                 break;
               default:
                 AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_radioframeAllocationPeriod choice: 1,2,4,8,16,32 !\n",
@@ -2170,9 +2368,9 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(RateMatchPatternLTE_CRS_subframeAllocation_choice , "oneFrame") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  EUTRA_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  NR_EUTRA_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame;
             }else if (strcmp(RateMatchPatternLTE_CRS_subframeAllocation_choice , "fourFrames") == 0){
-              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  EUTRA_MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames;
+              NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  NR_EUTRA_MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames;
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_subframeAllocation_choice !\n",
                            RC.config_file_name, i, RateMatchPatternLTE_CRS_subframeAllocation_choice);
@@ -2193,13 +2391,199 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
 }//End RCconfig_NRRRC function
 
+int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
+
+  int               j,k = 0;
+  int               gnb_id;
+  int32_t           my_int;
+  const char*       active_gnb[MAX_GNB];
+  char             *address                       = NULL;
+  char             *cidr                          = NULL;
+
+  // for no gcc warnings 
+
+  (void)  my_int;
+
+  memset((char*)active_gnb,0,MAX_GNB* sizeof(char*));
+
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  paramdef_t GNBParams[]  = GNBPARAMS_DESC;
+  paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
+
+/* get global parameters, defined outside any section in the config file */
+  
+  config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
+
+#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+    if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
+      asn_debug      = 0;
+      asn1_xer_print = 0;
+    } else if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
+      asn_debug      = 1;
+      asn1_xer_print = 1;
+    } else if (strcasecmp(*(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr) , GNB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
+      asn_debug      = 1;
+      asn1_xer_print = 2;
+    } else {
+      asn_debug      = 0;
+      asn1_xer_print = 0;
+    }
+
+#endif
+
+    AssertFatal (i<GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt,
+     "Failed to parse config file %s, %uth attribute %s \n",
+     RC.config_file_name, i, GNB_CONFIG_STRING_ACTIVE_GNBS);
+    
+  
+  if (GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt>0) {
+    // Output a list of all gNBs.
+       config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
+    
+    
+      
+      
+    
+    if (GNBParamList.numelt > 0) {
+      for (k = 0; k < GNBParamList.numelt; k++) {
+  if (GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr == NULL) {
+    // Calculate a default gNB ID
+
+# if defined(ENABLE_USE_MME)
+    uint32_t hash;
+    
+    hash = s1ap_generate_eNB_id ();
+    gnb_id = k + (hash & 0xFFFF8);
+# else
+    gnb_id = k;
+# endif
+  } else {
+          gnb_id = *(GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr);
+        }
+  
+  
+  // search if in active list
+  for (j=0; j < GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt; j++) {
+    if (strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[j], *(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr)) == 0) {
+             paramdef_t S1Params[]  = S1PARAMS_DESC;
+             paramlist_def_t S1ParamList = {GNB_CONFIG_STRING_MME_IP_ADDRESS,NULL,0};
+
+             paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
+             paramdef_t NETParams[]  =  NETPARAMS_DESC;
+             char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+      
+      S1AP_REGISTER_ENB_REQ (msg_p).eNB_id = gnb_id;
+      
+      if (strcmp(*(GNBParamList.paramarray[k][GNB_CELL_TYPE_IDX].strptr), "CELL_MACRO_GNB") == 0) {
+        S1AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_ENB;
+      } else  if (strcmp(*(GNBParamList.paramarray[k][GNB_CELL_TYPE_IDX].strptr), "CELL_HOME_GNB") == 0) {
+        S1AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
+      } else {
+        AssertFatal (0,
+         "Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_GNB or CELL_HOME_GNB !\n",
+         RC.config_file_name, i, *(GNBParamList.paramarray[k][GNB_CELL_TYPE_IDX].strptr));
+      }
+      
+      S1AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr));
+      S1AP_REGISTER_ENB_REQ (msg_p).tac              = (uint16_t)atoi(*(GNBParamList.paramarray[k][GNB_TRACKING_AREA_CODE_IDX].strptr));
+      S1AP_REGISTER_ENB_REQ (msg_p).mcc              = (uint16_t)atoi(*(GNBParamList.paramarray[k][GNB_MOBILE_COUNTRY_CODE_IDX].strptr));
+      S1AP_REGISTER_ENB_REQ (msg_p).mnc              = (uint16_t)atoi(*(GNBParamList.paramarray[k][GNB_MOBILE_NETWORK_CODE_IDX].strptr));
+      S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = strlen(*(GNBParamList.paramarray[k][GNB_MOBILE_NETWORK_CODE_IDX].strptr));
+      S1AP_REGISTER_ENB_REQ (msg_p).default_drx      = 0;
+      AssertFatal((S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length == 2) ||
+      (S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length == 3),
+      "BAD MNC DIGIT LENGTH %d",
+      S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length);
+      
+      sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
+            config_getlist( &S1ParamList,S1Params,sizeof(S1Params)/sizeof(paramdef_t),aprefix); 
+      
+      S1AP_REGISTER_ENB_REQ (msg_p).nb_mme = 0;
+
+      for (int l = 0; l < S1ParamList.numelt; l++) {
+
+        S1AP_REGISTER_ENB_REQ (msg_p).nb_mme += 1;
+
+        strcpy(S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4_address,*(S1ParamList.paramarray[l][GNB_MME_IPV4_ADDRESS_IDX].strptr));
+        strcpy(S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6_address,*(S1ParamList.paramarray[l][GNB_MME_IPV6_ADDRESS_IDX].strptr));
+
+        if (strcmp(*(S1ParamList.paramarray[l][GNB_MME_IP_ADDRESS_ACTIVE_IDX].strptr), "yes") == 0) {
+#if defined(ENABLE_USE_MME)
+    EPC_MODE_ENABLED = 1;
+#endif
+        } 
+        if (strcmp(*(S1ParamList.paramarray[l][GNB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
+    S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[j].ipv4 = 1;
+        } else if (strcmp(*(S1ParamList.paramarray[l][GNB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
+    S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[j].ipv6 = 1;
+        } else if (strcmp(*(S1ParamList.paramarray[l][GNB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
+    S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[j].ipv4 = 1;
+    S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[j].ipv6 = 1;
+        }
+      }
+
+    
+      // SCTP SETTING
+      S1AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
+      S1AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
+# if defined(ENABLE_USE_MME)
+      sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_SCTP_CONFIG);
+            config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix); 
+            S1AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
+            S1AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
+#endif
+
+            sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+      // NETWORK_INTERFACES
+            config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix); 
+
+    //    S1AP_REGISTER_ENB_REQ (msg_p).enb_interface_name_for_S1U = strdup(enb_interface_name_for_S1U);
+    cidr = *(NETParams[GNB_IPV4_ADDRESS_FOR_S1_MME_IDX].strptr);
+    address = strtok(cidr, "/");
+
+    S1AP_REGISTER_ENB_REQ (msg_p).enb_ip_address.ipv6 = 0;
+    S1AP_REGISTER_ENB_REQ (msg_p).enb_ip_address.ipv4 = 1;
+
+    strcpy(S1AP_REGISTER_ENB_REQ (msg_p).enb_ip_address.ipv4_address, address);
+
+    /*
+    in_addr_t  ipv4_address;
+
+        if (address) {
+      IPV4_STR_ADDR_TO_INT_NWBO ( address, ipv4_address, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
+    }
+    strcpy(S1AP_REGISTER_ENB_REQ (msg_p).enb_ip_address.ipv4_address, inet_ntoa(ipv4_address));
+    //    S1AP_REGISTER_ENB_REQ (msg_p).enb_port_for_S1U = enb_port_for_S1U;
+
+
+    S1AP_REGISTER_ENB_REQ (msg_p).enb_interface_name_for_S1_MME = strdup(enb_interface_name_for_S1_MME);
+    cidr = enb_ipv4_address_for_S1_MME;
+    address = strtok(cidr, "/");
+    
+    if (address) {
+      IPV4_STR_ADDR_TO_INT_NWBO ( address, S1AP_REGISTER_ENB_REQ(msg_p).enb_ipv4_address_for_S1_MME, "BAD IP ADDRESS FORMAT FOR eNB S1_MME !\n" );
+    }
+*/
+    
+
+
+
+      break;
+    }
+  }
+      }
+    }
+  }
+return 0;
+}
+
 void NRRCConfig(void) {
 
-  // paramlist_def_t MACRLCParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
-  // paramlist_def_t L1ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
-  // paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
-  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
-  paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
+  paramlist_def_t MACRLCParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
+  paramlist_def_t L1ParamList     = {CONFIG_STRING_L1_LIST,NULL,0};
+  paramlist_def_t RUParamList     = {CONFIG_STRING_RU_LIST,NULL,0};
+  paramdef_t GNBSParams[]         = GNBSPARAMS_DESC;
+  paramlist_def_t CCsParamList    = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
   
   char aprefix[MAX_OPTNAME_SIZE*2 + 8];  
   
@@ -2213,15 +2597,15 @@ void NRRCConfig(void) {
   RC.nb_nr_inst = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
  
   if (RC.nb_nr_inst > 0) {
-    RC.nb_CC = (int *)malloc((1+RC.nb_nr_inst)*sizeof(int));
+    RC.nb_nr_CC = (int *)malloc((1+RC.nb_nr_inst)*sizeof(int));
     for (int i=0;i<RC.nb_nr_inst;i++) {
       sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,i);
       config_getlist( &CCsParamList,NULL,0, aprefix);
-      RC.nb_CC[i]   = CCsParamList.numelt;
+      RC.nb_nr_CC[i]   = CCsParamList.numelt;
     }
   }
 
-/*    
+
 	// Get num MACRLC instances
     config_getlist( &MACRLCParamList,NULL,0, NULL);
     RC.nb_macrlc_inst  = MACRLCParamList.numelt;
@@ -2232,7 +2616,7 @@ void NRRCConfig(void) {
     // Get num RU instances
     config_getlist( &RUParamList,NULL,0, NULL);  
     RC.nb_RU     = RUParamList.numelt; 
- */
+ 
  
 
 }

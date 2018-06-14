@@ -293,9 +293,9 @@ typedef struct NRRrcConfigurationReq_s {
   //NR FrequencyInfoUL
   long                    UL_FreqBandIndicatorNR[MAX_NUM_CCs];
   long                    UL_absoluteFrequencyPointA[MAX_NUM_CCs];
-  lte_prefix_type_t       UL_additionalSpectrumEmission[MAX_NUM_CCs];
+  long                    UL_additionalSpectrumEmission[MAX_NUM_CCs];
   long                    UL_p_Max[MAX_NUM_CCs];
-  long                    ULfrequencyShift7p5khz[MAX_NUM_CCs];
+  long                    UL_frequencyShift7p5khz[MAX_NUM_CCs];
 
   //NR UL SCS-SpecificCarrier
   uint32_t                UL_offsetToCarrier[MAX_NUM_CCs];
