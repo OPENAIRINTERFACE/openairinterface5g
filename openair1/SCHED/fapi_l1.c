@@ -346,9 +346,10 @@ void handle_ulsch_harq_pdu(
   ulsch_harq->subframe                   = subframe;
   ulsch_harq->O_ACK                      = harq_information->harq_information_rel10.harq_size;
   ulsch->beta_offset_harqack_times8      = to_beta_offset_harqack[harq_information->harq_information_rel10.delta_offset_harq];
-  if (harq_information->harq_information_rel10.ack_nack_mode==0) //bundling
-      ulsch->bundling = 1;
-
+  if (eNB->frame_parms.frame_type == TDD) {
+    if (harq_information->harq_information_rel10.ack_nack_mode==0) //bundling
+        ulsch->bundling = 1;
+   }
 }
 
 uint16_t to_beta_offset_ri[16]={9,13,16,20,25,32,40,50,64,80,101,127,160,0,0,0};
