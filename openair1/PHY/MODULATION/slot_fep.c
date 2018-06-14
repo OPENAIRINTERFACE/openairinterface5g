@@ -39,7 +39,7 @@ int slot_fep_pbch(PHY_VARS_NR_UE *ue,
   NR_UE_COMMON *common_vars   = &ue->common_vars;
   uint8_t eNB_id = 0;//ue_common_vars->eNb_id;
   unsigned char aa;
-  unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
+  unsigned char symbol = l;//+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
   unsigned int subframe_offset;//,subframe_offset_F;
@@ -181,7 +181,7 @@ int slot_fep_pbch(PHY_VARS_NR_UE *ue,
   }
 
   if (ue->perfect_ce == 0) {
-    if ((l==0) || (l==(4-frame_parms->Ncp))) {
+    if ((l>0) && (l<4)) {
       for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
 #ifdef DEBUG_FEP
