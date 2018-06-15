@@ -968,7 +968,8 @@ fi
     {
       cd $OPENAIR_DIR/cmake_targets/basic_simulator/enb
       cmake .
-      make -j`nproc` coding params_libconfig tcp_bridge_oai lte-softmodem
+      make -j`nproc` lte-softmodem
+      make -j`nproc` coding params_libconfig tcp_bridge_oai
       ln -sf libtcp_bridge_oai.so liboai_device.so
       cd ../..
     } > $dlog/basic_simulator_enb.txt 2>&1
@@ -1023,7 +1024,8 @@ fi
     {
       cd $OPENAIR_DIR/cmake_targets/basic_simulator/ue
       cmake .
-      make -j`nproc` coding params_libconfig tcp_bridge_oai lte-uesoftmodem
+      make -j`nproc` lte-uesoftmodem
+      make -j`nproc` coding params_libconfig tcp_bridge_oai
       ln -sf libtcp_bridge_oai.so liboai_device.so
       cd ../..
     } > $dlog/basic_simulator_ue.txt 2>&1
