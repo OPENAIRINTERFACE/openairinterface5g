@@ -747,7 +747,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
                   (dlsch_pdu_rel8->transport_blocks>0),
                   "dlsch_pdu_rel8->transport_blocks = %d not in [1,2]\n",
                   dlsch_pdu_rel8->transport_blocks);
-      if (sdu != NULL)
+      if (1)//(sdu != NULL)
       {
 //LOG_I(PHY,"NFAPI: executing handle_nfapi_dlsch_pdu()\n");/////////////*********added
         handle_nfapi_dlsch_pdu(eNB,NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),proc,dl_config_pdu, dlsch_pdu_rel8->transport_blocks-1, sdu);

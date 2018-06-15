@@ -1199,12 +1199,7 @@ void wakeup_eNBs(RU_t *ru) {
     {
       LOG_D(PHY,"ru->wakeup_rxtx:%p\n", ru->wakeup_rxtx);
       eNB_list[i]->proc.ru_proc = &ru->proc;
-      if(eNB_list[i]->single_thread_flag){
-        char string[20];
-        sprintf(string,"Incoming RU %d",ru->idx);
-        ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string,ru);
-      }
-      else if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
+      if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
       {
         LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
       }
