@@ -1024,25 +1024,6 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 #endif
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(__x86_64__) || defined(__i386__)
-__m128 avg128U;
-#elif defined(__arm__)
-int32x4_t avg128U;
-#endif
-
 void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
                          LTE_DL_FRAME_PARMS *frame_parms,
                          int32_t *avg,
@@ -1053,7 +1034,9 @@ void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
   uint8_t aarx;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *ul_ch128;
+  __m128 avg128U;
 #elif defined(__arm__)
+  int32x4_t avg128U;
   int16x4_t *ul_ch128;
 #endif
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
