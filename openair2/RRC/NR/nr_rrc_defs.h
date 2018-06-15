@@ -90,9 +90,9 @@
 typedef unsigned int uid_nr_t;
 #define NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE (((NUMBER_OF_NR_UE_MAX/8)/sizeof(unsigned int)) + 1)
 
-typedef struct nr_uid_linear_allocator_s {
+/*typedef struct nr_uid_linear_allocator_s {
   unsigned int   bitmap[NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE];
-} nr_uid_allocator_t;
+} nr_uid_allocator_t;*/
     
 
 #define PROTOCOL_NR_RRC_CTXT_UE_FMT                PROTOCOL_CTXT_FMT
@@ -294,7 +294,7 @@ typedef struct gNB_RRC_INST_s {
 
   eth_params_t                                        eth_params_s;
   rrc_gNB_carrier_data_t                              carrier[MAX_NUM_CCs];
-  nr_uid_allocator_t                                  uid_allocator; // for rrc_ue_head
+  uid_allocator_t                                     uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
   
   uint8_t                                             Nb_ue;

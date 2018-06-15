@@ -1910,7 +1910,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl1") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
               
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl1[j] = NULL;                 
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl1[j] = 0;                 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl2") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2;

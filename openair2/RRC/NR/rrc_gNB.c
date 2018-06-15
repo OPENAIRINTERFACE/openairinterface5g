@@ -38,7 +38,7 @@
 
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
-#include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "UTIL/LOG/log.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
@@ -279,7 +279,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
               );
   }//END for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
 
-  nr_rrc_init_global_param();
+  rrc_init_nr_global_param();
 
 
   openair_nr_rrc_on(&ctxt);

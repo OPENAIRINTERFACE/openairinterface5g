@@ -28,7 +28,6 @@
  * \email:  navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr
  */
 
-#include "nr_rrc_defs.h"
 #include "nr_rrc_extern.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "COMMON/openair_defs.h"
@@ -50,12 +49,7 @@ extern UE_MAC_INST *UE_mac_inst;
 extern mui_t rrc_gNB_mui;
 
 //-----------------------------------------------------------------------------
-int
-nr_rrc_init_global_param(
-  void
-)
-//-----------------------------------------------------------------------------
-{
+int rrc_init_nr_global_param(void){
 
   rrc_rlc_register_rrc (rrc_data_ind, NULL); //register with rlc
 
@@ -89,7 +83,7 @@ nr_rrc_init_global_param(
 //-----------------------------------------------------------------------------
 void
 rrc_config_nr_buffer(
-  SRB_INFO* Srb_info,
+  NR_SRB_INFO* Srb_info,
   uint8_t Lchan_type,
   uint8_t Role
 )

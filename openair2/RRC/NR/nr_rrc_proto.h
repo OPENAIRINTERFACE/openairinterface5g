@@ -35,9 +35,9 @@
 
 #include "flexran_agent_extern.h"
 
-int nr_rrc_init_global_param(void);
+int rrc_init_nr_global_param(void);
 
-void rrc_config_nr_buffer(SRB_INFO* Srb_info,
+void rrc_config_nr_buffer(NR_SRB_INFO* Srb_info,
                           uint8_t Lchan_type,
                           uint8_t Role);
 

@@ -94,7 +94,7 @@ void mac_top_init_gNB(void)
   // These should be out of here later
   pdcp_layer_init();
 
-  rrc_init_global_param();
+  rrc_init_nr_global_param();
 
   }else {
     RC.nrmac = NULL;
