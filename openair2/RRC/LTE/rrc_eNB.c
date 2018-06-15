@@ -839,7 +839,6 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s 
       }
 
       for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-
         dlsch = eNB_PHY->dlsch[i][0];
 
         if((dlsch != NULL) && (dlsch->rnti == rnti)) {
@@ -5336,7 +5335,7 @@ openair_rrc_eNB_init(
     for (int ue_id = 0; ue_id < NUMBER_OF_UE_MAX; ue_id++) {
       RC.rrc[ctxt.module_id]->carrier[CC_id].sizeof_paging[ue_id] = 0;
       RC.rrc[ctxt.module_id]->carrier[CC_id].paging[ue_id] = (uint8_t *) malloc16(256);
-
+      
     }
   }
   rrc_init_global_param();

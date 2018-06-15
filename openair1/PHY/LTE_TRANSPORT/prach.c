@@ -357,10 +357,10 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	if (prach_fmt == 4) {
 	  dft256(prach2,rxsigF[aa],1);
 	} else {
-	  dft3072(prach2,rxsigF[aa]);
+	  dft3072(prach2,rxsigF[aa],1);
 	  
 	  if (prach_fmt>1)
-	    dft3072(prach2+6144,rxsigF[aa]+6144);
+	    dft3072(prach2+6144,rxsigF[aa]+6144,1);
 	}
 	
 	break;
@@ -371,10 +371,10 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	  dft1024(prach2,rxsigF[aa],1);
 	  fft_size = 1024;
 	} else {
-	  dft6144(prach2,rxsigF[aa]);
+	  dft6144(prach2,rxsigF[aa],1);
 	  
 	  if (prach_fmt>1)
-	    dft6144(prach2+12288,rxsigF[aa]+12288);
+	    dft6144(prach2+12288,rxsigF[aa]+12288,1);
 	  
 	  fft_size = 6144;
 	}
@@ -395,7 +395,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	
       case 75:
 	if (prach_fmt == 4) {
-	  dft3072(prach2,rxsigF[aa]);
+	  dft3072(prach2,rxsigF[aa],1);
 	} else {
 	  dft18432(prach2,rxsigF[aa]);
 	  
@@ -417,7 +417,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	  }
 	} else {
 	  if (prach_fmt == 4) {
-	    dft3072(prach2,rxsigF[aa]);
+	    dft3072(prach2,rxsigF[aa],1);
 	  } else {
 	    dft18432(prach2,rxsigF[aa]);
 	    

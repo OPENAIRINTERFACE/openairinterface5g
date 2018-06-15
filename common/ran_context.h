@@ -48,9 +48,9 @@
 #include "gtpv1u_eNB_defs.h"
 
 #include "PHY/defs_L1_NB_IoT.h"
-
 #include "RRC/LTE/defs_NB_IoT.h"
 #include "RRC/NR/nr_rrc_defs.h"
+
 
 typedef struct {
   /// RAN context config file name

@@ -33,7 +33,6 @@
 #include "PHY/defs_UE.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "PHY/phy_extern_ue.h"
-#include "transport_ue.h"
 #include "PHY/sse_intrin.h"
 
 int16_t ones256[16] __attribute__ ((aligned(32))) = {0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff};

@@ -270,4 +270,36 @@ typedef struct {
   nfapi_vendor_extension_tlv_t              vendor_extension;
 } nfapi_nr_config_request_t;
 
+typedef enum {
+	NFAPI_NR_DL_DCI_FORMAT_1_0 = 0,
+	NFAPI_NR_DL_DCI_FORMAT_1_1,
+  NFAPI_NR_DL_DCI_FORMAT_2_0,
+  NFAPI_NR_DL_DCI_FORMAT_2_1,
+  NFAPI_NR_DL_DCI_FORMAT_2_2,
+  NFAPI_NR_DL_DCI_FORMAT_2_3,
+} nfapi_nr_dl_dci_format_e;
+
+typedef enum {
+	NFAPI_NR_UL_DCI_FORMAT_0_0 = 0,
+	NFAPI_NR_UL_DCI_FORMAT_1_0,
+} nfapi_nr_ul_dci_format_e;
+
+// P7 Sub Structures
+typedef struct {
+	nfapi_tl_t tl;
+  // conf
+	uint8_t dci_format;
+	uint8_t cce_idx;
+	uint8_t aggregation_level;
+	uint16_t rnti;
+  // DCI fields
+
+} nfapi_nr_dl_config_dci_dl_pdu_rel15_t;
+#define NFAPI_NR_DL_CONFIG_REQUEST_DCI_DL_PDU_REL15_TAG
+
+typedef struct {
+	nfapi_nr_dl_config_dci_dl_pdu_rel15_t dci_dl_pdu_rel15;
+} nfapi_nr_dl_config_dci_dl_pdu;
+
 #endif
+

@@ -34,6 +34,8 @@
 #define __PHY_DEFS_NR_COMMON__H__
 
 #include "defs_common.h"
+#include "nfapi_nr_interface.h"
+#include "impl_defs_nr.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
 #define nr_subframe_t lte_subframe_t
@@ -55,6 +57,8 @@
 #define NR_PBCH_DMRS_LENGTH 144
 #define NR_PBCH_DMRS_LENGTH_DWORD 5 // roundup(NR_PBCH_DMRS_LENGTH/32)
 
+#define NR_MAX_NUM_BWP 4
+
 typedef enum {
   NR_MU_0=0,
   NR_MU_1,
@@ -72,7 +76,26 @@ typedef enum{
   nr_ssb_type_E
 } nr_ssb_type_e;
 
+typedef struct NR_BWP_PARMS {
+  /// Associated numerology index
+  uint8_t numerology_index;
+  /// Freq domain location
+  uint8_t location;
+  /// Bandwidth in PRB
+  uint16_t N_RB;
+  /// Size of FFT/IFFT
+  uint16_t ofdm_symbol_size;
+} NR_BWP_PARMS;
+
 typedef struct NR_DL_FRAME_PARMS {
+  /// Number of resource blocks (RB) in DL
+  uint8_t N_RB_DL;
+  /// Number of resource blocks (RB) in UL
+  uint8_t N_RB_UL;
+  ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
+  uint8_t N_RBG;
+  /// Total Number of Resource Block Groups SubSets: this is P
+  uint8_t N_RBGS;
   /// EUTRA Band
   uint8_t eutra_band;
   /// DL carrier frequency
@@ -84,6 +107,13 @@ typedef struct NR_DL_FRAME_PARMS {
   /// RX attenuation
   uint32_t att_rx;
   ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
+  /// Frame type (0 FDD, 1 TDD)
+  lte_frame_type_t frame_type;
+  /// TDD subframe assignment (0-7) (default = 3) (254=RX only, 255=TX only)
+  uint8_t tdd_config;
+  /// TDD S-subframe configuration (0-9)
+  /// Cell ID
+  uint16_t Nid_cell;
   uint32_t subcarrier_spacing;
   /// 3/4 sampling
   uint8_t threequarter_fs;
@@ -101,14 +131,47 @@ typedef struct NR_DL_FRAME_PARMS {
   uint16_t slots_per_subframe;
   /// Number of samples in a subframe
   uint32_t samples_per_subframe;
+  /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
+  uint16_t symbols_per_tti;
   /// Number of samples in a radio frame
   uint32_t samples_per_frame;
   /// Number of samples in a subframe without CP
   uint32_t samples_per_subframe_wCP;
   /// Number of samples in a radio frame without CP
   uint32_t samples_per_frame_wCP;
+  /// Number of samples in a tti (same as subrame in LTE, depending on numerology in NR)
+  uint32_t samples_per_tti;
+  /// NR numerology index [0..5] as specified in 38.211 Section 4 (mu). 0=15khZ SCS, 1=30khZ, 2=60kHz, etc
+  uint8_t numerology_index;
+  /// NR number of ttis per subframe deduced from numerology (cf 38.211): 1, 2, 4, 8(not supported),16(not supported),32(not supported)
+  uint8_t ttis_per_subframe;
+  /// NR number of slots per tti . Assumption only 2 Slot per TTI is supported (Slot Config 1 in 38.211)
+  uint8_t slots_per_tti;
+//#endif
+  /// Number of Physical transmit antennas in node
+  uint8_t nb_antennas_tx;
+  /// Number of Receive antennas in node
+  uint8_t nb_antennas_rx;
+  /// Number of common transmit antenna ports in eNodeB (1 or 2)
+  uint8_t nb_antenna_ports_eNB;
+  /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
+  lte_prefix_type_t Ncp;
+  /// shift of pilot position in one RB
+  uint8_t nushift;
+  /// SRS configuration from TS 38.331 RRC
+  SRS_NR srs_nr;
 
-    //SSB related params
+  /// for NR TDD management
+  TDD_UL_DL_configCommon_t  *p_tdd_UL_DL_Configuration;
+
+  TDD_UL_DL_configCommon_t  *p_tdd_UL_DL_ConfigurationCommon2;
+
+  TDD_UL_DL_SlotConfig_t    *p_TDD_UL_DL_ConfigDedicated;
+
+  /// TDD configuration
+  uint16_t tdd_uplink_nr[MAX_NR_OF_SLOTS]; /* this is a bitmap of symbol of each slot given for 2 frames */
+
+   //SSB related params
   /// Start in Subcarrier index of the SSB block
   uint16_t ssb_start_subcarrier;
   /// SSB type
@@ -116,6 +179,11 @@ typedef struct NR_DL_FRAME_PARMS {
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
 
+   //BWP params
+  NR_BWP_PARMS initial_bwp_params_dl;
+  NR_BWP_PARMS initial_bwp_params_ul;
+
 } NR_DL_FRAME_PARMS;
+
 
 #endif
