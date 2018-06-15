@@ -85,3 +85,20 @@ nr_rrc_init_global_param(
 
   return 0;
 }
+
+//-----------------------------------------------------------------------------
+void
+rrc_config_nr_buffer(
+  SRB_INFO* Srb_info,
+  uint8_t Lchan_type,
+  uint8_t Role
+)
+//-----------------------------------------------------------------------------
+{
+
+  Srb_info->Rx_buffer.payload_size = 0;
+  Srb_info->Tx_buffer.payload_size = 0;
+}
+
+
+//-----------------------------------------------------------------------------

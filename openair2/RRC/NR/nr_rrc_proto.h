@@ -37,6 +37,10 @@
 
 int nr_rrc_init_global_param(void);
 
+void rrc_config_nr_buffer(SRB_INFO* Srb_info,
+                          uint8_t Lchan_type,
+                          uint8_t Role);
+
 #if defined(ENABLE_ITTI)
 /**\brief RRC eNB task.
    \param void *args_p Pointer on arguments to start the task. */

@@ -559,152 +559,152 @@ typedef enum {
 
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                                                             component carriers configuration parameters                                                                                                                           */
-/*   optname                                                                        helpstr   paramflags    XXXptr                                                                  defXXXval                    type         numelt  checked_param  */
+/*   optname                                                                        helpstr   paramflags    XXXptr                                                                  defXXXval                       type         numelt  checked_param  */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define NRCCPARAMS_DESC { \
-{GNB_CONFIG_STRING_FRAME_TYPE,                                                       NULL,        0,        strptr:&frame_type,                                                     defstrval:"FDD",           TYPE_STRING,     0},  \
-{GNB_CONFIG_STRING_DL_PREFIX_TYPE,                                                   NULL,        0,        strptr:&DL_prefix_type,                                                 defstrval:"NORMAL",        TYPE_STRING,     0},  \
-{GNB_CONFIG_STRING_UL_PREFIX_TYPE,                                                   NULL,        0,        strptr:&UL_prefix_type,                                                 defstrval:"NORMAL",        TYPE_STRING,     0},  \
-{GNB_CONFIG_STRING_EUTRA_BAND,                                                       NULL,        0,        iptr:&eutra_band,                                                       defintval:7,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DOWNLINK_FREQUENCY,                                               NULL,        0,        i64ptr:(int64_t *)&downlink_frequency,                                  defint64val:2680000000,    TYPE_UINT64,     0},  \
-{GNB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET,                                          NULL,        0,        iptr:&uplink_frequency_offset,                                          defintval:-120000000,      TYPE_INT,        0},  \
-{GNB_CONFIG_STRING_NID_CELL,                                                         NULL,        0,        iptr:&Nid_cell,                                                         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_N_RB_DL,                                                          NULL,        0,        iptr:&N_RB_DL,                                                          defintval:25,              TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_NB_ANT_PORTS,                                                     NULL,        0,        iptr:&nb_antenna_ports,                                                 defintval:1,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_MIB_SUBCARRIERSPACINGCOMMON,                                      NULL,        0,        iptr:&MIB_subCarrierSpacingCommon,                                      defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_MIB_SSB_SUBCARRIEROFFSET,                                         NULL,        0,        iptr:&MIB_ssb_SubcarrierOffset,                                         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_MIB_DMRS_TYPEA_POSITION,                                          NULL,        0,        iptr:&MIB_dmrs_TypeA_Position,                                          defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDCCH_CONFIGSIB1,                                                 NULL,        0,        iptr:&pdcch_ConfigSIB1,                                                 defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SIB1_FREQUENCYOFFSETSSB,                                          NULL,        0,        iptr:&SIB1_frequencyOffsetSSB,                                          defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SIB1_SSB_PERIODICITYSERVINGCELL,                                  NULL,        0,        iptr:&SIB1_ssb_PeriodicityServingCell,                                  defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SIB1_SS_PBCH_BLOCKPOWER,                                          NULL,        0,        iptr:&SIB1_ss_PBCH_BlockPower,                                          defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_ABSOLUTEFREQUENCYSSB,                                             NULL,        0,        iptr:&absoluteFrequencySSB,                                             defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SSB_SUBCARRIEROFFSET,                                             NULL,        0,        iptr:&ssb_SubcarrierOffset,                                             defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_FREQBANDINDICATORNR,                                           NULL,        0,        iptr:&DL_FreqBandIndicatorNR,                                           defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_ABSOLUTEFREQUENCYPOINTA,                                       NULL,        0,        iptr:&DL_absoluteFrequencyPointA,                                       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_OFFSETTOCARRIER,                                               NULL,        0,        iptr:&DL_offsetToCarrier,                                               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_SCS_SUBCARRIERSPACING,                                         NULL,        0,        iptr:&DL_SCS_SubcarrierSpacing,                                         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_SCS_SPECIFICCARRIER_K0,                                        NULL,        0,        iptr:&DL_SCS_SpecificCarrier_k0,                                        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_CARRIERBANDWIDTH,                                              NULL,        0,        iptr:&DL_carrierBandwidth,                                              defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_LOCATIONANDBANDWIDTH,                                          NULL,        0,        iptr:&DL_locationAndBandwidth,                                          defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_BWP_SUBCARRIERSPACING,                                         NULL,        0,        iptr:&DL_BWP_SubcarrierSpacing,                                         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_BWP_PREFIX_TYPE,                                               NULL,        0,        iptr:&DL_BWP_prefix_type,                                               defintval:0,               TYPE_STRING,     0},  \
-{GNB_CONFIG_STRING_UL_FREQBANDINDICATORNR,                                           NULL,        0,        iptr:&UL_FreqBandIndicatorNR,                                           defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_ABSOLUTEFREQUENCYPOINTA,                                       NULL,        0,        iptr:&UL_absoluteFrequencyPointA,                                       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_ADDITIONALSPECTRUMEMISSION,                                    NULL,        0,        iptr:&UL_additionalSpectrumEmission,                                    defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_P_MAX,                                                         NULL,        0,        iptr:&UL_p_Max,                                                         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_FREQUENCYSHIFT7P5KHZ,                                          NULL,        0,        iptr:&UL_frequencyShift7p5khz,                                          defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_OFFSETTOCARRIER,                                               NULL,        0,        iptr:&UL_offsetToCarrier,                                               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_SCS_SUBCARRIERSPACING,                                         NULL,        0,        iptr:&UL_SCS_SubcarrierSpacing,                                         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_SCS_SPECIFICCARRIER_K0,                                        NULL,        0,        iptr:&UL_SCS_SpecificCarrier_k0,                                        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_CARRIERBANDWIDTH,                                              NULL,        0,        iptr:&UL_carrierBandwidth,                                              defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_LOCATIONANDBANDWIDTH,                                          NULL,        0,        iptr:&UL_locationAndBandwidth,                                          defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_BWP_SUBCARRIERSPACING,                                         NULL,        0,        iptr:&UL_BWP_SubcarrierSpacing,                                         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UL_BWP_PREFIX_TYPE,                                               NULL,        0,        iptr:&UL_BWP_prefix_type,                                               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR,                  NULL,        0,        iptr:&ServingCellConfigCommon_ssb_PositionsInBurst_PR,                  defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_PERIODICITYSERVINGCELL,               NULL,        0,        iptr:&ServingCellConfigCommon_ssb_periodicityServingCell,               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_DMRS_TYPEA_POSITION,                      NULL,        0,        iptr:&ServingCellConfigCommon_dmrs_TypeA_Position,                      defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_NIA_SUBCARRIERSPACING,                                            NULL,        0,        iptr:&NIA_SubcarrierSpacing,                                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SS_PBCH_BLOCKPOWER,                       NULL,        0,        iptr:&ServingCellConfigCommon_ss_PBCH_BlockPower,                       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_REFERENCESUBCARRIERSPACING,                                       NULL,        0,        iptr:&referenceSubcarrierSpacing,                                       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DL_UL_TRANSMISSIONPERIODICITY,                                    NULL,        0,        iptr:&dl_UL_TransmissionPeriodicity,                                    defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_NROFDOWNLINKSLOTS,                                                NULL,        0,        iptr:&nrofDownlinkSlots,                                                defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_NROFDOWNLINKSYMBOLS,                                              NULL,        0,        iptr:&nrofDownlinkSymbols,                                              defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_NROFUPLINKSLOTS,                                                  NULL,        0,        iptr:&nrofUplinkSlots,                                                  defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_NROFUPLINKSYMBOLS,                                                NULL,        0,        iptr:&nrofUplinkSymbols,                                                defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_TOTALNUMBEROFRA_PREAMBLES,                                   NULL,        0,        iptr:&rach_totalNumberOfRA_Preambles,                                   defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_CHOICE,            NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEEIGHTH,         NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth,         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEFOURTH,         NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth,         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEHALF,           NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf,           defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONE,               NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one,               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_TWO,               NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two,               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_FOUR,              NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four,              defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_EIGHT,             NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight,             defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_SIXTEEN,           NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen,           defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_GROUPBCONFIGURED,                                            NULL,        0,        iptr:&rach_groupBconfigured,                                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_RA_MSG3SIZEGROUPA,                                           NULL,        0,        iptr:&rach_ra_Msg3SizeGroupA,                                           defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_MESSAGEPOWEROFFSETGROUPB,                                    NULL,        0,        iptr:&rach_messagePowerOffsetGroupB,                                    defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_NUMBEROFRA_PREAMBLESGROUPA,                                  NULL,        0,        iptr:&rach_numberOfRA_PreamblesGroupA,                                  defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_RA_CONTENTIONRESOLUTIONTIMER,                                NULL,        0,        iptr:&rach_ra_ContentionResolutionTimer,                                defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RSRP_THRESHOLDSSB,                                                NULL,        0,        iptr:&rsrp_ThresholdSSB,                                                defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RSRP_THRESHOLDSSB_SUL,                                            NULL,        0,        iptr:&rsrp_ThresholdSSB_SUL,                                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PRACH_ROOTSEQUENCEINDEX_CHOICE,                                   NULL,        0,        iptr:&prach_RootSequenceIndex_choice,                                   defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PRACH_ROOTSEQUENCEINDEX_L839,                                     NULL,        0,        iptr:&prach_RootSequenceIndex_l839,                                     defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PRACH_ROOTSEQUENCEINDEX_L139,                                     NULL,        0,        iptr:&prach_RootSequenceIndex_l139,                                     defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PRACH_MSG1_SUBCARRIERSPACING,                                     NULL,        0,        iptr:&prach_msg1_SubcarrierSpacing,                                     defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RESTRICTEDSETCONFIG,                                              NULL,        0,        iptr:&restrictedSetConfig,                                              defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_MSG3_TRANSFORMPRECODING,                                          NULL,        0,        iptr:&msg3_transformPrecoding,                                          defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PRACH_CONFIGURATIONINDEX,                                         NULL,        0,        iptr:&prach_ConfigurationIndex,                                         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PRACH_MSG1_FDM,                                                   NULL,        0,        iptr:&prach_msg1_FDM,                                                   defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PRACH_MSG1_FREQUENCYSTART,                                        NULL,        0,        iptr:&prach_msg1_FrequencyStart,                                        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_ZEROCORRELATIONZONECONFIG,                                        NULL,        0,        iptr:&zeroCorrelationZoneConfig,                                        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PREAMBLERECEIVEDTARGETPOWER,                                      NULL,        0,        iptr:&preambleReceivedTargetPower,                                      defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PREAMBLETRANSMAX,                                                 NULL,        0,        iptr:&preambleTransMax,                                                 defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_POWERRAMPINGSTEP,                                                 NULL,        0,        iptr:&powerRampingStep,                                                 defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RA_RESPONSEWINDOW,                                                NULL,        0,        iptr:&ra_ResponseWindow,                                                defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_GROUPHOPPINGENABLEDTRANSFORMPRECODING,                            NULL,        0,        iptr:&groupHoppingEnabledTransformPrecoding,                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_MSG3_DELTAPREAMBLE,                                               NULL,        0,        iptr:&msg3_DeltaPreamble,                                               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_P0_NOMINALWITHGRANT,                                              NULL,        0,        iptr:&p0_NominalWithGrant,                                              defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PUSCH_TIMEDOMAINRESOURCEALLOCATION_K2,                            NULL,        0,        iptr:&PUSCH_TimeDomainResourceAllocation_k2,                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PUSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE,                   NULL,        0,        iptr:&PUSCH_TimeDomainResourceAllocation_mappingType,                   defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PUCCH_GROUPHOPPING,                                               NULL,        0,        iptr:&pucch_GroupHopping,                                               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_P0_NOMINAL,                                                       NULL,        0,        iptr:&p0_nominal,                                                       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDSCH_TIMEDOMAINRESOURCEALLOCATION_K0,                            NULL,        0,        iptr:&PDSCH_TimeDomainResourceAllocation_k0,                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE,                   NULL,        0,        iptr:&PDSCH_TimeDomainResourceAllocation_mappingType,                   defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERNID,                                               NULL,        0,        iptr:&rateMatchPatternId,                                               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERN_PATTERNTYPE,                                     NULL,        0,        iptr:&RateMatchPattern_patternType,                                     defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SYMBOLSINRESOURCEBLOCK,                                           NULL,        0,        iptr:&symbolsInResourceBlock,                                           defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PERIODICITYANDPATTERN,                                            NULL,        0,        iptr:&periodicityAndPattern,                                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERN_CONTROLRESOURCESET,                              NULL,        0,        iptr:&RateMatchPattern_controlResourceSet,                              defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERN_SUBCARRIERSPACING,                               NULL,        0,        iptr:&RateMatchPattern_subcarrierSpacing,                               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERN_MODE,                                            NULL,        0,        iptr:&RateMatchPattern_mode,                                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACESIB1,                                                  NULL,        0,        iptr:&searchSpaceSIB1,                                                  defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACEOTHERSYSTEMINFORMATION,                                NULL,        0,        iptr:&searchSpaceOtherSystemInformation,                                defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PAGINGSEARCHSPACE,                                                NULL,        0,        iptr:&pagingSearchSpace,                                                defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RA_SEARCHSPACE,                                                   NULL,        0,        iptr:&ra_SearchSpace,                                                   defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RACH_RA_CONTROLRESOURCESET,                                       NULL,        0,        iptr:&rach_ra_ControlResourceSet,                                       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDCCH_COMMON_CONTROLRESOURCESETID,                                NULL,        0,        iptr:&PDCCH_common_controlResourceSetId,                                defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDCCH_COMMON_CONTROLRESOURCESET_DURATION,                         NULL,        0,        iptr:&PDCCH_common_ControlResourceSet_duration,                         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDCCH_CCE_REG_MAPPINGTYPE,                                        NULL,        0,        iptr:&PDCCH_cce_REG_MappingType,                                        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDCCH_REG_BUNDLESIZE,                                             NULL,        0,        iptr:&PDCCH_reg_BundleSize,                                             defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDCCH_INTERLEAVERSIZE,                                            NULL,        0,        iptr:&PDCCH_interleaverSize,                                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDCCH_SHIFTINDEX,                                                 NULL,        0,        iptr:&PDCCH_shiftIndex,                                                 defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDCCH_PRECODERGRANULARITY,                                        NULL,        0,        iptr:&PDCCH_precoderGranularity,                                        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDCCH_TCI_STATEID,                                                NULL,        0,        iptr:&PDCCH_TCI_StateId,                                                defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_TCI_PRESENTINDCI,                                                 NULL,        0,        iptr:&tci_PresentInDCI,                                                 defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACEID,                                                    NULL,        0,        iptr:&SearchSpaceId,                                                    defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_COMMONSEARCHSPACES_CONTROLRESOURCESETID,                          NULL,        0,        iptr:&commonSearchSpaces_controlResourceSetId,                          defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_CHOICE,            NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_choice,            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL1,               NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl1,               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL2,               NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl2,               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL4,               NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl4,               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL5,               NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl5,               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL8,               NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl8,               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL10,              NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl10,              defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL16,              NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl16,              defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL20,              NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl20,              defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL1,                     NULL,        0,        iptr:&SearchSpace_nrofCandidates_aggregationLevel1,                     defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL2,                     NULL,        0,        iptr:&SearchSpace_nrofCandidates_aggregationLevel2,                     defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL4,                     NULL,        0,        iptr:&SearchSpace_nrofCandidates_aggregationLevel4,                     defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL8,                     NULL,        0,        iptr:&SearchSpace_nrofCandidates_aggregationLevel8,                     defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL16,                    NULL,        0,        iptr:&SearchSpace_nrofCandidates_aggregationLevel16,                    defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_SEARCHSPACE_SEARCHSPACETYPE,                                      NULL,        0,        iptr:&SearchSpace_searchSpaceType,                                      defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL1,        NULL,        0,        iptr:&Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1,        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL2,        NULL,        0,        iptr:&Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2,        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL4,        NULL,        0,        iptr:&Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4,        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL8,        NULL,        0,        iptr:&Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8,        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL16,       NULL,        0,        iptr:&Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16,       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_3_MONITORINGPERIODICITY,                       NULL,        0,        iptr:&Common_dci_Format2_3_monitoringPeriodicity,                       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_3_NROFPDCCH_CANDIDATES,                        NULL,        0,        iptr:&Common_dci_Format2_3_nrofPDCCH_Candidates,                        defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_UE_SPECIFIC__DCI_FORMATS,                                         NULL,        0,        iptr:&ue_Specific__dci_Formats,                                         defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_CARRIERFREQDL,                            NULL,        0,        iptr:&RateMatchPatternLTE_CRS_carrierFreqDL,                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_CARRIERBANDWIDTHDL,                       NULL,        0,        iptr:&RateMatchPatternLTE_CRS_carrierBandwidthDL,                       defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_NROFCRS_PORTS,                            NULL,        0,        iptr:&RateMatchPatternLTE_CRS_nrofCRS_Ports,                            defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_V_SHIFT,                                  NULL,        0,        iptr:&RateMatchPatternLTE_CRS_v_Shift,                                  defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONPERIOD,               NULL,        0,        iptr:&RateMatchPatternLTE_CRS_radioframeAllocationPeriod,               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONOFFSET,               NULL,        0,        iptr:&RateMatchPatternLTE_CRS_radioframeAllocationOffset,               defintval:0,               TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_SUBFRAMEALLOCATION_CHOICE,                NULL,        0,        iptr:&RateMatchPatternLTE_CRS_subframeAllocation_choice,                defintval:0,               TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_FRAME_TYPE,                                                       NULL,        0,        strptr:&frame_type,                                                     defstrval:"FDD",                TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_DL_PREFIX_TYPE,                                                   NULL,        0,        strptr:&DL_prefix_type,                                                 defstrval:"NORMAL",             TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_UL_PREFIX_TYPE,                                                   NULL,        0,        strptr:&UL_prefix_type,                                                 defstrval:"NORMAL",             TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_EUTRA_BAND,                                                       NULL,        0,        iptr:&eutra_band,                                                       defintval:7,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DOWNLINK_FREQUENCY,                                               NULL,        0,        i64ptr:(int64_t *)&downlink_frequency,                                  defint64val:2680000000,         TYPE_UINT64,     0},  \
+{GNB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET,                                          NULL,        0,        iptr:&uplink_frequency_offset,                                          defintval:-120000000,           TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_NID_CELL,                                                         NULL,        0,        iptr:&Nid_cell,                                                         defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_N_RB_DL,                                                          NULL,        0,        iptr:&N_RB_DL,                                                          defintval:25,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_NB_ANT_PORTS,                                                     NULL,        0,        iptr:&nb_antenna_ports,                                                 defintval:15,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_MIB_SUBCARRIERSPACINGCOMMON,                                      NULL,        0,        iptr:&MIB_subCarrierSpacingCommon,                                      defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_MIB_SSB_SUBCARRIEROFFSET,                                         NULL,        0,        iptr:&MIB_ssb_SubcarrierOffset,                                         defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_MIB_DMRS_TYPEA_POSITION,                                          NULL,        0,        iptr:&MIB_dmrs_TypeA_Position,                                          defintval:2,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PDCCH_CONFIGSIB1,                                                 NULL,        0,        iptr:&pdcch_ConfigSIB1,                                                 defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SIB1_FREQUENCYOFFSETSSB,                                          NULL,        0,        strptr:&SIB1_frequencyOffsetSSB,                                        defstrval:"khz5",               TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_SIB1_SSB_PERIODICITYSERVINGCELL,                                  NULL,        0,        iptr:&SIB1_ssb_PeriodicityServingCell,                                  defintval:5,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SIB1_SS_PBCH_BLOCKPOWER,                                          NULL,        0,        iptr:&SIB1_ss_PBCH_BlockPower,                                          defintval:-60,                  TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_ABSOLUTEFREQUENCYSSB,                                             NULL,        0,        iptr:&absoluteFrequencySSB,                                             defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SSB_SUBCARRIEROFFSET,                                             NULL,        0,        iptr:&ssb_SubcarrierOffset,                                             defintval:15,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DL_FREQBANDINDICATORNR,                                           NULL,        0,        iptr:&DL_FreqBandIndicatorNR,                                           defintval:15,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DL_ABSOLUTEFREQUENCYPOINTA,                                       NULL,        0,        iptr:&DL_absoluteFrequencyPointA,                                       defintval:15,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DL_OFFSETTOCARRIER,                                               NULL,        0,        iptr:&DL_offsetToCarrier,                                               defintval:15,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DL_SCS_SUBCARRIERSPACING,                                         NULL,        0,        strptr:&DL_SCS_SubcarrierSpacing,                                       defstrval:"kHz15",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_DL_SCS_SPECIFICCARRIER_K0,                                        NULL,        0,        iptr:&DL_SCS_SpecificCarrier_k0,                                        defintval:0,                    TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_DL_CARRIERBANDWIDTH,                                              NULL,        0,        iptr:&DL_carrierBandwidth,                                              defintval:15,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DL_LOCATIONANDBANDWIDTH,                                          NULL,        0,        iptr:&DL_locationAndBandwidth,                                          defintval:15,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DL_BWP_SUBCARRIERSPACING,                                         NULL,        0,        strptr:&DL_BWP_SubcarrierSpacing,                                       defstrval:"kHz15",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_DL_BWP_PREFIX_TYPE,                                               NULL,        0,        strptr:&DL_BWP_prefix_type,                                             defstrval:"NORMAL",             TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_UL_FREQBANDINDICATORNR,                                           NULL,        0,        iptr:&UL_FreqBandIndicatorNR,                                           defintval:15,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_ABSOLUTEFREQUENCYPOINTA,                                       NULL,        0,        iptr:&UL_absoluteFrequencyPointA,                                       defintval:13,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_ADDITIONALSPECTRUMEMISSION,                                    NULL,        0,        iptr:&UL_additionalSpectrumEmission,                                    defintval:3,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_P_MAX,                                                         NULL,        0,        iptr:&UL_p_Max,                                                         defintval:-1,                   TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_UL_FREQUENCYSHIFT7P5KHZ,                                          NULL,        0,        strptr:&UL_frequencyShift7p5khz,                                        defstrval:"TRUE",               TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_UL_OFFSETTOCARRIER,                                               NULL,        0,        iptr:&UL_offsetToCarrier,                                               defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_SCS_SUBCARRIERSPACING,                                         NULL,        0,        strptr:&UL_SCS_SubcarrierSpacing,                                       defstrval:"kHz15",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_UL_SCS_SPECIFICCARRIER_K0,                                        NULL,        0,        iptr:&UL_SCS_SpecificCarrier_k0,                                        defintval:0,                    TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_UL_CARRIERBANDWIDTH,                                              NULL,        0,        iptr:&UL_carrierBandwidth,                                              defintval:15,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_LOCATIONANDBANDWIDTH,                                          NULL,        0,        iptr:&UL_locationAndBandwidth,                                          defintval:15,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UL_BWP_SUBCARRIERSPACING,                                         NULL,        0,        strptr:&UL_BWP_SubcarrierSpacing,                                       defstrval:"kHz15",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_UL_BWP_PREFIX_TYPE,                                               NULL,        0,        strptr:&UL_BWP_prefix_type,                                             defstrval:"NORMAL",             TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR,                  NULL,        0,        strptr:&ServingCellConfigCommon_ssb_PositionsInBurst_PR,                defstrval:"shortBitmap",        TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_PERIODICITYSERVINGCELL,               NULL,        0,        iptr:&ServingCellConfigCommon_ssb_periodicityServingCell,               defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_DMRS_TYPEA_POSITION,                      NULL,        0,        iptr:&ServingCellConfigCommon_dmrs_TypeA_Position,                      defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_NIA_SUBCARRIERSPACING,                                            NULL,        0,        strptr:&NIA_SubcarrierSpacing,                                          defstrval:"kHz15",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SS_PBCH_BLOCKPOWER,                       NULL,        0,        iptr:&ServingCellConfigCommon_ss_PBCH_BlockPower,                       defintval:-60,                  TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_REFERENCESUBCARRIERSPACING,                                       NULL,        0,        strptr:&referenceSubcarrierSpacing,                                     defstrval:"kHz15",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_DL_UL_TRANSMISSIONPERIODICITY,                                    NULL,        0,        strptr:&dl_UL_TransmissionPeriodicity,                                  defstrval:"ms0p5",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_NROFDOWNLINKSLOTS,                                                NULL,        0,        iptr:&nrofDownlinkSlots,                                                defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_NROFDOWNLINKSYMBOLS,                                              NULL,        0,        iptr:&nrofDownlinkSymbols,                                              defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_NROFUPLINKSLOTS,                                                  NULL,        0,        iptr:&nrofUplinkSlots,                                                  defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_NROFUPLINKSYMBOLS,                                                NULL,        0,        iptr:&nrofUplinkSymbols,                                                defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_TOTALNUMBEROFRA_PREAMBLES,                                   NULL,        0,        iptr:&rach_totalNumberOfRA_Preambles,                                   defintval:63,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_CHOICE,            NULL,        0,        strptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,          defstrval:"oneEighth",          TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEEIGHTH,         NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth,         defintval:4,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEFOURTH,         NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth,         defintval:8,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEHALF,           NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf,           defintval:16,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONE,               NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one,               defintval:24,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_TWO,               NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two,               defintval:32,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_FOUR,              NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four,              defintval:8,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_EIGHT,             NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight,             defintval:4,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_SIXTEEN,           NULL,        0,        iptr:&rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen,           defintval:2,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_GROUPBCONFIGURED,                                            NULL,        0,        strptr:&rach_groupBconfigured,                                          defstrval:"ENABLE",             TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_RACH_RA_MSG3SIZEGROUPA,                                           NULL,        0,        iptr:&rach_ra_Msg3SizeGroupA,                                           defintval:56,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_MESSAGEPOWEROFFSETGROUPB,                                    NULL,        0,        strptr:&rach_messagePowerOffsetGroupB,                                  defstrval:"dB0",                TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_RACH_NUMBEROFRA_PREAMBLESGROUPA,                                  NULL,        0,        iptr:&rach_numberOfRA_PreamblesGroupA,                                  defintval:32,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_RA_CONTENTIONRESOLUTIONTIMER,                                NULL,        0,        iptr:&rach_ra_ContentionResolutionTimer,                                defintval:8,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RSRP_THRESHOLDSSB,                                                NULL,        0,        iptr:&rsrp_ThresholdSSB,                                                defintval:64,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RSRP_THRESHOLDSSB_SUL,                                            NULL,        0,        iptr:&rsrp_ThresholdSSB_SUL,                                            defintval:64,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PRACH_ROOTSEQUENCEINDEX_CHOICE,                                   NULL,        0,        strptr:&prach_RootSequenceIndex_choice,                                 defstrval:"l839",               TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_PRACH_ROOTSEQUENCEINDEX_L839,                                     NULL,        0,        iptr:&prach_RootSequenceIndex_l839,                                     defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PRACH_ROOTSEQUENCEINDEX_L139,                                     NULL,        0,        iptr:&prach_RootSequenceIndex_l139,                                     defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PRACH_MSG1_SUBCARRIERSPACING,                                     NULL,        0,        strptr:&prach_msg1_SubcarrierSpacing,                                   defstrval:"kHz15",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_RESTRICTEDSETCONFIG,                                              NULL,        0,        strptr:&restrictedSetConfig,                                            defstrval:"unrestrictedSet",    TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_MSG3_TRANSFORMPRECODING,                                          NULL,        0,        strptr:&msg3_transformPrecoding,                                        defstrval:"ENABLE",             TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_PRACH_CONFIGURATIONINDEX,                                         NULL,        0,        iptr:&prach_ConfigurationIndex,                                         defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PRACH_MSG1_FDM,                                                   NULL,        0,        strptr:&prach_msg1_FDM,                                                 defstrval:"one",                TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_PRACH_MSG1_FREQUENCYSTART,                                        NULL,        0,        iptr:&prach_msg1_FrequencyStart,                                        defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_ZEROCORRELATIONZONECONFIG,                                        NULL,        0,        iptr:&zeroCorrelationZoneConfig,                                        defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PREAMBLERECEIVEDTARGETPOWER,                                      NULL,        0,        iptr:&preambleReceivedTargetPower,                                      defintval:-150,                 TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_PREAMBLETRANSMAX,                                                 NULL,        0,        iptr:&preambleTransMax,                                                 defintval:6,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_POWERRAMPINGSTEP,                                                 NULL,        0,        strptr:&powerRampingStep,                                               defstrval:"dB0",                TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_RA_RESPONSEWINDOW,                                                NULL,        0,        iptr:&ra_ResponseWindow,                                                defintval:8,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_GROUPHOPPINGENABLEDTRANSFORMPRECODING,                            NULL,        0,        strptr:&groupHoppingEnabledTransformPrecoding,                          defstrval:"ENABLE",             TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_MSG3_DELTAPREAMBLE,                                               NULL,        0,        iptr:&msg3_DeltaPreamble,                                               defintval:0,                    TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_P0_NOMINALWITHGRANT,                                              NULL,        0,        iptr:&p0_NominalWithGrant,                                              defintval:0,                    TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_PUSCH_TIMEDOMAINRESOURCEALLOCATION_K2,                            NULL,        0,        iptr:&PUSCH_TimeDomainResourceAllocation_k2,                            defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PUSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE,                   NULL,        0,        strptr:&PUSCH_TimeDomainResourceAllocation_mappingType,                 defstrval:"typeA",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_PUCCH_GROUPHOPPING,                                               NULL,        0,        strptr:&pucch_GroupHopping,                                             defstrval:"neither",            TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_P0_NOMINAL,                                                       NULL,        0,        iptr:&p0_nominal,                                                       defintval:-30,                  TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_PDSCH_TIMEDOMAINRESOURCEALLOCATION_K0,                            NULL,        0,        iptr:&PDSCH_TimeDomainResourceAllocation_k0,                            defintval:2,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PDSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE,                   NULL,        0,        strptr:&PDSCH_TimeDomainResourceAllocation_mappingType,                 defstrval:"typeA",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNID,                                               NULL,        0,        iptr:&rateMatchPatternId,                                               defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERN_PATTERNTYPE,                                     NULL,        0,        strptr:&RateMatchPattern_patternType,                                   defstrval:"bitmaps",            TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_SYMBOLSINRESOURCEBLOCK,                                           NULL,        0,        strptr:&symbolsInResourceBlock,                                         defstrval:"oneSlot",            TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_PERIODICITYANDPATTERN,                                            NULL,        0,        iptr:&periodicityAndPattern,                                            defintval:2,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERN_CONTROLRESOURCESET,                              NULL,        0,        iptr:&RateMatchPattern_controlResourceSet,                              defintval:5,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERN_SUBCARRIERSPACING,                               NULL,        0,        strptr:&RateMatchPattern_subcarrierSpacing,                             defstrval:"kHz15",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERN_MODE,                                            NULL,        0,        strptr:&RateMatchPattern_mode,                                          defstrval:"dynamic",            TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_SEARCHSPACESIB1,                                                  NULL,        0,        iptr:&searchSpaceSIB1,                                                  defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACEOTHERSYSTEMINFORMATION,                                NULL,        0,        iptr:&searchSpaceOtherSystemInformation,                                defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PAGINGSEARCHSPACE,                                                NULL,        0,        iptr:&pagingSearchSpace,                                                defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RA_SEARCHSPACE,                                                   NULL,        0,        iptr:&ra_SearchSpace,                                                   defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RACH_RA_CONTROLRESOURCESET,                                       NULL,        0,        iptr:&rach_ra_ControlResourceSet,                                       defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PDCCH_COMMON_CONTROLRESOURCESETID,                                NULL,        0,        iptr:&PDCCH_common_controlResourceSetId,                                defintval:5,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PDCCH_COMMON_CONTROLRESOURCESET_DURATION,                         NULL,        0,        iptr:&PDCCH_common_ControlResourceSet_duration,                         defintval:2,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PDCCH_CCE_REG_MAPPINGTYPE,                                        NULL,        0,        strptr:&PDCCH_cce_REG_MappingType,                                      defstrval:"interleaved",        TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_PDCCH_REG_BUNDLESIZE,                                             NULL,        0,        iptr:&PDCCH_reg_BundleSize,                                             defintval:3,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PDCCH_INTERLEAVERSIZE,                                            NULL,        0,        iptr:&PDCCH_interleaverSize,                                            defintval:3,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PDCCH_SHIFTINDEX,                                                 NULL,        0,        iptr:&PDCCH_shiftIndex,                                                 defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_PDCCH_PRECODERGRANULARITY,                                        NULL,        0,        strptr:&PDCCH_precoderGranularity,                                      defstrval:"sameAsREG-bundle",   TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_PDCCH_TCI_STATEID,                                                NULL,        0,        iptr:&PDCCH_TCI_StateId,                                                defintval:32,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_TCI_PRESENTINDCI,                                                 NULL,        0,        strptr:&tci_PresentInDCI,                                               defstrval:"ENABLE",             TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_SEARCHSPACEID,                                                    NULL,        0,        iptr:&SearchSpaceId,                                                    defintval:10,                   TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_COMMONSEARCHSPACES_CONTROLRESOURCESETID,                          NULL,        0,        iptr:&commonSearchSpaces_controlResourceSetId,                          defintval:5,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_CHOICE,            NULL,        0,        strptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_choice,          defstrval:"sl1",                TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL1,               NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl1,               defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL2,               NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl2,               defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL4,               NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl4,               defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL5,               NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl5,               defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL8,               NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl8,               defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL10,              NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl10,              defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL16,              NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl16,              defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL20,              NULL,        0,        iptr:&SearchSpace_monitoringSlotPeriodicityAndOffset_sl20,              defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL1,                     NULL,        0,        iptr:&SearchSpace_nrofCandidates_aggregationLevel1,                     defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL2,                     NULL,        0,        iptr:&SearchSpace_nrofCandidates_aggregationLevel2,                     defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL4,                     NULL,        0,        iptr:&SearchSpace_nrofCandidates_aggregationLevel4,                     defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL8,                     NULL,        0,        iptr:&SearchSpace_nrofCandidates_aggregationLevel8,                     defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL16,                    NULL,        0,        iptr:&SearchSpace_nrofCandidates_aggregationLevel16,                    defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_SEARCHSPACE_SEARCHSPACETYPE,                                      NULL,        0,        strptr:&SearchSpace_searchSpaceType,                                    defstrval:"common",             TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL1,        NULL,        0,        iptr:&Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1,        defintval:1,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL2,        NULL,        0,        iptr:&Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2,        defintval:1,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL4,        NULL,        0,        iptr:&Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4,        defintval:1,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL8,        NULL,        0,        iptr:&Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8,        defintval:1,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL16,       NULL,        0,        iptr:&Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16,       defintval:1,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_3_MONITORINGPERIODICITY,                       NULL,        0,        iptr:&Common_dci_Format2_3_monitoringPeriodicity,                       defintval:1,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_COMMON_DCI_FORMAT2_3_NROFPDCCH_CANDIDATES,                        NULL,        0,        iptr:&Common_dci_Format2_3_nrofPDCCH_Candidates,                        defintval:1,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_UE_SPECIFIC__DCI_FORMATS,                                         NULL,        0,        strptr:&ue_Specific__dci_Formats,                                       defstrval:"formats0-0-And-1-0", TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_CARRIERFREQDL,                            NULL,        0,        iptr:&RateMatchPatternLTE_CRS_carrierFreqDL,                            defintval:6,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_CARRIERBANDWIDTHDL,                       NULL,        0,        iptr:&RateMatchPatternLTE_CRS_carrierBandwidthDL,                       defintval:6,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_NROFCRS_PORTS,                            NULL,        0,        iptr:&RateMatchPatternLTE_CRS_nrofCRS_Ports,                            defintval:1,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_V_SHIFT,                                  NULL,        0,        iptr:&RateMatchPatternLTE_CRS_v_Shift,                                  defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONPERIOD,               NULL,        0,        iptr:&RateMatchPatternLTE_CRS_radioframeAllocationPeriod,               defintval:1,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONOFFSET,               NULL,        0,        iptr:&RateMatchPatternLTE_CRS_radioframeAllocationOffset,               defintval:0,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_RATEMATCHPATTERNLTE_CRS_SUBFRAMEALLOCATION_CHOICE,                NULL,        0,        strptr:&RateMatchPatternLTE_CRS_subframeAllocation_choice,              defstrval:"oneFrame",           TYPE_STRING,     0},  \
 }
 
 
@@ -742,7 +742,7 @@ typedef enum {
 #define GNB_CONFIG_DL_BWP_PREFIX_TYPE_IDX                                           30
 #define GNB_CONFIG_UL_FREQBANDINDICATORNR_IDX                                       31
 #define GNB_CONFIG_UL_ABSOLUTEFREQUENCYPOINTA_IDX                                   32
-#define GNB_CONFIG_UL_ADDITIONALSPECTRUMEMISSION_IDX;                               33
+#define GNB_CONFIG_UL_ADDITIONALSPECTRUMEMISSION_IDX                                33
 #define GNB_CONFIG_UL_P_MAX_IDX                                                     34
 #define GNB_CONFIG_UL_FREQUENCYSHIFT7P5KHZ_IDX                                      35
 #define GNB_CONFIG_UL_OFFSETTOCARRIER_IDX                                           36
@@ -752,113 +752,110 @@ typedef enum {
 #define GNB_CONFIG_UL_LOCATIONANDBANDWIDTH_IDX                                      41
 #define GNB_CONFIG_UL_BWP_SUBCARRIERSPACING_IDX                                     42
 #define GNB_CONFIG_UL_BWP_PREFIX_TYPE_IDX                                           43
-#define GNB_CONFIG_SUBCARRIERSPACINGCOMMON_IDX                                      44
-#define GNB_CONFIG_PDCCH_CONFIGSIB1_IDX                                             45
-#define GNB_CONFIG_FREQUENCYOFFSETSSB_IDX                                           46
-#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR_IDX              47
-#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SSB_PERIODICITYSERVINGCELL_IDX           48
-#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_DMRS_TYPEA_POSITION_IDX                  49
-#define GNB_CONFIG_NIA_SUBCARRIERSPACING_IDX                                        50
-#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SS_PBCH_BLOCKPOWER_IDX                   51
-#define GNB_CONFIG_REFERENCESUBCARRIERSPACING_IDX                                   52
-#define GNB_CONFIG_DL_UL_TRANSMISSIONPERIODICITY_IDX                                53
-#define GNB_CONFIG_NROFDOWNLINKSLOTS_IDX                                            54
-#define GNB_CONFIG_NROFDOWNLINKSYMBOLS_IDX                                          55
-#define GNB_CONFIG_NROFUPLINKSLOTS_IDX                                              56
-#define GNB_CONFIG_NROFUPLINKSYMBOLS_IDX                                            57
-#define GNB_CONFIG_RACH_TOTALNUMBEROFRA_PREAMBLES_IDX                               58
-#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_CHOICE_IDX        59
-#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEEIGHTH_IDX     60
-#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEFOURTH_IDX     61
-#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEHALF_IDX       62
-#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONE_IDX           63
-#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_TWO_IDX           64
-#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_FOUR_IDX          65
-#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_EIGHT_IDX         66
-#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_SIXTEEN_IDX       67
-#define GNB_CONFIG_RACH_GROUPBCONFIGURED_IDX                                        68
-#define GNB_CONFIG_RACH_RA_MSG3SIZEGROUPA_IDX                                       69
-#define GNB_CONFIG_RACH_MESSAGEPOWEROFFSETGROUPB_IDX                                70
-#define GNB_CONFIG_RACH_NUMBEROFRA_PREAMBLESGROUPA_IDX                              71
-#define GNB_CONFIG_RACH_RA_CONTENTIONRESOLUTIONTIMER_IDX                            72
-#define GNB_CONFIG_RSRP_THRESHOLDSSB_IDX                                            73
-#define GNB_CONFIG_RSRP_THRESHOLDSSB_SUL_IDX                                        74
-#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_CHOICE_IDX                               75
-#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_L839_IDX                                 76
-#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_L139_IDX                                 77
-#define GNB_CONFIG_PRACH_MSG1_SUBCARRIERSPACING_IDX                                 78
-#define GNB_CONFIG_RESTRICTEDSETCONFIG_IDX                                          79
-#define GNB_CONFIG_MSG3_TRANSFORMPRECODING_IDX                                      80
-#define GNB_CONFIG_PRACH_CONFIGURATIONINDEX_IDX                                     81
-#define GNB_CONFIG_PRACH_MSG1_FDM_IDX                                               82
-#define GNB_CONFIG_PRACH_MSG1_FREQUENCYSTART_IDX                                    83
-#define GNB_CONFIG_ZEROCORRELATIONZONECONFIG_IDX                                    84
-#define GNB_CONFIG_PREAMBLERECEIVEDTARGETPOWER_IDX                                  85
-#define GNB_CONFIG_PREAMBLETRANSMAX_IDX                                             86
-#define GNB_CONFIG_POWERRAMPINGSTEP_IDX                                             87
-#define GNB_CONFIG_RA_RESPONSEWINDOW_IDX                                            88
-#define GNB_CONFIG_GROUPHOPPINGENABLEDTRANSFORMPRECODING_IDX                        89
-#define GNB_CONFIG_MSG3_DELTAPREAMBLE_IDX                                           90
-#define GNB_CONFIG_P0_NOMINALWITHGRANT_IDX                                          91
-#define GNB_CONFIG_PUSCH_TIMEDOMAINRESOURCEALLOCATION_K2_IDX                        92
-#define GNB_CONFIG_PUSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE_IDX               93
-#define GNB_CONFIG_PUCCH_GROUPHOPPING_IDX                                           94
-#define GNB_CONFIG_P0_NOMINAL_IDX                                                   95
-#define GNB_CONFIG_PDSCH_TIMEDOMAINRESOURCEALLOCATION_K0_IDX                        96
-#define GNB_CONFIG_PDSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE_IDX               97
-#define GNB_CONFIG_RATEMATCHPATTERNID_IDX                                           98
-#define GNB_CONFIG_RATEMATCHPATTERN_PATTERNTYPE_IDX                                 99
-#define GNB_CONFIG_SYMBOLSINRESOURCEBLOCK_IDX                                       100
-#define GNB_CONFIG_PERIODICITYANDPATTERN_IDX                                        101
-#define GNB_CONFIG_RATEMATCHPATTERN_CONTROLRESOURCESET_IDX                          102
-#define GNB_CONFIG_RATEMATCHPATTERN_SUBCARRIERSPACING_IDX                           103
-#define GNB_CONFIG_RATEMATCHPATTERN_MODE_IDX                                        104
-#define GNB_CONFIG_SEARCHSPACESIB1_IDX                                              105
-#define GNB_CONFIG_SEARCHSPACEOTHERSYSTEMINFORMATION_IDX                            106
-#define GNB_CONFIG_PAGINGSEARCHSPACE_IDX                                            107
-#define GNB_CONFIG_RA_SEARCHSPACE_IDX                                               108
-#define GNB_CONFIG_RACH_RA_CONTROLRESOURCESET_IDX                                   109
-#define GNB_CONFIG_PDCCH_COMMON_CONTROLRESOURCESETID_IDX                            110
-#define GNB_CONFIG_PDCCH_COMMON_CONTROLRESOURCESET_DURATION_IDX                     111
-#define GNB_CONFIG_PDCCH_CCE_REG_MAPPINGTYPE_IDX                                    112
-#define GNB_CONFIG_PDCCH_REG_BUNDLESIZE_IDX                                         113
-#define GNB_CONFIG_PDCCH_INTERLEAVERSIZE_IDX                                        114
-#define GNB_CONFIG_PDCCH_SHIFTINDEX_IDX                                             115
-#define GNB_CONFIG_PDCCH_PRECODERGRANULARITY_IDX                                    116
-#define GNB_CONFIG_PDCCH_TCI_STATEID_IDX                                            117
-#define GNB_CONFIG_TCI_PRESENTINDCI_IDX                                             118
-#define GNB_CONFIG_SEARCHSPACEID_IDX                                                119
-#define GNB_CONFIG_COMMONSEARCHSPACES_CONTROLRESOURCESETID_IDX                      120
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_CHOICE_IDX        121
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL1_IDX           122
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL2_IDX           123
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL4_IDX           124
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL5_IDX           125
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL8_IDX           126
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL10_IDX          127
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL16_IDX          128
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL20_IDX          129
-#define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL1_IDX                 130
-#define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL2_IDX                 131
-#define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL4_IDX                 132
-#define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL8_IDX                 133
-#define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL16_IDX                134
-#define GNB_CONFIG_SEARCHSPACE_SEARCHSPACETYPE_IDX                                  135
-#define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL1_IDX    136
-#define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL2_IDX    137
-#define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL4_IDX    138
-#define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL8_IDX    139
-#define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL16_IDX   140
-#define GNB_CONFIG_COMMON_DCI_FORMAT2_3_MONITORINGPERIODICITY_IDX                   141
-#define GNB_CONFIG_COMMON_DCI_FORMAT2_3_NROFPDCCH_CANDIDATES_IDX                    142
-#define GNB_CONFIG_UE_SPECIFIC__DCI_FORMATS_IDX                                     143
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_CARRIERFREQDL_IDX                        144
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_CARRIERBANDWIDTHDL_IDX                   145
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_NROFCRS_PORTS_IDX                        146
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_V_SHIFT_IDX                              147
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONPERIOD_IDX           148
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONOFFSET_IDX           149
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_SUBFRAMEALLOCATION_CHOICE_IDX            150
+#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR_IDX              44
+#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SSB_PERIODICITYSERVINGCELL_IDX           46
+#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_DMRS_TYPEA_POSITION_IDX                  47
+#define GNB_CONFIG_NIA_SUBCARRIERSPACING_IDX                                        48
+#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SS_PBCH_BLOCKPOWER_IDX                   49
+#define GNB_CONFIG_REFERENCESUBCARRIERSPACING_IDX                                   50
+#define GNB_CONFIG_DL_UL_TRANSMISSIONPERIODICITY_IDX                                51
+#define GNB_CONFIG_NROFDOWNLINKSLOTS_IDX                                            52
+#define GNB_CONFIG_NROFDOWNLINKSYMBOLS_IDX                                          53
+#define GNB_CONFIG_NROFUPLINKSLOTS_IDX                                              54
+#define GNB_CONFIG_NROFUPLINKSYMBOLS_IDX                                            55
+#define GNB_CONFIG_RACH_TOTALNUMBEROFRA_PREAMBLES_IDX                               56
+#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_CHOICE_IDX        57
+#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEEIGHTH_IDX     58
+#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEFOURTH_IDX     59
+#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONEHALF_IDX       60
+#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_ONE_IDX           61
+#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_TWO_IDX           62
+#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_FOUR_IDX          63
+#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_EIGHT_IDX         64
+#define GNB_CONFIG_RACH_SSB_PERRACH_OCCASIONANDCB_PREAMBLESPERSSB_SIXTEEN_IDX       65
+#define GNB_CONFIG_RACH_GROUPBCONFIGURED_IDX                                        66
+#define GNB_CONFIG_RACH_RA_MSG3SIZEGROUPA_IDX                                       67
+#define GNB_CONFIG_RACH_MESSAGEPOWEROFFSETGROUPB_IDX                                68
+#define GNB_CONFIG_RACH_NUMBEROFRA_PREAMBLESGROUPA_IDX                              69
+#define GNB_CONFIG_RACH_RA_CONTENTIONRESOLUTIONTIMER_IDX                            60
+#define GNB_CONFIG_RSRP_THRESHOLDSSB_IDX                                            70
+#define GNB_CONFIG_RSRP_THRESHOLDSSB_SUL_IDX                                        71
+#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_CHOICE_IDX                               72
+#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_L839_IDX                                 73
+#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_L139_IDX                                 74
+#define GNB_CONFIG_PRACH_MSG1_SUBCARRIERSPACING_IDX                                 75
+#define GNB_CONFIG_RESTRICTEDSETCONFIG_IDX                                          76
+#define GNB_CONFIG_MSG3_TRANSFORMPRECODING_IDX                                      77
+#define GNB_CONFIG_PRACH_CONFIGURATIONINDEX_IDX                                     78
+#define GNB_CONFIG_PRACH_MSG1_FDM_IDX                                               79
+#define GNB_CONFIG_PRACH_MSG1_FREQUENCYSTART_IDX                                    80
+#define GNB_CONFIG_ZEROCORRELATIONZONECONFIG_IDX                                    81
+#define GNB_CONFIG_PREAMBLERECEIVEDTARGETPOWER_IDX                                  82
+#define GNB_CONFIG_PREAMBLETRANSMAX_IDX                                             83
+#define GNB_CONFIG_POWERRAMPINGSTEP_IDX                                             84
+#define GNB_CONFIG_RA_RESPONSEWINDOW_IDX                                            85
+#define GNB_CONFIG_GROUPHOPPINGENABLEDTRANSFORMPRECODING_IDX                        86
+#define GNB_CONFIG_MSG3_DELTAPREAMBLE_IDX                                           87
+#define GNB_CONFIG_P0_NOMINALWITHGRANT_IDX                                          88
+#define GNB_CONFIG_PUSCH_TIMEDOMAINRESOURCEALLOCATION_K2_IDX                        89
+#define GNB_CONFIG_PUSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE_IDX               90
+#define GNB_CONFIG_PUCCH_GROUPHOPPING_IDX                                           91
+#define GNB_CONFIG_P0_NOMINAL_IDX                                                   92
+#define GNB_CONFIG_PDSCH_TIMEDOMAINRESOURCEALLOCATION_K0_IDX                        93
+#define GNB_CONFIG_PDSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE_IDX               94
+#define GNB_CONFIG_RATEMATCHPATTERNID_IDX                                           95
+#define GNB_CONFIG_RATEMATCHPATTERN_PATTERNTYPE_IDX                                 96
+#define GNB_CONFIG_SYMBOLSINRESOURCEBLOCK_IDX                                       97
+#define GNB_CONFIG_PERIODICITYANDPATTERN_IDX                                        98
+#define GNB_CONFIG_RATEMATCHPATTERN_CONTROLRESOURCESET_IDX                          99
+#define GNB_CONFIG_RATEMATCHPATTERN_SUBCARRIERSPACING_IDX                           100
+#define GNB_CONFIG_RATEMATCHPATTERN_MODE_IDX                                        101
+#define GNB_CONFIG_SEARCHSPACESIB1_IDX                                              102
+#define GNB_CONFIG_SEARCHSPACEOTHERSYSTEMINFORMATION_IDX                            103
+#define GNB_CONFIG_PAGINGSEARCHSPACE_IDX                                            104
+#define GNB_CONFIG_RA_SEARCHSPACE_IDX                                               105
+#define GNB_CONFIG_RACH_RA_CONTROLRESOURCESET_IDX                                   106
+#define GNB_CONFIG_PDCCH_COMMON_CONTROLRESOURCESETID_IDX                            107
+#define GNB_CONFIG_PDCCH_COMMON_CONTROLRESOURCESET_DURATION_IDX                     108
+#define GNB_CONFIG_PDCCH_CCE_REG_MAPPINGTYPE_IDX                                    109
+#define GNB_CONFIG_PDCCH_REG_BUNDLESIZE_IDX                                         110
+#define GNB_CONFIG_PDCCH_INTERLEAVERSIZE_IDX                                        111
+#define GNB_CONFIG_PDCCH_SHIFTINDEX_IDX                                             112
+#define GNB_CONFIG_PDCCH_PRECODERGRANULARITY_IDX                                    113
+#define GNB_CONFIG_PDCCH_TCI_STATEID_IDX                                            114
+#define GNB_CONFIG_TCI_PRESENTINDCI_IDX                                             115
+#define GNB_CONFIG_SEARCHSPACEID_IDX                                                116
+#define GNB_CONFIG_COMMONSEARCHSPACES_CONTROLRESOURCESETID_IDX                      117
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_CHOICE_IDX        118
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL1_IDX           119
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL2_IDX           120
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL4_IDX           121
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL5_IDX           122
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL8_IDX           123
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL10_IDX          124
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL16_IDX          125
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_SL20_IDX          126
+#define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL1_IDX                 127
+#define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL2_IDX                 128
+#define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL4_IDX                 129
+#define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL8_IDX                 130
+#define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL16_IDX                131
+#define GNB_CONFIG_SEARCHSPACE_SEARCHSPACETYPE_IDX                                  132
+#define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL1_IDX    133
+#define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL2_IDX    134
+#define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL4_IDX    135
+#define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL8_IDX    136
+#define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL16_IDX   137
+#define GNB_CONFIG_COMMON_DCI_FORMAT2_3_MONITORINGPERIODICITY_IDX                   138
+#define GNB_CONFIG_COMMON_DCI_FORMAT2_3_NROFPDCCH_CANDIDATES_IDX                    139
+#define GNB_CONFIG_UE_SPECIFIC__DCI_FORMATS_IDX                                     141
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_CARRIERFREQDL_IDX                        142
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_CARRIERBANDWIDTHDL_IDX                   143
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_NROFCRS_PORTS_IDX                        144
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_V_SHIFT_IDX                              145
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONPERIOD_IDX           146
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONOFFSET_IDX           147
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_SUBFRAMEALLOCATION_CHOICE_IDX            148
 
 
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/

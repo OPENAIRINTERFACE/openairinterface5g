@@ -115,7 +115,7 @@ mui_t                               rrc_gNB_mui = 0;
 ///---------------------------------------------------------------------------------------------------------------///
 
 void
-openair_nrrrc_on(
+openair_nr_rrc_on(
   const protocol_ctxt_t* const ctxt_pP
 )
 //-----------------------------------------------------------------------------
@@ -123,11 +123,11 @@ openair_nrrrc_on(
   int            CC_id;
 
     LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" gNB:OPENAIR NR RRC IN....\n",
-          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
+          PROTOCOL_NR_RRC_CTXT_ARGS(ctxt_pP));
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      rrc_config_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
+      rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
       RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
-      rrc_config_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
+      rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
       RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
     }
 }
@@ -146,7 +146,7 @@ init_NR_SI(
 )
 //-----------------------------------------------------------------------------
 {
-  int                                 i;
+  //int                                 i;
 
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
 
@@ -282,7 +282,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   nr_rrc_init_global_param();
 
 
-  openair_nrrrc_on(&ctxt);
+  openair_nr_rrc_on(&ctxt);
 
   return 0;  
 
@@ -328,10 +328,10 @@ void* rrc_gnb_task(void* args_p){
 	    
       /* Messages from PDCP */
 
-
+/*
 #if defined(ENABLE_USE_MME)
 
-      /* Messages from S1AP */
+      // Messages from S1AP 
     case S1AP_DOWNLINK_NAS:
       rrc_eNB_process_S1AP_DOWNLINK_NAS(msg_p, msg_name_p, instance, &rrc_gNB_mui);
       break;
@@ -371,7 +371,7 @@ void* rrc_gnb_task(void* args_p){
       break;
 
     case GTPV1U_ENB_DELETE_TUNNEL_RESP:
-      /* Nothing to do. Apparently everything is done in S1AP processing */
+      ///Nothing to do. Apparently everything is done in S1AP processing
       //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
       //instance, msg_name_p);
       if (rrc_eNB_get_ue_context(RC.nrrrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)
@@ -382,7 +382,7 @@ void* rrc_gnb_task(void* args_p){
       break;
 
 #endif
-
+*/
     /* Messages from gNB app */
     case NRRRC_CONFIGURATION_REQ:
       LOG_I(NR_RRC, "[gNB %d] Received %s : %p\n", instance, msg_name_p,&NRRRC_CONFIGURATION_REQ(msg_p));

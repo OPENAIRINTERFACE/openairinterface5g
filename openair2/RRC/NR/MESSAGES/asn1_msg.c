@@ -302,8 +302,8 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   struct NR_ServingCellConfigCommon__rateMatchPatternToReleaseList **ratematchpatterntoreleaselist = &RC.nrrrc[Mod_id]->carrier[CC_id].servingcellconfigcommon->rateMatchPatternToReleaseList;
   NR_RateMatchPatternId_t                                          *ratematchpatternid;
 
-  struct NR_TDD_UL_DL_ConfigCommon                                 **tdd_ul_dl_configurationcommon;
-  struct NR_TDD_UL_DL_ConfigCommon                                 **tdd_ul_dl_configurationcommon2;
+  struct NR_TDD_UL_DL_ConfigCommon                                 **tdd_ul_dl_configurationcommon  = &RC.nrrrc[Mod_id]->carrier[CC_id].servingcellconfigcommon->tdd_UL_DL_ConfigurationCommon;
+  struct NR_TDD_UL_DL_ConfigCommon                                 **tdd_ul_dl_configurationcommon2 = &RC.nrrrc[Mod_id]->carrier[CC_id].servingcellconfigcommon->tdd_UL_DL_ConfigurationCommon2;
 
   // FrequencyInfoDL //
   NR_FreqBandIndicatorNR_t                        *dl_frequencyBandList;
