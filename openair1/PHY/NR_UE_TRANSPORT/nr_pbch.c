@@ -68,14 +68,12 @@ uint16_t nr_pbch_extract(int **rxdataF,
   int32_t *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
   int rx_offset = frame_parms->ofdm_symbol_size-10*12;
-  int ch_offset = frame_parms->N_RB_DL*6-10*12;
   int nushiftmod4 = frame_parms->nushift;
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     
-    printf("extract_rbs (nushift %d): rx_offset=%d, ch_offset=%d symbol %d\n",frame_parms->nushift,
-     (rx_offset + (symbol*(frame_parms->ofdm_symbol_size))),
-	   LTE_CE_OFFSET+ch_offset+(symbol*(frame_parms->ofdm_symbol_size)),symbol);
+    printf("extract_rbs (nushift %d): rx_offset=%d, symbol %d\n",frame_parms->nushift,
+     (rx_offset + (symbol*(frame_parms->ofdm_symbol_size))),symbol);
     
     rxF        = &rxdataF[aarx][(rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))];
     rxF_ext    = &rxdataF_ext[aarx][symbol*(20*12)];
@@ -88,10 +86,12 @@ uint16_t nr_pbch_extract(int **rxdataF,
 #endif
 
     for (rb=0; rb<20; rb++) {
-      
-      if ((symbol==1) || (symbol==3)) {
-        j=0;
+      if (rb==10) {
+        rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))];
+      }
 
+      j=0;
+      if ((symbol==1) || (symbol==3)) {
         for (i=0; i<12; i++) {
           if ((i!=nushiftmod4) &&
               (i!=(nushiftmod4+4)) &&
@@ -103,7 +103,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
         }
 
         rxF+=12;
-        rxF_ext+=8;
+        rxF_ext+=9;
       } else { //symbol 2
     	if ((rb < 4) && (rb >15)){
     	  for (i=0; i<12; i++) {
@@ -118,34 +118,36 @@ uint16_t nr_pbch_extract(int **rxdataF,
 	}
 
         rxF+=12;
-        rxF_ext+=8;
+        rxF_ext+=9;
       }
     }
 
-    for (aatx=0; aatx<4; aatx++) { //frame_parms->nb_antenna_ports_eNB;aatx++) {
+    for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB;aatx++) {
       if (high_speed_flag == 1)
-        dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][LTE_CE_OFFSET+ch_offset+(symbol*(frame_parms->ofdm_symbol_size))];
+        dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][(symbol*(frame_parms->ofdm_symbol_size))];
       else
-        dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][LTE_CE_OFFSET+ch_offset];
+        dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][0];
+
+      printf("dl_ch0 addr %p\n",dl_ch0);
 
       dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*(20*12)];
 
       for (rb=0; rb<20; rb++) {
+	j=0;
         if ((symbol==1) || (symbol==3)) {
-          j=0;
-
-          	  for (i=0; i<12; i++) {
+              	  for (i=0; i<12; i++) {
                     if ((i!=nushiftmod4) &&
                         (i!=(nushiftmod4+4)) &&
                         (i!=(nushiftmod4+8))) {
                            dl_ch0_ext[j]=dl_ch0[i];
-			   //printf("dl ch0 ext[%d] = %d dl_ch0 [%d]= %d\n",j,dl_ch0_ext[j],i,dl_ch0[i]);
+			   if ((rb==0) && (i<2))
+			   printf("dl ch0 ext[%d] = %d dl_ch0 [%d]= %d\n",j,dl_ch0_ext[j],i,dl_ch0[i]);
 		           j++;
                     }
           	  }
 
           dl_ch0+=12;
-          dl_ch0_ext+=8;
+          dl_ch0_ext+=9;
         }
         else { //symbol 2
               if ((rb < 4) && (rb >15)){
@@ -160,7 +162,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
               }
 
               dl_ch0+=12;
-              dl_ch0_ext+=8;
+              dl_ch0_ext+=9;
 
          }
       }
@@ -558,7 +560,7 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #endif
 
     printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
-write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,2,1);
+    //write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,2,1);
   
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,
                  nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].dl_ch_estimates[eNB_id],
