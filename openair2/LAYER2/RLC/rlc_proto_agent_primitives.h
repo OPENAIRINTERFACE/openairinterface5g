@@ -2,7 +2,7 @@
 #ifndef __PROTO_AGENT_RLC_PRIMITIVES_H__
 #define __PROTO_AGENT_RLC_PRIMITIVES_H__
 
-#include "RRC/LITE/defs.h"
+#include "RRC/LTE/rrc_defs.h"
 #include "LAYER2/PROTO_AGENT/proto_agent.h"
 // PROTO AGENT
 pthread_t async_server_thread;

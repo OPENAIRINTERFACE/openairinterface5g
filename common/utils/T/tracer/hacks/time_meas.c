@@ -84,11 +84,12 @@ int main(int n, char **v)
       socket_send(socket, is_on, number_of_events * sizeof(int)) == -1)
     abort();
 
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   while (1) {
-    char v[T_BUFFER_MAX];
     event e;
     int on_off;
-    e = get_event(socket, v, database);
+    e = get_event(socket, &ebuf, database);
     if (e.type == -1) break;
     if (e.type != ev_fun)
       { printf("unhandled event %d\n", e.type); continue; }

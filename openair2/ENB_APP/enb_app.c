@@ -50,6 +50,7 @@
 #   include "flexran_agent.h"
 #endif
 
+#include "openair1/PHY/INIT/phy_init.h"
 extern unsigned char NB_eNB_INST;
 #endif
 

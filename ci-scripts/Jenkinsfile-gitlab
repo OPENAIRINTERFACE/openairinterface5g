@@ -1,0 +1,106 @@
+// Comments
+
+pipeline {
+    agent {
+        label 'bellatrix'
+    }
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+        gitLabConnection('OAI GitLab')
+        //gitlabBuilds(builds: ["Build", "Test"])
+        gitlabBuilds(builds: ["Local Build"])
+    }
+
+    stages {
+        stage ("Verify Guidelines") {
+            steps {
+                echo "Git URL         is ${GIT_URL}"
+                echo "GitLab Act      is ${env.gitlabActionType}"
+                script {
+                    if ("MERGE".equals(env.gitlabActionType)) {
+                        // GitLab-Jenkins plugin integration is lacking to perform the merge by itself
+                        // Doing it manually --> it may have merge conflicts
+                        sh "./ci-scripts/doGitLabMerge.sh --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+
+                        // Running astyle options on the list of modified files by the merge request
+                        // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
+                        sh "./ci-scripts/checkCodingFormattingRules.sh --src-branch ${env.gitlabSourceBranch} --target-branch ${env.gitlabTargetBranch}"
+                        def res=readFile('./oai_rules_result.txt').trim();
+                        if ("0".equals(res)) {
+                            def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): All Changed files in Merge Request follow OAI Formatting Rules"
+                            addGitLabMRComment comment: message
+                        } else {
+                            def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Some Changed files in Merge Request DO NOT follow OAI Formatting Rules"
+                            addGitLabMRComment comment: message
+                        }
+                    } else {
+                        echo "Git Branch      is ${GIT_BRANCH}"
+                        echo "Git Commit      is ${GIT_COMMIT}"
+
+                        // Running astyle options on all C/H files in the repository
+                        // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
+                        sh "./ci-scripts/checkCodingFormattingRules.sh"
+                    }
+                }
+            }
+        }
+        stage ("Local Build") {
+            steps {
+                gitlabCommitStatus(name: "Local Build") {
+                    sh "./ci-scripts/buildLocally.sh --workspace $WORKSPACE"
+                }
+            }
+            post {
+                always {
+                    script {
+                        if(fileExists('archives/local_build_logs.zip')) {
+                            archiveArtifacts artifacts: 'archives/local_build_logs.zip'
+                        }
+                        if ("MERGE".equals(env.gitlabActionType)) {
+                            sh "./ci-scripts/reportBuildLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger merge-request --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+                        } else {
+                            sh "./ci-scripts/reportBuildLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger push --branch ${GIT_BRANCH} --commit ${GIT_COMMIT}"
+                        }
+                        if(fileExists('build_results.html')) {
+                            archiveArtifacts artifacts: 'build_results.html'
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                echo "End of script"
+            }
+        }
+        success {
+            script {
+                def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ")"
+                if ("MERGE".equals(env.gitlabActionType)) {
+                    echo "This is a MERGE event"
+                    addGitLabMRComment comment: message
+                    def message2 = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ") -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
+                    slackSend channel: 'ci-enb', color: 'good', message: message2
+                } else {
+                    slackSend channel: 'ci-enb', color: 'good', message: message
+                }
+            }
+        }
+        failure {
+            script {
+                def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ")"
+                if ("MERGE".equals(env.gitlabActionType)) {
+                    echo "This is a MERGE event"
+                    addGitLabMRComment comment: message
+                    def message2 = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ") -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
+                    slackSend channel: 'ci-enb', color: 'danger', message: message2
+                } else {
+                    slackSend channel: 'ci-enb', color: 'danger', message: message
+                }
+            }
+        }
+    }
+}

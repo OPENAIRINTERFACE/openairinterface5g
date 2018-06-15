@@ -95,6 +95,7 @@ get_distribution_release() {
 check_supported_distribution() {
     local distribution=$(get_distribution_release)
     case "$distribution" in
+        "ubuntu18.04") return 0 ;;
         "ubuntu17.10") return 0 ;;
         "ubuntu17.04") return 0 ;;
         "ubuntu16.04") return 0 ;;
@@ -267,7 +268,7 @@ check_install_usrp_uhd_driver(){
     if [[ "$OS_DISTRO" == "ubuntu" ]]; then
         #first we remove old installation
         $SUDO apt-get remove -y uhd || true
-        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y
+        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y || true
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
         #The new USRP repository
@@ -488,19 +489,24 @@ check_install_oai_software() {
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
         "ubuntu14.04")
-            specific_packages="libtasn1-3-dev gccxml libgnutls-dev libatlas-dev"
+            specific_packages="libtasn1-3-dev gccxml libgnutls-dev libatlas-dev iproute libconfig8-dev"
             # For iperf3
             $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
             $SUDO apt-get update
             ;;
         "ubuntu16.04")
-            specific_packages="libtasn1-6-dev gccxml libgnutls-dev libatlas-dev"
+            specific_packages="libtasn1-6-dev gccxml libgnutls-dev libatlas-dev iproute libconfig8-dev"
             ;;
         "ubuntu17.04")
-            specific_packages="libtasn1-6-dev castxml libgnutls28-dev libatlas-dev"
+            specific_packages="libtasn1-6-dev castxml libgnutls28-dev libatlas-dev iproute libconfig8-dev"
             ;;
         "ubuntu17.10")
-            specific_packages="libtasn1-6-dev castxml libgnutls28-dev"
+            specific_packages="libtasn1-6-dev castxml libgnutls28-dev iproute libconfig8-dev"
+            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            ;;
+        "ubuntu18.04")
+            specific_packages="libtasn1-6-dev castxml libgnutls28-dev iproute2 libconfig-dev"
             LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
@@ -524,12 +530,10 @@ check_install_oai_software() {
 	gtkwave \
 	guile-2.0-dev  \
 	iperf \
-	iproute \
 	iptables \
 	iptables-dev \
 	libatlas-base-dev \
 	libblas-dev \
-	libconfig8-dev \
 	libffi-dev \
 	libforms-bin \
 	libforms-dev \

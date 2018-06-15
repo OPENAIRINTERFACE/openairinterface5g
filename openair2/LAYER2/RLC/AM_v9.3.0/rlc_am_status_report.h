@@ -55,7 +55,7 @@
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 #include "platform_constants.h"
-#include "PHY/defs.h"
+//#include "PHY/defs.h"
 
 //-----------------------------------------------------------------------------
 /*! \fn uint16_t      rlc_am_read_bit_field    (uint8_t** dataP, unsigned int* bit_posP, const signed int bits_to_readP)

@@ -55,7 +55,7 @@
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 #include "platform_constants.h"
-#include "PHY/defs.h"
+//#include "PHY/defs.h"
 
 
 /*! \struct  rlc_am_info_t

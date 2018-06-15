@@ -136,14 +136,22 @@ int main(int n, char **v)
 
   new_thread(get_message_thread, &socket);
 
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   while (1) {
     int type;
     int32_t length;
-    char v[T_BUFFER_MAX];
+    char *v;
     int vpos = 0;
 
     /* read event from file */
     if (fread(&length, 4, 1, in) != 1) break;
+    if (ebuf.omaxsize < length) {
+      ebuf.omaxsize = (length + 65535) & ~65535;
+      ebuf.obuf = realloc(ebuf.obuf, ebuf.omaxsize);
+      if (ebuf.obuf == NULL) { printf("out of memory\n"); exit(1); }
+    }
+    v = ebuf.obuf;
     memcpy(v+vpos, &length, 4);
     vpos += 4;
 #ifdef T_SEND_TIME

@@ -36,7 +36,7 @@
 #     include "lteRALue.h"
 #     include "lteRALenb.h"
 #   endif
-#   include "RRC/LITE/defs.h"
+#   include "RRC/LTE/rrc_defs.h"
 # endif
 # include "enb_app.h"
 

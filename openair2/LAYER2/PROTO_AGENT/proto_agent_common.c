@@ -39,10 +39,10 @@
 #include <time.h>
 
 #include "proto_agent_common.h"
-#include "PHY/extern.h"
+#include "PHY/phy_extern.h"
 #include "log.h"
 
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rrc_eNB_UE_context.h"
 //#include "LAYER2/PDCP_v10.1.0/pdcp_primitives.h"
@@ -438,7 +438,19 @@ int proto_agent_pdcp_data_req_ack(mid_t mod_id, const void *params, Protocol__Fl
   memcpy(pdcp_pdu_p->data, rlc_data->fsp_pdu->fsp_pdu_data.data, pdcp_pdu_size);
 
   
-  result = rlc_data_req((const protocol_ctxt_t*) ctxt_pP, (const srb_flag_t) srb_flagP, (const MBMS_flag_t) flag_MBMS, (const rb_id_t) rb_idP, (const mui_t) muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+  result = rlc_data_req((const protocol_ctxt_t*) ctxt_pP
+                        ,(const srb_flag_t) srb_flagP
+                        ,(const MBMS_flag_t) flag_MBMS
+                        ,(const rb_id_t) rb_idP
+                        ,(const mui_t) muiP
+                        ,confirmP
+                        ,pdcp_pdu_size
+                        ,pdcp_pdu_p
+  #ifdef Rel14
+                        ,NULL
+                        ,NULL
+  #endif                      
+                        );
  
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_RLC_DATA_REQ_ACK, &header) != 0)
     goto error;

@@ -47,20 +47,13 @@
 #    include "asn1_constants.h"
 #    include "UTIL/LOG/log.h"
 #    include "mem_block.h"
-#    include "PHY/defs.h"
+//#    include "PHY/defs.h"
 #    include "RLC-Config.h"
 #    include "DRB-ToAddMod.h"
 #    include "DRB-ToAddModList.h"
 #    include "SRB-ToAddMod.h"
 #    include "SRB-ToAddModList.h"
 #    include "DRB-ToReleaseList.h"
-
-// for proto_agent operation
-//#include "UTIL/LOG/log.h"
-//#include "ENB_APP/enb_config.h"
-
-
-
 
 #if defined(Rel10) || defined(Rel14)
 #include "PMCH-InfoList-r9.h"
@@ -181,7 +174,7 @@ typedef struct {
 //-----------------------------------------------------------------------------
 
 #define  RLC_MAX_MBMS_LC (maxSessionPerPMCH * maxServiceCount)
-#define  RLC_MAX_LC  ((max_val_DRB_Identity+1)* NUMBER_OF_UE_MAX)
+#define  RLC_MAX_LC  ((max_val_DRB_Identity+1)* MAX_MOBILES_PER_ENB)
 
 protected_rlc(void (*rlc_rrc_data_ind)(
                 const protocol_ctxt_t* const ctxtP,
@@ -231,7 +224,7 @@ typedef struct rlc_mbms_id_s {
   mbms_session_id_t       session_id;
 } rlc_mbms_id_t;
 
-#if !defined(Rel10) && !defined(Rel14)
+#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
 #    if !defined(maxServiceCount)
 //unused arrays rlc_mbms_array_ue rlc_mbms_array_eNB
 #        define maxServiceCount 1
@@ -241,10 +234,10 @@ typedef struct rlc_mbms_id_s {
 #        define maxSessionPerPMCH 1
 #    endif
 #endif
-//public_rlc(rlc_mbms_t           rlc_mbms_array_ue[NUMBER_OF_UE_MAX][maxServiceCount][maxSessionPerPMCH];)   // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
+//public_rlc(rlc_mbms_t           rlc_mbms_array_ue[MAX_MOBILES_PER_ENB][maxServiceCount][maxSessionPerPMCH];)   // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 //public_rlc(rlc_mbms_t           rlc_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH];) // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
-public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_ue[NUMBER_OF_UE_MAX][RLC_MAX_MBMS_LC];)    // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
-public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[NUMBER_OF_eNB_MAX][RLC_MAX_MBMS_LC];)  // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
+public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_ue[MAX_MOBILES_PER_ENB][RLC_MAX_MBMS_LC];)    // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
+public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[MAX_eNB][RLC_MAX_MBMS_LC];)  // some constants from openair2/RRC/LITE/MESSAGES/asn1_constants.h
 
 #define rlc_mbms_enb_get_lcid_by_rb_id(Enb_mOD,rB_iD) rlc_mbms_rbid2lcid_eNB[Enb_mOD][rB_iD]
 ;
@@ -260,8 +253,8 @@ public_rlc(rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[NUMBER_OF_e
             rlc_mbms_rbid2lcid_ue[uE_mOD][rB_iD] = lOG_cH_iD; \
         } while (0);
 
-public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_ue [NUMBER_OF_UE_MAX][NB_RB_MBMS_MAX];)              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
-public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[NUMBER_OF_eNB_MAX][NB_RB_MBMS_MAX];)              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_ue [MAX_MOBILES_PER_ENB][NB_RB_MBMS_MAX];)              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
+public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];)              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
 
 
 #define RLC_COLL_KEY_VALUE(eNB_iD, rNTI, iS_eNB, rB_iD, iS_sRB) \
@@ -281,6 +274,23 @@ public_rlc(logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[NUMBER_OF_eNB_MAX][NB_RB_
     (((hash_key_t)(lC_iD))  << 25) | \
     (((hash_key_t)(iS_sRB)) << 33) | \
     (((hash_key_t)(0x0a))   << 34))
+
+#define RLC_COLL_KEY_SOURCE_DEST_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, sOURCE_iD, dEST_iD, iS_sRB) \
+   ((hash_key_t)eNB_iD             | \
+    (((hash_key_t)(rNTI))   << 8)  | \
+    (((hash_key_t)(iS_eNB)) << 24) | \
+    (((hash_key_t)(lC_iD))  << 25) | \
+    (((hash_key_t)(dEST_iD)) << 33) | \
+    (((hash_key_t)(0x05))   << 57))
+
+#define RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, sOURCE_iD, dEST_iD, iS_sRB) \
+   ((hash_key_t)eNB_iD             | \
+    (((hash_key_t)(rNTI))   << 8)  | \
+    (((hash_key_t)(iS_eNB)) << 24) | \
+    (((hash_key_t)(lC_iD))  << 25) | \
+    (((hash_key_t)(dEST_iD)) << 33) | \
+    (((hash_key_t)(0x0a))   << 57))
+
 
 // service id max val is maxServiceCount = 16 (asn1_constants.h)
 
@@ -316,7 +326,7 @@ private_rlc_mac(struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, 
 //-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH RRC
 //-----------------------------------------------------------------------------
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t* const ctxtP, const srb_flag_t srb_flagP, const SRB_ToAddMod_t* const srb2addmod, const DRB_ToAddModList_t* const drb2add_listP, const DRB_ToReleaseList_t*  const drb2release_listP, const PMCH_InfoList_r9_t * const pmch_info_listP)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  ctxtP              Running context.
@@ -331,7 +341,9 @@ public_rlc_rrc( rlc_op_status_t rrc_rlc_config_asn1_req (
                   const SRB_ToAddModList_t* const ,
                   const DRB_ToAddModList_t* const ,
                   const DRB_ToReleaseList_t* const ,
-                  const PMCH_InfoList_r9_t * const pmch_info_listP);)
+                  const PMCH_InfoList_r9_t * const pmch_info_listP ,
+                  const uint32_t ,
+                  const uint32_t );)
 #else
 /*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t* const ctxtP, const SRB_ToAddModList_t* const srb2add_listP, const DRB_ToAddModList_t* const drb2add_listP, const DRB_ToReleaseList_t* const drb2release_listP)
 * \brief  Function for RRC to configure a Radio Bearer.
@@ -386,7 +398,12 @@ public_rlc_rrc(rlc_op_status_t rrc_rlc_remove_rlc   (const protocol_ctxt_t* cons
 * \param[in]  rlc_modeP          Mode of RLC (AM, UM, TM).
 * \return     A status about the processing, OK or error code.
 */
-private_rlc_rrc(rlc_union_t*  rrc_rlc_add_rlc      (const protocol_ctxt_t* const, const srb_flag_t,  const  MBMS_flag_t MBMS_flagP, const  rb_id_t, logical_chan_id_t, rlc_mode_t);)
+private_rlc_rrc(rlc_union_t*  rrc_rlc_add_rlc      (const protocol_ctxt_t* const, const srb_flag_t,  const  MBMS_flag_t MBMS_flagP, const  rb_id_t, logical_chan_id_t, rlc_mode_t
+#ifdef Rel14
+  ,const uint32_t  sourceL2Id,
+  const uint32_t  destinationL2Id
+#endif
+);)
 
 /*! \fn rlc_op_status_t rrc_rlc_config_req (
      const protocol_ctxt_t* const ctxtP,
@@ -447,7 +464,12 @@ public_rlc_rrc(void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_d
 * \param [in,out] bufferP          Memory area to fill with the bytes requested by MAC.
 * \return     A status about the processing, OK or error code.
 */
-public_rlc_mac(tbs_size_t            mac_rlc_data_req     (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, const tb_size_t,char*);)
+public_rlc_mac(tbs_size_t            mac_rlc_data_req     (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, const tb_size_t,char*
+#ifdef Rel14
+                                                           ,const uint32_t sourceL2Id
+                                                           ,const uint32_t destinationL2Id
+#endif
+);)
 
 /*! \fn void mac_rlc_data_ind     (const module_id_t mod_idP, const rnti_t rntiP, const frame_t frameP, const  eNB_flag_t eNB_flagP, const  MBMS_flag_t MBMS_flagP, logical_chan_id_t rb_idP, uint32_t frameP, char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcs)
 * \brief    Interface with MAC layer, deserialize the transport blocks sent by MAC, then map data indication to the RLC instance corresponding to the radio bearer identifier.
@@ -477,7 +499,12 @@ public_rlc_mac(void                  mac_rlc_data_ind     (const module_id_t, co
 * \param[in]  tb_sizeP         Size of a transport block set in bytes.
 * \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
 */
-public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const sub_frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, tb_size_t );)
+public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const sub_frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, tb_size_t
+#ifdef Rel14
+                                                           ,const uint32_t sourceL2Id
+                                                           ,const uint32_t destinationL2Id
+#endif
+  );)
 
 /*! \fn rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(const module_id_t module_idP, const rnti_t rntiP, const eNB_index_t eNB_index, const frame_t frameP, const sub_frame_t subframeP,const eNB_flag_t enb_flagP, const logical_chan_id_t channel_idP)
 * \brief    Interface with MAC layer, UE only: request and get the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
@@ -527,7 +554,12 @@ public_rlc(rlc_op_status_t rlc_data_req     (
              const  mui_t ,
              const confirm_t ,
              const sdu_size_t ,
-             mem_block_t * const);)
+             mem_block_t * const
+#ifdef Rel14
+             ,const uint32_t * const
+             ,const uint32_t * const
+#endif
+             );)
 
 /*! \fn void rlc_data_ind     (const protocol_ctxt_t* const ctxtP, const  srb_flag_t srb_flagP, const  MBMS_flag_t MBMS_flagP, const  rb_id_t rb_idP, const sdu_size_t sdu_sizeP, mem_block_t* sduP) {
 * \brief    Interface with higher layers, route SDUs coming from RLC protocol instances to upper layer instance.

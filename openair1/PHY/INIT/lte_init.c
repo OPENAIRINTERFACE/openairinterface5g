@@ -19,14 +19,17 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
-#include "SCHED/defs.h"
-#include "PHY/extern.h"
-#include "SIMULATION/TOOLS/defs.h"
+#include "PHY/defs_eNB.h"
+#include "phy_init.h"
+#include "SCHED/sched_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
-#include "LAYER2/MAC/extern.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
@@ -179,7 +182,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
 		    fp->frame_type,
                     RC.eNB[Mod_id][CC_id]->X_u);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   fp->prach_emtc_config_common.prach_Config_enabled=1;
 
   fp->prach_emtc_config_common.rootSequenceIndex                                         = cfg->emtc_config.prach_catm_root_sequence_index.value;
@@ -721,23 +724,6 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
 
 
 
-void  phy_config_cba_rnti (module_id_t Mod_id,int CC_id,eNB_flag_t eNB_flag, uint8_t index, rnti_t cba_rnti, uint8_t cba_group_id, uint8_t num_active_cba_groups)
-{
-  //   uint8_t i;
-
-  if (eNB_flag == 0 ) {
-    //LOG_D(PHY,"[UE %d] configure cba group %d with rnti %x, num active cba grp %d\n", index, index, cba_rnti, num_active_cba_groups);
-    PHY_vars_UE_g[Mod_id][CC_id]->ulsch[index]->num_active_cba_groups=num_active_cba_groups;
-    PHY_vars_UE_g[Mod_id][CC_id]->ulsch[index]->cba_rnti[cba_group_id]=cba_rnti;
-  } else {
-    //for (i=index; i < NUMBER_OF_UE_MAX; i+=num_active_cba_groups){
-    //  LOG_D(PHY,"[eNB %d] configure cba group %d with rnti %x for UE %d, num active cba grp %d\n",Mod_id, i%num_active_cba_groups, cba_rnti, i, num_active_cba_groups);
-    RC.eNB[Mod_id][CC_id]->ulsch[index]->num_active_cba_groups=num_active_cba_groups;
-    RC.eNB[Mod_id][CC_id]->ulsch[index]->cba_rnti[cba_group_id] = cba_rnti;
-    //}
-  }
-}
-
 int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
                      unsigned char is_secondary_eNB,
                      unsigned char abstraction_flag)
@@ -749,7 +735,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   LTE_eNB_PUSCH** const pusch_vars   = eNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = eNB->srs_vars;
   LTE_eNB_PRACH* const prach_vars    = &eNB->prach_vars;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_eNB_PRACH* const prach_vars_br = &eNB->prach_vars_br;
 #endif
   int i, UE_id; 
@@ -845,7 +831,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
   prach_vars->rxsigF[0]        = (int16_t**)malloc16_clear(64*sizeof(int16_t*));
   // PRACH BR
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   prach_vars_br->prachF = (int16_t*)malloc16_clear( 1024*2*sizeof(int32_t) );
 
   // assume maximum of 64 RX antennas for PRACH receiver
@@ -913,7 +899,7 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB)
   LTE_eNB_PUSCH** const pusch_vars   = eNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = eNB->srs_vars;
   LTE_eNB_PRACH* const prach_vars    = &eNB->prach_vars;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_eNB_PRACH* const prach_vars_br = &eNB->prach_vars_br;
 #endif
   int i, UE_id;
@@ -946,7 +932,7 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB)
   for (i = 0; i < 64; i++) free_and_zero(prach_vars->prach_ifft[0][i]);
   free_and_zero(prach_vars->prach_ifft[0]);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   for (int ce_level = 0; ce_level < 4; ce_level++) {
     for (i = 0; i < 64; i++) free_and_zero(prach_vars_br->prach_ifft[ce_level][i]);
     free_and_zero(prach_vars_br->prach_ifft[ce_level]);

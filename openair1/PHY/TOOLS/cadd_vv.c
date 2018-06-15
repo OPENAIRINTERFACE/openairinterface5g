@@ -19,7 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
+#include "PHY/defs_common.h"
+#include "tools_defs.h"
 
 
 int add_vector16(short *x,

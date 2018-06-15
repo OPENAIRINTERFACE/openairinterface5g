@@ -8,5 +8,5 @@ set(DEBUG_PHY False)
 set(MU_RECIEVER False)
 set(NAS_UE False)
 set(MESSAGE_CHART_GENERATOR False)
-
+set(RRC_ASN1_VERSION "Rel14")
 include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)

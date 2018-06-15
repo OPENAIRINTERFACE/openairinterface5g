@@ -47,7 +47,7 @@
 
 #include "PHY/types.h"
 
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
@@ -59,22 +59,18 @@
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "PHY/vars.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
-
+#include "PHY/phy_vars_ue.h"
+#include "PHY/LTE_TRANSPORT/transport_vars.h"
+#include "SCHED/sched_common_vars.h"
+#include "PHY/MODULATION/modulation_vars.h"
 #include "../../SIMU/USER/init_lte.h"
 
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/vars.h"
-#include "LAYER2/MAC/proto.h"
-#include "RRC/LITE/vars.h"
-#include "PHY_INTERFACE/vars.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_vars.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "RRC/LTE/rrc_vars.h"
+#include "PHY_INTERFACE/phy_interface_vars.h"
 
-#ifdef SMBV
-#include "PHY/TOOLS/smbv.h"
-unsigned short config_frames[4] = {2,9,11,13};
-#endif
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
@@ -101,6 +97,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 #include "lte-softmodem.h"
 
+RAN_CONTEXT_t RC;
+
 /* temporary compilation wokaround (UE/eNB split */
 uint16_t sf_ahead;
 #ifdef XFORMS
@@ -113,6 +111,17 @@ char title[255];
 unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
 #endif //XFORMS
+
+pthread_cond_t nfapi_sync_cond;
+pthread_mutex_t nfapi_sync_mutex;
+int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
+
+uint8_t nfapi_mode = 0;
+
+uint16_t sf_ahead=2;
+
+char *emul_iface;
+
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
@@ -205,6 +214,7 @@ uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
+extern void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_iface);
 
 extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
 			  uint8_t UE_id,
@@ -213,7 +223,10 @@ extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
 
 int transmission_mode=1;
 
-
+int emulate_rf = 0;
+int numerology = 0;
+int codingw = 0;
+int fepw = 0;
 
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
@@ -383,7 +396,7 @@ static void *scope_thread(void *arg) {
 #endif
 
   while (!oai_exit) {
-      dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
+    //      dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
       //fl_set_object_label(form_stats->stats_text, stats_buffer);
       fl_clear_browser(form_stats->stats_text);
       fl_add_browser_line(form_stats->stats_text, stats_buffer);
@@ -455,6 +468,7 @@ void *l2l1_task(void *arg) {
 }
 #endif
 
+extern int16_t dlsch_demod_shift;
 
 static void get_options(void) {
   int CC_id;
@@ -573,7 +587,8 @@ static void get_options(void) {
     // Read it in and store in asn1c data structures
     sprintf(uecap_xer,"%stargets/PROJECTS/GENERIC-LTE-EPC/CONF/UE_config.xml",getenv("OPENAIR_HOME"));
     printf("%s\n",uecap_xer);
-    uecap_xer_in=1;
+    if(nfapi_mode!=3)
+    	uecap_xer_in=1;
   } /* UE with config file  */
 }
 
@@ -739,6 +754,32 @@ void terminate_task(task_id_t task_id, module_id_t mod_id)
 
 #endif
 
+
+
+static inline void wait_nfapi_init(char *thread_name) {
+
+  printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
+  pthread_mutex_lock( &nfapi_sync_mutex );
+
+  while (nfapi_sync_var<0)
+    pthread_cond_wait( &nfapi_sync_cond, &nfapi_sync_mutex );
+
+  pthread_mutex_unlock(&nfapi_sync_mutex);
+
+  printf( "NFAPI: got sync (%s)\n", thread_name);
+}
+
+int stop_L1L2(module_id_t enb_id)
+{
+	return 0;
+}
+
+
+int restart_L1L2(module_id_t enb_id)
+{
+	return 0;
+}
+
 int main( int argc, char **argv )
 {
   int i;
@@ -749,6 +790,10 @@ int main( int argc, char **argv )
   int CC_id;
   uint8_t  abstraction_flag=0;
   uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
+
+  // Default value for the number of UEs. It will hold,
+  // if not changed from the command line option --num-ues
+  NB_UE_INST=1;
 
 #if defined (XFORMS)
   int ret;
@@ -777,7 +822,21 @@ int main( int argc, char **argv )
 
   printf("Reading in command-line options\n");
 
-  get_options (); 
+  get_options ();
+
+  printf("NFAPI_MODE value: %d \n", nfapi_mode);
+
+  // Panos: Not sure if the following is needed here
+  /*if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
+      if (UE_flag == 0) {
+        fprintf(stderr,"Getting configuration failed\n");
+        exit(-1);
+      }
+      else {
+        printf("Setting nfapi mode to UE_STUB_OFFNET\n");
+        nfapi_mode = 4;
+      }
+    }*/
 
 
 #if T_TRACER
@@ -843,6 +902,14 @@ int main( int argc, char **argv )
 #endif
 #endif
 
+//TTN for D2D
+#ifdef Rel14
+  printf ("RRC control socket\n");
+  rrc_control_socket_init();
+  printf ("PDCP PC5S socket\n");
+  pdcp_pc5_socket_init();
+#endif
+
 #if !defined(ENABLE_ITTI)
   // to make a graceful exit when ctrl-c is pressed
   signal(SIGSEGV, signal_handler);
@@ -869,20 +936,66 @@ int main( int argc, char **argv )
 
   printf("Before CC \n");
 
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
-      NB_UE_INST=1;     
-      NB_INST=1;     
-      PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE**));     
-      PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_UE*)*MAX_NUM_CCs);    
+
+
+  // Panos: From old version
+  /*if (UE_flag==1) {
+	  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE**)*NB_UE_INST);
+	  for (int i=0; i<NB_UE_INST; i++) {
+		  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+
+			  PHY_vars_UE_g[i] = malloc(sizeof(PHY_VARS_UE*)*MAX_NUM_CCs);
+			  PHY_vars_UE_g[i][CC_id] = init_ue_vars(frame_parms[CC_id], i,abstraction_flag);
+
+			  UE[CC_id] = PHY_vars_UE_g[i][CC_id];
+			  printf("PHY_vars_UE_g[inst][%d] = %p\n",CC_id,UE[CC_id]);
+
+			  if (phy_test==1)
+				  UE[CC_id]->mac_enabled = 0;
+			  else
+				  UE[CC_id]->mac_enabled = 1;
+		  }
+	  }
+  }*/
+
+
+
+  //NB_UE_INST=1;
+  NB_INST=1;
+  if(nfapi_mode == 3){
+	  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE**)*NB_UE_INST);
+	  	  for (int i=0; i<NB_UE_INST; i++) {
+	  		  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	  			PHY_vars_UE_g[i] = malloc(sizeof(PHY_VARS_UE*)*MAX_NUM_CCs);
+	  			PHY_vars_UE_g[i][CC_id] = init_ue_vars(frame_parms[CC_id], i,abstraction_flag);
+
+	  			UE[CC_id] = PHY_vars_UE_g[i][CC_id];
+	  			printf("PHY_vars_UE_g[inst][%d] = %p\n",CC_id,UE[CC_id]);
+
+	  			if (phy_test==1)
+	  				UE[CC_id]->mac_enabled = 0;
+	  			else
+	  				UE[CC_id]->mac_enabled = 1;
+	  		}
+	  	  }
+  }
+  else{
+
+
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      //NB_UE_INST=1;
+      NB_INST=1;
+      PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE**));
+      PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_UE*)*MAX_NUM_CCs);
       PHY_vars_UE_g[0][CC_id] = init_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
       UE[CC_id] = PHY_vars_UE_g[0][CC_id];
       printf("PHY_vars_UE_g[0][%d] = %p\n",CC_id,UE[CC_id]);
-      
+
       if (phy_test==1)
 	UE[CC_id]->mac_enabled = 0;
-      else 
+      else
 	UE[CC_id]->mac_enabled = 1;
-      
+
       if (UE[CC_id]->mac_enabled == 0) {  //set default UL parameters for testing mode
 	for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
 	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
@@ -894,13 +1007,13 @@ int main( int argc, char **argv )
 	  UE[CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
 	}
       }
-      
+
       UE[CC_id]->UE_scan = UE_scan;
       UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
       UE[CC_id]->mode    = mode;
       printf("UE[%d]->mode = %d\n",CC_id,mode);
-      
-      if (UE[CC_id]->mac_enabled == 1) { 
+
+      if (UE[CC_id]->mac_enabled == 1) {
 	UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
 	UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
       }else {
@@ -909,7 +1022,7 @@ int main( int argc, char **argv )
       }
       UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
       UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
-      
+
       if (frame_parms[CC_id]->frame_type==FDD) {
 	UE[CC_id]->N_TA_offset = 0;
       }
@@ -920,14 +1033,16 @@ int main( int argc, char **argv )
 	  UE[CC_id]->N_TA_offset = 624/2;
 	else if (frame_parms[CC_id]->N_RB_DL == 25)
 	  UE[CC_id]->N_TA_offset = 624/4;
-     
+
     }
-    init_openair0(); 
+    init_openair0();
   }
+
 
   printf("Runtime table\n");
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
   cpuf=get_cpu_freq_GHz();
+  }
   
   
   
@@ -976,6 +1091,9 @@ int main( int argc, char **argv )
     if (create_tasks_ue(1) < 0) {
       printf("cannot create ITTI tasks\n");
       exit(-1); // need a softer mode
+    }
+    if(nfapi_mode==3){ //Panos: Here we should add another nfapi_mode for the case of Supervised LTE-D2D
+    	UE_config_stub_pnf();
     }
     printf("ITTI tasks created\n");
 #endif
@@ -1026,9 +1144,46 @@ int main( int argc, char **argv )
   
   rt_sleep_ns(10*100000000ULL);
 
+  const char *nfapi_mode_str = "<UNKNOWN>";
+
+    switch(nfapi_mode)
+    {
+      case 0:
+        nfapi_mode_str = "MONOLITHIC";
+        break;
+      case 1:
+        nfapi_mode_str = "PNF";
+        break;
+      case 2:
+        nfapi_mode_str = "VNF";
+        break;
+      case 3:
+        nfapi_mode_str = "UE_STUB_PNF";
+        break;
+      case 4:
+        nfapi_mode_str = "UE_STUB_OFFNET";
+        break;
+      default:
+        nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
+        break;
+    }
+    printf("NFAPI MODE:%s\n", nfapi_mode_str);
+
+
   // start the main threads
     int eMBMS_active = 0;
-    init_UE(1,eMBMS_active,uecap_xer_in,0);
+
+    if (nfapi_mode==3) // UE-STUB-PNF
+    {
+    	config_sync_var=0;
+    	wait_nfapi_init("main?");
+    	//Panos: Temporarily we will be using single set of threads for multiple UEs.
+    	//init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
+    	init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
+    }
+    else {
+    	init_UE(1,eMBMS_active,uecap_xer_in,0);
+    }
 
     if (phy_test==0) {
       printf("Filling UE band info\n");
@@ -1036,10 +1191,12 @@ int main( int argc, char **argv )
       dl_phy_sync_success (0, 0, 0, 1);
     }
 
-    number_of_cards = 1;
-    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
-      PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    if (nfapi_mode!=3){
+    	number_of_cards = 1;
+    	for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    		PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
+    		PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+    	}
     }
 
 
@@ -1055,13 +1212,16 @@ int main( int argc, char **argv )
       UE[CC_id]->hw_timing_advance = 160;
 #endif
     }
-    if (setup_ue_buffers(UE,&openair0_cfg[0])!=0) {
-      printf("Error setting up eNB buffer\n");
-      exit(-1);
+    if(nfapi_mode!=3) {
+    	if (setup_ue_buffers(UE,&openair0_cfg[0])!=0) {
+    		printf("Error setting up eNB buffer\n");
+    		exit(-1);
+    	}
     }
     
     
     
+
     if (input_fd) {
       printf("Reading in from file to antenna buffer %d\n",0);
       if (fread(UE[0]->common_vars.rxdata[0],

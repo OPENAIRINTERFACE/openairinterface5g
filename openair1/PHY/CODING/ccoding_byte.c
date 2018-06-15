@@ -24,7 +24,7 @@
    author: raymond.knopp@eurecom.fr, based on similar code for 3GPP convolutional code (UMTS) by P. Humblet (2000)
    date: 10.2004
 */
-#include "defs.h"
+#include "coding_defs.h"
 
 
 unsigned short gdot11[] = { 0133, 0171 }; // {A,B}
