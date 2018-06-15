@@ -50,6 +50,7 @@ esac
 done
 
 cd $JENKINS_WKSP
+STATUS=0
 
 ############################################################
 # Creating a tmp folder to store results and artifacts
@@ -75,19 +76,35 @@ fi
 # Generated log files:
 if [ -f $JENKINS_WKSP/cmake_targets/log/lte-softmodem.Rel14.txt ]
 then
+    LOCAL_STAT=`egrep -c "Built target lte-softmodem" $JENKINS_WKSP/cmake_targets/log/lte-softmodem.Rel14.txt`
+    if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
     cp $JENKINS_WKSP/cmake_targets/log/lte-softmodem.Rel14.txt $ARCHIVES_LOC
+else
+    STATUS=-1
 fi
 if [ -f $JENKINS_WKSP/cmake_targets/log/params_libconfig.Rel14.txt ]
 then
+    LOCAL_STAT=`egrep -c "Built target params_libconfig" $JENKINS_WKSP/cmake_targets/log/params_libconfig.Rel14.txt`
+    if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
     cp $JENKINS_WKSP/cmake_targets/log/params_libconfig.Rel14.txt $ARCHIVES_LOC
+else
+    STATUS=-1
 fi
 if [ -f $JENKINS_WKSP/cmake_targets/log/coding.Rel14.txt ]
 then
+    LOCAL_STAT=`egrep -c "Built target coding" $JENKINS_WKSP/cmake_targets/log/coding.Rel14.txt`
+    if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
     cp $JENKINS_WKSP/cmake_targets/log/coding.Rel14.txt $ARCHIVES_LOC
+else
+    STATUS=-1
 fi
 if [ -f $JENKINS_WKSP/cmake_targets/log/oai_usrpdevif.Rel14.txt ]
 then
+    LOCAL_STAT=`egrep -c "Built target oai_usrpdevif" $JENKINS_WKSP/cmake_targets/log/oai_usrpdevif.Rel14.txt`
+    if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
     cp $JENKINS_WKSP/cmake_targets/log/oai_usrpdevif.Rel14.txt $ARCHIVES_LOC
+else
+    STATUS=-1
 fi
 
 ############################################################
@@ -104,15 +121,27 @@ cd $JENKINS_WKSP/cmake_targets
 # Generated log files:
 if [ -f $JENKINS_WKSP/cmake_targets/log/basic_simulator_enb.txt ]
 then
+    LOCAL_STAT=`egrep -c "Built target lte-softmodem" $JENKINS_WKSP/cmake_targets/log/basic_simulator_enb.txt`
+    if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
     cp $JENKINS_WKSP/cmake_targets/log/basic_simulator_enb.txt $ARCHIVES_LOC
+else
+    STATUS=-1
 fi
 if [ -f $JENKINS_WKSP/cmake_targets/log/basic_simulator_ue.txt ]
 then
+    LOCAL_STAT=`egrep -c "Built target lte-uesoftmodem" $JENKINS_WKSP/cmake_targets/log/basic_simulator_ue.txt`
+    if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
     cp $JENKINS_WKSP/cmake_targets/log/basic_simulator_ue.txt $ARCHIVES_LOC
+else
+    STATUS=-1
 fi
 if [ -f $JENKINS_WKSP/cmake_targets/log/conf2uedata.Rel14.txt ]
 then
+    LOCAL_STAT=`egrep -c "Built target conf2uedata" $JENKINS_WKSP/cmake_targets/log/conf2uedata.Rel14.txt`
+    if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
     cp $JENKINS_WKSP/cmake_targets/log/conf2uedata.Rel14.txt $ARCHIVES_LOC
+else
+    STATUS=-1
 fi
 
 ############################################################
@@ -120,3 +149,5 @@ fi
 ############################################################
 cd $JENKINS_WKSP/archives/
 zip -r local_build_logs.zip basic_sim enb_usrp
+
+exit $STATUS
