@@ -19,53 +19,41 @@ void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N)
 			d[i]=d[i] ^ (!( (j-i)& i ))*u[j];
         	}
     	}
+
+
 /*
  * It works, but there are too many moves from memory and it's slow. With AVX-512 it could be done faster
  *
-	__m256i A,B,C,E, OUT;
-	
+	__m256i A,B,C,E,U, OUT;
+	__m256i inc;
 	uint32_t dTest[8];
-	uint32_t jiArray[8];
-	uint32_t iArray[8];
 	uint32_t uArray[8];
 	uint32_t k;	
 	uint32_t toCheck[8];
 
+	uint32_t incArray[8];
+	for(k=0; k<8; k++)
+		incArray[k]=k; //0,1, ... 7
+
+	inc=_mm256_loadu_si256((__m256i const*)incArray);
+	
 	for(i=0; i<N; i+=8)
         {
-		iArray[0]=i;
-		iArray[1]=i+1;
-		iArray[2]=i+2;
-                iArray[3]=i+3; 
-		iArray[4]=i+4;
-                iArray[5]=i+5; 
-		iArray[6]=i+6;
-                iArray[7]=i+7; 
 
+		B=_mm256_set1_epi32((int)i); // i, ... i
+		B=_mm256_add_epi32(B, inc); //i, i+1, ... i+7
+		
 		OUT=_mm256_setzero_si256();
-                for(j=0; j<N; j++)
+                
+		for(j=0; j<N; j++)
 		{
 			//initialisation
-			jiArray[0]=j-i;
-        	        jiArray[1]=j-(i+1);
-                	jiArray[2]=j-(i+2);
-                	jiArray[3]=j-(i+3);
-                	jiArray[4]=j-(i+4);
-                	jiArray[5]=j-(i+5);
-                	jiArray[6]=j-(i+6);
-                	jiArray[7]=j-(i+7);
+			A=_mm256_set1_epi32((int)(j)); //j ...
+			A=_mm256_sub_epi32(A, B); //(j-i), (j-(i+1)), ... (j-(i+7))  
+			
+			U=_mm256_set1_epi32((int)u[j]);
+			_mm256_storeu_si256((__m256i*)uArray, U); //u(j) ... u(j) for the maskload
 
-			uArray[0]=(uint32_t)u[j];
-                        uArray[1]=(uint32_t)u[j];
-                        uArray[2]=(uint32_t)u[j];
-                        uArray[3]=(uint32_t)u[j];
-                        uArray[4]=(uint32_t)u[j];
-                        uArray[5]=(uint32_t)u[j];
-                        uArray[6]=(uint32_t)u[j];
-                        uArray[7]=(uint32_t)u[j];
-		
-			A=_mm256_loadu_si256((__m256i const*)jiArray);
-			B=_mm256_loadu_si256((__m256i const*)iArray);
 			C=_mm256_and_si256(A, B); //mask: if zero, then add
 
 			_mm256_storeu_si256((__m256i*)toCheck, C);
@@ -79,7 +67,7 @@ void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N)
 			OUT=_mm256_xor_si256(OUT, E); //32 bit x 8
 
 		}
-		_mm256_storeu_si256((__m256i*)&dTest, OUT);
+		_mm256_storeu_si256((__m256i*)dTest, OUT);
 
 		for(k=0; k<8; k++)
                 {	
