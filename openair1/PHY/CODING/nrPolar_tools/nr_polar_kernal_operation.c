@@ -9,78 +9,83 @@ void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N)
 {
 	// Martino's algorithm to avoid multiplication for the generating matrix of polar codes
 	
-	uint16_t i,j;
- 
+	uint32_t i,j;
+	
 	for(i=0; i<N; i++) // Create the elements of d=u*G_N ...
     	{
         	d[i]=0;
         	for(j=0; j<N; j++) // ... looking at all the elements of u
         	{
-            		//d[i]=d[i] || ( (!(j-i)) | (!i) )*u[j];
-
 			d[i]=d[i] ^ (!( (j-i)& i ))*u[j];
         	}
-
-		//d[i]=d[i]%2; // modulo 2
     	}
-
-
 /*
-	__m256i maddReg, uReg, orReg;
-	__m512i maddRegConv;
-	__m256i bitJIReg, bitIReg;
-	uint8_t bitJI[32];
-	uint8_t bitI[32];
-	int sumPartial;
-	uint8_t indToInit;
+ * It works, but there are too many moves from memory and it's slow. With AVX-512 it could be done faster
+ *
+	__m256i A,B,C,E, OUT;
+	
+	uint32_t dTest[8];
+	uint32_t jiArray[8];
+	uint32_t iArray[8];
+	uint32_t uArray[8];
+	uint32_t k;	
+	uint32_t toCheck[8];
 
-        for(i=0; i<N; i++) // Create the elements of d=u*G_N ...
+	for(i=0; i<N; i+=8)
         {
-                d[i]=0;
-                for(j=0; j<N; j+=32) // ... looking at all the elements of u 32 at a time
-                {
-                        //d[i]=d[i]+( (!(j-i)) | (!i) )*u[j];  <--- THIS IN INTRINSIC
-			// Products between ( (!(j-i)) | (!i) ) and u[j] and sum all with a reduce add
+		iArray[0]=i;
+		iArray[1]=i+1;
+		iArray[2]=i+2;
+                iArray[3]=i+3; 
+		iArray[4]=i+4;
+                iArray[5]=i+5; 
+		iArray[6]=i+6;
+                iArray[7]=i+7; 
 
-			uReg = _mm256_maskz_loadu_epi8 (0xFFFFFFFF, (void const*)&u[j]); // load 32 8-bit from u
-			
-			//init arrays for (!(i-j)) and for (!i)
-			for(indToInit=0; indToInit<32; indToInit++)
-			{
-				// j = j*32+indToInit
-				bitJI[j*32+indToInit] = !((j*32+indToInit)-i); // (!(j-i))
-				bitI[j*32+indToInit] = !i; // (!i)
+		OUT=_mm256_setzero_si256();
+                for(j=0; j<N; j++)
+		{
+			//initialisation
+			jiArray[0]=j-i;
+        	        jiArray[1]=j-(i+1);
+                	jiArray[2]=j-(i+2);
+                	jiArray[3]=j-(i+3);
+                	jiArray[4]=j-(i+4);
+                	jiArray[5]=j-(i+5);
+                	jiArray[6]=j-(i+6);
+                	jiArray[7]=j-(i+7);
+
+			uArray[0]=(uint32_t)u[j];
+                        uArray[1]=(uint32_t)u[j];
+                        uArray[2]=(uint32_t)u[j];
+                        uArray[3]=(uint32_t)u[j];
+                        uArray[4]=(uint32_t)u[j];
+                        uArray[5]=(uint32_t)u[j];
+                        uArray[6]=(uint32_t)u[j];
+                        uArray[7]=(uint32_t)u[j];
+		
+			A=_mm256_loadu_si256((__m256i const*)jiArray);
+			B=_mm256_loadu_si256((__m256i const*)iArray);
+			C=_mm256_and_si256(A, B); //mask: if zero, then add
+
+			_mm256_storeu_si256((__m256i*)toCheck, C);
+			for(k=0; k<8; k++)
+                        {
+				toCheck[k]=!toCheck[k] << 31;
 			}
-	 	
-			bitJIReg = _mm256_maskz_loadu_epi8(0xFFFFFFFF, (void const*)bitJI); // 32x8-bit
-			bitIReg = _mm256_maskz_loadu_epi8(0xFFFFFFFF, (void const*)bitI);   // 32x8-bit
-			orReg=_mm256_or_si256(bitWise1, bitWise2); // (!(j-i)) | (!i)   32x8-bit
-			maddReg=_mm256_maddubs_epi16(uReg, orReg); //a1*b1+a2*b2 from 32x8 to 16x16-bit
-			maddRegConv= _mm512_cvtepi16_epi32(maddReg); //convert to 16x32-bit
-			sumPartial = _mm512_reduce_add_epi32(maddRegConv); //sum all 16 values
+			C=_mm256_loadu_si256((__m256i const*)toCheck); //mask: if 1, add
 
-			d[i] = d[i] + sumPartial; //store in the final variable
+			E=_mm256_maskload_epi32((int const*)uArray, C);
+			OUT=_mm256_xor_si256(OUT, E); //32 bit x 8
+
+		}
+		_mm256_storeu_si256((__m256i*)&dTest, OUT);
+
+		for(k=0; k<8; k++)
+                {	
+		        d[i+k]=(uint8_t)dTest[k]; //Conv from 32 to 8
                 }
 
-                d[i]=d[i]%2; // modulo 2
-        }
-*/
-
-/*
- __m128 num1, num2, num3, num4;
-
-        for (uint16_t i = 0; i < col; i++) {
-        num4=_mm_setzero_ps(); //sets sum to zero
-                for (uint16_t j = 0; j < row; j+=4) {
-                        //output[i] += matrix1[j] * matrix2[j][i];
-                        num1=_mm_load_ps((float*)&matrix1[j]); // 1[3], 1[2], 1[1], 1[0] -> num1
-                        num2=_mm_load_ps((float*)&matrix2[j][i]); // 2[3], 2[2], 2[1], 2[0] -> num2
-                        num3=_mm_mul_ps(num1, num2); // 1[3]*2[3],...1[0]*2[0] -> num3
-                        num3=_mm_hadd_ps(num3, num3); //1[3]*2[3]+1[2]*2[2] ... 
-                        num4 = _mm_add_ps(num4, num3);
-                }
-                num4= _mm_hadd_ps(num4, num4);
-                _mm_store_ss(&output[i], num4); // Stores only the lower SP FP that contain the sum
-        }
+	}
 */
 }
