@@ -101,54 +101,51 @@ void RCconfig_flexran()
     ue_TimersAndConstants_t300, ue_TimersAndConstants_t301,
     ue_TimersAndConstants_t310, ue_TimersAndConstants_t311,
     ue_TimersAndConstants_n310, ue_TimersAndConstants_n311,
-    ue_TransmissionMode;
+    ue_TransmissionMode, ue_multiple_max;
 
-    int32_t     ue_multiple_max               = 0;
+  const char*       rxPool_sc_CP_Len;
+  const char*       rxPool_sc_Period;
+  const char*       rxPool_data_CP_Len;
+  libconfig_int     rxPool_ResourceConfig_prb_Num;
+  libconfig_int     rxPool_ResourceConfig_prb_Start;
+  libconfig_int     rxPool_ResourceConfig_prb_End;
+  const char*       rxPool_ResourceConfig_offsetIndicator_present;
+  libconfig_int     rxPool_ResourceConfig_offsetIndicator_choice;
+  const char*       rxPool_ResourceConfig_subframeBitmap_present;
+  char*             rxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
+  libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_size;
+  libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
 
-    e_SL_CP_Len_r12                rxPool_sc_CP_Len;
-    e_SL_PeriodComm_r12            rxPool_sc_Period;
-    e_SL_CP_Len_r12                rxPool_data_CP_Len;
-    long                           rxPool_ResourceConfig_prb_Num;
-    long                           rxPool_ResourceConfig_prb_Start;
-    long                           rxPool_ResourceConfig_prb_End;
-    SL_OffsetIndicator_r12_PR      rxPool_ResourceConfig_offsetIndicator_present;
-    long                           rxPool_ResourceConfig_offsetIndicator_choice;
-    SubframeBitmapSL_r12_PR        rxPool_ResourceConfig_subframeBitmap_present;
-    char*                          rxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
-    long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_size;
-    long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
+  //SIB19
+  //for discRxPool
+  const char*       discRxPool_cp_Len;
+  const char*       discRxPool_discPeriod;
+  libconfig_int     discRxPool_numRetx;
+  libconfig_int     discRxPool_numRepetition;
+  libconfig_int     discRxPool_ResourceConfig_prb_Num;
+  libconfig_int     discRxPool_ResourceConfig_prb_Start;
+  libconfig_int     discRxPool_ResourceConfig_prb_End;
+  const char*       discRxPool_ResourceConfig_offsetIndicator_present;
+  libconfig_int     discRxPool_ResourceConfig_offsetIndicator_choice;
+  const char*       discRxPool_ResourceConfig_subframeBitmap_present;
+  char*             discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
+  libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_size;
+  libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
 
-    //SIB19
-    //for discRxPool
-    SL_CP_Len_r12_t                discRxPool_cp_Len;
-    e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPool_discPeriod;
-    long                           discRxPool_numRetx;
-    long                           discRxPool_numRepetition;
-    long                           discRxPool_ResourceConfig_prb_Num;
-    long                           discRxPool_ResourceConfig_prb_Start;
-    long                           discRxPool_ResourceConfig_prb_End;
-    SL_OffsetIndicator_r12_PR      discRxPool_ResourceConfig_offsetIndicator_present;
-    long                           discRxPool_ResourceConfig_offsetIndicator_choice;
-    SubframeBitmapSL_r12_PR        discRxPool_ResourceConfig_subframeBitmap_present;
-    char*                          discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
-    long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_size;
-    long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
-    //for discRxPoolPS
-    SL_CP_Len_r12_t                discRxPoolPS_cp_Len;
-    e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPoolPS_discPeriod;
-    long                           discRxPoolPS_numRetx;
-    long                           discRxPoolPS_numRepetition;
-    long                           discRxPoolPS_ResourceConfig_prb_Num;
-    long                           discRxPoolPS_ResourceConfig_prb_Start;
-    long                           discRxPoolPS_ResourceConfig_prb_End;
-    SL_OffsetIndicator_r12_PR      discRxPoolPS_ResourceConfig_offsetIndicator_present;
-    long                           discRxPoolPS_ResourceConfig_offsetIndicator_choice;
-    SubframeBitmapSL_r12_PR        discRxPoolPS_ResourceConfig_subframeBitmap_present;
-    char*                          discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf;
-    long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size;
-    long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
-
-
+  //for discRxPoolPS
+  const char*       discRxPoolPS_cp_Len;
+  const char*       discRxPoolPS_discPeriod;
+  libconfig_int     discRxPoolPS_numRetx;
+  libconfig_int     discRxPoolPS_numRepetition;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_Num;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_Start;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_End;
+  const char*       discRxPoolPS_ResourceConfig_offsetIndicator_present;
+  libconfig_int     discRxPoolPS_ResourceConfig_offsetIndicator_choice;
+  const char*       discRxPoolPS_ResourceConfig_subframeBitmap_present;
+  char*             discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf;
+  libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size;
+  libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
 
   /* get number of eNBs */
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
