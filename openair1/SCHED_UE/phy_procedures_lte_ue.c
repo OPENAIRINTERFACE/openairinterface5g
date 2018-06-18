@@ -204,8 +204,13 @@ void dump_dlsch_SI(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t s
 unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb)
 {
 
-  int gain_dB = power_dBm - power_max_dBm;
+  int gain_dB;
   double gain_lin;
+
+  if (power_dBm<=power_max_dBm)
+    gain_dB = power_dBm - power_max_dBm;
+  else
+    gain_dB = 0;
 
   gain_lin = pow(10,.1*gain_dB);
   AssertFatal((nb_rb >0) && (nb_rb <= N_RB_UL),"Illegal nb_rb/N_RB_UL combination (%d/%d)\n",nb_rb,N_RB_UL);
