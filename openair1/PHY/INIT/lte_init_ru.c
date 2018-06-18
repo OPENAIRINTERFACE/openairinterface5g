@@ -109,7 +109,7 @@ int phy_init_RU(RU_t *ru) {
     AssertFatal(RC.nb_L1_inst <= NUMBER_OF_eNB_MAX,"eNB instances %d > %d\n",
 		RC.nb_L1_inst,NUMBER_OF_eNB_MAX);
 
-    LOG_E(PHY,"[INIT] %s() RC.nb_L1_inst:%d \n", __FUNCTION__, RC.nb_L1_inst);
+    LOG_D(PHY,"[INIT] %s() RC.nb_L1_inst:%d \n", __FUNCTION__, RC.nb_L1_inst);
 
     for (i=0; i<RC.nb_L1_inst; i++) {
       for (p=0;p<15;p++) {

@@ -34,7 +34,7 @@
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_UE *ue,
-                      unsigned char eNB_id,
+                      module_id_t eNB_id,
 					  uint8_t subframe,
                       unsigned char clear,
                       short coef)

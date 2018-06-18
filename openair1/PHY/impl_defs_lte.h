@@ -33,11 +33,6 @@
 #ifndef __PHY_IMPLEMENTATION_DEFS_LTE_H__
 #define __PHY_IMPLEMENTATION_DEFS_LTE_H__
 
-
-
-
-
-
 typedef struct {
   /// \brief Holds the transmit data in the frequency domain.
   /// - first index: rx antenna [0..nb_antennas_rx[
@@ -72,10 +67,5 @@ typedef struct {
   /// - third index: frequency [0..]
   int32_t **tdd_calib_coeffs;
 } RU_COMMON;
-
-
-
-
-
 
 #endif

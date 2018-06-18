@@ -42,6 +42,7 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 MSC_GEN="False"
 XFORMS="True"
+UE_EXPANSION="False"
 PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
@@ -213,6 +214,10 @@ function main() {
        --UE)
             UE=1
             echo_info "Will compile UE"
+            shift;;
+       --mu)
+            UE_EXPANSION="True"
+            echo_info "Will compile with UE_EXPANSION"
             shift;;
        --UE-conf-nvram)
             conf_nvram_path=$(readlink -f "$1")
@@ -540,6 +545,9 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
+    echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
+    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
+    echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
@@ -707,6 +715,9 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
+    echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
+    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
+    echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
@@ -794,6 +805,9 @@ function main() {
     cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
+    echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
+    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
+    echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file

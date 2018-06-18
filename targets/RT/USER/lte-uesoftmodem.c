@@ -471,6 +471,7 @@ void *l2l1_task(void *arg) {
 extern int16_t dlsch_demod_shift;
 
 static void get_options(void) {
+  char logmem_filename[1024] = {0};
   int CC_id;
   int tddflag, nonbiotflag;
   char *loopfile=NULL;

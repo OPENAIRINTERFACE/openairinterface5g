@@ -1677,9 +1677,5 @@ uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
 
-
-
-
-
 /**@}*/
 #endif
