@@ -1435,12 +1435,12 @@ typedef struct {
     RAR_PDU RAR_pdu;
     /// Incoming DLSCH pdu for PHY
     DLSCH_PDU DLSCH_pdu[MAX_MOBILES_PER_ENB][2];
-#ifdef Rel14
-  int sltx_active;
-  SLSCH_t slsch;
-  SLDCH_t sldch;
-  ULSCH_PDU slsch_pdu;
-  int slsch_lcid;
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    int sltx_active;
+    SLSCH_t slsch;
+    SLDCH_t sldch;
+    ULSCH_PDU slsch_pdu;
+    int slsch_lcid;
 #endif
     /// number of attempt for rach
     uint8_t RA_attempt_number;

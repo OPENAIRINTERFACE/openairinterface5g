@@ -248,7 +248,7 @@ ue_ip_common_ip2wireless(
   //---------------------------------------------------------------------------
   struct pdcp_data_req_header_s     pdcph;
   ue_ip_priv_t                     *priv_p=netdev_priv(ue_ip_dev[instP]);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ipversion_t         *ipv_p             = NULL;
   unsigned int         hard_header_len   = 0;
   unsigned char       *src_addr          = 0;

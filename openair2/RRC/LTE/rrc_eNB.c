@@ -555,7 +555,7 @@ static void init_MBMS(
                             NULL,   // DRB_ToReleaseList
                             &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                             ,0, 0
 #endif
                             );
@@ -4490,7 +4490,7 @@ check_handovers(
                                ue_context_p->ue_context.handover_info->size,
                                ue_context_p->ue_context.handover_info->buf,
                                PDCP_TRANSMISSION_MODE_CONTROL
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                ,NULL, NULL
 #endif
                                );
@@ -7806,7 +7806,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
                    (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)NULL,
                    (SL_CommConfig_r12_t*)&sl_CommConfig,
                    (SL_DiscConfig_r12_t*)NULL
-  #if defined(Rel10) || defined(Rel14)
+  #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                                            , (SCellToAddMod_r10_t*)NULL
   #endif
                                            );
@@ -7829,7 +7829,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
                    (struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList*)NULL,
                    (SL_CommConfig_r12_t*)NULL,
                    (SL_DiscConfig_r12_t*)&sl_DiscConfig
-  #if defined(Rel10) || defined(Rel14)
+  #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                                            , (SCellToAddMod_r10_t*)NULL
   #endif
                                            );

@@ -106,7 +106,7 @@ rrc_ue_decode_dcch(
   const uint8_t                eNB_indexP
 );
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int decode_SL_Discovery_Message(
   const protocol_ctxt_t* const ctxt_pP,
   const uint8_t                eNB_index,

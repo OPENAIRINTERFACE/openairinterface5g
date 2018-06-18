@@ -359,7 +359,7 @@ typedef struct RU_t_s{
   int (*wakeup_rxtx)(struct PHY_VARS_eNB_s *eNB, struct RU_t_s *ru);
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
 #endif
@@ -484,7 +484,7 @@ typedef struct RRU_config_s {
   int prach_FreqOffset[MAX_BANDS_PER_RRU];
   /// prach_ConfigIndex for IF4p5
   int prach_ConfigIndex[MAX_BANDS_PER_RRU];
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int emtc_prach_CElevel_enable[MAX_BANDS_PER_RRU][4];
   /// emtc_prach_FreqOffset for IF4p5 per CE Level
   int emtc_prach_FreqOffset[MAX_BANDS_PER_RRU][4];
@@ -619,7 +619,7 @@ typedef struct {
   int32_t **prach_ifft[4];
 
   /// repetition number
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// indicator of first frame in a group of PRACH repetitions
   int first_frame[4];
   /// current repetition for each CE level
@@ -706,7 +706,7 @@ typedef struct eNB_proc_t_s {
   int subframe_rx;
   /// subframe to act upon for PRACH
   int subframe_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// subframe to act upon for reception of prach BL/CE UEs
   int subframe_prach_br;
 #endif
@@ -716,7 +716,7 @@ typedef struct eNB_proc_t_s {
   int frame_tx;
   /// frame to act upon for PRACH
   int frame_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// frame to act upon for PRACH BL/CE UEs
   int frame_prach_br;
 #endif
@@ -726,7 +726,7 @@ typedef struct eNB_proc_t_s {
   int instance_cnt_te;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// \internal This variable is protected by \ref mutex_prach for BL/CE UEs.
   int instance_cnt_prach_br;
 #endif
@@ -748,7 +748,7 @@ typedef struct eNB_proc_t_s {
   pthread_attr_t attr_single;
   /// pthread attributes for prach processing thread
   pthread_attr_t attr_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread attributes for prach processing thread BL/CE UEs
   pthread_attr_t attr_prach_br;
 #endif
@@ -762,7 +762,7 @@ typedef struct eNB_proc_t_s {
   struct sched_param sched_param_single;
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach_br;
 #endif
@@ -774,7 +774,7 @@ typedef struct eNB_proc_t_s {
   pthread_t pthread_te;
   /// pthread structure for PRACH thread
   pthread_t pthread_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread structure for PRACH thread BL/CE UEs
   pthread_t pthread_prach_br;
 #endif
@@ -784,7 +784,7 @@ typedef struct eNB_proc_t_s {
   pthread_cond_t cond_te;
   /// condition variable for PRACH processing thread;
   pthread_cond_t cond_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// condition variable for PRACH processing thread BL/CE UEs;
   pthread_cond_t cond_prach_br;
 #endif
@@ -796,7 +796,7 @@ typedef struct eNB_proc_t_s {
   pthread_mutex_t mutex_te;
   /// mutex for PRACH thread
   pthread_mutex_t mutex_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mutex for PRACH thread for BL/CE UEs
   pthread_mutex_t mutex_prach_br;
 #endif
@@ -812,7 +812,7 @@ typedef struct eNB_proc_t_s {
   int RU_mask;
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach_br;
 #endif

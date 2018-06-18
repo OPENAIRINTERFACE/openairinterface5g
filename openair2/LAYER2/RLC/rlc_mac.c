@@ -127,7 +127,7 @@ tbs_size_t mac_rlc_data_req(
   const logical_chan_id_t channel_idP,
   const tb_size_t         tb_sizeP,
   char             *buffer_pP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t sourceL2Id
   ,const uint32_t destinationL2Id
 #endif
@@ -179,7 +179,7 @@ tbs_size_t mac_rlc_data_req(
     }
   } else {
     key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if ((sourceL2Id > 0) && (destinationL2Id > 0))
        key = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(module_idP, rntiP, enb_flagP, channel_idP, sourceL2Id, destinationL2Id, srb_flag);
 #endif
@@ -329,7 +329,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
   const tb_size_t         tb_sizeP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t sourceL2Id
   ,const uint32_t destinationL2Id
 #endif
@@ -362,7 +362,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
 
     key = RLC_COLL_KEY_MBMS_VALUE(module_idP, rntiP, enb_flagP, mbms_id_p->service_id, mbms_id_p->session_id);
   } else {
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if ((sourceL2Id > 0) && (destinationL2Id > 0)) {
        key = RLC_COLL_KEY_SOURCE_DEST_VALUE(module_idP, rntiP, enb_flagP, channel_idP, sourceL2Id, destinationL2Id, srb_flag);
     } else

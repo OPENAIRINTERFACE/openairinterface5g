@@ -578,7 +578,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,
 	      uint16_t *max_preamble_energy, 
 	      uint16_t *max_preamble_delay, 
 	      uint16_t Nf, uint8_t tdd_mapindex
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	      ,
               uint8_t br_flag
 #endif
