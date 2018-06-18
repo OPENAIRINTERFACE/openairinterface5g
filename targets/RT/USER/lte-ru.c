@@ -778,16 +778,13 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   // synchronize first reception to frame 0 subframe 0
 
 #ifdef PHY_TX_THREAD
-  proc->timestamp_phy_tx = proc->timestamp_rx+(3*fp->samples_per_tti);
-  proc->subframe_phy_tx  = (proc->subframe_rx+3)%10;
-  proc->frame_phy_tx     = (proc->subframe_rx>6) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+  proc->timestamp_phy_tx = proc->timestamp_rx+((sf_ahead-1)*fp->samples_per_tti);
+  proc->subframe_phy_tx  = (proc->subframe_rx+(sf_ahead-1))%10;  
+  proc->frame_phy_tx     = (proc->subframe_rx>(9-(sf_ahead-1))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 #else
-#if 0
-  /* TODO for Fujitsu: fix this somehow */
   proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
   proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
   proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-#endif
 #endif
 
   //proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
@@ -887,8 +884,6 @@ void tx_rf(RU_t *ru) {
     for (i=0; i<ru->nb_tx; i++)
       txp[i] = (void*)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_tti)-sf_extension];
 
-#if 0
-    /* TODO for Fujitsu: fix this somehow */
     /* add fail safe for late command */
     if(late_control!=STATE_BURST_NORMAL){//stop burst
       switch (late_control) {
@@ -916,7 +911,6 @@ void tx_rf(RU_t *ru) {
       }
     }
     /* add fail safe for late command end */
-#endif
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
@@ -1783,6 +1777,11 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
     
+    // wait until eNBs are finished subframe RX n and TX n+sf_ahead
+    if(get_nprocs() > 4)
+      wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
+    
+#ifndef PHY_TX_THREAD
     if(get_nprocs() <= 4){
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);
@@ -1796,32 +1795,11 @@ static void* ru_thread( void* param ) {
         if (ru->fh_north_out) ru->fh_north_out(ru);
       }
     }
-
-#if 0
-    /* TODO for Fujitsu: fix this somehow */
-    // wait until eNBs are finished subframe RX n and TX n+sf_ahead
-    wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
-#endif
-
-
-#if 0
-    /* TODO for Fujitsu: fix this somehow */
-#ifndef PHY_TX_THREAD
-    // do TX front-end processing if needed (precoding and/or IDFTs)
-    if (ru->feptx_prec) ru->feptx_prec(ru);
-   
-    // do OFDM if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-    // do outgoing fronthaul (south) if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
- 
-    if (ru->fh_north_out) ru->fh_north_out(ru);
 #else
     while((!oai_exit)&&(phy_tx_end == 0)){
         nanosleep(&time_req,&time_rem);
         continue;
     }
-#endif
 #endif
   }
   
@@ -2058,10 +2036,12 @@ static void* rf_tx( void* param ) {
        if (ru->feptx_prec) ru->feptx_prec(ru);
        // do OFDM if needed
        if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-       // do outgoing fronthaul (south) if needed
-       if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+       if(!emulate_rf){
+         // do outgoing fronthaul (south) if needed
+         if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
 
-       if (ru->fh_north_out) ru->fh_north_out(ru);
+         if (ru->fh_north_out) ru->fh_north_out(ru);
+       }
     }
     if (release_thread(&proc->mutex_rf_tx,&proc->instance_cnt_rf_tx,"rf_tx") < 0) break;
     if(proc->instance_cnt_rf_tx >= 0){
