@@ -34,47 +34,20 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "transport_eNB.h"
 #include "PHY/phy_extern.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-static inline unsigned int lte_gold_scram(unsigned int *x1, unsigned int *x2, unsigned char reset) __attribute__((always_inline));
-static inline unsigned int lte_gold_scram(unsigned int *x1, unsigned int *x2, unsigned char reset)
-{
-  int n;
-
-  if (reset) {
-    *x1 = 1+ (1<<31);
-    *x2=*x2 ^ ((*x2 ^ (*x2>>1) ^ (*x2>>2) ^ (*x2>>3))<<31);
-
-    // skip first 50 double words (1600 bits)
-    //      printf("n=0 : x1 %x, x2 %x\n",x1,x2);
-    for (n=1; n<50; n++) {
-      *x1 = (*x1>>1) ^ (*x1>>4);
-      *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
-      *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
-      *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
-    }
-  }
-
-  *x1 = (*x1>>1) ^ (*x1>>4);
-  *x1 = *x1 ^ (*x1<<31) ^ (*x1<<28);
-  *x2 = (*x2>>1) ^ (*x2>>2) ^ (*x2>>3) ^ (*x2>>4);
-  *x2 = *x2 ^ (*x2<<31) ^ (*x2<<30) ^ (*x2<<29) ^ (*x2<<28);
-  return(*x1^*x2);
-  //  printf("n=%d : c %x\n",n,x1^x2);
-
-}
-
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
                       int mbsfn_flag,
                       LTE_eNB_DLSCH_t *dlsch,
-		      int harq_pid,
+                      int harq_pid,
                       int G,
                       uint8_t q,
-		      uint16_t frame,
+                      uint16_t frame,
                       uint8_t Ns)
 {
 
@@ -148,7 +121,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   printf("scrambling: rnti %x, q %d, Ns %d, Nid_cell %d, G %d x2 %x\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell, G, x2);
 #endif
 #endif
-  s = lte_gold_scram(&x1, &x2, 1);
+  s = lte_gold_generic(&x1, &x2, 1);
 
   for (n=0; n<(1+(G>>5)); n++) {
 
@@ -197,7 +170,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
     
     
-    s = lte_gold_scram(&x1, &x2, 0);
+    s = lte_gold_generic(&x1, &x2, 0);
     e += 32;
   }
 
@@ -243,7 +216,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_SCRAMBLING
     printf("unscrambling: rnti %x, q %d, Ns %d, Nid_cell %d G %d, x2 %x\n",dlsch->rnti,q,Ns,frame_parms->Nid_cell,G,x2);
 #endif
-  s = lte_gold_scram(&x1, &x2, 1);
+  s = lte_gold_generic(&x1, &x2, 1);
 
   for (i=0; i<(1+(G>>5)); i++) {
     for (j=0; j<32; j++,k++) {
@@ -256,7 +229,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
     }
 
-    s = lte_gold_scram(&x1, &x2, 0);
+    s = lte_gold_generic(&x1, &x2, 0);
   }
 }
 

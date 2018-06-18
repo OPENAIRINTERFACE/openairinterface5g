@@ -72,13 +72,11 @@
 
 #include <pthread.h>
 
-#include "targets/ARCH/COMMON/common_lib.h"
 #include "targets/COMMON/openairinterface5g_limits.h"
 
 #include "types.h"
 #include "nfapi_interface.h"
 //#include "defs.h"
-#include "openair2/COMMON/platform_types.h"
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2
