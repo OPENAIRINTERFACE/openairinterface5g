@@ -1274,6 +1274,9 @@ typedef struct eNB_MAC_INST_s {
   UE_free_list_t UE_free_list;
   /// for scheduling selection
   SCHEDULER_MODES scheduler_mode;
+
+  int32_t puSch10xSnr;
+  int32_t puCch10xSnr;
 } eNB_MAC_INST;
 
 /*

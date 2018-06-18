@@ -1426,10 +1426,10 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	  // this is the normalized RX power
 	  eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
 
-	  /* TODO: fix how we deal with power, unit is not dBm, it's special from nfapi */
-	  normalized_rx_power = ue_sched_ctl->pucch1_snr[CC_id];
-	  target_rx_power = 208;
-
+	  /* unit is not dBm, it's special from nfapi */
+	  // converting to dBm: ToDo: Noise power hard coded to 30
+	  normalized_rx_power = (5*ue_sched_ctl->pucch1_snr[CC_id]-640)/10+30;
+	  target_rx_power= eNB->puCch10xSnr/10 + 30;
 	  // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
 	  int32_t framex10psubframe = UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame * 10 + UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe;

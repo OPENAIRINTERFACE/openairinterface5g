@@ -537,7 +537,6 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   // refresh UE list based on UEs dropped by PHY in previous subframe
   for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
     if (UE_list->active[i]) {
-
       rnti = UE_RNTI(module_idP, i);
       CC_id = UE_PCCID(module_idP, i);
       
