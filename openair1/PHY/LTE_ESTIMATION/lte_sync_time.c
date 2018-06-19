@@ -35,6 +35,8 @@
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 
+// Note: this is for prototype of generate_drs_pusch (OTA synchronization of RRUs)
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 
 int* sync_corr_ue0 = NULL;
 int* sync_corr_ue1 = NULL;

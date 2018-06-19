@@ -706,7 +706,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   int i;
   LTE_eNB_UCI *uci;
   uint16_t tdd_multiplexing_mask=0;
-  int res;
+
 
   for (i=0;i<NUMBER_OF_UE_MAX;i++) {
 
@@ -855,13 +855,13 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 		  uci->rnti,
 		  frame,subframe,
 		  uci->num_pucch_resources,
-		  uci->n_pucch_1[res][0],
-		  uci->n_pucch_1[res][1],
-		  uci->n_pucch_1[res][2],
-		  uci->n_pucch_1[res][3],
+		  uci->n_pucch_1[0][0],
+		  uci->n_pucch_1[0][1],
+		  uci->n_pucch_1[0][2],
+		  uci->n_pucch_1[0][3],
 		  uci->pucch_fmt);
 
-	    for (res=0;res<uci->num_pucch_resources;res++)
+	    for (int res=0;res<uci->num_pucch_resources;res++)
 	      metric[res] = rx_pucch(eNB,
 				     uci->pucch_fmt,
 				     i,
