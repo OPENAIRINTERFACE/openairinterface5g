@@ -71,17 +71,17 @@ uint16_t nr_pbch_extract(int **rxdataF,
   int nushiftmod4 = frame_parms->nushift;
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    
-    printf("extract_rbs (nushift %d): rx_offset=%d, symbol %d\n",frame_parms->nushift,
-     (rx_offset + (symbol*(frame_parms->ofdm_symbol_size))),symbol);
-    
+        
     rxF        = &rxdataF[aarx][(rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))];
     rxF_ext    = &rxdataF_ext[aarx][symbol*(20*12)];
 #ifdef DEBUG_PBCH
+     printf("extract_rbs (nushift %d): rx_offset=%d, symbol %d\n",frame_parms->nushift,
+     (rx_offset + (symbol*(frame_parms->ofdm_symbol_size))),symbol);
      int16_t *p = (int16_t *)rxF;
-     for (int i =0; i<240;i++){
+     for (int i =0; i<8;i++){
         printf("rxF [%d]= %d\n",i,rxF[i]);
-      printf("pbch pss %d %d @%p\n", p[2*i], p[2*i+1], &p[2*i]);
+        printf("pbch extract rxF  %d %d addr %p\n", p[2*i], p[2*i+1], &p[2*i]);
+        printf("rxF ext addr %p\n", &rxF_ext[i]);
      }
 #endif
 
@@ -105,13 +105,13 @@ uint16_t nr_pbch_extract(int **rxdataF,
         rxF+=12;
         rxF_ext+=9;
       } else { //symbol 2
-    	if ((rb < 4) && (rb >15)){
+    	if ((rb < 4) || (rb >15)){
     	  for (i=0; i<12; i++) {
         	if ((i!=nushiftmod4) &&
         	    (i!=(nushiftmod4+4)) &&
         	    (i!=(nushiftmod4+8))) {
         	  rxF_ext[j]=rxF[i];
-		  //printf("rxF ext[%d] = %d at %p\n",j,rxF_ext[j],&rxF[i]);
+		  //printf("symbol2 rxF ext[%d] = %d at %p\n",j,rxF_ext[j],&rxF[i]);
 		  j++;
         	}
     	  }
@@ -128,7 +128,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
       else
         dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][0];
 
-      printf("dl_ch0 addr %p\n",dl_ch0);
+      //printf("dl_ch0 addr %p\n",dl_ch0);
 
       dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*(20*12)];
 
@@ -140,8 +140,8 @@ uint16_t nr_pbch_extract(int **rxdataF,
                         (i!=(nushiftmod4+4)) &&
                         (i!=(nushiftmod4+8))) {
                            dl_ch0_ext[j]=dl_ch0[i];
-			   if ((rb==0) && (i<2))
-			   printf("dl ch0 ext[%d] = %d dl_ch0 [%d]= %d\n",j,dl_ch0_ext[j],i,dl_ch0[i]);
+			   //if ((rb==0) && (i<2))
+			     //printf("dl ch0 ext[%d] = %d dl_ch0 [%d]= %d\n",j,dl_ch0_ext[j],i,dl_ch0[i]);
 		           j++;
                     }
           	  }
@@ -150,12 +150,13 @@ uint16_t nr_pbch_extract(int **rxdataF,
           dl_ch0_ext+=9;
         }
         else { //symbol 2
-              if ((rb < 4) && (rb >15)){
+              if ((rb < 4) || (rb >15)){
               	  for (i=0; i<12; i++) {
                     if ((i!=nushiftmod4) &&
                         (i!=(nushiftmod4+4)) &&
                         (i!=(nushiftmod4+8))) {
 		           dl_ch0_ext[j]=dl_ch0[i];
+			   //printf("symbol2 dl ch0 ext[%d] = %d dl_ch0 [%d]= %d\n",j,dl_ch0_ext[j],i,dl_ch0[i]);
 			   j++;
                        	}
                	  }
@@ -181,7 +182,7 @@ int nr_pbch_channel_level(int **dl_ch_estimates_ext,
                        uint32_t symbol)
 {
 
-  int16_t rb, nb_rb=6;
+  int16_t rb, nb_rb=20;
   uint8_t aatx,aarx;
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -193,19 +194,16 @@ int nr_pbch_channel_level(int **dl_ch_estimates_ext,
 #endif
   int avg1=0,avg2=0;
 
-  uint32_t nsymb = (frame_parms->Ncp==0) ? 7:6;
-  uint32_t symbol_mod = symbol % nsymb;
-
-  for (aatx=0; aatx<4; aatx++) //frame_parms->nb_antenna_ports_eNB;aatx++)
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB;aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
 
 #if defined(__x86_64__) || defined(__i386__)
       avg128 = _mm_setzero_si128();
-      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*6*12];
+      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12];
 #elif defined(__arm__)
       avg128 = vdupq_n_s32(0);
-      dl_ch128=(int16x8_t *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*6*12];
+      dl_ch128=(int16x8_t *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12];
 
 #endif
       for (rb=0; rb<nb_rb; rb++) {
@@ -257,22 +255,24 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
                                uint8_t output_shift)
 {
 
-  uint16_t rb,nb_rb=6;
+  uint16_t rb,nb_rb=20;
   uint8_t aatx,aarx,symbol_mod;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
 #elif defined(__arm__)
 
 #endif
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  for (aatx=0; aatx<4; aatx++) //frame_parms->nb_antenna_ports_eNB;aatx++)
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB;aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
 #if defined(__x86_64__) || defined(__i386__)
-      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol_mod*6*12];
-      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol_mod*6*12];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol_mod*6*12];
+      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12];
+      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*20*12];
+      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*20*12];
+      //printf("ch compensation dl_ch ext addr %p \n", &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12]);
+      //printf("rxdataf ext addr %p symbol %d\n", &rxdataF_ext[aarx][symbol*20*12], symbol);
+      //printf("rxdataf_comp addr %p\n",&rxdataF_comp[(aatx<<1)+aarx][symbol*20*12]); 
 
 #elif defined(__arm__)
 // to be filled in
@@ -321,7 +321,6 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
         //  print_shorts("ch:",dl_ch128+1);
         //  print_shorts("pack:",rxdataF_comp128+1);
 
-        if (symbol_mod>1) {
           // multiply by conjugated channel
           mmtmpP0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
           // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
@@ -342,11 +341,7 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
           dl_ch128+=3;
           rxdataF128+=3;
           rxdataF_comp128+=3;
-        } else {
-          dl_ch128+=2;
-          rxdataF128+=2;
-          rxdataF_comp128+=2;
-        }
+        
 #elif defined(__arm__)
 // to be filled in
 #endif
@@ -559,7 +554,7 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
     msg("[PBCH] starting extract ofdm size %d\n",frame_parms->ofdm_symbol_size );
 #endif
 
-    printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
+    //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
     //write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,2,1);
   
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,
@@ -590,6 +585,8 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
                               symbol,
                               log2_maxh); // log2_maxh+I0_shift
 
+    //write_output("rxdataF_comp.m","rxFcomp",nr_ue_pbch_vars->rxdataF_comp,180,2,1);
+  
     /*if (frame_parms->nb_antennas_rx > 1)
       pbch_detection_mrc(frame_parms,
                          nr_ue_pbch_vars->rxdataF_comp,
@@ -607,13 +604,13 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
     if (symbol>(nsymb>>1)+1) {
       nr_pbch_quantize(pbch_e_rx,
-                    (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*72]),
+                    (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*240]),
                     144);
 
       pbch_e_rx+=144;
     } else {
       nr_pbch_quantize(pbch_e_rx,
-                    (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*72]),
+                    (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*240]),
                     96);
 
       pbch_e_rx+=96;
@@ -623,8 +620,13 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   }
 
   pbch_e_rx = nr_ue_pbch_vars->llr;
+  //#ifdef DEBUG_PBCH
+  //pbch_e_rx = &nr_ue_pbch_vars->llr[0];
 
-
+  short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][1*20*12]);
+  for (int cnt = 0; cnt < 8 ; cnt++)
+    printf("pbch rx llr %d rxdata_comp %d addr %p\n",*(pbch_e_rx+cnt), p[cnt], &p[0]);
+  //#endif
 
   //un-scrambling
 #ifdef DEBUG_PBCH

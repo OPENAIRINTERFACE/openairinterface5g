@@ -27,7 +27,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "filt16a_32.h"
 #include "T.h"
-#define DEBUG_CH
+//#define DEBUG_CH
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                               uint8_t eNB_id,
@@ -154,7 +154,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 #ifdef DEBUG_CH
       printf("ch 0 %d\n",((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1]));
-      printf("pilot 0 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+      printf("pilot 0 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
 #endif
       multadd_real_vector_complex_scalar(fl,
                                          ch,
@@ -162,8 +162,8 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          16);
       pil+=2;
       rxF+=8;
-      for (int i= 0; i<8; i++)
-      printf("dl_ch addr %p %d\n", dl_ch+i, *(dl_ch+i));
+      //for (int i= 0; i<8; i++)
+      //printf("dl_ch addr %p %d\n", dl_ch+i, *(dl_ch+i));
 
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
@@ -174,19 +174,15 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          ch,
                                          dl_ch,
                                          16);
-      //printf("after dl_ch %d %d\n", dl_ch, *(dl_ch));
-      //for (int i= 0; i<16; i++)
-      //      printf("dl_ch %d %d\n", dl_ch+i, *(dl_ch+i));
-
       pil+=2;
       rxF+=8;
 
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
-      #ifdef DEBUG_CH
-            printf("pilot 2 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-      #endif
+#ifdef DEBUG_CH
+      printf("pilot 2 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#endif
 
       multadd_real_vector_complex_scalar(fr,
                                          ch,
@@ -204,7 +200,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 #ifdef DEBUG_CH
-	//printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 #endif
         multadd_real_vector_complex_scalar(fl,
                                            ch,
@@ -220,7 +216,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 #ifdef DEBUG_CH
-	//printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+1,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+1,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 #endif
         multadd_real_vector_complex_scalar(fm,
                                            ch,
@@ -232,9 +228,9 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
-        #ifdef DEBUG_CH
-	// printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-        #endif
+#ifdef DEBUG_CH
+	printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#endif
 
         multadd_real_vector_complex_scalar(fr,
                                            ch,
@@ -248,8 +244,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 
     }
-
-    printf("finish dl_ch addr %p\n", dl_ch);
 
   }
 
