@@ -167,7 +167,7 @@ typedef struct {
 
     uint8_t block_number_count;
     uint8_t *block_numbers;
-    uint8_t srs_request;    //  38.212 table 7.3.1.1.2-5   
+    uint8_t dci2_3_srs_request;    //  38.212 table 7.3.1.1.2-5   
     uint8_t dci2_3_tpc_command;
 
 } nfapi_nr_dci_pdu_rel15_t;
