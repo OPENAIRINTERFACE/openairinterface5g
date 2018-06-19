@@ -386,7 +386,7 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 }
 
 void nr_pbch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
-                       int8_t* llr,
+                       uint8_t* pbch_a,
                        uint32_t length)
 {
   int i;
@@ -406,7 +406,7 @@ void nr_pbch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
     }
 
     if (((s>>(i%32))&1)==0)
-      llr[i] = -llr[i];
+      pbch_a[i] = -pbch_a[i];
   }
 }
 
@@ -496,7 +496,7 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   pbch_e_rx = &nr_ue_pbch_vars->llr[0];
 
   // clear LLR buffer
-  memset(nr_ue_pbch_vars->llr,0,NR_POLAR_PBCH_PAYLOAD_BITS);
+  memset(nr_ue_pbch_vars->llr,0,NR_POLAR_PBCH_E);
 
   for (symbol=1; symbol<4; symbol++) {
 
@@ -549,9 +549,9 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
     if (symbol==2) {
       nr_pbch_quantize(pbch_e_rx,
                     (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
-                    108);
+                    144);
 
-      pbch_e_rx+=108;
+      pbch_e_rx+=144;
     } else {
       nr_pbch_quantize(pbch_e_rx,
                     (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
@@ -574,7 +574,7 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //#endif
 
   //polar decoding de-rate matching
-  decoderState = polar_decoder(pbch_e_rx, pbch_a, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
+  decoderState = polar_decoder((double *)pbch_e_rx, pbch_a, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
 
   memset(pbch_a,0,((16+NR_POLAR_PBCH_PAYLOAD_BITS)>>3));
   //un-scrambling
