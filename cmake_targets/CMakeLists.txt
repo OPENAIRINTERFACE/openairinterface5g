@@ -1292,6 +1292,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_init_ue.c
+  ${PHY_POLARSRC}
   )
 
 

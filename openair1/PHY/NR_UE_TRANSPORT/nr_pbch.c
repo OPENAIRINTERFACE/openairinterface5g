@@ -31,20 +31,11 @@
 */
 #include "PHY/defs_nr_UE.h"
 #include "PHY/CODING/coding_extern.h"
-#include "PHY/CODING/lte_interleaver_inline.h"
-//#include "defs.h"
-//#include "extern.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/sse_intrin.h"
 
-#ifdef PHY_ABSTRACTION
-#include "SIMULATION/TOOLS/defs.h"
-#endif
-
-
 //#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
-//#define INTERFERENCE_MITIGATION 1
 
 #ifdef OPENAIR2
 //#include "PHY_INTERFACE/defs.h"
@@ -255,8 +246,8 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
                                uint8_t output_shift)
 {
 
-  uint16_t rb,nb_rb=20;
-  uint8_t aatx,aarx,symbol_mod;
+  uint16_t rb,nb_rb=15;
+  uint8_t aatx,aarx;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
 #elif defined(__arm__)
@@ -394,35 +385,9 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 #endif
 }
 
-void nr_pbch_scrambling(NR_DL_FRAME_PARMS *frame_parms,
-                     uint8_t *pbch_e,
-                     uint32_t length)
-{
-  int i;
-  uint8_t reset;
-  uint32_t x1, x2, s=0;
-
-  reset = 1;
-  // x1 is set in lte_gold_generic
-  x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
-  //  msg("pbch_scrambling: Nid_cell = %d\n",x2);
-
-  for (i=0; i<length; i++) {
-    if ((i&0x1f)==0) {
-      s = lte_gold_generic(&x1, &x2, reset);
-      //      printf("lte_gold[%d]=%x\n",i,s);
-      reset = 0;
-    }
-
-    pbch_e[i] = (pbch_e[i]&1) ^ ((s>>(i&0x1f))&1);
-
-  }
-}
-
 void nr_pbch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
                        int8_t* llr,
-                       uint32_t length,
-                       uint8_t frame_mod4)
+                       uint32_t length)
 {
   int i;
   uint8_t reset;
@@ -440,13 +405,8 @@ void nr_pbch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
       reset = 0;
     }
 
-    // take the quarter of the PBCH that corresponds to this frame
-    if ((i>=(frame_mod4*(length>>2))) && (i<((1+frame_mod4)*(length>>2)))) {
-      //      if (((s>>(i%32))&1)==1)
-
-      if (((s>>(i%32))&1)==0)
-        llr[i] = -llr[i];
-    }
+    if (((s>>(i%32))&1)==0)
+      llr[i] = -llr[i];
   }
 }
 
@@ -488,7 +448,7 @@ void nr_pbch_alamouti(NR_DL_FRAME_PARMS *frame_parms,
 
 }
 
-void nr_pbch_quantize(int8_t *pbch_llr8,
+void nr_pbch_quantize(int16_t *pbch_llr16,
                    int16_t *pbch_llr,
                    uint16_t len)
 {
@@ -496,19 +456,15 @@ void nr_pbch_quantize(int8_t *pbch_llr8,
   uint16_t i;
 
   for (i=0; i<len; i++) {
-    if (pbch_llr[i]>7)
+    /*if (pbch_llr[i]>7)
       pbch_llr8[i]=7;
     else if (pbch_llr[i]<-8)
       pbch_llr8[i]=-8;
-    else
-      pbch_llr8[i] = (char)(pbch_llr[i]);
+    else*/
+      pbch_llr16[i] = (char)(pbch_llr[i]);
 
   }
 }
-
-static unsigned char dummy_w_rx[3*3*(16+PBCH_A)];
-static int8_t pbch_w_rx[3*3*(16+PBCH_A)],pbch_d_rx[96+(3*(16+PBCH_A))];
-
 
 uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		     UE_nr_rxtx_proc_t *proc,
@@ -522,37 +478,27 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
 
-  uint8_t log2_maxh;//,aatx,aarx;
+  uint8_t log2_maxh;
   int max_h=0;
 
   int symbol,i;
-  uint32_t nsymb = (frame_parms->Ncp==0) ? 14:12;
-  uint16_t  pbch_E;
   uint8_t pbch_a[8];
-  uint8_t RCC;
 
-  int8_t *pbch_e_rx;
+  int16_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
   uint16_t crc;
+  int8_t decoderState=0;
+  uint8_t decoderListSize = 8, pathMetricAppr = 0;
+  double aPrioriArray[frame_parms->pbch_polar_params.payloadBits];  // assume no a priori knowledge available about the payload.
 
   int subframe_rx = proc->subframe_rx;
 
-  //  pbch_D    = 16+PBCH_A;
-
-  pbch_E  = (frame_parms->Ncp==0) ? 1920 : 1728; //RE/RB * #RB * bits/RB (QPSK)
-  pbch_e_rx = &nr_ue_pbch_vars->llr[frame_mod4*(pbch_E>>2)];
-#ifdef DEBUG_PBCH
-  msg("[PBCH] starting symbol loop (Ncp %d, frame_mod4 %d,mimo_mode %d\n",frame_parms->Ncp,frame_mod4,mimo_mode);
-#endif
+  pbch_e_rx = &nr_ue_pbch_vars->llr[0];
 
   // clear LLR buffer
-  memset(nr_ue_pbch_vars->llr,0,pbch_E);
+  memset(nr_ue_pbch_vars->llr,0,NR_POLAR_PBCH_PAYLOAD_BITS);
 
   for (symbol=1; symbol<4; symbol++) {
-
-#ifdef DEBUG_PBCH
-    msg("[PBCH] starting extract ofdm size %d\n",frame_parms->ofdm_symbol_size );
-#endif
 
     //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
     //write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,2,1);
@@ -565,7 +511,7 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
                  high_speed_flag,
                  frame_parms);
 #ifdef DEBUG_PBCH
-    msg("[PHY] PBCH Symbol %d\n",symbol);
+    msg("[PHY] PBCH Symbol %d ofdm size %d\n",symbol, frame_parms->ofdm_symbol_size );
     msg("[PHY] PBCH starting channel_level\n");
 #endif
 
@@ -595,31 +541,30 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
     if (mimo_mode == ALAMOUTI) {
       nr_pbch_alamouti(frame_parms,nr_ue_pbch_vars->rxdataF_comp,symbol);
-      //  msg("[PBCH][RX] Alamouti receiver not yet implemented!\n");
-      //  return(-1);
     } else if (mimo_mode != SISO) {
       msg("[PBCH][RX] Unsupported MIMO mode\n");
       return(-1);
     }
 
-    if (symbol>(nsymb>>1)+1) {
+    if (symbol==2) {
       nr_pbch_quantize(pbch_e_rx,
-                    (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*240]),
-                    144);
+                    (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
+                    108);
 
-      pbch_e_rx+=144;
+      pbch_e_rx+=108;
     } else {
       nr_pbch_quantize(pbch_e_rx,
-                    (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][(symbol%(nsymb>>1))*240]),
-                    96);
+                    (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
+                    360);
 
-      pbch_e_rx+=96;
+      pbch_e_rx+=360;
     }
 
 
   }
 
   pbch_e_rx = nr_ue_pbch_vars->llr;
+
   //#ifdef DEBUG_PBCH
   //pbch_e_rx = &nr_ue_pbch_vars->llr[0];
 
@@ -628,53 +573,25 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
     printf("pbch rx llr %d rxdata_comp %d addr %p\n",*(pbch_e_rx+cnt), p[cnt], &p[0]);
   //#endif
 
+  //polar decoding de-rate matching
+  decoderState = polar_decoder(pbch_e_rx, pbch_a, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
+
+  memset(pbch_a,0,((16+NR_POLAR_PBCH_PAYLOAD_BITS)>>3));
   //un-scrambling
-#ifdef DEBUG_PBCH
-  msg("[PBCH] doing unscrambling\n");
-#endif
-
-
   nr_pbch_unscrambling(frame_parms,
-                    pbch_e_rx,
-                    pbch_E,
-                    frame_mod4);
+                    pbch_a,
+					NR_POLAR_PBCH_PAYLOAD_BITS);
 
-
-
-  //un-rate matching
-#ifdef DEBUG_PBCH
-  msg("[PBCH] doing un-rate-matching\n");
-#endif
-
-
-  memset(dummy_w_rx,0,3*3*(16+PBCH_A));
-  RCC = generate_dummy_w_cc(16+PBCH_A,
-                            dummy_w_rx);
-
-
-  lte_rate_matching_cc_rx(RCC,pbch_E,pbch_w_rx,dummy_w_rx,pbch_e_rx);
-
-  sub_block_deinterleaving_cc((unsigned int)(PBCH_A+16),
-                              &pbch_d_rx[96],
-                              &pbch_w_rx[0]);
-
-  memset(pbch_a,0,((16+PBCH_A)>>3));
-
-
-
-
-  phy_viterbi_lte_sse2(pbch_d_rx+96,pbch_a,16+PBCH_A);
-
-  // Fix byte endian of PBCH (bit 23 goes in first)
-  for (i=0; i<(PBCH_A>>3); i++)
-    decoded_output[(PBCH_A>>3)-i-1] = pbch_a[i];
+  // Fix byte endian
+  for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++)
+    decoded_output[(NR_POLAR_PBCH_PAYLOAD_BITS>>3)-i-1] = pbch_a[i];
 
 #ifdef DEBUG_PBCH
 
-  for (i=0; i<(PBCH_A>>3); i++)
+  for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++)
     msg("[PBCH] pbch_a[%d] = %x\n",i,decoded_output[i]);
 
-#endif //DEBUG_PBCH
+#endif
 
 #ifdef DEBUG_PBCH
   msg("PBCH CRC %x : %x\n",
@@ -694,46 +611,4 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   else
     return(-1);
 
-
 }
-
-#ifdef PHY_ABSTRACTION
-uint16_t rx_pbch_emul(PHY_VARS_UE *phy_vars_ue,
-                      uint8_t eNB_id,
-                      uint8_t pbch_phase)
-{
-
-  double bler=0.0;//, x=0.0;
-  double sinr=0.0;
-  uint16_t nb_rb = phy_vars_ue->frame_parms.N_RB_DL;
-  int16_t f;
-  uint8_t CC_id=phy_vars_ue->CC_id;
-  int frame_rx = phy_vars_ue->proc.proc_rxtx[0].frame_rx;
-
-  // compute effective sinr
-  // TODO: adapt this to varible bandwidth
-  for (f=(nb_rb*6-3*12); f<(nb_rb*6+3*12); f++) {
-    if (f!=0) //skip DC
-      sinr += pow(10, 0.1*(phy_vars_ue->sinr_dB[f]));
-  }
-
-  sinr = 10*log10(sinr/(6*12));
-
-  bler = pbch_bler(sinr);
-
-  LOG_D(PHY,"EMUL UE rx_pbch_emul: eNB_id %d, pbch_phase %d, sinr %f dB, bler %f \n",
-        eNB_id,
-        pbch_phase,
-        sinr,
-        bler);
-
-  if (pbch_phase == (frame_rx % 4)) {
-    if (uniformrandom() >= bler) {
-      memcpy(phy_vars_ue->pbch_vars[eNB_id]->decoded_output,PHY_vars_eNB_g[eNB_id][CC_id]->pbch_pdu,PBCH_PDU_SIZE);
-      return(PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.nb_antenna_ports_eNB);
-    } else
-      return(-1);
-  } else
-    return(-1);
-}
-#endif

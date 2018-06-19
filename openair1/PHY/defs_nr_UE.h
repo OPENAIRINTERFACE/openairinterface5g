@@ -34,6 +34,8 @@
 
 
 #include "defs_nr_common.h"
+#include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+
 
 #define _GNU_SOURCE 
 #include <stdio.h>
@@ -110,8 +112,8 @@
 #define openair_sched_exit() exit(-1)
 
 
-#define max(a,b)  ((a)>(b) ? (a) : (b))
-#define min(a,b)  ((a)<(b) ? (a) : (b))
+//#define max(a,b)  ((a)>(b) ? (a) : (b))
+//#define min(a,b)  ((a)<(b) ? (a) : (b))
 
 
 #define bzero(s,n) (memset((s),0,(n)))
@@ -640,7 +642,7 @@ typedef struct {
   int32_t **dl_ch_estimates_ext;
   /// \brief Pointer to PBCH llrs.
   /// - first index: ? [0..1919] (hard coded)
-  int8_t *llr;
+  int16_t *llr;
   /// \brief Pointer to PBCH decoded output.
   /// - first index: ? [0..63] (hard coded)
   uint8_t *decoded_output;

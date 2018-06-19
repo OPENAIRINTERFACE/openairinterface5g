@@ -33,6 +33,7 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 
 //uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
@@ -954,6 +955,9 @@ void phy_init_nr_top(NR_DL_FRAME_PARMS *frame_parms)
   init_context_synchro_nr(frame_parms);
 
   generate_ul_reference_signal_sequences(SHRT_MAX);
+
+  // Polar encoder init for PBCH
+  nr_polar_init(&frame_parms->pbch_polar_params, 1);
 
   //lte_sync_time_init(frame_parms);
 
