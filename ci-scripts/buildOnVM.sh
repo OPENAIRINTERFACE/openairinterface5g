@@ -220,7 +220,7 @@ do
         fi
         if [ "$LOG_PATTERN" == "basic_simulator" ]
         then
-            PASS_PATTERN="Built target lte-"
+            PASS_PATTERN="lte-"
         fi
         LOCAL_STAT=`egrep -c "Built target $PASS_PATTERN" $FULLFILE`
         if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
