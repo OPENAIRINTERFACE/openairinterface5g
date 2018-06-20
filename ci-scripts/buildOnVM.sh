@@ -20,6 +20,7 @@ function usage {
     echo ""
     echo "    --variant enb-usrp   OR -v1"
     echo "    --variant basic-sim  OR -v2"
+    echo "    --variant phy-sim    OR -v3"
     echo "    Specify the variant to build"
     echo ""
     echo "    --help OR -h"
@@ -33,6 +34,7 @@ function variant_usage {
     echo ""
     echo "    --variant enb-usrp   OR -v1"
     echo "    --variant basic-sim  OR -v2"
+    echo "    --variant phy-sim    OR -v3"
     echo ""
 }
 
@@ -84,6 +86,15 @@ case $key in
     BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
     shift
     ;;
+    -v3)
+    VM_NAME=ci-phy-sim
+    ARCHIVES_LOC=phy_sim
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=3
+    BUILD_OPTIONS="--phy_simulators"
+    BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
+    shift
+    ;;
     --variant)
     variant="$2"
     case $variant in
@@ -101,6 +112,14 @@ case $key in
         LOG_PATTERN=basic_simulator
         NB_PATTERN_FILES=2
         BUILD_OPTIONS="--basic-simulator"
+        BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
+        ;;
+        phy-sim)
+        VM_NAME=ci-phy-sim
+        ARCHIVES_LOC=phy_sim
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=3
+        BUILD_OPTIONS="--phy_simulators"
         BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
         ;;
         *)
@@ -230,4 +249,10 @@ done
 
 if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]; then STATUS=-1; fi
 
+if [ $STATUS -eq 0 ]
+then
+    echo "STATUS seems OK"
+else
+    echo "STATUS failed?"
+fi
 exit $STATUS

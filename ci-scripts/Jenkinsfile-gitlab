@@ -8,7 +8,7 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim"])
+        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim"])
     }
 
     stages {
@@ -60,6 +60,13 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build basic-sim") {
                             sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant basic-sim"
+                        }
+                    }
+                }
+                stage ("Build physical simulators") {
+                    steps {
+                        gitlabCommitStatus(name: "Build phy-sim") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant phy-sim"
                         }
                     }
                 }

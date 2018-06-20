@@ -68,6 +68,113 @@ function trigger_usage {
     echo ""
 }
 
+function details_table {
+    echo "   <h4>$1</h4>" >> $3
+
+    echo "   <table border = "1">" >> $3
+    echo "      <tr>" >> $3
+    echo "        <th>File</th>" >> $3
+    echo "        <th>Line Number</th>" >> $3
+    echo "        <th>Status</th>" >> $3
+    echo "        <th>Message</th>" >> $3
+    echo "      </tr>" >> $3
+
+    LIST_MESSAGES=`egrep "error:|warning:" $2 | egrep -v "jobserver unavailable|Clock skew detected.|flexran.proto"`
+    COMPLETE_MESSAGE="start"
+    for MESSAGE in $LIST_MESSAGES
+    do
+        if [[ $MESSAGE == *"/home/ubuntu/tmp"* ]]
+        then
+            FILENAME=`echo $MESSAGE | sed -e "s#^/home/ubuntu/tmp/##" | awk -F ":" '{print $1}'`
+            LINENB=`echo $MESSAGE | awk -F ":" '{print $2}'`
+            if [ "$COMPLETE_MESSAGE" != "start" ]
+            then
+                COMPLETE_MESSAGE=`echo $COMPLETE_MESSAGE | sed -e "s#‘#'#g" -e "s#’#'#g"`
+                echo "        <td>$COMPLETE_MESSAGE</td>" >> $3
+                echo "      </tr>" >> $3
+            fi
+            echo "      <tr>" >> $3
+            echo "        <td>$FILENAME</td>" >> $3
+            echo "        <td>$LINENB</td>" >> $3
+        else
+            if [[ $MESSAGE == *"warning:"* ]] || [[ $MESSAGE == *"error:"* ]]
+            then
+                MSGTYPE=`echo $MESSAGE | sed -e "s#:##g"`
+                echo "        <td>$MSGTYPE</td>" >> $3
+                COMPLETE_MESSAGE=""
+            else
+                COMPLETE_MESSAGE=$COMPLETE_MESSAGE" "$MESSAGE
+            fi
+        fi
+    done
+
+    if [ "$COMPLETE_MESSAGE" != "start" ]
+    then
+        COMPLETE_MESSAGE=`echo $COMPLETE_MESSAGE | sed -e "s#‘#'#g" -e "s#’#'#g"`
+        echo "        <td>$COMPLETE_MESSAGE</td>" >> $3
+        echo "      </tr>" >> $3
+    fi
+    echo "   </table>" >> $3
+}
+
+function summary_table_header {
+    echo "   <h3>$1</h3>" >> ./build_results.html
+    echo "   <table border = "1">" >> ./build_results.html
+    echo "      <tr>" >> ./build_results.html
+    echo "        <th>Element</th>" >> ./build_results.html
+    echo "        <th>Status</th>" >> ./build_results.html
+    echo "        <th>Nb Errors</th>" >> ./build_results.html
+    echo "        <th>Nb Warnings</th>" >> ./build_results.html
+    echo "      </tr>" >> ./build_results.html
+}
+
+function summary_table_row {
+    echo "      <tr>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" >$1</th>" >> ./build_results.html
+    if [ -f $2 ]
+    then
+        STATUS=`egrep -c "$3" $2`
+        if [ $STATUS -eq 1 ]
+        then
+            echo "        <td bgcolor = \"green\" >OK</th>" >> ./build_results.html
+        else
+            echo "        <td bgcolor = \"red\" >KO</th>" >> ./build_results.html
+        fi
+        NB_ERRORS=`egrep -c "error:" $2`
+        if [ $NB_ERRORS -eq 0 ]
+        then
+            echo "        <td bgcolor = \"green\" >$NB_ERRORS</th>" >> ./build_results.html
+        else
+            echo "        <td bgcolor = \"red\" >$NB_ERRORS</th>" >> ./build_results.html
+        fi
+        NB_WARNINGS=`egrep "warning:" $2 | egrep -v "jobserver unavailable|Clock skew detected.|flexran.proto" | egrep -c "warning:"`
+        if [ $NB_WARNINGS -eq 0 ]
+        then
+            echo "        <td bgcolor = \"green\" >$NB_WARNINGS</th>" >> ./build_results.html
+        else
+            if [ $NB_WARNINGS -gt 20 ]
+            then
+                echo "        <td bgcolor = \"red\" >$NB_WARNINGS</th>" >> ./build_results.html
+            else
+                echo "        <td bgcolor = \"orange\" >$NB_WARNINGS</th>" >> ./build_results.html
+            fi
+        fi
+        if [ $NB_ERRORS -ne 0 ] || [ $NB_WARNINGS -ne 0 ]
+        then
+            details_table "$1" $2 $4
+        fi
+    else
+        echo "        <td bgcolor = \"lightgray\" >Unknown</th>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
+    fi
+    echo "      </tr>" >> ./build_results.html
+}
+
+function summary_table_footer {
+    echo "   </table>" >> ./build_results.html
+}
+
 jb_checker=0
 mr_checker=0
 pu_checker=0
@@ -289,245 +396,40 @@ then
     echo "   </table>" >> ./build_results.html
 fi
 
-echo "   <h3>OAI Build eNb -- USRP option</h3>" >> ./build_results.html
-echo "   <table border = "1">" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <th>Element</th>" >> ./build_results.html
-echo "        <th>Status</th>" >> ./build_results.html
-echo "        <th>Nb Errors</th>" >> ./build_results.html
-echo "        <th>Nb Warnings</th>" >> ./build_results.html
-echo "      </tr>" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <td bgcolor = \"lightcyan\" >LTE SoftModem - Release 14</th>" >> ./build_results.html
-if [ -f ./archives/enb_usrp/lte-softmodem.Rel14.txt ]
-then
-    STATUS=`egrep -c "Built target lte-softmodem" ./archives/enb_usrp/lte-softmodem.Rel14.txt`
-    if [ $STATUS -eq 1 ]
-    then
-        echo "        <td bgcolor = \"green\" >OK</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >KO</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep -c "error:" ./archives/enb_usrp/lte-softmodem.Rel14.txt`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep "warning:" ./archives/enb_usrp/lte-softmodem.Rel14.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"orange\" >$STATUS</th>" >> ./build_results.html
-    fi
-else
-    echo "        <td bgcolor = \"lightgray\" >Unknown</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-fi
-echo "      </tr>" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <td bgcolor = \"lightcyan\" >Coding - Release 14</th>" >> ./build_results.html
-if [ -f ./archives/enb_usrp/coding.Rel14.txt ]
-then
-    STATUS=`egrep -c "Built target coding" ./archives/enb_usrp/coding.Rel14.txt`
-    if [ $STATUS -eq 1 ]
-    then
-        echo "        <td bgcolor = \"green\" >OK</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >KO</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep -c "error:" ./archives/enb_usrp/coding.Rel14.txt`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep "warning:" ./archives/enb_usrp/coding.Rel14.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"orange\" >$STATUS</th>" >> ./build_results.html
-    fi
-else
-    echo "        <td bgcolor = \"lightgray\" >Unknown</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-fi
-echo "      </tr>" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <td bgcolor = \"lightcyan\" >OAI USRP device if - Release 14</th>" >> ./build_results.html
-if [ -f ./archives/enb_usrp/oai_usrpdevif.Rel14.txt ]
-then
-    STATUS=`egrep -c "Built target oai_usrpdevif" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt`
-    if [ $STATUS -eq 1 ]
-    then
-        echo "        <td bgcolor = \"green\" >OK</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >KO</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep -c "error:" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep "warning:" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"orange\" >$STATUS</th>" >> ./build_results.html
-    fi
-else
-    echo "        <td bgcolor = \"lightgray\" >Unknown</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-fi
-echo "      </tr>" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <td bgcolor = \"lightcyan\" >Parameters Lib Config - Release 14</th>" >> ./build_results.html
-if [ -f ./archives/enb_usrp/params_libconfig.Rel14.txt ]
-then
-    STATUS=`egrep -c "Built target params_libconfig" ./archives/enb_usrp/params_libconfig.Rel14.txt`
-    if [ $STATUS -eq 1 ]
-    then
-        echo "        <td bgcolor = \"green\" >OK</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >KO</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep -c "error:" ./archives/enb_usrp/params_libconfig.Rel14.txt`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep "warning:" ./archives/enb_usrp/params_libconfig.Rel14.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"orange\" >$STATUS</th>" >> ./build_results.html
-    fi
-else
-    echo "        <td bgcolor = \"lightgray\" >Unknown</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-fi
-echo "      </tr>" >> ./build_results.html
-echo "   </table>" >> ./build_results.html
+summary_table_header "OAI Build eNB -- USRP option"
+summary_table_row "LTE SoftModem - Release 14" ./archives/enb_usrp/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_row1.html
+summary_table_row "Coding - Release 14" ./archives/enb_usrp/coding.Rel14.txt "Built target coding" ./enb_usrp_row2.html
+summary_table_row "OAI USRP device if - Release 14" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_row3.html
+summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_row4.html
+summary_table_footer
 
-# conf2uedata.Rel14.txt
-# archives/basic_sim
+summary_table_header "OAI Build basic simulator option"
+summary_table_row "Basic Simulator eNb - Release 14" ./archives/basic_sim/basic_simulator_enb.txt "Built target lte-softmodem" ./basic_sim_row1.html
+summary_table_row "Basic Simulator UE - Release 14" ./archives/basic_sim/basic_simulator_ue.txt "Built target lte-uesoftmodem" ./basic_sim_row2.html
+summary_table_row "Conf 2 UE data - Release 14" ./archives/basic_sim/conf2uedata.Rel14.txt "Built target conf2uedata" ./basic_sim_row3.html
+summary_table_footer
 
-echo "   <h3>OAI Build basic simulator option</h3>" >> ./build_results.html
-echo "   <table border = "1">" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <th>Element</th>" >> ./build_results.html
-echo "        <th>Status</th>" >> ./build_results.html
-echo "        <th>Nb Errors</th>" >> ./build_results.html
-echo "        <th>Nb Warnings</th>" >> ./build_results.html
-echo "      </tr>" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <td bgcolor = \"lightcyan\" >Basic Simulator eNb - Release 14</th>" >> ./build_results.html
-if [ -f ./archives/basic_sim/basic_simulator_enb.txt ]
-then
-    STATUS=`egrep -c "Built target lte-softmodem" ./archives/basic_sim/basic_simulator_enb.txt`
-    if [ $STATUS -eq 1 ]
-    then
-        echo "        <td bgcolor = \"green\" >OK</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >KO</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep -c "error:" ./archives/basic_sim/basic_simulator_enb.txt`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep "warning:" ./archives/basic_sim/basic_simulator_enb.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"orange\" >$STATUS</th>" >> ./build_results.html
-    fi
-else
-    echo "        <td bgcolor = \"lightgray\" >Unknown</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-fi
-echo "      </tr>" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <td bgcolor = \"lightcyan\" >Basic Simulator UE - Release 14</th>" >> ./build_results.html
-if [ -f ./archives/basic_sim/basic_simulator_ue.txt ]
-then
-    STATUS=`egrep -c "Built target lte-uesoftmodem" ./archives/basic_sim/basic_simulator_ue.txt`
-    if [ $STATUS -eq 1 ]
-    then
-        echo "        <td bgcolor = \"green\" >OK</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >KO</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep -c "error:" ./archives/basic_sim/basic_simulator_ue.txt`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep "warning:" ./archives/basic_sim/basic_simulator_ue.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"orange\" >$STATUS</th>" >> ./build_results.html
-    fi
-else
-    echo "        <td bgcolor = \"lightgray\" >Unknown</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-fi
-echo "      </tr>" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <td bgcolor = \"lightcyan\" >Conf 2 UE data - Release 14</th>" >> ./build_results.html
-if [ -f ./archives/basic_sim/conf2uedata.Rel14.txt ]
-then
-    STATUS=`egrep -c "Built target conf2uedata" ./archives/basic_sim/conf2uedata.Rel14.txt`
-    if [ $STATUS -eq 1 ]
-    then
-        echo "        <td bgcolor = \"green\" >OK</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >KO</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep -c "error:" ./archives/basic_sim/conf2uedata.Rel14.txt`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
-    fi
-    STATUS=`egrep "warning:" ./archives/basic_sim/conf2uedata.Rel14.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
-    if [ $STATUS -eq 0 ]
-    then
-        echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
-    else
-        echo "        <td bgcolor = \"orange\" >$STATUS</th>" >> ./build_results.html
-    fi
-else
-    echo "        <td bgcolor = \"lightgray\" >Unknown</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightgray\" >--</th>" >> ./build_results.html
-fi
-echo "      </tr>" >> ./build_results.html
-echo "   </table>" >> ./build_results.html
+summary_table_header "OAI Build Physical simulators option"
+summary_table_row "DL Simulator - Release 14" ./archives/phy_sim/dlsim.Rel14.txt "Built target dlsim" ./phy_sim_row1.html
+summary_table_row "UL Simulator - Release 14" ./archives/phy_sim/ulsim.Rel14.txt "Built target ulsim" ./phy_sim_row2.html
+summary_table_row "Coding - Release 14" ./archives/phy_sim/coding.Rel14.txt "Built target coding" ./phy_sim_row3.html
+summary_table_footer
+
+echo "   <h3>Details</h3>" >> ./build_results.html
+
+for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
+do
+    cat $DETAILS_TABLE >> ./build_results.html
+done
+for DETAILS_TABLE in `ls ./basic_sim_row*.html`
+do
+    cat $DETAILS_TABLE >> ./build_results.html
+done
+for DETAILS_TABLE in `ls ./phy_sim_row*.html`
+do
+    cat $DETAILS_TABLE >> ./build_results.html
+done
+rm -f ./enb_usrp_row*.html ./basic_sim_row*.html ./phy_sim_row*.html
 
 echo "</body>" >> ./build_results.html
 echo "</html>" >> ./build_results.html
