@@ -1,0 +1,27 @@
+<domain type='kvm'>
+  <os>
+    <type>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+    <pae/>
+  </features>
+  <cpu mode='host-passthrough'>
+  </cpu>
+  <devices>
+    <interface type='network'>
+      <source network='default'/>
+      <model type='virtio'/>
+    </interface>
+    <serial type='pty'>
+      <source path='/dev/pts/3'/>
+      <target port='0'/>
+    </serial>
+    <graphics type='vnc' autoport='yes' listen='127.0.0.1'>
+      <listen type='address' address='127.0.0.1'/>
+    </graphics>
+    <video/>
+  </devices>
+</domain>

@@ -21,7 +21,7 @@ pipeline {
                         // GitLab-Jenkins plugin integration is lacking to perform the merge by itself
                         // Doing it manually --> it may have merge conflicts
                         sh "./ci-scripts/doGitLabMerge.sh --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
-                        sh "zip -r localZip.zip ."
+                        sh "zip -r -qq localZip.zip ."
 
                         // Running astyle options on the list of modified files by the merge request
                         // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
@@ -38,7 +38,7 @@ pipeline {
                         echo "Git Branch      is ${GIT_BRANCH}"
                         echo "Git Commit      is ${GIT_COMMIT}"
 
-                        sh "zip -r localZip.zip ."
+                        sh "zip -r -qq localZip.zip ."
                         // Running astyle options on all C/H files in the repository
                         // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
                         sh "./ci-scripts/checkCodingFormattingRules.sh"

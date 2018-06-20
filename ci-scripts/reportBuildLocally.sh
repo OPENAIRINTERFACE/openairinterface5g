@@ -315,7 +315,7 @@ then
     else
         echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
     fi
-    STATUS=`egrep -c "warning:" ./archives/enb_usrp/lte-softmodem.Rel14.txt`
+    STATUS=`egrep "warning:" ./archives/enb_usrp/lte-softmodem.Rel14.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
     if [ $STATUS -eq 0 ]
     then
         echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
@@ -346,7 +346,7 @@ then
     else
         echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
     fi
-    STATUS=`egrep -c "warning:" ./archives/enb_usrp/coding.Rel14.txt`
+    STATUS=`egrep "warning:" ./archives/enb_usrp/coding.Rel14.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
     if [ $STATUS -eq 0 ]
     then
         echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
@@ -377,7 +377,7 @@ then
     else
         echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
     fi
-    STATUS=`egrep -c "warning:" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt`
+    STATUS=`egrep "warning:" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
     if [ $STATUS -eq 0 ]
     then
         echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
@@ -408,7 +408,7 @@ then
     else
         echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
     fi
-    STATUS=`egrep -c "warning:" ./archives/enb_usrp/params_libconfig.Rel14.txt`
+    STATUS=`egrep "warning:" ./archives/enb_usrp/params_libconfig.Rel14.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
     if [ $STATUS -eq 0 ]
     then
         echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
@@ -452,7 +452,7 @@ then
     else
         echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
     fi
-    STATUS=`egrep -c "warning:" ./archives/basic_sim/basic_simulator_enb.txt`
+    STATUS=`egrep "warning:" ./archives/basic_sim/basic_simulator_enb.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
     if [ $STATUS -eq 0 ]
     then
         echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
@@ -483,7 +483,7 @@ then
     else
         echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
     fi
-    STATUS=`egrep -c "warning:" ./archives/basic_sim/basic_simulator_ue.txt`
+    STATUS=`egrep "warning:" ./archives/basic_sim/basic_simulator_ue.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
     if [ $STATUS -eq 0 ]
     then
         echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html
@@ -514,7 +514,7 @@ then
     else
         echo "        <td bgcolor = \"red\" >$STATUS</th>" >> ./build_results.html
     fi
-    STATUS=`egrep -c "warning:" ./archives/basic_sim/conf2uedata.Rel14.txt`
+    STATUS=`egrep "warning:" ./archives/basic_sim/conf2uedata.Rel14.txt | egrep -v "Clock skew detected.|flexran.proto" | egrep -c "warning:"`
     if [ $STATUS -eq 0 ]
     then
         echo "        <td bgcolor = \"green\" >$STATUS</th>" >> ./build_results.html

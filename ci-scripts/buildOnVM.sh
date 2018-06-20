@@ -146,7 +146,7 @@ echo "BUILD_EXTRA_OPTIONS = $BUILD_EXTRA_OPTIONS"
 echo "############################################################"
 echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
 echo "############################################################"
-uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 2
+uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
 echo "Waiting for VM to be started"
 uvt-kvm wait $VM_NAME --insecure
 
