@@ -175,6 +175,69 @@ function summary_table_footer {
     echo "   </table>" >> ./build_results.html
 }
 
+function sca_summary_table_header {
+    echo "   <h3>$1</h3>" >> ./build_results.html
+    echo "   <table border = "1">" >> ./build_results.html
+    echo "      <tr>" >> ./build_results.html
+    echo "        <th>Error Type</th>" >> ./build_results.html
+    echo "        <th>Nb Errors</th>" >> ./build_results.html
+    echo "        <th>Nb Warnings</th>" >> ./build_results.html
+    echo "      </tr>" >> ./build_results.html
+    echo "0" > ccp_error_cnt.txt
+}
+
+function sca_summary_table_row {
+    echo "      <tr>" >> ./build_results.html
+    echo "        <td>$2</td>" >> ./build_results.html
+    if [ -f $1 ]
+    then
+        NB_ERRORS=`egrep "severity=\"error\"" $1 | egrep -c "id=\"$3\""`
+        echo "        <td>$NB_ERRORS</td>" >> ./build_results.html
+        echo "        <td>N/A</td>" >> ./build_results.html
+        if [ -f ccp_error_cnt.txt ]
+        then
+            TOTAL_ERRORS=`cat ccp_error_cnt.txt`
+            TOTAL_ERRORS=$((TOTAL_ERRORS + NB_ERRORS))
+            echo $TOTAL_ERRORS > ccp_error_cnt.txt
+        fi
+    else
+        echo "        <td>Unknown</td>" >> ./build_results.html
+        echo "        <td>Unknown</td>" >> ./build_results.html
+    fi
+    echo "      </tr>" >> ./build_results.html
+}
+
+function sca_summary_table_footer {
+    echo "      <tr>" >> ./build_results.html
+    if [ -f $1 ]
+    then
+        NB_ERRORS=`egrep -c "severity=\"error\"" $1`
+        if [ -f ccp_error_cnt.txt ]
+        then
+            echo "        <td>Others</td>" >> ./build_results.html
+            TOTAL_ERRORS=`cat ccp_error_cnt.txt`
+            TOTAL_ERRORS=$((NB_ERRORS - TOTAL_ERRORS))
+            echo "        <td>$TOTAL_ERRORS</td>" >> ./build_results.html
+            echo "        <td>N/A</td>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+            echo "      <tr>" >> ./build_results.html
+            rm -f ccp_error_cnt.txt
+        fi
+        echo "        <th>Total</th>" >> ./build_results.html
+        echo "        <th>$NB_ERRORS</th>" >> ./build_results.html
+        NB_WARNINGS=`egrep -c "severity=\"warning\"" $1`
+        echo "        <th>$NB_WARNINGS</th>" >> ./build_results.html
+    else
+        echo "        <th>Total</th>" >> ./build_results.html
+        echo "        <th>Unknown</th>" >> ./build_results.html
+        echo "        <th>Unknown</th>" >> ./build_results.html
+    fi
+    echo "      </tr>" >> ./build_results.html
+    echo "   </table>" >> ./build_results.html
+    echo "   <p>Full details in zipped artifact (cppcheck/cppcheck.xml) </p>" >> ./build_results.html
+    echo "   <p>Graphical Interface tool : <code>cppcheck-gui -l cppcheck/cppcheck.xml</code> </p>" >> ./build_results.html
+}
+
 jb_checker=0
 mr_checker=0
 pu_checker=0
@@ -395,6 +458,18 @@ then
     echo "      </tr>" >> ./build_results.html
     echo "   </table>" >> ./build_results.html
 fi
+
+sca_summary_table_header "OAI Static Code Analysis with CPPCHECK"
+sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized variable" uninitvar
+sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized struct member" uninitStructMember
+sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory leak" memleak
+sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory is freed twice" doubleFree
+sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Resource leak" resourceLeak
+sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Possible null pointer dereference" nullPointer
+sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Array access  out of bounds" arrayIndexOutOfBounds
+sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Buffer is accessed out of bounds" bufferAccessOutOfBounds
+sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Expression depends on order of evaluation of side effects" unknownEvaluationOrder
+sca_summary_table_footer ./archives/cppcheck/cppcheck.xml
 
 summary_table_header "OAI Build eNB -- USRP option"
 summary_table_row "LTE SoftModem - Release 14" ./archives/enb_usrp/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_row1.html
