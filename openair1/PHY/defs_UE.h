@@ -161,12 +161,12 @@ typedef struct {
   UE_rxtx_proc_t proc_rxtx[RX_NB_TH];
 } UE_proc_t;
 
-/// Panos: Structure holding timer_thread related elements (phy_stub_UE mode)
+/// Structure holding timer_thread related elements (phy_stub_UE mode)
 typedef struct {
 	pthread_t pthread_timer;
-	/// Panos: mutex for waiting SF ticking
+	/// mutex for waiting SF ticking
 	pthread_mutex_t mutex_ticking;
-	/// Panos: \brief ticking var for ticking thread.
+	/// \brief ticking var for ticking thread.
 	/// \internal This variable is protected by \ref mutex_ticking.
 	int ticking_var;
 	/// condition variable for timer_thread;

@@ -707,7 +707,6 @@ void rrc_eNB_emulation_notify_ue_module_id(
   const uint8_t     cell_identity_byte2P,
   const uint8_t     cell_identity_byte3P)
 {
-	LOG_I(RRC, "Panos-D: rrc_eNB_emulation_notify_ue_module_id 1 \n");
   module_id_t                         enb_module_id;
   struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
   int                                 CC_id;
