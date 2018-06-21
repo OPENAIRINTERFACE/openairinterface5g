@@ -82,7 +82,7 @@ pipeline {
                 always {
                     script {
                         dir ('archives') {
-                            sh "zip -r vm_build_logs.zip basic_sim enb_usrp cppcheck"
+                            sh "zip -r vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck"
                         }
                         if(fileExists('archives/vm_build_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_build_logs.zip'

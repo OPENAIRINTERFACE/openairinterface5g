@@ -71,8 +71,8 @@ function trigger_usage {
 function details_table {
     echo "   <h4>$1</h4>" >> $3
 
-    echo "   <table border = "1">" >> $3
-    echo "      <tr>" >> $3
+    echo "   <table border = \"1\">" >> $3
+    echo "      <tr bgcolor = \"#33CCFF\" >" >> $3
     echo "        <th>File</th>" >> $3
     echo "        <th>Line Number</th>" >> $3
     echo "        <th>Status</th>" >> $3
@@ -119,8 +119,8 @@ function details_table {
 
 function summary_table_header {
     echo "   <h3>$1</h3>" >> ./build_results.html
-    echo "   <table border = "1">" >> ./build_results.html
-    echo "      <tr>" >> ./build_results.html
+    echo "   <table border = \"1\">" >> ./build_results.html
+    echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
     echo "        <th>Element</th>" >> ./build_results.html
     echo "        <th>Status</th>" >> ./build_results.html
     echo "        <th>Nb Errors</th>" >> ./build_results.html
@@ -177,9 +177,9 @@ function summary_table_footer {
 
 function sca_summary_table_header {
     echo "   <h3>$1</h3>" >> ./build_results.html
-    echo "   <table border = "1">" >> ./build_results.html
-    echo "      <tr>" >> ./build_results.html
-    echo "        <th>Error Type</th>" >> ./build_results.html
+    echo "   <table border = \"1\">" >> ./build_results.html
+    echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
+    echo "        <th>Error / Warning Type</th>" >> ./build_results.html
     echo "        <th>Nb Errors</th>" >> ./build_results.html
     echo "        <th>Nb Warnings</th>" >> ./build_results.html
     echo "      </tr>" >> ./build_results.html
@@ -188,7 +188,7 @@ function sca_summary_table_header {
 
 function sca_summary_table_row {
     echo "      <tr>" >> ./build_results.html
-    echo "        <td>$2</td>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" >$2</td>" >> ./build_results.html
     if [ -f $1 ]
     then
         NB_ERRORS=`egrep "severity=\"error\"" $1 | egrep -c "id=\"$3\""`
@@ -208,26 +208,27 @@ function sca_summary_table_row {
 }
 
 function sca_summary_table_footer {
-    echo "      <tr>" >> ./build_results.html
     if [ -f $1 ]
     then
         NB_ERRORS=`egrep -c "severity=\"error\"" $1`
+        NB_WARNINGS=`egrep -c "severity=\"warning\"" $1`
         if [ -f ccp_error_cnt.txt ]
         then
-            echo "        <td>Others</td>" >> ./build_results.html
+            echo "      <tr>" >> ./build_results.html
+            echo "        <td bgcolor = \"lightcyan\" >Others</td>" >> ./build_results.html
             TOTAL_ERRORS=`cat ccp_error_cnt.txt`
             TOTAL_ERRORS=$((NB_ERRORS - TOTAL_ERRORS))
             echo "        <td>$TOTAL_ERRORS</td>" >> ./build_results.html
-            echo "        <td>N/A</td>" >> ./build_results.html
+            echo "        <td>$NB_WARNINGS</td>" >> ./build_results.html
             echo "      </tr>" >> ./build_results.html
-            echo "      <tr>" >> ./build_results.html
             rm -f ccp_error_cnt.txt
         fi
+        echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
         echo "        <th>Total</th>" >> ./build_results.html
         echo "        <th>$NB_ERRORS</th>" >> ./build_results.html
-        NB_WARNINGS=`egrep -c "severity=\"warning\"" $1`
         echo "        <th>$NB_WARNINGS</th>" >> ./build_results.html
     else
+        echo "      <tr bgcolor = \"#33CCFF\"  >" >> ./build_results.html
         echo "        <th>Total</th>" >> ./build_results.html
         echo "        <th>Unknown</th>" >> ./build_results.html
         echo "        <th>Unknown</th>" >> ./build_results.html
@@ -394,9 +395,23 @@ echo "<!DOCTYPE html>" > ./build_results.html
 echo "<html class=\"no-js\" lang=\"en-US\">" >> ./build_results.html
 echo "<head>" >> ./build_results.html
 echo "  <title>Build Results for $JOB_NAME job build #$BUILD_ID</title>" >> ./build_results.html
+echo "  <base href = \"http://www.openairinterface.org/\" />" >> ./build_results.html
 echo "</head>" >> ./build_results.html
 echo "<body>" >> ./build_results.html
-echo "   <h1>Job Summary -- Job: $JOB_NAME -- Build-ID: $BUILD_ID</h1>" >> ./build_results.html
+echo "  <table style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
+echo "    <tr style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
+echo "      <td style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
+echo "        <a href=\"http://www.openairinterface.org/\">" >> ./build_results.html
+echo "           <img src=\"/wp-content/uploads/2016/03/cropped-oai_final_logo2.png\" alt=\"\" border=\"none\" height=50 width=150>" >> ./build_results.html
+echo "           </img>" >> ./build_results.html
+echo "        </a>" >> ./build_results.html
+echo "      </td>" >> ./build_results.html
+echo "      <td style=\"border-collapse: collapse; border: none; vertical-align: center;\">" >> ./build_results.html
+echo "        <b><font size = \"6\">Job Summary -- Job: eNb-CI -- Build-ID: 23</font></b>" >> ./build_results.html
+echo "      </td>" >> ./build_results.html
+echo "    </tr>" >> ./build_results.html
+echo "  </table>" >> ./build_results.html
+echo "  <br>" >> ./build_results.html
 echo "   <table border = \"1\">" >> ./build_results.html
 echo "      <tr>" >> ./build_results.html
 echo "        <td bgcolor = \"lightcyan\" >GIT Repository</td>" >> ./build_results.html
