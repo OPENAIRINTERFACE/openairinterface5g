@@ -148,8 +148,8 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
 
        }*/
 
-    for (i=0; i<10; i++)
-      dlsch->harq_ids[i] = Mdlharq;
+    for (i=0; i<20; i++)
+      dlsch->harq_ids[i/10][i%10] = Mdlharq;
 
     for (i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (LTE_DL_eNB_HARQ_t *)malloc16(sizeof(LTE_DL_eNB_HARQ_t));
@@ -227,11 +227,16 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch)
   if (dlsch) {
     Mdlharq = dlsch->Mdlharq;
     dlsch->rnti = 0;
+#ifdef PHY_TX_THREAD
+    for (i=0; i<10; i++)
+      dlsch->active[i] = 0;
+#else
     dlsch->active = 0;
+#endif
     dlsch->harq_mask = 0;
 
-    for (i=0; i<10; i++)
-      dlsch->harq_ids[i] = Mdlharq;
+    for (i=0; i<20; i++)
+      dlsch->harq_ids[i/10][i%10] = Mdlharq;
 
     for (i=0; i<Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
@@ -413,7 +418,11 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   unsigned int crc=1;
   unsigned short iind;
 
-  unsigned char harq_pid = dlsch->harq_ids[subframe];
+  unsigned char harq_pid = dlsch->harq_ids[frame%2][subframe];
+  if(harq_pid >= dlsch->Mdlharq) {
+    LOG_E(PHY,"dlsch_encoding_2threads illegal harq_pid %d\n", harq_pid);
+    return(-1);
+  }
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int A;
   unsigned char mod_order;
@@ -629,7 +638,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
 {
 	int encoding_return = 0;
 	unsigned int L,C,B;
-	B = dlsch->harq_processes[dlsch->harq_ids[subframe]]->B;
+	B = dlsch->harq_processes[dlsch->harq_ids[frame%2][subframe]]->B;
 	if(B<=6144)
 	{
 		L=0;
@@ -732,7 +741,11 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
   unsigned short iind;
 
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  unsigned char harq_pid = dlsch->harq_ids[subframe];
+  unsigned char harq_pid = dlsch->harq_ids[frame%2][subframe];
+  if(harq_pid >= dlsch->Mdlharq) {
+    LOG_E(PHY,"dlsch_encoding illegal harq_pid %d\n", harq_pid);
+    return(-1);
+  }
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int A;
   unsigned char mod_order;

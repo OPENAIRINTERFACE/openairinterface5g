@@ -471,6 +471,7 @@ void *l2l1_task(void *arg) {
 extern int16_t dlsch_demod_shift;
 
 static void get_options(void) {
+  char logmem_filename[1024] = {0};
   int CC_id;
   int tddflag, nonbiotflag;
   char *loopfile=NULL;
@@ -903,7 +904,7 @@ int main( int argc, char **argv )
 #endif
 
 //TTN for D2D
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   printf ("RRC control socket\n");
   rrc_control_socket_init();
   printf ("PDCP PC5S socket\n");
@@ -1106,41 +1107,7 @@ int main( int argc, char **argv )
   
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
-  
-#ifdef XFORMS
-  int UE_id;
-  
-  printf("XFORMS\n");
-
-  if (do_forms==1) {
-    fl_initialize (&argc, argv, NULL, 0, 0);
-    
-      form_stats = create_form_stats_form();
-      fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
-      UE_id = 0;
-      form_ue[UE_id] = create_lte_phy_scope_ue();
-      sprintf (title, "LTE DL SCOPE UE");
-      fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-      
-      /*
-	if (openair_daq_vars.use_ia_receiver) {
-	fl_set_button(form_ue[UE_id]->button_0,1);
-	fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver ON");
-	} else {
-	fl_set_button(form_ue[UE_id]->button_0,0);
-	fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
-	}*/
-      fl_set_button(form_ue[UE_id]->button_0,0);
-      fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
-    ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
-    
-    if (ret == 0)
-      pthread_setname_np( forms_thread, "xforms" );
-    
-    printf("Scope thread created, ret=%d\n",ret);
-  }
-  
-#endif
+ 
   
   rt_sleep_ns(10*100000000ULL);
 
@@ -1231,6 +1198,41 @@ int main( int argc, char **argv )
 	printf("error reading from file\n");
     }
     //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
+
+#ifdef XFORMS
+  int UE_id;
+  
+  printf("XFORMS\n");
+
+  if (do_forms==1) {
+    fl_initialize (&argc, argv, NULL, 0, 0);
+    
+      form_stats = create_form_stats_form();
+      fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
+      UE_id = 0;
+      form_ue[UE_id] = create_lte_phy_scope_ue();
+      sprintf (title, "LTE DL SCOPE UE");
+      fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+      
+      /*
+	if (openair_daq_vars.use_ia_receiver) {
+	fl_set_button(form_ue[UE_id]->button_0,1);
+	fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver ON");
+	} else {
+	fl_set_button(form_ue[UE_id]->button_0,0);
+	fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
+	}*/
+      fl_set_button(form_ue[UE_id]->button_0,0);
+      fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
+    ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
+    
+    if (ret == 0)
+      pthread_setname_np( forms_thread, "xforms" );
+    
+    printf("Scope thread created, ret=%d\n",ret);
+  }
+  
+#endif
   
   printf("Sending sync to all threads\n");
   

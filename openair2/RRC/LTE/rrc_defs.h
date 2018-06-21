@@ -192,7 +192,9 @@ void *send_UE_status_notification(void *);
 #include "AS-Context.h"
 #include "UE-EUTRA-Capability.h"
 #include "MeasResults.h"
+#if (RRC_VERSION >= MAKE_VERSION(12, 0, 0))
 #include "SidelinkUEInformation-r12.h"
+#endif
 
 /* for ImsiMobileIdentity_t */
 #include "MobileIdentity.h"
@@ -382,11 +384,7 @@ typedef enum SL_TRIGGER_e {
 // #define NUM_MAX_CBA_GROUP 4 // in the platform_constants
 
 /* TS 36.331: RRC-TransactionIdentifier ::= INTEGER (0..3) */
-#if defined(USRP_REC_PLAY)
-#define RRC_TRANSACTION_IDENTIFIER_NUMBER  1
-#else
 #define RRC_TRANSACTION_IDENTIFIER_NUMBER  3
-#endif
 
 typedef struct {
   unsigned short transport_block_size;                  /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */
@@ -602,6 +600,7 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           ue_reestablishment_timer;
   uint32_t                           ue_reestablishment_timer_thres;
   uint8_t                            e_rab_release_command_flag;
+  int8_t                             reestablishment_xid;
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;
@@ -760,7 +759,7 @@ typedef struct UE_RRC_INST_s {
   SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   SystemInformationBlockType11_t *sib11[NB_CNX_UE];
   uint8_t                           *MIB;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   //SIB18
   SystemInformationBlockType18_r12_t *sib18[NB_CNX_UE];
   SystemInformationBlockType19_r12_t *sib19[NB_CNX_UE];
@@ -828,7 +827,7 @@ typedef struct UE_RRC_INST_s {
   CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Used for Sidelink Preconfiguration
   DRB_ToAddModList_t *DRB_configList;
 #endif

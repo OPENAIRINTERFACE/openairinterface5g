@@ -304,6 +304,7 @@ typedef enum {
 #define ENB_CONFIG_STRING_UETIMERS_N310                                 "ue_TimersAndConstants_n310"
 #define ENB_CONFIG_STRING_UETIMERS_N311                                 "ue_TimersAndConstants_n311"
 #define ENB_CONFIG_STRING_UE_TRANSMISSION_MODE                          "ue_TransmissionMode"
+#define ENB_CONFIG_STRING_UE_MULTIPLE_MAX                               "ue_multiple_max"
 
 //TTN - for D2D
 //SIB18
@@ -490,7 +491,7 @@ typedef enum {
 {ENB_CONFIG_STRING_PUCCH_DELTA_SHIFT,                            NULL,   0,           iptr:&pucch_delta_shift,                        defintval:1,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_PUCCH_NRB_CQI,                                NULL,   0,           iptr:&pucch_nRB_CQI,                            defintval:1,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_PUCCH_NCS_AN,                                 NULL,   0,           iptr:&pucch_nCS_AN,                             defintval:0,               TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_PUCCH_N1_AN,                                  NULL,   0,           iptr:&pucch_n1_AN,                              defintval:32,              TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PUCCH_N1_AN,                                  NULL,   0,           iptr:&pucch_n1_AN,                              defintval:0,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_PDSCH_RS_EPRE,                                NULL,   0,           iptr:&pdsch_referenceSignalPower,               defintval:-29,             TYPE_INT,        0},  \
 {ENB_CONFIG_STRING_PDSCH_PB,                                     NULL,   0,           iptr:&pdsch_p_b,                                defintval:0,               TYPE_INT,        0},  \
 {ENB_CONFIG_STRING_PUSCH_N_SB,                                   NULL,   0,           iptr:&pusch_n_SB,                               defintval:1,               TYPE_INT,        0},  \
@@ -538,6 +539,7 @@ typedef enum {
 {ENB_CONFIG_STRING_UETIMERS_N310,                                NULL,   0,           iptr:&ue_TimersAndConstants_n310,               defintval:20,              TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ue_TimersAndConstants_n311,               defintval:1,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ue_multiple_max,                          defintval:4,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_RXPOOL_SC_CP_LEN,                             NULL,   0,   strptr:(char **)&rxPool_sc_CP_Len,          defstrval:"normal",  TYPE_STRING,  0}, \
 {ENB_CONFIG_STRING_RXPOOL_SC_PRIOD,                              NULL,   0,   strptr:(char **)&rxPool_sc_Period,          defstrval:"sf40",  TYPE_STRING,  0}, \
 {ENB_CONFIG_STRING_RXPOOL_DATA_CP_LEN,                           NULL,   0,   strptr:(char **)&rxPool_data_CP_Len,          defstrval:"normal",  TYPE_STRING,  0}, \
@@ -826,8 +828,8 @@ typedef enum {
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTC                "remote_s_portc"
 #define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
+#define CONFIG_STRING_MACRLC_SCHED_MODE                    "scheduler_mode"
 #define CONFIG_STRING_MACRLC_PHY_TEST_MODE                 "phy_test_mode"
-
 
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -846,5 +848,6 @@ typedef enum {
 #define MACRLC_REMOTE_S_PORTC_IDX                              14
 #define MACRLC_LOCAL_S_PORTD_IDX                               15
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
-#define MACRLC_PHY_TEST_IDX                                    17
+#define MACRLC_SCHED_MODE_IDX                                  17
+#define MACRLC_PHY_TEST_IDX                                    18
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/

@@ -47,7 +47,11 @@ signed int rlc_um_get_pdu_infos(
 
   pdu_info_pP->num_li = 0;
 
-  AssertFatal( total_sizeP > 0 , "RLC UM PDU LENGTH %d", total_sizeP);
+  //AssertFatal( total_sizeP > 0 , "RLC UM PDU LENGTH %d", total_sizeP);
+  if(total_sizeP <= 0) {
+    LOG_E(RLC, "RLC UM PDU LENGTH %d\n", total_sizeP);
+    return -1;
+  }
 
   if (sn_lengthP == 10) {
     pdu_info_pP->fi           = (header_pP->b1 >> 3) & 0x03;
@@ -62,7 +66,11 @@ signed int rlc_um_get_pdu_infos(
     pdu_info_pP->header_size  = 1;
     pdu_info_pP->payload      = &header_pP->b2;
   } else {
-    AssertFatal( sn_lengthP == 5 || sn_lengthP == 10, "RLC UM SN LENGTH %d", sn_lengthP);
+    //AssertFatal( sn_lengthP == 5 || sn_lengthP == 10, "RLC UM SN LENGTH %d", sn_lengthP);
+    if(!(sn_lengthP == 5 || sn_lengthP == 10)) {
+      LOG_E(RLC, "RLC UM SN LENGTH %d\n", sn_lengthP);
+      return -1;
+    }
   }
 
 
@@ -77,15 +85,23 @@ signed int rlc_um_get_pdu_infos(
       li_length_in_bytes = li_length_in_bytes ^ 3;
 
       if (li_length_in_bytes  == 2) {
-        AssertFatal( total_sizeP >= ((uint64_t)(&e_li_p->b2) - (uint64_t)header_pP),
-                     "DECODING PDU TOO FAR PDU size %d", total_sizeP);
+        //AssertFatal( total_sizeP >= ((uint64_t)(&e_li_p->b2) - (uint64_t)header_pP),
+        //             "DECODING PDU TOO FAR PDU size %d", total_sizeP);
+        if(total_sizeP < ((uint64_t)(&e_li_p->b2) - (uint64_t)header_pP)) {
+          LOG_E(RLC, "DECODING PDU TOO FAR PDU size %d\n", total_sizeP);
+          return -1;
+        }
         pdu_info_pP->li_list[pdu_info_pP->num_li] = ((uint16_t)(e_li_p->b1 << 4)) & 0x07F0;
         pdu_info_pP->li_list[pdu_info_pP->num_li] |= (((uint8_t)(e_li_p->b2 >> 4)) & 0x000F);
         li_to_read = e_li_p->b1 & 0x80;
         pdu_info_pP->header_size  += 2;
       } else {
-        AssertFatal( total_sizeP >= ((uint64_t)(&e_li_p->b3) - (uint64_t)header_pP),
-                     "DECODING PDU TOO FAR PDU size %d", total_sizeP);
+        //AssertFatal( total_sizeP >= ((uint64_t)(&e_li_p->b3) - (uint64_t)header_pP),
+        //             "DECODING PDU TOO FAR PDU size %d", total_sizeP);
+        if(total_sizeP < ((uint64_t)(&e_li_p->b3) - (uint64_t)header_pP)) {
+          LOG_E(RLC, "DECODING PDU TOO FAR PDU size %d\n", total_sizeP);
+          return -1;
+        }
         pdu_info_pP->li_list[pdu_info_pP->num_li] = ((uint16_t)(e_li_p->b2 << 8)) & 0x0700;
         pdu_info_pP->li_list[pdu_info_pP->num_li] |=  e_li_p->b3;
         li_to_read = e_li_p->b2 & 0x08;
@@ -93,10 +109,16 @@ signed int rlc_um_get_pdu_infos(
         pdu_info_pP->header_size  += 1;
       }
 
-      AssertFatal( pdu_info_pP->num_li <= RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU,
-                   PROTOCOL_RLC_UM_CTXT_FMT"[GET PDU INFO]  SN %04d TOO MANY LIs ",
+      //AssertFatal( pdu_info_pP->num_li <= RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU,
+      //             PROTOCOL_RLC_UM_CTXT_FMT"[GET PDU INFO]  SN %04d TOO MANY LIs ",
+      //             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
+      //             pdu_info_pP->sn);
+      if(pdu_info_pP->num_li > RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU) {
+        LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT"[GET PDU INFO]  SN %04d TOO MANY LIs \n",
                    PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                    pdu_info_pP->sn);
+        return -1;
+      }
 
       sum_li += pdu_info_pP->li_list[pdu_info_pP->num_li];
       pdu_info_pP->num_li = pdu_info_pP->num_li + 1;
@@ -308,9 +330,17 @@ rlc_um_try_reassembly(
               __LINE__);
 #endif
       }
-      AssertFatal(size >= 0, "invalid size!");
-      AssertFatal((e==0) || (e==1), "invalid e!");
-      AssertFatal((fi >= 0) && (fi <= 3), "invalid fi!");
+      //AssertFatal(size >= 0, "invalid size!");
+      //AssertFatal((e==0) || (e==1), "invalid e!");
+      //AssertFatal((fi >= 0) && (fi <= 3), "invalid fi!");
+      if((size < 0) || ((e!=0) && (e!=1)) || ((fi < 0) || (fi > 3))){
+        LOG_E(RLC, "invalid size %d, e %d, fi %d\n", size, e, fi);
+        sn = (sn + 1) % rlc_pP->rx_sn_modulo;
+        if ((sn == rlc_pP->vr_uh) || (sn == end_snP)) {
+          continue_reassembly = 0;
+        }
+        continue;
+      }
 
       if (e == RLC_E_FIXED_PART_DATA_FIELD_FOLLOW) {
         switch (fi) {
@@ -400,11 +430,14 @@ rlc_um_try_reassembly(
           break;
 
         default:
-          AssertFatal( 0 , PROTOCOL_RLC_UM_CTXT_FMT" fi=%d! TRY REASSEMBLY SHOULD NOT GO HERE (%s:%u)\n",
-                       PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
-                       fi,
-                       __FILE__,
-                       __LINE__);
+          //AssertFatal( 0 , PROTOCOL_RLC_UM_CTXT_FMT" fi=%d! TRY REASSEMBLY SHOULD NOT GO HERE (%s:%u)\n",
+          //             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
+          //             fi,
+          //             __FILE__,
+          //             __LINE__);
+          LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" fi=%d! TRY REASSEMBLY SHOULD NOT GO HERE (%s:%u)\n",
+                     PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP), fi, __FILE__, __LINE__);
+          
         }
       } else {
         if (rlc_um_read_length_indicators(&data_p, e_li_p, li_array, &num_li, &size ) >= 0) {
@@ -543,11 +576,14 @@ rlc_um_try_reassembly(
               // data_p is already ok, done by last loop above
               rlc_um_reassembly (ctxt_pP, rlc_pP, data_p, size);
             } else {
-              AssertFatal( 0 !=0, PROTOCOL_RLC_UM_CTXT_FMT" size=%d! SHOULD NOT GO HERE (%s:%u)\n",
-                           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
-                           size,
-                           __FILE__,
-                           __LINE__);
+              //AssertFatal( 0 !=0, PROTOCOL_RLC_UM_CTXT_FMT" size=%d! SHOULD NOT GO HERE (%s:%u)\n",
+              //             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
+              //             size,
+              //             __FILE__,
+              //             __LINE__);
+              LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" size=%d! SHOULD NOT GO HERE (%s:%u)\n",
+                PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP), size, __FILE__, __LINE__);
+              
               //rlc_pP->stat_rx_data_pdu_dropped += 1;
               rlc_pP->stat_rx_data_bytes_dropped += size;
             }

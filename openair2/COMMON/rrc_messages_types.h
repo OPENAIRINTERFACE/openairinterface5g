@@ -123,9 +123,9 @@ typedef struct RrcConfigurationReq_s {
   long                    pucch_delta_shift[MAX_NUM_CCs];
   long                    pucch_nRB_CQI[MAX_NUM_CCs];
   long                    pucch_nCS_AN[MAX_NUM_CCs];
-#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
+//#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
   long                    pucch_n1_AN[MAX_NUM_CCs];
-#endif
+//#endif
   long                    pdsch_referenceSignalPower[MAX_NUM_CCs];
   long                    pdsch_p_b[MAX_NUM_CCs];
   long                    pusch_n_SB[MAX_NUM_CCs];
@@ -174,6 +174,7 @@ typedef struct RrcConfigurationReq_s {
   long                    ue_TimersAndConstants_n310[MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
   long                    ue_TransmissionMode[MAX_NUM_CCs];
+  long                    ue_multiple_max[MAX_NUM_CCs];
 
   //TTN - for D2D
   //SIB18
@@ -219,13 +220,10 @@ typedef struct RrcConfigurationReq_s {
   char*                          discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
-
-
-
-
-
 } RrcConfigurationReq;
+
 #define MAX_NUM_NBIOT_CELEVELS    3
+
 typedef struct NbIoTRrcConfigurationReq_s {
   uint32_t            cell_identity;
 

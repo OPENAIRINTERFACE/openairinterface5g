@@ -632,6 +632,10 @@ add_boolean_option(MESSAGE_CHART_GENERATOR False         "For generating sequenc
 add_boolean_option(MESSAGE_CHART_GENERATOR_RLC_MAC False "trace RLC-MAC exchanges in sequence diagrams")
 add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchanges in sequence diagrams")
 
+add_boolean_option(UE_EXPANSION             False         "enable UE_EXPANSION with max 256 UE")
+add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION with max 256 UE")
+add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE")
+
 ########################
 # Include order
 ##########################
@@ -1093,6 +1097,7 @@ set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach_common.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pucch_common.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_scrambling.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_gold_generic.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/srs_modulation.c
   ${OPENAIR1_DIR}/PHY/MODULATION/ofdm_mod.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_time.c
@@ -1334,6 +1339,7 @@ set (MAC_SRC
   ${MAC_DIR}/eNB_scheduler_bch.c
   ${MAC_DIR}/eNB_scheduler_primitives.c
   ${MAC_DIR}/eNB_scheduler_RA.c
+  ${MAC_DIR}/eNB_scheduler_fairRR.c
   ${MAC_DIR}/eNB_scheduler_phytest.c
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c

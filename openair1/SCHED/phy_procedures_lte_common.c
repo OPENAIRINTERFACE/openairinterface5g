@@ -336,6 +336,29 @@ unsigned char ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsig
   return(0);
 }
 
+int ul_ACK_subframe2_dl_frame(LTE_DL_FRAME_PARMS *frame_parms,int frame, unsigned char subframe,unsigned char subframe_tx)
+{
+
+  if (frame_parms->frame_type == FDD) {
+    return (((subframe_tx > subframe ) ? frame-1 : frame)+1024)%1024;
+  } else {
+    switch (frame_parms->tdd_config) {
+    case 1:
+      return(((subframe_tx > subframe ) ? frame-1 : frame)+1024)%1024;
+      break;
+    case 3:
+        //TODO
+      break;
+    case 4:
+        //TODO
+      break;
+    }
+  }
+
+  return(0);
+}
+
+
 unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe)
 {
 
@@ -343,6 +366,23 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
     return(1);
   } else {
     switch (frame_parms->tdd_config) {
+    case 1:
+        return 1; // don't ACK special subframe for now
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        return(2);
+      } else if (subframe == 3) { // ACK subframe 9
+        return(1);  // To be updated
+      } else if (subframe == 7) { // ACK subframes 0 and 1
+        return(2);  // To be updated
+      } else if (subframe == 8) { // ACK subframe 4
+        return(1);  // To be updated
+      } else {
+        LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+              subframe,frame_parms->tdd_config);
+        return(0);
+      }
+
+      break;
     case 3:
       if (subframe == 2) {  // ACK subframes 5 and 6
         return(2); // should be 3
@@ -381,23 +421,6 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
               }
 
               break;
-
-    case 1:
-      if (subframe == 2) {  // ACK subframes 5 and 6
-        return(2);
-      } else if (subframe == 3) { // ACK subframe 9
-        return(1);  // To be updated
-      } else if (subframe == 7) { // ACK subframes 0 and 1
-        return(2);  // To be updated
-      } else if (subframe == 8) { // ACK subframe 4
-        return(1);  // To be updated
-      } else {
-        LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
-              subframe,frame_parms->tdd_config);
-        return(0);
-      }
-
-      break;
     }
   }
 

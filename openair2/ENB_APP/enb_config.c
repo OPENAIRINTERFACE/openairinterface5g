@@ -102,6 +102,7 @@ void RCconfig_flexran()
     ue_TimersAndConstants_n310, ue_TimersAndConstants_n311,
     ue_TransmissionMode;
 
+    int32_t     ue_multiple_max               = 0;
 
     e_SL_CP_Len_r12                rxPool_sc_CP_Len;
     e_SL_PeriodComm_r12            rxPool_sc_Period;
@@ -387,6 +388,8 @@ void RCconfig_macrlc() {
     RC.nb_mac_CC = (int*)malloc(RC.nb_macrlc_inst*sizeof(int));
 
     for (j=0;j<RC.nb_macrlc_inst;j++) {
+      RC.mac[j]->puSch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUSCH10xSNR_IDX ].iptr);
+      RC.mac[j]->puCch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCH10xSNR_IDX ].iptr);
       RC.nb_mac_CC[j] = *(MacRLC_ParamList.paramarray[j][MACRLC_CC_IDX].iptr);
       //RC.mac[j]->phy_test = *(MacRLC_ParamList.paramarray[j][MACRLC_PHY_TEST_IDX].iptr);
       //printf("PHY_TEST = %d,%d\n", RC.mac[j]->phy_test, j);
@@ -427,7 +430,17 @@ void RCconfig_macrlc() {
         printf("**************** RETURNED FROM configure_nfapi_vnf() vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
       } else { // other midhaul
 	AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
-      }	
+      }
+      if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr), "default") == 0){
+      	global_scheduler_mode=SCHED_MODE_DEFAULT;
+      	printf("sched mode = default %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
+      }else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr), "fairRR") == 0){
+      	global_scheduler_mode=SCHED_MODE_FAIR_RR;
+      	printf("sched mode = fairRR %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
+      }else{
+      	global_scheduler_mode=SCHED_MODE_DEFAULT;
+      	printf("sched mode = default %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
+      }
     }// j=0..num_inst
   } else {// MacRLC_ParamList.numelt > 0
 	  AssertFatal (0,
@@ -521,6 +534,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   int32_t     ue_TimersAndConstants_n311    = 0;
   int32_t     ue_TransmissionMode           = 0;
 
+  int32_t     ue_multiple_max               = 0;
+
   //TTN - for D2D
   //SIB18
   const char*       rxPool_sc_CP_Len                                        = NULL;
@@ -566,7 +581,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   char*             discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf         = NULL;
   libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size        = 0;
   libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused = 0;
-
 
   int32_t     srb1_timer_poll_retransmit    = 0;
   int32_t     srb1_timer_reordering         = 0;
@@ -918,12 +932,10 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			     RC.config_file_name, i, prach_zero_correlation);
 	      
 	      RRC_CONFIGURATION_REQ (msg_p).prach_freq_offset[j] = prach_freq_offset;
-	      
 	      if ((prach_freq_offset <0) || (prach_freq_offset > 94))
 		AssertFatal (0,
 			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 0..94!\n",
 			     RC.config_file_name, i, prach_freq_offset);
-	      
 	      
 	      RRC_CONFIGURATION_REQ (msg_p).pucch_delta_shift[j] = pucch_delta_shift-1;
 	      
@@ -946,7 +958,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
 			       RC.config_file_name, i, pucch_nCS_AN);
 
-#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
+//#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
 		RRC_CONFIGURATION_REQ (msg_p).pucch_n1_AN[j] = pucch_n1_AN;
 
 		if ((pucch_n1_AN <0) || (pucch_n1_AN > 2047))
@@ -954,7 +966,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_n1_AN choice: 0..2047!\n",
 			       RC.config_file_name, i, pucch_n1_AN);
 
-#endif
+//#endif
 		RRC_CONFIGURATION_REQ (msg_p).pdsch_referenceSignalPower[j] = pdsch_referenceSignalPower;
 
 		if ((pdsch_referenceSignalPower <-60) || (pdsch_referenceSignalPower > 50))
@@ -1579,6 +1591,34 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 			       RC.config_file_name, i, ue_TransmissionMode);
 		  break;
 		}
+
+        RRC_CONFIGURATION_REQ (msg_p).ue_multiple_max[j] = ue_multiple_max;
+
+        switch (N_RB_DL) {
+        case 25:
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 4))
+            AssertFatal (0,
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..4!\n",
+                     RC.config_file_name, i, ue_multiple_max);
+          break;
+        case 50:
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 8))
+            AssertFatal (0,
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..8!\n",
+                     RC.config_file_name, i, ue_multiple_max);
+          break;
+        case 100:
+          if ((ue_multiple_max < 1) || (ue_multiple_max > 16))
+            AssertFatal (0,
+                     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..16!\n",
+                     RC.config_file_name, i, ue_multiple_max);
+          break;
+        default:
+          AssertFatal (0,
+                   "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 25,50,100 !\n",
+                   RC.config_file_name, i, N_RB_DL);
+          break;
+        }
 
 		//TTN - for D2D
 		//SIB18

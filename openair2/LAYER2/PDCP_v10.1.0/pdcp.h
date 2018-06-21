@@ -260,7 +260,7 @@ public_pdcp(boolean_t pdcp_data_req(
               const sdu_size_t sdu_buffer_size,
               unsigned char* const sdu_buffer,
               const pdcp_transmission_mode_t mode
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
               ,const uint32_t * const sourceL2Id
               ,const uint32_t * const destinationL2Id
 #endif
@@ -437,7 +437,7 @@ typedef struct pdcp_data_req_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   traffic_type;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t sourceL2Id;
   uint32_t destinationL2Id;
 #endif
@@ -448,7 +448,7 @@ typedef struct pdcp_data_ind_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   dummy_traffic_type;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t sourceL2Id;
   uint32_t destinationL2Id;
 #endif
@@ -462,7 +462,7 @@ struct pdcp_netlink_element_s {
 };
 
 //TTN for D2D (PC5S)
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 #define PDCP_SOCKET_PORT_NO 9999 //temporary value
 #define PC5_SIGNALLING_PAYLOAD_SIZE   100  //should be updated with a correct value
 int pdcp_pc5_sockfd;

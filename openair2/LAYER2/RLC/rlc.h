@@ -399,7 +399,7 @@ public_rlc_rrc(rlc_op_status_t rrc_rlc_remove_rlc   (const protocol_ctxt_t* cons
 * \return     A status about the processing, OK or error code.
 */
 private_rlc_rrc(rlc_union_t*  rrc_rlc_add_rlc      (const protocol_ctxt_t* const, const srb_flag_t,  const  MBMS_flag_t MBMS_flagP, const  rb_id_t, logical_chan_id_t, rlc_mode_t
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t  sourceL2Id,
   const uint32_t  destinationL2Id
 #endif
@@ -465,7 +465,7 @@ public_rlc_rrc(void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_d
 * \return     A status about the processing, OK or error code.
 */
 public_rlc_mac(tbs_size_t            mac_rlc_data_req     (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, const tb_size_t,char*
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                            ,const uint32_t sourceL2Id
                                                            ,const uint32_t destinationL2Id
 #endif
@@ -500,7 +500,7 @@ public_rlc_mac(void                  mac_rlc_data_ind     (const module_id_t, co
 * \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
 */
 public_rlc_mac(mac_rlc_status_resp_t mac_rlc_status_ind   (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const sub_frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, tb_size_t
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                            ,const uint32_t sourceL2Id
                                                            ,const uint32_t destinationL2Id
 #endif
@@ -555,7 +555,7 @@ public_rlc(rlc_op_status_t rlc_data_req     (
              const confirm_t ,
              const sdu_size_t ,
              mem_block_t * const
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
              ,const uint32_t * const
              ,const uint32_t * const
 #endif

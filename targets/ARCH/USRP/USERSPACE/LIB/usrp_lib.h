@@ -47,7 +47,7 @@ typedef struct {
 } iqrec_t;
 #define DEF_NB_SF           120000               // default nb of sf or ms to capture (2 minutes at 5MHz)
 #define DEF_SF_FILE         "/home/nokia/iqfile" // default subframes file name
-#define DEF_SF_DELAY_READ   400                  // default read delay  µs (860=real)
+#define DEF_SF_DELAY_READ   700                  // default read delay  µs (860=real)
 #define DEF_SF_DELAY_WRITE  15                   // default write delay µs (15=real)
 #define DEF_SF_NB_LOOP      5                    // default nb loops
 

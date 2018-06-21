@@ -83,7 +83,7 @@ boolean_t pdcp_data_req(
   const sdu_size_t     sdu_buffer_sizeP,
   unsigned char *const sdu_buffer_pP,
   const pdcp_transmission_mode_t modeP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     ,const uint32_t * const sourceL2Id
     ,const uint32_t * const destinationL2Id
 #endif
@@ -170,7 +170,7 @@ boolean_t pdcp_data_req(
                                 sdu_buffer_sizeP);
 #endif
       rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,NULL, NULL
 #endif
                                 );
@@ -360,7 +360,7 @@ boolean_t pdcp_data_req(
     LOG_F(PDCP,"\n");
 #endif
     rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                              ,sourceL2Id
                              ,destinationL2Id
 #endif
@@ -982,7 +982,7 @@ pdcp_run (
                                 RRC_DCCH_DATA_REQ (msg_p).sdu_size,
                                 RRC_DCCH_DATA_REQ (msg_p).sdu_p,
                                 RRC_DCCH_DATA_REQ (msg_p).mode
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 , NULL, NULL
 #endif
                                 );

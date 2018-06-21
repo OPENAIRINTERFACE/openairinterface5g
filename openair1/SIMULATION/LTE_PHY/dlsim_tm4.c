@@ -3426,6 +3426,7 @@ int main(int argc, char **argv)
               re_allocated = dlsch_modulation(eNB,
                                               eNB->common_vars.txdataF[eNB_id],
                                               AMP,
+                                              frame,
                                               subframe,
                                               num_pdcch_symbols,
                                               ((TB0_active == 1)? eNB->dlsch[k][0]: NULL),
