@@ -31,7 +31,7 @@
  */
 
 #include "common/config/config_paramdesc.h"
-#include "NR_RRC_paramsvalues.h"
+#include "RRC_nr_paramsvalues.h"
 
 
 #define GNB_CONFIG_STRING_CC_NODE_FUNCTION        "node_function"
@@ -666,7 +666,7 @@ typedef enum {
 {GNB_CONFIG_STRING_RACH_RA_CONTROLRESOURCESET,                                       NULL,        0,        iptr:&rach_ra_ControlResourceSet,                                       defintval:10,                   TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_PDCCH_COMMON_CONTROLRESOURCESETID,                                NULL,        0,        iptr:&PDCCH_common_controlResourceSetId,                                defintval:5,                    TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_PDCCH_COMMON_CONTROLRESOURCESET_DURATION,                         NULL,        0,        iptr:&PDCCH_common_ControlResourceSet_duration,                         defintval:2,                    TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_PDCCH_CCE_REG_MAPPINGTYPE,                                        NULL,        0,        strptr:&PDCCH_cce_REG_MappingType,                                      defstrval:"interleaved",        TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_PDCCH_CCE_REG_MAPPINGTYPE,                                        NULL,        0,        strptr:&PDCCH_cce_REG_MappingType,                                      defstrval:"nonInterleaved",     TYPE_STRING,     0},  \
 {GNB_CONFIG_STRING_PDCCH_REG_BUNDLESIZE,                                             NULL,        0,        iptr:&PDCCH_reg_BundleSize,                                             defintval:3,                    TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_PDCCH_INTERLEAVERSIZE,                                            NULL,        0,        iptr:&PDCCH_interleaverSize,                                            defintval:3,                    TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_PDCCH_SHIFTINDEX,                                                 NULL,        0,        iptr:&PDCCH_shiftIndex,                                                 defintval:10,                   TYPE_UINT,       0},  \

@@ -61,6 +61,180 @@
 
 extern uint16_t sf_ahead;
 
+void RCconfig_NR_flexran()
+{
+  uint16_t  i;
+  uint16_t  num_gnbs;
+  char      aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  /* this will possibly truncate the cell id (RRC assumes int32_t).
+   * Both Nid_cell and gnb_id are signed in RRC case, but we use unsigned for
+   * the bitshifting to work properly */
+  int32_t   Nid_cell = 0;
+  uint16_t  Nid_cell_tr = 0;
+  uint32_t  gnb_id = 0;
+
+  /*
+   * the only reason for all these variables is, that they are "hard-encoded"
+   * into the CCPARAMS_DESC macro and we need it for the Nid_cell variable ...
+   */
+  char      *frame_type, DL_prefix_type, UL_prefix_type, SIB1_frequencyOffsetSSB,
+            DL_SCS_SubcarrierSpacing, DL_BWP_SubcarrierSpacing, DL_BWP_prefix_type,
+            UL_frequencyShift7p5khz, UL_SCS_SubcarrierSpacing, UL_BWP_SubcarrierSpacing,
+            UL_BWP_prefix_type, ServingCellConfigCommon_ssb_PositionsInBurst_PR,
+            NIA_SubcarrierSpacing, referenceSubcarrierSpacing, dl_UL_TransmissionPeriodicity,
+            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,
+            rach_groupBconfigured, rach_messagePowerOffsetGroupB, 
+            prach_RootSequenceIndex_choice, prach_msg1_SubcarrierSpacing,
+            restrictedSetConfig, msg3_transformPrecoding, prach_msg1_FDM,
+            powerRampingStep, groupHoppingEnabledTransformPrecoding,
+            PUSCH_TimeDomainResourceAllocation_mappingType, pucch_GroupHopping,
+            PDSCH_TimeDomainResourceAllocation_mappingType, RateMatchPattern_patternType,
+            symbolsInResourceBlock, RateMatchPattern_subcarrierSpacing, RateMatchPattern_mode,
+            PDCCH_cce_REG_MappingType, PDCCH_precoderGranularity,
+            tci_PresentInDCI, SearchSpace_monitoringSlotPeriodicityAndOffset_choice,
+            SearchSpace_searchSpaceType, ue_Specific__dci_Formats,
+            RateMatchPatternLTE_CRS_subframeAllocation_choice;
+
+  long long int  downlink_frequency;
+
+  int32_t   eutra_band, uplink_frequency_offset, N_RB_DL, nb_antenna_ports,
+            MIB_subCarrierSpacingCommon, MIB_ssb_SubcarrierOffset, MIB_dmrs_TypeA_Position,
+            pdcch_ConfigSIB1, SIB1_ssb_PeriodicityServingCell, SIB1_ss_PBCH_BlockPower,
+            absoluteFrequencySSB, ssb_SubcarrierOffset, DL_FreqBandIndicatorNR,
+            DL_absoluteFrequencyPointA, DL_offsetToCarrier, DL_SCS_SpecificCarrier_k0,
+            DL_carrierBandwidth, DL_locationAndBandwidth, UL_FreqBandIndicatorNR,
+            UL_absoluteFrequencyPointA, UL_additionalSpectrumEmission, UL_p_Max,
+            UL_offsetToCarrier, UL_SCS_SpecificCarrier_k0, UL_carrierBandwidth,
+            UL_locationAndBandwidth, ServingCellConfigCommon_ssb_periodicityServingCell,
+            ServingCellConfigCommon_dmrs_TypeA_Position, ServingCellConfigCommon_ss_PBCH_BlockPower,
+            nrofDownlinkSlots, nrofDownlinkSymbols, nrofUplinkSlots, nrofUplinkSymbols,
+            rach_totalNumberOfRA_Preambles, rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneEighth,
+            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneFourth,
+            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_oneHalf,
+            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_one,
+            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_two,
+            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_four,
+            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_eight,
+            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_sixteen,
+            rach_ra_Msg3SizeGroupA, rach_numberOfRA_PreamblesGroupA, rach_ra_ContentionResolutionTimer,
+            rsrp_ThresholdSSB, rsrp_ThresholdSSB_SUL, prach_RootSequenceIndex_l839,
+            prach_RootSequenceIndex_l139, prach_ConfigurationIndex, prach_msg1_FrequencyStart,
+            zeroCorrelationZoneConfig, preambleReceivedTargetPower, preambleTransMax,
+            ra_ResponseWindow, msg3_DeltaPreamble, p0_NominalWithGrant,
+            PUSCH_TimeDomainResourceAllocation_k2, p0_nominal, PDSCH_TimeDomainResourceAllocation_k0,
+            rateMatchPatternId, periodicityAndPattern, RateMatchPattern_controlResourceSet,
+            searchSpaceSIB1, searchSpaceOtherSystemInformation, pagingSearchSpace,
+            ra_SearchSpace, rach_ra_ControlResourceSet, PDCCH_common_controlResourceSetId,
+            PDCCH_common_ControlResourceSet_duration, PDCCH_reg_BundleSize, PDCCH_interleaverSize,
+            PDCCH_shiftIndex, PDCCH_TCI_StateId, SearchSpaceId, commonSearchSpaces_controlResourceSetId,
+            SearchSpace_monitoringSlotPeriodicityAndOffset_sl1,
+            SearchSpace_monitoringSlotPeriodicityAndOffset_sl2,
+            SearchSpace_monitoringSlotPeriodicityAndOffset_sl4,
+            SearchSpace_monitoringSlotPeriodicityAndOffset_sl5,
+            SearchSpace_monitoringSlotPeriodicityAndOffset_sl8,
+            SearchSpace_monitoringSlotPeriodicityAndOffset_sl10,
+            SearchSpace_monitoringSlotPeriodicityAndOffset_sl16,
+            SearchSpace_monitoringSlotPeriodicityAndOffset_sl20,
+            SearchSpace_nrofCandidates_aggregationLevel1,
+            SearchSpace_nrofCandidates_aggregationLevel2,
+            SearchSpace_nrofCandidates_aggregationLevel4,
+            SearchSpace_nrofCandidates_aggregationLevel8,
+            SearchSpace_nrofCandidates_aggregationLevel16,
+            Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel1,
+            Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel2,
+            Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel4,
+            Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel8,
+            Common_dci_Format2_0_nrofCandidates_SFI_aggregationLevel16,
+            Common_dci_Format2_3_monitoringPeriodicity,
+            Common_dci_Format2_3_nrofPDCCH_Candidates,
+            RateMatchPatternLTE_CRS_carrierFreqDL,
+            RateMatchPatternLTE_CRS_carrierBandwidthDL,
+            RateMatchPatternLTE_CRS_nrofCRS_Ports,
+            RateMatchPatternLTE_CRS_v_Shift,
+            RateMatchPatternLTE_CRS_radioframeAllocationPeriod,
+            RateMatchPatternLTE_CRS_radioframeAllocationOffset
+            ;
+
+  /* get number of gNBs */
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  config_get(GNBSParams, sizeof(GNBSParams)/sizeof(paramdef_t), NULL);
+  num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
+
+  /* for gNB ID */
+  paramdef_t GNBParams[]  = GNBPARAMS_DESC;
+  paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST, NULL, 0};
+
+  /* for Nid_cell */
+  checkedparam_t config_check_CCparams[] = NRCCPARAMS_CHECK;
+  paramdef_t CCsParams[] = NRCCPARAMS_DESC;
+  paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS, NULL, 0};
+  /* map parameter checking array instances to parameter definition array instances */
+  for (int I = 0; I < (sizeof(CCsParams) / sizeof(paramdef_t)); I++) {
+    CCsParams[I].chkPptr = &(config_check_CCparams[I]);
+  }
+
+  paramdef_t flexranParams[] = FLEXRANPARAMS_DESC;
+  config_get(flexranParams, sizeof(flexranParams)/sizeof(paramdef_t), CONFIG_STRING_NETWORK_CONTROLLER_CONFIG);
+
+  if (!RC.flexran) {
+    RC.flexran = calloc(num_gnbs, sizeof(flexran_agent_info_t*));
+    AssertFatal(RC.flexran,
+                "can't ALLOCATE %zu Bytes for %d flexran agent info with size %zu\n",
+                num_gnbs * sizeof(flexran_agent_info_t*),
+                num_gnbs, sizeof(flexran_agent_info_t*));
+  }
+
+  for (i = 0; i < num_gnbs; i++) {
+    RC.flexran[i] = calloc(1, sizeof(flexran_agent_info_t));
+    AssertFatal(RC.flexran[i],
+                "can't ALLOCATE %zu Bytes for flexran agent info (iteration %d/%d)\n",
+                sizeof(flexran_agent_info_t), i + 1, num_gnbs);
+    /* if config says "yes", enable Agent, in all other cases it's like "no" */
+    RC.flexran[i]->enabled          = strcasecmp(*(flexranParams[FLEXRAN_ENABLED].strptr), "yes") == 0;
+    /* if not enabled, simply skip the rest, it is not needed anyway */
+    if (!RC.flexran[i]->enabled)
+      continue;
+    RC.flexran[i]->interface_name   = strdup(*(flexranParams[FLEXRAN_INTERFACE_NAME_IDX].strptr));
+    //inet_ntop(AF_INET, &(enb_properties->properties[mod_id]->flexran_agent_ipv4_address), in_ip, INET_ADDRSTRLEN);
+    RC.flexran[i]->remote_ipv4_addr = strdup(*(flexranParams[FLEXRAN_IPV4_ADDRESS_IDX].strptr));
+    RC.flexran[i]->remote_port      = *(flexranParams[FLEXRAN_PORT_IDX].uptr);
+    RC.flexran[i]->cache_name       = strdup(*(flexranParams[FLEXRAN_CACHE_IDX].strptr));
+    RC.flexran[i]->node_ctrl_state  = strcasecmp(*(flexranParams[FLEXRAN_AWAIT_RECONF_IDX].strptr), "yes") == 0 ? ENB_WAIT : ENB_NORMAL_OPERATION;
+
+    config_getlist(&GNBParamList, GNBParams, sizeof(GNBParams)/sizeof(paramdef_t),NULL);
+    /* gNB ID from configuration, as read in by RCconfig_RRC() */
+    if (!GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr) {
+      // Calculate a default gNB ID
+# if defined(ENABLE_USE_MME)
+      gnb_id = i + (s1ap_generate_eNB_id () & 0xFFFF8);
+# else
+      gnb_id = i;
+# endif
+    } else {
+        gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
+    }
+
+    /* cell ID */
+    sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, i);
+    config_getlist(&CCsParamList, NULL, 0, aprefix);
+    if (CCsParamList.numelt > 0) {
+      sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, i, GNB_CONFIG_STRING_COMPONENT_CARRIERS, 0);
+      config_get(CCsParams, sizeof(CCsParams)/sizeof(paramdef_t), aprefix);
+      Nid_cell_tr = (uint16_t) Nid_cell;
+    }
+
+    RC.flexran[i]->mod_id   = i;
+    RC.flexran[i]->agent_id = (((uint64_t)i) << 48) | (((uint64_t)gnb_id) << 16) | ((uint64_t)Nid_cell_tr);
+
+    /* assume for the moment the monolithic case, i.e. agent can provide
+     * information for all layers */
+    RC.flexran[i]->capability_mask = FLEXRAN_CAP_LOPHY | FLEXRAN_CAP_HIPHY
+                                   | FLEXRAN_CAP_LOMAC | FLEXRAN_CAP_HIMAC
+                                   | FLEXRAN_CAP_RLC   | FLEXRAN_CAP_PDCP
+                                   | FLEXRAN_CAP_SDAP  | FLEXRAN_CAP_RRC;
+  }
+}
+
 void RCconfig_NR_L1(void) {
   int               i,j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;

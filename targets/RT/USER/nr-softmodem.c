@@ -1061,7 +1061,7 @@ int main( int argc, char **argv )
 #endif
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
-  RCconfig_flexran();
+  RCconfig_NR_flexran();
   for (i = 0; i < RC.nb_L1_inst; i++) {
     flexran_agent_start(i);
   }

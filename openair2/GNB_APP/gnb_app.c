@@ -58,30 +58,6 @@ extern RAN_CONTEXT_t RC;
 #   define GNB_REGISTER_RETRY_DELAY 10
 # endif
 
-/*------------------------------------------------------------------------------*/
-
-/*
-static void configure_phy(module_id_t enb_id, const Enb_properties_array_t* enb_properties)
-{
-  MessageDef *msg_p;
-  int CC_id;
-
-  msg_p = itti_alloc_new_message (TASK_ENB_APP, PHY_CONFIGURATION_REQ);
-
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_CONFIGURATION_REQ (msg_p).frame_type[CC_id]              = enb_properties->properties[enb_id]->frame_type[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).prefix_type[CC_id]             = enb_properties->properties[enb_id]->prefix_type[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).downlink_frequency[CC_id]      = enb_properties->properties[enb_id]->downlink_frequency[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[CC_id] = enb_properties->properties[enb_id]->uplink_frequency_offset[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).nb_antennas_tx[CC_id]          = enb_properties->properties[enb_id]->nb_antennas_tx[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).nb_antennas_rx[CC_id]          = enb_properties->properties[enb_id]->nb_antennas_rx[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).tx_gain[CC_id]                 = enb_properties->properties[enb_id]->tx_gain[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).rx_gain[CC_id]                 = enb_properties->properties[enb_id]->rx_gain[CC_id];
-  }
-
-  itti_send_msg_to_task (TASK_PHY_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-}
-*/
 
 /*------------------------------------------------------------------------------*/
 static void configure_nr_rrc(uint32_t gnb_id)
