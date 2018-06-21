@@ -83,7 +83,8 @@
 #define NFAPI_NR_P5_SCTP_PORT		7701
 
 
-#define NFAPI_NR_MAX_NUM_ALLOCATIONS 16
+#define NFAPI_NR_MAX_NUM_DL_ALLOCATIONS 16
+#define NFAPI_NR_MAX_NUM_UL_ALLOCATIONS 16
 
 
 typedef unsigned int	uint32_t;
@@ -374,23 +375,59 @@ typedef struct {
     } nfapi_nr_pdsch_time_domain_resource_allocation_t;
 
     typedef struct {
-        nfapi_nr_pdsch_time_domain_resource_allocation_t allocation_list[NFAPI_NR_MAX_NUM_ALLOCATIONS];
+        nfapi_nr_pdsch_time_domain_resource_allocation_t allocation_list[NFAPI_NR_MAX_NUM_DL_ALLOCATIONS];
     } nfapi_nr_pdsch_config_common_t;
 
     typedef struct {
+        uint8_t prach_configuration_index;
+        uint8_t msg1_fdm;
+        uint8_t msg1_frequency_start;
+        uint8_t zero_correlation_zone_config;
+        uint8_t preamble_received_target_power;
+        uint8_t preamble_transmission_max;
+        uint8_t power_ramping_step;
+        uint8_t ra_window_size;
 
+        uint8_t total_number_of_preamble;
+        uint8_t ssb_occasion_per_rach;
+        uint8_t cb_preamble_per_ssb;
+
+        uint8_t group_a_msg3_size;
+        uint8_t group_a_number_of_preamble;
+        uint8_t group_b_power_offset;
+        uint8_t contention_resolution_timer;
+        uint8_t rsrp_threshold_ssb;
+        uint8_t rsrp_threshold_ssb_sul;
+        uint8_t prach_length;   //  l839, l139
+        uint8_t prach_root_sequence_index;  //  0 - 837 for l839, 0 - 137 for l139
+        uint8_t msg1_subcarrier_spacing;
+        uint8_t restrictedset_config;
+        uint8_t msg3_transform_precoding;
     } nfapi_nr_rach_config_common_t;
 
     typedef struct {
-
+        uint8_t k2;
+        uint8_t mapping_type;
+        uint8_t symbol_starting;
+        uint8_t symbol_length;
+    } nfapi_nr_pusch_time_domain_resource_allocation_t;
+      
+    typedef struct {
+        uint8_t group_hopping_enabled_transform_precoding;
+        nfapi_nr_pusch_time_domain_resource_allocation_t allocation_list[NFAPI_NR_MAX_NUM_UL_ALLOCATIONS];
+        uint8_t msg3_delta_preamble;
+        uint8_t p0_nominal_with_grant;
     } nfapi_nr_pusch_config_common_t;
 
     typedef struct {
-
+        uint8_t pucch_resource_common;
+        uint8_t pucch_group_hopping;
+        uint8_t hopping_id;
+        uint8_t p0_nominal;
     } nfapi_nr_pucch_config_common_t;
 
     typedef struct {
-        uint8_t scs_common;
+        uint8_t subcarrier_spacing_common;
         uint8_t ssb_subcarrier_offset;
         uint8_t dmrs_type_a_position;
         uint8_t pdcch_config_sib1;
