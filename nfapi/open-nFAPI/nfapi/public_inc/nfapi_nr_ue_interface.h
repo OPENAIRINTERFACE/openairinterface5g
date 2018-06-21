@@ -82,6 +82,11 @@
 // http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=7701
 #define NFAPI_NR_P5_SCTP_PORT		7701
 
+
+#define NFAPI_NR_MAX_NUM_DL_ALLOCATIONS 16
+#define NFAPI_NR_MAX_NUM_UL_ALLOCATIONS 16
+
+
 typedef unsigned int	uint32_t;
 typedef unsigned short	uint16_t;
 typedef unsigned char	uint8_t;
@@ -268,7 +273,6 @@ typedef struct {
 } nfapi_nr_tx_request_t;
 
 
-
 	typedef struct {
 		uint8_t pdu_type;
 		uint8_t pdu_size;
@@ -303,76 +307,6 @@ typedef struct {
 	nfapi_nr_ul_config_request_body_t ul_config_request_body;
 } nfapi_nr_ul_config_request_t;
 
-    typedef struct {
-        uint32_t frequency_domain_resource;
-        uint8_t duration;
-        uint8_t cce_reg_mapping_type;
-        uint8_t cce_reg_interleaved_reg_bundle_size;    //  valid if CCE to REG mapping type is interleaved type
-        uint8_t cce_reg_interleaved_interleaver_size;   //  valid if CCE to REG mapping type is interleaved type
-        uint8_t cce_reg_interleaved_shift_index;        //  valid if CCE to REG mapping type is interleaved type
-        uint8_t precoder_granularity;
-        uint8_t tci_state_pdcch;
-        uint8_t tci_present_in_dci;
-        uint16_t pdcch_dmrs_scrambling_id;
-    } nfapi_nr_coreset_t;
-
-    typedef struct {
-        uint8_t monitoring_slot_peridicity;
-        uint8_t monitoring_slot_offset;
-        uint16_t monitoring_symbols_within_slot;
-        uint8_t number_of_candidates[5];	//	aggregation level 1, 2, 4, 8, 16
-
-        uint8_t dci_2_0_number_of_candidates[5];    //	aggregation level 1, 2, 4, 8, 16
-        uint8_t dci_2_3_monitorying_periodicity;
-        uint8_t dci_2_3_number_of_candidates;
-        
-    } nfapi_nr_search_space_t;
-
-    typedef struct {
-        nfapi_nr_search_space_t search_space_sib1;
-        nfapi_nr_search_space_t search_space_others_sib;
-        nfapi_nr_search_space_t search_space_paging;
-        nfapi_nr_coreset_t      coreset_ra;
-        nfapi_nr_search_space_t search_space_ra;
-    } nfapi_nr_pdcch_config_common_t;
-
-    typedef struct {
-        uint8_t k0;
-        uint8_t mapping_type;
-        uint8_t start_symbol;
-        uint8_t length_symbol;
-    } nfapi_nr_pdsch_config_common_t;
-
-    typedef struct {
-
-    } nfapi_nr_rach_config_common_t;
-
-    typedef struct {
-
-    } nfapi_nr_pusch_config_common_t;
-
-    typedef struct {
-        uint8_t scs_common;
-        uint8_t ssb_subcarrier_offset;
-        uint8_t dmrs_type_a_position;
-        uint8_t pdcch_config_sib1;
-        uint8_t cell_barred;
-        uint8_t intra_frquency_reselection;
-    } nfapi_nr_pbch_config_t;
-
-	typedef struct {
-		nfapi_nr_tl_t tl;
-		
-        nfapi_nr_pbch_config_t pbch_config_common;  //MIB
-
-        nfapi_nr_pdcch_config_common_t pdcch_config_common;
-        nfapi_nr_pdsch_config_common_t pdsch_config_common;
-        
-        nfapi_nr_rach_config_common_t  rach_config_common;
-        nfapi_nr_pusch_config_common_t pusch_config_common;
-
-
-	} nfapi_nr_dl_config_dci_dl_pdu;
 
 
 	typedef struct {
@@ -397,12 +331,145 @@ typedef struct {
 // P5
 //
 
+    typedef struct {
+        uint32_t frequency_domain_resource;
+        uint8_t duration;
+        uint8_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
+        uint8_t cce_reg_interleaved_reg_bundle_size;    //  valid if CCE to REG mapping type is interleaved type
+        uint8_t cce_reg_interleaved_interleaver_size;   //  valid if CCE to REG mapping type is interleaved type
+        uint8_t cce_reg_interleaved_shift_index;        //  valid if CCE to REG mapping type is interleaved type
+        uint8_t precoder_granularity;
+        uint8_t tci_state_pdcch;
+        uint8_t tci_present_in_dci;
+        uint16_t pdcch_dmrs_scrambling_id;
+    } nfapi_nr_coreset_t;
+
+    typedef struct {
+        nfapi_nr_coreset_t coreset;
+
+        uint8_t monitoring_slot_peridicity;
+        uint8_t monitoring_slot_offset;
+        uint16_t duration;
+        uint16_t monitoring_symbols_within_slot;
+        uint8_t number_of_candidates[5];            //  aggregation level 1, 2, 4, 8, 16
+
+        uint8_t dci_2_0_number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16
+        uint8_t dci_2_3_monitorying_periodicity;
+        uint8_t dci_2_3_number_of_candidates;
+        
+    } nfapi_nr_search_space_t;
+
+    typedef struct {
+        nfapi_nr_search_space_t search_space_sib1;
+        nfapi_nr_search_space_t search_space_others_sib;
+        nfapi_nr_search_space_t search_space_paging;
+        nfapi_nr_coreset_t      coreset_ra;         //  common coreset
+        nfapi_nr_search_space_t search_space_ra;    
+    } nfapi_nr_pdcch_config_common_t;
+
+    typedef struct {
+        uint8_t k0;
+        uint8_t mapping_type;
+        uint8_t symbol_starting;
+        uint8_t symbol_length;
+    } nfapi_nr_pdsch_time_domain_resource_allocation_t;
+
+    typedef struct {
+        nfapi_nr_pdsch_time_domain_resource_allocation_t allocation_list[NFAPI_NR_MAX_NUM_DL_ALLOCATIONS];
+    } nfapi_nr_pdsch_config_common_t;
+
+    typedef struct {
+        uint8_t prach_configuration_index;
+        uint8_t msg1_fdm;
+        uint8_t msg1_frequency_start;
+        uint8_t zero_correlation_zone_config;
+        uint8_t preamble_received_target_power;
+        uint8_t preamble_transmission_max;
+        uint8_t power_ramping_step;
+        uint8_t ra_window_size;
+
+        uint8_t total_number_of_preamble;
+        uint8_t ssb_occasion_per_rach;
+        uint8_t cb_preamble_per_ssb;
+
+        uint8_t group_a_msg3_size;
+        uint8_t group_a_number_of_preamble;
+        uint8_t group_b_power_offset;
+        uint8_t contention_resolution_timer;
+        uint8_t rsrp_threshold_ssb;
+        uint8_t rsrp_threshold_ssb_sul;
+        uint8_t prach_length;   //  l839, l139
+        uint8_t prach_root_sequence_index;  //  0 - 837 for l839, 0 - 137 for l139
+        uint8_t msg1_subcarrier_spacing;
+        uint8_t restrictedset_config;
+        uint8_t msg3_transform_precoding;
+    } nfapi_nr_rach_config_common_t;
+
+    typedef struct {
+        uint8_t k2;
+        uint8_t mapping_type;
+        uint8_t symbol_starting;
+        uint8_t symbol_length;
+    } nfapi_nr_pusch_time_domain_resource_allocation_t;
+      
+    typedef struct {
+        uint8_t group_hopping_enabled_transform_precoding;
+        nfapi_nr_pusch_time_domain_resource_allocation_t allocation_list[NFAPI_NR_MAX_NUM_UL_ALLOCATIONS];
+        uint8_t msg3_delta_preamble;
+        uint8_t p0_nominal_with_grant;
+    } nfapi_nr_pusch_config_common_t;
+
+    typedef struct {
+        uint8_t pucch_resource_common;
+        uint8_t pucch_group_hopping;
+        uint8_t hopping_id;
+        uint8_t p0_nominal;
+    } nfapi_nr_pucch_config_common_t;
+
+    typedef struct {
+        uint8_t subcarrier_spacing_common;
+        uint8_t ssb_subcarrier_offset;
+        uint8_t dmrs_type_a_position;
+        uint8_t pdcch_config_sib1;
+        uint8_t cell_barred;
+        uint8_t intra_frquency_reselection;
+    } nfapi_nr_pbch_config_t;
+
+    typedef struct {
+        nfapi_nr_tl_t tl;
+        
+        nfapi_nr_pdcch_config_common_t pdcch_config_common;
+        nfapi_nr_pdsch_config_common_t pdsch_config_common;
+        
+    } nfapi_nr_dl_bwp_common_config_t;
+
+    typedef struct {
+
+    } nfapi_nr_dl_bwp_dedicated_config_t;
+
+    typedef struct {
+
+        nfapi_nr_rach_config_common_t  rach_config_common;
+        nfapi_nr_pusch_config_common_t pusch_config_common;
+        nfapi_nr_pucch_config_common_t pucch_config_common;
+
+    } nfapi_nr_ul_bwp_common_config_t;
+        
+    typedef struct {
+
+    } nfapi_nr_ul_bwp_dedicated_config_t;
+
 typedef struct {
     nfapi_nr_p4_p5_message_header_t header;
     uint8_t num_tlv;
 
+    nfapi_nr_pbch_config_t pbch_config_common;  //  MIB
 
-    nfapi_nr_dl_config_dci_dl_pdu dci_dl_pdu;
+    nfapi_nr_dl_bwp_common_config_t     dl_bwp_common;
+    nfapi_nr_dl_bwp_dedicated_config_t  dl_bwp_dedicated;
+
+    nfapi_nr_ul_bwp_common_config_t     ul_bwp_common;
+    nfapi_nr_ul_bwp_dedicated_config_t  ul_bwp_dedicated;
 
 } nfapi_nr_config_request_t;
 
