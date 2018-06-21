@@ -33,6 +33,7 @@
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/sse_intrin.h"
+#include "SIMULATION/TOOLS/sim.h"
 
 //#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
@@ -246,7 +247,7 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
                                uint8_t output_shift)
 {
 
-  uint16_t rb,nb_rb=15;
+  uint16_t rb,nb_rb=20;
   uint8_t aatx,aarx;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
@@ -466,6 +467,10 @@ void nr_pbch_quantize(int16_t *pbch_llr16,
   }
 }
 
+unsigned short sign(short x) {
+  return (unsigned short)x >> 15;
+}
+
 uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		     UE_nr_rxtx_proc_t *proc,
 		     NR_UE_PBCH *nr_ue_pbch_vars,
@@ -482,14 +487,24 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   int max_h=0;
 
   int symbol,i;
-  uint8_t pbch_a[8];
+  uint8_t pbch_a[64];
 
   int16_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
   uint16_t crc;
+  //short nr_demod_table[8] = {0,0,0,1,1,0,1,1};
+  double nr_demod_table[8] = {0.707,0.707,0.707,-0.707,-0.707,0.707,-0.707,-0.707};
+  double *demod_pbch_e  = malloc (sizeof(double) * 864); 
+  unsigned short idx_demod =0;
   int8_t decoderState=0;
   uint8_t decoderListSize = 8, pathMetricAppr = 0;
   double aPrioriArray[frame_parms->pbch_polar_params.payloadBits];  // assume no a priori knowledge available about the payload.
+  double *channelOutput  = malloc (sizeof(double) * 864); //add noise
+  uint8_t *estimatedOutput = malloc(sizeof(uint8_t) * 32); //decoder output
+  memset(&channelOutput[0], 0, sizeof(double) * 864);
+  memset(&estimatedOutput[0], 0, sizeof(uint8_t) * 32);
+
+  for (int i=0; i<frame_parms->pbch_polar_params.payloadBits; i++) aPrioriArray[i] = NAN;
 
   int subframe_rx = proc->subframe_rx;
 
@@ -573,25 +588,37 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
     printf("pbch rx llr %d rxdata_comp %d addr %p\n",*(pbch_e_rx+cnt), p[cnt], &p[0]);
   //#endif
 
-  //polar decoding de-rate matching
-  decoderState = polar_decoder((double *)pbch_e_rx, pbch_a, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
+  for (int i=0; i<NR_POLAR_PBCH_E/2; i++){
+    idx_demod = (sign(pbch_e_rx[i<<1])&1) ^ ((sign(pbch_e_rx[(i<<1)+1])&1)<<1);
+    demod_pbch_e[i<<1] = nr_demod_table[(idx_demod)<<1];
+    demod_pbch_e[(i<<1)+1] = nr_demod_table[((idx_demod)<<1)+1];
+    if (i<16){
+    printf("idx[%d]= %d\n", i , idx_demod);
+    printf("sign[%d]= %d sign[%d]= %d\n", i<<1 , sign(pbch_e_rx[i<<1]), (i<<1)+1 , sign(pbch_e_rx[(i<<1)+1]));
+    printf("demod_pbch_e2[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
+  }
 
-  memset(pbch_a,0,((16+NR_POLAR_PBCH_PAYLOAD_BITS)>>3));
+		
+  //polar decoding de-rate matching
+  decoderState = polar_decoder(demod_pbch_e, estimatedOutput, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
+
+  //memset(pbch_a,0,((16+NR_POLAR_PBCH_PAYLOAD_BITS)>>3));
   //un-scrambling
-  nr_pbch_unscrambling(frame_parms,
-                    pbch_a,
-					NR_POLAR_PBCH_PAYLOAD_BITS);
+  // nr_pbch_unscrambling(frame_parms,
+  //                  pbch_a,
+  //					NR_POLAR_PBCH_PAYLOAD_BITS);
 
   // Fix byte endian
-  for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++)
-    decoded_output[(NR_POLAR_PBCH_PAYLOAD_BITS>>3)-i-1] = pbch_a[i];
+  for (i=0; i<32 /*(NR_POLAR_PBCH_PAYLOAD_BITS>>3)*/; i++)
+     printf("estimated output[%d] = %d \n", i,estimatedOutput[i]);
+  //decoded_output[(NR_POLAR_PBCH_PAYLOAD_BITS>>3)-i-1] = pbch_a[i];
 
-#ifdef DEBUG_PBCH
+  //#ifdef DEBUG_PBCH
 
-  for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++)
-    msg("[PBCH] pbch_a[%d] = %x\n",i,decoded_output[i]);
+    // for (i=0; i<2; i++)
+  // printf("[PBCH] pbch_a[%d] = %x\n",i,decoded_output[i]);
 
-#endif
+  //#endif
 
 #ifdef DEBUG_PBCH
   msg("PBCH CRC %x : %x\n",
