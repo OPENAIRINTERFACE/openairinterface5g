@@ -56,7 +56,6 @@ ARCHIVES_LOC=enb_usrp
 LOG_PATTERN=.Rel14.txt
 NB_PATTERN_FILES=4
 BUILD_OPTIONS="--eNB -w USRP"
-BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
 KEEP_VM_ALIVE=0
 
 while [[ $# -gt 0 ]]
@@ -84,7 +83,6 @@ case $key in
     LOG_PATTERN=.Rel14.txt
     NB_PATTERN_FILES=4
     BUILD_OPTIONS="--eNB -w USRP"
-    BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
     shift
     ;;
     -v2)
@@ -93,7 +91,6 @@ case $key in
     LOG_PATTERN=basic_simulator
     NB_PATTERN_FILES=2
     BUILD_OPTIONS="--basic-simulator"
-    BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
     shift
     ;;
     -v3)
@@ -102,7 +99,6 @@ case $key in
     LOG_PATTERN=.Rel14.txt
     NB_PATTERN_FILES=3
     BUILD_OPTIONS="--phy_simulators"
-    BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
     shift
     ;;
     -v4)
@@ -111,7 +107,6 @@ case $key in
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
     BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
-    BUILD_EXTRA_OPTIONS=""
     shift
     ;;
     --variant)
@@ -123,7 +118,6 @@ case $key in
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=4
         BUILD_OPTIONS="--eNB -w USRP"
-        BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
         ;;
         basic-sim)
         VM_NAME=ci-basic-sim
@@ -131,7 +125,6 @@ case $key in
         LOG_PATTERN=basic_simulator
         NB_PATTERN_FILES=2
         BUILD_OPTIONS="--basic-simulator"
-        BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
         ;;
         phy-sim)
         VM_NAME=ci-phy-sim
@@ -139,7 +132,6 @@ case $key in
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=3
         BUILD_OPTIONS="--phy_simulators"
-        BUILD_EXTRA_OPTIONS="--cflags_processor \"-mssse3 -msse4.1 -mavx2\""
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck
@@ -147,7 +139,6 @@ case $key in
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
         BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
-        BUILD_EXTRA_OPTIONS=""
         ;;
         *)
         echo ""
@@ -187,7 +178,6 @@ echo "VM_CMD_FILE         = $VM_CMDS"
 echo "JENKINS_WKSP        = $JENKINS_WKSP"
 echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
 echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
-echo "BUILD_EXTRA_OPTIONS = $BUILD_EXTRA_OPTIONS"
 
 echo "############################################################"
 echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
@@ -235,7 +225,7 @@ else
     echo "mkdir log" >> $VM_CMDS
     echo "cp /home/ubuntu/zip-install.txt log" >> $VM_CMDS
     echo "echo \"./build_oai -I $BUILD_OPTIONS \"" >> $VM_CMDS
-    echo "./build_oai -I $BUILD_OPTIONS $BUILD_EXTRA_OPTIONS > log/install-build.txt 2>&1" >> $VM_CMDS
+    echo "./build_oai -I $BUILD_OPTIONS > log/install-build.txt 2>&1" >> $VM_CMDS
 fi
 ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
 

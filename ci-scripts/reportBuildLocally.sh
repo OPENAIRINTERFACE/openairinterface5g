@@ -407,7 +407,7 @@ echo "           </img>" >> ./build_results.html
 echo "        </a>" >> ./build_results.html
 echo "      </td>" >> ./build_results.html
 echo "      <td style=\"border-collapse: collapse; border: none; vertical-align: center;\">" >> ./build_results.html
-echo "        <b><font size = \"6\">Job Summary -- Job: eNb-CI -- Build-ID: 23</font></b>" >> ./build_results.html
+echo "        <b><font size = \"6\">Job Summary -- Job: $JOB_NAME -- Build-ID: $BUILD_ID</font></b>" >> ./build_results.html
 echo "      </td>" >> ./build_results.html
 echo "    </tr>" >> ./build_results.html
 echo "  </table>" >> ./build_results.html
