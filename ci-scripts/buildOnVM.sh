@@ -210,8 +210,8 @@ else
 fi
 echo "mkdir tmp" >> $VM_CMDS
 echo "cd tmp" >> $VM_CMDS
-echo "echo \"unzip -qq ../localZip.zip\"" >> $VM_CMDS
-echo "unzip -qq ../localZip.zip" >> $VM_CMDS
+echo "echo \"unzip -qq -DD ../localZip.zip\"" >> $VM_CMDS
+echo "unzip -qq -DD ../localZip.zip" >> $VM_CMDS
 if [ "$VM_NAME" == "ci-cppcheck" ]
 then
     echo "mkdir cmake_targets/log" >> $VM_CMDS
