@@ -106,7 +106,7 @@ rrc_ue_decode_dcch(
   const uint8_t                eNB_indexP
 );
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int decode_SL_Discovery_Message(
   const protocol_ctxt_t* const ctxt_pP,
   const uint8_t                eNB_index,
@@ -628,5 +628,11 @@ void openair_rrc_top_init_ue(
                         uint8_t cba_group_active,
                         uint8_t HO_active
 );
+pthread_mutex_t      rrc_release_freelist;
+RRC_release_list_t rrc_release_info;
+pthread_mutex_t      lock_ue_freelist;
+void remove_UE_from_freelist(module_id_t mod_id, rnti_t rnti);
+void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, boolean_t removeFlag);
+void release_UE_in_freeList(module_id_t mod_id);
 
 /** @}*/

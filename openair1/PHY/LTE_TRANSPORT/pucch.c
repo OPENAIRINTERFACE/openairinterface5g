@@ -795,25 +795,11 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       for (j=0;j<NUMBER_OF_UE_MAX;j++) {
 	eNB->pucch1_stats_cnt[j][i]=0;
 	eNB->pucch1ab_stats_cnt[j][i]=0;
-      }
-    }
-#if defined(USRP_REC_PLAY)
-    // It's probably bad to do this statically only once.
-    // Looks like the above is incomplete.
-    // Such reset needs to be done once a UE PHY structure is being used/re-used
-    // Don't know if this is ever possible in current architecture
-    for (i=0;i<10240;i++) {
-      for (j=0;j<NUMBER_OF_UE_MAX;j++) {
-	eNB->pucch1_stats[j][i]=0;
+#if defined(USRP_REC_PLAY) // not 100% sure
 	eNB->pucch1_stats_thres[j][i]=0;
+#endif	
       }
     }
-    for (i=0;i<20480;i++) {
-      for (j=0;j<NUMBER_OF_UE_MAX;j++) {
-	eNB->pucch1ab_stats[j][i]=0;
-      }
-    }
-#endif    
     first_call=0;
   }
 
@@ -1236,6 +1222,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #if defined(USRP_REC_PLAY)
     // It looks like the value is a bit messy when RF is replayed.
     // For instance i assume to skip pucch1_thres from the test below.
+    // Not 100% sure
     if (sigma2_dB<(dB_fixed(stat_max)))  {//
 #else
     if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {//

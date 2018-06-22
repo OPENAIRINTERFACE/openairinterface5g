@@ -112,7 +112,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 
-int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
+int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,module_id_t UE_id)
 {
   int temp, i, aa, max_pos=0, max_val=0;
   short Re,Im;

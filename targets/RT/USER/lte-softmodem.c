@@ -144,6 +144,8 @@ static int8_t                     threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
+char logmem_filename[1024] = {0};
+
 // This is a dummy declaration (dlsch_demodulation.c is no longer compiled for eNodeB)
 int16_t dlsch_demod_shift = 0;
 
@@ -340,10 +342,14 @@ void exit_fun(const char* s)
     if (RC.ru == NULL)
         exit(-1); // likely init not completed, prevent crash or hang, exit now...
     for (ru_id=0; ru_id<RC.nb_RU;ru_id++) {
-      if (RC.ru[ru_id] && RC.ru[ru_id]->rfdevice.trx_end_func)
+      if (RC.ru[ru_id] && RC.ru[ru_id]->rfdevice.trx_end_func) {
 	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
-      if (RC.ru[ru_id] && RC.ru[ru_id]->ifdevice.trx_end_func)
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+      }
+      if (RC.ru[ru_id] && RC.ru[ru_id]->ifdevice.trx_end_func) {
 	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+      }
     }
 
 
@@ -552,6 +558,12 @@ static void get_options(void) {
   }
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
+  }
+  if (strlen(logmem_filename) > 0) {
+    log_mem_filename = &logmem_filename[0];
+    log_mem_flag = 1;
+    printf("Enabling OPT for log save at memory %s\n",log_mem_filename);
+    logInit_log_mem();
   }
 
 #if T_TRACER
@@ -1284,6 +1296,10 @@ int main( int argc, char **argv )
   printf("stopping MODEM threads\n");
 
   // cleanup
+  for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+    stop_ru(RC.ru[ru_id]);
+  }
+
     stop_eNB(NB_eNB_INST);
     stop_RU(NB_RU);
     /* release memory used by the RU/eNB threads (incomplete), after all
@@ -1314,11 +1330,14 @@ int main( int argc, char **argv )
   // *** Handle per CC_id openair0
 
     for(ru_id=0; ru_id<NB_RU; ru_id++) {
-      if (RC.ru[ru_id]->rfdevice.trx_end_func)
-	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);  
-      if (RC.ru[ru_id]->ifdevice.trx_end_func)
-	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
-
+      if (RC.ru[ru_id]->rfdevice.trx_end_func) {
+        RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+      }
+      if (RC.ru[ru_id]->ifdevice.trx_end_func) {
+        RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+      }
     }
   if (ouput_vcd)
     VCD_SIGNAL_DUMPER_CLOSE();

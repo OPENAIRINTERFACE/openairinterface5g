@@ -63,7 +63,7 @@ extern boolean_t pdcp_data_req(
   const sdu_size_t     sdu_buffer_sizeP,
   unsigned char *const sdu_buffer_pP,
   const pdcp_transmission_mode_t modeP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     ,const uint32_t * const sourceL2Id
     ,const uint32_t * const destinationL2Id
 #endif
@@ -363,7 +363,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
 			     buffer_len,
 			     buffer,
 			     PDCP_TRANSMISSION_MODE_DATA
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
               ,NULL, NULL
 #endif
               );

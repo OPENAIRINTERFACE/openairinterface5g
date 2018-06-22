@@ -72,13 +72,11 @@
 
 #include <pthread.h>
 
-#include "targets/ARCH/COMMON/common_lib.h"
 #include "targets/COMMON/openairinterface5g_limits.h"
 
 #include "types.h"
 #include "nfapi_interface.h"
 //#include "defs.h"
-#include "openair2/COMMON/platform_types.h"
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2
@@ -159,7 +157,7 @@ typedef struct {
   PRACH_CONFIG_INFO prach_ConfigInfo;
 } PRACH_CONFIG_COMMON;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 /// PRACH-eMTC-Config from 36.331 RRC spec
 typedef struct {
@@ -192,7 +190,7 @@ typedef struct {
   /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
   uint8_t prach_Config_enabled;
   /// PRACH Configuration Information
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
 #endif  
 } PRACH_eMTC_CONFIG_COMMON;
@@ -644,7 +642,7 @@ typedef struct {
   uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// PRACH_eMTC_CONFIG
   PRACH_eMTC_CONFIG_COMMON prach_emtc_config_common;
 #endif
@@ -678,7 +676,8 @@ typedef struct {
   uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[MAX_MBSFN_AREA];
-
+  /// for fair RR scheduler
+  uint32_t ue_multiple_max;
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {

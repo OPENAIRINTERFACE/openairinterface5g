@@ -241,6 +241,7 @@ int32_t allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 int32_t dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
                          int32_t **txdataF,
                          int16_t amp,
+                         int frame,
                          uint32_t sub_frame_offset,
                          uint8_t num_pdcch_symbols,
                          LTE_eNB_DLSCH_t *dlsch0,
@@ -418,7 +419,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *d
 void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
 	      nfapi_hi_dci0_dci_pdu *pdu);
 
-void fill_ulsch(PHY_VARS_eNB *eNB,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe);
+void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe);
 
 int generate_eNB_ulsch_params_from_rar(PHY_VARS_eNB *eNB,
 				       unsigned char *rar_pdu,
@@ -577,7 +578,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,
 	      uint16_t *max_preamble_energy, 
 	      uint16_t *max_preamble_delay, 
 	      uint16_t Nf, uint8_t tdd_mapindex
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	      ,
               uint8_t br_flag
 #endif
@@ -611,11 +612,11 @@ void conv_eMTC_rballoc(uint16_t resource_block_coding,
 		       uint32_t N_RB_DL,
 		       uint32_t *rb_alloc);
 
-int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
-int8_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
+int16_t find_ulsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type);
 
-int8_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type);
+int16_t find_uci(uint16_t rnti, int frame, int subframe, PHY_VARS_eNB *eNB,find_type_t type);
 
 /**@}*/
 #endif

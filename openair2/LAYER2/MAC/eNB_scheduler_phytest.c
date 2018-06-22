@@ -213,7 +213,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   
   if (sched_subframe<subframeP) sched_frame++;
 
-  nfapi_hi_dci0_request_body_t   *hi_dci0_req = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
+  nfapi_hi_dci0_request_body_t   *hi_dci0_req = &eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body;
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
 
   //nfapi_ul_config_request_pdu_t  *ul_config_pdu = &ul_req->ul_config_pdu_list[0];;
@@ -221,7 +221,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 
 
   eNB->UL_req[CC_id].sfn_sf   = (sched_frame<<4) + sched_subframe;
-  eNB->HI_DCI0_req[CC_id].sfn_sf = (frameP<<4)+subframeP;
+  eNB->HI_DCI0_req[CC_id][subframeP].sfn_sf = (frameP<<4)+subframeP;
   
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     //rnti = UE_RNTI(module_idP,UE_id);
@@ -281,7 +281,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  // save it for a potential retransmission
       UE_template->cshift[harq_pid] = cshift;	    
 
-	  hi_dci0_pdu                                                         = &hi_dci0_req->hi_dci0_pdu_list[eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_dci+eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_hi]; 	
+	  hi_dci0_pdu                                                         = &hi_dci0_req->hi_dci0_pdu_list[eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body.number_of_dci+eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body.number_of_hi]; 	
 	  memset((void*)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
 	  hi_dci0_pdu->pdu_type                                               = NFAPI_HI_DCI0_DCI_PDU_TYPE; 
 	  hi_dci0_pdu->pdu_size                                               = 2+sizeof(nfapi_hi_dci0_dci_pdu);
@@ -300,7 +300,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index               = UE_template->DAI_ul[sched_subframe];
 
 	    
-	  eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_dci++;
+	  eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body.number_of_dci++;
 	    
 	    
 	  // Add UL_config PDUs
@@ -325,7 +325,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 						 0, // n_srs
 						 get_TBS_UL(mcs,nb_rb)
 						 );
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	  if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
 	    fill_nfapi_ulsch_config_request_emtc(&ul_req->ul_config_pdu_list[ul_req->number_of_pdus],
 						   UE_template->rach_resource_type>2 ? 2 : 1,

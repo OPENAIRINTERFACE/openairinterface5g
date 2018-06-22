@@ -4,6 +4,7 @@ To build the basic simulator:
     cd [openair top directory]
     . oaienv
     cd cmake_targets
+    ./build_oai -I -w USRP
     ./build_oai --basic-simulator
     cd ../common/utils/T/tracer
     make

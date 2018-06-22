@@ -58,23 +58,27 @@ void mac_top_init_eNB(void)
 	  RC.nb_macrlc_inst);
 
     if (RC.nb_macrlc_inst > 0) {
-	RC.mac =
-	    (eNB_MAC_INST **) malloc16(RC.nb_macrlc_inst *
-				       sizeof(eNB_MAC_INST *));
+      if (RC.mac == NULL){
+		RC.mac =
+			(eNB_MAC_INST **) malloc16(RC.nb_macrlc_inst *
+						   sizeof(eNB_MAC_INST *));
+        }
 	AssertFatal(RC.mac != NULL,
 		    "can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",
 		    RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *),
 		    RC.nb_macrlc_inst, sizeof(eNB_MAC_INST));
 	for (i = 0; i < RC.nb_macrlc_inst; i++) {
-	    RC.mac[i] = (eNB_MAC_INST *) malloc16(sizeof(eNB_MAC_INST));
-	    AssertFatal(RC.mac != NULL,
-			"can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",
-			RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *),
-			RC.nb_macrlc_inst, sizeof(eNB_MAC_INST));
-	    LOG_D(MAC,
-		  "[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",
-		  sizeof(eNB_MAC_INST), RC.nb_macrlc_inst, RC.mac);
-	    bzero(RC.mac[i], sizeof(eNB_MAC_INST));
+            if (RC.mac[i] == NULL) {
+                RC.mac[i] = (eNB_MAC_INST *) malloc16(sizeof(eNB_MAC_INST));
+                AssertFatal(RC.mac[i] != NULL,
+                            "can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",
+                            RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *),
+                            RC.nb_macrlc_inst, sizeof(eNB_MAC_INST));
+                LOG_D(MAC,
+                      "[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",
+                      sizeof(eNB_MAC_INST), RC.nb_macrlc_inst, RC.mac);
+                bzero(RC.mac[i], sizeof(eNB_MAC_INST));
+            }
 	    RC.mac[i]->Mod_id = i;
 	    for (j = 0; j < MAX_NUM_CCs; j++) {
 		RC.mac[i]->DL_req[j].dl_config_request_body.
@@ -85,9 +89,10 @@ void mac_top_init_eNB(void)
 		    RC.mac[i]->UL_req_tmp[j][k].
 			ul_config_request_body.ul_config_pdu_list =
 			RC.mac[i]->ul_config_pdu_list_tmp[j][k];
-		RC.mac[i]->HI_DCI0_req[j].
-		    hi_dci0_request_body.hi_dci0_pdu_list =
-		    RC.mac[i]->hi_dci0_pdu_list[j];
+		for(int sf=0;sf<10;sf++){
+		    RC.mac[i]->HI_DCI0_req[j][sf].hi_dci0_request_body.hi_dci0_pdu_list =RC.mac[i]->hi_dci0_pdu_list[j][sf];
+		}
+
 		RC.mac[i]->TX_req[j].tx_request_body.tx_pdu_list =
 		    RC.mac[i]->tx_request_pdu[j];
 		RC.mac[i]->ul_handle = 0;
