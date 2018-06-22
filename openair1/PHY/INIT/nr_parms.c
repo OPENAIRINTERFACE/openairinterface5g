@@ -26,12 +26,12 @@
 uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 16, 32};
 
-int nr_init_frame_parms(nfapi_config_request_t* config,
+int nr_init_frame_parms(nfapi_nr_config_request_t* config,
                         NR_DL_FRAME_PARMS *frame_parms)
 {
 
-  int N_RB = config->rf_config.dl_channel_bandwidth.value;
-  int Ncp = config->subframe_config.dl_cyclic_prefix_type.value;
+  int N_RB = config->rf_config.dl_carrierBandwidth.value;
+  int Ncp = config->subframe_config.dl_prefix_type.value;
   int mu = config->subframe_config.numerology_index_mu.value;
 
 #if DISABLE_LOG_X

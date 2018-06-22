@@ -58,6 +58,7 @@
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 extern uint16_t sf_ahead;
 
@@ -77,23 +78,23 @@ void RCconfig_NR_flexran()
    * the only reason for all these variables is, that they are "hard-encoded"
    * into the CCPARAMS_DESC macro and we need it for the Nid_cell variable ...
    */
-  char      *frame_type, DL_prefix_type, UL_prefix_type, SIB1_frequencyOffsetSSB,
-            DL_SCS_SubcarrierSpacing, DL_BWP_SubcarrierSpacing, DL_BWP_prefix_type,
-            UL_frequencyShift7p5khz, UL_SCS_SubcarrierSpacing, UL_BWP_SubcarrierSpacing,
-            UL_BWP_prefix_type, ServingCellConfigCommon_ssb_PositionsInBurst_PR,
-            NIA_SubcarrierSpacing, referenceSubcarrierSpacing, dl_UL_TransmissionPeriodicity,
-            rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,
-            rach_groupBconfigured, rach_messagePowerOffsetGroupB, 
-            prach_RootSequenceIndex_choice, prach_msg1_SubcarrierSpacing,
-            restrictedSetConfig, msg3_transformPrecoding, prach_msg1_FDM,
-            powerRampingStep, groupHoppingEnabledTransformPrecoding,
-            PUSCH_TimeDomainResourceAllocation_mappingType, pucch_GroupHopping,
-            PDSCH_TimeDomainResourceAllocation_mappingType, RateMatchPattern_patternType,
-            symbolsInResourceBlock, RateMatchPattern_subcarrierSpacing, RateMatchPattern_mode,
-            PDCCH_cce_REG_MappingType, PDCCH_precoderGranularity,
-            tci_PresentInDCI, SearchSpace_monitoringSlotPeriodicityAndOffset_choice,
-            SearchSpace_searchSpaceType, ue_Specific__dci_Formats,
-            RateMatchPatternLTE_CRS_subframeAllocation_choice;
+  char      *frame_type, *DL_prefix_type, *UL_prefix_type, *SIB1_frequencyOffsetSSB,
+            *DL_SCS_SubcarrierSpacing, *DL_BWP_SubcarrierSpacing, *DL_BWP_prefix_type,
+            *UL_frequencyShift7p5khz, *UL_SCS_SubcarrierSpacing, *UL_BWP_SubcarrierSpacing,
+            *UL_BWP_prefix_type, *ServingCellConfigCommon_ssb_PositionsInBurst_PR,
+            *NIA_SubcarrierSpacing, *referenceSubcarrierSpacing, *dl_UL_TransmissionPeriodicity,
+            *rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,
+            *rach_groupBconfigured, *rach_messagePowerOffsetGroupB, 
+            *prach_RootSequenceIndex_choice, *prach_msg1_SubcarrierSpacing,
+            *restrictedSetConfig, *msg3_transformPrecoding, *prach_msg1_FDM,
+            *powerRampingStep, *groupHoppingEnabledTransformPrecoding,
+            *PUSCH_TimeDomainResourceAllocation_mappingType, *pucch_GroupHopping,
+            *PDSCH_TimeDomainResourceAllocation_mappingType, *RateMatchPattern_patternType,
+            *symbolsInResourceBlock, *RateMatchPattern_subcarrierSpacing, *RateMatchPattern_mode,
+            *PDCCH_cce_REG_MappingType, *PDCCH_precoderGranularity,
+            *tci_PresentInDCI, *SearchSpace_monitoringSlotPeriodicityAndOffset_choice,
+            *SearchSpace_searchSpaceType, *ue_Specific__dci_Formats,
+            *RateMatchPatternLTE_CRS_subframeAllocation_choice;
 
   long long int  downlink_frequency;
 
@@ -840,7 +841,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(SIB1_frequencyOffsetSSB , "khz5") == 0) {
               NRRRC_CONFIGURATION_REQ (msg_p).SIB1_frequencyOffsetSSB[j] = 5;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SIB1_frequencyOffsetSSB !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for SIB1_frequencyOffsetSSB !\n",
                            RC.config_file_name, i, SIB1_frequencyOffsetSSB);
             }
 
@@ -1646,7 +1647,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               NRRRC_CONFIGURATION_REQ (msg_p).prach_RootSequenceIndex_choice[j] = NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139;
               NRRRC_CONFIGURATION_REQ (msg_p).prach_RootSequenceIndex_l139[j] = prach_RootSequenceIndex_l139;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for prach_RootSequenceIndex_choice !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for prach_RootSequenceIndex_choice !\n",
                            RC.config_file_name, i, prach_RootSequenceIndex_choice);
             }
 
@@ -1672,7 +1673,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(restrictedSetConfig , "restrictedSetTypeB") == 0) {
               NRRRC_CONFIGURATION_REQ (msg_p).restrictedSetConfig[j] = NR_RACH_ConfigCommon__restrictedSetConfig_restrictedSetTypeB;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for restrictedSetConfig !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for restrictedSetConfig !\n",
                            RC.config_file_name, i, restrictedSetConfig);
             }
 
@@ -1696,7 +1697,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(prach_msg1_FDM , "eight") == 0) {
               NRRRC_CONFIGURATION_REQ (msg_p).prach_msg1_FDM[j] = NR_RACH_ConfigGeneric__msg1_FDM_eight;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for prach_msg1_FDM !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for prach_msg1_FDM !\n",
                            RC.config_file_name, i, prach_msg1_FDM);
             }            
             
@@ -1767,7 +1768,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(powerRampingStep , "dB6") == 0) {
               NRRRC_CONFIGURATION_REQ (msg_p).powerRampingStep[j] = NR_RACH_ConfigGeneric__powerRampingStep_dB6;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for powerRampingStep !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for powerRampingStep !\n",
                            RC.config_file_name, i, powerRampingStep);
             }
 
@@ -1831,7 +1832,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(PUSCH_TimeDomainResourceAllocation_mappingType , "typeB") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).PUSCH_TimeDomainResourceAllocation_mappingType[j] =  NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PUSCH_TimeDomainResourceAllocation_mappingType !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for PUSCH_TimeDomainResourceAllocation_mappingType !\n",
                            RC.config_file_name, i, PUSCH_TimeDomainResourceAllocation_mappingType);
             }
 
@@ -1843,7 +1844,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(pucch_GroupHopping , "disable") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).pucch_GroupHopping[j] =  NR_PUCCH_ConfigCommon__pucch_GroupHopping_disable;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for pucch_GroupHopping !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for pucch_GroupHopping !\n",
                            RC.config_file_name, i, pucch_GroupHopping);
             }
 
@@ -1865,7 +1866,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(PDSCH_TimeDomainResourceAllocation_mappingType , "typeB") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).PDSCH_TimeDomainResourceAllocation_mappingType[j] =  NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDSCH_TimeDomainResourceAllocation_mappingType !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for PDSCH_TimeDomainResourceAllocation_mappingType !\n",
                            RC.config_file_name, i, PDSCH_TimeDomainResourceAllocation_mappingType);
             }
 
@@ -1883,7 +1884,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(RateMatchPattern_patternType , "controlResourceSet") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_patternType[j] =  NR_RateMatchPattern__patternType_PR_controlResourceSet;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPattern_patternType !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for RateMatchPattern_patternType !\n",
                            RC.config_file_name, i, RateMatchPattern_patternType);
             }
 
@@ -1894,7 +1895,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(symbolsInResourceBlock , "twoSlots") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).symbolsInResourceBlock[j] =  NR_RateMatchPattern__patternType__bitmaps__symbolsInResourceBlock_PR_twoSlots;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for symbolsInResourceBlock !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for symbolsInResourceBlock !\n",
                            RC.config_file_name, i, symbolsInResourceBlock);
             }
 
@@ -1952,7 +1953,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(RateMatchPattern_mode , "semiStatic") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPattern_mode[j] =  NR_RateMatchPattern__mode_semiStatic;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPattern_mode !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for RateMatchPattern_mode !\n",
                            RC.config_file_name, i, RateMatchPattern_mode);
             }
 
@@ -2007,7 +2008,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(PDCCH_cce_REG_MappingType , "nonInterleaved") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_cce_REG_MappingType[j] =  NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDCCH_cce_REG_MappingType !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for PDCCH_cce_REG_MappingType !\n",
                            RC.config_file_name, i, PDCCH_cce_REG_MappingType);
             }
 
@@ -2054,7 +2055,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(PDCCH_precoderGranularity , "allContiguousRBs") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_precoderGranularity[j] =  NR_ControlResourceSet__precoderGranularity_allContiguousRBs;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDCCH_precoderGranularity !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for PDCCH_precoderGranularity !\n",
                            RC.config_file_name, i, PDCCH_precoderGranularity);
             }            
 
@@ -2153,7 +2154,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_NOTHING;
             
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_choice !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for SearchSpace_monitoringSlotPeriodicityAndOffset_choice !\n",
                            RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_choice);
             }// End if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl1")
 
@@ -2320,7 +2321,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(SearchSpace_searchSpaceType , "ue_Specific") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_searchSpaceType[j] =  NR_SearchSpace__searchSpaceType_PR_ue_Specific;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_searchSpaceType !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for SearchSpace_searchSpaceType !\n",
                            RC.config_file_name, i, SearchSpace_searchSpaceType);
             }
 
@@ -2438,7 +2439,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(ue_Specific__dci_Formats , "formats0-1-And-1-1") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).ue_Specific__dci_Formats[j] =  NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ue_Specific__dci_Formats !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for ue_Specific__dci_Formats !\n",
                            RC.config_file_name, i, ue_Specific__dci_Formats);
             }
 
@@ -2553,7 +2554,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else if (strcmp(RateMatchPatternLTE_CRS_subframeAllocation_choice , "fourFrames") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).RateMatchPatternLTE_CRS_subframeAllocation_choice[j] =  NR_EUTRA_MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames;
             }else {
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for RateMatchPatternLTE_CRS_subframeAllocation_choice !\n",
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for RateMatchPatternLTE_CRS_subframeAllocation_choice !\n",
                            RC.config_file_name, i, RateMatchPatternLTE_CRS_subframeAllocation_choice);
             }
 

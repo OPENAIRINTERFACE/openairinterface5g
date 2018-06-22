@@ -926,9 +926,9 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
 #endif
 
       LOG_I(PHY,"Registering with MAC interface module\n");
-      AssertFatal((gNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
+      AssertFatal((gNB->if_inst         = NR_IF_Module_init(inst))!=NULL,"Cannot register interface");
       gNB->if_inst->schedule_response   = schedule_response;
-      gNB->if_inst->PHY_config_req      = phy_config_request;
+      gNB->if_inst->PHY_config_req      = nr_phy_config_request;
       nr_phy_config_request(gNB);
       memset((void*)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
       memset((void*)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));

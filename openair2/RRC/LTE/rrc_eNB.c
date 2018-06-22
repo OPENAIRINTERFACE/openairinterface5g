@@ -94,6 +94,8 @@
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+
 //#define XER_PRINT
 
 extern RAN_CONTEXT_t RC;

@@ -27,7 +27,7 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
   unsigned int n, x1, x2;
   unsigned char Nid, i_ssb, i_ssb2;
   unsigned char Lmax, l, n_hf, N_hf;
-  nfapi_config_request_t *cfg = &gNB->gNB_config;
+  nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
 
   Nid = cfg->sch_config.physical_cell_id.value;

@@ -32,7 +32,6 @@
 #include "PHY_INTERFACE/phy_interface.h"
 #include "SCHED/sched_eNB.h"
 
-lte_subframe_t nr_subframe_select (nfapi_config_request_t *cfg, unsigned char subframe);
 int nr_generate_pss(  int16_t *d_pss,
                       int32_t **txdataF,
                       int16_t amp,

@@ -46,6 +46,8 @@
 #   include "gtpv1u_eNB_task.h"
 # endif
 
+# include "PHY/INIT/phy_init.h" 
+
 extern unsigned char NB_gNB_INST;
 #endif
 

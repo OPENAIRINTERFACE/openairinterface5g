@@ -117,7 +117,7 @@ typedef struct PHY_VARS_gNB_s {
   nfapi_nr_config_request_t  gNB_config;
   NR_DL_FRAME_PARMS   frame_parms;
   PHY_MEASUREMENTS_gNB measurements;
-  IF_Module_t          *if_inst;
+  NR_IF_Module_t          *if_inst;
   UL_IND_t             UL_INFO;
   pthread_mutex_t      UL_INFO_mutex;
   /// NFAPI RX ULSCH information

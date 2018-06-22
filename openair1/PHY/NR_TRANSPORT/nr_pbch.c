@@ -46,7 +46,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           int16_t amp,
                           uint8_t ssb_start_symbol,
                           uint8_t nushift,
-                          nfapi_config_request_t* config,
+                          nfapi_nr_config_request_t* config,
                           NR_DL_FRAME_PARMS *frame_parms)
 {
   int k,l;
@@ -159,7 +159,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
                      uint8_t n_hf,
                      int sfn,
                      int frame_mod8,
-                     nfapi_config_request_t* config,
+                     nfapi_nr_config_request_t* config,
                      NR_DL_FRAME_PARMS *frame_parms)
 {
 

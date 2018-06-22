@@ -56,7 +56,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
-
+#include "gnb_config.h"
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
 unsigned short config_frames[4] = {2,9,11,13};

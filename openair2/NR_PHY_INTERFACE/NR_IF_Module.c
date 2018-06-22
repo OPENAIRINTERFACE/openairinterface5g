@@ -18,6 +18,214 @@ extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern uint8_t nfapi_mode;
 extern uint16_t sf_ahead;
 
+void handle_nr_rach(NR_UL_IND_t *UL_info) {
+  int i;
+
+  if (UL_info->rach_ind.rach_indication_body.number_of_preambles>0) {
+
+    AssertFatal(UL_info->rach_ind.rach_indication_body.number_of_preambles==1,"More than 1 preamble not supported\n");
+    UL_info->rach_ind.rach_indication_body.number_of_preambles=0;
+    LOG_D(MAC,"UL_info[Frame %d, Subframe %d] Calling initiate_ra_proc RACH:SFN/SF:%d\n",UL_info->frame,UL_info->subframe, NFAPI_SFNSF2DEC(UL_info->rach_ind.sfn_sf));
+    initiate_ra_proc(UL_info->module_id,
+         UL_info->CC_id,
+         NFAPI_SFNSF2SFN(UL_info->rach_ind.sfn_sf),
+         NFAPI_SFNSF2SF(UL_info->rach_ind.sfn_sf),
+         UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
+         UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
+         UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti
+#ifdef Rel14
+         ,0
+#endif
+         );
+  }
+
+#ifdef Rel14
+  if (UL_info->rach_ind_br.rach_indication_body.number_of_preambles>0) {
+
+    AssertFatal(UL_info->rach_ind_br.rach_indication_body.number_of_preambles<5,"More than 4 preambles not supported\n");
+    for (i=0;i<UL_info->rach_ind_br.rach_indication_body.number_of_preambles;i++) {
+      AssertFatal(UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel13.rach_resource_type>0,
+      "Got regular PRACH preamble, not BL/CE\n");
+      LOG_D(MAC,"Frame %d, Subframe %d Calling initiate_ra_proc (CE_level %d)\n",UL_info->frame,UL_info->subframe,
+      UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel13.rach_resource_type-1);
+      initiate_ra_proc(UL_info->module_id,
+           UL_info->CC_id,
+           UL_info->frame,
+           UL_info->subframe,
+           UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel8.preamble,
+           UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel8.timing_advance,
+           UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel8.rnti,
+           UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel13.rach_resource_type);
+    }
+    UL_info->rach_ind_br.rach_indication_body.number_of_preambles=0;
+  }
+#endif
+}
+
+void handle_nr_sr(NR_UL_IND_t *UL_info) {
+
+  int i;
+
+  if (nfapi_mode == 1)  // PNF
+  {
+    if (UL_info->sr_ind.sr_indication_body.number_of_srs>0)
+    {
+      oai_nfapi_sr_indication(&UL_info->sr_ind);
+    }
+  }
+  else
+  {
+    for (i=0;i<UL_info->sr_ind.sr_indication_body.number_of_srs;i++)
+      SR_indication(UL_info->module_id,
+          UL_info->CC_id,
+          UL_info->frame,
+          UL_info->subframe,
+          UL_info->sr_ind.sr_indication_body.sr_pdu_list[i].rx_ue_information.rnti,
+          UL_info->sr_ind.sr_indication_body.sr_pdu_list[i].ul_cqi_information.ul_cqi);
+  }
+
+  UL_info->sr_ind.sr_indication_body.number_of_srs=0;
+}
+
+void handle_nr_cqi(NR_UL_IND_t *UL_info) {
+
+  int i;
+
+  if (nfapi_mode == 1)
+  {
+    if (UL_info->cqi_ind.number_of_cqis>0)
+    {
+      LOG_D(PHY,"UL_info->cqi_ind.number_of_cqis:%d\n", UL_info->cqi_ind.number_of_cqis);
+      nfapi_cqi_indication_t ind;
+
+      ind.header.message_id = NFAPI_RX_CQI_INDICATION;
+      ind.sfn_sf = UL_info->frame<<4 | UL_info->subframe;
+      ind.cqi_indication_body = UL_info->cqi_ind;
+
+      oai_nfapi_cqi_indication(&ind);
+
+      UL_info->cqi_ind.number_of_cqis=0;
+    }
+  }
+  else
+  {
+    for (i=0;i<UL_info->cqi_ind.number_of_cqis;i++) 
+      cqi_indication(UL_info->module_id,
+          UL_info->CC_id,
+          UL_info->frame,
+          UL_info->subframe,
+          UL_info->cqi_ind.cqi_pdu_list[i].rx_ue_information.rnti,
+          &UL_info->cqi_ind.cqi_pdu_list[i].cqi_indication_rel9,
+          UL_info->cqi_ind.cqi_raw_pdu_list[i].pdu,
+          &UL_info->cqi_ind.cqi_pdu_list[i].ul_cqi_information);
+
+    UL_info->cqi_ind.number_of_cqis=0;
+  }
+}
+
+void handle_nr_harq(NR_UL_IND_t *UL_info) {
+
+  int i;
+
+  if (nfapi_mode == 1 && UL_info->harq_ind.harq_indication_body.number_of_harqs>0) // PNF
+  {
+    //LOG_D(PHY, "UL_info->harq_ind.harq_indication_body.number_of_harqs:%d Send to VNF\n", UL_info->harq_ind.harq_indication_body.number_of_harqs);
+
+    int retval = oai_nfapi_harq_indication(&UL_info->harq_ind);
+
+    if (retval!=0)
+    {
+      LOG_E(PHY, "Failed to encode NFAPI HARQ_IND retval:%d\n", retval);
+    }
+
+    UL_info->harq_ind.harq_indication_body.number_of_harqs = 0;
+  }
+  else
+  {
+    for (i=0;i<UL_info->harq_ind.harq_indication_body.number_of_harqs;i++)
+      harq_indication(UL_info->module_id,
+          UL_info->CC_id,
+          NFAPI_SFNSF2SFN(UL_info->harq_ind.sfn_sf),
+          NFAPI_SFNSF2SF(UL_info->harq_ind.sfn_sf),
+          &UL_info->harq_ind.harq_indication_body.harq_pdu_list[i]);
+
+    UL_info->harq_ind.harq_indication_body.number_of_harqs=0;
+  }
+}
+
+void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
+
+  int i,j;
+
+  if(nfapi_mode == 1)
+  {
+    if (UL_info->crc_ind.crc_indication_body.number_of_crcs>0)
+    {
+      //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
+
+      oai_nfapi_crc_indication(&UL_info->crc_ind);
+
+      UL_info->crc_ind.crc_indication_body.number_of_crcs = 0;
+    }
+
+    if (UL_info->rx_ind.rx_indication_body.number_of_pdus>0)
+    {
+      //LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/SF:%d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf));
+      oai_nfapi_rx_ind(&UL_info->rx_ind);
+      UL_info->rx_ind.rx_indication_body.number_of_pdus = 0;
+    }
+  }
+  else
+  {
+    if (UL_info->rx_ind.rx_indication_body.number_of_pdus>0 && UL_info->crc_ind.crc_indication_body.number_of_crcs>0) {
+      for (i=0;i<UL_info->rx_ind.rx_indication_body.number_of_pdus;i++) {
+        for (j=0;j<UL_info->crc_ind.crc_indication_body.number_of_crcs;j++) {
+          // find crc_indication j corresponding rx_indication i
+          LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].rx_ue_information.rnti:%04x UL_info->rx_ind.rx_indication_body.rx_pdu_list[%d].rx_ue_information.rnti:%04x\n", j, UL_info->crc_ind.crc_indication_body.crc_pdu_list[j].rx_ue_information.rnti, i, UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_ue_information.rnti);
+          if (UL_info->crc_ind.crc_indication_body.crc_pdu_list[j].rx_ue_information.rnti ==
+              UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_ue_information.rnti) {
+            LOG_D(PHY, "UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].crc_indication_rel8.crc_flag:%d\n", j, UL_info->crc_ind.crc_indication_body.crc_pdu_list[j].crc_indication_rel8.crc_flag);
+            if (UL_info->crc_ind.crc_indication_body.crc_pdu_list[j].crc_indication_rel8.crc_flag == 1) { // CRC error indication
+              LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->subframe);
+              rx_sdu(UL_info->module_id,
+                  UL_info->CC_id,
+                  NFAPI_SFNSF2SFN(UL_info->rx_ind.sfn_sf), //UL_info->frame,
+                  NFAPI_SFNSF2SF(UL_info->rx_ind.sfn_sf), //UL_info->subframe,
+                  UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_ue_information.rnti,
+                  (uint8_t *)NULL,
+                  UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.length,
+                  UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.timing_advance,
+                  UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
+            }
+            else {
+              LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC ok) \n",UL_info->frame,UL_info->subframe);
+              rx_sdu(UL_info->module_id,
+                  UL_info->CC_id,
+                  NFAPI_SFNSF2SFN(UL_info->rx_ind.sfn_sf), //UL_info->frame,
+                  NFAPI_SFNSF2SF(UL_info->rx_ind.sfn_sf), //UL_info->subframe,
+                  UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_ue_information.rnti,
+                  UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].data,
+                  UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.length,
+                  UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.timing_advance,
+                  UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
+            }
+            break;
+          } //if (UL_info->crc_ind.crc_pdu_list[j].rx_ue_information.rnti ==
+          //    UL_info->rx_ind.rx_pdu_list[i].rx_ue_information.rnti)
+        } //    for (j=0;j<UL_info->crc_ind.crc_indication_body.number_of_crcs;j++)
+      } //   for (i=0;i<UL_info->rx_ind.number_of_pdus;i++)
+      UL_info->crc_ind.crc_indication_body.number_of_crcs=0;
+      UL_info->rx_ind.rx_indication_body.number_of_pdus = 0;
+    } // UL_info->rx_ind.rx_indication_body.number_of_pdus>0 && UL_info->subframe && UL_info->crc_ind.crc_indication_body.number_of_crcs>0
+    else if (UL_info->rx_ind.rx_indication_body.number_of_pdus!=0 || UL_info->crc_ind.crc_indication_body.number_of_crcs!=0) {
+      LOG_E(PHY,"hoping not to have mis-match between CRC ind and RX ind - hopefully the missing message is coming shortly rx_ind:%d(SFN/SF:%05d) crc_ind:%d(SFN/SF:%05d) UL_info(SFN/SF):%04d%d\n",
+          UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf),
+          UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf),
+          UL_info->frame, UL_info->subframe);
+    }
+  }
+}
+
 void NR_UL_indication(NR_UL_IND_t *UL_info)
 {
 
@@ -56,18 +264,18 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
   clear_nfapi_information(RC.mac[module_id],CC_id,
         UL_info->frame,UL_info->subframe);
 
-  handle_rach(UL_info);
+  handle_nr_rach(UL_info);
 
-  handle_sr(UL_info);
+  handle_nr_sr(UL_info);
 
-  handle_cqi(UL_info);
+  handle_nr_cqi(UL_info);
 
-  handle_harq(UL_info);
+  handle_nr_harq(UL_info);
 
   // clear HI prior to handling ULSCH
   mac->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_hi                     = 0;
   
-  handle_ulsch(UL_info);
+  handle_nr_ulsch(UL_info);
 
   if (nfapi_mode != 1)
   {

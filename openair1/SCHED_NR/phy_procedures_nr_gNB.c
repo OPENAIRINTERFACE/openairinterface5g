@@ -75,7 +75,7 @@ int return_ssb_type(nfapi_config_request_t *cfg)
 }*/
 
 // First SSB starting symbol candidate is used and type B is chosen for 30kHz SCS
-int nr_get_ssb_start_symbol(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp)
+int nr_get_ssb_start_symbol(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp)
 {
   int mu = cfg->subframe_config.numerology_index_mu.value;
   int symbol = 0;
@@ -118,7 +118,7 @@ void nr_set_ssb_first_subcarrier(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
 
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
-  nfapi_config_request_t *cfg = &gNB->gNB_config;
+  nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
   int ss_subframe = (cfg->sch_config.half_frame_index.value)? 5 : 0;
@@ -161,7 +161,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   int subframe=proc->subframe_tx;
 
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
-  nfapi_config_request_t *cfg = &gNB->gNB_config;
+  nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
 
   int offset = gNB->CC_id;
 
