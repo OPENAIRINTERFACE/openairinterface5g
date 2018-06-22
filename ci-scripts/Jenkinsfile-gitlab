@@ -52,28 +52,28 @@ pipeline {
                 stage ("Analysis with cppcheck") {
                     steps {
                         gitlabCommitStatus(name: "Analysis with cppcheck") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant cppcheck"
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep"
                         }
                     }
                 }
                 stage ("Build eNb-USRP") {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-USRP") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-usrp"
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep"
                         }
                     }
                 }
                 stage ("Build basic simulator") {
                     steps {
                         gitlabCommitStatus(name: "Build basic-sim") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant basic-sim"
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep"
                         }
                     }
                 }
                 stage ("Build physical simulators") {
                     steps {
                         gitlabCommitStatus(name: "Build phy-sim") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant phy-sim"
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep"
                         }
                     }
                 }
@@ -99,11 +99,18 @@ pipeline {
                 }
             }
         }
+
+        stage ("Destroy all Virtual Machines") {
+            steps {
+                sh "./ci-scripts/destroyAllRunningVM.sh --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
     }
     post {
         always {
             script {
-                echo "End of script"
+                // Stage destroy may not be run if error in previous stage
+                sh "./ci-scripts/destroyAllRunningVM.sh --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
             }
         }
         success {

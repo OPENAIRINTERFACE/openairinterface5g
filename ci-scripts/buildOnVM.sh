@@ -15,6 +15,12 @@ function usage {
     echo ""
     echo "Options:"
     echo "--------"
+    echo "    --job-name #### OR -jn ####"
+    echo "    Specify the name of the Jenkins job."
+    echo ""
+    echo "    --build-id #### OR -id ####"
+    echo "    Specify the build ID of the Jenkins job."
+    echo ""
     echo "    --workspace #### OR -ws ####"
     echo "    Specify the workspace."
     echo ""
@@ -43,7 +49,7 @@ function variant_usage {
     echo ""
 }
 
-if [ $# -lt 1 ] || [ $# -gt 5 ]
+if [ $# -lt 1 ] || [ $# -gt 9 ]
 then
     echo "Syntax Error: not the correct number of arguments"
     echo ""
@@ -51,6 +57,9 @@ then
     exit 1
 fi
 
+VM_TEMPLATE=ci-
+JOB_NAME=XX
+BUILD_ID=XX
 VM_NAME=ci-enb-usrp
 ARCHIVES_LOC=enb_usrp
 LOG_PATTERN=.Rel14.txt
@@ -67,6 +76,16 @@ case $key in
     shift
     usage
     exit 0
+    ;;
+    -jn|--job-name)
+    JOB_NAME="$2"
+    shift
+    shift
+    ;;
+    -id|--build-id)
+    BUILD_ID="$2"
+    shift
+    shift
     ;;
     -ws|--workspace)
     JENKINS_WKSP="$2"
@@ -170,6 +189,14 @@ then
     exit 1
 fi
 
+if [ "$JOB_NAME" == "XX" ] || [ "$BUILD_ID" == "XX" ]
+then
+    VM_TEMPLATE=ci-
+else
+    VM_TEMPLATE=${JOB_NAME}-b${BUILD_ID}-
+fi
+
+VM_NAME=`echo $VM_NAME | sed -e "s#ci-#$VM_TEMPLATE#"`
 VM_CMDS=${VM_NAME}_cmds.txt
 ARCHIVES_LOC=${JENKINS_WKSP}/archives/${ARCHIVES_LOC}
 
