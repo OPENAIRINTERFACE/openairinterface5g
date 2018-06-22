@@ -95,6 +95,8 @@ int pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 
   pbch_decoded = 0;
 
+  printf("pbch_detection nid_cell %d\n",frame_parms->Nid_cell);
+  
   //for (frame_mod4=0; frame_mod4<4; frame_mod4++) {
     pbch_tx_ant = nr_rx_pbch(ue,
 						  &ue->proc.proc_rxtx[0],
@@ -265,6 +267,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     nr_gold_pbch(ue);
     ret = pbch_detection(ue,mode);
+    ret = -1;
     //   write_output("rxdata2.m","rxd2",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
