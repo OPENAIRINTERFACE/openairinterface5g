@@ -21,7 +21,7 @@
 
 /*! \file PHY/defs_nr_UE.h
  \brief Top-level defines and structure definitions for nr ue
- \author Guy De Souza, H. WANG
+ \author Guy De Souza, H. WANG, A. Mico Pereperez
  \date 2018
  \version 0.1
  \company Eurecom
@@ -140,7 +140,9 @@
 
 #endif
 
+#include "PHY/NR_UE_TRANSPORT/dci_nr.h"
 //#include "PHY/LTE_TRANSPORT/defs.h"
+//#include "PHY/NR_UE_TRANSPORT/defs_nr.h"
 #include <pthread.h>
 
 #include "targets/ARCH/COMMON/common_lib.h"
@@ -569,6 +571,207 @@ typedef struct {
   //MIMO_mode_t mimo_mode;
 } NR_UE_PDSCH_FLP;
 
+#define NR_PDCCH_DEFS_NR_UE
+#define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
+#define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearchSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
+#ifdef NR_PDCCH_DEFS_NR_UE
+
+#define NBR_NR_FORMATS         8
+#define NBR_NR_DCI_FIELDS     48
+// The following parameters define 'position' of each DCI field described in TS 38.212
+#define CARRIER_IND                      0
+#define SUL_IND_0_1                      1
+#define IDENTIFIER_DCI_FORMATS           2
+#define SLOT_FORMAT_IND                  3
+#define PRE_EMPTION_IND                  4
+#define TPC_CMD_NUMBER                   5
+#define BLOCK_NUMBER                     6
+#define BANDWIDTH_PART_IND               7
+#define FREQ_DOM_RESOURCE_ASSIGNMENT_UL  8
+#define FREQ_DOM_RESOURCE_ASSIGNMENT_DL  9
+#define TIME_DOM_RESOURCE_ASSIGNMENT    10
+#define VRB_TO_PRB_MAPPING              11
+#define PRB_BUNDLING_SIZE_IND           12
+#define RATE_MATCHING_IND               13
+#define ZP_CSI_RS_TRIGGER               14
+#define FREQ_HOPPING_FLAG               15
+#define TB1_MCS                         16
+#define TB1_NDI                         17
+#define TB1_RV                          18
+#define TB2_MCS                         19
+#define TB2_NDI                         20
+#define TB2_RV                          21
+#define MCS                             22
+#define NDI                             23
+#define RV                              24
+#define HARQ_PROCESS_NUMBER             25
+#define DAI_                            26
+#define FIRST_DAI                       27
+#define SECOND_DAI                      28
+#define TPC_PUSCH                       29
+#define TPC_PUCCH                       30
+#define PUCCH_RESOURCE_IND              31
+#define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 32
+#define SHORT_MESSAGE_IND               33
+#define SRS_RESOURCE_IND                34
+#define PRECOD_NBR_LAYERS               35
+#define ANTENNA_PORTS                   36
+#define TCI                             37
+#define SRS_REQUEST                     38
+#define TPC_CMD_NUMBER_FORMAT2_3        39
+#define CSI_REQUEST                     40
+#define CBGTI                           41
+#define CBGFI                           42
+#define PTRS_DMRS                       43
+#define BETA_OFFSET_IND                 44
+#define DMRS_SEQ_INI                    45
+#define SUL_IND_0_0                     46
+#define PADDING                         47
+
+typedef enum {bundle_n2=2,bundle_n3=3,bundle_n6=6} NR_UE_CORESET_REG_bundlesize_t;
+
+typedef enum {interleave_n2=2,interleave_n3=3,interleave_n6=6} NR_UE_CORESET_interleaversize_t;
+
+typedef struct {
+  //Corresponds to L1 parameter 'CORESET-REG-bundle-size' (see 38.211, section FFS_Section)
+  NR_UE_CORESET_REG_bundlesize_t reg_bundlesize;
+  //Corresponds to L1 parameter 'CORESET-interleaver-size' (see 38.211, 38.213, section FFS_Section)
+  NR_UE_CORESET_interleaversize_t interleaversize;
+  //Corresponds to L1 parameter 'CORESET-shift-index' (see 38.211, section 7.3.2.2)
+  int shiftIndex;
+} NR_UE_CORESET_CCE_REG_MAPPING_t;
+
+typedef enum {allContiguousRBs=0,sameAsREGbundle=1} NR_UE_CORESET_precoder_granularity_t;
+
+typedef struct {
+  /*
+   * define CORESET structure according to 38.331
+   *
+   * controlResourceSetId: 		Corresponds to L1 parameter 'CORESET-ID'
+   * 							Value 0 identifies the common CORESET configured in MIB and in ServingCellConfigCommon
+   *                       		Values 1..maxNrofControlResourceSets-1 identify CORESETs configured by dedicated signalling
+   * frequencyDomainResources: 	BIT STRING (SIZE (45))
+   * 							Corresponds to L1 parameter 'CORESET-freq-dom'(see 38.211, section 7.3.2.2)
+   * 							Frequency domain resources for the CORESET. Each bit corresponds a group of 6 RBs, with grouping starting from PRB 0,
+   * 							which is fully contained in the bandwidth part within which the CORESET is configured.
+   * duration:					INTEGER (1..maxCoReSetDuration)
+   * 							Corresponds to L1 parameter 'CORESET-time-duration' (see 38.211, section 7.3.2.2FFS_Section)
+   * 							Contiguous time duration of the CORESET in number of symbols
+   * cce-REG-MappingType:		interleaved
+   *								reg-BundleSize: ENUMERATED {n2, n3, n6}
+   *								interleaverSize: ENUMERATED {n2, n3, n6}
+   *								shiftIndex: INTEGER
+   *							nonInterleaved NULL
+   * precoderGranularity:		ENUMERATED {sameAsREG-bundle, allContiguousRBs}
+   * 							Corresponds to L1 parameter 'CORESET-precoder-granuality' (see 38.211, sections 7.3.2.2 and 7.4.1.3.2)
+   * tci-StatesPDCCH:			SEQUENCE(SIZE (1..maxNrofTCI-StatesPDCCH)) OF TCI-StateId OPTIONAL
+   * 							A subset of the TCI states defined in TCI-States used for providing QCL relationships between the DL RS(s)
+   * 							in one RS Set (TCI-State) and the PDCCH DMRS ports.
+   * 							Corresponds to L1 parameter 'TCI-StatesPDCCH' (see 38.214, section FFS_Section)
+   * tci-PresentInDCI:			ENUMERATED {enabled} OPTIONAL
+   * 							Corresponds to L1 parameter 'TCI-PresentInDCI' (see 38,213, section 5.1.5)
+   * pdcch-DMRS-ScramblingID:	BIT STRING (SIZE (16)) OPTIONAL
+   * 							PDCCH DMRS scrambling initalization.
+   * 							Corresponds to L1 parameter 'PDCCH-DMRS-Scrambling-ID' (see 38.214, section 5.1)
+   * 							When the field is absent the UE applies the value '0'.
+   */
+  int controlResourceSetId;
+  uint64_t frequencyDomainResources;
+  int duration;
+  NR_UE_CORESET_CCE_REG_MAPPING_t cce_reg_mappingType;
+  NR_UE_CORESET_precoder_granularity_t precoderGranularity;
+  int tciStatesPDCCH;
+  int tciPresentInDCI;
+  uint16_t pdcchDMRSScramblingID;
+
+} NR_UE_PDCCH_CORESET;
+
+// Slots for PDCCH Monitoring configured as periodicity and offset
+typedef enum {nr_sl1=1,nr_sl2=2,nr_sl4=4,nr_sl5=5,nr_sl8=8,nr_sl10=10,nr_sl16=16,nr_sl20=20} NR_UE_SLOT_PERIOD_OFFSET_t;
+typedef enum {nc0=0,nc1=1,nc2=2,nc3=3,nc4=4,nc5=5,nc6=6,nc8=8} NR_UE_SEARCHSPACE_nbrCAND_t;
+typedef enum {nsfi1=1,nsfi2=2} NR_UE_SEARCHSPACE_nbrCAND_SFI_t;
+typedef enum {n2_3_1=1,n2_3_2=2} NR_UE_SEARCHSPACE_nbrCAND_2_3_t;
+typedef enum {cformat0_0_and_1_0=0,cformat2_0=2,cformat2_1=3,cformat2_2=4,cformat2_3=5} NR_UE_SEARCHSPACE_CSS_DCI_FORMAT_t;
+typedef enum {uformat0_0_and_1_0=0,uformat0_1_and_1_1=1} NR_UE_SEARCHSPACE_USS_DCI_FORMAT_t;
+// Monitoring periodicity of SRS PDCCH in number of slots for DCI format 2-3
+// Corresponds to L1 parameter 'SRS-Num-PDCCH-cand' (see 38.212, 38.213, section 7.3.1, 11.3)
+typedef enum {mp1=1,mp2=2,mp4=4,mp5=5,mp8=8,mp10=10,mp16=16,mp20=20} NR_UE_SEARCHSPACE_MON_PERIOD_t;
+//typedef enum {n1=1,n2=2} NR_UE_SEARCHSPACE_nbrCAND_2_3_t;
+             // The number of PDCCH candidates for DCI format 2-3 for the configured aggregation level.
+             // Corresponds to L1 parameter 'SRS-Num-PDCCH-cand' (see 38.212, 38.213, section 7.3.1, 11.3)
+typedef enum {common=0,ue_specific=1} NR_SEARCHSPACE_TYPE_t;
+
+typedef struct {
+
+/*
+ * searchSpaceType:      Indicates whether this is a common search space (present) or a UE specific search space (CHOICE)
+ *                       as well as DCI formats to monitor for (description in struct NR_UE_PDCCH_SEARCHSPACE_TYPE
+ *      common:          Configures this search space as common search space (CSS) and DCI formats to monitor
+ *      ue-Specific:     Configures this search space as UE specific search space (USS)
+ *                       The UE monitors the DCI format with CRC scrambled by
+ *                       C-RNTI, CS-RNTI (if configured), TC-RNTI (if a certain condition is met),
+ *                       and SP-CSI-RNTI (if configured)
+ */
+
+  NR_SEARCHSPACE_TYPE_t type;
+  NR_UE_SEARCHSPACE_CSS_DCI_FORMAT_t  common_dci_formats;
+  //NR_UE_SEARCHSPACE_nbrCAND_t nrofCandidates_SFI_aggr_level[5]; // FIXME! A table of five enum elements
+  NR_UE_SEARCHSPACE_nbrCAND_SFI_t sfi_nrofCandidates_aggrlevel1;
+  NR_UE_SEARCHSPACE_nbrCAND_SFI_t sfi_nrofCandidates_aggrlevel2;
+  NR_UE_SEARCHSPACE_nbrCAND_SFI_t sfi_nrofCandidates_aggrlevel4;
+  NR_UE_SEARCHSPACE_nbrCAND_SFI_t sfi_nrofCandidates_aggrlevel8;
+  NR_UE_SEARCHSPACE_nbrCAND_SFI_t sfi_nrofCandidates_aggrlevel16;
+  NR_UE_SEARCHSPACE_MON_PERIOD_t  srs_monitoringPeriodicity2_3;
+  NR_UE_SEARCHSPACE_nbrCAND_2_3_t srs_nrofCandidates;
+  NR_UE_SEARCHSPACE_USS_DCI_FORMAT_t  ue_specific_dci_formats;
+
+} NR_UE_PDCCH_SEARCHSPACE_TYPE;
+
+typedef struct {
+/*
+ * define SearchSpace structure according to 38.331
+ *
+ * searchSpaceId:        Identity of the search space. SearchSpaceId = 0 identifies the SearchSpace configured via PBCH (MIB)
+ *                       The searchSpaceId is unique among the BWPs of a Serving Cell
+ * controlResourceSetId: CORESET applicable for this SearchSpace
+ *                       0 identifies the common CORESET configured in MIB
+ *                       1..maxNrofControlResourceSets-1 identify CORESETs configured by dedicated signalling
+ * monitoringSlotPeriodicityAndOffset:
+ *                       Slots for PDCCH Monitoring configured as periodicity and offset.
+ *                       Corresponds to L1 parameters 'Montoring-periodicity-PDCCH-slot' and
+ *                       'Montoring-offset-PDCCH-slot' (see 38.213, section 10)
+ * monitoringSymbolsWithinSlot:
+ *                       Symbols for PDCCH monitoring in the slots configured for PDCCH monitoring
+ *                       The most significant (left) bit represents the first OFDM in a slot
+ *
+ * nrofCandidates:       Number of PDCCH candidates per aggregation level
+ *
+ * searchSpaceType:      Indicates whether this is a common search space (present) or a UE specific search space
+ *                       as well as DCI formats to monitor for (description in struct NR_UE_PDCCH_SEARCHSPACE_TYPE
+ *      common:          Configures this search space as common search space (CSS) and DCI formats to monitor
+ *      ue-Specific:     Configures this search space as UE specific search space (USS)
+ *                       The UE monitors the DCI format with CRC scrambled by
+ *                       C-RNTI, CS-RNTI (if configured), TC-RNTI (if a certain condition is met),
+ *                       and SP-CSI-RNTI (if configured)
+ */
+  // INTEGER (0..maxNrofSearchSpaces-1) (0..40-1)
+  int searchSpaceId;
+  int controlResourceSetId;
+  // FIXME! Verify type to be used for this parameter (sl1, sl2, sl4, sl5, sl8, sl10, sl16, sl20). Maybe enum.
+  NR_UE_SLOT_PERIOD_OFFSET_t monitoringSlotPeriodicityAndOffset;
+  int monitoringSlotPeriodicityAndOffset_offset;
+  // bit string size 14. Bitmap to indicate symbols within slot where PDCCH has to be monitored
+  // the MSB (left) bit represents first OFDM in slot
+  uint16_t monitoringSymbolWithinSlot;
+  NR_UE_SEARCHSPACE_nbrCAND_t nrofCandidates_aggrlevel1;
+  NR_UE_SEARCHSPACE_nbrCAND_t nrofCandidates_aggrlevel2;
+  NR_UE_SEARCHSPACE_nbrCAND_t nrofCandidates_aggrlevel4;
+  NR_UE_SEARCHSPACE_nbrCAND_t nrofCandidates_aggrlevel8;
+  NR_UE_SEARCHSPACE_nbrCAND_t nrofCandidates_aggrlevel16;
+  NR_UE_PDCCH_SEARCHSPACE_TYPE searchSpaceType;
+
+} NR_UE_PDCCH_SEARCHSPACE;
+#endif
 typedef struct {
   /// \brief Pointers to extracted PDCCH symbols in frequency-domain.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
@@ -621,6 +824,13 @@ typedef struct {
   //Check for specific DCIFormat and AgregationLevel
   uint8_t dciFormat;
   uint8_t agregationLevel;
+  #ifdef NR_PDCCH_DEFS_NR_UE
+  // CORESET structure, where maximum number of CORESETs to be handled is 3 (according to 38.331 V15.1.0)
+  NR_UE_PDCCH_CORESET coreset[NR_NBR_CORESET_ACT_BWP];
+  // SEARCHSPACE structure, where maximum number of SEARCHSPACEs to be handled is 10 (according to 38.331 V15.1.0)
+  // Each SearchSpace is associated with one ControlResourceSet 
+  NR_UE_PDCCH_SEARCHSPACE searchSpace[NR_NBR_SEARCHSPACE_ACT_BWP];
+  #endif
 } NR_UE_PDCCH;
 
 #define PBCH_A 24
