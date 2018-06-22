@@ -19,17 +19,18 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_TRANSPORT/nr_pdcch.c
-* \brief Implements PDCCH physical channel TX/RX procedures (38.211). Current NR compliance V15.1 2018-06.
-* \author Guy De Souza
-* \date 2018
-* \version 0.1
-* \company Eurecom
-* \email: desouza@eurecom.fr
-* \note
-* \warning
-*/
+/* Definitions for LTE Reference signals */
+/* Author R. Knopp / EURECOM / OpenAirInterface.org */
+#ifndef __NR_REFSIG__H__
+#define __NR_REFSIG__H__
 
-#include "nr_dci.h"
+#include "PHY/defs_gNB.h"
 
 
+/*!\brief This function generates the NR Gold sequence (38-211, Sec 5.2.1) for the PBCH DMRS.
+@param PHY_VARS_gNB* gNB structure provides configuration, frame parameters and the pointers to the 32 bits sequence storage tables
+ */
+void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB);
+
+
+#endif

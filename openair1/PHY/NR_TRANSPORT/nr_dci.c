@@ -20,7 +20,7 @@
  */
 
 /*! \file PHY/NR_TRANSPORT/nr_dci.c
-* \brief Implements DCI encoding/decoding (38.212/38.213/38.214). Current NR compliance V15.1 2018-06.
+* \brief Implements DCI encoding/decoding and PDCCH TX/RX procedures (38.212/38.213/38.214). V15.1 2018-06.
 * \author Guy De Souza
 * \date 2018
 * \version 0.1
@@ -35,7 +35,7 @@
 uint8_t nr_get_dci_size(nr_dci_format_e format,
                         nr_rnti_type_e rnti,
                         NR_BWP_PARMS* bwp,
-                        nfapi_nr_config_request_t* config)
+                        nfapi_config_request_t* config)
 {
   uint8_t size = 0;
   uint16_t N_RB = bwp->N_RB;
@@ -124,7 +124,6 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
 
   return size;
 }
-
 
 uint8_t nr_generate_dci_top(NR_DCI_ALLOC_t dci_alloc,
                             int32_t** txdataF,

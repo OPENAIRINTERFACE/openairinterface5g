@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
+#include "nr_refsig.h"
 
 void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
 {

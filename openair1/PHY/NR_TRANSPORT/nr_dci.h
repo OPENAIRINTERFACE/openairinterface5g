@@ -21,7 +21,7 @@
 #ifndef __PHY_NR_TRANSPORT_DCI__H
 #define __PHY_NR_TRANSPORT_DCI__H
 
-#include "defs_gNB.h"
+#include "PHY/defs_gNB.h"
 
 
 typedef enum {
@@ -44,6 +44,41 @@ typedef enum {
   nr_rnti_type_P_RNTI
 } nr_rnti_type_e;
 
+// PDCCH search space types css: common, uss: ue specific
+typedef enum {
+  nr_pdcch_css_type_0=0,
+  nr_pdcch_css_type_0_A,
+  nr_pdcch_css_type_1,
+  nr_pdcch_css_type_2,
+  nr_pdcch_css_type_3,
+  nr_pdcch_uss_type
+} nr_pdcch_ss_type_e;
+
+typedef enum {
+  nr_pdcch_mux_pattern_type_1=0,
+  nr_pdcch_mux_pattern_type_2,
+  nr_pdcch_mux_pattern_type_3
+} nr_pdcch_mux_pattern_type_e;
+
+typedef struct {
+  uint8_t param_O;
+  uint8_t param_M;
+  uint8_t nb_ss_sets_per_slot;
+  uint8_t first_symbol_idx;
+  nr_pdcch_ss_type_e ss_type;
+} nr_pdcch_ss_params_t;
+
+typedef struct {
+  uint8_t n_rb;
+  uint8_t n_symb;
+  uint8_t rb_offset;
+  nr_pdcch_mux_pattern_type_e mux_pattern;
+} nr_pdcch_coreset_params_t;
+
+typedef struct {
+  nr_pdcch_ss_params_t ss_params;
+  nr_pdcch_coreset_params_t coreset_params;
+} nr_pdcch_params_t;
 
 typedef struct {
   /// Length of DCI in bits
@@ -66,12 +101,12 @@ typedef struct {
 uint8_t nr_get_dci_size(nr_dci_format_e format,
                         nr_rnti_type_e rnti,
                         NR_BWP_PARMS bwp,
-                        nfapi_nr_config_request_t* config);
+                        nfapi_config_request_t* config);
 
 uint8_t nr_generate_dci_top(NR_DCI_ALLOC_t dci_alloc,
                             int32_t** txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS* frame_parms,
-                            nfapi_config_request_t* config)
+                            nfapi_config_request_t* config);
 
 #endif //__PHY_NR_TRANSPORT_DCI__H

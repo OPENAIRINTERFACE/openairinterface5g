@@ -31,6 +31,7 @@
 #include "PHY/defs_gNB.h"
 #include "PHY_INTERFACE/phy_interface.h"
 #include "SCHED/sched_eNB.h"
+#include "PHY/NR_TRANSPORT/nr_dci.h"
 
 lte_subframe_t nr_subframe_select (nfapi_config_request_t *cfg, unsigned char subframe);
 void nr_set_ssb_first_subcarrier(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
@@ -39,5 +40,9 @@ void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx);
 void nr_feptx_ofdm(RU_t *ru);
 void nr_feptx_ofdm_2thread(RU_t *ru);
 void nr_feptx0(RU_t *ru,int slot);
+
+void nr_fill_pdcch_params(nr_pdcch_params_t *pdcch_params,
+                          nfapi_config_request_t* config,
+                          uint8_t ssb_idx);
 
 #endif

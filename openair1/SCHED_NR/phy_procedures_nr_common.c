@@ -29,15 +29,65 @@
 * \note
 * \warning
 */
-#include "PHY/defs_gNB.h"
-#include "PHY/phy_extern.h"
+
 #include "sched_nr.h"
+
+
+/// LUT for the number of symbols in the coreset indexed by SSB index
+uint8_t nr_coreset_nsymb_pdcch_type_0[16] = {2,2,2,2,2,3,3,3,3,3,1,1,1,2,2,2};
+/// LUT for the number of RBs in the coreset indexed by SSB index
+uint8_t nr_coreset_rb_offset_pdcch_type_0[16] = {0,1,2,3,4,0,1,2,3,4,12,14,16,12,14,16};
+/// LUT for monitoring occasions param O indexed by SSB index
+uint8_t nr_ss_param_O_type_0_mux1_FR1[16] = {0,0,2,2,5,5,7,7,0,5,0,0,2,2,5,5};
+/// LUT for number of SS sets per slot indexed by SSB index
+uint8_t nr_ss_sets_per_slot_type_0_FR1[16] = {1,2,1,2,1,2,1,2,1,1,1,1,1,1,1,1};
+/// LUT for monitoring occasions param M indexed by SSB index
+uint8_t nr_ss_param_M_type_0_mux1_FR1[16] = {1,0.5,1,0.5,1,0.5,1,0.5,2,2,1,1,1,1,1,1};
+/// LUT for SS first symbol index indexed by SSB index
+uint8_t nr_ss_first_symb_idx_type_0_mux1_FR1[8] = {0,0,1,2,1,2,1,2};
+
 
 
 nr_subframe_t nr_subframe_select(nfapi_config_request_t *cfg,unsigned char subframe)
 {
   if (cfg->subframe_config.duplex_mode.value == FDD)
     return(SF_DL);
-  else
-    return SF_DL;
+}
+
+
+void nr_fill_pdcch_params(nr_pdcch_params_t *pdcch_params,
+                          nfapi_config_request_t* config,
+                          uint8_t ssb_idx)
+{
+  nr_pdcch_coreset_params_t *coreset_params = &pdcch_params->coreset_params;
+  nr_pdcch_ss_params_t *ss_params = &pdcch_params->ss_params;
+
+  // the switch case below assumes that only the cases where the SSB and the PDCCH have the same SCS are supported along with type 1 PDCCH/ mux pattern 1 and FR1
+  switch(config->subframe_config.numerology_index_mu.value) {
+
+    case NR_MU_0:
+      break;
+
+    case NR_MU_1:
+      coreset_params->mux_pattern = nr_pdcch_mux_pattern_type_1;
+      coreset_params->n_rb = (ssb_idx < 10)? 24 : 48;
+      coreset_params->n_symb = nr_coreset_nsymb_pdcch_type_0[ssb_idx];
+      coreset_params->rb_offset =  nr_coreset_rb_offset_pdcch_type_0[ssb_idx];
+      ss_params->ss_type = nr_pdcch_css_type_1;
+      ss_params->param_O = nr_ss_param_O_type_0_mux1_FR1[ssb_idx];
+      ss_params->nb_ss_sets_per_slot = nr_ss_sets_per_slot_type_0_FR1[ssb_idx];
+      ss_params->param_M = nr_ss_param_M_type_0_mux1_FR1[ssb_idx];
+      ss_params->first_symbol_idx = (ssb_idx < 8)? ( (ssb_idx&1)? coreset_params->n_symb : 0 ) : nr_ss_first_symb_idx_type_0_mux1_FR1[ssb_idx - 8];
+      break;
+
+    case NR_MU_2:
+      break;
+
+    case NR_MU_3:
+      break;
+
+  default:
+    AssertFatal(1==0,"Invalid PDCCH numerology index %d", config->subframe_config.numerology_index_mu.value);
+
+  }
 }
