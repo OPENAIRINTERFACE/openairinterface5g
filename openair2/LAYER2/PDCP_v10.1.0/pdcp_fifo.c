@@ -491,7 +491,6 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
    int prose_addr_len;
    char send_buf[BUFSIZE], receive_buf[BUFSIZE];
-   // Panos: Remove the following definitions due to warnings of unused variables.
    //int optval;
    int bytes_received;
    sidelink_pc5s_element *sl_pc5s_msg_recv = NULL;

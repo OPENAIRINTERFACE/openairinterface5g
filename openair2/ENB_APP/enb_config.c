@@ -230,47 +230,6 @@ void RCconfig_flexran()
 }
 
 
-/*void UE_config_stub_pnf(void) {
-  int               j;
-  paramdef_t L1_Params[] = L1PARAMS_DESC;
-  paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
-
-  config_getlist( &L1_ParamList,L1_Params,sizeof(L1_Params)/sizeof(paramdef_t), NULL);
-  if (L1_ParamList.numelt > 0) {
-	  for (j=0; j<L1_ParamList.numelt; j++){
-		  //nb_L1_CC = *(L1_ParamList.paramarray[j][L1_CC_IDX].uptr); // Number of component carriers is of no use for the
-	                                                            // phy_stub mode UE pnf. Maybe we can completely skip it.
-
-		  if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
-			  sf_ahead = 4; // Need 4 subframe gap between RX and TX
-			  }
-		  // Panos: Right now that we have only one UE (thread) it is ok to put the eth_params in the UE_mac_inst.
-		  // Later I think we have to change that to attribute eth_params to a global element for all the UEs.
-		  else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
-			  stub_eth_params.local_if_name            = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_IF_NAME_IDX].strptr));
-			  stub_eth_params.my_addr                  = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_ADDRESS_IDX].strptr));
-			  stub_eth_params.remote_addr              = strdup(*(L1_ParamList.paramarray[j][L1_REMOTE_N_ADDRESS_IDX].strptr));
-			  stub_eth_params.my_portc                 = *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTC_IDX].iptr);
-			  stub_eth_params.remote_portc             = *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTC_IDX].iptr);
-			  stub_eth_params.my_portd                 = *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTD_IDX].iptr);
-			  stub_eth_params.remote_portd             = *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTD_IDX].iptr);
-			  stub_eth_params.transp_preference        = ETH_UDP_MODE;
-
-
-			  sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
-			  //configure_nfapi_pnf(UE_mac_inst[0].eth_params_n.remote_addr, UE_mac_inst[0].eth_params_n.remote_portc, UE_mac_inst[0].eth_params_n.my_addr, UE_mac_inst[0].eth_params_n.my_portd, UE_mac_inst[0].eth_params_n.remote_portd);
-			  configure_nfapi_pnf(stub_eth_params.remote_addr, stub_eth_params.remote_portc, stub_eth_params.my_addr, stub_eth_params.my_portd, stub_eth_params.remote_portd);
-		  }
-		  else { // other midhaul
-		  }
-	  }
-  }
-  else {
-
-  }
-}*/
-
-
 void RCconfig_L1(void) {
   int               i,j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
@@ -338,7 +297,6 @@ void RCconfig_L1(void) {
         configure_nfapi_pnf(RC.eNB[j][0]->eth_params_n.remote_addr, RC.eNB[j][0]->eth_params_n.remote_portc, RC.eNB[j][0]->eth_params_n.my_addr, RC.eNB[j][0]->eth_params_n.my_portd, RC.eNB[j][0]->eth_params_n     .remote_portd);
       }
       else { // other midhaul
-        //printf("Panos-D: RCconfig_L1 12 \n");
       }	
     }// j=0..num_inst
     printf("Initializing northbound interface for L1\n");
