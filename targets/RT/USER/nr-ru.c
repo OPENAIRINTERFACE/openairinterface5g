@@ -132,7 +132,7 @@ extern volatile int                    oai_exit;
 
 extern void  nr_phy_init_RU(RU_t*);
 extern void  nr_phy_free_RU(RU_t*);
-extern void  nr_phy_config_request(PHY_VARS_gNB *gNB);
+extern void  nr_phy_config_request(NR_PHY_Config_t *gNB);
 
 void init_RU(char*);
 void stop_RU(int nb_ru);

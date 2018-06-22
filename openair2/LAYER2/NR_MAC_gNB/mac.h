@@ -48,7 +48,7 @@
 
 #include "nfapi_nr_interface.h"
 
-#include "NR_PHY_INTERFACE/IF_Module.h"
+#include "NR_PHY_INTERFACE/NR_IF_Module.h"
 
 #include "PHY/TOOLS/time_meas.h"
 

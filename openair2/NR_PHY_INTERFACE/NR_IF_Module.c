@@ -1,5 +1,5 @@
 #include "openair1/PHY/defs_eNB.h"
-#include "openair2/NR_PHY_INTERFACE/IF_Module.h"
+#include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "openair1/PHY/phy_extern.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"

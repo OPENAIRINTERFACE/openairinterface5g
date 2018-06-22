@@ -114,7 +114,7 @@ typedef struct PHY_VARS_gNB_s {
   int                  (*te)(struct PHY_VARS_gNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *);
   int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_gNB_s *eNB);
   uint8_t              local_flag;
-  nfapi_config_request_t  gNB_config;
+  nfapi_nr_config_request_t  gNB_config;
   NR_DL_FRAME_PARMS   frame_parms;
   PHY_MEASUREMENTS_gNB measurements;
   IF_Module_t          *if_inst;

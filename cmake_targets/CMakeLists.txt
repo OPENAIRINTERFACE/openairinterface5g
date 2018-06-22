@@ -1452,7 +1452,7 @@ set (MAC_SRC
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
   ${MAC_DIR}/config_ue.c
-  ${NR_PHY_INTERFACE_DIR}/IF_Module.c
+  ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
   ${NR_MAC_DIR}/main.c
   ${NR_MAC_DIR}/config.c
  )
