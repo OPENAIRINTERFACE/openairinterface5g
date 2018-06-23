@@ -198,9 +198,10 @@ typedef struct s1ap_eNB_instance_s {
   /* Mobile Country Code
    * Mobile Network Code
    */
-  uint16_t  mcc;
-  uint16_t  mnc;
-  uint8_t   mnc_digit_length;
+  uint16_t  mcc[PLMN_LIST_MAX_SIZE];
+  uint16_t  mnc[PLMN_LIST_MAX_SIZE];
+  uint8_t   mnc_digit_length[PLMN_LIST_MAX_SIZE];
+  uint8_t   num_plmn;
 
   /* Default Paging DRX of the eNB as defined in TS 36.304 */
   paging_drx_t default_drx;

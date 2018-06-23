@@ -190,10 +190,14 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
     /* Checks if it is a retry on the same eNB */
     DevCheck(new_instance->eNB_id == s1ap_register_eNB->eNB_id, new_instance->eNB_id, s1ap_register_eNB->eNB_id, 0);
     DevCheck(new_instance->cell_type == s1ap_register_eNB->cell_type, new_instance->cell_type, s1ap_register_eNB->cell_type, 0);
+    DevCheck(new_instance->num_plmn == s1ap_register_eNB->num_plmn, new_instance->num_plmn, s1ap_register_eNB->num_plmn, 0);
     DevCheck(new_instance->tac == s1ap_register_eNB->tac, new_instance->tac, s1ap_register_eNB->tac, 0);
-    DevCheck(new_instance->mcc == s1ap_register_eNB->mcc, new_instance->mcc, s1ap_register_eNB->mcc, 0);
-    DevCheck(new_instance->mnc == s1ap_register_eNB->mnc, new_instance->mnc, s1ap_register_eNB->mnc, 0);
-    DevCheck(new_instance->mnc_digit_length == s1ap_register_eNB->mnc_digit_length, new_instance->mnc_digit_length, s1ap_register_eNB->mnc_digit_length, 0);
+    for (int i = 0; i < new_instance->num_plmn; i++)
+    {
+      DevCheck(new_instance->mcc[i] == s1ap_register_eNB->mcc[i], new_instance->mcc[i], s1ap_register_eNB->mcc[i], 0);
+      DevCheck(new_instance->mnc[i] == s1ap_register_eNB->mnc[i], new_instance->mnc[i], s1ap_register_eNB->mnc[i], 0);
+      DevCheck(new_instance->mnc_digit_length[i] == s1ap_register_eNB->mnc_digit_length[i], new_instance->mnc_digit_length[i], s1ap_register_eNB->mnc_digit_length[i], 0);
+    }
     DevCheck(new_instance->default_drx == s1ap_register_eNB->default_drx, new_instance->default_drx, s1ap_register_eNB->default_drx, 0);
   } else {
     new_instance = calloc(1, sizeof(s1ap_eNB_instance_t));
@@ -208,9 +212,13 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
     new_instance->eNB_id           = s1ap_register_eNB->eNB_id;
     new_instance->cell_type        = s1ap_register_eNB->cell_type;
     new_instance->tac              = s1ap_register_eNB->tac;
-    new_instance->mcc              = s1ap_register_eNB->mcc;
-    new_instance->mnc              = s1ap_register_eNB->mnc;
-    new_instance->mnc_digit_length = s1ap_register_eNB->mnc_digit_length;
+    for (int i = 0; i < s1ap_register_eNB->num_plmn; i++)
+    {
+      new_instance->mcc[i]              = s1ap_register_eNB->mcc[i];
+      new_instance->mnc[i]              = s1ap_register_eNB->mnc[i];
+      new_instance->mnc_digit_length[i] = s1ap_register_eNB->mnc_digit_length[i];
+    }
+    new_instance->num_plmn         = s1ap_register_eNB->num_plmn;
     new_instance->default_drx      = s1ap_register_eNB->default_drx;
 
     /* Add the new instance to the list of eNB (meaningfull in virtual mode) */
