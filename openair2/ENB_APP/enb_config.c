@@ -624,7 +624,14 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
       for (k=0; k <num_enbs ; k++) {
 	if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[k], *(ENBParamList.paramarray[i][ENB_ENB_NAME_IDX].strptr) )== 0) {
 	  char enbpath[MAX_OPTNAME_SIZE + 8];
+	  sprintf(enbpath,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
 
+          paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
+          paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+          /* map parameter checking array instances to parameter definition array instances */
+          checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+          for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+            PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 	  
 	  RRC_CONFIGURATION_REQ (msg_p).cell_identity = enb_id;
 	  
@@ -641,18 +648,36 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		
 		enb_properties_loc.properties[enb_properties_loc_index]->eNB_name         = strdup(enb_name);
 	  */
-	  RRC_CONFIGURATION_REQ (msg_p).tac              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].strptr) );
-	  RRC_CONFIGURATION_REQ (msg_p).mcc              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX].strptr) );
-	  RRC_CONFIGURATION_REQ (msg_p).mnc              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr) );
-	  RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length = strlen(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-	  AssertFatal((RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length == 2) ||
-		      (RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length == 3),
-		      "BAD MNC DIGIT LENGTH %d",
-		      RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length);
+          RRC_CONFIGURATION_REQ(msg_p).tac = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
+          AssertFatal(!ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
+                      && !ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX_OLD].strptr,
+                      "It seems that you use an old configuration file. Please change the existing\n"
+                      "    tracking_area_code  =  \"1\";\n"
+                      "    mobile_country_code =  \"208\";\n"
+                      "    mobile_network_code =  \"93\";\n"
+                      "to\n"
+                      "    tracking_area_code  =  1; // no string!!\n"
+                      "    plmn_list = ( { mcc = 208; mnc = 93; mnc_length = 2; } )\n");
+
+          config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), enbpath);
+
+          if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
+            AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
+                        PLMNParamList.numelt);
+          RRC_CONFIGURATION_REQ(msg_p).num_plmn = PLMNParamList.numelt;
+
+          for (int l = 0; l < PLMNParamList.numelt; ++l) {
+            RRC_CONFIGURATION_REQ(msg_p).mcc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
+            RRC_CONFIGURATION_REQ(msg_p).mnc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
+            RRC_CONFIGURATION_REQ(msg_p).mnc_digit_length[l] = *PLMNParamList.paramarray[l][ENB_MNC_DIGIT_LENGTH].u8ptr;
+            AssertFatal(RRC_CONFIGURATION_REQ(msg_p).mnc_digit_length[l] == 3
+                        || RRC_CONFIGURATION_REQ(msg_p).mnc[l] < 100,
+                        "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
+                        RRC_CONFIGURATION_REQ(msg_p).mnc[l]);
+          }
 	  
 	
 	  // Parse optional physical parameters
-	  sprintf(enbpath,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k),
 	  config_getlist( &CCsParamList,NULL,0,enbpath); 
 	  
 	  LOG_I(RRC,"num component carriers %d \n",CCsParamList.numelt);  
@@ -2246,12 +2271,21 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
 	// search if in active list
 	for (j=0; j < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt; j++) {
 	  if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[j], *(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr)) == 0) {
+            paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
+            paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+            /* map parameter checking array instances to parameter definition array instances */
+            checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+            for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+              PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+
              paramdef_t S1Params[]  = S1PARAMS_DESC;
              paramlist_def_t S1ParamList = {ENB_CONFIG_STRING_MME_IP_ADDRESS,NULL,0};
 
              paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
              paramdef_t NETParams[]  =  NETPARAMS_DESC;
-             char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+
+            char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+	    sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
 	    
 	    S1AP_REGISTER_ENB_REQ (msg_p).eNB_id = enb_id;
 	    
@@ -2266,17 +2300,35 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
 	    }
 	    
 	    S1AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr));
-	    S1AP_REGISTER_ENB_REQ (msg_p).tac              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].strptr));
-	    S1AP_REGISTER_ENB_REQ (msg_p).mcc              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_MOBILE_COUNTRY_CODE_IDX].strptr));
-	    S1AP_REGISTER_ENB_REQ (msg_p).mnc              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-	    S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = strlen(*(ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-	    S1AP_REGISTER_ENB_REQ (msg_p).default_drx      = 0;
-	    AssertFatal((S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length == 2) ||
-			(S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length == 3),
-			"BAD MNC DIGIT LENGTH %d",
-			S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length);
+            S1AP_REGISTER_ENB_REQ(msg_p).tac               = *ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].uptr;
+
+            AssertFatal(!ENBParamList.paramarray[k][ENB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
+                        && !ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX_OLD].strptr,
+                        "It seems that you use an old configuration file. Please change the existing\n"
+                        "    tracking_area_code  =  \"1\";\n"
+                        "    mobile_country_code =  \"208\";\n"
+                        "    mobile_network_code =  \"93\";\n"
+                        "to\n"
+                        "    tracking_area_code  =  1; // no string!!\n"
+                        "    plmn_list = ( { mcc = 208; mnc = 93; mnc_length = 2; } )\n");
+
+            config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
+            if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
+              AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
+                          PLMNParamList.numelt);
+
+            S1AP_REGISTER_ENB_REQ(msg_p).num_plmn = PLMNParamList.numelt;
+            for (int l = 0; l < PLMNParamList.numelt; ++l) {
+              S1AP_REGISTER_ENB_REQ(msg_p).mcc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
+              S1AP_REGISTER_ENB_REQ(msg_p).mnc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
+              S1AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length[l] = *PLMNParamList.paramarray[l][ENB_MNC_DIGIT_LENGTH].u8ptr;
+              AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length[l] == 3
+                          || S1AP_REGISTER_ENB_REQ(msg_p).mnc[l] < 100,
+                          "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
+                          S1AP_REGISTER_ENB_REQ(msg_p).mnc[l]);
+            }
+            S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 0;
 	    
-	    sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
             config_getlist( &S1ParamList,S1Params,sizeof(S1Params)/sizeof(paramdef_t),aprefix); 
 	    
 	    S1AP_REGISTER_ENB_REQ (msg_p).nb_mme = 0;
