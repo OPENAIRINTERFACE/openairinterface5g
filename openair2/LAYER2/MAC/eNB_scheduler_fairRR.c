@@ -542,6 +542,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   uint16_t                temp_total_rbs_count;
   unsigned char           temp_total_ue_count;
   unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX];
+  uint8_t slice_allocation[MAX_NUM_CCs][N_RBG_MAX];
   int                     UE_id, i; 
   uint16_t                j;
   uint16_t                nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
@@ -660,17 +661,22 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
 
       transmission_mode = get_tmode(Mod_id,CC_id,UE_id);
 
+      /* slicing support has been introduced into the scheduler. Provide dummy
+       * data so that the preprocessor "simply works" */
+      for (int i = 0; i < MAX_NUM_CCs; ++i)
+        for (int j = 0; i < N_RBG_MAX; ++j)
+          slice_allocation[i][j] = 1;
+
       LOG_T(MAC,"calling dlsch_scheduler_pre_processor_allocate .. \n ");
       dlsch_scheduler_pre_processor_allocate (Mod_id,
                                               UE_id,
                                               CC_id,
                                               N_RBG[CC_id],
-                                              transmission_mode,
                                               min_rb_unit[CC_id],
-                                              N_RB_DL,
                                               (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
                                               (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required_remaining,
                                               rballoc_sub,
+                                              slice_allocation,
                                               MIMO_mode_indicator);
       temp_total_rbs_count -= ue_sched_ctl->pre_nb_available_rbs[CC_id];
       temp_total_ue_count--;
