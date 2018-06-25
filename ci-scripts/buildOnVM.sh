@@ -81,6 +81,16 @@ case $key in
     usage
     exit 0
     ;;
+    -jn|--job-name)
+    JOB_NAME="$2"
+    shift
+    shift
+    ;;
+    -id|--build-id)
+    BUILD_ID="$2"
+    shift
+    shift
+    ;;
     -ws|--workspace)
     JENKINS_WKSP="$2"
     shift
