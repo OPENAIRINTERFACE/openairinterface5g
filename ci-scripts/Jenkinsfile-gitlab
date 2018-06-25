@@ -52,28 +52,28 @@ pipeline {
                 stage ("Analysis with cppcheck") {
                     steps {
                         gitlabCommitStatus(name: "Analysis with cppcheck") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep"
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                         }
                     }
                 }
                 stage ("Build eNb-USRP") {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-USRP") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep"
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                         }
                     }
                 }
                 stage ("Build basic simulator") {
                     steps {
                         gitlabCommitStatus(name: "Build basic-sim") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep"
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                         }
                     }
                 }
                 stage ("Build physical simulators") {
                     steps {
                         gitlabCommitStatus(name: "Build phy-sim") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep"
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                         }
                     }
                 }
@@ -82,7 +82,7 @@ pipeline {
                 always {
                     script {
                         dir ('archives') {
-                            sh "zip -r vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck"
+                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck"
                         }
                         if(fileExists('archives/vm_build_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_build_logs.zip'
