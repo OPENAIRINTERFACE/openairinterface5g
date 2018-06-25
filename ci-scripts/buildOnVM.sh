@@ -260,7 +260,7 @@ echo "############################################################"
 echo "Running install and build script on VM ($VM_NAME)"
 echo "############################################################"
 echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
-if [ "$VM_NAME" == "ci-cppcheck" ]
+if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "echo \"sudo apt-get --yes --quiet install zip cppcheck \"" >> $VM_CMDS
     echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
@@ -273,7 +273,7 @@ echo "mkdir tmp" >> $VM_CMDS
 echo "cd tmp" >> $VM_CMDS
 echo "echo \"unzip -qq -DD ../localZip.zip\"" >> $VM_CMDS
 echo "unzip -qq -DD ../localZip.zip" >> $VM_CMDS
-if [ "$VM_NAME" == "ci-cppcheck" ]
+if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "mkdir cmake_targets/log" >> $VM_CMDS
     echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
@@ -304,7 +304,7 @@ then
 fi
 
 scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/*.txt $ARCHIVES_LOC
-if [ "$VM_NAME" == "ci-cppcheck" ]
+if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/*.xml $ARCHIVES_LOC
 fi
