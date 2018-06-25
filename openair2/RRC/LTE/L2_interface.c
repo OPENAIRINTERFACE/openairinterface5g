@@ -96,30 +96,6 @@ mac_rrc_data_req(
                RC.rrc[Mod_idP]->carrier[CC_id].SIB1,
                RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1);
 
-#if 0 //defined(ENABLE_ITTI)
-        {
-          MessageDef *message_p;
-          int sib1_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1;
-          int sdu_size = sizeof(RRC_MAC_BCCH_DATA_REQ (message_p).sdu);
-
-          if (sib1_size > sdu_size) {
-            LOG_E(RRC, "SIB1 SDU larger than BCCH SDU buffer size (%d, %d)", sib1_size, sdu_size);
-            sib1_size = sdu_size;
-          }
-
-          message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_MAC_BCCH_DATA_REQ);
-          RRC_MAC_BCCH_DATA_REQ (message_p).frame    = frameP;
-          RRC_MAC_BCCH_DATA_REQ (message_p).sdu_size = sib1_size;
-          memset (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, 0, BCCH_SDU_SIZE);
-          memcpy (RRC_MAC_BCCH_DATA_REQ (message_p).sdu,
-                  RC.rrc[Mod_idP]->carrier[CC_id].SIB1,
-                  sib1_size);
-          RRC_MAC_BCCH_DATA_REQ (message_p).enb_index = eNB_index;
-
-          itti_send_msg_to_task (TASK_MAC_ENB, ENB_MODULE_ID_TO_INSTANCE(Mod_idP), message_p);
-        }
-#endif
-
 #ifdef DEBUG_RRC
         LOG_T(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_idP,frameP);
 
@@ -136,30 +112,6 @@ mac_rrc_data_req(
         memcpy(&buffer_pP[0],
                RC.rrc[Mod_idP]->carrier[CC_id].SIB23,
                RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23);
-
-#if 0 //defined(ENABLE_ITTI)
-        {
-          MessageDef *message_p;
-          int sib23_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23;
-          int sdu_size = sizeof(RRC_MAC_BCCH_DATA_REQ (message_p).sdu);
-
-          if (sib23_size > sdu_size) {
-            LOG_E(RRC, "SIB23 SDU larger than BCCH SDU buffer size (%d, %d)", sib23_size, sdu_size);
-            sib23_size = sdu_size;
-          }
-
-          message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_MAC_BCCH_DATA_REQ);
-          RRC_MAC_BCCH_DATA_REQ (message_p).frame = frameP;
-          RRC_MAC_BCCH_DATA_REQ (message_p).sdu_size = sib23_size;
-          memset (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, 0, BCCH_SDU_SIZE);
-          memcpy (RRC_MAC_BCCH_DATA_REQ (message_p).sdu,
-                  RC.rrc[Mod_idP]->carrier[CC_id].SIB23,
-                  sib23_size);
-          RRC_MAC_BCCH_DATA_REQ (message_p).enb_index = eNB_index;
-
-          itti_send_msg_to_task (TASK_MAC_ENB, ENB_MODULE_ID_TO_INSTANCE(Mod_idP), message_p);
-        }
-#endif
 
 #ifdef DEBUG_RRC
         LOG_T(RRC,"[eNB %d] Frame %d BCCH request => SIB 2-3\n",Mod_idP,frameP);
@@ -205,28 +157,6 @@ mac_rrc_data_req(
       if(Srb_info->Tx_buffer.payload_size>0) { //Fill buffer
         LOG_D(RRC,"[eNB %d] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Mod_idP,Srb_info,Srb_info->Tx_buffer.payload_size,buffer_pP,Srb_info->Tx_buffer.Payload);
 
-#if 0 // defined(ENABLE_ITTI)
-        {
-          MessageDef *message_p;
-          int ccch_size = Srb_info->Tx_buffer.payload_size;
-          int sdu_size = sizeof(RRC_MAC_CCCH_DATA_REQ (message_p).sdu);
-
-          if (ccch_size > sdu_size) {
-            LOG_E(RRC, "SDU larger than CCCH SDU buffer size (%d, %d)", ccch_size, sdu_size);
-            ccch_size = sdu_size;
-          }
-
-          message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_MAC_CCCH_DATA_REQ);
-          RRC_MAC_CCCH_DATA_REQ (message_p).frame = frameP;
-          RRC_MAC_CCCH_DATA_REQ (message_p).sdu_size = ccch_size;
-          memset (RRC_MAC_CCCH_DATA_REQ (message_p).sdu, 0, CCCH_SDU_SIZE);
-          memcpy (RRC_MAC_CCCH_DATA_REQ (message_p).sdu, Srb_info->Tx_buffer.Payload, ccch_size);
-          RRC_MAC_CCCH_DATA_REQ (message_p).enb_index = eNB_index;
-
-          itti_send_msg_to_task (TASK_MAC_ENB, ENB_MODULE_ID_TO_INSTANCE(Mod_idP), message_p);
-        }
-#endif
-
         memcpy(buffer_pP,Srb_info->Tx_buffer.Payload,Srb_info->Tx_buffer.payload_size);
         Sdu_size = Srb_info->Tx_buffer.payload_size;
         Srb_info->Tx_buffer.payload_size=0;
@@ -243,28 +173,6 @@ mac_rrc_data_req(
         LOG_D(RRC,"[eNB %d] PCCH (%p) has %d bytes\n",Mod_idP,&RC.rrc[Mod_idP]->carrier[CC_id].paging[mbsfn_sync_area],
                RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area]);
 
-#if 0 //defined(ENABLE_ITTI)
-        {
-          MessageDef *message_p;
-          int pcch_size = RC.rrc[Mod_idP]->arrier[CC_id].sizeof_paging[mbsfn_sync_area];
-          int sdu_size = sizeof(RRC_MAC_PCCH_DATA_REQ (message_p).sdu);
-
-          if (pcch_size > sdu_size) {
-            LOG_E(RRC, "SDU larger than PCCH SDU buffer size (%d, %d)", pcch_size, sdu_size);
-            pcch_size = sdu_size;
-          }
-
-          message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_MAC_PCCH_DATA_REQ);
-          RRC_MAC_PCCH_DATA_REQ (message_p).frame = frameP;
-          RRC_MAC_PCCH_DATA_REQ (message_p).sdu_size = pcch_size;
-          memset (RRC_MAC_PCCH_DATA_REQ (message_p).sdu, 0, PCCH_SDU_SIZE);
-          memcpy (RRC_MAC_PCCH_DATA_REQ (message_p).sdu, RC.rrc[Mod_idP]->carrier[CC_id].paging[mbsfn_sync_area], pcch_size);
-          RRC_MAC_PCCH_DATA_REQ (message_p).enb_index = eNB_index;
-
-          itti_send_msg_to_task (TASK_MAC_ENB, ENB_MODULE_ID_TO_INSTANCE(Mod_idP), message_p);
-        }
-#endif
-
         memcpy(buffer_pP, RC.rrc[Mod_idP]->carrier[CC_id].paging[mbsfn_sync_area], RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area]);
         Sdu_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area];
         RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area] = 0;
@@ -279,32 +187,6 @@ mac_rrc_data_req(
       if(RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESS[mbsfn_sync_area].Active==0) {
         return 0;  // this parameter is set in function init_mcch in rrc_eNB.c
       }
-
-
-#if 0 // defined(ENABLE_ITTI)
-      {
-        MessageDef *message_p;
-        int mcch_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area];
-        int sdu_size = sizeof(RRC_MAC_MCCH_DATA_REQ (message_p).sdu);
-
-        if (mcch_size > sdu_size) {
-          LOG_E(RRC, "SDU larger than MCCH SDU buffer size (%d, %d)", mcch_size, sdu_size);
-          mcch_size = sdu_size;
-        }
-
-        message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_MAC_MCCH_DATA_REQ);
-        RRC_MAC_MCCH_DATA_REQ (message_p).frame = frameP;
-        RRC_MAC_MCCH_DATA_REQ (message_p).sdu_size = mcch_size;
-        memset (RRC_MAC_MCCH_DATA_REQ (message_p).sdu, 0, MCCH_SDU_SIZE);
-        memcpy (RRC_MAC_MCCH_DATA_REQ (message_p).sdu,
-                RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
-                mcch_size);
-        RRC_MAC_MCCH_DATA_REQ (message_p).enb_index = eNB_index;
-        RRC_MAC_MCCH_DATA_REQ (message_p).mbsfn_sync_area = mbsfn_sync_area;
-
-        itti_send_msg_to_task (TASK_MAC_ENB, ENB_MODULE_ID_TO_INSTANCE(Mod_idP), message_p);
-      }
-#endif
 
       memcpy(&buffer_pP[0],
              RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
@@ -380,31 +262,6 @@ mac_rrc_data_ind(
     Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
     LOG_D(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",module_idP,Srb_info->Srb_id);
     
-#if 0 //defined(ENABLE_ITTI)
-    {
-      MessageDef *message_p;
-      int msg_sdu_size = sizeof(RRC_MAC_CCCH_DATA_IND (message_p).sdu);
-
-      if (sdu_lenP > msg_sdu_size) {
-        LOG_E(RRC, "SDU larger than CCCH SDU buffer size (%d, %d)", sdu_lenP, msg_sdu_size);
-        sdu_size = msg_sdu_size;
-      } else {
-        sdu_size = sdu_lenP;
-      }
-
-      message_p = itti_alloc_new_message (TASK_MAC_ENB, RRC_MAC_CCCH_DATA_IND);
-      RRC_MAC_CCCH_DATA_IND (message_p).frame     = frameP;
-      RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = sub_frameP;
-      RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rntiP;
-      RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = sdu_size;
-      RRC_MAC_CCCH_DATA_IND (message_p).CC_id = CC_id;
-      memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-      memcpy (RRC_MAC_CCCH_DATA_IND (message_p).sdu, sduP, sdu_size);
-      LOG_D(RRC,"[eNB %d] Sending message to RRC task\n",module_idP);
-      itti_send_msg_to_task (TASK_RRC_ENB, ctxt.instance, message_p);
-    }
-#else
-
     //    msg("\n******INST %d Srb_info %p, Srb_id=%d****\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
     if (sdu_lenP > 0) {
       memcpy(Srb_info->Rx_buffer.Payload,sduP,sdu_lenP);
@@ -422,7 +279,6 @@ mac_rrc_data_ind(
         ue_context_p->ue_context.Status = RRC_RECONFIGURED;
       }
     }
-#endif
 
   return(0);
 

@@ -220,11 +220,6 @@ void dlsch_scheduler_pre_ue_select_fairRR(
       }
 
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-#if 0
-      if (ue_sched_ctl->ul_out_of_sync == 1) {
-        continue;
-      }
-#endif
       harq_pid = frame_subframe2_dl_harq_pid(cc[CC_id].tdd_Config,frameP ,subframeP);
 
       round = ue_sched_ctl->round[CC_id][harq_pid];
@@ -330,14 +325,9 @@ void dlsch_scheduler_pre_ue_select_fairRR(
         }
 
         ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-#if 0
-        if (ue_sched_ctl->ul_out_of_sync == 1) {
-          continue;
-        }
-#endif
-       for(i = 0;i<dlsch_ue_select[CC_id].ue_num;i++){
+	for(i = 0;i<dlsch_ue_select[CC_id].ue_num;i++){
           if(dlsch_ue_select[CC_id].list[i].UE_id == UE_id){
-           break;
+	    break;
           }
         }
         if(i < dlsch_ue_select[CC_id].ue_num)
@@ -447,11 +437,6 @@ void dlsch_scheduler_pre_ue_select_fairRR(
         }
 
         ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-#if 0
-        if (ue_sched_ctl->ul_out_of_sync == 1) {
-          continue;
-        }
-#endif
         for(i = 0;i<dlsch_ue_select[CC_id].ue_num;i++){
           if(dlsch_ue_select[CC_id].list[i].UE_id == UE_id){
            break;
@@ -830,12 +815,6 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
     int tdd_sfa;
     int ta_update;
 
-#if 0
-    if (UE_list->head == -1) {
-	return;
-    }
-#endif
-
     start_meas(&eNB->schedule_dlsch);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_IN);
@@ -972,16 +951,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
         // update UL DAI after DLSCH scheduling
         set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP);
       }
-#warning RK->CR This old API call has to be revisited for FAPI, or logic must be changed
-#if 0
-	    /* add "fake" DCI to have CCE_allocation_infeasible work properly for next allocations */
-	    /* if we don't add it, next allocations may succeed but overall allocations may fail */
-	    /* will be removed at the end of this function */
-	    add_ue_spec_dci(&eNB->common_channels[CC_id].DCI_pdu, &(char[]) {
-			    0}, rnti, 1, aggregation, 1, format1, 0);
-#endif
-
-	    nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
+            nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
 
 	    harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
 
@@ -2925,19 +2895,6 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
             if(ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_FIRST) {
               UE_template->scheduled_ul_bytes += get_TBS_UL(UE_template->mcs_UL[harq_pid],rb_table[rb_table_index]);
               UE_template->ul_SR = 0;
-#if 0
-              LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,get_TBS_UL(UE_template->mcs_UL[harq_pid],rb_table[rb_table_index]));
-                if(ulsch_ue_select[CC_id].list[ulsch_ue_num].ul_total_buffer > 0){
-                    if (UE_template->ul_total_buffer > get_TBS_UL(UE_template->mcs_UL[harq_pid],rb_table[rb_table_index]))
-                      UE_template->ul_total_buffer -= get_TBS_UL(UE_template->mcs_UL[harq_pid],rb_table[rb_table_index]);
-                    else
-                      UE_template->ul_total_buffer = 0;
-                    LOG_D(MAC,"ul_total_buffer, new %d\n", UE_template->ul_total_buffer);
-                } else {
-                    UE_template->ul_SR = 0;
-                }
-              LOG_D(MAC,"ul_total_buffer, new %d\n", UE_template->ul_total_buffer);
-#endif
             }
             if((ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_INACTIVE) && (ULSCH_first_end == 0)) {
                 ULSCH_first_end = 1;

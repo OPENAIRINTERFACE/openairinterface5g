@@ -275,14 +275,6 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
   }
 
   printf("UE threads created by %ld\n", gettid());
-#if 0
-#if defined(ENABLE_USE_MME)
-  extern volatile int start_UE;
-  while (start_UE == 0) {
-    sleep(1);
-  }
-#endif
-#endif
 }
 
 // Panos: Initiating all UEs within a single set of threads for PHY_STUB. Future extensions -> multiple

@@ -3601,16 +3601,14 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
       stop_meas(&ue->dlsch_unscrambling_stats);
 #endif
       
-#if 0
-      LOG_I(PHY," ------ start turbo decoder for AbsSubframe %d.%d / %d  ------  \n", frame_rx, subframe_rx, harq_pid);
-      LOG_I(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d --> nb_rb %d \n", frame_rx, subframe_rx, harq_pid, dlsch0->harq_processes[harq_pid]->nb_rb);
-      LOG_I(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> rb_alloc_even %x \n", frame_rx, subframe_rx, harq_pid, dlsch0->harq_processes[harq_pid]->rb_alloc_even);
-      LOG_I(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> Qm %d \n", frame_rx, subframe_rx, harq_pid, dlsch0->harq_processes[harq_pid]->Qm);
-      LOG_I(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> Nl %d \n", frame_rx, subframe_rx, harq_pid, dlsch0->harq_processes[harq_pid]->Nl);
-      LOG_I(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> G  %d \n", frame_rx, subframe_rx, harq_pid, dlsch0->harq_processes[harq_pid]->G);
-      LOG_I(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> Kmimo  %d \n", frame_rx, subframe_rx, harq_pid, dlsch0->Kmimo);
-      LOG_I(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> Pdcch Sym  %d \n", frame_rx, subframe_rx, harq_pid, ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->num_pdcch_symbols);
-#endif
+      LOG_D(PHY," ------ start turbo decoder for AbsSubframe %d.%d / %d  ------  \n", frame_rx, subframe_rx, harq_pid);
+      LOG_D(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d --> nb_rb %d \n", frame_rx, subframe_rx, harq_pid, dlsch0->harq_processes[harq_pid]->nb_rb);
+      LOG_D(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> rb_alloc_even %x \n", frame_rx, subframe_rx, harq_pid, dlsch0->harq_processes[harq_pid]->rb_alloc_even);
+      LOG_D(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> Qm %d \n", frame_rx, subframe_rx, harq_pid, dlsch0->harq_processes[harq_pid]->Qm);
+      LOG_D(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> Nl %d \n", frame_rx, subframe_rx, harq_pid, dlsch0->harq_processes[harq_pid]->Nl);
+      LOG_D(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> G  %d \n", frame_rx, subframe_rx, harq_pid, dlsch0->harq_processes[harq_pid]->G);
+      LOG_D(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> Kmimo  %d \n", frame_rx, subframe_rx, harq_pid, dlsch0->Kmimo);
+      LOG_D(PHY,"start turbo decode for CW 0 for AbsSubframe %d.%d / %d  --> Pdcch Sym  %d \n", frame_rx, subframe_rx, harq_pid, ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->num_pdcch_symbols);
       
 #if UE_TIMING_TRACE
       start_meas(&ue->dlsch_decoding_stats[ue->current_thread_id[subframe_rx]]);
@@ -3667,15 +3665,13 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
           stop_meas(&ue->dlsch_unscrambling_stats);
 #endif
 	  
-#if 0
-          LOG_I(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d --> nb_rb %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->harq_processes[harq_pid]->nb_rb);
-          LOG_I(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> rb_alloc_even %x \n", frame_rx, subframe_rx, harq_pid, dlsch1->harq_processes[harq_pid]->rb_alloc_even);
-          LOG_I(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> Qm %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->harq_processes[harq_pid]->Qm);
-          LOG_I(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> Nl %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->harq_processes[harq_pid]->Nl);
-          LOG_I(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> G  %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->harq_processes[harq_pid]->G);
-          LOG_I(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> Kmimo  %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->Kmimo);
-          LOG_I(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> Pdcch Sym  %d \n", frame_rx, subframe_rx, harq_pid, ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->num_pdcch_symbols);
-#endif
+          LOG_D(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d --> nb_rb %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->harq_processes[harq_pid]->nb_rb);
+          LOG_D(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> rb_alloc_even %x \n", frame_rx, subframe_rx, harq_pid, dlsch1->harq_processes[harq_pid]->rb_alloc_even);
+          LOG_D(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> Qm %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->harq_processes[harq_pid]->Qm);
+          LOG_D(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> Nl %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->harq_processes[harq_pid]->Nl);
+          LOG_D(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> G  %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->harq_processes[harq_pid]->G);
+          LOG_D(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> Kmimo  %d \n", frame_rx, subframe_rx, harq_pid, dlsch1->Kmimo);
+          LOG_D(PHY,"start turbo decode for CW 1 for AbsSubframe %d.%d / %d  --> Pdcch Sym  %d \n", frame_rx, subframe_rx, harq_pid, ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->num_pdcch_symbols);
 	  
 #if UE_TIMING_TRACE
           start_meas(&ue->dlsch_decoding_stats[ue->current_thread_id[subframe_rx]]);
@@ -4424,11 +4420,9 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *pr
     /**** End Subframe FE Processing ****/
 
 
-#if 0
     //Trigger LLR parallelized for Slot 1
-    proc->dci_slot0_available=1;
-    printf("Set available dci slot0 to 1 AbsSubframe %d.%d \n",frame_rx%1024,subframe_rx);
-#endif
+    //proc->dci_slot0_available=1;
+    //printf("Set available dci slot0 to 1 AbsSubframe %d.%d \n",frame_rx%1024,subframe_rx);
 
     /**** Pdsch Procedure Slot0 ****/
     // start main thread for Pdsch Procedure (slot0)

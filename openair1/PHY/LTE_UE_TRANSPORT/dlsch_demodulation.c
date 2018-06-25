@@ -1188,7 +1188,8 @@ int rx_pdsch(PHY_VARS_UE *ue,
     LOG_D(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
-// Please keep it: useful for debugging
+
+    // Please keep it: useful for debugging
 #if 0
   if( (symbol == 13) && (subframe==0) && (dlsch0_harq->Qm == 6) /*&& (nb_rb==25)*/)
   {

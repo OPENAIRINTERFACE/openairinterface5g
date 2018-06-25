@@ -243,31 +243,6 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   eNB->if_inst->UL_indication(&eNB->UL_INFO);
 
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-#if 0
-/* TODO: find a correct solution for this conflict */
-<<<<<<< HEAD
-
-  // *****************************************
-  // TX processing for subframe n+sf_ahead
-  // run PHY TX procedures the one after the other for all CCs to avoid race conditions
-  // (may be relaxed in the future for performance reasons)
-  // *****************************************
-  //if (wait_CCs(proc)<0) return(-1);
-  
-  if (oai_exit) return(-1);
-#ifndef PHY_TX_THREAD
-  phy_procedures_eNB_TX(eNB, proc, no_relay, NULL, 1);
-#endif
-  if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) return(-1);
-=======
-  
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 0 );
-  if(oai_exit) return(-1);
-  if(get_nprocs() <= 4){
-    phy_procedures_eNB_TX(eNB, proc, 1);
-  }
->>>>>>> origin/develop
-#endif /* #if 0 */
   /* this conflict resolution may be totally wrong, to be tested */
   /* CONFLICT RESOLUTION: BEGIN */
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 0 );
@@ -285,7 +260,6 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);
 
-#if 0
   LOG_D(PHY, "rxtx:%lld nfapi:%lld phy:%lld tx:%lld rx:%lld prach:%lld ofdm:%lld ",
       softmodem_stats_rxtx_sf.diff_now, nfapi_meas.diff_now,
       TICK_TO_US(eNB->phy_proc),
@@ -325,7 +299,6 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
       TICK_TO_US(eNB->ulsch_tc_intl1_stats),
       TICK_TO_US(eNB->ulsch_tc_intl2_stats)
       );
-#endif
   
   return(0);
 }
@@ -465,30 +438,6 @@ static void* eNB_thread_rxtx( void* param ) {
   eNB_thread_rxtx_status = 0;
   return &eNB_thread_rxtx_status;
 }
-
-
-#if 0 //defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-// Wait for eNB application initialization to be complete (eNB registration to MME)
-static void wait_system_ready (char *message, volatile int *start_flag) {
-  
-  static char *indicator[] = {".    ", "..   ", "...  ", ".... ", ".....",
-			      " ....", "  ...", "   ..", "    .", "     "};
-  int i = 0;
-  
-  while ((!oai_exit) && (*start_flag == 0)) {
-    LOG_N(EMU, message, indicator[i]);
-    fflush(stdout);
-    i = (i + 1) % (sizeof(indicator) / sizeof(indicator[0]));
-    usleep(200000);
-  }
-  
-  LOG_D(EMU,"\n");
-}
-#endif
-
-
-
-
 
 void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t *ru)
 {
