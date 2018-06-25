@@ -52,7 +52,7 @@ void set_default_frame_parms_single(nfapi_config_request_t *config, NR_DL_FRAME_
 
 //#define DEBUG_INITIAL_SYNCH
 
-int pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
+int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
 
   uint8_t l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
@@ -262,12 +262,12 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     rx_sss_nr(ue,&metric_fdd_ncp,&phase_fdd_ncp);
 
-    set_default_frame_parms_single(config,&ue->frame_parms);
+    //set_default_frame_parms_single(config,&ue->frame_parms);
     nr_init_frame_parms_ue(config,&ue->frame_parms);
 
     nr_gold_pbch(ue);
-    ret = pbch_detection(ue,mode);
-    ret = -1;
+    ret = nr_pbch_detection(ue,mode);
+    ret = -1;  //to be deleted
     //   write_output("rxdata2.m","rxd2",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH

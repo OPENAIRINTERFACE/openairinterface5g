@@ -642,7 +642,7 @@ typedef struct {
   int32_t **dl_ch_estimates_ext;
   /// \brief Pointer to PBCH llrs.
   /// - first index: ? [0..1919] (hard coded)
-  int16_t *llr;
+  int8_t *llr;
   /// \brief Pointer to PBCH decoded output.
   /// - first index: ? [0..63] (hard coded)
   uint8_t *decoded_output;
