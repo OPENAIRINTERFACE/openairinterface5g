@@ -244,7 +244,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_DL_FRAME_PARMS   frame_parms;
   PHY_MEASUREMENTS_gNB measurements;
   NR_IF_Module_t          *if_inst;
-  UL_IND_t             UL_INFO;
+  NR_UL_IND_t             UL_INFO;
   pthread_mutex_t      UL_INFO_mutex;
   /// NFAPI RX ULSCH information
   nfapi_rx_indication_pdu_t  rx_pdu_list[NFAPI_RX_IND_MAX_PDU];

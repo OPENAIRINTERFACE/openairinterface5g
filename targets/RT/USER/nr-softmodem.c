@@ -548,8 +548,8 @@ static void get_options(void) {
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
       memset((void*)&RC,0,sizeof(RC));
       /* Read RC configuration file */
-      RCConfig();
-      NB_gNB_INST = RC.nb_inst;
+      NRRCConfig();
+      NB_gNB_INST = RC.nb_nr_inst;
       NB_RU	  = RC.nb_RU;
       printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_gNB_INST,RC.nb_L1_inst,NB_RU);
    }

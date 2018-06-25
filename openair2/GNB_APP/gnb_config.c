@@ -2793,7 +2793,7 @@ void NRRCConfig(void) {
     RC.nb_macrlc_inst  = MACRLCParamList.numelt;
     // Get num L1 instances
     config_getlist( &L1ParamList,NULL,0, NULL);
-    RC.nb_L1_inst = L1ParamList.numelt;
+    RC.nb_nr_L1_inst = L1ParamList.numelt;
 
     // Get num RU instances
     config_getlist( &RUParamList,NULL,0, NULL);  
