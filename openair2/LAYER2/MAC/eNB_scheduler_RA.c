@@ -1006,7 +1006,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 #endif
     {
     // This is normal LTE case
-	LOG_D(MAC, "Panos-D: generate_Msg4 1 ra->Msg4_frame SFN/SF: %d.%d,  frameP SFN/SF: %d.%d FOR eNB_Mod: %d \n", ra->Msg4_frame, ra->Msg4_subframe, frameP, subframeP, module_idP);
+	LOG_D(MAC, "generate_Msg4 1 ra->Msg4_frame SFN/SF: %d.%d,  frameP SFN/SF: %d.%d FOR eNB_Mod: %d \n", ra->Msg4_frame, ra->Msg4_subframe, frameP, subframeP, module_idP);
     	if ((ra->Msg4_frame == frameP) && (ra->Msg4_subframe == subframeP)) {
 
     	    // Get RRCConnectionSetup for Piggyback
@@ -1326,7 +1326,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 			  ra->rnti, round, frameP, subframeP);
 		    // DLSCH Config
                     //DJP - fix this pdu_index = -1
-		    LOG_D(MAC, "Panos:D: check_Msg4_retransmission() before fill_nfapi_dlsch_config() with pdu_index = -1 \n");
+		    LOG_D(MAC, "check_Msg4_retransmission() before fill_nfapi_dlsch_config() with pdu_index = -1 \n");
 		    fill_nfapi_dlsch_config(mac, dl_req_body, ra->msg4_TBsize,
 					    -1
 					    /* retransmission, no pdu_index */

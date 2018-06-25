@@ -422,11 +422,13 @@ static void* eNB_thread_rxtx( void* param ) {
       exit_fun( "ERROR pthread_cond_signal" );
     }
     pthread_mutex_unlock( &proc->mutex_rxtx );
-    if(get_nprocs() >= 8)      wakeup_tx(eNB,eNB->proc.ru_proc);
-    else
-    {  
-      phy_procedures_eNB_TX(eNB, proc, 1);
-      wakeup_txfh(proc,eNB->proc.ru_proc);
+    if (nfapi_mode!=2){
+    	if(get_nprocs() >= 8)      wakeup_tx(eNB,eNB->proc.ru_proc);
+    	else
+    	{
+    		phy_procedures_eNB_TX(eNB, proc, 1);
+    		wakeup_txfh(proc,eNB->proc.ru_proc);
+    	}
     }
 
   } // while !oai_exit
@@ -962,7 +964,7 @@ void init_eNB_proc(int inst) {
 	//pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc_rxtx );
 
 
-    // Panos: Should we also include here the case where single_thread_flag = 1 ?
+    //Should we also include here the case where single_thread_flag = 1 ?
 	if(nfapi_mode!=2){
 		pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
 		pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);

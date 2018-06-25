@@ -516,7 +516,7 @@ int config_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfap
   uint8_t num_tlv = 0;
   //struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
 
-  // Panos: In the case of nfapi_mode = 3 (UE = PNF) we should not have dependency on any eNB var. So we aim
+  //  In the case of nfapi_mode = 3 (UE = PNF) we should not have dependency on any eNB var. So we aim
   // to keep only the necessary just to keep the nfapi FSM rolling by sending a dummy response.
   LTE_DL_FRAME_PARMS *fp;
   if (nfapi_mode!=3) {
@@ -1105,7 +1105,6 @@ int start_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi
   }
 
   if(phy_info->timing_info_mode & 0x2) {
-	  //printf("Panos-D: start_request () Enabling timing_info_mode_aperiodic \n");
     p7_config->timing_info_mode_aperiodic = 1;
   }
 
@@ -1173,9 +1172,6 @@ int start_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi
     NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] DJP - HACK - Set p7_config global ready for subframe ind%s\n", __FUNCTION__);
     p7_config_g = p7_config;
 
-    //NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] Panos-D: start_request, BUFFER SIZE: %d", p7_config_g->subframe_buffer_size);
-    //printf("Panos-D: start_request, bUFFER SIZE: %d", p7_config_g->subframe_buffer_size);
-
     // Need to wait for main thread to create RU structures
     while(config_sync_var<0)
     {
@@ -1189,13 +1185,7 @@ int start_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfapi
 
     printf("[PNF] About to call init_eNB_afterRU()\n");
 
-    // Panos: Instead
-    /*if (nfapi_mode == 3) {
-    	init_UE_stub(1,0,uecap_xer_in);
-    }*/
-    //else{
     if (nfapi_mode != 3) {
-    	// Panos
     	init_eNB_afterRU();
     }
 
