@@ -62,7 +62,7 @@
 
 extern uint16_t sf_ahead;
 
-void RCconfig_NR_flexran()
+void RCconfig_nr_flexran()
 {
   uint16_t  i;
   uint16_t  num_gnbs;
@@ -2573,6 +2573,51 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
 }//End RCconfig_NRRRC function
 
+int RCconfig_nr_gtpu(void ) {
+
+  int               num_gnbs                      = 0;
+
+
+
+  char*             enb_interface_name_for_S1U    = NULL;
+  char*             enb_ipv4_address_for_S1U      = NULL;
+  uint32_t          enb_port_for_S1U              = 0;
+  char             *address                       = NULL;
+  char             *cidr                          = NULL;
+  char gtpupath[MAX_OPTNAME_SIZE*2 + 8];
+    
+
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  
+  paramdef_t GTPUParams[]  = GTPUPARAMS_DESC;
+  LOG_I(GTPU,"Configuring GTPu\n");
+
+/* get number of active eNodeBs */
+  config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
+  num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
+  AssertFatal (num_gnbs >0,
+           "Failed to parse config file no active gNodeBs in %s \n", GNB_CONFIG_STRING_ACTIVE_GNBS);
+
+
+  sprintf(gtpupath,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+  config_get( GTPUParams,sizeof(GTPUParams)/sizeof(paramdef_t),gtpupath);    
+
+
+
+    cidr = enb_ipv4_address_for_S1U;
+    address = strtok(cidr, "/");
+    
+    if (address) {
+      IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
+
+      LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
+
+    }
+
+    RC.gtpv1u_data_g->enb_port_for_S1u_S12_S4_up = enb_port_for_S1U;
+return 0;
+}
+
 int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
 
   int               j,k = 0;
@@ -2793,7 +2838,7 @@ void NRRCConfig(void) {
     RC.nb_macrlc_inst  = MACRLCParamList.numelt;
     // Get num L1 instances
     config_getlist( &L1ParamList,NULL,0, NULL);
-    RC.nb_L1_inst = L1ParamList.numelt;
+    RC.nb_nr_L1_inst = L1ParamList.numelt;
 
     // Get num RU instances
     config_getlist( &RUParamList,NULL,0, NULL);  

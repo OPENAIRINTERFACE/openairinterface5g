@@ -909,11 +909,11 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
 
   LOG_I(PHY,"[nr-softmodem.c] gNB structure about to allocated RC.nb_L1_inst:%d RC.nb_L1_CC[0]:%d\n",RC.nb_L1_inst,RC.nb_L1_CC[0]);
 
-  if (RC.gNB == NULL) RC.gNB = (PHY_VARS_gNB***) malloc(RC.nb_L1_inst*sizeof(PHY_VARS_gNB **));
+  if (RC.gNB == NULL) RC.gNB = (PHY_VARS_gNB***) malloc(RC.nb_nr_L1_inst*sizeof(PHY_VARS_gNB **));
   LOG_I(PHY,"[lte-softmodem.c] gNB structure RC.gNB allocated\n");
-  for (inst=0;inst<RC.nb_L1_inst;inst++) {
-    if (RC.gNB[inst] == NULL) RC.gNB[inst] = (PHY_VARS_gNB**) malloc(RC.nb_CC[inst]*sizeof(PHY_VARS_gNB *));
-    for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) {
+  for (inst=0;inst<RC.nb_nr_L1_inst;inst++) {
+    if (RC.gNB[inst] == NULL) RC.gNB[inst] = (PHY_VARS_gNB**) malloc(RC.nb_nr_CC[inst]*sizeof(PHY_VARS_gNB *));
+    for (CC_id=0;CC_id<RC.nb_nr_L1_CC[inst];CC_id++) {
       if (RC.gNB[inst][CC_id] == NULL) RC.gNB[inst][CC_id] = (PHY_VARS_gNB*) malloc(sizeof(PHY_VARS_gNB));
       gNB                     = RC.gNB[inst][CC_id]; 
       gNB->abstraction_flag   = 0;
