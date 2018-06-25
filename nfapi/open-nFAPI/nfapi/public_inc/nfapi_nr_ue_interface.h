@@ -85,7 +85,8 @@
 
 #define NFAPI_NR_MAX_NUM_DL_ALLOCATIONS 16
 #define NFAPI_NR_MAX_NUM_UL_ALLOCATIONS 16
-
+#define NFAPI_NR_MAX_NUM_SERVING_CELLS 32
+#define NFAPI_NR_MAX_NUM_ZP_CSI_RS_RESOURCE_PER_SET 16
 
 typedef unsigned int	uint32_t;
 typedef unsigned short	uint16_t;
@@ -443,12 +444,138 @@ typedef struct {
         
     } nfapi_nr_dl_bwp_common_config_t;
 
+
+
     typedef struct {
+        uint16_t int_rnti;
+        uint8_t time_frequency_set;
+        uint8_t dci_payload_size;
+        uint8_t serving_cell_id[NFAPI_NR_MAX_NUM_SERVING_CELLS];    //  interrupt configuration per serving cell
+        uint8_t position_in_dci[NFAPI_NR_MAX_NUM_SERVING_CELLS];    //  interrupt configuration per serving cell
+    } nfapi_nr_downlink_preemption_t;
+
+    typedef struct {
+        uint8_t tpc_index;
+        uint8_t tpc_index_sul;
+        uint8_t target_cell;
+    } nfapi_nr_pusch_tpc_command_config_t;
+
+    typedef struct {
+        uint8_t tpc_index_pcell;
+        uint8_t tpc_index_pucch_scell;
+    } nfapi_nr_pucch_tpc_command_config_t;
+
+    typedef struct {
+        uint8_t starting_bit_of_format_2_3;
+        uint8_t feild_type_format_2_3;
+    } nfapi_nr_srs_tpc_command_config_t;
+
+    typedef struct {
+        nfapi_nr_downlink_preemption_t downlink_preemption;
+        nfapi_nr_pusch_tpc_command_config_t tpc_pusch;
+        nfapi_nr_pucch_tpc_command_config_t tpc_pucch;
+        nfapi_nr_srs_tpc_command_config_t tpc_srs;
+    } nfapi_nr_pdcch_config_dedicated_t;
+
+    typedef struct {
+        uint8_t dmrs_type;
+        uint8_t dmrs_addition_position;
+        uint8_t max_length;
+        uint16_t scrambling_id_0;
+        uint16_t scrambling_id_1;
+        uint8_t ptrs_frequency_density[2];      //  phase tracking rs
+        uint8_t ptrs_time_density[3];           //  phase tracking rs
+        uint8_t ptrs_epre_ratio;                //  phase tracking rs
+        uint8_t ptrs_resource_element_offset;   //  phase tracking rs
+    } nfapi_nr_dmrs_downlink_config_t;
+
+    typedef struct {
+        uint8_t bwp_or_cell_level;
+        uint8_t pattern_type;
+        uint32_t resource_blocks[9];        //  bitmaps type 275 bits
+        uint8_t slot_type;                  //  bitmaps type one/two slot(s)
+        uint32_t symbols_in_resouece_block; //  bitmaps type 14/28 bits
+        uint8_t periodic;                   //  bitmaps type 
+        uint32_t pattern[2];                //  bitmaps type 2/4/5/8/10/20/40 bits
+
+        nfapi_nr_coreset_t coreset;         //  coreset
+
+        uint8_t subcarrier_spacing;
+        uint8_t mode;
+    } nfapi_nr_rate_matching_pattern_group_t;
+
+    typedef struct {
+        //  resource mapping
+        uint8_t row;    //  row1/row2/row4/other
+        uint16_t frequency_domain_allocation; //    4/12/3/6 bits
+        uint8_t number_of_ports;
+        uint8_t first_ofdm_symbol_in_time_domain;
+        uint8_t first_ofdm_symbol_in_time_domain2;
+        uint8_t cdm_type;
+        uint8_t density;            //  .5/1/3
+        uint8_t density_dot5_type;  //  even/odd PRBs
+        
+        uint8_t frequency_band_starting_rb;     //  freqBand
+        uint8_t frequency_band_number_of_rb;    //  freqBand
+
+        //  periodicityAndOffset
+        uint8_t periodicity;    //  slot4/5/8/10/16/20/32/40/64/80/160/320/640
+        uint32_t offset;        //  0..639 bits
+    } nfapi_nr_zp_csi_rs_resource_t;
+
+    typedef struct {
+        uint16_t data_scrambling_id_pdsch;
+        nfapi_nr_dmrs_downlink_config_t dmrs_dl_for_pdsch_mapping_type_a;
+        nfapi_nr_dmrs_downlink_config_t dmrs_dl_for_pdsch_mapping_type_b; 
+        uint8_t vrb_to_prb_interleaver;
+        uint8_t resource_allocation;
+        nfapi_nr_pdsch_time_domain_resource_allocation_t allocation_list[NFAPI_NR_MAX_NUM_DL_ALLOCATIONS];
+        uint8_t pdsch_aggregation_factor;
+        nfapi_nr_rate_matching_pattern_group_t rate_matching_pattern_group1;
+        nfapi_nr_rate_matching_pattern_group_t rate_matching_pattern_group2;
+        uint8_t rbg_size;
+        uint8_t mcs_table;
+        uint8_t max_num_of_code_word_scheduled_by_dci;
+        uint8_t bundle_size;        //  prb_bundling static
+        uint8_t bundle_size_set1;   //  prb_bundling dynamic 
+        uint8_t bundle_size_set2;   //  prb_bundling dynamic
+        nfapi_nr_zp_csi_rs_resource_t periodically_zp_csi_rs_resource_set[NFAPI_NR_MAX_NUM_ZP_CSI_RS_RESOURCE_PER_SET];
+    } nfapi_nr_pdsch_config_dedicated_t;
+
+    typedef struct {
+        uint16_t starting_prb;
+        uint8_t intra_slot_frequency_hopping;
+        uint16_t second_hop_prb;
+        uint8_t format;                 //  pucch format 0..4
+        uint8_t initial_cyclic_shift;
+        uint8_t number_of_symbols;
+        uint8_t starting_symbol_index;
+        uint8_t time_domain_occ;
+        uint8_t number_of_prbs;
+        uint8_t occ_length;
+        uint8_t occ_index;
+    } nfapi_nr_pucch_resource_t;
+
+    typedef struct {
+        uint8_t periodicity;
+        uint8_t number_of_harq_process;
+        nfapi_nr_pucch_resource_t n1_pucch_an;
+    } nfapi_nr_sps_config_t;
+
+    typedef struct {
+        uint8_t beam_failure_instance_max_count;
+        uint8_t beam_failure_detection_timer;
+    } nfapi_nr_radio_link_monitoring_config_t;
+
+    typedef struct {
+        nfapi_nr_pdcch_config_dedicated_t pdcch_config_dedicated;
+        nfapi_nr_pdsch_config_dedicated_t pdsch_config_dedicated;
+        nfapi_nr_sps_config_t sps_config;
+        nfapi_nr_radio_link_monitoring_config_t radio_link_monitoring_config;
 
     } nfapi_nr_dl_bwp_dedicated_config_t;
 
     typedef struct {
-
         nfapi_nr_rach_config_common_t  rach_config_common;
         nfapi_nr_pusch_config_common_t pusch_config_common;
         nfapi_nr_pucch_config_common_t pucch_config_common;
