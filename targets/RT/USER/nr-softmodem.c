@@ -551,7 +551,7 @@ static void get_options(void) {
       NRRCConfig();
       NB_gNB_INST = RC.nb_nr_inst;
       NB_RU	  = RC.nb_RU;
-      printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_gNB_INST,RC.nb_L1_inst,NB_RU);
+      printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %d\n",NB_gNB_INST,RC.nb_nr_L1_inst,NB_RU);
    }
 }
 
@@ -1045,7 +1045,7 @@ int main( int argc, char **argv )
   
   
 #if defined(ENABLE_ITTI)
-  if (RC.nb_inst > 0)  {
+  if (RC.nb_nr_inst > 0)  {
     
     // don't create if node doesn't connect to RRC/S1/GTP
       if (create_gNB_tasks(1) < 0) {
@@ -1061,7 +1061,7 @@ int main( int argc, char **argv )
 #endif
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
-  RCconfig_NR_flexran();
+  RCconfig_nr_flexran();
   for (i = 0; i < RC.nb_L1_inst; i++) {
     flexran_agent_start(i);
   }
@@ -1150,7 +1150,7 @@ int main( int argc, char **argv )
   // start the main threads
 
     number_of_cards = 1;    
-    printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
+    printf("RC.nb_nr_L1_inst:%d\n", RC.nb_nr_L1_inst);
     if (RC.nb_L1_inst > 0) {
       printf("Initializing gNB threads single_thread_flag:%d wait_for_sync:%d\n", single_thread_flag,wait_for_sync);
       init_gNB(single_thread_flag,wait_for_sync);

@@ -92,17 +92,17 @@ typedef struct ru_config_s {
 } ru_config_t;
 */
 extern void RCconfig_RU(void);
-extern void RCconfig_NR_flexran(void);
+extern void RCconfig_nr_flexran(void);
 extern void RCconfig_NR_L1(void);
 extern void RCconfig_nr_macrlc(void);
-extern int  RCconfig_gtpu(void );
+extern int  RCconfig_nr_gtpu(void );
 extern void NRRCConfig(void);
 
 //void                          enb_config_display(void);
 //void                          ru_config_display(void);
 
 int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc);
-int RCconfig_S1(MessageDef *msg_p, uint32_t i);
+int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i);
 
 #endif /* GNB_CONFIG_H_ */
 /** @} */
