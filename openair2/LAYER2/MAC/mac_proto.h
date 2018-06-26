@@ -441,6 +441,7 @@ void set_ue_dai(sub_frame_t subframeP,
 		int UE_id,
 		uint8_t CC_id, uint8_t tdd_config, UE_list_t * UE_list);
 
+uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
 /** \brief First stage of PCH Scheduling. Gets a PCH SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
@@ -675,6 +676,8 @@ int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid
     );
 int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 
+void store_dlsch_buffer(module_id_t Mod_id, slice_id_t slice_id, frame_t frameP, sub_frame_t subframeP);
+void assign_rbs_required(module_id_t Mod_id, slice_id_t slice_id, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB], int min_rb_unit[NFAPI_CC_MAX]);
 
 int maxround(module_id_t Mod_id, uint16_t rnti, int frame,
 	     sub_frame_t subframe, uint8_t ul_flag);
