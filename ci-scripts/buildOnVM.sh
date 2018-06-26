@@ -24,10 +24,12 @@ function usage {
     echo "    --workspace #### OR -ws ####"
     echo "    Specify the workspace."
     echo ""
-    echo "    --variant enb-usrp   OR -v1"
-    echo "    --variant basic-sim  OR -v2"
-    echo "    --variant phy-sim    OR -v3"
-    echo "    --variant cppcheck   OR -v4"
+    echo "    --variant enb-usrp     OR -v1"
+    echo "    --variant basic-sim    OR -v2"
+    echo "    --variant phy-sim      OR -v3"
+    echo "    --variant cppcheck     OR -v4"
+    echo "    --variant enb-ethernet OR -v7"
+    echo "    --variant ue-ethernet  OR -v8"
     echo "    Specify the variant to build."
     echo ""
     echo "    --keep-vm-alive OR -k"
@@ -42,10 +44,12 @@ function variant_usage {
     echo "OAI VM Build Check script"
     echo "   Original Author: Raphael Defosseux"
     echo ""
-    echo "    --variant enb-usrp   OR -v1"
-    echo "    --variant basic-sim  OR -v2"
-    echo "    --variant phy-sim    OR -v3"
-    echo "    --variant cppcheck   OR -v4"
+    echo "    --variant enb-usrp     OR -v1"
+    echo "    --variant basic-sim    OR -v2"
+    echo "    --variant phy-sim      OR -v3"
+    echo "    --variant cppcheck     OR -v4"
+    echo "    --variant enb-ethernet OR -v7"
+    echo "    --variant ue-ethernet  OR -v8"
     echo ""
 }
 
@@ -128,6 +132,22 @@ case $key in
     BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
     shift
     ;;
+    -v7)
+    VM_NAME=ci-enb-ethernet
+    ARCHIVES_LOC=enb_eth
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=6
+    BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+    shift
+    ;;
+    -v8)
+    VM_NAME=ci-ue-ethernet
+    ARCHIVES_LOC=ue_eth
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=6
+    BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+    shift
+    ;;
     --variant)
     variant="$2"
     case $variant in
@@ -158,6 +178,20 @@ case $key in
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
         BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+        ;;
+        enb-ethernet)
+        VM_NAME=ci-enb-ethernet
+        ARCHIVES_LOC=enb_eth
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=6
+        BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+        ;;
+        ue-ethernet)
+        VM_NAME=ci-ue-ethernet
+        ARCHIVES_LOC=ue_eth
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=6
+        BUILD_OPTIONS="--UE -t ETHERNET --noS1"
         ;;
         *)
         echo ""
@@ -226,7 +260,7 @@ echo "############################################################"
 echo "Running install and build script on VM ($VM_NAME)"
 echo "############################################################"
 echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
-if [ "$VM_NAME" == "ci-cppcheck" ]
+if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "echo \"sudo apt-get --yes --quiet install zip cppcheck \"" >> $VM_CMDS
     echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
@@ -239,7 +273,7 @@ echo "mkdir tmp" >> $VM_CMDS
 echo "cd tmp" >> $VM_CMDS
 echo "echo \"unzip -qq -DD ../localZip.zip\"" >> $VM_CMDS
 echo "unzip -qq -DD ../localZip.zip" >> $VM_CMDS
-if [ "$VM_NAME" == "ci-cppcheck" ]
+if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "mkdir cmake_targets/log" >> $VM_CMDS
     echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
@@ -270,7 +304,7 @@ then
 fi
 
 scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/*.txt $ARCHIVES_LOC
-if [ "$VM_NAME" == "ci-cppcheck" ]
+if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/*.xml $ARCHIVES_LOC
 fi

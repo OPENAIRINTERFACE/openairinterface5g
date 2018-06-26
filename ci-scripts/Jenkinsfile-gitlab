@@ -8,7 +8,7 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Analysis with cppcheck"])
+        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE--ethernet", "Analysis with cppcheck"])
     }
 
     stages {
@@ -77,12 +77,26 @@ pipeline {
                         }
                     }
                 }
+                stage ("Build eNb-ethernet") {
+                    steps {
+                        gitlabCommitStatus(name: "Build eNb-ethernet") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Build UE-ethernet") {
+                    steps {
+                        gitlabCommitStatus(name: "Build UE-ethernet") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
             }
             post {
                 always {
                     script {
                         dir ('archives') {
-                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck"
+                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth"
                         }
                         if(fileExists('archives/vm_build_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_build_logs.zip'

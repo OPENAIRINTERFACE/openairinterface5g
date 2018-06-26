@@ -232,6 +232,10 @@ function sca_summary_table_footer {
         echo "        <th>Total</th>" >> ./build_results.html
         echo "        <th>Unknown</th>" >> ./build_results.html
         echo "        <th>Unknown</th>" >> ./build_results.html
+        if [ -f ccp_error_cnt.txt ]
+        then
+            rm -f ccp_error_cnt.txt
+        fi
     fi
     echo "      </tr>" >> ./build_results.html
     echo "   </table>" >> ./build_results.html
@@ -505,6 +509,24 @@ summary_table_row "UL Simulator - Release 14" ./archives/phy_sim/ulsim.Rel14.txt
 summary_table_row "Coding - Release 14" ./archives/phy_sim/coding.Rel14.txt "Built target coding" ./phy_sim_row3.html
 summary_table_footer
 
+summary_table_header "OAI Build eNB -- ETHERNET transport option"
+summary_table_row "LTE SoftModem w/o S1 - Release 14" ./archives/enb_eth/lte-softmodem-nos1.Rel14.txt "Built target lte-softmodem" ./enb_eth_row1.html
+summary_table_row "Coding - Release 14" ./archives/enb_eth/coding.Rel14.txt "Built target coding" ./enb_eth_row2.html
+summary_table_row "OAI ETHERNET transport - Release 14" ./archives/enb_eth/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./enb_eth_row3.html
+summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_eth/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_eth_row4.html
+summary_table_row "RB Tools - Release 14" ./archives/enb_eth/rb_tool.Rel14.txt "Built target rb_tool" ./enb_eth_row5.html
+summary_table_row "NAS Mesh - Release 14" ./archives/enb_eth/nasmesh.Rel14.txt "Built target nasmesh" ./enb_eth_row6.html
+summary_table_footer
+
+summary_table_header "OAI Build UE -- ETHERNET transport option"
+summary_table_row "LTE UE SoftModem w/o S1 - Release 14" ./archives/ue_eth/lte-uesoftmodem-nos1.Rel14.txt "Built target lte-uesoftmodem" ./ue_eth_row1.html
+summary_table_row "Coding - Release 14" ./archives/ue_eth/coding.Rel14.txt "Built target coding" ./ue_eth_row2.html
+summary_table_row "OAI ETHERNET transport - Release 14" ./archives/ue_eth/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./ue_eth_row3.html
+summary_table_row "Parameters Lib Config - Release 14" ./archives/ue_eth/params_libconfig.Rel14.txt "Built target params_libconfig" ./ue_eth_row4.html
+summary_table_row "RB Tools - Release 14" ./archives/ue_eth/rb_tool.Rel14.txt "Built target rb_tool" ./ue_eth_row5.html
+summary_table_row "NAS Mesh - Release 14" ./archives/ue_eth/nasmesh.Rel14.txt "Built target nasmesh" ./ue_eth_row6.html
+summary_table_footer
+
 echo "   <h3>Details</h3>" >> ./build_results.html
 
 for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
@@ -519,7 +541,15 @@ for DETAILS_TABLE in `ls ./phy_sim_row*.html`
 do
     cat $DETAILS_TABLE >> ./build_results.html
 done
-rm -f ./enb_usrp_row*.html ./basic_sim_row*.html ./phy_sim_row*.html
+for DETAILS_TABLE in `ls ./enb_eth_row*.html`
+do
+    cat $DETAILS_TABLE >> ./build_results.html
+done
+for DETAILS_TABLE in `ls ./ue_eth_row*.html`
+do
+    cat $DETAILS_TABLE >> ./build_results.html
+done
+rm -f ./enb_usrp_row*.html ./basic_sim_row*.html ./phy_sim_row*.html ./enb_eth_row*.html ./ue_eth_row*.html
 
 echo "</body>" >> ./build_results.html
 echo "</html>" >> ./build_results.html
