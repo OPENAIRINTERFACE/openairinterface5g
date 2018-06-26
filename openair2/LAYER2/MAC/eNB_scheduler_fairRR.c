@@ -34,7 +34,8 @@
 #include "assertions.h"
 
 #include "PHY/phy_extern.h"
-
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/eNB_scheduler_fairRR.h"
@@ -53,6 +54,9 @@ extern uint8_t nfapi_mode;
 extern volatile int16_t phy_tx_txdataF_end;
 extern int oai_exit;
 #endif
+extern uint16_t sfnsf_add_subframe(uint16_t frameP, uint16_t subframeP, int offset);
+extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
+
 /* internal vars */
 DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs];
 int last_dlsch_ue_id[MAX_NUM_CCs] = {-1};
@@ -566,7 +570,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
     LTE_eNB_UE_stats *eNB_UE_stats2 = NULL;
     UE_sched_ctrl *ue_sched_ctl1, *ue_sched_ctl2;
 #endif
-
+  memset(min_rb_unit,0,sizeof(min_rb_unit));
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
 	if (mbsfn_flag[CC_id] > 0)	// If this CC is allocated for MBSFN skip it here
@@ -591,7 +595,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
 						frameP,
 						subframeP,
 						N_RBG[CC_id],
-						nb_rbs_required,
+						(uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
 						rballoc_sub,
 						MIMO_mode_indicator);
 
@@ -600,12 +604,12 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
 
 #if (!defined(PRE_SCD_THREAD))
     // Store the DLSCH buffer for each logical channel
-    store_dlsch_buffer(Mod_id, frameP, subframeP);
+    store_dlsch_buffer(Mod_id,0, frameP, subframeP);
 
 
 
     // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
-    assign_rbs_required(Mod_id, frameP, subframeP, nb_rbs_required,
+    assign_rbs_required(Mod_id, 0, frameP, subframeP, nb_rbs_required,
 			min_rb_unit);
 #else
     memcpy(nb_rbs_required, pre_nb_rbs_required[dlsch_ue_select_tbl_in_use] , sizeof(uint16_t)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
@@ -664,8 +668,8 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
                                               transmission_mode,
                                               min_rb_unit[CC_id],
                                               N_RB_DL,
-                                              nb_rbs_required,
-                                              nb_rbs_required_remaining,
+                                              (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
+                                              (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required_remaining,
                                               rballoc_sub,
                                               MIMO_mode_indicator);
       temp_total_rbs_count -= ue_sched_ctl->pre_nb_available_rbs[CC_id];
@@ -780,7 +784,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 
     uint8_t CC_id;
     int UE_id;
-    unsigned char aggregation;
+//    unsigned char aggregation;
     mac_rlc_status_resp_t rlc_status;
     unsigned char header_len_dcch = 0, header_len_dcch_tmp = 0;
     unsigned char header_len_dtch = 0, header_len_dtch_tmp =
@@ -799,7 +803,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
     eNB_MAC_INST *eNB = RC.mac[module_idP];
     COMMON_channels_t *cc = eNB->common_channels;
     UE_list_t *UE_list = &eNB->UE_list;
-    int continue_flag = 0;
+   // int continue_flag = 0;
     int32_t normalized_rx_power, target_rx_power;
     int32_t tpc = 1;
     static int32_t tpc_accumulated = 0;
@@ -863,7 +867,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
     }
 
     //weight = get_ue_weight(module_idP,UE_id);
-    aggregation = 2;
+//    aggregation = 2;
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
 	N_RB_DL[CC_id] = to_prb(cc[CC_id].mib->message.dl_Bandwidth);
 	min_rb_unit[CC_id] = get_min_rb_unit(module_idP, CC_id);
@@ -922,7 +926,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 
       eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-
+/*
       switch(get_tmode(module_idP,CC_id,UE_id)){
       case 1:
       case 2:
@@ -941,7 +945,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
         aggregation = 2;
         break;
       }
-
+*/
       if (cc[CC_id].tdd_Config != NULL) { //TDD
         set_ue_dai (subframeP,
                     UE_id,
@@ -951,7 +955,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
         // update UL DAI after DLSCH scheduling
         set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP);
       }
-            nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
+
+	    nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
 
 	    harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
 
@@ -1631,7 +1636,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 		    }
 		    //#endif
 #ifdef DEBUG_eNB_SCHEDULER
-		    LOG_T(MAC, "[eNB %d] First 16 bytes of DLSCH : \n");
+		    LOG_T(MAC, "[eNB %d] First 16 bytes of DLSCH : \n",module_idP );
 
 		    for (i = 0; i < 16; i++) {
 			LOG_T(MAC, "%x.", dlsch_buffer[i]);
@@ -2642,19 +2647,19 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
           if(N_RB_UL == 25){
             if (first_rb[CC_id] >= N_RB_UL-1) {
               LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d N_RB_UL %d first_rb %d: dropping, not enough RBs\n",
-                       module_idP,frameP,subframeP,UE_id,rnti,CC_id, N_RB_UL, first_rb);
+                       module_idP,frameP,subframeP,UE_id,rnti,CC_id, N_RB_UL, first_rb[CC_id]);
               break;
             }
           }else if(N_RB_UL == 50){
               if (first_rb[CC_id] >= N_RB_UL-2) {
                 LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d N_RB_UL %d first_rb %d: dropping, not enough RBs\n",
-                         module_idP,frameP,subframeP,UE_id,rnti,CC_id, N_RB_UL, first_rb);
+                         module_idP,frameP,subframeP,UE_id,rnti,CC_id, N_RB_UL, first_rb[CC_id]);
                 break;
               }
           }else if(N_RB_UL == 100){
               if (first_rb[CC_id] >= N_RB_UL-3) {
                 LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d N_RB_UL %d first_rb %d: dropping, not enough RBs\n",
-                       module_idP,frameP,subframeP,UE_id,rnti,CC_id, N_RB_UL, first_rb);
+                       module_idP,frameP,subframeP,UE_id,rnti,CC_id, N_RB_UL, first_rb[CC_id]);
                 break;
               }
           }
