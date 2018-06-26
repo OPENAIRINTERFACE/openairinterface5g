@@ -298,7 +298,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   (*servingcellconfigcommon)->initialDownlinkBWP              = CALLOC(1,sizeof(struct NR_BWP_DownlinkCommon));
   (*servingcellconfigcommon)->uplinkConfigCommon              = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));
   //(*servingcellconfigcommon)->supplementaryUplinkConfig              = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));  
-  (*servingcellconfigcommon)->ssb_positionsinburst            = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__ssb_PositionsInBurst));
+  (*servingcellconfigcommon)->ssb_PositionsInBurst            = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__ssb_PositionsInBurst));
   (*servingcellconfigcommon)->ssb_periodicityServingCell      = CALLOC(1,sizeof(long));
   //(*servingcellconfigcommon)->lte_CRS_ToMatchAround           = CALLOC(1,sizeof(struct NR_SetupRelease_RateMatchPatternLTE_CRS));
   (*servingcellconfigcommon)->rateMatchPatternToAddModList    = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__rateMatchPatternToAddModList));
@@ -514,7 +514,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   NR_FreqBandIndicatorNR_t  *ul_frequencyBandList;
   ul_frequencyBandList      = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t)); 
   *(ul_frequencyBandList)   = configuration->UL_FreqBandIndicatorNR[CC_id];
-  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->frequencyInfoUL->frequencyBandList->list,&ul_frequencyBandList);
+  ASN_SEQUENCE_ADD(&(*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list,&ul_frequencyBandList);
 
   (*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA = CALLOC(1,sizeof(NR_ARFCN_ValueNR_t));
   *((*servingcellconfigcommon)->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA) = configuration->UL_absoluteFrequencyPointA[CC_id];
@@ -669,30 +669,30 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId->buf[1] = 0xff;
 
   //ssb_PositionsInBurst
-  (*servingcellconfigcommon)->ssb_positionsinburst->present = configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id];
+  (*servingcellconfigcommon)->ssb_PositionsInBurst->present = configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id];
 
-  if((*servingcellconfigcommon)->ssb_positionsinburst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap){
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.shortBitmap.buf = MALLOC(1);
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.shortBitmap.size = 1;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.shortBitmap.bits_unused = 4;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.shortBitmap.buf[0] = 0x0f;
-  }else if((*servingcellconfigcommon)->ssb_positionsinburst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap){
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.mediumBitmap.buf = MALLOC(1);
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.mediumBitmap.size = 1;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.mediumBitmap.bits_unused = 0;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.mediumBitmap.buf[0] = 0xff;
-  }else if((*servingcellconfigcommon)->ssb_positionsinburst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap){
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.buf = MALLOC(8);
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.size = 8;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.bits_unused = 0;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.buf[0] = 0xff;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.buf[1] = 0xff;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.buf[2] = 0xff;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.buf[3] = 0xff;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.buf[4] = 0xff;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.buf[5] = 0xff;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.buf[6] = 0xff;
-    (*servingcellconfigcommon)->ssb_positionsinburst->choice.longBitmap.buf[7] = 0xff;    
+  if((*servingcellconfigcommon)->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap){
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.buf = MALLOC(1);
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.size = 1;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.bits_unused = 4;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.shortBitmap.buf[0] = 0x0f;
+  }else if((*servingcellconfigcommon)->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap){
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.buf = MALLOC(1);
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.size = 1;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.bits_unused = 0;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.mediumBitmap.buf[0] = 0xff;
+  }else if((*servingcellconfigcommon)->ssb_PositionsInBurst->present == NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap){
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf = MALLOC(8);
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.size = 8;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.bits_unused = 0;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[0] = 0xff;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[1] = 0xff;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[2] = 0xff;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[3] = 0xff;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[4] = 0xff;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[5] = 0xff;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[6] = 0xff;
+    (*servingcellconfigcommon)->ssb_PositionsInBurst->choice.longBitmap.buf[7] = 0xff;    
   }
 
   //ssb_periodicityServingCell

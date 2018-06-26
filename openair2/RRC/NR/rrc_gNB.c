@@ -172,21 +172,6 @@ init_NR_SI(
                                                                             #endif
                                                                             );
 
-  ///SIB1
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1      =  0;
-  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SIB1             =  (uint8_t*) malloc16(32);
-  AssertFatal(RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SIB1 != NULL,PROTOCOL_NR_RRC_CTXT_FMT" init_SI: FATAL, no memory for NR SIB1 allocated\n",PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-  
-/*  RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1     = do_SIB1_NR(&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id],
-                                                                             ctxt_pP->module_id,
-                                                                             CC_id
-                                                                             #if defined(ENABLE_ITTI)
-                                                                             ,configuration
-                                                                             #endif
-                                                                             );*/
-  
-  AssertFatal(RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.nrrrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
-
   do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
                              CC_id
                              #if defined(ENABLE_ITTI)
