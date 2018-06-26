@@ -107,7 +107,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
                           ue->high_speed_flag,
                           frame_mod4);
 
-      pbch_decoded = 1;
+    pbch_decoded = 0; //to be updated
 //      break;
   //}
 

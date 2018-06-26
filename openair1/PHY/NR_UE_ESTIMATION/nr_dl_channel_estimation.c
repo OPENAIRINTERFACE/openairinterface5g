@@ -46,15 +46,15 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 
   uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
-  uint8_t nushift;
+  uint8_t nushift, Lmax, ssb_index=1, n_hf=0;
   uint8_t previous_thread_id = ue->current_thread_id[Ns>>1]==0 ? (RX_NB_TH-1):(ue->current_thread_id[Ns>>1]-1);
   int **dl_ch_estimates         =ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset];
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].rxdataF;
 
-
-  // recompute nushift with eNB_offset corresponding to adjacent eNB on which to perform channel estimation
-  nushift =  Nid_cell%4;
-
+  Lmax = 8; //to be updated
+  nushift =  (Lmax < 8)? ssb_index&3 : ssb_index&7;
+  ue->frame_parms.nushift = nushift;
+ 
   if (ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
     ch_offset     = ue->frame_parms.ofdm_symbol_size ;
   else
@@ -124,11 +124,8 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
     break;
   }
 
-
-
   // generate pilot
-  nr_pbch_dmrs_rx(ue->nr_gold_pbch,
-					  &pilot[p][0]);
+  nr_pbch_dmrs_rx(ue->nr_gold_pbch[n_hf][ssb_index], &pilot[p][0]);
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 

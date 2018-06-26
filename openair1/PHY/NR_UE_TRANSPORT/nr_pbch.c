@@ -617,11 +617,11 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS); i++)
      decoded_output[(NR_POLAR_PBCH_PAYLOAD_BITS)-i-1] = pbch_a[i];
 
-#ifdef DEBUG_PBCH
+  //#ifdef DEBUG_PBCH
   	  for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS); i++)
   		  printf("unscrambling pbch_a[%d] = %d \n", i,pbch_a[i]);
-  	  for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
-  		  printf("[PBCH] decoder_output[%d] = %x\n",i,decoded_output[i]);
-#endif
+  	  //for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+	  //	  printf("[PBCH] decoder_output[%d] = %x\n",i,decoded_output[i]);
+	  //#endif
 
 }

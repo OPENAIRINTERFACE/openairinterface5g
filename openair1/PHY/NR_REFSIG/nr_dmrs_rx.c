@@ -151,8 +151,8 @@ int nr_pbch_dmrs_rx(unsigned int *nr_gold_pbch,
       ((int16_t*)output)[(m<<1)+1] = nr_mod_table[((1 + ((nr_gold_pbch[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1) + 1];
 #ifdef DEBUG_PBCH
 	//printf("nr_gold_pbch[m>>5] %x\n",nr_gold_pbch[m>>5]);
-       if (m<6)
-	printf("m %d  output %d %d addr %p\n", m, output[2*m], output[2*m+1],&output[0]);
+       if (m<16)
+	printf("m %d  output %d %d addr %p\n", m, ((int16_t*)output)[m<<1], ((int16_t*)output)[(m<<1)+1],&output[0]);
 #endif
     }
 
