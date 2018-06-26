@@ -1781,10 +1781,6 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
     
-    // wait until eNBs are finished subframe RX n and TX n+sf_ahead
-    if(get_nprocs() > 4)
-      wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
-    
 #ifndef PHY_TX_THREAD
     if(get_nprocs() <= 4){
       // do TX front-end processing if needed (precoding and/or IDFTs)
