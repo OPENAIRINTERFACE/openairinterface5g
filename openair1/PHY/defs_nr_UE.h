@@ -34,6 +34,8 @@
 
 
 #include "defs_nr_common.h"
+#include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+
 
 #define _GNU_SOURCE 
 #include <stdio.h>
@@ -110,8 +112,8 @@
 #define openair_sched_exit() exit(-1)
 
 
-#define max(a,b)  ((a)>(b) ? (a) : (b))
-#define min(a,b)  ((a)<(b) ? (a) : (b))
+//#define max(a,b)  ((a)>(b) ? (a) : (b))
+//#define min(a,b)  ((a)<(b) ? (a) : (b))
 
 
 #define bzero(s,n) (memset((s),0,(n)))

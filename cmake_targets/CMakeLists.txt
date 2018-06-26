@@ -1296,6 +1296,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/INIT/nr_init_ue.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_ue.c
   #${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_common_ue.c
+  ${PHY_POLARSRC}
   )
 
 
