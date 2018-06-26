@@ -258,7 +258,7 @@ void RCconfig_NR_L1(void) {
 
       if (RC.gNB[j] == NULL) {
         RC.gNB[j]                       = (PHY_VARS_gNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_gNB*));
-        LOG_I(NR_PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
+        LOG_I(NR_PHY,"RC.gNB[%d] = %p\n",j,RC.gNB[j]);
         memset(RC.gNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_gNB*));
       }
 
@@ -748,11 +748,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
         
             NRRRC_CONFIGURATION_REQ (msg_p).N_RB_DL[j]= N_RB_DL;
-        
+            
+            /*
             if ((N_RB_DL!=6) && (N_RB_DL!=15) && (N_RB_DL!=25) && (N_RB_DL!=50) && (N_RB_DL!=75) && (N_RB_DL!=100)) {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
                            RC.config_file_name, i, N_RB_DL);
             }
+            */
         
             if (strcmp(frame_type, "FDD") == 0) {
               NRRRC_CONFIGURATION_REQ (msg_p).frame_type[j] = FDD;
@@ -1136,7 +1138,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                 break;
 
                default:
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ServingCellConfigCommon_dmrs_TypeA_Position choice: -6,0,6 !\n",
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ServingCellConfigCommon_dmrs_TypeA_Position choice: 2,3 !\n",
                              RC.config_file_name, i, ServingCellConfigCommon_dmrs_TypeA_Position);
                 break;
             }

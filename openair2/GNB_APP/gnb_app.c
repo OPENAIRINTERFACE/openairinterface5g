@@ -95,7 +95,7 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
       /* note:  there is an implicit relationship between the data structure and the message name */
       msg_p = itti_alloc_new_message (TASK_GNB_APP, S1AP_REGISTER_ENB_REQ); //Message Temporarily reuse
 
-      RCconfig_S1(msg_p, gnb_id);
+      RCconfig_NR_S1(msg_p, gnb_id);
 
       if (gnb_id == 0) RCconfig_gtpu();
 

@@ -262,8 +262,8 @@ typedef struct {
   uint8_t							                      *MIB;
   uint8_t							                      sizeof_MIB;
 
-  uint8_t                                   *SIB1;
-  uint8_t                                   sizeof_SIB1;
+  uint8_t                                   *ServingCellConfigCommon;
+  uint8_t                                   sizeof_servingcellconfigcommon;
 
   //implicit parameters needed
   int                                       physCellId;
@@ -277,7 +277,6 @@ typedef struct {
   //are the only static one (memory has been already allocated)
   NR_BCCH_BCH_Message_t                     mib;
   
-  NR_SIB1_t     		                        *sib1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
 
 
