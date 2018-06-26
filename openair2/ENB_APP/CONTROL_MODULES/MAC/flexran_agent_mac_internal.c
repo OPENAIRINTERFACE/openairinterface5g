@@ -34,10 +34,10 @@
 #include "flexran_agent_mac_slice_verification.h"
 
 /* from flexran_agent_mac.c */
-extern Protocol__FlexSliceConfig *slice_config[NUM_MAX_ENB];
-extern Protocol__FlexSliceConfig *sc_update[NUM_MAX_ENB];
+extern Protocol__FlexSliceConfig *slice_config[MAX_NUM_SLICES];
+extern Protocol__FlexSliceConfig *sc_update[MAX_NUM_SLICES];
 extern int perform_slice_config_update_count;
-extern Protocol__FlexUeConfig *ue_slice_assoc_update[NUM_MAX_UE];
+extern Protocol__FlexUeConfig *ue_slice_assoc_update[MAX_NUM_SLICES];
 extern int n_ue_slice_assoc_updates;
 extern pthread_mutex_t sc_update_mtx;
 
@@ -1574,7 +1574,7 @@ int apply_new_slice_ul_config(mid_t mod_id, Protocol__FlexUlSlice *oldc, Protoco
 
 void prepare_ue_slice_assoc_update(mid_t mod_id, Protocol__FlexUeConfig *ue_config)
 {
-  if (n_ue_slice_assoc_updates == NUM_MAX_UE) {
+  if (n_ue_slice_assoc_updates == MAX_NUM_SLICES) {
     LOG_E(FLEXRAN_AGENT,
           "[%d] can not handle flex_ue_config message, buffer is full; try again later\n",
           mod_id);
