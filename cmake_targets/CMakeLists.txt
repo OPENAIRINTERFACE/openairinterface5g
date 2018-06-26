@@ -507,11 +507,13 @@ include_directories ("${X2AP_DIR}")
 # Same limitation as described in RRC/S1AP: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(F1AP_VERSION R15 "F1AP Asn.1 grammar version" R15)
+add_list1_option(F1AP_RELEASE R15 "F1AP ASN.1 grammar version" R15)
 set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
-#if (${F1AP_VERSION} STREQUAL "R15")
-  set (ASN1RELDIR R15)
-#endif(${F1AP_VERSION} STREQUAL "R15")
+if (${F1AP_RELEASE} STREQUAL "R15")
+  make_version(F1AP_VERSION 15 1 1)
+  set (ASN1RELDIR R15.1.1)
+endif(${F1AP_RELEASE} STREQUAL "R15")
+add_definitions(-DF1AP_VERSION=${F1AP_VERSION})
 set(F1AP_ASN_DIR ${F1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
 set(F1AP_ASN_FILES
   ${F1AP_ASN_DIR}/F1AP-CommonDataTypes.asn
@@ -522,22 +524,24 @@ set(F1AP_ASN_FILES
   ${F1AP_ASN_DIR}/F1AP-Containers.asn
   )
 
-set(F1AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
+set(F1AP_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
+set(ENV{ASN1C_PREFIX} F1AP_)
 execute_process(COMMAND ${asn1c_call} ${F1AP_C_DIR} ${F1AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE reti)
+unset(ENV{ASN1C_PREFIX})
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND python ${F1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${F1AP_ASN_DIR}/F1AP-PDU-Contents.asn -o ${F1AP_C_DIR}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "asn1tostruct.py: error")
-endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND ${fix_asn1c_call} ${F1AP_C_DIR} F1AP ${F1AP_VERSION}
-                RESULT_VARIABLE ret)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${fix_asn1c_call}: error")
-endif (NOT ${ret} STREQUAL 0)
+#execute_process(COMMAND python ${F1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${F1AP_ASN_DIR}/F1AP-PDU-Contents.asn -o ${F1AP_C_DIR}
+#                RESULT_VARIABLE ret)
+#if (NOT ${ret} STREQUAL 0)
+#  message(FATAL_ERROR "asn1tostruct.py: error")
+#endif (NOT ${ret} STREQUAL 0)
+#execute_process(COMMAND ${fix_asn1c_call} ${F1AP_C_DIR} F1AP ${F1AP_VERSION}
+#                RESULT_VARIABLE ret)
+#if (NOT ${ret} STREQUAL 0)
+#  message(FATAL_ERROR "${fix_asn1c_call}: error")
+#endif (NOT ${ret} STREQUAL 0)
 file(GLOB F1AP_source ${F1AP_C_DIR}/*.c)
 
 #set(F1AP_OAI_generated
@@ -907,8 +911,8 @@ set(FLPT_MSG_FILES
   ${FLPT_MSG_DIR}/control_delegation.proto
   )
 
-set(FLPT_C_DIR ${protobuf_generated_dir}/${FLPTDIR})
-message("calling protoc_call=${protoc_call} FLPT_C_DIR=${FLPT_C_DIR} FLPT_MSG_FILES=${FLPT_MSG_FILES}")
+set(FLPT_C_DIR ${protobuf_generated_dir}/FLPT_${FLPTDIR})
+#message("calling protoc_call=${protoc_call} FLPT_C_DIR=${FLPT_C_DIR} FLPT_MSG_FILES=${FLPT_MSG_FILES}")
 execute_process(COMMAND ${protoc_call} ${FLPT_C_DIR} ${FLPT_MSG_DIR} ${FLPT_MSG_FILES})
 file(GLOB FLPT_source ${FLPT_C_DIR}/*.c)
 set(FLPT_OAI_generated
@@ -988,10 +992,10 @@ if (PDCP_SPLIT)
     ${FSPT_MSG_DIR}/flexsplit.proto
     )
 
-  set(FSPT_C_DIR ${protobuf_generated_dir}/${FSPTDIR})
-  message("calling protoc_call=${protoc_call} FSPT_C_DIR=${FSPT_C_DIR} FSPT_MSG_FILES=${FSPT_MSG_FILES}")
+  set(FSPT_C_DIR ${protobuf_generated_dir}/FSPT_${FSPTDIR})
+  message("calling protoc_call=${protoc_call} FSPT_C_DIR=${FSPT_C_DIR} FSPT_MSG_DIR=${FSPT_MSG_DIR} FSPT_MSG_FILES=${FSPT_MSG_FILES}")
   execute_process(COMMAND ${protoc_call} ${FSPT_C_DIR} ${FSPT_MSG_DIR} ${FSPT_MSG_FILES})
-  file(GLOB FSPT_source ${FSPT_C_DIR}/*.c)  
+  file(GLOB FSPT_source ${FSPT_C_DIR}/*.c)
   set(FSPT_OAI_generated
     ${FSPT_C_DIR}/flexsplit.pb-c.c
     )

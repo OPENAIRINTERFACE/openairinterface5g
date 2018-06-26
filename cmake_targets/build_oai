@@ -105,6 +105,10 @@ Options
    Enables agent for software-defined control of the eNB
 --pdcp-split
    Enables PDCP-RLC U plane split
+--CU
+   Build the CU entity 
+--DU 
+   Build the CU entity 
 -r | --3gpp-release
    default is Rel14,
    Rel8 limits the implementation to 3GPP Release 8 version
@@ -214,9 +218,11 @@ function main() {
        -a | --agent)
 	    echo_info "FlexRAN support is always compiled into the eNB"
 	    shift;;
-       --pdcp-split)
+       --pdcp-split | --CU | --DU )
 	    PDCP_SPLIT=1
-	    echo_info "Will compile PDCP-RLC U plane split support"
+	    CU=1
+	    DU=1
+	    echo_info "Will compile for $1 with F1AP support "
 	    shift;;
        --UE)
             UE=1
@@ -473,7 +479,7 @@ function main() {
 
   if [ "$INSTALL_EXTERNAL" = "1" ] ; then
     echo_info "Installing packages"
-    check_install_oai_software
+    check_install_oai_software $PDCP_SPLIT
     if [ "$HW" == "OAI_USRP" ] ; then
       echo_info "installing packages for USRP support"
       check_install_usrp_uhd_driver

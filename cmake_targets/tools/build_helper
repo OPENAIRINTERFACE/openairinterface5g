@@ -567,7 +567,8 @@ check_install_oai_software() {
 	pydb \
 	libyaml-dev \
 	wget \
-	libxpm-dev
+	libxpm-dev \
+        libboost-all-dev
 
     $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"
 
@@ -653,7 +654,7 @@ check_install_oai_software() {
       libyaml-devel
   fi
 
-    install_asn1c_from_source
+    install_asn1c_from_source $1
     $SUDO rm -fr /opt/ssh
     $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
 }
@@ -663,10 +664,14 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c
-    GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    if [ $1 -eq "1" ]; then
+             echo "building ASN1C from https://github.com/brchiu/asn1c branch"
+	GIT_SSL_NO_VERIFY=true git clone https://github.com/brchiu/asn1c.git --branch velichkov_s1ap_plus_option_group /tmp/asn1c
+    else
+        echo "building ASN1C from https://gitlab.eurecom.fr/oai/asn1c branch"
+	GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git --branch master.aper /tmp/asn1c
+    fi
     cd /tmp/asn1c
-    git checkout master.aper
-    git pull
     test -f configure || autoreconf -iv
     ./configure
     make -j`nproc`

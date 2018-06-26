@@ -140,6 +140,22 @@ function patch_s1ap()
   esac
 }
 
+function patch_f1ap()
+{
+  local directory="$1"
+  local version="$2"
+
+  case "$version" in
+    R15 )
+      #nothing to do anymore (fixes went to asn1c)
+      ;;
+    * )
+      error unknwon/unhandled F1AP version \'"$version"\'
+      ;;
+  esac
+}
+
+
 function main()
 {
   if [ $# -ne 3 ]
@@ -166,6 +182,9 @@ function main()
       ;;
     S1AP )
       patch_s1ap "$directory" "$version"
+      ;;
+    F1AP )
+      patch_f1ap "$directory" "$version"
       ;;
     * )
       error unknown module "$module"
