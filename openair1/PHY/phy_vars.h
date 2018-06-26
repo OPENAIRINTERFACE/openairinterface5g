@@ -38,7 +38,6 @@ int16_t *primary_synch1_time;
 int16_t *primary_synch2_time;
 
 
-#include "PHY/CODING/coding_vars.h"
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
 
