@@ -394,21 +394,20 @@ void nr_pbch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
   uint8_t reset;
   uint32_t x1, x2, s=0;
 
-  printf("unscramb nid_cell %d\n",frame_parms->Nid_cell);
+  //printf("unscramb nid_cell %d\n",frame_parms->Nid_cell);
 
   reset = 1;
   // x1 is set in first call to lte_gold_generic
   x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
-  //  msg("pbch_unscrambling: Nid_cell = %d\n",x2);
 
   for (i=0; i<length; i++) {
     if (i%32==0) {
       s = lte_gold_generic(&x1, &x2, reset);
-            printf("lte_gold[%d]=%x\n",i,s);
+            //printf("lte_gold[%d]=%x\n",i,s);
       reset = 0;
     }
 
-    printf("s = %d\n",((s>>(i%32))&1) );
+    //printf("s = %d\n",((s>>(i%32))&1) );
     if (((s>>(i%32))&1)==1)
       pbch_a[i] = 1-pbch_a[i];
   }
@@ -503,15 +502,10 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   int8_t decoderState=0;
   uint8_t decoderListSize = 8, pathMetricAppr = 0;
   double aPrioriArray[frame_parms->pbch_polar_params.payloadBits];  // assume no a priori knowledge available about the payload.
-  double *channelOutput  = malloc (sizeof(double) * 864); //add noise
-  uint8_t *estimatedOutput = malloc(sizeof(uint8_t) * 32); //decoder output
-  memset(&channelOutput[0], 0, sizeof(double) * 864);
-  memset(&estimatedOutput[0], 0, sizeof(uint8_t) * 32);
 
-  memset(&pbch_a[0], 0, sizeof(uint8_t) * 32);
-  frame_parms->Nid_cell = 100;
+  memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
 
-  printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
+  //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
 
   for (int i=0; i<frame_parms->pbch_polar_params.payloadBits; i++) aPrioriArray[i] = NAN;
 
@@ -597,57 +591,37 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
     printf("pbch rx llr %d rxdata_comp %d addr %p\n",*(pbch_e_rx+cnt), p[cnt], &p[0]);
   //#endif
 
-  for (int i=0; i<NR_POLAR_PBCH_E/2; i++){
+  for (i=0; i<NR_POLAR_PBCH_E/2; i++){
     idx_demod = (sign(pbch_e_rx[i<<1])&1) ^ ((sign(pbch_e_rx[(i<<1)+1])&1)<<1);
     demod_pbch_e[i<<1] = nr_demod_table[(idx_demod)<<1];
     demod_pbch_e[(i<<1)+1] = nr_demod_table[((idx_demod)<<1)+1];
+#ifdef DEBUG_PBCH
     if (i<16){
     printf("idx[%d]= %d\n", i , idx_demod);
     printf("sign[%d]= %d sign[%d]= %d\n", i<<1 , sign(pbch_e_rx[i<<1]), (i<<1)+1 , sign(pbch_e_rx[(i<<1)+1]));
     printf("demod_pbch_e2[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
+#endif
   }
 
 		
   //polar decoding de-rate matching
   decoderState = polar_decoder(demod_pbch_e, pbch_a, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
 
-   for (i=0; i<32 /*(NR_POLAR_PBCH_PAYLOAD_BITS>>3)*/; i++)
-     printf("pbch_a[%d] = %u \n", i,pbch_a[i]);
+  //for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+     //printf("pbch_a[%d] = %u \n", i,pbch_a[i]);
   
   //un-scrambling
   nr_pbch_unscrambling(frame_parms,pbch_a,NR_POLAR_PBCH_PAYLOAD_BITS);
 
-   for (i=0; i<32 /*(NR_POLAR_PBCH_PAYLOAD_BITS>>3)*/; i++)
-     printf("after unscrambling pbch_a[%d] = %d \n", i,pbch_a[i]);
-
   // Fix byte endian
-  //for (i=0; i<32 /*(NR_POLAR_PBCH_PAYLOAD_BITS>>3)*/; i++)
-   // printf("estimated output[%d] = %d \n", i,estimatedOutput[i]);
-  //decoded_output[(NR_POLAR_PBCH_PAYLOAD_BITS>>3)-i-1] = pbch_a[i];
-
-  //#ifdef DEBUG_PBCH
-
-    // for (i=0; i<2; i++)
-  // printf("[PBCH] pbch_a[%d] = %x\n",i,decoded_output[i]);
-
-  //#endif
+  for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS); i++)
+     decoded_output[(NR_POLAR_PBCH_PAYLOAD_BITS)-i-1] = pbch_a[i];
 
 #ifdef DEBUG_PBCH
-  msg("PBCH CRC %x : %x\n",
-      crc16(pbch_a,PBCH_A),
-      ((uint16_t)pbch_a[PBCH_A>>3]<<8)+pbch_a[(PBCH_A>>3)+1]);
+  	  for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS); i++)
+  		  printf("unscrambling pbch_a[%d] = %d \n", i,pbch_a[i]);
+  	  for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+  		  printf("[PBCH] decoder_output[%d] = %x\n",i,decoded_output[i]);
 #endif
-
-  crc = (crc16(pbch_a,PBCH_A)>>16) ^
-        (((uint16_t)pbch_a[PBCH_A>>3]<<8)+pbch_a[(PBCH_A>>3)+1]);
-
-  if (crc == 0x0000)
-    return(1);
-  else if (crc == 0xffff)
-    return(2);
-  else if (crc == 0x5555)
-    return(4);
-  else
-    return(-1);
 
 }
