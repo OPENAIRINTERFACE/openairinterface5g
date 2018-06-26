@@ -399,27 +399,24 @@ boolean_t pdcp_data_req(
 
   case RLC_OP_STATUS_BAD_PARAMETER:
     LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-    ret= FALSE;
-    break;
+    return FALSE;
 
   case RLC_OP_STATUS_INTERNAL_ERROR:
     LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-    ret= FALSE;
-    break;
+    return FALSE;
 
   case RLC_OP_STATUS_OUT_OF_RESSOURCES:
     pdcp_enb[ctxt_pP->module_id].time_buf_full[pdcp_uid] = pdcp_enb[ctxt_pP->module_id].sfn;
     LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
     int h = TM_SKIP_FULL_BUF_MS;
     LOG_W(PDCP, "Blocking incoming traffic for %d ms\n", h);
-    ret= FALSE;
-    break;
+    return FALSE;
 
   case RLC_OP_SKIPPED_FUL_BUF:
     LOG_D(PDCP, "Skipping RLC request due to full buffer\n");
-    /* fake good return so that GTP doesn't spam us */
-    ret = TRUE;
-    break;
+    /* fake good return so that GTP doesn't spam us and return immediately so
+     * that dropped traffic is not counted in PDCP traffic stats */
+    return TRUE;
 
   default:
     LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
