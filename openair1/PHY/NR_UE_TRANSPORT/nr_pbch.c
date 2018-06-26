@@ -608,7 +608,7 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   decoderState = polar_decoder(demod_pbch_e, pbch_a, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
 
   //for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
-     //printf("pbch_a[%d] = %u \n", i,pbch_a[i]);
+  // printf("pbch_a[%d] = %u \n", i,pbch_a[i]);
   
   //un-scrambling
   nr_pbch_unscrambling(frame_parms,pbch_a,NR_POLAR_PBCH_PAYLOAD_BITS);
