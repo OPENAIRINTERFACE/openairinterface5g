@@ -240,12 +240,17 @@ echo "JENKINS_WKSP        = $JENKINS_WKSP"
 echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
 echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
-echo "############################################################"
-echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
-echo "############################################################"
-uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
-echo "Waiting for VM to be started"
-uvt-kvm wait $VM_NAME --insecure
+IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
+
+if [ $IS_VM_ALIVE -eq 0 ]
+then
+    echo "############################################################"
+    echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
+    echo "############################################################"
+    uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+    echo "Waiting for VM to be started"
+    uvt-kvm wait $VM_NAME --insecure
+fi
 
 VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
 echo "$VM_NAME has for IP addr = $VM_IP_ADDR"

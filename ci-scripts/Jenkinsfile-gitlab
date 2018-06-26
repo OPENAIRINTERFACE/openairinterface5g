@@ -47,6 +47,42 @@ pipeline {
             }
         }
 
+        stage ("Start VM -- cppcheck") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- enb-usrp") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- basic-sim") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- phy-sim") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- enb-ethernet") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- ue-ethernet") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
         stage ("Variant Builds") {
             parallel {
                 stage ("Analysis with cppcheck") {
