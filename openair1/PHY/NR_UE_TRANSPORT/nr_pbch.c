@@ -494,7 +494,7 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   int8_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
-  uint16_t crc;
+  //uint16_t crc;
   //short nr_demod_table[8] = {0,0,0,1,1,0,1,1};
   double nr_demod_table[8] = {0.707,0.707,0.707,-0.707,-0.707,0.707,-0.707,-0.707};
   double *demod_pbch_e  = malloc (sizeof(double) * 864); 
@@ -583,13 +583,13 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   pbch_e_rx = nr_ue_pbch_vars->llr;
 
-  //#ifdef DEBUG_PBCH
+#ifdef DEBUG_PBCH
   //pbch_e_rx = &nr_ue_pbch_vars->llr[0];
 
   short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][1*20*12]);
   for (int cnt = 0; cnt < 8 ; cnt++)
     printf("pbch rx llr %d rxdata_comp %d addr %p\n",*(pbch_e_rx+cnt), p[cnt], &p[0]);
-  //#endif
+#endif
 
   for (i=0; i<NR_POLAR_PBCH_E/2; i++){
     idx_demod = (sign(pbch_e_rx[i<<1])&1) ^ ((sign(pbch_e_rx[(i<<1)+1])&1)<<1);

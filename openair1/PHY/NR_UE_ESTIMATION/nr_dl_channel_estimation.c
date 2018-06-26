@@ -41,14 +41,13 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned char aarx;
   unsigned short k;
   unsigned int pilot_cnt;
-  int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*f2l,*fr,f1,*f2r,*fl_dc,*fm_dc,*fr_dc;
+  int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
   int ch_offset,symbol_offset;
 
-  uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
+  //uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
   uint8_t nushift, Lmax, ssb_index=1, n_hf=0;
-  uint8_t previous_thread_id = ue->current_thread_id[Ns>>1]==0 ? (RX_NB_TH-1):(ue->current_thread_id[Ns>>1]-1);
-  int **dl_ch_estimates         =ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset];
+  int **dl_ch_estimates  =ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset];
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].rxdataF;
 
   Lmax = 8; //to be updated
@@ -74,48 +73,24 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
         fl = filt16a_l0;
         fm = filt16a_m0;
         fr = filt16a_r0;
-        fl_dc = filt16a_l0;
-        fm_dc = filt16a_m0;
-        fr_dc = filt16a_r0;
-        f1 = filt16a_1;
-        f2l = filt16a_2l0;
-        f2r = filt16a_2r0;
         break;
 
   case 1:
         fl = filt16a_l1;
         fm = filt16a_m1;
         fr = filt16a_r1;
-        fl_dc = filt16a_l1;
-        fm_dc = filt16a_m1;
-        fr_dc = filt16a_r1;
-        f1 = filt16a_1;
-        f2l = filt16a_2l1;
-        f2r = filt16a_2r1;
         break;
 
   case 2:
         fl = filt16a_l2;
         fm = filt16a_m2;
         fr = filt16a_r2;
-        fl_dc = filt16a_l2;
-        fm_dc = filt16a_m2;
-        fr_dc = filt16a_r2;
-        f1 = filt16a_1;
-        f2l = filt16a_2l0;
-        f2r = filt16a_2r0;
         break;
 
   case 3:
         fl = filt16a_l3;
         fm = filt16a_m3;
         fr = filt16a_r3;
-        fl_dc = filt16a_l3;
-        fm_dc = filt16a_m3;
-        fr_dc = filt16a_r3;
-        f1 = filt16a_1;
-        f2l = filt16a_2l1;
-        f2r = filt16a_2r1;
         break;
 
   default:
