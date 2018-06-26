@@ -114,6 +114,7 @@ case $key in
         VM_NAME=ci-basic-sim
         ;;
         phy-sim)
+        VM_NAME=ci-phy-sim
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck

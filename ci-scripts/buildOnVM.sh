@@ -248,9 +248,10 @@ then
     echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
     echo "############################################################"
     uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
-    echo "Waiting for VM to be started"
-    uvt-kvm wait $VM_NAME --insecure
 fi
+
+echo "Waiting for VM to be started"
+uvt-kvm wait $VM_NAME --insecure
 
 VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
 echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
