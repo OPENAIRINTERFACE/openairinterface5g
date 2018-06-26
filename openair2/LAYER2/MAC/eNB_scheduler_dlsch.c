@@ -510,7 +510,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
   }
   //weight = get_ue_weight(module_idP,UE_id);
   aggregation = 2;
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; CC_id++) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     N_RB_DL[CC_id] = to_prb(cc[CC_id].mib->message.dl_Bandwidth);
     min_rb_unit[CC_id] = get_min_rb_unit(module_idP, CC_id);
     // get number of PRBs less those used by common channels
@@ -559,7 +559,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
     sort_UEs(module_idP, slice_idxP, frameP, subframeP);
   }
 
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; CC_id++) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     LOG_D(MAC, "doing schedule_ue_spec for CC_id %d\n", CC_id);
 
     dl_req = &eNB->DL_req[CC_id].dl_config_request_body;
@@ -1464,7 +1464,7 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
   // otherwise it contains the id of the slice it belongs to.
   // (Information about slicing must be retained to deal with isolation).
   // FIXME: This method does not consider RBGs that are free and belong to no slices
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; ++CC_id) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; ++CC_id) {
     cc = &RC.mac[Mod_id]->common_channels[CC_id];
     N_RBG[CC_id] = to_rbg(cc->mib->message.dl_Bandwidth);
     for (rbg = 0; rbg < N_RBG[CC_id]; ++rbg) {
@@ -1481,7 +1481,7 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
 
   // Find out which slices need other resources.
   // FIXME: I don't think is really needed since we check nb_rbs_remaining later
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; ++CC_id) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; ++CC_id) {
     for (i = 0; i < sli->n_dl; ++i) {
       has_traffic[CC_id][i] = 0;
       for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; ++UE_id) {
@@ -1497,7 +1497,7 @@ void dlsch_scheduler_interslice_multiplexing(module_id_t Mod_id,
 
   // MULTIPLEXING
   // This part is an adaptation of dlsch_scheduler_pre_processor_allocate() code
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; ++CC_id) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; ++CC_id) {
 
     N_RB_DL = to_prb(RC.mac[Mod_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
     min_rb_unit = get_min_rb_unit(Mod_id, CC_id);
@@ -1589,7 +1589,7 @@ void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id, int frameP, sub_frame_
   slice_info_t *sli = &RC.mac[Mod_id]->slice_info;
   //UE_sched_ctrl *ue_sched_ctl;
 
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; ++CC_id) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; ++CC_id) {
     for (i = 0; i < sli->n_dl; ++i) {
 
       // Sort UE again
@@ -1636,7 +1636,7 @@ fill_DLSCH_dci(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
   (VCD_SIGNAL_DUMPER_FUNCTIONS_FILL_DLSCH_DCI, VCD_FUNCTION_IN);
 
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; CC_id++) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     LOG_D(MAC, "Doing fill DCI for CC_id %d\n", CC_id);
 
     if (mbsfn_flagP[CC_id] > 0)
@@ -1866,7 +1866,7 @@ void schedule_PCH(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 
   start_meas(&eNB->schedule_pch);
 
-  for (CC_id = 0; CC_id < NFAPI_CC_MAX; CC_id++) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     cc              = &eNB->common_channels[CC_id];
     vrb_map         = (void *) &cc->vrb_map;
     n_rb_dl         = to_prb(cc->mib->message.dl_Bandwidth);
