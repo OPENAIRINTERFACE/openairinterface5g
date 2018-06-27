@@ -62,6 +62,7 @@ void mac_top_init_eNB(void)
 		RC.mac =
 			(eNB_MAC_INST **) malloc16(RC.nb_macrlc_inst *
 						   sizeof(eNB_MAC_INST *));
+                bzero(RC.mac, RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *));
         }
 	AssertFatal(RC.mac != NULL,
 		    "can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",
