@@ -56,7 +56,7 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
 void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
 {
 
-  uint32_t n, x1, x2;
+  uint32_t x1, x2;
   uint8_t reset = 1;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   uint32_t ***pdcch_dmrs = gNB->nr_gold_pdcch_dmrs;

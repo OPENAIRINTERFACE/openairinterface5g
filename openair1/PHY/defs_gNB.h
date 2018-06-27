@@ -291,7 +291,7 @@ typedef struct PHY_VARS_gNB_s {
   uint32_t nr_gold_pbch_dmrs[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
 
   /// PDCCH DMRS sequence
-  uint32_t **nr_gold_pdcch_dmrs[NR_MAX_PDCCH_DMRS_LENGTH_DWORD];
+  uint32_t ***nr_gold_pdcch_dmrs;
 
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_UE_MAX];

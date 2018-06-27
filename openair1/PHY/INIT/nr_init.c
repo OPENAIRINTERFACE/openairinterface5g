@@ -121,8 +121,11 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   nr_polar_init(&fp->pbch_polar_params, 1);
   //PDCCH DMRS init
   pdcch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t**));
-  for (int slot=0; slot<fp->slots_per_frame; slot++)
+  for (int slot=0; slot<fp->slots_per_frame; slot++) {
     pdcch_dmrs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot);
+    for (int symb=0; symb<fp->symbols_per_slot; symb++)
+      pdcch_dmrs[slot][symb] = (uint32_t *)malloc16(NR_MAX_PDCCH_DMRS_LENGTH_DWORD);
+  }
 
   nr_init_pdcch_dmrs(gNB, cfg->sch_config.physical_cell_id.value);
 
@@ -278,7 +281,6 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 {
 //  NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
   nfapi_config_request_t *cfg       = &gNB->gNB_config;
-  NR_DL_FRAME_PARMS *fp             = &gNB->frame_parms;
   NR_gNB_COMMON* const common_vars  = &gNB->common_vars;
   LTE_eNB_PUSCH** const pusch_vars   = gNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = gNB->srs_vars;
@@ -297,9 +299,6 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(common_vars->rxdataF);
 
   // PDCCH DMRS sequences
-  pdcch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t**));
-  for (int slot=0; slot<fp->slots_per_frame; slot++)
-    free_and_zero(pdcch_dmrs[slot]);
   free_and_zero(pdcch_dmrs);
 
   // Channel estimates for SRS
