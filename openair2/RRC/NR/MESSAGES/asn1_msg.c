@@ -297,7 +297,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   (*servingcellconfigcommon)->frequencyInfoDL                 = CALLOC(1,sizeof(struct NR_FrequencyInfoDL));
   (*servingcellconfigcommon)->initialDownlinkBWP              = CALLOC(1,sizeof(struct NR_BWP_DownlinkCommon));
   (*servingcellconfigcommon)->uplinkConfigCommon              = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));
-  //(*servingcellconfigcommon)->supplementaryUplinkConfig              = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));  
+  //(*servingcellconfigcommon)->supplementaryUplinkConfig       = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));  
   (*servingcellconfigcommon)->ssb_PositionsInBurst            = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__ssb_PositionsInBurst));
   (*servingcellconfigcommon)->ssb_periodicityServingCell      = CALLOC(1,sizeof(long));
   //(*servingcellconfigcommon)->lte_CRS_ToMatchAround           = CALLOC(1,sizeof(struct NR_SetupRelease_RateMatchPatternLTE_CRS));

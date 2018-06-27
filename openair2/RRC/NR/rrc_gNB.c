@@ -296,7 +296,7 @@ void* rrc_gnb_task(void* args_p){
 
     msg_name_p = ITTI_MSG_NAME(msg_p);
     instance = ITTI_MSG_INSTANCE(msg_p);
-    LOG_I(RRC,"Received message %s\n",msg_name_p);
+    LOG_I(NR_RRC,"Received message %s\n",msg_name_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
