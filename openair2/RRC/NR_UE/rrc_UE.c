@@ -32,119 +32,11 @@
 #define RRC_UE_C
 
 #include "rrc_list.h"
-//  header files for RRC message for NR might be change to add prefix in from of the file name.
-#include "assertions.h"
-#include "hashtable.h"
-#include "asn1_conversions.h"
-#include "defs.h"
-#include "PHY/TOOLS/dB_routines.h"
-#include "extern.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-#include "LAYER2/RLC/rlc.h"
-#include "COMMON/mac_rrc_primitives.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-#ifndef CELLULAR
-#include "RRC/LITE/MESSAGES/asn1_msg.h"
-#endif
-#include "RRCConnectionRequest.h"
-#include "RRCConnectionReconfiguration.h"
-#include "UL-CCCH-Message.h"
-#include "DL-CCCH-Message.h"
-#include "UL-DCCH-Message.h"
-#include "DL-DCCH-Message.h"
-#include "BCCH-DL-SCH-Message.h"
-#include "PCCH-Message.h"
-#if defined(Rel10) || defined(Rel14)
-#include "MCCH-Message.h"
-#endif
-#include "MeasConfig.h"
-#include "MeasGapConfig.h"
-#include "MeasObjectEUTRA.h"
-#include "TDD-Config.h"
-#include "UECapabilityEnquiry.h"
-#include "UE-CapabilityRequest.h"
-#include "RRC/NAS/nas_config.h"
-#include "RRC/NAS/rb_config.h"
-#if ENABLE_RAL
-#include "rrc_UE_ral.h"
-#endif
-
-#if defined(ENABLE_SECURITY)
-# include "UTIL/OSA/osa_defs.h"
-#endif
-
-
-#if defined(ENABLE_ITTI)
-#include "intertask_interface.h"
-#endif
-
-
-
-// from NR SRB3
-uint8_t nr_rrc_ue_decode_dcch(
-    const uint8_t *buffer,
-    const uint32_t size
-){
-    //  uper_decode by nr R15 rrc_connection_reconfiguration
-    
-    NR_DL_DCCH_Message_t *nr_dl_dcch_msg = (NR_DL_DCCH_Message_t *)0;
-
-    uper_decode(NULL,
-                &asn_DEF_NR_DL_DCCH_Message,    
-                (void**)&nr_dl_dcch_msg,
-                (uint8_t *)buffer,
-                size, 0, 0); 
-
-    if(nr_dl_dcch_msg != NULL){
-        switch(nr_dl_dcch_msg->message.present){            
-            case DL_DCCH_MessageType_PR_c1:
-
-                switch(nr_dl_dcch_msg->message.choice.c1.present){
-                    case DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
-                        nr_rrc_ue_process_rrcReconfiguration(&nr_dl_dcch_msg->message.choice.c1.choice.rrcReconfiguration);
-                        break;
-
-                    case DL_DCCH_MessageType__c1_PR_NOTHING:
-                    case DL_DCCH_MessageType__c1_PR_spare15:
-                    case DL_DCCH_MessageType__c1_PR_spare14:
-                    case DL_DCCH_MessageType__c1_PR_spare13:
-                    case DL_DCCH_MessageType__c1_PR_spare12:
-                    case DL_DCCH_MessageType__c1_PR_spare11:
-                    case DL_DCCH_MessageType__c1_PR_spare10:
-                    case DL_DCCH_MessageType__c1_PR_spare9:
-                    case DL_DCCH_MessageType__c1_PR_spare8:
-                    case DL_DCCH_MessageType__c1_PR_spare7:
-                    case DL_DCCH_MessageType__c1_PR_spare6:
-                    case DL_DCCH_MessageType__c1_PR_spare5:
-                    case DL_DCCH_MessageType__c1_PR_spare4:
-                    case DL_DCCH_MessageType__c1_PR_spare3:
-                    case DL_DCCH_MessageType__c1_PR_spare2:
-                    case DL_DCCH_MessageType__c1_PR_spare1:
-                    default:
-                        //  not support or unuse
-                        break;
-                }   
-                break;
-            case DL_DCCH_MessageType_PR_NOTHING:
-            case DL_DCCH_MessageType_PR_messageClassExtension:
-            default:
-                //  not support or unuse
-                break;
-        }
-        
-        //  release memory allocation
-        free(nr_dl_dcch_msg);
-    }else{
-        //  log..
-    }
-
-    return 0;
-
-}
+#include "rrc_defs.h"
+#include "rrc_proto.h"
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
-uint8_t nr_rrc_ue_decode_secondary_cellgroup_config(
+int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
     const uint8_t *buffer,
     const uint32_t size
 ){
@@ -161,7 +53,8 @@ uint8_t nr_rrc_ue_decode_secondary_cellgroup_config(
         nr_rrc_ue_process_scg_config(cellGroupConfig);
     }else{
         nr_rrc_ue_process_scg_config(cellGroupConfig);
-        asn_DEF_CellGroupConfig.free_struct(asn_DEF_CellGroupConfig, cellGroupConfig, 0);
+        //asn_DEF_CellGroupConfig.free_struct(asn_DEF_CellGroupConfig, cellGroupConfig, 0);
+        SEQUENCE_free(&asn_DEF_CellGroupConfig, (void *)cellGroupConfig, 0);
     }
 
     nr_rrc_mac_config_req_ue(); 
@@ -170,7 +63,7 @@ uint8_t nr_rrc_ue_decode_secondary_cellgroup_config(
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (decoded)
 // RRCReconfiguration
-uint8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfiguration){
+int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfiguration){
 
     switch(rrcReconfiguration.criticalExtensions.present){
         case RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration:
@@ -197,7 +90,8 @@ uint8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfi
                 }else{
                     //  after first time, update it and free the memory after.
                     nr_rrc_ue_process_scg_config(cellGroupConfig);
-                    asn_DEF_CellGroupConfig.free_struct(asn_DEF_CellGroupConfig, cellGroupConfig, 0);
+                    //asn_DEF_CellGroupConfig.free_struct(asn_DEF_CellGroupConfig, cellGroupConfig, 0);
+                    SEQUENCE_free(&asn_DEF_CellGroupConfig, (void *)cellGroupConfig, 0);
                 }
                 
             }
@@ -228,11 +122,11 @@ uint8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfi
     nr_rrc_mac_config_req_ue(); 
 }
 
-uint8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config){
+int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config){
 
 }
 
-uint8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config){
+int8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config){
     int i;
     void *listobj;
     if(NR_UE_rrc_inst->cell_group_config==NULL){
@@ -274,12 +168,12 @@ uint8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config){
         }
     } 
 }
-uint8_t nr_rrc_ue_process_radio_bearer_config(NR_RadioBearerConfig_t *radio_bearer_config){
+int8_t nr_rrc_ue_process_radio_bearer_config(NR_RadioBearerConfig_t *radio_bearer_config){
 
 }
 
 
-uint8_t openair_rrc_top_init_ue_nr(void){
+int8_t openair_rrc_top_init_ue_nr(void){
 
     if(NB_NR_UE_INST > 0){
         NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)malloc(NB_NR_UE_INST * sizeof(NR_UE_RRC_INST_t));
@@ -318,22 +212,140 @@ uint8_t openair_rrc_top_init_ue_nr(void){
 }
 
 
-uint8_t nr_ue_process_rlc_bearer_list(NR_CellGroupConfig_t *cell_group_config){
+int8_t nr_ue_process_rlc_bearer_list(NR_CellGroupConfig_t *cell_group_config){
 
 };
 
-uint8_t nr_ue_process_secondary_cell_list(NR_CellGroupConfig_t *cell_group_config){
+int8_t nr_ue_process_secondary_cell_list(NR_CellGroupConfig_t *cell_group_config){
 
 };
 
-uint8_t nr_ue_process_mac_cell_group_config(NR_MAC_CellGroupConfig_t *mac_cell_group_config){
+int8_t nr_ue_process_mac_cell_group_config(NR_MAC_CellGroupConfig_t *mac_cell_group_config){
 
 };
 
-uint8_t nr_ue_process_physical_cell_group_config(NR_PhysicalCellGroupConfig_t *phy_cell_group_config){
+int8_t nr_ue_process_physical_cell_group_config(NR_PhysicalCellGroupConfig_t *phy_cell_group_config){
 
 };
 
-uint8_t nr_ue_process_spcell_config(NR_SpCellConfig_t *spcell_config){
+int8_t nr_ue_process_spcell_config(NR_SpCellConfig_t *spcell_config){
 
 };
+
+/*brief decode BCCH-BCH (MIB) message*/
+int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
+    const module_id_t module_id,
+    const uint8_t     gNB_index,
+    uint8_t           *const bufferP,
+    const uint8_t     buffer_len){
+    int i;
+    NR_BCCH_BCH_Message_t *bcch_message = NULL;
+    NR_MIB_t *mib = NR_UE_rrc_inst->mib;
+
+    asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+                            &asn_DEF_NR_BCCH_BCH_Message,
+                            (void **)&bcch_message,
+                            (const void *)bufferP,
+                            buffer_len );
+
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+        LOG_E( RRC, "[UE %"PRIu8"] Failed to decode BCCH_DLSCH_MESSAGE (%zu bits)\n",
+               module_id,
+               dec_rval.consumed );
+
+        for (i=0; i<buffer_len; i++)
+            printf("%02x ",bufferP[i]);
+
+        printf("\n");
+        // free the memory
+        SEQUENCE_free( &asn_DEF_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );
+        return -1;
+    }
+
+    //  copy into rrc instance
+    memcpy( (void *)mib,
+        (void *)&bcch_message->message.choice.mib,
+        sizeof(NR_MIB_t) );
+
+    nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
+
+    return 0;
+}
+
+
+// from NR SRB3
+int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
+    const module_id_t module_id,
+    const uint8_t     gNB_index,
+    const uint8_t    *bufferP,
+    const uint32_t    buffer_len){
+    //  uper_decode by nr R15 rrc_connection_reconfiguration
+    
+    NR_DL_DCCH_Message_t *nr_dl_dcch_msg = (NR_DL_DCCH_Message_t *)0;
+
+    asn_dec_rval_t dec_rval = uper_decode(  NULL,
+                                            &asn_DEF_NR_DL_DCCH_Message,    
+                                            (void**)&nr_dl_dcch_msg,
+                                            (uint8_t *)bufferP,
+                                            buffer_len, 0, 0); 
+
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+        LOG_E( RRC, "[UE %"PRIu8"] Failed to decode NR_DL_DCCH_Message (%zu bits)\n",
+               module_id,
+               dec_rval.consumed );
+
+        for (i=0; i<buffer_len; i++)
+            printf("%02x ",bufferP[i]);
+
+        printf("\n");
+        // free the memory
+        SEQUENCE_free( &asn_DEF_NR_DL_DCCH_Message, (void *)nr_dl_dcch_msg, 1 );
+        return -1;
+    }
+
+    if(nr_dl_dcch_msg != NULL){
+        switch(nr_dl_dcch_msg->message.present){            
+            case DL_DCCH_MessageType_PR_c1:
+
+                switch(nr_dl_dcch_msg->message.choice.c1.present){
+                    case DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
+                        nr_rrc_ue_process_rrcReconfiguration(&nr_dl_dcch_msg->message.choice.c1.choice.rrcReconfiguration);
+                        break;
+
+                    case DL_DCCH_MessageType__c1_PR_NOTHING:
+                    case DL_DCCH_MessageType__c1_PR_spare15:
+                    case DL_DCCH_MessageType__c1_PR_spare14:
+                    case DL_DCCH_MessageType__c1_PR_spare13:
+                    case DL_DCCH_MessageType__c1_PR_spare12:
+                    case DL_DCCH_MessageType__c1_PR_spare11:
+                    case DL_DCCH_MessageType__c1_PR_spare10:
+                    case DL_DCCH_MessageType__c1_PR_spare9:
+                    case DL_DCCH_MessageType__c1_PR_spare8:
+                    case DL_DCCH_MessageType__c1_PR_spare7:
+                    case DL_DCCH_MessageType__c1_PR_spare6:
+                    case DL_DCCH_MessageType__c1_PR_spare5:
+                    case DL_DCCH_MessageType__c1_PR_spare4:
+                    case DL_DCCH_MessageType__c1_PR_spare3:
+                    case DL_DCCH_MessageType__c1_PR_spare2:
+                    case DL_DCCH_MessageType__c1_PR_spare1:
+                    default:
+                        //  not support or unuse
+                        break;
+                }   
+                break;
+            case DL_DCCH_MessageType_PR_NOTHING:
+            case DL_DCCH_MessageType_PR_messageClassExtension:
+            default:
+                //  not support or unuse
+                break;
+        }
+        
+        //  release memory allocation
+        SEQUENCE_free( &asn_DEF_NR_DL_DCCH_Message, (void *)nr_dl_dcch_msg, 1 );
+    }else{
+        //  log..
+    }
+
+    return 0;
+
+}

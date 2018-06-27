@@ -21,66 +21,6 @@
 
 #include "stddef.h"
 
-// Constants - update based on implementation
-#define NFAPI_NR_MAX_PHY_RF_INSTANCES 2
-#define NFAPI_NR_PNF_PARAM_GENERAL_LOCATION_LENGTH 16
-#define NFAPI_NR_PNF_PARAM_GENERAL_OUI_LENGTH 3
-#define NFAPI_NR_MAX_NUM_RF_BANDS 16
-
-// The following definition control the size of arrays used in the interface.
-// These may be changed if desired. They are used in the encoder to make sure 
-// that the user has not specified a 'count' larger than the max array, and also
-// used by the decoder when decode an array. If the 'count' received is larger
-// than the array it is to be stored in the decode fails.
-#define NFAPI_NR_MAX_NUM_ANTENNAS 8
-#define NFAPI_NR_MAX_NUM_SUBBANDS 13
-#define NFAPI_NR_MAX_BF_VECTORS 8
-#define NFAPI_NR_MAX_CC 1
-#define NFAPI_NR_MAX_NUM_PHYSICAL_ANTENNAS 8
-#define NFAPI_NR_MAX_RSSI 8
-#define NFAPI_NR_MAX_PSC_LIST 32
-#define NFAPI_NR_MAX_PCI_LIST 32
-#define NFAPI_NR_MAX_CARRIER_LIST 32
-#define NFAPI_NR_MAX_ARFCN_LIST 128
-#define NFAPI_NR_MAX_LTE_CELLS_FOUND 8
-#define NFAPI_NR_MAX_UTRAN_CELLS_FOUND 8
-#define NFAPI_NR_MAX_GSM_CELLS_FOUND 8
-#define NFAPI_NR_MAX_NB_IOT_CELLS_FOUND 8
-#define NFAPI_NR_MAX_SI_PERIODICITY 8
-#define NFAPI_NR_MAX_SI_INDEX 8
-#define NFAPI_NR_MAX_MIB_LENGTH 32
-#define NFAPI_NR_MAX_SIB_LENGTH 256
-#define NFAPI_NR_MAX_SI_LENGTH 256
-#define NFAPI_NR_MAX_OPAQUE_DATA 64
-#define NFAPI_NR_MAX_NUM_SCHEDULED_UES 8 // Used in the TPM structure
-#define NFAPI_NR_MAX_PNF_PHY 5
-#define NFAPI_NR_MAX_PNF_PHY_RF_CONFIG 5
-#define NFAPI_NR_MAX_PNF_RF  5
-#define NFAPI_NR_MAX_NMM_FREQUENCY_BANDS 32
-#define NFAPI_NR_MAX_RECEIVED_INTERFERENCE_POWER_RESULTS 100
-#define NFAPI_NR_MAX_UL_DL_CONFIGURATIONS 5
-#define NFAPI_NR_MAX_CSI_RS_RESOURCE_CONFIG 4
-#define NFAPI_NR_MAX_ANTENNA_PORT_COUNT 8
-#define NFAPI_NR_MAX_EPDCCH_PRB 8
-#define NFAPI_NR_MAX_TX_PHYSICAL_ANTENNA_PORTS 8
-#define NFAPI_NR_MAX_NUMBER_ACK_NACK_TDD 8
-#define NFAPI_NR_MAX_RO_DL 8
-
-#define NFAPI_NR_HEADER_LENGTH 8
-#define NFAPI_NR_P7_HEADER_LENGTH 16
-
-#define NFAPI_NR_VENDOR_EXTENSION_MIN_TAG_VALUE 0xF000
-#define NFAPI_NR_VENDOR_EXTENSION_MAX_TAG_VALUE 0xFFFF
-
-#define NFAPI_NR_VERSION_3_0_11	0x000
-#define NFAPI_NR_VERSION_3_0_12    0x001
-
-#define NFAPI_NR_HALF_FRAME_INDEX_FIRST_HALF 0
-#define NFAPI_NR_HALF_FRAME_INDEX_SECOND_HALF 1
-
-// The IANA agreed port definition of the P5 SCTP VNF enpoint 
-// http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?search=7701
-#define NFAPI_NR_P5_SCTP_PORT		7701
 
 
 #define NFAPI_NR_MAX_NUM_DL_ALLOCATIONS 16
@@ -326,6 +266,7 @@ typedef struct {
 	uint16_t sfn_sf_slot;
 	nfapi_nr_dl_config_request_pdu_t dl_config_request_body;
 } nfapi_nr_dl_config_request_t;
+
 
 
 //
@@ -583,7 +524,28 @@ typedef struct {
     } nfapi_nr_ul_bwp_common_config_t;
         
     typedef struct {
+        uint8_t inter_slot_frequency_hopping;
+        uint8_t additional_dmrs;
+        uint8_t max_code_rate;
+        uint8_t number_of_slots;
+        uint8_t pi2bpsk;
+        uint8_t simultaneous_harq_ack_csi;
+    } nfapi_nr_pucch_format_config_t;
 
+    typedef struct {
+        nfapi_nr_pucch_format_config_t format1;
+        nfapi_nr_pucch_format_config_t format2;
+        nfapi_nr_pucch_format_config_t format3;
+        nfapi_nr_pucch_format_config_t format4;
+        nfapi_nr_pucch_resource_t multi_csi_pucch_resources[2];
+        uint8_t dl_data_to_ul_ack[8];
+        //  pucch power control
+        uint8_t deltaF_pucch_f0;
+        uint8_t deltaF_pucch_f1;
+        uint8_t deltaF_pucch_f2;
+        uint8_t deltaF_pucch_f3;
+        uint8_t deltaF_pucch_f4;
+        uint8_t two_pucch_pc_adjusment_states;
     } nfapi_nr_ul_bwp_dedicated_config_t;
 
 typedef struct {

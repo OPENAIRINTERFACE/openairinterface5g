@@ -1,4 +1,5 @@
-
+#ifndef _RRC_LIST_H_
+#define _RRC_LIST_H_
 
 
 #define RRC_LIST_TYPE(T, N)     \
@@ -14,61 +15,61 @@
 #define RRC_LIST_INIT(list, c)                      \
     do {                                            \
         int iterator;                               \
-        (list).count = (c);                             \
+        (list).count = (c);                         \
         for(iterator=0; iterator<c; ++iterator){    \
-            (list).entries[iterator] = NULL;          \
-            (list).next[iterator] = -1;               \
-            (list).prev[iterator] = -1;               \
-            (list).start = -1;                        \
+            (list).entries[iterator] = NULL;        \
+            (list).next[iterator] = -1;             \
+            (list).prev[iterator] = -1;             \
+            (list).start = -1;                      \
         }                                           \
     }while(0)
 
 
 //  check the entry by id first then update or create new entry.
-#define RRC_LIST_MOD_ADD(list, new, id_name)                                    \
-    do {                                                                        \
-        int iterator;                                                           \
+#define RRC_LIST_MOD_ADD(list, new, id_name)                                        \
+    do {                                                                            \
+        int iterator;                                                               \
         for(iterator=(list).start; iterator!=-1; iterator=(list).next[iterator]){   \
-            if((new)->id_name == (list).entries[iterator]->id_name){              \
+            if((new)->id_name == (list).entries[iterator]->id_name){                \
                 (list).entries[iterator] = (new);                                   \
-                break;                                                          \
-            }                                                                   \
-        }                                                                       \
-        if(iterator==-1){                                                       \
-            for(iterator=0; iterator<(list).count; ++iterator){                   \
-                if((list).entries[iterator] == NULL){                             \
+                break;                                                              \
+            }                                                                       \
+        }                                                                           \
+        if(iterator==-1){                                                           \
+            for(iterator=0; iterator<(list).count; ++iterator){                     \
+                if((list).entries[iterator] == NULL){                               \
                     (list).next[iterator] = (list).start;                           \
-                    (list).prev[iterator] = -1;                                   \
-                    if((list).start != -1){                                       \
-                        (list).prev[list.start] = iterator;                       \
-                    }                                                           \
-                    (list).start = iterator;                                      \
+                    (list).prev[iterator] = -1;                                     \
+                    if((list).start != -1){                                         \
+                        (list).prev[list.start] = iterator;                         \
+                    }                                                               \
+                    (list).start = iterator;                                        \
                     (list).entries[iterator] = (new);                               \
-                    break;                                                      \
-                }                                                               \
-            }                                                                   \
-        }                                                                       \
+                    break;                                                          \
+                }                                                                   \
+            }                                                                       \
+        }                                                                           \
     }while(0)
 
 //  search entries by id, unlink from the list and output free pointer for upper function to release memory
-#define RRC_LIST_MOD_REL(list, id_name, id, free)                               \
-    do{                                                                         \
-        int iterator;                                                           \
+#define RRC_LIST_MOD_REL(list, id_name, id, free)                                   \
+    do{                                                                             \
+        int iterator;                                                               \
         for(iterator=(list).start; iterator!=-1; iterator=(list).next[iterator]){   \
-            if(id == (list).entries[iterator]->id_name){                          \
-                if((list).prev[iterator] == -1){                                  \
+            if(id == (list).entries[iterator]->id_name){                            \
+                if((list).prev[iterator] == -1){                                    \
                     (list).start = (list).next[iterator];                           \
-                }else{                                                          \
-                    (list).next[(list).prev[iterator]] = (list).next[iterator];       \
-                }                                                               \
-                if((list).next[iterator] != -1){                                  \
-                    (list).prev[(list).next[iterator]] = (list).prev[iterator];       \
-                }                                                               \
+                }else{                                                              \
+                    (list).next[(list).prev[iterator]] = (list).next[iterator];     \
+                }                                                                   \
+                if((list).next[iterator] != -1){                                    \
+                    (list).prev[(list).next[iterator]] = (list).prev[iterator];     \
+                }                                                                   \
                 (free) = (list).entries[iterator];                                  \
-                (list).entries[iterator] = NULL;                                  \
-                break;                                                          \
-            }                                                                   \
-        }                                                                       \
+                (list).entries[iterator] = NULL;                                    \
+                break;                                                              \
+            }                                                                       \
+        }                                                                           \
     }while(0)
 
 
@@ -78,10 +79,4 @@
 #define RRC_LIST_ENTRY(list, i)         \
         list.entries[i]
 
-
-
-
-
-
-
-
+#endif
