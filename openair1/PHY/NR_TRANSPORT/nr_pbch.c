@@ -51,7 +51,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 {
   int k,l;
   int16_t a;
-  int16_t mod_dmrs[2 * NR_PBCH_DMRS_LENGTH];
+  int16_t mod_dmrs[NR_PBCH_DMRS_LENGTH<<2];
 
   LOG_I(PHY, "PBCH DMRS mapping started at symbol %d shift %d\n", ssb_start_symbol+1, nushift);
 

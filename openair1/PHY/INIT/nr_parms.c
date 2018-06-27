@@ -139,7 +139,7 @@ int nr_init_frame_parms(nfapi_config_request_t* config,
     AssertFatal(1==0,"Invalid numerology index %d", mu);
   }
 
-
+  frame_parms->slots_per_frame = 10* frame_parms->slots_per_subframe;
   frame_parms->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_slot * frame_parms->slots_per_subframe;
   frame_parms->samples_per_frame_wCP = 10 * frame_parms->samples_per_subframe_wCP;
@@ -289,6 +289,7 @@ int nr_init_frame_parms_ue(nfapi_config_request_t* config,
     frame_parms->samples_per_subframe = 30720 * frame_parms->ttis_per_subframe;
     frame_parms->first_carrier_offset = 2048-600;
 
+  frame_parms->slots_per_frame = 10* frame_parms->slots_per_subframe;
   frame_parms->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_slot * frame_parms->slots_per_subframe;
   frame_parms->samples_per_frame_wCP = 10 * frame_parms->samples_per_subframe_wCP;

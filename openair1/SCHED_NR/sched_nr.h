@@ -41,8 +41,12 @@ void nr_feptx_ofdm(RU_t *ru);
 void nr_feptx_ofdm_2thread(RU_t *ru);
 void nr_feptx0(RU_t *ru,int slot);
 
-void nr_fill_pdcch_params(nr_pdcch_params_t *pdcch_params,
-                          nfapi_config_request_t* config,
-                          uint8_t ssb_idx);
+void nr_get_coreset_and_ss_params(nr_pdcch_vars_t *pdcch_params,
+                                  uint8_t mu,
+                                  uint8_t ssb_idx);
+void nr_get_pdcch_type_0_monitoring_period(nr_pdcch_vars_t *pdcch_vars,
+                                           uint8_t mu,
+                                           uint8_t nb_slots_per_frame,
+                                           uint8_t ssb_idx);
 
 #endif

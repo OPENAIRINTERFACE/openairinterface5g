@@ -55,15 +55,15 @@ nr_subframe_t nr_subframe_select(nfapi_config_request_t *cfg,unsigned char subfr
 }
 
 
-void nr_fill_pdcch_params(nr_pdcch_params_t *pdcch_params,
-                          nfapi_config_request_t* config,
+void nr_get_coreset_and_ss_params(nr_pdcch_vars_t *pdcch_vars,
+                          uint8_t mu,
                           uint8_t ssb_idx)
 {
-  nr_pdcch_coreset_params_t *coreset_params = &pdcch_params->coreset_params;
-  nr_pdcch_ss_params_t *ss_params = &pdcch_params->ss_params;
+  nr_pdcch_coreset_params_t *coreset_params = &pdcch_vars->coreset_params;
+  nr_pdcch_ss_params_t *ss_params = &pdcch_vars->ss_params;
 
   // the switch case below assumes that only the cases where the SSB and the PDCCH have the same SCS are supported along with type 1 PDCCH/ mux pattern 1 and FR1
-  switch(config->subframe_config.numerology_index_mu.value) {
+  switch(mu) {
 
     case NR_MU_0:
       break;
@@ -87,7 +87,25 @@ void nr_fill_pdcch_params(nr_pdcch_params_t *pdcch_params,
       break;
 
   default:
-    AssertFatal(1==0,"Invalid PDCCH numerology index %d", config->subframe_config.numerology_index_mu.value);
+    AssertFatal(1==0,"Invalid PDCCH numerology index %d\n", mu);
 
   }
+}
+
+void nr_get_pdcch_type_0_monitoring_period(nr_pdcch_vars_t *pdcch_vars,
+                                           uint8_t mu,
+                                           uint8_t nb_slots_per_frame,
+                                           uint8_t ssb_idx)
+{
+  uint8_t O = pdcch_vars->ss_params.param_O, M = pdcch_vars->ss_params.param_M;
+
+  if (pdcch_vars->coreset_params.mux_pattern == nr_pdcch_mux_pattern_type_1) {
+    pdcch_vars->nb_slots = 2;
+    pdcch_vars->sfn_mod2 = ((uint8_t)(floor( (O*pow(2, mu) + floor(ssb_idx*M)) / nb_slots_per_frame )) & 1)? 1 : 0;
+    pdcch_vars->first_slot = (uint8_t)(O*pow(2, mu) + floor(ssb_idx*M)) % nb_slots_per_frame;
+  }
+  else { //nr_pdcch_mux_pattern_type_2, nr_pdcch_mux_pattern_type_3
+    pdcch_vars->nb_slots = 1;
+  }
+
 }

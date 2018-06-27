@@ -57,6 +57,9 @@
 #define NR_PBCH_DMRS_LENGTH 144
 #define NR_PBCH_DMRS_LENGTH_DWORD 5 // roundup(NR_PBCH_DMRS_LENGTH/32)
 
+#define NR_MAX_PDCCH_DMRS_LENGTH 100
+#define NR_MAX_PDCCH_DMRS_LENGTH_DWORD 5
+
 #define NR_MAX_NUM_BWP 4
 
 typedef enum {
@@ -129,6 +132,8 @@ typedef struct NR_DL_FRAME_PARMS {
   uint16_t symbols_per_slot;
   /// Number of slots per subframe
   uint16_t slots_per_subframe;
+    /// Number of slots per frame
+  uint16_t slots_per_frame;
   /// Number of samples in a subframe
   uint32_t samples_per_subframe;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)

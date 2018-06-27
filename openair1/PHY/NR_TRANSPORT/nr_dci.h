@@ -76,9 +76,12 @@ typedef struct {
 } nr_pdcch_coreset_params_t;
 
 typedef struct {
+  uint8_t first_slot;
+  uint8_t nb_slots;
+  uint8_t sfn_mod2;
   nr_pdcch_ss_params_t ss_params;
   nr_pdcch_coreset_params_t coreset_params;
-} nr_pdcch_params_t;
+} nr_pdcch_vars_t;
 
 typedef struct {
   /// Length of DCI in bits
@@ -100,10 +103,11 @@ typedef struct {
 
 uint8_t nr_get_dci_size(nr_dci_format_e format,
                         nr_rnti_type_e rnti,
-                        NR_BWP_PARMS bwp,
+                        NR_BWP_PARMS* bwp,
                         nfapi_config_request_t* config);
 
 uint8_t nr_generate_dci_top(NR_DCI_ALLOC_t dci_alloc,
+                            uint32_t *gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS* frame_parms,

@@ -46,7 +46,7 @@ extern uint8_t nfapi_mode;
 int return_ssb_type(nfapi_config_request_t *cfg)
 {
   int mu = cfg->subframe_config.numerology_index_mu.value;
-  nr_numerology_index_e ssb_type;
+  nr_ssb_type_e ssb_type;
 
   switch(mu) {
 
@@ -181,5 +181,9 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     nr_common_signal_procedures(gNB,frame, subframe);
     //if (frame == 9)
       //write_output("txdataF.m","txdataF",gNB->common_vars.txdataF[aa],fp->samples_per_frame_wCP, 1, 1);
+
+    //temporary DCI generation test
+    NR_DCI_ALLOC_t dci_alloc;
+    nr_generate_dci_top(dci_alloc, gNB->nr_gold_pdcch_dmrs[0][0],gNB->common_vars.txdataF, 512, fp, cfg);
   }
 }

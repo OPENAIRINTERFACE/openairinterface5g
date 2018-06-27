@@ -25,12 +25,18 @@
 #define __NR_REFSIG__H__
 
 #include "PHY/defs_gNB.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 
 /*!\brief This function generates the NR Gold sequence (38-211, Sec 5.2.1) for the PBCH DMRS.
 @param PHY_VARS_gNB* gNB structure provides configuration, frame parameters and the pointers to the 32 bits sequence storage tables
  */
 void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB);
+/*!\brief This function generates the NR Gold sequence (38-211, Sec 5.2.1) for the PDCCH DMRS.
+@param PHY_VARS_gNB* gNB structure provides configuration, frame parameters and the pointers to the 32 bits sequence storage tables
+@param Nid is used for the initialization of x2, Physical cell Id by default or upper layer configured pdcch_scrambling_ID
+ */
+void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
 
 
 #endif

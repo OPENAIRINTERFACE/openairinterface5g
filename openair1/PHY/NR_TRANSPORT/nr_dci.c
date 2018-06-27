@@ -32,6 +32,11 @@
 
 #include "nr_dci.h"
 
+#define DEBUG_PDCCH_DMRS
+#define DEBUG_DCI
+
+extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
+
 uint8_t nr_get_dci_size(nr_dci_format_e format,
                         nr_rnti_type_e rnti,
                         NR_BWP_PARMS* bwp,
@@ -126,10 +131,23 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
 }
 
 uint8_t nr_generate_dci_top(NR_DCI_ALLOC_t dci_alloc,
+                            uint32_t *gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS* frame_parms,
                             nfapi_config_request_t* config)
 {
+
+  uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH<<2];
+
+  /// DMRS BPSK modulation
+  for (int m=0; m<NR_MAX_PDCCH_DMRS_LENGTH; m++) {
+    mod_dmrs[m<<1] = nr_mod_table[((NR_MOD_TABLE_BPSK_OFFSET + ((gold_pdcch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1)];
+    mod_dmrs[(m<<1)+1] = nr_mod_table[((NR_MOD_TABLE_BPSK_OFFSET + ((gold_pdcch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1) + 1];
+#ifdef DEBUG_PBCH_DMRS
+  printf("m %d  mod_dmrs %d %d\n", m, mod_dmrs[2*m], mod_dmrs[2*m+1]);
+#endif
+  }
+
   return 0;
 }
