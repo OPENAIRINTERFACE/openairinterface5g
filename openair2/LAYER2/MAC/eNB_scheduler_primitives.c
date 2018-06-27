@@ -4351,8 +4351,11 @@ static int nack_or_dtx_reported(
   int i;
 
   if (cc->tdd_Config) {
-    AssertFatal(0==1, "TDD to be done. FAPI structures (see nfapi_harq_indication_tdd_rel13_t) are not clean. To be cleaned as well?\n");
-    abort();
+    nfapi_harq_indication_tdd_rel13_t *hi = &harq_pdu->harq_indication_tdd_rel13;
+    for (i = 0; i < hi->number_of_ack_nack; hi++)
+      if (hi->harq_data[0].bundling.value_0 != 1) //only bundling is used for tdd for now
+        return 1;
+    return 0;
   } else {
     nfapi_harq_indication_fdd_rel13_t *hi = &harq_pdu->harq_indication_fdd_rel13;
     for (i = 0; i < hi->number_of_ack_nack; hi++)
