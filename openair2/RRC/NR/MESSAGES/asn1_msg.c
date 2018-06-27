@@ -292,7 +292,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   (*servingcellconfigcommon)->physCellId                      = CALLOC(1,sizeof(NR_PhysCellId_t));
   (*servingcellconfigcommon)->frequencyInfoDL                 = CALLOC(1,sizeof(struct NR_FrequencyInfoDL));
   (*servingcellconfigcommon)->initialDownlinkBWP              = CALLOC(1,sizeof(struct NR_BWP_DownlinkCommon));
-  (*servingcellconfigcommon)->uplinkConfigCommon              = CALLOC(1,sizeof(struct NR_UplinkConfigCommon_t));
+  (*servingcellconfigcommon)->uplinkConfigCommon              = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));
   //(*servingcellconfigcommon)->supplementaryUplinkConfig       = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));  
   (*servingcellconfigcommon)->ssb_PositionsInBurst            = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__ssb_PositionsInBurst));
   (*servingcellconfigcommon)->ssb_periodicityServingCell      = CALLOC(1,sizeof(long));

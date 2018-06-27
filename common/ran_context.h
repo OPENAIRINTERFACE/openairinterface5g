@@ -73,6 +73,8 @@ typedef struct {
   int nb_nr_macrlc_inst;
   /// Number of component carriers per instance in this node
   int *nb_mac_CC;
+  /// Number of component carriers per instance in this node
+  int *nb_nr_mac_CC;
   /// Number of L1 instances in this node
   int nb_L1_inst;
   /// Number of NB_IoT L1 instances in this node

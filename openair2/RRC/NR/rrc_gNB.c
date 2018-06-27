@@ -178,7 +178,8 @@ init_NR_SI(
                              ,configuration
                              #endif
                              );
-
+  
+  LOG_I(NR_RRC,"Done init_NR_SI\n");
   
   
   rrc_mac_config_req_gNB(ctxt_pP->module_id,
