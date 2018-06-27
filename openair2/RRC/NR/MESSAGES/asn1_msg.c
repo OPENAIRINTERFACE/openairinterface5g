@@ -288,15 +288,11 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
 { 
   NR_ServingCellConfigCommon_t  **servingcellconfigcommon  =  &RC.nrrrc[Mod_id]->carrier[CC_id].servingcellconfigcommon;
 
-  if (!servingcellconfigcommon) {
-    LOG_E(NR_RRC,"[gNB %d] servingcellconfigcommon is null, exiting\n", Mod_id);
-    exit(-1);
-  }
-
+  (*servingcellconfigcommon)                                  = CALLOC(1,sizeof(NR_ServingCellConfigCommon_t));
   (*servingcellconfigcommon)->physCellId                      = CALLOC(1,sizeof(NR_PhysCellId_t));
   (*servingcellconfigcommon)->frequencyInfoDL                 = CALLOC(1,sizeof(struct NR_FrequencyInfoDL));
   (*servingcellconfigcommon)->initialDownlinkBWP              = CALLOC(1,sizeof(struct NR_BWP_DownlinkCommon));
-  (*servingcellconfigcommon)->uplinkConfigCommon              = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));
+  (*servingcellconfigcommon)->uplinkConfigCommon              = CALLOC(1,sizeof(struct NR_UplinkConfigCommon_t));
   //(*servingcellconfigcommon)->supplementaryUplinkConfig       = CALLOC(1,sizeof(struct NR_UplinkConfigCommon));  
   (*servingcellconfigcommon)->ssb_PositionsInBurst            = CALLOC(1,sizeof(struct NR_ServingCellConfigCommon__ssb_PositionsInBurst));
   (*servingcellconfigcommon)->ssb_periodicityServingCell      = CALLOC(1,sizeof(long));
@@ -382,7 +378,6 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   bwp_dl_controlresourceset->tci_StatesPDCCH = CALLOC(1,sizeof(struct NR_ControlResourceSet__tci_StatesPDCCH));
   NR_TCI_StateId_t  *TCI_StateId;
   TCI_StateId = CALLOC(1,sizeof(NR_TCI_StateId_t));
-  memset(&TCI_StateId,0,sizeof(NR_TCI_StateId_t));
   *(TCI_StateId) = configuration->PDCCH_TCI_StateId[CC_id];
   ASN_SEQUENCE_ADD(&bwp_dl_controlresourceset->tci_StatesPDCCH->list,&TCI_StateId);
 
@@ -537,6 +532,7 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   
   //uplinkConfigCommon  initialUplinkBWP //
   //Fill  initialUplinkBWP -> BWP-UplinkCommon -> genericParameters//
+  (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP  = CALLOC(1,sizeof(struct NR_BWP_UplinkCommon));
   (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth = configuration->UL_locationAndBandwidth[CC_id];
   (*servingcellconfigcommon)->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing    = configuration->UL_BWP_SubcarrierSpacing[CC_id];
 
@@ -710,8 +706,6 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
 
   if(ratematchpattern->patternType.present == NR_RateMatchPattern__patternType_PR_bitmaps){
     ratematchpattern->patternType.choice.bitmaps = CALLOC(1,sizeof(struct NR_RateMatchPattern__patternType__bitmaps));
-    memset(&ratematchpattern->patternType.choice.bitmaps,0,sizeof(struct NR_RateMatchPattern__patternType__bitmaps));
-
     ratematchpattern->patternType.choice.bitmaps->resourceBlocks.buf = MALLOC(35);
     ratematchpattern->patternType.choice.bitmaps->resourceBlocks.size = 35;
     ratematchpattern->patternType.choice.bitmaps->resourceBlocks.bits_unused = 5;
