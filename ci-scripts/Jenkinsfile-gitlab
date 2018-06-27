@@ -150,6 +150,36 @@ pipeline {
             }
         }
 
+        stage ("Variant Tests") {
+            parallel {
+                stage ("Test physical simulators") {
+                    steps {
+                        gitlabCommitStatus(name: "Test phy-sim") {
+                            sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Test basic simulator") {
+                    steps {
+                        //gitlabCommitStatus(name: "Test basic-sim") {
+                            sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        //}
+                    }
+                }
+            }
+            post {
+                always {
+                    script {
+                        dir ('archives') {
+                            sh "zip -r -qq vm_tests_logs.zip */test"
+                        }
+                        if(fileExists('archives/vm_tests_logs.zip')) {
+                            archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'
+                        }
+                    }
+                }
+            }
+        }
         stage ("Destroy all Virtual Machines") {
             steps {
                 sh "./ci-scripts/destroyAllRunningVM.sh --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
