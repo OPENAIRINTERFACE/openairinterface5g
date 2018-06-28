@@ -65,6 +65,7 @@ VM_NAME=ci-enb-usrp
 ARCHIVES_LOC=enb_usrp/test
 KEEP_VM_ALIVE=0
 RUN_OPTIONS="none"
+STATUS=0
 
 while [[ $# -gt 0 ]]
 do
@@ -205,6 +206,8 @@ else
     echo "$RUN_OPTIONS" | sed -e 's@"@\\"@g' -e 's@^@echo "@' -e 's@$@"@' >> $VM_CMDS
     echo "$RUN_OPTIONS" >> $VM_CMDS
     echo "cp /home/ubuntu/bc-install.txt log" >> $VM_CMDS
+    echo "cd log" >> $VM_CMDS
+    echo "zip -r -qq tmp.zip *.* 0*" >> $VM_CMDS
 
     ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
 
@@ -216,7 +219,19 @@ else
     then
         rm -Rf $ARCHIVES_LOC
     fi
-    scp -rf -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/autotests/log $ARCHIVES_LOC
+    mkdir --parents $ARCHIVES_LOC
+
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/autotests/log/tmp.zip $ARCHIVES_LOC
+    pushd $ARCHIVES_LOC
+    unzip -qq -DD tmp.zip
+    rm tmp.zip
+    if [ -f results_autotests.xml ]
+    then
+        FUNCTION=`echo $VM_NAME | sed -e "s@$VM_TEMPLATE@@"`
+        NEW_NAME=`echo "results_autotests.xml" | sed -e "s@results_autotests@results_autotests-$FUNCTION@"`
+        mv results_autotests.xml $NEW_NAME
+    fi
+    popd
 
     if [ $KEEP_VM_ALIVE -eq 0 ]
     then
@@ -227,6 +242,50 @@ else
         ssh-keygen -R $VM_IP_ADDR
     fi
     rm -f $VM_CMDS
+
+    echo "############################################################"
+    echo "Checking build status"
+    echo "############################################################"
+
+    LOG_FILES=`ls $ARCHIVES_LOC/results_autotests*.xml`
+    NB_FOUND_FILES=0
+    NB_RUNS=0
+    NB_FAILURES=0
+
+    for FULLFILE in $LOG_FILES
+    do
+        TESTSUITES=`egrep "testsuite errors" $FULLFILE`
+        for TESTSUITE in $TESTSUITES
+        do
+            if [[ "$TESTSUITE" == *"tests="* ]]
+            then
+                RUNS=`echo $TESTSUITE | awk 'BEGIN{FS="="}{print $2}END{}' | sed -e "s@'@@g" `
+                NB_RUNS=$((NB_RUNS + RUNS))
+            fi
+            if [[ "$TESTSUITE" == *"failures="* ]]
+            then
+                FAILS=`echo $TESTSUITE | awk 'BEGIN{FS="="}{print $2}END{}' | sed -e "s@'@@g" `
+                NB_FAILURES=$((NB_FAILURES + FAILS))
+            fi
+        done
+        NB_FOUND_FILES=$((NB_FOUND_FILES + 1))
+    done
+
+    echo "NB_FOUND_FILES = $NB_FOUND_FILES"
+    echo "NB_RUNS        = $NB_RUNS"
+    echo "NB_FAILURES    = $NB_FAILURES"
+
+    if [ $NB_FOUND_FILES -eq 0 ]; then STATUS=-1; fi
+    if [ $NB_RUNS -eq 0 ]; then STATUS=-1; fi
+    if [ $NB_FAILURES -ne 0 ]; then STATUS=-1; fi
+
+    if [ $STATUS -eq 0 ]
+    then
+        echo "STATUS seems OK"
+    else
+        echo "STATUS failed?"
+    fi
+
 fi
 
-exit 0
+exit $STATUS
