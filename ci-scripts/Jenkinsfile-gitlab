@@ -162,7 +162,7 @@ pipeline {
                 stage ("Test basic simulator") {
                     steps {
                         //gitlabCommitStatus(name: "Test basic-sim") {
-                            sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                            sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                         //}
                     }
                 }
