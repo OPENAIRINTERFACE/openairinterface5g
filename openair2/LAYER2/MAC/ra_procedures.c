@@ -299,8 +299,8 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 
     uint8_t Size = 0;
     UE_MODE_t UE_mode;
-    // Panos: Modification for phy_stub_ue operation
-    if(nfapi_mode == 3) { // Panos: phy_stub_ue mode
+    // Modification for phy_stub_ue operation
+    if(nfapi_mode == 3) { // phy_stub_ue mode
         UE_mode = UE_mac_inst[module_idP].UE_mode[0];
         LOG_D(MAC, "ue_get_rach , UE_mode: %d", UE_mode);
     }

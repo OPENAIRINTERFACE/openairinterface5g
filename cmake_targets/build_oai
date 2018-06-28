@@ -527,7 +527,7 @@ function main() {
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
     echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
-    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
+#    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
     echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file

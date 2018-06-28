@@ -15,13 +15,21 @@ function usage {
     echo ""
     echo "Options:"
     echo "--------"
+    echo "    --job-name #### OR -jn ####"
+    echo "    Specify the name of the Jenkins job."
+    echo ""
+    echo "    --build-id #### OR -id ####"
+    echo "    Specify the build ID of the Jenkins job."
+    echo ""
     echo "    --workspace #### OR -ws ####"
     echo "    Specify the workspace."
     echo ""
-    echo "    --variant enb-usrp   OR -v1"
-    echo "    --variant basic-sim  OR -v2"
-    echo "    --variant phy-sim    OR -v3"
-    echo "    --variant cppcheck   OR -v4"
+    echo "    --variant enb-usrp     OR -v1"
+    echo "    --variant basic-sim    OR -v2"
+    echo "    --variant phy-sim      OR -v3"
+    echo "    --variant cppcheck     OR -v4"
+    echo "    --variant enb-ethernet OR -v7"
+    echo "    --variant ue-ethernet  OR -v8"
     echo "    Specify the variant to build."
     echo ""
     echo "    --keep-vm-alive OR -k"
@@ -36,14 +44,16 @@ function variant_usage {
     echo "OAI VM Build Check script"
     echo "   Original Author: Raphael Defosseux"
     echo ""
-    echo "    --variant enb-usrp   OR -v1"
-    echo "    --variant basic-sim  OR -v2"
-    echo "    --variant phy-sim    OR -v3"
-    echo "    --variant cppcheck   OR -v4"
+    echo "    --variant enb-usrp     OR -v1"
+    echo "    --variant basic-sim    OR -v2"
+    echo "    --variant phy-sim      OR -v3"
+    echo "    --variant cppcheck     OR -v4"
+    echo "    --variant enb-ethernet OR -v7"
+    echo "    --variant ue-ethernet  OR -v8"
     echo ""
 }
 
-if [ $# -lt 1 ] || [ $# -gt 5 ]
+if [ $# -lt 1 ] || [ $# -gt 9 ]
 then
     echo "Syntax Error: not the correct number of arguments"
     echo ""
@@ -51,6 +61,9 @@ then
     exit 1
 fi
 
+VM_TEMPLATE=ci-
+JOB_NAME=XX
+BUILD_ID=XX
 VM_NAME=ci-enb-usrp
 ARCHIVES_LOC=enb_usrp
 LOG_PATTERN=.Rel14.txt
@@ -67,6 +80,16 @@ case $key in
     shift
     usage
     exit 0
+    ;;
+    -jn|--job-name)
+    JOB_NAME="$2"
+    shift
+    shift
+    ;;
+    -id|--build-id)
+    BUILD_ID="$2"
+    shift
+    shift
     ;;
     -ws|--workspace)
     JENKINS_WKSP="$2"
@@ -109,6 +132,22 @@ case $key in
     BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
     shift
     ;;
+    -v7)
+    VM_NAME=ci-enb-ethernet
+    ARCHIVES_LOC=enb_eth
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=6
+    BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+    shift
+    ;;
+    -v8)
+    VM_NAME=ci-ue-ethernet
+    ARCHIVES_LOC=ue_eth
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=6
+    BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+    shift
+    ;;
     --variant)
     variant="$2"
     case $variant in
@@ -140,6 +179,20 @@ case $key in
         NB_PATTERN_FILES=1
         BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
         ;;
+        enb-ethernet)
+        VM_NAME=ci-enb-ethernet
+        ARCHIVES_LOC=enb_eth
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=6
+        BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+        ;;
+        ue-ethernet)
+        VM_NAME=ci-ue-ethernet
+        ARCHIVES_LOC=ue_eth
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=6
+        BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+        ;;
         *)
         echo ""
         echo "Syntax Error: Invalid Variant option -> $variant"
@@ -170,6 +223,14 @@ then
     exit 1
 fi
 
+if [ "$JOB_NAME" == "XX" ] || [ "$BUILD_ID" == "XX" ]
+then
+    VM_TEMPLATE=ci-
+else
+    VM_TEMPLATE=${JOB_NAME}-b${BUILD_ID}-
+fi
+
+VM_NAME=`echo $VM_NAME | sed -e "s#ci-#$VM_TEMPLATE#"`
 VM_CMDS=${VM_NAME}_cmds.txt
 ARCHIVES_LOC=${JENKINS_WKSP}/archives/${ARCHIVES_LOC}
 
@@ -179,10 +240,16 @@ echo "JENKINS_WKSP        = $JENKINS_WKSP"
 echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
 echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
-echo "############################################################"
-echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
-echo "############################################################"
-uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
+
+if [ $IS_VM_ALIVE -eq 0 ]
+then
+    echo "############################################################"
+    echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
+    echo "############################################################"
+    uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+fi
+
 echo "Waiting for VM to be started"
 uvt-kvm wait $VM_NAME --insecure
 
@@ -199,7 +266,7 @@ echo "############################################################"
 echo "Running install and build script on VM ($VM_NAME)"
 echo "############################################################"
 echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
-if [ "$VM_NAME" == "ci-cppcheck" ]
+if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "echo \"sudo apt-get --yes --quiet install zip cppcheck \"" >> $VM_CMDS
     echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
@@ -210,9 +277,9 @@ else
 fi
 echo "mkdir tmp" >> $VM_CMDS
 echo "cd tmp" >> $VM_CMDS
-echo "echo \"unzip -qq ../localZip.zip\"" >> $VM_CMDS
-echo "unzip -qq ../localZip.zip" >> $VM_CMDS
-if [ "$VM_NAME" == "ci-cppcheck" ]
+echo "echo \"unzip -qq -DD ../localZip.zip\"" >> $VM_CMDS
+echo "unzip -qq -DD ../localZip.zip" >> $VM_CMDS
+if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "mkdir cmake_targets/log" >> $VM_CMDS
     echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
@@ -243,7 +310,7 @@ then
 fi
 
 scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/*.txt $ARCHIVES_LOC
-if [ "$VM_NAME" == "ci-cppcheck" ]
+if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/*.xml $ARCHIVES_LOC
 fi

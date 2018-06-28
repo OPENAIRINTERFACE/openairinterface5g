@@ -826,7 +826,7 @@ int main( int argc, char **argv )
 
   printf("NFAPI_MODE value: %d \n", nfapi_mode);
 
-  // Panos: Not sure if the following is needed here
+  // Not sure if the following is needed here
   /*if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
       if (UE_flag == 0) {
         fprintf(stderr,"Getting configuration failed\n");
@@ -1047,7 +1047,7 @@ int main( int argc, char **argv )
       printf("cannot create ITTI tasks\n");
       exit(-1); // need a softer mode
     }
-    if(nfapi_mode==3){ //Panos: Here we should add another nfapi_mode for the case of Supervised LTE-D2D
+    if(nfapi_mode==3){ // Here we should add another nfapi_mode for the case of Supervised LTE-D2D
     	UE_config_stub_pnf();
     }
     printf("ITTI tasks created\n");
@@ -1085,8 +1085,6 @@ int main( int argc, char **argv )
     printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
 
-
-  
   // connect the TX/RX buffers
 
       
