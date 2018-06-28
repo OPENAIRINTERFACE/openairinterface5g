@@ -1048,8 +1048,8 @@ int main(int argc, char **argv)
         }
 
         printf("Read in %d samples\n",i/4);
-        //      write_output("txsig0UL.m","txs0", txdata[0],2*frame_parms->samples_per_tti,1,1);
-        //    write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+        //      LOG_M("txsig0UL.m","txs0", txdata[0],2*frame_parms->samples_per_tti,1,1);
+        //    LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
         tx_lev = signal_energy(&txdata[0][0],
                                OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
         tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
@@ -1202,9 +1202,9 @@ int main(int argc, char **argv)
 
 
             if (n_frames==1) {
-              write_output("txsigF0UL.m","txsF0", &UE->common_vars.txdataF[0][eNB->frame_parms.ofdm_symbol_size*nsymb*subframe],eNB->frame_parms.ofdm_symbol_size*nsymb,1,
+              LOG_M("txsigF0UL.m","txsF0", &UE->common_vars.txdataF[0][eNB->frame_parms.ofdm_symbol_size*nsymb*subframe],eNB->frame_parms.ofdm_symbol_size*nsymb,1,
                            1);
-              //write_output("txsigF1.m","txsF1", UE->common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+              //LOG_M("txsigF1.m","txsF1", UE->common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
             }
 
 	  }  // input_fd == NULL
@@ -1212,8 +1212,8 @@ int main(int argc, char **argv)
           tx_lev_dB = (unsigned int) dB_fixed_times10(tx_lev);
 
           if (n_frames==1) {
-            write_output("txsig0UL.m","txs0", &txdata[0][eNB->frame_parms.samples_per_tti*subframe],2*frame_parms->samples_per_tti,1,1);
-            //        write_output("txsig1UL.m","txs1", &txdata[1][eNB->frame_parms.samples_per_tti*subframe],2*frame_parms->samples_per_tti,1,1);
+            LOG_M("txsig0UL.m","txs0", &txdata[0][eNB->frame_parms.samples_per_tti*subframe],2*frame_parms->samples_per_tti,1,1);
+            //        LOG_M("txsig1UL.m","txs1", &txdata[1][eNB->frame_parms.samples_per_tti*subframe],2*frame_parms->samples_per_tti,1,1);
           }
 
           //AWGN
@@ -1312,8 +1312,8 @@ int main(int argc, char **argv)
           if (n_frames<=10) {
             printf("SNRmeas %f\n",SNRmeas);
 
-	    write_output("rxsig0UL.m","rxs0", &ru->common.rxdata[0][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
-	    if (eNB->frame_parms.nb_antennas_rx>1) write_output("rxsig1UL.m","rxs1", &ru->common.rxdata[1][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
+	    LOG_M("rxsig0UL.m","rxs0", &ru->common.rxdata[0][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
+	    if (eNB->frame_parms.nb_antennas_rx>1) LOG_M("rxsig1UL.m","rxs1", &ru->common.rxdata[1][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
           }
 
 
@@ -1830,8 +1830,8 @@ int main(int argc, char **argv)
     //
 
 
-    //write_output("chestim_f.m","chestf",eNB->pusch_vars[0]->drs_ch_estimates[0][0],300*12,2,1);
-    // write_output("chestim_t.m","chestt",eNB->pusch_vars[0]->drs_ch_estimates_time[0][0], (frame_parms->ofdm_symbol_size)*2,2,1);
+    //LOG_M("chestim_f.m","chestf",eNB->pusch_vars[0]->drs_ch_estimates[0][0],300*12,2,1);
+    // LOG_M("chestim_t.m","chestt",eNB->pusch_vars[0]->drs_ch_estimates_time[0][0], (frame_parms->ofdm_symbol_size)*2,2,1);
 
   }//ch realization
 

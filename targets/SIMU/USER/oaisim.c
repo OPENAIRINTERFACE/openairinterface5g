@@ -828,29 +828,29 @@ l2l1_task (void *args_p)
 	if ((sf == 0) && ((frame % MAX_FRAME_NUMBER) == 0) && (abstraction_flag == 0)
 	    && (oai_emulation.info.n_frames == 1)) {
 	  
-	  write_output ("dlchan0.m",
+	  LOG_M ("dlchan0.m",
 			"dlch0",
 			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[0][0][0]),
 			(6
 			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
 			1, 1);
-	  write_output ("dlchan1.m",
+	  LOG_M ("dlchan1.m",
 			"dlch1",
 			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[1][0][0]),
 			(6
 			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
 			1, 1);
-	  write_output ("dlchan2.m",
+	  LOG_M ("dlchan2.m",
 			"dlch2",
 			&(PHY_vars_UE_g[0][0]->common_vars.common_vars_rx_data_per_thread[0].dl_ch_estimates[2][0][0]),
 			(6
 			 * (PHY_vars_UE_g[0][0]->frame_parms.ofdm_symbol_size)),
 			1, 1);
-	  write_output ("pbch_rxF_comp0.m",
+	  LOG_M ("pbch_rxF_comp0.m",
 			"pbch_comp0",
 			PHY_vars_UE_g[0][0]->pbch_vars[0]->rxdataF_comp[0],
 			6 * 12 * 4, 1, 1);
-	  write_output ("pbch_rxF_llr.m", "pbch_llr",
+	  LOG_M ("pbch_rxF_llr.m", "pbch_llr",
 			PHY_vars_UE_g[0][0]->pbch_vars[0]->llr,
 			(PHY_vars_UE_g[0][0]->frame_parms.Ncp == 0) ? 1920 : 1728, 1,
 			4);
@@ -870,7 +870,7 @@ l2l1_task (void *args_p)
 	) {
       sprintf (fname, "UEtxsig%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "txs%d", frame % MAX_FRAME_NUMBER);
-      write_output (fname,
+      LOG_M (fname,
 		    vname,
 		    PHY_vars_UE_g[0][0]->common_vars.txdata[0],
 		    PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti
@@ -878,7 +878,7 @@ l2l1_task (void *args_p)
 		    1, 1);
       sprintf (fname, "eNBtxsig%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "txs%d", frame % MAX_FRAME_NUMBER);
-      write_output (fname,
+      LOG_M (fname,
 		    vname,
 		    PHY_vars_eNB_g[0][0]->common_vars.txdata[0][0],
 		    PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti
@@ -886,7 +886,7 @@ l2l1_task (void *args_p)
 		    1, 1);
       sprintf (fname, "eNBtxsigF%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "txsF%d", frame % MAX_FRAME_NUMBER);
-      write_output (fname,
+      LOG_M (fname,
 		    vname,
 		    PHY_vars_eNB_g[0][0]->common_vars.txdataF[0][0],
 		    PHY_vars_eNB_g[0][0]->frame_parms.symbols_per_tti
@@ -894,7 +894,7 @@ l2l1_task (void *args_p)
 		    1, 1);
       sprintf (fname, "UErxsig%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "rxs%d", frame % MAX_FRAME_NUMBER);
-      write_output (fname,
+      LOG_M (fname,
 		    vname,
 		    PHY_vars_UE_g[0][0]->common_vars.rxdata[0],
 		    PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti
@@ -902,7 +902,7 @@ l2l1_task (void *args_p)
 		    1, 1);
       sprintf (fname, "eNBrxsig%d.m", frame % MAX_FRAME_NUMBER);
       sprintf (vname, "rxs%d", frame % MAX_FRAME_NUMBER);
-      write_output (fname,
+      LOG_M (fname,
 		    vname,
 		    PHY_vars_eNB_g[0][0]->common_vars.rxdata[0][0],
 		    PHY_vars_UE_g[0][0]->frame_parms.samples_per_tti

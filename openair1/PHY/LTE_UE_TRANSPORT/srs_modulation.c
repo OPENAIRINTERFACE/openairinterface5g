@@ -322,7 +322,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
   }
   */
 
-  //  write_output("srs_rx.m","srsrx",txdataF,1024,2,1);
+  //  LOG_M("srs_rx.m","srsrx",txdataF,1024,2,1);
   return(0);
 }
 #endif
