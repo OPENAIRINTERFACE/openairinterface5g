@@ -403,7 +403,6 @@ void rrc_in_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
   UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt=0;
 
   if (UE_rrc_inst[Mod_idP].Info[eNB_index].T310_active==1) {
-    LOG_D(RRC, "Panos-D: rrc_in_sync_ind 1 \n");
     UE_rrc_inst[Mod_idP].Info[eNB_index].N311_cnt++;
   }
 

@@ -368,19 +368,16 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
     } else
 #endif
     {
-    	//LOG_I(RLC, "Panos-D mac_rlc_status_ind 1 enb_flagP: %d, channel_idP: %d, srb_flag: %d \n", enb_flagP, channel_idP, srb_flag);
     key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
     }
 }
 
-  //LOG_I(RLC, "Panos-D mac_rlc_status_ind 2 enb_flagP: %d, channel_idP: %d, srb_flag: %d \n", enb_flagP, channel_idP, srb_flag);
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
 
   if (h_rc == HASH_TABLE_OK) {
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    //LOG_D(RLC , "Panos-D: mac_rlc_status_ind() In RLC_MODE_NONE \n");
     //LOG_W(RLC , "[%s] RLC not configured lcid %u module %u!\n", __FUNCTION__, channel_idP, module_idP);
     //LOG_D(RLC , "[%s] RLC not configured rb id %u lcid %u module %u!\n", __FUNCTION__, rb_id, channel_idP, ue_module_idP);
   }

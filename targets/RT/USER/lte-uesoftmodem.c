@@ -827,7 +827,7 @@ int main( int argc, char **argv )
 
   printf("NFAPI_MODE value: %d \n", nfapi_mode);
 
-  // Panos: Not sure if the following is needed here
+  // Not sure if the following is needed here
   /*if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
       if (UE_flag == 0) {
         fprintf(stderr,"Getting configuration failed\n");
@@ -936,29 +936,6 @@ int main( int argc, char **argv )
 
 
   printf("Before CC \n");
-
-
-
-  // Panos: From old version
-  /*if (UE_flag==1) {
-	  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE**)*NB_UE_INST);
-	  for (int i=0; i<NB_UE_INST; i++) {
-		  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
-			  PHY_vars_UE_g[i] = malloc(sizeof(PHY_VARS_UE*)*MAX_NUM_CCs);
-			  PHY_vars_UE_g[i][CC_id] = init_ue_vars(frame_parms[CC_id], i,abstraction_flag);
-
-			  UE[CC_id] = PHY_vars_UE_g[i][CC_id];
-			  printf("PHY_vars_UE_g[inst][%d] = %p\n",CC_id,UE[CC_id]);
-
-			  if (phy_test==1)
-				  UE[CC_id]->mac_enabled = 0;
-			  else
-				  UE[CC_id]->mac_enabled = 1;
-		  }
-	  }
-  }*/
-
 
 
   //NB_UE_INST=1;
@@ -1093,7 +1070,7 @@ int main( int argc, char **argv )
       printf("cannot create ITTI tasks\n");
       exit(-1); // need a softer mode
     }
-    if(nfapi_mode==3){ //Panos: Here we should add another nfapi_mode for the case of Supervised LTE-D2D
+    if(nfapi_mode==3){ // Here we should add another nfapi_mode for the case of Supervised LTE-D2D
     	UE_config_stub_pnf();
     }
     printf("ITTI tasks created\n");
@@ -1141,7 +1118,7 @@ int main( int argc, char **argv )
     {
     	config_sync_var=0;
     	wait_nfapi_init("main?");
-    	//Panos: Temporarily we will be using single set of threads for multiple UEs.
+    	// Temporarily we will be using single set of threads for multiple UEs.
     	//init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
     	init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
     }

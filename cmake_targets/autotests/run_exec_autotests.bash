@@ -200,6 +200,7 @@ function test_compile() {
 #\param $14 -> tags to help identify the test case for readability in output xml file
 #\param $15 => password for the user to run certain commands as sudo
 #\param $16 => test config file params to be modified
+#\param $17 => bypass flag if main_exec if available
 
 function test_compile_and_run() {
     xUnit_start
@@ -221,6 +222,7 @@ function test_compile_and_run() {
     tags=${14}
     mypassword=${15}
     test_config_file=${16}
+    bypass_compile=${17}
 
     build_dir=$tdir/$1/build
     #exec_file=$build_dir/$6
@@ -231,8 +233,6 @@ function test_compile_and_run() {
     rm -fr $log_dir
     mkdir -p $log_dir
     
-    rm -fr $OPENAIR_DIR/cmake_targets/log
-
     echo "" > $temp_exec_log
     echo "" > $log_file
     #echo "log_dir = $log_dir"
@@ -257,7 +257,13 @@ function test_compile_and_run() {
     main_exec_args_array=()
     readarray -t main_exec_args_array <<< "$exec_args"
     
-    
+    REAL_MAIN_EXEC=`eval "echo $main_exec"`
+    if [ "$bypass_compile" == "1" ] && [ -f $REAL_MAIN_EXEC ]
+    then
+        echo "Bypassing compilation for $main_exec"
+    else
+        rm -fr $OPENAIR_DIR/cmake_targets/log
+
     #for search_expr in "${compile_prog_array[@]}"  
     #do
        echo "Compiling test case $test_case_name Log file = $log_file"  
@@ -283,6 +289,7 @@ function test_compile_and_run() {
        }>> $log_file 2>&1
        echo "</COMPILATION LOG>" >> $log_file 2>&1
     #done
+    fi
     
     #process the test case if it is that of execution
     if [ "$class" == "execution" ]; then
@@ -393,10 +400,18 @@ Options
    Run test cases in a group. For example, ./run_exec_autotests "0101* 010102"
 -p
    Use password for logging
+-np | --no-password
+   No need for a password
+-q | --quiet
+   Quiet  mode;  eliminate  informational  messages and comment prompts.
+-b | --bypass-compile
+   Bypass compilation of main-exec if already present
 '
 }
 
 function main () {
+QUIET=0
+BYPASS_COMPILE=0
 RUN_GROUP=0
 SET_PASSWORD=0
 passwd=""
@@ -419,6 +434,16 @@ until [ -z "$1" ]
             SET_PASSWORD=1
             passwd=$2
             shift 2;;
+        -np|--no-password)
+            SET_PASSWORD=1
+            shift ;;
+        -q|--quiet)
+            QUIET=1
+            shift ;;
+        -b|--bypass-compile)
+            BYPASS_COMPILE=1
+            echo "bypass option ON"
+            shift ;;
         -h | --help)
             print_help
             exit 1;;
@@ -449,15 +474,15 @@ xml_conf="$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml"
 
 test_case_list=`xmlstarlet sel -T -t -m /testCaseList/testCase -s A:N:- "@id" -v "@id" -n $xml_conf`
 test_case_excl_list=`xmlstarlet sel -t -v "/testCaseList/TestCaseExclusionList" $xml_conf`
-echo "Test Case Exclusion List = $test_case_excl_list "
+if [ $QUIET -eq 0 ]; then echo "Test Case Exclusion List = $test_case_excl_list "; fi
 
 test_case_excl_list=`sed "s/\+/\*/g" <<< "$test_case_excl_list" ` # Replace + with * for bash string substituion
 
 read -a test_case_excl_array <<< "$test_case_excl_list"
 
-echo "test_case_list = $test_case_list"
+if [ $QUIET -eq 0 ]; then echo "test_case_list = $test_case_list"; fi
 
-echo "Test Case Exclusion List = $test_case_excl_list \n"
+if [ $QUIET -eq 0 ]; then echo "Test Case Exclusion List = $test_case_excl_list \n"; fi
 
 readarray -t test_case_array <<<"$test_case_list"
 
@@ -484,7 +509,7 @@ for search_expr in "${test_case_array[@]}"
        do  
           if [[ $search_expr == $search_excl ]];then
              flag_run_test_case=0
-             echo_info "Test case $search_expr match found in test case excl group. Will skip the test case for execution..."
+             if [ $QUIET -eq 0 ]; then echo_info "Test case $search_expr match found in test case excl group. Will skip the test case for execution..."; fi
              break
           fi
        done
@@ -533,8 +558,8 @@ for search_expr in "${test_case_array[@]}"
 
     search_array_true=()
 
-    IFS=\"                  #set the shell's field separator
-    set -f                  #don't try to glob 
+    IFS=\"                  #set the shell field separator
+    set -f                  #dont try to glob 
     #set -- $search_expr_true             #split on $IFS
     for i in $search_expr_true
       do echo "i = $i"
@@ -551,7 +576,7 @@ for search_expr in "${test_case_array[@]}"
         test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags"
     elif  [ "$class" == "execution" ]; then
         echo \'passwd\' | $SUDO killall -q oaisim_nos1
-        test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" "$test_config_file"
+        test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" "$test_config_file" "$BYPASS_COMPILE"
     else
         echo "Unexpected class of test case...Skipping the test case $name ...."
     fi
