@@ -34,6 +34,7 @@
 #define __PHY_DEFS_NR_COMMON__H__
 
 #include "defs_common.h"
+#include "nfapi_interface.h"
 #include "impl_defs_nr.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
@@ -56,6 +57,8 @@
 #define NR_PBCH_DMRS_LENGTH 144
 #define NR_PBCH_DMRS_LENGTH_DWORD 5 // roundup(NR_PBCH_DMRS_LENGTH/32)
 
+#define NR_MAX_NUM_BWP 4
+
 typedef enum {
   NR_MU_0=0,
   NR_MU_1,
@@ -72,6 +75,17 @@ typedef enum{
   nr_ssb_type_D,
   nr_ssb_type_E
 } nr_ssb_type_e;
+
+typedef struct NR_BWP_PARMS {
+  /// Associated numerology index
+  uint8_t numerology_index;
+  /// Freq domain location
+  uint8_t location;
+  /// Bandwidth in PRB
+  uint16_t N_RB;
+  /// Size of FFT/IFFT
+  uint16_t ofdm_symbol_size;
+} NR_BWP_PARMS;
 
 typedef struct NR_DL_FRAME_PARMS {
   /// Number of resource blocks (RB) in DL
@@ -165,6 +179,11 @@ typedef struct NR_DL_FRAME_PARMS {
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
 
+   //BWP params
+  NR_BWP_PARMS initial_bwp_params_dl;
+  NR_BWP_PARMS initial_bwp_params_ul;
+
 } NR_DL_FRAME_PARMS;
+
 
 #endif

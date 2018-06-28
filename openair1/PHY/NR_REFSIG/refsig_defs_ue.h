@@ -19,25 +19,35 @@
  *      contact@openairinterface.org
  */
 
-/*! \file phy_procedures_lte_eNB.c
-* \brief Implementation of common utilities for eNB/UE procedures from 36.213 LTE specifications
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
-* \note
-* \warning
-*/
-#include "PHY/defs_gNB.h"
-#include "PHY/phy_extern.h"
-#include "sched_nr.h"
+/* Definitions for LTE Reference signals */
+/* Author R. Knopp / EURECOM / OpenAirInterface.org */
+#ifndef __NR_REFSIG_DEFS__H__
+#define __NR_REFSIG_DEFS__H__
+#include "PHY/defs_nr_UE.h"
 
 
-nr_subframe_t nr_subframe_select(nfapi_config_request_t *cfg,unsigned char subframe)
-{
-  if (cfg->subframe_config.duplex_mode.value == FDD)
-    return(SF_DL);
-  else
-    return SF_DL;
-}
+/*!\brief This function generates the NR Gold sequence (38-211, Sec 5.2.1) for the PBCH DMRS.
+@param PHY_VARS_NR_UE* ue structure provides configuration, frame parameters and the pointers to the 32 bits sequence storage tables
+ */
+int nr_pbch_dmrs_rx(unsigned int *nr_gold_pbch,	int32_t *output	);
+
+/*int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
+						unsigned int ncp,
+						unsigned int Ns,
+						unsigned int nr_gold_pdsch[2][20][2][21],
+						int32_t *output,
+						unsigned short p,
+						int length_dmrs,
+						unsigned short nb_pdsch_rb);*/
+
+void nr_gold_pbch(PHY_VARS_NR_UE* ue);
+
+void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
+					unsigned short lbar,
+					unsigned int nr_gold_pdsch[2][20][2][21],
+					unsigned int Nid_cell,
+					unsigned short *n_idDMRS,
+					unsigned short length_dmrs);
+
+
+#endif

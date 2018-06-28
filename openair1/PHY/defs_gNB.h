@@ -320,7 +320,7 @@ typedef struct PHY_VARS_gNB_s {
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
 
-  // PDSCH Varaibles
+  // PDSCH Variables
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_UE_MAX];
 
   // PUSCH Varaibles

@@ -32,7 +32,8 @@
 
 #include "PHY/defs_gNB.h"
 #include "PHY/phy_extern.h"
-#include "SCHED_NR/defs.h"
+#include "sched_nr.h"
+#include "PHY/MODULATION/modulation_common.h"
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
@@ -85,6 +86,7 @@ void nr_feptx0(RU_t *ru,int slot) {
 void nr_feptx_ofdm_2thread(RU_t *ru) {
 
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
+  nfapi_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   RU_proc_t *proc = &ru->proc;
   struct timespec wait;
   int subframe = ru->proc.subframe_tx;
@@ -94,7 +96,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru) {
 
   start_meas(&ru->ofdm_mod_stats);
 
-  if (nr_subframe_select(fp,subframe) == SF_UL) return;
+  if (nr_subframe_select(cfg,subframe) == SF_UL) return;
 
   // this copy should be done in the precoding thread (currently inactive)
   for (int aa=0;aa<ru->nb_tx;aa++)
@@ -104,7 +106,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
 
-  if (nr_subframe_select(fp,subframe)==SF_DL) {
+  if (nr_subframe_select(cfg,subframe)==SF_DL) {
     // If this is not an S-subframe
     if (pthread_mutex_timedlock(&proc->mutex_feptx,&wait) != 0) {
       printf("[RU] ERROR pthread_mutex_lock for feptx thread (IC %d)\n", proc->instance_cnt_feptx);
@@ -202,8 +204,8 @@ void nr_feptx_ofdm(RU_t *ru) {
 
   slot_offset = subframe*fp->samples_per_subframe;
 
-  if ((nr_subframe_select(fp,subframe)==SF_DL)||
-      ((nr_subframe_select(fp,subframe)==SF_S))) {
+  if ((nr_subframe_select(cfg,subframe)==SF_DL)||
+      ((nr_subframe_select(cfg,subframe)==SF_S))) {
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
 
     start_meas(&ru->ofdm_mod_stats);
@@ -228,7 +230,7 @@ void nr_feptx_ofdm(RU_t *ru) {
                           14,
                           fp);
 	// if S-subframe generate first slot only
-	if (nr_subframe_select(fp,subframe) == SF_DL) 
+	if (nr_subframe_select(cfg,subframe) == SF_DL) 
 	  nr_normal_prefix_mod(&ru->common.txdataF_BF[aa][slot_offset_F+slot_sizeF],
 			    dummy_tx_b+(fp->samples_per_subframe / fp->slots_per_subframe),
 			    14,

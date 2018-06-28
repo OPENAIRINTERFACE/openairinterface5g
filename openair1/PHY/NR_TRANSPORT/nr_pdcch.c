@@ -19,25 +19,17 @@
  *      contact@openairinterface.org
  */
 
-/*! \file phy_procedures_lte_eNB.c
-* \brief Implementation of common utilities for eNB/UE procedures from 36.213 LTE specifications
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
+/*! \file PHY/NR_TRANSPORT/nr_pdcch.c
+* \brief Implements PDCCH physical channel TX/RX procedures (38.211). Current NR compliance V15.1 2018-06.
+* \author Guy De Souza
+* \date 2018
 * \version 0.1
 * \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr
+* \email: desouza@eurecom.fr
 * \note
 * \warning
 */
-#include "PHY/defs_gNB.h"
-#include "PHY/phy_extern.h"
-#include "sched_nr.h"
+
+#include "nr_dci.h"
 
 
-nr_subframe_t nr_subframe_select(nfapi_config_request_t *cfg,unsigned char subframe)
-{
-  if (cfg->subframe_config.duplex_mode.value == FDD)
-    return(SF_DL);
-  else
-    return SF_DL;
-}

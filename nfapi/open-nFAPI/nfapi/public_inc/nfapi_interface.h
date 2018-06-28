@@ -15,8 +15,7 @@
  */
 
 
-#ifndef _NFAPI_INTERFACE_NR_EXTENSION_H_
-#define _NFAPI_INTERFACE_NR_EXTENSION_H_
+#ifndef _NFAPI_INTERFACE_H_
 #define _NFAPI_INTERFACE_H_
 
 #include "stddef.h"
