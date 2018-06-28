@@ -243,6 +243,7 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
   PHY_VARS_UE *UE;
   int         inst;
   int         ret;
+  LTE_DL_FRAME_PARMS *fp;
 
   LOG_I(PHY,"UE : Calling Layer 2 for initialization\n");
 
@@ -258,18 +259,16 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
 
     if (simL1flag == 0) PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
     else {
+      // needed for memcopy below. these are not used in the RU, but needed for UE
        RC.ru[0]->frame_parms.nb_antennas_rx = nb_rx;
        RC.ru[0]->frame_parms.nb_antennas_tx = nb_tx;
-       RC.ru[0]->frame_parms.frame_type          = FDD;
-       RC.ru[0]->frame_parms.tdd_config          = 3;
-       RC.ru[0]->frame_parms.tdd_config_S        = 0;
-
        PHY_vars_UE_g[inst][0]  = init_ue_vars(&RC.ru[0]->frame_parms,inst,0);
     }
     // turn off timing control loop in UE
     PHY_vars_UE_g[inst][0]->no_timing_correction = timing_correction;
 
     UE = PHY_vars_UE_g[inst][0];
+    fp = &UE->frame_parms;
     printf("PHY_vars_UE_g[0][0] = %p\n",UE);
 
     if (phy_test==1)
@@ -307,6 +306,35 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
     UE->frame_parms.nb_antennas_tx = nb_tx;
     UE->frame_parms.nb_antennas_rx = nb_rx; 
 
+    if (fp->frame_type == TDD) {
+      switch (fp->N_RB_DL) {
+
+      case 100:
+	if (fp->threequarter_fs) UE->N_TA_offset = (624*3)/4;
+	else                              UE->N_TA_offset = 624;
+	break;
+      case 75:
+	UE->N_TA_offset = (624*3)/4;
+	break;
+      case 50:
+	UE->N_TA_offset = 624/2;
+	break;
+      case 25:
+	UE->N_TA_offset = 624/4;
+	break;
+      case 15:
+	UE->N_TA_offset = 624/8;
+	break;
+      case 6:
+	UE->N_TA_offset = 624/16;
+	break;
+      default:
+	AssertFatal(1==0,"illegal N_RB_DL %d\n",fp->N_RB_DL);
+	break;
+      }
+    }
+    else UE->N_TA_offset = 0;
+
     if (simL1flag == 1) init_ue_devices(UE);
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     init_UE_threads(inst);
@@ -319,7 +347,7 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
     }
     UE->rfdevice.host_type = RAU_HOST;
     //    UE->rfdevice.type      = NONE_DEV;
-    PHY_VARS_UE *UE = PHY_vars_UE_g[inst][0];
+
     AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
                                     &UE->proc.attr_ue,
                                     UE_thread,

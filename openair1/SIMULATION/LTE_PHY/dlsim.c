@@ -1137,10 +1137,10 @@ int main(int argc, char **argv)
   }
   else {
     eNB->te = dlsch_encoding_2threads;
-    extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
-    extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
-    init_td_thread(eNB,NULL);
-    init_te_thread(eNB,NULL);
+    extern void init_td_thread(PHY_VARS_eNB *);
+    extern void init_te_thread(PHY_VARS_eNB *);
+    init_td_thread(eNB);
+    init_te_thread(eNB);
   }
 
   // callback functions required for phy_procedures_tx

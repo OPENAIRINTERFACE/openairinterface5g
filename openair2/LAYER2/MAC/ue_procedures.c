@@ -1853,7 +1853,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 							 lcid,
 							 buflen_remain,
 							 (char *)&ulsch_buff[sdu_length_total]
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 							 ,0,
                               0
 #endif
@@ -2840,7 +2840,7 @@ update_bsr(module_id_t module_idP, frame_t frameP,
 		    rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti,eNB_index,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
 		                                    lcid,
 		                                    0xFFFF //TBS is not used in RLC at this step, set a special value for debug
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                           ,0, 0
 #endif
                                           );
@@ -3291,7 +3291,7 @@ SLSCH_t *ue_get_slsch(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_
                ue->slsch_lcid,
                req,
                (char*)(ue->slsch_pdu.payload + sizeof(SLSCH_SUBHEADER_24_Bit_DST_LONG))
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,ue->sourceL2Id,
                ue->destinationL2Id
 #endif

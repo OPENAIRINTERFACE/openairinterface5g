@@ -1289,6 +1289,7 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const ch
                   instance,
                   eNB_ue_s1ap_id);
     */
+#if 0
     {
       int      e_rab;
       //int      mod_id = 0;
@@ -1344,7 +1345,7 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const ch
       		  rrc_ue_s1ap_ids);
       }
     }
-
+#endif
     return (0);
   }
 }
@@ -2039,6 +2040,11 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
                                   buffer,
                                   S1AP_PAGING_IND(msg_p).ue_paging_identity,
                                   S1AP_PAGING_IND(msg_p).cn_domain);
+              if(length == -1)
+              {
+                LOG_I(RRC, "do_Paging error");
+                return -1;
+              }
               message_buffer = itti_malloc (TASK_RRC_ENB, TASK_PDCP_ENB, length);
               /* Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling). */
               memcpy (message_buffer, buffer, length);

@@ -1308,7 +1308,7 @@ typedef struct {
 typedef struct {
 	nfapi_tl_t tl;
 	uint16_t length;
-	uint16_t pdu_index;
+	int16_t pdu_index;
 	uint16_t transmission_power;
 } nfapi_dl_config_bch_pdu_rel8_t;
 #define NFAPI_DL_CONFIG_REQUEST_BCH_PDU_REL8_TAG 0x2004
@@ -1320,7 +1320,7 @@ typedef struct {
 typedef struct {
 	nfapi_tl_t tl;
 	uint16_t length;
-	uint16_t pdu_index;
+	int16_t pdu_index;
 	uint16_t rnti;
 	uint8_t resource_allocation_type;
 	uint32_t resource_block_coding;
@@ -1344,7 +1344,7 @@ typedef struct {
 typedef struct {
 	nfapi_tl_t tl;
 	uint16_t length;
-	uint16_t pdu_index;
+	int16_t pdu_index;
 	uint16_t rnti;
 	uint8_t resource_allocation_type;
 	uint8_t virtual_resource_block_assignment_flag;
@@ -1429,7 +1429,7 @@ typedef struct {
 typedef struct {
 	nfapi_tl_t tl;
 	uint16_t length;
-	uint16_t pdu_index;
+	int16_t pdu_index;
 	uint16_t p_rnti;
 	uint8_t resource_allocation_type;
 	uint8_t virtual_resource_block_assignment_flag;
@@ -1595,7 +1595,7 @@ typedef struct {
 typedef struct {
 	nfapi_tl_t tl;
 	uint16_t length;
-	uint16_t pdu_index;
+	int16_t pdu_index;
 	uint16_t transmission_power;
 	uint16_t hyper_sfn_2_lsbs;
 } nfapi_dl_config_nbch_pdu_rel13_t;
@@ -1609,7 +1609,7 @@ typedef struct {
 typedef struct {
 	nfapi_tl_t tl;
 	uint16_t length;
-	uint16_t pdu_index;
+	int16_t pdu_index;
 	uint8_t ncce_index;
 	uint8_t aggregation_level;
 	uint8_t start_symbol;
@@ -1642,7 +1642,7 @@ typedef struct {
 typedef struct {
 	nfapi_tl_t tl;
 	uint16_t length;
-	uint16_t pdu_index;
+	int16_t pdu_index;
 	uint8_t start_symbol;
 	uint8_t rnti_type;
 	uint16_t rnti;
@@ -2218,6 +2218,7 @@ typedef struct {
 	uint8_t dl_assignment_index;
 	uint32_t tpc_bitmap;
 	uint16_t transmission_power;
+	uint8_t harq_pid;
 } nfapi_hi_dci0_dci_pdu_rel8_t;
 #define NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG 0x2020
 
@@ -2361,7 +2362,7 @@ typedef struct {
 #define NFAPI_TX_MAX_SEGMENTS 32
 typedef struct {
 	uint16_t pdu_length;
-	uint16_t pdu_index;
+	int16_t pdu_index;
 	uint8_t num_segments;
 	struct {
 		uint32_t segment_length;
@@ -2902,7 +2903,7 @@ typedef struct {
 
 typedef struct {
 	uint8_t sub_error_code;
-	uint16_t pdu_index;
+	int16_t pdu_index;
 } nfapi_error_indication_msg_tx_err;
 
 // 

@@ -129,12 +129,12 @@ store_dlsch_buffer(module_id_t Mod_id, slice_id_t slice_id, frame_t frameP,
 
 	rnti = UE_RNTI(Mod_id, UE_id);
 
-	for (i = 0; i < MAX_NUM_LCID; i++) {	// loop over all the logical channels
+        for (i = 0; i < MAX_NUM_LCID; i++) {    // loop over all the logical channels
 
 	    rlc_status =
 		mac_rlc_status_ind(Mod_id, rnti, Mod_id, frameP, subframeP,
 				   ENB_FLAG_YES, MBMS_FLAG_NO, i, 0
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                    ,0, 0
 #endif
                    );
@@ -318,10 +318,8 @@ maxround(module_id_t Mod_id, uint16_t rnti, int frame,
 	cc = &RC.mac[Mod_id]->common_channels[CC_id];
 
 	UE_id = find_UE_id(Mod_id, rnti);
-	if (cc->tdd_Config)
-	    harq_pid = ((frame * 10) + subframe) % 10;
-	else
-	    harq_pid = ((frame * 10) + subframe) & 7;
+
+	harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame ,subframe);
 
 	round = UE_list->UE_sched_ctrl[UE_id].round[CC_id][harq_pid];
 	if (round > round_max) {
@@ -501,8 +499,10 @@ void sort_UEs(module_id_t Mod_idP, slice_id_t slice_id, int frameP, sub_frame_t 
 			continue;
 		if ((rnti = UE_RNTI(Mod_idP, i)) == NOT_A_RNTI)
 			continue;
+#if 0
 		if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
 			continue;
+#endif
 		if (!ue_slice_membership(i, slice_id))
 			continue;
 
@@ -638,8 +638,10 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
 
     if (rnti == NOT_A_RNTI)
       continue;
+#if 0
     if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
       continue;
+#endif
     if (!ue_slice_membership(UE_id, slice_id))
       continue;
 
@@ -719,8 +721,10 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
 
     if (rnti == NOT_A_RNTI)
       continue;
+#if 0
     if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
       continue;
+#endif
     if (!ue_slice_membership(UE_id, slice_id))
       continue;
 
@@ -728,11 +732,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
       CC_id = UE_list->ordered_CCids[ii][UE_id];
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
       cc = &RC.mac[Mod_id]->common_channels[CC_id];
-      // TODO Can we use subframe2harqpid() here?
-      if (cc->tdd_Config)
-        harq_pid = ((frameP * 10) + subframeP) % 10;
-      else
-        harq_pid = ((frameP * 10) + subframeP) & 7;
+      harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
       round = ue_sched_ctl->round[CC_id][harq_pid];
 
       // control channel or retransmission
@@ -797,8 +797,10 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
           // LOG_D(MAC,"UE %d rnti 0x\n", UE_id, rnti );
           if (rnti == NOT_A_RNTI)
             continue;
+#if 0
           if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
             continue;
+#endif
           if (!ue_slice_membership(UE_id, slice_id))
             continue;
 
@@ -1401,11 +1403,12 @@ dlsch_scheduler_pre_processor_allocate(module_id_t Mod_id,
 
 /// ULSCH PRE_PROCESSOR
 
-
-void
-ulsch_scheduler_pre_processor(module_id_t module_idP,
-			      slice_id_t slice_id, int frameP,
-			      sub_frame_t subframeP, uint16_t * first_rb)
+void ulsch_scheduler_pre_processor(module_id_t module_idP,
+                                   slice_id_t slice_id,
+                                   int frameP,
+                                   sub_frame_t subframeP,
+                                   unsigned char sched_subframeP,
+                                   uint16_t *first_rb)
 {
 
     int16_t i;
@@ -1530,7 +1533,7 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
         CC_id = UE_list->ordered_ULCCids[n][UE_id];
         UE_template = &UE_list->UE_template[CC_id][UE_id];
         harq_pid = subframe2harqpid(&RC.mac[module_idP]->common_channels[CC_id],
-                                    frameP, subframeP);
+                                    frameP, sched_subframeP);
 
         //      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
 
@@ -1616,7 +1619,6 @@ ulsch_scheduler_pre_processor(module_id_t module_idP,
     }
 #endif
 }
-
 
 void
 assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,

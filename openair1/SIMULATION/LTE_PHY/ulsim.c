@@ -887,9 +887,9 @@ int main(int argc, char **argv)
 
   if (parallel_flag == 1) {
     extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
-    extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
+    extern void init_td_thread(PHY_VARS_eNB *);
     init_fep_thread(eNB,NULL);
-    init_td_thread(eNB,NULL);
+    init_td_thread(eNB);
   }
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {

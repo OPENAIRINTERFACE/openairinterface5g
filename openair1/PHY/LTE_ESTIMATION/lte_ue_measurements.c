@@ -55,7 +55,7 @@ void print_ints(char *s,int *x)
 
 }
 
-int16_t get_PL(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
+int16_t get_PL(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -81,7 +81,7 @@ int16_t get_PL(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 }
 
 
-uint8_t get_n_adj_cells (uint8_t Mod_id,uint8_t CC_id)
+uint8_t get_n_adj_cells (module_id_t Mod_id,uint8_t CC_id)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -92,7 +92,7 @@ uint8_t get_n_adj_cells (uint8_t Mod_id,uint8_t CC_id)
     return 0;
 }
 
-uint32_t get_rx_total_gain_dB (uint8_t Mod_id,uint8_t CC_id)
+uint32_t get_rx_total_gain_dB (module_id_t Mod_id,uint8_t CC_id)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -102,7 +102,7 @@ uint32_t get_rx_total_gain_dB (uint8_t Mod_id,uint8_t CC_id)
 
   return 0xFFFFFFFF;
 }
-uint32_t get_RSSI (uint8_t Mod_id,uint8_t CC_id)
+uint32_t get_RSSI (module_id_t Mod_id,uint8_t CC_id)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -112,7 +112,7 @@ uint32_t get_RSSI (uint8_t Mod_id,uint8_t CC_id)
 
   return 0xFFFFFFFF;
 }
-double get_RSRP(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
+double get_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
 
   AssertFatal(PHY_vars_UE_g!=NULL,"PHY_vars_UE_g is null\n");
@@ -128,7 +128,7 @@ double get_RSRP(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
   return -140.0;
 }
 
-uint32_t get_RSRQ(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
+uint32_t get_RSRQ(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -139,7 +139,7 @@ uint32_t get_RSRQ(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
   return 0xFFFFFFFF;
 }
 
-int8_t set_RSRP_filtered(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rsrp)
+int8_t set_RSRP_filtered(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rsrp)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -153,7 +153,7 @@ int8_t set_RSRP_filtered(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rs
   return -1;
 }
 
-int8_t set_RSRQ_filtered(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rsrq)
+int8_t set_RSRQ_filtered(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rsrq)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];

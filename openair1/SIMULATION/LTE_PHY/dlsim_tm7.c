@@ -2679,6 +2679,7 @@ PMI_FEEDBACK:
               re_allocated = dlsch_modulation(eNB,
 					      eNB->common_vars.txdataF[eNB_id],
                                               AMP,
+                                              frame,
                                               subframe,
                                               num_pdcch_symbols,
                                               eNB->dlsch[k][0],

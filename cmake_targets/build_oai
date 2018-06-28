@@ -42,6 +42,7 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 MSC_GEN="False"
 XFORMS="True"
+UE_EXPANSION="False"
 PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
@@ -209,8 +210,12 @@ function main() {
             UE=1
             echo_info "Will compile UE"
             shift;;
+       --mu)
+            UE_EXPANSION="True"
+            echo_info "Will compile with UE_EXPANSION"
+            shift;;
        --UE-conf-nvram)
-            conf_nvram_path=$(readlink -f "$1")
+            conf_nvram_path=$(readlink -f $2)
             shift 2;;
         --UE-gen-nvram)
             gen_nvram_path=$(readlink -f $2)
@@ -521,6 +526,9 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
+    echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
+    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
+    echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
@@ -669,6 +677,7 @@ function main() {
     fi
     cp $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 $dbin
   fi
+
 
 
   # Telnet server compilation
@@ -832,7 +841,8 @@ fi
     {
       cd $OPENAIR_DIR/cmake_targets/basic_simulator/enb
       cmake .
-      make -j`nproc` coding params_libconfig tcp_bridge_oai lte-softmodem
+      make -j`nproc` lte-softmodem
+      make -j`nproc` coding params_libconfig tcp_bridge_oai
       ln -sf libtcp_bridge_oai.so liboai_device.so
       cd ../..
     } > $dlog/basic_simulator_enb.txt 2>&1
@@ -887,7 +897,8 @@ fi
     {
       cd $OPENAIR_DIR/cmake_targets/basic_simulator/ue
       cmake .
-      make -j`nproc` coding params_libconfig tcp_bridge_oai lte-uesoftmodem
+      make -j`nproc` lte-uesoftmodem
+      make -j`nproc` coding params_libconfig tcp_bridge_oai
       ln -sf libtcp_bridge_oai.so liboai_device.so
       cd ../..
     } > $dlog/basic_simulator_ue.txt 2>&1

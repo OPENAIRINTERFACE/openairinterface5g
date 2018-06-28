@@ -633,7 +633,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 			       MTCH,
 			       TBS - header_len_mcch - header_len_msi -
 			       sdu_length_total - header_len_mtch
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                     ,0, 0
 #endif
                                     );
@@ -652,7 +652,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES, MTCH, 0,	//not used
 						     (char *)
 						     &mch_buffer[sdu_length_total]
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,0,
                                  0
 #endif

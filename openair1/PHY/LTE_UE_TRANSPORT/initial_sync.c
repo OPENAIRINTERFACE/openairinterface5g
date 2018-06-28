@@ -387,6 +387,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
       // Now TDD normal prefix
       frame_parms->Ncp=NORMAL;
       frame_parms->frame_type=TDD;
+      frame_parms->tdd_config=1;
       init_frame_parms(frame_parms,1);
 
       if (sync_pos >= frame_parms->nb_prefix_samples)
@@ -426,6 +427,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
         // Now TDD extended prefix
         frame_parms->Ncp=EXTENDED;
         frame_parms->frame_type=TDD;
+	frame_parms->tdd_config=1;
         init_frame_parms(frame_parms,1);
         sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
 
