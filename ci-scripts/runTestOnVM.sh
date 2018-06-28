@@ -133,6 +133,8 @@ case $key in
         ;;
         phy-sim)
         VM_NAME=ci-phy-sim
+        RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
+        ARCHIVES_LOC=phy_sim/test
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck

@@ -171,7 +171,7 @@ pipeline {
                 always {
                     script {
                         dir ('archives') {
-                            sh "zip -r -qq vm_tests_logs.zip */test"
+                            sh "if [ -d */test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
                         }
                         if(fileExists('archives/vm_tests_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'
