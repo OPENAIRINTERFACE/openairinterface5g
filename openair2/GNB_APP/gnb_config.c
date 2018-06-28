@@ -395,7 +395,7 @@ void RCconfig_nr_macrlc() {
   }else {// MacRLC_ParamList.numelt > 0
     AssertFatal (0,"No " CONFIG_STRING_MACRLC_LIST " configuration found");     
   }
-  
+
 }
 
 int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
@@ -2580,9 +2580,9 @@ int RCconfig_nr_gtpu(void ) {
 
 
 
-  char*             enb_interface_name_for_S1U    = NULL;
-  char*             enb_ipv4_address_for_S1U      = NULL;
-  uint32_t          enb_port_for_S1U              = 0;
+  char*             gnb_interface_name_for_S1U    = NULL;
+  char*             gnb_ipv4_address_for_S1U      = NULL;
+  uint32_t          gnb_port_for_S1U              = 0;
   char             *address                       = NULL;
   char             *cidr                          = NULL;
   char gtpupath[MAX_OPTNAME_SIZE*2 + 8];
@@ -2605,7 +2605,7 @@ int RCconfig_nr_gtpu(void ) {
 
 
 
-    cidr = enb_ipv4_address_for_S1U;
+    cidr = gnb_ipv4_address_for_S1U;
     address = strtok(cidr, "/");
     
     if (address) {
@@ -2615,7 +2615,7 @@ int RCconfig_nr_gtpu(void ) {
 
     }
 
-    RC.gtpv1u_data_g->enb_port_for_S1u_S12_S4_up = enb_port_for_S1U;
+    RC.gtpv1u_data_g->enb_port_for_S1u_S12_S4_up = gnb_port_for_S1U;
 return 0;
 }
 

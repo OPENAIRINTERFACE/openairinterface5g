@@ -165,7 +165,7 @@ void config_common(int Mod_idP,
   cfg->rf_config.dl_carrierBandwidth.value    = dl_BandwidthP;
   cfg->rf_config.dl_carrierBandwidth.tl.tag   = NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG; //temporary
   cfg->num_tlv++;
-  LOG_E(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, dl_BandwidthP);
+  LOG_I(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, dl_BandwidthP);
 
   cfg->rf_config.ul_carrierBandwidth.value    = dl_BandwidthP;
   cfg->rf_config.ul_carrierBandwidth.tl.tag   = NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG;  //temporary
@@ -215,7 +215,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
 
 
-  LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.mac[Mod_idP]->if_inst->PHY_config_req);
+  LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->PHY_config_req);
 
   // if in nFAPI mode 
   if ( (nfapi_mode == 1 || nfapi_mode == 2) && (RC.nrmac[Mod_idP]->if_inst->PHY_config_req == NULL) ){

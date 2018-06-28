@@ -97,7 +97,7 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
 
       RCconfig_NR_S1(msg_p, gnb_id);
 
-      if (gnb_id == 0) RCconfig_gtpu();
+      if (gnb_id == 0) RCconfig_nr_gtpu();
 
       s1ap_register_gNB = &S1AP_REGISTER_ENB_REQ(msg_p); //Message Temporarily reuse
       LOG_I(GNB_APP,"default drx %d\n",s1ap_register_gNB->default_drx);
@@ -123,8 +123,8 @@ void *gNB_app_task(void *args_p)
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
 # if defined(ENABLE_USE_MME)
-  uint32_t                        register_gnb_pending;
-  uint32_t                        registered_gnb;
+  //uint32_t                        register_gnb_pending;
+  //uint32_t                        registered_gnb;
   long                            gnb_register_retry_timer_id;
 # endif
   uint32_t                        gnb_id;
@@ -165,8 +165,8 @@ void *gNB_app_task(void *args_p)
 
 # if defined(ENABLE_USE_MME)
   /* Try to register each gNB */
-  registered_gnb = 0;
-  register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
+  //registered_gnb = 0;
+  //register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
 # else
   /* Start L2L1 task */
   msg_p = itti_alloc_new_message(TASK_GNB_APP, INITIALIZE_MESSAGE);
@@ -191,7 +191,7 @@ void *gNB_app_task(void *args_p)
       break;
 
 # if defined(ENABLE_USE_MME)
-
+/*
     case S1AP_REGISTER_ENB_CNF:
       LOG_I(GNB_APP, "[gNB %d] Received %s: associated MME %d\n", instance, msg_name,
             S1AP_REGISTER_ENB_CNF(msg_p).nb_mme);
@@ -199,15 +199,15 @@ void *gNB_app_task(void *args_p)
       DevAssert(register_gnb_pending > 0);
       register_gnb_pending--;
 
-      /* Check if at least gNB is registered with one MME */
+      // Check if at least gNB is registered with one MME 
       if (S1AP_REGISTER_ENB_CNF(msg_p).nb_mme > 0) {
         registered_gnb++;
       }
 
-      /* Check if all register gNB requests have been processed */
+      // Check if all register gNB requests have been processed 
       if (register_gnb_pending == 0) {
         if (registered_gnb == gnb_nb) {
-          /* If all gNB are registered, start L2L1 task */
+          // If all gNB are registered, start L2L1 task 
           MessageDef *msg_init_p;
 
           msg_init_p = itti_alloc_new_message (TASK_GNB_APP, INITIALIZE_MESSAGE);
@@ -219,13 +219,13 @@ void *gNB_app_task(void *args_p)
           LOG_W(GNB_APP, " %d gNB %s not associated with a MME, retrying registration in %d seconds ...\n",
                 not_associated, not_associated > 1 ? "are" : "is", GNB_REGISTER_RETRY_DELAY);
 
-          /* Restart the gNB registration process in GNB_REGISTER_RETRY_DELAY seconds */
+          // Restart the gNB registration process in GNB_REGISTER_RETRY_DELAY seconds 
           if (timer_setup (GNB_REGISTER_RETRY_DELAY, 0, TASK_GNB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
                            NULL, &gnb_register_retry_timer_id) < 0) {
             LOG_E(GNB_APP, " Can not start gNB register retry timer, use \"sleep\" instead!\n");
 
             sleep(GNB_REGISTER_RETRY_DELAY);
-            /* Restart the registration process */
+            // Restart the registration process 
             registered_gnb = 0;
             register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);//, gnb_properties_p);
           }
@@ -233,7 +233,7 @@ void *gNB_app_task(void *args_p)
       }
 
       break;
-
+*/
     case S1AP_DEREGISTERED_ENB_IND:
       LOG_W(GNB_APP, "[gNB %d] Received %s: associated MME %d\n", instance, msg_name,
             S1AP_DEREGISTERED_ENB_IND(msg_p).nb_mme);
@@ -244,11 +244,11 @@ void *gNB_app_task(void *args_p)
     case TIMER_HAS_EXPIRED:
       LOG_I(GNB_APP, " Received %s: timer_id %ld\n", msg_name, TIMER_HAS_EXPIRED(msg_p).timer_id);
 
-      if (TIMER_HAS_EXPIRED (msg_p).timer_id == gnb_register_retry_timer_id) {
+      //if (TIMER_HAS_EXPIRED (msg_p).timer_id == gnb_register_retry_timer_id) {
         /* Restart the registration process */
-        registered_gnb = 0;
-        register_gnb_pending = gNB_app_register(gnb_id_start, gnb_id_end);//, gnb_properties_p);
-      }
+      //  registered_gnb = 0;
+      //  register_gnb_pending = gNB_app_register(gnb_id_start, gnb_id_end);//, gnb_properties_p);
+      //}
 
       break;
 # endif
