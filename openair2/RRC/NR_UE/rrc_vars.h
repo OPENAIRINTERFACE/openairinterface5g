@@ -19,35 +19,21 @@
  *      contact@openairinterface.org
  */
 
-/*! \file main.c
- * \brief top init of Layer 2
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \version 1.0
- * \email: navid.nikaein@eurecom.fr
- * @ingroup _mac
+/*! \file vars.hles
+* \brief rrc variables
+* \author Raymond Knopp and Navid Nikaein
+* \date 2013
+* \version 1.0
+* \company Eurecom
+* \email: navid.nikaein@eurecom.fr
+*/
 
- */
 
-#include "defs.h"
-#include "proto.h"
+#ifndef __OPENAIR_NR_RRC_VARS_H__
+#define __OPENAIR_NR_RRC_VARS_H__
 
-static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
+#include "rrc_defs.h"
 
-int
-nr_l2_init_ue(void)
-{
-    //LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
+NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 
-    //LOG_I(MAC, "[MAIN] init UE MAC functions \n");
-    
-    //init mac here
-    nr_ue_mac_inst = (NR_UE_MAC_INST_t *)malloc(sizeof(NR_UE_MAC_INST_t)*NB_NR_UE_MAC_INST);
-    
-
-    return (1);
-}
-
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t Mod_idP){
-    return &nr_ue_mac_inst[(int)Mod_idP];
-}
+#endif

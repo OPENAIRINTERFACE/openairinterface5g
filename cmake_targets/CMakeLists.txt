@@ -1319,12 +1319,14 @@ add_library(PHY_RU ${PHY_SRC_RU})
 #Layer 2 library
 #####################
 set(MAC_DIR ${OPENAIR2_DIR}/LAYER2/MAC)
+set(NR_UE_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_UE)
 set(PHY_INTERFACE_DIR ${OPENAIR2_DIR}/PHY_INTERFACE)
 set(RLC_DIR ${OPENAIR2_DIR}/LAYER2/RLC)
 set(RLC_UM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/UM_v9.3.0)
 set(RLC_AM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/AM_v9.3.0)
 set(RLC_TM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/TM_v9.3.0)
 set(RRC_DIR ${OPENAIR2_DIR}/RRC/LTE)
+set(NR_UE_RRC_DIR ${OPENAIR2_DIR}/RRC/NR_UE)
 set(PDCP_DIR  ${OPENAIR2_DIR}/LAYER2/PDCP_v10.1.0)
 set(L2_SRC
   ${OPENAIR2_DIR}/LAYER2/openair2_proc.c
@@ -1411,6 +1413,9 @@ set(L2_SRC_UE
   ${RRC_DIR}/rrc_common.c
   ${RRC_DIR}/L2_interface_common.c
   ${RRC_DIR}/L2_interface_ue.c
+  ${NR_UE_RRC_DIR}/L2_interface_ue.c
+  ${NR_UE_RRC_DIR}/main_ue.c
+  ${NR_UE_RRC_DIR}/rrc_UE.c
   )
 
 set (MAC_SRC
@@ -1442,6 +1447,10 @@ set (MAC_SRC_UE
   ${MAC_DIR}/l1_helpers.c
   ${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/config_ue.c
+  ${NR_UE_MAC_DIR}/config_ue.c
+  ${NR_UE_MAC_DIR}/mac_vars.c
+  ${NR_UE_MAC_DIR}/main_ue_nr.c
+  ${NR_UE_MAC_DIR}/nr_ue_procedures.c
  )
 
 set (ENB_APP_SRC

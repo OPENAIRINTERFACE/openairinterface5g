@@ -19,23 +19,39 @@
  *      contact@openairinterface.org
  */
 
-/*! \file vars.hles
-* \brief rrc variables
-* \author Raymond Knopp and Navid Nikaein
-* \date 2013
-* \version 1.0
-* \company Eurecom
-* \email: navid.nikaein@eurecom.fr
-*/
+/*! \file l2_interface.c
+ * \brief layer 2 interface, used to support different RRC sublayer
+ * \author Raymond Knopp and Navid Nikaein
+ * \date 2010-2014
+ * \version 1.0
+ * \company Eurecom
+ * \email: raymond.knopp@eurecom.fr
+ */
+
+#include "rrc_defs.h"
+#include "rrc_proto.h"
+
+typedef uint32_t channel_t;
+
+int8_t
+nr_mac_rrc_data_ind_ue(
+    const module_id_t     module_id,
+    const int             CC_id,
+    const uint8_t         gNB_index,
+    const uint32_t*       frameP,
+    const channel_t       channel,
+    const uint8_t*        pduP,
+    const sdu_size_t      pdu_len){
+
+    switch(channel){
+        case NR_BCCH_BCH:
+            nr_rrc_ue_decode_NR_BCCH_BCH_Message( module_id, gNB_index, (uint8_t*)pduP, pdu_len);
+            break;
+        default:
+            break;
+    }
 
 
-#ifndef __OPENAIR_NR_RRC_VARS_H__
-#define __OPENAIR_NR_RRC_VARS_H__
+    return(0);
 
-#include "defs.h"
-#include "LAYER2/RLC/rlc.h"
-#include "COMMON/mac_rrc_primitives.h"
-#include "LAYER2/MAC/defs.h"
-
-NR_UE_RRC_INST_t *NR_UE_rrc_inst;
-#endif
+}

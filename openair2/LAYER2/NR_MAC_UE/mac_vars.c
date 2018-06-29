@@ -19,35 +19,18 @@
  *      contact@openairinterface.org
  */
 
-/*! \file main.c
- * \brief top init of Layer 2
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \version 1.0
- * \email: navid.nikaein@eurecom.fr
- * @ingroup _mac
+/*! \file vars.h
+* \brief mac vars
+* \author  Navid Nikaein and Raymond Knopp
+* \date 2010 - 2014
+* \version 1.0
+* \email navid.nikaein@eurecom.fr
+* @ingroup _mac
 
- */
+*/
 
 #include "defs.h"
-#include "proto.h"
 
-static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
+NR_UE_MAC_INST_t UE_mac_inst;	//[NB_MODULE_MAX];
 
-int
-nr_l2_init_ue(void)
-{
-    //LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
 
-    //LOG_I(MAC, "[MAIN] init UE MAC functions \n");
-    
-    //init mac here
-    nr_ue_mac_inst = (NR_UE_MAC_INST_t *)malloc(sizeof(NR_UE_MAC_INST_t)*NB_NR_UE_MAC_INST);
-    
-
-    return (1);
-}
-
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t Mod_idP){
-    return &nr_ue_mac_inst[(int)Mod_idP];
-}
