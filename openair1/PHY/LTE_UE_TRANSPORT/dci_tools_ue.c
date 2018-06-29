@@ -943,7 +943,7 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
         }
     }
 
-    if (dci_format == format1a && ((rnti==si_rnti) || (rnti==p_rnti) || (rnti==ra_rnti)))
+    if (dci_format == format1A && ((rnti==si_rnti) || (rnti==p_rnti) || (rnti==ra_rnti)))
     {
         NPRB = (TPC&1) + 2;
         switch (N_RB_DL) {
@@ -961,7 +961,7 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
             break;
         }
     } 
-    else if (dci_format == format1a)
+    else if (dci_format == format1A)
     {
         switch (N_RB_DL) {
         case 6:
@@ -1002,7 +1002,7 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
     }
 
 
-    if(dci_format == format1a && rballoc > RIV_max)
+    if(dci_format == format1A && rballoc > RIV_max)
     {
       //        LOG_I(PHY,"bad dci rballoc rballoc %d  RIV_max %lld \n",rballoc, RIV_max);
         // DCI false detection
