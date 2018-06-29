@@ -96,9 +96,9 @@ void generate_pucch1x(int32_t **txdataF,
   Nprime_div_deltaPUCCH_Shift = (n1_pucch < thres) ? Ncs1_div_deltaPUCCH_Shift : (12/deltaPUCCH_Shift);
   Nprime = Nprime_div_deltaPUCCH_Shift * deltaPUCCH_Shift;
 
-  //#ifdef DEBUG_PUCCH_TX
+#ifdef DEBUG_PUCCH_TX
   printf("[PHY] PUCCH: cNcs1/deltaPUCCH_Shift %d, Nprime %d, n1_pucch %d\n",thres,Nprime,n1_pucch);
-  //#endif
+#endif
 
   LOG_I(PHY,"[PHY] PUCCH: n1_pucch %d, thres %d Ncs1_div_deltaPUCCH_Shift %d (12/deltaPUCCH_Shift) %d Nprime_div_deltaPUCCH_Shift %d \n",
 		              n1_pucch, thres, Ncs1_div_deltaPUCCH_Shift, (int)(12/deltaPUCCH_Shift), Nprime_div_deltaPUCCH_Shift);
@@ -117,15 +117,15 @@ void generate_pucch1x(int32_t **txdataF,
   else {
     d = (frame_parms->Ncp==0) ? 2 : 0;
     h= (nprime0+d)%(c*Nprime_div_deltaPUCCH_Shift);
-    //#ifdef DEBUG_PUCCH_TX
+#ifdef DEBUG_PUCCH_TX
     printf("[PHY] PUCCH: h %d, d %d\n",h,d);
-    //#endif
+#endif
     nprime1 = (h/c) + (h%c)*Nprime_div_deltaPUCCH_Shift;
   }
 
-  //#ifdef DEBUG_PUCCH_TX
+#ifdef DEBUG_PUCCH_TX
   printf("[PHY] PUCCH: nprime0 %d nprime1 %d, %s, payload (%d,%d)\n",nprime0,nprime1,pucch_format_string[fmt],payload[0],payload[1]);
-  //#endif
+#endif
 
   n_oc0 = nprime0/Nprime_div_deltaPUCCH_Shift;
 
@@ -137,9 +137,9 @@ void generate_pucch1x(int32_t **txdataF,
   if (frame_parms->Ncp==1)  // extended CP
     n_oc1<<=1;
 
-  //#ifdef DEBUG_PUCCH_TX
+#ifdef DEBUG_PUCCH_TX
   printf("[PHY] PUCCH: noc0 %d noc1 %d\n",n_oc0,n_oc1);
-  //#endif
+#endif
 
   nprime=nprime0;
   n_oc  =n_oc0;
