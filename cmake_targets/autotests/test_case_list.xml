@@ -970,7 +970,7 @@
                        -m26 -gF -s16.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1899 -O70
 		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70
                        -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70</main_exec_args>
-      <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.TM2_test1 dlsim.TM2_test1b</tags>
+      <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.test11b dlsim.TM2_test1 dlsim.TM2_test1b dlsim.TM2_test1c</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

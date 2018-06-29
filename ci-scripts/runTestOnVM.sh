@@ -231,7 +231,12 @@ else
     then
         FUNCTION=`echo $VM_NAME | sed -e "s@$VM_TEMPLATE@@"`
         NEW_NAME=`echo "results_autotests.xml" | sed -e "s@results_autotests@results_autotests-$FUNCTION@"`
-        mv results_autotests.xml $NEW_NAME
+        echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > $NEW_NAME
+        echo "<?xml-stylesheet type=\"text/xsl\" href=\"$FUNCTION.xsl\" ?>" >> $NEW_NAME
+        cat results_autotests.xml >> $NEW_NAME
+        sed -e "s@TEMPLATE@$FUNCTION@" $JENKINS_WKSP/ci-scripts/template.xsl > $FUNCTION.xsl
+        #mv results_autotests.xml $NEW_NAME
+        rm results_autotests.xml
     fi
     popd
 
