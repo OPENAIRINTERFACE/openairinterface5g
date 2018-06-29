@@ -175,10 +175,10 @@ function test_compile() {
     fi
     if [ "$result" == "1" ]; then
       echo_success "$test_case_name.${tags} PASSED"
-      xUnit_success "compilation" "$test_case_name.$tags" "PASS" "$result_string" "$xmlfile_testcase"
+      xUnit_success "compilation" "$test_case_name.$tags" "PASS" "$result_string" "$xmlfile_testcase" ""
     else             
       echo_error "$test_case_name.${tags} FAILED"
-      xUnit_fail "compilation" "$test_case_name.$tags" "FAIL" "$result_string" "$xmlfile_testcase"
+      xUnit_fail "compilation" "$test_case_name.$tags" "FAIL" "$result_string" "$xmlfile_testcase" ""
     fi
 }
 
@@ -201,6 +201,7 @@ function test_compile() {
 #\param $15 => password for the user to run certain commands as sudo
 #\param $16 => test config file params to be modified
 #\param $17 => bypass flag if main_exec if available
+#\param $18 -> desc to help identify the test case for readability in output xml file
 
 function test_compile_and_run() {
     xUnit_start
@@ -223,6 +224,7 @@ function test_compile_and_run() {
     mypassword=${15}
     test_config_file=${16}
     bypass_compile=${17}
+    desc=${18}
 
     build_dir=$tdir/$1/build
     #exec_file=$build_dir/$6
@@ -243,6 +245,7 @@ function test_compile_and_run() {
     #echo "pre_exec_file = $pre_exec_file"
     #echo "nruns = $nruns"
     echo "class = $class"
+    echo "desc = $desc"
     
     #compile_prog_array=()
     #read -a compile_prog_array <<<"$compile_prog"
@@ -253,6 +256,8 @@ function test_compile_and_run() {
   
     tags_array=()
     read -a tags_array <<<"$tags"
+    desc_array=()
+    readarray -t desc_array <<<"$desc"
     
     main_exec_args_array=()
     readarray -t main_exec_args_array <<< "$exec_args"
@@ -298,6 +303,7 @@ function test_compile_and_run() {
       do
         global_result=1
         result_string=""
+        PROPER_DESC=`echo ${desc_array[$tags_array_index]} | sed -e "s@^.*lsim.*est case.*(Test@Test@" -e "s@^ *(@@" -e "s/),$//"`
         
        for (( run_index=1; run_index <= $nruns; run_index++ ))
         do
@@ -366,16 +372,16 @@ function test_compile_and_run() {
 
        if [ "$result_string" == "" ]; then
            echo_error "execution $test_case_name.$compile_prog.${tags_array[$tags_array_index]} Run_Result = \"$result_string\"  Result = FAIL"
-	   xUnit_fail "execution" "$test_case_name.${tags_array[$tags_array_index]}" "FAIL" "$result_string" "$xmlfile_testcase"
+	   xUnit_fail "execution" "$test_case_name.${tags_array[$tags_array_index]}" "FAIL" "$result_string" "$xmlfile_testcase" "$PROPER_DESC"
        else
         if [ "$global_result" == "0" ]; then
            echo_error "execution $test_case_name.${tags_array[$tags_array_index]} Run_Result = \"$result_string\" Result =  FAIL"
-           xUnit_fail "execution" "$test_case_name.${tags_array[$tags_array_index]}" "FAIL" "$result_string" "$xmlfile_testcase"
+           xUnit_fail "execution" "$test_case_name.${tags_array[$tags_array_index]}" "FAIL" "$result_string" "$xmlfile_testcase" "$PROPER_DESC"
         fi
 
         if [ "$global_result" == "1" ]; then
             echo_success "execution $test_case_name.${tags_array[$tags_array_index]} Run_Result = \"$result_string\"  Result = PASS "
-	    xUnit_success "execution" "$test_case_name.${tags_array[$tags_array_index]}" "PASS" "$result_string"   "$xmlfile_testcase"     
+	    xUnit_success "execution" "$test_case_name.${tags_array[$tags_array_index]}" "PASS" "$result_string"   "$xmlfile_testcase"  "$PROPER_DESC"
         fi  
        fi
 
@@ -573,10 +579,10 @@ for search_expr in "${test_case_array[@]}"
     #echo "arg1 = ${search_array_true[0]}"
     #echo " arg2 = ${search_array_true[1]}"
     if [ "$class" == "compilation" ]; then
-        test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags"
+        test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$desc"
     elif  [ "$class" == "execution" ]; then
         echo \'passwd\' | $SUDO killall -q oaisim_nos1
-        test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" "$test_config_file" "$BYPASS_COMPILE"
+        test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" "$test_config_file" "$BYPASS_COMPILE" "$desc"
     else
         echo "Unexpected class of test case...Skipping the test case $name ...."
     fi
