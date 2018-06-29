@@ -245,7 +245,7 @@ function test_compile_and_run() {
     #echo "pre_exec_file = $pre_exec_file"
     #echo "nruns = $nruns"
     echo "class = $class"
-    echo "desc = $desc"
+    #echo "desc = $desc"
     
     #compile_prog_array=()
     #read -a compile_prog_array <<<"$compile_prog"
