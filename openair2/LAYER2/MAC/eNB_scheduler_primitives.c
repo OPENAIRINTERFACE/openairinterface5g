@@ -3432,9 +3432,12 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
            sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
            LOG_D(MAC,"frame %d subframe %d Acking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
          }else{ //nack
-         if( sched_ctl->round[CC_idP][harq_pid]<8)
-           sched_ctl->round[CC_idP][harq_pid]++;
-       LOG_D(MAC,"frame %d subframe %d Nacking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
+           sched_ctl->round[CC_idP][harq_pid]++; // increment round
+           if (sched_ctl->round[CC_idP][harq_pid] == 4) {
+             sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
+             sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+           }
+           LOG_D(MAC,"frame %d subframe %d Nacking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
       if(sched_ctl->round[CC_idP][harq_pid] == 8){
        for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
         if((ra[ra_i].rnti == rnti) && (ra[ra_i].state == WAITMSG4ACK)){
