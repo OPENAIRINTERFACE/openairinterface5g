@@ -282,6 +282,13 @@ typedef struct {
   UE_nr_rxtx_proc_t proc_rxtx[RX_NB_TH];
 } UE_nr_proc_t;
 
+typedef enum {
+  NR_PBCH_EST=0,
+  NR_PDCCH_EST,
+  NR_PDSCH_EST,
+  NR_SSS_EST,
+} NR_CHANNEL_EST_t;
+
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
 
 typedef struct {
@@ -988,7 +995,7 @@ typedef struct {
   uint32_t nr_gold_pdsch[2][20][2][21];
 
   /// PDCCH DMRS
-  uint32_t nr_gold_pdcch[10][3][42];
+  uint32_t nr_gold_pdcch[2][20][3][10];
 
   uint32_t X_u[64][839];
 

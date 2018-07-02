@@ -1141,16 +1141,15 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
     if (high_speed_flag == 1){
-      dl_ch0 = &dl_ch_estimates[aarx][5 + (symbol * (frame_parms->ofdm_symbol_size))];
+      dl_ch0 = &dl_ch_estimates[aarx][(symbol * (frame_parms->ofdm_symbol_size))];
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][5 + (symbol * (frame_parms->ofdm_symbol_size (%d))) = (%d)]\n",
-               aarx,frame_parms->ofdm_symbol_size,5 + (symbol * (frame_parms->ofdm_symbol_size)));
-        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> why pointer is pointing to that position (what does '5' mean)?\n");
+        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][ (symbol * (frame_parms->ofdm_symbol_size (%d))) = (%d)]\n",
+               aarx,frame_parms->ofdm_symbol_size,(symbol * (frame_parms->ofdm_symbol_size)));
       #endif
     } else {
-      dl_ch0 = &dl_ch_estimates[aarx][5];
+      dl_ch0 = &dl_ch_estimates[aarx][0];
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][5]\n",aarx);
+        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][0]\n",aarx);
       #endif
     }
 

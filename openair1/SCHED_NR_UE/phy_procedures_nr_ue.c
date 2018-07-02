@@ -5951,12 +5951,13 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
         start_meas(&ue->ofdm_demod_stats);
 #endif
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
-      slot_fep_pbch(ue,
+      nr_slot_fep(ue,
          l,
          (nr_tti_rx<<1),
          0,
          0,
-         0);
+         0,
+		 NR_PDCCH_EST);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
       stop_meas(&ue->ofdm_demod_stats);

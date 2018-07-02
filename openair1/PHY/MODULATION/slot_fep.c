@@ -28,12 +28,13 @@
 
 #define SOFFSET 0
 
-int slot_fep_pbch(PHY_VARS_NR_UE *ue,
+int nr_slot_fep(PHY_VARS_NR_UE *ue,
              unsigned char l,
              unsigned char Ns,
              int sample_offset,
              int no_prefix,
-			 int reset_freq_est)
+			 int reset_freq_est,
+			 NR_CHANNEL_EST_t channel)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
@@ -181,6 +182,9 @@ int slot_fep_pbch(PHY_VARS_NR_UE *ue,
   }
 
   if (ue->perfect_ce == 0) {
+
+  switch(channel){
+  case NR_PBCH_EST:
     if ((l>0) && (l<4)) {
       for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
@@ -196,7 +200,9 @@ int slot_fep_pbch(PHY_VARS_NR_UE *ue,
                                   l,
                                   symbol);
       }
-
+#if UE_TIMING_TRACE
+        stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
 
       // do frequency offset estimation here!
       // use channel estimates from current symbol (=ch_t) and last symbol (ch_{t-1})
@@ -221,6 +227,36 @@ int slot_fep_pbch(PHY_VARS_NR_UE *ue,
 
       }
     }
+  break;
+
+  case NR_PDCCH_EST:
+      for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
+
+#ifdef DEBUG_FEP
+          printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
+#endif
+#if UE_TIMING_TRACE
+          start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+          nr_pdcch_channel_estimation(ue,eNB_id,0,
+                                    Ns,
+                                    aa,
+                                    l,
+                                    symbol);
+#if UE_TIMING_TRACE
+        stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+      }
+    break;
+
+  case NR_SSS_EST:
+  break;
+
+  default:
+    LOG_E(PHY,"[UE][FATAL] Unknown channel format %d\n",channel);
+    return(-1);
+    break;
+  }
 
   }
 

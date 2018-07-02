@@ -819,7 +819,7 @@ void *UE_thread(void *arg) {
                                                             (void**)UE->common_vars.rxdata,
                                                             UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
                                                             UE->frame_parms.nb_antennas_rx),"");
-                    slot_fep_pbch(UE,0, 0, 0, 0, 0);
+                    nr_slot_fep(UE,0, 0, 0, 0, 0, NR_PBCH_EST);
                 } //UE->mode != loop_through_memory
                 else
                     rt_sleep_ns(1000*1000);

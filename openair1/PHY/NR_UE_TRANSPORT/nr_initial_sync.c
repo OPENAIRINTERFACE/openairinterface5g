@@ -68,28 +68,31 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   frame_parms->nb_prefix_samples0 = 0;
 
   //symbol 1
-  slot_fep_pbch(ue,
+  nr_slot_fep(ue,
     	   1,
     	   0,
     	   ue->rx_offset,
     	   0,
-    	   1);
+    	   1,
+		   NR_PBCH_EST);
 
   //symbol 2
-  slot_fep_pbch(ue,
+  nr_slot_fep(ue,
     	   2,
     	   0,
     	   ue->rx_offset,
     	   0,
-    	   1);
+    	   1,
+		   NR_PBCH_EST);
 
   //symbol 3
-  slot_fep_pbch(ue,
+  nr_slot_fep(ue,
     	   3,
     	   0,
     	   ue->rx_offset,
     	   0,
-    	   1);
+    	   1,
+		   NR_PBCH_EST);
 
   frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
 
