@@ -736,7 +736,7 @@ void wait_gNBs(void) {
     waiting=0;
     for (i=0;i<RC.nb_nr_L1_inst;i++) {
 
-      printf("RC.nb_nr_L1_CC[%d]:%d\n", i, RC.nb_L1_CC[i]);
+      printf("RC.nb_nr_L1_CC[%d]:%d\n", i, RC.nb_nr_L1_CC[i]);
 
       for (j=0;j<RC.nb_nr_L1_CC[i];j++) {
 	if (RC.gNB[i][j]->configured==0) {

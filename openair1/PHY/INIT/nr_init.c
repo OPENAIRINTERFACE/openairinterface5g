@@ -45,8 +45,8 @@ int l1_north_init_gNB() {
 
   if (RC.nb_nr_L1_inst > 0 && RC.nb_nr_L1_CC != NULL && RC.gNB != NULL)
   {
-    AssertFatal(RC.nb_nr_L1_inst>0,"nb_L1_inst=%d\n",RC.nb_nr_L1_inst);
-    AssertFatal(RC.nb_nr_L1_CC!=NULL,"nb_L1_CC is null\n");
+    AssertFatal(RC.nb_nr_L1_inst>0,"nb_nr_L1_inst=%d\n",RC.nb_nr_L1_inst);
+    AssertFatal(RC.nb_nr_L1_CC!=NULL,"nb_nr_L1_CC is null\n");
     AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
 
     LOG_I(PHY,"%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
