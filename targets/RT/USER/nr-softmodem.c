@@ -731,14 +731,14 @@ void wait_gNBs(void) {
 
 
   while (waiting==1) {
-    printf("Waiting for gNB L1 instances to all get configured ... sleeping 50ms (nb_L1_inst %d)\n",RC.nb_L1_inst);
+    printf("Waiting for gNB L1 instances to all get configured ... sleeping 50ms (nb_nr_sL1_inst %d)\n",RC.nb_nr_L1_inst);
     usleep(50*1000);
     waiting=0;
-    for (i=0;i<RC.nb_L1_inst;i++) {
+    for (i=0;i<RC.nb_nr_L1_inst;i++) {
 
-      printf("RC.nb_L1_CC[%d]:%d\n", i, RC.nb_L1_CC[i]);
+      printf("RC.nb_nr_L1_CC[%d]:%d\n", i, RC.nb_L1_CC[i]);
 
-      for (j=0;j<RC.nb_L1_CC[i];j++) {
+      for (j=0;j<RC.nb_nr_L1_CC[i];j++) {
 	if (RC.gNB[i][j]->configured==0) {
 	  waiting=1;
 	  break;
@@ -1062,7 +1062,7 @@ int main( int argc, char **argv )
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
   RCconfig_nr_flexran();
-  for (i = 0; i < RC.nb_L1_inst; i++) {
+  for (i = 0; i < RC.nb_nr_L1_inst; i++) {
     flexran_agent_start(i);
   }
 
@@ -1151,7 +1151,7 @@ int main( int argc, char **argv )
 
     number_of_cards = 1;    
     printf("RC.nb_nr_L1_inst:%d\n", RC.nb_nr_L1_inst);
-    if (RC.nb_L1_inst > 0) {
+    if (RC.nb_nr_L1_inst > 0) {
       printf("Initializing gNB threads single_thread_flag:%d wait_for_sync:%d\n", single_thread_flag,wait_for_sync);
       init_gNB(single_thread_flag,wait_for_sync);
     }

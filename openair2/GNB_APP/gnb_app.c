@@ -143,9 +143,9 @@ void *gNB_app_task(void *args_p)
 
   RCconfig_nr_macrlc();
 
-  LOG_I(PHY, "%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_L1_inst);
+  LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
 
-  if (RC.nb_L1_inst>0) AssertFatal(l1_north_init_gNB()==0,"could not initialize L1 north interface\n");
+  if (RC.nb_nr_L1_inst>0) AssertFatal(l1_north_init_gNB()==0,"could not initialize L1 north interface\n");
 
   AssertFatal (gnb_nb <= RC.nb_nr_inst,
                "Number of gNB is greater than gNB defined in configuration file (%d/%d)!",

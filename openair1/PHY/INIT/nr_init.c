@@ -43,21 +43,21 @@ int l1_north_init_gNB() {
 
   int i,j;
 
-  if (RC.nb_L1_inst > 0 && RC.nb_L1_CC != NULL && RC.gNB != NULL)
+  if (RC.nb_nr_L1_inst > 0 && RC.nb_nr_L1_CC != NULL && RC.gNB != NULL)
   {
-    AssertFatal(RC.nb_L1_inst>0,"nb_L1_inst=%d\n",RC.nb_L1_inst);
-    AssertFatal(RC.nb_L1_CC!=NULL,"nb_L1_CC is null\n");
+    AssertFatal(RC.nb_nr_L1_inst>0,"nb_L1_inst=%d\n",RC.nb_nr_L1_inst);
+    AssertFatal(RC.nb_nr_L1_CC!=NULL,"nb_L1_CC is null\n");
     AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
 
-    LOG_I(PHY,"%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_L1_inst);
+    LOG_I(PHY,"%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
 
-    for (i=0;i<RC.nb_L1_inst;i++) {
+    for (i=0;i<RC.nb_nr_L1_inst;i++) {
       AssertFatal(RC.gNB[i]!=NULL,"RC.gNB[%d] is null\n",i);
-      AssertFatal(RC.nb_L1_CC[i]>0,"RC.nb_L1_CC[%d]=%d\n",i,RC.nb_L1_CC[i]);
+      AssertFatal(RC.nb_nr_L1_CC[i]>0,"RC.nb_nr_L1_CC[%d]=%d\n",i,RC.nb_nr_L1_CC[i]);
 
-      LOG_I(PHY,"%s() RC.nb_L1_CC[%d]:%d\n", __FUNCTION__, i,  RC.nb_L1_CC[i]);
+      LOG_I(PHY,"%s() RC.nb_nr_L1_CC[%d]:%d\n", __FUNCTION__, i,  RC.nb_nr_L1_CC[i]);
 
-      for (j=0;j<RC.nb_L1_CC[i];j++) {
+      for (j=0;j<RC.nb_nr_L1_CC[i];j++) {
         AssertFatal(RC.gNB[i][j]!=NULL,"RC.gNB[%d][%d] is null\n",i,j);
 
         if ((RC.gNB[i][j]->if_inst =  NR_IF_Module_init(i))<0) return(-1); 
@@ -71,7 +71,7 @@ int l1_north_init_gNB() {
   }
   else
   {
-    LOG_I(PHY,"%s() Not installing PHY callbacks - RC.nb_L1_inst:%d RC.nb_L1_CC:%p RC.gNB:%p\n", __FUNCTION__, RC.nb_L1_inst, RC.nb_L1_CC, RC.gNB);
+    LOG_I(PHY,"%s() Not installing PHY callbacks - RC.nb_nr_L1_inst:%d RC.nb_nr_L1_CC:%p RC.gNB:%p\n", __FUNCTION__, RC.nb_nr_L1_inst, RC.nb_nr_L1_CC, RC.gNB);
   }
   return(0);
 }

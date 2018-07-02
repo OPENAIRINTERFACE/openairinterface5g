@@ -2119,11 +2119,11 @@ void init_RU(char *rf_config_file) {
   // read in configuration file)
   printf("configuring RU from file\n");
   RCconfig_RU();
-  LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_L1_inst,RC.nb_RU,get_nprocs());
+  LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_nr_L1_inst,RC.nb_RU,get_nprocs());
 
-  if (RC.nb_CC != 0)
-    for (i=0;i<RC.nb_L1_inst;i++) 
-      for (CC_id=0;CC_id<RC.nb_CC[i];CC_id++) RC.gNB[i][CC_id]->num_RU=0;
+  if (RC.nb_nr_CC != 0)
+    for (i=0;i<RC.nb_nr_L1_inst;i++) 
+      for (CC_id=0;CC_id<RC.nb_nr_CC[i];CC_id++) RC.gNB[i][CC_id]->num_RU=0;
 
   LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
   for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
@@ -2236,7 +2236,7 @@ void RCconfig_RU(void) {
       printf("Creating RC.ru[%d]:%p\n", j, RC.ru[j]);
 
       RC.ru[j]->if_timing                           = synch_to_ext_device;
-      if (RC.nb_L1_inst >0)
+      if (RC.nb_nr_L1_inst >0)
         RC.ru[j]->num_gNB                           = RUParamList.paramarray[j][RU_ENB_LIST_IDX].numelt;
       else
 	    RC.ru[j]->num_gNB                           = 0;
