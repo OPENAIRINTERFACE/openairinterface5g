@@ -193,7 +193,7 @@ int                             otg_enabled;
 
 
 //static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
-static nfapi_config_request_t *config[MAX_NUM_CCs];
+static nfapi_nr_config_request_t *config[MAX_NUM_CCs];
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
@@ -231,7 +231,7 @@ threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 uint8_t abstraction_flag=0;
 
 /* forward declarations */
-void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -564,16 +564,16 @@ int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 
 
 
-void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
+void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
   int CC_id;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id] = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
-    config[CC_id] = (nfapi_config_request_t*) malloc(sizeof(nfapi_config_request_t));
+    config[CC_id] = (nfapi_nr_config_request_t*) malloc(sizeof(nfapi_nr_config_request_t));
     config[CC_id]->subframe_config.numerology_index_mu.value =1;
     config[CC_id]->subframe_config.duplex_mode.value = 1; //FDD
-    config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
+    config[CC_id]->subframe_config.dl_prefix_type.value = 0; //NORMAL
     config[CC_id]->rf_config.dl_channel_bandwidth.value = 106;
     config[CC_id]->rf_config.ul_channel_bandwidth.value = 106;
     config[CC_id]->rf_config.tx_antenna_ports.value = 1;
