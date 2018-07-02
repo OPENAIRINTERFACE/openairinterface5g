@@ -801,7 +801,7 @@ int stop_L1L2(module_id_t gnb_id)
   LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", gnb_id);
   kill_RU_proc(gnb_id);
   oai_exit = 0;
-  for (int cc_id = 0; cc_id < RC.nb_CC[gnb_id]; cc_id++) {
+  for (int cc_id = 0; cc_id < RC.nb_nr_CC[gnb_id]; cc_id++) {
     //free_transport(RC.gNB[gnb_id][cc_id]);
     phy_free_nr_gNB(RC.gNB[gnb_id][cc_id]);
   }
@@ -824,7 +824,7 @@ int restart_L1L2(module_id_t gnb_id)
   /* block threads */
   sync_var = -1;
 
-  for (cc_id = 0; cc_id < RC.nb_L1_CC[gnb_id]; cc_id++) {
+  for (cc_id = 0; cc_id < RC.nb_nr_L1_CC[gnb_id]; cc_id++) {
     RC.gNB[gnb_id][cc_id]->configured = 0;
   }
 
@@ -1257,7 +1257,7 @@ int main( int argc, char **argv )
     /* release memory used by the RU/gNB threads (incomplete), after all
      * threads have been stopped (they partially use the same memory) */
     for (int inst = 0; inst < NB_gNB_INST; inst++) {
-      for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
+      for (int cc_id = 0; cc_id < RC.nb_nr_CC[inst]; cc_id++) {
         //free_transport(RC.gNB[inst][cc_id]);
         phy_free_nr_gNB(RC.gNB[inst][cc_id]);
       }
