@@ -1178,7 +1178,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
 
   NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
-  nfapi_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
+  nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
   openair0_config_t *cfg   = &ru->openair0_cfg;
   int N_RB = gNB_config->rf_config.dl_channel_bandwidth.value;
   int mu = gNB_config->subframe_config.numerology_index_mu.value;

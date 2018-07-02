@@ -76,8 +76,10 @@ typedef struct {
 typedef struct {
   nfapi_uint16_tlv_t  tx_antenna_ports;
   nfapi_uint16_tlv_t  rx_antenna_ports;
-  nfapi_uint16_tlv_t  dl_carrierBandwidth;
-  nfapi_uint16_tlv_t  ul_carrierBandwidth;
+  nfapi_uint16_tlv_t  dl_channel_bandwidth;
+  nfapi_uint16_tlv_t  ul_channel_bandwidth;  
+  nfapi_uint16_tlv_t  dl_BWP_carrierBandwidth;
+  nfapi_uint16_tlv_t  ul_BWP_carrierBandwidth;
   nfapi_uint16_tlv_t  dl_locationAndBandwidth;
   nfapi_uint16_tlv_t  ul_locationAndBandwidth;
   nfapi_uint16_tlv_t  dl_BWP_SubcarrierSpacing;

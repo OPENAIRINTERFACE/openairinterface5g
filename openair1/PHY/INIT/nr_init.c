@@ -387,8 +387,8 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   gNB_config->nfapi_config.earfcn.value                 = phy_config->cfg->nfapi_config.earfcn.value; //6600
   gNB_config->subframe_config.numerology_index_mu.value = phy_config->cfg->subframe_config.numerology_index_mu.value;//1
   gNB_config->rf_config.tx_antenna_ports.value          = phy_config->cfg->rf_config.tx_antenna_ports.value; //1
-  gNB_config->rf_config.dl_carrierBandwidth.value       = phy_config->cfg->rf_config.dl_carrierBandwidth.value;//106;
-  gNB_config->rf_config.ul_carrierBandwidth.value       = phy_config->cfg->rf_config.ul_carrierBandwidth.value;//106;
+  gNB_config->rf_config.dl_channel_bandwidth.value      = phy_config->cfg->rf_config.dl_channel_bandwidth.value;//106;
+  gNB_config->rf_config.ul_channel_bandwidth.value      = phy_config->cfg->rf_config.ul_channel_bandwidth.value;//106;
   gNB_config->sch_config.half_frame_index.value         = 0;
   gNB_config->sch_config.ssb_subcarrier_offset.value    = phy_config->cfg->sch_config.ssb_subcarrier_offset.value;//0;
   gNB_config->sch_config.n_ssb_crb.value                = 86;
@@ -411,8 +411,8 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   Mod_id, 
   CC_id, 
   gNB_config->nfapi_config.rf_bands.rf_band[0], 
-  gNB_config->rf_config.dl_carrierBandwidth.value, 
-  gNB_config->rf_config.ul_carrierBandwidth.value, 
+  gNB_config->rf_config.dl_channel_bandwidth.value, 
+  gNB_config->rf_config.ul_channel_bandwidth.value, 
   gNB_config->sch_config.physical_cell_id.value, 
   gNB_config->rf_config.tx_antenna_ports.value,
   fp->dl_CarrierFreq );
