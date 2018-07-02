@@ -866,7 +866,7 @@ pdcp_data_ind(
 
 void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
 
-  uint8_t            pdcp_uid = 0;
+  uint16_t           pdcp_uid = 0;
   uint8_t            rb_id     = 0;
   
  // these stats are measured for both eNB and UE on per seond basis 
