@@ -8,6 +8,7 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
 #include "SIMULATION/TOOLS/sim.h"
 
 int main(int argc, char *argv[]) {
@@ -70,15 +71,23 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (polarMessageType == 0) { //DCI
-		//testLength = ;
-		//coderLength = ;
+	  //testLength = ;
+	  //coderLength = ;
+	  printf("polartest for DCI not supported yet\n");
+	  exit(-1);
 	} else if (polarMessageType == 1) { //PBCH
-		testLength = NR_POLAR_PBCH_PAYLOAD_BITS;
-		coderLength = NR_POLAR_PBCH_E;
+	  testLength = NR_POLAR_PBCH_PAYLOAD_BITS;
+	  coderLength = NR_POLAR_PBCH_E;
+	  printf("running polartest for PBCH\n");
 	} else if (polarMessageType == 2) { //UCI
-		//testLength = ;
-		//coderLength = ;
+	  testLength = NR_POLAR_PUCCH_PAYLOAD_BITS;
+	  coderLength = NR_POLAR_PUCCH_E;
+	  printf("running polartest for UCI");
+	} else {
+	  printf("unsupported polarMessageType %d (0=DCI, 1=PBCH, 2=UCI)\n",polarMessageType);
+	  exit(-1);
 	}
+	
 
 	//Logging
 	time_t currentTime;
@@ -96,12 +105,12 @@ int main(int argc, char *argv[]) {
 	if (stat(folderName, &folder) == -1) mkdir(folderName, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	FILE* logFile;
-    logFile = fopen(fileName, "w");
-    if (logFile==NULL) {
-        fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
-        exit(-1);
-      }
-    fprintf(logFile,",SNR,nBitError,blockErrorState,t_encoder[us],t_decoder[us]\n");
+	logFile = fopen(fileName, "w");
+	if (logFile==NULL) {
+	  fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
+	  exit(-1);
+	}
+	fprintf(logFile,",SNR,nBitError,blockErrorState,t_encoder[us],t_decoder[us]\n");
 
 	uint8_t *testInput = malloc(sizeof(uint8_t) * testLength); //generate randomly
 	uint8_t *encoderOutput = malloc(sizeof(uint8_t) * coderLength);
