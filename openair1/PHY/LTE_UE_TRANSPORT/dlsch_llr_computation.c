@@ -1208,7 +1208,6 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 }
 
-//#if 0
 void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                          int32_t **rxdataF_comp,
                          int32_t **sic_buffer,  //Q15
@@ -8859,15 +8858,6 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   memcpy(ch_mag_i_256i, ch_mag_i, len*4);
   memcpy(rho_256i, rho, len*4);
 
-#if 0
-  qam64_qam16_avx2((short *)rxF_256i,
-                   (short *)rxF_i_256i,
-                   (short *)ch_mag_256i,
-                   (short *)ch_mag_i_256i,
-                   (short *)llr16,
-                   (short *) rho_256i,
-                   len);
-#else
   qam64_qam64_avx2((int32_t *)rxF_256i,
                    (int32_t *)rxF_i_256i,
                    (int32_t *)ch_mag_256i,
@@ -8875,7 +8865,6 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                    (int16_t *)llr16,
                    (int32_t *) rho_256i,
                    len);
-#endif
   
   free16(rxF_256i, sizeof(rxF_256i));
   free16(rxF_i_256i, sizeof(rxF_i_256i));

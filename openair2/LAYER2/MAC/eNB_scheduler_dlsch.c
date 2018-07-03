@@ -597,12 +597,6 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
   int header_length_last;
   int header_length_total;
 
-#if 0
-  if (UE_list->head == -1) {
-    return;
-  }
-#endif
-
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
     (VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_IN);
@@ -761,14 +755,6 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 			  CC_id, UE_id, subframeP, S_DL_NONE);
 	continue;
       }
-#warning RK->CR This old API call has to be revisited for FAPI, or logic must be changed
-#if 0
-      /* add "fake" DCI to have CCE_allocation_infeasible work properly for next allocations */
-      /* if we don't add it, next allocations may succeed but overall allocations may fail */
-      /* will be removed at the end of this function */
-      add_ue_spec_dci(&eNB->common_channels[CC_id].DCI_pdu, &(char[]) {
-	  0}, rnti, 1, aggregation, 1, format1, 0);
-#endif
 
       nb_available_rb = ue_sched_ctl->pre_nb_available_rbs[CC_id];
 
@@ -1366,12 +1352,6 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 		 dlsch_buffer, sdu_length_total);
 	  // memcpy(RC.mac[0].DLSCH_pdu[0][0].payload[0][offset],dcch_buffer,sdu_lengths[0]);
 
-#if 0
-	  // fill remainder of DLSCH with random data
-	  for (j = 0; j < (TBS - sdu_length_total - offset); j++) {
-	    UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset + sdu_length_total + j] = (char) (taus() & 0xff);
-	  }
-#endif
 	  // fill remainder of DLSCH with 0
 	  for (j = 0; j < (TBS - sdu_length_total - offset); j++) {
 	    UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0][offset + sdu_length_total + j] = 0;
@@ -1868,18 +1848,6 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
 	if ((subframeP == 0 || subframeP == 1 || subframeP == 2 || subframeP == 4 || subframeP == 6 || subframeP == 9) ||
 	    (subframeP == 5 && ((frameP % 2) != 0 && (frameP % 8) != 1))) {
 	  switch (n_rb_dl) {
-#if 0
-	  case 6:
-	    n_gap = n_rb_dl/2;  /* expect: 3 */
-	    n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));;  /* expect: 6 */
-	    first_rb = 0;
-	    break;
-	  case 15:
-	    n_gap = GAP_MAP[2][0];  /* expect: 8 */
-	    n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 14 */
-	    first_rb = 6;
-	    break;
-#endif
 	  case 25:
 	    n_gap = GAP_MAP[3][0];  /* expect: 12 */
 	    n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 24 */
@@ -1906,18 +1874,6 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
 	  }
 	} else if (subframeP == 5 && ((frameP % 2) == 0 || (frameP % 8) == 1)) {  // SIB + paging
 	  switch (n_rb_dl) {
-#if 0
-	  case 6:
-	    n_gap = n_rb_dl/2;  /* expect: 3 */
-	    n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));;  /* expect: 6 */
-	    first_rb = 0;
-	    break;
-	  case 15:
-	    n_gap = GAP_MAP[2][0];  /* expect: 8 */
-	    n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 14 */
-	    first_rb = 10;
-	    break;
-#endif
 	  case 25:
 	    n_gap = GAP_MAP[3][0];  /* expect: 12 */
 	    n_vrb_dl = 2*((n_gap < (n_rb_dl - n_gap)) ? n_gap : (n_rb_dl - n_gap));  /* expect: 24 */

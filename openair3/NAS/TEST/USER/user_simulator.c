@@ -225,23 +225,6 @@ int main (int argc, const char* argv[])
       break;
     }
 
-#if 0
-    /* Send the AT command one byte at a time (serial port simulation) */
-    const char* pbuffer = _user_simulator_send_buffer;
-
-    while (*pbuffer) {
-      int sbytes = USER_SEND(pbuffer++, 1);
-
-      if (sbytes == RETURNerror) {
-        perror("ERROR\t: Failed to send data to the NAS sublayer");
-        break;
-      }
-
-      (void)poll(0, 0, 10);
-    }
-
-#endif
-
     (void)poll(0, 0, 100);
   }
 

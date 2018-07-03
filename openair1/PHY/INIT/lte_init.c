@@ -255,12 +255,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
 	      "prach_starting_subframe_periodicity[0] %d < prach_numPetitionPerPreambleAttempt[0] %d\n",
 	      fp->prach_emtc_config_common.prach_ConfigInfo.prach_starting_subframe_periodicity[0],
 	      fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0]);
-#if 0
-  AssertFatal(fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0] > 0,
-	      "prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0]==0\n");
-#else
-  LOG_D(PHY,"***DJP*** removed assert on preamble fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0]:%d expecting >0 %s:%d\n\n\n", fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0], __FILE__, __LINE__);
-#endif
+
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[0]                     = cfg->emtc_config.prach_ce_level_0_configuration_index.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[0]                      = cfg->emtc_config.prach_ce_level_0_frequency_offset.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_hopping_enable[0]                = cfg->emtc_config.prach_ce_level_0_hopping_enable.value;
