@@ -151,50 +151,6 @@ extern T_cache_t *T_cache;
     abort(); \
   }
 
-#if 0
-#define T_PUT(type, var, argnum) \
-  do { \
-    if (T_LOCAL_size + sizeof(var) > T_BUFFER_MAX) { \
-      printf("%s:%d:%s: cannot put argument %d in T macro, not enough space" \
-               ", consider increasing T_BUFFER_MAX (%d)\n", \
-               __FILE__, __LINE__, __FUNCTION__, argnum, T_BUFFER_MAX); \
-      abort(); \
-    } \
-    memcpy(T_LOCAL_buf + T_LOCAL_size, &var, sizeof(var)); \
-    T_LOCAL_size += sizeof(var); \
-  } while (0)
-#endif
-
-#if 0
-#define T_PROCESS(x, argnum) \
-  do { \
-    T_PUT(typeof(x), x, argnum); \
-  } while (0)
-#endif
-
-#if 0
-#define T_PROCESS(x, argnum) \
-  do { \
-    if (__builtin_types_compatible_p(typeof(x), int)) \
-      { T_PUT(int, (intptr_t)(x), argnum); printf("int\n"); } \
-    else if (__builtin_types_compatible_p(typeof(x), short)) \
-      { T_PUT(short, (intptr_t)(x), argnum); printf("short\n"); } \
-    else if (__builtin_types_compatible_p(typeof(x), float)) \
-      { T_PUT(float, (x), argnum); printf("float\n"); } \
-    else if (__builtin_types_compatible_p(typeof(x), char *)) \
-      { T_PUT(char *, (char *)(intptr_t)(x), argnum); printf("char *\n"); } \
-    else if (__builtin_types_compatible_p(typeof(x), float *)) \
-      { T_PUT(float *, (float *)(intptr_t)(x), argnum); printf("float *\n"); } \
-    else if (__builtin_types_compatible_p(typeof(x), void *)) \
-      { T_PUT(void *, (void *)(intptr_t)(x), argnum); printf("void *\n"); } \
-    else { \
-      printf("%s:%d:%s: unsupported type for argument %d in T macro\n", \
-               __FILE__, __LINE__, __FUNCTION__, argnum); \
-      abort(); \
-    } \
-  } while (0)
-#endif
-
 /* we have 4 versions of T_HEADER:
  * - bad quality C++ version with time
  * - good quality C version with time

@@ -39,6 +39,7 @@
                   <th>Test Name</th>
                   <th>Result</th>
                   <th>Time</th>
+                  <th>Description</th>
               </tr>
               <!--Get all the other rows-->
               <xsl:for-each select="testsuites/testsuite/testcase">
@@ -51,6 +52,9 @@
                     </td>
                     <td>
                       <xsl:value-of select="@time"/>
+                    </td>
+                    <td>
+                      <xsl:value-of select="@description"/>
                     </td>
                 </tr>
               </xsl:for-each>
