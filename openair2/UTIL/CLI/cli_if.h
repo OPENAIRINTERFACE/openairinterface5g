@@ -38,30 +38,14 @@
 extern "C" {
 #endif
 
-#    ifdef COMPONENT_CLI
-#        ifdef COMPONENT_CLI_IF
-#            define private_cli_if(x) x
-#            define friend_cli_if(x) x
-#            define public_cli_if(x) x
-#        else
-#            define private_cli_if(x)
-#            define friend_cli_if(x) extern x
-#            define public_cli_if(x) extern x
-#        endif
-#    else
-#        define private_cli_if(x)
-#        define friend_cli_if(x)
-#        define public_cli_if(x) extern x
-#    endif
-
 /** @defgroup _cli_if Interfaces of CLI
  * @{*/
 
 
-public_cli_if( void cli_init (void); )
-public_cli_if( int cli_server_init(cli_handler_t handler); )
-public_cli_if(void cli_server_cleanup(void);)
-public_cli_if(void cli_server_recv(const void * data, socklen_t len);)
+void cli_init (void); 
+int cli_server_init(cli_handler_t handler); 
+void cli_server_cleanup(void);
+void cli_server_recv(const void * data, socklen_t len);
 /* @}*/
 
 #ifdef __cplusplus
