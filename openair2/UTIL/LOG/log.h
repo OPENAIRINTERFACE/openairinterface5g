@@ -92,7 +92,8 @@ extern "C" {
 # define  LOG_DEBUG 7 /*!< \brief debug-level messages */
 # define  LOG_FILE        8 /*!< \brief message sequence chart -level  */
 # define  LOG_TRACE 9 /*!< \brief trace-level messages */
-#define NUM_LOG_LEVEL  10 /*!< \brief the number of message levels users have with LOG */
+# define  LOG_MATLAB 10 /*!< \brief output to matlab file */
+#define NUM_LOG_LEVEL  11 /*!< \brief the number of message levels users have with LOG */
 /* @}*/
 
 
@@ -300,6 +301,17 @@ void *log_thread_function(void * list);
 #endif
 /* @}*/
 
+/*!\fn int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);
+\brief Write output file from signal data
+@param fname output file name
+@param vname  output vector name (for MATLAB/OCTAVE)
+@param data   point to data
+@param length length of data vector to output
+@param dec    decimation level
+@param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
+*/
+int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);
+
 /*----------------macro definitions for reading log configuration from the config module */
 #define CONFIG_STRING_LOG_PREFIX                           "log_config"
 
@@ -340,6 +352,7 @@ void *log_thread_function(void * list);
 #    define LOG_C(c, x...) /* */
 #    define LOG_N(c, x...) /* */
 #    define LOG_F(c, x...) /* */
+#    define LOG_M(file, vector, data, len, dec, format) /* */
 #  else /* T_TRACER */
 #    if DISABLE_LOG_X
 #        define LOG_I(c, x...) /* */
@@ -352,6 +365,7 @@ void *log_thread_function(void * list);
 #        define LOG_C(c, x...) /* */
 #        define LOG_N(c, x...) /* */
 #        define LOG_F(c, x...) /* */
+#        define LOG_M(file, vector, data, len, dec, format) /* */
 #    else  /*DISABLE_LOG_X*/
 #        define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
 #        define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
@@ -363,6 +377,7 @@ void *log_thread_function(void * list);
 #        define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
 #        define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
 #        define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
+#        define LOG_M(file, vector, data, len, dec, format) write_file_matlab(file, vector, data, len, dec, format)
 #    endif /*DISABLE_LOG_X*/
 #  endif /* T_TRACER */
 /* @}*/

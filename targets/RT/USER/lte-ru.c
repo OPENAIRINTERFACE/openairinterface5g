@@ -1781,10 +1781,6 @@ static void* ru_thread( void* param ) {
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_eNBs(ru);
     
-    // wait until eNBs are finished subframe RX n and TX n+sf_ahead
-    if(get_nprocs() > 4)
-      wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread");
-    
 #ifndef PHY_TX_THREAD
     if(get_nprocs() <= 4){
       // do TX front-end processing if needed (precoding and/or IDFTs)
@@ -1882,8 +1878,8 @@ void *ru_thread_synch(void *arg) {
 	/*
 	if ((peak_val > 300000) && (sync_pos > 0)) {
 	//      if (sync_pos++ > 3) {
-	write_output("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
-	write_output("ru_rx.m","rxs",(void*)ru->ru_time.rxdata[0][0],fp->samples_per_tti*10,1,1);
+	LOG_M("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
+	LOG_M("ru_rx.m","rxs",(void*)ru->ru_time.rxdata[0][0],fp->samples_per_tti*10,1,1);
 	exit(-1);
 	}
 	*/

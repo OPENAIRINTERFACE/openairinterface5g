@@ -51,8 +51,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx)
   randominit(0);
   set_taus_seed(0);
 
-  crcTableInit();
-
   lte_frame_parms = &(PHY_config->lte_frame_parms);   //openair1/PHY/impl_defs_lte.h
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
   lte_ue_dlsch_vars = &(PHY_vars->lte_ue_dlsch_vars);
@@ -248,7 +246,6 @@ int main(int argc, char *argv[])
   randominit(0);
   set_taus_seed(0);
 
-  crcTableInit();
   ccodelte_init();
   ccodelte_init_inv();
 

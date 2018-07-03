@@ -183,32 +183,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING
   uint16_t i;
 #endif
-  //#ifdef __AVX2__
-#if 0
-  int Kr_last,skipped_last=0;
-  uint8_t (*tc_2cw)(int16_t *y,
-		    int16_t *y2,
-		    uint8_t *,
-		    uint8_t *,
-		    uint16_t,
-		    uint16_t,
-		    uint16_t,
-		    uint8_t,
-		    uint8_t,
-		    uint8_t,
-		    time_stats_t *,
-		    time_stats_t *,
-		    time_stats_t *,
-		    time_stats_t *,
-		    time_stats_t *,
-		    time_stats_t *,
-		    time_stats_t *);
-
-#endif
-decoder_if_t *tc;
-
-
-
+  decoder_if_t *tc;
 
   if (!dlsch_llr) {
     printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
@@ -236,17 +211,13 @@ decoder_if_t *tc;
   }
 
   if (llr8_flag == 0) {
-    //#ifdef __AVX2__
-#if 0
-    tc_2cw = phy_threegpplte_turbo_decoder16avx2;
-#endif
     tc = decoder16;
   }
   else
   {
-	  AssertFatal (harq_process->TBS >= 256 , "Mismatch flag nbRB=%d TBS=%d mcs=%d Qm=%d RIV=%d round=%d \n",
-			  harq_process->nb_rb, harq_process->TBS,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
-	    tc = decoder8;
+    AssertFatal (harq_process->TBS >= 256 , "Mismatch flag nbRB=%d TBS=%d mcs=%d Qm=%d RIV=%d round=%d \n",
+		 harq_process->nb_rb, harq_process->TBS,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
+    tc = decoder8;
   }
 
 
@@ -411,8 +382,8 @@ decoder_if_t *tc;
 #ifdef DEBUG_DLSCH_DECODING
     /*
     if (r==0) {
-              write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-              write_output("decoder_in.m","dec",&harq_process->d[0][96],(3*8*Kr_bytes)+12,1,0);
+              LOG_M("decoder_llr.m","decllr",dlsch_llr,G,1,0);
+              LOG_M("decoder_in.m","dec",&harq_process->d[0][96],(3*8*Kr_bytes)+12,1,0);
     }
 
     printf("decoder input(segment %d) :",r);
@@ -820,7 +791,7 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
 #ifdef DEBUG_DLSCH_CODING
 
       if (r==0)
-        write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
+        LOG_M("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
 
 #endif
       start_meas(i_stats);
@@ -867,7 +838,7 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
 #ifdef DEBUG_DLSCH_CODING
 
     if (r==dlsch->harq_processes[harq_pid]->C-1)
-      write_output("enc_output.m","enc",dlsch->harq_processes[harq_pid]->e,r_offset,1,4);
+      LOG_M("enc_output.m","enc",dlsch->harq_processes[harq_pid]->e,r_offset,1,4);
 
 #endif
   }

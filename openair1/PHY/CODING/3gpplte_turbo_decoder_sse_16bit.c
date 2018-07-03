@@ -232,9 +232,6 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 #if defined(__x86_64__) || defined(__i386__)
     alpha128 = (__m128i *)alpha;
     //#ifdef __AVX2__
-#if 0
-    alpha256 = (__m256i *)alpha;
-#endif
 #elif defined(__arm__)
     alpha128 = (int16x8_t *)alpha;
 #endif
@@ -316,10 +313,6 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 
     alpha_ptr = &alpha128[0];
     //#ifdef __AVX2__
-#if 0
-    alpha_ptr256 = &alpha256[0];
-#endif
-
 #if defined(__x86_64__) || defined(__i386__)
     m11p = (__m128i*)m_11;
     m10p = (__m128i*)m_10;
@@ -449,9 +442,6 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 
       alpha_ptr+=8;
       //#ifdef __AVX2__
-#if 0
-      alpha_ptr256+=4;
-#endif
       m11p++;
       m10p++;
 #if defined(__x86_64__) || defined(__i386__)

@@ -795,7 +795,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
 #ifdef DEBUG_DLSCH_CODING
 
       if (r==0)
-        write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
+        LOG_M("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
 
 #endif
       start_meas(i_stats);
@@ -842,7 +842,7 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
 #ifdef DEBUG_DLSCH_CODING
 
     if (r==dlsch->harq_processes[harq_pid]->C-1)
-      write_output("enc_output.m","enc",dlsch->harq_processes[harq_pid]->e,r_offset,1,4);
+      LOG_M("enc_output.m","enc",dlsch->harq_processes[harq_pid]->e,r_offset,1,4);
 
 #endif
   }

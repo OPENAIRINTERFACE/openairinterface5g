@@ -29,8 +29,6 @@
 
 #include <stdint.h>
 
-#include "PHY/defs_common.h"
-
 #define CRC24_A 0
 #define CRC24_B 1
 #define CRC16 2
@@ -338,7 +336,7 @@ void ccodedab_init_inv(void);
 
 /*!\fn void crcTableInit(void)
 \brief This function initializes the different crc tables.*/
-void crcTableInit (void);
+//void crcTableInit (void);
 
 
 
@@ -348,7 +346,7 @@ based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits
 */
-uint32_t crc24a (uint8_t *inPtr, int32_t bitlen);
+uint32_t crc24a (uint8_t * inptr, uint32_t bitlen);
 
 /*!\fn uint32_t crc24b(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 24-bit crc ('b' variant for transport-block segments)
@@ -356,26 +354,26 @@ based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits
 */
-uint32_t crc24b (uint8_t *inPtr, int32_t bitlen);
-
+uint32_t crc24b (uint8_t * inptr, uint32_t bitlen);
+    
 /*!\fn uint32_t crc16(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 16-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc16 (uint8_t *inPtr, int32_t bitlen);
+uint32_t crc16 (uint8_t * inptr, uint32_t bitlen);
 
 /*!\fn uint32_t crc12(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 12-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc12 (uint8_t *inPtr, int32_t bitlen);
+uint32_t crc12 (uint8_t * inptr, uint32_t bitlen);
 
 /*!\fn uint32_t crc8(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 8-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc8  (uint8_t *inPtr, int32_t bitlen);
-
+uint32_t crc8 (uint8_t * inptr, uint32_t bitlen);
+    
 /*!\fn void phy_viterbi_dot11_sse2(int8_t *y, uint8_t *decoded_bytes, uint16_t n,int offset,int traceback)
 \brief This routine performs a SIMD optmized Viterbi decoder for the 802.11 64-state convolutional code. It can be
 run in segments with final trace back after last segment.

@@ -472,24 +472,6 @@ void init_SL_preconfig(UE_RRC_INST *UE, const uint8_t eNB_index )
 
 #endif
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-//-----------------------------------------------------------------------------
-#if 0
-void init_MCCH_UE(module_id_t ue_mod_idP, uint8_t eNB_index)
-{
-  int i;
-  UE_rrc_inst[ue_mod_idP].sizeof_MCCH_MESSAGE[eNB_index] = 0;
-  UE_rrc_inst[ue_mod_idP].MCCH_MESSAGE[eNB_index] = (uint8_t *)malloc16(32);
-  UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index] = (MBSFNAreaConfiguration_r9_t *)malloc16(sizeof(MBSFNAreaConfiguration_r9_t));
-
-  for (i=0; i<8; i++) { // MAX MBSFN Area
-    UE_rrc_inst[ue_mod_idP].Info[eNB_index].MCCHStatus[i] = 0;
-
-  }
-}
-#endif
-#endif
-
 //-----------------------------------------------------------------------------
 void openair_rrc_ue_init_security( const protocol_ctxt_t* const ctxt_pP )
 {
@@ -629,22 +611,6 @@ static const char const nas_attach_req_imsi[] = {
   0x01, 0x27, 0x11,
 };
 #endif /* !(defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)) */
-
-#if 0
-/* NAS Attach request with GUTI */
-static const char const nas_attach_req_guti[] = {
-  0x07, 0x41,
-  /* EPS Mobile identity = GUTI */
-  0x71, 0x0B, 0xF6, 0x12, 0xF2, 0x01, 0x80, 0x00, 0x01, 0xE0, 0x00,
-  0xDA, 0x1F,
-  /* End of EPS Mobile Identity */
-  0x02, 0xE0, 0xE0, 0x00, 0x20, 0x02, 0x03,
-  0xD0, 0x11, 0x27, 0x1A, 0x80, 0x80, 0x21, 0x10, 0x01, 0x00, 0x00,
-  0x10, 0x81, 0x06, 0x00, 0x00, 0x00, 0x00, 0x83, 0x06, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x0A, 0x00, 0x52, 0x12, 0xF2,
-  0x01, 0x27, 0x11,
-};
-#endif
 
 //-----------------------------------------------------------------------------
 void

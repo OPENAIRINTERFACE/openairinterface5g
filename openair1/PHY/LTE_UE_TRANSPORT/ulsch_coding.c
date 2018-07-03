@@ -357,7 +357,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 #ifdef DEBUG_ULSCH_CODING
 
         if (r==0)
-          write_output("enc_output0.m","enc0",&ulsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
+          LOG_M("enc_output0.m","enc0",&ulsch->harq_processes[harq_pid]->d[r][96],(3*8*Kr_bytes)+12,1,4);
 
 #endif
         start_meas(i_stats);
@@ -527,7 +527,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 #ifdef DEBUG_ULSCH_CODING
 
       if (r==ulsch->harq_processes[harq_pid]->C-1)
-        write_output("enc_output.m","enc",ulsch->e,r_offset,1,4);
+        LOG_M("enc_output.m","enc",ulsch->e,r_offset,1,4);
 
 #endif
     }
