@@ -207,7 +207,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
     mod_pbch_e[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1)+1];
 
 #ifdef DEBUG_PBCH
-  printf("i %d  mod_pbch %d %d\n", i, mod_pbch_e[2*i], mod_pbch_e[2*i+1]);
+  printf("i %d idx %d  mod_pbch %d %d\n", i, idx, mod_pbch_e[2*i], mod_pbch_e[2*i+1]);
 #endif
   }
 

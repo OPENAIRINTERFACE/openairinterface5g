@@ -27,12 +27,12 @@
 typedef enum {
   nr_dci_format_0_0=0,
   nr_dci_format_0_1,
-  nr_dci_format_1_0,
-  nr_dci_format_1_1,
   nr_dci_format_2_0,
   nr_dci_format_2_1,
   nr_dci_format_2_2,
-  nr_dci_format_2_3
+  nr_dci_format_2_3,
+  nr_dci_format_1_0,
+  nr_dci_format_1_1,
 } nr_dci_format_e;
 
 typedef enum {
@@ -43,7 +43,6 @@ typedef enum {
   nr_rnti_type_CS_RNTI,
   nr_rnti_type_P_RNTI
 } nr_rnti_type_e;
-
 
 
 typedef struct {
@@ -65,10 +64,14 @@ typedef struct {
 
 
 uint8_t nr_get_dci_size(nr_dci_format_e format,
-                     nr_rnti_type_e rnti,
-                     NR_BWP_PARMS bwp,
-                     nfapi_nr_config_request_t* config);
+                        nr_rnti_type_e rnti,
+                        NR_BWP_PARMS bwp,
+                        nfapi_nr_config_request_t* config);
 
-uint8_t nr_generate_dci_top();
+uint8_t nr_generate_dci_top(NR_DCI_ALLOC_t dci_alloc,
+                            int32_t** txdataF,
+                            int16_t amp,
+                            NR_DL_FRAME_PARMS* frame_parms,
+                            nfapi_config_request_t* config)
 
 #endif //__PHY_NR_TRANSPORT_DCI__H

@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -29,26 +28,26 @@
  * @ingroup _mac
 
  */
-
-#include "mac_proto.h"
+#include "defs.h"
+#include "proto.h"
 
 int
 nr_rrc_mac_config_req_ue(
     module_id_t                     module_id,
-	int                             CC_idP,
-	uint8_t                         gNB_index,
+    int                             CC_idP,
+    uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
     NR_MAC_CellGroupConfig_t        *mac_cell_group_configP,
     NR_PhysicalCellGroupConfig_t    *phy_cell_group_configP,
     NR_SpCellConfig_t               *spcell_configP ){
 
-    NR_UE_MAC_INST *mac = get_mac_inst(module_id);
+    NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-    ServingCellConfig_t *serving_cell_config = spcell_config->spCellConfigDedicated;
+//    NR_ServingCellConfig_t *serving_cell_config = spcell_configP->spCellConfigDedicated;
 //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
 
-    if(mib != NULL){
-        
+    if(mibP != NULL){
+        ;
     }
 
     if(mac_cell_group_configP != NULL){
@@ -56,16 +55,16 @@ nr_rrc_mac_config_req_ue(
             mac->drx_Config = mac_cell_group_configP->drx_Config;
         }
 
-        if(mac_cell_group_configP->SchedulingRequestConfig != NULL ){
-            mac->SchedulingRequestConfig = mac_cell_group_configP->SchedulingRequestConfig;
+        if(mac_cell_group_configP->schedulingRequestConfig != NULL ){
+            mac->schedulingRequestConfig = mac_cell_group_configP->schedulingRequestConfig;
         }
 
-        if(mac_cell_group_configP->BSR_Config != NULL ){
-            mac->BSR_Config = mac_cell_group_configP->BSR_Config;
+        if(mac_cell_group_configP->bsr_Config != NULL ){
+            mac->bsr_Config = mac_cell_group_configP->bsr_Config;
         }
 
-        if(mac_cell_group_configP->TAG_Config != NULL ){
-            mac->TAG_Config = mac_cell_group_configP->TAG_Config;
+        if(mac_cell_group_configP->tag_Config != NULL ){
+            mac->tag_Config = mac_cell_group_configP->tag_Config;
         }
 
         if(mac_cell_group_configP->phr_Config != NULL ){
@@ -82,7 +81,7 @@ nr_rrc_mac_config_req_ue(
     }
 
 //  TODO check
-/*
+#if 0
     if(serving_cell_config_configP != NULL ){
         //config_phy(NULL, spcell_config);
         mac->servCellIndex = spcell_config->servCellIndex;
@@ -122,8 +121,8 @@ nr_rrc_mac_config_req_ue(
 
         spcell_config->tag_Id = spcell_config.tag_Id;
     }
-*/
+#endif
     //scell config not yet
 
-    return (0);
+    return 0;
 }

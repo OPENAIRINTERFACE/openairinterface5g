@@ -34,8 +34,8 @@
 
 /*@}*/
 
-#ifndef __LAYER2_MAC_DEFS_H__
-#define __LAYER2_MAC_DEFS_H__
+#ifndef __LAYER2_NR_MAC_DEFS_H__
+#define __LAYER2_NR_MAC_DEFS_H__
 
 
 
@@ -43,66 +43,37 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "PHY/defs.h"
-#include "PHY/LTE_TRANSPORT/defs.h"
-#include "COMMON/platform_constants.h"
-#include "BCCH-BCH-Message.h"
-#include "RadioResourceConfigCommon.h"
-#include "RadioResourceConfigDedicated.h"
-#include "MeasGapConfig.h"
-#include "SchedulingInfoList.h"
-#include "TDD-Config.h"
-#include "RACH-ConfigCommon.h"
-#include "MeasObjectToAddModList.h"
-#include "MobilityControlInfo.h"
-#if defined(Rel10) || defined(Rel14)
-#include "MBSFN-AreaInfoList-r9.h"
-#include "MBSFN-SubframeConfigList.h"
-#include "PMCH-InfoList-r9.h"
-#include "SCellToAddMod-r10.h"
-#endif
-#ifdef Rel14
-#include "SystemInformationBlockType1-v1310-IEs.h"
-#endif
+#include "platform_types.h"
 
-#include "nfapi_interface.h"
-#include "PHY_INTERFACE/IF_Module.h"
+#include "NR_DRX-Config.h"
+#include "NR_SchedulingRequestConfig.h"
+#include "NR_BSR-Config.h"
+#include "NR_TAG-Config.h"
+#include "NR_PHR-Config.h"
+#include "NR_RNTI-Value.h"
 
+#include "NR_MIB.h"
+#include "NR_MAC-CellGroupConfig.h"
+#include "NR_PhysicalCellGroupConfig.h"
+#include "NR_SpCellConfig.h"
+
+#include "NR_ServingCellConfig.h"
+
+#define NB_NR_UE_MAC_INST 1
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
     
     ////  MAC config
-    drx_Config_t *drx_config;
-    SchedulingRequestConfig_t *SchedulingRequestConfig;
-    BSR_Config_t *BSR_Config;
-    TAG_Config_t *TAG_Config;
-    phr_Config_t *phr_Config;
-    cs_RNTI_t *cs_RNTI;
-    ServCellIndex_t *servCellIndex;
+    NR_DRX_Config_t    *drx_Config;    /* OPTIONAL */
+    NR_SchedulingRequestConfig_t   *schedulingRequestConfig;   /* OPTIONAL */
+    NR_BSR_Config_t    *bsr_Config;    /* OPTIONAL */
+    NR_TAG_Config_t    *tag_Config;    /* OPTIONAL */
+    NR_PHR_Config_t    *phr_Config;    /* OPTIONAL */
+    
+    NR_RNTI_Value_t *cs_RNTI;   /* OPTIONAL */
 
-    ////  Serving cell config
-    TDD_UL_DL_ConfigDedicated_t *tdd_UL_DL_ConfigurationDedicated;
-    //  init DL BWP
-    BWP_DownlinkDedicated_t *init_DL_BWP;
-    //  DL BWP list, not default one
-    BWP_Downlink_t **BWP_Downlink_list;
-    int BWP_Downlink_count;
-    //BWP_Id_t *firstActiveDownlinkBWP_Id;
-    long *bwp_InactivityTimer;
-    BWP_Id_t *defaultDownlinkBWP_Id;
-    //struct UplinkConfig *uplinkConfig;
-    //struct UplinkConfig *supplementaryUplink;
-    PDSCH_ServingCellConfig_t *pdsch_ServingCellConfig;
-    CSI_MeasConfig_t *csi_MeasConfig;
-    //SRS_CarrierSwitching_t *carrierSwitching;
-    //long *sCellDeactivationTimer /* OPTIONAL */;
-    //struct CrossCarrierSchedulingConfig *crossCarrierSchedulingConfig   /* OPTIONAL */;
-    TAG_Id_t tag_Id;
-    //long *ue_BeamLockFunction    /* OPTIONAL */;
-    //long *pathlossReferenceLinking   /* OPTIONAL */;    
+} NR_UE_MAC_INST_t;
 
-} UE_MAC_INST;
-#include "proto.h"
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

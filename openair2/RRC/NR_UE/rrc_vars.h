@@ -32,10 +32,7 @@
 #ifndef __OPENAIR_NR_RRC_VARS_H__
 #define __OPENAIR_NR_RRC_VARS_H__
 
-#include "defs.h"
-#include "LAYER2/RLC/rlc.h"
-#include "COMMON/mac_rrc_primitives.h"
-#include "LAYER2/MAC/defs.h"
+#include "rrc_defs.h"
 
 NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 

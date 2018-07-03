@@ -154,6 +154,60 @@ typedef struct {
 } nfapi_nr_pucch_config_t;
 
 typedef struct {
+  nfapi_uint16_tlv_t  TimeDomainResourceAllocation_k0;                                ///// L1 parameter 'K0'
+  nfapi_uint16_tlv_t  TimeDomainResourceAllocation_mappingType;                       ///// L1 parameter 'Mapping-type'
+} nfapi_nr_pdsch_config_t;
+
+typedef struct{
+  nfapi_uint16_tlv_t  controlResourceSetId;                                           ///// L1 parameter 'CORESET-ID'
+  nfapi_uint16_tlv_t  frequencyDomainResources                                        ///// L1 parameter 'CORESET-freq-dom'
+  nfapi_uint16_tlv_t  duration;                                                       ///// L1 parameter 'CORESET-time-duration'
+  nfapi_uint16_tlv_t  cce_REG_MappingType;                                            ///// L1 parameter 'CORESET-CCE-REG-mapping-type'
+  nfapi_uint16_tlv_t  reg_BundleSize;                                                 ///// L1 parameter 'CORESET-REG-bundle-size'
+  nfapi_uint16_tlv_t  interleaverSize;                                                ///// L1 parameter 'CORESET-interleaver-size'
+  nfapi_uint16_tlv_t  shiftIndex;                                                     ///// L1 parameter 'CORESET-shift-index'
+  nfapi_uint16_tlv_t  precoderGranularity;                                            ///// L1 parameter 'CORESET-precoder-granuality'
+  nfapi_uint16_tlv_t  TCI_StateId;                                                    ///// L1 parameter 'TCI-StatesPDCCH'
+  nfapi_uint16_tlv_t  tci_PresentInDCI;                                               ///// L1 parameter 'TCI-PresentInDCI'
+  nfapi_uint16_tlv_t  pdcch_DMRS_ScramblingID;                                        ///// L1 parameter 'PDCCH-DMRS-Scrambling-ID'
+} nfapi_nr_pdcch_commonControlResourcesSets_t;
+
+typedef struct{
+  nfapi_uint16_tlv_t  SearchSpaceId;
+  nfapi_uint16_tlv_t  commonSearchSpaces_controlResourceSetId;
+  nfapi_uint16_tlv_t  SearchSpace_monitoringSlotPeriodicityAndOffset;                 ///// L1 parameters 'Montoring-periodicity-PDCCH-slot'
+  nfapi_uint16_tlv_t  monitoringSymbolsWithinSlot                                     ///// L1 parameter 'Montoring-symbols-PDCCH-within-slot'
+  nfapi_uint16_tlv_t  SearchSpace_nrofCandidates_aggregationLevel1;                   ///// L1 parameter 'Aggregation-level-1'
+  nfapi_uint16_tlv_t  SearchSpace_nrofCandidates_aggregationLevel2;                   ///// L1 parameter 'Aggregation-level-2'
+  nfapi_uint16_tlv_t  SearchSpace_nrofCandidates_aggregationLevel4;                   ///// L1 parameter 'Aggregation-level-4'
+  nfapi_uint16_tlv_t  SearchSpace_nrofCandidates_aggregationLevel8;                   ///// L1 parameter 'Aggregation-level-8'
+  nfapi_uint16_tlv_t  SearchSpace_nrofCandidates_aggregationLevel16;                  ///// L1 parameter 'Aggregation-level-16'
+  nfapi_uint16_tlv_t  Common_dci_Format2_0_nrofCandidates_SFI_And_aggregationLevel;   ///// L1 parameters 'SFI-Num-PDCCH-cand' and 'SFI-Aggregation-Level'
+  nfapi_uint16_tlv_t  Common_dci_Format2_3_monitoringPeriodicity;                     ///// L1 parameter 'SRS-monitoring-periodicity'
+  nfapi_uint16_tlv_t  Common_dci_Format2_3_nrofPDCCH_Candidates;                      ///// L1 parameter 'SRS-Num-PDCCH-cand'
+  nfapi_uint16_tlv_t  ue_Specific__dci_Formats;
+} nfapi_nr_pdcch_commonSearchSpaces_t;
+
+typedef struct {
+  nfapi_nr_pdcch_commonControlResourcesSets_t commonControlResourcesSets;
+  nfapi_nr_pfcch_commonSearchSpaces_t         commonSearchSpaces; 
+  nfapi_uint16_tlv_t                          searchSpaceSIB1;                        ///// L1 parameter 'rmsi-SearchSpace'
+  nfapi_uint16_tlv_t                          searchSpaceOtherSystemInformation;      ///// L1 parameter 'osi-SearchSpace'
+  nfapi_uint16_tlv_t                          pagingSearchSpace;                      ///// L1 parameter 'paging-SearchSpace'
+  nfapi_uint16_tlv_t                          ra_SearchSpace;                         ///// L1 parameter 'ra-SearchSpace'
+  nfapi_uint16_tlv_t                          rach_ra_ControlResourceSet;             ///// L1 parameter 'rach-coreset-configuration'
+
+} nfapi_nr_pdcch_common_config_t;
+
+typedef struct {
+  nfapi_uint16_tlv_t  ssb_PositionsInBurst_PR;                                        ///// L1 parameter 'SSB-Transmitted
+  nfapi_uint16_tlv_t  ssb_periodicityServingCell;
+  nfapi_uint16_tlv_t  dmrs_TypeA_Position;                                            ///// Position of (first) DL DM-RS
+  nfapi_uint16_tlv_t  NIA_SubcarrierSpacing;                                          ///// Used only for non-initial access (e.g. SCells, PCell of SCG)   
+  nfapi_uint16_tlv_t  ss_PBCH_BlockPower;
+} nfapi_nr_servingcellconfigcommon_t;
+
+typedef struct {
 //NR TDD-UL-DL-ConfigCommon                ///// L1 parameter 'UL-DL-configuration-common'
   nfapi_uint16_tlv_t  referenceSubcarrierSpacing;                                     ///// L1 parameter 'reference-SCS'
   nfapi_uint16_tlv_t  dl_UL_TransmissionPeriodicity;                                  ///// L1 parameter 'DL-UL-transmission-periodicity'
@@ -330,3 +384,4 @@ typedef struct {
 } nfapi_nr_dl_config_request_t;
 
 #endif
+

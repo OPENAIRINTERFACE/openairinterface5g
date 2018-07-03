@@ -28,8 +28,8 @@
  * @ingroup _mac
 
  */
-#include "mac_proto.h"
-#include "RRC/NR_UE/proto.h"
+#include "proto.h"
+#include "RRC/NR_UE/rrc_proto.h"
 
 void
 nr_ue_decode_mib(

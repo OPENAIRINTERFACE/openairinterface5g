@@ -20,9 +20,9 @@
  */
 
 /*
-  \author R. Knopp, F. Kaltenberger
+  \author Guy De Souza
   \company EURECOM
-  \email knopp@eurecom.fr
+  \email desouza@eurecom.fr
 */
 
 #ifndef __openair_SCHED_NR_DEFS_H__
@@ -32,23 +32,12 @@
 #include "PHY_INTERFACE/phy_interface.h"
 #include "SCHED/sched_eNB.h"
 
-int nr_generate_pss(  int16_t *d_pss,
-                      int32_t **txdataF,
-                      int16_t amp,
-                      uint8_t ssb_start_symbol,
-                      nfapi_config_request_t* config,
-                      NR_DL_FRAME_PARMS *frame_parms);
-int nr_generate_sss(  int16_t *d_sss,
-                      int32_t **txdataF,
-                      int16_t amp,
-                      uint8_t ssb_start_symbol,
-                      nfapi_config_request_t* config,
-                      NR_DL_FRAME_PARMS *frame_parms);
-int nr_generate_pbch_dmrs(uint32_t gold_sequence,
-                          int32_t **txdataF,
-                          int16_t amp,
-                          nfapi_config_request_t* config,
-                          NR_DL_FRAME_PARMS *frame_parms);
+lte_subframe_t nr_subframe_select (nfapi_config_request_t *cfg, unsigned char subframe);
 void nr_set_ssb_first_subcarrier(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
+void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, gNB_rxtx_proc_t *proc, int do_meas);
+void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx);
+void nr_feptx_ofdm(RU_t *ru);
+void nr_feptx_ofdm_2thread(RU_t *ru);
+void nr_feptx0(RU_t *ru,int slot);
 
 #endif

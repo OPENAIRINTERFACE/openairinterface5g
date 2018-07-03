@@ -19,18 +19,28 @@
  *      contact@openairinterface.org
  */
 
-/*! \file vars.h
-* \brief mac vars
-* \author  Navid Nikaein and Raymond Knopp
-* \date 2010 - 2014
-* \version 1.0
-* \email navid.nikaein@eurecom.fr
-* @ingroup _mac
-
+/*! \file PHY/NR_TRANSPORT/nr_mcs.c
+* \brief Some support routines for NR MCS computations
+* \author
+* \date 2018
+* \version 0.1
+* \company Eurecom
+* \email:
+* \note
+* \warning
 */
 
-#include "defs.h"
+#ifndef __NR_TRANSPORT_COMMON_PROTO__H__
+#define __NR_TRANSPORT_COMMON_PROTO__H__
 
-NR_UE_MAC_INST_t UE_mac_inst;	//[NB_MODULE_MAX];
+// Functions below implement minor procedures from 38-214
 
+/** \brief Computes Q based on I_MCS PDSCH and when 'MCS-Table-PDSCH' is set to "256QAM". Implements Table 5.1.3.1-2 from 38.214.
+    @param I_MCS */
+uint8_t get_nr_Qm(uint8_t I_MCS);
 
+/** \brief Computes Q based on I_MCS PUSCH. Implements Table 6.1.4.1-1 from 38.214.
+    @param I_MCS */
+uint8_t get_nr_Qm_ul(uint8_t I_MCS);
+
+#endif

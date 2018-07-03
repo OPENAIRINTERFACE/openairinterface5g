@@ -35,15 +35,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "platform_types.h"
+
+#include "LAYER2/NR_MAC_UE/mac.h"
 #include "rrc_list.h"
-/*#include "NR_MeasConfig.h"
+#include "NR_asn_constant.h"
+#include "NR_MeasConfig.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_RadioBearerConfig.h"
-#include "NR_RLC_Bearer_Config_t"
+#include "NR_RLC-Bearer-Config.h"
 #include "asn1_constants.h"
-#include "NR_SchedulingRequestToAddMod.h"*/
+#include "NR_SchedulingRequestToAddMod.h"
+#include "NR_MIB.h"
+#include "NR_BCCH-BCH-Message.h"
+#include "NR_DL-DCCH-Message.h"
 
 #define NB_NR_UE_INST 1
+
+typedef uint32_t channel_t;
 
 typedef struct NR_UE_RRC_INST_s {
 
@@ -102,8 +111,6 @@ typedef struct NR_UE_RRC_INST_s {
     RRC_LIST_TYPE(NR_CSI_ReportConfig_t, NR_maxNrofCSI_ReportConfigurations) CSI_ReportConfig_list;
   
 } NR_UE_RRC_INST_t;
-
-#include "proto.h"
 
 #endif
 /** @} */

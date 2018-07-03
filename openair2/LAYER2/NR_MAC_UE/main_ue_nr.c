@@ -31,17 +31,15 @@
 
 #include "defs.h"
 #include "proto.h"
-#include "extern.h"
-#include "assertions.h"
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
 int
 nr_l2_init_ue(void)
 {
-    LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
+    //LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
 
-    LOG_I(MAC, "[MAIN] init UE MAC functions \n");
+    //LOG_I(MAC, "[MAIN] init UE MAC functions \n");
     
     //init mac here
     nr_ue_mac_inst = (NR_UE_MAC_INST_t *)malloc(sizeof(NR_UE_MAC_INST_t)*NB_NR_UE_MAC_INST);
@@ -50,6 +48,6 @@ nr_l2_init_ue(void)
     return (1);
 }
 
-NR_UE_MAC_INST_t *get_mac_inst(Module_id_t Mod_idP){
+NR_UE_MAC_INST_t *get_mac_inst(module_id_t Mod_idP){
     return &nr_ue_mac_inst[(int)Mod_idP];
 }

@@ -34,30 +34,34 @@
 #include "rrc_list.h"
 #include "rrc_defs.h"
 #include "rrc_proto.h"
+#include "rrc_vars.h"
+#include "LAYER2/NR_MAC_UE/proto.h"
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
     const uint8_t *buffer,
     const uint32_t size
 ){
-    NR_CellGroupConfig_t *cellGroupConfig = (NR_CellGroupConfig_t *)0;
+    NR_CellGroupConfig_t *cellGroupConfig = NULL;
 
     uper_decode(NULL,
-                &asn_DEF_CellGroupConfig,   //might be added prefix later
+                &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
                 (void **)&cellGroupConfig,
                 (uint8_t *)buffer,
                 size, 0, 0); 
 
-    if(NR_UE_rrc_inst->cell_group_config == (NR_CellGroupConfig_t *)0){
+    if(NR_UE_rrc_inst->cell_group_config == NULL){
         NR_UE_rrc_inst->cell_group_config = cellGroupConfig;
         nr_rrc_ue_process_scg_config(cellGroupConfig);
     }else{
         nr_rrc_ue_process_scg_config(cellGroupConfig);
-        //asn_DEF_CellGroupConfig.free_struct(asn_DEF_CellGroupConfig, cellGroupConfig, 0);
-        SEQUENCE_free(&asn_DEF_CellGroupConfig, (void *)cellGroupConfig, 0);
+        //asn_DEF_NR_CellGroupConfig.free_struct(asn_DEF_NR_CellGroupConfig, cellGroupConfig, 0);
+        SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 0);
     }
 
-    nr_rrc_mac_config_req_ue(); 
+    //nr_rrc_mac_config_req_ue( module_id_t module_id, int CC_id, uint8_t gNB_index, NR_MIB_t *mibP, NR_MAC_CellGroupConfig_t *mac_cell_group_configP, NR_PhysicalCellGroupConfig_t *phy_cell_group_configP, NR_SpCellConfig_t *spcell_configP );
+
+    return 0;
 }
 
 
@@ -65,79 +69,80 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
 // RRCReconfiguration
 int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfiguration){
 
-    switch(rrcReconfiguration.criticalExtensions.present){
-        case RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration:
-            if(rrcReconfiguration.criticalExtensions.rrcReconfiguration->radioBearerConfig != (NR_RadioBearerConfig_t *)0){
-                if(NR_UE_rrc_inst->radio_bearer_config == (NR_RadioBearerConfig_t *)0){
-                    NR_UE_rrc_inst->radio_bearer_config = rrcReconfiguration->radioBearerConfig;                
+    switch(rrcReconfiguration->criticalExtensions.present){
+        case NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration:
+            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.radioBearerConfig != NULL){
+                if(NR_UE_rrc_inst->radio_bearer_config == NULL){
+                    NR_UE_rrc_inst->radio_bearer_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.radioBearerConfig;                
                 }else{
-                    nr_rrc_ue_process_radio_bearer_config(rrcReconfiguration->radioBearerConfig);
+                    nr_rrc_ue_process_radio_bearer_config(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.radioBearerConfig);
                 }
             }
 
-            if(rrcReconfiguration.criticalExtensions.rrcReconfiguration->secondaryCellGroup != (OCTET_STRING_t *)0){
-                NR_CellGroupConfig_t *cellGroupConfig = (NR_CellGroupConfig_t *)0;
+            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.secondaryCellGroup != NULL){
+                NR_CellGroupConfig_t *cellGroupConfig = NULL;
                 uper_decode(NULL,
-                            &asn_DEF_CellGroupConfig,   //might be added prefix later
+                            &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
                             (void **)&cellGroupConfig,
-                            (uint8_t *)rrcReconfiguration->secondaryCellGroup->buffer,
-                            rrcReconfiguration->secondaryCellGroup.size, 0, 0); 
+                            (uint8_t *)rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.secondaryCellGroup->buf,
+                            rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.secondaryCellGroup->size, 0, 0); 
 
-                if(NR_UE_rrc_inst->cell_group_config == (NR_CellGroupConfig_t *)0){
+                if(NR_UE_rrc_inst->cell_group_config == NULL){
                     //  first time receive the configuration, just use the memory allocated from uper_decoder. TODO this is not good implementation, need to maintain RRC_INST own structure every time.
                     NR_UE_rrc_inst->cell_group_config = cellGroupConfig;
                     nr_rrc_ue_process_scg_config(cellGroupConfig);
                 }else{
                     //  after first time, update it and free the memory after.
                     nr_rrc_ue_process_scg_config(cellGroupConfig);
-                    //asn_DEF_CellGroupConfig.free_struct(asn_DEF_CellGroupConfig, cellGroupConfig, 0);
-                    SEQUENCE_free(&asn_DEF_CellGroupConfig, (void *)cellGroupConfig, 0);
+                    //asn_DEF_NR_CellGroupConfig.free_struct(asn_DEF_NR_CellGroupConfig, cellGroupConfig, 0);
+                    SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 0);
                 }
                 
             }
 
-            if(rrcReconfiguration.criticalExtensions.rrcReconfiguration->measConfig != (MeasConfig *)0){
-                if(NR_UE_rrc_inst->meas_config == (NR_MeasConfig_t *)0){
-                    NR_UE_rrc_inst->meas_config = rrcReconfiguration->measConfig;
+            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.measConfig != NULL){
+                if(NR_UE_rrc_inst->meas_config == NULL){
+                    NR_UE_rrc_inst->meas_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.measConfig;
                 }else{
                     //  if some element need to be updated
-                    nr_rrc_ue_process_meas_config(rrcReconfiguration->measConfig);
+                    nr_rrc_ue_process_meas_config(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.measConfig);
                 }
                
             }
 
-            if(rrcReconfiguration.criticalExtensions.rrcReconfiguration->lateNonCriticalExtension != (OCTET_STRING_t *)0){
+            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.lateNonCriticalExtension != NULL){
                 //  unuse now
             }
 
-            if(rrcReconfiguration.criticalExtensions.rrcReconfiguration->nonCriticalExtension != (RRCReconfiguration_IEs__nonCriticalExtension *)0){
+            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.nonCriticalExtension != NULL){
                 // unuse now
             }
             break;
-        case RRCReconfiguration__criticalExtensions_PR_NOTHING:
-        case RRCReconfiguration__criticalExtensions_PR_criticalExtensionsFuture:
+        case NR_RRCReconfiguration__criticalExtensions_PR_NOTHING:
+        case NR_RRCReconfiguration__criticalExtensions_PR_criticalExtensionsFuture:
         default:
             break;
     }
-    nr_rrc_mac_config_req_ue(); 
+    //nr_rrc_mac_config_req_ue(); 
+
+    return 0;
 }
 
 int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config){
 
+    return 0;
 }
 
 int8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config){
     int i;
-    void *listobj;
     if(NR_UE_rrc_inst->cell_group_config==NULL){
         //  initial list
       
         if(cell_group_config->spCellConfig != NULL){
             if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
                 if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList != NULL){
-                    listobj = cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
-                    for(i=0; i<((struct NR_ServingCellConfig__downlinkBWP_ToAddModList)listobj)->list.count; ++i){
-                        RRC_LIST_MOD_ADD(NR_UE_rrc_inst.BWP_Downlink_list, ((struct NR_ServingCellConfig__downlinkBWP_ToAddModList)listobj)->list.array[i]);
+                    for(i=0; i<cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count; ++i){
+                        RRC_LIST_MOD_ADD(NR_UE_rrc_inst->BWP_Downlink_list, cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[i], bwp_Id);
                     }
                 }
             }
@@ -150,26 +155,31 @@ int8_t nr_rrc_ue_process_scg_config(NR_CellGroupConfig_t *cell_group_config){
             if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
                 //  process element of list to be add by RRC message
                 if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList != NULL){
-                    listobj = cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
-                    for(i=0; i<((struct NR_ServingCellConfig__downlinkBWP_ToAddModList)listobj)->list.count; ++i){
-                        RRC_LIST_MOD_ADD(NR_UE_rrc_inst.BWP_Downlink_list, ((struct NR_ServingCellConfig__downlinkBWP_ToAddModList)listobj)->list.array[i]);
+                    for(i=0; i<cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count; ++i){
+                        RRC_LIST_MOD_ADD(NR_UE_rrc_inst->BWP_Downlink_list, cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[i], bwp_Id);
                     }
                 }
                 
 
                 //  process element of list to be release by RRC message
-                if(cell_group_config->spCellConfig->spCellconfigDedicated->downlinkBWP_ToReleaseList != NULL){
-                    listobj = cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToReleaseList;
-                    for(i=0; i<((struct NR_ServingCellconfig__downlinkBWP_ToReleaseList)listobj)->list.count; ++i){
-                        RRC_LIST_MOD_REL(NR_UE_rrc_inst.BWP_Downlink_list, ((struct NR_ServingCellConfig__downlinkBWP_ToReleaseList)listlbj)->list.array[i]);
+                if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToReleaseList != NULL){
+                    for(i=0; i<cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToReleaseList->list.count; ++i){
+                        NR_BWP_Downlink_t *freeP = NULL;
+                        RRC_LIST_MOD_REL(NR_UE_rrc_inst->BWP_Downlink_list, bwp_Id, *cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToReleaseList->list.array[i], freeP);
+                        if(freeP != NULL){
+                            SEQUENCE_free(&asn_DEF_NR_BWP_Downlink, (void *)freeP, 0);
+                        }
                     }
                 }
             }
         }
     } 
+
+    return 0;
 }
 int8_t nr_rrc_ue_process_radio_bearer_config(NR_RadioBearerConfig_t *radio_bearer_config){
 
+    return 0;
 }
 
 
@@ -192,13 +202,41 @@ int8_t openair_rrc_top_init_ue_nr(void){
         RRC_LIST_INIT(NR_UE_rrc_inst->ControlResourceSet_list[2], 3);   //  for dl-bwp id=1
         RRC_LIST_INIT(NR_UE_rrc_inst->ControlResourceSet_list[3], 3);   //  for dl-bwp id=2
         RRC_LIST_INIT(NR_UE_rrc_inst->ControlResourceSet_list[4], 3);   //  for dl-bwp id=3
-        RRC_LIST_INIT(NR_UE_rrc_inst->SearchSpace_list, 10);
-        RRC_LIST_INIT(NR_UE_rrc_inst->SlotFormatCombinationsPerCell_list, NR_maxNrofAggregatedCellsPerCellGroup);
-        RRC_LIST_INIT(NR_UE_rrc_inst->TCI_State_list, NR_maxNrofTCI_States);
-        RRC_LIST_INIT(NR_UE_rrc_inst->RateMatchPattern_list, NR_maxNrofRateMatchPatterns);
-        RRC_LIST_INIT(NR_UE_rrc_inst->ZP_CSI_RS_Resource_list, NR_maxNrofZP_CSI_RS_Resources);
-        RRC_LIST_INIT(NR_UE_rrc_inst->Aperidic_ZP_CSI_RS_ResourceSet_list, NR_maxNrofZP_CSI_RS_Sets);
-        RRC_LIST_INIT(NR_UE_rrc_inst->SP_ZP_CSI_RS_ResourceSet_list, NR_maxNrofZP_CSI_RS_Sets);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SearchSpace_list[0], 10);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SearchSpace_list[1], 10);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SearchSpace_list[2], 10);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SearchSpace_list[3], 10);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SearchSpace_list[4], 10);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SlotFormatCombinationsPerCell_list[0], NR_maxNrofAggregatedCellsPerCellGroup);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SlotFormatCombinationsPerCell_list[1], NR_maxNrofAggregatedCellsPerCellGroup);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SlotFormatCombinationsPerCell_list[2], NR_maxNrofAggregatedCellsPerCellGroup);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SlotFormatCombinationsPerCell_list[3], NR_maxNrofAggregatedCellsPerCellGroup);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SlotFormatCombinationsPerCell_list[4], NR_maxNrofAggregatedCellsPerCellGroup);
+        RRC_LIST_INIT(NR_UE_rrc_inst->TCI_State_list[0], NR_maxNrofTCI_States);
+        RRC_LIST_INIT(NR_UE_rrc_inst->TCI_State_list[1], NR_maxNrofTCI_States);
+        RRC_LIST_INIT(NR_UE_rrc_inst->TCI_State_list[2], NR_maxNrofTCI_States);
+        RRC_LIST_INIT(NR_UE_rrc_inst->TCI_State_list[3], NR_maxNrofTCI_States);
+        RRC_LIST_INIT(NR_UE_rrc_inst->TCI_State_list[4], NR_maxNrofTCI_States);
+        RRC_LIST_INIT(NR_UE_rrc_inst->RateMatchPattern_list[0], NR_maxNrofRateMatchPatterns);
+        RRC_LIST_INIT(NR_UE_rrc_inst->RateMatchPattern_list[1], NR_maxNrofRateMatchPatterns);
+        RRC_LIST_INIT(NR_UE_rrc_inst->RateMatchPattern_list[2], NR_maxNrofRateMatchPatterns);
+        RRC_LIST_INIT(NR_UE_rrc_inst->RateMatchPattern_list[3], NR_maxNrofRateMatchPatterns);
+        RRC_LIST_INIT(NR_UE_rrc_inst->RateMatchPattern_list[4], NR_maxNrofRateMatchPatterns);
+        RRC_LIST_INIT(NR_UE_rrc_inst->ZP_CSI_RS_Resource_list[0], NR_maxNrofZP_CSI_RS_Resources);
+        RRC_LIST_INIT(NR_UE_rrc_inst->ZP_CSI_RS_Resource_list[1], NR_maxNrofZP_CSI_RS_Resources);
+        RRC_LIST_INIT(NR_UE_rrc_inst->ZP_CSI_RS_Resource_list[2], NR_maxNrofZP_CSI_RS_Resources);
+        RRC_LIST_INIT(NR_UE_rrc_inst->ZP_CSI_RS_Resource_list[3], NR_maxNrofZP_CSI_RS_Resources);
+        RRC_LIST_INIT(NR_UE_rrc_inst->ZP_CSI_RS_Resource_list[4], NR_maxNrofZP_CSI_RS_Resources);
+        RRC_LIST_INIT(NR_UE_rrc_inst->Aperidic_ZP_CSI_RS_ResourceSet_list[0], NR_maxNrofZP_CSI_RS_Sets);
+        RRC_LIST_INIT(NR_UE_rrc_inst->Aperidic_ZP_CSI_RS_ResourceSet_list[1], NR_maxNrofZP_CSI_RS_Sets);
+        RRC_LIST_INIT(NR_UE_rrc_inst->Aperidic_ZP_CSI_RS_ResourceSet_list[2], NR_maxNrofZP_CSI_RS_Sets);
+        RRC_LIST_INIT(NR_UE_rrc_inst->Aperidic_ZP_CSI_RS_ResourceSet_list[3], NR_maxNrofZP_CSI_RS_Sets);
+        RRC_LIST_INIT(NR_UE_rrc_inst->Aperidic_ZP_CSI_RS_ResourceSet_list[4], NR_maxNrofZP_CSI_RS_Sets);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SP_ZP_CSI_RS_ResourceSet_list[0], NR_maxNrofZP_CSI_RS_Sets);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SP_ZP_CSI_RS_ResourceSet_list[1], NR_maxNrofZP_CSI_RS_Sets);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SP_ZP_CSI_RS_ResourceSet_list[2], NR_maxNrofZP_CSI_RS_Sets);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SP_ZP_CSI_RS_ResourceSet_list[3], NR_maxNrofZP_CSI_RS_Sets);
+        RRC_LIST_INIT(NR_UE_rrc_inst->SP_ZP_CSI_RS_ResourceSet_list[4], NR_maxNrofZP_CSI_RS_Sets);
         RRC_LIST_INIT(NR_UE_rrc_inst->NZP_CSI_RS_Resource_list, NR_maxNrofNZP_CSI_RS_Resources);
         RRC_LIST_INIT(NR_UE_rrc_inst->NZP_CSI_RS_ResourceSet_list, NR_maxNrofNZP_CSI_RS_ResourceSets);
         RRC_LIST_INIT(NR_UE_rrc_inst->CSI_IM_Resource_list, NR_maxNrofCSI_IM_Resources);
@@ -207,29 +245,36 @@ int8_t openair_rrc_top_init_ue_nr(void){
         RRC_LIST_INIT(NR_UE_rrc_inst->CSI_ResourceConfig_list, NR_maxNrofCSI_ResourceConfigurations);
         RRC_LIST_INIT(NR_UE_rrc_inst->CSI_ReportConfig_list, NR_maxNrofCSI_ReportConfigurations);
     }else{
-        NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)0;
+        NR_UE_rrc_inst = NULL;
     }
+
+    return 0;
 }
 
 
 int8_t nr_ue_process_rlc_bearer_list(NR_CellGroupConfig_t *cell_group_config){
 
+    return 0;
 };
 
 int8_t nr_ue_process_secondary_cell_list(NR_CellGroupConfig_t *cell_group_config){
 
+    return 0;
 };
 
 int8_t nr_ue_process_mac_cell_group_config(NR_MAC_CellGroupConfig_t *mac_cell_group_config){
 
+    return 0;
 };
 
 int8_t nr_ue_process_physical_cell_group_config(NR_PhysicalCellGroupConfig_t *phy_cell_group_config){
 
+    return 0;
 };
 
 int8_t nr_ue_process_spcell_config(NR_SpCellConfig_t *spcell_config){
 
+    return 0;
 };
 
 /*brief decode BCCH-BCH (MIB) message*/
@@ -258,7 +303,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
 
         printf("\n");
         // free the memory
-        SEQUENCE_free( &asn_DEF_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );
+        SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
         return -1;
     }
 
@@ -280,8 +325,8 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
     const uint8_t    *bufferP,
     const uint32_t    buffer_len){
     //  uper_decode by nr R15 rrc_connection_reconfiguration
-    
-    NR_DL_DCCH_Message_t *nr_dl_dcch_msg = (NR_DL_DCCH_Message_t *)0;
+    int32_t i;
+    NR_DL_DCCH_Message_t *nr_dl_dcch_msg = NULL;
 
     asn_dec_rval_t dec_rval = uper_decode(  NULL,
                                             &asn_DEF_NR_DL_DCCH_Message,    
@@ -305,36 +350,36 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
 
     if(nr_dl_dcch_msg != NULL){
         switch(nr_dl_dcch_msg->message.present){            
-            case DL_DCCH_MessageType_PR_c1:
+            case NR_DL_DCCH_MessageType_PR_c1:
 
                 switch(nr_dl_dcch_msg->message.choice.c1.present){
-                    case DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
+                    case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
                         nr_rrc_ue_process_rrcReconfiguration(&nr_dl_dcch_msg->message.choice.c1.choice.rrcReconfiguration);
                         break;
 
-                    case DL_DCCH_MessageType__c1_PR_NOTHING:
-                    case DL_DCCH_MessageType__c1_PR_spare15:
-                    case DL_DCCH_MessageType__c1_PR_spare14:
-                    case DL_DCCH_MessageType__c1_PR_spare13:
-                    case DL_DCCH_MessageType__c1_PR_spare12:
-                    case DL_DCCH_MessageType__c1_PR_spare11:
-                    case DL_DCCH_MessageType__c1_PR_spare10:
-                    case DL_DCCH_MessageType__c1_PR_spare9:
-                    case DL_DCCH_MessageType__c1_PR_spare8:
-                    case DL_DCCH_MessageType__c1_PR_spare7:
-                    case DL_DCCH_MessageType__c1_PR_spare6:
-                    case DL_DCCH_MessageType__c1_PR_spare5:
-                    case DL_DCCH_MessageType__c1_PR_spare4:
-                    case DL_DCCH_MessageType__c1_PR_spare3:
-                    case DL_DCCH_MessageType__c1_PR_spare2:
-                    case DL_DCCH_MessageType__c1_PR_spare1:
+                    case NR_DL_DCCH_MessageType__c1_PR_NOTHING:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare15:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare14:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare13:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare12:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare11:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare10:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare9:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare8:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare7:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare6:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare5:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare4:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare3:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare2:
+                    case NR_DL_DCCH_MessageType__c1_PR_spare1:
                     default:
                         //  not support or unuse
                         break;
                 }   
                 break;
-            case DL_DCCH_MessageType_PR_NOTHING:
-            case DL_DCCH_MessageType_PR_messageClassExtension:
+            case NR_DL_DCCH_MessageType_PR_NOTHING:
+            case NR_DL_DCCH_MessageType_PR_messageClassExtension:
             default:
                 //  not support or unuse
                 break;

@@ -48,6 +48,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "SCHED/sched_eNB.h"
+#include "SCHED_NR/sched_nr.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all

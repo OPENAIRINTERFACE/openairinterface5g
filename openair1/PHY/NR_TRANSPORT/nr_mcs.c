@@ -19,18 +19,41 @@
  *      contact@openairinterface.org
  */
 
-/*! \file vars.h
-* \brief mac vars
-* \author  Navid Nikaein and Raymond Knopp
-* \date 2010 - 2014
-* \version 1.0
-* \email navid.nikaein@eurecom.fr
-* @ingroup _mac
-
+/*! \file PHY/NR_TRANSPORT/nr_mcs.c
+* \brief Some support routines for NR MCS computations
+* \author
+* \date 2018
+* \version 0.1
+* \company Eurecom
+* \email:
+* \note
+* \warning
 */
 
-#include "defs.h"
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 
-NR_UE_MAC_INST_t UE_mac_inst;	//[NB_MODULE_MAX];
+//get_Qm under PHY/LTE_TRANSPORT/lte_mcs.c is the same for NR.
 
+uint8_t get_nr_Qm(uint8_t I_MCS)
+{
+  if (I_MCS < 5)
+    return(2);
+  else if (I_MCS < 11)
+    return(4);
+  else if (I_MCS < 20)
+    return(6);
+  else
+    return(8);
+}
 
+uint8_t get_nr_Qm_ul(uint8_t I_MCS) {
+
+  if (I_MCS < 2)
+	  return(2);  //This should be 1 if UE has reported to support pi/2 BPSK, and 2 otherwise.
+  else if (I_MCS < 10)
+    return(2);
+  else if (I_MCS < 17)
+    return(4);
+  else
+    return(6);
+}
