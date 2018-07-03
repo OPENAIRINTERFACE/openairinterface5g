@@ -95,22 +95,6 @@ protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_copy (
                               rlc_am_entity_t *const rlcP,
                               const rlc_sn_t snP));
 
-#if 0
-/*! \fn mem_block_t* rlc_am_retransmit_get_subsegment (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t *rlcP,rlc_sn_t snP, sdu_size_t *sizeP)
-* \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.
-* \param[in]  ctxtP        Running context.
-* \param[in]  rlcP         RLC AM protocol instance pointer.
-* \param[in]  snP          Sequence number of the PDU to be copied.
-* \param[in,out]  sizeP    Maximum size allowed for the subsegment, it is updated with the amount of bytes not used (sizeP[out] = sizeP[in] - size of segment).
-* \return                  A copy of a segment of the PDU having sequence number equal to parameter snP.
-*/
-protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_subsegment (
-                              const protocol_ctxt_t* const  ctxt_pP,
-                              rlc_am_entity_t *const rlcP,
-                              const rlc_sn_t snP,
-                              sdu_size_t *const sizeP));
-#endif
-
 /*! \fn mem_block_t* rlc_am_get_pdu_to_retransmit(const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t* rlcP)
 * \brief      Find a PDU or PDU segment to retransmit.
 * \param[in]  ctxtP        Running context.
@@ -120,17 +104,6 @@ protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_subsegment (
 protected_rlc_am_retransmit(mem_block_t* rlc_am_get_pdu_to_retransmit(
                               const protocol_ctxt_t* const  ctxt_pP,
                               rlc_am_entity_t* const rlcP);)
-#if 0
-/*! \fn void rlc_am_retransmit_any_pdu(const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t* rlcP)
-* \brief      Retransmit any PDU in order to unblock peer entity, if no suitable PDU is found (depending on requested MAC size) to be retransmitted, then try to retransmit a subsegment of any PDU.
-* \param[in]  ctxtP        Running context.
-* \param[in]  rlcP         RLC AM protocol instance pointer.
-*/
-protected_rlc_am_retransmit(void rlc_am_retransmit_any_pdu(
-                              const protocol_ctxt_t* const  ctxt_pP,
-                              rlc_am_entity_t* const rlcP);)
-#endif
-
 /*! \fn void rlc_am_tx_buffer_display (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t* rlcP,  char* message_pP)
 * \brief      Display the dump of the retransmission buffer.
 * \param[in]  ctxtP        Running context.

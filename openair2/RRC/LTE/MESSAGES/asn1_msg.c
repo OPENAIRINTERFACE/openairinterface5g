@@ -477,22 +477,6 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
   ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
 
-#if 0
-  /* TODO: this is disabled for the moment because OAI UE does
-   * not connect to OAI eNB with the current software.
-   * See also TODO comment in do_SIB23.
-   */
-  //TTN - This is for SIB18
-  sib_type=SIB_Type_sibType18_v1250;
-  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
-  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
-
-  //TTN - This is for SIB19
-  sib_type=SIB_Type_sibType19_v1250;
-  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,&sib_type);
-  ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
-#endif
-
   //  ASN_SEQUENCE_ADD(&schedulingInfo.sib_MappingInfo.list,NULL);
 
 #if defined(ENABLE_ITTI)
@@ -673,11 +657,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   (*sib2)->ac_BarringInfo = NULL;
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-#if 0
-  (*sib2)->ssac_BarringForMMTEL_Voice_r9 = NULL;
-  (*sib2)->ssac_BarringForMMTEL_Video_r9 = NULL;
-  (*sib2)->ac_BarringForCSFB_r10 = NULL;
-#endif
   (*sib2)->ext1 = NULL;
   (*sib2)->ext2 = NULL;
 #endif
@@ -970,12 +949,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
   /// (*SIB3)
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   (*sib3)->ext1 = NULL;
-#if 0
-  (*sib3)->s_IntraSearch_v920=NULL;
-  (*sib3)->s_NonIntraSearch_v920=NULL;
-  (*sib3)->q_QualMin_r9=NULL;
-  (*sib3)->threshServingLowQ_r9=NULL;
-#endif
 #endif
   (*sib3)->cellReselectionInfoCommon.q_Hyst=SystemInformationBlockType3__cellReselectionInfoCommon__q_Hyst_dB4;
 
@@ -1375,20 +1348,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
   if (MBMS_flag > 0) {
     ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list,sib13_part);
   }
-
-#if 0
-  /* TODO: this is disabled for the moment.
-   * Maybe we shouldn't put this together with SIBs 2/3.
-   * The problem is that the MAC message is now 92 bytes, which
-   * is too much in the SIB scheduler (the scheduler allocates
-   * 4 RBs with max MCS 8).
-   */
-  //for D2D
-  ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib18_part);
-  ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib19_part);
-  ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib21_part);
-#endif
-
 #endif
 
 #ifdef XER_PRINT

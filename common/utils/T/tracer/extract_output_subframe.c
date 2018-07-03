@@ -124,12 +124,6 @@ err:
     }
     last_frame = frame;
     last_subframe = subframe;
-#if 0
-for (i = 0; i < e.e[buffer_arg].bsize/2; i++) {
-short *x = e.e[buffer_arg].b;
-x[i] *= 14;
-}
-#endif
     if (verbose)
       printf("save output frame %d subframe %d size %d\n",
              e.e[frame_arg].i, e.e[subframe_arg].i, e.e[buffer_arg].bsize);

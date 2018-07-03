@@ -5182,11 +5182,6 @@ int main(int argc, char **argv)
 #endif
       }
 
-#if 0
-        thr_cw0_tm4_nonconst = rate[0]*get_Qm(PHY_vars_eNB->dlsch[0][0]->harq_processes[0]->mcs)* \
-        ((double)(round_trials[0][0]-dci_errors)/((double)round_trials[0][0] + round_trials[0][1] + round_trials[0][2] + round_trials[0][3]));
-        printf("Throughput cw0 noncnstr =  %f \n", thr_cw0_tm4_nonconst);
-#endif
         //FOR CW1
        /*thr_cw1[0] = rate[1]*get_Qm(PHY_vars_eNB->dlsch[0][1]->harq_processes[0]->mcs)*(1-((double)errs[0][0]/(double)round_trials[0][0])) \
        *(1-((double)errs[1][0]/(double)round_trials[1][0]));

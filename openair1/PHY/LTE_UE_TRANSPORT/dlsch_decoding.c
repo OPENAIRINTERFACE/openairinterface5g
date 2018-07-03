@@ -184,32 +184,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING
   uint16_t i;
 #endif
-  //#ifdef __AVX2__
-#if 0
-  int Kr_last,skipped_last=0;
-  uint8_t (*tc_2cw)(int16_t *y,
-		    int16_t *y2,
-		    uint8_t *,
-		    uint8_t *,
-		    uint16_t,
-		    uint16_t,
-		    uint16_t,
-		    uint8_t,
-		    uint8_t,
-		    uint8_t,
-		    time_stats_t *,
-		    time_stats_t *,
-		    time_stats_t *,
-		    time_stats_t *,
-		    time_stats_t *,
-		    time_stats_t *,
-		    time_stats_t *);
-
-#endif
-decoder_if_t tc;
-
-
-
+  decoder_if_t tc;
 
   if (!dlsch_llr) {
     printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
@@ -237,17 +212,13 @@ decoder_if_t tc;
   }
 
   if (llr8_flag == 0) {
-    //#ifdef __AVX2__
-#if 0
-    tc_2cw = phy_threegpplte_turbo_decoder16avx2;
-#endif
     tc = decoder16;
   }
   else
   {
-	  AssertFatal (harq_process->TBS >= 256 , "Mismatch flag nbRB=%d TBS=%d mcs=%d Qm=%d RIV=%d round=%d \n",
-			  harq_process->nb_rb, harq_process->TBS,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
-	    tc = decoder8;
+    AssertFatal (harq_process->TBS >= 256 , "Mismatch flag nbRB=%d TBS=%d mcs=%d Qm=%d RIV=%d round=%d \n",
+		 harq_process->nb_rb, harq_process->TBS,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
+    tc = decoder8;
   }
 
 

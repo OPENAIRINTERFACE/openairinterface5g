@@ -124,20 +124,6 @@ x_window *x_create_window(x_connection *_x, int width, int height,
 
   XMapWindow(x->d, ret->w);
 
-#if 0
-  /* wait for window to be mapped */
-  LOGD("wait for map\n");
-  while (1) {
-    XEvent ev;
-    //XWindowEvent(x->d, ret->w, StructureNotifyMask, &ev);
-    XWindowEvent(x->d, ret->w, ExposureMask, &ev);
-    LOGD("got ev %d\n", ev.type);
-    //if (ev.type == MapNotify) break;
-    if (ev.type == Expose) break;
-  }
-  LOGD("XXX create connection %p window %p (win id %d pixmap %d) w h %d %d\n", x, ret, (int)ret->w, (int)ret->p, width, height);
-#endif
-
   return ret;
 }
 
@@ -265,14 +251,6 @@ void x_events(gui *_gui)
             ev.xbutton.button, 1);
       }
       break;
-#if 0
-    case MapNotify:
-      if ((w = find_x_window(g, ev.xmap.window)) != NULL) {
-        struct x_window *xw = w->x;
-        xw->repaint = 1;
-      }
-      break;
-#endif
     default: if (gui_logd) WARN("TODO: X event type %d\n", ev.type); break;
     }
   }
