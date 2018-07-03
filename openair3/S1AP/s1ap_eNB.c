@@ -97,7 +97,9 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
                                   net_ip_address_t    *mme_ip_address,
                                   net_ip_address_t    *local_ip_addr,
                                   uint16_t             in_streams,
-                                  uint16_t             out_streams)
+                                  uint16_t             out_streams,
+                                  uint8_t              broadcast_plmn_num,
+                                  uint8_t              broadcast_plmn_index[PLMN_LIST_MAX_SIZE])
 {
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
@@ -139,6 +141,9 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
     sctp_new_association_req_p->ulp_cnx_id = s1ap_mme_data_p->cnx_id;
 
     s1ap_mme_data_p->assoc_id          = -1;
+    s1ap_mme_data_p->broadcast_plmn_num = broadcast_plmn_num;
+    for (int i = 0; i < broadcast_plmn_num; ++i)
+      s1ap_mme_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
     s1ap_mme_data_p->s1ap_eNB_instance = instance_p;
 
     STAILQ_INIT(&s1ap_mme_data_p->served_gummei);
@@ -239,7 +244,9 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
                           &s1ap_register_eNB->mme_ip_address[index],
                           &s1ap_register_eNB->enb_ip_address,
                           s1ap_register_eNB->sctp_in_streams,
-                          s1ap_register_eNB->sctp_out_streams);
+                          s1ap_register_eNB->sctp_out_streams,
+                          s1ap_register_eNB->broadcast_plmn_num[index],
+                          s1ap_register_eNB->broadcast_plmn_index[index]);
   }
 }
 
