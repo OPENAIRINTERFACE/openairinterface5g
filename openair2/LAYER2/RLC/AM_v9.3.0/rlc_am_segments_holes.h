@@ -36,21 +36,9 @@
 #ifndef __RLC_AM_SEGMENT_HOLES_H__
 #    define __RLC_AM_SEGMENT_HOLES_H__
 //-----------------------------------------------------------------------------
-#    ifdef RLC_AM_SEGMENT_HOLES_C
 #        define private_rlc_am_segments_holes(x)    x
 #        define protected_rlc_am_segments_holes(x)  x
 #        define public_rlc_am_segments_holes(x)     x
-#    else
-#        ifdef RLC_AM_MODULE
-#            define private_rlc_am_segments_holes(x)
-#            define protected_rlc_am_segments_holes(x)  extern x
-#            define public_rlc_am_segments_holes(x)     extern x
-#        else
-#            define private_rlc_am_segments_holes(x)
-#            define protected_rlc_am_segments_holes(x)
-#            define public_rlc_am_segments_holes(x)     extern x
-#        endif
-#    endif
 /*! \fn void rlc_am_clear_holes (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t * const rlcP, rlc_sn_t snP)
 * \brief      Remove all marked holes for PDU with sequence number "snP".
 * \param[in]  ctxt_pP        Running context.

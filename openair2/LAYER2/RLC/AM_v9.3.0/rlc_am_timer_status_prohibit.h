@@ -34,21 +34,10 @@
 */
 #ifndef __RLC_AM_TIMER_STATUS_PROHIBIT_H__
 #    define __RLC_AM_TIMER_STATUS_PROHIBIT_H__
-#    ifdef RLC_AM_TIMER_STATUS_PROHIBIT_C
+
 #        define private_rlc_am_timer_status_prohibit(x)    x
 #        define protected_rlc_am_timer_status_prohibit(x)  x
 #        define public_rlc_am_timer_status_prohibit(x)     x
-#    else
-#        ifdef RLC_AM_MODULE
-#            define private_rlc_am_timer_status_prohibit(x)
-#            define protected_rlc_am_timer_status_prohibit(x)  extern x
-#            define public_rlc_am_timer_status_prohibit(x)     extern x
-#        else
-#            define private_rlc_am_timer_status_prohibit(x)
-#            define protected_rlc_am_timer_status_prohibit(x)
-#            define public_rlc_am_timer_status_prohibit(x)     extern x
-#        endif
-#    endif
 
 /*! \fn void rlc_am_check_timer_status_prohibit(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlc_pP)
 * \brief      Check if timer status-prohibit has timed-out, if so it is stopped and has the status "timed-out".

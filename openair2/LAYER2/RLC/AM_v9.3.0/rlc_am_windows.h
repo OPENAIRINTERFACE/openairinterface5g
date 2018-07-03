@@ -35,21 +35,9 @@
 #    ifndef __RLC_AM_WINDOWS_H__
 #        define __RLC_AM_WINDOWS_H__
 //-----------------------------------------------------------------------------
-#        ifdef RLC_AM_WINDOWS_C
 #            define private_rlc_am_windows(x)    x
 #            define protected_rlc_am_windows(x)  x
 #            define public_rlc_am_windows(x)     x
-#        else
-#            ifdef RLC_AM_MODULE
-#                define private_rlc_am_windows(x)
-#                define protected_rlc_am_windows(x)  extern x
-#                define public_rlc_am_windows(x)     extern x
-#            else
-#                define private_rlc_am_windows(x)
-#                define protected_rlc_am_windows(x)
-#                define public_rlc_am_windows(x)     extern x
-#            endif
-#        endif
 
 /*! \fn signed int rlc_am_in_tx_window(const protocol_ctxt_t* const  ctxt_pP,const rlc_am_entity_t* const rlc_pP, const rlc_sn_t snP)
 * \brief      Boolean function, check if sequence number is VT(A) <= snP < VT(MS).

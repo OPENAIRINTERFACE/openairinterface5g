@@ -37,21 +37,9 @@
 
 #    include "UTIL/MEM/mem_block.h"
 //-----------------------------------------------------------------------------
-#        ifdef RLC_AM_INIT_C
 #            define private_rlc_am_init(x)    x
 #            define protected_rlc_am_init(x)  x
 #            define public_rlc_am_init(x)     x
-#        else
-#            ifdef RLC_AM_MODULE
-#                define private_rlc_am_init(x)
-#                define protected_rlc_am_init(x)  extern x
-#                define public_rlc_am_init(x)     extern x
-#            else
-#                define private_rlc_am_init(x)
-#                define protected_rlc_am_init(x)
-#                define public_rlc_am_init(x)     extern x
-#            endif
-#        endif
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 #include "platform_constants.h"

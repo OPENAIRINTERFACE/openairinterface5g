@@ -518,7 +518,7 @@ int logInit (void)
 extern int oai_exit;
 void * log_mem_write(void)
 {
-  int *fp;
+  int fp;
   char f_name[1024];
   struct timespec slp_tm;
   slp_tm.tv_sec = 0;
@@ -567,7 +567,7 @@ int logInit_log_mem (void)
       if ((pthread_mutex_init (&log_mem_lock, NULL) != 0)
           || (pthread_cond_init (&log_mem_notify, NULL) != 0)) {
         log_mem_d[1].enable_flag=0;
-        return;
+        return 0;
       }
       pthread_create(&log_mem_thread, NULL, log_mem_write, (void*)NULL);
     }else{
@@ -1852,8 +1852,7 @@ void log_set_instance_type (log_instance_type_t instance)
 #endif
   
 void output_log_mem(void){
-  int cnt,cnt2;
-  int *fp;
+  int fp;
   char f_name[1024];
 
   if(log_mem_flag==1){

@@ -33,34 +33,9 @@
 
 #ifndef __PDCP_H__
 #    define __PDCP_H__
-//-----------------------------------------------------------------------------
-#    ifdef PDCP_C
 #        define private_pdcp(x) x
 #        define protected_pdcp(x) x
 #        define public_pdcp(x) x
-#    else
-#        define private_pdcp(x)
-#        define public_pdcp(x) extern x
-#        ifdef PDCP_FIFO_C
-#            define protected_pdcp(x) extern x
-#        else
-#            define protected_pdcp(x)
-#        endif
-#    endif
-
-#    ifdef PDCP_FIFO_C
-#        define private_pdcp_fifo(x) x
-#        define protected_pdcp_fifo(x) x
-#        define public_pdcp_fifo(x) x
-#    else
-#        define private_pdcp_fifo(x)
-#        define public_pdcp_fifo(x) extern x
-#        ifdef PDCP_C
-#            define protected_pdcp_fifo(x) extern x
-#        else
-#            define protected_pdcp_fifo(x)
-#        endif
-#    endif
 //-----------------------------------------------------------------------------
 #ifndef NON_ACCESS_STRATUM
 #include "UTIL/MEM/mem_block.h"
@@ -416,14 +391,10 @@ public_pdcp(int pdcp_netlink_init    (void);)
 #define PDCP2NW_DRIVER_FIFO 21
 #define NW_DRIVER2PDCP_FIFO 22
 
-protected_pdcp_fifo(int pdcp_fifo_flush_sdus                      (
-                      const protocol_ctxt_t* const  ctxt_pP);)
-protected_pdcp_fifo(int pdcp_fifo_read_input_sdus_remaining_bytes (
-                      const protocol_ctxt_t* const  ctxt_pP);)
-protected_pdcp_fifo(int pdcp_fifo_read_input_sdus                 (
-                      const protocol_ctxt_t* const  ctxt_pP);)
-protected_pdcp_fifo(void pdcp_fifo_read_input_sdus_from_otg       (
-                      const protocol_ctxt_t* const  ctxt_pP);)
+int pdcp_fifo_flush_sdus                      ( const protocol_ctxt_t* const  ctxt_pP);
+int pdcp_fifo_read_input_sdus_remaining_bytes ( const protocol_ctxt_t* const  ctxt_pP);
+int pdcp_fifo_read_input_sdus                 ( const protocol_ctxt_t* const  ctxt_pP);
+void pdcp_fifo_read_input_sdus_from_otg       ( const protocol_ctxt_t* const  ctxt_pP);
 
 //-----------------------------------------------------------------------------
 

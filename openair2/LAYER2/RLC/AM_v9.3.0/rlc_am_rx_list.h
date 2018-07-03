@@ -37,22 +37,9 @@
 #    define __RLC_AM_RX_LIST_H__
 
 #    include "UTIL/MEM/mem_block.h"
-//-----------------------------------------------------------------------------
-#        ifdef RLC_AM_RX_LIST_C
 #            define private_rlc_am_rx_list(x)    x
 #            define protected_rlc_am_rx_list(x)  x
 #            define public_rlc_am_rx_list(x)     x
-#        else
-#            ifdef RLC_AM_MODULE
-#                define private_rlc_am_rx_list(x)
-#                define protected_rlc_am_rx_list(x)  extern x
-#                define public_rlc_am_rx_list(x)     extern x
-#            else
-#                define private_rlc_am_rx_list(x)
-#                define protected_rlc_am_rx_list(x)
-#                define public_rlc_am_rx_list(x)     extern x
-#            endif
-#        endif
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 #include "platform_constants.h"

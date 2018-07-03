@@ -42,21 +42,9 @@
 //#        include "rlc.h"
 #        include "platform_types.h"
 //-----------------------------------------------------------------------------
-#        ifdef RLC_TM_INIT_C
 #            define private_rlc_tm_init(x)    x
 #            define protected_rlc_tm_init(x)  x
 #            define public_rlc_tm_init(x)     x
-#        else
-#            ifdef RLC_TM_MODULE
-#                define private_rlc_tm_init(x)
-#                define protected_rlc_tm_init(x)  extern x
-#                define public_rlc_tm_init(x)     extern x
-#            else
-#                define private_rlc_tm_init(x)
-#                define protected_rlc_tm_init(x)
-#                define public_rlc_tm_init(x)     extern x
-#            endif
-#        endif
 
 typedef volatile struct rlc_tm_info_s {
   uint8_t             is_uplink_downlink;

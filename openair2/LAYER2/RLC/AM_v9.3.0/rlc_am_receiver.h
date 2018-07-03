@@ -34,21 +34,9 @@
 */
 #    ifndef __RLC_AM_RECEIVER_H__
 #        define __RLC_AM_RECEIVER_H__
-#        ifdef RLC_AM_RECEIVER_C
 #            define private_rlc_am_receiver(x)    x
 #            define protected_rlc_am_receiver(x)  x
 #            define public_rlc_am_receiver(x)     x
-#        else
-#            ifdef RLC_AM_MODULE
-#                define private_rlc_am_receiver(x)
-#                define protected_rlc_am_receiver(x)  extern x
-#                define public_rlc_am_receiver(x)     extern x
-#            else
-#                define private_rlc_am_receiver(x)
-#                define protected_rlc_am_receiver(x)
-#                define public_rlc_am_receiver(x)     extern x
-#            endif
-#        endif
 /*! \fn signed int rlc_am_get_data_pdu_infos( const protocol_ctxt_t* const ctxt_pP, const rlc_am_entity_t * const rlc_pP,rlc_am_pdu_sn_10_t* headerP, int16_t sizeP, rlc_am_pdu_info_t* pdu_infoP)
 * \brief    Extract PDU informations (header fields, data size, etc) from the serialized PDU.
 * \param[in]  ctxt_pP          Running context.

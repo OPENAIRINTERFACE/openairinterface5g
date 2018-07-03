@@ -21,21 +21,9 @@
 
 #    ifndef __RLC_UM_TEST_H__
 #        define __RLC_UM_TEST_H__
-#        ifdef RLC_UM_TEST_C
 #            define private_rlc_um_test(x)    x
 #            define protected_rlc_um_test(x)  x
 #            define public_rlc_um_test(x)     x
-#        else
-#            ifdef RLC_UM_MODULE
-#                define private_rlc_um_test(x)
-#                define protected_rlc_um_test(x)  extern x
-#                define public_rlc_um_test(x)     extern x
-#            else
-#                define private_rlc_um_test(x)
-#                define protected_rlc_um_test(x)
-#                define public_rlc_um_test(x)     extern x
-#            endif
-#        endif
 public_rlc_um_test(rlc_um_entity_t       um_tx;)
 public_rlc_um_test(rlc_um_entity_t       um_rx;)
 

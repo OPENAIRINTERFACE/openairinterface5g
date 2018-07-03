@@ -59,49 +59,17 @@
 #include "PMCH-InfoList-r9.h"
 #endif
 
-#ifdef CMAKER
 typedef uint64_t hash_key_t;
 #define HASHTABLE_NOT_A_KEY_VALUE ((uint64_t)-1)
-#endif
-//-----------------------------------------------------------------------------
-#    ifdef RLC_MAC_C
 #        define private_rlc_mac(x) x
 #        define public_rlc_mac(x) x
-#    else
-#        define private_rlc_mac(x)
-#        define public_rlc_mac(x) extern x
-#    endif
-
-#    ifdef RLC_MPLS_C
 #        define private_rlc_mpls(x) x
 #        define public_rlc_mpls(x) x
-#    else
-#        define private_rlc_mpls(x)
-#        define public_rlc_mpls(x) extern x
-#    endif
-
-#    ifdef RLC_RRC_C
 #        define private_rlc_rrc(x) x
 #        define public_rlc_rrc(x) x
-#    else
-#        define private_rlc_rrc(x)
-#        define public_rlc_rrc(x) extern x
-#    endif
-
-#    ifdef RLC_C
 #        define private_rlc(x) x
 #        define protected_rlc(x) x
 #        define public_rlc(x) x
-#    else
-#        define private_rlc(x)
-#        if defined(RLC_MAC_C) || defined(RLC_MPLS_C) || defined(RLC_RRC_C) || defined(RLC_AM_C) || defined(RLC_TM_C) || defined(RLC_UM_C) || defined (PDCP_C)
-#            define protected_rlc(x) extern x
-#        else
-#            define protected_rlc(x)
-#        endif
-#        define public_rlc(x) extern x
-#    endif
-
 
 //-----------------------------------------------------------------------------
 #define  RLC_OP_STATUS_OK                1

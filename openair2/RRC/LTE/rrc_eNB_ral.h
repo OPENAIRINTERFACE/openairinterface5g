@@ -30,21 +30,9 @@
 #ifndef __RRC_ENB_RAL_H__
 #    define __RRC_ENB_RAL_H__
 //-----------------------------------------------------------------------------
-#        ifdef RRC_ENB_RAL_C
 #            define private_rrc_enb_ral(x)    x
 #            define protected_rrc_enb_ral(x)  x
 #            define public_rrc_enb_ral(x)     x
-#        else
-#            ifdef RRC_ENB
-#                define private_rrc_enb_ral(x)
-#                define protected_rrc_enb_ral(x)  extern x
-#                define public_rrc_enb_ral(x)     extern x
-#            else
-#                define private_rrc_enb_ral(x)
-#                define protected_rrc_enb_ral(x)
-#                define public_rrc_enb_ral(x)     extern x
-#            endif
-#        endif
 //-----------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>

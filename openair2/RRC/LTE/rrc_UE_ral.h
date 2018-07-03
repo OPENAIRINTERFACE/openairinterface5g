@@ -30,21 +30,9 @@
 #ifndef __RRC_UE_RAL_H__
 #    define __RRC_UE_RAL_H__
 //-----------------------------------------------------------------------------
-#        ifdef RRC_UE_RAL_C
 #            define private_rrc_ue_ral(x)    x
 #            define protected_rrc_ue_ral(x)  x
 #            define public_rrc_ue_ral(x)     x
-#        else
-#            ifdef RRC_UE
-#                define private_rrc_ue_ral(x)
-#                define protected_rrc_ue_ral(x)  extern x
-#                define public_rrc_ue_ral(x)     extern x
-#            else
-#                define private_rrc_ue_ral(x)
-#                define protected_rrc_ue_ral(x)
-#                define public_rrc_ue_ral(x)     extern x
-#            endif
-#        endif
 //-----------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>

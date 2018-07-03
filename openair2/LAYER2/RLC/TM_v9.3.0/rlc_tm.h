@@ -34,21 +34,9 @@
 */
 #    ifndef __RLC_TM_H__
 #        define __RLC_TM_H__
-#        ifdef RLC_TM_C
-#            define private_rlc_tm(x)
-#            define protected_rlc_tm(x)
-#            define public_rlc_tm(x)
-#        else
-#            ifdef RLC_TM_MODULE
-#                define private_rlc_tm(x)
-#                define protected_rlc_tm(x)  extern x
-#                define public_rlc_tm(x)     extern x
-#            else
-#                define private_rlc_tm(x)
-#                define protected_rlc_tm(x)
-#                define public_rlc_tm(x)     extern x
-#            endif
-#        endif
+#            define private_rlc_tm(x) x
+#            define protected_rlc_tm(x) x
+#            define public_rlc_tm(x) x
 #        include "platform_types.h"
 #        include "rlc_def.h"
 #        include "rlc_def_lte.h"
@@ -111,11 +99,12 @@ private_rlc_tm( void     rlc_tm_rx (
 * \param[in]  tx_statusP                Transmission status given by MAC on previous MAC transmission of the PDU.
 * \return     The maximum number of bytes that can be served by RLC instance to MAC.
 */
-public_rlc_tm( struct mac_status_resp rlc_tm_mac_status_indication (
-                 const protocol_ctxt_t* const  ctxt_pP,
-                 void * const rlcP,
-                 const uint16_t tb_sizeP,
-                 struct mac_status_ind tx_statusP);)
+struct mac_status_resp
+rlc_tm_mac_status_indication (
+  const protocol_ctxt_t* const  ctxt_pP,
+  void * const                  rlc_pP,
+  const tb_size_t               tb_sizeP,
+  struct mac_status_ind         tx_statusP);
 
 
 /*! \fn struct mac_data_req rlc_tm_mac_data_request (const protocol_ctxt_t* const  ctxt_pP, void * const rlcP)

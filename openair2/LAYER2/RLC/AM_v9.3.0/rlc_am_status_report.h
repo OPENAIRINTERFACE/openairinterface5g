@@ -37,21 +37,9 @@
 
 #    include "UTIL/MEM/mem_block.h"
 //-----------------------------------------------------------------------------
-#        ifdef RLC_AM_STATUS_REPORT_C
 #            define private_rlc_am_status_report(x)    x
 #            define protected_rlc_am_status_report(x)  x
 #            define public_rlc_am_status_report(x)     x
-#        else
-#            ifdef RLC_AM_MODULE
-#                define private_rlc_am_status_report(x)
-#                define protected_rlc_am_status_report(x)  extern x
-#                define public_rlc_am_status_report(x)     extern x
-#            else
-#                define private_rlc_am_status_report(x)
-#                define protected_rlc_am_status_report(x)
-#                define public_rlc_am_status_report(x)     extern x
-#            endif
-#        endif
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 #include "platform_constants.h"

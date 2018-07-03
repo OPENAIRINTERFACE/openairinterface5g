@@ -43,21 +43,9 @@
 #        include "DL-UM-RLC.h"
 #        include "UL-UM-RLC.h"
 //-----------------------------------------------------------------------------
-#        ifdef RLC_UM_CONTROL_PRIMITIVES_C
 #            define private_rlc_um_control_primitives(x)    x
 #            define protected_rlc_um_control_primitives(x)  x
 #            define public_rlc_um_control_primitives(x)     x
-#        else
-#            ifdef RLC_UM_MODULE
-#                define private_rlc_um_control_primitives(x)
-#                define protected_rlc_um_control_primitives(x)  extern x
-#                define public_rlc_um_control_primitives(x)     extern x
-#            else
-#                define private_rlc_um_control_primitives(x)
-#                define protected_rlc_um_control_primitives(x)
-#                define public_rlc_um_control_primitives(x)     extern x
-#            endif
-#        endif
 
 typedef volatile struct {
   uint32_t             is_uplink_downlink;

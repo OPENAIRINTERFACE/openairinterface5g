@@ -34,21 +34,9 @@
 */
 #ifndef __RLC_AM_REASSEMBLY_H__
 #    define __RLC_AM_REASSEMBLY_H__
-#    ifdef RLC_AM_REASSEMBLY_C
 #        define private_rlc_am_reassembly(x)    x
 #        define protected_rlc_am_reassembly(x)  x
 #        define public_rlc_am_reassembly(x)     x
-#    else
-#        ifdef RLC_AM_MODULE
-#            define private_rlc_am_reassembly(x)
-#            define protected_rlc_am_reassembly(x)  extern x
-#            define public_rlc_am_reassembly(x)     extern x
-#        else
-#            define private_rlc_am_reassembly(x)
-#            define protected_rlc_am_reassembly(x)
-#            define public_rlc_am_reassembly(x)     extern x
-#        endif
-#    endif
 /*! \fn void rlc_am_clear_rx_sdu (const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP)
 * \brief    Reset the data cursor index in the output SDU buffer to zero.
 * \param[in]  ctxtP                       Running context.

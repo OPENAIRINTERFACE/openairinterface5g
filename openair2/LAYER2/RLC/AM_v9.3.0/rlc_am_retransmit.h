@@ -35,21 +35,9 @@
 #    ifndef __RLC_AM_RETRANSMIT_H__
 #        define __RLC_AM_RETRANSMIT_H__
 //-----------------------------------------------------------------------------
-#        ifdef RLC_AM_RETRANSMIT_C
 #            define private_rlc_am_retransmit(x)    x
 #            define protected_rlc_am_retransmit(x)  x
 #            define public_rlc_am_retransmit(x)     x
-#        else
-#            ifdef RLC_AM_MODULE
-#                define private_rlc_am_retransmit(x)
-#                define protected_rlc_am_retransmit(x)  extern x
-#                define public_rlc_am_retransmit(x)     extern x
-#            else
-#                define private_rlc_am_retransmit(x)
-#                define protected_rlc_am_retransmit(x)
-#                define public_rlc_am_retransmit(x)     extern x
-#            endif
-#        endif
 /*! \fn boolean_t  rlc_am_nack_pdu (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *rlcP, int16_t snP, int16_t prev_nack_snP,sdu_size_t so_startP, sdu_size_t so_endP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked NACKed with segment offset fields.
 * \param[in]  ctxtP        Running context.

@@ -40,21 +40,9 @@
 #        include "rlc_um_constants.h"
 #        include "list.h"
 //-----------------------------------------------------------------------------
-#        ifdef RLC_UM_DAR_C
 #            define private_rlc_um_dar(x)    x
 #            define protected_rlc_um_dar(x)  x
 #            define public_rlc_um_dar(x)     x
-#        else
-#            ifdef RLC_UM_MODULE
-#                define private_rlc_um_dar(x)
-#                define protected_rlc_um_dar(x)  extern x
-#                define public_rlc_um_dar(x)     extern x
-#            else
-#                define private_rlc_um_dar(x)
-#                define protected_rlc_um_dar(x)
-#                define public_rlc_um_dar(x)     extern x
-#            endif
-#        endif
 /*! \fn signed int rlc_um_get_pdu_infos(const protocol_ctxt_t* const ctxt_pP,const rlc_um_entity_t * const rlc_pP,rlc_um_pdu_sn_10_t* header_pP, int16_t total_sizeP, rlc_um_pdu_info_t* pdu_info_pP, uint8_t sn_lengthP)
 * \brief    Extract PDU informations (header fields, data size, etc) from the serialized PDU.
 * \param[in]  ctxt_pP              Running context.

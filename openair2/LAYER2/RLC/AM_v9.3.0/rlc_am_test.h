@@ -32,21 +32,9 @@
 */
 #    ifndef __RLC_AM_TEST_H__
 #        define __RLC_AM_TEST_H__
-#        ifdef RLC_AM_TEST_C
 #            define private_rlc_am_test(x)    x
 #            define protected_rlc_am_test(x)  x
 #            define public_rlc_am_test(x)     x
-#        else
-#            ifdef RLC_AM_MODULE
-#                define private_rlc_am_test(x)
-#                define protected_rlc_am_test(x)  extern x
-#                define public_rlc_am_test(x)     extern x
-#            else
-#                define private_rlc_am_test(x)
-#                define protected_rlc_am_test(x)
-#                define public_rlc_am_test(x)     extern x
-#            endif
-#        endif
 public_rlc_am_test(rlc_am_entity_t       g_am_tx;)
 public_rlc_am_test(rlc_am_entity_t       g_am_rx;)
 

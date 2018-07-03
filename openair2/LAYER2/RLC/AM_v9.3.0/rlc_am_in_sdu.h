@@ -34,22 +34,9 @@
 */
 #    ifndef __RLC_AM_IN_SDU_H__
 #        define __RLC_AM_IN_SDU_H__
-//-----------------------------------------------------------------------------
-#        ifdef RLC_AM_IN_SDU_C
 #            define private_rlc_am_in_sdu(x)    x
 #            define protected_rlc_am_in_sdu(x)  x
 #            define public_rlc_am_in_sdu(x)     x
-#        else
-#            ifdef RLC_AM_MODULE
-#                define private_rlc_am_in_sdu(x)
-#                define protected_rlc_am_in_sdu(x)  extern x
-#                define public_rlc_am_in_sdu(x)     extern x
-#            else
-#                define private_rlc_am_in_sdu(x)
-#                define protected_rlc_am_in_sdu(x)
-#                define public_rlc_am_in_sdu(x)     extern x
-#            endif
-#        endif
 /*! \fn void rlc_am_free_in_sdu (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *rlcP, unsigned int index_in_bufferP)
 * \brief    Free a higher layer SDU stored in input_sdus[] buffer.
 * \param[in]  ctxtP                     Running context.
