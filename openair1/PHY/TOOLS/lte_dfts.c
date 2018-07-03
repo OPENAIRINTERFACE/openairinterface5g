@@ -3088,8 +3088,8 @@ void dft128(int16_t *x,int16_t *y,int scale)
   dft64((int16_t*)(xtmp),(int16_t*)ytmp,1);
   dft64((int16_t*)(xtmp+32),(int16_t*)(ytmp+16),1);
 
-  /*  write_output("dft128a.m","dfta",ytmp,64,1,1);
-      write_output("dft128b.m","dftb",ytmp+16,64,1,1);*/
+  /*  LOG_M("dft128a.m","dfta",ytmp,64,1,1);
+      LOG_M("dft128b.m","dftb",ytmp+16,64,1,1);*/
 
   for (i=0; i<16; i++) {
     bfly2_16(ytmpp,ytmpp+16,
@@ -3140,7 +3140,7 @@ void dft128(int16_t *x,int16_t *y,int scale)
 
   }
 
-  /*  write_output("dft128out.m","dft128",y,128,1,1);
+  /*  LOG_M("dft128out.m","dft128",y,128,1,1);
       exit(-1);*/
   _mm_empty();
   _m_empty();
@@ -3167,15 +3167,15 @@ void dft128(int16_t *x,int16_t *y,int scale)
   transpose4_ooff_simd256(x256+12,xtmp+6,8);
   transpose4_ooff_simd256(x256+14,xtmp+7,8);
   
-  /*  write_output("dft128ina_256.m","dftina",xtmp,64,1,1);
-  write_output("dft128inb_256.m","dftinb",xtmp+8,64,1,1);
+  /*  LOG_M("dft128ina_256.m","dftina",xtmp,64,1,1);
+  LOG_M("dft128inb_256.m","dftinb",xtmp+8,64,1,1);
   */
 
   dft64((int16_t*)(xtmp),(int16_t*)ytmp,1);
   dft64((int16_t*)(xtmp+8),(int16_t*)(ytmp+8),1);
   
-  /*write_output("dft128outa_256.m","dftouta",ytmp,64,1,1);
-  write_output("dft128outb_256.m","dftoutb",ytmp+8,64,1,1);
+  /*LOG_M("dft128outa_256.m","dftouta",ytmp,64,1,1);
+  LOG_M("dft128outb_256.m","dftoutb",ytmp+8,64,1,1);
   */
 
   for (i=0; i<8; i++) {
@@ -3210,7 +3210,7 @@ void dft128(int16_t *x,int16_t *y,int scale)
 
   }
   
-  /*  write_output("dft128.m","dft",y256,128,1,1);
+  /*  LOG_M("dft128.m","dft",y256,128,1,1);
       exit(-1);*/
 }
 
@@ -5411,9 +5411,9 @@ void dft1536(int16_t *input, int16_t *output, int scale)
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
 
-  //  write_output("out0.m","o0",tmpo[0],2048,1,1);
-  //  write_output("out1.m","o1",tmpo[1],2048,1,1);
-  //  write_output("out2.m","o2",tmpo[2],2048,1,1);
+  //  LOG_M("out0.m","o0",tmpo[0],2048,1,1);
+  //  LOG_M("out1.m","o1",tmpo[1],2048,1,1);
+  //  LOG_M("out2.m","o2",tmpo[2],2048,1,1);
   for (i=0,i2=0; i<1024; i+=8,i2+=4)  {
     bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+1024+i),(simd_q15_t*)(output+2048+i),
@@ -5483,10 +5483,10 @@ void idft6144(int16_t *input, int16_t *output)
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
 
-  //  write_output("in.m","in",input,6144,1,1);
-  //  write_output("out0.m","o0",tmpo[0],2048,1,1);
-  //  write_output("out1.m","o1",tmpo[1],2048,1,1);
-  //  write_output("out2.m","o2",tmpo[2],2048,1,1);
+  //  LOG_M("in.m","in",input,6144,1,1);
+  //  LOG_M("out0.m","o0",tmpo[0],2048,1,1);
+  //  LOG_M("out1.m","o1",tmpo[1],2048,1,1);
+  //  LOG_M("out2.m","o2",tmpo[2],2048,1,1);
 
   for (i=0,i2=0; i<4096; i+=8,i2+=4)  {
     ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
@@ -5494,7 +5494,7 @@ void idft6144(int16_t *input, int16_t *output)
 	   (simd_q15_t*)(twa6144+i),(simd_q15_t*)(twb6144+i));
   }
 
-  //  write_output("out.m","out",output,6144,1,1);
+  //  LOG_M("out.m","out",output,6144,1,1);
   _mm_empty();
   _m_empty();
 
@@ -5524,9 +5524,9 @@ void dft6144(int16_t *input, int16_t *output)
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
 
-  //  write_output("out0.m","o0",tmpo[0],2048,1,1);
-  //  write_output("out1.m","o1",tmpo[1],2048,1,1);
-  //  write_output("out2.m","o2",tmpo[2],2048,1,1);
+  //  LOG_M("out0.m","o0",tmpo[0],2048,1,1);
+  //  LOG_M("out1.m","o1",tmpo[1],2048,1,1);
+  //  LOG_M("out2.m","o2",tmpo[2],2048,1,1);
   for (i=0,i2=0; i<4096; i+=8,i2+=4)  {
     bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+4096+i),(simd_q15_t*)(output+8192+i),
@@ -5563,9 +5563,9 @@ void dft12288(int16_t *input, int16_t *output)
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
 
-  //  write_output("out0.m","o0",tmpo[0],4096,1,1);
-  //  write_output("out1.m","o1",tmpo[1],4096,1,1);
-  //  write_output("out2.m","o2",tmpo[2],4096,1,1);
+  //  LOG_M("out0.m","o0",tmpo[0],4096,1,1);
+  //  LOG_M("out1.m","o1",tmpo[1],4096,1,1);
+  //  LOG_M("out2.m","o2",tmpo[2],4096,1,1);
   for (i=0,i2=0; i<8192; i+=8,i2+=4)  {
     bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+8192+i),(simd_q15_t*)(output+16384+i),
@@ -5594,10 +5594,10 @@ void idft12288(int16_t *input, int16_t *output)
   idft4096((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
   idft4096((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
   /*
-    write_output("in.m","in",input,12288,1,1);
-    write_output("out0.m","o0",tmpo[0],4096,1,1);
-    write_output("out1.m","o1",tmpo[1],4096,1,1);
-    write_output("out2.m","o2",tmpo[2],4096,1,1);
+    LOG_M("in.m","in",input,12288,1,1);
+    LOG_M("out0.m","o0",tmpo[0],4096,1,1);
+    LOG_M("out1.m","o1",tmpo[1],4096,1,1);
+    LOG_M("out2.m","o2",tmpo[2],4096,1,1);
   */
   for (i=0,i2=0; i<8192; i+=8,i2+=4)  {
     ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
@@ -5608,7 +5608,7 @@ void idft12288(int16_t *input, int16_t *output)
   _mm_empty();
   _m_empty();
 
-  //  write_output("out.m","out",output,6144,1,1);
+  //  LOG_M("out.m","out",output,6144,1,1);
 }
 
 #include "twiddle18432.h"
@@ -5689,9 +5689,9 @@ void dft24576(int16_t *input, int16_t *output)
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
 
-  //   write_output("out0.m","o0",tmpo[0],8192,1,1);
-  //    write_output("out1.m","o1",tmpo[1],8192,1,1);
-  //    write_output("out2.m","o2",tmpo[2],8192,1,1);
+  //   LOG_M("out0.m","o0",tmpo[0],8192,1,1);
+  //    LOG_M("out1.m","o1",tmpo[1],8192,1,1);
+  //    LOG_M("out2.m","o2",tmpo[2],8192,1,1);
   for (i=0,i2=0; i<16384; i+=8,i2+=4)  {
     bfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),(simd_q15_t*)(&tmpo[2][i2]),
           (simd_q15_t*)(output+i),(simd_q15_t*)(output+16384+i),(simd_q15_t*)(output+32768+i),
@@ -5701,7 +5701,7 @@ void dft24576(int16_t *input, int16_t *output)
   _mm_empty();
   _m_empty();
 
-  //  write_output("out.m","out",output,24576,1,1);
+  //  LOG_M("out.m","out",output,24576,1,1);
 }
 
 void idft24576(int16_t *input, int16_t *output)
@@ -5721,10 +5721,10 @@ void idft24576(int16_t *input, int16_t *output)
   idft8192((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
   
   /*
-    write_output("in.m","in",input,24576,1,1);
-    write_output("out0.m","o0",tmpo[0],8192,1,1);
-    write_output("out1.m","o1",tmpo[1],8192,1,1);
-    write_output("out2.m","o2",tmpo[2],8192,1,1);
+    LOG_M("in.m","in",input,24576,1,1);
+    LOG_M("out0.m","o0",tmpo[0],8192,1,1);
+    LOG_M("out1.m","o1",tmpo[1],8192,1,1);
+    LOG_M("out2.m","o2",tmpo[2],8192,1,1);
   */
 
   for (i=0,i2=0; i<16384; i+=8,i2+=4)  {
@@ -5736,7 +5736,7 @@ void idft24576(int16_t *input, int16_t *output)
   _mm_empty();
   _m_empty();
 
-  //  write_output("out.m","out",output,24576,1,1);
+  //  LOG_M("out.m","out",output,24576,1,1);
 }
 
 ///  THIS SECTION IS FOR ALL PUSCH DFTS (i.e. radix 2^a * 3^b * 4^c * 5^d)
@@ -18920,9 +18920,9 @@ int main(int argc, char**argv)
   }
 
   printf("\n\n64-point (%f cycles, #trials %d)\n",(double)ts.diff/(double)ts.trials,ts.trials);
-  //  write_output("x64.m","x64",x,64,1,1);
-  write_output("y64.m","y64",y,64,1,1);
-  write_output("x64.m","x64",x,64,1,1);
+  //  LOG_M("x64.m","x64",x,64,1,1);
+  LOG_M("y64.m","y64",y,64,1,1);
+  LOG_M("x64.m","x64",x,64,1,1);
 
 /*
   printf("X: ");
@@ -18966,8 +18966,8 @@ int main(int argc, char**argv)
   }
 
   printf("\n\n128-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-  write_output("y128.m","y128",y,128,1,1);
-  write_output("x128.m","x128",x,128,1,1);
+  LOG_M("y128.m","y128",y,128,1,1);
+  LOG_M("x128.m","x128",x,128,1,1);
 /*
   printf("X: ");
    for (i=0;i<32;i++)
@@ -19008,8 +19008,8 @@ int main(int argc, char**argv)
   }
 
   printf("\n\n256-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-  write_output("y256.m","y256",y,256,1,1);
-  write_output("x256.m","x256",x,256,1,1);
+  LOG_M("y256.m","y256",y,256,1,1);
+  LOG_M("x256.m","x256",x,256,1,1);
 
   memset((void*)&x[0],0,512*sizeof(int32_t));
   for (i=2;i<302;i++) {
@@ -19033,8 +19033,8 @@ int main(int argc, char**argv)
   }
 
   printf("\n\n512-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-  write_output("y512.m","y512",y,512,1,1);
-  write_output("x512.m","x512",x,512,1,1);
+  LOG_M("y512.m","y512",y,512,1,1);
+  LOG_M("x512.m","x512",x,512,1,1);
   /*
   printf("X: ");
   for (i=0;i<64;i++)
@@ -19068,8 +19068,8 @@ int main(int argc, char**argv)
   }
 
   printf("\n\n1024-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-  write_output("y1024.m","y1024",y,1024,1,1);
-  write_output("x1024.m","x1024",x,1024,1,1);
+  LOG_M("y1024.m","y1024",y,1024,1,1);
+  LOG_M("x1024.m","x1024",x,1024,1,1);
 
   memset((void*)x,0,2048*sizeof(int32_t));
   for (i=2;i<1202;i++) {
@@ -19093,8 +19093,8 @@ int main(int argc, char**argv)
   }
 
   printf("\n\n2048-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-  write_output("y2048.m","y2048",y,2048,1,1);
-  write_output("x2048.m","x2048",x,2048,1,1);
+  LOG_M("y2048.m","y2048",y,2048,1,1);
+  LOG_M("x2048.m","x2048",x,2048,1,1);
 
   memset((void*)x,0,2048*sizeof(int32_t));
   for (i=2;i<2402;i++) {
@@ -19118,8 +19118,8 @@ int main(int argc, char**argv)
   }
 
   printf("\n\n4096-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-  write_output("y4096.m","y4096",y,4096,1,1);
-  write_output("x4096.m","x4096",x,4096,1,1);
+  LOG_M("y4096.m","y4096",y,4096,1,1);
+  LOG_M("x4096.m","x4096",x,4096,1,1);
 
   memset((void*)x,0,8192*sizeof(int32_t));
   for (i=2;i<4802;i++) {
@@ -19142,8 +19142,8 @@ int main(int argc, char**argv)
   }
 
   printf("\n\n8192-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-  write_output("y8192.m","y8192",y,8192,1,1);
-  write_output("x8192.m","x8192",x,8192,1,1);
+  LOG_M("y8192.m","y8192",y,8192,1,1);
+  LOG_M("x8192.m","x8192",x,8192,1,1);
 
   return(0);
 }

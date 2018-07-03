@@ -192,8 +192,8 @@ void do_DL_sig(channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM
       double scale = pow(10.0,(frame_parms->pdsch_config_common.referenceSignalPower+RU2UE[att_eNB_id][UE_id][CC_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB)/20.0);
       LOG_D(OCM,"scale =%lf (%d dB)\n",scale,(int) (20*log10(scale)));
       // freq_channel(desc1,frame_parms->N_RB_DL,nb_samples);
-      //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
-      //write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
+      //LOG_M("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
+      //LOG_M("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
       int count,count1,a_rx,a_tx;
 
       for(a_tx=0; a_tx<nb_antennas_tx; a_tx++) {
@@ -532,10 +532,10 @@ void do_UL_sig(channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM
 	      ru_id,nb_antennas_rx,UE2RU[UE_id][ru_id][CC_id]->nb_rx,10*log10(rx_pwr),10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe])+UE2RU[UE_id][ru_id][CC_id]->path_loss_dB,subframe,frame_parms->samples_per_tti);
 	/*	
 	if (abs(10*log10(rx_pwr)-10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe])-UE2RU[UE_id][ru_id][CC_id]->path_loss_dB)>3) {
-	  write_output("txsig_re.m","s_re",s_re[0],frame_parms->samples_per_tti,1,7);
-	  write_output("txsig_im.m","s_im",s_im[0],frame_parms->samples_per_tti,1,7);
-	  write_output("rxsig_re.m","r_re",r_re0[0],frame_parms->samples_per_tti,1,7);
-	  write_output("rxsig_im.m","r_im",r_im0[0],frame_parms->samples_per_tti,1,7);
+	  LOG_M("txsig_re.m","s_re",s_re[0],frame_parms->samples_per_tti,1,7);
+	  LOG_M("txsig_im.m","s_im",s_im[0],frame_parms->samples_per_tti,1,7);
+	  LOG_M("rxsig_re.m","r_re",r_re0[0],frame_parms->samples_per_tti,1,7);
+	  LOG_M("rxsig_im.m","r_im",r_im0[0],frame_parms->samples_per_tti,1,7);
 	  exit(-1);
 	  }*/
 

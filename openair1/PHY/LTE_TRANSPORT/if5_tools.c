@@ -297,7 +297,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int subframe, uint8_t
 #ifdef DEBUG_DL_MOBIPASS 
   if(subframe==0) {
     if (dummy_cnt==100) {
-      write_output("txsigmb.m","txs",(void*)dummy_buffer, fp->samples_per_tti,1, 5); 
+      LOG_M("txsigmb.m","txs",(void*)dummy_buffer, fp->samples_per_tti,1, 5); 
       exit(-1);
     } else {
     dummy_cnt++;
@@ -601,7 +601,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16
 	  if (rxe > 0){
 	    LOG_I(PHY,"[Mobipass] frame:%d, subframe:%d, energy %d\n", (*proc_timestamp/(10*fp->samples_per_tti))&1023,subframe, rxe);
 	    
-	    //    write_output("rxsigmb.m","rxs",(void*)dummy_buffer_rx, fp->samples_per_tti,1, 5); 
+	    //    LOG_M("rxsigmb.m","rxs",(void*)dummy_buffer_rx, fp->samples_per_tti,1, 5); 
 	    //    exit(-1);
 	  }
 	}

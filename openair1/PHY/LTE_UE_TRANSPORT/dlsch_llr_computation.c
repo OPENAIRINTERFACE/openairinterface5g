@@ -765,11 +765,11 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                     13);
 
 #ifdef DEBUG_LLR_SIC
-    write_output("rho_for_multipl.m","rho_for_m", rho_1,len,1,
+    LOG_M("rho_for_multipl.m","rho_for_m", rho_1,len,1,
      symbol==num_pdcch_symbols ? 15 :
      symbol==nsymb-1 ? 14 : 13);
 
-    write_output("rho_rho_in_llr.m","rho2", rho_rho_amp_x0,len,1,
+    LOG_M("rho_rho_in_llr.m","rho2", rho_rho_amp_x0,len,1,
      symbol==num_pdcch_symbols ? 15 :
      symbol==nsymb-1 ? 14 : 13);
 #endif
@@ -781,8 +781,8 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                      len*2);
 
 #ifdef DEBUG_LLR_SIC
-    write_output("rxFdata_comp1_after.m","rxF_a", rxF,len,1,1);
-    write_output("rxF_comp1.m","rxF_1_comp", rxF,len,1,
+    LOG_M("rxFdata_comp1_after.m","rxF_a", rxF,len,1,1);
+    LOG_M("rxF_comp1.m","rxF_1_comp", rxF,len,1,
                  symbol==num_pdcch_symbols ? 15 :
                  symbol==nsymb-1 ? 14 : 13);
 #endif

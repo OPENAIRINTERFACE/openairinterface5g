@@ -657,12 +657,12 @@ int main(int argc, char **argv)
     }
 
 
-    //  write_output("pilotsF.m","rsF",txdataF[0],frame_parms->ofdm_symbol_size,1,1);
+    //  LOG_M("pilotsF.m","rsF",txdataF[0],frame_parms->ofdm_symbol_size,1,1);
 
-    write_output("txsigF0.m","txsF0", eNB->common_vars.txdataF[0][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+    LOG_M("txsigF0.m","txsF0", eNB->common_vars.txdataF[0][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
     if (eNB->frame_parms.nb_antennas_tx>1)
-      write_output("txsigF1.m","txsF1", eNB->common_vars.txdataF[0][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+      LOG_M("txsigF1.m","txsF1", eNB->common_vars.txdataF[0][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
     tx_lev = 0;
     tx_lev1 = 0;
@@ -710,10 +710,10 @@ int main(int argc, char **argv)
                                  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
       }
 
-      write_output("txsigF0_1.m","txsF0_1", eNB1->common_vars.txdataF[0][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+      LOG_M("txsigF0_1.m","txsF0_1", eNB1->common_vars.txdataF[0][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
       if (eNB1->frame_parms.nb_antennas_tx>1)
-        write_output("txsigF1_1.m","txsF1_1", eNB1->common_vars.txdataF[0][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+        LOG_M("txsigF1_1.m","txsF1_1", eNB1->common_vars.txdataF[0][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
     }
 
     if (interf2>-20) {
@@ -736,28 +736,28 @@ int main(int argc, char **argv)
                                  OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
       }
 
-      write_output("txsigF0_2.m","txsF0_2", eNB2->common_vars.txdataF[0][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+      LOG_M("txsigF0_2.m","txsF0_2", eNB2->common_vars.txdataF[0][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
       if (eNB2->frame_parms.nb_antennas_tx>1)
-        write_output("txsigF1_2.m","txsF1_2", eNB2->common_vars.txdataF[0][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+        LOG_M("txsigF1_2.m","txsF1_2", eNB2->common_vars.txdataF[0][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
     }
 
     //    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
-    write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
     if (frame_parms->nb_antennas_tx>1)
-      write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
-    write_output("txsig0_1.m","txs0_1", eNB1->common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-
-    if (frame_parms->nb_antennas_tx>1)
-      write_output("txsig1_1.m","txs1_1", eNB1->common_vars.txdata[0][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-
-    write_output("txsig0_2.m","txs0_2", eNB2->common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("txsig0_1.m","txs0_1", eNB1->common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
     if (frame_parms->nb_antennas_tx>1)
-      write_output("txsig1_2.m","txs1_2", eNB2->common_vars.txdata[0][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      LOG_M("txsig1_1.m","txs1_1", eNB1->common_vars.txdata[0][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+
+    LOG_M("txsig0_2.m","txs0_2", eNB2->common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+
+    if (frame_parms->nb_antennas_tx>1)
+      LOG_M("txsig1_2.m","txs1_2", eNB2->common_vars.txdata[0][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   } else { //read in from file
     i=0;
 
@@ -782,8 +782,8 @@ int main(int argc, char **argv)
     }
 
     printf("Read in %d samples\n",i/4);
-    write_output("txsig0.m","txs0", txdata[0],2*frame_parms->samples_per_tti,1,1);
-    //    write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("txsig0.m","txs0", txdata[0],2*frame_parms->samples_per_tti,1,1);
+    //    LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     tx_lev = signal_energy(&txdata[0][0],
                            OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
     //    tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
@@ -960,7 +960,7 @@ int main(int argc, char **argv)
           if (l==((eNB->frame_parms.Ncp==0)?4:3)) {
             //sprintf(fname,"dl_ch00_%d.m",l);
             //sprintf(vname,"dl_ch00_%d",l);
-            //write_output(fname,vname,&(common_vars->dl_ch_estimates[0][frame_parms->ofdm_symbol_size*(l%6)]),frame_parms->ofdm_symbol_size,1,1);
+            //LOG_M(fname,vname,&(common_vars->dl_ch_estimates[0][frame_parms->ofdm_symbol_size*(l%6)]),frame_parms->ofdm_symbol_size,1,1);
 
             lte_est_freq_offset(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0],
                                 &UE->frame_parms,
@@ -1050,16 +1050,16 @@ int main(int argc, char **argv)
 
   if (n_frames==1) {
 
-    write_output("H00.m","h00",&(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+    LOG_M("H00.m","h00",&(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
     if (n_tx==2)
-      write_output("H10.m","h10",&(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+      LOG_M("H10.m","h10",&(UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
-    write_output("rxsig0.m","rxs0", UE->common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
-    write_output("PBCH_rxF0_ext.m","pbch0_ext",UE->pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
-    write_output("PBCH_rxF0_comp.m","pbch0_comp",UE->pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
-    write_output("PBCH_rxF_llr.m","pbch_llr",UE->pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
+    LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[/*subframe*/0&0x1].rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
+    LOG_M("PBCH_rxF0_ext.m","pbch0_ext",UE->pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
+    LOG_M("PBCH_rxF0_comp.m","pbch0_comp",UE->pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
+    LOG_M("PBCH_rxF_llr.m","pbch_llr",UE->pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
   }
 
 
