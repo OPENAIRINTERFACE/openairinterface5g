@@ -218,8 +218,6 @@ int main(int argc, char *argv[])
   randominit();
   set_taus_seed();
 
-  crcTableInit();
-
   printf("EbN0, sigma, BER, FER\n");
 
   for (SNR=0; SNR<10; SNR++) {
