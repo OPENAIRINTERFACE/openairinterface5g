@@ -273,7 +273,8 @@ then
     echo "sudo apt-get --yes install zip cppcheck >> zip-install.txt 2>&1" >> $VM_CMDS
 else
     echo "echo \"sudo apt-get --yes --quiet install zip subversion libboost-dev \"" >> $VM_CMDS
-    echo "sudo apt-get --yes install zip subversion libboost-dev > zip-install.txt 2>&1" >> $VM_CMDS
+    echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+    echo "sudo apt-get --yes install zip subversion libboost-dev >>> zip-install.txt 2>&1" >> $VM_CMDS
 fi
 echo "mkdir tmp" >> $VM_CMDS
 echo "cd tmp" >> $VM_CMDS
