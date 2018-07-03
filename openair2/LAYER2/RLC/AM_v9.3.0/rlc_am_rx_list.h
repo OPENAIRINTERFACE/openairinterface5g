@@ -60,7 +60,6 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_check_duplicate_insert_pdu(const protocol_
 * \return     Zero if the PDU could be inserted in the RX buffer, a negative value if the PDU could not be inserted.
 */
 signed int rlc_am_rx_list_insert_pdu(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlcP,  mem_block_t* const tbP);
-#endif
 
 /*! \fn boolean_t rlc_am_rx_check_vr_reassemble(const protocol_ctxt_t* const ctxt_pP,const rlc_am_entity_t* const rlc_pP)
 * \brief      Check if reassembly taking into account potential new vrR value
