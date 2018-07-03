@@ -35,9 +35,6 @@
 #    ifndef __RLC_UM_FSM_PROTO_EXTERN_H__
 #        define __RLC_UM_FSM_PROTO_EXTERN_H__
 //-----------------------------------------------------------------------------
-#            define private_rlc_um_fsm(x)    x
-#            define protected_rlc_um_fsm(x)  x
-#            define public_rlc_um_fsm(x)     x
 #        include "platform_types.h"
 #        include "rlc_um_entity.h"
 //-----------------------------------------------------------------------------
@@ -53,6 +50,6 @@
 * \return     1 if no error was encountered, 0 if the event was not processed.
 * \Note       This FSM is not LTE 9.3.0 compliant, it has to be modified or removed.
 */
-protected_rlc_um_fsm(int      rlc_um_fsm_notify_event (const protocol_ctxt_t* const ctxtP, rlc_um_entity_t *rlcP, uint8_t eventP));
+int      rlc_um_fsm_notify_event (const protocol_ctxt_t* const ctxtP, rlc_um_entity_t *rlcP, uint8_t eventP);
 /** @} */
 #    endif

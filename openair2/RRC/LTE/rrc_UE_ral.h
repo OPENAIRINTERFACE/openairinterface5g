@@ -30,9 +30,6 @@
 #ifndef __RRC_UE_RAL_H__
 #    define __RRC_UE_RAL_H__
 //-----------------------------------------------------------------------------
-#            define private_rrc_ue_ral(x)    x
-#            define protected_rrc_ue_ral(x)  x
-#            define public_rrc_ue_ral(x)     x
 //-----------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,7 +43,7 @@
 #include "ral_messages_types.h"
 #include "defs.h"
 
-private_rrc_ue_ral(  int rrc_ue_ral_delete_all_thresholds_type        (unsigned int mod_idP, ral_link_param_type_t *param_type_pP);)
-private_rrc_ue_ral(  int rrc_ue_ral_delete_threshold                  (unsigned int mod_idP, ral_link_param_type_t *param_type_pP, ral_threshold_t *threshold_pP);)
-protected_rrc_ue_ral(int rrc_ue_ral_handle_configure_threshold_request(unsigned int mod_idP, MessageDef *msg_pP);)
+int rrc_ue_ral_delete_all_thresholds_type        (unsigned int mod_idP, ral_link_param_type_t *param_type_pP);
+int rrc_ue_ral_delete_threshold                  (unsigned int mod_idP, ral_link_param_type_t *param_type_pP, ral_threshold_t *threshold_pP);
+int rrc_ue_ral_handle_configure_threshold_request(unsigned int mod_idP, MessageDef *msg_pP);
 #endif

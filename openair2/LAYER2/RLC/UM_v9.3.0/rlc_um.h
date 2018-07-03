@@ -34,9 +34,6 @@
 */
 #    ifndef __RLC_UM_H__
 #        define __RLC_UM_H__
-#            define private_rlc_um(x) x
-#            define protected_rlc_um(x) x
-#            define public_rlc_um(x) x
 #        include <errno.h>
 #        include "platform_types.h"
 #        include "rlc_def.h"
@@ -206,7 +203,7 @@ rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP,cons
 * \brief    Gets Tx Buffer Occupancy.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.)
 */
-public_rlc_um(    uint32_t rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlc_pP);)
+uint32_t rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlc_pP);
 
 /*! \fn void     rlc_um_data_req (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, mem_block_t *sduP)
 * \brief    Interface with higher layers, buffer higher layer SDUS for transmission.
