@@ -32,8 +32,8 @@
 #include "PHY_INTERFACE/phy_interface.h"
 #include "SCHED/sched_eNB.h"
 
-lte_subframe_t nr_subframe_select (nfapi_config_request_t *cfg, unsigned char subframe);
-void nr_set_ssb_first_subcarrier(nfapi_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
+nr_subframe_t nr_subframe_select(nfapi_nr_config_request_t *cfg,unsigned char subframe);
+void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp);
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, gNB_rxtx_proc_t *proc, int do_meas);
 void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx);
 void nr_feptx_ofdm(RU_t *ru);

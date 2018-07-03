@@ -284,9 +284,9 @@ void* rrc_gnb_task(void* args_p){
   const char                         *msg_name_p;
   instance_t                         instance;
   int                                result;
-  SRB_INFO                           *srb_info_p;
-  int                                CC_id;
-  protocol_ctxt_t                    ctxt;
+  //SRB_INFO                           *srb_info_p;
+  //int                                CC_id;
+  //protocol_ctxt_t                    ctxt;
 
   itti_mark_task_ready(TASK_RRC_GNB);
   LOG_I(NR_RRC,"Entering main loop of NR_RRC message task\n");

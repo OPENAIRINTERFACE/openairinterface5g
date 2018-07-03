@@ -62,8 +62,8 @@ typedef struct
 typedef struct {
   nfapi_uint16_tlv_t  numerology_index_mu;
   nfapi_uint16_tlv_t  duplex_mode;
-  nfapi_uint16_tlv_t  dl_prefix_type;
-  nfapi_uint16_tlv_t  ul_prefix_type;
+  nfapi_uint16_tlv_t  dl_cyclic_prefix_type;
+  nfapi_uint16_tlv_t  ul_cyclic_prefix_type;
 } nfapi_nr_subframe_config_t;
 
 #define NFAPI_NR_SUBFRAME_CONFIG_DUPLEX_MODE_TAG 0x5001
@@ -154,60 +154,6 @@ typedef struct {
 } nfapi_nr_pucch_config_t;
 
 typedef struct {
-  nfapi_uint16_tlv_t  TimeDomainResourceAllocation_k0;                                ///// L1 parameter 'K0'
-  nfapi_uint16_tlv_t  TimeDomainResourceAllocation_mappingType;                       ///// L1 parameter 'Mapping-type'
-} nfapi_nr_pdsch_config_t;
-
-typedef struct{
-  nfapi_uint16_tlv_t  controlResourceSetId;                                           ///// L1 parameter 'CORESET-ID'
-  nfapi_uint16_tlv_t  frequencyDomainResources                                        ///// L1 parameter 'CORESET-freq-dom'
-  nfapi_uint16_tlv_t  duration;                                                       ///// L1 parameter 'CORESET-time-duration'
-  nfapi_uint16_tlv_t  cce_REG_MappingType;                                            ///// L1 parameter 'CORESET-CCE-REG-mapping-type'
-  nfapi_uint16_tlv_t  reg_BundleSize;                                                 ///// L1 parameter 'CORESET-REG-bundle-size'
-  nfapi_uint16_tlv_t  interleaverSize;                                                ///// L1 parameter 'CORESET-interleaver-size'
-  nfapi_uint16_tlv_t  shiftIndex;                                                     ///// L1 parameter 'CORESET-shift-index'
-  nfapi_uint16_tlv_t  precoderGranularity;                                            ///// L1 parameter 'CORESET-precoder-granuality'
-  nfapi_uint16_tlv_t  TCI_StateId;                                                    ///// L1 parameter 'TCI-StatesPDCCH'
-  nfapi_uint16_tlv_t  tci_PresentInDCI;                                               ///// L1 parameter 'TCI-PresentInDCI'
-  nfapi_uint16_tlv_t  pdcch_DMRS_ScramblingID;                                        ///// L1 parameter 'PDCCH-DMRS-Scrambling-ID'
-} nfapi_nr_pdcch_commonControlResourcesSets_t;
-
-typedef struct{
-  nfapi_uint16_tlv_t  SearchSpaceId;
-  nfapi_uint16_tlv_t  commonSearchSpaces_controlResourceSetId;
-  nfapi_uint16_tlv_t  SearchSpace_monitoringSlotPeriodicityAndOffset;                 ///// L1 parameters 'Montoring-periodicity-PDCCH-slot'
-  nfapi_uint16_tlv_t  monitoringSymbolsWithinSlot                                     ///// L1 parameter 'Montoring-symbols-PDCCH-within-slot'
-  nfapi_uint16_tlv_t  SearchSpace_nrofCandidates_aggregationLevel1;                   ///// L1 parameter 'Aggregation-level-1'
-  nfapi_uint16_tlv_t  SearchSpace_nrofCandidates_aggregationLevel2;                   ///// L1 parameter 'Aggregation-level-2'
-  nfapi_uint16_tlv_t  SearchSpace_nrofCandidates_aggregationLevel4;                   ///// L1 parameter 'Aggregation-level-4'
-  nfapi_uint16_tlv_t  SearchSpace_nrofCandidates_aggregationLevel8;                   ///// L1 parameter 'Aggregation-level-8'
-  nfapi_uint16_tlv_t  SearchSpace_nrofCandidates_aggregationLevel16;                  ///// L1 parameter 'Aggregation-level-16'
-  nfapi_uint16_tlv_t  Common_dci_Format2_0_nrofCandidates_SFI_And_aggregationLevel;   ///// L1 parameters 'SFI-Num-PDCCH-cand' and 'SFI-Aggregation-Level'
-  nfapi_uint16_tlv_t  Common_dci_Format2_3_monitoringPeriodicity;                     ///// L1 parameter 'SRS-monitoring-periodicity'
-  nfapi_uint16_tlv_t  Common_dci_Format2_3_nrofPDCCH_Candidates;                      ///// L1 parameter 'SRS-Num-PDCCH-cand'
-  nfapi_uint16_tlv_t  ue_Specific__dci_Formats;
-} nfapi_nr_pdcch_commonSearchSpaces_t;
-
-typedef struct {
-  nfapi_nr_pdcch_commonControlResourcesSets_t commonControlResourcesSets;
-  nfapi_nr_pfcch_commonSearchSpaces_t         commonSearchSpaces; 
-  nfapi_uint16_tlv_t                          searchSpaceSIB1;                        ///// L1 parameter 'rmsi-SearchSpace'
-  nfapi_uint16_tlv_t                          searchSpaceOtherSystemInformation;      ///// L1 parameter 'osi-SearchSpace'
-  nfapi_uint16_tlv_t                          pagingSearchSpace;                      ///// L1 parameter 'paging-SearchSpace'
-  nfapi_uint16_tlv_t                          ra_SearchSpace;                         ///// L1 parameter 'ra-SearchSpace'
-  nfapi_uint16_tlv_t                          rach_ra_ControlResourceSet;             ///// L1 parameter 'rach-coreset-configuration'
-
-} nfapi_nr_pdcch_common_config_t;
-
-typedef struct {
-  nfapi_uint16_tlv_t  ssb_PositionsInBurst_PR;                                        ///// L1 parameter 'SSB-Transmitted
-  nfapi_uint16_tlv_t  ssb_periodicityServingCell;
-  nfapi_uint16_tlv_t  dmrs_TypeA_Position;                                            ///// Position of (first) DL DM-RS
-  nfapi_uint16_tlv_t  NIA_SubcarrierSpacing;                                          ///// Used only for non-initial access (e.g. SCells, PCell of SCG)   
-  nfapi_uint16_tlv_t  ss_PBCH_BlockPower;
-} nfapi_nr_servingcellconfigcommon_t;
-
-typedef struct {
 //NR TDD-UL-DL-ConfigCommon                ///// L1 parameter 'UL-DL-configuration-common'
   nfapi_uint16_tlv_t  referenceSubcarrierSpacing;                                     ///// L1 parameter 'reference-SCS'
   nfapi_uint16_tlv_t  dl_UL_TransmissionPeriodicity;                                  ///// L1 parameter 'DL-UL-transmission-periodicity'
@@ -259,8 +205,8 @@ typedef struct {
 } nfapi_nr_config_request_t;
 
 typedef enum {
-	NFAPI_NR_DL_DCI_FORMAT_1_0 = 0,
-	NFAPI_NR_DL_DCI_FORMAT_1_1,
+  NFAPI_NR_DL_DCI_FORMAT_1_0 = 0,
+  NFAPI_NR_DL_DCI_FORMAT_1_1,
   NFAPI_NR_DL_DCI_FORMAT_2_0,
   NFAPI_NR_DL_DCI_FORMAT_2_1,
   NFAPI_NR_DL_DCI_FORMAT_2_2,
@@ -268,25 +214,25 @@ typedef enum {
 } nfapi_nr_dl_dci_format_e;
 
 typedef enum {
-	NFAPI_NR_UL_DCI_FORMAT_0_0 = 0,
-	NFAPI_NR_UL_DCI_FORMAT_1_0,
+  NFAPI_NR_UL_DCI_FORMAT_0_0 = 0,
+  NFAPI_NR_UL_DCI_FORMAT_1_0,
 } nfapi_nr_ul_dci_format_e;
 
 // P7 Sub Structures
 typedef struct {
-	nfapi_tl_t tl;
+  nfapi_tl_t tl;
   // conf
-	uint8_t dci_format;
-	uint8_t cce_idx;
-	uint8_t aggregation_level;
-	uint16_t rnti;
+  uint8_t dci_format;
+  uint8_t cce_idx;
+  uint8_t aggregation_level;
+  uint16_t rnti;
   // DCI fields
 
 } nfapi_nr_dl_config_dci_dl_pdu_rel15_t;
 #define NFAPI_NR_DL_CONFIG_REQUEST_DCI_DL_PDU_REL15_TAG
 
 typedef struct {
-	nfapi_nr_dl_config_dci_dl_pdu_rel15_t dci_dl_pdu_rel15;
+  nfapi_nr_dl_config_dci_dl_pdu_rel15_t dci_dl_pdu_rel15;
 } nfapi_nr_dl_config_dci_dl_pdu;
 
 
@@ -384,4 +330,3 @@ typedef struct {
 } nfapi_nr_dl_config_request_t;
 
 #endif
-
