@@ -28,6 +28,7 @@
 #define __CODING_DEFS__H__
 
 #include <stdint.h>
+#include <PHY/defs_common.h>
 
 #define CRC24_A 0
 #define CRC24_B 1
