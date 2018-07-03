@@ -2349,6 +2349,30 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
 		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 1;
 		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6 = 1;
 	      }
+              if (S1ParamList.paramarray[l][ENB_MME_BROADCAST_PLMN_INDEX].iptr)
+                S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = S1ParamList.paramarray[l][ENB_MME_BROADCAST_PLMN_INDEX].numelt;
+              else
+                S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = 0;
+              AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] <= S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
+                          "List of broadcast PLMN to be sent to MME can not be longer than actual "
+                          "PLMN list (max %d, but is %d)\n",
+                          S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
+                          S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l]);
+              for (int el = 0; el < S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l]; ++el) {
+                /* UINTARRAY gets mapped to int, see config_libconfig.c:223 */
+                S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el] = S1ParamList.paramarray[l][ENB_MME_BROADCAST_PLMN_INDEX].iptr[el];
+                AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el] >= 0
+                            && S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el] < S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
+                            "index for MME's MCC/MNC (%d) is an invalid index for the registered PLMN IDs (%d)\n",
+                            S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el],
+                            S1AP_REGISTER_ENB_REQ(msg_p).num_plmn);
+              }
+              /* if no broadcasst_plmn array is defined, fill default values */
+              if (S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] == 0) {
+                S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = S1AP_REGISTER_ENB_REQ(msg_p).num_plmn;
+                for (int el = 0; el < S1AP_REGISTER_ENB_REQ(msg_p).num_plmn; ++el)
+                  S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el] = el;
+              }
 	    }
 
 	  
