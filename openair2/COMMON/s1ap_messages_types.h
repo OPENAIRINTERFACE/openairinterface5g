@@ -376,6 +376,10 @@ typedef struct s1ap_nas_first_req_s {
   /* UE id for initial connection to S1AP */
   uint16_t ue_initial_id;
 
+  /* the chosen PLMN identity as index, see TS 36.331 6.2.2 RRC Connection
+   * Setup Complete. This index here is zero-based, unlike the standard! */
+  int selected_plmn_identity;
+
   /* Establishment cause as sent by UE */
   rrc_establishment_cause_t establishment_cause;
 

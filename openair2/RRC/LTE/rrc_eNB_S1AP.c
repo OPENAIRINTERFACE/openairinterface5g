@@ -757,6 +757,7 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
 
       /* selected_plmn_identity: IE is 1-based, convert to 0-based (C array) */
       int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity - 1;
+      S1AP_NAS_FIRST_REQ(message_p).selected_plmn_identity = selected_plmn_identity;
 
       if (rrcConnectionSetupComplete->registeredMME != NULL) {
         /* Fill GUMMEI */
