@@ -463,7 +463,9 @@ static int s1ap_eNB_generate_s1_setup_request(
   ie->id = S1AP_ProtocolIE_ID_id_Global_ENB_ID;
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_S1SetupRequestIEs__value_PR_Global_ENB_ID;
-  MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length,
+  MCC_MNC_TO_PLMNID(instance_p->mcc[s1ap_mme_data_p->broadcast_plmn_index[0]],
+                    instance_p->mnc[s1ap_mme_data_p->broadcast_plmn_index[0]],
+                    instance_p->mnc_digit_length[s1ap_mme_data_p->broadcast_plmn_index[0]],
                     &ie->value.choice.Global_ENB_ID.pLMNidentity);
   ie->value.choice.Global_ENB_ID.eNB_ID.present = S1AP_ENB_ID_PR_macroENB_ID;
   MACRO_ENB_ID_TO_BIT_STRING(instance_p->eNB_id,
@@ -494,9 +496,14 @@ static int s1ap_eNB_generate_s1_setup_request(
     ta = (S1AP_SupportedTAs_Item_t *)calloc(1, sizeof(S1AP_SupportedTAs_Item_t));
     INT16_TO_OCTET_STRING(instance_p->tac, &ta->tAC);
     {
-      plmn = (S1AP_PLMNidentity_t *)calloc(1, sizeof(S1AP_PLMNidentity_t));
-      MCC_MNC_TO_TBCD(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length, plmn);
-      ASN_SEQUENCE_ADD(&ta->broadcastPLMNs.list, plmn);
+      for (int i = 0; i < s1ap_mme_data_p->broadcast_plmn_num; ++i) {
+        plmn = (S1AP_PLMNidentity_t *)calloc(1, sizeof(S1AP_PLMNidentity_t));
+        MCC_MNC_TO_TBCD(instance_p->mcc[s1ap_mme_data_p->broadcast_plmn_index[i]],
+                        instance_p->mnc[s1ap_mme_data_p->broadcast_plmn_index[i]],
+                        instance_p->mnc_digit_length[s1ap_mme_data_p->broadcast_plmn_index[i]],
+                        plmn);
+        ASN_SEQUENCE_ADD(&ta->broadcastPLMNs.list, plmn);
+      }
     }
     ASN_SEQUENCE_ADD(&ie->value.choice.SupportedTAs.list, ta);
   }
