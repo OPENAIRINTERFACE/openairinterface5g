@@ -104,6 +104,10 @@ git checkout -f $SOURCE_COMMIT_ID
 
 git merge --ff $TARGET_COMMIT_ID -m "Temporary merge for CI"
 
-exit 0
-
-
+STATUS=`git status | egrep -c "You have unmerged paths.|fix conflicts"`
+if [ $STATUS -ne 0 ]
+then
+    echo "There are merge conflicts.. Cannot perform further build tasks"
+    STATUS=-1
+fi
+exit $STATUS

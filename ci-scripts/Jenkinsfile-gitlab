@@ -45,6 +45,14 @@ pipeline {
                     }
                 }
             }
+            post {
+                failure {
+                    script {
+                        def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Merge Conflicts -- Cannot perform CI"
+                        addGitLabMRComment comment: message
+                    }
+                }
+            }
         }
 
         stage ("Start VM -- cppcheck") {
