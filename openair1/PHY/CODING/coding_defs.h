@@ -28,6 +28,7 @@
 #define __CODING_DEFS__H__
 
 #include <stdint.h>
+#include <PHY/defs_common.h>
 
 #define CRC24_A 0
 #define CRC24_B 1
@@ -37,7 +38,24 @@
 #define MAX_TURBO_ITERATIONS_MBSFN 8
 #define MAX_TURBO_ITERATIONS max_turbo_iterations
 
+typedef struct {
+  unsigned short nb_bits;
+  unsigned short f1;
+  unsigned short f2;
+} interleaver_TS_36_212_t;
+
+extern const interleaver_TS_36_212_t f1f2[188];
+
 #define LTE_NULL 2
+typedef struct interleaver_codebook {
+  unsigned long nb_bits;
+  unsigned short f1;
+  unsigned short f2;
+  unsigned int beg_index;
+} t_interleaver_codebook;
+extern t_interleaver_codebook *f1f2mat;
+extern short *il_tb;
+
 
 /** @addtogroup _PHY_CODING_BLOCKS_
  * @{
@@ -419,5 +437,9 @@ uint32_t crcbit (uint8_t * ,
 
 int16_t reverseBits(int32_t ,int32_t);
 void phy_viterbi_dot11(int8_t *,uint8_t *,uint16_t);
+
+decoder_if_t phy_threegpplte_turbo_decoder;
+decoder_if_t phy_threegpplte_turbo_decoder8;
+decoder_if_t phy_threegpplte_turbo_decoder16;
 
 #endif

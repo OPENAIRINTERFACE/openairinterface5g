@@ -42,7 +42,6 @@
 #include "PHY/defs_common.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "extern_3GPPinterleaver.h"
 #else
 
 #include "defs.h"
@@ -836,25 +835,21 @@ void init_td8(void)
   }
 }
 
-unsigned char phy_threegpplte_turbo_decoder8(short *y,
-    short y2,
-    unsigned char *decoded_bytes,
-    unsigned char *decoded_bytes2,
-    unsigned short n,
-    unsigned short f1,
-    unsigned short f2,
-    unsigned char max_iterations,
-    unsigned char crc_type,
-    unsigned char F,
-    time_stats_t *init_stats,
-    time_stats_t *alpha_stats,
-    time_stats_t *beta_stats,
-    time_stats_t *gamma_stats,
-    time_stats_t *ext_stats,
-    time_stats_t *intl1_stats,
-    time_stats_t *intl2_stats)
-{
-
+uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
+                               int16_t *y2,
+    		               uint8_t *decoded_bytes,
+    		               uint8_t *decoded_bytes2,
+	   		       uint16_t n,
+	   		       uint8_t max_iterations,
+	   		       uint8_t crc_type,
+	   		       uint8_t F,
+	   		       time_stats_t *init_stats,
+	   		       time_stats_t *alpha_stats,
+	   		       time_stats_t *beta_stats,
+	   		       time_stats_t *gamma_stats,
+	   		       time_stats_t *ext_stats,
+	   		       time_stats_t *intl1_stats,
+                               time_stats_t *intl2_stats) {
   /*  y is a pointer to the input
       decoded_bytes is a pointer to the decoded output
       n is the size in bits of the coded block, with the tail */

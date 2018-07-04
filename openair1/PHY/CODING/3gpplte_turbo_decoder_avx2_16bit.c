@@ -46,7 +46,6 @@
 #include "PHY/defs_common.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "extern_3GPPinterleaver.h"
 #else
 
 #include "defs.h"
@@ -893,8 +892,6 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
 						  uint8_t *decoded_bytes,
 						  uint8_t *decoded_bytes2,
 						  uint16_t n,
-						  uint16_t f1,
-						  uint16_t f2,
 						  uint8_t max_iterations,
 						  uint8_t crc_type,
 						  uint8_t F,
@@ -1287,8 +1284,6 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
 						  uint8_t *decoded_bytes,
 						  uint8_t *decoded_bytes2,
 						  uint16_t n,
-						  uint16_t f1,
-						  uint16_t f2,
 						  uint8_t max_iterations,
 						  uint8_t crc_type,
 						  uint8_t F,

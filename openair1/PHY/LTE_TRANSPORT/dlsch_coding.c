@@ -265,8 +265,6 @@ int dlsch_encoding_2threads0(te_params *tep) {
   unsigned int total_worker       = tep->total_worker;
   unsigned int current_worker     = tep->current_worker;
 
-  unsigned short iind;
-
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
   //  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
@@ -285,28 +283,10 @@ int dlsch_encoding_2threads0(te_params *tep) {
 
       Kr_bytes = Kr>>3;
 
-      // get interleaver index for Turbo code (lookup in Table 5.1.3-3 36-212, V8.6 2009-03, p. 13-14)
-      if (Kr_bytes<=64)
-        iind = (Kr_bytes-5);
-      else if (Kr_bytes <=128)
-        iind = 59 + ((Kr_bytes-64)>>1);
-      else if (Kr_bytes <= 256)
-        iind = 91 + ((Kr_bytes-128)>>2);
-      else if (Kr_bytes <= 768)
-        iind = 123 + ((Kr_bytes-256)>>3);
-      else {
-        printf("dlsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
-        return(-1);
-      }
-
-
-
       encoder(dlsch->harq_processes[harq_pid]->c[r],
               Kr>>3,
               &dlsch->harq_processes[harq_pid]->d[r][96],
-              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0
              );
       dlsch->harq_processes[harq_pid]->RTC[r] =
         sub_block_interleaving_turbo(4+(Kr_bytes*8),
@@ -416,7 +396,6 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   eNB_proc_t *proc = &eNB->proc;
   unsigned int G;
   unsigned int crc=1;
-  unsigned short iind;
 
   unsigned char harq_pid = dlsch->harq_ids[frame%2][subframe];
   if(harq_pid >= dlsch->Mdlharq) {
@@ -505,28 +484,11 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
 
       Kr_bytes = Kr>>3;
 
-      // get interleaver index for Turbo code (lookup in Table 5.1.3-3 36-212, V8.6 2009-03, p. 13-14)
-      if (Kr_bytes<=64)
-        iind = (Kr_bytes-5);
-      else if (Kr_bytes <=128)
-        iind = 59 + ((Kr_bytes-64)>>1);
-      else if (Kr_bytes <= 256)
-        iind = 91 + ((Kr_bytes-128)>>2);
-      else if (Kr_bytes <= 768)
-        iind = 123 + ((Kr_bytes-256)>>3);
-      else {
-        printf("dlsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
-        return(-1);
-      }
-
-
       start_meas(te_stats);
       encoder(dlsch->harq_processes[harq_pid]->c[r],
               Kr>>3,
               &dlsch->harq_processes[harq_pid]->d[r][96],
-              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0
              );
       stop_meas(te_stats);
 
@@ -738,7 +700,6 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
 
   unsigned int G;
   unsigned int crc=1;
-  unsigned short iind;
 
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   unsigned char harq_pid = dlsch->harq_ids[frame%2][subframe];
@@ -813,21 +774,6 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
 
       Kr_bytes = Kr>>3;
 
-      // get interleaver index for Turbo code (lookup in Table 5.1.3-3 36-212, V8.6 2009-03, p. 13-14)
-      if (Kr_bytes<=64)
-        iind = (Kr_bytes-5);
-      else if (Kr_bytes <=128)
-        iind = 59 + ((Kr_bytes-64)>>1);
-      else if (Kr_bytes <= 256)
-        iind = 91 + ((Kr_bytes-128)>>2);
-      else if (Kr_bytes <= 768)
-        iind = 123 + ((Kr_bytes-256)>>3);
-      else {
-        printf("dlsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
-        return(-1);
-      }
-
-
 #ifdef DEBUG_DLSCH_CODING
       printf("Generating Code Segment %d (%d bits)\n",r,Kr);
       // generate codewords
@@ -839,16 +785,11 @@ int dlsch_encoding(PHY_VARS_eNB *eNB,
 #endif
 
 
-#ifdef DEBUG_DLSCH_CODING
-      printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
-#endif
       start_meas(te_stats);
       encoder(dlsch->harq_processes[harq_pid]->c[r],
               Kr>>3,
               &dlsch->harq_processes[harq_pid]->d[r][96],
-              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0
              );
       stop_meas(te_stats);
 #ifdef DEBUG_DLSCH_CODING

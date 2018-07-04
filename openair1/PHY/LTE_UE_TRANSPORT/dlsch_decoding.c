@@ -176,7 +176,6 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-  uint16_t iind;
   //  uint8_t dummy_channel_output[(3*8*block_length)+12];
   short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
   uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0;
@@ -184,7 +183,30 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING
   uint16_t i;
 #endif
-  decoder_if_t tc;
+  //#ifdef __AVX2__
+#if 0
+  int Kr_last,skipped_last=0;
+  uint8_t (*tc_2cw)(int16_t *y,
+		    int16_t *y2,
+		    uint8_t *,
+		    uint8_t *,
+		    uint16_t,
+		    uint16_t,
+		    uint16_t,
+		    uint8_t,
+		    uint8_t,
+		    uint8_t,
+		    time_stats_t *,
+		    time_stats_t *,
+		    time_stats_t *,
+		    time_stats_t *,
+		    time_stats_t *,
+		    time_stats_t *,
+		    time_stats_t *);
+
+#endif
+decoder_if_t *tc;
+
 
   if (!dlsch_llr) {
     printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
@@ -314,23 +336,6 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
     Kr_bytes = Kr>>3;
 
-    if (Kr_bytes<=64)
-      iind = (Kr_bytes-5);
-    else if (Kr_bytes <=128)
-      iind = 59 + ((Kr_bytes-64)>>1);
-    else if (Kr_bytes <= 256)
-      iind = 91 + ((Kr_bytes-128)>>2);
-    else if (Kr_bytes <= 768)
-      iind = 123 + ((Kr_bytes-256)>>3);
-    else {
-      printf("dlsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      return(dlsch->max_turbo_iterations);
-    }
-
-#ifdef DEBUG_DLSCH_DECODING
-    printf("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? harq_process->F : 0);
-#endif
-
 #if UE_TIMING_TRACE
     start_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -451,8 +456,6 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
              harq_process->c[r],
              NULL,
              Kr,
-             f1f2mat_old[iind*2],
-             f1f2mat_old[(iind*2)+1],
              dlsch->max_turbo_iterations,
              crc_type,
              (r==0) ? harq_process->F : 0,
@@ -479,8 +482,6 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
             (&harq_process->d[r][96],
              harq_process->c[r],
              Kr,
-             f1f2mat_old[iind*2],
-             f1f2mat_old[(iind*2)+1],
              dlsch->max_turbo_iterations,
              crc_type,
              (r==0) ? harq_process->F : 0,
@@ -522,8 +523,6 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
              harq_process->c[r-1],
              harq_process->c[r],
              Kr,
-             f1f2mat_old[iind*2],
-             f1f2mat_old[(iind*2)+1],
              dlsch->max_turbo_iterations,
              crc_type,
              (r==0) ? harq_process->F : 0,
@@ -539,8 +538,6 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
             (&harq_process->d[r-1][96],
              harq_process->c[r-1],
              Kr_last,
-             f1f2mat_old[iind*2],
-             f1f2mat_old[(iind*2)+1],
              dlsch->max_turbo_iterations,
              crc_type,
              (r==0) ? harq_process->F : 0,
@@ -565,8 +562,6 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
             (&harq_process->d[r-1][96],
              harq_process->c[r-1],
              Kr_last,
-             f1f2mat_old[iind*2],
-             f1f2mat_old[(iind*2)+1],
              dlsch->max_turbo_iterations,
              crc_type,
              (r==0) ? harq_process->F : 0,
@@ -587,8 +582,6 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
             (&harq_process->d[r][96],
              harq_process->c[r],
              Kr,
-             f1f2mat_old[iind*2],
-             f1f2mat_old[(iind*2)+1],
              dlsch->max_turbo_iterations,
              crc_type,
              (r==0) ? harq_process->F : 0,
@@ -731,7 +724,6 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
   
   unsigned int G;
   unsigned int crc=1;
-  unsigned short iind;
 
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   unsigned char harq_pid = ue->dlsch[subframe&2][0][0]->rnti;
@@ -801,21 +793,6 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
 
       Kr_bytes = Kr>>3;
 
-      // get interleaver index for Turbo code (lookup in Table 5.1.3-3 36-212, V8.6 2009-03, p. 13-14)
-      if (Kr_bytes<=64)
-        iind = (Kr_bytes-5);
-      else if (Kr_bytes <=128)
-        iind = 59 + ((Kr_bytes-64)>>1);
-      else if (Kr_bytes <= 256)
-        iind = 91 + ((Kr_bytes-128)>>2);
-      else if (Kr_bytes <= 768)
-        iind = 123 + ((Kr_bytes-256)>>3);
-      else {
-        printf("dlsch_coding: Illegal codeword size %d!!!\n",Kr_bytes);
-        return(-1);
-      }
-
-
 #ifdef DEBUG_DLSCH_CODING
       printf("Generating Code Segment %d (%d bits)\n",r,Kr);
       // generate codewords
@@ -827,16 +804,11 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
 #endif
 
 
-#ifdef DEBUG_DLSCH_CODING
-      printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
-#endif
       start_meas(te_stats);
       encoder(dlsch->harq_processes[harq_pid]->c[r],
               Kr>>3,
               &dlsch->harq_processes[harq_pid]->d[r][96],
-              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0,
-              f1f2mat_old[iind*2],   // f1 (see 36121-820, page 14)
-              f1f2mat_old[(iind*2)+1]  // f2 (see 36121-820, page 14)
+              (r==0) ? dlsch->harq_processes[harq_pid]->F : 0
              );
       stop_meas(te_stats);
 #ifdef DEBUG_DLSCH_CODING
