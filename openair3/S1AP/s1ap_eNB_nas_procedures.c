@@ -124,6 +124,7 @@ int s1ap_eNB_handle_nas_first_req(
   ue_desc_p->mme_ref       = mme_desc_p;
   ue_desc_p->ue_initial_id = s1ap_nas_first_req_p->ue_initial_id;
   ue_desc_p->eNB_instance  = instance_p;
+  ue_desc_p->selected_plmn_identity = s1ap_nas_first_req_p->selected_plmn_identity;
 
   do {
     struct s1ap_eNB_ue_context_s *collision_p;
@@ -172,9 +173,9 @@ int s1ap_eNB_handle_nas_first_req(
   ie->value.present = S1AP_InitialUEMessage_IEs__value_PR_TAI;
   /* Assuming TAI is the TAI from the cell */
   INT16_TO_OCTET_STRING(instance_p->tac, &ie->value.choice.TAI.tAC);
-  MCC_MNC_TO_PLMNID(instance_p->mcc,
-                    instance_p->mnc,
-                    instance_p->mnc_digit_length,
+  MCC_MNC_TO_PLMNID(instance_p->mcc[ue_desc_p->selected_plmn_identity],
+                    instance_p->mnc[ue_desc_p->selected_plmn_identity],
+                    instance_p->mnc_digit_length[ue_desc_p->selected_plmn_identity],
                     &ie->value.choice.TAI.pLMNidentity);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
@@ -191,9 +192,9 @@ int s1ap_eNB_handle_nas_first_req(
   MACRO_ENB_ID_TO_CELL_IDENTITY(instance_p->eNB_id,
                                 0, // Cell ID
                                 &ie->value.choice.EUTRAN_CGI.cell_ID);
-  MCC_MNC_TO_TBCD(instance_p->mcc,
-                  instance_p->mnc,
-                  instance_p->mnc_digit_length,
+  MCC_MNC_TO_TBCD(instance_p->mcc[ue_desc_p->selected_plmn_identity],
+                  instance_p->mnc[ue_desc_p->selected_plmn_identity],
+                  instance_p->mnc_digit_length[ue_desc_p->selected_plmn_identity],
                   &ie->value.choice.EUTRAN_CGI.pLMNidentity);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
@@ -608,9 +609,9 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
   ie->criticality = S1AP_Criticality_ignore;
   ie->value.present = S1AP_UplinkNASTransport_IEs__value_PR_EUTRAN_CGI;
   MCC_MNC_TO_PLMNID(
-    s1ap_eNB_instance_p->mcc,
-    s1ap_eNB_instance_p->mnc,
-    s1ap_eNB_instance_p->mnc_digit_length,
+    s1ap_eNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
+    s1ap_eNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
+    s1ap_eNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
     &ie->value.choice.EUTRAN_CGI.pLMNidentity);
   //#warning "TODO get cell id from RRC"
   MACRO_ENB_ID_TO_CELL_IDENTITY(s1ap_eNB_instance_p->eNB_id,
@@ -624,9 +625,9 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
   ie->criticality = S1AP_Criticality_ignore;
   ie->value.present = S1AP_UplinkNASTransport_IEs__value_PR_TAI;
   MCC_MNC_TO_PLMNID(
-    s1ap_eNB_instance_p->mcc,
-    s1ap_eNB_instance_p->mnc,
-    s1ap_eNB_instance_p->mnc_digit_length,
+    s1ap_eNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
+    s1ap_eNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
+    s1ap_eNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
     &ie->value.choice.TAI.pLMNidentity);
   TAC_TO_ASN1(s1ap_eNB_instance_p->tac, &ie->value.choice.TAI.tAC);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
