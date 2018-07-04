@@ -19,35 +19,28 @@
  *      contact@openairinterface.org
  */
 
-/*! \file main.c
- * \brief top init of Layer 2
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \version 1.0
- * \email: navid.nikaein@eurecom.fr
- * @ingroup _mac
+/*! \file PHY/NR_TRANSPORT/nr_mcs.c
+* \brief Some support routines for NR MCS computations
+* \author
+* \date 2018
+* \version 0.1
+* \company Eurecom
+* \email:
+* \note
+* \warning
+*/
 
- */
+#ifndef __NR_TRANSPORT_COMMON_PROTO__H__
+#define __NR_TRANSPORT_COMMON_PROTO__H__
 
-#include "defs.h"
-#include "proto.h"
+// Functions below implement minor procedures from 38-214
 
-static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
+/** \brief Computes Q based on I_MCS PDSCH and when 'MCS-Table-PDSCH' is set to "256QAM". Implements Table 5.1.3.1-2 from 38.214.
+    @param I_MCS */
+uint8_t get_nr_Qm(uint8_t I_MCS);
 
-int
-nr_l2_init_ue(void)
-{
-    //LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
+/** \brief Computes Q based on I_MCS PUSCH. Implements Table 6.1.4.1-1 from 38.214.
+    @param I_MCS */
+uint8_t get_nr_Qm_ul(uint8_t I_MCS);
 
-    //LOG_I(MAC, "[MAIN] init UE MAC functions \n");
-    
-    //init mac here
-    nr_ue_mac_inst = (NR_UE_MAC_INST_t *)malloc(sizeof(NR_UE_MAC_INST_t)*NB_NR_UE_MAC_INST);
-    
-
-    return (1);
-}
-
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t Mod_idP){
-    return &nr_ue_mac_inst[(int)Mod_idP];
-}
+#endif

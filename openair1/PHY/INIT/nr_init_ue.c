@@ -33,6 +33,7 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 
 //uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
@@ -841,17 +842,17 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       pbch_vars[eNB_id]->rxdataF_ext         = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
       pbch_vars[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
       pbch_vars[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pbch_vars[eNB_id]->llr                 = (int8_t*)malloc16_clear( 1920 );
+      pbch_vars[eNB_id]->llr                 = (int8_t*)malloc16_clear( 1920 );//
       prach_vars[eNB_id]->prachF             = (int16_t*)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
       prach_vars[eNB_id]->prach              = (int16_t*)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
 
       for (i=0; i<fp->nb_antennas_rx; i++) {
-        pbch_vars[eNB_id]->rxdataF_ext[i]    = (int32_t*)malloc16_clear( sizeof(int32_t)*6*12*4 );
+        pbch_vars[eNB_id]->rxdataF_ext[i]    = (int32_t*)malloc16_clear( sizeof(int32_t)*20*12*4 );
 
         for (j=0; j<4; j++) {//fp->nb_antennas_tx;j++) {
           int idx = (j<<1)+i;
-          pbch_vars[eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t)*6*12*4 );
-          pbch_vars[eNB_id]->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*6*12*4 );
+          pbch_vars[eNB_id]->rxdataF_comp[idx]        = (int32_t*)malloc16_clear( sizeof(int32_t)*20*12*4 );
+          pbch_vars[eNB_id]->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*20*12*4 );
         }
       }
     }
@@ -954,6 +955,9 @@ void phy_init_nr_top(NR_DL_FRAME_PARMS *frame_parms)
   init_context_synchro_nr(frame_parms);
 
   generate_ul_reference_signal_sequences(SHRT_MAX);
+
+  // Polar encoder init for PBCH
+  nr_polar_init(&frame_parms->pbch_polar_params, 1);
 
   //lte_sync_time_init(frame_parms);
 

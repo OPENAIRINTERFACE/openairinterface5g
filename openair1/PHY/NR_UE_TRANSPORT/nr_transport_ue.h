@@ -328,7 +328,42 @@ typedef struct {
   int8_t               g_pucch;
 } NR_UE_DLSCH_t;
 
+typedef enum {format0_0,
+              format0_1,
+              format1_0,
+              format1_1,
+              format2_0,
+              format2_1,
+              format2_2,
+              format2_3
+             } NR_DCI_format_t;
 
+
+typedef enum {nr_pucch_format0=0,
+              nr_pucch_format1,
+              nr_pucch_format2,
+              nr_pucch_format3,
+              nr_pucch_format4
+             } NR_PUCCH_FMT_t;
+
+typedef struct {
+  /// Length of DCI in bits
+  uint8_t dci_length;
+  /// Aggregation level
+  uint8_t L;
+  /// Position of first CCE of the dci
+  int firstCCE;
+  /// flag to indicate that this is a RA response
+  boolean_t ra_flag;
+  /// rnti
+  rnti_t rnti;
+  /// Format
+  NR_DCI_format_t format;
+  /// search space
+  dci_space_t search_space;
+  /// DCI pdu
+  uint8_t dci_pdu[8];
+} NR_DCI_ALLOC_t;
 
 
 /**@}*/

@@ -30,6 +30,7 @@
 #include "PHY/types.h"
 
 #include "flexran_agent.h"
+#include "PHY/defs_gNB.h"
 
 #if defined(ENABLE_ITTI)
 #if defined(ENABLE_USE_MME)

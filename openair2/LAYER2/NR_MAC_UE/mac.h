@@ -34,8 +34,8 @@
 
 /*@}*/
 
-#ifndef __LAYER2_NR_MAC_DEFS_H__
-#define __LAYER2_NR_MAC_DEFS_H__
+#ifndef __LAYER2_MAC_DEFS_H__
+#define __LAYER2_MAC_DEFS_H__
 
 
 
@@ -43,37 +43,50 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "platform_types.h"
+#include "COMMON/platform_constants.h"
+#include "BCCH-BCH-Message.h"
+#include "RadioResourceConfigCommon.h"
+#include "RadioResourceConfigCommonSIB.h"
+#include "RadioResourceConfigDedicated.h"
+#include "MeasGapConfig.h"
+#include "SchedulingInfoList.h"
+#include "TDD-Config.h"
+#include "RACH-ConfigCommon.h"
+#include "MeasObjectToAddModList.h"
+#include "MobilityControlInfo.h"
+#if defined(Rel10) || defined(Rel14)
+#include "MBSFN-AreaInfoList-r9.h"
+#include "MBSFN-SubframeConfigList.h"
+#include "PMCH-InfoList-r9.h"
+#include "SCellToAddMod-r10.h"
+#endif
+#ifdef Rel14
+#include "SystemInformationBlockType1-v1310-IEs.h"
+#endif
 
-#include "NR_DRX-Config.h"
-#include "NR_SchedulingRequestConfig.h"
-#include "NR_BSR-Config.h"
-#include "NR_TAG-Config.h"
-#include "NR_PHR-Config.h"
-#include "NR_RNTI-Value.h"
+#include "nfapi_interface.h"
+#include "PHY_INTERFACE/IF_Module.h"
 
-#include "NR_MIB.h"
-#include "NR_MAC-CellGroupConfig.h"
-#include "NR_PhysicalCellGroupConfig.h"
-#include "NR_SpCellConfig.h"
+#include "PHY/TOOLS/time_meas.h"
 
-#include "NR_ServingCellConfig.h"
+#include "PHY/defs_common.h" // for PRACH_RESOURCES_t
 
-#define NB_NR_UE_MAC_INST 1
+#include "targets/ARCH/COMMON/common_lib.h"
 
-/*!\brief Top level UE MAC structure */
-typedef struct {
-    
-    ////  MAC config
-    NR_DRX_Config_t    *drx_Config;    /* OPTIONAL */
-    NR_SchedulingRequestConfig_t   *schedulingRequestConfig;   /* OPTIONAL */
-    NR_BSR_Config_t    *bsr_Config;    /* OPTIONAL */
-    NR_TAG_Config_t    *tag_Config;    /* OPTIONAL */
-    NR_PHR_Config_t    *phr_Config;    /* OPTIONAL */
-    
-    NR_RNTI_Value_t *cs_RNTI;   /* OPTIONAL */
+//solve implicit declaration
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
-} NR_UE_MAC_INST_t;
+/** @defgroup _mac  MAC
+ * @ingroup _oai2
+ * @{
+ */
 
+/*!\brief Values of BCCH logical channel (fake)*/
+#define NR_BCCH_DL_SCH 3			// SI
+
+/*!\brief Values of PCCH logical channel (fake) */
+#define NR_BCCH_BCH 5			// MIB
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */
