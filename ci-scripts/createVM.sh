@@ -59,6 +59,7 @@ VM_TEMPLATE=ci-
 JOB_NAME=XX
 BUILD_ID=XX
 VM_NAME=ci-enb-usrp
+VM_MEMORY=2048
 
 while [[ $# -gt 0 ]]
 do
@@ -94,6 +95,7 @@ case $key in
     ;;
     -v4)
     VM_NAME=ci-cppcheck
+    VM_MEMORY=4096
     shift
     ;;
     -v7)
@@ -118,6 +120,7 @@ case $key in
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck
+        VM_MEMORY=4096
         ;;
         enb-ethernet)
         VM_NAME=ci-enb-ethernet
@@ -154,11 +157,12 @@ VM_NAME=`echo $VM_NAME | sed -e "s#ci-#$VM_TEMPLATE#"`
 VM_CMDS=${VM_NAME}_cmds.txt
 
 echo "VM_NAME             = $VM_NAME"
+echo "VM_MEMORY           = $VM_MEMORY MBytes"
 
 echo "############################################################"
 echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
 echo "############################################################"
-uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
 echo "Waiting for VM to be started"
 uvt-kvm wait $VM_NAME --insecure
 

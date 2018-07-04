@@ -65,6 +65,7 @@ VM_TEMPLATE=ci-
 JOB_NAME=XX
 BUILD_ID=XX
 VM_NAME=ci-enb-usrp
+VM_MEMORY=2048
 ARCHIVES_LOC=enb_usrp
 LOG_PATTERN=.Rel14.txt
 NB_PATTERN_FILES=4
@@ -126,6 +127,7 @@ case $key in
     ;;
     -v4)
     VM_NAME=ci-cppcheck
+    VM_MEMORY=4096
     ARCHIVES_LOC=cppcheck
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
@@ -174,6 +176,7 @@ case $key in
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck
+        VM_MEMORY=4096
         ARCHIVES_LOC=cppcheck
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
@@ -247,7 +250,7 @@ then
     echo "############################################################"
     echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
     echo "############################################################"
-    uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+    uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
 fi
 
 echo "Waiting for VM to be started"
