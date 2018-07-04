@@ -496,7 +496,7 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
   //uint16_t crc;
   //short nr_demod_table[8] = {0,0,0,1,1,0,1,1};
-  double nr_demod_table[8] = {0.707,0.707,0.707,-0.707,-0.707,0.707,-0.707,-0.707};
+  double nr_demod_table[8] = {0.707,0.707,-0.707,0.707,0.707,-0.707,-0.707,-0.707};
   double *demod_pbch_e  = malloc (sizeof(double) * 864); 
   unsigned short idx_demod =0;
   int8_t decoderState=0;
@@ -607,8 +607,8 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //polar decoding de-rate matching
   decoderState = polar_decoder(demod_pbch_e, pbch_a, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
 
-  //for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
-  // printf("pbch_a[%d] = %u \n", i,pbch_a[i]);
+  for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+   printf("pbch_a[%d] = %u \n", i,pbch_a[i]);
   
   //un-scrambling
   nr_pbch_unscrambling(frame_parms,pbch_a,NR_POLAR_PBCH_PAYLOAD_BITS);
