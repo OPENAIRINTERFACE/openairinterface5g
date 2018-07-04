@@ -755,17 +755,19 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
             ue_context_pP->ue_context.rnti);
       }
 
+      /* selected_plmn_identity: IE is 1-based, convert to 0-based (C array) */
+      int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity - 1;
+
       if (rrcConnectionSetupComplete->registeredMME != NULL) {
         /* Fill GUMMEI */
         struct RegisteredMME *r_mme = rrcConnectionSetupComplete->registeredMME;
-        //int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity;
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_gummei;
 
         if (r_mme->plmn_Identity != NULL) {
           if ((r_mme->plmn_Identity->mcc != NULL) && (r_mme->plmn_Identity->mcc->list.count > 0)) {
             /* Use first indicated PLMN MCC if it is defined */
-            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc = *r_mme->plmn_Identity->mcc->list.array[0];
+            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc = *r_mme->plmn_Identity->mcc->list.array[selected_plmn_identity];
             LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
                 ctxt_pP->module_id,
                 S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc,
@@ -774,20 +776,16 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
 
           if (r_mme->plmn_Identity->mnc.list.count > 0) {
             /* Use first indicated PLMN MNC if it is defined */
-            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc = *r_mme->plmn_Identity->mnc.list.array[0];
+            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc = *r_mme->plmn_Identity->mnc.list.array[selected_plmn_identity];
             LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
                   ctxt_pP->module_id,
                   S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc,
                   ue_context_pP->ue_context.rnti);
           }
         } else {
-	  //          const Enb_properties_array_t   *enb_properties_p  = NULL;
-	  //          enb_properties_p = enb_config_get();
-
-          // actually the eNB configuration contains only one PLMN (can be up to 6)
-          S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc = rrc->mcc;
-          S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc = rrc->mnc;
-          S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc_len = rrc->mnc_digit_length;
+          S1AP_NAS_FIRST_REQ(message_p).ue_identity.gummei.mcc = rrc->configuration.mcc[selected_plmn_identity];
+          S1AP_NAS_FIRST_REQ(message_p).ue_identity.gummei.mnc = rrc->configuration.mnc[selected_plmn_identity];
+          S1AP_NAS_FIRST_REQ(message_p).ue_identity.gummei.mnc_len = rrc->configuration.mnc_digit_length[selected_plmn_identity];
         }
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code     = BIT_STRING_to_uint8 (&r_mme->mmec);
