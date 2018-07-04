@@ -81,6 +81,16 @@ int s1ap_eNB_handle_nas_first_req(
                    instance_p,
                    s1ap_nas_first_req_p->establishment_cause,
                    s1ap_nas_first_req_p->ue_identity.gummei);
+    if (mme_desc_p) {
+      S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through GUMMEI MCC %d MNC %d MMEGI %d MMEC %d\n",
+                instance,
+                mme_desc_p->mme_name,
+                mme_desc_p->assoc_id,
+                s1ap_nas_first_req_p->ue_identity.gummei.mcc,
+                s1ap_nas_first_req_p->ue_identity.gummei.mnc,
+                s1ap_nas_first_req_p->ue_identity.gummei.mme_group_id,
+                s1ap_nas_first_req_p->ue_identity.gummei.mme_code);
+    }
   }
 
   if (mme_desc_p == NULL) {
@@ -91,6 +101,16 @@ int s1ap_eNB_handle_nas_first_req(
                      s1ap_nas_first_req_p->establishment_cause,
                      s1ap_nas_first_req_p->selected_plmn_identity,
                      s1ap_nas_first_req_p->ue_identity.s_tmsi.mme_code);
+      if (mme_desc_p) {
+        S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through S-TMSI MMEC %d and selected PLMN Identity index %d MCC %d MNC %d\n",
+                  instance,
+                  mme_desc_p->mme_name,
+                  mme_desc_p->assoc_id,
+                  s1ap_nas_first_req_p->ue_identity.s_tmsi.mme_code,
+                  s1ap_nas_first_req_p->selected_plmn_identity,
+                  instance_p->mcc[s1ap_nas_first_req_p->selected_plmn_identity],
+                  instance_p->mnc[s1ap_nas_first_req_p->selected_plmn_identity]);
+      }
     }
   }
 
@@ -101,6 +121,15 @@ int s1ap_eNB_handle_nas_first_req(
                    instance_p,
                    s1ap_nas_first_req_p->establishment_cause,
                    s1ap_nas_first_req_p->selected_plmn_identity);
+    if (mme_desc_p) {
+      S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
+                instance,
+                mme_desc_p->mme_name,
+                mme_desc_p->assoc_id,
+                s1ap_nas_first_req_p->selected_plmn_identity,
+                instance_p->mcc[s1ap_nas_first_req_p->selected_plmn_identity],
+                instance_p->mnc[s1ap_nas_first_req_p->selected_plmn_identity]);
+    }
   }
 
   if (mme_desc_p == NULL) {
@@ -111,6 +140,12 @@ int s1ap_eNB_handle_nas_first_req(
     mme_desc_p = s1ap_eNB_nnsf_select_mme(
                    instance_p,
                    s1ap_nas_first_req_p->establishment_cause);
+    if (mme_desc_p) {
+      S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through highest relative capacity\n",
+                instance,
+                mme_desc_p->mme_name,
+                mme_desc_p->assoc_id);
+    }
   }
 
   if (mme_desc_p == NULL) {
