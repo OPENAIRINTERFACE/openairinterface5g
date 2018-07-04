@@ -89,6 +89,7 @@ int s1ap_eNB_handle_nas_first_req(
       mme_desc_p = s1ap_eNB_nnsf_select_mme_by_mme_code(
                      instance_p,
                      s1ap_nas_first_req_p->establishment_cause,
+                     s1ap_nas_first_req_p->selected_plmn_identity,
                      s1ap_nas_first_req_p->ue_identity.s_tmsi.mme_code);
     }
   }
