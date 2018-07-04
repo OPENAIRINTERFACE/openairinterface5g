@@ -136,7 +136,7 @@ void nr_pbch_scrambling(uint32_t Nid,
                         uint8_t *pbch_a,
                         uint32_t length)
 {
-  uint8_t reset;
+  uint8_t reset, offset;
   uint32_t x1, x2, s=0;
   uint64_t tmp=0;
   uint8_t M = length - 3; // case Lmax = 4--> 29
@@ -146,22 +146,18 @@ void nr_pbch_scrambling(uint32_t Nid,
   x2 = Nid;
 
   // The Gold sequence is shifted by nushift* M, so we skip (nushift*M /32) double words
-  for (int i=0; i<(nushift*M)>>5; i++) {
+  for (int i=0; i<(uint16_t)ceil((nushift*M)/5); i++) {
     s = lte_gold_generic(&x1, &x2, reset);
     reset = 0;
   }
-  tmp = (uint64_t)s;
-  s = lte_gold_generic(&x1, &x2, reset);
-  tmp^=(uint64_t)(s<<32);
-  tmp>>=((nushift*M)&0x1f);
-  s = (uint32_t)(tmp);
+  offset = (nushift*M)&0x1f;
 
   for (int i=0; i<length; i++) {
-    if ((i&0x1f)==0) {
+    if (((i+offset)&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
     }
-    pbch_a[i] = (pbch_a[i]&1) ^ ((s>>(i&0x1f))&1);
+    pbch_a[i] = (pbch_a[i]&1) ^ ((s>>((i+offset)&0x1f))&1);
   }
 }
 
