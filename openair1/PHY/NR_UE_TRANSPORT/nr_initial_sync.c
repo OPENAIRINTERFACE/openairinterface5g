@@ -52,7 +52,7 @@ void set_default_frame_parms_single(nfapi_config_request_t *config, NR_DL_FRAME_
 
 //#define DEBUG_INITIAL_SYNCH
 
-int pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
+int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
 
   uint8_t l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
@@ -95,6 +95,8 @@ int pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 
   pbch_decoded = 0;
 
+  printf("pbch_detection nid_cell %d\n",frame_parms->Nid_cell);
+  
   //for (frame_mod4=0; frame_mod4<4; frame_mod4++) {
     pbch_tx_ant = nr_rx_pbch(ue,
 						  &ue->proc.proc_rxtx[0],
@@ -105,11 +107,8 @@ int pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
                           ue->high_speed_flag,
                           frame_mod4);
 
-    if ((pbch_tx_ant>0) && (pbch_tx_ant<=2)) {
-      pbch_decoded = 1;
+    pbch_decoded = 0; //to be updated
 //      break;
-    }
-
   //}
 
 
@@ -127,43 +126,6 @@ int pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
     //    ue->pbch_vars[0]->decoded_output[0] = ue->pbch_vars[0]->decoded_output[2];
     //    ue->pbch_vars[0]->decoded_output[2] = dummy;
 
-    // now check for Bandwidth of Cell
-    dummy = (ue->pbch_vars[0]->decoded_output[2]>>5)&7;
-
-    switch (dummy) {
-
-    case 0 :
-      frame_parms->N_RB_DL = 6;
-      break;
-
-    case 1 :
-      frame_parms->N_RB_DL = 15;
-      break;
-
-    case 2 :
-      frame_parms->N_RB_DL = 25;
-      break;
-
-    case 3 :
-      frame_parms->N_RB_DL = 50;
-      break;
-
-    case 4 :
-      frame_parms->N_RB_DL = 75;
-      break;
-
-    case 5:
-      frame_parms->N_RB_DL = 100;
-      break;
-
-    default:
-      LOG_E(PHY,"[UE%d] Initial sync: PBCH decoding: Unknown N_RB_DL\n",ue->Mod_id);
-      return -1;
-      break;
-    }
-
-
-
     for(int i=0; i<RX_NB_TH;i++)
     {
         ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
@@ -176,14 +138,11 @@ int pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
         ue->proc.proc_rxtx[i].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
     }
 #ifdef DEBUG_INITIAL_SYNCH
-    LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %s!\n",
+    LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d\n",
           ue->Mod_id,
           frame_parms->mode1_flag,
           pbch_tx_ant,
-          ue->proc.proc_rxtx[0].frame_rx,
-          frame_parms->N_RB_DL,
-          frame_parms->phich_config_common.phich_duration,
-          phich_resource);  //frame_parms->phich_config_common.phich_resource);
+          ue->proc.proc_rxtx[0].frame_rx,);
 #endif
     return(0);
   } else {
@@ -192,7 +151,6 @@ int pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 
 }
 
-char phich_string[13][4] = {"","1/6","","1/2","","","one","","","","","","two"};
 char duplex_string[2][4] = {"FDD","TDD"};
 char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 
@@ -260,11 +218,12 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     rx_sss_nr(ue,&metric_fdd_ncp,&phase_fdd_ncp);
 
-    set_default_frame_parms_single(config,&ue->frame_parms);
+    //set_default_frame_parms_single(config,&ue->frame_parms);
     nr_init_frame_parms_ue(config,&ue->frame_parms);
 
     nr_gold_pbch(ue);
-    ret = pbch_detection(ue,mode);
+    ret = nr_pbch_detection(ue,mode);
+    ret = -1;  //to be deleted
     //   write_output("rxdata2.m","rxd2",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
@@ -321,10 +280,6 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 	ue->UE_mode[0] = PUSCH;
       }
 #endif
-
-      generate_pcfich_reg_mapping(frame_parms);
-      generate_phich_reg_mapping(frame_parms);
-
 
       ue->pbch_vars[0]->pdu_errors_conseq=0;
 

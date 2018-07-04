@@ -98,7 +98,7 @@ typedef struct {
   DCI_format_t format;
   /// DCI pdu
   uint8_t dci_pdu[8];
-} NR_DCI_ALLOC_t;
+} NR_gNB_DCI_ALLOC_t;
 
 
 uint8_t nr_get_dci_size(nr_dci_format_e format,
@@ -106,7 +106,7 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
                         NR_BWP_PARMS* bwp,
                         nfapi_config_request_t* config);
 
-uint8_t nr_generate_dci_top(NR_DCI_ALLOC_t dci_alloc,
+uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
                             uint32_t *gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,

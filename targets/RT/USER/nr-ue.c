@@ -61,6 +61,8 @@
 #include "T.h"
 
 extern double cpuf;
+static  nfapi_config_request_t config_t;
+static  nfapi_config_request_t* config =&config_t;
 
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
@@ -413,7 +415,7 @@ static void *UE_thread_synch(void *arg) {
                     //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
                     //UE->rfdevice.trx_stop_func(&UE->rfdevice);
                     // sleep(1);
-                    nr_init_frame_parms_ue(&UE->frame_parms);
+		    nr_init_frame_parms_ue(config,&UE->frame_parms);
                     /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
                         LOG_E(HW,"Could not start the device\n");
                         oai_exit=1;

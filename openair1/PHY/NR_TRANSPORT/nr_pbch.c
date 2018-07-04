@@ -51,16 +51,19 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 {
   int k,l;
   int16_t a;
-  int16_t mod_dmrs[NR_PBCH_DMRS_LENGTH<<2];
+  int16_t mod_dmrs[NR_PBCH_DMRS_LENGTH<<1];
+  uint8_t idx=0;
 
   LOG_I(PHY, "PBCH DMRS mapping started at symbol %d shift %d\n", ssb_start_symbol+1, nushift);
 
-  /// BPSK modulation
-  for (int m=0; m<NR_PBCH_DMRS_LENGTH; m++) {
-    mod_dmrs[m<<1] = nr_mod_table[((NR_MOD_TABLE_BPSK_OFFSET + ((gold_pbch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1)];
-    mod_dmrs[(m<<1)+1] = nr_mod_table[((NR_MOD_TABLE_BPSK_OFFSET + ((gold_pbch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1) + 1];
+  /// QPSK modulation
+  for (int m=0; m<NR_PBCH_DMRS_LENGTH>>1; m++) {
+    idx = ((((gold_pbch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1)<<1) ^ (((gold_pbch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1);
+    mod_dmrs[m<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+    mod_dmrs[(m<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PBCH_DMRS
-  printf("m %d  mod_dmrs %d %d\n", m, mod_dmrs[2*m], mod_dmrs[2*m+1]);
+  printf("m %d idx %d gold seq %d b0-b1 %d-%d mod_dmrs %d %d\n", m, idx, gold_pbch_dmrs[(m<<1)>>5], (((gold_pbch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1),
+  (((gold_pbch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1), mod_dmrs[(m<<1)], mod_dmrs[(m<<1)+1]);
 #endif
   }
 
@@ -133,19 +136,27 @@ void nr_pbch_scrambling(uint32_t Nid,
                         uint8_t *pbch_a,
                         uint32_t length)
 {
-  uint8_t reset;
+  uint8_t reset, offset;
   uint32_t x1, x2, s=0;
+  uint8_t M = length - 3; // case Lmax = 4--> 29
 
   reset = 1;
   // x1 is set in lte_gold_generic
   x2 = Nid;
 
+  // The Gold sequence is shifted by nushift* M, so we skip (nushift*M /32) double words
+  for (int i=0; i<(uint16_t)ceil((nushift*M)/5); i++) {
+    s = lte_gold_generic(&x1, &x2, reset);
+    reset = 0;
+  }
+  offset = (nushift*M)&0x1f;
+
   for (int i=0; i<length; i++) {
-    if ((i&0x1f)==0) {
+    if (((i+offset)&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
     }
-    pbch_a[i] = (pbch_a[i]&1) ^ ((s>>(i&0x1f))&1);
+    pbch_a[i] = (pbch_a[i]&1) ^ ((s>>((i+offset)&0x1f))&1);
   }
 }
 
@@ -202,7 +213,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 
   /// QPSK modulation
   for (int i=0; i<NR_POLAR_PBCH_E>>1; i++){
-    idx = (pbch->pbch_e[i<<1]&1) ^ ((pbch->pbch_e[(i<<1)+1]&1)<<1);
+    idx = ((pbch->pbch_e[i<<1]&1)<<1) ^ (pbch->pbch_e[(i<<1)+1]&1);
     mod_pbch_e[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
     mod_pbch_e[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1)+1];
 

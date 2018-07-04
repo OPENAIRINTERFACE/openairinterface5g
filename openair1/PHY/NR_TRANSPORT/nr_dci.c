@@ -130,7 +130,7 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
   return size;
 }
 
-uint8_t nr_generate_dci_top(NR_DCI_ALLOC_t dci_alloc,
+uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
                             uint32_t *gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
@@ -138,14 +138,17 @@ uint8_t nr_generate_dci_top(NR_DCI_ALLOC_t dci_alloc,
                             nfapi_config_request_t* config)
 {
 
-  uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH<<2];
+  uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH<<1];
+  uint8_t idx=0;
 
-  /// DMRS BPSK modulation
-  for (int m=0; m<NR_MAX_PDCCH_DMRS_LENGTH; m++) {
-    mod_dmrs[m<<1] = nr_mod_table[((NR_MOD_TABLE_BPSK_OFFSET + ((gold_pdcch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1)];
-    mod_dmrs[(m<<1)+1] = nr_mod_table[((NR_MOD_TABLE_BPSK_OFFSET + ((gold_pdcch_dmrs[m>>5]&(1<<(m&0x1f)))>>(m&0x1f)))<<1) + 1];
-#ifdef DEBUG_PBCH_DMRS
-  printf("m %d  mod_dmrs %d %d\n", m, mod_dmrs[2*m], mod_dmrs[2*m+1]);
+  /// DMRS QPSK modulation
+  for (int m=0; m<NR_MAX_PDCCH_DMRS_LENGTH>>1; m++) {
+    idx = ((((gold_pdcch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1)<<1) ^ (((gold_pdcch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1);
+    mod_dmrs[m<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+    mod_dmrs[(m<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+#ifdef DEBUG_PDCCH_DMRS
+  printf("m %d idx %d gold seq %d b0-b1 %d-%d mod_dmrs %d %d\n", m, idx, gold_pdcch_dmrs[(m<<1)>>5], (((gold_pdcch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1),
+  (((gold_pdcch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1), mod_dmrs[(m<<1)], mod_dmrs[(m<<1)+1]);
 #endif
   }
 

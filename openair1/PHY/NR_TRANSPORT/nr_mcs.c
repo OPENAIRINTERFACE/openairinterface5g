@@ -19,35 +19,41 @@
  *      contact@openairinterface.org
  */
 
-/*! \file main.c
- * \brief top init of Layer 2
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \version 1.0
- * \email: navid.nikaein@eurecom.fr
- * @ingroup _mac
+/*! \file PHY/NR_TRANSPORT/nr_mcs.c
+* \brief Some support routines for NR MCS computations
+* \author
+* \date 2018
+* \version 0.1
+* \company Eurecom
+* \email:
+* \note
+* \warning
+*/
 
- */
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 
-#include "defs.h"
-#include "proto.h"
+//get_Qm under PHY/LTE_TRANSPORT/lte_mcs.c is the same for NR.
 
-static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
-
-int
-nr_l2_init_ue(void)
+uint8_t get_nr_Qm(uint8_t I_MCS)
 {
-    //LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
-
-    //LOG_I(MAC, "[MAIN] init UE MAC functions \n");
-    
-    //init mac here
-    nr_ue_mac_inst = (NR_UE_MAC_INST_t *)malloc(sizeof(NR_UE_MAC_INST_t)*NB_NR_UE_MAC_INST);
-    
-
-    return (1);
+  if (I_MCS < 5)
+    return(2);
+  else if (I_MCS < 11)
+    return(4);
+  else if (I_MCS < 20)
+    return(6);
+  else
+    return(8);
 }
 
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t Mod_idP){
-    return &nr_ue_mac_inst[(int)Mod_idP];
+uint8_t get_nr_Qm_ul(uint8_t I_MCS) {
+
+  if (I_MCS < 2)
+	  return(2);  //This should be 1 if UE has reported to support pi/2 BPSK, and 2 otherwise.
+  else if (I_MCS < 10)
+    return(2);
+  else if (I_MCS < 17)
+    return(4);
+  else
+    return(6);
 }
