@@ -95,9 +95,18 @@ int s1ap_eNB_handle_nas_first_req(
   }
 
   if (mme_desc_p == NULL) {
+    /* Select MME based on the selected PLMN identity, received through RRC
+     * Connection Setup Complete */
+    mme_desc_p = s1ap_eNB_nnsf_select_mme_by_plmn_id(
+                   instance_p,
+                   s1ap_nas_first_req_p->establishment_cause,
+                   s1ap_nas_first_req_p->selected_plmn_identity);
+  }
+
+  if (mme_desc_p == NULL) {
     /*
-     * If no MME corresponds to the GUMMEI or the s-TMSI, selects the MME with the
-     * highest capacity.
+     * If no MME corresponds to the GUMMEI, the s-TMSI, or the selected PLMN
+     * identity, selects the MME with the highest capacity.
      */
     mme_desc_p = s1ap_eNB_nnsf_select_mme(
                    instance_p,
