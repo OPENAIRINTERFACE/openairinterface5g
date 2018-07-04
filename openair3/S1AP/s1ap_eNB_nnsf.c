@@ -173,8 +173,6 @@ s1ap_eNB_nnsf_select_mme_by_gummei(s1ap_eNB_instance_t       *instance_p,
                                    s1ap_gummei_t                   gummei)
 {
   struct s1ap_eNB_mme_data_s *mme_data_p             = NULL;
-  struct s1ap_eNB_mme_data_s *mme_highest_capacity_p = NULL;
-  uint8_t                     current_capacity       = 0;
 
   RB_FOREACH(mme_data_p, s1ap_mme_map, &instance_p->s1ap_mme_head) {
     struct served_gummei_s *gummei_p = NULL;
@@ -213,12 +211,6 @@ s1ap_eNB_nnsf_select_mme_by_gummei(s1ap_eNB_instance_t       *instance_p,
       }
     }
 
-    if (current_capacity < mme_data_p->relative_mme_capacity) {
-      /* We find a better MME, keep a reference to it */
-      current_capacity = mme_data_p->relative_mme_capacity;
-      mme_highest_capacity_p = mme_data_p;
-    }
-
     /* Looking for MME gummei matching the one provided by NAS */
     STAILQ_FOREACH(gummei_p, &mme_data_p->served_gummei, next) {
       struct served_group_id_s *group_id_p = NULL;
@@ -254,10 +246,8 @@ s1ap_eNB_nnsf_select_mme_by_gummei(s1ap_eNB_instance_t       *instance_p,
     }
   }
 
-  /* At this point no MME matches the provided GUMMEI. Select the one with the
-   * highest relative capacity.
-   * In case the list of known MME is empty, simply return NULL, that way the RRC
-   * layer should know about it and reject RRC connectivity.
-   */
-  return mme_highest_capacity_p;
+  /* At this point no MME matches the provided GUMMEI. In this case, return
+   * NULL. That way the RRC layer should know about it and reject RRC
+   * connectivity. */
+  return NULL;
 }
