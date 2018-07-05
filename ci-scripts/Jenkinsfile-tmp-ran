@@ -1,0 +1,204 @@
+// Comments
+
+pipeline {
+    // The node should be selected with a 'label' parameter
+    // trying to use NodeLabel plugin to pass it, currently failing to do so
+    agent {
+        label 'bellatrix'
+    }
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+        // When performing commit status updates and merge requests comments
+        // the connection name SHALL be here.
+        // So please use the same connection name and use proper credentials
+        gitLabConnection('OAI GitLab')
+    }
+    // the following parameter options are commented out so it shows the ones
+    // that you SHALL have to run the job.
+    // You can use them as template
+    /*
+    parameters {
+        //eNB parameters
+        string(name: 'eNB_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of eNB')
+        credentials(name: 'eNB_Credentials', defaultValue: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', credentialType: "Username with password", required: true, description: 'Credentials for eNB')
+        string(name: 'eNB_SourceCodePath', defaultValue: '/home/starsky/CI-enb', description: 'Full path of eNB source code')
+
+        //EPC parameters
+        string(name: 'EPC_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of EPC')
+        string(name: 'EPC_Type', defaultValue: 'OAI', description: 'EPC type: OAI or ltebox')
+        credentials(name: 'EPC_Credentials', defaultValue: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', credentialType: "Username with password", required: true, description: 'Credentials for EPC')
+        string(name: 'EPC_SourceCodePath', defaultValue: '/home/nano/CI_oai-cn/openair-cn', description: 'Full path of EPC source code')
+
+        //ADB server parameters
+        string(name: 'ADB_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of ADB server')
+        credentials(name: 'ADB_Credentials', defaultValue: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', credentialType: "Username with password", required: true, description: 'Credentials for ADB')
+    }
+    */
+
+    stages {
+        stage ("Verify Parameters") {
+            steps {
+                script {
+                    def allParametersPresent = true
+                    if (params.CI_MASTER_NODE != null) {
+                        echo "eNB CI parameter node :   $params.CI_MASTER_NODE"
+                    } else {
+                        echo "eNB CI master node    :   $NODE_NAME"
+                    }
+
+                    if (params.eNB_IPAddress == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.eNB_SourceCodePath == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.eNB_Credentials == null) {
+                        allParametersPresent = false
+                    }
+
+                    if (params.EPC_IPAddress == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.EPC_Type == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.EPC_SourceCodePath == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.EPC_Credentials == null) {
+                        allParametersPresent = false
+                    }
+
+                    if (params.ADB_IPAddress == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.ADB_Credentials == null) {
+                        allParametersPresent = false
+                    }
+
+                    if (allParametersPresent) {
+                        echo "All parameters are present"
+                    } else {
+                        echo "Some parameters are missing"
+                        sh "./ci-scripts/fail.sh"
+                    }
+                }
+            }
+        }
+        stage ("Build on eNB server") {
+            steps {
+                script {
+                    dir ('ci-scripts') {
+                        try {
+                            withCredentials([
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
+                            ]) {
+                                sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${GIT_URL} --eNBBranch=${GIT_BRANCH} --eNBCommitID=${GIT_COMMIT} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password}"
+                            }
+                        } catch (Exception e) {
+                            //sh "./ci-scripts/fail.sh"
+                            currentBuild.result = 'FAILURE'
+                        }
+                    }
+                }
+            }
+        }
+        stage('Log Collection') {
+            parallel {
+                stage('Log Collection (eNB)') {
+                    steps {
+                        script {
+                            dir ('ci-scripts') {
+                                withCredentials([
+                                     [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+                                ]) {
+                                    sh "python3 main.py --mode=LogCollectBuild --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
+                                    sh "python3 main.py --mode=LogCollecteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
+                                    sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/build.log.zip ./build.log.${env.BUILD_ID}.zip || true"
+                                    sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/enb.log.zip ./enb.log.${env.BUILD_ID}.zip || true"
+                                    // No need to remove since we are wiping out the folder on the eNB server during build
+                                    // sh "sshpass -p \'${eNB_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress} 'cd ${eNB_SourceCodePath}; cd cmake_targets; if [ -e build.log.zip ]; then rm build.log.zip; fi;'"
+                                    // sh "sshpass -p \'${eNB_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress} 'cd ${eNB_SourceCodePath}; cd cmake_targets; if [ -e enb.log.zip ]; then rm enb.log.zip; fi;'"
+                                    if(fileExists("build.log.${env.BUILD_ID}.zip")) {
+                                        archiveArtifacts "build.log.${env.BUILD_ID}.zip"
+                                        // Same thing here, no need to remove.
+                                        // SCM folder is wiped out at build start on node
+                                        // sh "rm build.log.${env.BUILD_ID}.zip"
+                                    }
+                                    if(fileExists("enb.log.${env.BUILD_ID}.zip")) {
+                                        archiveArtifacts "enb.log.${env.BUILD_ID}.zip"
+                                        // Same thing here, no need to remove.
+                                        // SCM folder is wiped out at build start on node
+                                        // sh "rm enb.log.${env.BUILD_ID}.zip"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (EPC)') {
+                    steps {
+                        script {
+                            dir ('ci-scripts') {
+                                withCredentials([
+                                     [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                                ]) {
+                                    sh "python3 main.py --mode=LogCollectSPGW --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type} "
+                                    sh "python3 main.py --mode=LogCollectMME --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type} "
+                                    sh "python3 main.py --mode=LogCollectHSS --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type} "
+                                    if ("OAI".equals(params.EPC_Type)) {
+                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/spgw.log.zip ./spgw.log.${env.BUILD_ID}.zip || true"
+                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/mme.log.zip ./mme.log.${env.BUILD_ID}.zip || true"
+                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/hss.log.zip ./hss.log.${env.BUILD_ID}.zip || true"
+                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd ${EPC_SourceCodePath}; cd scripts; if [ -e spgw.log.zip ]; then rm spgw.log.zip; fi;'"
+                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd ${EPC_SourceCodePath}; cd scripts; if [ -e mme.log.zip ]; then rm mme.log.zip; fi;'"
+                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd ${EPC_SourceCodePath}; cd scripts; if [ -e hss.log.zip ]; then rm hss.log.zip; fi;'"
+                                    } else {
+                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:/home/${EPC_Username}/spgw.log.zip ./spgw.log.${env.BUILD_ID}.zip || true"
+                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:/home/${EPC_Username}/mme.log.zip ./mme.log.${env.BUILD_ID}.zip || true"
+                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:/home/${EPC_Username}/hss.log.zip ./hss.log.${env.BUILD_ID}.zip || true"
+                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd /home/${EPC_Username}; if [ -e spgw.log.zip ]; then rm spgw.log.zip; fi;'"
+                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd /home/${EPC_Username}; if [ -e mme.log.zip ]; then rm mme.log.zip; fi;'"
+                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd /home/${EPC_Username}; if [ -e hss.log.zip ]; then rm hss.log.zip; fi;'"
+                                    }
+                                    if(fileExists("spgw.log.${env.BUILD_ID}.zip")) {
+                                        archiveArtifacts "spgw.log.${env.BUILD_ID}.zip"
+                                        sh "rm spgw.log.${env.BUILD_ID}.zip"
+                                    }
+                                    if(fileExists("mme.log.${env.BUILD_ID}.zip")) {
+                                        archiveArtifacts "mme.log.${env.BUILD_ID}.zip"
+                                        sh "rm mme.log.${env.BUILD_ID}.zip"
+                                    }
+                                    if(fileExists("hss.log.${env.BUILD_ID}.zip")) {
+                                        archiveArtifacts "hss.log.${env.BUILD_ID}.zip"
+                                        sh "rm hss.log.${env.BUILD_ID}.zip"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Archiving Jenkins console log"
+            // Not working in Eurecom environment
+            /*
+            sh "wget --no-check-certificate --no-proxy ${env.JENKINS_URL}/job/${env.JOB_NAME}/${env.BUILD_ID}/consoleText -O consoleText.log || true"
+            sh "zip -m consoleText.log.${env.BUILD_ID}.zip consoleText.log || true"
+            script {
+                if(fileExists("consoleText.log.${env.BUILD_ID}.zip")) {
+                    archiveArtifacts "consoleText.log.${env.BUILD_ID}.zip"
+                    sh "rm consoleText.log.${env.BUILD_ID}.zip"
+                }
+            }
+            */
+        }
+    }
+}
