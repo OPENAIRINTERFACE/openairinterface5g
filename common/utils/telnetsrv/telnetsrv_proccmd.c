@@ -55,7 +55,7 @@
 #include "log.h"
 #include "log_extern.h"
 #include "common/config/config_userapi.h"
-#include "openair1/PHY/extern.h"
+#include "openair1/PHY/phy_extern.h"
 #include "telnetsrv_proccmd.h"
 
 void decode_procstat(char *record, int debug, telnet_printfunc_t prnt)
@@ -193,7 +193,6 @@ struct dirent *entry;
 
 int proccmd_show(char *buf, int debug, telnet_printfunc_t prnt)
 {
-extern log_t *g_log;   
    
    if (debug > 0)
        prnt(" proccmd_show received %s\n",buf);
@@ -203,10 +202,12 @@ extern log_t *g_log;
    if (strcasestr(buf,"loglvl") != NULL) {
        prnt("component                 verbosity  level  enabled\n");
        for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
-            prnt("%02i %17.17s:%10.10s%10.10s  %s\n",i ,g_log->log_component[i].name, 
-                  map_int_to_str(log_verbosity_names,g_log->log_component[i].flag),
-	          map_int_to_str(log_level_names,g_log->log_component[i].level),
-                  ((g_log->log_component[i].interval>0)?"Y":"N") );
+            if (g_log->log_component[i].name != NULL) {
+               prnt("%02i %17.17s:%10.10s%10.10s  %s\n",i ,g_log->log_component[i].name, 
+                     map_int_to_str(log_verbosity_names,g_log->log_component[i].flag),
+	             map_int_to_str(log_level_names,g_log->log_component[i].level),
+                     ((g_log->log_component[i].interval>0)?"Y":"N") );
+           }
        }
    }
    if (strcasestr(buf,"config") != NULL) {
@@ -368,6 +369,15 @@ int s = sscanf(buf,"%ms %i-%i\n",&logsubcmd, &idx1,&idx2);
       if (logparam != NULL) free(logparam);
       if (tmpstr != NULL)   free(tmpstr);
       for (int i=idx1; i<=idx2 ; i++) {
+          if (level < 0) {
+              level=g_log->log_component[i].level;
+           }
+          if (verbosity < 0) {
+              verbosity=g_log->log_component[i].flag;
+           }
+          if (interval < 0) {
+              interval=g_log->log_component[i].interval;
+           }
           set_comp_log(i, level, verbosity, interval);
           prnt("log level/verbosity  comp %i %s set to %s / %s (%s)\n",
                 i,((g_log->log_component[i].name==NULL)?"":g_log->log_component[i].name),

@@ -912,6 +912,9 @@ void tx_rf(RU_t *ru) {
         flags=2; // start burst
         late_control=STATE_BURST_NORMAL;
         break;
+      default:
+        LOG_D(PHY,"[TXPATH] RU %d late_control %d not implemented\n",ru->idx, late_control);
+      break;
       }
     }
     /* add fail safe for late command end */
@@ -1585,9 +1588,6 @@ static void* ru_thread( void* param ) {
   dlsch_ue_select_tbl_in_use = 1;
 #endif
 
-  struct timespec time_req, time_rem;
-  time_req.tv_sec = 0;
-  time_req.tv_nsec = 10000;
 
   // set default return value
   thread_top_init("ru_thread",1,400000,500000,500000);
@@ -1796,6 +1796,10 @@ static void* ru_thread( void* param ) {
       }
     }
 #else
+    struct timespec time_req, time_rem;
+    time_req.tv_sec = 0;
+    time_req.tv_nsec = 10000;
+
     while((!oai_exit)&&(phy_tx_end == 0)){
         nanosleep(&time_req,&time_rem);
         continue;
@@ -2766,7 +2770,7 @@ void init_RU(char *rf_config_file) {
 
 
 void stop_ru(RU_t *ru) {
-  int *status;
+ 
   printf("Stopping RU %p processing threads\n",(void*)ru);
 #if defined(PRE_SCD_THREAD)
   if(ru){

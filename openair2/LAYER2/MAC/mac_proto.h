@@ -1242,5 +1242,7 @@ uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
 
 int ue_slice_membership(int UE_id, int slice_id);
 
+/* from here: prototypes to get rid of compilation warnings: doc to be written by function author */
+uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);
 #endif
 /** @}*/

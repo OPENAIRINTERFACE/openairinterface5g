@@ -186,10 +186,13 @@ typedef enum {
     LOCALIZE,
     RRH,
     X2AP,
-    MAX_LOG_COMPONENTS,
+    LOADER,
+    MAX_LOG_PREDEF_COMPONENTS,
 }
 comp_name_t;
 
+#define MAX_LOG_DYNALLOC_COMPONENTS 20
+#define MAX_LOG_COMPONENTS (MAX_LOG_PREDEF_COMPONENTS + MAX_LOG_DYNALLOC_COMPONENTS)
 //#define msg printf
 
 typedef struct {
@@ -231,6 +234,7 @@ typedef struct {
     int                     syslog;
     int                     filelog;
     char*                   filelog_name;
+    int                     async;       // asynchronous mode, via dedicated log thread + log buffer
 } log_t;
 
 typedef struct LOG_params {
@@ -289,16 +293,15 @@ char *map_int_to_str(mapping *map, int val);
 void logClean (void);
 int  is_newline( char *str, int size);
 void *log_thread_function(void * list);
-
+int register_log_component(char *name, char *fext, int compidx);
 /** @defgroup _logIt logIt function
  *  @ingroup _macro
  *  @brief Macro used to call tr_log_full_ex with file, function and line information
  * @{*/
-#ifdef LOG_NO_THREAD
+
 #define logIt(component, level, format, args...) (g_log->log_component[component].interval?logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
-#else //default
-#define logIt(component, level, format, args...) (g_log->log_component[component].interval?logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
-#endif
+#define logItS(component, level, format, args...) (g_log->log_component[component].interval?logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
+
 /* @}*/
 
 /*!\fn int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);
@@ -323,15 +326,16 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_CONFIG_LEVEL_FORMAT                            "%s_log_level"
 #define LOG_CONFIG_VERBOSITY_FORMAT                        "%s_log_verbosity"
 #define LOG_CONFIG_LOGFILE_FORMAT                          "%s_log_infile"
+
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                       LOG globalconfiguration parameters										        */
-/*   optname                              helpstr   paramflags    XXXptr	             defXXXval				      type	     numelt	*/
+/*   optname                            help   paramflags       XXXptr	                   defXXXval				      type	 numelt	*/
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define LOG_GLOBALPARAMS_DESC { \
-{LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    NULL,	    0,  	 strptr:(char **)&gloglevel, defstrval:log_level_names[2].name,       TYPE_STRING,  0}, \
-{LOG_CONFIG_STRING_GLOBAL_LOG_VERBOSITY,NULL,	    0,  	 strptr:(char **)&glogverbo, defstrval:log_verbosity_names[2].name,   TYPE_STRING,  0}, \
-{LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   NULL,	    0,  	 iptr:&(g_log->onlinelog),   defintval:1,                             TYPE_INT,      0,              }, \
-{LOG_CONFIG_STRING_GLOBAL_LOG_INFILE,   NULL,	    0,  	 iptr:&(g_log->filelog),     defintval:0,                             TYPE_INT,      0,              }, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    NULL, 0,  	      strptr:(char **)&gloglevel, defstrval:log_level_names[2].name,       TYPE_STRING,  0}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_VERBOSITY,NULL, 0,  	      strptr:(char **)&glogverbo, defstrval:log_verbosity_names[2].name,   TYPE_STRING,  0}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   NULL, 0,  	      iptr:&(g_log->onlinelog),   defintval:1,                             TYPE_INT,     0}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_INFILE,   NULL, 0,  	      iptr:&(g_log->filelog),     defintval:0,                             TYPE_INT,     0}, \
 }
 /*----------------------------------------------------------------------------------*/
 /** @defgroup _debugging debugging macros
@@ -339,20 +343,20 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
  *  @brief Macro used to call logIt function with different message levels
  * @{*/
 
-// debugging macros
+// debugging macros(g_log->log_component[component].interval?logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
 #  if T_TRACER
 #    include "T.h"
-#    define LOG_I(c, x...) T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))
-#    define LOG_W(c, x...) T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x))
-#    define LOG_E(c, x...) T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))
-#    define LOG_D(c, x...) T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))
-#    define LOG_T(c, x...) T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))
-#    define LOG_G(c, x...) /* */
-#    define LOG_A(c, x...) /* */
-#    define LOG_C(c, x...) /* */
-#    define LOG_N(c, x...) /* */
-#    define LOG_F(c, x...) /* */
-#    define LOG_M(file, vector, data, len, dec, format) /* */
+#    define LOG_I(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0) 
+#    define LOG_W(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_WARNING, x) ;} else { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)) ;}} while (0) 
+#    define LOG_E(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_ERR, x)     ;} else { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))   ;}} while (0) 
+#    define LOG_D(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0) 
+#    define LOG_T(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0) 
+#    define LOG_G(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_EMERG, x)   ;}} while (0) /* */
+#    define LOG_A(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_ALERT, x)   ;}} while (0) /* */
+#    define LOG_C(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_CRIT, x)    ;}} while (0) /* */
+#    define LOG_N(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_NOTICE, x)  ;}} while (0) /* */
+#    define LOG_F(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_FILE, x)  ;}}   while (0)  /* */
+#    define LOG_M(file, vector, data, len, dec, format) write_file_matlab(file, vector, data, len, dec, format)/* */
 #  else /* T_TRACER */
 #    if DISABLE_LOG_X
 #        define LOG_I(c, x...) /* */
