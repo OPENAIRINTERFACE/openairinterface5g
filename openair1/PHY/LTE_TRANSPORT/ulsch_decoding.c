@@ -366,7 +366,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
     else
       crc_type = CRC24_B;
     
-    
+   
     ret = tc(&ulsch_harq->d[r][96],
              NULL,
 	     ulsch_harq->c[r],
@@ -734,7 +734,8 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
       crc_type = CRC24_A;
     else
       crc_type = CRC24_B;
-   
+  
+ 
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     
     ret = tc(&ulsch_harq->d[r][96],

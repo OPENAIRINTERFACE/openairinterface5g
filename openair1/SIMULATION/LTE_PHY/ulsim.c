@@ -126,7 +126,6 @@ fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
 {
   memset((void *) ul_config_pdu, 0, sizeof(nfapi_ul_config_request_pdu_t));
 
-  //  printf("filling ul_config_pdu: modulation type %d, rvidx %d\n",modulation_type,redundancy_version);
 
   ul_config_pdu->pdu_type                                                    = NFAPI_UL_CONFIG_ULSCH_PDU_TYPE;
   ul_config_pdu->pdu_size                                                    = (uint8_t) (2 + sizeof(nfapi_ul_config_ulsch_pdu));
@@ -146,6 +145,8 @@ fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
   ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.current_tx_nb                      = current_tx_nb;
   ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.n_srs                              = n_srs;
   ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.size                               = size;
+
+  //printf("Filling ul_config_pdu : Q %d, TBS %d, rv %d, ndi %d\n", modulation_type,size,redundancy_version,new_data_indication);
 
   if (cqi_req == 1) {
     // Add CQI portion
@@ -183,6 +184,7 @@ void fill_ulsch_dci(PHY_VARS_eNB *eNB,
 		    int mcs,
 		    int modulation_type,
 		    int ndi,
+                    int TBS,
 		    int cqi_flag,
 		    uint8_t beta_CQI,
 		    uint8_t beta_RI,
@@ -191,7 +193,7 @@ void fill_ulsch_dci(PHY_VARS_eNB *eNB,
   nfapi_ul_config_request_body_t *ul_req=&sched_resp->UL_req->ul_config_request_body;
   int harq_pid = ((frame*10)+subframe)&7;
 
-  //  printf("ulsch in frame %d, subframe %d => harq_pid %d, mcs %d, ndi %d\n",frame,subframe,harq_pid,mcs,ndi);
+  //printf("ulsch in frame %d, subframe %d => harq_pid %d, mcs %d, ndi %d\n",frame,subframe,harq_pid,mcs,ndi);
 
   switch (eNB->frame_parms.N_RB_UL) {
   case 6:
@@ -297,7 +299,7 @@ void fill_ulsch_dci(PHY_VARS_eNB *eNB,
 				  0,	// ul_tx_mode
 				  0,	// current_tx_nb
 				  0,	// n_srs
-				  get_TBS_UL(mcs,nb_rb));
+				  TBS);
 
   sched_resp->UL_req->header.message_id = NFAPI_UL_CONFIG_REQUEST;
   ul_req->number_of_pdus=1;
@@ -446,14 +448,14 @@ int main(int argc, char **argv)
 	      "cannot load configuration module, exiting\n");
 
   logInit();
-  /*
+  
   // enable these lines if you need debug info
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
-  set_comp_log(PHY,LOG_DEBUG,LOG_MED,1);
-  set_glog(LOG_DEBUG,LOG_MED);
-  */
+  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+  //set_comp_log(PHY,LOG_DEBUG,LOG_MED,1);
+  //set_glog(LOG_DEBUG,LOG_MED);
+  
 
   while ((c = getopt (argc, argv, "hapZEbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:LF")) != -1) {
     switch (c) {
@@ -1142,7 +1144,7 @@ int main(int argc, char **argv)
 	  else if (mcs < 21) modulation_type = 4;
 	  else if (mcs < 29) modulation_type = 6;
 
-	  fill_ulsch_dci(eNB,proc_rxtx->frame_rx,subframe,&sched_resp,14,(void*)&UL_alloc_pdu,first_rb,nb_rb,(round==0)?mcs:(28+rvidx[round]),modulation_type,ndi,cqi_flag,beta_CQI,beta_RI,cqi_size);
+	  fill_ulsch_dci(eNB,proc_rxtx->frame_rx,subframe,&sched_resp,14,(void*)&UL_alloc_pdu,first_rb,nb_rb,(round==0)?mcs:(28+rvidx[round]),modulation_type,ndi,get_TBS_UL(mcs,nb_rb),cqi_flag,beta_CQI,beta_RI,cqi_size);
 
 	  UE->ulsch_Msg3_active[eNB_id] = 0;
 	  UE->ul_power_control_dedicated[eNB_id].accumulationEnabled=1;
@@ -1323,7 +1325,6 @@ int main(int argc, char **argv)
 
 	  ru->feprx(ru);
 	  phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
-
 
           if (cqi_flag > 0) {
             cqi_error = 0;

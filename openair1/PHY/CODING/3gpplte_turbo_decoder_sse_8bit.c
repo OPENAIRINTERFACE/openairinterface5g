@@ -1337,9 +1337,8 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   if (init_stats) stop_meas(init_stats);
 
   // do log_map from first parity bit
-
+ 
   log_map8(systematic0,yparity1,m11,m10,alpha,beta,ext,n2,0,F,offset8_flag,alpha_stats,beta_stats,gamma_stats,ext_stats);
-
   while (iteration_cnt++ < max_iterations) {
 
 #ifdef DEBUG_LOGMAP
