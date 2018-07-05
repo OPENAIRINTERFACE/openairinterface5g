@@ -957,13 +957,11 @@ extern int sync_var;
 #define DECODE_NUM_FPTR              13
 
 
-typedef uint8_t(*decoder_if_t)(int16_t *y,
+typedef uint8_t(decoder_if_t)(int16_t *y,
                                int16_t *y2,
     		               uint8_t *decoded_bytes,
     		               uint8_t *decoded_bytes2,
 	   		       uint16_t n,
-	   		       uint16_t f1,
-	   		       uint16_t f2,
 	   		       uint8_t max_iterations,
 	   		       uint8_t crc_type,
 	   		       uint8_t F,
@@ -975,12 +973,10 @@ typedef uint8_t(*decoder_if_t)(int16_t *y,
 	   		       time_stats_t *intl1_stats,
                                time_stats_t *intl2_stats);
 
-typedef uint8_t(*encoder_if_t)(uint8_t *input,
+typedef uint8_t(encoder_if_t)(uint8_t *input,
                                uint16_t input_length_bytes,
                                uint8_t *output,
-                               uint8_t F,
-                               uint16_t interleaver_f1,
-                               uint16_t interleaver_f2);
+                               uint8_t F);
 
 
 static inline void wait_sync(char *thread_name) {

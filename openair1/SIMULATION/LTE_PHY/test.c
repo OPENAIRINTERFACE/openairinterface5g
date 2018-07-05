@@ -281,8 +281,8 @@ int main(int argc, char **argv)
 
 #endif
 
-  write_output("rxsig0.m","rxs0",rxdata[0],lte_frame_parms->samples_per_tti>>1,1,1);
-  write_output("rxsig1.m","rxs1",rxdata[1],lte_frame_parms->samples_per_tti>>1,1,1);
+  LOG_M("rxsig0.m","rxs0",rxdata[0],lte_frame_parms->samples_per_tti>>1,1,1);
+  LOG_M("rxsig1.m","rxs1",rxdata[1],lte_frame_parms->samples_per_tti>>1,1,1);
 
 
 #ifdef IFFT_FPGA

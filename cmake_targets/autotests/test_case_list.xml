@@ -955,7 +955,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim</main_exec>
+      <main_exec> $OPENAIR_DIR/targets/bin/dlsim.Rel14</main_exec>
       <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
                        -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
                        -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
@@ -970,7 +970,7 @@
                        -m26 -gF -s16.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1899 -O70
 		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70
                        -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70</main_exec_args>
-      <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.TM2_test1 dlsim.TM2_test1b</tags>
+      <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.test11b dlsim.TM2_test1 dlsim.TM2_test1b dlsim.TM2_test1c</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -989,7 +989,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim</main_exec>
+      <main_exec> $OPENAIR_DIR/targets/bin/ulsim.Rel14</main_exec>
       <main_exec_args> -B25 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L
                        -B25 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L
                         -B50 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L 

@@ -527,18 +527,6 @@ int config_request(nfapi_pnf_config_t* config, nfapi_pnf_phy_config_t* phy, nfap
 	  fp = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
   }
 
-
-#if 0
-  //DJP
-  auto found = std::find_if(pnf->phys.begin(), pnf->phys.end(), [&](phy_info& item)
-      { return item.id == req->header.phy_id; });
-
-  if(found != pnf->phys.end())
-  {
-    phy_info& phy_info = (*found);
-  }
-#endif
-  //DJP 
   phy_info* phy_info = pnf->phys;
 
   if(req->nfapi_config.timing_window.tl.tag == NFAPI_NFAPI_TIMING_WINDOW_TAG) {

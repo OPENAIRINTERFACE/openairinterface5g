@@ -384,60 +384,6 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
   mme_desc_p->s1ap_eNB_instance->s1ap_mme_associated_nb ++;
   s1ap_handle_s1_setup_message(mme_desc_p, 0);
 
-#if 0
-  /* We call back our self
-   * -> generate a dummy initial UE message
-   */
-  {
-    s1ap_nas_first_req_t s1ap_nas_first_req;
-
-    memset(&s1ap_nas_first_req, 0, sizeof(s1ap_nas_first_req_t));
-
-    s1ap_nas_first_req.rnti = 0xC03A;
-    s1ap_nas_first_req.establishment_cause = RRC_CAUSE_MO_DATA;
-    s1ap_nas_first_req.ue_identity.presenceMask = UE_IDENTITIES_gummei;
-
-    s1ap_nas_first_req.ue_identity.gummei.mcc = 208;
-    s1ap_nas_first_req.ue_identity.gummei.mnc = 34;
-    s1ap_nas_first_req.ue_identity.gummei.mme_code = 0;
-    s1ap_nas_first_req.ue_identity.gummei.mme_group_id = 0;
-
-    /* NAS Attach request with IMSI */
-    static uint8_t nas_attach_req_imsi[] = {
-      0x07, 0x41,
-      /* EPS Mobile identity = IMSI */
-      0x71, 0x08, 0x29, 0x80, 0x43, 0x21, 0x43, 0x65, 0x87,
-      0xF9,
-      /* End of EPS Mobile Identity */
-      0x02, 0xE0, 0xE0, 0x00, 0x20, 0x02, 0x03,
-      0xD0, 0x11, 0x27, 0x1A, 0x80, 0x80, 0x21, 0x10, 0x01, 0x00, 0x00,
-      0x10, 0x81, 0x06, 0x00, 0x00, 0x00, 0x00, 0x83, 0x06, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x0A, 0x00, 0x52, 0x12, 0xF2,
-      0x01, 0x27, 0x11,
-    };
-
-    /* NAS Attach request with GUTI */
-    static uint8_t nas_attach_req_guti[] = {
-      0x07, 0x41,
-      /* EPS Mobile identity = IMSI */
-      0x71, 0x0B, 0xF6, 0x12, 0xF2, 0x01, 0x80, 0x00, 0x01, 0xE0, 0x00,
-      0xDA, 0x1F,
-      /* End of EPS Mobile Identity */
-      0x02, 0xE0, 0xE0, 0x00, 0x20, 0x02, 0x03,
-      0xD0, 0x11, 0x27, 0x1A, 0x80, 0x80, 0x21, 0x10, 0x01, 0x00, 0x00,
-      0x10, 0x81, 0x06, 0x00, 0x00, 0x00, 0x00, 0x83, 0x06, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x0A, 0x00, 0x52, 0x12, 0xF2,
-      0x01, 0x27, 0x11,
-    };
-
-    s1ap_nas_first_req.nas_pdu.buffer = nas_attach_req_guti;
-    s1ap_nas_first_req.nas_pdu.length = sizeof(nas_attach_req_guti);
-
-    s1ap_eNB_handle_nas_first_req(mme_desc_p->s1ap_eNB_instance->instance,
-                                  &s1ap_nas_first_req);
-  }
-#endif
-
   return 0;
 }
 
@@ -1078,29 +1024,6 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
       return -1;
   }
 
-#if 0
-  /* convert Paging DRX(optional) */
-  if (paging_p->presenceMask & S1AP_PAGINGIES_PAGINGDRX_PRESENT) {
-      switch(paging_p->pagingDRX) {
-        case S1ap_PagingDRX_v32:
-          S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_32;
-         break;
-        case S1ap_PagingDRX_v64:
-          S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_64;
-        break;
-        case S1ap_PagingDRX_v128:
-          S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_128;
-        break;
-        case S1ap_PagingDRX_v256:
-          S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_256;
-        break;
-        default:
-          // when UE Paging DRX is no value
-          S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_256;
-        break;
-      }
-  }
-#endif
   S1AP_PAGING_IND(message_p).paging_drx = PAGING_DRX_256;
 
   /* convert cnDomain */
@@ -1133,46 +1056,6 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
      S1AP_DEBUG("[SCTP %d] Received Paging: MCC %d, MNC %d, TAC %d\n", assoc_id, S1AP_PAGING_IND(message_p).plmn_identity[i].mcc, S1AP_PAGING_IND(message_p).plmn_identity[i].mnc, S1AP_PAGING_IND(message_p).tac[i]);
   }
 
-#if 0
- // CSG Id(optional) List is not used
-  if (paging_p->presenceMask & S1AP_PAGINGIES_CSG_IDLIST_PRESENT) {
-      // TODO
-  }
-
-  /* convert pagingPriority (optional) if has value */
-  if (paging_p->presenceMask & S1AP_PAGINGIES_PAGINGPRIORITY_PRESENT) {
-      switch(paging_p->pagingPriority) {
-      case S1ap_PagingPriority_priolevel1:
-          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL1;
-        break;
-      case S1ap_PagingPriority_priolevel2:
-          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL2;
-        break;
-      case S1ap_PagingPriority_priolevel3:
-          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL3;
-        break;
-      case S1ap_PagingPriority_priolevel4:
-          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL4;
-        break;
-      case S1ap_PagingPriority_priolevel5:
-          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL5;
-        break;
-      case S1ap_PagingPriority_priolevel6:
-          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL6;
-        break;
-      case S1ap_PagingPriority_priolevel7:
-          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL7;
-        break;
-      case S1ap_PagingPriority_priolevel8:
-          S1AP_PAGING_IND(message_p).paging_priority = PAGING_PRIO_LEVEL8;
-        break;
-      default:
-        /* invalid paging_p->pagingPriority */
-        S1AP_ERROR("[SCTP %d] Received paging : pagingPriority(%ld) is invalid\n", assoc_id, paging_p->pagingPriority);
-        return -1;
-      }
-  }
-#endif
   //paging parameter values
   S1AP_DEBUG("[SCTP %d] Received Paging parameters: ue_index_value %d  cn_domain %d paging_drx %d paging_priority %d\n",assoc_id,
           S1AP_PAGING_IND(message_p).ue_index_value, S1AP_PAGING_IND(message_p).cn_domain,

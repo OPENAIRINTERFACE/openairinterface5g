@@ -275,9 +275,9 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
 
 
 #ifdef DEBUG_PHY
-  write_output("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size,1,1);
-  write_output("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size,1,1);
-  write_output("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size,1,1);
+  LOG_M("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size,1,1);
+  LOG_M("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size,1,1);
+  LOG_M("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size,1,1);
 #endif
   return (1);
 }
@@ -466,10 +466,10 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
 #ifdef DEBUG_PHY
   if (debug_cnt == 0) {
-    write_output("sync_corr0_ue.m","synccorr0",sync_corr_ue0,2*length,1,2);
-    write_output("sync_corr1_ue.m","synccorr1",sync_corr_ue1,2*length,1,2);
-    write_output("sync_corr2_ue.m","synccorr2",sync_corr_ue2,2*length,1,2);
-    write_output("rxdata0.m","rxd0",rxdata[0],length<<1,1,1);
+    LOG_M("sync_corr0_ue.m","synccorr0",sync_corr_ue0,2*length,1,2);
+    LOG_M("sync_corr1_ue.m","synccorr1",sync_corr_ue1,2*length,1,2);
+    LOG_M("sync_corr2_ue.m","synccorr2",sync_corr_ue2,2*length,1,2);
+    LOG_M("rxdata0.m","rxd0",rxdata[0],length<<1,1,1);
     //    exit(-1);
   } else {
     debug_cnt++;

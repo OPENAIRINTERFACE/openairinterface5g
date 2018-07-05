@@ -497,17 +497,6 @@ typedef struct {
 
 #endif
 
-
-#if 0
-/*
- * Missing PDU information struct, a copy of this will be enqueued
- * into pdcp.missing_pdus for every missing PDU
- */
-typedef struct pdcp_missing_pdu_info_t {
-  pdcp_sn_t sequence_number;
-} pdcp_missing_pdu_info_t;
-#endif
-
 /*
  * PDCP limit values
  */

@@ -200,13 +200,6 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 				// still time before the end of the subframe wait
 				pselect_timeout = timespec_sub(sf_start, pselect_start);
 
-#if 0
-                                NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sf_start:%d.%ld pselect_start:%d.%ld pseclect_timeout:%d.%ld\n",
-                                    __FUNCTION__,
-                                    sf_start.tv_sec, sf_start.tv_nsec,
-                                    pselect_start.tv_sec, pselect_start.tv_nsec,
-                                    pselect_timeout.tv_sec, pselect_timeout.tv_nsec);
-#endif
 			}
 
 //original_pselect_timeout = pselect_timeout;
@@ -266,13 +259,6 @@ if (selectRetval==-1 && errno == 22)
   phy->insync_minor_adjustment_duration, phy->insync_minor_adjustment, 
   sf_duration.tv_sec, sf_duration.tv_nsec);
 }
-#if 0
-                        if (selectRetval != 0 || phy->insync_minor_adjustment_duration != 0)
-                          NFAPI_TRACE(NFAPI_TRACE_NOTE, "pselect()=%d maxSock:%d vnf_p7->socket:%d pselect_timeout:%u.%u original_pselect_timeout:%u.%u\n", 
-                              selectRetval, maxSock, vnf_p7->socket, pselect_timeout.tv_sec, pselect_timeout.tv_nsec,
-                              original_pselect_timeout.tv_sec, original_pselect_timeout.tv_nsec);
-#endif
-
 			if(selectRetval == 0)
 			{
 				// calculate the start of the next subframe

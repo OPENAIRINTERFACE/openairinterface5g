@@ -858,18 +858,18 @@ void run(int argc, char *argv[])
     if ((last_slot == 1) && (frame == 0)
         && (abstraction_flag == 0) && (oai_emulation.info.n_frames == 1)) {
 
-      write_output ("dlchan0.m", "dlch0",
+      LOG_M ("dlchan0.m", "dlch0",
                     &(PHY_vars_UE_g[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][0][0]),
                     (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
-      write_output ("dlchan1.m", "dlch1",
+      LOG_M ("dlchan1.m", "dlch1",
                     &(PHY_vars_UE_g[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[1][0][0]),
                     (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
-      write_output ("dlchan2.m", "dlch2",
+      LOG_M ("dlchan2.m", "dlch2",
                     &(PHY_vars_UE_g[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[2][0][0]),
                     (6 * (PHY_vars_UE_g[0]->lte_frame_parms.ofdm_symbol_size)), 1, 1);
-      write_output ("pbch_rxF_comp0.m", "pbch_comp0",
+      LOG_M ("pbch_rxF_comp0.m", "pbch_comp0",
                     PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0], 6 * 12 * 4, 1, 1);
-      write_output ("pbch_rxF_llr.m", "pbch_llr",
+      LOG_M ("pbch_rxF_llr.m", "pbch_llr",
                     PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr, (frame_parms->Ncp == 0) ? 1920 : 1728, 1, 4);
     }
 
@@ -912,14 +912,14 @@ void run(int argc, char *argv[])
       oai_emulation.info.time_s += 0.01;
 
       if ((frame>=1)&&(frame<=9)&&(abstraction_flag==0)) {
-        write_output("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+        LOG_M("UEtxsig0.m","txs0", PHY_vars_UE_g[0]->lte_ue_common_vars.txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
         sprintf(fname,"eNBtxsig%d.m",frame);
         sprintf(vname,"txs%d",frame);
-        write_output(fname,vname, PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-        write_output("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size,1,1);
+        LOG_M(fname,vname, PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+        LOG_M("eNBtxsigF0.m","txsF0",PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0],PHY_vars_eNB_g[0]->lte_frame_parms.symbols_per_tti*PHY_vars_eNB_g[0]->lte_frame_parms.ofdm_symbol_size,1,1);
 
-        write_output("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-        write_output("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+        LOG_M("UErxsig0.m","rxs0", PHY_vars_UE_g[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+        LOG_M("eNBrxsig0.m","rxs0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.rxdata[0][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
       }
 
 #ifdef XFORMS

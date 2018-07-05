@@ -79,7 +79,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_PHY
       sprintf(fname,"srs_ch_estimates_time_%d%d.m",ind,aa);
       sprintf(vname,"srs_time_%d%d",ind,aa);
-      write_output(fname,vname,lte_eNB_srs->srs_ch_estimates_time[aa],frame_parms->ofdm_symbol_size*2,2,1);
+      LOG_M(fname,vname,lte_eNB_srs->srs_ch_estimates_time[aa],frame_parms->ofdm_symbol_size*2,2,1);
 #endif
     }
 

@@ -225,14 +225,6 @@ int tcp_bridge_read(openair0_device *device, openair0_timestamp *timestamp, void
 
   b = &t->b[t->bstart];
 
-#if 0
-typedef struct {
-  int32_t data[30720]; /* max 20MHz */
-  unsigned long timestamp;
-  int size;
-} input_buffer;
-#endif
-
   if (b->timestamp != t->read_timestamp) abort();
   if (b->size != nsamps * 4) abort();
 

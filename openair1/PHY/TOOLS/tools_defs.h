@@ -282,17 +282,6 @@ void bit8_txmux(int32_t length,int32_t offset);
 
 void bit8_rxdemux(int32_t length,int32_t offset);
 
-/*!\fn int32_t write_output(const char *fname, const char *vname, void *data, int length, int dec, char format);
-\brief Write output file from signal data
-@param fname output file name
-@param vname  output vector name (for MATLAB/OCTAVE)
-@param data   point to data
-@param length length of data vector to output
-@param dec    decimation level
-@param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
-*/
-int32_t write_output(const char *fname, const char *vname, void *data, int length, int dec, char format);
-
 void Zero_Buffer(void *,uint32_t);
 void Zero_Buffer_nommx(void *buf,uint32_t length);
 

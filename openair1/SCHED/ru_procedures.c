@@ -410,11 +410,6 @@ void feptx_prec(RU_t *ru) {
 			 aa);
 	}
       }
-#if 0
-      LOG_D(PHY,"feptx_prec: frame %d, subframe %d: txp (freq) %d dB\n",
-	    ru->proc.frame_tx,subframe,
-	    dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[0],2*fp->symbols_per_tti*fp->ofdm_symbol_size)));
-#endif
     }
   }
 }

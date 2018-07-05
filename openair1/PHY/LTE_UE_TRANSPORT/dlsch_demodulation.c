@@ -561,9 +561,10 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                nb_rb,
                                pdsch_vars[eNB_id]->log2_maxh,
                                measurements); // log2_maxh+I0_shift
- /*if (symbol == 5) {
-     write_output("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
- } */
+    if (symbol == 5) {
+     LOG_M("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+    }
+    
     if ((rx_type==rx_IC_single_stream) &&
         (eNB_id_i<ue->n_connected_eNB)) {
          dlsch_channel_compensation(pdsch_vars[eNB_id_i]->rxdataF_ext,
@@ -579,12 +580,10 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                  nb_rb,
                                  pdsch_vars[eNB_id]->log2_maxh,
                                  measurements); // log2_maxh+I0_shift
-#ifdef DEBUG_PHY
       if (symbol == 5) {
-        write_output("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-        write_output("rxF_comp_i.m","rxF_c_i",&pdsch_vars[eNB_id_i]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+        LOG_M("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+        LOG_M("rxF_comp_i.m","rxF_c_i",&pdsch_vars[eNB_id_i]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
       }
-#endif
 
       dlsch_dual_stream_correlation(frame_parms,
                                     symbol,
@@ -609,14 +608,14 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                      nb_rb,
                                      pdsch_vars[eNB_id]->log2_maxh0,
                                      pdsch_vars[eNB_id]->log2_maxh1);
-  /*   if (symbol == 5) {
-     write_output("rxF_comp_d00.m","rxF_c_d00",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
-     write_output("rxF_comp_d01.m","rxF_c_d01",&pdsch_vars[eNB_id]->rxdataF_comp0[1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
-     write_output("rxF_comp_d10.m","rxF_c_d10",&pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
-     write_output("rxF_comp_d11.m","rxF_c_d11",&pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be QAM
-        } */
+      if (symbol == 5) {
+	LOG_M("rxF_comp_d00.m","rxF_c_d00",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
+	LOG_M("rxF_comp_d01.m","rxF_c_d01",&pdsch_vars[eNB_id]->rxdataF_comp0[1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
+	LOG_M("rxF_comp_d10.m","rxF_c_d10",&pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
+	LOG_M("rxF_comp_d11.m","rxF_c_d11",&pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be QAM
+      }
       // compute correlation between signal and interference channels (rho12 and rho21)
-        dlsch_dual_stream_correlation(frame_parms, // this is doing h11'*h12 and h21'*h22
+      dlsch_dual_stream_correlation(frame_parms, // this is doing h11'*h12 and h21'*h22
                                     symbol,
                                     nb_rb,
                                     pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -634,13 +633,12 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                     pdsch_vars[eNB_id]->log2_maxh1);
     //  printf("rho stream2 =%d\n",&pdsch_vars[eNB_id]->dl_ch_rho2_ext );
       //printf("TM3 log2_maxh : %d\n",pdsch_vars[eNB_id]->log2_maxh);
-  /*     if (symbol == 5) {
-     write_output("rho0_0.m","rho0_0",&pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
-     write_output("rho2_0.m","rho2_0",&pdsch_vars[eNB_id]->dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
-     write_output("rho0_1.m.m","rho0_1",&pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
-     write_output("rho2_1.m","rho2_1",&pdsch_vars[eNB_id]->dl_ch_rho2_ext[1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be QAM
-        } */
-
+      if (symbol == 5) {
+	LOG_M("rho0_0.m","rho0_0",&pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
+	LOG_M("rho2_0.m","rho2_0",&pdsch_vars[eNB_id]->dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
+	LOG_M("rho0_1.m.m","rho0_1",&pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
+	LOG_M("rho2_1.m","rho2_1",&pdsch_vars[eNB_id]->dl_ch_rho2_ext[1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be QAM
+      }
     } else if (dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding (TM5, TM6)
         if ((rx_type==rx_IC_single_stream) && (eNB_id_i==ue->n_connected_eNB) && (dlsch0_harq->dl_power_off==0)) {
           dlsch_channel_compensation_TM56(pdsch_vars[eNB_id]->rxdataF_ext,
@@ -690,12 +688,11 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                       nb_rb,
                                       pdsch_vars[eNB_id]->log2_maxh,
                                       dlsch0_harq->dl_power_off);
-#ifdef DEBUG_PHY
       if (symbol==5) {
-        write_output("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
-       write_output("rxF_comp_i.m","rxF_c_i",&pdsch_vars[eNB_id_i]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+        LOG_M("rxF_comp_d.m","rxF_c_d",&pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+	LOG_M("rxF_comp_i.m","rxF_c_i",&pdsch_vars[eNB_id_i]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
       }
-#endif
+
       dlsch_dual_stream_correlation(frame_parms,
                                     symbol,
                                     nb_rb,
@@ -765,10 +762,10 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                  symbol,
                                  nb_rb,
                                  1);
-    /*   if (symbol == 5) {
-     write_output("rho0_mrc.m","rho0_0",&pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
-     write_output("rho2_mrc.m","rho2_0",&pdsch_vars[eNB_id]->dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
-        } */
+	if (symbol == 5) {
+	  LOG_M("rho0_mrc.m","rho0_0",&pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
+	  LOG_M("rho2_mrc.m","rho2_0",&pdsch_vars[eNB_id]->dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
+        }
       }
     } else {
       dlsch_detection_mrc(frame_parms,
@@ -1188,7 +1185,8 @@ int rx_pdsch(PHY_VARS_UE *ue,
     LOG_D(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,subframe,slot,symbol,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
-// Please keep it: useful for debugging
+
+    // Please keep it: useful for debugging
 #if 0
   if( (symbol == 13) && (subframe==0) && (dlsch0_harq->Qm == 6) /*&& (nb_rb==25)*/)
   {
@@ -1196,29 +1194,29 @@ int rx_pdsch(PHY_VARS_UE *ue,
       if(1)
       {
 #if 1
-      write_output("rxdataF0.m"    , "rxdataF0",             &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
-      //write_output("rxdataF1.m"    , "rxdataF1",             &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
-      write_output("dl_ch_estimates00.m", "dl_ch_estimates00",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0],14*frame_parms->ofdm_symbol_size,1,1);
-      //write_output("dl_ch_estimates01.m", "dl_ch_estimates01",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][1][0],14*frame_parms->ofdm_symbol_size,1,1);
-      //write_output("dl_ch_estimates10.m", "dl_ch_estimates10",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2][0],14*frame_parms->ofdm_symbol_size,1,1);
-      //write_output("dl_ch_estimates11.m", "dl_ch_estimates11",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][3][0],14*frame_parms->ofdm_symbol_size,1,1);
+      LOG_M("rxdataF0.m"    , "rxdataF0",             &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
+      //LOG_M("rxdataF1.m"    , "rxdataF1",             &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[0][0],14*frame_parms->ofdm_symbol_size,1,1);
+      LOG_M("dl_ch_estimates00.m", "dl_ch_estimates00",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0],14*frame_parms->ofdm_symbol_size,1,1);
+      //LOG_M("dl_ch_estimates01.m", "dl_ch_estimates01",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][1][0],14*frame_parms->ofdm_symbol_size,1,1);
+      //LOG_M("dl_ch_estimates10.m", "dl_ch_estimates10",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2][0],14*frame_parms->ofdm_symbol_size,1,1);
+      //LOG_M("dl_ch_estimates11.m", "dl_ch_estimates11",   &common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][3][0],14*frame_parms->ofdm_symbol_size,1,1);
 
 
-      //write_output("rxdataF_ext00.m"    , "rxdataF_ext00",       &pdsch_vars[eNB_id]->rxdataF_ext[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_ext01.m"    , "rxdataF_ext01",       &pdsch_vars[eNB_id]->rxdataF_ext[1][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_ext10.m"    , "rxdataF_ext10",       &pdsch_vars[eNB_id]->rxdataF_ext[2][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_ext11.m"    , "rxdataF_ext11",       &pdsch_vars[eNB_id]->rxdataF_ext[3][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("dl_ch_estimates_ext00.m", "dl_ch_estimates_ext00", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("dl_ch_estimates_ext01.m", "dl_ch_estimates_ext01", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[1][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("dl_ch_estimates_ext10.m", "dl_ch_estimates_ext10", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("dl_ch_estimates_ext11.m", "dl_ch_estimates_ext11", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[3][0],14*frame_parms->N_RB_DL*12,1,1);
-      write_output("rxdataF_comp00.m","rxdataF_comp00",              &pdsch_vars[eNB_id]->rxdataF_comp0[0][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_comp01.m","rxdataF_comp01",              &pdsch_vars[eNB_id]->rxdataF_comp0[1][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_comp10.m","rxdataF_comp10",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][0][0],14*frame_parms->N_RB_DL*12,1,1);
-      //write_output("rxdataF_comp11.m","rxdataF_comp11",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][0],14*frame_parms->N_RB_DL*12,1,1);
+      //LOG_M("rxdataF_ext00.m"    , "rxdataF_ext00",       &pdsch_vars[eNB_id]->rxdataF_ext[0][0],14*frame_parms->N_RB_DL*12,1,1);
+      //LOG_M("rxdataF_ext01.m"    , "rxdataF_ext01",       &pdsch_vars[eNB_id]->rxdataF_ext[1][0],14*frame_parms->N_RB_DL*12,1,1);
+      //LOG_M("rxdataF_ext10.m"    , "rxdataF_ext10",       &pdsch_vars[eNB_id]->rxdataF_ext[2][0],14*frame_parms->N_RB_DL*12,1,1);
+      //LOG_M("rxdataF_ext11.m"    , "rxdataF_ext11",       &pdsch_vars[eNB_id]->rxdataF_ext[3][0],14*frame_parms->N_RB_DL*12,1,1);
+      LOG_M("dl_ch_estimates_ext00.m", "dl_ch_estimates_ext00", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][0],14*frame_parms->N_RB_DL*12,1,1);
+      //LOG_M("dl_ch_estimates_ext01.m", "dl_ch_estimates_ext01", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[1][0],14*frame_parms->N_RB_DL*12,1,1);
+      //LOG_M("dl_ch_estimates_ext10.m", "dl_ch_estimates_ext10", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[2][0],14*frame_parms->N_RB_DL*12,1,1);
+      //LOG_M("dl_ch_estimates_ext11.m", "dl_ch_estimates_ext11", &pdsch_vars[eNB_id]->dl_ch_estimates_ext[3][0],14*frame_parms->N_RB_DL*12,1,1);
+      LOG_M("rxdataF_comp00.m","rxdataF_comp00",              &pdsch_vars[eNB_id]->rxdataF_comp0[0][0],14*frame_parms->N_RB_DL*12,1,1);
+      //LOG_M("rxdataF_comp01.m","rxdataF_comp01",              &pdsch_vars[eNB_id]->rxdataF_comp0[1][0],14*frame_parms->N_RB_DL*12,1,1);
+      //LOG_M("rxdataF_comp10.m","rxdataF_comp10",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][0][0],14*frame_parms->N_RB_DL*12,1,1);
+      //LOG_M("rxdataF_comp11.m","rxdataF_comp11",              &pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][0],14*frame_parms->N_RB_DL*12,1,1);
 #endif
-      write_output("llr0.m","llr0",  &pdsch_vars[eNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
-      //write_output("llr1.m","llr1",  &pdsch_vars[eNB_id]->llr[1][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
+      LOG_M("llr0.m","llr0",  &pdsch_vars[eNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
+      //LOG_M("llr1.m","llr1",  &pdsch_vars[eNB_id]->llr[1][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
 
 
       AssertFatal(0," ");
@@ -6030,84 +6028,84 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,unsigned int *c
 
   sprintf(fname,"dlsch%d_rxF_r%d_ext0.m",eNB_id,round);
   sprintf(vname,"dl%d_rxF_r%d_ext0",eNB_id,round);
-  write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_ext[0],12*N_RB_DL*nsymb,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_ext[0],12*N_RB_DL*nsymb,1,1);
 
   if (ue->frame_parms.nb_antennas_rx >1) {
     sprintf(fname,"dlsch%d_rxF_r%d_ext1.m",eNB_id,round);
     sprintf(vname,"dl%d_rxF_r%d_ext1",eNB_id,round);
-    write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_ext[1],12*N_RB_DL*nsymb,1,1);
+    LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_ext[1],12*N_RB_DL*nsymb,1,1);
   }
 
   sprintf(fname,"dlsch%d_ch_r%d_ext00.m",eNB_id,round);
   sprintf(vname,"dl%d_ch_r%d_ext00",eNB_id,round);
-  write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_ext[0],12*N_RB_DL*nsymb,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_ext[0],12*N_RB_DL*nsymb,1,1);
 
   if (ue->transmission_mode[eNB_id]==7){
     sprintf(fname,"dlsch%d_bf_ch_r%d.m",eNB_id,round);
     sprintf(vname,"dl%d_bf_ch_r%d",eNB_id,round);
-    write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_bf_ch_estimates[0],512*nsymb,1,1);
-    //write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates[0],512,1,1);
+    LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_bf_ch_estimates[0],512*nsymb,1,1);
+    //LOG_M(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates[0],512,1,1);
 
     sprintf(fname,"dlsch%d_bf_ch_r%d_ext00.m",eNB_id,round);
     sprintf(vname,"dl%d_bf_ch_r%d_ext00",eNB_id,round);
-    write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_bf_ch_estimates_ext[0],12*N_RB_DL*nsymb,1,1);
+    LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_bf_ch_estimates_ext[0],12*N_RB_DL*nsymb,1,1);
   }
 
   if (ue->frame_parms.nb_antennas_rx == 2) {
     sprintf(fname,"dlsch%d_ch_r%d_ext01.m",eNB_id,round);
     sprintf(vname,"dl%d_ch_r%d_ext01",eNB_id,round);
-    write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*nsymb,1,1);
+    LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*nsymb,1,1);
   }
 
   if (ue->frame_parms.nb_antenna_ports_eNB == 2) {
     sprintf(fname,"dlsch%d_ch_r%d_ext10.m",eNB_id,round);
     sprintf(vname,"dl%d_ch_r%d_ext10",eNB_id,round);
-    write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*nsymb,1,1);
+    LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*nsymb,1,1);
 
     if (ue->frame_parms.nb_antennas_rx == 2) {
       sprintf(fname,"dlsch%d_ch_r%d_ext11.m",eNB_id,round);
       sprintf(vname,"dl%d_ch_r%d_ext11",eNB_id,round);
-      write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_ext[3],12*N_RB_DL*nsymb,1,1);
+      LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_ext[3],12*N_RB_DL*nsymb,1,1);
     }
   }
 
   sprintf(fname,"dlsch%d_rxF_r%d_uespec0.m",eNB_id,round);
   sprintf(vname,"dl%d_rxF_r%d_uespec0",eNB_id,round);
-  write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_uespec_pilots[0],12*N_RB_DL,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_uespec_pilots[0],12*N_RB_DL,1,1);
 
   /*
-    write_output("dlsch%d_ch_ext01.m","dl01_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*nsymb,1,1);
-    write_output("dlsch%d_ch_ext10.m","dl10_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*nsymb,1,1);
-    write_output("dlsch%d_ch_ext11.m","dl11_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[3],12*N_RB_DL*nsymb,1,1);
+    LOG_M("dlsch%d_ch_ext01.m","dl01_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*nsymb,1,1);
+    LOG_M("dlsch%d_ch_ext10.m","dl10_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*nsymb,1,1);
+    LOG_M("dlsch%d_ch_ext11.m","dl11_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[3],12*N_RB_DL*nsymb,1,1);
   */
   sprintf(fname,"dlsch%d_r%d_rho.m",eNB_id,round);
   sprintf(vname,"dl_rho_r%d_%d",eNB_id,round);
 
-  write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_rho_ext[harq_pid][round][0],12*N_RB_DL*nsymb,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_rho_ext[harq_pid][round][0],12*N_RB_DL*nsymb,1,1);
 
   sprintf(fname,"dlsch%d_r%d_rho2.m",eNB_id,round);
   sprintf(vname,"dl_rho2_r%d_%d",eNB_id,round);
 
-  write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_rho2_ext[0],12*N_RB_DL*nsymb,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_rho2_ext[0],12*N_RB_DL*nsymb,1,1);
 
   sprintf(fname,"dlsch%d_rxF_r%d_comp0.m",eNB_id,round);
   sprintf(vname,"dl%d_rxF_r%d_comp0",eNB_id,round);
-  write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_comp0[0],12*N_RB_DL*nsymb,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_comp0[0],12*N_RB_DL*nsymb,1,1);
   if (ue->frame_parms.nb_antenna_ports_eNB == 2) {
     sprintf(fname,"dlsch%d_rxF_r%d_comp1.m",eNB_id,round);
     sprintf(vname,"dl%d_rxF_r%d_comp1",eNB_id,round);
-    write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_comp1[harq_pid][round][0],12*N_RB_DL*nsymb,1,1);
+    LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_comp1[harq_pid][round][0],12*N_RB_DL*nsymb,1,1);
   }
 
   sprintf(fname,"dlsch%d_rxF_r%d_llr.m",eNB_id,round);
   sprintf(vname,"dl%d_r%d_llr",eNB_id,round);
-  write_output(fname,vname, ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->llr[0],coded_bits_per_codeword[0],1,0);
+  LOG_M(fname,vname, ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->llr[0],coded_bits_per_codeword[0],1,0);
   sprintf(fname,"dlsch%d_r%d_mag1.m",eNB_id,round);
   sprintf(vname,"dl%d_r%d_mag1",eNB_id,round);
-  write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_mag0[0],12*N_RB_DL*nsymb,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_mag0[0],12*N_RB_DL*nsymb,1,1);
   sprintf(fname,"dlsch%d_r%d_mag2.m",eNB_id,round);
   sprintf(vname,"dl%d_r%d_mag2",eNB_id,round);
-  write_output(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_magb0[0],12*N_RB_DL*nsymb,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->dl_ch_magb0[0],12*N_RB_DL*nsymb,1,1);
 
   //  printf("log2_maxh = %d\n",ue->pdsch_vars[eNB_id]->log2_maxh);
 }

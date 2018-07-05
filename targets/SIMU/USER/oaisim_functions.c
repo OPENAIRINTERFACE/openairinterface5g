@@ -1562,33 +1562,6 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
   }
 
 #else
-#if 0 //  defined(EXMIMO) || defined(OAI_USRP)
-  if (otg_enabled==1) {
-    ctime = frame * 100;
-
-    for (dst_id = 0; dst_id < MAX_MOBILES_PER_ENB; dst_id++) {
-      if (mac_get_rrc_status(eNB_index, eNB_flag, dst_id ) > 2) {
-        otg_pkt = malloc (sizeof(Packet_otg_elt_t));
-        (otg_pkt->otg_pkt).sdu_buffer = packet_gen(module_instP, dst_id, ctime, &pkt_size);
-
-        if (otg_pkt != NULL) {
-          rb_id = DTCH-2;
-          (otg_pkt->otg_pkt).rb_id     = rb_id;
-          (otg_pkt->otg_pkt).module_id = module_idP;
-          (otg_pkt->otg_pkt).is_ue     = FALSE;
-          (otg_pkt->otg_pkt).mode      = PDCP_TRANSMISSION_MODE_DATA;
-          //Adding the packet to the OTG-PDCP buffer
-          pkt_list_add_tail_eurecom(otg_pkt, &(otg_pdcp_buffer[module_idP]));
-          LOG_D(EMU, "[eNB %d] ADD pkt to OTG buffer for dst %d on rb_id %d\n", (otg_pkt->otg_pkt).module_id, (otg_pkt->otg_pkt).dst_id,(otg_pkt->otg_pkt).rb_id);
-        } else {
-          //LOG_I(EMU, "OTG returns null \n");
-          free(otg_pkt);
-          otg_pkt=NULL;
-        }
-      }
-    }
-  }
-#endif
 }
 
 void update_otg_UE(module_id_t ue_mod_idP, unsigned int ctime)
