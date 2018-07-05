@@ -1245,6 +1245,7 @@ int main( int argc, char **argv )
   
   // connect the TX/RX buffers
  
+  sleep(1); /* wait for thread activation */
   
   printf("Sending sync to all threads\n");
   
