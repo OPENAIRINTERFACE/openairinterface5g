@@ -3782,11 +3782,8 @@ void dlsch_channel_level_core(int **dl_ch_estimates_ext,
 
   for (aatx=0; aatx<n_tx; aatx++)
     for (aarx=0; aarx<n_rx; aarx++) {
-       //clear average level
-      //printf("aatx = %d, aarx = %d, aatx*frame_parms->nb_antennas_rx + aarx] = %d \n", aatx, aarx, aatx*frame_parms->nb_antennas_rx + aarx);
 
       avg128D = _mm_setzero_si128();
-      // 5 is always a symbol with no pilots for both normal and extended prefix
 
       dl_ch128=(__m128i *)&dl_ch_estimates_ext[aatx*n_rx + aarx][start_point];
 
@@ -3797,17 +3794,8 @@ void dlsch_channel_level_core(int **dl_ch_estimates_ext,
         length2 = length>>2;
 
         for (ii=0;ii<length2;ii++) {
-          //printf("rb %d : ",rb);
           avg128D = _mm_add_epi32(avg128D,_mm_srai_epi16(_mm_madd_epi16(dl_ch128[0],dl_ch128[0]),x));
           avg128D = _mm_add_epi32(avg128D,_mm_srai_epi16(_mm_madd_epi16(dl_ch128[1],dl_ch128[1]),x));
-
-          //avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[0], coeff128),15)));
-          //avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[1], coeff128),15)));
-
-          if (ii == 0){
-            //print_shorts("dl_ch128",&dl_ch128[0]);
-            //print_shorts("dl_ch128",&dl_ch128[1]);
-          }
 
           dl_ch128+=2;
         }
@@ -3827,6 +3815,7 @@ void dlsch_channel_level_core(int **dl_ch_estimates_ext,
   _mm_empty();
   _m_empty();
 
+ /* FIXME This part needs to be adapted like the one above */
 #elif defined(__arm__)
 
   short rb;
@@ -3859,14 +3848,6 @@ void dlsch_channel_level_core(int **dl_ch_estimates_ext,
           avg128D = vqaddq_s32(avg128D,vmull_s16(dl_ch128[5],dl_ch128[5]));
           dl_ch128+=6;
         }
-
-        /*
-          if (rb==0) {
-          print_shorts("dl_ch128",&dl_ch128[0]);
-          print_shorts("dl_ch128",&dl_ch128[1]);
-          print_shorts("dl_ch128",&dl_ch128[2]);
-          }
-        */
       }
 
 
