@@ -816,6 +816,19 @@ void dlsch_channel_compensation(int32_t **rxdataF_ext,
                                 uint8_t output_shift,
                                 PHY_MEASUREMENTS *phy_measurements);
 
+void dlsch_channel_compensation_core(int **rxdataF_ext,
+                                     int **dl_ch_estimates_ext,
+                                     int **dl_ch_mag,
+                                     int **dl_ch_magb,
+                                     int **rxdataF_comp,
+                                     int **rho,
+                                     unsigned char n_tx,
+                                     unsigned char n_rx,
+                                     unsigned char mod_order,
+                                     unsigned char output_shift,
+                                     int length,
+                                     int start_point);
+
 void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
                                    unsigned char symbol,
                                    unsigned short nb_rb,
@@ -928,6 +941,13 @@ void dlsch_channel_level(int32_t **dl_ch_estimates_ext,
                          int32_t *avg,
                          uint8_t pilots_flag,
                          uint16_t nb_rb);
+
+void dlsch_channel_level_core(int32_t **dl_ch_estimates_ext,
+                              int32_t *avg,
+                              int n_tx,
+                              int n_rx,
+                              int length,
+                              int start_point);
 
 
 void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
@@ -1672,8 +1692,8 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
   LTE_UE_DLSCH_t *dlsch_ue);
 */
 
-uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms, 
-			     uint8_t prach_ConfigIndex, 
+uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
+			     uint8_t prach_ConfigIndex,
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
 
