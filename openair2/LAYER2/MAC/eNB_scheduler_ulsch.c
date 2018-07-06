@@ -1580,34 +1580,6 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	      T_INT(first_rb[CC_id]),
 	      T_INT(rb_table[rb_table_index]), T_INT(round));
 
-#if 0
-            /* This is done in rx_sdu, as it has to.
-             * Since the code is a bit different, let's keep this version here for review, in case of problem.
-             */
-	    // fill in NAK information
-
-	    hi_dci0_pdu = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
-	    memset((void *) hi_dci0_pdu, 0,
-		   sizeof(nfapi_hi_dci0_request_pdu_t));
-	    hi_dci0_pdu->pdu_type = NFAPI_HI_DCI0_HI_PDU_TYPE;
-	    hi_dci0_pdu->pdu_size = 2 + sizeof(nfapi_hi_dci0_hi_pdu);
-	    hi_dci0_pdu->hi_pdu.hi_pdu_rel8.tl.tag = NFAPI_HI_DCI0_REQUEST_HI_PDU_REL8_TAG;
-	    hi_dci0_pdu->hi_pdu.hi_pdu_rel8.resource_block_start = UE_template->first_rb_ul[harq_pid];
-	    hi_dci0_pdu->hi_pdu.hi_pdu_rel8.cyclic_shift_2_for_drms = UE_template->cshift[harq_pid];
-	    hi_dci0_pdu->hi_pdu.hi_pdu_rel8.hi_value = 0;
-	    hi_dci0_req_body->number_of_hi++;
-	    hi_dci0_req_body->sfnsf = sfnsf_add_subframe(sched_frame, sched_subframeP, 0);
-	    hi_dci0_req->sfn_sf = frameP<<4|subframeP;
-	    hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
-
-	    LOG_D(MAC,
-		  "[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled (PHICH) UE %d (mcs %d, first rb %d, nb_rb %d, TBS %d, round %d)\n",
-		  module_idP, harq_pid, rnti, CC_id, frameP,
-		  subframeP, UE_id, UE_template->mcs_UL[harq_pid],
-		  UE_template->first_rb_ul[harq_pid],
-		  UE_template->nb_rb_ul[harq_pid],
-		  UE_template->TBS_UL[harq_pid], round);
-#endif
 	    // Add UL_config PDUs
 	    LOG_D(MAC,
 		  "[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG.Request for UE %d/%x, ulsch_frame %d, ulsch_subframe %d\n",

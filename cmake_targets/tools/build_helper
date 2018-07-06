@@ -271,8 +271,23 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y || true
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
-        #The new USRP repository
-        $SUDO add-apt-repository ppa:ettusresearch/uhd -y
+        # The new USRP repository
+        # Raphael Defosseux: Adding a loop on adding PPA because in CI the gpg key retrieve may 
+        # timeout due to proxy / network latencies in Eurecom on VM
+        echo_info "\nAdding PPA repository ettusresearch/uhd\n"
+        x=0
+        while [ $x -le 5 ]
+        do
+            if $SUDO add-apt-repository ppa:ettusresearch/uhd -y
+            then
+                echo_info "add-apt-repository successful\n"
+                break
+            else
+                echo_info "add-apt-repository failed, retrying...\n"
+                sleep 30
+            fi
+            x=$((x + 1))
+        done
         $SUDO apt-get update
         $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
         $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host

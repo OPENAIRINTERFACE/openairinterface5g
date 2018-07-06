@@ -1359,13 +1359,6 @@ fill_nfapi_harq_information(module_id_t                      module_idP,
 
   AssertFatal(UE_id >= 0, "UE_id cannot be found, impossible\n");
   AssertFatal(UE_list != NULL, "UE_list is null\n");
-#if 0
-  /* TODO: revisit, don't use Assert, it's perfectly possible to
-   * have physicalConfigDedicated NULL here
-   */
-  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL,
-	      "physicalConfigDedicated for rnti %x is null\n", rntiP);
-#endif
 
   harq_information->harq_information_rel11.tl.tag        = NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL11_TAG;
   harq_information->harq_information_rel11.num_ant_ports = 1;
@@ -4441,14 +4434,6 @@ SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP,
       LOG_D(MAC,
 	    "[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",
 	    mod_idP, rntiP, frameP, subframeP, UE_id, cc_idP);
-
-#if 0
-    UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-
-    /* for the moment don't use ul_cqi from SR, value is too different from harq */
-    sched_ctl->pucch1_snr[cc_idP] = ul_cqi;
-    sched_ctl->pucch1_cqi_update[cc_idP] = 1;
-#endif
 
     UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
     UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;

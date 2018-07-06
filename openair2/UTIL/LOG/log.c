@@ -80,6 +80,7 @@ mapping log_level_names[] = {
   {"debug", LOG_DEBUG},
   {"file", LOG_FILE},
   {"trace", LOG_TRACE},
+  {"matlab", LOG_MATLAB},
   {NULL, -1}
 };
 mapping log_verbosity_names[] = {
@@ -112,6 +113,161 @@ static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG
 #if defined(ENABLE_ITTI)
 static log_instance_type_t log_instance_type;
 #endif
+
+int write_file_matlab(const char *fname,const char *vname,void *data,int length,int dec,char format)
+{
+
+  FILE *fp=NULL;
+  int i;
+
+
+  //printf("Writing %d elements of type %d to %s\n",length,format,fname);
+
+
+  if (format == 10 || format ==11 || format == 12 || format == 13 || format == 14) {
+    fp = fopen(fname,"a+");
+  } else if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14) {
+    fp = fopen(fname,"w+");
+  }
+
+
+
+  if (fp== NULL) {
+    printf("[OPENAIR][FILE OUTPUT] Cannot open file %s\n",fname);
+    return(-1);
+  }
+
+  if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14)
+    fprintf(fp,"%s = [",vname);
+
+
+  switch (format) {
+  case 0:   // real 16-bit
+
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%d\n",((short *)data)[i]);
+    }
+
+    break;
+
+  case 1:  // complex 16-bit
+  case 13:
+  case 14:
+  case 15:
+
+    for (i=0; i<length<<1; i+=(2*dec)) {
+      fprintf(fp,"%d + j*(%d)\n",((short *)data)[i],((short *)data)[i+1]);
+
+    }
+
+
+    break;
+
+  case 2:  // real 32-bit
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%d\n",((int *)data)[i]);
+    }
+
+    break;
+
+  case 3: // complex 32-bit
+    for (i=0; i<length<<1; i+=(2*dec)) {
+      fprintf(fp,"%d + j*(%d)\n",((int *)data)[i],((int *)data)[i+1]);
+    }
+
+    break;
+
+  case 4: // real 8-bit
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%d\n",((char *)data)[i]);
+    }
+
+    break;
+
+  case 5: // complex 8-bit
+    for (i=0; i<length<<1; i+=(2*dec)) {
+      fprintf(fp,"%d + j*(%d)\n",((char *)data)[i],((char *)data)[i+1]);
+    }
+
+    break;
+
+  case 6:  // real 64-bit
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%lld\n",((long long*)data)[i]);
+    }
+
+    break;
+
+  case 7: // real double
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%g\n",((double *)data)[i]);
+    }
+
+    break;
+
+  case 8: // complex double
+    for (i=0; i<length<<1; i+=2*dec) {
+      fprintf(fp,"%g + j*(%g)\n",((double *)data)[i], ((double *)data)[i+1]);
+    }
+
+    break;
+
+  case 9: // real unsigned 8-bit
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%d\n",((unsigned char *)data)[i]);
+    }
+
+    break;
+
+
+  case 10 : // case eren 16 bit complex :
+
+    for (i=0; i<length<<1; i+=(2*dec)) {
+
+      if((i < 2*(length-1)) && (i > 0))
+        fprintf(fp,"%d + j*(%d),",((short *)data)[i],((short *)data)[i+1]);
+      else if (i == 2*(length-1))
+        fprintf(fp,"%d + j*(%d);",((short *)data)[i],((short *)data)[i+1]);
+      else if (i == 0)
+        fprintf(fp,"\n%d + j*(%d),",((short *)data)[i],((short *)data)[i+1]);
+
+
+
+    }
+
+    break;
+
+  case 11 : //case eren 16 bit real for channel magnitudes:
+    for (i=0; i<length; i+=dec) {
+
+      if((i <(length-1))&& (i > 0))
+        fprintf(fp,"%d,",((short *)data)[i]);
+      else if (i == (length-1))
+        fprintf(fp,"%d;",((short *)data)[i]);
+      else if (i == 0)
+        fprintf(fp,"\n%d,",((short *)data)[i]);
+    }
+
+    printf("\n erennnnnnnnnnnnnnn: length :%d",length);
+    break;
+
+  case 12 : // case eren for log2_maxh real unsigned 8 bit
+    fprintf(fp,"%d \n",((unsigned char *)&data)[0]);
+    break;
+
+  }
+
+  if (format != 10 && format !=11 && format !=12 && format != 13 && format != 15) {
+    fprintf(fp,"];\n");
+    fclose(fp);
+    return(0);
+  } else if (format == 10 || format ==11 || format == 12 || format == 13 || format == 15) {
+    fclose(fp);
+    return(0);
+  }
+
+  return 0;
+}
 
 /* get log parameters from configuration file */
 void  log_getconfig(log_t *g_log) {
@@ -476,6 +632,7 @@ int logInit (void)
   g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
   g_log->level2string[LOG_FILE]          = "F"; // file
   g_log->level2string[LOG_TRACE]         = "T"; // TRACE
+  g_log->level2string[LOG_MATLAB]        = "M"; // MATLAB
 
   g_log->onlinelog = 1; //online log file
   g_log->syslog = 0;
@@ -880,46 +1037,6 @@ void nfapi_log(char *file, char *func, int line, int comp, int level, const char
   }
 
 #endif
-#if 0
-  LOG_params log_params;
-  int        len;
-
-  len = vsnprintf(log_params.l_buff_info, MAX_LOG_INFO-1, format, args);
-
-  //2 first parameters must be passed as 'const' to the thread function
-  log_params.file = strdup(file);
-  log_params.func = strdup(func);
-  log_params.line = line;
-  log_params.comp = PHY;//comp;
-  log_params.level = 6; // INFO - level;
-  log_params.format = format;
-  log_params.len = len;
-
-  if (pthread_mutex_lock(&log_lock) != 0) {
-    return;
-  }
-
-  log_list_tail++;
-  log_list[log_list_tail - 1] = log_params;
-
-  if (log_list_tail >= 1000) {
-    log_list_tail = 0;
-  }
-
-  if (log_list_nb_elements < 1000) {
-    log_list_nb_elements++;
-  }
-
-  if(pthread_cond_signal(&log_notify) != 0) {
-    pthread_mutex_unlock(&log_lock);
-    return;
-  }
-
-  if(pthread_mutex_unlock(&log_lock) != 0) {
-    return;
-  }
-
-#endif
 }
 
 //log record: add to a list
@@ -1120,261 +1237,6 @@ void *log_thread_function(void *list)
   }
 }
 #endif
-
-#if 0
-/* This function does not work. When multiple threads call it at the same time
- * for the same component, both threads end up using the same buffer.
- * The output is the completely messed up/wrong.
- * Kept in case the fix below is not correct or acceptable.
- */
-//log record, format, and print:  executed in the main thread (mt)
-void logRecord_mt(const char *file, const char *func, int line, int comp,
-                  int level, const char *format, ...)
-{
-  int len = 0;
-  va_list args;
-  log_component_t *c;
-  char *log_start;
-  char *log_end;
-
-  /* for no gcc warnings */
-  (void)log_start;
-  (void)log_end;
-
-  c = &g_log->log_component[comp];
-
-  // do not apply filtering for LOG_F
-  // only log messages which are enabled and are below the global log level and component's level threshold
-  if ((level != LOG_FILE) && ((level > c->level) || (level > g_log->level))) {
-    /* if ((level != LOG_FILE) &&
-          ((level > c->level) ||
-           (level > g_log->level) ||
-           ( c->level > g_log->level))) {
-    */
-    return;
-  }
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,
-                                          VCD_FUNCTION_IN);
-
-  va_start(args, format);
-
-  // adjust syslog level for TRACE messages
-  if (g_log->syslog) {
-    if (g_log->level > LOG_DEBUG) {
-      g_log->level = LOG_DEBUG;
-    }
-  }
-
-  // make sure that for log trace the extra info is only printed once, reset when the level changes
-  if ((level == LOG_FILE) || (c->flag == LOG_NONE) || (level == LOG_TRACE)) {
-    log_start = c->log_buffer;
-    len = vsnprintf(c->log_buffer, MAX_LOG_TOTAL-1, format, args);
-    log_end = c->log_buffer + len;
-  } else {
-    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "%s",
-                      log_level_highlight_start[level]);
-    }
-
-    log_start = c->log_buffer + len;
-
-    if ( (g_log->flag & FLAG_COMP) || (c->flag & FLAG_COMP) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "[%s]",
-                      g_log->log_component[comp].name);
-    }
-
-    if ( (g_log->flag & FLAG_LEVEL) || (c->flag & FLAG_LEVEL) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "[%s]",
-                      g_log->level2string[level]);
-    }
-
-    if ( (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "[%s] ",
-                      func);
-    }
-
-    if ( (g_log->flag & FLAG_FILE_LINE) || (c->flag & FLAG_FILE_LINE) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "[%s:%d]",
-                      file, line);
-    }
-
-    len += vsnprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, format, args);
-    log_end = c->log_buffer + len;
-
-    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "%s",
-                      log_level_highlight_end[level]);
-    }
-  }
-
-  va_end(args);
-
-  // OAI printf compatibility
-  if ((g_log->onlinelog == 1) && (level != LOG_FILE))
-    fwrite(c->log_buffer, len, 1, stdout);
-
-  if (g_log->syslog) {
-    syslog(g_log->level, "%s", c->log_buffer);
-  }
-
-  if (g_log->filelog) {
-    if (write(gfd, c->log_buffer, len) < len) {
-      // TODO assert ?
-    }
-  }
-
-  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-    if (write(g_log->log_component[comp].fd, c->log_buffer, len) < len) {
-      // TODO assert ?
-    }
-  }
-
-#if defined(ENABLE_ITTI)
-
-  if (level <= LOG_DEBUG) {
-    task_id_t origin_task_id = TASK_UNKNOWN;
-    MessagesIds messages_id;
-    MessageDef *message_p;
-    size_t      message_string_size;
-    char       *message_msg_p;
-
-    message_string_size = log_end - log_start;
-
-#if !defined(DISABLE_ITTI_DETECT_SUB_TASK_ID)
-
-    /* Try to identify sub task ID from log information (comp, log_instance_type) */
-    switch (comp) {
-    case PHY:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_PHY_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_PHY_UE;
-        break;
-
-      default:
-        break;
-      }
-
-      break;
-
-    case MAC:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_MAC_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_MAC_UE;
-
-      default:
-        break;
-      }
-
-      break;
-
-    case RLC:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_RLC_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_RLC_UE;
-
-      default:
-        break;
-      }
-
-      break;
-
-    case PDCP:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_PDCP_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_PDCP_UE;
-
-      default:
-        break;
-      }
-
-      break;
-
-    default:
-      break;
-    }
-
-#endif
-
-    switch (level) {
-    case LOG_EMERG:
-    case LOG_ALERT:
-    case LOG_CRIT:
-    case LOG_ERR:
-      messages_id = ERROR_LOG;
-      break;
-
-    case LOG_WARNING:
-      messages_id = WARNING_LOG;
-      break;
-
-    case LOG_NOTICE:
-      messages_id = NOTICE_LOG;
-      break;
-
-    case LOG_INFO:
-      messages_id = INFO_LOG;
-      break;
-
-    default:
-      messages_id = DEBUG_LOG;
-      break;
-    }
-
-    message_p = itti_alloc_new_message_sized(origin_task_id, messages_id, message_string_size);
-
-    switch (level) {
-    case LOG_EMERG:
-    case LOG_ALERT:
-    case LOG_CRIT:
-    case LOG_ERR:
-      message_msg_p = (char *) &message_p->ittiMsg.error_log;
-      break;
-
-    case LOG_WARNING:
-      message_msg_p = (char *) &message_p->ittiMsg.warning_log;
-      break;
-
-    case LOG_NOTICE:
-      message_msg_p = (char *) &message_p->ittiMsg.notice_log;
-      break;
-
-    case LOG_INFO:
-      message_msg_p = (char *) &message_p->ittiMsg.info_log;
-      break;
-
-    default:
-      message_msg_p = (char *) &message_p->ittiMsg.debug_log;
-      break;
-    }
-
-    memcpy(message_msg_p, log_start, message_string_size);
-
-    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-  }
-
-#endif
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,
-                                          VCD_FUNCTION_OUT);
-}
-#endif /* #if 0 */
 
 //log record, format, and print:  executed in the main thread (mt)
 void logRecord_mt(const char *file, const char *func, int line, int comp,
@@ -1691,7 +1553,7 @@ int set_log(int component, int level, int interval)
   /* Checking parameters */
   DevCheck((component >= MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS),
            component, MIN_LOG_COMPONENTS, MAX_LOG_COMPONENTS);
-  DevCheck((level <= LOG_TRACE) && (level >= LOG_EMERG), level, LOG_TRACE,
+  DevCheck((level < NUM_LOG_LEVEL) && (level >= LOG_EMERG), level, NUM_LOG_LEVEL,
            LOG_EMERG);
   DevCheck((interval >= 0) && (interval <= 0xFF), interval, 0, 0xFF);
 
@@ -1725,19 +1587,11 @@ int set_comp_log(int component, int level, int verbosity, int interval)
   /* Checking parameters */
   DevCheck((component >= MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS),
            component, MIN_LOG_COMPONENTS, MAX_LOG_COMPONENTS);
-  DevCheck((level <= LOG_TRACE) && (level >= LOG_EMERG), level, LOG_TRACE,
+  DevCheck((level < NUM_LOG_LEVEL) && (level >= LOG_EMERG), level, NUM_LOG_LEVEL,
            LOG_EMERG);
   DevCheck((interval >= 0) && (interval <= 0xFF), interval, 0, 0xFF);
 
-#if 0
-  if ((verbosity == LOG_NONE) || (verbosity == LOG_LOW) ||
-      (verbosity == LOG_MED) || (verbosity == LOG_FULL) ||
-      (verbosity == LOG_HIGH)) {
-    g_log->log_component[component].flag = verbosity;
-  }
-#else
   g_log->log_component[component].flag = verbosity;
-#endif
 
   g_log->log_component[component].level = level;
   g_log->log_component[component].interval = interval;

@@ -1102,7 +1102,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
     /*
     if (eNB->pucch1_stats_cnt[UE_id][subframe] == 0) {
-      write_output("pucch_debug.m","pucch_energy",
+      LOG_M("pucch_debug.m","pucch_energy",
 		   &eNB->pucch1_stats[UE_id][(subframe<<10)],
 		   1024,1,2);
       AssertFatal(0,"Exiting for PUCCH 1 debug\n");

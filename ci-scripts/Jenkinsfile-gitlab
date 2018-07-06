@@ -45,6 +45,14 @@ pipeline {
                     }
                 }
             }
+            post {
+                failure {
+                    script {
+                        def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Merge Conflicts -- Cannot perform CI"
+                        addGitLabMRComment comment: message
+                    }
+                }
+            }
         }
 
         stage ("Start VM -- cppcheck") {
@@ -176,6 +184,7 @@ pipeline {
                         if(fileExists('archives/vm_tests_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'
                             archiveArtifacts artifacts: 'archives/*/test/results_autotests*.xml'
+                            archiveArtifacts artifacts: 'archives/*/test/*.xsl'
                         }
                     }
                 }

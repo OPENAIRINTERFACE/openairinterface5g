@@ -1871,8 +1871,8 @@ void *ru_thread_synch(void *arg) {
 	/*
 	if ((peak_val > 300000) && (sync_pos > 0)) {
 	//      if (sync_pos++ > 3) {
-	write_output("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
-	write_output("ru_rx.m","rxs",(void*)ru->ru_time.rxdata[0][0],fp->samples_per_tti*10,1,1);
+	LOG_M("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
+	LOG_M("ru_rx.m","rxs",(void*)ru->ru_time.rxdata[0][0],fp->samples_per_tti*10,1,1);
 	exit(-1);
 	}
 	*/

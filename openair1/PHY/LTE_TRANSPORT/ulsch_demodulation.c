@@ -1184,8 +1184,8 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   }
 
 
-  //write_output("rxdataF_ext.m","rxF_ext",pusch_vars->rxdataF_ext[eNB_id][0],300*(frame_parms->symbols_per_tti-ulsch[UE_id]->srs_active),1,1);
-  //write_output("ulsch_chest.m","drs_est",pusch_vars->drs_ch_estimates[eNB_id][0],300*(frame_parms->symbols_per_tti-ulsch[UE_id]->srs_active),1,1);
+  //LOG_M("rxdataF_ext.m","rxF_ext",pusch_vars->rxdataF_ext[eNB_id][0],300*(frame_parms->symbols_per_tti-ulsch[UE_id]->srs_active),1,1);
+  //LOG_M("ulsch_chest.m","drs_est",pusch_vars->drs_ch_estimates[eNB_id][0],300*(frame_parms->symbols_per_tti-ulsch[UE_id]->srs_active),1,1);
 
 
   ulsch_channel_level(pusch_vars->drs_ch_estimates,
@@ -1350,70 +1350,70 @@ void rx_ulsch_emul(PHY_VARS_eNB *eNB,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
   sprintf(fname,"/tmp/ulsch_r%d_d",round);
   sprintf(vname,"/tmp/ulsch_r%d_dseq",round);
-  write_output(fname,vname,&eNB->ulsch[UE_id]->harq_processes[harq_pid]->d[0][96],
+  LOG_M(fname,vname,&eNB->ulsch[UE_id]->harq_processes[harq_pid]->d[0][96],
                eNB->ulsch[UE_id]->harq_processes[harq_pid]->Kplus*3,1,0);
   if (eNB->common_vars.rxdata) {
     sprintf(fname,"/tmp/rxsig0_r%d.m",round);
     sprintf(vname,"rxs0_r%d",round);
-    write_output(fname,vname, &eNB->common_vars.rxdata[0][0],eNB->frame_parms.samples_per_tti*10,1,1);
+    LOG_M(fname,vname, &eNB->common_vars.rxdata[0][0],eNB->frame_parms.samples_per_tti*10,1,1);
   
     if (eNB->frame_parms.nb_antennas_rx>1)
       if (eNB->common_vars.rxdata) {
 	sprintf(fname,"/tmp/rxsig1_r%d.m",round);
 	sprintf(vname,"rxs1_r%d",round);
-	write_output(fname,vname, &eNB->common_vars.rxdata[1][0],eNB->frame_parms.samples_per_tti*10,1,1);
+	LOG_M(fname,vname, &eNB->common_vars.rxdata[1][0],eNB->frame_parms.samples_per_tti*10,1,1);
       }
   }
 
   sprintf(fname,"/tmp/rxsigF0_r%d.m",round);
   sprintf(vname,"rxsF0_r%d",round);
-  write_output(fname,vname, (void*)&eNB->common_vars.rxdataF[0][0],eNB->frame_parms.ofdm_symbol_size*nsymb,1,1);
+  LOG_M(fname,vname, (void*)&eNB->common_vars.rxdataF[0][0],eNB->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
   if (eNB->frame_parms.nb_antennas_rx>1) {
     sprintf(fname,"/tmp/rxsigF1_r%d.m",round);
     sprintf(vname,"rxsF1_r%d",round);
-    write_output(vname,fname, &eNB->common_vars.rxdataF[1][0],eNB->frame_parms.ofdm_symbol_size*nsymb,1,1);
+    LOG_M(vname,fname, &eNB->common_vars.rxdataF[1][0],eNB->frame_parms.ofdm_symbol_size*nsymb,1,1);
   }
 
   sprintf(fname,"/tmp/rxsigF0_ext_r%d.m",round);
   sprintf(vname,"rxsF0_ext_r%d",round);
-  write_output(fname,vname, &eNB->pusch_vars[UE_id]->rxdataF_ext[0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+  LOG_M(fname,vname, &eNB->pusch_vars[UE_id]->rxdataF_ext[0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
 
   if (eNB->frame_parms.nb_antennas_rx>1) {
     sprintf(fname,"/tmp/rxsigF1_ext_r%d.m",round);
     sprintf(vname,"rxsF1_ext_r%d",round);
-    write_output(fname,vname,&eNB->pusch_vars[UE_id]->rxdataF_ext[1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+    LOG_M(fname,vname,&eNB->pusch_vars[UE_id]->rxdataF_ext[1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
   }
   /*
-  if (eNB->srs_vars[UE_id].srs_ch_estimates) write_output("/tmp/srs_est0.m","srsest0",eNB->srs_vars[UE_id].srs_ch_estimates[0],eNB->frame_parms.ofdm_symbol_size,1,1);
+  if (eNB->srs_vars[UE_id].srs_ch_estimates) LOG_M("/tmp/srs_est0.m","srsest0",eNB->srs_vars[UE_id].srs_ch_estimates[0],eNB->frame_parms.ofdm_symbol_size,1,1);
 
   if (eNB->frame_parms.nb_antennas_rx>1)
-    if (eNB->srs_vars[UE_id].srs_ch_estimates) write_output("/tmp/srs_est1.m","srsest1",eNB->srs_vars[UE_id].srs_ch_estimates[1],eNB->frame_parms.ofdm_symbol_size,1,1);
+    if (eNB->srs_vars[UE_id].srs_ch_estimates) LOG_M("/tmp/srs_est1.m","srsest1",eNB->srs_vars[UE_id].srs_ch_estimates[1],eNB->frame_parms.ofdm_symbol_size,1,1);
   */
 
   sprintf(fname,"/tmp/drs_est0_r%d.m",round);
   sprintf(vname,"drsest0_r%d",round);
-  write_output(fname,vname,eNB->pusch_vars[UE_id]->drs_ch_estimates[0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+  LOG_M(fname,vname,eNB->pusch_vars[UE_id]->drs_ch_estimates[0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
 
   if (eNB->frame_parms.nb_antennas_rx>1) {
     sprintf(fname,"/tmp/drs_est1_r%d.m",round);
     sprintf(vname,"drsest1_r%d",round);
-    write_output(fname,vname,eNB->pusch_vars[UE_id]->drs_ch_estimates[1],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+    LOG_M(fname,vname,eNB->pusch_vars[UE_id]->drs_ch_estimates[1],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
   }
 
   sprintf(fname,"/tmp/ulsch0_rxF_comp0_r%d.m",round);
   sprintf(vname,"ulsch0_rxF_comp0_r%d",round);
-  write_output(fname,vname,&eNB->pusch_vars[UE_id]->rxdataF_comp[0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
-  //  write_output("ulsch_rxF_comp1.m","ulsch0_rxF_comp1",&eNB->pusch_vars[UE_id]->rxdataF_comp[0][1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+  LOG_M(fname,vname,&eNB->pusch_vars[UE_id]->rxdataF_comp[0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+  //  LOG_M("ulsch_rxF_comp1.m","ulsch0_rxF_comp1",&eNB->pusch_vars[UE_id]->rxdataF_comp[0][1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
   sprintf(fname,"/tmp/ulsch_rxF_llr_r%d.m",round);
   sprintf(vname,"ulsch_llr_r%d",round);
-  write_output(fname,vname,eNB->pusch_vars[UE_id]->llr,
+  LOG_M(fname,vname,eNB->pusch_vars[UE_id]->llr,
                eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12*eNB->ulsch[UE_id]->harq_processes[harq_pid]->Qm
                *eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch,1,0);
   sprintf(fname,"/tmp/ulsch_ch_mag_r%d.m",round);
   sprintf(vname,"ulsch_ch_mag_r%d",round);
-  write_output(fname,vname,&eNB->pusch_vars[UE_id]->ul_ch_mag[0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
-  //  write_output("ulsch_ch_mag1.m","ulsch_ch_mag1",&eNB->pusch_vars[UE_id]->ul_ch_mag[1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+  LOG_M(fname,vname,&eNB->pusch_vars[UE_id]->ul_ch_mag[0][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
+  //  LOG_M("ulsch_ch_mag1.m","ulsch_ch_mag1",&eNB->pusch_vars[UE_id]->ul_ch_mag[1][0],eNB->frame_parms.N_RB_UL*12*nsymb,1,1);
   //#endif
 }
 

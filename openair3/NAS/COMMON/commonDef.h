@@ -314,17 +314,6 @@ typedef struct {
  */
 #define TAI_LIST_T(SIZE) struct {Byte_t n_tais; tai_t tai[SIZE];}
 
-#if 0
-/*
- * User notification callback, executed whenever a change of data with
- * respect of network information (e.g. network registration and/or
- * location change, new PLMN becomes available) is notified by the
- * EPS Mobility Management sublayer
- */
-typedef int (*emm_indication_callback_t) (Stat_t, tac_t, ci_t, AcT_t,
-    const char*, size_t);
-#endif
-
 typedef enum eps_protocol_discriminator_e {
   /* Protocol discriminator identifier for EPS Mobility Management */
   EPS_MOBILITY_MANAGEMENT_MESSAGE =   0x7,
