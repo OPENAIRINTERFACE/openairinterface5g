@@ -3205,18 +3205,14 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-
-
- //printf ("antenna %d", aarx);
     dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
 
     if (dl_ch_estimates_ext_i == NULL) // TM3/4
-      dl_ch128i         = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch128i         = (__m128i *)&dl_ch_estimates_ext[aarx + frame_parms->nb_antennas_rx][symbol*frame_parms->N_RB_DL*12];
     else
       dl_ch128i         = (__m128i *)&dl_ch_estimates_ext_i[aarx][symbol*frame_parms->N_RB_DL*12];
 
     dl_ch_rho128      = (__m128i *)&dl_ch_rho_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-
 
     for (rb=0; rb<nb_rb; rb++) {
       // multiply by conjugated channel
