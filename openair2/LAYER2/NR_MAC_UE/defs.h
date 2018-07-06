@@ -65,13 +65,15 @@
 typedef struct {
     
     ////  MAC config
-    NR_DRX_Config_t    *drx_Config;    /* OPTIONAL */
+    NR_DRX_Config_t    	*drx_Config;    /* OPTIONAL */
     NR_SchedulingRequestConfig_t   *schedulingRequestConfig;   /* OPTIONAL */
-    NR_BSR_Config_t    *bsr_Config;    /* OPTIONAL */
-    NR_TAG_Config_t    *tag_Config;    /* OPTIONAL */
-    NR_PHR_Config_t    *phr_Config;    /* OPTIONAL */
+    NR_BSR_Config_t    	*bsr_Config;    /* OPTIONAL */
+    NR_TAG_Config_t		*tag_Config;    /* OPTIONAL */
+    NR_PHR_Config_t		*phr_Config;    /* OPTIONAL */
     
-    NR_RNTI_Value_t *cs_RNTI;   /* OPTIONAL */
+    NR_RNTI_Value_t 	*cs_RNTI;   /* OPTIONAL */
+
+	NR_MIB_t 			*mib;
 
 } NR_UE_MAC_INST_t;
 

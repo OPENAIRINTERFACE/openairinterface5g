@@ -1296,6 +1296,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/INIT/nr_init_ue.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_ue.c
   #${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_common_ue.c
+  ${OPENAIR1_DIR}/SCHED_NR_UE/fapi_nr_ue_l1.c
   ${PHY_POLARSRC}
   )
 
@@ -1321,6 +1322,7 @@ add_library(PHY_RU ${PHY_SRC_RU})
 set(MAC_DIR ${OPENAIR2_DIR}/LAYER2/MAC)
 set(NR_UE_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_UE)
 set(PHY_INTERFACE_DIR ${OPENAIR2_DIR}/PHY_INTERFACE)
+set(NR_UE_PHY_INTERFACE_DIR ${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE)
 set(RLC_DIR ${OPENAIR2_DIR}/LAYER2/RLC)
 set(RLC_UM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/UM_v9.3.0)
 set(RLC_AM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/AM_v9.3.0)
@@ -1440,6 +1442,7 @@ set (MAC_SRC
   ${MAC_DIR}/config_ue.c
  )
 
+
 set (MAC_SRC_UE
   ${MAC_DIR}/main_ue.c
   ${MAC_DIR}/ue_procedures.c
@@ -1447,11 +1450,16 @@ set (MAC_SRC_UE
   ${MAC_DIR}/l1_helpers.c
   ${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/config_ue.c
+  
+ )
+
+set (MAC_NR_SRC_UE
+  ${NR_UE_PHY_INTERFACE_DIR}/NR_IF_Module.c
   ${NR_UE_MAC_DIR}/config_ue.c
   ${NR_UE_MAC_DIR}/mac_vars.c
   ${NR_UE_MAC_DIR}/main_ue_nr.c
   ${NR_UE_MAC_DIR}/nr_ue_procedures.c
- )
+)
 
 set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/enb_app.c
@@ -1468,8 +1476,10 @@ add_library(L2
 add_library(L2_UE
   ${L2_SRC_UE}
   ${MAC_SRC_UE}
+  ${MAC_NR_SRC_UE}
 )
 
+include_directories(${NR_UE_PHY_INTERFACE_DIR})
 
 include_directories(${NFAPI_USER_DIR})
 

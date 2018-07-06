@@ -31,19 +31,37 @@
 #include "proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
-void
-nr_ue_decode_mib(
+int8_t nr_ue_decode_mib(
 	module_id_t module_id,
 	int 		CC_id,
 	uint8_t 	gNB_index,
-	uint8_t 	extra_bits,
-	uint32_t 	ssb_index,
-	uint32_t 	*frameP,
-	void 		*pduP,
+	uint8_t 	extra_bits,	//	8bits 38.212 c7.1.1
+	uint32_t    l_ssb_equal_64,
+	uint32_t 	*ssb_index,	//	from decoded MIB
+	uint32_t 	*frameP,	//	10 bits = 6(in decoded MIB)+4(in extra bits from L1)
+	void 		*pduP,		//	encoded MIB
 	uint16_t 	pdu_len){
+
+	NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
     nr_mac_rrc_data_ind_ue( module_id, CC_id, gNB_index, frameP,
 		     NR_BCCH_BCH, (uint8_t *) pduP, pdu_len );
     
-    //	frame calculation
+
+    uint32_t frame = mac->mib->systemFrameNumber.buf[0];
+    uint32_t frame_number_4lsb = (uint32_t)(extra_bits & 0xf);
+    uint32_t ssb_subcarrier_offset_msb = (uint32_t)(( extra_bits >> 4 ) & 0x1 );
+
+    frame = frame << 4;
+    frame = frame | frame_number_4lsb;
+
+    *frameP = frame;
+
+    if(l_ssb_equal_64){
+    	*ssb_index = (( extra_bits >> 4 ) & 0x7 );
+    }
+
+
+
+    return 0;
 }
