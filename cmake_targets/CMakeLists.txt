@@ -1177,6 +1177,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/sss_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/linear_preprocessing_rec.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_decoding.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dci_tools_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/uci_tools_ue.c
@@ -1817,11 +1818,13 @@ endif()
 # So, here are some hacks here. Hope this gets fixed in future!
 if(EXISTS "/usr/include/atlas/cblas.h" OR EXISTS "/usr/include/cblas.h")
   include_directories("/usr/include/atlas")
+  LINK_DIRECTORIES("/usr/lib/lapack")
   LINK_DIRECTORIES("/usr/lib64")
   LINK_DIRECTORIES("/usr/lib64/atlas") #Added because atlas libraries in CentOS 7 are here!
   
   if(EXISTS "/usr/lib64/libblas.so" OR EXISTS "/usr/lib/libblas.so") #Case for CentOS7
      list(APPEND ATLAS_LIBRARIES blas)
+
   else() # Case for Ubuntu
      list(APPEND ATLAS_LIBRARIES cblas)
   endif()
@@ -1846,6 +1849,8 @@ elseif(EXISTS "/usr/include/x86_64-linux-gnu/cblas.h")
 else()
   message("No Blas/Atlas libs found, some targets will fail")
 endif()
+
+list(APPEND ATLAS_LIBRARIES lapack lapacke)
 
 if (${XFORMS})
   include_directories ("/usr/include/X11")

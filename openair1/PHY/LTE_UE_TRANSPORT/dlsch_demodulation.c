@@ -36,8 +36,18 @@
 #include "transport_proto_ue.h"
 #include "PHY/sse_intrin.h"
 #include "T.h"
+#include<stdio.h>
+#include<math.h>
+#include <stdlib.h>
+#include <string.h>
+#include <lapacke_utils.h>
+#include <lapacke.h>
+#include <cblas.h>
+#include "linear_preprocessing_rec.h"
 
 #define NOCYGWIN_STATIC
+//#define DEBUG_MMSE
+
 
 /* dynamic shift for LLR computation for TM3/4
  * set as command line argument, see lte-softmodem.c
@@ -103,6 +113,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
   int avg[4];
   int avg_0[2];
   int avg_1[2];
+  unsigned short mmse_flag=0;
 
 #if UE_TIMING_TRACE
   uint8_t slot = 0;
@@ -440,14 +451,15 @@ int rx_pdsch(PHY_VARS_UE *ue,
            ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
             (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING)))
      {
-      dlsch_channel_level_TM34(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                 frame_parms,
-                                 pdsch_vars[eNB_id]->pmi_ext,
-                                 avg_0,
-                                 avg_1,
-                                 symbol,
-                                 nb_rb,
-                                 dlsch0_harq->mimo_mode);
+       dlsch_channel_level_TM34(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+                                  frame_parms,
+                                  pdsch_vars[eNB_id]->pmi_ext,
+                                  avg_0,
+                                  avg_1,
+                                  symbol,
+                                  nb_rb,
+                                  mmse_flag,
+                                  dlsch0_harq->mimo_mode);
 
       LOG_D(PHY,"Channel Level TM34  avg_0 %d, avg_1 %d, rx_type %d, rx_standard %d, dlsch_demod_shift %d \n", avg_0[0],
               avg_1[0], rx_type, rx_standard, dlsch_demod_shift);
@@ -547,6 +559,26 @@ int rx_pdsch(PHY_VARS_UE *ue,
     start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
 #endif
 
+  if (rx_type==rx_IC_dual_stream && mmse_flag==1){
+
+    precode_channel_est(pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+                        frame_parms,
+                        pdsch_vars[eNB_id],
+                        symbol,
+                        nb_rb,
+                        dlsch0_harq->mimo_mode);
+
+   mmse_processing_oai(pdsch_vars[eNB_id],
+                        frame_parms,
+                        measurements,
+                        first_symbol_flag,
+                        dlsch0_harq->mimo_mode,
+                        mmse_flag,
+                        0.0,
+                        symbol,
+                        nb_rb);
+  }
+
 // Now channel compensation
   if (dlsch0_harq->mimo_mode<LARGE_CDD) {
     dlsch_channel_compensation(pdsch_vars[eNB_id]->rxdataF_ext,
@@ -607,6 +639,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
                                      dlsch0_harq->round,
                                      dlsch0_harq->mimo_mode,
                                      nb_rb,
+                                     mmse_flag,
                                      pdsch_vars[eNB_id]->log2_maxh0,
                                      pdsch_vars[eNB_id]->log2_maxh1);
       if (symbol == 5) {
@@ -2479,6 +2512,69 @@ void dlsch_channel_compensation_TM56(int **rxdataF_ext,
   _m_empty();
 }
 
+void precode_channel_est(int32_t **dl_ch_estimates_ext,
+                        LTE_DL_FRAME_PARMS *frame_parms,
+                        LTE_UE_PDSCH *pdsch_vars,
+                        unsigned char symbol,
+                        unsigned short nb_rb,
+                        MIMO_mode_t mimo_mode){
+
+  unsigned short rb;
+  __m128i *dl_ch0_128,*dl_ch1_128;
+  unsigned char aarx=0,symbol_mod,pilots=0;
+  unsigned char *pmi_ext = pdsch_vars->pmi_ext;
+
+  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+
+  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp)))
+    pilots=1;
+
+  for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
+
+    dl_ch0_128          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12]; // this is h11
+    dl_ch1_128          = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12]; // this is h12
+
+    for (rb=0; rb<nb_rb; rb++) {
+      if (mimo_mode==LARGE_CDD) {
+            prec2A_TM3_128(&dl_ch0_128[0],&dl_ch1_128[0]);
+            prec2A_TM3_128(&dl_ch0_128[1],&dl_ch1_128[1]);
+            if (pilots==0) {
+              prec2A_TM3_128(&dl_ch0_128[2],&dl_ch1_128[2]);
+            }
+          }else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1) {
+            prec2A_TM4_128(0,&dl_ch0_128[0],&dl_ch1_128[0]);
+            prec2A_TM4_128(0,&dl_ch0_128[1],&dl_ch1_128[1]);
+            if (pilots==0) {
+              prec2A_TM4_128(0,&dl_ch0_128[2],&dl_ch1_128[2]);
+            }
+          }else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj) {
+            prec2A_TM4_128(1,&dl_ch0_128[0],&dl_ch1_128[0]);
+            prec2A_TM4_128(1,&dl_ch0_128[1],&dl_ch1_128[1]);
+            if (pilots==0) {
+              prec2A_TM4_128(1,&dl_ch0_128[2],&dl_ch1_128[2]);
+            }
+          }else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING) {
+            prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[0],&dl_ch1_128[0]);
+            prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[1],&dl_ch1_128[1]);
+            if (pilots==0) {
+              prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[2],&dl_ch1_128[2]);
+            }
+          }else {
+            LOG_E(PHY,"Unknown MIMO mode\n");
+            return;
+          }
+          if (pilots==0){
+            dl_ch0_128+=3;
+            dl_ch1_128+=3;
+          }else {
+            dl_ch0_128+=2;
+            dl_ch1_128+=2;
+          }
+        }
+
+      }
+}
+
 void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                                     LTE_UE_PDSCH *pdsch_vars,
                                     PHY_MEASUREMENTS *measurements,
@@ -2490,6 +2586,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                                     int round,
                                     MIMO_mode_t mimo_mode,
                                     unsigned short nb_rb,
+                                    unsigned short mmse_flag,
                                     unsigned char output_shift0,
                                     unsigned char output_shift1) {
 
@@ -2539,20 +2636,8 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
 
-   /* if (aarx==0) {
-      output_shift=output_shift0;
-    }
-      else {
-        output_shift=output_shift1;
-      } */
-
-     // printf("antenna %d\n", aarx);
-   // printf("symbol %d, rx antenna %d\n", symbol, aarx);
-
     dl_ch0_128          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12]; // this is h11
     dl_ch1_128          = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12]; // this is h12
-
-
     dl_ch_mag0_128      = (__m128i *)&dl_ch_mag0[aarx][symbol*frame_parms->N_RB_DL*12]; //responsible for x1
     dl_ch_mag0_128b     = (__m128i *)&dl_ch_magb0[aarx][symbol*frame_parms->N_RB_DL*12];//responsible for x1
     dl_ch_mag1_128      = (__m128i *)&dl_ch_mag1[aarx][symbol*frame_parms->N_RB_DL*12];   //responsible for x2. always coming from tx2
@@ -2562,47 +2647,36 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
     rxdataF_comp1_128   = (__m128i *)&rxdataF_comp1[aarx][symbol*frame_parms->N_RB_DL*12]; //result of multipl with MF x2 on antenna of interest
 
     for (rb=0; rb<nb_rb; rb++) {
-
+      if (mmse_flag == 0) {
       // combine TX channels using precoder from pmi
-      if (mimo_mode==LARGE_CDD) {
-        prec2A_TM3_128(&dl_ch0_128[0],&dl_ch1_128[0]);
-        prec2A_TM3_128(&dl_ch0_128[1],&dl_ch1_128[1]);
-
-
-        if (pilots==0) {
-          prec2A_TM3_128(&dl_ch0_128[2],&dl_ch1_128[2]);
+        if (mimo_mode==LARGE_CDD) {
+          prec2A_TM3_128(&dl_ch0_128[0],&dl_ch1_128[0]);
+          prec2A_TM3_128(&dl_ch0_128[1],&dl_ch1_128[1]);
+          if (pilots==0) {
+            prec2A_TM3_128(&dl_ch0_128[2],&dl_ch1_128[2]);
+          }
+        }else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1) {
+          prec2A_TM4_128(0,&dl_ch0_128[0],&dl_ch1_128[0]);
+          prec2A_TM4_128(0,&dl_ch0_128[1],&dl_ch1_128[1]);
+          if (pilots==0) {
+            prec2A_TM4_128(0,&dl_ch0_128[2],&dl_ch1_128[2]);
+          }
+        }else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj) {
+          prec2A_TM4_128(1,&dl_ch0_128[0],&dl_ch1_128[0]);
+          prec2A_TM4_128(1,&dl_ch0_128[1],&dl_ch1_128[1]);
+          if (pilots==0) {
+            prec2A_TM4_128(1,&dl_ch0_128[2],&dl_ch1_128[2]);
+          }
+        }else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING) {
+          prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[0],&dl_ch1_128[0]);
+          prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[1],&dl_ch1_128[1]);
+          if (pilots==0) {
+            prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[2],&dl_ch1_128[2]);
+          }
+        }else {
+          LOG_E(PHY,"Unknown MIMO mode\n");
+          return;
         }
-      }
-      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1) {
-        prec2A_TM4_128(0,&dl_ch0_128[0],&dl_ch1_128[0]);
-        prec2A_TM4_128(0,&dl_ch0_128[1],&dl_ch1_128[1]);
-
-        if (pilots==0) {
-          prec2A_TM4_128(0,&dl_ch0_128[2],&dl_ch1_128[2]);
-        }
-      }
-      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj) {
-        prec2A_TM4_128(1,&dl_ch0_128[0],&dl_ch1_128[0]);
-        prec2A_TM4_128(1,&dl_ch0_128[1],&dl_ch1_128[1]);
-
-        if (pilots==0) {
-          prec2A_TM4_128(1,&dl_ch0_128[2],&dl_ch1_128[2]);
-        }
-      }
-
-        else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING) {
-        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[0],&dl_ch1_128[0]);
-        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[1],&dl_ch1_128[1]);
-
-        if (pilots==0) {
-          prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[2],&dl_ch1_128[2]);
-        }
-      }
-
-
-      else {
-        LOG_E(PHY,"Unknown MIMO mode\n");
-        return;
       }
 
 
@@ -2732,7 +2806,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
 
            // print_shorts("rx:",rxdataF128);
            // print_shorts("ch:",dl_ch0_128);
-        // print_shorts("pack:",rxdataF_comp0_128);
+      //print_shorts("pack:",rxdataF_comp0_128);
 
       // multiply by conjugated channel
       mmtmpD0 = _mm_madd_epi16(dl_ch0_128[1],rxdataF128[1]);
@@ -2951,35 +3025,30 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
     rxdataF_comp1_128   = (int16x8_t*)&rxdataF_comp1[aarx][symbol*frame_parms->N_RB_DL*12];
 
     for (rb=0; rb<nb_rb; rb++) {
-      // combine TX channels using precoder from pmi
-      if (mimo_mode==LARGE_CDD) {
-        prec2A_TM3_128(&dl_ch0_128[0],&dl_ch1_128[0]);
-        prec2A_TM3_128(&dl_ch0_128[1],&dl_ch1_128[1]);
-
-
-        if (pilots==0) {
-          prec2A_TM3_128(&dl_ch0_128[2],&dl_ch1_128[2]);
+      if (mmse_flag == 0) {
+        // combine TX channels using precoder from pmi
+        if (mimo_mode==LARGE_CDD) {
+          prec2A_TM3_128(&dl_ch0_128[0],&dl_ch1_128[0]);
+          prec2A_TM3_128(&dl_ch0_128[1],&dl_ch1_128[1]);
+          if (pilots==0) {
+            prec2A_TM3_128(&dl_ch0_128[2],&dl_ch1_128[2]);
+          }
+        }else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1) {
+          prec2A_TM4_128(0,&dl_ch0_128[0],&dl_ch1_128[0]);
+          prec2A_TM4_128(0,&dl_ch0_128[1],&dl_ch1_128[1]);
+          if (pilots==0) {
+            prec2A_TM4_128(0,&dl_ch0_128[2],&dl_ch1_128[2]);
+          }
+        }else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj) {
+          prec2A_TM4_128(1,&dl_ch0_128[0],&dl_ch1_128[0]);
+          prec2A_TM4_128(1,&dl_ch0_128[1],&dl_ch1_128[1]);
+          if (pilots==0) {
+            prec2A_TM4_128(1,&dl_ch0_128[2],&dl_ch1_128[2]);
+          }
+        }else {
+          LOG_E(PHY,"Unknown MIMO mode\n");
+          return;
         }
-      }
-      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1) {
-        prec2A_TM4_128(0,&dl_ch0_128[0],&dl_ch1_128[0]);
-        prec2A_TM4_128(0,&dl_ch0_128[1],&dl_ch1_128[1]);
-
-        if (pilots==0) {
-          prec2A_TM4_128(0,&dl_ch0_128[2],&dl_ch1_128[2]);
-        }
-      }
-      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj) {
-        prec2A_TM4_128(1,&dl_ch0_128[0],&dl_ch1_128[0]);
-        prec2A_TM4_128(1,&dl_ch0_128[1],&dl_ch1_128[1]);
-
-        if (pilots==0) {
-          prec2A_TM4_128(1,&dl_ch0_128[2],&dl_ch1_128[2]);
-        }
-      }
-      else {
-        LOG_E(PHY,"Unknown MIMO mode\n");
-        return;
       }
 
 
@@ -3869,7 +3938,592 @@ void dlsch_channel_level_core(int **dl_ch_estimates_ext,
 
 }
 
-//compute average channel_level of effective (precoded) channel
+void mmse_processing_oai(LTE_UE_PDSCH *pdsch_vars,
+                     LTE_DL_FRAME_PARMS *frame_parms,
+                     PHY_MEASUREMENTS *measurements,
+                     unsigned char first_symbol_flag,
+                     MIMO_mode_t mimo_mode,
+                     unsigned short mmse_flag,
+                     int noise_power,
+                     unsigned char symbol,
+                     unsigned short nb_rb){
+
+  int **rxdataF_ext           = pdsch_vars->rxdataF_ext;
+  int **dl_ch_estimates_ext   = pdsch_vars->dl_ch_estimates_ext;
+  unsigned char *pmi_ext      = pdsch_vars->pmi_ext;
+  int avg_00[frame_parms->nb_antenna_ports_eNB*frame_parms->nb_antennas_rx];
+  int avg_01[frame_parms->nb_antenna_ports_eNB*frame_parms->nb_antennas_rx];
+  int symbol_mod, length, start_point, nre;
+
+  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1))
+    nre=8;
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB==1))
+    nre=10;
+  else
+    nre=12;
+
+  length  = nre*nb_rb;
+  start_point = symbol*nb_rb*12;
+
+
+  mmse_processing_core(rxdataF_ext,
+                       dl_ch_estimates_ext,
+                       noise_power,
+                       frame_parms->nb_antenna_ports_eNB,
+                       frame_parms->nb_antennas_rx,
+                       length,
+                       start_point);
+
+
+  /*dlsch_channel_aver_band(dl_ch_estimates_ext,
+                          frame_parms,
+                          chan_avg,
+                          symbol,
+                          nb_rb);
+
+
+   for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
+     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+       H[aatx*frame_parms->nb_antennas_rx + aarx] = (float)(chan_avg[aatx*frame_parms->nb_antennas_rx + aarx].r/(32768.0)) + I*(float)(chan_avg[aatx*frame_parms->nb_antennas_rx + aarx].i/(32768.0));
+      // printf("H [%d] = (%f, %f) \n", aatx*frame_parms->nb_antennas_rx + aarx, creal(H[aatx*frame_parms->nb_antennas_rx + aarx]), cimag(H[aatx*frame_parms->nb_antennas_rx + aarx]));
+   }*/
+
+    if (first_symbol_flag == 1){
+      dlsch_channel_level_TM34(dl_ch_estimates_ext,
+                                 frame_parms,
+                                 pmi_ext,
+                                 avg_00,
+                                 avg_01,
+                                 symbol,
+                                 nb_rb,
+                                 mmse_flag,
+                                 mimo_mode);
+
+      avg_00[0] = (log2_approx(avg_00[0])/2) + dlsch_demod_shift+4;// + 2 ;//+ 4;
+      avg_01[0] = (log2_approx(avg_01[0])/2) + dlsch_demod_shift+4;// + 2 ;//+ 4;
+      pdsch_vars->log2_maxh0 = cmax(avg_00[0],0);
+      pdsch_vars->log2_maxh1 = cmax(avg_01[0],0);
+  }
+}
+
+void mmse_processing_core(int32_t **rxdataF_ext,
+                          int32_t **dl_ch_estimates_ext,
+                          int noise_power,
+                          int n_tx,
+                          int n_rx,
+                          int length,
+                          int start_point){
+
+  int aatx, aarx, re;
+  float imag;
+  float real;
+
+
+  float complex **W_MMSE= malloc(n_tx*n_rx*sizeof(float complex*));
+   for (int j=0; j<n_tx*n_rx; j++) {
+     W_MMSE[j] = malloc(sizeof(float complex)*length);
+  }
+
+  float complex *H=  malloc(n_tx*n_rx*sizeof(float complex));
+  float complex *W_MMSE_re=  malloc(n_tx*n_rx*sizeof(float complex));
+
+  float complex** dl_ch_estimates_ext_flcpx = malloc(n_tx*n_rx*sizeof(float complex*));
+  for (int j=0; j<n_tx*n_rx; j++) {
+    dl_ch_estimates_ext_flcpx[j] = malloc(sizeof(float complex)*length);
+  }
+
+  float complex** rxdataF_ext_flcpx = malloc(n_rx*sizeof(float complex*));
+  for (int j=0; j<n_rx; j++) {
+    rxdataF_ext_flcpx[j] = malloc(sizeof(float complex)*length);
+  }
+
+  chan_est_to_float(dl_ch_estimates_ext,
+                    dl_ch_estimates_ext_flcpx,
+                    n_tx,
+                    n_rx,
+                    length,
+                    start_point);
+
+  for (re=0; re<length; re++){
+    for (aatx=0; aatx<n_tx; aatx++){
+      for (aarx=0; aarx<n_rx; aarx++) {
+        imag = cimag(dl_ch_estimates_ext_flcpx[aatx*n_rx + aarx][re]);
+        real = creal(dl_ch_estimates_ext_flcpx[aatx*n_rx + aarx][re]);
+        H[aatx*n_rx + aarx] = real+ I*imag;
+      }
+    }
+    compute_MMSE(H, n_tx, noise_power, W_MMSE_re);
+    for (aatx=0; aatx<n_tx; aatx++){
+      for (aarx=0; aarx<n_rx; aarx++) {
+        W_MMSE[aatx*n_rx + aarx][re] = W_MMSE_re[aatx*n_rx + aarx];
+      }
+    }
+  }
+
+  rxdataF_to_float(rxdataF_ext,
+                   rxdataF_ext_flcpx,
+                   n_rx,
+                   length,
+                   start_point);
+
+  mult_mmse_rxdataF(W_MMSE,
+                    rxdataF_ext_flcpx,
+                    n_tx,
+                    n_rx,
+                    length,
+                    start_point);
+
+
+  mult_mmse_chan_est(W_MMSE,
+                     dl_ch_estimates_ext_flcpx,
+                     n_tx,
+                     n_rx,
+                     length,
+                     start_point);
+
+
+  float_to_rxdataF(rxdataF_ext,
+                   rxdataF_ext_flcpx,
+                   n_tx,
+                   n_rx,
+                   length,
+                   start_point);
+
+
+  float_to_chan_est(dl_ch_estimates_ext,
+                    dl_ch_estimates_ext_flcpx,
+                    n_tx,
+                    n_rx,
+                    length,
+                    start_point);
+
+free(W_MMSE);
+free(H);
+free(W_MMSE_re);
+free(dl_ch_estimates_ext_flcpx);
+free(rxdataF_ext_flcpx);
+
+}
+
+
+/*THIS FUNCTION TAKES FLOAT_POINT INPUT. SHOULD NOT BE USED WITH OAI*/
+void mmse_processing_core_flp(float complex** rxdataF_ext_flcpx,
+                              float complex **H,
+                              int32_t **rxdataF_ext,
+                              int32_t **dl_ch_estimates_ext,
+                              float noise_power,
+                              int n_tx,
+                              int n_rx,
+                              int length,
+                              int start_point){
+
+  int aatx, aarx, re;
+  float max = 0;
+  float one_over_max = 0;
+
+  float complex **W_MMSE= malloc(n_tx*n_rx*sizeof(float complex*));
+   for (int j=0; j<n_tx*n_rx; j++) {
+     W_MMSE[j] = malloc(sizeof(float complex)*length);
+  }
+
+  float complex *H_re=  malloc(n_tx*n_rx*sizeof(float complex));
+  float complex *W_MMSE_re=  malloc(n_tx*n_rx*sizeof(float complex));
+
+  for (re=0; re<length; re++){
+    for (aatx=0; aatx<n_tx; aatx++){
+      for (aarx=0; aarx<n_rx; aarx++) {
+        H_re[aatx*n_rx + aarx] = H[aatx*n_rx + aarx][re];
+#ifdef DEBUG_MMSE
+        if (re == 0)
+        printf(" H_re[%d]= (%f + i%f)\n", aatx*n_rx + aarx, creal(H_re[aatx*n_rx + aarx]), cimag(H_re[aatx*n_rx + aarx]));
+#endif
+      }
+    }
+    compute_MMSE(H_re, n_tx, noise_power, W_MMSE_re);
+    for (aatx=0; aatx<n_tx; aatx++){
+      for (aarx=0; aarx<n_rx; aarx++) {
+        W_MMSE[aatx*n_rx + aarx][re] = W_MMSE_re[aatx*n_rx + aarx];
+        if (fabs(creal(W_MMSE_re[aatx*n_rx + aarx])) > max)
+          max = fabs(creal(W_MMSE_re[aatx*n_rx + aarx]));
+        if (fabs(cimag(W_MMSE_re[aatx*n_rx + aarx])) > max)
+          max = fabs(cimag(W_MMSE_re[aatx*n_rx + aarx]));
+      }
+    }
+  }
+  one_over_max = 1.0/max;
+
+  for (re=0; re<length; re++)
+    for (aatx=0; aatx<n_tx; aatx++)
+      for (aarx=0; aarx<n_rx; aarx++){
+#ifdef DEBUG_MMSE
+        if (re == 0)
+          printf(" W_MMSE[%d] = (%f + i%f)\n", aatx*n_rx + aarx, creal(W_MMSE[aatx*n_rx + aarx][re]), cimag(W_MMSE[aatx*n_rx + aarx][re]));
+#endif
+        W_MMSE[aatx*n_rx + aarx][re] = one_over_max*W_MMSE[aatx*n_rx + aarx][re];
+#ifdef DEBUG_MMSE
+        if (re == 0)
+          printf(" AFTER NORM W_MMSE[%d] = (%f + i%f), max = %f \n", aatx*n_rx + aarx, creal(W_MMSE[aatx*n_rx + aarx][re]), cimag(W_MMSE[aatx*n_rx + aarx][re]), max);
+#endif
+      }
+
+
+  mult_mmse_rxdataF(W_MMSE,
+                    rxdataF_ext_flcpx,
+                    n_tx,
+                    n_rx,
+                    length,
+                    start_point);
+
+  mult_mmse_chan_est(W_MMSE,
+                     H,
+                     n_tx,
+                     n_rx,
+                     length,
+                     start_point);
+
+  float_to_rxdataF(rxdataF_ext,
+                   rxdataF_ext_flcpx,
+                   n_tx,
+                   n_rx,
+                   length,
+                   start_point);
+
+  float_to_chan_est(dl_ch_estimates_ext,
+                    H,
+                    n_tx,
+                    n_rx,
+                    length,
+                    start_point);
+  free(H_re);
+  free(W_MMSE);
+  free(W_MMSE_re);
+
+}
+
+
+void dlsch_channel_aver_band(int **dl_ch_estimates_ext,
+                             LTE_DL_FRAME_PARMS *frame_parms,
+                             struct complex32 *chan_avg,
+                             unsigned char symbol,
+                             unsigned short nb_rb)
+{
+
+#if defined(__x86_64__)||defined(__i386__)
+
+  short rb;
+  unsigned char aatx,aarx,nre=12,symbol_mod;
+  __m128i *dl_ch128, avg128D;
+  int32_t chan_est_avg[4];
+
+  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1))
+    nre=8;
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB==1))
+    nre=10;
+  else
+    nre=12;
+
+  for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++){
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+      dl_ch128=(__m128i *)&dl_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx + aarx][symbol*frame_parms->N_RB_DL*12];
+      avg128D = _mm_setzero_si128();
+     //  print_shorts("avg128D 1",&avg128D);
+
+      for (rb=0;rb<nb_rb;rb++) {
+        /*  printf("symbol %d, ant %d, nre*nrb %d, rb %d \n", symbol, aatx*frame_parms->nb_antennas_rx + aarx, nb_rb*nre, rb);
+          print_shorts("aver dl_ch128",&dl_ch128[0]);
+          print_shorts("aver dl_ch128",&dl_ch128[1]);
+          print_shorts("aver dl_ch128",&dl_ch128[2]);
+        avg128D = _mm_add_epi16(avg128D, dl_ch128[0]);*/
+        //print_shorts("avg128D 2",&avg128D);
+
+        avg128D = _mm_add_epi16(avg128D, dl_ch128[1]);
+       //  print_shorts("avg128D 3",&avg128D);
+
+        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
+          dl_ch128+=2;
+        }else {
+          avg128D = _mm_add_epi16(avg128D,dl_ch128[2]);
+         //  print_shorts("avg128D 4",&avg128D);
+          dl_ch128+=3;
+        }
+      }
+
+      chan_avg[aatx*frame_parms->nb_antennas_rx + aarx].r =(((int16_t*)&avg128D)[0] +
+                                                              ((int16_t*)&avg128D)[2] +
+                                                              ((int16_t*)&avg128D)[4] +
+                                                              ((int16_t*)&avg128D)[6])/(nb_rb*nre);
+    //  printf("symb %d chan_avg re [%d] = %d\n", symbol, aatx*frame_parms->nb_antennas_rx + aarx, chan_avg[aatx*frame_parms->nb_antennas_rx + aarx].r);
+
+
+
+      chan_avg[aatx*frame_parms->nb_antennas_rx + aarx].i =(((int16_t*)&avg128D)[1] +
+                                                            ((int16_t*)&avg128D)[3] +
+                                                            ((int16_t*)&avg128D)[5] +
+                                                            ((int16_t*)&avg128D)[7])/(nb_rb*nre);
+    //  printf("symb %d chan_avg im [%d] = %d\n", symbol, aatx*frame_parms->nb_antennas_rx + aarx, chan_avg[aatx*frame_parms->nb_antennas_rx + aarx].i);
+
+      //printf("symb %d chan_avg im [%d] = %d\n", symbol, aatx*frame_parms->nb_antennas_rx + aarx, chan_avg[aatx*frame_parms->nb_antennas_rx + aarx].i);
+
+
+      chan_est_avg[aatx*frame_parms->nb_antennas_rx + aarx] = (((int32_t)chan_avg[aatx*frame_parms->nb_antennas_rx + aarx].i)<<16)|(((int32_t)chan_avg[aatx*frame_parms->nb_antennas_rx + aarx].r) & 0xffff);
+
+      //printf("symb %d chan_est_avg [%d] = %d\n", symbol, aatx*frame_parms->nb_antennas_rx + aarx, chan_est_avg[aatx*frame_parms->nb_antennas_rx + aarx]);
+
+      dl_ch128=(__m128i *)&dl_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx + aarx][symbol*frame_parms->N_RB_DL*12];
+
+      for (rb=0;rb<nb_rb;rb++) {
+        dl_ch128[0] = _mm_set1_epi32(chan_est_avg[aatx*frame_parms->nb_antennas_rx + aarx]);
+        dl_ch128[1] = _mm_set1_epi32(chan_est_avg[aatx*frame_parms->nb_antennas_rx + aarx]);
+        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
+          dl_ch128+=2;
+        }else {
+        dl_ch128[2] = _mm_set1_epi32(chan_est_avg[aatx*frame_parms->nb_antennas_rx + aarx]);
+          dl_ch128+=3;
+        }
+       }
+     }
+   }
+
+    _mm_empty();
+    _m_empty();
+
+#elif defined(__arm__)
+#endif
+  }
+
+void rxdataF_to_float(int32_t **rxdataF_ext,
+                      float complex **rxdataF_f,
+                      int n_rx,
+                      int length,
+                      int start_point)
+{
+  short re;
+  int aarx;
+  int16_t imag;
+  int16_t real;
+
+  for (aarx=0; aarx<n_rx; aarx++) {
+    for (re=0; re<length; re++){
+      imag = (int16_t) (rxdataF_ext[aarx][start_point + re] >> 16);
+      real = (int16_t) (rxdataF_ext[aarx][start_point + re] & 0xffff);
+      rxdataF_f[aarx][re] = (float)(real/(32768.0)) + I*(float)(imag/(32768.0));
+#ifdef DEBUG_MMSE
+        if (re==0){
+          printf("rxdataF_to_float: aarx = %d, real= %d, imag = %d\n", aarx, real, imag);
+          //printf("rxdataF_to_float: rxdataF_ext[%d][%d] = %d\n", aarx, start_point + re, rxdataF_ext[aarx][start_point + re]);
+          //printf("rxdataF_to_float: ant %d, re = %d, rxdataF_f real = %f, rxdataF_f imag = %f \n", aarx, re, creal(rxdataF_f[aarx][re]), cimag(rxdataF_f[aarx][re]));
+        }
+#endif
+    }
+  }
+}
+
+
+
+void chan_est_to_float(int32_t **dl_ch_estimates_ext,
+                       float complex **dl_ch_estimates_ext_f,
+                       int n_tx,
+                       int n_rx,
+                       int length,
+                       int start_point)
+{
+  short re;
+  int aatx,aarx;
+  int16_t imag;
+  int16_t real;
+
+  for (aatx=0; aatx<n_tx; aatx++){
+    for (aarx=0; aarx<n_rx; aarx++) {
+      for (re=0; re<length; re++){
+        imag = (int16_t) (dl_ch_estimates_ext[aatx*n_rx + aarx][start_point + re] >> 16);
+        real = (int16_t) (dl_ch_estimates_ext[aatx*n_rx + aarx][start_point+ re] & 0xffff);
+        dl_ch_estimates_ext_f[aatx*n_rx + aarx][re] = (float)(real/(32768.0)) + I*(float)(imag/(32768.0));
+#ifdef DEBUG_MMSE
+        if (re==0){
+          printf("ant %d, re = %d, real = %d, imag = %d \n", aatx*n_rx + aarx, re, real, imag);
+          printf("ant %d, re = %d, real = %f, imag = %f \n", aatx*n_rx + aarx, re, creal(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re]), cimag(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re]));
+        }
+#endif
+     }
+    }
+  }
+}
+
+void float_to_chan_est(int32_t **dl_ch_estimates_ext,
+                      float complex **dl_ch_estimates_ext_f,
+                      int n_tx,
+                      int n_rx,
+                      int length,
+                      int start_point)
+{
+
+  short re;
+  int aarx, aatx;
+  int16_t imag;
+  int16_t real;
+
+  for (aatx=0; aatx<n_tx; aatx++){
+    for (aarx=0; aarx<n_rx; aarx++) {
+      for (re=0; re<length; re++){
+        if (cimag(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re])<-1)
+           imag = 0x8000;
+         else if (cimag(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re])>=1)
+           imag = 0x7FFF;
+         else
+          imag = cimag(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re])*32768;
+         if (creal(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re])<-1)
+           real = 0x8000;
+         else if (creal(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re])>=1)
+           real = 0x7FFF;
+         else
+           real = creal(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re])*32768;
+
+         dl_ch_estimates_ext[aatx*n_rx + aarx][start_point + re] = (((int32_t)imag)<<16)|((int32_t)real & 0xffff);
+#ifdef DEBUG_MMSE
+        if (re==0){
+          printf(" float_to_chan_est: chan est real = %f, chan est imag = %f\n",creal(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re]), cimag(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re]));
+          printf("float_to_chan_est: real fixed = %d, imag fixed = %d\n", real, imag);
+          printf("float_to_chan_est: ant %d, re = %d, dl_ch_estimates_ext = %d \n", aatx*n_rx + aarx, re,  dl_ch_estimates_ext[aatx*n_rx + aarx][start_point + re]);
+        }
+#endif
+      }
+    }
+  }
+}
+
+
+void float_to_rxdataF(int32_t **rxdataF_ext,
+                      float complex **rxdataF_f,
+                      int n_tx,
+                      int n_rx,
+                      int length,
+                      int start_point)
+{
+
+  short re;
+  int aarx;
+  int16_t imag;
+  int16_t real;
+
+  for (aarx=0; aarx<n_rx; aarx++) {
+    for (re=0; re<length; re++){
+      if (cimag(rxdataF_f[aarx][re])<-1)
+        imag = 0x8000;
+      else if (cimag(rxdataF_f[aarx][re])>=1)
+        imag = 0x7FFF;
+      else
+        imag = cimag(rxdataF_f[aarx][re])*32768;
+      if (creal(rxdataF_f[aarx][re])<-1)
+        real = 0x8000;
+      else if (creal(rxdataF_f[aarx][re])>=1)
+        real = 0x7FFF;
+      else
+        real = creal(rxdataF_f[aarx][re])*32768;
+      rxdataF_ext[aarx][start_point + re] = (((int32_t)imag)<<16)|(((int32_t)real) & 0xffff);
+#ifdef DEBUG_MMSE
+        if (re==0){
+          printf(" float_to_rxdataF: real = %f, imag = %f\n",creal(rxdataF_f[aarx][re]), cimag(rxdataF_f[aarx][re]));
+          printf("float_to_rxdataF: real fixed = %d, imag fixed = %d\n", real, imag);
+          printf("float_to_rxdataF: ant %d, re = %d, rxdataF_ext = %d \n", aarx, re,  rxdataF_ext[aarx][symbol*nb_rb*12 + re]);
+        }
+#endif
+      }
+    }
+}
+
+
+void mult_mmse_rxdataF(float complex** Wmmse,
+                       float complex** rxdataF_ext_f,
+                       int n_tx,
+                       int n_rx,
+                       int length,
+                       int start_point)
+{
+  short re;
+  int aarx, aatx;
+
+
+  float complex* rxdata_re =  malloc(n_rx*sizeof(float complex));
+  float complex* rxdata_mmse_re =  malloc(n_rx*sizeof(float complex));
+  float complex* Wmmse_re =  malloc(n_tx*n_rx*sizeof(float complex));
+
+  for (re=0;re<length; re++){
+    for (aarx=0; aarx<n_rx; aarx++){
+      rxdata_re[aarx] = rxdataF_ext_f[aarx][re];
+#ifdef DEBUG_MMSE
+      if (re==0)
+        printf("mult_mmse_rxdataF before: rxdata_re[%d] = (%f, %f)\n", aarx, creal(rxdata_re[aarx]), cimag(rxdata_re[aarx]));
+#endif
+     }
+    for (aatx=0; aatx<n_tx; aatx++){
+      for (aarx=0; aarx<n_rx; aarx++){
+        Wmmse_re[aatx*n_rx + aarx] = Wmmse[aatx*n_rx + aarx][re];
+      }
+    }
+    mutl_matrix_matrix_col_based(Wmmse_re, rxdata_re, n_rx, n_tx, n_rx, 1, rxdata_mmse_re);
+
+    for (aarx=0; aarx<n_rx; aarx++){
+      rxdataF_ext_f[aarx][re] = rxdata_mmse_re[aarx];
+#ifdef DEBUG_MMSE
+       if (re==0)
+        printf("mult_mmse_rxdataF after: rxdataF_ext_f[%d] = (%f, %f)\n", aarx, creal(rxdataF_ext_f[aarx][re]), cimag(rxdataF_ext_f[aarx][re]));
+#endif
+    }
+  }
+
+  free(rxdata_re);
+  free(rxdata_mmse_re);
+  free(Wmmse_re);
+}
+
+void mult_mmse_chan_est(float complex** Wmmse,
+                        float complex** dl_ch_estimates_ext_f,
+                        int n_tx,
+                        int n_rx,
+                        int length,
+                        int start_point)
+{
+  short re;
+  int aarx, aatx;
+
+  float complex* chan_est_re =  malloc(n_tx*n_rx*sizeof(float complex));
+  float complex* chan_est_mmse_re =  malloc(n_tx*n_rx*sizeof(float complex));
+  float complex* Wmmse_re =  malloc(n_tx*n_rx*sizeof(float complex));
+
+  for (re=0;re<length; re++){
+    for (aatx=0; aatx<n_tx; aatx++){
+      for (aarx=0; aarx<n_rx; aarx++){
+        chan_est_re[aatx*n_rx + aarx] = dl_ch_estimates_ext_f[aatx*n_rx + aarx][re];
+        Wmmse_re[aatx*n_rx + aarx] = Wmmse[aatx*n_rx + aarx][re];
+#ifdef DEBUG_MMSE
+        if (re==0)
+        printf("mult_mmse_chan_est: chan_est_re[%d] = (%f, %f)\n", aatx*n_rx + aarx, creal(chan_est_re[aatx*n_rx + aarx]), cimag(chan_est_re[aatx*n_rx + aarx]));
+#endif
+      }
+    }
+      mutl_matrix_matrix_col_based(Wmmse_re, chan_est_re, n_rx, n_tx, n_rx, n_tx, chan_est_mmse_re);
+      for (aatx=0; aatx<n_tx; aatx++){
+        for (aarx=0; aarx<n_rx; aarx++){
+          dl_ch_estimates_ext_f[aatx*n_rx + aarx][re] = chan_est_mmse_re[aatx*n_rx + aarx];
+#ifdef DEBUG_MMSE
+          if (re==0)
+          printf("mult_mmse_chan_est: dl_ch_estimates_ext_f[%d][%d] = (%f, %f)\n", aatx*n_rx + aarx, re, creal(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re]), cimag(dl_ch_estimates_ext_f[aatx*n_rx + aarx][re]));
+#endif
+        }
+      }
+   }
+   free(Wmmse_re);
+   free(chan_est_re);
+   free(chan_est_mmse_re);
+}
+
+
+
+
 
 //compute average channel_level of effective (precoded) channel
 void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
@@ -3879,10 +4533,10 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
                               int *avg_1,
                               uint8_t symbol,
                               unsigned short nb_rb,
+                              unsigned int mmse_flag,
                               MIMO_mode_t mimo_mode){
 
 #if defined(__x86_64__)||defined(__i386__)
-
 
   short rb;
   unsigned char aarx,nre=12,symbol_mod;
@@ -3914,19 +4568,21 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
     avg_1_128D = _mm_setzero_si128();
     for (rb=0; rb<nb_rb; rb++) {
               // printf("rb %d : \n",rb);
-              // print_shorts("ch0\n",&dl_ch0_128[0]);
-               //print_shorts("ch1\n",&dl_ch1_128[0]);
+    //print_shorts("ch0\n",&dl_ch0_128[0]);
+    //print_shorts("ch1\n",&dl_ch1_128[0]);
       dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[0]);
       dl_ch1_128_tmp = _mm_load_si128(&dl_ch1_128[0]);
 
-      if (mimo_mode==LARGE_CDD)
-        prec2A_TM3_128(&dl_ch0_128_tmp,&dl_ch1_128_tmp);
-      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1)
-        prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
-      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
-        prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
-      else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
-        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+      if (mmse_flag == 0){
+        if (mimo_mode==LARGE_CDD)
+          prec2A_TM3_128(&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1)
+          prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
+          prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
+          prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+      }
 
       //      mmtmpD0 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);
       avg_0_128D = _mm_add_epi32(avg_0_128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
@@ -3936,14 +4592,16 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
       dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[1]);
       dl_ch1_128_tmp = _mm_load_si128(&dl_ch1_128[1]);
 
-      if (mimo_mode==LARGE_CDD)
-        prec2A_TM3_128(&dl_ch0_128_tmp,&dl_ch1_128_tmp);
-      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1)
-        prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
-      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
-        prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
-      else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
-        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+      if (mmse_flag == 0){
+        if (mimo_mode==LARGE_CDD)
+          prec2A_TM3_128(&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1)
+          prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
+          prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
+          prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+      }
 
       //      mmtmpD1 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);
       avg_0_128D = _mm_add_epi32(avg_0_128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
@@ -3958,14 +4616,16 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
         dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[2]);
         dl_ch1_128_tmp = _mm_load_si128(&dl_ch1_128[2]);
 
-        if (mimo_mode==LARGE_CDD)
-          prec2A_TM3_128(&dl_ch0_128_tmp,&dl_ch1_128_tmp);
-        else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1)
-          prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
-        else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
-          prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
-        else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
-          prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        if (mmse_flag == 0){
+          if (mimo_mode==LARGE_CDD)
+            prec2A_TM3_128(&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+          else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1)
+            prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+          else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
+            prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+          else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
+            prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        }
         //      mmtmpD2 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);
 
         avg_1_128D = _mm_add_epi32(avg_1_128D,_mm_madd_epi16(dl_ch1_128_tmp,dl_ch1_128_tmp));

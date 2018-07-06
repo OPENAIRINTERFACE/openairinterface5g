@@ -925,6 +925,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                                     int round,
                                     MIMO_mode_t mimo_mode,
                                     unsigned short nb_rb,
+                                    unsigned short mmse_flag,
                                     unsigned char output_shift0,
                                     unsigned char output_shift1);
 
@@ -957,6 +958,7 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
                               int *avg_1,
                               uint8_t symbol,
                               unsigned short nb_rb,
+                              unsigned int mmse_flag,
                               MIMO_mode_t mimo_mode);
 
 
