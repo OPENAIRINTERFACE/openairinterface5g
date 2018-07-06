@@ -38,7 +38,7 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "prach_extern.h"
 
-#define PRACH_DEBUG 1
+//#define PRACH_DEBUG 1
 //#define PRACH_WRITE_OUTPUT_DEBUG 1
 
 

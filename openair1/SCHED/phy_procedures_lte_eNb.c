@@ -1270,7 +1270,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     ulsch = eNB->ulsch[i];
     ulsch_harq = ulsch->harq_processes[harq_pid];
-    if (ulsch->rnti>0) LOG_I(PHY,"eNB->ulsch[%d]->harq_processes[harq_pid:%d] SFN/SF:%04d%d: PUSCH procedures, UE %d/%x ulsch_harq[status:%d SFN/SF:%04d%d handled:%d]\n",
+    if (ulsch->rnti>0) LOG_D(PHY,"eNB->ulsch[%d]->harq_processes[harq_pid:%d] SFN/SF:%04d%d: PUSCH procedures, UE %d/%x ulsch_harq[status:%d SFN/SF:%04d%d handled:%d]\n",
 			     i, harq_pid, frame,subframe,i,ulsch->rnti,
                              ulsch_harq->status, ulsch_harq->frame, ulsch_harq->subframe, ulsch_harq->handled);
     
@@ -1297,7 +1297,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 			    fp->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
 			    nPRS)%12;
       AssertFatal(ulsch_harq->TBS>0,"illegal TBS %d\n",ulsch_harq->TBS); 
-      LOG_I(PHY,
+      LOG_D(PHY,
 	    "[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, first_rb %d, nb_rb %d, Qm %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, ), O_ACK %d, beta_cqi %d \n",
 	    eNB->Mod_id,harq_pid,frame,subframe,
 	    ulsch_harq->dci_alloc,

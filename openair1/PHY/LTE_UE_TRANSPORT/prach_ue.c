@@ -41,7 +41,7 @@
 
 #include "../LTE_TRANSPORT/prach_extern.h"
 
-#define PRACH_DEBUG 1
+//#define PRACH_DEBUG 1
 
 int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf )
 {
