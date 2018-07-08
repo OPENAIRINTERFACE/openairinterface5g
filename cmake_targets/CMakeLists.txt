@@ -1244,7 +1244,7 @@ set(PHY_MEX_UE
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
-${OPENAIR2_DIR}/UTIL/LOG/log.c
+  ${OPENAIR2_DIR}/UTIL/LOG/log.c
   )
 add_library(PHY_MEX ${PHY_MEX_UE})
 
