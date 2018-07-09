@@ -146,7 +146,7 @@ int nr_init_frame_parms(nfapi_config_request_t* config,
   frame_parms->samples_per_subframe = (frame_parms->samples_per_subframe_wCP + (frame_parms->nb_prefix_samples0 * frame_parms->slots_per_subframe) +
                                       (frame_parms->nb_prefix_samples * frame_parms->slots_per_subframe * (frame_parms->symbols_per_slot - 1)));
   frame_parms->samples_per_frame = 10 * frame_parms->samples_per_subframe;
-
+  frame_parms->freq_range = (frame_parms->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
   return 0;
 }
@@ -283,7 +283,7 @@ int nr_init_frame_parms_ue(nfapi_config_request_t* config,
   //frame_parms->samples_per_subframe = (frame_parms->samples_per_subframe_wCP + (frame_parms->nb_prefix_samples0 * frame_parms->slots_per_subframe) +
   //                                    (frame_parms->nb_prefix_samples * frame_parms->slots_per_subframe * (frame_parms->symbols_per_slot - 1)));
   frame_parms->samples_per_frame = 10 * frame_parms->samples_per_subframe;
-
+  frame_parms->freq_range = (frame_parms->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
   return 0;
 }
