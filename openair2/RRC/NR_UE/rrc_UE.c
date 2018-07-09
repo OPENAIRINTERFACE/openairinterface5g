@@ -287,6 +287,10 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     NR_BCCH_BCH_Message_t *bcch_message = NULL;
     NR_MIB_t *mib = NR_UE_rrc_inst->mib;
 
+    if(mib != NULL){
+        SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)mib, 1 );
+    }
+
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
                             &asn_DEF_NR_BCCH_BCH_Message,
                             (void **)&bcch_message,
@@ -307,10 +311,11 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
         return -1;
     }
 
-    //  copy into rrc instance
-    memcpy( (void *)mib,
-        (void *)&bcch_message->message.choice.mib,
-        sizeof(NR_MIB_t) );
+    //  link to rrc instance
+    mib = &bcch_message->message.choice.mib;
+    //memcpy( (void *)mib,
+    //    (void *)&bcch_message->message.choice.mib,
+    //    sizeof(NR_MIB_t) );
 
     nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
 
