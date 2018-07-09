@@ -70,11 +70,12 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 \brief PBCH scrambling function
 @param
  */
-void nr_pbch_scrambling(uint32_t Nid,
+void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
+                        uint32_t Nid,
                         uint8_t nushift,
-                        uint8_t *pbch_a,
                         uint16_t M,
-                        uint16_t length);
+                        uint16_t length,
+                        uint8_t bitwise);
 
 /*!
 \fn int nr_generate_pbch

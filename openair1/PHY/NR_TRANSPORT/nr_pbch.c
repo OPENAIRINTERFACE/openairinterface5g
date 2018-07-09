@@ -131,14 +131,19 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
   return 0;
 }
 
-void nr_pbch_scrambling(uint32_t Nid,
+void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
+                        uint32_t Nid,
                         uint8_t nushift,
-                        uint8_t *pbch_a,
                         uint16_t M,
-                        uint16_t length)
+                        uint16_t length,
+                        uint8_t bitwise)
 {
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
+  uint8_t *pbch_e = pbch->pbch_e;
+  uint32_t *pbch_a_prime = (uint32_t*)pbch->pbch_a_prime;
+  uint32_t *pbch_a_interleaved = (uint32_t*)pbch->pbch_a_interleaved;
+  uint32_t unscrambling_mask = 0x87002D;
 
   reset = 1;
   // x1 is set in lte_gold_generic
@@ -157,7 +162,12 @@ void nr_pbch_scrambling(uint32_t Nid,
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
     }
-    pbch_a[i] = (pbch_a[i]&1) ^ ((s>>((i+offset)&0x1f))&1);
+    if (bitwise) {
+      (*pbch_a_prime) ^= ((unscrambling_mask>>i)&1)? (((*pbch_a_interleaved)>>i)&1)<<i : ((((*pbch_a_interleaved)>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;      
+    }
+
+    else
+      pbch_e[i] = (pbch_e[i]&1) ^ ((s>>((i+offset)&0x1f))&1);
   }
 }
 
@@ -167,11 +177,11 @@ uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6
 uint8_t nr_pbch_payload_interleaver(uint8_t i) {
   uint8_t j_sfn=0, j_hrf=10, j_ssb=11, j_other=14;
 
-  if (24<=i && i<=27) //sfn bits
+  if (24<=i && i<=27) //Sfn bits
     return nr_pbch_payload_interleaving_pattern[j_sfn + i -24];
-  else if (i == 28) // Hrf bit
+  else if (i==28) // Hrf bit
     return nr_pbch_payload_interleaving_pattern[j_hrf];
-  else if (29<=i) // SSB bits
+  else if (29<=i) // Ssb bits
     return nr_pbch_payload_interleaving_pattern[j_ssb + (i-29)];
   else
     return nr_pbch_payload_interleaving_pattern[j_other + i];
@@ -207,7 +217,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Byte endian fix:\n");
   for (int i=0; i<4; i++)
-  printf("pbch_a[%d]: 0x%08x\n", i, pbch->pbch_a[i]);
+  printf("pbch_a[%d]: 0x%04x\n", i, pbch->pbch_a[i]);
   
 #endif
 
@@ -227,7 +237,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Extra byte:\n");
   for (int i=0; i<4; i++)
-  printf("pbch_a[%d]: 0x%08x\n", i, pbch->pbch_a[i]);
+  printf("pbch_a[%d]: 0x%04x\n", i, pbch->pbch_a[i]);
 #endif
 
     // Payload interleaving
@@ -238,26 +248,28 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Interleaving:\n");
   for (int i=0; i<4; i++)
-  printf("pbch_a_interleaved[%d]: 0x%08x\n", i, pbch->pbch_a_interleaved[i]);
+  printf("pbch_a_interleaved[%d]: 0x%04x\n", i, pbch->pbch_a_interleaved[i]);
 #endif
 
     // Scrambling
-  M = NR_POLAR_PBCH_PAYLOAD_BITS - 3; // case Lmax = 4--> 29
-  nr_pbch_scrambling((uint32_t)config->sch_config.physical_cell_id.value, nushift, pbch->pbch_a_interleaved, M, NR_POLAR_PBCH_PAYLOAD_BITS);
+  M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
+  nushift = (((sfn>>2)&1)<<1) ^ ((sfn>>1)&1);
+  nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_PAYLOAD_BITS, 1);
 #ifdef DEBUG_PBCH_ENCODING
   
 #endif
 
 
   /// CRC, coding and rate matching
-  polar_encoder (pbch->pbch_a, pbch->pbch_e, &frame_parms->pbch_polar_params);
+  polar_encoder (pbch->pbch_a_prime, pbch->pbch_e, &frame_parms->pbch_polar_params);
 #ifdef DEBUG_PBCH_ENCODING
   
 #endif
 
   /// Scrambling
   M =  NR_POLAR_PBCH_E;
-  nr_pbch_scrambling((uint32_t)config->sch_config.physical_cell_id.value, nushift, pbch->pbch_a, M, NR_POLAR_PBCH_E);
+  nushift = config->sch_config.physical_cell_id.value &3;;
+  nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_E, 0);
 
   /// QPSK modulation
   for (int i=0; i<NR_POLAR_PBCH_E>>1; i++){
@@ -271,7 +283,6 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   }
 
   /// Resource mapping
-  nushift = config->sch_config.physical_cell_id.value &3;
   a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
   for (int aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
