@@ -35,6 +35,7 @@
 #include "LAYER2/MAC/mac_extern.h"
 
 #include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
@@ -42,6 +43,7 @@
 #include "OCG_extern.h"
 
 #include "RRC/LTE/rrc_extern.h"
+#include "RRC/NR/nr_rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
@@ -637,8 +639,14 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 
   // This schedules MIB
 
-  if ((subframeP == 0) && (frameP & 3) == 0)
-      schedule_mib(module_idP, frameP, subframeP);
+  if ((subframeP == 0) && (frameP & 3) == 0){
+    schedule_mib(module_idP, frameP, subframeP);
+  }
+
+  if((subframeP == 0) && (frameP & 7) == 0){
+    schedule_nr_mib(module_idP, frameP, subframeP);
+  }
+
   if (phy_test == 0){
     // This schedules SI for legacy LTE and eMTC starting in subframeP
     schedule_SI(module_idP, frameP, subframeP);

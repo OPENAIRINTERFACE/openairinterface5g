@@ -58,6 +58,41 @@
 
 #include "LAYER2/MAC/mac.h" // temporary
 
+/*! \brief eNB common channels */
+typedef struct {
+    int physCellId;
+    int p_gNB;
+    int Ncp;
+    int eutra_band;
+    uint32_t dl_CarrierFreq;
+    NR_BCCH_BCH_Message_t *mib;
+    TDD_Config_t *tdd_Config;
+    ARFCN_ValueEUTRA_t ul_CarrierFreq;
+    long ul_Bandwidth;
+    /// Outgoing MIB PDU for PHY
+    MIB_PDU MIB_pdu;
+    /// Outgoing BCCH pdu for PHY
+    BCCH_PDU BCCH_pdu;
+    /// Outgoing BCCH DCI allocation
+    uint32_t BCCH_alloc_pdu;
+    /// Outgoing CCCH pdu for PHY
+    CCCH_PDU CCCH_pdu;
+    /// Outgoing PCCH DCI allocation
+    uint32_t PCCH_alloc_pdu;
+    /// Outgoing PCCH pdu for PHY
+    PCCH_PDU PCCH_pdu;
+    /// Outgoing RAR pdu for PHY
+    RAR_PDU RAR_pdu;
+    /// Template for RA computations
+    RA_t ra[NB_RA_PROC_MAX];
+    /// VRB map for common channels
+    uint8_t vrb_map[100];
+    /// VRB map for common channels and retransmissions by PHICH
+    uint8_t vrb_map_UL[100];
+    /// number of subframe allocation pattern available for MBSFN sync area
+    uint8_t num_sf_allocation_pattern;
+} NR_COMMON_channels_t;
+
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
@@ -75,7 +110,7 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_t       config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
-  nfapi_dl_config_request_t       DL_req[NFAPI_CC_MAX];
+  nfapi_nr_dl_config_request_t    DL_req[NFAPI_CC_MAX];
   /// NFAPI UL Config Request Structure, send to L1 4 subframes before processing takes place
   nfapi_ul_config_request_t       UL_req[NFAPI_CC_MAX];
   /// Preallocated DL pdu list
@@ -87,8 +122,9 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI DL PDU structure
   nfapi_tx_request_t TX_req[NFAPI_CC_MAX];
   /// Common cell resources
-  COMMON_channels_t common_channels[NFAPI_CC_MAX];
-
+  NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
+  /// current PDU index (BCH,DLSCH)
+  uint16_t pdu_index[NFAPI_CC_MAX];
 
   UE_list_t UE_list;
 } gNB_MAC_INST;

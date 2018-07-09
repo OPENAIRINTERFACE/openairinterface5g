@@ -1396,6 +1396,7 @@ set(L2_SRC
   ${RRC_DIR}/L2_interface_ue.c
   ${NR_RRC_DIR}/rrc_gNB.c
   ${NR_RRC_DIR}/nr_rrc_common.c
+  ${NR_RRC_DIR}/L2_nr_interface.c
   )
 
 set(L2_SRC_UE
@@ -1465,6 +1466,7 @@ set (MAC_SRC
   ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
   ${NR_MAC_DIR}/main.c
   ${NR_MAC_DIR}/config.c
+  ${NR_MAC_DIR}/gNB_scheduler_bch.c
  )
 
 set (MAC_SRC_UE

@@ -5,7 +5,7 @@
 #include "mac.h"
 #include "PHY/defs_nr_common.h"
 
-
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
 void mac_top_init_gNB(void);
 

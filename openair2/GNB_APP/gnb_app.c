@@ -125,7 +125,7 @@ void *gNB_app_task(void *args_p)
 # if defined(ENABLE_USE_MME)
   //uint32_t                        register_gnb_pending;
   //uint32_t                        registered_gnb;
-  long                            gnb_register_retry_timer_id;
+  //long                            gnb_register_retry_timer_id;
 # endif
   uint32_t                        gnb_id;
   MessageDef                      *msg_p           = NULL;

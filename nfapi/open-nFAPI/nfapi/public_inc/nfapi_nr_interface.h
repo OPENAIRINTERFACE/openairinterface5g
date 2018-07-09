@@ -268,12 +268,17 @@ typedef struct{
 
 typedef struct {
   nfapi_tl_t tl;
-  nfapi_nr_SearchSpaces_t           sib1searchSpace;
-  nfapi_nr_ControlResourcesSets_t   sib1ControlResourceSets;
+  uint16_t length;
+  uint16_t pdu_index;
+  uint16_t transmission_power;
 }nfapi_nr_dl_config_bch_pdu_rel15_t;
+#define NFAPI_NR_DL_CONFIG_REQUEST_BCH_PDU_REL15_TAG 0x5025
+
 
 typedef struct {
   nfapi_tl_t tl;
+  nfapi_nr_SearchSpaces_t           sib1searchSpace;
+  nfapi_nr_ControlResourcesSets_t   sib1ControlResourceSets;
   nfapi_nr_SearchSpaces_t           sibssearchSpace;
   nfapi_nr_ControlResourcesSets_t   sibsControlResourceSets; 
   nfapi_nr_SearchSpaces_t           ra_SearchSpace;
@@ -319,7 +324,7 @@ typedef struct {
   uint8_t   number_dci;
   uint16_t  number_pdu;
   uint8_t   number_pdsch_rnti;
-  nfapi_dl_config_request_pdu_t *dl_config_pdu_list;
+  nfapi_nr_dl_config_request_pdu_t *dl_config_pdu_list;
 } nfapi_nr_dl_config_request_body_t;
 
 typedef struct {
