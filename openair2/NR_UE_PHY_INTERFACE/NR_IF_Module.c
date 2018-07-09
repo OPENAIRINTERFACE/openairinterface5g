@@ -44,17 +44,14 @@ int8_t handle_bcch_bch(uint32_t pdu_len, uint8_t *pduP){
 
     //  pdu_len = 4, 32bits
     uint8_t extra_bits = pduP[3];
-    uint32_t ssb_index;
-    uint32_t frame;
     nr_ue_decode_mib(   (module_id_t)0,
                         0,
                         0,
                         extra_bits,
                         0,  //  Lssb = 64 is not support
-                        &ssb_index,
-                        &frame,
                         pduP,
                         3 );
+
 
 
     return 0;
@@ -66,6 +63,12 @@ int8_t handle_bcch_dlsch(uint32_t pdu_len, uint8_t *pduP){
 }
 
 int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
+    
+    module_id_t module_id = dl_info->module_id;
+    NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+
+    //  clean up scheduled_response structure
+
     if(dl_info->rx_ind != NULL){
         switch(dl_info->rx_ind->rx_request_body.pdu_index){
             case FAPI_NR_RX_PDU_BCCH_BCH_TYPE:
@@ -84,10 +87,13 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 
     }
 
+    if(nr_ue_if_module_inst[module_id] != NULL){
+        nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
+    }
+
+
     return 0;
 }
-
-
 
 nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
 
@@ -100,36 +106,6 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     }
 
     return nr_ue_if_module_inst[module_id];
-}
-
-int8_t nr_ue_if_module_register_dl_indication(uint32_t module_id, nr_ue_dl_indication_f *f){
-    if (nr_ue_if_module_inst[module_id] == NULL) {
-        nr_ue_if_module_inst[module_id]->dl_indication = f;
-    }else{
-        return -1;
-    }
-
-    return 0;
-}
-
-int8_t nr_ue_if_module_register_phy_config_request(uint32_t module_id, nr_ue_phy_config_request_f *f){
-    if (nr_ue_if_module_inst[module_id] == NULL) {
-        nr_ue_if_module_inst[module_id]->phy_config_request = f;
-    }else{
-        return -1;
-    }
-
-    return 0;
-}
-
-int8_t nr_ue_if_module_register_scheduled_response(uint32_t module_id, nr_ue_scheduled_response_f *f){
-    if (nr_ue_if_module_inst[module_id] == NULL) {
-        nr_ue_if_module_inst[module_id]->scheduled_response = f;
-    }else{
-        return -1;
-    }
-
-    return 0;
 }
 
 int8_t nr_ue_if_module_kill(uint32_t module_id) {
