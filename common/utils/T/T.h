@@ -571,6 +571,7 @@ extern T_cache_t *T_cache;
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 #define CONFIG_HLP_STDOUT        "print log messges on console\n"
 
+
 #define TTRACER_CONFIG_PREFIX   "TTracer"
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            configuration parameters for TTRACE utility                                                   */
@@ -585,8 +586,7 @@ extern T_cache_t *T_cache;
 
 
 
-extern int *T_active;
-extern int T_stdout;         /* log on stdout */
+        /* log on stdout */
 void T_init(int remote_port, int wait_for_tracer, int dont_fork);
 void T_Config_Init(void);
 #else /* T_TRACER */
