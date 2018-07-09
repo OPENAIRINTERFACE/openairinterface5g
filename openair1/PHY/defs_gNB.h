@@ -38,7 +38,8 @@
 
 
 typedef struct {
-  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS];
+  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint8_t pbch_a_interleaved[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
   uint8_t pbch_e[NR_POLAR_PBCH_E];
 } NR_gNB_PBCH;
 

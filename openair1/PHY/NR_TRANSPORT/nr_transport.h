@@ -62,7 +62,6 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           int32_t **txdataF,
                           int16_t amp,
                           uint8_t ssb_start_symbol,
-                          uint8_t nushift,
                           nfapi_config_request_t* config,
                           NR_DL_FRAME_PARMS *frame_parms);
 
@@ -74,7 +73,8 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 void nr_pbch_scrambling(uint32_t Nid,
                         uint8_t nushift,
                         uint8_t *pbch_a,
-                        uint32_t length);
+                        uint16_t M,
+                        uint16_t length);
 
 /*!
 \fn int nr_generate_pbch
@@ -87,11 +87,19 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
                      int32_t **txdataF,
                      int16_t amp,
                      uint8_t ssb_start_symbol,
-                     uint8_t nushift,
                      uint8_t n_hf,
+                     uint8_t Lmax,
+                     uint8_t ssb_index,
                      int sfn,
-                     int frame_mod8,
                      nfapi_config_request_t* config,
                      NR_DL_FRAME_PARMS *frame_parms);
+
+/*!
+\fn int nr_generate_pbch
+\brief PBCH interleaving function
+@param bit index i of the input payload
+@returns the bit index of the output
+ */
+uint8_t nr_pbch_payload_interleaver(uint8_t i);
 
 #endif /*__NR_TRANSPORT__H__*/
