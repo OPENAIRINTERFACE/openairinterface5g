@@ -23,6 +23,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "modulation_UE.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
+#include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
 //#define DEBUG_FEP
 
@@ -48,6 +49,9 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   int i;
   unsigned int frame_length_samples = frame_parms->samples_per_subframe * 10;
   unsigned int rx_offset;
+  //NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns>>1]][0];
+  uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset;
+  uint16_t nb_rb_coreset = 24;
 
   /*LTE_UE_DLSCH_t **dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id];
   unsigned char harq_pid = dlsch_ue[0]->current_harq_pid;
@@ -242,7 +246,9 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
                                     Ns,
                                     aa,
                                     l,
-                                    symbol);
+                                    symbol,
+									coreset_start_subcarrier,
+									nb_rb_coreset);
 #if UE_TIMING_TRACE
         stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif

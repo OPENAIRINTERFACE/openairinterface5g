@@ -229,6 +229,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                               unsigned char p,
                               unsigned char l,
                               unsigned char symbol,
+							  unsigned short coreset_start_subcarrier,
 							  unsigned short nb_rb_coreset)
 {
   int pilot[2][200] __attribute__((aligned(16)));
@@ -241,8 +242,8 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   //uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
   uint8_t nushift;
-  int **dl_ch_estimates  =ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].dl_ch_estimates[eNB_offset];
-  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF;
+  int **dl_ch_estimates  =ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset];
+  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].rxdataF;
 
   nushift = 1;
   ue->frame_parms.nushift = nushift;
@@ -254,7 +255,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
   symbol_offset = ue->frame_parms.ofdm_symbol_size*symbol;
 
-  k = nushift;
+  k = coreset_start_subcarrier;
 
 #ifdef DEBUG_CH
   printf("PBCH Channel Estimation : ThreadId %d, eNB_offset %d cell_id %d ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns>>1], eNB_offset,Nid_cell,ch_offset,ue->frame_parms.ofdm_symbol_size,
@@ -271,7 +272,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
     pil   = (int16_t *)&pilot[p][0];
-    rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+(ue->frame_parms.ofdm_symbol_size-12*(nb_rb_coreset>>1)))];
+    rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];
     dl_ch = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][ch_offset];
 
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
@@ -329,11 +330,13 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
       pil+=2;
       rxF+=8;
       dl_ch+=24;
+      k+=12;
 
-      for (pilot_cnt=3; pilot_cnt<(3*24); pilot_cnt+=3) {
+      for (pilot_cnt=3; pilot_cnt<(3*nb_rb_coreset); pilot_cnt+=3) {
 
-	if (pilot_cnt == 36)
-	  rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k)];
+        if (k >= ue->frame_parms.ofdm_symbol_size){
+    		 k-=ue->frame_parms.ofdm_symbol_size;
+    		 rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+nushift)];}
 
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
@@ -377,6 +380,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
         pil+=2;
         rxF+=8;
         dl_ch+=24;
+        k+=12;
 
       }
 
