@@ -212,6 +212,8 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   uint8_t idx=0;
   uint16_t M;
   uint8_t nushift;
+  uint8_t *xbyte = pbch->pbch_a;
+  memset((void*) xbyte, 0, 1);
 
   LOG_I(PHY, "PBCH generation started\n");
 
@@ -223,13 +225,10 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Byte endian fix:\n");
   for (int i=0; i<4; i++)
-  printf("pbch_a[%d]: 0x%04x\n", i, pbch->pbch_a[i]);
-  
+  printf("pbch_a[%d]: 0x%04x\n", i, pbch->pbch_a[i]);  
 #endif
 
     // Extra byte generation
-  uint8_t *xbyte = pbch->pbch_a;
-  //memset((void*) xbyte, 0, 1);
   for (int i=0; i<4; i++)
     (*xbyte) ^= ((sfn>>i)&1)<<i; // 4 lsb of sfn
 
