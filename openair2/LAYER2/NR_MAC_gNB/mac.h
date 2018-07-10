@@ -122,12 +122,23 @@ typedef struct gNB_MAC_INST_s {
   nfapi_dl_config_request_pdu_t   dl_config_pdu_list[NFAPI_CC_MAX][MAX_NUM_DL_PDU];
   /// Preallocated UL pdu list
   nfapi_ul_config_request_pdu_t   ul_config_pdu_list[NFAPI_CC_MAX][MAX_NUM_UL_PDU];
+  /// Preallocated UL pdu list for ULSCH (n+k delay)
+  nfapi_ul_config_request_pdu_t   ul_config_pdu_list_tmp[NFAPI_CC_MAX][10][MAX_NUM_UL_PDU];
+  /// NFAPI "Temporary" UL Config Request Structure, holds future UL_config requests
+  nfapi_ul_config_request_t       UL_req_tmp[NFAPI_CC_MAX][10];
+  /// Preallocated HI_DCI0 pdu list
+  nfapi_hi_dci0_request_pdu_t     hi_dci0_pdu_list[NFAPI_CC_MAX][MAX_NUM_HI_DCI0_PDU];
   /// NFAPI HI/DCI0 Config Request Structure
-  nfapi_hi_dci0_request_t HI_DCI0_req[NFAPI_CC_MAX];
+  nfapi_hi_dci0_request_t         HI_DCI0_req[NFAPI_CC_MAX];
+  /// Prealocated TX pdu list
+  nfapi_tx_request_pdu_t          tx_request_pdu[NFAPI_CC_MAX][MAX_NUM_TX_REQUEST_PDU];
   /// NFAPI DL PDU structure
-  nfapi_tx_request_t TX_req[NFAPI_CC_MAX];
+  nfapi_tx_request_t              TX_req[NFAPI_CC_MAX];
 
   UE_list_t UE_list;
+
+  /// UL handle
+  uint32_t ul_handle;
 
     // MAC function execution peformance profiler
   /// processing time of eNB scheduler
