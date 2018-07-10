@@ -185,6 +185,10 @@ typedef enum {
     LOCALIZE,
     RRH,
     X2AP,
+    GNB_APP,
+    NR_RRC,
+    NR_MAC,
+    NR_PHY,
     MAX_LOG_COMPONENTS,
 }
 comp_name_t;

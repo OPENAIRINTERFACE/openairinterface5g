@@ -32,6 +32,7 @@
 #include "LAYER2/MAC/mac.h"
 #include "PHY/defs_common.h" // for PRACH_RESOURCES_t and lte_subframe_t
 
+
 /** \addtogroup _mac
  *  @{
  */

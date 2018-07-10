@@ -29,23 +29,21 @@
  * \note
  * \warning
  */
-#ifndef __NRRRC_PARAMSVALUES__H__
-#define __NRRRC_PARAMSVALUES__H__
+#ifndef __NR_RRC_PARAMSVALUES__H__
+#define __NR_RRC_PARAMSVALUES__H__
 /*    cell configuration section name */
-#define GNB_CONFIG_STRING_GNB_LIST                    "gNBs"
-/* component carriers configuration section name */		
-#define GNB_CONFIG_STRING_COMPONENT_CARRIERS          "component_carriers"		 
+#define GNB_CONFIG_STRING_GNB_LIST                              "gNBs"
+/* component carriers configuration section name */   
+#define GNB_CONFIG_STRING_COMPONENT_CARRIERS                    "component_carriers"     
 
-#define GNB_CONFIG_STRING_FRAME_TYPE                  "frame_type"
-#define GNB_CONFIG_STRING_DL_PREFIX_TYPE              "DL_prefix_type"
-#define GNB_CONFIG_STRING_UL_PREFIX_TYPE           	  "UL_prefix_type"
-#define GNB_CONFIG_STRING_EUTRA_BAND                  "eutra_band"
-#define GNB_CONFIG_STRING_DOWNLINK_FREQUENCY          "downlink_frequency"
-#define GNB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET     "uplink_frequency_offset"
-#define GNB_CONFIG_STRING_NID_CELL                    "Nid_cell"
-#define GNB_CONFIG_STRING_N_RB_DL                     "N_RB_DL"
-#define GNB_CONFIG_STRING_CELL_MBSFN                  "Nid_cell_mbsfn"
-
+#define GNB_CONFIG_STRING_FRAME_TYPE                            "frame_type"
+#define GNB_CONFIG_STRING_DL_PREFIX_TYPE                        "DL_prefix_type"
+#define GNB_CONFIG_STRING_UL_PREFIX_TYPE                        "UL_prefix_type"
+#define GNB_CONFIG_STRING_EUTRA_BAND                            "eutra_band"
+#define GNB_CONFIG_STRING_DOWNLINK_FREQUENCY                    "downlink_frequency"
+#define GNB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET               "uplink_frequency_offset"
+#define GNB_CONFIG_STRING_NID_CELL                              "Nid_cell"
+#define GNB_CONFIG_STRING_N_RB_DL                               "N_RB_DL"
 
 #define FRAMETYPE_OKVALUES                                      {"FDD","TDD"}
 #define FRAMETYPE_MODVALUES                                     { FDD, TDD} 
@@ -66,7 +64,7 @@
 
 #define UETIMER_T300_OKVALUES                                   {100,200,300,400,600,1000,1500,2000}
 #define UETT300(A)                                              UE_TimersAndConstants__t300_ ## A
-#define UETIMER_T300_MODVALUES                                  { UETT300(ms100), UETT300(ms200),UETT300(ms300),UETT300(ms400),UETT300(ms600),UETT300(ms1000),UETT300(ms1500),UETT300(ms2000)}           		
+#define UETIMER_T300_MODVALUES                                  { UETT300(ms100), UETT300(ms200),UETT300(ms300),UETT300(ms400),UETT300(ms600),UETT300(ms1000),UETT300(ms1500),UETT300(ms2000)}              
 
 #define UETIMER_T301_OKVALUES                                   {100,200,300,400,600,1000,1500,2000}
 #define UETT301(A)                                              UE_TimersAndConstants__t301_ ## A

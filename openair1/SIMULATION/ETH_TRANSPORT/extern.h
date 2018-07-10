@@ -33,6 +33,7 @@
 
 #include <pthread.h>
 
+
 extern unsigned char Emulation_status;
 extern unsigned char emu_tx_status;
 extern unsigned char emu_rx_status;

@@ -56,7 +56,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
-
+#include "gnb_config.h"
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
 unsigned short config_frames[4] = {2,9,11,13};
@@ -76,7 +76,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #if defined(ENABLE_ITTI)
 #include "intertask_interface_init.h"
-#include "create_tasks.h"
+#include "create_nr_tasks.h"
 #endif
 
 #include "PHY/INIT/phy_init.h"
@@ -193,7 +193,7 @@ int                             otg_enabled;
 
 
 //static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
-static nfapi_config_request_t *config[MAX_NUM_CCs];
+static nfapi_nr_config_request_t *config[MAX_NUM_CCs];
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
@@ -231,7 +231,7 @@ threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 uint8_t abstraction_flag=0;
 
 /* forward declarations */
-void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -548,10 +548,10 @@ static void get_options(void) {
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
       memset((void*)&RC,0,sizeof(RC));
       /* Read RC configuration file */
-      RCConfig();
-      NB_gNB_INST = RC.nb_inst;
+      NRRCConfig();
+      NB_gNB_INST = RC.nb_nr_inst;
       NB_RU	  = RC.nb_RU;
-      printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_gNB_INST,RC.nb_L1_inst,NB_RU);
+      printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %d\n",NB_gNB_INST,RC.nb_nr_L1_inst,NB_RU);
    }
 }
 
@@ -564,13 +564,13 @@ int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 
 
 
-void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
+void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
   int CC_id;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id] = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
-    config[CC_id] = (nfapi_config_request_t*) malloc(sizeof(nfapi_config_request_t));
+    config[CC_id] = (nfapi_nr_config_request_t*) malloc(sizeof(nfapi_nr_config_request_t));
     config[CC_id]->subframe_config.numerology_index_mu.value =1;
     config[CC_id]->subframe_config.duplex_mode.value = 1; //FDD
     config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
@@ -731,14 +731,14 @@ void wait_gNBs(void) {
 
 
   while (waiting==1) {
-    printf("Waiting for gNB L1 instances to all get configured ... sleeping 50ms (nb_L1_inst %d)\n",RC.nb_L1_inst);
+    printf("Waiting for gNB L1 instances to all get configured ... sleeping 50ms (nb_nr_sL1_inst %d)\n",RC.nb_nr_L1_inst);
     usleep(50*1000);
     waiting=0;
-    for (i=0;i<RC.nb_L1_inst;i++) {
+    for (i=0;i<RC.nb_nr_L1_inst;i++) {
 
-      printf("RC.nb_L1_CC[%d]:%d\n", i, RC.nb_L1_CC[i]);
+      printf("RC.nb_nr_L1_CC[%d]:%d\n", i, RC.nb_nr_L1_CC[i]);
 
-      for (j=0;j<RC.nb_L1_CC[i];j++) {
+      for (j=0;j<RC.nb_nr_L1_CC[i];j++) {
 	if (RC.gNB[i][j]->configured==0) {
 	  waiting=1;
 	  break;
@@ -801,7 +801,7 @@ int stop_L1L2(module_id_t gnb_id)
   LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", gnb_id);
   kill_RU_proc(gnb_id);
   oai_exit = 0;
-  for (int cc_id = 0; cc_id < RC.nb_CC[gnb_id]; cc_id++) {
+  for (int cc_id = 0; cc_id < RC.nb_nr_CC[gnb_id]; cc_id++) {
     //free_transport(RC.gNB[gnb_id][cc_id]);
     phy_free_nr_gNB(RC.gNB[gnb_id][cc_id]);
   }
@@ -824,7 +824,7 @@ int restart_L1L2(module_id_t gnb_id)
   /* block threads */
   sync_var = -1;
 
-  for (cc_id = 0; cc_id < RC.nb_L1_CC[gnb_id]; cc_id++) {
+  for (cc_id = 0; cc_id < RC.nb_nr_L1_CC[gnb_id]; cc_id++) {
     RC.gNB[gnb_id][cc_id]->configured = 0;
   }
 
@@ -1045,10 +1045,10 @@ int main( int argc, char **argv )
   
   
 #if defined(ENABLE_ITTI)
-  if (RC.nb_inst > 0)  {
+  if (RC.nb_nr_inst > 0)  {
     
     // don't create if node doesn't connect to RRC/S1/GTP
-      if (create_tasks(1) < 0) {
+      if (create_gNB_tasks(1) < 0) {
         printf("cannot create ITTI tasks\n");
         exit(-1); // need a softer mode
       }
@@ -1061,8 +1061,8 @@ int main( int argc, char **argv )
 #endif
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
-  RCconfig_flexran();
-  for (i = 0; i < RC.nb_L1_inst; i++) {
+  RCconfig_nr_flexran();
+  for (i = 0; i < RC.nb_nr_L1_inst; i++) {
     flexran_agent_start(i);
   }
 
@@ -1150,8 +1150,8 @@ int main( int argc, char **argv )
   // start the main threads
 
     number_of_cards = 1;    
-    printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
-    if (RC.nb_L1_inst > 0) {
+    printf("RC.nb_nr_L1_inst:%d\n", RC.nb_nr_L1_inst);
+    if (RC.nb_nr_L1_inst > 0) {
       printf("Initializing gNB threads single_thread_flag:%d wait_for_sync:%d\n", single_thread_flag,wait_for_sync);
       init_gNB(single_thread_flag,wait_for_sync);
     }
@@ -1257,7 +1257,7 @@ int main( int argc, char **argv )
     /* release memory used by the RU/gNB threads (incomplete), after all
      * threads have been stopped (they partially use the same memory) */
     for (int inst = 0; inst < NB_gNB_INST; inst++) {
-      for (int cc_id = 0; cc_id < RC.nb_CC[inst]; cc_id++) {
+      for (int cc_id = 0; cc_id < RC.nb_nr_CC[inst]; cc_id++) {
         //free_transport(RC.gNB[inst][cc_id]);
         phy_free_nr_gNB(RC.gNB[inst][cc_id]);
       }

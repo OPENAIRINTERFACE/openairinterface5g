@@ -29,14 +29,13 @@
 * \note
 * \warning
 */
-#ifndef __IF_MODULE__H__
-#define __IF_MODULE__H__
-
+#ifndef __NR_IF_MODULE__H__
+#define __NR_IF_MODULE__H__
 
 #include <stdint.h>
-#include "openair1/PHY/LTE_TRANSPORT/defs.h"
-#include "nfapi_interface.h"
-
+#include "nfapi_nr_interface.h"
+#include "platform_constants.h"
+#include "platform_types.h"
 
 #define MAX_NUM_DL_PDU 100
 #define MAX_NUM_UL_PDU 100
@@ -86,7 +85,7 @@ typedef struct{
   /// RX indication
   nfapi_rx_indication_t rx_ind;
 
-} UL_IND_t;
+} NR_UL_IND_t;
 
 // Downlink subframe P7
 
@@ -108,35 +107,33 @@ typedef struct{
   nfapi_hi_dci0_request_t *HI_DCI0_req;
   /// Pointers to DL SDUs
   nfapi_tx_request_t *TX_req;
-}Sched_Rsp_t;
+} NR_Sched_Rsp_t;
 
 typedef struct {
     uint8_t Mod_id;
     int CC_id;
-    nfapi_config_request_t *cfg;
-}PHY_Config_t;
+    nfapi_nr_config_request_t *cfg;
+} NR_PHY_Config_t;
 
-typedef struct IF_Module_s{
+typedef struct NR_IF_Module_s{
 //define the function pointer
-  void (*UL_indication)(UL_IND_t *UL_INFO);
-  void (*schedule_response)(Sched_Rsp_t *Sched_INFO);
-  void (*PHY_config_req)(PHY_Config_t* config_INFO);
+  void (*UL_indication)(NR_UL_IND_t *UL_INFO);
+  void (*schedule_response)(NR_Sched_Rsp_t *Sched_INFO);
+  void (*PHY_config_req)(NR_PHY_Config_t* config_INFO);
   uint32_t CC_mask;
   uint16_t current_frame;
   uint8_t current_subframe;
   pthread_mutex_t if_mutex;
-}IF_Module_t;
+} NR_IF_Module_t;
 
 /*Initial */
-IF_Module_t *IF_Module_init(int Mod_id);
-void IF_Module_kill(int Mod_id);
+NR_IF_Module_t *NR_IF_Module_init(int Mod_id);
 
-/*Interface for uplink, transmitting the Preamble(list), ULSCH SDU, NAK, Tick (trigger scheduler)
- */
-void UL_indication(UL_IND_t *UL_INFO);
+void NR_IF_Module_kill(int Mod_id);
+
+void NR_UL_indication(NR_UL_IND_t *UL_INFO);
 
 /*Interface for Downlink, transmitting the DLSCH SDU, DCI SDU*/
-void Schedule_Response(Sched_Rsp_t *Sched_INFO);
+void NR_Schedule_Response(NR_Sched_Rsp_t *Sched_INFO);
 
-#endif
-
+#endif /*_NFAPI_INTERFACE_NR_H_*/

@@ -135,7 +135,7 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
                             int32_t** txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS* frame_parms,
-                            nfapi_config_request_t* config)
+                            nfapi_nr_config_request_t* config)
 {
 
   uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH<<1];

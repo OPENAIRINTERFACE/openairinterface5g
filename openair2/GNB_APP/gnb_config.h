@@ -37,17 +37,15 @@
 #include "commonDef.h"
 #include "platform_types.h"
 #include "platform_constants.h"
-#include "PHY/impl_defs_lte.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
-//#ifdef CMAKER
-//#include "SystemInformationBlockType2.h"
-//#include "rrc_messages_types.h"
-//#else
-//#include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
-//#endif
+
+#ifdef CMAKER
+#include "rrc_messages_types.h"
+#endif
+
 #include "intertask_interface_types.h"
-#include "RRC/NR/defs_NR.h"
+#include "RRC/NR/nr_rrc_defs.h"
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\
             struct in_addr inp;\
@@ -64,7 +62,7 @@
  */
 
 // Hard to find a defined value for max enb...
-#define MAX_ENB 16
+#define MAX_GNB 16
 
 /*
 typedef struct mme_ip_address_s {
@@ -93,18 +91,18 @@ typedef struct ru_config_s {
   uint8_t   if_compress;
 } ru_config_t;
 */
-//extern void RCconfig_RU(void);
-//extern void RCconfig_flexran(void);
-//extern void RCconfig_L1(void);
-//extern void RCconfig_macrlc(void);
-//extern int  RCconfig_gtpu(void );
+extern void RCconfig_RU(void);
+extern void RCconfig_nr_flexran(void);
+extern void RCconfig_NR_L1(void);
+extern void RCconfig_nr_macrlc(void);
+extern int  RCconfig_nr_gtpu(void );
 extern void NRRCConfig(void);
 
 //void                          enb_config_display(void);
 //void                          ru_config_display(void);
 
-int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc);
-//int RCconfig_S1(MessageDef *msg_p, uint32_t i);
+int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc);
+int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i);
 
 #endif /* GNB_CONFIG_H_ */
 /** @} */

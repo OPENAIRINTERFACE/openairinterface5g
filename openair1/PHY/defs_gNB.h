@@ -35,10 +35,12 @@
 #include "defs_eNB.h"
 #include "defs_nr_common.h"
 #include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
-
+#include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 
 typedef struct {
-  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS];
+  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint8_t pbch_a_interleaved[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint8_t pbch_a_prime[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
   uint8_t pbch_e[NR_POLAR_PBCH_E];
 } NR_gNB_PBCH;
 
@@ -240,11 +242,11 @@ typedef struct PHY_VARS_gNB_s {
   int                  rx_total_gain_dB;
   int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_gNB_s *gNB);
   uint8_t              local_flag;
-  nfapi_config_request_t  gNB_config;
+  nfapi_nr_config_request_t  gNB_config;
   NR_DL_FRAME_PARMS   frame_parms;
   PHY_MEASUREMENTS_gNB measurements;
-  IF_Module_t          *if_inst;
-  UL_IND_t             UL_INFO;
+  NR_IF_Module_t          *if_inst;
+  NR_UL_IND_t             UL_INFO;
   pthread_mutex_t      UL_INFO_mutex;
   /// NFAPI RX ULSCH information
   nfapi_rx_indication_pdu_t  rx_pdu_list[NFAPI_RX_IND_MAX_PDU];

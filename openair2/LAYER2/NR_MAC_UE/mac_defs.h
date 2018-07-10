@@ -58,6 +58,8 @@
 #include "NR_SpCellConfig.h"
 
 #include "NR_ServingCellConfig.h"
+#include "fapi_nr_ue_interface.h"
+#include "NR_IF_Module.h"
 
 #define NB_NR_UE_MAC_INST 1
 
@@ -65,14 +67,26 @@
 typedef struct {
     
     ////  MAC config
-    NR_DRX_Config_t    *drx_Config;    /* OPTIONAL */
+    NR_DRX_Config_t    	*drx_Config;    /* OPTIONAL */
     NR_SchedulingRequestConfig_t   *schedulingRequestConfig;   /* OPTIONAL */
-    NR_BSR_Config_t    *bsr_Config;    /* OPTIONAL */
-    NR_TAG_Config_t    *tag_Config;    /* OPTIONAL */
-    NR_PHR_Config_t    *phr_Config;    /* OPTIONAL */
+    NR_BSR_Config_t    	*bsr_Config;    /* OPTIONAL */
+    NR_TAG_Config_t		*tag_Config;    /* OPTIONAL */
+    NR_PHR_Config_t		*phr_Config;    /* OPTIONAL */
     
-    NR_RNTI_Value_t *cs_RNTI;   /* OPTIONAL */
+    NR_RNTI_Value_t 	*cs_RNTI;   /* OPTIONAL */
 
+	NR_MIB_t 			*mib;
+
+	////	FAPI-like interface
+	fapi_nr_tx_request_t tx_request;
+	fapi_nr_ul_config_request_t ul_config_request;
+	fapi_nr_dl_config_request_t dl_config_request;
+	fapi_nr_dci_indication_t dci_indication;
+	fapi_nr_rx_indication_t rx_indication;
+
+	nr_ue_if_module_t *if_module;
+	nr_scheduled_response_t	scheduled_response;
+	nr_phy_config_t phy_config;
 } NR_UE_MAC_INST_t;
 
 /*@}*/

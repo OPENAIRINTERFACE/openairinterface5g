@@ -18,6 +18,7 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+
 #ifndef __PHY_NR_TRANSPORT_DCI__H
 #define __PHY_NR_TRANSPORT_DCI__H
 
@@ -100,6 +101,7 @@ typedef struct {
   uint8_t dci_pdu[8];
 } NR_gNB_DCI_ALLOC_t;
 
+typedef unsigned __int128 uint128_t;
 
 uint8_t nr_get_dci_size(nr_dci_format_e format,
                         nr_rnti_type_e rnti,
@@ -111,6 +113,6 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
                             int32_t** txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS* frame_parms,
-                            nfapi_config_request_t* config);
+                            nfapi_nr_config_request_t* config)
 
 #endif //__PHY_NR_TRANSPORT_DCI__H

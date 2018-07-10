@@ -107,10 +107,14 @@ case "$module" in
   ;;
   NR_RRC )
     	export ASN1C_PREFIX=NR_
-  	asn1c -gen-PER -fcompound-names -no-gen-example fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  	asn1c -gen-PER -fcompound-names -findirect-choice -no-gen-example fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
   ;;
   S1AP )
 	export ASN1C_PREFIX=S1AP_
+  	asn1c -gen-PER -fcompound-names -no-gen-example fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  ;;
+  X2AP )
+	export ASN1C_PREFIX=X2AP_
   	asn1c -gen-PER -fcompound-names -no-gen-example fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
   ;;
 esac
@@ -129,10 +133,14 @@ case "$module" in
   ;; 
   NR_RRC )
     	export ASN1C_PREFIX=NR_
-  	asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  	asn1c -fcompound-names -findirect-choice -fno-include-deps -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
   ;;
   S1AP )
     	export ASN1C_PREFIX=S1AP_
+    	asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  ;;
+  X2AP )
+    	export ASN1C_PREFIX=X2AP_
     	asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
   ;;
 esac

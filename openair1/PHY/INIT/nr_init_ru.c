@@ -100,12 +100,12 @@ int nr_phy_init_RU(RU_t *ru) {
       LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
     }
     
-    AssertFatal(RC.nb_L1_inst <= NUMBER_OF_eNB_MAX,"gNB instances %d > %d\n",
-		RC.nb_L1_inst,NUMBER_OF_eNB_MAX);
+    AssertFatal(RC.nb_nr_L1_inst <= NUMBER_OF_eNB_MAX,"gNB instances %d > %d\n",
+		RC.nb_nr_L1_inst,NUMBER_OF_gNB_MAX);
 
-    LOG_E(PHY,"[INIT] %s() RC.nb_L1_inst:%d \n", __FUNCTION__, RC.nb_L1_inst);
+    LOG_E(PHY,"[INIT] %s() RC.nb_nr_L1_inst:%d \n", __FUNCTION__, RC.nb_nr_L1_inst);
 
-    for (i=0; i<RC.nb_L1_inst; i++) {
+    for (i=0; i<RC.nb_nr_L1_inst; i++) {
       for (p=0;p<15;p++) {
         LOG_D(PHY,"[INIT] %s() nb_antenna_ports_eNB:%d \n", __FUNCTION__, ru->gNB_list[i]->gNB_config.rf_config.tx_antenna_ports.value);
 	if (p<ru->gNB_list[i]->gNB_config.rf_config.tx_antenna_ports.value || p==5) {
@@ -178,7 +178,7 @@ void nr_phy_free_RU(RU_t *ru)
     free_and_zero(ru->prach_rxsigF);
     /* ru->prach_rxsigF_br is not allocated -> don't free */
 
-    for (i = 0; i < RC.nb_L1_inst; i++) {
+    for (i = 0; i < RC.nb_nr_L1_inst; i++) {
       for (p = 0; p < 15; p++) {
 	if (p < ru->gNB_list[i]->gNB_config.rf_config.tx_antenna_ports.value || p == 5) {
 	  for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);

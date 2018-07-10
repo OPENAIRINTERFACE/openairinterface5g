@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -35,8 +34,8 @@
 int
 nr_rrc_mac_config_req_ue(
     module_id_t                     module_id,
-	int                             CC_idP,
-	uint8_t                         gNB_index,
+    int                             CC_idP,
+    uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
     NR_MAC_CellGroupConfig_t        *mac_cell_group_configP,
     NR_PhysicalCellGroupConfig_t    *phy_cell_group_configP,
@@ -48,7 +47,7 @@ nr_rrc_mac_config_req_ue(
 //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
 
     if(mibP != NULL){
-        ;
+        mac->mib = mibP;    //  update by every reception
     }
 
     if(mac_cell_group_configP != NULL){

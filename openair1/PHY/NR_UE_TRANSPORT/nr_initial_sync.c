@@ -45,10 +45,10 @@
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 
 extern openair0_config_t openair0_cfg[];
-static  nfapi_config_request_t config_t;
-static  nfapi_config_request_t* config =&config_t;
+static  nfapi_nr_config_request_t config_t;
+static  nfapi_nr_config_request_t* config =&config_t;
 /* forward declarations */
-void set_default_frame_parms_single(nfapi_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms);
+void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms);
 
 //#define DEBUG_INITIAL_SYNCH
 
@@ -164,7 +164,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int ret=-1;
   int aarx,rx_power=0;
-  //nfapi_config_request_t* config;
+  //nfapi_nr_config_request_t* config;
 
   /*offset parameters to be updated from higher layer */
   k_ssb =0;

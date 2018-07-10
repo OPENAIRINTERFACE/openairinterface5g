@@ -94,6 +94,8 @@
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+
 //#define XER_PRINT
 
 extern RAN_CONTEXT_t RC;
@@ -5282,6 +5284,7 @@ openair_rrc_eNB_init(
 
   RC.rrc[ctxt.module_id]->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   RC.rrc[ctxt.module_id]->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+
   memcpy(&RC.rrc[ctxt.module_id]->configuration,configuration,sizeof(RrcConfigurationReq));
   /// System Information INIT
   LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Checking release \n",
@@ -5334,6 +5337,7 @@ openair_rrc_eNB_init(
     for (int ue_id = 0; ue_id < NUMBER_OF_UE_MAX; ue_id++) {
       RC.rrc[ctxt.module_id]->carrier[CC_id].sizeof_paging[ue_id] = 0;
       RC.rrc[ctxt.module_id]->carrier[CC_id].paging[ue_id] = (uint8_t *) malloc16(256);
+      
     }
   }
   rrc_init_global_param();
