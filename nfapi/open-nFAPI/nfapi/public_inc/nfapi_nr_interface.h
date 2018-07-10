@@ -331,7 +331,7 @@ typedef struct {
  
 typedef struct {
   nfapi_tl_t tl;
-  //uint8_t number_pdcch_ofdm_symbols;
+  uint8_t number_pdcch_ofdm_symbols;
   uint8_t   number_dci;
   uint16_t  number_pdu;
   uint8_t   number_pdsch_rnti;
