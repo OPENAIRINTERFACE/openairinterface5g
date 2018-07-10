@@ -33,16 +33,16 @@
 
 #include "rt_wrapper.h"
 
-#include "LAYER2/MAC/mac.h"
-#include "RRC/LTE/rrc_extern.h"
+#include "LAYER2/NR_MAC_UE/mac.h"
+//#include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "PHY/phy_extern_nr_ue.h"
-#include "LAYER2/MAC/mac_extern.h"
-#include "LAYER2/MAC/mac_proto.h"
+//#include "LAYER2/NR_MAC_UE/extern.h"
+#include "LAYER2/NR_MAC_UE/proto.h"
 
 #include "SCHED_NR/extern.h"
 //#ifndef NO_RAT_NR
@@ -734,7 +734,7 @@ void *UE_thread(void *arg) {
     init_UE_threads(UE);
 
 #ifdef NAS_UE
-    MessageDef *message_p;
+    //MessageDef *message_p;
     //message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
     //itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif
@@ -1037,6 +1037,7 @@ void init_UE_threads(PHY_VARS_NR_UE *UE) {
 
 
 #ifdef OPENAIR2
+/*
 void fill_ue_band_info(void) {
 
     UE_EUTRA_Capability_t *UE_EUTRA_Capability = UE_rrc_inst[0].UECap->UE_EUTRA_Capability;
@@ -1063,7 +1064,7 @@ void fill_ue_band_info(void) {
                 break;
             }
     }
-}
+}*/
 #endif
 
 int setup_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg) {

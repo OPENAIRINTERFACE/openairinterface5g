@@ -29,7 +29,7 @@
 
 */
 
-#include "defs.h"
+#include "mac_defs.h"
 
 NR_UE_MAC_INST_t UE_mac_inst;	//[NB_MODULE_MAX];
 
