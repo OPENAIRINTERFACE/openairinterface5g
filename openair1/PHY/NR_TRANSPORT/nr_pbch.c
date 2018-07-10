@@ -166,7 +166,7 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
       reset = 0;
     }
 #ifdef DEBUG_PBCH_ENCODING
-  printf("\ts: %04x\t", s);
+  printf("s: %04x\t", s);
 #endif
     if (bitwise) {
       (*pbch_a_prime) ^= ((unscrambling_mask>>i)&1)? (((*pbch_a_interleaved)>>i)&1)<<i : ((((*pbch_a_interleaved)>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;      
@@ -273,7 +273,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
   for (int i=0; i<NR_POLAR_PBCH_E>>3; i++)
-  printf("\tpbch_e[%d]: 0x%04x\t", i, pbch->pbch_e[i]);
+  printf("pbch_e[%d]: 0x%04x\t", i, pbch->pbch_e[i]);
   printf("\n");
 #endif
 
@@ -284,7 +284,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Scrambling:\n");
   for (int i=0; i<NR_POLAR_PBCH_E>>3; i++)
-  printf("\tpbch_e[%d]: 0x%04x\t", i, pbch->pbch_e[i]);
+  printf("pbch_e[%d]: 0x%04x\t", i, pbch->pbch_e[i]);
   printf("\n");
 #endif
 
