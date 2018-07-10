@@ -97,11 +97,10 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(const module_id_t module_id, const ui
    \param module_id  module id
    \param CC_id      component carrier id
    \param gNB_index  gNB index
-   \param frameP     pointer to frame for calculation
    \param channel    indicator for channel of the pdu
    \param pduP       pointer to pdu
    \param pdu_len    data length of pdu*/
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const uint32_t *frameP, const channel_t channel, const uint8_t* pduP, const sdu_size_t pdu_len);
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const channel_t channel, const uint8_t* pduP, const sdu_size_t pdu_len);
 
 /** @}*/
 #endif

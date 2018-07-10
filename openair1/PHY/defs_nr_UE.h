@@ -578,57 +578,109 @@ typedef struct {
 #define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearchSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
 #ifdef NR_PDCCH_DEFS_NR_UE
 
+#define MAX_NR_DCI_DECODED_SLOT 10
 #define NBR_NR_FORMATS         8
-#define NBR_NR_DCI_FIELDS     48
-// The following parameters define 'position' of each DCI field described in TS 38.212
-#define CARRIER_IND                      0
-#define SUL_IND_0_1                      1
-#define IDENTIFIER_DCI_FORMATS           2
+#define NBR_NR_DCI_FIELDS     56
+
+#define IDENTIFIER_DCI_FORMATS           0
+#define CARRIER_IND                      1
+#define SUL_IND_0_1                      2
 #define SLOT_FORMAT_IND                  3
 #define PRE_EMPTION_IND                  4
 #define TPC_CMD_NUMBER                   5
 #define BLOCK_NUMBER                     6
 #define BANDWIDTH_PART_IND               7
-#define FREQ_DOM_RESOURCE_ASSIGNMENT_UL  8
-#define FREQ_DOM_RESOURCE_ASSIGNMENT_DL  9
-#define TIME_DOM_RESOURCE_ASSIGNMENT    10
-#define VRB_TO_PRB_MAPPING              11
-#define PRB_BUNDLING_SIZE_IND           12
-#define RATE_MATCHING_IND               13
-#define ZP_CSI_RS_TRIGGER               14
-#define FREQ_HOPPING_FLAG               15
-#define TB1_MCS                         16
-#define TB1_NDI                         17
-#define TB1_RV                          18
-#define TB2_MCS                         19
-#define TB2_NDI                         20
-#define TB2_RV                          21
-#define MCS                             22
-#define NDI                             23
-#define RV                              24
-#define HARQ_PROCESS_NUMBER             25
-#define DAI_                            26
-#define FIRST_DAI                       27
-#define SECOND_DAI                      28
-#define TPC_PUSCH                       29
-#define TPC_PUCCH                       30
-#define PUCCH_RESOURCE_IND              31
-#define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 32
-#define SHORT_MESSAGE_IND               33
-#define SRS_RESOURCE_IND                34
-#define PRECOD_NBR_LAYERS               35
-#define ANTENNA_PORTS                   36
-#define TCI                             37
-#define SRS_REQUEST                     38
-#define TPC_CMD_NUMBER_FORMAT2_3        39
-#define CSI_REQUEST                     40
-#define CBGTI                           41
-#define CBGFI                           42
-#define PTRS_DMRS                       43
-#define BETA_OFFSET_IND                 44
-#define DMRS_SEQ_INI                    45
-#define SUL_IND_0_0                     46
-#define PADDING                         47
+#define SHORT_MESSAGE_IND                8
+#define SHORT_MESSAGES                   9
+#define FREQ_DOM_RESOURCE_ASSIGNMENT_UL 10
+#define FREQ_DOM_RESOURCE_ASSIGNMENT_DL 11
+#define TIME_DOM_RESOURCE_ASSIGNMENT    12
+#define VRB_TO_PRB_MAPPING              13
+#define PRB_BUNDLING_SIZE_IND           14
+#define RATE_MATCHING_IND               15
+#define ZP_CSI_RS_TRIGGER               16
+#define FREQ_HOPPING_FLAG               17
+#define TB1_MCS                         18
+#define TB1_NDI                         19
+#define TB1_RV                          20
+#define TB2_MCS                         21
+#define TB2_NDI                         22
+#define TB2_RV                          23
+#define MCS                             24
+#define NDI                             25
+#define RV                              26
+#define HARQ_PROCESS_NUMBER             27
+#define DAI_                            28
+#define FIRST_DAI                       29
+#define SECOND_DAI                      30
+#define TB_SCALING                      31
+#define TPC_PUSCH                       32
+#define TPC_PUCCH                       33
+#define PUCCH_RESOURCE_IND              34
+#define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 35
+//#define SHORT_MESSAGE_IND             33
+#define SRS_RESOURCE_IND                36
+#define PRECOD_NBR_LAYERS               37
+#define ANTENNA_PORTS                   38
+#define TCI                             39
+#define SRS_REQUEST                     40
+#define TPC_CMD_NUMBER_FORMAT2_3        41
+#define CSI_REQUEST                     42
+#define CBGTI                           43
+#define CBGFI                           44
+#define PTRS_DMRS                       45
+#define BETA_OFFSET_IND                 46
+#define DMRS_SEQ_INI                    47
+#define UL_SCH_IND                      48
+#define PADDING_NR_DCI                  49
+#define SUL_IND_0_0                     50
+#define RA_PREAMBLE_INDEX               51
+#define SUL_IND_1_0                     52
+#define SS_PBCH_INDEX                   53
+#define PRACH_MASK_INDEX                54
+#define RESERVED_NR_DCI                 55
+
+
+typedef enum {
+  _format_0_0_found=0,
+  _format_0_1_found=1,
+  _format_1_0_found=2,
+  _format_1_1_found=3,
+  _format_2_0_found=4,
+  _format_2_1_found=5,
+  _format_2_2_found=6,
+  _format_2_3_found=7} format_found_t;
+#define TOTAL_NBR_SCRAMBLED_VALUES 13
+#define _C_RNTI_           0
+#define _CS_RNTI_          1
+#define _NEW_RNTI_         2
+#define _TC_RNTI_          3
+#define _P_RNTI_           4
+#define _SI_RNTI_          5
+#define _RA_RNTI_          6
+#define _SP_CSI_RNTI_      7
+#define _SFI_RNTI_         8
+#define _INT_RNTI_         9
+#define _TPC_PUSCH_RNTI_  10
+#define _TPC_PUCCH_RNTI_  11
+#define _TPC_SRS_RNTI_    12
+  typedef enum {
+      _c_rnti         = _C_RNTI_,
+      _cs_rnti        = _CS_RNTI_,
+      _new_rnti       = _NEW_RNTI_,
+      _tc_rnti        = _TC_RNTI_,
+      _p_rnti         = _P_RNTI_,
+      _si_rnti        = _SI_RNTI_,
+      _ra_rnti        = _RA_RNTI_,
+      _sp_csi_rnti    = _SP_CSI_RNTI_,
+      _sfi_rnti       = _SFI_RNTI_,
+      _int_rnti       = _INT_RNTI_,
+      _tpc_pusch_rnti = _TPC_PUSCH_RNTI_,
+      _tpc_pucch_rnti = _TPC_PUCCH_RNTI_,
+      _tpc_srs_rnti   = _TPC_SRS_RNTI_} crc_scrambled_t;
+
+
+
 
 typedef enum {bundle_n2=2,bundle_n3=3,bundle_n6=6} NR_UE_CORESET_REG_bundlesize_t;
 

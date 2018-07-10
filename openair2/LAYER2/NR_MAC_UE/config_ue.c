@@ -47,7 +47,7 @@ nr_rrc_mac_config_req_ue(
 //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
 
     if(mibP != NULL){
-        ;
+        mac->mib = mibP;    //  update by every reception
     }
 
     if(mac_cell_group_configP != NULL){

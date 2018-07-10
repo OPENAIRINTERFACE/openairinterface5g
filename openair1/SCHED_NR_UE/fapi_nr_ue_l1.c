@@ -19,38 +19,25 @@
  *      contact@openairinterface.org
  */
 
-/*! \file l2_interface.c
- * \brief layer 2 interface, used to support different RRC sublayer
- * \author Raymond Knopp and Navid Nikaein
- * \date 2010-2014
- * \version 1.0
+/*! \file fapi_nr_ue_l1.c
+ * \brief functions for NR UE FAPI-like interface
+ * \author R. Knopp
+ * \date 2018
+ * \version 0.1
  * \company Eurecom
- * \email: raymond.knopp@eurecom.fr
+ * \email: knopp@eurecom.fr
+ * \note
+ * \warning
  */
 
-#include "rrc_defs.h"
-#include "rrc_proto.h"
+#include "fapi_nr_ue_interface.h"
+#include "fapi_nr_ue_l1.h"
 
-typedef uint32_t channel_t;
-
-int8_t
-nr_mac_rrc_data_ind_ue(
-    const module_id_t     module_id,
-    const int             CC_id,
-    const uint8_t         gNB_index,
-    const channel_t       channel,
-    const uint8_t*        pduP,
-    const sdu_size_t      pdu_len){
-
-    switch(channel){
-        case NR_BCCH_BCH:
-            nr_rrc_ue_decode_NR_BCCH_BCH_Message( module_id, gNB_index, (uint8_t*)pduP, pdu_len);
-            break;
-        default:
-            break;
-    }
+int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
+	return 0;
+}
 
 
-    return(0);
-
+int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
+	return 0;
 }

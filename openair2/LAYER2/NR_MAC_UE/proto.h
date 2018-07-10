@@ -32,15 +32,14 @@
 #include "defs.h"
 
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
-   \param module_id     module id
-   \param CC_id         component carrier id
-   \param gNB_index     gNB index
-   \param extra_bits    extra bits for frame calculation
-   \param ssb_index     SSB index for frame calculation
-   \param frameP        pointer to frame for revising after frame calculation
-   \param pduP          pointer to pdu
-   \param pdu_length    length of pdu*/
-void nr_ue_decode_mib(module_id_t module_id, int CC_id, uint8_t gNB_index, uint8_t extra_bits, uint32_t ssb_index, uint32_t *frameP, void *pduP, uint16_t pdu_len);
+   \param module_id      module id
+   \param CC_id          component carrier id
+   \param gNB_index      gNB index
+   \param extra_bits     extra bits for frame calculation
+   \param l_ssb_equal_64 check if ssb number of candicate is equal 64, 1=equal; 0=non equal. Reference 38.212 7.1.1
+   \param pduP           pointer to pdu
+   \param pdu_length     length of pdu*/
+int8_t nr_ue_decode_mib(module_id_t module_id, int CC_id, uint8_t gNB_index, uint8_t extra_bits, uint32_t l_ssb_equal_64, void *pduP, uint16_t pdu_len);
 
 
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
