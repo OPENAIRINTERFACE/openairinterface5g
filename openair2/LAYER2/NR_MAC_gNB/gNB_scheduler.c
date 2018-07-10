@@ -72,10 +72,10 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 frame_t frameP, 
                                 sub_frame_t subframeP){
 
-  nfapi_dl_config_request_t      *DL_req = &gNB->DL_req[0];
-  nfapi_ul_config_request_t      *UL_req = &gNB->UL_req[0];
-  nfapi_hi_dci0_request_t   *HI_DCI0_req = &gNB->HI_DCI0_req[0];
-  nfapi_tx_request_t             *TX_req = &gNB->TX_req[0];
+  nfapi_nr_dl_config_request_t    *DL_req = &gNB->DL_req[0];
+  nfapi_ul_config_request_t       *UL_req = &gNB->UL_req[0];
+  nfapi_hi_dci0_request_t   *     HI_DCI0_req = &gNB->HI_DCI0_req[0];
+  nfapi_tx_request_t              *TX_req = &gNB->TX_req[0];
 
   gNB->pdu_index[CC_idP] = 0;
 
@@ -85,7 +85,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
     DL_req[CC_idP].dl_config_request_body.number_dci                          = 0;
     DL_req[CC_idP].dl_config_request_body.number_pdu                          = 0;
     DL_req[CC_idP].dl_config_request_body.number_pdsch_rnti                   = 0;
-    DL_req[CC_idP].dl_config_request_body.transmission_power_pcfich           = 6000;
+    //DL_req[CC_idP].dl_config_request_body.transmission_power_pcfich           = 6000;
 
     HI_DCI0_req[CC_idP].hi_dci0_request_body.sfnsf                            = subframeP + (frameP<<4);
     HI_DCI0_req[CC_idP].hi_dci0_request_body.number_of_dci                    = 0;
@@ -99,17 +99,17 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   }
 }
-
+/*
 void check_nr_ul_failure(module_id_t module_idP, 
                          int CC_id, 
                          int UE_id,
                          frame_t frameP, 
                          sub_frame_t subframeP) {
 
-  UE_list_t                 *UE_list = &RC.nrmac[module_idP]->UE_list;
-  nfapi_dl_config_request_t  *DL_req = &RC.nrmac[module_idP]->DL_req[0];
-  uint16_t                      rnti = UE_RNTI(module_idP, UE_id);
-  COMMON_channels_t              *cc = RC.nrmac[module_idP]->common_channels;
+  UE_list_t                     *UE_list  = &RC.nrmac[module_idP]->UE_list;
+  nfapi_nr_dl_config_request_t  *DL_req   = &RC.nrmac[module_idP]->DL_req[0];
+  uint16_t                      rnti      = UE_RNTI(module_idP, UE_id);
+  NR_COMMON_channels_t          *cc       = RC.nrmac[module_idP]->common_channels;
 
   // check uplink failure
   if ((UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 0) &&
@@ -120,7 +120,7 @@ void check_nr_ul_failure(module_id_t module_idP,
       UE_list->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 1;
 
       // add a format 1A dci for this UE to request an RA procedure (only one UE per subframe)
-      nfapi_dl_config_request_pdu_t *dl_config_pdu                    = &DL_req[CC_id].dl_config_request_body.dl_config_pdu_list[DL_req[CC_id].dl_config_request_body.number_pdu];
+      nfapi_nr_dl_config_request_pdu_t *dl_config_pdu                    = &DL_req[CC_id].dl_config_request_body.dl_config_pdu_list[DL_req[CC_id].dl_config_request_body.number_pdu];
       memset((void *) dl_config_pdu, 0,sizeof(nfapi_dl_config_request_pdu_t));
       dl_config_pdu->pdu_type                                         = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
       dl_config_pdu->pdu_size                                         = (uint8_t) (2 + sizeof(nfapi_dl_config_dci_dl_pdu));
@@ -175,7 +175,7 @@ void check_nr_ul_failure(module_id_t module_idP,
   }       // ul_failure_timer>0
 
 }
-
+*/
 void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
@@ -258,200 +258,6 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
   }
 }
 
-void
-schedule_nr_CSI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
-{
-  gNB_MAC_INST                   *gNB = RC.nrmac[module_idP];
-  UE_list_t                      *UE_list = &gNB->UE_list;
-  COMMON_channels_t              *cc;
-  nfapi_ul_config_request_body_t *ul_req;
-  int                            CC_id, UE_id;
-  struct CQI_ReportPeriodic      *cqi_ReportPeriodic;
-  uint16_t                       Npd, N_OFFSET_CQI;
-  int                            H;
-
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-
-    cc = &gNB->common_channels[CC_id];
-    for (UE_id = 0; UE_id < MAX_MOBILES_PER_GNB; UE_id++) {
-      if (!UE_list->active[UE_id]) continue;
-
-      ul_req = &RC.nrmac[module_idP]->UL_req[CC_id].ul_config_request_body;
-
-      // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
-      if (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
-
-      AssertFatal(UE_list->
-      UE_template[CC_id][UE_id].physicalConfigDedicated
-      != NULL,
-      "physicalConfigDedicated is null for UE %d\n",
-      UE_id);
-
-      if (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig) {
-  if ((cqi_ReportPeriodic = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic) != NULL
-      && (cqi_ReportPeriodic->present != CQI_ReportPeriodic_PR_release)) {
-    //Rel8 Periodic CQI/PMI/RI reporting
-
-    get_csi_params(cc, cqi_ReportPeriodic, &Npd,
-       &N_OFFSET_CQI, &H);
-
-    if ((((frameP * 10) + subframeP) % Npd) == N_OFFSET_CQI) {  // CQI opportunity
-      UE_list->UE_sched_ctrl[UE_id].feedback_cnt[CC_id] = (((frameP * 10) + subframeP) / Npd) % H;
-      // Program CQI
-      nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
-      memset((void *) ul_config_pdu, 0,
-       sizeof(nfapi_ul_config_request_pdu_t));
-      ul_config_pdu->pdu_type                                                          = NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE;
-      ul_config_pdu->pdu_size                                                          = 2 + (uint8_t) (2 + sizeof(nfapi_ul_config_uci_cqi_pdu));
-      ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.tl.tag             = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
-      ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.rnti               = UE_list->UE_template[CC_id][UE_id].rnti;
-      ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.tl.tag           = NFAPI_UL_CONFIG_REQUEST_CQI_INFORMATION_REL8_TAG;
-      ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.pucch_index      = cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex;
-      ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.dl_cqi_pmi_size  = get_rel8_dl_cqi_pmi_size(&UE_list->UE_sched_ctrl[UE_id], CC_id, cc,
-                              get_tmode(module_idP, CC_id, UE_id),
-                              cqi_ReportPeriodic);
-      ul_req->number_of_pdus++;
-      ul_req->tl.tag                                                                   = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
-
-#if defined(Rel10) || defined(Rel14)
-      // PUT rel10-13 UCI options here
-#endif
-    } else
-      if ((cqi_ReportPeriodic->choice.setup.ri_ConfigIndex)
-    && ((((frameP * 10) + subframeP) % ((H * Npd) << (*cqi_ReportPeriodic->choice.setup.ri_ConfigIndex / 161))) == N_OFFSET_CQI + (*cqi_ReportPeriodic->choice.setup.ri_ConfigIndex % 161))) {  // RI opportunity
-        // Program RI
-        nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
-        memset((void *) ul_config_pdu, 0,
-         sizeof(nfapi_ul_config_request_pdu_t));
-        ul_config_pdu->pdu_type                                                          = NFAPI_UL_CONFIG_UCI_CQI_PDU_TYPE;
-        ul_config_pdu->pdu_size                                                          = 2 + (uint8_t) (2 + sizeof(nfapi_ul_config_uci_cqi_pdu));
-        ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.tl.tag             = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
-        ul_config_pdu->uci_cqi_pdu.ue_information.ue_information_rel8.rnti               = UE_list->UE_template[CC_id][UE_id].rnti;
-        ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.tl.tag           = NFAPI_UL_CONFIG_REQUEST_CQI_INFORMATION_REL8_TAG;
-        ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.pucch_index      = cqi_ReportPeriodic->choice.setup.cqi_PUCCH_ResourceIndex;
-        ul_config_pdu->uci_cqi_pdu.cqi_information.cqi_information_rel8.dl_cqi_pmi_size  = (cc->p_eNB == 2) ? 1 : 2;
-        RC.nrmac[module_idP]->UL_req[CC_id].sfn_sf                                         = (frameP << 4) + subframeP;
-        ul_req->number_of_pdus++;
-        ul_req->tl.tag                                                                   = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
-      }
-  }   // if ((cqi_ReportPeriodic = cqi_ReportConfig->cqi_ReportPeriodic)!=NULL) {
-      }     // if (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig)
-    }     // for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
-  }       // for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-}
-
-void
-schedule_nr_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
-{
-  gNB_MAC_INST                   *gNB = RC.nrmac[module_idP];
-  UE_list_t                      *UE_list = &gNB->UE_list;
-  nfapi_ul_config_request_t      *ul_req;
-  nfapi_ul_config_request_body_t *ul_req_body;
-  int                            CC_id;
-  int                            UE_id;
-  SchedulingRequestConfig_t      *SRconfig;
-  int                            skip_ue;
-  int                            is_harq;
-  nfapi_ul_config_sr_information sr;
-  int                            i;
-
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    RC.nrmac[module_idP]->UL_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
-
-    for (UE_id = 0; UE_id < MAX_MOBILES_PER_GNB; UE_id++) {
-      if (!RC.nrmac[module_idP]->UE_list.active[UE_id]) continue;
-
-      ul_req        = &RC.nrmac[module_idP]->UL_req[CC_id];
-      ul_req_body   = &ul_req->ul_config_request_body;
-
-      // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
-      if (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
-
-      AssertFatal(UE_list->
-      UE_template[CC_id][UE_id].physicalConfigDedicated!= NULL,
-      "physicalConfigDedicated is null for UE %d\n",
-      UE_id);
-
-      if ((SRconfig = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->schedulingRequestConfig) != NULL) {
-  if (SRconfig->present == SchedulingRequestConfig_PR_setup) {
-    if (SRconfig->choice.setup.sr_ConfigIndex <= 4) { // 5 ms SR period
-      if ((subframeP % 5) != SRconfig->choice.setup.sr_ConfigIndex) continue;
-    } else if (SRconfig->choice.setup.sr_ConfigIndex <= 14) { // 10 ms SR period
-      if (subframeP != (SRconfig->choice.setup.sr_ConfigIndex - 5)) continue;
-    } else if (SRconfig->choice.setup.sr_ConfigIndex <= 34) { // 20 ms SR period
-      if ((10 * (frameP & 1) + subframeP) != (SRconfig->choice.setup.sr_ConfigIndex - 15)) continue;
-    } else if (SRconfig->choice.setup.sr_ConfigIndex <= 74) { // 40 ms SR period
-      if ((10 * (frameP & 3) + subframeP) != (SRconfig->choice.setup.sr_ConfigIndex - 35)) continue;
-    } else if (SRconfig->choice.setup.sr_ConfigIndex <= 154) {  // 80 ms SR period
-      if ((10 * (frameP & 7) + subframeP) != (SRconfig->choice.setup.sr_ConfigIndex - 75)) continue;
-    }
-  }   // SRconfig->present == SchedulingRequestConfig_PR_setup)
-      }     // SRconfig = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->schedulingRequestConfig)!=NULL)
-
-      // if we get here there is some PUCCH1 reception to schedule for SR
-
-      skip_ue = 0;
-      is_harq = 0;
-      // check that there is no existing UL grant for ULSCH which overrides the SR
-      for (i = 0; i < ul_req_body->number_of_pdus; i++) {
-  if (((ul_req_body->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) || 
-       (ul_req_body->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE) || 
-       (ul_req_body->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE) || 
-       (ul_req_body->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_ULSCH_CQI_HARQ_RI_PDU_TYPE)) && 
-      (ul_req_body->ul_config_pdu_list[i].ulsch_pdu.ulsch_pdu_rel8.rnti == UE_list->UE_template[CC_id][UE_id].rnti)) {
-    skip_ue = 1;
-    break;
-  }
-  /* if there is already an HARQ pdu, convert to SR_HARQ */
-  else if ((ul_req_body->ul_config_pdu_list[i].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE) && 
-     (ul_req_body->ul_config_pdu_list[i].uci_harq_pdu.ue_information.ue_information_rel8.rnti == UE_list->UE_template[CC_id][UE_id].rnti)) {
-    is_harq = 1;
-    break;
-  }
-      }
-
-      // drop the allocation because ULSCH with handle it with BSR
-      if (skip_ue == 1) continue;
-
-      LOG_D(MAC,"Frame %d, Subframe %d : Scheduling SR for UE %d/%x is_harq:%d\n",frameP,subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].rnti, is_harq);
-
-      // check Rel10 or Rel8 SR
-#if defined(Rel10) || defined(Rel14)
-      if ((UE_list-> UE_template[CC_id][UE_id].physicalConfigDedicated->ext2)
-    && (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020)
-    && (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020)) {
-  sr.sr_information_rel10.tl.tag                    = NFAPI_UL_CONFIG_REQUEST_SR_INFORMATION_REL10_TAG;
-  sr.sr_information_rel10.number_of_pucch_resources = 1;
-  sr.sr_information_rel10.pucch_index_p1            = *UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020->sr_PUCCH_ResourceIndexP1_r10;
-  LOG_D(MAC,"REL10 PUCCH INDEX P1:%d\n", sr.sr_information_rel10.pucch_index_p1);
-      } else
-#endif
-  {
-    sr.sr_information_rel8.tl.tag                   = NFAPI_UL_CONFIG_REQUEST_SR_INFORMATION_REL8_TAG;
-    sr.sr_information_rel8.pucch_index              = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex;
-    LOG_D(MAC,"REL8 PUCCH INDEX:%d\n", sr.sr_information_rel8.pucch_index);
-  }
-
-      /* if there is already an HARQ pdu, convert to SR_HARQ */
-      if (is_harq) {
-  nfapi_ul_config_harq_information h                                                                                 = ul_req_body->ul_config_pdu_list[i].uci_harq_pdu.harq_information;
-  ul_req_body->ul_config_pdu_list[i].pdu_type                                                                        = NFAPI_UL_CONFIG_UCI_SR_HARQ_PDU_TYPE;
-  ul_req_body->ul_config_pdu_list[i].uci_sr_harq_pdu.sr_information                                                  = sr;
-  ul_req_body->ul_config_pdu_list[i].uci_sr_harq_pdu.harq_information                                                = h;
-      } else {
-  ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus].pdu_type                                              = NFAPI_UL_CONFIG_UCI_SR_PDU_TYPE;
-  ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus].uci_sr_pdu.ue_information.ue_information_rel8.tl.tag  = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
-  ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus].uci_sr_pdu.ue_information.ue_information_rel8.rnti    = UE_list->UE_template[CC_id][UE_id].rnti;
-  ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus].uci_sr_pdu.ue_information.ue_information_rel11.tl.tag = 0;
-  ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus].uci_sr_pdu.ue_information.ue_information_rel13.tl.tag = 0;
-  ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus].uci_sr_pdu.sr_information                             = sr;
-  ul_req_body->number_of_pdus++;
-      }     /* if (is_harq) */
-      ul_req_body->tl.tag                                                                                                  = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
-    }     // for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id])
-  }       // for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
-}
-
 void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
   int CC_id;
@@ -484,8 +290,6 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, 
                                frame_t frameP,
                                sub_frame_t subframeP){
-
-  int               mbsfn_status[MAX_NUM_CCs];
   protocol_ctxt_t   ctxt;
 
   int               CC_id, i = -1;
@@ -501,7 +305,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   RC.nrmac[module_idP]->subframe = subframeP;
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    mbsfn_status[CC_id] = 0;
+    //mbsfn_status[CC_id] = 0;
 
     // clear vrb_maps
     memset(cc[CC_id].vrb_map, 0, 100);
@@ -545,7 +349,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer,
             RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].cqi_req_timer);
       
-      check_nr_ul_failure(module_idP, CC_id, i, frameP, subframeP);
+      //check_nr_ul_failure(module_idP, CC_id, i, frameP, subframeP);
       
       if (RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer > 0) {
         RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ue_reestablishment_reject_timer++;
@@ -606,7 +410,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   
   pdcp_run(&ctxt);
 
-  rrc_rx_tx(&ctxt, CC_id);
+  //rrc_rx_tx(&ctxt, CC_id);
 
   // This schedules MIB
   if((subframeP == 0) && (frameP & 7) == 0){
@@ -642,11 +446,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if (RC.flexran[module_idP]->enabled)
     flexran_agent_send_update_stats(module_idP);
   
+  /*
   // Allocate CCEs for good after scheduling is done
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)
     allocate_CCEs(module_idP, CC_id, subframeP, 0);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
-
+  */
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_OUT);
 }

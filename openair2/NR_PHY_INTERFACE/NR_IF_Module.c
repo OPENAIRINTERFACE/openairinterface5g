@@ -263,7 +263,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
 
 
   // clear DL/UL info for new scheduling round
-  clear_nfapi_information(RC.nrmac[module_id],CC_id,UL_info->frame,UL_info->subframe);
+  clear_nr_nfapi_information(RC.nrmac[module_id],CC_id,UL_info->frame,UL_info->subframe);
 
   handle_nr_rach(UL_info);
 
