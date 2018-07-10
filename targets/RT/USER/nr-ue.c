@@ -61,8 +61,8 @@
 #include "T.h"
 
 extern double cpuf;
-static  nfapi_config_request_t config_t;
-static  nfapi_config_request_t* config =&config_t;
+static  nfapi_nr_config_request_t config_t;
+static  nfapi_nr_config_request_t* config =&config_t;
 
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL

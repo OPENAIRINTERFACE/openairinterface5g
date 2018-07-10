@@ -151,7 +151,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
   return 0;
 }
 
-int nr_init_frame_parms_ue(nfapi_config_request_t* config,
+int nr_init_frame_parms_ue(nfapi_nr_config_request_t* config,
                         NR_DL_FRAME_PARMS *frame_parms)
 {
 
