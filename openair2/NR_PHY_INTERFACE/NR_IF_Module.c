@@ -2,6 +2,7 @@
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "openair1/PHY/phy_extern.h"
 #include "LAYER2/MAC/mac_extern.h"
+#include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/ran_context.h"
 
@@ -284,7 +285,11 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
       eNB_dlsch_ulsch_scheduler(module_id,
           (UL_info->frame+((UL_info->subframe>(9-sf_ahead))?1:0)) % 1024,
           (UL_info->subframe+sf_ahead)%10);
-
+      /*
+      gNB_dlsch_ulsch_scheduler(module_id,
+          (UL_info->frame+((UL_info->subframe>(9-sf_ahead))?1:0)) % 1024,
+          (UL_info->subframe+sf_ahead)%10);
+      */
       ifi->CC_mask            = 0;
 
       sched_info->module_id   = module_id;

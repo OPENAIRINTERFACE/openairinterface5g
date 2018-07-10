@@ -107,6 +107,11 @@ typedef struct gNB_MAC_INST_s {
   sub_frame_t                     subframe;  
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
+    /// Common cell resources
+  NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
+  /// current PDU index (BCH,DLSCH)
+  uint16_t pdu_index[NFAPI_CC_MAX];
+
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_t       config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
@@ -121,12 +126,30 @@ typedef struct gNB_MAC_INST_s {
   nfapi_hi_dci0_request_t HI_DCI0_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure
   nfapi_tx_request_t TX_req[NFAPI_CC_MAX];
-  /// Common cell resources
-  NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
-  /// current PDU index (BCH,DLSCH)
-  uint16_t pdu_index[NFAPI_CC_MAX];
 
   UE_list_t UE_list;
+
+    // MAC function execution peformance profiler
+  /// processing time of eNB scheduler
+  time_stats_t eNB_scheduler;
+  /// processing time of eNB scheduler for SI
+  time_stats_t schedule_si;
+  /// processing time of eNB scheduler for Random access
+  time_stats_t schedule_ra;
+  /// processing time of eNB ULSCH scheduler
+  time_stats_t schedule_ulsch;
+  /// processing time of eNB DCI generation
+  time_stats_t fill_DLSCH_dci;
+  /// processing time of eNB MAC preprocessor
+  time_stats_t schedule_dlsch_preprocessor;
+  /// processing time of eNB DLSCH scheduler
+  time_stats_t schedule_dlsch;  // include rlc_data_req + MAC header + preprocessor
+  /// processing time of eNB MCH scheduler
+  time_stats_t schedule_mch;
+  /// processing time of eNB ULSCH reception
+  time_stats_t rx_ulsch_sdu;  // include rlc_data_ind
+  /// processing time of eNB PCH scheduler
+  time_stats_t schedule_pch;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_DEFS_H__ */
