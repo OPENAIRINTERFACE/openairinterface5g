@@ -95,7 +95,7 @@ struct T_header;
 #define T_ID(x) ((struct T_header *)(uintptr_t)(x))
 
 /* T macro tricks */
-
+extern int T_stdout;
 #define TN(...) TN_N(__VA_ARGS__,33,32,31,30,29,28,27,26,25,24,23,22,21,\
         20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)(__VA_ARGS__)
 #define TN_N(n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14,n15,n16,n17,\
@@ -110,7 +110,7 @@ typedef struct {
 
 extern volatile int *T_freelist_head;
 extern T_cache_t *T_cache;
-
+extern int *T_active;
 /* When running the basic simulator, we may fill the T cache too fast.
  * Let's not crash if it's full, just wait.
  */
