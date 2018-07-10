@@ -156,12 +156,18 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
   }
   // Scrambling is now done with offset (nushift*M)%32
   offset = (nushift*M)&0x1f;
+#ifdef DEBUG_PBCH_ENCODING
+  printf("Scrambling params: nushift %d M %d length %d bitwise %d offset %d\n", nushift, M, length, bitwise, offset);
+#endif
 
   for (int i=0; i<length; i++) {
     if (((i+offset)&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
     }
+#ifdef DEBUG_PBCH_ENCODING
+  printf("s: %04x\n", s);
+#endif
     if (bitwise) {
       (*pbch_a_prime) ^= ((unscrambling_mask>>i)&1)? (((*pbch_a_interleaved)>>i)&1)<<i : ((((*pbch_a_interleaved)>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;      
     }
@@ -256,20 +262,31 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   nushift = (((sfn>>2)&1)<<1) ^ ((sfn>>1)&1);
   nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_PAYLOAD_BITS, 1);
 #ifdef DEBUG_PBCH_ENCODING
-  
+  printf("Payload scrambling:\n");
+  for (int i=0; i<4; i++)
+  printf("pbch_a_prime[%d]: 0x%04x\n", i, pbch->pbch_a_prime[i]);
 #endif
 
 
   /// CRC, coding and rate matching
   polar_encoder (pbch->pbch_a_prime, pbch->pbch_e, &frame_parms->pbch_polar_params);
 #ifdef DEBUG_PBCH_ENCODING
-  
+  printf("Channel coding:\n");
+  for (int i=0; i<NR_POLAR_PBCH_E>>3; i++)
+  printf("pbch_e[%d]: 0x%04x", i, pbch->pbch_e[i]);
+  printf("\n");
 #endif
 
   /// Scrambling
   M =  NR_POLAR_PBCH_E;
   nushift = config->sch_config.physical_cell_id.value &3;;
   nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_E, 0);
+#ifdef DEBUG_PBCH_ENCODING
+  printf("Scrambling:\n");
+  for (int i=0; i<NR_POLAR_PBCH_E>>3; i++)
+  printf("pbch_e[%d]: 0x%04x", i, pbch->pbch_e[i]);
+  printf("\n");
+#endif
 
   /// QPSK modulation
   for (int i=0; i<NR_POLAR_PBCH_E>>1; i++){
