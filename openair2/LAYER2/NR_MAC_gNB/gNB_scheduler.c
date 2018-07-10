@@ -612,7 +612,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if((subframeP == 0) && (frameP & 7) == 0){
     schedule_nr_mib(module_idP, frameP, subframeP);
   }
-  
+  /*
   if (phy_test == 0){
     // This schedules SI for legacy LTE and eMTC starting in subframeP
     schedule_SI(module_idP, frameP, subframeP);
@@ -637,7 +637,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_ulsch_phy_test(module_idP,frameP,subframeP);
     schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
   }
-  
+  */
 
   if (RC.flexran[module_idP]->enabled)
     flexran_agent_send_update_stats(module_idP);

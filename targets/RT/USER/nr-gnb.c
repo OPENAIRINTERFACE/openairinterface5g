@@ -49,6 +49,7 @@
 #include "PHY/defs_gNB.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
+#include "SCHED_NR/fapi_nr_l1.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -928,8 +929,8 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
 
       LOG_I(PHY,"Registering with MAC interface module\n");
       AssertFatal((gNB->if_inst         = NR_IF_Module_init(inst))!=NULL,"Cannot register interface");
-      gNB->if_inst->schedule_response   = schedule_response;
-      gNB->if_inst->PHY_config_req      = nr_phy_config_request;
+      gNB->if_inst->NR_Schedule_response   = nr_schedule_response;
+      gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
       memset((void*)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
       memset((void*)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
       LOG_I(PHY,"Setting indication lists\n");

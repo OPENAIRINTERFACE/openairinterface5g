@@ -1,6 +1,7 @@
 #include "openair1/PHY/defs_eNB.h"
-#include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "openair1/PHY/phy_extern.h"
+#include "openair1/SCHED_NR/fapi_nr_l1.h"
+#include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
@@ -262,8 +263,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
 
 
   // clear DL/UL info for new scheduling round
-  clear_nfapi_information(RC.mac[module_id],CC_id,
-        UL_info->frame,UL_info->subframe);
+  clear_nfapi_information(RC.nrmac[module_id],CC_id,UL_info->frame,UL_info->subframe);
 
   handle_nr_rach(UL_info);
 
@@ -311,16 +311,16 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
       dump_dl(sched_info);
 #endif
 
-      if (ifi->schedule_response)
+      if (ifi->NR_Schedule_response)
       {
-        AssertFatal(ifi->schedule_response!=NULL,
-            "schedule_response is null (mod %d, cc %d)\n",
-            module_id,
-            CC_id);
-        ifi->schedule_response(sched_info);
+        AssertFatal(ifi->NR_Schedule_response!=NULL,
+                    "nr_schedule_response is null (mod %d, cc %d)\n",
+                    module_id,
+                    CC_id);
+        ifi->NR_Schedule_response(sched_info);
       }
 
-      LOG_D(PHY,"Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",sched_info->frame,sched_info->subframe,sched_info->DL_req->dl_config_request_body.number_pdu);
+      LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",sched_info->frame,sched_info->subframe,sched_info->DL_req->dl_config_request_body.number_pdu);
     }
   }
 }
@@ -336,7 +336,7 @@ NR_IF_Module_t *NR_IF_Module_init(int Mod_id){
     memset((void*)if_inst[Mod_id],0,sizeof(NR_IF_Module_t));
 
     if_inst[Mod_id]->CC_mask=0;
-    if_inst[Mod_id]->UL_indication = NR_UL_indication;
+    if_inst[Mod_id]->NR_UL_indication = NR_UL_indication;
 
     AssertFatal(pthread_mutex_init(&if_inst[Mod_id]->if_mutex,NULL)==0,
         "allocation of if_inst[%d]->if_mutex fails\n",Mod_id);

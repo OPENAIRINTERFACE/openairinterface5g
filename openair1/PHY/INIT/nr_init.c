@@ -35,6 +35,7 @@
 
 #include "PHY/NR_REFSIG/defs.h" 
 #include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "SCHED_NR/fapi_nr_l1.h"
 
 extern uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn);
 extern int32_t get_uldl_offset(int eutra_bandP);
@@ -64,8 +65,8 @@ int l1_north_init_gNB() {
 
         LOG_I(PHY,"%s() RC.gNB[%d][%d] installing callbacks\n", __FUNCTION__, i,  j);
 
-        RC.gNB[i][j]->if_inst->PHY_config_req = nr_phy_config_request;
-        RC.gNB[i][j]->if_inst->schedule_response = schedule_response;
+        RC.gNB[i][j]->if_inst->NR_PHY_config_req = nr_phy_config_request;
+        RC.gNB[i][j]->if_inst->NR_Schedule_response = nr_schedule_response;
       }
     }
   }

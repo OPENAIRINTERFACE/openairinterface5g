@@ -3,6 +3,17 @@
 
 #include "nfapi_interface.h"
 
+// nFAPI enums
+typedef enum {
+  NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE = 0,
+  NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE,
+  NFAPI_NR_DL_CONFIG_DLSCH_PDU_TYPE,
+  NFAPI_NR_DL_CONFIG_PCH_PDU_TYPE,
+  NFAPI_NR_DL_CONFIG_NBCH_PDU_TYPE,
+  NFAPI_NR_DL_CONFIG_NPDCCH_PDU_TYPE,
+  NFAPI_NR_DL_CONFIG_NDLSCH_PDU_TYPE
+} nfapi_nr_dl_config_pdu_type_e;
+
 //These TLVs are used exclusively by nFAPI
 typedef struct
 {
@@ -307,13 +318,13 @@ typedef struct {
   uint8_t pdu_type;
   uint8_t pdu_size;
   union {
-    nfapi_nr_dl_config_dci_dl_pdu_rel15_t     dci_dl_pdu;
-    nfapi_nr_dl_config_bch_pdu_rel15_t        bch_pdu;
-    nfapi_nr_dl_config_dlsch_pdu_rel15_t      dlsch_pdu;
-    nfapi_nr_dl_config_pch_pdu_rel15_t        pch_pdu;
-    nfapi_nr_dl_config_nbch_pdu_rel15_t       nbch_pdu;
-    nfapi_nr_dl_config_npdcch_pdu_rel15_t     npdcch_pdu;
-    nfapi_nr_dl_config_ndlsch_pdu_rel15_t     ndlsch_pdu;
+    nfapi_nr_dl_config_dci_dl_pdu_rel15_t     dci_dl_pdu_rel15;
+    nfapi_nr_dl_config_bch_pdu_rel15_t        bch_pdu_rel15;
+    nfapi_nr_dl_config_dlsch_pdu_rel15_t      dlsch_pdu_rel15;
+    nfapi_nr_dl_config_pch_pdu_rel15_t        pch_pdu_rel15;
+    nfapi_nr_dl_config_nbch_pdu_rel15_t       nbch_pdu_rel15;
+    nfapi_nr_dl_config_npdcch_pdu_rel15_t     npdcch_pdu_rel15;
+    nfapi_nr_dl_config_ndlsch_pdu_rel15_t     ndlsch_pdu_rel15;
   };
 
 } nfapi_nr_dl_config_request_pdu_t;

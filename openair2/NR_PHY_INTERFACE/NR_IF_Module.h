@@ -100,7 +100,7 @@ typedef struct{
   /// subframe
   sub_frame_t subframe;
   /// nFAPI DL Config Request
-  nfapi_dl_config_request_t *DL_req;
+  nfapi_nr_dl_config_request_t *DL_req;
   /// nFAPI UL Config Request
   nfapi_ul_config_request_t *UL_req;
   /// nFAPI HI_DCI Request
@@ -117,9 +117,9 @@ typedef struct {
 
 typedef struct NR_IF_Module_s{
 //define the function pointer
-  void (*UL_indication)(NR_UL_IND_t *UL_INFO);
-  void (*schedule_response)(NR_Sched_Rsp_t *Sched_INFO);
-  void (*PHY_config_req)(NR_PHY_Config_t* config_INFO);
+  void (*NR_UL_indication)(NR_UL_IND_t *UL_INFO);
+  void (*NR_Schedule_response)(NR_Sched_Rsp_t *Sched_INFO);
+  void (*NR_PHY_config_req)(NR_PHY_Config_t* config_INFO);
   uint32_t CC_mask;
   uint16_t current_frame;
   uint8_t current_subframe;
