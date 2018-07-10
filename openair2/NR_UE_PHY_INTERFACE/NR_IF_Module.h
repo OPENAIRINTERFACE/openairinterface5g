@@ -91,7 +91,7 @@ typedef struct {
     
     /// NR UE FAPI-like P5 message
     /// physical layer configuration request structure
-    fapi_nr_config_request_t *config_req;
+    fapi_nr_config_request_t config_req;
 
 } nr_phy_config_t;
 
@@ -127,7 +127,7 @@ typedef int8_t(nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
 
 
 //  TODO check this stuff can be reuse of need modification
-typedef struct IF_Module_s {
+typedef struct nr_ue_if_module_s {
     nr_ue_scheduled_response_f *scheduled_response;
     nr_ue_phy_config_request_f *phy_config_request;
     nr_ue_dl_indication_f      *dl_indication;
@@ -152,21 +152,6 @@ int8_t nr_ue_if_module_kill(uint32_t module_id);
 /**\brief interface between L1/L2, indicating the downlink related information, like dci_ind and rx_req
    \param dl_info including dci_ind and rx_request messages*/
 int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info);
-
-
-/**\brief register dl_indication into certain if_module_inst by module_id
-   \param f function pointer to dl_indication*/
-int8_t nr_ue_if_module_register_dl_indication(uint32_t module_id, nr_ue_dl_indication_f *f);
-
-
-/**\brief register phy_config_request into certain if_module_inst by module_id
-   \param f function pointer to phy_config_request*/
-int8_t nr_ue_if_module_register_phy_config_request(uint32_t module_id, nr_ue_phy_config_request_f *f);
-
-
-/**\brief register scheduled_response into certain if_module_inst by module_id
-   \param f function pointer to scheduled_response*/
-int8_t nr_ue_if_module_register_scheduled_response(uint32_t module_id, nr_ue_scheduled_response_f *f);
 
 
 /**\brief handle BCCH-BCH message from dl_indication

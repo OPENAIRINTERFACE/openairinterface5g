@@ -38,7 +38,6 @@ nr_mac_rrc_data_ind_ue(
     const module_id_t     module_id,
     const int             CC_id,
     const uint8_t         gNB_index,
-    const uint32_t*       frameP,
     const channel_t       channel,
     const uint8_t*        pduP,
     const sdu_size_t      pdu_len){

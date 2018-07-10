@@ -370,12 +370,17 @@ typedef struct {
     } fapi_nr_pucch_config_common_t;
 
     typedef struct {
+
         uint8_t subcarrier_spacing_common;
         uint8_t ssb_subcarrier_offset;
         uint8_t dmrs_type_a_position;
         uint8_t pdcch_config_sib1;
         uint8_t cell_barred;
         uint8_t intra_frquency_reselection;
+
+        uint16_t system_frame_number;
+        uint8_t ssb_index;
+        uint8_t half_frame_bit;
     } fapi_nr_pbch_config_t;
 
     typedef struct {
@@ -716,11 +721,18 @@ typedef struct {
         
     } fapi_nr_ul_bwp_dedicated_config_t;
 
+#define FAPI_NR_CONFIG_REQUEST_MASK_PBCH                0x01
+#define FAPI_NR_CONFIG_REQUEST_MASK_DL_BWP_COMMON       0x02
+#define FAPI_NR_CONFIG_REQUEST_MASK_UL_BWP_COMMON       0x04
+#define FAPI_NR_CONFIG_REQUEST_MASK_DL_BWP_DEDICATED    0x08
+#define FAPI_NR_CONFIG_REQUEST_MASK_UL_BWP_DEDICATED    0x10
+
 typedef struct {
     fapi_nr_p4_p5_message_header_t header;
     uint8_t num_tlv;
+    uint32_t config_mask;
 
-    fapi_nr_pbch_config_t pbch_config_common;  //  MIB
+    fapi_nr_pbch_config_t pbch_config;  //  MIB
 
     fapi_nr_dl_bwp_common_config_t     dl_bwp_common;
     fapi_nr_dl_bwp_dedicated_config_t  dl_bwp_dedicated;
