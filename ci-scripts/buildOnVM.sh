@@ -135,7 +135,7 @@ case $key in
     ARCHIVES_LOC=cppcheck
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
-    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c"
     shift
     ;;
     -v5)
@@ -200,7 +200,7 @@ case $key in
         ARCHIVES_LOC=cppcheck
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
-        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c"
         ;;
         gnb-usrp)
         VM_NAME=ci-gnb-usrp
