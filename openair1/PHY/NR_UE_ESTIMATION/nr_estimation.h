@@ -59,4 +59,14 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                               unsigned char p,
                               unsigned char l,
                               unsigned char symbol);
+
+int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
+                              uint8_t eNB_id,
+                              uint8_t eNB_offset,
+                              unsigned char Ns,
+                              unsigned char p,
+                              unsigned char l,
+                              unsigned char symbol,
+							  unsigned short bwp_start_subcarrier,
+							  unsigned short nb_rb_pdsch);
 #endif

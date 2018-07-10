@@ -995,7 +995,7 @@ typedef struct {
   uint32_t nr_gold_pdsch[2][20][2][21];
 
   /// PDCCH DMRS
-  uint32_t nr_gold_pdcch[2][20][3][10];
+  uint32_t nr_gold_pdcch[7][20][3][10];
 
   uint32_t X_u[64][839];
 

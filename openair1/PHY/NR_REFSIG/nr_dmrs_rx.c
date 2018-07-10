@@ -53,8 +53,9 @@ int wt2[12][2] = {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1
 short nr_mod_table[14] = {0,0,23170,-23170,-23170,23170,23170,-23170,23170,23170,-23170,-23170,-23170,23170};
 
 int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
+						uint8_t eNB_offset,
 						unsigned int Ns,
-						unsigned int nr_gold_pdcch[2][20][3][10],
+						unsigned int nr_gold_pdcch[7][20][3][10],
 						int32_t *output,
 						unsigned short p,
 						int length_dmrs,
@@ -87,7 +88,7 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
         			ind_dword = ind>>4;
         			ind_qpsk_symb = ind&0xf;
 
-        			output[k] = qpsk[(ue->nr_gold_pdcch[0][Ns][l][ind_dword]>>(2*ind_qpsk_symb))&3];
+        			output[k] = qpsk[(nr_gold_pdcch[eNB_offset][Ns][l][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 #ifdef DEBUG_DL_DMRS
           LOG_I(PHY,"Ns %d, p %d, ind_dword %d, ind_qpsk_symbol %d\n",
@@ -107,8 +108,9 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
 }
 
 int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
+						uint8_t eNB_offset,
 						unsigned int Ns,
-						unsigned int nr_gold_pdsch[2][20][2][21],
+						unsigned int nr_gold_pdsch[7][20][2][21],
 						int32_t *output,
 						unsigned short p,
 						int length_dmrs,
@@ -166,7 +168,7 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
         			ind_dword = ind>>4;
         			ind_qpsk_symb = ind&0xf;
 
-        			output[k] = qpsk_p[(ue->nr_gold_pdsch[0][Ns][lp][ind_dword]>>(2*ind_qpsk_symb))&3];
+        			output[k] = qpsk_p[(nr_gold_pdsch[0][Ns][lp][ind_dword]>>(2*ind_qpsk_symb))&3];
 
 
 #ifdef DEBUG_DL_DMRS

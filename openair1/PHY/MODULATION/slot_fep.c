@@ -52,6 +52,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   //NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns>>1]][0];
   uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset;
   uint16_t nb_rb_coreset = 24;
+  uint16_t bwp_start_subcarrier = frame_parms->first_carrier_offset;
+  uint16_t nb_rb_pdsch = 100;
 
   /*LTE_UE_DLSCH_t **dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id];
   unsigned char harq_pid = dlsch_ue[0]->current_harq_pid;
@@ -249,6 +251,28 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
                                     symbol,
 									coreset_start_subcarrier,
 									nb_rb_coreset);
+#if UE_TIMING_TRACE
+        stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+      }
+    break;
+
+  case NR_PDSCH_EST:
+      for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
+
+#ifdef DEBUG_FEP
+          printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
+#endif
+#if UE_TIMING_TRACE
+          start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+          nr_pdsch_channel_estimation(ue,eNB_id,0,
+                                    Ns,
+                                    aa,
+                                    l,
+                                    symbol,
+									bwp_start_subcarrier,
+									nb_rb_pdsch);
 #if UE_TIMING_TRACE
         stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
