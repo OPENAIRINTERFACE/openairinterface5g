@@ -181,7 +181,7 @@ int                             otg_enabled;
 //int                             number_of_cards =   1;
 
 static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
-static nfapi_config_request_t *config[MAX_NUM_CCs];
+static nfapi_nr_config_request_t *config[MAX_NUM_CCs];
 int16_t   node_synch_ref[MAX_NUM_CCs];
 
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
@@ -245,7 +245,7 @@ int emulate_rf = 0;
 threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
 
 /* forward declarations */
-void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
@@ -551,7 +551,7 @@ static void get_options (int argc, char **argv) {
 	  uint32_t online_log_messages;
 	  uint32_t glog_level, glog_verbosity;
 	  uint32_t start_telnetsrv;
-	  nfapi_config_request_t *config[MAX_NUM_CCs];
+	  nfapi_nr_config_request_t *config[MAX_NUM_CCs];
 
 	  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
 	  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
@@ -628,7 +628,7 @@ int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
-  void set_default_frame_parms(nfapi_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
+  void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
   int CC_id;
 
@@ -636,7 +636,7 @@ int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
         frame_parms[CC_id] = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
         /* Set some default values that may be overwritten while reading options */
         frame_parms[CC_id] = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
-        config[CC_id] = (nfapi_config_request_t*) malloc(sizeof(nfapi_config_request_t));
+        config[CC_id] = (nfapi_nr_config_request_t*) malloc(sizeof(nfapi_nr_config_request_t));
         config[CC_id]->subframe_config.numerology_index_mu.value =1;
         config[CC_id]->subframe_config.duplex_mode.value = 1; //FDD
         config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
@@ -695,7 +695,7 @@ int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 
 }
 
-void set_default_frame_parms_single(nfapi_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms) {
+void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms) {
 
   //int CC_id;
 
@@ -703,7 +703,7 @@ void set_default_frame_parms_single(nfapi_config_request_t *config, NR_DL_FRAME_
         frame_parms = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
         /* Set some default values that may be overwritten while reading options */
         frame_parms = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
-        config = (nfapi_config_request_t*) malloc(sizeof(nfapi_config_request_t));
+        config = (nfapi_nr_config_request_t*) malloc(sizeof(nfapi_nr_config_request_t));
         config->subframe_config.numerology_index_mu.value =1;
         config->subframe_config.duplex_mode.value = 1; //FDD
         config->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL

@@ -230,7 +230,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
 
   uint8_t Mod_id              = phy_config->Mod_id;
   int CC_id                   = phy_config->CC_id;
-  nfapi_config_request_t *cfg = phy_config->cfg;
+  nfapi_nr_config_request_t *cfg = phy_config->cfg;
 
   NR_DL_FRAME_PARMS *fp;
   PHICH_RESOURCE_t phich_resource_table[4]={oneSixth,half,one,two};
@@ -345,7 +345,7 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 /*void nr_phy_config_request(PHY_VARS_gNB *gNB)
 {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-  nfapi_config_request_t *gNB_config = &gNB->gNB_config;
+  nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
 
   //overwrite for new NR parameters
   gNB_config->nfapi_config.rf_bands.rf_band[0] = 22;

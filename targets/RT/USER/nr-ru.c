@@ -600,7 +600,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  nfapi_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   RU_proc_t *proc        = &ru->proc;
 
   uint16_t packet_type;
@@ -782,7 +782,7 @@ void tx_rf(RU_t *ru) {
 
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  nfapi_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   void *txp[ru->nb_tx]; 
   unsigned int txs;
   int i;
@@ -1281,7 +1281,7 @@ int setup_RU_buffers(RU_t *ru) {
   //uint16_t N_TA_offset = 0;
 
   NR_DL_FRAME_PARMS *frame_parms;
-  //nfapi_config_request_t *gNB_config = ru->gNB_list[0]->gNB_config; //tmp index
+  //nfapi_nr_config_request_t *gNB_config = ru->gNB_list[0]->gNB_config; //tmp index
   
   if (ru) {
     frame_parms = ru->nr_frame_parms;
@@ -1841,7 +1841,7 @@ void configure_ru(int idx,
   RU_t               *ru           = RC.ru[idx];
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t*)arg;
-  nfapi_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
   int ret;
 
   LOG_I(PHY, "Received capabilities from RRU %d\n",idx);
@@ -1885,7 +1885,7 @@ void configure_rru(int idx,
 
   RRU_config_t *config = (RRU_config_t *)arg;
   RU_t         *ru         = RC.ru[idx];
-  nfapi_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
 
   ru->nr_frame_parms->eutra_band                                               = config->band_list[0];
   ru->nr_frame_parms->dl_CarrierFreq                                           = config->tx_freq[0];
