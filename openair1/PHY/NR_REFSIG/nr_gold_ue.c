@@ -69,7 +69,6 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,unsigned int Nid_cell, unsigned short n_id
 
   unsigned char ns,l;
   unsigned int n,x1,x2,x2tmp0;
-  int nscid;
   unsigned int nid;
 
     if (n_idDMRS)
@@ -112,7 +111,7 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned int Nid_cell,
 {
 
   unsigned char ns,l;
-  unsigned int n,x1,x2,x2tmp0,x2tmp1, x2tmp2,x2s;
+  unsigned int n,x1,x2,x2tmp0;
   int nscid;
   unsigned int nid;
 
