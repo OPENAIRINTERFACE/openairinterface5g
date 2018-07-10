@@ -28,6 +28,7 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
   unsigned char Lmax, l, n_hf, N_hf;
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  uint8_t reset=1;
 
   Nid = cfg->sch_config.physical_cell_id.value;
 

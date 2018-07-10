@@ -34,7 +34,7 @@
 #include "assertions.h"
 #include <math.h>
 
-#include "PHY/NR_REFSIG/defs.h" 
+#include "PHY/NR_REFSIG/nr_refsig.h" 
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
 extern uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn);

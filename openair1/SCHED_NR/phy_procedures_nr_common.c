@@ -48,7 +48,7 @@ uint8_t nr_ss_first_symb_idx_type_0_mux1_FR1[8] = {0,0,1,2,1,2,1,2};
 
 
 
-nr_subframe_t nr_subframe_select(nfapi_config_request_t *cfg,unsigned char subframe)
+nr_subframe_t nr_subframe_select(nfapi_nr_config_request_t *cfg,unsigned char subframe)
 {
   if (cfg->subframe_config.duplex_mode.value == FDD)
     return(SF_DL);

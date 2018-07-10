@@ -40,7 +40,7 @@ extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 uint8_t nr_get_dci_size(nr_dci_format_e format,
                         nr_rnti_type_e rnti,
                         NR_BWP_PARMS* bwp,
-                        nfapi_config_request_t* config)
+                        nfapi_nr_config_request_t* config)
 {
   uint8_t size = 0;
   uint16_t N_RB = bwp->N_RB;

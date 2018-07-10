@@ -106,13 +106,13 @@ typedef unsigned __int128 uint128_t;
 uint8_t nr_get_dci_size(nr_dci_format_e format,
                         nr_rnti_type_e rnti,
                         NR_BWP_PARMS* bwp,
-                        nfapi_config_request_t* config);
+                        nfapi_nr_config_request_t* config);
 
 uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
                             uint32_t *gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS* frame_parms,
-                            nfapi_nr_config_request_t* config)
+                            nfapi_nr_config_request_t* config);
 
 #endif //__PHY_NR_TRANSPORT_DCI__H
