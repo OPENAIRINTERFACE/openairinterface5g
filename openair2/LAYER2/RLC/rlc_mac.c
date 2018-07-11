@@ -30,6 +30,7 @@
 //-----------------------------------------------------------------------------
 #define RLC_MAC_C
 #include "rlc.h"
+#include "LAYER2/RLC/UM_v9.3.0/rlc_um.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"

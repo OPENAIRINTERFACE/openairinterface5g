@@ -732,7 +732,6 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   int i;
   LTE_eNB_UCI *uci;
   uint16_t tdd_multiplexing_mask=0;
-  int res;
 
   for (i=0;i<NUMBER_OF_UE_MAX;i++) {
 

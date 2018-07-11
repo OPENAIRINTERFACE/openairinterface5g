@@ -30,6 +30,7 @@
 #include "rlc.h"
 #include "mem_block.h"
 #include "../MAC/mac_extern.h"
+#include "LAYER2/RLC/UM_v9.3.0/rlc_um.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
@@ -226,8 +227,7 @@ rlc_op_status_t rlc_stat_req     (
     *stat_rx_data_bytes_out_of_window     = 0;
     *stat_timer_poll_retransmit_timed_out = 0;
     *stat_timer_status_prohibit_timed_out = 0;
-    rlc_um_stat_req (ctxt_pP,
-                     &rlc_union_p->rlc.um,
+    rlc_um_stat_req (&rlc_union_p->rlc.um,
                      stat_tx_pdcp_sdu,
                      stat_tx_pdcp_bytes,
                      stat_tx_pdcp_sdu_discarded,

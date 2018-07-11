@@ -35,21 +35,6 @@
 #    ifndef __RLC_AM_WINDOWS_H__
 #        define __RLC_AM_WINDOWS_H__
 //-----------------------------------------------------------------------------
-#        ifdef RLC_AM_WINDOWS_C
-#            define private_rlc_am_windows(x)    x
-#            define protected_rlc_am_windows(x)  x
-#            define public_rlc_am_windows(x)     x
-#        else
-#            ifdef RLC_AM_MODULE
-#                define private_rlc_am_windows(x)
-#                define protected_rlc_am_windows(x)  extern x
-#                define public_rlc_am_windows(x)     extern x
-#            else
-#                define private_rlc_am_windows(x)
-#                define protected_rlc_am_windows(x)
-#                define public_rlc_am_windows(x)     extern x
-#            endif
-#        endif
 
 /*! \fn signed int rlc_am_in_tx_window(const protocol_ctxt_t* const  ctxt_pP,const rlc_am_entity_t* const rlc_pP, const rlc_sn_t snP)
 * \brief      Boolean function, check if sequence number is VT(A) <= snP < VT(MS).
@@ -58,10 +43,10 @@
 * \param[in]  snP               Sequence number.
 * \return 1 if snP in tx window, else 0.
 */
-protected_rlc_am_windows(signed int rlc_am_in_tx_window(
+signed int rlc_am_in_tx_window(
                            const protocol_ctxt_t* const  ctxt_pP,
                            const rlc_am_entity_t* const rlc_pP,
-                           const rlc_sn_t snP);)
+                           const rlc_sn_t snP);
 
 /*! \fn signed int rlc_am_in_rx_window(const protocol_ctxt_t* const  ctxt_pP,const rlc_am_entity_t* const rlc_pP, const rlc_sn_t snP)
 * \brief      Boolean function, check if sequence number is VR(R) <= snP < VR(MR).
@@ -70,10 +55,10 @@ protected_rlc_am_windows(signed int rlc_am_in_tx_window(
 * \param[in]  snP               Sequence number.
 * \return 1 if snP in rx window, else 0.
 */
-protected_rlc_am_windows(signed int rlc_am_in_rx_window(
+signed int rlc_am_in_rx_window(
                            const protocol_ctxt_t* const  ctxt_pP,
                            const rlc_am_entity_t* const rlc_pP,
-                           const rlc_sn_t snP);)
+                           const rlc_sn_t snP);
 
 /*! \fn signed int rlc_am_sn_gte_vr_h (const protocol_ctxt_t* const  ctxt_pP,const rlc_am_entity_t* const rlc_pP, const rlc_sn_t snP)
 * \brief      Boolean function, check if sequence number is greater than or equal VR(R).
@@ -82,10 +67,10 @@ protected_rlc_am_windows(signed int rlc_am_in_rx_window(
 * \param[in]  snP               Sequence number.
 * \return 1 if sequence number is greater than or equal VR(R), else 0.
 */
-protected_rlc_am_windows(signed int rlc_am_sn_gte_vr_h (
+signed int rlc_am_sn_gte_vr_h (
                            const protocol_ctxt_t* const  ctxt_pP,
                            const rlc_am_entity_t* const rlc_pP,
-                           const rlc_sn_t snP);)
+                           const rlc_sn_t snP);
 
 /*! \fn signed int rlc_am_sn_gte_vr_x (const protocol_ctxt_t* const  ctxt_pP,const rlc_am_entity_t* const rlc_pP, const rlc_sn_t snP)
 * \brief      Boolean function, check if sequence number is greater than or equal VR(X).
@@ -94,10 +79,10 @@ protected_rlc_am_windows(signed int rlc_am_sn_gte_vr_h (
 * \param[in]  snP               Sequence number.
 * \return 1 if sequence number is greater than or equal VR(X), else 0.
 */
-protected_rlc_am_windows(signed int rlc_am_sn_gte_vr_x (
+signed int rlc_am_sn_gte_vr_x (
                            const protocol_ctxt_t* const  ctxt_pP,
                            const rlc_am_entity_t* const rlc_pP,
-                           const rlc_sn_t snP);)
+                           const rlc_sn_t snP);
 
 /*! \fn signed int rlc_am_sn_gt_vr_ms (const protocol_ctxt_t* const  ctxt_pP,const rlc_am_entity_t* const rlc_pP, const rlc_sn_t snP)
 * \brief      Boolean function, check if sequence number is greater than VR(MS).
@@ -106,10 +91,10 @@ protected_rlc_am_windows(signed int rlc_am_sn_gte_vr_x (
 * \param[in]  snP               Sequence number.
 * \return 1 if sequence number is greater than VR(MS), else 0.
 */
-protected_rlc_am_windows(signed int rlc_am_sn_gt_vr_ms(
+signed int rlc_am_sn_gt_vr_ms(
                            const protocol_ctxt_t* const  ctxt_pP,
                            const rlc_am_entity_t* const rlc_pP,
-                           const rlc_sn_t snP);)
+                           const rlc_sn_t snP);
 
 /*! \fn signed int rlc_am_tx_sn1_gt_sn2 (const protocol_ctxt_t* const  ctxt_pP,const rlc_am_entity_t* const rlc_pP, const rlc_sn_t sn1P, const rlc_sn_t sn2P)
 * \brief      Boolean function, in the context of the tx window, check if sn1P is greater than sn2P.
@@ -119,11 +104,11 @@ protected_rlc_am_windows(signed int rlc_am_sn_gt_vr_ms(
 * \param[in]  sn2P              Sequence number.
 * \return 1 if sn1P is greater than sn2P, else 0.
 */
-protected_rlc_am_windows(signed int rlc_am_tx_sn1_gt_sn2(
+signed int rlc_am_tx_sn1_gt_sn2(
                            const protocol_ctxt_t* const  ctxt_pP,
                            const rlc_am_entity_t* const rlc_pP,
                            const rlc_sn_t sn1P,
-                           const rlc_sn_t sn2P);)
+                           const rlc_sn_t sn2P);
 
 /*! \fn signed int rlc_am_rx_sn1_gt_sn2(const protocol_ctxt_t* const  ctxt_pP,const rlc_am_entity_t* const rlc_pP, const rlc_sn_t sn1P, const rlc_sn_t sn2P)
 * \brief      Boolean function, in the context of the rx window, check if sn1P is greater than sn2P.
@@ -133,10 +118,10 @@ protected_rlc_am_windows(signed int rlc_am_tx_sn1_gt_sn2(
 * \param[in]  sn2P              Sequence number.
 * \return 1 if sn1P is greater than sn2P, else 0.
 */
-protected_rlc_am_windows(signed int rlc_am_rx_sn1_gt_sn2(
+signed int rlc_am_rx_sn1_gt_sn2(
                            const protocol_ctxt_t* const  ctxt_pP,
                            const rlc_am_entity_t* const rlc_pP,
                            const rlc_sn_t sn1P,
-                           const rlc_sn_t sn2P);)
+                           const rlc_sn_t sn2P);
 /** @} */
 #    endif
