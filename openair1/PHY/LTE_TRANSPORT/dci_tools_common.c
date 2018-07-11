@@ -1090,8 +1090,8 @@ uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
   else
     return((n+6)%10);
 
-LOG_E(PHY, "%s %s:%i pdcch allocation error\n",__FUNCTION__,__FILE__,__LINE__);
-return 0;
+  LOG_E(PHY, "%s %s:%i pdcch allocation error\n",__FUNCTION__,__FILE__,__LINE__);
+  return 0;
 }
 
 uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n)
