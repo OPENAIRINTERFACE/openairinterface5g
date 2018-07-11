@@ -642,7 +642,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   uint32_t *rxF = (uint32_t*)&rxdataF_comp[0][((int32_t)symbol*frame_parms->N_RB_DL*12)];
   uint32_t *llr32;
-  int i,len;
+  int len;
   uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
 
   /*
