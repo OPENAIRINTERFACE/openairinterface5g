@@ -44,7 +44,7 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
                                      (void *)mib,
                                      carrier->MIB,
                                      24);
-    LOG_I(NR_RRC,"Encoded MIB for frame %d (%p), bits %lu\n",sfn,carrier->MIB,enc_rval.encoded);
+    LOG_I(NR_RRC,"Encoded MIB for frame %d (%p), bits %lu\n",sfn_msb,carrier->MIB,enc_rval.encoded);
     buffer_pP[0]=carrier->MIB[0];
     buffer_pP[1]=carrier->MIB[1];
     buffer_pP[2]=carrier->MIB[2];
