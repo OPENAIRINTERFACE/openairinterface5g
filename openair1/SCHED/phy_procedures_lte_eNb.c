@@ -1769,12 +1769,13 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
       {
         int subframe_tx = (subframe+6)%10;
         int frame_tx = subframe_tx >= 6 ? (frame+1023)%1024 : frame;
-        if (ulsch_harq->o_ACK[i] != 1)
+        if (ulsch_harq->o_ACK[i] != 1) {
           T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
             T_INT(rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
-        else
+        } else {
           T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
             T_INT(rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
+        }
       }
 #endif
     }
@@ -1871,12 +1872,13 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
       {
         int subframe_tx = (subframe+6)%10;
         int frame_tx = subframe_tx >= 6 ? (frame+1023)%1024 : frame;
-        if (harq_ack[0] != 1)
+        if (harq_ack[0] != 1) {
           T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
             T_INT(uci->rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
-        else
+        } else {
           T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
             T_INT(uci->rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
+        }
       }
 #endif
     }

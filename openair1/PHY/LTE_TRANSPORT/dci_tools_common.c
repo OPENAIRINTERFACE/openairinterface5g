@@ -1089,6 +1089,8 @@ uint8_t ul_subframe2pdcch_alloc_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
     return(9);
   else
     return((n+6)%10);
+
+  LOG_E(PHY, "%s %s:%i pdcch allocation error\n",__FUNCTION__,__FILE__,__LINE__);
   return 0;
 }
 
@@ -1100,6 +1102,9 @@ uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, ui
       (frame_parms->tdd_config == 1)) {
     if ((n==1)||(n==6)||(n==4)||(n==9)) { // tdd_config 0,1 SF 1,5
       ul_frame = (frame + (n < 5 ? 0 : 1));
+    } else {
+    LOG_E(PHY, "frame %d subframe %d: PUSCH frame = ?\n", frame, n);
+    ul_frame = 0;
     }
   } else if ((frame_parms->frame_type == TDD) &&
            (frame_parms->tdd_config == 6) &&

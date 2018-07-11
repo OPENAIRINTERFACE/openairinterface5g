@@ -50,6 +50,7 @@
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
+#include "SCHED/sched_common.h"
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
@@ -62,6 +63,7 @@
 #include "T.h"
 
 #include "common/ran_context.h"
+#include "LAYER2/MAC/eNB_scheduler_fairRR.h"
 
 extern RAN_CONTEXT_t RC;
 
