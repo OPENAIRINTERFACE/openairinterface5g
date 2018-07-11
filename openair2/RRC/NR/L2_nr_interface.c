@@ -20,9 +20,9 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
                            uint8_t *const    buffer_pP ){
 
   asn_enc_rval_t enc_rval;
-  SRB_INFO *Srb_info;
-  uint8_t Sdu_size                = 0;
-  uint8_t sfn                     = (uint8_t)((frameP>>2)&0xff);
+  //SRB_INFO *Srb_info;
+  //uint8_t Sdu_size                = 0;
+  uint8_t sfn                     = (uint8_t)((frameP>>4)&0xff);
 
 #ifdef DEBUG_RRC
   int i;

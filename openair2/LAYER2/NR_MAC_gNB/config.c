@@ -215,11 +215,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
 
 
-  LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->PHY_config_req);
+  LOG_E(MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
 
   // if in nFAPI mode 
-  if ( (nfapi_mode == 1 || nfapi_mode == 2) && (RC.nrmac[Mod_idP]->if_inst->PHY_config_req == NULL) ){
-    while(RC.nrmac[Mod_idP]->if_inst->PHY_config_req == NULL) {
+  if ( (nfapi_mode == 1 || nfapi_mode == 2) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
+    while(RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) {
       // DJP AssertFatal(RC.nrmac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
       usleep(100 * 1000);
       printf("Waiting for PHY_config_req\n");
@@ -232,7 +232,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     phycfg.CC_id  = CC_idP;
     phycfg.cfg    = &RC.nrmac[Mod_idP]->config[CC_idP];
       
-    if (RC.nrmac[Mod_idP]->if_inst->PHY_config_req) RC.nrmac[Mod_idP]->if_inst->PHY_config_req(&phycfg); 
+    if (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req) RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg); 
       
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
   }
