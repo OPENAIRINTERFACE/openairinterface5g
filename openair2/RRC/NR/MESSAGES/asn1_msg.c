@@ -206,7 +206,7 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
   memset(mib->message.choice.mib,0,sizeof(struct NR_MIB));
   //36.331 SFN BIT STRING (SIZE (8)  , 38.331 SFN BIT STRING (SIZE (6))
   uint8_t sfn_msb = (uint8_t)((frame>>4)&0x3f);
-  mib->message.choice.mib->systemFrameNumber.buf = &sfn;
+  mib->message.choice.mib->systemFrameNumber.buf = &sfn_msb;
   mib->message.choice.mib->systemFrameNumber.size = 1;
   mib->message.choice.mib->systemFrameNumber.bits_unused=2;
 
