@@ -22,8 +22,8 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   asn_enc_rval_t enc_rval;
   //SRB_INFO *Srb_info;
   //uint8_t Sdu_size                = 0;
-  uint8_t sfn                     = (uint8_t)((frameP>>4)&0xff);
-
+  uint8_t sfn                     = (uint8_t)((frameP>>4)&0x3f);
+  
 #ifdef DEBUG_RRC
   int i;
   LOG_I(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
