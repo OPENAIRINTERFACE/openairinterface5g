@@ -3842,7 +3842,7 @@ void dlsch_channel_level_core(int **dl_ch_estimates_ext,
 
   short ii;
   int aatx,aarx;
-  int length_mod4;
+  int length_mod8;
   int length2;
   __m128i *dl_ch128, avg128D;
 
@@ -3856,11 +3856,11 @@ void dlsch_channel_level_core(int **dl_ch_estimates_ext,
 
       dl_ch128=(__m128i *)&dl_ch_estimates_ext[aatx*n_rx + aarx][start_point];
 
-      length_mod4=length&3;
+      length_mod8=length&7;
 
-      if (length_mod4 == 0){
+      if (length_mod8 == 0){
 
-        length2 = length>>2;
+        length2 = length>>3;
 
         for (ii=0;ii<length2;ii++) {
           avg128D = _mm_add_epi32(avg128D,_mm_srai_epi16(_mm_madd_epi16(dl_ch128[0],dl_ch128[0]),x));
@@ -4428,7 +4428,7 @@ void float_to_rxdataF(int32_t **rxdataF_ext,
         if (re==0){
           printf(" float_to_rxdataF: real = %f, imag = %f\n",creal(rxdataF_f[aarx][re]), cimag(rxdataF_f[aarx][re]));
           printf("float_to_rxdataF: real fixed = %d, imag fixed = %d\n", real, imag);
-          printf("float_to_rxdataF: ant %d, re = %d, rxdataF_ext = %d \n", aarx, re,  rxdataF_ext[aarx][symbol*nb_rb*12 + re]);
+          printf("float_to_rxdataF: ant %d, re = %d, rxdataF_ext = %d \n", aarx, re,  rxdataF_ext[aarx][start_point + re]);
         }
 #endif
       }
