@@ -58,6 +58,7 @@
 extern uint16_t frame_cnt;
 
 #include "common/ran_context.h"
+#include "SCHED/sched_common.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -1973,7 +1974,6 @@ int rrc_mac_remove_ue(module_id_t mod_idP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
 
-  int i;
   int j;
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
   int UE_id = find_UE_id(mod_idP,rntiP);
@@ -3321,7 +3321,7 @@ void get_retransmission_timing(TDD_Config_t *tdd_Config, frame_t *frameP,
             else
             {
                 AssertFatal(2 == 1,
-                        "Illegal dl subframe %d for tdd config %d\n", *subframeP,
+                        "Illegal dl subframe %d for tdd config %ld\n", *subframeP,
                         tdd_Config->subframeAssignment);
             }
             break;
@@ -3350,7 +3350,7 @@ uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, su
             harq_pid = (((frame_cnt*1024 + abs_frameP) * 4) - 1 + get_dl_subframe_count(tdd_Config->subframeAssignment,subframeP))%7;//4 dl subframe in a frame
             if(harq_pid < 0)
               harq_pid += 7;
-            LOG_D(MAC,"[frame_subframe2_dl_harq_pid] (%d,%d) calculate harq_pid ((( %d * 1024 + %d) *4) - 1 + %d)%7 = %d \n",
+            LOG_D(MAC,"[frame_subframe2_dl_harq_pid] (%d,%d) calculate harq_pid ((( %d * 1024 + %d) *4) - 1 + %d) = %d \n",
                     (abs_frameP+1024)%1024,subframeP,frame_cnt,abs_frameP,
                     get_dl_subframe_count(tdd_Config->subframeAssignment,subframeP),harq_pid);
             return harq_pid;

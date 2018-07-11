@@ -42,21 +42,6 @@
 //#        include "rlc.h"
 #        include "platform_types.h"
 //-----------------------------------------------------------------------------
-#        ifdef RLC_TM_INIT_C
-#            define private_rlc_tm_init(x)    x
-#            define protected_rlc_tm_init(x)  x
-#            define public_rlc_tm_init(x)     x
-#        else
-#            ifdef RLC_TM_MODULE
-#                define private_rlc_tm_init(x)
-#                define protected_rlc_tm_init(x)  extern x
-#                define public_rlc_tm_init(x)     extern x
-#            else
-#                define private_rlc_tm_init(x)
-#                define protected_rlc_tm_init(x)
-#                define public_rlc_tm_init(x)     extern x
-#            endif
-#        endif
 
 typedef volatile struct rlc_tm_info_s {
   uint8_t             is_uplink_downlink;
@@ -75,35 +60,35 @@ typedef volatile struct rlc_tm_info_s {
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  chan_idP                  Transport channel identifier.
 */
-public_rlc_tm_init(   void config_req_rlc_tm (
+void config_req_rlc_tm (
                         const protocol_ctxt_t* const  ctxt_pP,
                         const srb_flag_t  srb_flagP,
                         const rlc_tm_info_t * const config_tmP,
                         const rb_id_t     rb_idP,
-                        const logical_chan_id_t chan_idP);) 
+                        const logical_chan_id_t chan_idP); 
 
 /*! \fn void rlc_tm_init (const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP)
 * \brief    Initialize a RLC TM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC TM protocol instance will be in RLC_NULL_STATE state.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 */
-protected_rlc_tm_init(void rlc_tm_init (
+void rlc_tm_init (
                         const protocol_ctxt_t* const  ctxt_pP,
-                        rlc_tm_entity_t * const rlcP);)
+                        rlc_tm_entity_t * const rlcP);
 
 /*! \fn void rlc_tm_reset_state_variables (const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP)
 * \brief    Reset protocol variables and state variables to initial values.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 */
-protected_rlc_tm_init(void rlc_tm_reset_state_variables (
+void rlc_tm_reset_state_variables (
                         const protocol_ctxt_t* const  ctxt_pP,
-                        rlc_tm_entity_t * const rlcP);)
+                        rlc_tm_entity_t * const rlcP);
 
 /*! \fn void rlc_tm_cleanup(rlc_tm_entity_t * const rlcP)
 * \brief    Free all allocated memory (lists and buffers) previously allocated by this RLC TM instance.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 */
-public_rlc_tm_init(   void rlc_tm_cleanup(
-                        rlc_tm_entity_t * const rlcP);)
+void rlc_tm_cleanup(
+                        rlc_tm_entity_t * const rlcP);
 
 /*! \fn void rlc_tm_configure(const protocol_ctxt_t* const  ctxt_pP,rlc_tm_entity_t * const rlcP, const boolean_t is_uplink_downlinkP)
 * \brief    Configure RLC TM protocol parameters.
@@ -111,10 +96,10 @@ public_rlc_tm_init(   void rlc_tm_cleanup(
 * \param[in]  is_uplink_downlinkP       Is this instance is TRANSMITTER_ONLY,
 RECEIVER_ONLY, or TRANSMITTER_AND_RECEIVER.
 */
-protected_rlc_tm_init(void rlc_tm_configure(
+void rlc_tm_configure(
                         const protocol_ctxt_t* const  ctxt_pP,
                         rlc_tm_entity_t * const rlcP,
-                        const boolean_t is_uplink_downlinkP);)
+                        const boolean_t is_uplink_downlinkP);
 
 /*! \fn void rlc_tm_set_debug_infos(const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP, const rb_id_t rb_idP, const srb_flag_t srb_flagP)
 * \brief    Set debug informations for a RLC TM protocol instance, these informations are only for trace purpose.
@@ -123,12 +108,12 @@ protected_rlc_tm_init(void rlc_tm_configure(
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  chan_idP                  Transport channel identifier
 */
-protected_rlc_tm_init(void rlc_tm_set_debug_infos(
+void rlc_tm_set_debug_infos(
                         const protocol_ctxt_t* const  ctxt_pP,
                         rlc_tm_entity_t * const       rlcP,
                         const srb_flag_t              srb_flagP,
                         const rb_id_t                 rb_idP,
-                        const logical_chan_id_t chan_idP);)
+                        const logical_chan_id_t chan_idP);
 
 /** @} */
 #    endif
