@@ -1,18 +1,16 @@
+//
 // Comments
 
 pipeline {
     // The node should be selected with a 'label' parameter
     // trying to use NodeLabel plugin to pass it, currently failing to do so
     agent {
-        label 'bellatrix'
+        label 'starsky'
     }
     options {
         disableConcurrentBuilds()
         timestamps()
-        // When performing commit status updates and merge requests comments
-        // the connection name SHALL be here.
-        // So please use the same connection name and use proper credentials
-        gitLabConnection('OAI GitLab')
+        ansiColor('xterm')
     }
     // the following parameter options are commented out so it shows the ones
     // that you SHALL have to run the job.
@@ -86,7 +84,7 @@ pipeline {
                 }
             }
         }
-        stage ("Build on eNB server") {
+        stage ("Build eNB") {
             steps {
                 script {
                     dir ('ci-scripts') {
@@ -96,7 +94,47 @@ pipeline {
                                 [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
                                 [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
                             ]) {
-                                sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${GIT_URL} --eNBBranch=${GIT_BRANCH} --eNBCommitID=${GIT_COMMIT} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password}"
+                                sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${GIT_URL} --eNBBranch=${GIT_BRANCH} --eNBCommitID=${GIT_COMMIT} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=xml_files/build_enb_usrp_start_epc.xml"
+                            }
+                        } catch (Exception e) {
+                            sh "./ci-scripts/fail.sh"
+                            currentBuild.result = 'FAILURE'
+                        }
+                    }
+                }
+            }
+        }
+        stage ("Test eNB - Band 7 - USRP210 - 5MHz") {
+            steps {
+                script {
+                    dir ('ci-scripts') {
+                        try {
+                            withCredentials([
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
+                            ]) {
+                                sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${GIT_URL} --eNBBranch=${GIT_BRANCH} --eNBCommitID=${GIT_COMMIT} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=xml_files/enb_usrpB210_band7_50PRB.xml"
+                            }
+                        } catch (Exception e) {
+                            //sh "./ci-scripts/fail.sh"
+                            currentBuild.result = 'FAILURE'
+                        }
+                    }
+                }
+            }
+        }
+        stage ("Terminate All") {
+            steps {
+                script {
+                    dir ('ci-scripts') {
+                        try {
+                            withCredentials([
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
+                            ]) {
+                                sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${GIT_URL} --eNBBranch=${GIT_BRANCH} --eNBCommitID=${GIT_COMMIT} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=xml_files/terminate_epc.xml"
                             }
                         } catch (Exception e) {
                             //sh "./ci-scripts/fail.sh"
@@ -149,32 +187,28 @@ pipeline {
                                     sh "python3 main.py --mode=LogCollectSPGW --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type} "
                                     sh "python3 main.py --mode=LogCollectMME --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type} "
                                     sh "python3 main.py --mode=LogCollectHSS --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type} "
-                                    if ("OAI".equals(params.EPC_Type)) {
-                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/spgw.log.zip ./spgw.log.${env.BUILD_ID}.zip || true"
-                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/mme.log.zip ./mme.log.${env.BUILD_ID}.zip || true"
-                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/hss.log.zip ./hss.log.${env.BUILD_ID}.zip || true"
-                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd ${EPC_SourceCodePath}; cd scripts; if [ -e spgw.log.zip ]; then rm spgw.log.zip; fi;'"
-                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd ${EPC_SourceCodePath}; cd scripts; if [ -e mme.log.zip ]; then rm mme.log.zip; fi;'"
-                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd ${EPC_SourceCodePath}; cd scripts; if [ -e hss.log.zip ]; then rm hss.log.zip; fi;'"
-                                    } else {
-                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:/home/${EPC_Username}/spgw.log.zip ./spgw.log.${env.BUILD_ID}.zip || true"
-                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:/home/${EPC_Username}/mme.log.zip ./mme.log.${env.BUILD_ID}.zip || true"
-                                        sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:/home/${EPC_Username}/hss.log.zip ./hss.log.${env.BUILD_ID}.zip || true"
-                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd /home/${EPC_Username}; if [ -e spgw.log.zip ]; then rm spgw.log.zip; fi;'"
-                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd /home/${EPC_Username}; if [ -e mme.log.zip ]; then rm mme.log.zip; fi;'"
-                                        sh "sshpass -p \'${EPC_Password}\' ssh -t -t -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress} 'cd /home/${EPC_Username}; if [ -e hss.log.zip ]; then rm hss.log.zip; fi;'"
-                                    }
-                                    if(fileExists("spgw.log.${env.BUILD_ID}.zip")) {
+                                    sh "python3 main.py --mode=LogCollectPing --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type} "
+
+                                    sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/*.log.zip . || true"
+                                    if(fileExists("spgw.log.zip")) {
+                                        sh "mv spgw.log.zip ./spgw.log.${env.BUILD_ID}.zip"
                                         archiveArtifacts "spgw.log.${env.BUILD_ID}.zip"
                                         sh "rm spgw.log.${env.BUILD_ID}.zip"
                                     }
-                                    if(fileExists("mme.log.${env.BUILD_ID}.zip")) {
+                                    if(fileExists("mme.log.zip")) {
+                                        sh "mv mme.log.zip ./mme.log.${env.BUILD_ID}.zip"
                                         archiveArtifacts "mme.log.${env.BUILD_ID}.zip"
                                         sh "rm mme.log.${env.BUILD_ID}.zip"
                                     }
-                                    if(fileExists("hss.log.${env.BUILD_ID}.zip")) {
+                                    if(fileExists("hss.log.zip")) {
+                                        sh "mv hss.log.zip ./hss.log.${env.BUILD_ID}.zip"
                                         archiveArtifacts "hss.log.${env.BUILD_ID}.zip"
                                         sh "rm hss.log.${env.BUILD_ID}.zip"
+                                    }
+                                    if(fileExists("ping.log.zip")) {
+                                        sh "mv ping.log.zip ./ping.log.${env.BUILD_ID}.zip"
+                                        archiveArtifacts "ping.log.${env.BUILD_ID}.zip"
+                                        sh "rm ping.log.${env.BUILD_ID}.zip"
                                     }
                                 }
                             }
@@ -199,6 +233,23 @@ pipeline {
                 }
             }
             */
+        }
+        failure {
+            script {
+                dir ('ci-scripts') {
+                    try {
+                        withCredentials([
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
+                        ]) {
+                            sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${GIT_URL} --eNBBranch=${GIT_BRANCH} --eNBCommitID=${GIT_COMMIT} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=xml_files/terminate_epc.xml"
+                        }
+                    } catch (Exception e) {
+                        echo "could not properly terminate everything"
+                    }
+                }
+            }
         }
     }
 }

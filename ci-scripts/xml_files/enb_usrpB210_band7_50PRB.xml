@@ -1,0 +1,43 @@
+<testCaseList>
+	<TestCaseRequestedList>030101 040101 040301 040501 040401 040201 030201</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="030101">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band1/5MHz/info)</desc>
+		<Initialize_eNB_args>enb.band7.tm1.50PRB.usrpb210.conf</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
+	</testCase>
+
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
+	</testCase>
+
+	<testCase id="040201">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+	</testCase>
+
+        <testCase id="040301">
+                <class>Attach_UE</class>
+                <desc>Attach UE</desc>
+        </testCase>
+
+        <testCase id="040401">
+                <class>Detach_UE</class>
+                <desc>Detach UE</desc>
+        </testCase>
+
+        <testCase id="040501">
+                <class>Ping</class>
+                <desc>ping (20 sec)</desc>
+                <ping_args>-c 20</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
+</testCaseList>
