@@ -184,7 +184,7 @@ uint8_t nr_pbch_payload_interleaver(uint8_t i) {
   uint8_t j_sfn=0, j_hrf=10, j_ssb=11, j_other=14;
 
   if (18<=i && i<=27) //Sfn bits
-    return nr_pbch_payload_interleaving_pattern[j_sfn + i -24];
+    return nr_pbch_payload_interleaving_pattern[j_sfn + i -18];
   else if (i==28) // Hrf bit
     return nr_pbch_payload_interleaving_pattern[j_hrf];
   else if (29<=i) // Ssb bits
@@ -250,8 +250,12 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
     in |= (uint32_t)(pbch->pbch_a[i]<<((3-i)<<3));
 
-  for (int i=0; i<32; i++)
+  for (int i=0; i<32; i++) {
     out |= ((in>>i)&1)<<(nr_pbch_payload_interleaver(i));
+#ifdef DEBUG_PBCH_ENCODING
+  printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, in, out, nr_pbch_payload_interleaver(i), (in>>i)&1);
+#endif
+  }
 
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
     pbch->pbch_a_interleaved[i] = (uint8_t)((out>>(i<<3))&0xff);
