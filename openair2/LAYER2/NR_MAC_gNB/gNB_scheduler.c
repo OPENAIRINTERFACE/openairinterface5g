@@ -182,7 +182,7 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
   UE_list_t *UE_list = &gNB->UE_list;
   nfapi_ul_config_request_body_t *ul_req;
   int CC_id, UE_id;
-  COMMON_channels_t *cc = RC.nrmac[module_idP]->common_channels;
+  NR_COMMON_channels_t *cc = RC.nrmac[module_idP]->common_channels;
   SoundingRS_UL_ConfigCommon_t *soundingRS_UL_ConfigCommon;
   struct SoundingRS_UL_ConfigDedicated *soundingRS_UL_ConfigDedicated;
   uint8_t TSFC;

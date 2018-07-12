@@ -599,18 +599,18 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int32_t                srb1_poll_byte                = 0;
   int32_t                srb1_max_retx_threshold       = 0;
 
-  int32_t             my_int;
+  //int32_t             my_int;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   ////////// Identification parameters
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
   ////////// Physical parameters
-  checkedparam_t config_check_CCparams[] = NRCCPARAMS_CHECK;
+  //checkedparam_t config_check_CCparams[] = NRCCPARAMS_CHECK;
   paramdef_t CCsParams[] = NRCCPARAMS_DESC;
   paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
   
-  paramdef_t SRB1Params[] = SRB1PARAMS_DESC;  
+  //paramdef_t SRB1Params[] = SRB1PARAMS_DESC;  
 
   /* get global parameters, defined outside any section in the config file */
  
