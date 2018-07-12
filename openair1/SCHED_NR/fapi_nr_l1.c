@@ -45,7 +45,7 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
   AssertFatal(dl_config_pdu->bch_pdu_rel15.length == 3, "BCH PDU has length %d != 3\n",
               dl_config_pdu->bch_pdu_rel15.length);
 
-  LOG_I(PHY,"bch_pdu: %x,%x,%x\n",sdu[0],sdu[1],sdu[2]);
+  LOG_I(PHY,"pbch_pdu[0]: %x,pbch_pdu[1]: %x,gNB->pbch_pdu[2]: %x\n",sdu[0],sdu[1],sdu[2]);
   gNB->pbch_pdu[0] = sdu[2];
   gNB->pbch_pdu[1] = sdu[1];
   gNB->pbch_pdu[2] = sdu[0];

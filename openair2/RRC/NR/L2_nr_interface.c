@@ -38,13 +38,13 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   mib     = &carrier->mib;
 
   if( (Srb_id & RAB_OFFSET ) == MIBCH) {
-    mib->message.choice.mib->systemFrameNumber.buf = &sfn_msb;
+    mib->message.choice.mib->systemFrameNumber.buf = sfn_msb << 2;
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_BCH_Message,
                                      NULL,
                                      (void *)mib,
                                      carrier->MIB,
                                      24);
-    LOG_I(NR_RRC,"Encoded MIB for frame %d (%p), bits %lu\n",sfn_msb,carrier->MIB,enc_rval.encoded);
+    LOG_I(NR_RRC,"Encoded MIB for frame %d sfn_msb %d (%p), bits %lu\n",frameP,sfn_msb,carrier->MIB,enc_rval.encoded);
     buffer_pP[0]=carrier->MIB[0];
     buffer_pP[1]=carrier->MIB[1];
     buffer_pP[2]=carrier->MIB[2];
