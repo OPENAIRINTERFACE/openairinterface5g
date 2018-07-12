@@ -238,7 +238,7 @@ void nr_feptx_ofdm(RU_t *ru) {
       }
 
       // if S-subframe generate first slot only
-      if (nr_subframe_select(fp,subframe) == SF_S)
+      if (nr_subframe_select(cfg,subframe) == SF_S)
 	len = fp->samples_per_subframe / fp->slots_per_subframe;
       else
 	len = fp->samples_per_subframe;
