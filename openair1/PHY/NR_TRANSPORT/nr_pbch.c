@@ -258,7 +258,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   for (int i=0; i<32; i++) {
     out |= ((in>>i)&1)<<(nr_pbch_payload_interleaving_pattern[i]);
 #ifdef DEBUG_PBCH_ENCODING
-  printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, in, out, nr_pbch_payload_interleaver(i), (in>>i)&1);
+  printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, in, out, nr_pbch_payload_interleaving_pattern[i], (in>>i)&1);
 #endif
   }
 
