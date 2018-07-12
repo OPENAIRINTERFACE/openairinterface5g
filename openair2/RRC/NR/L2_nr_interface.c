@@ -38,7 +38,7 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   mib     = &carrier->mib;
 
   if( (Srb_id & RAB_OFFSET ) == MIBCH) {
-    mib->message.choice.mib->systemFrameNumber.buf = sfn_msb << 2;
+    mib->message.choice.mib->systemFrameNumber.buf = sfn_msb[0] << 2;
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_BCH_Message,
                                      NULL,
                                      (void *)mib,
