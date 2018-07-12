@@ -205,10 +205,11 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
   mib->message.choice.mib = CALLOC(1,sizeof(struct NR_MIB));
   memset(mib->message.choice.mib,0,sizeof(struct NR_MIB));
   //36.331 SFN BIT STRING (SIZE (8)  , 38.331 SFN BIT STRING (SIZE (6))
-  uint8_t sfn = (uint8_t)((frame>>2)&0x3f);
-  mib->message.choice.mib->systemFrameNumber.buf = &sfn;
+  uint8_t sfn_msb = (uint8_t)((frame>>4)&0x3f);
+  mib->message.choice.mib->systemFrameNumber.buf = CALLOC(1,sizeof(uint8_t));
+  mib->message.choice.mib->systemFrameNumber.buf[0] = sfn_msb << 2;
   mib->message.choice.mib->systemFrameNumber.size = 1;
-  mib->message.choice.mib->systemFrameNumber.bits_unused=0;
+  mib->message.choice.mib->systemFrameNumber.bits_unused=2;
 
   //38.331 spare BIT STRING (SIZE (1))
   uint16_t *spare= calloc(1, sizeof(uint16_t));

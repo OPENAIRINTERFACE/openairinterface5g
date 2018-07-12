@@ -29,7 +29,7 @@
 #ifndef __LAYER2_MAC_PROTO_H__
 #define __LAYER2_MAC_PROTO_H__
 
-#include "defs.h"
+#include "mac_defs.h"
 
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
    \param module_id      module id

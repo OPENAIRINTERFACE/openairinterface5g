@@ -19,18 +19,23 @@
  *      contact@openairinterface.org
  */
 
-/*! \file vars.h
-* \brief mac vars
-* \author  Navid Nikaein and Raymond Knopp
-* \date 2010 - 2014
-* \version 1.0
-* \email navid.nikaein@eurecom.fr
-* @ingroup _mac
+/*! \file fapi_l1.h
+ * \brief function prototypes for FAPI L1 interface
+ * \author R. Knopp
+ * \date 2017
+ * \version 0.1
+ * \company Eurecom
+ * \email: knopp@eurecom.fr
+ * \note
+ * \warning
+ */
 
-*/
+#include "PHY/defs_gNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED/sched_common.h"
+#include "SCHED_NR/sched_nr.h"
+#include "nfapi_nr_interface.h"
 
-#include "mac_defs.h"
-
-NR_UE_MAC_INST_t UE_mac_inst;	//[NB_MODULE_MAX];
-
-
+void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO);

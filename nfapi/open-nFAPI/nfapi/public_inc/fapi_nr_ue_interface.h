@@ -79,8 +79,13 @@ typedef struct {
 	uint8_t redundancy_version;
     uint8_t harq_process;
     uint8_t tpc_command;
-
+    uint8_t padding_bits;
     uint8_t ul_sul_ind;
+    uint8_t ul_sch_indicator;
+
+    uint8_t random_access_preamble_index;
+    uint8_t ss_pbch_index;
+    uint8_t prach_mask_index;
 
     uint8_t carrier_indicator;
     uint8_t bwp_indndicator;
@@ -100,6 +105,9 @@ typedef struct {
     uint8_t pdsch_to_harq_feedback_timing_indicator;
 
     uint8_t short_messages_indicator;
+    uint8_t short_messages;
+    uint8_t tb_scaling;
+
 
     uint8_t prb_bundling_size_indicator;    //  38.214 chapter 5.1.2.3
     uint8_t rate_matching_indicator;
@@ -113,11 +121,12 @@ typedef struct {
     uint8_t preemption_indication_count;
     uint8_t *preemption_indications;    //  38.213 chapter 11.2
 
+    uint8_t block_number_count;         //  for F22 and F23
+    uint8_t *block_numbers;             //  for F22 and F23
+    uint8_t closed_loop_indicator;
+
     uint8_t tpc_command_count;
     uint8_t *tpc_command_numbers;
-
-    uint8_t block_number_count;
-    uint8_t *block_numbers;
     uint8_t dci2_3_srs_request;    //  38.212 table 7.3.1.1.2-5   
     uint8_t dci2_3_tpc_command;
 
