@@ -288,8 +288,8 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 
   /// Scrambling
   M =  NR_POLAR_PBCH_E;
-  nushift = config->sch_config.physical_cell_id.value &3;;
-  nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_E, 0);
+  nushift = (Lmax==4)? ssb_index&3 : ssb_index&7;
+  nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, (Lmax), M, NR_POLAR_PBCH_E, 0);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Scrambling:\n");
   for (int i=0; i<NR_POLAR_PBCH_E>>3; i++)
@@ -309,6 +309,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   }
 
   /// Resource mapping
+  nushift = config->sch_config.physical_cell_id.value &3;
   a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
   for (int aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
