@@ -1471,6 +1471,7 @@ set (MAC_SRC
   ${NR_MAC_DIR}/config.c
   ${NR_MAC_DIR}/gNB_scheduler.c
   ${NR_MAC_DIR}/gNB_scheduler_bch.c
+  ${NR_MAC_DIR}/gNB_scheduler_primitives.c
  )
 
 

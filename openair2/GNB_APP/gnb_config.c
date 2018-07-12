@@ -599,7 +599,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int32_t                srb1_poll_byte                = 0;
   int32_t                srb1_max_retx_threshold       = 0;
 
-  int32_t             my_int;
+  //int32_t             my_int;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   ////////// Identification parameters

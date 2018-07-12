@@ -176,13 +176,14 @@ void check_nr_ul_failure(module_id_t module_idP,
 
 }
 */
+/*
 void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   UE_list_t *UE_list = &gNB->UE_list;
   nfapi_ul_config_request_body_t *ul_req;
   int CC_id, UE_id;
-  COMMON_channels_t *cc = RC.nrmac[module_idP]->common_channels;
+  NR_COMMON_channels_t *cc = RC.nrmac[module_idP]->common_channels;
   SoundingRS_UL_ConfigCommon_t *soundingRS_UL_ConfigCommon;
   struct SoundingRS_UL_ConfigDedicated *soundingRS_UL_ConfigDedicated;
   uint8_t TSFC;
@@ -257,7 +258,7 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
     }     // SRS config
   }
 }
-
+*/
 void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
   int CC_id;

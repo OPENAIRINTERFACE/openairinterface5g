@@ -300,7 +300,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
       sched_info->DL_req      = &mac->DL_req[CC_id];
       sched_info->HI_DCI0_req = &mac->HI_DCI0_req[CC_id];
       if ((mac->common_channels[CC_id].tdd_Config==NULL) ||
-          (is_UL_sf(&mac->common_channels[CC_id],(sched_info->subframe+sf_ahead)%10)>0))
+          (is_nr_UL_sf(&mac->common_channels[CC_id],(sched_info->subframe+sf_ahead)%10)>0))
         sched_info->UL_req      = &mac->UL_req[CC_id];
       else
         sched_info->UL_req      = NULL;
