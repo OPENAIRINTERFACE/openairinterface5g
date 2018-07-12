@@ -176,6 +176,7 @@ void check_nr_ul_failure(module_id_t module_idP,
 
 }
 */
+/*
 void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
@@ -257,7 +258,7 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
     }     // SRS config
   }
 }
-
+*/
 void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
   int CC_id;

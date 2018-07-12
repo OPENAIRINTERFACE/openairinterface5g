@@ -207,7 +207,7 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
   //36.331 SFN BIT STRING (SIZE (8)  , 38.331 SFN BIT STRING (SIZE (6))
   uint8_t sfn_msb = (uint8_t)((frame>>4)&0x3f);
   mib->message.choice.mib->systemFrameNumber.buf = CALLOC(1,sizeof(uint8_t));
-  mib->message.choice.mib->systemFrameNumber.buf = sfn_msb[0] << 2;
+  mib->message.choice.mib->systemFrameNumber.buf[0] = sfn_msb << 2;
   mib->message.choice.mib->systemFrameNumber.size = 1;
   mib->message.choice.mib->systemFrameNumber.bits_unused=2;
 

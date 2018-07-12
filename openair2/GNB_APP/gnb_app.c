@@ -115,8 +115,9 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
   return register_gnb_pending;
 }
 # endif
-#endif
 */
+#endif
+
 
 /*------------------------------------------------------------------------------*/
 void *gNB_app_task(void *args_p)

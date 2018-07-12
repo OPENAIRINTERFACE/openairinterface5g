@@ -31,16 +31,20 @@
 
 #include "assertions.h"
 
+#include "LAYER2/MAC/mac.h"
 #include "LAYER2/NR_MAC_gNB/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
+
+#include "RRC/LTE/rrc_extern.h"
 #include "RRC/NR/nr_rrc_extern.h"
+#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
@@ -52,7 +56,7 @@
 #include "T.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
-#define DEBUG_eNB_SCHEDULER 1
+#define DEBUG_gNB_SCHEDULER 1
 
 #include "common/ran_context.h"
 
@@ -60,8 +64,7 @@ extern RAN_CONTEXT_t RC;
 
 extern int n_active_slices;
 
-int is_nr_UL_sf(NR_COMMON_channels_t * ccP, sub_frame_t subframeP)
-{
+int is_nr_UL_sf(NR_COMMON_channels_t * ccP, sub_frame_t subframeP){
   // if FDD return dummy value
   if (ccP->tdd_Config == NULL)
     return (0);
