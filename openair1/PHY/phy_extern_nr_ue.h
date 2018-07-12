@@ -23,7 +23,7 @@
 #define __PHY_EXTERN_UE__H__
 
 #include "PHY/defs_nr_UE.h"
-#include "common/ran_context.h"
+//#include "common/ran_context.h"
 
 extern  char* namepointer_chMag ;
 extern char* namepointer_log2;

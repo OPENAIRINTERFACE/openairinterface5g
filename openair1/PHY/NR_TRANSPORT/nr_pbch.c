@@ -183,7 +183,7 @@ uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6
 uint8_t nr_pbch_payload_interleaver(uint8_t i) {
   uint8_t j_sfn=0, j_hrf=10, j_ssb=11, j_other=14;
 
-  if (24<=i && i<=27) //Sfn bits
+  if (18<=i && i<=27) //Sfn bits
     return nr_pbch_payload_interleaving_pattern[j_sfn + i -24];
   else if (i==28) // Hrf bit
     return nr_pbch_payload_interleaving_pattern[j_hrf];
@@ -206,7 +206,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
                      NR_DL_FRAME_PARMS *frame_parms)
 {
 
-  int k,l,m;
+  int j,k,l,m;
   int16_t a;
   int16_t mod_pbch_e[NR_POLAR_PBCH_E];
   uint8_t idx=0;
@@ -225,7 +225,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Byte endian fix:\n");
   for (int i=0; i<4; i++)
-  printf("pbch_a[%d]: 0x%04x\n", i, pbch->pbch_a[i]);  
+  printf("pbch_a[%d]: 0x%02x\n", i, pbch->pbch_a[i]);
 #endif
 
     // Extra byte generation
@@ -242,18 +242,24 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Extra byte:\n");
   for (int i=0; i<4; i++)
-  printf("pbch_a[%d]: 0x%04x\n", i, pbch->pbch_a[i]);
+  printf("pbch_a[%d]: 0x%02x\n", i, pbch->pbch_a[i]);
 #endif
 
     // Payload interleaving
-  uint32_t* input = (uint32_t*)pbch->pbch_a;
-  uint32_t* output = (uint32_t*)pbch->pbch_a_interleaved;
-  for (int i=0; i<32; i++)
-    (*output) |= (((*input)>>i)&1)<<(nr_pbch_payload_interleaver(i));
+  uint8_t *in = &pbch->pbch_a[3];
+  uint8_t *out = &pbch->pbch_a_interleaved[3];
+  for (int i=0; i<32; i++) {
+    j = i&7;
+    if (!j) {
+      in--;
+      out--;
+    }
+    (*out) |= (((*in)>>j)&1)<<((nr_pbch_payload_interleaver(i))&7);
+  }
 #ifdef DEBUG_PBCH_ENCODING
   printf("Interleaving:\n");
   for (int i=0; i<4; i++)
-  printf("pbch_a_interleaved[%d]: 0x%04x\n", i, pbch->pbch_a_interleaved[i]);
+  printf("pbch_a_interleaved[%d]: 0x%02x\n", i, pbch->pbch_a_interleaved[i]);
 #endif
 
     // Scrambling
@@ -263,7 +269,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Payload scrambling:\n");
   for (int i=0; i<4; i++)
-  printf("pbch_a_prime[%d]: 0x%04x\n", i, pbch->pbch_a_prime[i]);
+  printf("pbch_a_prime[%d]: 0x%02x\n", i, pbch->pbch_a_prime[i]);
 #endif
 
 
@@ -272,7 +278,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
   for (int i=0; i<NR_POLAR_PBCH_E>>3; i++)
-  printf("pbch_e[%d]: 0x%04x\t", i, pbch->pbch_e[i]);
+  printf("pbch_e[%d]: 0x%02x\t", i, pbch->pbch_e[i]);
   printf("\n");
 #endif
 
@@ -283,7 +289,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("Scrambling:\n");
   for (int i=0; i<NR_POLAR_PBCH_E>>3; i++)
-  printf("pbch_e[%d]: 0x%04x\t", i, pbch->pbch_e[i]);
+  printf("pbch_e[%d]: 0x%02x\t", i, pbch->pbch_e[i]);
   printf("\n");
 #endif
 

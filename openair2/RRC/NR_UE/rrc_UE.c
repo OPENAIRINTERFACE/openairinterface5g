@@ -71,21 +71,21 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfig
 
     switch(rrcReconfiguration->criticalExtensions.present){
         case NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration:
-            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.radioBearerConfig != NULL){
+            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig != NULL){
                 if(NR_UE_rrc_inst->radio_bearer_config == NULL){
-                    NR_UE_rrc_inst->radio_bearer_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.radioBearerConfig;                
+                    NR_UE_rrc_inst->radio_bearer_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig;                
                 }else{
-                    nr_rrc_ue_process_radio_bearer_config(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.radioBearerConfig);
+                    nr_rrc_ue_process_radio_bearer_config(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig);
                 }
             }
 
-            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.secondaryCellGroup != NULL){
+            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup != NULL){
                 NR_CellGroupConfig_t *cellGroupConfig = NULL;
                 uper_decode(NULL,
                             &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
                             (void **)&cellGroupConfig,
-                            (uint8_t *)rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.secondaryCellGroup->buf,
-                            rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.secondaryCellGroup->size, 0, 0); 
+                            (uint8_t *)rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf,
+                            rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size, 0, 0); 
 
                 if(NR_UE_rrc_inst->cell_group_config == NULL){
                     //  first time receive the configuration, just use the memory allocated from uper_decoder. TODO this is not good implementation, need to maintain RRC_INST own structure every time.
@@ -100,21 +100,21 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfig
                 
             }
 
-            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.measConfig != NULL){
+            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->measConfig != NULL){
                 if(NR_UE_rrc_inst->meas_config == NULL){
-                    NR_UE_rrc_inst->meas_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.measConfig;
+                    NR_UE_rrc_inst->meas_config = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->measConfig;
                 }else{
                     //  if some element need to be updated
-                    nr_rrc_ue_process_meas_config(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.measConfig);
+                    nr_rrc_ue_process_meas_config(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->measConfig);
                 }
                
             }
 
-            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.lateNonCriticalExtension != NULL){
+            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->lateNonCriticalExtension != NULL){
                 //  unuse now
             }
 
-            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration.nonCriticalExtension != NULL){
+            if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->nonCriticalExtension != NULL){
                 // unuse now
             }
             break;
@@ -298,10 +298,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
                             buffer_len );
 
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-        LOG_E( RRC, "[UE %"PRIu8"] Failed to decode BCCH_DLSCH_MESSAGE (%zu bits)\n",
-               module_id,
-               dec_rval.consumed );
-
+        
         for (i=0; i<buffer_len; i++)
             printf("%02x ",bufferP[i]);
 
@@ -312,7 +309,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     }
 
     //  link to rrc instance
-    mib = &bcch_message->message.choice.mib;
+    mib = bcch_message->message.choice.mib;
     //memcpy( (void *)mib,
     //    (void *)&bcch_message->message.choice.mib,
     //    sizeof(NR_MIB_t) );
@@ -340,9 +337,6 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
                                             buffer_len, 0, 0); 
 
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-        LOG_E( RRC, "[UE %"PRIu8"] Failed to decode NR_DL_DCCH_Message (%zu bits)\n",
-               module_id,
-               dec_rval.consumed );
 
         for (i=0; i<buffer_len; i++)
             printf("%02x ",bufferP[i]);
@@ -357,9 +351,9 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
         switch(nr_dl_dcch_msg->message.present){            
             case NR_DL_DCCH_MessageType_PR_c1:
 
-                switch(nr_dl_dcch_msg->message.choice.c1.present){
+                switch(nr_dl_dcch_msg->message.choice.c1->present){
                     case NR_DL_DCCH_MessageType__c1_PR_rrcReconfiguration:
-                        nr_rrc_ue_process_rrcReconfiguration(&nr_dl_dcch_msg->message.choice.c1.choice.rrcReconfiguration);
+                        nr_rrc_ue_process_rrcReconfiguration(nr_dl_dcch_msg->message.choice.c1->choice.rrcReconfiguration);
                         break;
 
                     case NR_DL_DCCH_MessageType__c1_PR_NOTHING:
