@@ -793,10 +793,6 @@ int main( int argc, char **argv )
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   } 
       
-#ifdef DEBUG_CONSOLE
-  setvbuf(stdout, NULL, _IONBF, 0);
-  setvbuf(stderr, NULL, _IONBF, 0);
-#endif
 
   PHY_VARS_UE *UE[MAX_NUM_CCs];
 
@@ -851,11 +847,6 @@ int main( int argc, char **argv )
     set_comp_log(NAS,     LOG_INFO,   LOG_HIGH, 1);
 # endif
 #endif
-
-
-  if (ouput_vcd) {
-      VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_UE.vcd");
-  }
 
   cpuf=get_cpu_freq_GHz();
 
@@ -1251,9 +1242,6 @@ int main( int argc, char **argv )
   // *** Handle per CC_id openair0
   if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
     PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
-  
-  if (ouput_vcd)
-    VCD_SIGNAL_DUMPER_CLOSE();
   
   if (opt_enabled == 1)
     terminate_opt();

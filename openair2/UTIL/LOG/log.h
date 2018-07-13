@@ -300,7 +300,7 @@ int register_log_component(char *name, char *fext, int compidx);
  * @{*/
 
 #define logIt(component, level, format, args...) (g_log->log_component[component].interval?logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
-#define logItS(component, level, format, args...) (g_log->log_component[component].interval?logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
+
 
 /* @}*/
 
@@ -346,43 +346,29 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 // debugging macros(g_log->log_component[component].interval?logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
 #  if T_TRACER
 #    include "T.h"
-#    define LOG_I(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0) 
-#    define LOG_W(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_WARNING, x) ;} else { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)) ;}} while (0) 
-#    define LOG_E(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_ERR, x)     ;} else { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))   ;}} while (0) 
-#    define LOG_D(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0) 
-#    define LOG_T(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0) 
-#    define LOG_G(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_EMERG, x)   ;}} while (0) /* */
-#    define LOG_A(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_ALERT, x)   ;}} while (0) /* */
-#    define LOG_C(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_CRIT, x)    ;}} while (0) /* */
-#    define LOG_N(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_NOTICE, x)  ;}} while (0) /* */
-#    define LOG_F(c, x...) do { if (T_active[c] == T_ACTIVE_STDOUT) { logIt(c, LOG_FILE, x)  ;}}   while (0)  /* */
+#    define LOG_I(c, x...) do { if (T_stdout) { logIt(c, LOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0) 
+#    define LOG_W(c, x...) do { if (T_stdout) { logIt(c, LOG_WARNING, x) ;} else { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)) ;}} while (0) 
+#    define LOG_E(c, x...) do { if (T_stdout) { logIt(c, LOG_ERR, x)     ;} else { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))   ;}} while (0) 
+#    define LOG_D(c, x...) do { if (T_stdout) { logIt(c, LOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0) 
+#    define LOG_T(c, x...) do { if (T_stdout) { logIt(c, LOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0) 
+#    define LOG_G(c, x...) do { if (T_stdout) { logIt(c, LOG_EMERG, x)   ;}} while (0) /* */
+#    define LOG_A(c, x...) do { if (T_stdout) { logIt(c, LOG_ALERT, x)   ;}} while (0) /* */
+#    define LOG_C(c, x...) do { if (T_stdout) { logIt(c, LOG_CRIT, x)    ;}} while (0) /* */
+#    define LOG_N(c, x...) do { if (T_stdout) { logIt(c, LOG_NOTICE, x)  ;}} while (0) /* */
+#    define LOG_F(c, x...) do { if (T_stdout) { logIt(c, LOG_FILE, x)  ;}}   while (0)  /* */
 #    define LOG_M(file, vector, data, len, dec, format) write_file_matlab(file, vector, data, len, dec, format)/* */
 #  else /* T_TRACER */
-#    if DISABLE_LOG_X
-#        define LOG_I(c, x...) /* */
-#        define LOG_W(c, x...) /* */
-#        define LOG_E(c, x...) /* */
-#        define LOG_D(c, x...) /* */
-#        define LOG_T(c, x...) /* */
-#        define LOG_G(c, x...) /* */
-#        define LOG_A(c, x...) /* */
-#        define LOG_C(c, x...) /* */
-#        define LOG_N(c, x...) /* */
-#        define LOG_F(c, x...) /* */
-#        define LOG_M(file, vector, data, len, dec, format) /* */
-#    else  /*DISABLE_LOG_X*/
-#        define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
-#        define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
-#        define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
-#        define LOG_E(c, x...) logIt(c, LOG_ERR, x)
-#        define LOG_W(c, x...) logIt(c, LOG_WARNING, x)
-#        define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
-#        define LOG_I(c, x...) logIt(c, LOG_INFO, x)
-#        define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
-#        define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
-#        define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
-#        define LOG_M(file, vector, data, len, dec, format) write_file_matlab(file, vector, data, len, dec, format)
-#    endif /*DISABLE_LOG_X*/
+#    define LOG_I(c, x...) /* */
+#    define LOG_W(c, x...) /* */
+#    define LOG_E(c, x...) /* */
+#    define LOG_D(c, x...) /* */
+#    define LOG_T(c, x...) /* */
+#    define LOG_G(c, x...) /* */
+#    define LOG_A(c, x...) /* */
+#    define LOG_C(c, x...) /* */
+#    define LOG_N(c, x...) /* */
+#    define LOG_F(c, x...) /* */
+#    define LOG_M(file, vector, data, len, dec, format) /* */
 #  endif /* T_TRACER */
 /* @}*/
 
