@@ -19,12 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file eNB_scheduler_primitives.c
- * \brief primitives used by eNB for BCH, RACH, ULSCH, DLSCH scheduling
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \email: navid.nikaein@eurecom.fr
+/*! \file gNB_scheduler_primitives.c
+ * \brief primitives used by gNB for BCH, RACH, ULSCH, DLSCH scheduling
+ * \author  Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
+ * \date 2010 - 2014, 2018
+ * \email: navid.nikaein@eurecom.fr, kroempa@gmail.com
  * \version 1.0
+ * \company Eurecom, NTUST
  * @ingroup _mac
 
  */

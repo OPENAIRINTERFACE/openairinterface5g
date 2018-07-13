@@ -21,10 +21,11 @@
 
 /*! \file main.c
  * \brief top init of Layer 2
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
+ * \author  Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
+ * \date 2010 - 2014, 2018
  * \version 1.0
- * \email: navid.nikaein@eurecom.fr
+ * \company Eurecom, NTUST
+ * \email: navid.nikaein@eurecom.fr, kroempa@gmail.com
  * @ingroup _mac
 
  */

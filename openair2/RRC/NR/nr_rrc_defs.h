@@ -18,13 +18,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file RRC/LITE/defs_NR.h
+/*! \file nr_rrc_defs.h
 * \brief NR RRC struct definitions and function prototypes
-* \author Navid Nikaein, Raymond Knopp 
+* \author Navid Nikaein, Raymond Knopp, WEI-TAI CHEN
 * \date 2010 - 2014, 2018
 * \version 1.0
-* \company Eurecom
-* \email: navid.nikaein@eurecom.fr, raymond.knopp@eurecom.fr
+* \company Eurecom, NTSUT
+* \email: navid.nikaein@eurecom.fr, raymond.knopp@eurecom.fr, kroempa@gmail.com
 */
 
 #ifndef __OPENAIR_RRC_DEFS_NR_H__

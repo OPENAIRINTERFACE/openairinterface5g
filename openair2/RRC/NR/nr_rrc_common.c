@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file rrc_common.c
- * \brief rrc common procedures for eNB and UE
- * \author Navid Nikaein and Raymond Knopp
- * \date 2011 - 2014
+/*! \file nr_ rrc_common.c
+ * \brief rrc common procedures for gNB
+ * \author Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
+ * \date 2011 - 2014, 2018
  * \version 1.0
- * \company Eurecom
- * \email:  navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr
+ * \company Eurecom, NTUST
+ * \email:  navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr, kroempa@gmail.com
  */
 
 #include "nr_rrc_extern.h"

@@ -19,12 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file eNB_scheduler_bch.c
+/*! \file gNB_scheduler_bch.c
  * \brief procedures related to eNB for the BCH transport channel
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \email: navid.nikaein@eurecom.fr
+ * \author  Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
+ * \date 2010 - 2014, 2018
+ * \email: navid.nikaein@eurecom.fr, kroempa@gmail.com
  * \version 1.0
+ * \company Eurecom, NTUST
  * @ingroup _mac
 
  */

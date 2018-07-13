@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file proto.h
- * \brief RRC functions prototypes for eNB and UE
- * \author Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \email navid.nikaein@eurecom.fr
+/*! \file nr_rrc_proto.h
+ * \brief RRC functions prototypes for gNB
+ * \author Navid Nikaein and Raymond Knopp, WEI-TAI-CHEN
+ * \date 2010 - 2014, 2018
+ * \email navid.nikaein@eurecom.fr, kroempa@gmail.com
  * \version 1.0
- 
+ * \company Eurecom, NTUST
  */
 /** \addtogroup _rrc
  *  @{

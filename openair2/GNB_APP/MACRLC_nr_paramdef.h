@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/ENB_APP/MACRLC_paramdef.f
- * \brief definition of configuration parameters for all eNodeB modules 
- * \author Francois TABURET
- * \date 2017
+/*! \file openair2/GNB_APP/MACRLC_nr_paramdef.f
+ * \brief definition of configuration parameters for all gNodeB modules 
+ * \author Francois TABURET, WEI-TAI CHEN
+ * \date 2018
  * \version 0.1
- * \company NOKIA BellLabs France
- * \email: francois.taburet@nokia-bell-labs.com
+ * \company NOKIA BellLabs France, NTUST
+ * \email: francois.taburet@nokia-bell-labs.com, kroempa@gmail.com
  * \note
  * \warning
  */

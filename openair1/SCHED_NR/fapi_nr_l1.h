@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file fapi_l1.h
+/*! \file fapi_nr_l1.h
  * \brief function prototypes for FAPI L1 interface
- * \author R. Knopp
- * \date 2017
+ * \author R. Knopp, WEI-TAI CHEN
+ * \date 2017, 2018
  * \version 0.1
- * \company Eurecom
- * \email: knopp@eurecom.fr
+ * \company Eurecom, NTUST
+ * \email: knopp@eurecom.fr, kroempa@gmail.com
  * \note
  * \warning
  */

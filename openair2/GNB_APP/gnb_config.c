@@ -20,11 +20,11 @@
  */
 
 /*
-  enb_config.c
+  gnb_config.c
   -------------------
-  AUTHOR  : Lionel GAUTHIER, navid nikaein, Laurent Winckel
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr, navid.nikaein@eurecom.fr
+  AUTHOR  : Lionel GAUTHIER, navid nikaein, Laurent Winckel, WEI-TAI CHEN
+  COMPANY : EURECOM, NTUST
+  EMAIL   : Lionel.Gauthier@eurecom.fr, navid.nikaein@eurecom.fr, kroempa@gmail.com
 */
 
 #include <string.h>

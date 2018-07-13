@@ -21,11 +21,11 @@
 
 /*! \file asn1_msg.h
 * \brief primitives to build the asn1 messages
-* \author Raymond Knopp and Navid Nikaein
-* \date 2011
+* \author Raymond Knopp and Navid Nikaein, WIE-TAI CHEN
+* \date 2011, 2018
 * \version 1.0
-* \company Eurecom
-* \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr
+* \company Eurecom, NTUST
+* \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr, kroempa@gmail.com
 */
 
 #include <stdio.h>

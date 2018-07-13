@@ -24,8 +24,8 @@
  * \author Navid Nikaein and  Raymond Knopp , WEI-TAI CHEN
  * \date 2011 - 2014 , 2018
  * \version 1.0
- * \company Eurecom
- * \email: navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr
+ * \company Eurecom, NTUST
+ * \email: navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr, kroempa@gmail.com
  */
 #define RRC_GNB_C
 #define RRC_GNB_C

@@ -19,16 +19,17 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/PHY_INTERFACE/IF_Module.h
+/*! \file openair2/NR_PHY_INTERFACE/NR_IF_Module.h
 * \brief data structures for PHY/MAC interface modules
 * \author EURECOM/NTUST
-* \date 2017
+* \date 2018
 * \version 0.1
-* \company Eurecom
-* \email: raymond.knopp@eurecom.fr
+* \company Eurecom, NTUST
+* \email: raymond.knopp@eurecom.fr, kroempa@gmail.com
 * \note
 * \warning
 */
+
 #ifndef __NR_IF_MODULE__H__
 #define __NR_IF_MODULE__H__
 
