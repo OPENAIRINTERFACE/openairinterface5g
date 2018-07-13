@@ -46,13 +46,13 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
   uint16_t N_RB = bwp->N_RB;
 
   switch(format) {
-
+/*Only sizes for 0_0 and 1_0 are correct at the moment*/
     case nr_dci_format_0_0:
-      /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 --16
-      size += 16;
-      size += ceil( log2( (N_RB*(N_RB+1))>>2 ) ); // Freq domain assignment -- hopping scenario to be updated
-      // Time domain assignment
-      // UL/SUL indicator
+      /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
+      size += 20;
+      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>2 ) ); // Freq domain assignment -- hopping scenario to be updated
+      // UL/SUL indicator assumed to be 0
+      // Padding
       break;
 
     case nr_dci_format_0_1:
@@ -80,7 +80,7 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
     case nr_dci_format_1_0:
       /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 --24
       size += 24;
-      size += ceil( log2( (N_RB*(N_RB+1))>>2 ) ); // Freq domain assignment
+      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>2 ) ); // Freq domain assignment
       // Time domain assignment
       break;
 
