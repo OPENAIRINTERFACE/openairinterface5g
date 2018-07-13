@@ -149,8 +149,6 @@
 
 #include "targets/ARCH/COMMON/common_lib.h"
 
-
-
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
   /// index of the current UE RX/TX proc
@@ -850,6 +848,11 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..287] (hard coded)
   int32_t **dl_ch_estimates_ext;
+  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint8_t pbch_a_interleaved[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint8_t pbch_a_prime[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint8_t pbch_e[NR_POLAR_PBCH_E];
+  double  demod_pbch_e[NR_POLAR_PBCH_E];
   /// \brief Pointer to PBCH llrs.
   /// - first index: ? [0..1919] (hard coded)
   int8_t *llr;
