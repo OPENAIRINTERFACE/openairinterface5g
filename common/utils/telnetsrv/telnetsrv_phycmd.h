@@ -35,7 +35,7 @@
 #include "UTIL/LOG/log.h"
 
 
-#include "openair1/PHY/extern.h"
+#include "openair1/PHY/phy_extern.h"
 
 
 #define TELNETVAR_PHYCC0    0

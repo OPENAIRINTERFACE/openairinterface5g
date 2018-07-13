@@ -200,7 +200,7 @@ void
 config_req_rlc_am (
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t             srb_flagP,
-  rlc_am_info_t  * const       config_am_pP,
+  const rlc_am_info_t  *       config_am_pP,
   const rb_id_t                rb_idP,
   const logical_chan_id_t      chan_idP 
 )

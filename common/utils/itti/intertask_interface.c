@@ -330,14 +330,15 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
 
   if (destination_task_id != TASK_UNKNOWN) {
 
-    if (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_ENDED) {
-      ITTI_DEBUG(ITTI_DEBUG_ISSUES, " Message %s, number %lu with priority %d can not be sent from %s to queue (%u:%s), ended destination task!\n",
-                 itti_desc.messages_info[message_id].name,
-                 message_number,
-                 priority,
-                 itti_get_task_name(origin_task_id),
-                 destination_task_id,
-                 itti_get_task_name(destination_task_id));
+    if (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_ENDED ||
+      itti_desc.threads[destination_thread_id].task_state == TASK_STATE_NOT_CONFIGURED) {
+        ITTI_DEBUG(ITTI_DEBUG_ISSUES, " Message %s, number %lu with priority %d can not be sent from %s to queue (%u:%s), unconfigured or ended destination task!\n",
+                   itti_desc.messages_info[message_id].name,
+                   message_number,
+                   priority,
+                   itti_get_task_name(origin_task_id),
+                   destination_task_id,
+                   itti_get_task_name(destination_task_id));
     } else {
       if(!emulate_rf){
         /* We cannot send a message if the task is not running */
@@ -425,14 +426,15 @@ int itti_try_send_msg_to_task(task_id_t destination_task_id, instance_t instance
 
   if (destination_task_id != TASK_UNKNOWN) {
 
-    if (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_ENDED) {
-      ITTI_DEBUG(ITTI_DEBUG_ISSUES, " Message %s, number %lu with priority %d can not be sent from %s to queue (%u:%s), ended destination task!\n",
-                 itti_desc.messages_info[message_id].name,
-                 message_number,
-                 priority,
-                 itti_get_task_name(origin_task_id),
-                 destination_task_id,
-                 itti_get_task_name(destination_task_id));
+    if (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_ENDED || 
+      itti_desc.threads[destination_thread_id].task_state == TASK_STATE_NOT_CONFIGURED) {
+        ITTI_DEBUG(ITTI_DEBUG_ISSUES, " Message %s, number %lu with priority %d can not be sent from %s to queue (%u:%s), unconfigured or ended destination task!\n",
+                   itti_desc.messages_info[message_id].name,
+                   message_number,
+                   priority,
+                   itti_get_task_name(origin_task_id),
+                   destination_task_id,
+                   itti_get_task_name(destination_task_id));
     } else {
       /* We cannot send a message if the task is not running */
       AssertFatal (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_READY,
