@@ -669,42 +669,43 @@ void nfapi_log(const char *file, const char *func, int line, int comp, int level
   va_end(args);
 
   // OAI printf compatibility
-  if ((g_log->onlinelog == 1) && (level != LOG_FILE))
-  if(log_mem_flag==1){
-    if(log_mem_d[log_mem_side].enable_flag==1){
-      int temp_index;
-      temp_index=log_mem_d[log_mem_side].buf_index;
-      if(temp_index+len+1 < LOG_MEM_SIZE){
-        log_mem_d[log_mem_side].buf_index+=len;
-        memcpy(&log_mem_d[log_mem_side].buf_p[temp_index],log_buffer,len);
-      }else{
-        log_mem_d[log_mem_side].enable_flag=0;
-        if(log_mem_d[1-log_mem_side].enable_flag==1){
-          temp_index=log_mem_d[1-log_mem_side].buf_index;
-          if(temp_index+len+1 < LOG_MEM_SIZE){
-            log_mem_d[1-log_mem_side].buf_index+=len;
-            log_mem_side=1-log_mem_side;
-            memcpy(&log_mem_d[log_mem_side].buf_p[temp_index],log_buffer,len);
-            /* write down !*/
-            if (pthread_mutex_lock(&log_mem_lock) != 0) {
-              return;
-            }
-            if(log_mem_write_flag==0){
-              log_mem_write_side=1-log_mem_side;
-              if(pthread_cond_signal(&log_mem_notify) != 0) {
+  if ((g_log->onlinelog == 1) && (level != LOG_FILE)) {
+    if(log_mem_flag==1){
+      if(log_mem_d[log_mem_side].enable_flag==1){
+        int temp_index;
+        temp_index=log_mem_d[log_mem_side].buf_index;
+        if(temp_index+len+1 < LOG_MEM_SIZE){
+          log_mem_d[log_mem_side].buf_index+=len;
+          memcpy(&log_mem_d[log_mem_side].buf_p[temp_index],log_buffer,len);
+        }else{
+          log_mem_d[log_mem_side].enable_flag=0;
+          if(log_mem_d[1-log_mem_side].enable_flag==1){
+            temp_index=log_mem_d[1-log_mem_side].buf_index;
+            if(temp_index+len+1 < LOG_MEM_SIZE){
+              log_mem_d[1-log_mem_side].buf_index+=len;
+              log_mem_side=1-log_mem_side;
+              memcpy(&log_mem_d[log_mem_side].buf_p[temp_index],log_buffer,len);
+              /* write down !*/
+              if (pthread_mutex_lock(&log_mem_lock) != 0) {
+                return;
               }
+              if(log_mem_write_flag==0){
+                log_mem_write_side=1-log_mem_side;
+                if(pthread_cond_signal(&log_mem_notify) != 0) {
+                }
+              }
+              if(pthread_mutex_unlock(&log_mem_lock) != 0) {
+                return;
+              }
+            }else{
+              log_mem_d[1-log_mem_side].enable_flag=0;
             }
-            if(pthread_mutex_unlock(&log_mem_lock) != 0) {
-              return;
-            }
-          }else{
-            log_mem_d[1-log_mem_side].enable_flag=0;
           }
         }
       }
+    }else{
+      fwrite(log_buffer, len, 1, stdout);
     }
-  }else{
-    fwrite(log_buffer, len, 1, stdout);
   }
 
   if (g_log->syslog) {

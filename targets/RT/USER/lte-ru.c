@@ -2770,7 +2770,10 @@ void init_RU(char *rf_config_file) {
 
 
 void stop_ru(RU_t *ru) {
- 
+
+#if defined(PRE_SCD_THREAD) || defined(PHY_TX_THREAD)
+  int *status;
+#endif
   printf("Stopping RU %p processing threads\n",(void*)ru);
 #if defined(PRE_SCD_THREAD)
   if(ru){
