@@ -630,7 +630,7 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
     if (i<16){
     printf("idx[%d]= %d\n", i , idx_demod);
     printf("sign[%d]= %d sign[%d]= %d\n", i<<1 , sign(pbch_e_rx[i<<1]), (i<<1)+1 , sign(pbch_e_rx[(i<<1)+1]));
-    printf("demod_pbch_e2[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
+    printf("demod_pbch_e[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
 #endif
   }
 
@@ -638,6 +638,11 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   M =  NR_POLAR_PBCH_E;
   nushift = (Lmax==4)? ssb_index&3 : ssb_index&7;
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0);
+
+#ifdef DEBUG_PBCH
+    if (i<16){
+    printf("unscrambling demod_pbch_e[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
+#endif
 		
   //polar decoding de-rate matching
   decoderState = polar_decoder(demod_pbch_e, pbch_a_prime, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
