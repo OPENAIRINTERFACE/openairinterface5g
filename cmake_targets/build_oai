@@ -544,7 +544,7 @@ function main() {
   if [ "$NOS1" = "1" ] ; then
       build_dir=noS1_ran_build
       if [ "$gNB" = "1" ] ; then
-         exec=nr-softmodem
+         exec=nr-softmodem-nos1
        elif [ "$nrUE" = "1" ] ; then
          exec=nr-uesoftmodem-nos1
        elif [ "$eNB" = "1" ] ; then
