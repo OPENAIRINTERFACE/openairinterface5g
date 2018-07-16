@@ -40,8 +40,8 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
+#include "fapi_nr_ue_l1.h"
 #include "PHY/phy_extern_nr_ue.h"
-//#include "LAYER2/NR_MAC_UE/extern.h"
 #include "LAYER2/NR_MAC_UE/proto.h"
 
 #include "SCHED_NR/extern.h"
@@ -220,6 +220,9 @@ void init_UE(int nb_inst)
     LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
         PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
 
+    AssertFatal((UE->if_inst = IF_Module_init(inst)) != NULL,"Can't register interface module\n");
+    UE->if_inst->scheduled_response = nr_ue_scheduled_response;
+    UE->if_inst->phy_config_request = nr_ue_phy_config_request;
 
     AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
                                     &UE->proc.attr_ue,

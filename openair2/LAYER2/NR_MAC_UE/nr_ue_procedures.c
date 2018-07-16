@@ -19,15 +19,17 @@
  *      contact@openairinterface.org
  */
 
-/*! \file ue_procedures.c
+/* \file ue_procedures.c
  * \brief procedures related to UE
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \version 1
- * \email: navid.nikaein@eurecom.fr
- * @ingroup _mac
-
+ * \author R. Knopp, K.H. HSU
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom / NTUST
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
+ * \note
+ * \warning
  */
+
 #include "proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
