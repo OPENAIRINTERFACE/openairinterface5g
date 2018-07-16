@@ -33,8 +33,9 @@
 #include "defs.h"
 #include "proto.h"
 
-int
-nr_rrc_mac_config_req_ue(
+#include "NR_MAC-CellGroupConfig.h"
+
+int nr_rrc_mac_config_req_ue(
     module_id_t                     module_id,
     int                             CC_idP,
     uint8_t                         gNB_index,
@@ -54,7 +55,18 @@ nr_rrc_mac_config_req_ue(
 
     if(mac_cell_group_configP != NULL){
         if(mac_cell_group_configP->drx_Config != NULL ){
-            mac->drx_Config = mac_cell_group_configP->drx_Config;
+            switch(mac_cell_group_configP->drx_Config->present){
+                case NR_SetupRelease_DRX_Config_PR_NOTHING:
+                    break;
+                case NR_SetupRelease_DRX_Config_PR_release:
+                    mac->drx_Config = NULL;
+                    break;
+                case NR_SetupRelease_DRX_Config_PR_setup:
+                    mac->drx_Config = mac_cell_group_configP->drx_Config->choice.setup;
+                    break;
+                default:
+                    break;
+            }
         }
 
         if(mac_cell_group_configP->schedulingRequestConfig != NULL ){
@@ -70,11 +82,35 @@ nr_rrc_mac_config_req_ue(
         }
 
         if(mac_cell_group_configP->phr_Config != NULL ){
-            mac->phr_Config = mac_cell_group_configP->phr_Config;
+            switch(mac_cell_group_configP->phr_Config->present){
+                case NR_SetupRelease_PHR_Config_PR_NOTHING:
+                    break;
+                case NR_SetupRelease_PHR_Config_PR_release:
+                    mac->phr_Config = NULL;
+                    break;
+                case NR_SetupRelease_PHR_Config_PR_setup:
+                    mac->phr_Config = mac_cell_group_configP->phr_Config->choice.setup;
+                    break;
+                default:
+                    break;
+            }
+            
         }
 
         if(mac_cell_group_configP->cs_RNTI != NULL ){
-            mac->cs_RNTI = mac_cell_group_configP->cs_RNTI;
+            switch(mac_cell_group_configP->cs_RNTI->present){
+                case NR_SetupRelease_RNTI_Value_PR_NOTHING:
+                    break;
+                case NR_SetupRelease_RNTI_Value_PR_release:
+                    mac->cs_RNTI = NULL;
+                    break;
+                case NR_SetupRelease_RNTI_Value_PR_setup:
+                    mac->cs_RNTI = &mac_cell_group_configP->cs_RNTI->choice.setup;
+                    break;
+                default:
+                    break;
+            }
+            
         }
     }
     

@@ -220,7 +220,7 @@ void init_UE(int nb_inst)
     LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
         PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
 
-    AssertFatal((UE->if_inst = IF_Module_init(inst)) != NULL,"Can't register interface module\n");
+    AssertFatal((UE->if_inst = nr_ue_if_module_init(inst)) != NULL,"Can't register interface module\n");
     UE->if_inst->scheduled_response = nr_ue_scheduled_response;
     UE->if_inst->phy_config_request = nr_ue_phy_config_request;
 

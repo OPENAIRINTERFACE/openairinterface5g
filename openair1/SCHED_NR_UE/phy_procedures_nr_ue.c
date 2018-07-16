@@ -59,7 +59,6 @@
 #define PUCCH
 #endif
 
-#include "LAYER2/NR_MAC_UE/extern.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
 #include "UTIL/LOG/log.h"
 

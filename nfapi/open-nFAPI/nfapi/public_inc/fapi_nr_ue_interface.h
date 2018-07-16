@@ -319,7 +319,7 @@ typedef struct {
         fapi_nr_search_space_t search_space_sib1;
         fapi_nr_search_space_t search_space_others_sib;
         fapi_nr_search_space_t search_space_paging;
-        fapi_nr_coreset_t      coreset_ra;         //  common coreset
+        //fapi_nr_coreset_t      coreset_ra;         //  common coreset
         fapi_nr_search_space_t search_space_ra;    
     } fapi_nr_pdcch_config_common_t;
 

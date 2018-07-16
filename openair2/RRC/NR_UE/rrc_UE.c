@@ -33,11 +33,19 @@
 #define RRC_UE
 #define RRC_UE_C
 
+#include "NR_DL-DCCH-Message.h"     //asn_DEF_NR_DL_DCCH_Message
+#include "NR_BCCH-BCH-Message.h"    //asn_DEF_NR_BCCH_BCH_Message
+#include "NR_CellGroupConfig.h"     //asn_DEF_NR_CellGroupConfig
+#include "NR_BWP-Downlink.h"        //asn_DEF_NR_BWP_Downlink
+
 #include "rrc_list.h"
 #include "rrc_defs.h"
 #include "rrc_proto.h"
 #include "rrc_vars.h"
 #include "LAYER2/NR_MAC_UE/proto.h"
+
+
+
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
@@ -57,7 +65,6 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
         nr_rrc_ue_process_scg_config(cellGroupConfig);
     }else{
         nr_rrc_ue_process_scg_config(cellGroupConfig);
-        //asn_DEF_NR_CellGroupConfig.free_struct(asn_DEF_NR_CellGroupConfig, cellGroupConfig, 0);
         SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 0);
     }
 
@@ -96,7 +103,6 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfig
                 }else{
                     //  after first time, update it and free the memory after.
                     nr_rrc_ue_process_scg_config(cellGroupConfig);
-                    //asn_DEF_NR_CellGroupConfig.free_struct(asn_DEF_NR_CellGroupConfig, cellGroupConfig, 0);
                     SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 0);
                 }
                 
