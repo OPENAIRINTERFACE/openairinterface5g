@@ -67,8 +67,12 @@ typedef struct {
 #define FAPI_NR_TAG_LENGTH_PACKED_LEN 4
 
 typedef struct {
-	fapi_nr_tl_t tl;
-    //  common C-RNTI
+	//  config
+    uint8_t cce_idx;
+    uint8_t aggregation_level;
+    uint16_t rnti;
+
+    //  dci pdu
 	uint8_t dci_format; 
     uint8_t frequency_domain_resouce_assignment;    //  38.214 chapter 5.1.2.2
     uint8_t time_domain_resource_assignment;        //  38.214 chapter 5.1.2.1

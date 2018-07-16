@@ -19,15 +19,17 @@
  *      contact@openairinterface.org
  */
 
-/*! \file config.c
+/* \file config.c
  * \brief UE and eNB configuration performed by RRC or as a consequence of RRC procedures
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
+ * \author R. Knopp, K.H. HSU
+ * \date 2018
  * \version 0.1
- * \email: navid.nikaein@eurecom.fr
- * @ingroup _mac
-
+ * \company Eurecom / NTUST
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
+ * \note
+ * \warning
  */
+
 #include "defs.h"
 #include "proto.h"
 

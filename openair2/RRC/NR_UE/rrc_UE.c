@@ -19,13 +19,15 @@
  *      contact@openairinterface.org
  */
 
-/*! \file rrc_UE.c
- * \brief rrc procedures for UE
- * \author Navid Nikaein and Raymond Knopp
- * \date 2011 - 2014
- * \version 1.0
- * \company Eurecom
- * \email: navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr
+/* \file rrc_UE.c
+ * \brief RRC procedures
+ * \author R. Knopp, K.H. HSU
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom / NTUST
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
+ * \note
+ * \warning
  */
 
 #define RRC_UE

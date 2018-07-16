@@ -19,20 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file LAYER2/MAC/defs.h
-* \brief MAC data structures, constant, and function prototype
-* \author Navid Nikaein and Raymond Knopp
-* \date 2011
-* \version 0.5
-* \email navid.nikaein@eurecom.fr
-
-*/
-/** @defgroup _oai2  openair2 Reference Implementation
- * @ingroup _ref_implementation_
- * @{
+/* \file mac.h
+ * \brief MAC data structures, constant, and function prototype
+ * \author R. Knopp, K.H. HSU
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom / NTUST
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
+ * \note
+ * \warning
  */
-
-/*@}*/
 
 #ifndef __LAYER2_NR_UE_MAC_DEFS_H__
 #define __LAYER2_NR_UE_MAC_DEFS_H__

@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file NR_IF_Module.c
+/* \file NR_IF_Module.c
  * \brief functions for NR UE FAPI-like interface
- * \author R. Knopp
+ * \author R. Knopp, K.H. HSU
  * \date 2018
  * \version 0.1
- * \company Eurecom
- * \email: knopp@eurecom.fr
+ * \company Eurecom / NTUST
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
  * \note
  * \warning
  */
@@ -102,7 +102,7 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
         memset((void*)nr_ue_if_module_inst[module_id],0,sizeof(nr_ue_if_module_t));
 
         nr_ue_if_module_inst[module_id]->CC_mask=0;
-        nr_ue_if_module_register_dl_indication(module_id, nr_ue_dl_indication);
+        nr_ue_if_module_inst[module_id]->dl_indication = nr_ue_dl_indication;
     }
 
     return nr_ue_if_module_inst[module_id];

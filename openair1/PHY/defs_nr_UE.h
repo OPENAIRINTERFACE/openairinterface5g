@@ -991,6 +991,8 @@ typedef struct {
   NR_DL_FRAME_PARMS  frame_parms_before_ho;
   NR_UE_COMMON    common_vars;
 
+  nr_ue_if_module_t *if_inst;
+
   // point to the current rxTx thread index
   uint8_t current_thread_id[10];
 
