@@ -1099,13 +1099,9 @@ uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, ui
   uint32_t ul_frame;
 
   if ((frame_parms->frame_type == TDD) &&
-      (frame_parms->tdd_config == 1)) {
-    if ((n==1)||(n==6)||(n==4)||(n==9)) { // tdd_config 0,1 SF 1,5
+      (frame_parms->tdd_config == 1) &&
+      ((n==1)||(n==6)||(n==4)||(n==9))) { // tdd_config 0,1 SF 1,5
       ul_frame = (frame + (n < 5 ? 0 : 1));
-    } else {
-    LOG_E(PHY, "frame %d subframe %d: PUSCH frame = ?\n", frame, n);
-    ul_frame = 0;
-    }
   } else if ((frame_parms->frame_type == TDD) &&
            (frame_parms->tdd_config == 6) &&
            ((n==0)||(n==1)||(n==5)||(n==6)))
