@@ -33,6 +33,8 @@
 #include "proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
+#include <stdio.h>
+
 int8_t nr_ue_decode_mib(
 	module_id_t module_id,
 	int 		CC_id,
@@ -43,6 +45,8 @@ int8_t nr_ue_decode_mib(
 	//uint32_t 	*frameP,	//	10 bits = 6(in decoded MIB)+4(in extra bits from L1)
 	void 		*pduP,		//	encoded MIB
 	uint16_t 	pdu_len){
+
+    printf("[L2][MAC] decode mib\n");
 
 	NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -79,7 +83,7 @@ int8_t nr_ue_decode_mib(
     mac->phy_config.config_req.pbch_config.dmrs_type_a_position = mac->mib->dmrs_TypeA_Position;
     mac->phy_config.config_req.pbch_config.pdcch_config_sib1 = mac->mib->pdcch_ConfigSIB1;
     mac->phy_config.config_req.pbch_config.cell_barred = mac->mib->cellBarred;
-    mac->phy_config.config_req.pbch_config.intra_frquency_reselection = mac->mib->intraFreqReselection;
+    mac->phy_config.config_req.pbch_config.intra_frequency_reselection = mac->mib->intraFreqReselection;
     mac->phy_config.config_req.pbch_config.half_frame_bit = half_frame_bit;
     mac->phy_config.config_req.config_mask |= FAPI_NR_CONFIG_REQUEST_MASK_PBCH;
 

@@ -389,7 +389,7 @@ typedef struct {
         uint8_t dmrs_type_a_position;
         uint8_t pdcch_config_sib1;
         uint8_t cell_barred;
-        uint8_t intra_frquency_reselection;
+        uint8_t intra_frequency_reselection;
 
         uint16_t system_frame_number;
         uint8_t ssb_index;

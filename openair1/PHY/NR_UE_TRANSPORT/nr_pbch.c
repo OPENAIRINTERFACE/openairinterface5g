@@ -624,4 +624,10 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
 	  //	  printf("[PBCH] decoder_output[%d] = %x\n",i,decoded_output[i]);
 	  //#endif
 
+    
+    ue->dl_indication.rx_ind.rx_request_body.pdu_index = FAPI_NR_RX_PDU_BCCH_BCH_TYPE;
+    ue->dl_indication.rx_ind.rx_request_body.pdu_length = 3;
+    ue->dl_indication.rx_ind.rx_request_body.pdu = &pbch_a[0];
+    ue->if_inst->dl_indication(&ue->dl_indication);
+    
 }

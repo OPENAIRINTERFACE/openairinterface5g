@@ -33,7 +33,7 @@
 #include "NR_IF_Module.h"
 #include "LAYER2/NR_MAC_UE/proto.h"
 
-
+#include <stdio.h>
 
 #define MAX_IF_MODULES 100
 
@@ -50,7 +50,7 @@ int8_t handle_bcch_bch(uint32_t pdu_len, uint8_t *pduP){
                         extra_bits,
                         0,  //  Lssb = 64 is not support
                         pduP,
-                        3 );
+                        pdu_len );
 
 
 
@@ -69,23 +69,24 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 
     //  clean up scheduled_response structure
 
-    if(dl_info->rx_ind != NULL){
-        switch(dl_info->rx_ind->rx_request_body.pdu_index){
+    //if(dl_info->rx_ind != NULL){
+        printf("[L2][IF MODULE][DL INDICATION][RX_IND]\n");
+        switch(dl_info->rx_ind.rx_request_body.pdu_index){
             case FAPI_NR_RX_PDU_BCCH_BCH_TYPE:
-                    handle_bcch_bch(dl_info->rx_ind->rx_request_body.pdu_length, dl_info->rx_ind->rx_request_body.pdu);
+                    handle_bcch_bch(dl_info->rx_ind.rx_request_body.pdu_length, dl_info->rx_ind.rx_request_body.pdu);
                 break;
             case FAPI_NR_RX_PDU_BCCH_DLSCH_TYPE:
-                    handle_bcch_dlsch(dl_info->rx_ind->rx_request_body.pdu_length, dl_info->rx_ind->rx_request_body.pdu);
+                    handle_bcch_dlsch(dl_info->rx_ind.rx_request_body.pdu_length, dl_info->rx_ind.rx_request_body.pdu);
                 break;
             default:
                 break;
 
         }
-    }
+    //}
 
-    if(dl_info->dci_ind != NULL){
+    //if(dl_info->dci_ind != NULL){
 
-    }
+    //}
 
     if(nr_ue_if_module_inst[module_id] != NULL){
         nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);

@@ -50,10 +50,10 @@ typedef struct {
 
     /// NR UE FAPI-like P7 message, direction: L1 to L2
     /// data reception indication structure
-    fapi_nr_rx_indication_t *rx_ind;
+    fapi_nr_rx_indication_t rx_ind;
 
     /// dci reception indication structure
-    fapi_nr_dci_indication_t *dci_ind;
+    fapi_nr_dci_indication_t dci_ind;
 
 } nr_downlink_indication_t;
 
