@@ -350,7 +350,7 @@ add_custom_command (
 add_list2_option(NR_RRC_ASN1_VERSION "NR_Rel15" "ASN.1 version of NR_RRC interface")
 
 if (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
-  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-38331-f10.asn)
+  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-38331-f21.asn)
 endif  (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
 
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
@@ -2200,7 +2200,6 @@ add_executable(nr-softmodem
   ${OPENAIR_TARGETS}/RT/USER/nr-ru.c
   ${OPENAIR_TARGETS}/RT/USER/nr-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/COMMON/create_nr_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2218,7 +2217,7 @@ target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB}
-  RRC_LIB S1AP_LIB S1AP_ENB L2
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
@@ -2254,7 +2253,7 @@ add_executable(nr-softmodem-nos1
   ${SHLIB_LOADER_SOURCES}
   )
 
-target_link_libraries (nr-softmodem
+target_link_libraries (nr-softmodem-nos1
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${MIH_LIB}
@@ -2262,10 +2261,10 @@ target_link_libraries (nr-softmodem
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
-target_link_libraries (nr-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (nr-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
-target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
-target_link_libraries (nr-softmodem ${T_LIB})
+target_link_libraries (nr-softmodem-nos1 ${LIBXML2_LIBRARIES})
+target_link_libraries (nr-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (nr-softmodem-nos1 ${LIB_LMS_LIBRARIES})
+target_link_libraries (nr-softmodem-nos1 ${T_LIB})
 
 # nr-uesoftmodem is  UE implementation
 #######################################
