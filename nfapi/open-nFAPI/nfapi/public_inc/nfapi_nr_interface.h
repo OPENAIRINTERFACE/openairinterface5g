@@ -121,6 +121,7 @@ typedef struct {
   nfapi_uint16_tlv_t  ssb_periodicity;
   nfapi_uint16_tlv_t  ss_pbch_block_power;
   nfapi_uint16_tlv_t  n_ssb_crb;
+  nfapi_uint16_tlv_t  rmsi_pdcch_config;
 } nfapi_nr_sch_config_t;
 
 #define NFAPI_NR_SCH_CONFIG_PHYSICAL_CELL_ID_TAG 0x501E

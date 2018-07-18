@@ -70,6 +70,13 @@ typedef enum {
   NR_MU_4,
 } nr_numerology_index_e;
 
+typedef enum {
+  kHz15=0,
+  kHz30,
+  kHz60,
+  kHz120,
+  kHz240
+} nr_scs_e;
 
 typedef enum{
   nr_ssb_type_A = 0,

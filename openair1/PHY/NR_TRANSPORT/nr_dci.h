@@ -56,10 +56,10 @@ typedef enum {
 } nr_pdcch_ss_type_e;
 
 typedef enum {
-  nr_pdcch_mux_pattern_type_1=0,
-  nr_pdcch_mux_pattern_type_2,
-  nr_pdcch_mux_pattern_type_3
-} nr_pdcch_mux_pattern_type_e;
+  nr_ssb_and_cset_mux_pattern_type_1=0,
+  nr_ssb_and_cset_mux_pattern_type_2,
+  nr_ssb_and_cset_mux_pattern_type_3
+} nr_ssb_and_cset_mux_pattern_type_e;
 
 typedef struct {
   uint8_t param_O;
@@ -73,7 +73,7 @@ typedef struct {
   uint8_t n_rb;
   uint8_t n_symb;
   uint8_t rb_offset;
-  nr_pdcch_mux_pattern_type_e mux_pattern;
+  nr_ssb_and_cset_mux_pattern_type_e mux_pattern;
 } nr_pdcch_coreset_params_t;
 
 typedef struct {
