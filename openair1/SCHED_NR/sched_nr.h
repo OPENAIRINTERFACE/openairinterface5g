@@ -42,7 +42,7 @@ void nr_feptx_ofdm(RU_t *ru);
 void nr_feptx_ofdm_2thread(RU_t *ru);
 void nr_feptx0(RU_t *ru,int slot);
 
-void nr_get_type0_coreset_and_ss_params(nr_pdcch_vars_t *pdcch_vars,
+void nr_get_pdcch_vars_from_mib(nr_pdcch_vars_t *pdcch_vars,
                           nr_scs_e scs_common,
                           nr_scs_e pdcch_scs,
                           nr_frequency_range_e freq_range,

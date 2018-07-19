@@ -61,6 +61,11 @@ typedef enum {
   nr_ssb_and_cset_mux_pattern_type_3
 } nr_ssb_and_cset_mux_pattern_type_e;
 
+typedef enum {
+  nr_cce_reg_mapping_interleaved=0,
+  nr_cce_reg_mapping_non_interleaved
+} nr_cce_reg_mapping_type_e;
+
 typedef struct {
   uint8_t param_O;
   uint8_t param_M;
@@ -80,6 +85,8 @@ typedef struct {
   uint8_t first_slot;
   uint8_t nb_slots;
   uint8_t sfn_mod2;
+  uint32_t dmrs_scrambling_id;
+  nr_cce_reg_mapping_type_e cr_mapping_type;
   nr_pdcch_ss_params_t ss_params;
   nr_pdcch_coreset_params_t coreset_params;
 } nr_pdcch_vars_t;
@@ -89,22 +96,20 @@ typedef struct {
   uint8_t size;
   /// Aggregation level
   uint8_t L;
-  /// Position of first CCE of the dci
-  int firstCCE;
-  /// flag to indicate that this is a RA response
-  boolean_t ra_flag;
-  /// rnti
+  /// rnti type
   nr_rnti_type_e rnti;
   /// Format
-  DCI_format_t format;
+  nr_dci_format_e format;
+  /// type
+  nr_pdcch_ss_type_e ss_type;
   /// DCI pdu
-  uint8_t dci_pdu[8];
+  uint32_t dci_pdu[4];
 } NR_gNB_DCI_ALLOC_t;
 
 typedef unsigned __int128 uint128_t;
 
 uint8_t nr_get_dci_size(nr_dci_format_e format,
-                        nr_rnti_type_e rnti,
+                        nr_rnti_type_e rnti_type,
                         NR_BWP_PARMS* bwp,
                         nfapi_nr_config_request_t* config);
 
@@ -112,7 +117,13 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
                             uint32_t *gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
-                            NR_DL_FRAME_PARMS* frame_parms,
-                            nfapi_nr_config_request_t* config);
+                            NR_DL_FRAME_PARMS frame_parms,
+                            nfapi_nr_config_request_t config,
+                            nr_pdcch_vars_t pdcch_vars);
+
+void nr_pdcch_scrambling(NR_gNB_DCI_ALLOC_t dci_alloc,
+                         nr_pdcch_vars_t pdcch_vars,
+                         nfapi_nr_config_request_t config,
+                         uint32_t* out);
 
 #endif //__PHY_NR_TRANSPORT_DCI__H

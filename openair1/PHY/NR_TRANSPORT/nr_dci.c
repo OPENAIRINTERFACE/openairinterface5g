@@ -38,7 +38,7 @@
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
 uint8_t nr_get_dci_size(nr_dci_format_e format,
-                        nr_rnti_type_e rnti,
+                        nr_rnti_type_e rnti_type,
                         NR_BWP_PARMS* bwp,
                         nfapi_nr_config_request_t* config)
 {
@@ -50,7 +50,7 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
     case nr_dci_format_0_0:
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
-      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>2 ) ); // Freq domain assignment -- hopping scenario to be updated
+      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
       // UL/SUL indicator assumed to be 0
       // Padding
       break;
@@ -80,7 +80,7 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
     case nr_dci_format_1_0:
       /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 --24
       size += 24;
-      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>2 ) ); // Freq domain assignment
+      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
       // Time domain assignment
       break;
 
@@ -130,12 +130,37 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
   return size;
 }
 
+void nr_pdcch_scrambling(NR_gNB_DCI_ALLOC_t dci_alloc,
+                         nr_pdcch_vars_t pdcch_vars,
+                         nfapi_nr_config_request_t config,
+                         uint32_t* out) {
+
+  uint8_t reset;
+  uint32_t x1, x2, s=0;
+  uint32_t Nid = (dci_alloc.ss_type == nr_pdcch_uss_type)? pdcch_vars.dmrs_scrambling_id : config.sch_config.physical_cell_id.value;
+  uint32_t n_RNTI = (dci_alloc.ss_type == nr_pdcch_uss_type)? dci_alloc.rnti : 0;
+  uint32_t *in = dci_alloc.dci_pdu;
+
+  reset = 1;
+  x2 = (n_RNTI<<16) + Nid;
+
+  for (int i=0; i<dci_alloc.size; i++) {
+    if ((i&0x1f)==0) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      reset = 0;
+    }
+    *out ^= (((*in)>>i)&1) ^ ((s>>i)&1);
+  }  
+
+}
+
 uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
                             uint32_t *gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
-                            NR_DL_FRAME_PARMS* frame_parms,
-                            nfapi_nr_config_request_t* config)
+                            NR_DL_FRAME_PARMS frame_parms,
+                            nfapi_nr_config_request_t config,
+                            nr_pdcch_vars_t pdcch_vars)
 {
 
   uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH<<1];
@@ -151,6 +176,14 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
   (((gold_pdcch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1), mod_dmrs[(m<<1)], mod_dmrs[(m<<1)+1]);
 #endif
   }
+
+  /// DCI payload processing
+    // scrambling
+  uint32_t scrambled_payload[4]; 
+  nr_pdcch_scrambling(dci_alloc, pdcch_vars, config, scrambled_payload);
+
+    // QPSK modulation
+  
 
   return 0;
 }

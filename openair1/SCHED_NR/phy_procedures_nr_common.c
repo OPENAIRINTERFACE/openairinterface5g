@@ -60,7 +60,7 @@ nr_subframe_t nr_subframe_select(nfapi_nr_config_request_t *cfg,unsigned char su
 }
 
 
-void nr_get_type0_coreset_and_ss_params(nr_pdcch_vars_t *pdcch_vars,
+void nr_get_pdcch_vars_from_mib(nr_pdcch_vars_t *pdcch_vars,
                           nr_scs_e scs_common,
                           nr_scs_e pdcch_scs,
                           nr_frequency_range_e freq_range,
@@ -170,8 +170,17 @@ void nr_get_pdcch_type_0_monitoring_period(nr_pdcch_vars_t *pdcch_vars,
     pdcch_vars->sfn_mod2 = ((uint8_t)(floor( (O*pow(2, mu) + floor(ssb_idx*M)) / nb_slots_per_frame )) & 1)? 1 : 0;
     pdcch_vars->first_slot = (uint8_t)(O*pow(2, mu) + floor(ssb_idx*M)) % nb_slots_per_frame;
   }
-  else { //nr_pdcch_mux_pattern_type_2, nr_pdcch_mux_pattern_type_3
+  else { //nr_ssb_and_cset_mux_pattern_type_2, nr_ssb_and_cset_mux_pattern_type_3
     pdcch_vars->nb_slots = 1;
   }
 
+}
+
+void nr_get_pdcch_vars_from_config(nr_pdcch_vars_t* pdcch_vars,
+                                   nfapi_nr_coreset_t* coreset,
+                                   nfapi_nr_search_space_t* search_space) {
+
+  nr_pdcch_coreset_params_t cset_params = pdcch_vars->coreset_params;
+  nr_pdcch_ss_params_t ss_params = pdcch_vars->ss_params;
+  
 }
