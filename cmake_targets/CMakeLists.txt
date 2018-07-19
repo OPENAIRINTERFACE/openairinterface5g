@@ -291,7 +291,7 @@ elseif (${RRC_ASN1_VERSION} STREQUAL "CBA")
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel10")
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn)
 else()
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/RRC-e30.asn)
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/RRC-36331-f22.asn)
 endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
@@ -301,6 +301,9 @@ if(NOT EXISTS ${asn1c_call})
 endif(NOT EXISTS ${asn1c_call})
 
 message("calling asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
+#execute_process(COMMAND mkdir -p ${RRC_FULL_DIR}
+#                COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
+#                RESULT_VARIABLE ret)
 execute_process(COMMAND ${asn1c_call}  
 			${RRC_FULL_DIR} 
 			${RRC_GRAMMAR}

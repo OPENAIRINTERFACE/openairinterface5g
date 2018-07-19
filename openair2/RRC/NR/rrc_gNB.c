@@ -47,7 +47,7 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_UL-DCCH-Message.h"
 #include "NR_DL-DCCH-Message.h"
-
+#include "NR_CellGroupConfig.h"
 #include "NR_MeasResults.h"
 
 #include "rlc.h"
@@ -114,38 +114,49 @@ mui_t                               rrc_gNB_mui = 0;
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-void
-openair_nr_rrc_on(
-  const protocol_ctxt_t* const ctxt_pP
-)
-//-----------------------------------------------------------------------------
-{
+void openair_nr_rrc_on(const protocol_ctxt_t* const ctxt_pP){
+  
   int            CC_id;
+  LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" gNB:OPENAIR NR RRC IN....\n",PROTOCOL_NR_RRC_CTXT_ARGS(ctxt_pP));
 
-    LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" gNB:OPENAIR NR RRC IN....\n",
-          PROTOCOL_NR_RRC_CTXT_ARGS(ctxt_pP));
-    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
-      RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
-      rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
-      RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
-    }
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+    rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
+    RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
+    rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
+    RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
+  }
+
 }
 
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-static void
-init_NR_SI(
-  const protocol_ctxt_t* const ctxt_pP,
-  const int              CC_id
-#if defined(ENABLE_ITTI)
-  ,
-  gNB_RrcConfigurationReq * configuration
-#endif
-)
-//-----------------------------------------------------------------------------
-{
+void rrc_gNB_process_SgNBAdditionRequest( 
+     const protocol_ctxt_t  *const ctxt_pP,
+     rrc_gNB_ue_context_t   *ue_context_pP 
+     ){
+
+  rrc_gNB_generate_SgNBAdditionRequestAcknowledge(ctxt_pP,ue_context_pP);
+}
+
+void rrc_gNB_generate_SgNBAdditionRequestAcknowledge( 
+     const protocol_ctxt_t  *const ctxt_pP,
+     rrc_gNB_ue_context_t   *const ue_context_pP
+     ){
+
+
+}
+
+///---------------------------------------------------------------------------------------------------------------///
+///---------------------------------------------------------------------------------------------------------------///
+
+static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
+                       const int              CC_id
+                       #if defined(ENABLE_ITTI)
+                       ,
+                       gNB_RrcConfigurationReq * configuration
+                       #endif
+                      ){
   //int                                 i;
 
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
