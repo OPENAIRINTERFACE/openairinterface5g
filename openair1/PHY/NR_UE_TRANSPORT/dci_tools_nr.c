@@ -51,6 +51,7 @@
 #define NR_PDCCH_DCI_TOOLS
 #define NR_PDCCH_DCI_TOOLS_DEBUG
 
+
 #if 0
 
 uint32_t localRIV2alloc_LUT6[32];
@@ -4049,6 +4050,122 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
   uint16_t l_symbol;
   uint16_t start_symbol;
   uint16_t tmp_symbol;
+  // dmrs_typeA_pos provided by higher layers. FIXME !!!
+  uint8_t dmrs_typeA_pos = 2;
+  uint8_t sliv_S;
+  uint8_t sliv_L;
+  uint8_t k_offset; 
+  uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?12:11}, // row index 1
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?10:9},  // row index 2
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?9:8},   // row index 3
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?7:6},   // row index 4
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?5:4},   // row index 5
+  {0,(dmrs_typeA_pos == 2)?9:10,(dmrs_typeA_pos == 2)?4:4},   // row index 6
+  {0,(dmrs_typeA_pos == 2)?4:6, (dmrs_typeA_pos == 2)?4:4},   // row index 7
+  {0,5,7},  // row index 8
+  {0,5,2},  // row index 9
+  {0,9,2},  // row index 10
+  {0,12,2}, // row index 11
+  {0,1,13}, // row index 12
+  {0,1,6},  // row index 13
+  {0,2,4},  // row index 14
+  {0,4,7},  // row index 15
+  {0,8,4}   // row index 16
+  };
+  uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?6:5},   // row index 1
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?10:9},  // row index 2
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?9:8},   // row index 3
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?7:6},   // row index 4
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?5:4},   // row index 5
+  {0,(dmrs_typeA_pos == 2)?6:8, (dmrs_typeA_pos == 2)?4:2},   // row index 6
+  {0,(dmrs_typeA_pos == 2)?4:6, (dmrs_typeA_pos == 2)?4:4},   // row index 7
+  {0,5,6},  // row index 8
+  {0,5,2},  // row index 9
+  {0,9,2},  // row index 10
+  {0,10,2}, // row index 11
+  {0,1,11}, // row index 12
+  {0,1,6},  // row index 13
+  {0,2,4},  // row index 14
+  {0,4,6},  // row index 15
+  {0,8,4}   // row index 16
+  };
+  uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  {0,2,2},  // row index 1
+  {0,4,2},  // row index 2
+  {0,6,2},  // row index 3
+  {0,8,2},  // row index 4
+  {0,10,2}, // row index 5
+  {1,2,2},  // row index 6
+  {1,4,2},  // row index 7
+  {0,2,4},  // row index 8
+  {0,4,4},  // row index 9
+  {0,6,4},  // row index 10
+  {0,8,4},  // row index 11
+  {0,10,4}, // row index 12
+  {0,2,7},  // row index 13
+  {0,(dmrs_typeA_pos == 2)?2:3,(dmrs_typeA_pos == 2)?12:11},  // row index 14
+  {1,2,4},  // row index 15
+  {0,0,0}   // row index 16
+  };
+  uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  {0,2,2},  // row index 1
+  {0,4,2},  // row index 2
+  {0,6,2},  // row index 3
+  {0,8,2},  // row index 4
+  {0,10,2}, // row index 5
+  {0,0,0},  // row index 6
+  {0,0,0},  // row index 7
+  {0,2,4},  // row index 8
+  {0,4,4},  // row index 9
+  {0,6,4},  // row index 10
+  {0,8,4},  // row index 11
+  {0,10,4}, // row index 12
+  {0,2,7},  // row index 13
+  {0,(dmrs_typeA_pos == 2)?2:3,(dmrs_typeA_pos == 2)?12:11},  // row index 14
+  {0,0,6},  // row index 15
+  {0,2,6}   // row index 16
+  };
+  uint8_t mu_pusch = 1;
+  // definition table j Table 6.1.2.1.1-4
+  uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
+  uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
+  {j,  0,14}, // row index 1
+  {j,  0,12}, // row index 2
+  {j,  0,10}, // row index 3
+  {j,  2,10}, // row index 4
+  {j,  4,10}, // row index 5
+  {j,  4,8},  // row index 6
+  {j,  4,6},  // row index 7
+  {j+1,0,14}, // row index 8
+  {j+1,0,12}, // row index 9
+  {j+1,0,10}, // row index 10
+  {j+2,0,14}, // row index 11
+  {j+2,0,12}, // row index 12
+  {j+2,0,10}, // row index 13
+  {j,  8,6},  // row index 14
+  {j+3,0,14}, // row index 15
+  {j+3,0,10}  // row index 16
+  };
+  uint8_t table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
+  {j,  0,8},  // row index 1
+  {j,  0,12}, // row index 2
+  {j,  0,10}, // row index 3
+  {j,  2,10}, // row index 4
+  {j,  4,4},  // row index 5
+  {j,  4,8},  // row index 6
+  {j,  4,6},  // row index 7
+  {j+1,0,8},  // row index 8
+  {j+1,0,12}, // row index 9
+  {j+1,0,10}, // row index 10
+  {j+2,0,6},  // row index 11
+  {j+2,0,12}, // row index 12
+  {j+2,0,10}, // row index 13
+  {j,  8,4},  // row index 14
+  {j+3,0,8},  // row index 15
+  {j+3,0,10}  // row index 16
+  };
 
 
  /*
@@ -4276,11 +4393,29 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
                // where I the number of entries in the higher layer parameter pusch-AllocationList
         nr_pdci_info_extracted->time_dom_resource_assignment     = (uint8_t)(((((*(uint64_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format-15]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format-15]));
         if (dci_format == format0_0 || dci_format == format0_1){ // Subclause 6.1.2.1 of [6, TS 38.214]
+          k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[nr_pdci_info_extracted->time_dom_resource_assignment][0];
+          sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[nr_pdci_info_extracted->time_dom_resource_assignment][1];
+          sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[nr_pdci_info_extracted->time_dom_resource_assignment][2];
+          // k_offset = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
+          // sliv_S   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
+          // sliv_L   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
 
         }
         if (dci_format == format1_0 || dci_format == format1_1){ // Subclause 5.1.2.1 of [6, TS 38.214]
-         //the Time domain resource assignment field of the DCI provides a row index of a higher layer configured table pdsch-symbolAllocation
-         // FIXME! To clarify which parameters to update after reception of row index
+          // the Time domain resource assignment field of the DCI provides a row index of a higher layer configured table pdsch-symbolAllocation
+          // FIXME! To clarify which parameters to update after reception of row index
+          k_offset = table_5_1_2_1_1_2_time_dom_res_alloc_A[nr_pdci_info_extracted->time_dom_resource_assignment][0];
+          sliv_S   = table_5_1_2_1_1_2_time_dom_res_alloc_A[nr_pdci_info_extracted->time_dom_resource_assignment][1];
+          sliv_L   = table_5_1_2_1_1_2_time_dom_res_alloc_A[nr_pdci_info_extracted->time_dom_resource_assignment][2];
+          // k_offset = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
+          // sliv_S   = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
+          // sliv_L   = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
+          // k_offset = table_5_1_2_1_1_4_time_dom_res_alloc_B[nr_pdci_info_extracted->time_dom_resource_assignment][0];
+          // sliv_S   = table_5_1_2_1_1_4_time_dom_res_alloc_B[nr_pdci_info_extracted->time_dom_resource_assignment][1];
+          // sliv_L   = table_5_1_2_1_1_4_time_dom_res_alloc_B[nr_pdci_info_extracted->time_dom_resource_assignment][2];
+          // k_offset = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][0];
+          // sliv_S   = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][1];
+          // sliv_L   = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][2];
         }
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->time_dom_resource_assignment=%x\n",nr_pdci_info_extracted->time_dom_resource_assignment);
