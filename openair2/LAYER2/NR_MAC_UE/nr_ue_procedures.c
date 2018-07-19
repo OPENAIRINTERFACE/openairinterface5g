@@ -53,7 +53,6 @@ int8_t nr_ue_decode_mib(
     nr_mac_rrc_data_ind_ue( module_id, CC_id, gNB_index,
 		     NR_BCCH_BCH, (uint8_t *) pduP, pdu_len );
     
-
     uint32_t frame = mac->mib->systemFrameNumber.buf[0];
     uint32_t frame_number_4lsb = (uint32_t)(extra_bits & 0xf);                      //	extra bits[0:3]
     uint32_t half_frame_bit = (uint32_t)(( extra_bits >> 4 ) & 0x1 );               //	extra bits[4]
@@ -74,6 +73,16 @@ int8_t nr_ue_decode_mib(
             ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
         }
     }
+
+
+printf("subcarrier spacing:          %d\n", mac->mib->subCarrierSpacingCommon);
+printf("ssb carrier offset:          %d\n", ssb_subcarrier_offset);
+printf("dmrs type A position:        %d\n", mac->mib->dmrs_TypeA_Position);
+printf("pdcch config sib1:           %d\n", mac->mib->pdcch_ConfigSIB1);
+printf("cell barred:                 %d\n", mac->mib->cellBarred);
+printf("intra frequcney reselection: %d\n", mac->mib->intraFreqReselection);
+printf("system frame number:         %d\n", frame);
+printf("half frame bit:              %d\n", half_frame_bit);
 
 
     // fill in the elements in config request inside P5 message

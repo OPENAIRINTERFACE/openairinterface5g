@@ -33,28 +33,13 @@
 #ifndef __LAYER2_NR_UE_MAC_DEFS_H__
 #define __LAYER2_NR_UE_MAC_DEFS_H__
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-
-/** @defgroup _mac  MAC
- * @ingroup _oai2
- * @{
- */
-
-/*!\brief Values of BCCH logical channel (fake)*/
 #define NR_BCCH_DL_SCH 3			// SI
 
-/*!\brief Values of PCCH logical channel (fake) */
 #define NR_BCCH_BCH 5			// MIB
-/*@}*/
-
-
-
-
 
 /*!\brief UE layer 2 status */
 typedef enum {
@@ -63,12 +48,6 @@ typedef enum {
     PHY_RESYNCH,
     PHY_HO_PRACH
 } UE_L2_STATE_t;
-
-
-
-
-
-
 
 
 #endif /*__LAYER2_MAC_DEFS_H__ */

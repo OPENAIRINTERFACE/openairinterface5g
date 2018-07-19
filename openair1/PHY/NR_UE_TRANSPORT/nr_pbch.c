@@ -641,10 +641,10 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   nushift = (Lmax==4)? ssb_index&3 : ssb_index&7;
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0);
 
-#ifdef DEBUG_PBCH
+//#ifdef DEBUG_PBCH
     if (i<16){
     printf("unscrambling demod_pbch_e[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
-#endif
+//#endif
 		
   //polar decoding de-rate matching
   decoderState = polar_decoder(demod_pbch_e, pbch_a_b, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
@@ -656,10 +656,10 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
       //printf("pbch_a_b[%d] = %u pbch_a_prime[i/8] 0x%02x \n", i,pbch_a_b[i],pbch_a_prime[i/8]);
     }
 
-#ifdef DEBUG_PBCH
+//#ifdef DEBUG_PBCH
   for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
      printf("pbch_a_prime[%d] = 0x%02x\n", i,pbch_a_prime[i]);
-#endif
+//#endif
   
   //payload un-scrambling
   memset(nr_ue_pbch_vars->pbch_a_interleaved, 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS>>3);
@@ -675,9 +675,9 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   for (int i=0; i<32; i++) {
     out |= ((in>>i)&1)<<(pbch_deinterleaving_pattern[i]);
-#ifdef DEBUG_PBCH
+//#ifdef DEBUG_PBCH
   printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, in, out, pbch_deinterleaving_pattern[i], (in>>i)&1);
-#endif
+//#endif
   }
 
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
@@ -697,7 +697,9 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
     
     ue->dl_indication.rx_ind.rx_request_body.pdu_index = FAPI_NR_RX_PDU_BCCH_BCH_TYPE;
     ue->dl_indication.rx_ind.rx_request_body.pdu_length = 3;
-    ue->dl_indication.rx_ind.rx_request_body.pdu = &pbch_a[0];
+//    ue->dl_indication.rx_ind.rx_request_body.pdu = &pbch_a[0];
+
+    ue->dl_indication.rx_ind.rx_request_body.pdu = &decoded_output[0];
     ue->if_inst->dl_indication(&ue->dl_indication);
     
 }

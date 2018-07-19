@@ -299,11 +299,17 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
         SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)mib, 1 );
     }
 
+
+for(i=0; i<4; ++i){
+printf("[RRC] bcch undecod : %d\n", bufferP[i]);
+}
+
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
                             &asn_DEF_NR_BCCH_BCH_Message,
                             (void **)&bcch_message,
-                            (const void *)bufferP,
-                            buffer_len );
+                            (const void *)bufferP[1],
+                            3//buffer_len
+		    );
 
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
         
