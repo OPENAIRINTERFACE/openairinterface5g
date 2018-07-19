@@ -58,32 +58,30 @@ int8_t nr_ue_decode_mib(
     uint32_t half_frame_bit = (uint32_t)(( extra_bits >> 4 ) & 0x1 );               //	extra bits[4]
     uint32_t ssb_subcarrier_offset_msb = (uint32_t)(( extra_bits >> 5 ) & 0x1 );    //	extra bits[5]
     
-    uint32_t ssb_subcarrier_offset = mac->mib->subCarrierSpacingCommon;
+    uint32_t ssb_subcarrier_offset = mac->mib->ssb_SubcarrierOffset;
 
-    uint32_t ssb_index;
+    uint32_t ssb_index = 0;
 
     frame = frame << 4;
     frame = frame | frame_number_4lsb;
 
     if(l_ssb_equal_64){
     	ssb_index = (( extra_bits >> 5 ) & 0x7 );                                   //	extra bits[5:7]
-    	mac->phy_config.config_req.pbch_config.ssb_index = ssb_index;
     }else{
         if(ssb_subcarrier_offset_msb){
             ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
         }
     }
 
-
-printf("subcarrier spacing:          %d\n", mac->mib->subCarrierSpacingCommon);
-printf("ssb carrier offset:          %d\n", ssb_subcarrier_offset);
-printf("dmrs type A position:        %d\n", mac->mib->dmrs_TypeA_Position);
-printf("pdcch config sib1:           %d\n", mac->mib->pdcch_ConfigSIB1);
-printf("cell barred:                 %d\n", mac->mib->cellBarred);
-printf("intra frequcney reselection: %d\n", mac->mib->intraFreqReselection);
-printf("system frame number:         %d\n", frame);
-printf("half frame bit:              %d\n", half_frame_bit);
-
+printf("system frame number(with LSB): %d\n", (int)frame);
+printf("subcarrier spacing:            %d\n", (int)mac->mib->subCarrierSpacingCommon);
+printf("ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
+printf("dmrs type A position:          %d\n", (int)mac->mib->dmrs_TypeA_Position);
+printf("pdcch config sib1:             %d\n", (int)mac->mib->pdcch_ConfigSIB1);
+printf("cell barred:                   %d\n", (int)mac->mib->cellBarred);
+printf("intra frequcney reselection:   %d\n", (int)mac->mib->intraFreqReselection);
+printf("half frame bit(extra bits):    %d\n", (int)half_frame_bit);
+printf("ssb index(extra bits):         %d\n", (int)ssb_index);
 
     // fill in the elements in config request inside P5 message
     mac->phy_config.config_req.pbch_config.system_frame_number = frame;    //  after calculation
@@ -94,6 +92,7 @@ printf("half frame bit:              %d\n", half_frame_bit);
     mac->phy_config.config_req.pbch_config.cell_barred = mac->mib->cellBarred;
     mac->phy_config.config_req.pbch_config.intra_frequency_reselection = mac->mib->intraFreqReselection;
     mac->phy_config.config_req.pbch_config.half_frame_bit = half_frame_bit;
+    mac->phy_config.config_req.pbch_config.ssb_index = ssb_index;
     mac->phy_config.config_req.config_mask |= FAPI_NR_CONFIG_REQUEST_MASK_PBCH;
 
     if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL){

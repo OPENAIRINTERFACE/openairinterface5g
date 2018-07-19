@@ -300,15 +300,15 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     }
 
 
-for(i=0; i<4; ++i){
-printf("[RRC] bcch undecod : %d\n", bufferP[i]);
-}
+    for(i=0; i<buffer_len; ++i){
+        printf("[RRC] MIB PDU : %d\n", bufferP[i]);
+    }
 
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
                             &asn_DEF_NR_BCCH_BCH_Message,
                             (void **)&bcch_message,
-                            (const void *)bufferP[1],
-                            3//buffer_len
+                            (const void *)bufferP,
+                            buffer_len
 		    );
 
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
