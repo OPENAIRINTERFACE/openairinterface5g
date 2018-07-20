@@ -43,13 +43,13 @@ static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 int8_t handle_bcch_bch(uint32_t pdu_len, uint8_t *pduP){
 
     //  pdu_len = 4, 32bits
-    uint8_t extra_bits = pduP[3];
+    uint8_t extra_bits = pduP[0];
     nr_ue_decode_mib(   (module_id_t)0,
                         0,
                         0,
                         extra_bits,
                         0,  //  Lssb = 64 is not support
-                        pduP,
+                        &pduP[1],
                         pdu_len );
 
 

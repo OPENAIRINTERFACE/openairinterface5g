@@ -223,7 +223,14 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     nr_gold_pbch(ue);
     ret = nr_pbch_detection(ue,mode);
-    ret = -1;  //to be deleted
+
+LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
+              ue->Mod_id,
+              ue->proc.proc_rxtx[0].frame_rx,
+              ue->rx_offset,
+              ue->common_vars.freq_offset );
+
+    //ret = -1;  //to be deleted
     //   write_output("rxdata2.m","rxd2",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
