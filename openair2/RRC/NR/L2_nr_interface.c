@@ -29,8 +29,8 @@
  */
 
 #include "platform_types.h"
-#include "rrc_defs.h"
-#include "rrc_extern.h"
+#include "nr_rrc_defs.h"
+#include "nr_rrc_extern.h"
 #include "UTIL/LOG/log.h"
 #include "pdcp.h"
 #include "msc.h"

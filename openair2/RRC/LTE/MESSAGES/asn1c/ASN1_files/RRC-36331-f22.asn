@@ -7905,7 +7905,7 @@ MeasObjectNR-r15 ::=				SEQUENCE {
 	carrierFreq-r15						ARFCN-ValueNR-r15,
 	rs-ConfigSSB-r15					RS-ConfigSSB-NR-r15,
 	threshRS-Index-r15					ThresholdListNR-r15				OPTIONAL,		-- Need OR
-	maxRS-IndexCellQualNR-r15			INTEGER (1.. maxRS-IndexCellQual-r15)			OPTIONAL,		-- Need OR
+	maxRS-IndexCellQual-r15			INTEGER (1.. maxRS-IndexCellQualNR-r15)			OPTIONAL,		-- Need OR
 	offsetFreq-r15						Q-OffsetRangeInterRAT			DEFAULT 0,
 	blackCellsToRemoveList-r15			CellIndexList					OPTIONAL,		-- Need ON
 	blackCellsToAddModList-r15			CellsToAddModListNR-r15			OPTIONAL,		-- Need ON
@@ -11807,7 +11807,7 @@ maxReservationPeriod-r14	INTEGER ::= 16	-- Maximum number of resource reservatio
 maxRS-Index-r15				INTEGER ::= 64	-- Maximum number of RS indices
 maxRS-Index-1-r15				INTEGER ::= 63	-- Highest value of RS index as used to identify
 											-- RS index in RRM reports.
-maxRS-IndexCellQual-r15	INTEGER ::= 16	-- Maximum number of RS indices averaged to derive
+maxRS-IndexCellQualNR-r15	INTEGER ::= 16	-- Maximum number of RS indices averaged to derive
 											-- cell quality for RRM.
 maxRS-IndexReport-r15		INTEGER ::= 32	-- Maximum number of RS indices for RRM.
 maxRSTD-Freq-r10			INTEGER ::= 3	-- Maximum number of frequency layers for RSTD

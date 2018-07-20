@@ -48,6 +48,15 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
                            const uint8_t     Nb_tb,
                            uint8_t *const    buffer_pP );
 
+void rrc_gNB_process_SgNBAdditionRequest( 
+     const protocol_ctxt_t  *const ctxt_pP,
+     rrc_gNB_ue_context_t   *ue_context_pP 
+     );
+
+void rrc_gNB_generate_SgNBAdditionRequestAcknowledge( 
+     const protocol_ctxt_t  *const ctxt_pP,
+     rrc_gNB_ue_context_t   *const ue_context_pP
+     );
 
 #if defined(ENABLE_ITTI)
 /**\brief RRC eNB task.

@@ -44,7 +44,7 @@
 //#include "LAYER2/RLC/rlc.h"
 
 //#include "COMMON/mac_rrc_primitives.h"
-#if defined(NR_Rel15)
+
 #include "NR_SIB1.h"
 //#include "SystemInformation.h"
 //#include "RRCConnectionReconfiguration.h"
@@ -65,7 +65,7 @@
 #include "NR_UE-NR-Capability.h"
 #include "NR_MeasResults.h"
 #include "NR_ServingCellConfigCommon.h"
-#endif
+
 //-------------------
 
 #if defined(ENABLE_ITTI)
