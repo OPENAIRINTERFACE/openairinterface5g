@@ -309,7 +309,7 @@ void  log_getconfig(log_t *g_log) {
           logparams_logfile[i].optname[j] = tolower(logparams_logfile[i].optname[j]);
 /* */
     logparams_level[i].defstrval     = gloglevel;
-    logparams_verbosity[i].defstrval = glogverbo;
+    logparams_verbosity[i].defstrval = glogverbo; 
     logparams_logfile[i].defstrval   = malloc(strlen(g_log->log_component[i].name) + 16);
     sprintf(logparams_logfile[i].defstrval,"/tmp/oai%s.log",g_log->log_component[i].name);
     logparams_logfile[i].numelt      = 0;
@@ -332,7 +332,7 @@ void  log_getconfig(log_t *g_log) {
     if ( logparams_logfile[i].defstrval != NULL) {
        free (logparams_logfile[i].defstrval);
     }
-  }
+    }
 }
 
 int register_log_component(char *name, char *fext, int compidx)
@@ -536,7 +536,7 @@ int logInit_log_mem (void)
       if ((pthread_mutex_init (&log_mem_lock, NULL) != 0)
           || (pthread_cond_init (&log_mem_notify, NULL) != 0)) {
         log_mem_d[1].enable_flag=0;
-        return 0;
+        return -1;
       }
       pthread_create(&log_mem_thread, NULL, (void *(*)(void *))log_mem_write, (void*)NULL);
     }else{
@@ -576,7 +576,7 @@ void nfapi_log(const char *file, const char *func, int line, int comp, int level
   /* for no gcc warnings */
   (void)log_start;
   (void)log_end;
-   
+
 
   c = &g_log->log_component[comp];
 
@@ -669,9 +669,44 @@ void nfapi_log(const char *file, const char *func, int line, int comp, int level
   va_end(args);
 
   // OAI printf compatibility
-  if ((g_log->onlinelog == 1) && (level != LOG_FILE))
+  if ((g_log->onlinelog == 1) && (level != LOG_FILE)) {
+    if(log_mem_flag==1){
+      if(log_mem_d[log_mem_side].enable_flag==1){
+        int temp_index;
+        temp_index=log_mem_d[log_mem_side].buf_index;
+        if(temp_index+len+1 < LOG_MEM_SIZE){
+          log_mem_d[log_mem_side].buf_index+=len;
+          memcpy(&log_mem_d[log_mem_side].buf_p[temp_index],log_buffer,len);
+        }else{
+          log_mem_d[log_mem_side].enable_flag=0;
+          if(log_mem_d[1-log_mem_side].enable_flag==1){
+            temp_index=log_mem_d[1-log_mem_side].buf_index;
+            if(temp_index+len+1 < LOG_MEM_SIZE){
+              log_mem_d[1-log_mem_side].buf_index+=len;
+              log_mem_side=1-log_mem_side;
+              memcpy(&log_mem_d[log_mem_side].buf_p[temp_index],log_buffer,len);
+              /* write down !*/
+              if (pthread_mutex_lock(&log_mem_lock) != 0) {
+                return;
+              }
+              if(log_mem_write_flag==0){
+                log_mem_write_side=1-log_mem_side;
+                if(pthread_cond_signal(&log_mem_notify) != 0) {
+                }
+              }
+              if(pthread_mutex_unlock(&log_mem_lock) != 0) {
+                return;
+              }
+            }else{
+              log_mem_d[1-log_mem_side].enable_flag=0;
+            }
+          }
+        }
+      }
+    }else{
       fwrite(log_buffer, len, 1, stdout);
-
+    }
+  }
 
   if (g_log->syslog) {
     syslog(g_log->level, "%s", log_buffer);

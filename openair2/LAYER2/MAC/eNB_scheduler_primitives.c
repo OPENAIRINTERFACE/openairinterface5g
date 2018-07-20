@@ -3561,39 +3561,43 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	  frame_tx = subframeP < 4 ? frameP -1 : frameP;
 	harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame_tx,subframe_tx);
         RA_t *ra = &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
-	
-	if(num_ack_nak==1){
-	  if(harq_indication_tdd->harq_data[0].bundling.value_0==1){ //ack
-	    sched_ctl->round[CC_idP][harq_pid] = 8; // release HARQ process
-	    sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
-	    LOG_D(MAC,"frame %d subframe %d Acking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
-	  }else{ //nack
-	    if( sched_ctl->round[CC_idP][harq_pid]<8) sched_ctl->round[CC_idP][harq_pid]++;
-	    LOG_D(MAC,"frame %d subframe %d Nacking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
-	    if(sched_ctl->round[CC_idP][harq_pid] == 8){
-	      for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
-		if((ra[ra_i].rnti == rnti) && (ra[ra_i].state == WAITMSG4ACK)){
-		  //Msg NACK num to MAC ,remove UE
-		  // add UE info to freeList
-		  LOG_I(MAC, "put UE %x into freeList\n", rnti);
-		  put_UE_in_freelist(mod_idP, rnti, 1);
-		}
-	      }
-	    }
-	  }
-	}
-	for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
-	  if ((ra[ra_i].rnti == rnti) && (ra[ra_i].state == MSGCRNTI_ACK) && (ra[ra_i].crnti_harq_pid == harq_pid)) {
-	    LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",harq_indication_tdd->harq_data[0].bundling.value_0,rnti,sched_ctl->round[CC_idP][harq_pid],frameP,subframeP);
-	    if(num_ack_nak == 1 && harq_indication_tdd->harq_data[0].bundling.value_0 == 1) {
-	      cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
-	    }else{
-	      if(sched_ctl->round[CC_idP][harq_pid] == 7){
-		cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
-	      }
-	    }
-	    break;
-	  }
+
+       if(num_ack_nak==1){
+         if(harq_indication_tdd->harq_data[0].bundling.value_0==1){ //ack
+           sched_ctl->round[CC_idP][harq_pid] = 8; // release HARQ process
+           sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+           LOG_D(MAC,"frame %d subframe %d Acking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
+         }else{ //nack
+	   if( sched_ctl->round[CC_idP][harq_pid]<8) sched_ctl->round[CC_idP][harq_pid]++;
+           if (sched_ctl->round[CC_idP][harq_pid] == 4) {
+             sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
+             sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+           }
+           LOG_D(MAC,"frame %d subframe %d Nacking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
+      if(sched_ctl->round[CC_idP][harq_pid] == 8){
+       for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
+        if((ra[ra_i].rnti == rnti) && (ra[ra_i].state == WAITMSG4ACK)){
+         //Msg NACK num to MAC ,remove UE
+         // add UE info to freeList
+         LOG_I(RRC, "put UE %x into freeList\n", rnti);
+         put_UE_in_freelist(mod_idP, rnti, 1);
+        }
+       }
+      }
+         }
+        }
+        for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
+        if ((ra[ra_i].rnti == rnti) && (ra[ra_i].state == MSGCRNTI_ACK) && (ra[ra_i].crnti_harq_pid == harq_pid)) {
+         LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",harq_indication_tdd->harq_data[0].bundling.value_0,rnti,sched_ctl->round[CC_idP][harq_pid],frameP,subframeP);
+         if(num_ack_nak == 1 && harq_indication_tdd->harq_data[0].bundling.value_0 == 1) {
+          cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
+         }else{
+          if(sched_ctl->round[CC_idP][harq_pid] == 7){
+           cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
+          }
+         }
+         break;
+        }
        }
       }
       break;
@@ -4481,18 +4485,11 @@ static int nack_or_dtx_reported(
   int i;
 
   if (cc->tdd_Config) {
-    nfapi_harq_indication_tdd_rel13_t *harq_indication_tdd = &harq_pdu->harq_indication_tdd_rel13;
-    // AssertFatal(0==1, "TDD to be done. FAPI structures (see nfapi_harq_indication_tdd_rel13_t) are not clean. To be cleaned as well?\n");
-    AssertFatal(harq_indication_tdd->number_of_ack_nack==1,"number of ack/nak %d != 1\n",harq_indication_tdd->number_of_ack_nack); 
-    switch (harq_indication_tdd->mode) {
-    case 0: // Format 1a/b bundling
-      if (harq_indication_tdd->harq_data[0].bundling.value_0 == 1) return 1;
-      return 0;
-      break;
-    default:
-      AssertFatal(1==0,"harq_indication_tdd type is not bundling\n");
-      break;
-    }
+    nfapi_harq_indication_tdd_rel13_t *hi = &harq_pdu->harq_indication_tdd_rel13;
+    for (i = 0; i < hi->number_of_ack_nack; hi++)
+      if (hi->harq_data[0].bundling.value_0 != 1) //only bundling is used for tdd for now
+        return 1;
+    return 0;
   } else {
     nfapi_harq_indication_fdd_rel13_t *hi = &harq_pdu->harq_indication_fdd_rel13;
     for (i = 0; i < hi->number_of_ack_nack; hi++)
