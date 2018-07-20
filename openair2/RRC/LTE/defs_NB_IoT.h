@@ -18,7 +18,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file RRC/LITE/defs_NB_IoT.h
+/*! \file RRC/LTE/defs_NB_IoT.h
 * \brief NB-IoT RRC struct definitions and function prototypes
 * \author Navid Nikaein, Raymond Knopp and Michele Paffetti
 * \date 2010 - 2014, 2017

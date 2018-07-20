@@ -37,7 +37,7 @@
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
-#include "RRC/LITE/vars.h"
+#include "RRC/LTE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/LOG/log.h"
 #include "OCG_vars.h"
