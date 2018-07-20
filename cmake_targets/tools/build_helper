@@ -56,7 +56,7 @@ white='\E[37m'
 reset_color='\E[00m'
 COLORIZE=1
 
-cecho()  {  
+cecho()  {
     # Color-echo
     # arg1 = message
     # arg2 = color
@@ -147,10 +147,10 @@ clean_kernel() {
 clean_all_files() {
  set_openair_env
  dir=$OPENAIR_DIR/cmake_targets
- rm -rf $dir/log $OPENAIR_DIR/targets/bin/* 
+ rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
  rm -rf $dir/lte_build_oai $dir/lte-simulators/build
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
- rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build 
+ rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build
 }
 
 ###################################
@@ -272,7 +272,7 @@ check_install_usrp_uhd_driver(){
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
         # The new USRP repository
-        # Raphael Defosseux: Adding a loop on adding PPA because in CI the gpg key retrieve may 
+        # Raphael Defosseux: Adding a loop on adding PPA because in CI the gpg key retrieve may
         # timeout due to proxy / network latencies in Eurecom on VM
         echo_info "\nAdding PPA repository ettusresearch/uhd\n"
         x=0
@@ -352,7 +352,7 @@ check_install_bladerf_driver(){
         fi
         $SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
         $SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
-        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40	
+        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40
    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         install_bladerf_driver_from_source
    else
@@ -373,7 +373,7 @@ check_install_lmssdr_driver(){
                 echo_error "lmssdr support implies installing lmssdr drivers and tools" \
                            " from sources. check:"
                 echo_info "https://open-cells.com/index.php/2017/05/10/limesdr-installation/"
-                echo_fatal "Cannot compile lmssdr device" 
+                echo_fatal "Cannot compile lmssdr device"
 	fi
 
 
@@ -470,7 +470,7 @@ check_install_additional_tools (){
       python2-matplotlib"
   fi
     $SUDO $INSTALLER install -y $PACKAGE_LIST
-    
+
     $SUDO rm -fr /opt/ssh
     $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
 
@@ -549,6 +549,8 @@ check_install_oai_software() {
 	iptables-dev \
 	libatlas-base-dev \
 	libblas-dev \
+  liblapack-dev\
+  liblapacke-dev\
 	libffi-dev \
 	libforms-bin \
 	libforms-dev \
@@ -602,7 +604,7 @@ check_install_oai_software() {
       # Fedora repos already contain gccxml's successor castxml.
       $SUDO $INSTALLER install -y castxml
     fi
-    
+
     $SUDO $INSTALLER install -y \
       autoconf \
       automake \
@@ -689,7 +691,7 @@ install_asn1c_from_source(){
 }
 
 #################################################
-# 2. compile 
+# 2. compile
 ################################################
 
 install_nas_tools() {
@@ -718,7 +720,7 @@ set_openair_env(){
     [ -f "/.$fullpath" ] || fullpath=`readlink -f $PWD/$fullpath`
     openair_path=${fullpath%/cmake_targets/*}
     openair_path=${openair_path%/targets/*}
-    openair_path=${openair_path%/openair[123]/*}    
+    openair_path=${openair_path%/openair[123]/*}
     export OPENAIR_DIR=$openair_path
     export OPENAIR1_DIR=$openair_path/openair1
     export OPENAIR2_DIR=$openair_path/openair2
@@ -735,7 +737,7 @@ ppid=$$
 arraycounter=1
 echo_info "** Trapped CTRL-C. Killing all subprocesses now..."
 echo_info "** Calling sync now..."
-sync 
+sync
 while true
 do
         FORLOOP=FALSE
@@ -753,7 +755,7 @@ do
            arraycounter=`expr $arraycounter - 1`
            ## We want to kill child process id first and then parent id's
            while [ $arraycounter -ne 0 ]
-           do  
+           do
              echo "first we send ctrl-c to program"
              $SUDO kill -INT "${procid[$arraycounter]}"
              sleep 5

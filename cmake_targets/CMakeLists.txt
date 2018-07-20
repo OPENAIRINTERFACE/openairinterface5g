@@ -515,12 +515,12 @@ set (CONFIG_SOURCES
     ${CONFIG_ROOTDIR}/config_load_configmodule.c
     ${CONFIG_ROOTDIR}/config_userapi.c
     ${CONFIG_ROOTDIR}/config_cmdline.c
-   ) 
+   )
 set (CONFIG_LIBCONFIG_SOURCES
     ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c
-   )   
+   )
 add_library(params_libconfig MODULE ${CONFIG_LIBCONFIG_SOURCES} )
-target_link_libraries(params_libconfig config)  
+target_link_libraries(params_libconfig config)
 # shared library loader
 set (SHLIB_LOADER_SOURCES
     ${OPENAIR_DIR}/common/utils/load_module_shlib.c
@@ -665,6 +665,7 @@ add_boolean_option(SMBV                    False "Rohde&Schwarz SMBV100A vector 
 add_boolean_option(DEBUG_PHY               False "Enable PHY layer debugging options")
 add_boolean_option(DEBUG_PHY_PROC          False "Enable debugging of PHY layer procedures")
 add_boolean_option(DEBUG_DLSCH             False "Enable debugging of DLSCH physical layer channel")
+add_boolean_option(MEX                     False "Enabling compilation with mex")
 
 ##########################
 # NAS LAYER OPTIONS
@@ -984,7 +985,7 @@ set(SECU_CN_SRC
   )
 add_library(SECU_CN ${SECU_CN_SRC})
 
-# Physical Channel Procedures Scheduling  
+# Physical Channel Procedures Scheduling
 ################################"
 set(SCHED_SRC
   ${OPENAIR1_DIR}/SCHED/fapi_l1.c
@@ -1084,6 +1085,7 @@ set(PHY_SRC_COMMON
 #  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/slss.c
 #  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/sldch.c
 #  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/slsch.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/get_pmi.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/group_hopping.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/phich_common.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pcfich_common.c
@@ -1172,6 +1174,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/sss_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/linear_preprocessing_rec.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_decoding.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dci_tools_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/uci_tools_ue.c
@@ -1218,6 +1221,27 @@ add_library(PHY_COMMON ${PHY_SRC_COMMON})
 add_library(PHY ${PHY_SRC})
 add_library(PHY_UE ${PHY_SRC_UE})
 add_library(PHY_RU ${PHY_SRC_RU})
+
+#Library for mex functions
+#########################3
+set(PHY_MEX_UE
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/linear_preprocessing_rec.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_mcs.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/get_pmi.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/dB_routines.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch_common.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cmult_sv.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/cmult_vv.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c
+  ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
+  ${OPENAIR2_DIR}/UTIL/LOG/log.c
+  )
+add_library(PHY_MEX ${PHY_MEX_UE})
 
 #Layer 2 library
 #####################
@@ -1814,11 +1838,13 @@ endif()
 # So, here are some hacks here. Hope this gets fixed in future!
 if(EXISTS "/usr/include/atlas/cblas.h" OR EXISTS "/usr/include/cblas.h")
   include_directories("/usr/include/atlas")
+  LINK_DIRECTORIES("/usr/lib/lapack")
   LINK_DIRECTORIES("/usr/lib64")
   LINK_DIRECTORIES("/usr/lib64/atlas") #Added because atlas libraries in CentOS 7 are here!
-  
+
   if(EXISTS "/usr/lib64/libblas.so" OR EXISTS "/usr/lib/libblas.so") #Case for CentOS7
      list(APPEND ATLAS_LIBRARIES blas)
+
   else() # Case for Ubuntu
      list(APPEND ATLAS_LIBRARIES cblas)
   endif()
@@ -1843,6 +1869,8 @@ elseif(EXISTS "/usr/include/x86_64-linux-gnu/cblas.h")
 else()
   message("No Blas/Atlas libs found, some targets will fail")
 endif()
+
+list(APPEND ATLAS_LIBRARIES lapack lapacke)
 
 if (${XFORMS})
   include_directories ("/usr/include/X11")
@@ -1926,7 +1954,7 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2 
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
@@ -1964,7 +1992,7 @@ add_executable(lte-softmodem-nos1
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} 
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB}
   ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl )
@@ -2004,8 +2032,8 @@ add_executable(lte-uesoftmodem
 
 target_link_libraries (lte-uesoftmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU 
-  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU
+  ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
@@ -2044,8 +2072,8 @@ add_executable(lte-uesoftmodem-nos1
 
 target_link_libraries (lte-uesoftmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} 
-  ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB}
+  ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl )
 
