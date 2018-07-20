@@ -38,7 +38,7 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 //#define DEBUG_DLSCH_DECODING
-//#define UE_DEBUG_TRACE 1
+#define UE_DEBUG_TRACE 1
 
 
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch)

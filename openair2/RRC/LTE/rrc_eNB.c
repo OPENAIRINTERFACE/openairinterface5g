@@ -29,12 +29,15 @@
  */
 #define RRC_ENB
 #define RRC_ENB_C
-
+#include <asn_application.h>
+#include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
+#include <per_encoder.h>
 #include "rrc_defs.h"
 #include "rrc_extern.h"
 #include "assertions.h"
 #include "common/ran_context.h"
 #include "asn1_conversions.h"
+#include "asn_internal.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/mac_proto.h"
