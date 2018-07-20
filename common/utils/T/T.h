@@ -100,7 +100,7 @@ extern int T_stdout;
         20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)(__VA_ARGS__)
 #define TN_N(n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14,n15,n16,n17,\
         n18,n19,n20,n21,n22,n23,n24,n25,n26,n27,n28,n29,n30,n31,n32,n,...) T##n
-#define T(...) if(T_stdout == 0) {TN(__VA_ARGS__);}
+#define T(...) do { if (T_stdout == 0) TN(__VA_ARGS__); } while (0)
 
 /* type used to send arbitrary buffer data */
 typedef struct {
