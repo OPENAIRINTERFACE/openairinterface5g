@@ -78,15 +78,21 @@ typedef struct {
   uint8_t n_rb;
   uint8_t n_symb;
   uint8_t rb_offset;
+  nr_cce_reg_mapping_type_e cr_mapping_type;
   nr_ssb_and_cset_mux_pattern_type_e mux_pattern;
 } nr_pdcch_coreset_params_t;
+
+typedef struct {
+  uint8_t start_sc_idx;
+  uint8_t symb_idx;
+} nr_cce_t;
 
 typedef struct {
   uint8_t first_slot;
   uint8_t nb_slots;
   uint8_t sfn_mod2;
   uint32_t dmrs_scrambling_id;
-  nr_cce_reg_mapping_type_e cr_mapping_type;
+  nr_cce_t cce_list[NR_MAX_PDCCH_AGG_LEVEL];
   nr_pdcch_ss_params_t ss_params;
   nr_pdcch_coreset_params_t coreset_params;
 } nr_pdcch_vars_t;

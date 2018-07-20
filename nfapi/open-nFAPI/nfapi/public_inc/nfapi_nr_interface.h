@@ -375,8 +375,8 @@ typedef struct{
 
 typedef struct {
   nfapi_tl_t tl;
-  nfapi_nr_search_space_t search_space;
-  
+  nfapi_nr_coreset_t coreset;
+  nfapi_nr_search_space_t search_space;  
 } nfapi_nr_dl_config_pdcch_parameters_rel15_t;
 
 typedef struct {

@@ -165,25 +165,69 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
 
   uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH<<1];
   uint8_t idx=0;
+  uint16_t a;
+  int k,l;
+  nr_cce_t cce;
 
   /// DMRS QPSK modulation
-  for (int m=0; m<NR_MAX_PDCCH_DMRS_LENGTH>>1; m++) {
-    idx = ((((gold_pdcch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1)<<1) ^ (((gold_pdcch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1);
-    mod_dmrs[m<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
-    mod_dmrs[(m<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+  for (int i=0; i<NR_MAX_PDCCH_DMRS_LENGTH>>1; i++) {
+    idx = ((((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((gold_pdcch_dmrs[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
+    mod_dmrs[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+    mod_dmrs[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PDCCH_DMRS
-  printf("m %d idx %d gold seq %d b0-b1 %d-%d mod_dmrs %d %d\n", m, idx, gold_pdcch_dmrs[(m<<1)>>5], (((gold_pdcch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1),
-  (((gold_pdcch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1), mod_dmrs[(m<<1)], mod_dmrs[(m<<1)+1]);
+  printf("i %d idx %d gold seq %d b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, gold_pdcch_dmrs[(i<<1)>>5], (((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+  (((gold_pdcch_dmrs[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), mod_dmrs[(i<<1)], mod_dmrs[(i<<1)+1]);
 #endif
   }
 
   /// DCI payload processing
+    //channel coding
+  
     // scrambling
   uint32_t scrambled_payload[4]; 
   nr_pdcch_scrambling(dci_alloc, pdcch_vars, config, scrambled_payload);
 
     // QPSK modulation
-  
+  uint32_t mod_dci[NR_MAX_DCI_SIZE>>1];
+  for (int i=0; i<dci_alloc.size>>1; i++) {
+    idx = (((scrambled_payload[i<<1]>>(i<<1))&1)<<1) ^ ((scrambled_payload[(i<<1)+1]>>((i<<1)+1))&1);
+    mod_dci[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+    mod_dci[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+  }
+
+  /// Resource mapping
+  a = (config.rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
+  uint8_t n_rb = pdcch_vars.coreset_params.n_rb;
+  uint8_t rb_offset = pdcch_vars.coreset_params.n_symb;
+  uint8_t n_symb = pdcch_vars.coreset_params.rb_offset;
+  uint8_t first_slot = pdcch_vars.first_slot;
+  uint8_t first_symb = pdcch_vars.ss_params.first_symbol_idx;
+
+   /*The coreset is initialised
+    * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset
+    * in time: by its first slot and its first symbol*/
+  uint8_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+rb_offset)*NR_NB_SC_PER_RB;
+  uint8_t cset_start_symb = first_slot*frame_parms.symbols_per_slot + first_symb;
+
+  for (int aa = 0; aa < config.rf_config.tx_antenna_ports.value; aa++)
+  {
+    if (cset_start_sc >= frame_parms.ofdm_symbol_size)
+      cset_start_sc -= frame_parms.ofdm_symbol_size;
+
+    for (int cce_idx=0; cce_idx<dci_alloc.L; cce_idx++){
+      cce = pdcch_vars.cce_list[cce_idx];
+      k = cset_start_sc + cce.start_sc_idx;
+      l = cset_start_symb + cce.symb_idx;
+      for (int m=0; m<NR_NB_SC_PER_RB; m++) {
+        ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dci[m<<1]) >> 15;
+        ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dci[(m<<1) + 1]) >> 15;
+        k++;
+        if (k >= frame_parms.ofdm_symbol_size)
+          k -= frame_parms.ofdm_symbol_size;
+      }
+    }
+
+  }
 
   return 0;
 }

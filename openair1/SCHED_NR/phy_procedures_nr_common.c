@@ -39,7 +39,7 @@ uint8_t nr_coreset_nsymb_pdcch_type_0_a40Mhz[10] = {2,2,3,3,1,1,2,2,3,3}; // abo
 /// LUT for the number of RBs in the coreset indexed by coreset index
 uint8_t nr_coreset_rb_offset_pdcch_type_0_b40Mhz[16] = {0,1,2,3,4,0,1,2,3,4,12,14,16,12,14,16};
 uint8_t nr_coreset_rb_offset_pdcch_type_0_a40Mhz[10] = {0,4,0,4,0,28,0,28,0,28};
-/// LUT for monitoring occasions param O indexed by ss index (4 MSB rmsi_pdcch_config)
+/// LUT for monitoring occasions param O indexed by ss index (4 LSB rmsi_pdcch_config)
 uint8_t nr_ss_param_O_type_0_mux1_FR1[16] = {0,0,2,2,5,5,7,7,0,5,0,0,2,2,5,5};
 uint8_t nr_ss_param_O_type_0_mux1_FR2[14] = {0,0,2.5,2.5,5,5,0,2.5,5,7.5,7.5,7.5,0,5};
 /// LUT for number of SS sets per slot indexed by ss index

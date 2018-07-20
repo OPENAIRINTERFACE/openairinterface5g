@@ -42,6 +42,8 @@
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
+#define NR_NB_SC_PER_RB 12
+
 #define NR_SYMBOLS_PER_SLOT 14
 
 #define ONE_OVER_SQRT2_Q15 23170
@@ -60,7 +62,12 @@
 #define NR_MAX_PDCCH_DMRS_LENGTH 100
 #define NR_MAX_PDCCH_DMRS_LENGTH_DWORD 5
 
+#define NR_MAX_DCI_PAYLOAD_SIZE 64
+#define NR_MAX_DCI_SIZE 200 //random values
+
 #define NR_MAX_NUM_BWP 4
+
+#define NR_MAX_PDCCH_AGG_LEVEL 16
 
 typedef enum {
   NR_MU_0=0,
