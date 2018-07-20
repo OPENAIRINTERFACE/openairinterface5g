@@ -367,20 +367,24 @@ void T_local_tracer_main(int remote_port, int wait_for_tracer,
   int port = remote_port;
   int dont_wait = wait_for_tracer ? 0 : 1;
   void *f;
-
+  printf("local tracer starting\n");
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
-  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
+  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR){
+       printf("local tracer received SIGPIPE\n");
+       abort();
+   }
 
   init_shm(shm_file);
   s = local_socket;
-
+  printf("local tracer starting step 2\n");
   if (dont_wait) {
     char t = 2;
+  printf("local tracer in no wait mode \n");
     if (write(s, &t, 1) != 1) abort();
   }
-
+  printf("local tracer starting step 3\n");
   f = forwarder(port, s);
-
+  printf("local tracer main loop.... \n");
   /* read messages */
   while (1) {
     wait_message();

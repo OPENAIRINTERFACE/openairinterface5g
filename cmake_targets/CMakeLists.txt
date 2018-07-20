@@ -244,7 +244,7 @@ add_boolean_option(TEST_OMG            False "???")
 add_boolean_option(DEBUG_OMG           False "???")
 add_boolean_option(XFORMS              False "This adds the possibility to see the signal oscilloscope")
 add_boolean_option(PRINT_STATS         False "This adds the possibility to see the status")
-add_boolean_option(T_TRACER            False "Activate the T tracer, a debugging/monitoring framework" )
+add_boolean_option(T_TRACER            True  "Activate the T tracer, a debugging/monitoring framework" )
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs")
 add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace")
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace")
@@ -899,7 +899,7 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/LISTS/list.c
   ${OPENAIR2_DIR}/UTIL/LISTS/list2.c
   ${OPENAIR2_DIR}/UTIL/LOG/log.c
-  ${OPENAIR2_DIR}/UTIL/LOG/vcd_signal_dumper.c
+#  ${OPENAIR2_DIR}/UTIL/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
   ${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG.c
@@ -2182,7 +2182,7 @@ endforeach(myExe)
 if (${T_TRACER})
   foreach(i
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
-        lte-softmodem lte-softmodem-nos1
+        lte-softmodem lte-softmodem-nos1 lte-uesoftmodem lte-uesoftmodem-nos1
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
         pdcchsim pucchsim prachsim syncsim
         #all "add_library" definitions

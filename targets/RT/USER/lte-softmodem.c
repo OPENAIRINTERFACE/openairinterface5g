@@ -937,10 +937,6 @@ int main( int argc, char **argv )
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   } 
       
-#ifdef DEBUG_CONSOLE
-  setvbuf(stdout, NULL, _IONBF, 0);
-  setvbuf(stderr, NULL, _IONBF, 0);
-#endif
 
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
@@ -970,11 +966,6 @@ int main( int argc, char **argv )
   set_taus_seed (0);
 
   printf("configuring for RAU/RRU\n");
-
-
-  if (ouput_vcd) {
-      VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_eNB.vcd");
-  }
 
   if (opp_enabled ==1) {
     reset_opp_meas();
@@ -1332,8 +1323,6 @@ int main( int argc, char **argv )
         RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
       }
     }
-  if (ouput_vcd)
-    VCD_SIGNAL_DUMPER_CLOSE();
   
   if (opt_enabled == 1)
     terminate_opt();
