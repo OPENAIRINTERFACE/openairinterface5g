@@ -3938,6 +3938,112 @@ void dlsch_channel_level_core(int **dl_ch_estimates_ext,
 
 }
 
+void dlsch_channel_level_median(int **dl_ch_estimates_ext,
+                                int32_t *median,
+                                int n_tx,
+                                int n_rx,
+                                int length,
+                                int start_point)
+{
+
+#if defined(__x86_64__)||defined(__i386__)
+
+  short ii;
+  int aatx,aarx;
+  int length_mod4;
+  int length2;
+  int max = 0, min=0;
+  int norm_pack;
+  __m128i *dl_ch128, norm128D;
+
+  int16_t x = factor2(length);
+  int16_t y = (length)>>x;
+
+  for (aatx=0; aatx<n_tx; aatx++){
+    for (aarx=0; aarx<n_rx; aarx++) {
+      max = 0;
+      min = 0;
+      norm128D = _mm_setzero_si128();
+
+      dl_ch128=(__m128i *)&dl_ch_estimates_ext[aatx*n_rx + aarx][start_point];
+
+      length_mod4=length&3;
+
+      length2 = length>>2;
+
+      for (ii=0;ii<length2;ii++) {
+        norm128D = _mm_srai_epi32( _mm_madd_epi16(dl_ch128[0],dl_ch128[0]), 1);
+          //print_ints("norm128D",&norm128D[0]);
+
+        norm_pack = ((int32_t*)&norm128D)[0] +
+                    ((int32_t*)&norm128D)[1] +
+                    ((int32_t*)&norm128D)[2] +
+                    ((int32_t*)&norm128D)[3];
+
+        if (ii<1){
+          print_ints("norm128D",&norm128D[0]);
+          printf("norm_pack[%d] %d\n", aatx*n_rx + aarx, norm_pack);
+        }
+
+        if (norm_pack > max)
+          max = norm_pack;
+        if (norm_pack < min)
+          min = norm_pack;
+
+          dl_ch128+=1;
+      }
+
+        median[aatx*n_rx + aarx]  = (max+min)>>1;
+
+     // printf("Channel level  median [%d]: %d\n",aatx*n_rx + aarx, median[aatx*n_rx + aarx]);
+      }
+    }
+
+  _mm_empty();
+  _m_empty();
+
+#elif defined(__arm__)
+
+  short rb;
+  unsigned char aatx,aarx,nre=12,symbol_mod;
+  int32x4_t norm128D;
+  int16x4_t *dl_ch128;
+
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++){
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+      max = 0;
+      min = 0;
+      norm128D = vdupq_n_s32(0);
+
+      dl_ch128=(int16x4_t *)&dl_ch_estimates_ext[aatx*n_rx + aarx][start_point];
+
+      length_mod8=length&3;
+      length2 = length>>2;
+
+      for (ii=0;ii<length2;ii++) {
+        norm128D = vshrq_n_u32(vmull_s16(dl_ch128[0],dl_ch128[0]), 1);
+        norm_pack = ((int32_t*)&norm128D)[0] +
+                    ((int32_t*)&norm128D)[1] +
+                    ((int32_t*)&norm128D)[2] +
+                    ((int32_t*)&norm128D)[3];
+
+        if (norm_pack > max)
+          max = norm_pack;
+        if (norm_pack < min)
+          min = norm_pack;
+
+          dl_ch128+=1;
+      }
+
+        median[aatx*n_rx + aarx]  = (max+min)>>1;
+
+      //printf("Channel level  median [%d]: %d\n",aatx*n_rx + aarx, median[aatx*n_rx + aarx]);
+      }
+    }
+#endif
+
+}
+
 void mmse_processing_oai(LTE_UE_PDSCH *pdsch_vars,
                      LTE_DL_FRAME_PARMS *frame_parms,
                      PHY_MEASUREMENTS *measurements,

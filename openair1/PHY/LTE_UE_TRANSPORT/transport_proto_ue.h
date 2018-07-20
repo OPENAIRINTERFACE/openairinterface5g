@@ -966,6 +966,13 @@ void dlsch_channel_level_core(int32_t **dl_ch_estimates_ext,
                               int length,
                               int start_point);
 
+void dlsch_channel_level_median(int **dl_ch_estimates_ext,
+                                int32_t *median,
+                                int n_tx,
+                                int n_rx,
+                                int length,
+                                int start_point);
+
 
 void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
                               LTE_DL_FRAME_PARMS *frame_parms,
