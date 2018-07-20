@@ -330,7 +330,7 @@ endif (NOT ${ret} STREQUAL 0)
 
 file(GLOB rrc_source ${RRC_FULL_DIR}/*.c)
 file(GLOB rrc_h ${RRC_FULL_DIR}/*.h)
-set(rrc_h ${rrc_h} ${RRC_FULL_DIR}/asn1_constants.h)
+set(rrc_h ${rrc_h} ${RRC_FULL_DIR}/asn_constant.h)
 set_source_files_properties(${rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
 add_library(RRC_LIB ${rrc_h} ${rrc_source}
     ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1_msg.c
@@ -340,7 +340,7 @@ include_directories ("${RRC_FULL_DIR}")
 # add the command to generate the source code
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 add_custom_command (
-  OUTPUT ${RRC_FULL_DIR}/asn1_constants.h
+  OUTPUT ${RRC_FULL_DIR}/asn_constant.h
   COMMAND mkdir -p ${RRC_FULL_DIR}
   COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
   DEPENDS ${RRC_GRAMMAR}
@@ -1054,7 +1054,7 @@ set(PHY_TURBOIF
 add_library(coding MODULE ${PHY_TURBOSRC} )
 set(PHY_SRC_COMMON
   # depend on code generation from asn1c
-  ${RRC_FULL_DIR}/asn1_constants.h
+  ${RRC_FULL_DIR}/asn_constant.h
   # actual source
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci_tools_common.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_mcs.c
@@ -2230,13 +2230,13 @@ endif()
 add_custom_command (
   OUTPUT ${OPENAIR_BIN_DIR}/messages.xml
   COMMAND ${xml_command}
-  DEPENDS ${S1AP_OAI_generated} ${RRC_FULL_DIR}/asn1_constants.h
+  DEPENDS ${S1AP_OAI_generated} ${RRC_FULL_DIR}/asn_constant.h
   )
 
 add_custom_command (
   OUTPUT ${OPENAIR_BIN_DIR}/messages_xml.h
   COMMAND sed -e 's/ *//'   -e 's/\"/\\\\\"/g' -e 's/^/\"/' -e 's/$$/\\\\n\"/' ${OPENAIR_BIN_DIR}/messages.xml  > ${OPENAIR_BIN_DIR}/messages_xml.h
-  DEPENDS ${OPENAIR_BIN_DIR}/messages.xml ${RRC_FULL_DIR}/asn1_constants.h
+  DEPENDS ${OPENAIR_BIN_DIR}/messages.xml ${RRC_FULL_DIR}/asn_constant.h
   )
 
 ################
