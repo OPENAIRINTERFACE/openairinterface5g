@@ -750,6 +750,27 @@ ID = LEGACY_OSA_TRACE
     GROUP = ALL:LEGACY_OSA:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
+ID = LEGACY_SIM_INFO
+    DESC = SIM legacy logs - info level
+    GROUP = ALL:LEGACY_SIM:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_SIM_ERROR
+    DESC = SIM legacy logs - error level
+    GROUP = ALL:LEGACY_SIM:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_SIM_WARNING
+    DESC = SIM legacy logs - warning level
+    GROUP = ALL:LEGACY_SIM:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_SIM_DEBUG
+    DESC = SIM legacy logs - debug level
+    GROUP = ALL:LEGACY_SIM:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_SIM_TRACE
+    DESC = SIM legacy logs - trace level
+    GROUP = ALL:LEGACY_SIM:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
+
 # this is a bad hack but I won't fix (function util_print_hex_octets
 # in openairinterface5g/openair2/LAYER2/PDCP_v10.1.0/pdcp_util.c
 # does funky things with the LOG_x macros but we work on the C pre-processor
