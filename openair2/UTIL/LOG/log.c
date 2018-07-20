@@ -328,7 +328,10 @@ void  log_getconfig(log_t *g_log) {
     verbosity = map_str_to_int(log_verbosity_names,*(logparams_verbosity[i].strptr));
     level     = map_str_to_int(log_level_names,    *(logparams_level[i].strptr));
     set_comp_log(i, level,verbosity,1);
-    set_component_filelog(*(logparams_logfile[i].uptr));
+    /* HOTFIX: the following statement crashes, it is thus commented
+     * TODO: proper fix
+     */
+    /*set_component_filelog(*(logparams_logfile[i].uptr));*/
     if ( logparams_logfile[i].defstrval != NULL) {
        free (logparams_logfile[i].defstrval);
     }
