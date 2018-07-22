@@ -42,7 +42,7 @@
 #define debug_msg
 #define ONE_OVER_SQRT2_Q15 23170
 
-
+int oai_exit=0;
 #endif
 
 #define ONE_OVER_SQRT3_Q15 18919
@@ -64,7 +64,7 @@ const static int16_t conjugatedft[32] __attribute__((aligned(32))) = {-1,1,-1,1,
 
 const static int16_t reflip[32]  __attribute__((aligned(32))) = {1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1};
 
-int oai_exit=0;
+
 
 #if defined(__x86_64__) || defined(__i386__)
 static inline void cmac(__m128i a,__m128i b, __m128i *re32, __m128i *im32) __attribute__((always_inline));
