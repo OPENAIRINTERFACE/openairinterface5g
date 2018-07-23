@@ -23,7 +23,7 @@
 
 void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
 {
-  unsigned int n, x1, x2;
+  unsigned int x1, x2;
   unsigned char Nid, i_ssb, i_ssb2;
   unsigned char Lmax, l, n_hf, N_hf;
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
@@ -63,7 +63,7 @@ void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
   for (uint8_t slot=0; fp->slots_per_frame; slot++) {
     for (uint8_t symb=0; fp->symbols_per_slot; symb++) {
 
-      x2 = ((1<<17) * (14*slot+symb+1) * ((Nid<<1)+1) + (Nid<<1))%(1<<31);
+      x2 = ((1<<17) * (14*slot+symb+1) * ((Nid<<1)+1) + (Nid<<1))&(((uint32_t)1<<31)-1);
 
       for (uint32_t n=0; n<NR_MAX_PDCCH_DMRS_LENGTH_DWORD; n++) {
         pdcch_dmrs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);

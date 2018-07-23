@@ -23,7 +23,7 @@
 #define __PHY_NR_TRANSPORT_DCI__H
 
 #include "PHY/defs_gNB.h"
-
+#include "PHY/NR_REFSIG/nr_refsig.h"
 
 typedef enum {
   nr_dci_format_0_0=0,
@@ -66,6 +66,16 @@ typedef enum {
   nr_cce_reg_mapping_non_interleaved
 } nr_cce_reg_mapping_type_e;
 
+typedef enum {
+  nr_cset_config_mib_sib1=0,
+  nr_cset_config_pdcch_config
+} nr_coreset_config_type_e;
+
+typedef enum {
+  nr_cset_same_as_reg_bundle=0,
+  nr_cset_all_contiguous_rbs
+} nr_coreset_precoder_granularity_type_e;
+
 typedef struct {
   uint8_t param_O;
   uint8_t param_M;
@@ -80,11 +90,19 @@ typedef struct {
   uint8_t rb_offset;
   nr_cce_reg_mapping_type_e cr_mapping_type;
   nr_ssb_and_cset_mux_pattern_type_e mux_pattern;
+  nr_coreset_precoder_granularity_type_e precoder_granularity;
+  nr_coreset_config_type_e config_type;
 } nr_pdcch_coreset_params_t;
 
 typedef struct {
+  uint8_t reg_idx;
   uint8_t start_sc_idx;
   uint8_t symb_idx;
+} nr_reg_t;
+
+typedef struct {
+  uint8_t cce_idx;
+  nr_reg_t reg_list[NR_NB_REG_PER_CCE];
 } nr_cce_t;
 
 typedef struct {

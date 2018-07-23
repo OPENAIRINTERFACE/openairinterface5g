@@ -37,6 +37,7 @@
 #include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 
+
 typedef struct {
   uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
   uint8_t pbch_a_interleaved[NR_POLAR_PBCH_PAYLOAD_BITS>>3];

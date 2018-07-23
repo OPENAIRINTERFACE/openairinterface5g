@@ -166,7 +166,7 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
   uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH<<1];
   uint8_t idx=0;
   uint16_t a;
-  int k,l;
+  int k,l,k_prime,dci_idx, dmrs_idx;
   nr_cce_t cce;
 
   /// DMRS QPSK modulation
@@ -214,17 +214,41 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
     if (cset_start_sc >= frame_parms.ofdm_symbol_size)
       cset_start_sc -= frame_parms.ofdm_symbol_size;
 
-    for (int cce_idx=0; cce_idx<dci_alloc.L; cce_idx++){
-      cce = pdcch_vars.cce_list[cce_idx];
-      k = cset_start_sc + cce.start_sc_idx;
-      l = cset_start_symb + cce.symb_idx;
-      for (int m=0; m<NR_NB_SC_PER_RB; m++) {
-        ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dci[m<<1]) >> 15;
-        ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dci[(m<<1) + 1]) >> 15;
-        k++;
-        if (k >= frame_parms.ofdm_symbol_size)
-          k -= frame_parms.ofdm_symbol_size;
+    if (pdcch_vars.coreset_params.precoder_granularity == nr_cset_same_as_reg_bundle) {
+
+      dci_idx = 0;
+      dmrs_idx = 0;
+
+      for (int cce_idx=0; cce_idx<dci_alloc.L; cce_idx++){
+        cce = pdcch_vars.cce_list[cce_idx];
+          for (int reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
+            if (pdcch_vars.coreset_params.config_type == nr_cset_config_mib_sib1)
+              k = cset_start_sc + cce.reg_list[reg_idx].start_sc_idx;
+            else
+              k = frame_parms.first_carrier_offset; // Not clear, to review
+            l = cset_start_symb + cce.reg_list[reg_idx].symb_idx;
+            k_prime = 0;
+            for (int m=0; m<NR_NB_SC_PER_RB; m++) {
+              if ( m == (k_prime<<2)+1) { // DMRS
+                ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dmrs[dmrs_idx<<1]) >> 15;
+                ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
+                k_prime++;
+                dmrs_idx++;
+              }
+              else { // DCI payload
+                ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dci[dci_idx<<1]) >> 15;
+                ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dci[(dci_idx<<1) + 1]) >> 15;
+                dci_idx++;
+              }
+              k++;
+              if (k >= frame_parms.ofdm_symbol_size)
+                k -= frame_parms.ofdm_symbol_size;
+            }
+        }
       }
+    }
+
+    else { //nr_cset_all_contiguous_rbs
     }
 
   }

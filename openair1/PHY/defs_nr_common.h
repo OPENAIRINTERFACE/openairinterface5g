@@ -43,6 +43,7 @@
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
 #define NR_NB_SC_PER_RB 12
+#define NR_NB_REG_PER_CCE 6
 
 #define NR_SYMBOLS_PER_SLOT 14
 
