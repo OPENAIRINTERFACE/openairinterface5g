@@ -4109,13 +4109,14 @@ void nr_dci_decoding_procedure0(int s,                                          
   #endif
   for (m = 0; m < nb_candidates; m++) {
     int n_ci = 0;
+    if (nCCE[p] < L2) return;
     int debug1 = nCCE[p] / L2;
     int debug2 = L2*m_p_s_L_max;
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug1(%d)=nCCE[p]/L2 | nCCE[%d](%d) | L2(%d)\n",debug1,p,nCCE[p],L2);
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug2(%d)=L2*m_p_s_L_max | L2(%d) | m_p_s_L_max(%d)\n",debug2,L2,m_p_s_L_max);
     #endif
-    CCEind = (((Yk + ((m*nCCE[p])/(L2*m_p_s_L_max)) + n_ci) % (nCCE[p] / L2)) * L2);
+    CCEind = (((Yk + (uint16_t)(floor((m*nCCE[p])/(L2*m_p_s_L_max))) + n_ci) % (uint16_t)(floor(nCCE[p] / L2))) * L2);
     #ifdef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> CCEind(%d) = (((Yk(%d) + ((m(%d)*nCCE[p](%d))/(L2(%d)*m_p_s_L_max(%d)))) % (nCCE[p] / L2)) * L2)\n",
                CCEind,Yk,m,nCCE[p],L2,m_p_s_L_max);
