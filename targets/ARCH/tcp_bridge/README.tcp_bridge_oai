@@ -21,7 +21,7 @@ In the other terminal, run:
     cd [openair top directory]
     cd cmake_targets/basic_simulator/enb
     export ENODEB=1
-    sudo -E ./lte-softmodem -O [configuration file]
+    sudo -E ./lte-softmodem -O [configuration file] --T_stdout 0
 [configuration file] is just a regular configuration file.
 The eNB needs an EPC.
 
