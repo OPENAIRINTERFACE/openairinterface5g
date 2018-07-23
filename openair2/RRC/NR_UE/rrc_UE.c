@@ -299,31 +299,38 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
         SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)mib, 1 );
     }
 
+
+    for(i=0; i<buffer_len; ++i){
+        printf("[RRC] MIB PDU : %d\n", bufferP[i]);
+    }
+
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
                             &asn_DEF_NR_BCCH_BCH_Message,
                             (void **)&bcch_message,
                             (const void *)bufferP,
-                            buffer_len );
+                            buffer_len
+		    );
 
-    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-        
-        for (i=0; i<buffer_len; i++)
-            printf("%02x ",bufferP[i]);
+    if(bcch_message->message.choice.mib->systemFrameNumber.buf != 0){
+	    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+		
+		for (i=0; i<buffer_len; i++)
+		    printf("%02x ",bufferP[i]);
 
-        printf("\n");
-        // free the memory
-        SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
-        return -1;
+		printf("\n");
+		// free the memory
+		SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
+		return -1;
+	    }
+
+	    //  link to rrc instance
+	    mib = bcch_message->message.choice.mib;
+	    //memcpy( (void *)mib,
+	    //    (void *)&bcch_message->message.choice.mib,
+	    //    sizeof(NR_MIB_t) );
+
+	    nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
     }
-
-    //  link to rrc instance
-    mib = bcch_message->message.choice.mib;
-    //memcpy( (void *)mib,
-    //    (void *)&bcch_message->message.choice.mib,
-    //    sizeof(NR_MIB_t) );
-
-    nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
-
     return 0;
 }
 

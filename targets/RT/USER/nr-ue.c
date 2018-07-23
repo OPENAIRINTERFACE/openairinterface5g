@@ -43,6 +43,7 @@
 #include "fapi_nr_ue_l1.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "LAYER2/NR_MAC_UE/proto.h"
+#include "RRC/NR_UE/rrc_proto.h"
 
 #include "SCHED_NR/extern.h"
 //#ifndef NO_RAT_NR
@@ -221,6 +222,10 @@ void init_UE(int nb_inst)
         PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
 
     AssertFatal((UE->if_inst = nr_ue_if_module_init(inst)) != NULL,"Can't register interface module\n");
+nr_l3_init_ue();
+nr_l2_init_ue();
+NR_UE_MAC_INST_t *UE_MAC_INST = get_mac_inst(0);
+UE_MAC_INST->if_module = UE->if_inst;
     UE->if_inst->scheduled_response = nr_ue_scheduled_response;
     UE->if_inst->phy_config_request = nr_ue_phy_config_request;
 

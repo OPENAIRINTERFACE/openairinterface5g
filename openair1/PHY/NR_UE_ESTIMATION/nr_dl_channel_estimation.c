@@ -46,12 +46,11 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 
   //uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
-  uint8_t nushift, Lmax, ssb_index=0, n_hf=0;
+  uint8_t nushift, ssb_index=0, n_hf=0;
   int **dl_ch_estimates  =ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset];
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].rxdataF;
 
-  Lmax = 8; //to be updated
-  nushift =  (Lmax < 8)? ssb_index&3 : ssb_index&7;
+  nushift =  ue->frame_parms.Nid_cell%4;
   ue->frame_parms.nushift = nushift;
  
   if (ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
