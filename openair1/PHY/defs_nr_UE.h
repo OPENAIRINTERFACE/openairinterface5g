@@ -82,6 +82,15 @@
 //#define RX_NB_TH_MAX 3
 //#define RX_NB_TH 3
 
+#ifdef NR_UNIT_TEST
+  #define FILE_NAME                " "
+  #define LINE_FILE                (0)
+  #define NR_TST_PHY_PRINTF(...)   printf(__VA_ARGS__)
+#else
+  #define FILE_NAME                (__FILE__)
+  #define LINE_FILE                (__LINE__)
+  #define NR_TST_PHY_PRINTF(...)
+#endif
 
 //#ifdef SHRLIBDEV
 //extern int rxrescale;
@@ -150,6 +159,27 @@
 #include "targets/ARCH/COMMON/common_lib.h"
 
 #include "NR_IF_Module.h"
+
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+                        /* see 38.321  Table 7.1-2  RNTI usage */
+typedef enum {          /* Type for Radio Network Temporary Identifier */
+  C_RNTI_NR = 0,        /* Cell RNTI */
+  Temporary_C_RNTI_NR,  /* Temporary C-RNTI */
+  CS_RNTI_NR,           /* Configured Scheduling RNTI */
+  P_RNTI_NR,            /* Paging RNTI */
+  SI_RNTI_NR,           /* System information RNTI */
+  RA_RNTI_NR,           /* Random Access RNTI */
+  TPC_CS_RNTI_NR,       /* configured scheduling uplink power control */
+  TPC_PUCCH_RNTI_NR,    /* PUCCH power control */
+  TPC_PUSCH_RNTI_NR,    /* PUSCH power control */
+  TPC_SRS_RNTI_NR,      /* SRS trigger and power control */
+  INT_RNTI_NR,          /* Indication pre-emption in DL */
+  SFI_RNTI_NR,          /* Slot Format Indication on the given cell */
+  SP_CSI_RNTI_NR        /* Semipersistent CSI reporting on PUSCH */
+} nr_rnti_type_t;
+
+#endif
 
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
@@ -978,9 +1008,9 @@ typedef struct {
   /// \brief Total gains with bypassed RF gain stage (ExpressMIMO2/Lime)
   uint32_t rx_gain_byp[4];
   /// \brief Current transmit power
-  int16_t tx_power_dBm[10];
+  int16_t tx_power_dBm[MAX_NR_OF_SLOTS];
   /// \brief Total number of REs in current transmission
-  int tx_total_RE[10];
+  int tx_total_RE[MAX_NR_OF_SLOTS];
   /// \brief Maximum transmit power
   int8_t tx_power_max_dBm;
   /// \brief Number of eNB seen by UE
@@ -1155,6 +1185,22 @@ typedef struct {
 
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+
+  SystemInformationBlockType1_nr_t systemInformationBlockType1_nr;
+
+  CellGroupConfig_t          cell_group_config;
+  PDSCH_ServingCellConfig_t  PDSCH_ServingCellConfig;
+  PDSCH_Config_t             PDSCH_Config;
+
+  PUCCH_ConfigCommon_nr_t    pucch_config_common_nr[NUMBER_OF_CONNECTED_eNB_MAX];
+  PUCCH_Config_t             pucch_config_dedicated_nr[NUMBER_OF_CONNECTED_eNB_MAX];
+
+  PUSCH_Config_t             pusch_config;
+
+#endif
+
   uint8_t ncs_cell[20][7];
 
   /// UL-POWER-Control
@@ -1172,6 +1218,12 @@ typedef struct {
 
   /// Scheduling Request Config
   SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_CONNECTED_eNB_MAX];
+
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+  scheduling_request_config_t scheduling_request_config_nr[NUMBER_OF_CONNECTED_eNB_MAX];
+
+#endif
 
   /// Transmission mode per eNB
   uint8_t transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];

@@ -181,7 +181,7 @@ void insert_sss_nr(int16_t *sss_time,
   /* get sss in the frequency domain by applying an inverse FFT */
   idft2048(synchroF_tmp,          /* complex input */
            synchro_tmp,           /* complex output */
-   	       1);                 /* scaling factor */
+   	   1);                    /* scaling factor */
 
   /* then get final sss in time */
   for (unsigned int i=0; i<ofdm_symbol_size; i++) {
@@ -305,8 +305,6 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
   int32_t **rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
-#if 1
-
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
     pss_symbol = PSS_SYMBOL_NB;  /* symbol position */
@@ -359,46 +357,6 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
 
   for (int i = 0; i < LENGTH_PSS_NR; i++) {
     printf(" pss_rxF_ext [%d]  %d  %d at address %p\n", i, p2[2*i], p2[2*i+1], &p2[2*i]);
-  }
-
-#endif
-
-#else
-
-  /* same method as LTE implementation */
-
-  uint16_t rb,nb_rb = N_RB_SS_PBCH_BLOCK;
-
-  int rx_offset = frame_parms->ofdm_symbol_size - (LENGTH_SSS_NR/2);
-
-  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-
-    pss_symbol = PSS_SYMBOL_NB;
-    sss_symbol = SSS_SYMBOL_NB;
-
-    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
-    pss_rxF  =  &rxdataF[aarx][(rx_offset + (pss_symbol*(frame_parms->ofdm_symbol_size)))];
-    sss_rxF  =  &rxdataF[aarx][(rx_offset + (sss_symbol*(frame_parms->ofdm_symbol_size)))];
-
-    //printf("extract_rbs: symbol_mod=%d, rx_offset=%d, ch_offset=%d\n",symbol_mod,
-    //   (rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))*2,
-    //   LTE_CE_OFFSET+ch_offset+(symbol_mod*(frame_parms->ofdm_symbol_size)));
-
-    pss_rxF_ext = &pss_ext[aarx][0];
-    sss_rxF_ext = &sss_ext[aarx][0];
-
-    for (rb=0; rb<nb_rb; rb++) {
-
-      for (int i=0; i<N_SC_RB; i++) {
-        if (doPss) {pss_rxF_ext[i] = pss_rxF[i];}
-        if (doSss) {sss_rxF_ext[i] = sss_rxF[i];}
-      }
-
-      pss_rxF += N_SC_RB;
-      sss_rxF += N_SC_RB;
-      pss_rxF_ext += N_SC_RB;
-      sss_rxF_ext += N_SC_RB;
-    }
   }
 
 #endif

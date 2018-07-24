@@ -36,13 +36,14 @@
 #include "defs.h"
 //#include "PHY/defs.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/phy_vars_nr_ue.h"
+//#include "PHY/phy_vars_nr_ue.h"
+#include "PHY/phy_extern_nr_ue.h"
 //#include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 //#include "PHY/extern.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SCHED_NR/extern.h"
-#include <sched.h>
-#include "targets/RT/USER/nr-softmodem.h"
+//#include <sched.h>
+//#include "targets/RT/USER/nr-softmodem.h"
 
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
@@ -3132,7 +3133,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
     int do_pdcch_monitoring_current_slot=0;
     // For Type0-PDCCH searchspace, we need to calculate the monitoring slot from Tables 13-1 .. 13-15 in TS 38.213 Subsection 13
     NR_UE_SLOT_PERIOD_OFFSET_t sl_period_offset_mon = pdcch_vars2->searchSpace[nb_searchspace_active].monitoringSlotPeriodicityAndOffset;
-    if (sl_period_offset_mon == sl1) {
+    if (sl_period_offset_mon == srs_sl1) {
       do_pdcch_monitoring_current_slot=1; // PDCCH monitoring in every slot
     } else if (nr_tti_rx%(int)sl_period_offset_mon == pdcch_vars2->searchSpace[nb_searchspace_active].monitoringSlotPeriodicityAndOffset_offset) {
       do_pdcch_monitoring_current_slot=1; // PDCCH monitoring in every monitoringSlotPeriodicityAndOffset slot with offset

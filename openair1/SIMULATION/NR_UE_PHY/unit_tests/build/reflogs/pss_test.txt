@@ -1,0 +1,179 @@
+ PSS TEST 
+----------
+log init done
+Start lte_param_init, frame_type 0, extended_prefix 0
+[PHY][I][nr_init_frame_parms_ue] Initializing frame parms for mu 1, N_RB 106, Ncp 0
+Initializing UE vars (abstraction 0) for eNB TXant 1, UE RXant 1
+***********************************
+    PSS NR Test synchronisation 
+***********************************
+------------------------------------------------
+Test nr pss with Nid2 0 at position 0 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 0, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 0, val = 232379536 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 0 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 0, val = 232105225 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 0, val = 232105225 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 0 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 0, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 0, val = 231344100 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 492 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 232379536 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 492 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 492, val = 232105225 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 492, val = 232105225 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 492 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 231344100 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 493 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 230217517 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 230217517 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 1 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 493 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 492, val = 230099437 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 492, val = 230099437 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 1 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 493 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 229165600 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 229165600 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 1 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 56788 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 56788, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 56788, val = 232379536 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 56788 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 56788, val = 232105225 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 56788, val = 232105225 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 56788 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 56788, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 56788, val = 231344100 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 56888 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 56888, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 56888, val = 232379536 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 56888 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 56888, val = 232105225 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 56888, val = 232105225 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 56888 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 56888, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 56888, val = 231344100 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 111111 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 111112, val = 230349320 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 111112, val = 230349320 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 1 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 111111 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 111112, val = 230409881 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 111112, val = 230409881 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 1 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 111111 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 111112, val = 229601794 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 111112, val = 229601794 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 1 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 151234 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 151236, val = 219912170 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 151236, val = 219912170 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 2 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 151234 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 151236, val = 219714314 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 151236, val = 219714314 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 151234 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 151236, val = 219588850 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 151236, val = 219588850 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 2 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 151500 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 151500, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 151500, val = 232379536 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 151500 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 151500, val = 232105225 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 151500, val = 232105225 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 151500 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 151500, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 151500, val = 231344100 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 200000 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 200000, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 200000, val = 232379536 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 200000 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 200000, val = 232105225 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 200000, val = 232105225 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 200000 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 200000, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 200000, val = 231344100 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 250004 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 250004, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 250004, val = 232379536 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 250004 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 250004, val = 232105225 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 250004, val = 232105225 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 250004 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 250004, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 250004, val = 231344100 (41 dB)
+PSS NR Test is pass: pss detected at right position 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 305152 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 305148, val = 185066768 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 305148, val = 185066768 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 4 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 305152 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 305148, val = 185490842 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 305148, val = 185490842 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 4 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 305152 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 305148, val = 185637380 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 305148, val = 185637380 (41 dB)
+PSS NR Test is pass with warning: pss detected with a shift of 4 
+
+PSS NR Number of tests : 33  Pass : 21 Pass with warning : 12 Fail : 0 
+
+PSS NR Synchronisaton test is terminated.
+
