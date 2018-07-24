@@ -181,21 +181,17 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_rxtx_proc_t *proc, char *thread_nam
         gNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles ||
         gNB->UL_INFO.cqi_ind.number_of_cqis
        ) {
-      LOG_D(PHY, "UL_info[rx_ind:%05d:%d harqs:%05d:%d crcs:%05d:%d preambles:%05d:%d cqis:%d] RX:%04d%d TX:%04d%d num_pdcch_symbols:%d\n", 
+      LOG_D(PHY, "UL_info[rx_ind:%05d:%d harqs:%05d:%d crcs:%05d:%d preambles:%05d:%d cqis:%d] RX:%04d%d TX:%04d%d \n", 
           NFAPI_SFNSF2DEC(gNB->UL_INFO.rx_ind.sfn_sf),   gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus, 
           NFAPI_SFNSF2DEC(gNB->UL_INFO.harq_ind.sfn_sf), gNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs, 
           NFAPI_SFNSF2DEC(gNB->UL_INFO.crc_ind.sfn_sf),  gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs, 
           NFAPI_SFNSF2DEC(gNB->UL_INFO.rach_ind.sfn_sf), gNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles,
           gNB->UL_INFO.cqi_ind.number_of_cqis, 
           proc->frame_rx, proc->subframe_rx, 
-      proc->frame_tx, proc->subframe_tx, gNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols);
+      proc->frame_tx, proc->subframe_tx);
     }
   }
 
-  if (nfapi_mode == 1 && gNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols == 0) {
-    LOG_E(PHY, "gNB->pdcch_vars[proc->subframe_tx&1].num_pdcch_symbols == 0");
-    return 0;
-  }
   /// NR disabling
 
   // ****************************************

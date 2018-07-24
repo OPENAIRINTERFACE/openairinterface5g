@@ -85,8 +85,8 @@ typedef struct {
 
 typedef unsigned __int128 uint128_t;
 
-uint8_t nr_get_dci_size(nr_dci_format_e format,
-                        nr_rnti_type_e rnti_type,
+uint8_t nr_get_dci_size(nfapi_nr_dci_format_e format,
+                        nfapi_nr_rnti_type_e rnti_type,
                         NR_BWP_PARMS* bwp,
                         nfapi_nr_config_request_t* config);
 

@@ -37,8 +37,8 @@
 
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
-uint8_t nr_get_dci_size(nr_dci_format_e format,
-                        nr_rnti_type_e rnti_type,
+uint8_t nr_get_dci_size(nfapi_nr_dci_format_e format,
+                        nfapi_nr_rnti_type_e rnti_type,
                         NR_BWP_PARMS* bwp,
                         nfapi_nr_config_request_t* config)
 {
@@ -47,7 +47,7 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
 
   switch(format) {
 /*Only sizes for 0_0 and 1_0 are correct at the moment*/
-    case nr_dci_format_0_0:
+    case NFAPI_NR_UL_DCI_FORMAT_0_0:
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
@@ -55,7 +55,7 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
       // Padding
       break;
 
-    case nr_dci_format_0_1:
+    case NFAPI_NR_UL_DCI_FORMAT_0_1:
       /// fixed: Format identifier 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2, SRS request 2 --17
       size += 17;
       // Carrier indicator
@@ -77,14 +77,14 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
       // DMRS sequence init
       break;
 
-    case nr_dci_format_1_0:
+    case NFAPI_NR_DL_DCI_FORMAT_1_0:
       /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 --24
       size += 24;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
       // Time domain assignment
       break;
 
-    case nr_dci_format_1_1:
+    case NFAPI_NR_DL_DCI_FORMAT_1_1:
       // Carrier indicator
       size += 1; // Format identifier
       // BWP Indicator
@@ -111,16 +111,16 @@ uint8_t nr_get_dci_size(nr_dci_format_e format,
       
       break;
 
-    case nr_dci_format_2_0:
+    case NFAPI_NR_DL_DCI_FORMAT_2_0:
       break;
 
-    case nr_dci_format_2_1:
+    case NFAPI_NR_DL_DCI_FORMAT_2_1:
       break;
 
-    case nr_dci_format_2_2:
+    case NFAPI_NR_DL_DCI_FORMAT_2_2:
       break;
 
-    case nr_dci_format_2_3:
+    case NFAPI_NR_DL_DCI_FORMAT_2_3:
       break;
 
   default:
@@ -137,8 +137,8 @@ void nr_pdcch_scrambling(NR_gNB_DCI_ALLOC_t dci_alloc,
 
   uint8_t reset;
   uint32_t x1, x2, s=0;
-  uint32_t Nid = (dci_alloc.ss_type == nr_pdcch_uss_type)? pdcch_vars.dmrs_scrambling_id : config.sch_config.physical_cell_id.value;
-  uint32_t n_RNTI = (dci_alloc.ss_type == nr_pdcch_uss_type)? dci_alloc.rnti : 0;
+  uint32_t Nid = (dci_alloc.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_vars.dmrs_scrambling_id : config.sch_config.physical_cell_id.value;
+  uint32_t n_RNTI = (dci_alloc.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? dci_alloc.rnti : 0;
   uint32_t *in = dci_alloc.dci_pdu;
 
   reset = 1;

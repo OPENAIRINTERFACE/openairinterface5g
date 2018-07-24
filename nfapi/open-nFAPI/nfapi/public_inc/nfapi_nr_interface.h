@@ -238,7 +238,7 @@ typedef enum {
   NFAPI_NR_DL_DCI_FORMAT_2_2,
   NFAPI_NR_DL_DCI_FORMAT_2_3,
   NFAPI_NR_UL_DCI_FORMAT_0_0,
-  NFAPI_NR_UL_DCI_FORMAT_1_0
+  NFAPI_NR_UL_DCI_FORMAT_0_1
 } nfapi_nr_dci_format_e;
 
 typedef enum {
