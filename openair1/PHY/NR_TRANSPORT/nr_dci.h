@@ -45,43 +45,11 @@ typedef enum {
   nr_rnti_type_P_RNTI
 } nr_rnti_type_e;
 
-// PDCCH search space types css: common, uss: ue specific
-typedef enum {
-  nr_pdcch_css_type_0=0,
-  nr_pdcch_css_type_0_A,
-  nr_pdcch_css_type_1,
-  nr_pdcch_css_type_2,
-  nr_pdcch_css_type_3,
-  nr_pdcch_uss_type
-} nr_pdcch_ss_type_e;
-
-typedef enum {
-  nr_ssb_and_cset_mux_pattern_type_1=0,
-  nr_ssb_and_cset_mux_pattern_type_2,
-  nr_ssb_and_cset_mux_pattern_type_3
-} nr_ssb_and_cset_mux_pattern_type_e;
-
-typedef enum {
-  nr_cce_reg_mapping_interleaved=0,
-  nr_cce_reg_mapping_non_interleaved
-} nr_cce_reg_mapping_type_e;
-
-typedef enum {
-  nr_cset_config_mib_sib1=0,
-  nr_cset_config_pdcch_config
-} nr_coreset_config_type_e;
-
-typedef enum {
-  nr_cset_same_as_reg_bundle=0,
-  nr_cset_all_contiguous_rbs
-} nr_coreset_precoder_granularity_type_e;
-
 typedef struct {
   uint8_t param_O;
   uint8_t param_M;
   uint8_t nb_ss_sets_per_slot;
   uint8_t first_symbol_idx;
-  nr_pdcch_ss_type_e ss_type;
 } nr_pdcch_ss_params_t;
 
 typedef struct {
@@ -114,21 +82,6 @@ typedef struct {
   nr_pdcch_ss_params_t ss_params;
   nr_pdcch_coreset_params_t coreset_params;
 } nr_pdcch_vars_t;
-
-typedef struct {
-  /// Length of DCI in bits
-  uint8_t size;
-  /// Aggregation level
-  uint8_t L;
-  /// rnti type
-  nr_rnti_type_e rnti;
-  /// Format
-  nr_dci_format_e format;
-  /// type
-  nr_pdcch_ss_type_e ss_type;
-  /// DCI pdu
-  uint32_t dci_pdu[4];
-} NR_gNB_DCI_ALLOC_t;
 
 typedef unsigned __int128 uint128_t;
 

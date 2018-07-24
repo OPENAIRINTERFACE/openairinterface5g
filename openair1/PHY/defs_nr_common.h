@@ -42,6 +42,8 @@
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
+#define NR_MAX_NB_RB 275
+
 #define NR_NB_SC_PER_RB 12
 #define NR_NB_REG_PER_CCE 6
 
@@ -58,10 +60,10 @@
 #define NR_SSS_LENGTH 127
 
 #define NR_PBCH_DMRS_LENGTH 144 // in mod symbols
-#define NR_PBCH_DMRS_LENGTH_DWORD 10 // roundup(2(QPSK)*NR_PBCH_DMRS_LENGTH/32)
+#define NR_PBCH_DMRS_LENGTH_DWORD 10 // ceil(2(QPSK)*NR_PBCH_DMRS_LENGTH/32)
 
-#define NR_MAX_PDCCH_DMRS_LENGTH 100
-#define NR_MAX_PDCCH_DMRS_LENGTH_DWORD 5
+#define NR_MAX_PDCCH_DMRS_LENGTH ((NR_MAX_NB_RB<<1)*3) // 3 symbols *2(QPSK)
+#define NR_MAX_PDCCH_DMRS_LENGTH_DWORD 52 // ceil(NR_MAX_PDCCH_DMRS_LENGTH/32)
 
 #define NR_MAX_DCI_PAYLOAD_SIZE 64
 #define NR_MAX_DCI_SIZE 200 //random values
@@ -109,6 +111,27 @@ typedef struct NR_BWP_PARMS {
   /// Size of FFT/IFFT
   uint16_t ofdm_symbol_size;
 } NR_BWP_PARMS;
+
+typedef enum {
+  nr_ssb_and_cset_mux_pattern_type_1=0,
+  nr_ssb_and_cset_mux_pattern_type_2,
+  nr_ssb_and_cset_mux_pattern_type_3
+} nr_ssb_and_cset_mux_pattern_type_e;
+
+typedef enum {
+  nr_cce_reg_mapping_interleaved=0,
+  nr_cce_reg_mapping_non_interleaved
+} nr_cce_reg_mapping_type_e;
+
+typedef enum {
+  nr_cset_config_mib_sib1=0,
+  nr_cset_config_pdcch_config
+} nr_coreset_config_type_e;
+
+typedef enum {
+  nr_cset_same_as_reg_bundle=0,
+  nr_cset_all_contiguous_rbs
+} nr_coreset_precoder_granularity_type_e;
 
 typedef struct NR_DL_FRAME_PARMS {
   /// frequency range

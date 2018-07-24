@@ -81,7 +81,6 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   if (nfapi_mode==0 || nfapi_mode == 1) { // monolithic or PNF
 
-    DL_req[CC_idP].dl_config_request_body.number_pdcch_ofdm_symbols           = 1;
     DL_req[CC_idP].dl_config_request_body.number_dci                          = 0;
     DL_req[CC_idP].dl_config_request_body.number_pdu                          = 0;
     DL_req[CC_idP].dl_config_request_body.number_pdsch_rnti                   = 0;

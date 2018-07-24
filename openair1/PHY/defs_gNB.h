@@ -46,6 +46,24 @@ typedef struct {
 } NR_gNB_PBCH;
 
 typedef struct {
+  /// Length of DCI in bits
+  uint8_t size;
+  /// Aggregation level
+  uint8_t L;
+  /// rnti type
+  nfapi_nr_rnti_type_e rnti;
+  /// Format
+  nfapi_nr_dci_format_e format;
+  /// DCI pdu
+  uint32_t dci_pdu[4];
+} NR_gNB_DCI_ALLOC_t;
+
+typedef struct {
+  uint8_t     num_dci;
+  NR_gNB_DCI_ALLOC_t dci_alloc[32];
+} NR_gNB_PDCCH;
+
+typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
@@ -265,7 +283,7 @@ typedef struct PHY_VARS_gNB_s {
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
 
   Sched_Rsp_t          Sched_INFO;
-  LTE_eNB_PDCCH        pdcch_vars[2];
+  NR_gNB_PDCCH        pdcch_vars[2];
   LTE_eNB_PHICH        phich_vars[2];
 
   NR_gNB_COMMON       common_vars;

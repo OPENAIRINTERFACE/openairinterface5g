@@ -53,6 +53,25 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
   // adjust transmit amplitude here based on NFAPI info
 }
 
+
+void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
+                                int frame, int subframe,
+                                gNB_rxtx_proc_t *proc,
+                                nfapi_nr_dl_config_request_pdu_t *dl_config_pdu)
+{
+  int idx                         = subframe&1;
+  NR_gNB_PDCCH *pdcch_vars       = &gNB->pdcch_vars[idx];
+  nfapi_nr_dl_config_dci_dl_pdu *pdu = &dl_config_pdu->dci_dl_pdu;
+
+  LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,subframe, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
+
+  // copy dci configuration into gNB structure
+  nr_fill_dci_and_dlsch(eNB,frame,subframe,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],pdu);
+
+  LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->subframe_tx, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
+}
+
+
 void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   PHY_VARS_gNB *gNB;
   gNB_rxtx_proc_t *proc;

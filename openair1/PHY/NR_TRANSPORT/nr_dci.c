@@ -169,7 +169,18 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
   int k,l,k_prime,dci_idx, dmrs_idx;
   nr_cce_t cce;
 
+  uint8_t n_rb = pdcch_vars.coreset_params.n_rb;
+  uint8_t rb_offset = pdcch_vars.coreset_params.n_symb;
+  uint8_t n_symb = pdcch_vars.coreset_params.rb_offset;
+  uint8_t first_slot = pdcch_vars.first_slot;
+  uint8_t first_symb = pdcch_vars.ss_params.first_symbol_idx;
+
   /// DMRS QPSK modulation
+    /*There is a need to shift from which index the pregenerated DMRS sequence is used
+     * see 38211 r15.2.0 section 7.4.1.3.2: assumption is the reference point for k refers to the DMRS sequence*/
+  if (pdcch_vars.coreset_params.config_type == nr_cset_config_pdcch_config)
+    gold_pdcch_dmrs += ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+rb_offset)*3/32;
+
   for (int i=0; i<NR_MAX_PDCCH_DMRS_LENGTH>>1; i++) {
     idx = ((((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((gold_pdcch_dmrs[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
     mod_dmrs[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
@@ -197,17 +208,14 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
 
   /// Resource mapping
   a = (config.rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
-  uint8_t n_rb = pdcch_vars.coreset_params.n_rb;
-  uint8_t rb_offset = pdcch_vars.coreset_params.n_symb;
-  uint8_t n_symb = pdcch_vars.coreset_params.rb_offset;
-  uint8_t first_slot = pdcch_vars.first_slot;
-  uint8_t first_symb = pdcch_vars.ss_params.first_symbol_idx;
 
    /*The coreset is initialised
     * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset
     * in time: by its first slot and its first symbol*/
   uint8_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+rb_offset)*NR_NB_SC_PER_RB;
   uint8_t cset_start_symb = first_slot*frame_parms.symbols_per_slot + first_symb;
+  dci_idx = 0;
+  dmrs_idx = 0;
 
   for (int aa = 0; aa < config.rf_config.tx_antenna_ports.value; aa++)
   {
@@ -216,16 +224,10 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
 
     if (pdcch_vars.coreset_params.precoder_granularity == nr_cset_same_as_reg_bundle) {
 
-      dci_idx = 0;
-      dmrs_idx = 0;
-
       for (int cce_idx=0; cce_idx<dci_alloc.L; cce_idx++){
         cce = pdcch_vars.cce_list[cce_idx];
           for (int reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
-            if (pdcch_vars.coreset_params.config_type == nr_cset_config_mib_sib1)
-              k = cset_start_sc + cce.reg_list[reg_idx].start_sc_idx;
-            else
-              k = frame_parms.first_carrier_offset; // Not clear, to review
+            k = cset_start_sc + cce.reg_list[reg_idx].start_sc_idx;
             l = cset_start_symb + cce.reg_list[reg_idx].symb_idx;
             k_prime = 0;
             for (int m=0; m<NR_NB_SC_PER_RB; m++) {
