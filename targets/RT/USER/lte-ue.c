@@ -79,7 +79,7 @@ void init_UE_threads(int);
 void init_UE_threads_stub(int);
 void init_UE_single_thread_stub(int);
 void *UE_thread(void *arg);
-void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax,int nb_rx,int nb_tx);
+void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax,LTE_DL_FRAME_PARMS *fp);
 void init_UE_stub(int nb_inst,int,int,char*);
 void init_UE_stub_single_thread(int nb_inst,int,int,char*);
 int init_timer_thread(void);
@@ -172,14 +172,12 @@ PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
 
 {
 
-  PHY_VARS_UE* ue;
+  PHY_VARS_UE* ue = (PHY_VARS_UE *)malloc(sizeof(PHY_VARS_UE));
+  memset(ue,0,sizeof(PHY_VARS_UE));
 
   if (frame_parms!=(LTE_DL_FRAME_PARMS *)NULL) { // if we want to give initial frame parms, allocate the PHY_VARS_UE structure and put them in
-    ue = (PHY_VARS_UE *)malloc(sizeof(PHY_VARS_UE));
-    memset(ue,0,sizeof(PHY_VARS_UE));
     memcpy(&(ue->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   }
-  else ue = PHY_vars_UE_g[UE_id][0];
 
 
   ue->Mod_id      = UE_id;
@@ -238,7 +236,7 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
 
 }
 
-void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax,int nb_rx,int nb_tx) {
+void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax,LTE_DL_FRAME_PARMS *fp0) {
 
   PHY_VARS_UE *UE;
   int         inst;
@@ -257,11 +255,11 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
     if (PHY_vars_UE_g[inst]==NULL) PHY_vars_UE_g[inst] = (PHY_VARS_UE**)calloc(1+MAX_NUM_CCs,sizeof(PHY_VARS_UE*));
     LOG_I(PHY,"Allocating UE context %d\n",inst);
 
-    if (simL1flag == 0) PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
+    if (simL1flag == 0) PHY_vars_UE_g[inst][0] = init_ue_vars(fp0,inst,0);
     else {
       // needed for memcopy below. these are not used in the RU, but needed for UE
-       RC.ru[0]->frame_parms.nb_antennas_rx = nb_rx;
-       RC.ru[0]->frame_parms.nb_antennas_tx = nb_tx;
+       RC.ru[0]->frame_parms.nb_antennas_rx = fp0->nb_antennas_rx;
+       RC.ru[0]->frame_parms.nb_antennas_tx = fp0->nb_antennas_tx;
        PHY_vars_UE_g[inst][0]  = init_ue_vars(&RC.ru[0]->frame_parms,inst,0);
     }
     // turn off timing control loop in UE
@@ -303,8 +301,8 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
     UE->rx_total_gain_dB =  rxgain;
     UE->tx_power_max_dBm = txpowermax;
 
-    UE->frame_parms.nb_antennas_tx = nb_tx;
-    UE->frame_parms.nb_antennas_rx = nb_rx; 
+    UE->frame_parms.nb_antennas_tx = fp0->nb_antennas_tx;
+    UE->frame_parms.nb_antennas_rx = fp0->nb_antennas_rx; 
 
     if (fp->frame_type == TDD) {
       switch (fp->N_RB_DL) {

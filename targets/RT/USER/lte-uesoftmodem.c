@@ -952,8 +952,7 @@ int main( int argc, char **argv )
   }
   else {
       init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
-              frame_parms[0]->nb_antennas_rx,
-              frame_parms[0]->nb_antennas_tx);
+              frame_parms[0]);
   }
 
 

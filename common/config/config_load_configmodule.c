@@ -276,7 +276,7 @@ int i;
    if (cfgmode != NULL) free(cfgmode);
    if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
        config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params));
-       exit(-1);   
+//       exit(-1);   
    }
    return cfgptr;
 }
