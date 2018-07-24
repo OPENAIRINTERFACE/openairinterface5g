@@ -1,3 +1,4 @@
+#!/bin/groovy
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,6 +19,16 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+
+// Abstraction function to send social media messages:
+// like on Slack or Mattermost
+def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
+    if (params.pipelineUsesSlack != null) {
+        if (params.pipelineUsesSlack) {
+            slackSend channel: pipeChannel, color: pipeColor, message: pipeMessage
+        }
+    }
+}
 
 pipeline {
     agent {
@@ -229,9 +240,9 @@ pipeline {
                     echo "This is a MERGE event"
                     addGitLabMRComment comment: message
                     def message2 = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ") -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
-                    slackSend channel: 'ci-enb', color: 'good', message: message2
+                    sendSocialMediaMessage('ci-enb', 'good', message2)
                 } else {
-                    slackSend channel: 'ci-enb', color: 'good', message: message
+                    sendSocialMediaMessage('ci-enb', 'good', message)
                 }
             }
         }
@@ -242,9 +253,9 @@ pipeline {
                     echo "This is a MERGE event"
                     addGitLabMRComment comment: message
                     def message2 = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ") -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
-                    slackSend channel: 'ci-enb', color: 'danger', message: message2
+                    sendSocialMediaMessage('ci-enb', 'danger', message2)
                 } else {
-                    slackSend channel: 'ci-enb', color: 'danger', message: message
+                    sendSocialMediaMessage('ci-enb', 'danger', message)
                 }
             }
         }
