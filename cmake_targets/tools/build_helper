@@ -504,24 +504,24 @@ check_install_oai_software() {
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
         "ubuntu14.04")
-            specific_packages="libtasn1-3-dev gccxml libgnutls-dev libatlas-dev iproute libconfig8-dev"
+            specific_packages="libtasn1-3-dev libgnutls-dev libatlas-dev iproute libconfig8-dev"
             # For iperf3
             $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
             $SUDO apt-get update
             ;;
         "ubuntu16.04")
-            specific_packages="libtasn1-6-dev gccxml libgnutls-dev libatlas-dev iproute libconfig8-dev"
+            specific_packages="libtasn1-6-dev libgnutls-dev libatlas-dev iproute libconfig8-dev"
             ;;
         "ubuntu17.04")
-            specific_packages="libtasn1-6-dev castxml libgnutls28-dev libatlas-dev iproute libconfig8-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev libatlas-dev iproute libconfig8-dev"
             ;;
         "ubuntu17.10")
-            specific_packages="libtasn1-6-dev castxml libgnutls28-dev iproute libconfig8-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute libconfig8-dev"
             LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
         "ubuntu18.04")
-            specific_packages="libtasn1-6-dev castxml libgnutls28-dev iproute2 libconfig-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
             LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
@@ -598,11 +598,8 @@ check_install_oai_software() {
         $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
       fi
       $SUDO $INSTALLER install -y python-epdb
-      $SUDO $INSTALLER install -y gccxml
     else
       $SUDO $INSTALLER install -y mscgen pydb
-      # Fedora repos already contain gccxml's successor castxml.
-      $SUDO $INSTALLER install -y castxml
     fi
 
     $SUDO $INSTALLER install -y \

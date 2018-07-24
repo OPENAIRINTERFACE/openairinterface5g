@@ -262,7 +262,6 @@ if (${ENABLE_ITTI})
     # add .h files if depend on (this one is generated)
     ${ITTI_DIR}/intertask_interface.h
     ${ITTI_DIR}/intertask_interface.c
-    ${ITTI_DIR}/intertask_interface_dump.c
     ${ITTI_DIR}/backtrace.c
     ${ITTI_DIR}/memory_pools.c
     ${ITTI_DIR}/signals.c
@@ -1905,7 +1904,6 @@ add_definitions(-DASN1_MINIMUM_VERSION=924)
 add_executable(lte-softmodem
   ${rrc_h}
   ${s1ap_h}
-  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
@@ -1945,7 +1943,6 @@ target_link_libraries (lte-softmodem ${T_LIB})
 add_executable(lte-softmodem-nos1
   ${rrc_h}
   ${s1ap_h}
-  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
@@ -1984,7 +1981,6 @@ target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 add_executable(lte-uesoftmodem
   ${rrc_h}
   ${s1ap_h}
-  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
@@ -2023,7 +2019,6 @@ target_link_libraries (lte-uesoftmodem ${T_LIB})
 add_executable(lte-uesoftmodem-nos1
   ${rrc_h}
   ${s1ap_h}
-  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
@@ -2091,7 +2086,6 @@ target_link_libraries (lte-uesoftmodem-nos1 ${T_LIB})
 
 #special case for dlim TM4, which uses its own version of phy_scope code
 add_executable(dlsim_tm4
-#  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/dlsim_tm4.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lte_phy_scope_tm4.c
   ${T_SOURCE}
@@ -2104,7 +2098,6 @@ target_link_libraries (dlsim_tm4
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 
   add_executable(${myExe}
-#    ${OPENAIR_BIN_DIR}/messages_xml.h
     ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/${myExe}.c
     ${XFORMS_SOURCE}
     ${T_SOURCE}
@@ -2126,7 +2119,6 @@ add_executable(test_epc_generate_scenario
   ${OPENAIR2_DIR}/COMMON/messages_def.h
   ${OPENAIR2_DIR}/COMMON/messages_types.h
   ${OPENAIR3_DIR}/S1AP/s1ap_eNB_defs.h
-#  ${OPENAIR_BIN_DIR}/messages_xml.h
   )
 target_link_libraries (test_epc_generate_scenario
   -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
@@ -2146,7 +2138,6 @@ add_executable(test_epc_play_scenario
   ${OPENAIR2_DIR}/COMMON/commonDef.h
   ${OPENAIR2_DIR}/COMMON/messages_def.h
   ${OPENAIR2_DIR}/COMMON/messages_types.h
-  ${OPENAIR_BIN_DIR}/messages_xml.h
   )
 target_include_directories(test_epc_play_scenario PUBLIC /usr/local/share/asn1c)
 target_link_libraries (test_epc_play_scenario
@@ -2201,43 +2192,6 @@ endif (${T_TRACER})
 ##################################################
 # Generated specific cases is not regular code
 ###############################################
-
-##################""
-# itti symbolic debug print require to generate a specific include file
-########################################
-
-# retrieve the compiler options to send it to gccxml
-get_directory_property( DirDefs COMPILE_DEFINITIONS )
-foreach( d ${DirDefs} )
-    list(APPEND itti_compiler_options "-D${d}")
-endforeach()
-get_directory_property( DirDefs INCLUDE_DIRECTORIES )
-foreach( d ${DirDefs} )
-    list(APPEND itti_compiler_options "-I${d}")
-endforeach()
-
-# castxml doesn't work with c11 (gcc 5 default)
-# force castxml and clang compilation with gnu89 standard
-# we can't use cXX standard as pthread_rwlock_t is gnu standard
-list(APPEND itti_compiler_options "-std=gnu89;-DASN_DISABLE_OER_SUPPORT;-D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'")
-set (ITTI_H ${ITTI_DIR}/intertask_interface_types.h)
-if(EXISTS /usr/bin/gccxml)
-   set(xml_command gccxml ${itti_compiler_options} -fxml=${OPENAIR_BIN_DIR}/messages.xml ${ITTI_H})
-else()
-   set(xml_command castxml --castxml-gccxml ${itti_compiler_options} ${ITTI_H} -o ${OPENAIR_BIN_DIR}/messages.xml)
-endif()
-
-add_custom_command (
-  OUTPUT ${OPENAIR_BIN_DIR}/messages.xml
-  COMMAND ${xml_command}
-  DEPENDS ${S1AP_OAI_generated} ${RRC_FULL_DIR}/asn_constant.h
-  )
-
-add_custom_command (
-  OUTPUT ${OPENAIR_BIN_DIR}/messages_xml.h
-  COMMAND sed -e 's/ *//'   -e 's/\"/\\\\\"/g' -e 's/^/\"/' -e 's/$$/\\\\n\"/' ${OPENAIR_BIN_DIR}/messages.xml  > ${OPENAIR_BIN_DIR}/messages_xml.h
-  DEPENDS ${OPENAIR_BIN_DIR}/messages.xml ${RRC_FULL_DIR}/asn_constant.h
-  )
 
 ################
 # Kernel modules

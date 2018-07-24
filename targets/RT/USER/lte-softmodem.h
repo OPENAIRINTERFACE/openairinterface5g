@@ -176,7 +176,6 @@
 {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&chain_offset,                 defintval:0,                    TYPE_INT,       0},                     \
 {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
 {"E" ,                      CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,         i8ptr:&threequarter_fs,             defintval:0,                    TYPE_INT8,      0},                     \
-{"K" ,                      CONFIG_HLP_ITTIL,       PARAMFLAG_NOFREE,       strptr:&itti_dump_file,             defstrval:"/tmp/itti.dump",     TYPE_STRING,    0},                     \
 {"m" ,                      CONFIG_HLP_DLMCS,       0,                      uptr:&target_dl_mcs,                defintval:0,                    TYPE_UINT,      0},                     \
 {"t" ,                      CONFIG_HLP_ULMCS,       0,                      uptr:&target_ul_mcs,                defintval:0,                    TYPE_UINT,      0},                     \
 {"W" ,                      CONFIG_HLP_L2MONW,      0,                      strptr:(char **)&in_ip,             defstrval:"127.0.0.1",          TYPE_STRING,    sizeof(in_ip)},         \

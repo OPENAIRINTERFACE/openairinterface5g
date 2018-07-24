@@ -149,10 +149,6 @@ char logmem_filename[1024] = {0};
 // This is a dummy declaration (dlsch_demodulation.c is no longer compiled for eNodeB)
 int16_t dlsch_demod_shift = 0;
 
-#if defined(ENABLE_ITTI)
-static char                    *itti_dump_file = NULL;
-#endif
-
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
@@ -976,7 +972,7 @@ int main( int argc, char **argv )
   log_set_instance_type (LOG_INSTANCE_ENB);
 
   printf("ITTI init\n");
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
