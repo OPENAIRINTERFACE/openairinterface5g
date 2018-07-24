@@ -30,8 +30,8 @@
  * \warning
  */
 
-#include "defs.h"
-#include "proto.h"
+//#include "defs.h"
+#include "mac_proto.h"
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
@@ -49,6 +49,6 @@ nr_l2_init_ue(void)
     return (1);
 }
 
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t Mod_idP){
-    return &nr_ue_mac_inst[(int)Mod_idP];
+NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id){
+    return &nr_ue_mac_inst[(int)module_id];
 }

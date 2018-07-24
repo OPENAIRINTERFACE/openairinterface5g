@@ -30,14 +30,14 @@
  * \warning
  */
 
-#include "defs.h"
-#include "proto.h"
+//#include "mac_defs.h"
+#include "mac_proto.h"
 
 #include "NR_MAC-CellGroupConfig.h"
 
 int nr_rrc_mac_config_req_ue(
     module_id_t                     module_id,
-    int                             CC_idP,
+    int                             cc_idP,
     uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
     NR_MAC_CellGroupConfig_t        *mac_cell_group_configP,

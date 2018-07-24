@@ -1441,9 +1441,13 @@ set(L2_SRC_UE
   ${RRC_DIR}/rrc_common.c
   ${RRC_DIR}/L2_interface_common.c
   ${RRC_DIR}/L2_interface_ue.c
+  )
+
+set(NR_L2_SRC_UE
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
   ${NR_UE_RRC_DIR}/main_ue.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
+#  ${NR_UE_RRC_DIR}/mac_vars.c
   )
 
 set (MAC_SRC
@@ -1514,12 +1518,19 @@ add_library(L2
 add_library(L2_UE
   ${L2_SRC_UE}
   ${MAC_SRC_UE}
-  ${MAC_NR_SRC_UE}
 )
 
-include_directories(${NR_UE_PHY_INTERFACE_DIR})
-include_directories(${OPENAIR1_DIR}/SCHED_NR_UE)
-include_directories(${NFAPI_USER_DIR})
+add_library( NR_L2_UE
+    ${L2_SRC_UE}
+    ${NR_L2_SRC_UE}
+    ${MAC_NR_SRC_UE}
+    ${MAC_SRC_UE}
+)
+
+include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
+include_directories("${OPENAIR2_DIR}/LAYER2/NR_MAC_UE")
+include_directories("${OPENAIR1_DIR}/SCHED_NR_UE")
+#include_directories("${NFAPI_USER_DIR}"")
 
 # L3 Libs
 ##########################
@@ -2294,7 +2305,7 @@ add_executable(nr-uesoftmodem
 
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_NR_UE PHY_COMMON PHY_UE PHY_RU LFDS L2_UE 
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_NR_UE PHY_COMMON PHY_UE PHY_RU LFDS NR_L2_UE 
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
   -Wl,--end-group z dl)
 

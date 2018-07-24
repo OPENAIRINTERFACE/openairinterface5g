@@ -34,31 +34,68 @@
 #define __LAYER2_MAC_PROTO_H__
 
 #include "mac_defs.h"
+#include "mac.h"
 
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
    \param module_id      module id
-   \param CC_id          component carrier id
+   \param cc_id          component carrier id
    \param gNB_index      gNB index
    \param extra_bits     extra bits for frame calculation
    \param l_ssb_equal_64 check if ssb number of candicate is equal 64, 1=equal; 0=non equal. Reference 38.212 7.1.1
    \param pduP           pointer to pdu
    \param pdu_length     length of pdu*/
-int8_t nr_ue_decode_mib(module_id_t module_id, int CC_id, uint8_t gNB_index, uint8_t extra_bits, uint32_t l_ssb_equal_64, void *pduP, uint16_t pdu_len);
+int8_t nr_ue_decode_mib(
+    module_id_t module_id, 
+    int cc_id, 
+    uint8_t gNB_index, 
+    uint8_t extra_bits, 
+    uint32_t l_ssb_equal_64, 
+    void *pduP, 
+    uint16_t pdu_len);
 
 
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
    \param module_id                 module id
-   \param CC_id                     component carrier id
+   \param cc_id                     component carrier id
    \param gNB_index                 gNB index
    \param mibP                      pointer to RRC message MIB
    \param mac_cell_group_configP    pointer to RRC message MAC-related in cell group config 
    \param phy_cell_group_configP    pointer to RRC message PHY-related in cell group config
    \param spcell_configP            pointer to RRC message serving cell config*/
-int nr_rrc_mac_config_req_ue( module_id_t module_id, int CC_id, uint8_t gNB_index, NR_MIB_t *mibP, NR_MAC_CellGroupConfig_t *mac_cell_group_configP, NR_PhysicalCellGroupConfig_t *phy_cell_group_configP, NR_SpCellConfig_t *spcell_configP );
-
+int nr_rrc_mac_config_req_ue( 
+    module_id_t module_id, 
+    int cc_id, 
+    uint8_t gNB_index, 
+    NR_MIB_t *mibP, 
+    NR_MAC_CellGroupConfig_t *mac_cell_group_configP, 
+    NR_PhysicalCellGroupConfig_t *phy_cell_group_configP, 
+    NR_SpCellConfig_t *spcell_configP );
+   
+/**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
 int nr_l2_init_ue(void);
 
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t Mod_idP);
+/**\brief fetch MAC instance by module_id, within 0 - (NB_NR_UE_MAC_INST-1)
+   \param module_id index of MAC instance(s)*/
+NR_UE_MAC_INST_t *get_mac_inst(
+    module_id_t module_id);
+
+/**\brief called at each slot, slot length based on numerology. now use u=0, scs=15kHz, slot=1ms
+          performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.
+   \param module_id     module id
+   \param gNB_index     corresponding gNB index
+   \param cc_id         component carrier id
+   \param rx_frame      receive frame number
+   \param rx_slot       receive slot number
+   \param tx_frame      transmit frame number
+   \param tx_slot       transmit slot number*/
+NR_UE_L2_STATE_t nr_ue_scheduler(
+    const module_id_t module_id,
+    const uint8_t gNB_index,
+    const int cc_id,
+    const frame_t rx_frame,
+    const slot_t rx_slot,
+    const frame_t tx_frame,
+    const slot_t tx_slot);
 
 #endif
 /** @}*/

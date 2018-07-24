@@ -67,11 +67,6 @@ typedef struct {
 #define FAPI_NR_TAG_LENGTH_PACKED_LEN 4
 
 typedef struct {
-	//  config
-    uint8_t cce_idx;
-    uint8_t aggregation_level;
-    uint16_t rnti;
-
     //  dci pdu
 	uint8_t dci_format; 
     uint8_t frequency_domain_resouce_assignment;    //  38.214 chapter 5.1.2.2
@@ -149,7 +144,19 @@ typedef struct {
     uint32_t sr;
 } fapi_nr_uci_pdu_rel15_t;
 
+    typedef struct {
+        uint32_t frequency_domain_resource;
+        uint8_t duration;
+        uint8_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
+        uint8_t cce_reg_interleaved_reg_bundle_size;    //  valid if CCE to REG mapping type is interleaved type
+        uint8_t cce_reg_interleaved_interleaver_size;   //  valid if CCE to REG mapping type is interleaved type
+        uint8_t cce_reg_interleaved_shift_index;        //  valid if CCE to REG mapping type is interleaved type
+        uint8_t precoder_granularity;
+        uint8_t tci_state_pdcch;
 
+        uint8_t tci_present_in_dci;
+        uint16_t pdcch_dmrs_scrambling_id;
+    } fapi_nr_coreset_t;
 
 //
 // Top level FAPI messages
@@ -233,22 +240,7 @@ typedef struct {
 		uint8_t pdu_type;
 		uint8_t pdu_size;
 		union {
-			/*fapi_nr_ul_config_ulsch_pdu				ulsch_pdu;
-			fapi_nr_ul_config_ulsch_cqi_ri_pdu		ulsch_cqi_ri_pdu;
-			fapi_nr_ul_config_ulsch_harq_pdu			ulsch_harq_pdu;
-			fapi_nr_ul_config_ulsch_cqi_harq_ri_pdu	ulsch_cqi_harq_ri_pdu;
-			fapi_nr_ul_config_uci_cqi_pdu				uci_cqi_pdu;
-			fapi_nr_ul_config_uci_sr_pdu				uci_sr_pdu;
-			fapi_nr_ul_config_uci_harq_pdu			uci_harq_pdu;
-			fapi_nr_ul_config_uci_sr_harq_pdu			uci_sr_harq_pdu;
-			fapi_nr_ul_config_uci_cqi_harq_pdu		uci_cqi_harq_pdu;
-			fapi_nr_ul_config_uci_cqi_sr_pdu			uci_cqi_sr_pdu;
-			fapi_nr_ul_config_uci_cqi_sr_harq_pdu		uci_cqi_sr_harq_pdu;
-			fapi_nr_ul_config_srs_pdu					srs_pdu;
-			fapi_nr_ul_config_harq_buffer_pdu			harq_buffer_pdu;
-			fapi_nr_ul_config_ulsch_uci_csi_pdu		ulsch_uci_csi_pdu;
-			fapi_nr_ul_config_ulsch_uci_harq_pdu		ulsch_uci_harq_pdu;
-			fapi_nr_ul_config_ulsch_csi_uci_harq_pdu	ulsch_csi_uci_harq_pdu;*/
+
 		};
 	} fapi_nr_ul_config_request_pdu_t;
 
@@ -264,21 +256,48 @@ typedef struct {
 } fapi_nr_ul_config_request_t;
 
 
+    typedef struct {
+        uint16_t rnti;
+
+        fapi_nr_coreset_t coreset;
+        uint32_t duration;
+        uint8_t aggregation_level;
+        uint8_t number_of_candidates;
+        uint16_t monitoring_symbols_within_slot;
+        //  DCI foramt-specific
+        uint8_t format_2_0_number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16
+        uint8_t format_2_3_monitorying_periodicity;
+        uint8_t format_2_3_number_of_candidates;
+    } fapi_nr_dl_config_dci_dl_pdu_rel15_t;
+
+    typedef struct {
+        fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15;
+    } fapi_nr_dl_config_dci_pdu;
+
+    typedef struct {
+        uint16_t rnti;
+        fapi_nr_dci_pdu_rel15_t dci_config;
+    } fapi_nr_dl_config_dlsch_pdu_rel15_t;
+
+    typedef struct {
+        fapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config_rel15;
+    } fapi_nr_dl_config_dlsch_pdu;
 
 	typedef struct {
 		uint8_t pdu_type;
 		uint8_t pdu_size;
 		union {
-			/*fapi_nr_dl_config_dlsch_pdu	dlsch_pdu;
-			fapi_nr_dl_config_prs_pdu		prs_pdu;
-			fapi_nr_dl_config_csi_rs_pdu	csi_rs_pdu;*/
+            fapi_nr_dl_config_dci_pdu dci_pdu;
+            fapi_nr_dl_config_dlsch_pdu dlsch_pdu;
 		};
 	} fapi_nr_dl_config_request_pdu_t;
 
 typedef struct {
 	fapi_nr_p7_message_header_t header;
 	uint16_t sfn_sf_slot;
-	fapi_nr_dl_config_request_pdu_t dl_config_request_body;
+    uint8_t number_dci;
+    uint8_t number_pdsch;
+	fapi_nr_dl_config_request_pdu_t *dl_config_request_body;
 } fapi_nr_dl_config_request_t;
 
 
@@ -286,19 +305,7 @@ typedef struct {
 // P5
 //
 
-    typedef struct {
-        uint32_t frequency_domain_resource;
-        uint8_t duration;
-        uint8_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
-        uint8_t cce_reg_interleaved_reg_bundle_size;    //  valid if CCE to REG mapping type is interleaved type
-        uint8_t cce_reg_interleaved_interleaver_size;   //  valid if CCE to REG mapping type is interleaved type
-        uint8_t cce_reg_interleaved_shift_index;        //  valid if CCE to REG mapping type is interleaved type
-        uint8_t precoder_granularity;
-        uint8_t tci_state_pdcch;
-
-        uint8_t tci_present_in_dci;
-        uint16_t pdcch_dmrs_scrambling_id;
-    } fapi_nr_coreset_t;
+    
 
     typedef struct {
         fapi_nr_coreset_t coreset;

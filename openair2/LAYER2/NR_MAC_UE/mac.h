@@ -47,7 +47,7 @@ typedef enum {
     CONNECTION_LOST,
     PHY_RESYNCH,
     PHY_HO_PRACH
-} UE_L2_STATE_t;
+} NR_UE_L2_STATE_t;
 
 
 #endif /*__LAYER2_MAC_DEFS_H__ */

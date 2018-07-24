@@ -31,7 +31,7 @@
  */
 
 #include "NR_IF_Module.h"
-#include "LAYER2/NR_MAC_UE/proto.h"
+#include "mac_proto.h"
 
 #include <stdio.h>
 

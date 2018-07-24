@@ -42,7 +42,7 @@
 
 #include "fapi_nr_ue_l1.h"
 #include "PHY/phy_extern_nr_ue.h"
-#include "LAYER2/NR_MAC_UE/proto.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
 #include "SCHED_NR/extern.h"
