@@ -128,8 +128,8 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
          sizeof(*local_ip_addr));
 
   S1AP_INFO("[eNB %d] check the mme registration state\n",instance_p->instance);
-
-  mme = s1ap_eNB_get_MME_from_instance(instance_p);
+	      
+  mme = NULL;
 
   if ( mme == NULL ) {
 
