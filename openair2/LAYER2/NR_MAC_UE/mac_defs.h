@@ -63,15 +63,22 @@
 typedef struct {
     
     ////  MAC config
-    NR_DRX_Config_t    	*drx_Config;    /* OPTIONAL */
-    NR_SchedulingRequestConfig_t   *schedulingRequestConfig;   /* OPTIONAL */
-    NR_BSR_Config_t    	*bsr_Config;    /* OPTIONAL */
-    NR_TAG_Config_t		*tag_Config;    /* OPTIONAL */
-    NR_PHR_Config_t		*phr_Config;    /* OPTIONAL */
-    
-    NR_RNTI_Value_t 	*cs_RNTI;   /* OPTIONAL */
+    NR_DRX_Config_t    	            *drx_Config;
+    NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
+    NR_BSR_Config_t    	            *bsr_Config;
+    NR_TAG_Config_t		            *tag_Config;
+    NR_PHR_Config_t		            *phr_Config;
+    NR_RNTI_Value_t 	            *cs_RNTI;
+	NR_MIB_t 			            *mib;
 
-	NR_MIB_t 			*mib;
+    ///     Type0-PDCCH seach space coreset
+    uint32_t num_rbs;
+    uint32_t num_symbols;
+    uint32_t rb_offset;
+    
+
+    ///     Type0-PDCCH seach space
+
 
 	////	FAPI-like interface
 	fapi_nr_tx_request_t tx_request;
@@ -80,9 +87,12 @@ typedef struct {
 	fapi_nr_dci_indication_t dci_indication;
 	fapi_nr_rx_indication_t rx_indication;
 
+	///     Interface module instances
 	nr_ue_if_module_t *if_module;
 	nr_scheduled_response_t	scheduled_response;
 	nr_phy_config_t phy_config;
+
+
 } NR_UE_MAC_INST_t;
 
 /*@}*/

@@ -312,6 +312,13 @@ typedef struct {
   UE_nr_rxtx_proc_t proc_rxtx[RX_NB_TH];
 } UE_nr_proc_t;
 
+typedef enum {
+  NR_PBCH_EST=0,
+  NR_PDCCH_EST,
+  NR_PDSCH_EST,
+  NR_SSS_EST,
+} NR_CHANNEL_EST_t;
+
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
 
 typedef struct {
@@ -1028,6 +1035,7 @@ typedef struct {
 
   nr_ue_if_module_t *if_inst;
   nr_downlink_indication_t dl_indication;
+  nr_uplink_indication_t ul_indication;
 
   // point to the current rxTx thread index
   uint8_t current_thread_id[10];
@@ -1078,7 +1086,7 @@ typedef struct {
   uint32_t nr_gold_pdsch[2][20][2][21];
 
   /// PDCCH DMRS
-  uint32_t nr_gold_pdcch[10][3][42];
+  uint32_t nr_gold_pdcch[7][20][3][10];
 
   uint32_t X_u[64][839];
 

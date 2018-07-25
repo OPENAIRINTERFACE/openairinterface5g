@@ -62,6 +62,34 @@ int8_t handle_bcch_dlsch(uint32_t pdu_len, uint8_t *pduP){
     return 0;
 }
 
+int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
+
+    NR_UE_L2_STATE_t ret;
+
+    ret = nr_ue_scheduler(
+        ul_info->module_id,
+        ul_info->gNB_index,
+        ul_info->cc_id,
+        ul_info->frame,
+        ul_info->slot,
+        0, 0); //  TODO check tx/rx frame/slot is need for NR version
+
+    switch(ret){
+        case CONNECTION_OK:
+            break;
+        case CONNECTION_LOST:
+            break;
+        case PHY_RESYNCH:
+            break;
+        case PHY_HO_PRACH:
+            break;
+        default:
+            break;
+    }
+
+    return 0;
+}
+
 int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     
     module_id_t module_id = dl_info->module_id;
@@ -99,11 +127,16 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
 
     if (nr_ue_if_module_inst[module_id] == NULL) {
-        nr_ue_if_module_inst[module_id] = (nr_ue_if_module_t*)malloc(sizeof(nr_ue_if_module_t));
+        nr_ue_if_module_inst[module_id] = (nr_ue_if_module_t *)malloc(sizeof(nr_ue_if_module_t));
         memset((void*)nr_ue_if_module_inst[module_id],0,sizeof(nr_ue_if_module_t));
 
-        nr_ue_if_module_inst[module_id]->CC_mask=0;
+        nr_ue_if_module_inst[module_id]->cc_mask=0;
+        nr_ue_if_module_inst[module_id]->current_frame = 0;
+        nr_ue_if_module_inst[module_id]->current_slot = 0;
+        nr_ue_if_module_inst[module_id]->phy_config_request = NULL;
+        nr_ue_if_module_inst[module_id]->scheduled_response = NULL;
         nr_ue_if_module_inst[module_id]->dl_indication = nr_ue_dl_indication;
+        nr_ue_if_module_inst[module_id]->ul_indication = nr_ue_ul_indication;
     }
 
     return nr_ue_if_module_inst[module_id];

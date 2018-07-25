@@ -498,7 +498,7 @@ unsigned char sign(int8_t x) {
 
 uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,1,29,25,27,22,2,24,3,4,5,6,7,18,21,20,8,9,10,11,19,26,12,13,14,15,16,23,17};
 
-uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
+int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		     UE_nr_rxtx_proc_t *proc,
 		     NR_UE_PBCH *nr_ue_pbch_vars,
 		     NR_DL_FRAME_PARMS *frame_parms,
@@ -546,7 +546,7 @@ uint16_t nr_rx_pbch( PHY_VARS_NR_UE *ue,
   // clear LLR buffer
   memset(nr_ue_pbch_vars->llr,0,NR_POLAR_PBCH_E);
 
-  for (symbol=1; symbol<4; symbol++) {
+  for (symbol=5; symbol<8; symbol++) {
 
     //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
     //write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,2,1);
