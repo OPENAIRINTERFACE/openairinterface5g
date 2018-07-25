@@ -19,12 +19,12 @@
  *      contact@openairinterface.org
  */
 
-#ifndef __LTE_ESTIMATION_DEFS__H__
-#define __LTE_ESTIMATION_DEFS__H__
+#ifndef __NR_ESTIMATION_DEFS__H__
+#define __NR_ESTIMATION_DEFS__H__
 
 
 #include "PHY/defs_nr_UE.h"
-#include "PHY/defs_gNB.h"
+//#include "PHY/defs_gNB.h"
 /** @addtogroup _PHY_PARAMETER_ESTIMATION_BLOCKS_
  * @{
  */
@@ -42,13 +42,15 @@
 \param l symbol within slot
 \param symbol symbol within frame
 */
-int nr_dl_channel_estimation(PHY_VARS_NR_UE *ue,
+int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                               uint8_t eNB_id,
                               uint8_t eNB_offset,
                               unsigned char Ns,
                               unsigned char p,
                               unsigned char l,
-                              unsigned char symbol);
+                              unsigned char symbol,
+							  unsigned short coreset_start_subcarrier,
+							  unsigned short nb_rb_coreset);
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                               uint8_t eNB_id,
@@ -57,4 +59,14 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                               unsigned char p,
                               unsigned char l,
                               unsigned char symbol);
+
+int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
+                              uint8_t eNB_id,
+                              uint8_t eNB_offset,
+                              unsigned char Ns,
+                              unsigned char p,
+                              unsigned char l,
+                              unsigned char symbol,
+							  unsigned short bwp_start_subcarrier,
+							  unsigned short nb_rb_pdsch);
 #endif

@@ -24,7 +24,6 @@
 
 #include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/phy_vars_nr_ue.h"
 
 #include "common/ran_context.h"
 
@@ -45,7 +44,7 @@ int16_t *primary_synch2_time;
 #ifndef OCP_FRAMEWORK
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
 PHY_VARS_eNB ***PHY_vars_eNB_g;
-LTE_DL_FRAME_PARMS *lte_frame_parms_g;
+NR_DL_FRAME_PARMS *lte_frame_parms_g;
 #else
 PHY_VARS_NR_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs]={NULL};
 

@@ -4574,10 +4574,15 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
                         // packet was actually decoded in previous transmission (ACK was missed by eNB)
                         // however, the round is not a good check as it might have been decoded in a retransmission prior to this one.
                         // skip pdsch decoding and report ack
+            
+            pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.ack = 1;
+            pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.send_harq_status;
+#if 0            
             pdlsch0->active       = 0;
             pdlsch0->harq_ack[nr_tti_rx].ack = 1;
             pdlsch0->harq_ack[nr_tti_rx].harq_id = nr_pdci_info_extracted->harq_process_number;
             pdlsch0->harq_ack[nr_tti_rx].send_harq_status = 1;
+#endif            
           } else { // normal retransmission, nothing special to do
           }
         } else {
@@ -4602,7 +4607,8 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
                // 2 if one serving cell is configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 bits are the counter DAI
                // 0 otherwise
         nr_pdci_info_extracted->dai                              = (uint8_t)(((((*(uint64_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format-15]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format-15]));
-        pdlsch0->harq_ack[nr_tti_rx].vDAI_DL = nr_pdci_info_extracted->dai+1;
+        pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.vDAI_DL = nr_pdci_info_extracted->dai+1;
+        //pdlsch0->harq_ack[nr_tti_rx].vDAI_DL = nr_pdci_info_extracted->dai+1;
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->dai=%x\n",nr_pdci_info_extracted->dai);
         #endif

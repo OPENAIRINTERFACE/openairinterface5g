@@ -669,24 +669,21 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
 
 #endif
 
-#if 1
-
   synchro_position = pss_search_time_nr(rxdata,
                                         frame_parms,
                                         (int *)&PHY_vars_UE->common_vars.eNb_id);
-
-#else
-
-  synchro_position = lte_sync_time(rxdata,
-                                          frame_parms,
-                                          (int *)&PHY_vars_UE->common_vars.eNb_id);
-#endif
 
 #if TEST_SYNCHRO_TIMING_PSS
 
   stop_meas(&generic_time[TIME_PSS]);
 
-  printf("PSS execution duration %5.2f \n", generic_time[TIME_PSS].p_time/(cpuf*1000.0));
+  int duration_ms = generic_time[TIME_PSS].p_time/(cpuf*1000.0);
+
+  #ifndef NR_UNIT_TEST
+
+    printf("PSS execution duration %4d microseconds \n", duration_ms);
+
+  #endif
 
 #endif
 
@@ -855,7 +852,9 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
   }
 //#endif
 
-#ifdef DEBUG_PHY
+#ifdef DBG_PSS_NR
+
+  static debug_cnt = 0;
 
   if (debug_cnt == 0) {
     write_output("pss_corr_ue0.m","pss_corr_ue0",pss_corr_ue[0],length,1,2);

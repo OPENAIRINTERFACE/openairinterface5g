@@ -34,6 +34,7 @@
 #ifndef PHY_IMPL_DEFS_NR_H
 #define PHY_IMPL_DEFS_NR_H
 
+#include <stdbool.h>
 #include "types.h"
 
 #ifdef DEFINE_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
@@ -65,6 +66,46 @@ EXTERN const uint8_t N_slot_subframe[MU_NUMBER]
 #endif
 ;
 
+//#define RX_NB_TH_MAX 3
+//#define RX_NB_TH 3
+
+#if 0
+#define LTE_SLOTS_PER_SUBFRAME             (2)
+
+#define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME  (10)
+#define LTE_SLOTS_PER_FRAME                (20)
+#define LTE_CE_FILTER_LENGTH               (5)
+#define LTE_CE_OFFSET                      (LTE_CE_FILTER_LENGTH)
+#define TX_RX_SWITCH_SYMBOL                (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
+#define PBCH_PDU_SIZE                      (3) //bytes
+
+#define PRACH_SYMBOL                       (3) //position of the UL PSS wrt 2nd slot of special subframe
+
+#define NUMBER_OF_FREQUENCY_GROUPS         (lte_frame_parms->N_RB_DL)
+
+#define SSS_AMP                            (1148)
+
+#define MAX_NUM_PHICH_GROUPS               (56)  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
+
+#define MAX_MBSFN_AREA                     (8)
+
+#endif
+
+#define  NB_DL_DATA_TO_UL_ACK              (8) /* size of table TS 38.213 Table 9.2.3-1 */
+
+/***********************************************************************
+*
+* FUNCTIONALITY    :  System information type 1
+*
+* DESCRIPTION      :  parameters provided by system information 1
+*
+************************************************************************/
+typedef struct {
+
+  int N_BWP_SIZE; /* size of bandwidth part */
+}
+SystemInformationBlockType1_nr_t;
+
 /***********************************************************************
 *
 * FUNCTIONALITY    :  Time Division Duplex
@@ -73,7 +114,7 @@ EXTERN const uint8_t N_slot_subframe[MU_NUMBER]
 *
 ************************************************************************/
 
-#define MAX_NR_OF_SLOTS                    (320)    /* maximum number of slots for tdd configuration which is periodic */
+#define MAX_NR_OF_SLOTS                    (320)    /* maximum number of slots */
 
 #define NR_TDD_DOWNLINK_SLOT               (0x0000)
 #define NR_TDD_UPLINK_SLOT                 (0x3FFF) /* uplink bitmap for each symbol, there are 14 symbols per slots */
@@ -177,23 +218,23 @@ typedef enum {
 } resourceType_t;
 
 typedef enum {
-  sl1    = 0,
-  sl2    = 1,
-  sl4    = 2,
-  sl5    = 3,
-  sl8    = 4,
-  sl10   = 5,
-  sl16   = 6,
-  sl20   = 7,
-  sl32   = 8,
-  sl40   = 9,
-  sl64   = 10,
-  sl80   = 11,
-  sl160  = 12,
-  sl320  = 13,
-  sl640  = 14,
-  sl1280 = 15,
-  sl2560 = 16
+  srs_sl1    = 0,
+  srs_sl2    = 1,
+  srs_sl4    = 2,
+  srs_sl5    = 3,
+  srs_sl8    = 4,
+  srs_sl10   = 5,
+  srs_sl16   = 6,
+  srs_sl20   = 7,
+  srs_sl32   = 8,
+  srs_sl40   = 9,
+  srs_sl64   = 10,
+  srs_sl80   = 11,
+  srs_sl160  = 12,
+  srs_sl320  = 13,
+  srs_sl640  = 14,
+  srs_sl1280 = 15,
+  srs_sl2560 = 16
 } SRS_Periodicity_t;
 
 #define NB_SRS_PERIOD         (17)
@@ -318,27 +359,492 @@ typedef struct {
   SRS_ResourceSet_t *p_SRS_ResourceSetList[MAX_NR_OF_SRS_RESOURCE_SET]; /* ue implementation specific */
 } SRS_NR;
 
-//#define RX_NB_TH_MAX 3
-//#define RX_NB_TH 3
+/***********************************************************************
+*
+* FUNCTIONALITY    :  Packed Downlink Shared Channel PDSCH
+*
+* DESCRIPTION      :  interface description for PSCH configuration
+*
+************************************************************************/
 
-#define LTE_SLOTS_PER_SUBFRAME 2
+/* FFS TODO_NR partial structure that should be complete */
 
-#define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
-#define LTE_SLOTS_PER_FRAME  20
-#define LTE_CE_FILTER_LENGTH 5
-#define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
-#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
-#define PBCH_PDU_SIZE 3 //bytes
+typedef enum {
+  nb_code_n1 = 1,
+  nb_code_n2 = 2
+} maxNrofCodeWordsScheduledByDCI_t;
 
-#define PRACH_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
+typedef struct {
+/*
+  Maximum number of code words that a single DCI may schedule. This changes the number of MCS/RV/NDI bits in the DCI message from 1 to 2.
+*/
+  maxNrofCodeWordsScheduledByDCI_t maxNrofCodeWordsScheduledByDCI;
 
-#define NUMBER_OF_FREQUENCY_GROUPS (lte_frame_parms->N_RB_DL)
+} PDSCH_Config_t;
 
-#define SSS_AMP 1148
+/***********************************************************************
+*
+* FUNCTIONALITY    :  Packed Uplink Shared Channel
+*
+* DESCRIPTION      :  configuration for PUSCH
+*
+************************************************************************/
 
-#define MAX_NUM_PHICH_GROUPS 56  //110 RBs Ng=2, p.60 36-212, Sec. 6.9
+#define MAX_NR_OF_UL_ALLOCATIONS            (16)
 
-#define MAX_MBSFN_AREA 8
+typedef enum {
+  enable_tpc_accumulation = 0,  /* by default it is enable */
+  disable_tpc_accumulation = 1
+} tpc_Accumulation_t;
+
+typedef enum {
+  typeA = 0,
+  typeB = 1
+} mappingType_t;
+
+typedef struct {
+  tpc_Accumulation_t tpc_Accumulation;
+} PUSCH_PowerControl_t;
+
+typedef struct {
+
+  uint8_t         k2;
+  mappingType_t   mappingType;
+  uint8_t         startSymbolAndLength;
+} PUSCH_TimeDomainResourceAllocation_t;
+
+typedef struct {
+  PUSCH_PowerControl_t                    pusch_PowerControl;
+  PUSCH_TimeDomainResourceAllocation_t    *pusch_TimeDomainResourceAllocation[MAX_NR_OF_UL_ALLOCATIONS];
+} PUSCH_Config_t;
+
+/***********************************************************************
+*
+* FUNCTIONALITY    :  Pucch Power Control
+*
+* DESCRIPTION      :  configuration for pucch power control
+*
+************************************************************************/
+
+#define MAX_NR_OF_PUCCH_P0_PER_SET                (8)
+#define NUMBER_PUCCH_FORMAT_NR                    (5)
+
+typedef int8_t power_level_t;      /* INTEGER (-16..15) */
+
+typedef struct {
+  uint8_t         p0_PUCCH_Id;     /* INTEGER (1..8)     */
+  power_level_t   p0_PUCCH_Value;
+} P0_PUCCH_t;
+
+typedef struct {
+  power_level_t deltaF_PUCCH_f[NUMBER_PUCCH_FORMAT_NR];
+  P0_PUCCH_t    *p0_Set[MAX_NR_OF_PUCCH_P0_PER_SET];
+  // pathlossReferenceRSs        SEQUENCE (SIZE (1..maxNrofPUCCH-PathlossReferenceRSs)) OF PUCCH-PathlossReferenceRS OPTIONAL, -- Need M
+  int8_t        twoPUCCH_PC_AdjustmentStates;
+
+} PUCCH_PowerControl_t;
+
+/***********************************************************************
+*
+* FUNCTIONALITY    :  Packed Uplink Control Channel aka PUCCH
+*
+* DESCRIPTION      :  interface description for managing PUCCH
+*                     There are two main configurations:
+*                     - a first one in SIB1 which gives configuration (common) for initial access
+*                     - a second one which is send by network for dedicated mode
+*
+************************************************************************/
+
+typedef enum {
+  neither = 0,
+  enable  = 1,
+  disable = 2,
+} pucch_GroupHopping_t;
+
+typedef struct {
+/*
+  PUCCH-ConfigCommon ::=          SEQUENCE {
+  -- An entry into a 16-row table where each row configures a set of cell-specific PUCCH resources/parameters. The UE uses
+  -- those PUCCH resources during initial access on the initial uplink BWP. Once the network provides a dedicated PUCCH-Config
+  -- for that bandwidth part the UE applies that one instead of the one provided in this field.
+  -- Corresponds to L1 parameter 'PUCCH-resource-common' (see 38.213, section 9.2)
+  pucch-ResourceCommon          BIT STRING (SIZE (4))                             OPTIONAL, -- Need R
+*/
+  uint16_t pucch_ResourceCommon;
+/*
+  -- Configuration of group- and sequence hopping for all the PUCCH formats 0, 1, 3 and 4. "neither" implies neither group
+  -- or sequence hopping is enabled. "enable" enables group hopping and disables sequence hopping. "disable"” disables group
+  -- hopping and enables sequence hopping. Corresponds to L1 parameter 'PUCCH-GroupHopping' (see 38.211, section 6.4.1.3)
+  pucch-GroupHopping            ENUMERATED { neither, enable, disable },
+*/
+  pucch_GroupHopping_t   pucch_GroupHopping;
+/*
+  -- Cell-Specific scrambling ID for group hoppping and sequence hopping if enabled.
+  -- Corresponds to L1 parameter 'HoppingID' (see 38.211, section 6.3.2.2)
+  hoppingId               BIT STRING (SIZE (10))                              OPTIONAL,   -- Need R
+*/
+  uint16_t hoppingId;
+/*
+  -- Power control parameter P0 for PUCCH transmissions. Value in dBm. Only even values (step size 2) allowed.
+  -- Corresponds to L1 parameter 'p0-nominal-pucch' (see 38.213, section 7.2)
+  p0-nominal                INTEGER (-202..24)                                OPTIONAL,   -- Need R
+*/
+  int8_t p0_nominal;
+} PUCCH_ConfigCommon_nr_t;
+
+#define MAX_NB_OF_PUCCH_RESOURCE_SETS             (4)
+#define MAX_NB_OF_PUCCH_RESOURCES_PER_SET         (32)
+#define MAX_NB_OF_PUCCH_RESOURCES_PER_SET_NOT_0   (8)
+#define MAX_NB_OF_PUCCH_RESOURCES                 (128)
+#define NB_INITIAL_PUCCH_RESOURCE                 (16)
+#define MAX_PUCCH_RESOURCE_INDICATOR              (8)
+#define MAX_NB_CYCLIC_SHIFT                       (4)
+#define MAX_NR_OF_SPATIAL_RELATION_INFOS          (8)
+
+typedef enum {
+  pucch_format0_nr  = 0,
+  pucch_format1_nr  = 1,
+  pucch_format2_nr  = 2,
+  pucch_format3_nr  = 3,
+  pucch_format4_nr  = 4,
+} pucch_format_nr_t;
+
+typedef enum {
+  feature_disabled = 0,
+  feature_enabled  = 1,
+} feature_status_t;
+
+typedef enum {
+  disable_feature = 0,
+  enable_feature  = 1
+} enable_feature_t;
+
+typedef enum {
+  zeroDot08 = 0,
+  zeroDot15 = 1,
+  zeroDot25 = 2,
+  zeroDot35 = 3,
+  zeroDot45 = 4,
+  zeroDot60 = 5,
+  zeroDot80 = 6,
+  reserved  = 7
+} PUCCH_MaxCodeRate_t;
+
+typedef struct {
+  pucch_format_nr_t format;
+  uint8_t                startingSymbolIndex;
+  uint8_t                nrofSymbols;
+  uint16_t               PRB_offset;
+  uint8_t                nb_CS_indexes;
+  uint8_t                initial_CS_indexes[MAX_NB_CYCLIC_SHIFT];
+} initial_pucch_resource_t;
+
+const initial_pucch_resource_t initial_pucch_resource[NB_INITIAL_PUCCH_RESOURCE]; /* TS 36.213 Table 9.2.1-1: PUCCH resource sets before dedicated PUCCH resource configuration */
+
+/* structure with all possible field for pucch format from 0 to 4  */
+typedef struct {
+  pucch_format_nr_t      format;              /* format   0    1    2    3    4    */
+  uint8_t                initialCyclicShift;  /*          x    x                   */
+  uint8_t                nrofSymbols;         /*          x    x    x    x    x    */
+  uint8_t                startingSymbolIndex; /*          x    x    x    x    x    */
+  uint8_t                timeDomainOCC;       /*               x                   */
+  uint8_t                nrofPRBs;            /*                    x    x         */
+  uint8_t                occ_length;          /*                              x    */
+  uint8_t                occ_Index;           /*                              x    */
+} PUCCH_format_t;
+
+typedef struct {
+  uint8_t                pucch_ResourceId;           /*  maxNrofPUCCH-Resources = 128 */
+  uint16_t               startingPRB;                /* maxNrofPhysicalResourceBlocks  = 275 */
+  feature_status_t       intraSlotFrequencyHopping;
+  uint16_t               secondHopPRB;
+  PUCCH_format_t         format_parameters;
+} PUCCH_Resource_t;
+
+typedef struct {
+  uint8_t                pucch_ResourceSetId; /* maxNrofPUCCH-ResourceSets = 4 */
+/*
+  -- PUCCH resources of format0 and format1 are only allowed in the first PUCCH reosurce set,
+  -- i.e., in a PUCCH-ResourceSet with pucch-ResourceSetId = 0. This set may contain between 8 and 32 resources.
+  -- PUCCH resources of format2, format3 and format4 are only allowed  in a PUCCH-ReosurceSet with pucch-ResourceSetId > 0. If present, these sets must contain 8 resources each.
+  -- The UE chooses a PUCCH-Resource from this list based on the 3-bit PUCCH resource indicator field in DCI as
+  -- speciied in 38.213, FFS_section.
+  -- Note that this list contains only a list of resource IDs. The actual resources are configured in PUCCH-Config.
+*/
+  uint8_t                pucch_resource_id[MAX_NB_OF_PUCCH_RESOURCES_PER_SET];  /* pucch resources belonging to current set is a 32 bit map to address maxNrofPUCCH-ResourcesPerSet = 32 resources */
+
+  uint8_t                first_resources_set_R_PUCCH;  /* size of first resource set which can be higher than 8 */
+/*
+  -- Maximum number of payload bits minus 1 that the UE may transmit using this PUCCH resource set. In a PUCCH occurrence, the UE
+  -- chooses the first of its PUCCH-ResourceSet which supports the number of bits that the UE wants to transmit.
+  -- The field is not present in the first set (Set0) since the maximum Size of Set0 is specified to be 3 bit.
+  -- The field is not present in the last configured set since the UE derives its maximum payload size as specified in 38.213.
+  -- This field can take integer values that are multiples of 4. Corresponds to L1 parameter 'N_2' or 'N_3' (see 38.213, section 9.2)
+*/
+  uint16_t               maxPayloadMinus1;  /* INTEGER (4..256) */
+} PUCCH_ResourceSet_t;
+
+typedef struct {
+/*
+  -- Enabling inter-slot frequency hopping when PUCCH Format 1, 3 or 4 is repeated over multiple slots.
+  -- The field is not applicable for format 2.
+ */
+  feature_status_t       interslotFrequencyHopping;
+/*
+  -- Enabling 2 DMRS symbols per hop of a PUCCH Format 3 or 4 if both hops are more than X symbols when FH is enabled (X=4).
+  -- Enabling 4 DMRS sybmols for a PUCCH Format 3 or 4 with more than 2X+1 symbols when FH is disabled (X=4).
+  -- Corresponds to L1 parameter 'PUCCH-F3-F4-additional-DMRS' (see 38.213, section 9.2.1)
+  -- The field is not applicable for format 1 and 2.
+*/
+  enable_feature_t       additionalDMRS;
+/*
+  -- Max coding rate to determine how to feedback UCI on PUCCH for format 2, 3 or 4
+  -- Corresponds to L1 parameter 'PUCCH-F2-maximum-coderate', 'PUCCH-F3-maximum-coderate' and 'PUCCH-F4-maximum-coderate'
+  -- (see 38.213, section 9.2.5)
+  -- The field is not applicable for format 1.
+*/
+  PUCCH_MaxCodeRate_t    maxCodeRate;
+/*
+  -- Number of slots with the same PUCCH F1, F3 or F4. When the field is absent the UE applies the value n1.
+  -- Corresponds to L1 parameter 'PUCCH-F1-number-of-slots', 'PUCCH-F3-number-of-slots' and 'PUCCH-F4-number-of-slots'
+  -- (see 38.213, section 9.2.6)
+  -- The field is not applicable for format 2.
+*/
+  uint8_t                nrofSlots;
+/*
+  -- Enabling pi/2 BPSK for UCI symbols instead of QPSK for PUCCH.
+  -- Corresponds to L1 parameter 'PUCCH-PF3-PF4-pi/2PBSK' (see 38.213, section 9.2.5)
+  -- The field is not applicable for format 1 and 2.
+*/
+  feature_status_t       pi2PBSK;
+/*
+  -- Enabling simultaneous transmission of CSI and HARQ-ACK feedback with or without SR with PUCCH Format 2, 3 or 4
+  -- Corresponds to L1 parameter 'PUCCH-F2-Simultaneous-HARQ-ACK-CSI', 'PUCCH-F3-Simultaneous-HARQ-ACK-CSI' and
+  -- 'PUCCH-F4-Simultaneous-HARQ-ACK-CSI' (see 38.213, section 9.2.5)
+  -- When the field is absent the UE applies the value OFF
+  -- The field is not applicable for format 1.
+*/
+  enable_feature_t       simultaneousHARQ_ACK_CSI;
+} PUCCH_FormatConfig_t;
+
+typedef struct {
+  PUCCH_Resource_t       *PUCCH_Resource[MAX_NB_OF_PUCCH_RESOURCES];
+  PUCCH_ResourceSet_t    *PUCCH_ResourceSet[MAX_NB_OF_PUCCH_RESOURCE_SETS];
+  PUCCH_FormatConfig_t   *formatConfig[NUMBER_PUCCH_FORMAT_NR-1];   /* format 0 is not there */
+  uint8_t                dl_DataToUL_ACK[NB_DL_DATA_TO_UL_ACK];     /* table TS 38.213 Table 9.2.3-1: Mapping of PSDCH-to-HARQ_feedback timing indicator field values to numbers of slots */
+  void                   *spatial_Relation_Info[MAX_NR_OF_SPATIAL_RELATION_INFOS];
+  PUCCH_PowerControl_t   pucch_PowerControl;
+} PUCCH_Config_t;
+
+/***********************************************************************
+*
+* FUNCTIONALITY    :  PhysicalCellGroupConfig
+*
+* DESCRIPTION      :  Physical cell group configuration
+*
+************************************************************************/
+
+typedef uint16_t RNTI_value_t;
+
+typedef enum {
+  semiStatic = 0,
+  dynamic =    1
+} pdsch_HARQ_ACK_Codebook_t;
+
+typedef struct {
+/*
+  -- Enables spatial bundling of HARQ ACKs. It is configured per cell group (i.e. for all the cells within the cell group) for PUCCH
+  -- reporting of HARQ-ACK. It is only applicable when more than 4 layers are possible to schedule.
+  -- Corresponds to L1 parameter 'HARQ-ACK-spatial-bundling' (see 38.213, section FFS_Section)
+  -- Absence indicates that spatial bundling is disabled.
+*/
+  bool                          harq_ACK_SpatialBundlingPUCCH;
+/*
+  -- Enables spatial bundling of HARQ ACKs. It is configured per cell group (i.e. for all the cells within the cell group) for PUSCH
+  -- reporting of HARQ-ACK. It is only applicable when more than 4 layers are possible to schedule.
+  -- Corresponds to L1 parameter 'HARQ-ACK-spatial-bundling' (see 38.213, section FFS_Section)
+  -- Absence indicates that spatial bundling is disabled.
+*/
+  bool                          harq_ACK_SpatialBundlingPUSCH;
+/*
+  -- The maximum transmit power to be used by the UE in this NR cell group.
+*/
+  uint8_t                       p_NR;
+/*
+  -- The PDSCH HARQ-ACK codebook is either semi-static of dynamic. This is applicable to both CA and none CA operation.
+  -- Corresponds to L1 parameter 'HARQ-ACK-codebook' (see 38.213, section FFS_Section)
+*/
+  pdsch_HARQ_ACK_Codebook_t     pdsch_HARQ_ACK_Codebook;
+/*
+  -- RNTI used for SRS TPC commands on DCI. Corresponds to L1 parameter 'TPC-SRS-RNTI' (see 38.213, section 10)
+*/
+  RNTI_value_t                  tpc_SRS_RNTI;
+/*
+  -- RNTI used for PUCCH TPC commands on DCI. Corresponds to L1 parameter 'TPC-PUCCH-RNTI' (see 38.213, section 10).
+*/
+  RNTI_value_t                  tpc_PUCCH_RNTI;
+/*
+  -- RNTI used for PUSCH TPC commands on DCI. Corresponds to L1 parameter 'TPC-PUSCH-RNTI' (see 38.213, section 10)
+*/
+  RNTI_value_t                  tpc_PUSCH_RNTI;
+} PhysicalCellGroupConfig_t;
+
+/***********************************************************************
+*
+* FUNCTIONALITY    :  CellGroupConfig
+*
+* DESCRIPTION      :  Cell Group configuration
+*
+************************************************************************/
+
+/* FFS TODO_NR partial structure that should be complete */
+
+typedef struct {
+/*
+  cellGroupId                 CellGroupId,
+
+  -- Logical Channel configuration and association with radio bearers:
+  rlc-BearerToAddModList            SEQUENCE (SIZE(1..maxLC-ID)) OF RLC-Bearer-Config       OPTIONAL,   -- Need N
+  rlc-BearerToReleaseList           SEQUENCE (SIZE(1..maxLC-ID)) OF LogicalChannelIdentity      OPTIONAL,   -- Need N
+
+  -- Parameters applicable for the entire cell group:
+  mac-CellGroupConfig             MAC-CellGroupConfig                       OPTIONAL, -- Need M
+*/
+  PhysicalCellGroupConfig_t  physicalCellGroupConfig;
+/*
+  -- Serving Cell specific parameters (SpCell and SCells)
+  spCellConfig                SpCellConfig                          OPTIONAL,   -- Need M
+  sCellToAddModList             SEQUENCE (SIZE (1..maxNrofSCells)) OF SCellConfig       OPTIONAL, -- Need N
+  -- List of seconary serving cells to be released (not applicable for SpCells)
+  sCellToReleaseList              SEQUENCE (SIZE (1..maxNrofSCells)) OF SCellIndex        OPTIONAL, -- Need N
+  ...
+  */
+} CellGroupConfig_t;
+
+/***********************************************************************
+*
+* FUNCTIONALITY    :  PDSCH_ServingCellConfig
+*
+* DESCRIPTION      :  pdsch serving cell configuration
+*
+************************************************************************/
+
+/* FFS TODO_NR partial structure that should be complete */
+
+typedef int PDSCH_CodeBlockGroupTransmission_t;  /* dummy struct which should be change by correct structure */
+
+typedef enum {
+  xOh6  = 0,
+  xOh12 = 1,
+  xOh18 = 2
+} xOverhead_t;
+
+typedef enum {
+  n2_dl_harq  = 2,
+  n4_dl_harq  = 4,
+  n6_dl_harq  = 6,
+  n10_dl_harq = 10,
+  n12_dl_harq = 12,
+  n16_dl_harq = 16
+} nrofHARQ_ProcessesForPDSCH_t;
+
+typedef struct {
+/*
+  -- Enables and configures code-block-group (CBG) based transmission (see 38.213, section 9.1.1)
+*/
+  PDSCH_CodeBlockGroupTransmission_t  *codeBlockGroupTransmission;
+/*
+  -- Accounts for overhead from CSI-RS, CORESET, etc. If the field is absent, the UE applies value xOh0.
+  -- Corresponds to L1 parameter 'Xoh-PDSCH' (see 38.214, section 5.1.3.2)
+*/
+  xOverhead_t                         xOverhead;
+/*
+  -- The number of HARQ processes to be used on the PDSCH of a serving cell. n2 corresponds to 2 HARQ processes, n4 to 4 HARQ processes
+  -- and so on. If the field is absent, the UE uses 8 HARQ processes.
+  -- Corresponds to L1 parameter 'number-HARQ-process-PDSCH' (see 38.214, section REF)
+*/
+  nrofHARQ_ProcessesForPDSCH_t        nrofHARQ_ProcessesForPDSCH;
+/*
+  -- The ID of the serving cell (of the same cell group) to use for PUCCH.
+  -- If the field is absent, the UE sends the HARQ feedback on the PUCCH of the SpCell of this cell group.
+*/
+  uint8_t                            pucch_Cell;
+
+} PDSCH_ServingCellConfig_t;
+
+/***********************************************************************
+*
+* FUNCTIONALITY    :  Scheduling Request Configuration (SR)
+*
+* DESCRIPTION      :  Configuration for Scheduling Request send on PUCCH
+*                     In the case that scheduling should be send alone
+*                     in a PUCCH, it should used its configuration.
+*
+************************************************************************/
+
+#define MAX_NR_OF_SR_CONFIG_PER_CELL_GROUP          (8)
+
+#define NB_SR_PERIOD    (15)
+
+const uint16_t scheduling_request_periodicity[NB_SR_PERIOD]
+#ifdef INIT_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
+= { 0, 0, 1, 2, 4, 5, 8, 10, 16, 20, 40, 80, 160, 320, 640 }
+#endif
+;
+
+typedef enum {
+  sr_sym2     = 0,
+  sr_sym6or7  = 1,
+  sr_sl1      = 2,
+  sr_sl2      = 3,
+  sr_sl4      = 4,
+  sr_sl5      = 5,
+  sr_sl8      = 6,
+  sr_sl10     = 7,
+  sr_sl16     = 8,
+  sr_sl20     = 9,
+  sr_sl40     = 10,
+  sr_sl80     = 11,
+  sr_sl160    = 12,
+  sr_sl320    = 13,
+  sr_sl640    = 14
+} sr_periodicity_t;
+
+typedef struct {
+
+  uint8_t                schedulingRequestResourceId;
+/*
+  -- The ID of the SchedulingRequestConfig that uses this scheduling request resource.
+ */
+  uint8_t                schedulingRequestID;
+
+/*
+  -- SR periodicity and offset in number of slots. Corresponds to L1 parameter 'SR-periodicity' and 'SR-offset' (see 38.213, section 9.2.2)
+  -- The following periodicities may be configured depending on the chosen subcarrier spacing:
+  -- SCS =  15 kHz: 2sym, 7sym, 1sl, 2sl, 4sl, 5sl, 8sl, 10sl, 16sl, 20sl, 40sl, 80sl
+  -- SCS =  30 kHz: 2sym, 7sym, 1sl, 2sl, 4sl, 8sl, 10sl, 16sl, 20sl, 40sl, 80sl, 160sl
+  -- SCS =  60 kHz: 2sym, 7sym/6sym, 1sl, 2sl, 4sl, 8sl, 16sl, 20sl, 40sl, 80sl, 160sl, 320sl
+  -- SCS = 120 kHz: 2sym, 7sym, 1sl, 2sl, 4sl, 8sl, 16sl, 40sl, 80sl, 160sl, 320sl, sl640
+  -- sym6or7 corresponds to 6 symbols if extended cyclic prefix and a SCS of 60 kHz are configured, otherwise it corresponds to 7 symbols.
+  -- For periodicities sym2, sym7 and sl1 the UE assumes an offset of 0 slots.
+*/
+  sr_periodicity_t       periodicity;
+  uint16_t               offset;
+
+/*
+  -- ID of the PUCCH resource in which the UE shall send the scheduling request. The
+  -- actual PUCCH-Resource is configured in PUCCH-Config of the same UL BWP and serving cell as this SchedulingRequestResourceConfig.
+  -- The network configures a PUCCH-Resource of PUCCH-format0 or PUCCH-format1
+  -- (other formats not supported). Corresponds to L1 parameter 'SR-resource' (see 38.213, section 9.2.2)
+ */
+  uint8_t                resource;
+
+} SchedulingRequestResourceConfig_t;
+
+typedef struct {
+  int                                active_sr_id;
+  SchedulingRequestResourceConfig_t  *sr_ResourceConfig[MAX_NR_OF_SR_CONFIG_PER_CELL_GROUP];
+} scheduling_request_config_t;
 
 #undef EXTERN
 #undef INIT_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H

@@ -32,6 +32,7 @@
 #ifndef SSS_NR_H
 #define SSS_NR_H
 
+#include "limits.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/types.h"
 
@@ -46,7 +47,6 @@
 
 /************** DEFINE ********************************************/
 
-#define  INT_MIN	   (-2147483647 - 1)
 #define  SAMPLES_IQ                   (sizeof(int16_t)*2)
 #define  NUMBER_SSS_SEQUENCE          (336)
 #define  INVALID_SSS_SEQUENCE         (NUMBER_SSS_SEQUENCE)
