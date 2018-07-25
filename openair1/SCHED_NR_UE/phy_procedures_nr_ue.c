@@ -5901,6 +5901,7 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
   LOG_D(PHY," ------  --> FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
 
+  nr_gold_pdcch(ue,ue->frame_parms.Nid_cell, 0, 3);
 
   for (; l<=3; l++) {
     if (abstraction_flag == 0) {
@@ -5908,12 +5909,13 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
         start_meas(&ue->ofdm_demod_stats);
 #endif
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
-      slot_fep_pbch(ue,
+      nr_slot_fep(ue,
          l,
          (nr_tti_rx<<1),
          0,
          0,
-         0);
+         0,
+		 NR_PDCCH_EST);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
       stop_meas(&ue->ofdm_demod_stats);
@@ -5970,6 +5972,17 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 #endif
 
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+  //to update from pdsch config
+  nr_gold_pdsch(ue,0,ue->frame_parms.Nid_cell, 0, 1);
+
+  nr_slot_fep(ue,
+          2,  //to be updated from higher layer
+          (nr_tti_rx<<1),
+          0,
+          0,
+          0,
+ 		  NR_PDSCH_EST);
+
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat);
 #endif
@@ -5994,7 +6007,6 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
   if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
-
 			proc,
 			eNB_id,
 			SI_PDSCH,

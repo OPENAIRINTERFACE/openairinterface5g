@@ -424,20 +424,22 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
 
   // Do FFTs for SSS/PSS
   // SSS
-  slot_fep_pbch(ue,
+  nr_slot_fep(ue,
            SSS_SYMBOL_NB,      // symbol number
            0,                  // Ns slot number
            ue->rx_offset,      // sample_offset of int16_t
            0,                  // no_prefix
-           1);                 // reset frequency estimation
+           1,                  // reset frequency estimation
+		   NR_SSS_EST);
 
   // PSS
-  slot_fep_pbch(ue,
+  nr_slot_fep(ue,
            PSS_SYMBOL_NB,
            0,
            ue->rx_offset,
            0,
-           1);
+           1,
+		   NR_SSS_EST);
 
   frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
 
