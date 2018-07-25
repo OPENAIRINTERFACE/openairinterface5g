@@ -191,7 +191,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
   switch(channel){
   case NR_PBCH_EST:
-    if ((l>0) && (l<4)) {
+    if ((l>4) && (l<8)) {
       for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
 #ifdef DEBUG_FEP
