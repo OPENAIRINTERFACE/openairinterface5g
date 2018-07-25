@@ -40,11 +40,9 @@ typedef struct {
     /// module id
     module_id_t module_id;
     /// component carrier id
-    int CC_id;
+    int cc_id;
     /// frame 
     frame_t frame;
-    /// subframe
-    sub_frame_t subframe;
     /// slot
     uint8_t slot;
 
@@ -56,6 +54,20 @@ typedef struct {
     fapi_nr_dci_indication_t dci_ind;
 
 } nr_downlink_indication_t;
+
+
+typedef struct {
+    /// module id
+    module_id_t module_id;
+    /// gNB index
+    uint32_t gNB_index;
+    /// component carrier id
+    int cc_id;
+    /// frame 
+    frame_t frame;
+    /// slot
+    uint32_t slot;
+} nr_uplink_indication_t;
 
 // Downlink subframe P7
 
@@ -104,7 +116,7 @@ typedef struct {
  *  -1: Failed to consume bytes. Abort the mission.
  * Non-negative return values indicate success, and ignored.
  */
-typedef int8_t(nr_ue_scheduled_response_f)(nr_scheduled_response_t *scheduled_response);
+typedef int8_t (nr_ue_scheduled_response_f)(nr_scheduled_response_t *scheduled_response);
 
 
 /*
@@ -114,7 +126,7 @@ typedef int8_t(nr_ue_scheduled_response_f)(nr_scheduled_response_t *scheduled_re
  *  -1: Failed to consume bytes. Abort the mission.
  * Non-negative return values indicate success, and ignored.
  */
-typedef int8_t(nr_ue_phy_config_request_f)(nr_phy_config_t *phy_config);
+typedef int8_t (nr_ue_phy_config_request_f)(nr_phy_config_t *phy_config);
 
 
 /*
@@ -124,18 +136,27 @@ typedef int8_t(nr_ue_phy_config_request_f)(nr_phy_config_t *phy_config);
  *  -1: Failed to consume bytes. Abort the mission.
  * Non-negative return values indicate success, and ignored.
  */
-typedef int8_t(nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
+typedef int8_t (nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
 
+/*
+ * Generic type of an application-defined callback to return various
+ * types of data to the application.
+ * EXPECTED RETURN VALUES:
+ *  -1: Failed to consume bytes. Abort the mission.
+ * Non-negative return values indicate success, and ignored.
+ */
+typedef int8_t (nr_ue_ul_indication_f)(nr_uplink_indication_t *ul_info);
 
 //  TODO check this stuff can be reuse of need modification
 typedef struct nr_ue_if_module_s {
     nr_ue_scheduled_response_f *scheduled_response;
     nr_ue_phy_config_request_f *phy_config_request;
     nr_ue_dl_indication_f      *dl_indication;
+    nr_ue_ul_indication_f      *ul_indication;
 
-    uint32_t CC_mask;
-    uint16_t current_frame;
-    uint8_t current_subframe;
+    uint32_t cc_mask;
+    uint32_t current_frame;
+    uint32_t current_slot;
     //pthread_mutex_t nr_if_mutex;
 } nr_ue_if_module_t;
 

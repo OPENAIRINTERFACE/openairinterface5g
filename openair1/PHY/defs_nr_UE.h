@@ -998,6 +998,7 @@ typedef struct {
 
   nr_ue_if_module_t *if_inst;
   nr_downlink_indication_t dl_indication;
+  nr_uplink_indication_t ul_indication;
 
   // point to the current rxTx thread index
   uint8_t current_thread_id[10];
