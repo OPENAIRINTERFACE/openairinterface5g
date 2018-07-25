@@ -63,17 +63,6 @@ typedef struct {
 } nr_pdcch_coreset_params_t;
 
 typedef struct {
-  uint8_t reg_idx;
-  uint8_t start_sc_idx;
-  uint8_t symb_idx;
-} nr_reg_t;
-
-typedef struct {
-  uint8_t cce_idx;
-  nr_reg_t reg_list[NR_NB_REG_PER_CCE];
-} nr_cce_t;
-
-typedef struct {
   uint8_t first_slot;
   uint8_t nb_slots;
   uint8_t sfn_mod2;
@@ -90,17 +79,17 @@ uint8_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                         NR_BWP_PARMS* bwp,
                         nfapi_nr_config_request_t* config);
 
-uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
+uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
                             uint32_t *gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS frame_parms,
-                            nfapi_nr_config_request_t config,
-                            nr_pdcch_vars_t pdcch_vars);
+                            nfapi_nr_config_request_t config);
 
-void nr_pdcch_scrambling(NR_gNB_DCI_ALLOC_t dci_alloc,
-                         nr_pdcch_vars_t pdcch_vars,
-                         nfapi_nr_config_request_t config,
+void nr_pdcch_scrambling(uint32_t *in,
+                         uint8_t size,
+                         uint32_t Nid,
+                         uint32_t n_RNTI,
                          uint32_t* out);
 
 #endif //__PHY_NR_TRANSPORT_DCI__H

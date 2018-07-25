@@ -20,7 +20,7 @@
  */
 
 /*! \file PHY/NR_TRANSPORT/nr_dci.c
-* \brief Implements DCI encoding/decoding and PDCCH TX/RX procedures (38.212/38.213/38.214). V15.1 2018-06.
+* \brief Implements DCI encoding/decoding and PDCCH TX/RX procedures (38.212/38.213/38.214). V15.2.0 2018-06.
 * \author Guy De Souza
 * \date 2018
 * \version 0.1
@@ -130,21 +130,19 @@ uint8_t nr_get_dci_size(nfapi_nr_dci_format_e format,
   return size;
 }
 
-void nr_pdcch_scrambling(NR_gNB_DCI_ALLOC_t dci_alloc,
-                         nr_pdcch_vars_t pdcch_vars,
-                         nfapi_nr_config_request_t config,
+void nr_pdcch_scrambling(uint32_t *in,
+                         uint8_t size,
+                         uint32_t Nid,
+                         uint32_t n_RNTI,
                          uint32_t* out) {
 
   uint8_t reset;
   uint32_t x1, x2, s=0;
-  uint32_t Nid = (dci_alloc.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_vars.dmrs_scrambling_id : config.sch_config.physical_cell_id.value;
-  uint32_t n_RNTI = (dci_alloc.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? dci_alloc.rnti : 0;
-  uint32_t *in = dci_alloc.dci_pdu;
 
   reset = 1;
   x2 = (n_RNTI<<16) + Nid;
 
-  for (int i=0; i<dci_alloc.size; i++) {
+  for (int i=0; i<size; i++) {
     if ((i&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
@@ -154,13 +152,12 @@ void nr_pdcch_scrambling(NR_gNB_DCI_ALLOC_t dci_alloc,
 
 }
 
-uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
+uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
                             uint32_t *gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS frame_parms,
-                            nfapi_nr_config_request_t config,
-                            nr_pdcch_vars_t pdcch_vars)
+                            nfapi_nr_config_request_t config)
 {
 
   uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH<<1];
@@ -169,17 +166,15 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
   int k,l,k_prime,dci_idx, dmrs_idx;
   nr_cce_t cce;
 
-  uint8_t n_rb = pdcch_vars.coreset_params.n_rb;
-  uint8_t rb_offset = pdcch_vars.coreset_params.n_symb;
-  uint8_t n_symb = pdcch_vars.coreset_params.rb_offset;
-  uint8_t first_slot = pdcch_vars.first_slot;
-  uint8_t first_symb = pdcch_vars.ss_params.first_symbol_idx;
+  /*First iteration: single DCI*/
+  NR_gNB_DCI_ALLOC_t dci_alloc = pdcch_vars.dci_alloc[0];
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc.pdcch_params;
 
   /// DMRS QPSK modulation
     /*There is a need to shift from which index the pregenerated DMRS sequence is used
      * see 38211 r15.2.0 section 7.4.1.3.2: assumption is the reference point for k refers to the DMRS sequence*/
-  if (pdcch_vars.coreset_params.config_type == nr_cset_config_pdcch_config)
-    gold_pdcch_dmrs += ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+rb_offset)*3/32;
+  if (pdcch_params.config_type == nr_cset_config_pdcch_config)
+    gold_pdcch_dmrs += ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*3/32;
 
   for (int i=0; i<NR_MAX_PDCCH_DMRS_LENGTH>>1; i++) {
     idx = ((((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((gold_pdcch_dmrs[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
@@ -195,8 +190,10 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
     //channel coding
   
     // scrambling
-  uint32_t scrambled_payload[4]; 
-  nr_pdcch_scrambling(dci_alloc, pdcch_vars, config, scrambled_payload);
+  uint32_t scrambled_payload[4];
+  uint32_t Nid = (dci_alloc.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
+  uint32_t n_RNTI = (dci_alloc.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? dci_alloc.rnti : 0;
+  nr_pdcch_scrambling(dci_alloc.dci_pdu, dci_alloc.size, Nid, n_RNTI, scrambled_payload);
 
     // QPSK modulation
   uint32_t mod_dci[NR_MAX_DCI_SIZE>>1];
@@ -212,8 +209,8 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
    /*The coreset is initialised
     * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset
     * in time: by its first slot and its first symbol*/
-  uint8_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+rb_offset)*NR_NB_SC_PER_RB;
-  uint8_t cset_start_symb = first_slot*frame_parms.symbols_per_slot + first_symb;
+  uint8_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*NR_NB_SC_PER_RB;
+  uint8_t cset_start_symb = pdcch_params.first_slot*frame_parms.symbols_per_slot + pdcch_params.first_symbol;
   dci_idx = 0;
   dmrs_idx = 0;
 
@@ -222,10 +219,10 @@ uint8_t nr_generate_dci_top(NR_gNB_DCI_ALLOC_t dci_alloc,
     if (cset_start_sc >= frame_parms.ofdm_symbol_size)
       cset_start_sc -= frame_parms.ofdm_symbol_size;
 
-    if (pdcch_vars.coreset_params.precoder_granularity == nr_cset_same_as_reg_bundle) {
+    if (pdcch_params.precoder_granularity == nr_cset_same_as_reg_bundle) {
 
       for (int cce_idx=0; cce_idx<dci_alloc.L; cce_idx++){
-        cce = pdcch_vars.cce_list[cce_idx];
+        cce = dci_alloc.cce_list[cce_idx];
           for (int reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
             k = cset_start_sc + cce.reg_list[reg_idx].start_sc_idx;
             l = cset_start_symb + cce.reg_list[reg_idx].symb_idx;

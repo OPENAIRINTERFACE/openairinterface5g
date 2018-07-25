@@ -157,6 +157,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   int aa;
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
+  uint8_t num_dci=0;
 
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
@@ -178,10 +179,18 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     nr_common_signal_procedures(gNB,frame, subframe);
     //if (frame == 9)
       //write_output("txdataF.m","txdataF",gNB->common_vars.txdataF[aa],fp->samples_per_frame_wCP, 1, 1);
-
-    //temporary DCI generation test
-    NR_gNB_DCI_ALLOC_t dci_alloc;
-    nr_pdcch_vars_t pdcch_vars;
-    nr_generate_dci_top(dci_alloc, gNB->nr_gold_pdcch_dmrs[0][0],gNB->common_vars.txdataF, 512, *fp, *cfg, pdcch_vars);
   }
+
+  num_dci = gNB->pdcch_vars.num_dci;
+  if (num_dci) {
+    LOG_I(PHY, "[gNB %d] Frame %d subframe %d \
+    Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, subframe, num_dci);
+
+    if (nfapi_mode == 0 || nfapi_mode == 1)
+      nr_generate_dci_top(gNB->pdcch_vars,
+                          gNB->nr_gold_pdcch_dmrs[0][0],
+                          gNB->common_vars.txdataF,
+                          AMP, *fp, *cfg);
+  }
+
 }

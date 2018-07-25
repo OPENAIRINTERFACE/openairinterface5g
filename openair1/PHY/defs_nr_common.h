@@ -133,6 +133,17 @@ typedef enum {
   nr_cset_all_contiguous_rbs
 } nr_coreset_precoder_granularity_type_e;
 
+typedef struct {
+  uint8_t reg_idx;
+  uint8_t start_sc_idx;
+  uint8_t symb_idx;
+} nr_reg_t;
+
+typedef struct {
+  uint8_t cce_idx;
+  nr_reg_t reg_list[NR_NB_REG_PER_CCE];
+} nr_cce_t;
+
 typedef struct NR_DL_FRAME_PARMS {
   /// frequency range
   nr_frequency_range_e freq_range;

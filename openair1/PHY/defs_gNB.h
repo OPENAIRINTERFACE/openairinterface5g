@@ -58,6 +58,10 @@ typedef struct {
   nfapi_nr_search_space_type_e search_space_type;
   /// Format
   nfapi_nr_dci_format_e format;
+  /// PDCCH parameters
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params;
+  /// CCE list
+  nr_cce_t cce_list[NR_MAX_PDCCH_AGG_LEVEL];
   /// DCI pdu
   uint32_t dci_pdu[4];
 } NR_gNB_DCI_ALLOC_t;
@@ -287,7 +291,7 @@ typedef struct PHY_VARS_gNB_s {
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
 
   Sched_Rsp_t          Sched_INFO;
-  NR_gNB_PDCCH        pdcch_vars[2];
+  NR_gNB_PDCCH        pdcch_vars;
   LTE_eNB_PHICH        phich_vars[2];
 
   NR_gNB_COMMON       common_vars;

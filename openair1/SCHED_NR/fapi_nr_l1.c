@@ -60,7 +60,7 @@ void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
                                 nfapi_nr_dl_config_request_pdu_t *dl_config_pdu)
 {
   int idx                         = subframe&1;
-  NR_gNB_PDCCH *pdcch_vars       = &gNB->pdcch_vars[idx];
+  NR_gNB_PDCCH *pdcch_vars       = &gNB->pdcch_vars;
   nfapi_nr_dl_config_dci_pdu_rel15_t *pdu = &dl_config_pdu->dci_dl_pdu_rel15;
 
   LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,subframe, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
@@ -120,6 +120,15 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
                                 proc,
                                 dl_config_pdu,
                                 TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->bch_pdu_rel15.pdu_index].segments[0].segment_data);
+      break;
+
+      case NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE:
+        handle_nfapi_nr_dci_dl_pdu(gNB,
+                                   frame, subframe,
+                                   proc,
+                                   dl_config_pdu);
+        gNB->pdcch_vars.num_dci++;
+        do_oai=1;
       break;
     }
   }

@@ -17,6 +17,16 @@ typedef struct {
 	uint32_t value;
 } nfapi_uint32_tlv_t;
 
+typedef struct {
+	nfapi_tl_t tl;
+	int64_t value;
+} nfapi_int64_tlv_t;
+
+typedef struct {
+	nfapi_tl_t tl;
+	uint64_t value;
+} nfapi_uint64_tlv_t;
+
 // nFAPI enums
 typedef enum {
   NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE = 0,
@@ -366,16 +376,16 @@ uint8_t *block_numbers;
 
 
 typedef struct{
-  nfapi_uint16_tlv_t  coreset_id;
-  nfapi_uint16_tlv_t  frequency_domain_resources;
-  nfapi_uint16_tlv_t  duration;
-  nfapi_uint16_tlv_t  cce_reg_mapping_type;
-  nfapi_uint16_tlv_t  reg_bundle_size;
-  nfapi_uint16_tlv_t  interleaver_size;
-  nfapi_uint16_tlv_t  shift_index;
-  nfapi_uint16_tlv_t  precoder_granularity;
-  nfapi_uint16_tlv_t  tci_state_id;
-  nfapi_uint16_tlv_t  tci_present_in_dci;
+  nfapi_uint8_tlv_t  coreset_id;
+  nfapi_uint64_tlv_t  frequency_domain_resources;
+  nfapi_uint8_tlv_t  duration;
+  nfapi_uint8_tlv_t  cce_reg_mapping_type;
+  nfapi_uint8_tlv_t  reg_bundle_size;
+  nfapi_uint8_tlv_t  interleaver_size;
+  nfapi_uint8_tlv_t  shift_index;
+  nfapi_uint8_tlv_t  precoder_granularity;
+  nfapi_uint8_tlv_t  tci_state_id;
+  nfapi_uint8_tlv_t  tci_present_in_dci;
   nfapi_uint16_tlv_t  pdcch_dmrs_scrambling_id;
 } nfapi_nr_coreset_t;
 
@@ -411,6 +421,7 @@ typedef struct {
   uint8_t nb_ss_sets_per_slot;
   uint8_t sfn_mod2;
   uint8_t search_space_type;
+  uint16_t scrambling_id;
   nfapi_bf_vector_t   bf_vector;
 } nfapi_nr_dl_config_pdcch_parameters_rel15_t;
 
