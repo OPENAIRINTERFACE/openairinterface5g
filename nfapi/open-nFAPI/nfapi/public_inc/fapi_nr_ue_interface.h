@@ -144,14 +144,27 @@ typedef struct {
     uint32_t sr;
 } fapi_nr_uci_pdu_rel15_t;
 
+    typedef enum {
+        CCE_REG_MAPPING_TYPE_INTERLEAVED,
+        CCE_REG_MAPPING_TYPE_NON_INTERLEAVED,
+    } coreset_cce_reg_mapping_type_t;
+
+    typedef enum{
+        PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE, 
+        PRECODER_GRANULARITY_ALL_CONTIGUOUS_RBS
+    } coreset_precoder_granularity_t;
+
     typedef struct {
-        uint32_t frequency_domain_resource;
+        /// frequency_domain_resource;
+        uint32_t rb_start;
+        uint32_t rb_end;
+
         uint8_t duration;
-        uint8_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
+        coreset_cce_reg_mapping_type_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
         uint8_t cce_reg_interleaved_reg_bundle_size;    //  valid if CCE to REG mapping type is interleaved type
         uint8_t cce_reg_interleaved_interleaver_size;   //  valid if CCE to REG mapping type is interleaved type
         uint8_t cce_reg_interleaved_shift_index;        //  valid if CCE to REG mapping type is interleaved type
-        uint8_t precoder_granularity;
+        coreset_precoder_granularity_t precoder_granularity;
         uint8_t tci_state_pdcch;
 
         uint8_t tci_present_in_dci;

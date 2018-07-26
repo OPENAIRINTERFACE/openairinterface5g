@@ -72,11 +72,12 @@ typedef struct {
 	NR_MIB_t 			            *mib;
 
     ///     Type0-PDCCH seach space coreset
-    uint32_t num_rbs;
-    uint32_t num_symbols;
-    uint32_t rb_offset;
-    
-
+    fapi_nr_search_space_t type0_pdcch_ss;
+    uint32_t type0_pdcch_ss_mux_pattern;
+    float type0_pdcch_ss_big_o;
+    uint32_t type0_pdcch_ss_number_of_search_space_per_slot;
+    float type0_pdcch_ss_big_m;
+    uint32_t type0_pdcch_ss_first_symbol_index;
     ///     Type0-PDCCH seach space
 
 
