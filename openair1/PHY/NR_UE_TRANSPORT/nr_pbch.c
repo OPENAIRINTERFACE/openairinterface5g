@@ -83,7 +83,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
       }
 
       j=0;
-      if ((symbol==1) || (symbol==3)) {
+      if ((symbol==5) || (symbol==7)) {
         for (i=0; i<12; i++) {
           if ((i!=nushiftmod4) &&
               (i!=(nushiftmod4+4)) &&
@@ -126,14 +126,14 @@ uint16_t nr_pbch_extract(int **rxdataF,
 
       for (rb=0; rb<20; rb++) {
 	j=0;
-        if ((symbol==1) || (symbol==3)) {
+        if ((symbol==5) || (symbol==7)) {
               	  for (i=0; i<12; i++) {
                     if ((i!=nushiftmod4) &&
                         (i!=(nushiftmod4+4)) &&
                         (i!=(nushiftmod4+8))) {
                            dl_ch0_ext[j]=dl_ch0[i];
-			   //if ((rb==0) && (i<2))
-			     //printf("dl ch0 ext[%d] = %d dl_ch0 [%d]= %d\n",j,dl_ch0_ext[j],i,dl_ch0[i]);
+			   if ((rb==0) && (i<2))
+			     printf("dl ch0 ext[%d] = %d dl_ch0 [%d]= %d\n",j,dl_ch0_ext[j],i,dl_ch0[i]);
 		           j++;
                     }
           	  }
@@ -141,7 +141,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
           dl_ch0+=12;
           dl_ch0_ext+=9;
         }
-        else { //symbol 2
+        else { 
               if ((rb < 4) || (rb >15)){
               	  for (i=0; i<12; i++) {
                     if ((i!=nushiftmod4) &&
@@ -401,7 +401,7 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
   uint32_t *pbch_a_interleaved = (uint32_t*)pbch->pbch_a_interleaved;
   uint32_t unscrambling_mask = 0x100006D;
 
-  //printf("unscramb nid_cell %d\n",frame_parms->Nid_cell);
+  printf("unscramb nid_cell %d\n",Nid);
 
   reset = 1;
   // x1 is set in first call to lte_gold_generic
@@ -431,6 +431,10 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
       else {
     	  if (((s>>((i+offset)&0x1f))&1)==1)
     		  demod_pbch_e[i] = -demod_pbch_e[i];
+#ifdef DEBUG_PBCH_ENCODING
+		if (i<8)
+	printf("s %d demod_pbch_e[i] %d\n", ((s>>((i+offset)&0x1f))&1), demod_pbch_e[i]);
+#endif
       }
   }
 
@@ -594,7 +598,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
       return(-1);
     }
 
-    if (symbol==2) {
+    if (symbol==6) {
       nr_pbch_quantize(pbch_e_rx,
                     (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
                     144);
@@ -619,7 +623,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 //#ifdef DEBUG_PBCH
   //pbch_e_rx = &nr_ue_pbch_vars->llr[0];
 
-  short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][1*20*12]);
+  short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][5*20*12]);
   for (int cnt = 0; cnt < 8 ; cnt++)
     printf("pbch rx llr %d rxdata_comp %d addr %p\n",*(pbch_e_rx+cnt), p[cnt], &p[0]);
 //#endif
@@ -642,12 +646,13 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0);
 
 //#ifdef DEBUG_PBCH
-    if (i<16){
+    for (i=0; i<16; i++){
     printf("unscrambling demod_pbch_e[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
 //#endif
 		
   //polar decoding de-rate matching
   decoderState = polar_decoder(demod_pbch_e, pbch_a_b, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
+  printf("polar decoder state %d\n", decoderState);
   if(decoderState == -1)
   	return(decoderState);
 

@@ -691,7 +691,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #endif
 
         // Prepare the future Tx data
-#if 1
+#if 0
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
                 (UE->frame_parms.frame_type == FDD) )
             if (UE->mode != loop_through_memory)

@@ -101,10 +101,10 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     slot_offset = (frame_parms->samples_per_tti>>1) * (Ns%2);
   }
 
-  if (l<0 || l>=7-frame_parms->Ncp) {
+  /*if (l<0 || l>=7-frame_parms->Ncp) {
     printf("slot_fep: l must be between 0 and %d\n",7-frame_parms->Ncp);
     return(-1);
-  }
+    }*/
 
   if (Ns<0 || Ns>=20) {
     printf("slot_fep: Ns must be between 0 and 19\n");
@@ -191,12 +191,12 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
   switch(channel){
   case NR_PBCH_EST:
-    if ((l>4) && (l<8)) {
+    //if ((l>4) && (l<8)) {
       for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
-#ifdef DEBUG_FEP
+//#ifdef DEBUG_FEP
         printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
-#endif
+//#endif
 #if UE_TIMING_TRACE
         start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
@@ -205,7 +205,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
                                   aa,
                                   l,
                                   symbol);
-      }
+      //}
 #if UE_TIMING_TRACE
         stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif

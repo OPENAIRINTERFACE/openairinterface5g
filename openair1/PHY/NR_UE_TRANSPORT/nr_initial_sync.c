@@ -70,7 +70,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 
   //symbol 1
   nr_slot_fep(ue,
-    	   1,
+    	   5,
     	   0,
     	   ue->rx_offset,
     	   0,
@@ -79,7 +79,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 
   //symbol 2
   nr_slot_fep(ue,
-    	   2,
+    	   6,
     	   0,
     	   ue->rx_offset,
     	   0,
@@ -88,7 +88,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 
   //symbol 3
   nr_slot_fep(ue,
-    	   3,
+    	   7,
     	   0,
     	   ue->rx_offset,
     	   0,
@@ -198,7 +198,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   /* process pss search on received buffer */
   sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
 
-  sync_pos_slot = (frame_parms->samples_per_tti>>1) - 4*(frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+  sync_pos_slot = (frame_parms->samples_per_tti>>1) - 3*(frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
   if (sync_pos >= frame_parms->nb_prefix_samples)
       sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
@@ -210,6 +210,8 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
       ue->rx_offset = sync_pos2 - sync_pos_slot;
     else
       ue->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + sync_pos2 - sync_pos_slot;
+
+  printf("sync_pos %d sync_pos_slot %d rx_offset\n",sync_pos,sync_pos_slot, ue->rx_offset);
 
 
   //  write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
@@ -385,9 +387,9 @@ LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %
     rx_power = 0;
 
     // do a measurement on the best guess of the PSS
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
-      rx_power += signal_energy(&ue->common_vars.rxdata[aarx][sync_pos2],
-				frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+    //for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
+    //  rx_power += signal_energy(&ue->common_vars.rxdata[aarx][sync_pos2],
+	//			frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 
     /*
     // do a measurement on the full frame
@@ -409,7 +411,7 @@ LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %
 #ifndef OAI_BLADERF
 #ifndef OAI_LMSSDR
 #ifndef OAI_ADRV9371_ZC706
-  phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
+  //phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
 #endif
 #endif
 #endif
@@ -422,7 +424,7 @@ LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %
 #ifndef OAI_BLADERF
 #ifndef OAI_LMSSDR
 #ifndef OAI_ADRV9371_ZC706
-  phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
+  //phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
 #endif
 #endif
 #endif
