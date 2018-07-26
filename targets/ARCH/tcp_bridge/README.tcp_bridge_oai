@@ -28,7 +28,7 @@ The eNB needs an EPC.
 To run the UE, open a terminal and run:
     cd [openair top directory]
     cd cmake_targets/basic_simulator/ue
-    sudo ./lte-uesoftmodem -C 2680000000 -r 25
+    sudo ./lte-uesoftmodem -C 2680000000 -r 25 --ue-rxgain 140
 Adapt the value of -r, it has to match the value N_RB_DL in the configuration
 file of the eNB. (Same for -C which should match the value downlink_frequency
 in the configuration file.)
