@@ -951,7 +951,10 @@ typedef struct {
     int16_t ta_update;
     uint16_t ul_consecutive_errors;
     int32_t context_active_timer;
+    /// timer for regular CQI request on PUSCH
     int32_t cqi_req_timer;
+    /// indicator that CQI was received on PUSCH when requested
+    int32_t cqi_received;
     int32_t ul_inactivity_timer;
     int32_t ul_failure_timer;
     uint32_t ue_reestablishment_reject_timer;

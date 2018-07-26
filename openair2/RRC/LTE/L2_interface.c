@@ -131,6 +131,7 @@ mac_rrc_data_req(
 
         mib->message.systemFrameNumber.buf = &sfn;
 	enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
+					 NULL,
 					 (void*)mib,
 					 carrier->MIB,
 					 24);

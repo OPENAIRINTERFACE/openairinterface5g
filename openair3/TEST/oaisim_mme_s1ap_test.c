@@ -145,16 +145,16 @@ int main(int argc, char *argv[])
   }
 
   for (i = 0; i < sizeof(s1ap_test) / sizeof(s1ap_test_t); i++) {
-    struct s1ap_message_s message;
+    S1AP_S1AP_PDU_t pdu;
     uint8_t *buffer;
     uint32_t length;
-    memset(&message, 0, sizeof(struct s1ap_message_s));
+    memset(&pdu, 0, sizeof(pdu));
     printf("Trying to decode %s procedure with asn1c decoder\n",
            s1ap_test[i].procedure_name);
 
-    if (s1ap_mme_decode_pdu(&message, s1ap_test[i].buffer,
+    if (s1ap_mme_decode_pdu(&pdu, s1ap_test[i].buffer,
                             s1ap_test[i].buf_len) < 0) {
-      if (s1ap_eNB_decode_pdu(&message, s1ap_test[i].buffer,
+      if (s1ap_eNB_decode_pdu(&pdu, s1ap_test[i].buffer,
                               s1ap_test[i].buf_len) < 0) {
         printf("Failed to decode this message\n");
       } else {
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
     printf("Trying to encode %s procedure with asn1c encoder\n",
            s1ap_test[i].procedure_name);
 
-    if (s1ap_eNB_encode_pdu(&message, &buffer, &length) < 0) {
+    if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
       printf("Failed to encode this message on MME side, trying eNB side\n");
     } else {
       compare_buffer(buffer, length, s1ap_test[i].buffer, s1ap_test[i].buf_len);

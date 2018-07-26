@@ -39,7 +39,6 @@
 
 #include "assertions.h"
 #include "intertask_interface.h"
-#include "intertask_interface_dump.h"
 
 #if T_TRACER
 #include "T.h"
@@ -770,7 +769,7 @@ void itti_terminate_tasks(task_id_t task_id)
 }
 
 int itti_init(task_id_t task_max, thread_id_t thread_max, MessagesIds messages_id_max, const task_info_t *tasks_info,
-              const message_info_t *messages_info, const char * const messages_definition_xml, const char * const dump_file_name)
+              const message_info_t *messages_info)
 {
   task_id_t task_id;
   thread_id_t thread_id;

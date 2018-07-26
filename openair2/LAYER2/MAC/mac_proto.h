@@ -1060,6 +1060,12 @@ uint16_t mac_computeRIV(uint16_t N_RB_DL, uint16_t RBstart,
 
 int get_phich_resource_times6(COMMON_channels_t * cc);
 
+uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
+
+uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);
+
+unsigned char ul_ACK_subframe2M(TDD_Config_t *tdd_Config,unsigned char subframe);
+
 int to_rbg(int dl_Bandwidth);
 
 int to_prb(int dl_Bandwidth);

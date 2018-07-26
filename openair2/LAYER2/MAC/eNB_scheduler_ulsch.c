@@ -158,8 +158,8 @@ rx_sdu(const module_id_t enb_mod_idP,
 
   if (UE_id != -1) {
     LOG_D(MAC,
-	  "[eNB %d][PUSCH %d] CC_id %d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
-	  enb_mod_idP, harq_pid, CC_idP,
+	  "[eNB %d][PUSCH %d] CC_id %d %d.%d Received ULSCH sdu round %d from PHY (rnti %x, UE_id %d) ul_cqi %d\n",
+	  enb_mod_idP, harq_pid, CC_idP,frameP,subframeP,
 	  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 	  current_rnti, UE_id, ul_cqi);
 
@@ -191,9 +191,9 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes < 0)
         UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes = 0;
     } else {		// we've got an error
-      LOG_D(MAC,
-	    "[eNB %d][PUSCH %d] CC_id %d ULSCH in error in round %d, ul_cqi %d\n",
-	    enb_mod_idP, harq_pid, CC_idP,
+      LOG_I(MAC,
+	    "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d\n",
+	    enb_mod_idP, harq_pid, CC_idP,frameP,subframeP,
 	    UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
 	    ul_cqi);
 
@@ -1332,18 +1332,23 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	  // reset the scheduling request
 	  UE_template->ul_SR = 0;
 	  status = mac_eNB_get_rrc_status(module_idP, rnti);
-	  if (status < RRC_CONNECTED)
-	    cqi_req = 0;
-	  else if (UE_sched_ctrl->cqi_req_timer > 30) {
-	    if (nfapi_mode) {
-	      cqi_req = 0;
-	    } else {
-	      cqi_req = 1;
-              UE_sched_ctrl->cqi_req_flag |= 1 << sched_subframeP;
+	  cqi_req = 0;
+
+	  if (status >= RRC_CONNECTED && UE_sched_ctrl->cqi_req_timer > 30) { 
+	    if (UE_sched_ctrl->cqi_received == 0) {
+	      if (nfapi_mode) {
+		cqi_req = 0;
+	      } else {
+		cqi_req = 1;
+		UE_sched_ctrl->cqi_req_flag |= 1 << sched_subframeP;
+	      }
 	    }
-	    UE_sched_ctrl->cqi_req_timer = 0;
-	  } else
-	    cqi_req = 0;
+	    else if (UE_sched_ctrl->cqi_received == 1) {
+	      UE_sched_ctrl->cqi_req_flag = 0;
+	      UE_sched_ctrl->cqi_received = 0;
+	      UE_sched_ctrl->cqi_req_timer = 0;
+	    }
+	  }
 
 	  //power control
 	  //compute the expected ULSCH RX power (for the stats)
@@ -1562,7 +1567,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 			      CC_id, UE_id, subframeP,
 			      S_UL_SCHEDULED);
 
-	    //LOG_D(MAC, "[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP, CC_id, frameP, subframeP, UE_id);
+	    LOG_D(MAC, "[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP, CC_id, frameP, subframeP, UE_id);
 	    LOG_D(MAC,"[PUSCH %d] SFN/SF:%04d%d UL_CFG:SFN/SF:%04d%d CQI:%d for UE %d/%x\n", harq_pid,frameP,subframeP,ul_sched_frame,ul_sched_subframeP,cqi_req,UE_id,rnti);
 
 	    // increment first rb for next UE allocation

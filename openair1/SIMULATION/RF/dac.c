@@ -26,7 +26,7 @@
 #include "rf.h"
 void dac(double *s_re[2],
          double *s_im[2],
-         uint32_t **input,
+         int32_t **input,
          uint32_t input_offset,
          uint32_t nb_tx_antennas,
          uint32_t length,
@@ -76,7 +76,7 @@ void dac(double *s_re[2],
 
 double dac_fixed_gain(double *s_re[2],
                       double *s_im[2],
-                      uint32_t **input,
+                      int32_t **input,
                       uint32_t input_offset,
                       uint32_t nb_tx_antennas,
                       uint32_t length,

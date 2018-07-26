@@ -20,7 +20,7 @@
  */
 
 openair0_device openair0;
-int oai_exit=0;
+volatile int oai_exit=0;
 
 void exit_fun(const char *s) { exit(-1); }
 

@@ -169,19 +169,13 @@ int T_dont_fork;       /* default is to fork, see 'T_init' to understand */
 
 paramdef_t ttraceparams[] = CMDLINE_TTRACEPARAMS_DESC ;
 
-/* compatibility: look for TTracer parameters in root section */
-  config_get( ttraceparams,sizeof(ttraceparams)/sizeof(paramdef_t),NULL);
+/* for a cleaner config file, TTracer params should be defined in a specific section... */
+  config_get( ttraceparams,sizeof(ttraceparams)/sizeof(paramdef_t),TTRACER_CONFIG_PREFIX);
 
-/* but for a cleaner config file, TTracer params should be defined in a specific section... */
-  int ret = config_get( ttraceparams,sizeof(ttraceparams)/sizeof(paramdef_t),TTRACER_CONFIG_PREFIX);
-  if (ret <0) {
-       printf( "TTracer configuration couldn't be performed via config module\n");
-  }
+/* compatibility: look for TTracer command line options in root section */
+  config_process_cmdline( ttraceparams,sizeof(ttraceparams)/sizeof(paramdef_t),NULL);
+
   if (T_stdout == 0) {
     T_init(T_port, 1-T_nowait, T_dont_fork);
-  } else {
-    for( int i=0 ; i<T_NUMBER_OF_IDS ; i++ ) {
-         T_active[i] = T_ACTIVE_STDOUT;
-    }
   }
 }

@@ -108,6 +108,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   int prach_ifft_cnt=0;
 #endif
 #ifdef PRACH_DEBUG
+  int en=0;
   int en0=0;
 #endif
 
@@ -229,7 +230,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 #ifdef PRACH_DEBUG
       int32_t en0=signal_energy((int32_t*)prach[aa],fp->samples_per_tti);
       int8_t dbEn0 = dB_fixed(en0);
-      int8_t rach_dBm = dbEn0 - eNB->rx_total_gain_dB;
+      int8_t rach_dBm = dbEn0 - ru->rx_total_gain_dB;
 
 #ifdef PRACH_WRITE_OUTPUT_DEBUG
         if (dbEn0>32 && prach[0]!= NULL)
@@ -466,7 +467,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   } else if (eNB!=NULL) {
 
 #ifdef PRACH_DEBUG
-    int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
+    en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
     if ((en > 60)&&(br_flag==1)) LOG_I(PHY,"PRACH (br_flag %d,ce_level %d, n_ra_prb %d, k %d): Frame %d, Subframe %d => %d dB\n",br_flag,ce_level,n_ra_prb,k,eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
 #endif
   }

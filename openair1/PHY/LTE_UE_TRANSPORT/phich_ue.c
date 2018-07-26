@@ -369,7 +369,7 @@ void rx_phich(PHY_VARS_UE *ue,
 
   if (HI16>0) {   //NACK
     if (ue->ulsch_Msg3_active[eNB_id] == 1) {
-      LOG_D(PHY,"[UE  %d][PUSCH %d][RAPROC] Frame %d subframe %d Msg3 PHICH, received NAK (%d) nseq %d, ngroup %d\n",
+      LOG_I(PHY,"[UE  %d][PUSCH %d][RAPROC] Frame %d subframe %d Msg3 PHICH, received NAK (%d) nseq %d, ngroup %d\n",
             ue->Mod_id,harq_pid,
             proc->frame_rx,
             subframe,
@@ -379,7 +379,7 @@ void rx_phich(PHY_VARS_UE *ue,
 
       ulsch->f_pusch += delta_PUSCH_acc[ulsch->harq_processes[harq_pid]->TPC];
 
-      LOG_D(PHY,"[PUSCH %d] AbsSubframe %d.%d: f_pusch (ACC) %d, adjusting by %d (TPC %d)\n",
+      LOG_I(PHY,"[PUSCH %d] AbsSubframe %d.%d: f_pusch (ACC) %d, adjusting by %d (TPC %d)\n",
                  harq_pid,proc->frame_rx,subframe,ulsch->f_pusch,
                     delta_PUSCH_acc[ulsch->harq_processes[harq_pid]->TPC],
                     ulsch->harq_processes[harq_pid]->TPC);

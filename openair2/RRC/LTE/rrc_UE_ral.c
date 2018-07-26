@@ -33,8 +33,8 @@
 #include "rrc_UE_ral.h"
 #include "assertions.h"
 #include "collection/hashtable/obj_hashtable.h"
-#include "RRC/LITE/defs.h"
-#include "RRC/LITE/extern.h"
+#include "RRC/LTE/defs.h"
+#include "RRC/LTE/extern.h"
 
 
 //-----------------------------------------------------------------------------

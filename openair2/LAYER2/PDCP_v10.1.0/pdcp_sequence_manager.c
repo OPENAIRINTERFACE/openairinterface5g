@@ -161,7 +161,7 @@ boolean_t pdcp_is_rx_seq_number_valid(uint16_t seq_num, pdcp_t* pdcp_entity,srb_
    * (and to build PDCP Control PDU for PDCP status report)
    */
   if (pdcp_mark_current_pdu_as_received(seq_num, pdcp_entity) == TRUE) {
-    LOG_I(PDCP, "Received sequence number successfuly marked\n");
+    LOG_D(PDCP, "Received sequence number successfuly marked\n");
   } else {
     LOG_W(PDCP, "Cannot mark received sequence number on the bitmap!\n");
   }
