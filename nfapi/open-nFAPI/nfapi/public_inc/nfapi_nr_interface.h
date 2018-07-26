@@ -224,7 +224,7 @@ typedef struct {
 
 typedef struct {
   nfapi_p4_p5_message_header_t              header;
-  uint8_t 									                num_tlv;
+  uint8_t 									num_tlv;
   nfapi_nr_subframe_config_t                subframe_config;
   nfapi_nr_rf_config_t                      rf_config;
   nfapi_nr_sch_config_t                     sch_config;
@@ -241,7 +241,7 @@ typedef struct {
 } nfapi_nr_config_request_t;
 
 typedef enum {
-  NFAPI_NR_DL_DCI_FORMAT_1_0=0,
+  NFAPI_NR_DL_DCI_FORMAT_1_0 = 0,
   NFAPI_NR_DL_DCI_FORMAT_1_1,
   NFAPI_NR_DL_DCI_FORMAT_2_0,
   NFAPI_NR_DL_DCI_FORMAT_2_1,
@@ -252,7 +252,7 @@ typedef enum {
 } nfapi_nr_dci_format_e;
 
 typedef enum {
-	NFAPI_NR_RNTI_new=0,
+	NFAPI_NR_RNTI_new = 0,
 	NFAPI_NR_RNTI_C,
 	NFAPI_NR_RNTI_RA,
 	NFAPI_NR_RNTI_P,
@@ -286,6 +286,7 @@ nfapi_tl_t tl;
 uint8_t cce_idx;
 uint8_t aggregation_level;
 uint16_t rnti;
+uint8_t rnti_type;
 
 uint8_t dci_format; //1 bit
 uint16_t frequency_domain_resource_assignment; //up to 9 bits
@@ -325,6 +326,7 @@ nfapi_tl_t tl;
 uint8_t cce_idx;
 uint8_t aggregation_level;
 uint16_t rnti;
+uint8_t rnti_type;
 
 uint8_t dci_format; //1 bit
 uint16_t frequency_domain_resource_assignment; //up to 9 bits
@@ -374,6 +376,9 @@ uint8_t *block_numbers;
 } nfapi_nr_dl_config_dci_pdu_rel15_t;
 //#define NFAPI_NR_DL_CONFIG_REQUEST_DCI_DL_PDU_REL15_TAG 0x????
 
+typedef struct {
+	nfapi_nr_dl_config_dci_pdu_rel15_t dci_dl_pdu_rel15;
+} nfapi_dl_config_dci_dl_pdu;
 
 typedef struct{
   nfapi_uint8_tlv_t  coreset_id;
