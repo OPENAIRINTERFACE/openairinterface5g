@@ -30,8 +30,7 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "log.h"
-#include "log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "assertions.h"
 #include "enb_config.h"
 #include "UTIL/OTG/otg.h"

@@ -41,7 +41,7 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/mac_proto.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/LTE/MESSAGES/asn1_msg.h"
 #include "RRCConnectionRequest.h"
@@ -61,7 +61,7 @@
 #include "SL-CommConfig-r12.h"
 #include "PeriodicBSR-Timer-r12.h"
 #include "RetxBSR-Timer-r12.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
 
@@ -4340,7 +4340,7 @@ rrc_eNB_generate_HandoverPreparationInformation(
       ue_context_target_p = rrc_eNB_allocate_new_UE_context(RC.rrc[ctxt_pP->module_id]);
       ue_context_target_p->ue_id_rnti      = ue_context_pP->ue_context.rnti;             // LG: should not be the same
       ue_context_target_p->ue_context.rnti = ue_context_target_p->ue_id_rnti; // idem
-      LOG_N(RRC,
+      LOG_I(RRC,
             "[eNB %d] Frame %d : Emulate sending HandoverPreparationInformation msg from eNB source %d to eNB target %ld: source UE_id %x target UE_id %x source_modId: %d target_modId: %d\n",
             ctxt_pP->module_id,
             ctxt_pP->frame,

@@ -51,8 +51,8 @@
 
 #include "gtpv1u.h"
 #if defined(ENB_MODE)
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #endif
 
 #ifdef __cplusplus

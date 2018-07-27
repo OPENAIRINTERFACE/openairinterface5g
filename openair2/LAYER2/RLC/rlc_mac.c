@@ -32,11 +32,11 @@
 #include "rlc.h"
 #include "LAYER2/RLC/UM_v9.3.0/rlc_um.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"
 #include "hashtable.h"
 #include "assertions.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 //#define DEBUG_MAC_INTERFACE 1
 

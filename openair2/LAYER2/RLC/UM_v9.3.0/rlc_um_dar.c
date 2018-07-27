@@ -30,8 +30,8 @@
 #include "rlc_primitives.h"
 #include "mac_primitives.h"
 #include "list.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 //-----------------------------------------------------------------------------
 signed int rlc_um_get_pdu_infos(
   const protocol_ctxt_t* const ctxt_pP,

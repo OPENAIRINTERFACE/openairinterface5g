@@ -38,8 +38,8 @@
 #include "PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "SCHED/sched_eNB.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
 #include <syscall.h>
 #include "targets/RT/USER/rt_wrapper.h"
 

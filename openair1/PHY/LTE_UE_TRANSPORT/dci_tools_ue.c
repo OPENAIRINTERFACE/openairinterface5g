@@ -3128,7 +3128,7 @@ void fill_CQI(LTE_UE_ULSCH_t *ulsch,PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_
       // this is the cba mcs uci for cba transmission
       ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->mcs     = ulsch->harq_processes[harq_pid]->mcs;
       ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti  = rnti;
-      LOG_N(PHY,"fill uci for cba rnti %x, mcs %d \n", rnti, ulsch->harq_processes[harq_pid]->mcs);
+      LOG_I(PHY,"fill uci for cba rnti %x, mcs %d \n", rnti, ulsch->harq_processes[harq_pid]->mcs);
       break;
 
     case ue_selected:
@@ -3182,7 +3182,7 @@ void fill_CQI(LTE_UE_ULSCH_t *ulsch,PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_
       // this is the cba mcs uci for cba transmission
       ((HLC_subband_cqi_mcs_CBA_10MHz *)o)->mcs     = ulsch->harq_processes[harq_pid]->mcs;
       ((HLC_subband_cqi_mcs_CBA_10MHz *)o)->crnti  = rnti;
-      LOG_N(PHY,"fill uci for cba rnti %x, mcs %d \n", rnti, ulsch->harq_processes[harq_pid]->mcs);
+      LOG_I(PHY,"fill uci for cba rnti %x, mcs %d \n", rnti, ulsch->harq_processes[harq_pid]->mcs);
       break;
 
     case ue_selected:
@@ -3236,7 +3236,7 @@ void fill_CQI(LTE_UE_ULSCH_t *ulsch,PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_
       // this is the cba mcs uci for cba transmission
       ((HLC_subband_cqi_mcs_CBA_20MHz *)o)->mcs     = ulsch->harq_processes[harq_pid]->mcs;
       ((HLC_subband_cqi_mcs_CBA_20MHz *)o)->crnti  = rnti;
-      LOG_N(PHY,"fill uci for cba rnti %x, mcs %d \n", rnti, ulsch->harq_processes[harq_pid]->mcs);
+      LOG_I(PHY,"fill uci for cba rnti %x, mcs %d \n", rnti, ulsch->harq_processes[harq_pid]->mcs);
       break;
 
     case ue_selected:

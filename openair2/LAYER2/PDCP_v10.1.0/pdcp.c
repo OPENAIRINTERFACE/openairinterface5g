@@ -42,10 +42,10 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 #include "otg_rx.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include <inttypes.h>
 #include "platform_constants.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "msc.h"
 
 #if defined(ENABLE_SECURITY)
@@ -1583,7 +1583,7 @@ pdcp_config_req_asn1 (
     pdcp_pP->first_missing_pdu                = -1;
     pdcp_pP->rx_hfn_offset                    = 0;
 
-    LOG_N(PDCP, PROTOCOL_PDCP_CTXT_FMT" Action ADD  LCID %d (%s id %d) "
+    LOG_I(PDCP, PROTOCOL_PDCP_CTXT_FMT" Action ADD  LCID %d (%s id %d) "
             "configured with SN size %d bits and RLC %s\n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           lc_idP,
@@ -1632,7 +1632,7 @@ pdcp_config_req_asn1 (
       pdcp_pP->seq_num_size=5;
     }
 
-    LOG_N(PDCP,PROTOCOL_PDCP_CTXT_FMT" Action MODIFY LCID %d "
+    LOG_I(PDCP,PROTOCOL_PDCP_CTXT_FMT" Action MODIFY LCID %d "
             "RB id %d reconfigured with SN size %d and RLC %s \n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           lc_idP,

@@ -31,7 +31,7 @@
 */
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 unsigned short msrsb_6_40[8][4] = {{36,12,4,4},
   {32,16,8,4},

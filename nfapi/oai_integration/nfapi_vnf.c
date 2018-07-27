@@ -680,7 +680,6 @@ void vnf_deallocate(void* ptr) {
   free(ptr);
 }
 
-extern void nfapi_log(char *file, char *func, int line, int comp, int level, const char* format, va_list args);
 
 void vnf_trace(nfapi_trace_level_t nfapi_level, const char* message, ...) {
 

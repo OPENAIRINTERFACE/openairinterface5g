@@ -36,10 +36,9 @@
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
 #include "nfapi_pnf.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
-#include "T.h"
 
 #include "assertions.h"
 #include "msc.h"

@@ -38,7 +38,7 @@
 #include "SCHED_UE/sched_UE.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "RRC/LTE/rrc_defs.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 

@@ -29,7 +29,7 @@
 #include "rlc_primitives.h"
 #include "mac_primitives.h"
 #include "list.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 //-----------------------------------------------------------------------------
 void

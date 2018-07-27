@@ -24,7 +24,7 @@
 # include "assertions.h"
 # include "intertask_interface.h"
 # include "nas_ue_task.h"
-# include "UTIL/LOG/log.h"
+# include "common/utils/LOG/log.h"
 
 # include "user_defs.h"
 # include "user_api.h"

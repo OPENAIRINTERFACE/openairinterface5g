@@ -37,6 +37,35 @@
 #include <errno.h>
 #include "config_userapi.h"
 
+
+void parse_stringlist(paramdef_t *cfgoptions, char *val)
+{
+char *atoken;
+char *tokctx;
+char *tmpval=strdup(val);
+int   numelt=0;
+
+   cfgoptions->numelt=0;
+
+   atoken=strtok_r(tmpval, ",",&tokctx);
+   while(atoken != NULL) {
+     numelt++ ;
+     atoken=strtok_r(NULL, ",",&tokctx);
+   }
+   free(tmpval);
+   config_check_valptr(cfgoptions,(char **)&(cfgoptions->strlistptr), sizeof(char *) * numelt);
+   cfgoptions->numelt=numelt;
+
+   atoken=strtok_r(val, ",",&tokctx);
+   for( int i=0; i<cfgoptions->numelt && atoken != NULL ; i++) {
+      config_check_valptr(cfgoptions,&(cfgoptions->strlistptr[i]),strlen(atoken)+1);
+      sprintf(cfgoptions->strlistptr[i],"%s",atoken);
+      printf_params("[LIBCONFIG] %s[%i]: %s\n", cfgoptions->optname,i,cfgoptions->strlistptr[i]);
+      atoken=strtok_r(NULL, ",",&tokctx);
+   }
+   cfgoptions->numelt=numelt; 
+}
+ 
 int processoption(paramdef_t *cfgoptions, char *value)
 {
 char *tmpval = value;
@@ -66,6 +95,7 @@ char defbool[2]="1";
         break;
 	
         case TYPE_STRINGLIST:
+           parse_stringlist(cfgoptions,tmpval); 
         break;
         case TYPE_UINT32:
        	case TYPE_INT32:
@@ -140,7 +170,7 @@ char *cfgpath;
                      exit_fun("[CONFIG] Exiting after displaying help\n");
                 }
             } else {
-                pp=strtok_r(NULL, "_",&tokctx);
+                pp=strtok_r(NULL, " ",&tokctx);
                 if ( prefix != NULL && pp != NULL && strncasecmp(prefix,pp,strlen(pp)) == 0 ) { 
                    printf ("Help for %s section:\n",prefix);               
                    config_printhelp(cfgoptions,numoptions);
@@ -167,17 +197,19 @@ char *cfgpath;
     		     ((strlen(oneargv) > 2) && (strcmp(oneargv + 2,cfgpath ) == 0 )) ) {
                    char *valptr=NULL;
                    int ret;
-    		   pp = config_get_if()->argv[i+1];
-                   if (pp != NULL && c > 1) {                      
-                       ret = strlen(pp);
-                       if (ret > 0 ) {
-                           if (pp[0] != '-')
-                              valptr=pp;
-                           else if ( ret > 1 && pp[0] == '-' && isdigit(pp[1]) )
-                              valptr=pp;
-                       }
+                   if (c > 0) {
+    		      pp = config_get_if()->argv[i+1];
+                      if (pp != NULL ) {                      
+                         ret = strlen(pp);
+                         if (ret > 0 ) {
+                             if (pp[0] != '-')
+                                valptr=pp;
+                             else if ( ret > 1 && pp[0] == '-' && isdigit(pp[1]) )
+                                valptr=pp;
+                         }
+                     }
                    }
-                   j += processoption(&(cfgoptions[n]), pp);
+                   j += processoption(&(cfgoptions[n]), valptr);
     		   if (  valptr != NULL ) {
                       i++;
                       c--;

@@ -32,7 +32,7 @@
 
 #ifdef TELNETSRV_LOADER_MAIN
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 
 #include "common/utils/load_module_shlib.h"

@@ -45,8 +45,8 @@
 
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "RRC/LTE/rrc_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -2386,7 +2386,7 @@ ue_scheduler(const module_id_t module_idP,
 	return (PHY_RESYNCH);
 
     case RRC_Handover_failed:
-	LOG_N(MAC, "Handover failure for UE %d eNB_index %d\n", module_idP,
+	LOG_I(MAC, "Handover failure for UE %d eNB_index %d\n", module_idP,
 	      eNB_indexP);
 	//Invalid...need to add another MAC UE state for re-connection procedure
 	phy_config_afterHO_ue(module_idP, 0, eNB_indexP,

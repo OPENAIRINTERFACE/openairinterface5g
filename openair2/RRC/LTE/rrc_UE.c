@@ -41,8 +41,8 @@
 #include "openair1/PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #ifndef CELLULAR
 #include "RRC/LTE/MESSAGES/asn1_msg.h"
 #endif
@@ -2254,7 +2254,7 @@ rrc_ue_process_mobilityControlInfo(
   DRB_ToReleaseList_t*  drb2release_list;
   DRB_Identity_t *lcid;
    */
-  LOG_N(RRC,"Note: This function needs some updates\n");
+  LOG_I(RRC,"Note: This function needs some updates\n");
 
   if(UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].T310_active == 1) {
     UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].T310_active = 0;
@@ -2272,7 +2272,7 @@ rrc_ue_process_mobilityControlInfo(
   }
    */
   //Removing SRB1 and SRB2 and DRB0
-  LOG_N(RRC,"[UE %d] : Update needed for rrc_pdcp_config_req (deprecated) and rrc_rlc_config_req commands(deprecated)\n", ctxt_pP->module_id);
+  LOG_I(RRC,"[UE %d] : Update needed for rrc_pdcp_config_req (deprecated) and rrc_rlc_config_req commands(deprecated)\n", ctxt_pP->module_id);
   rrc_pdcp_config_req (ctxt_pP, SRB_FLAG_YES, CONFIG_ACTION_REMOVE, DCCH,UNDEF_SECURITY_MODE);
   rrc_rlc_config_req(ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, CONFIG_ACTION_REMOVE,ctxt_pP->module_id+DCCH,Rlc_info_am_config);
   rrc_pdcp_config_req (ctxt_pP, SRB_FLAG_YES, CONFIG_ACTION_REMOVE, DCCH1,UNDEF_SECURITY_MODE);
@@ -2312,7 +2312,7 @@ rrc_ue_process_mobilityControlInfo(
     memcpy((void *)UE_rrc_inst[ue_mod_idP].DRB_config[~(7<<eNB_index)][0],(void *)UE_rrc_inst[ue_mod_idP].DRB_config[7<<eNB_index][0],sizeof(DRB_ToAddMod_t));
    */
   /*
-  LOG_N(RRC,"Not sure if Freeing the current queue config works properly: Fix me\n");
+  LOG_I(RRC,"Not sure if Freeing the current queue config works properly: Fix me\n");
   free((void *)&UE_rrc_inst[ue_mod_idP].SRB1_config[eNB_index]);
   free((void *)&UE_rrc_inst[ue_mod_idP].SRB2_config[eNB_index]);
   free((void *)&UE_rrc_inst[ue_mod_idP].DRB_config[eNB_index][0]);
@@ -4396,7 +4396,6 @@ void ue_measurement_report_triggering(protocol_ctxt_t* const ctxt_pP, const uint
                 (UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.present ==
                  ReportConfigEUTRA__triggerType_PR_event)) {
               hys = UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId-1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis;
-              //LOG_N(RRC,"[UE%d] Frame %d Check below lines for segfault :), Fix me \n",ctxt_pP->module_id, frameP);
               ttt_ms = timeToTrigger_ms[UE_rrc_inst[ctxt_pP->module_id].ReportConfig[i][reportConfigId
                                         -1]->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger];
               // Freq specific offset of neighbor cell freq
@@ -4924,7 +4923,7 @@ void *rrc_ue_task( void *args_p )
         break;
 
       default:
-        LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
+        LOG_E(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
         break;
       }
 
@@ -4966,7 +4965,7 @@ void *rrc_ue_task( void *args_p )
         break;
 
       default:
-        LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
+        LOG_E(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
         break;
       }
 
@@ -5051,7 +5050,7 @@ void *rrc_ue_task( void *args_p )
         break;
 
       default:
-        LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
+        LOG_E(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
         break;
       }
 
@@ -5089,7 +5088,7 @@ void *rrc_ue_task( void *args_p )
         }
 
         default:
-          LOG_C(RRC, "[UE %d] Invalid RRC state %d substate %d\n",
+          LOG_E(RRC, "[UE %d] Invalid RRC state %d substate %d\n",
                 ue_mod_id,
                 rrc_get_state(ue_mod_id),
                 rrc_get_sub_state(ue_mod_id));
@@ -5104,7 +5103,7 @@ void *rrc_ue_task( void *args_p )
         break;
 
       default:
-        LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
+        LOG_E(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
         break;
       }
 
@@ -5153,7 +5152,7 @@ void *rrc_ue_task( void *args_p )
         break;
 
       default:
-        LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
+        LOG_E(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
         break;
       }
 

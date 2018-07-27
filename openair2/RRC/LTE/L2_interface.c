@@ -31,7 +31,7 @@
 #include "platform_types.h"
 #include "rrc_defs.h"
 #include "rrc_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "rrc_eNB_UE_context.h"
 #include "pdcp.h"
 #include "msc.h"

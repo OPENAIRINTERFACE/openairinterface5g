@@ -83,11 +83,11 @@
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
 //#include "PHY/TOOLS/time_meas.h"
@@ -1872,14 +1872,13 @@ void *ru_thread_synch(void *arg) {
 
 	LOG_I(PHY,"Estimated sync_pos %d, peak_val %d => timing offset %d\n",sync_pos,peak_val,ru->rx_offset);
 	
-	/*
+LOG_M_BEGIN(RU)	
 	if ((peak_val > 300000) && (sync_pos > 0)) {
-	//      if (sync_pos++ > 3) {
-	LOG_M("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
-	LOG_M("ru_rx.m","rxs",(void*)ru->ru_time.rxdata[0][0],fp->samples_per_tti*10,1,1);
+	   LOG_M("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
+	   LOG_M("ru_rx.m","rxs",&(ru->eNB_list[0]->common_vars.rxdata[0][0]),fp->samples_per_tti*10,1,1);
 	exit(-1);
 	}
-	*/
+LOG_M_END
 	ru->in_synch=1;
       }
     }

@@ -47,7 +47,7 @@ extern RAN_CONTEXT_t RC;
 #include <vendor_ext.h>
 #include "fapi_stub.h"
 //#include "fapi_l1.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "openair2/LAYER2/MAC/mac_proto.h"
 
 #include "PHY/INIT/phy_init.h"
@@ -192,8 +192,6 @@ typedef struct {
 
 static pnf_info pnf;
 static pthread_t pnf_start_pthread;
-
-extern void nfapi_log(char *file, char *func, int line, int comp, int level, const char* format, va_list args);
 
 void pnf_nfapi_trace(nfapi_trace_level_t nfapi_level, const char* message, ...) {
   va_list args;

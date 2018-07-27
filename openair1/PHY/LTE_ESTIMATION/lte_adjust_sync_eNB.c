@@ -23,7 +23,7 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #define DEBUG_PHY
 

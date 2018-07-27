@@ -45,8 +45,8 @@
 #include "mac.h"
 #include "mac_proto.h"
 #include "mac_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "common/ran_context.h"
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
