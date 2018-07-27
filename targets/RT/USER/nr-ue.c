@@ -701,7 +701,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
                 (UE->frame_parms.frame_type == TDD))
             if (UE->mode != loop_through_memory)
-                phy_procedures_UE_S_TX(UE,0,0,no_relay);
+                //phy_procedures_UE_S_TX(UE,0,0,no_relay);
         updateTimes(current, &t3, 10000, timing_proc_name);
 
         if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {

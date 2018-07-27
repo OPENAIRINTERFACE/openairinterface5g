@@ -168,9 +168,9 @@ uint16_t beta_ack[16] = {16,  //2.000
 
 
 #endif
-int8_t delta_PUSCH_abs[4] = {-4,-1,1,4};
-int8_t delta_PUSCH_acc[4] = {-1,0,1,3};
-int8_t *delta_PUCCH_lut = delta_PUSCH_acc;
+int8_t nr_delta_PUSCH_abs[4] = {-4,-1,1,4};
+int8_t nr_delta_PUSCH_acc[4] = {-1,0,1,3};
+int8_t *nr_delta_PUCCH_lut = nr_delta_PUSCH_acc;
 
 #if 0
 void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t *rb_alloc2)
@@ -4642,9 +4642,9 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
         nr_pdci_info_extracted->tpc_pusch                        = (uint8_t)(((((*(uint64_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format-15]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format-15]));
         ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC = nr_pdci_info_extracted->tpc_pusch;
         if (ue->ul_power_control_dedicated[eNB_id].accumulationEnabled == 1) {
-          ulsch0->f_pusch += delta_PUSCH_acc[ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC];
+          ulsch0->f_pusch += nr_delta_PUSCH_acc[ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC];
         } else {
-          ulsch0->f_pusch  = delta_PUSCH_abs[ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC];
+          ulsch0->f_pusch  = nr_delta_PUSCH_abs[ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC];
         }
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tpc_pusch=%x\n",nr_pdci_info_extracted->tpc_pusch);
@@ -4654,7 +4654,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case TPC_PUCCH: // 33 TPC_PUCCH: (field defined for -,-,format1_0,format1_1,-,-,-,-)
                // defined in Subclause 7.2.1 TS 38.213
         nr_pdci_info_extracted->tpc_pucch                        = (uint8_t)(((((*(uint64_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format-15]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format-15]));
-        pdlsch0_harq->delta_PUCCH  = delta_PUCCH_lut[nr_pdci_info_extracted->tpc_pucch &3];
+        pdlsch0_harq->delta_PUCCH  = nr_delta_PUCCH_lut[nr_pdci_info_extracted->tpc_pucch &3];
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tpc_pucch=%x\n",nr_pdci_info_extracted->tpc_pucch);
         #endif
@@ -6212,7 +6212,7 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
     pdlsch0_harq->Nl           = 1;
     pdlsch0_harq->mimo_mode    = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
     pdlsch0_harq->dl_power_off = 1; //no power offset
-    pdlsch0_harq->delta_PUCCH  = delta_PUCCH_lut[TPC &3];
+    pdlsch0_harq->delta_PUCCH  = nr_delta_PUCCH_lut[TPC &3];
 
     // compute resource allocation
     if(dci_format == format1A)
@@ -6671,8 +6671,8 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
         dlsch1_harq->codeword = 1;
         dlsch0_harq->Nl       = 1;
         dlsch1_harq->Nl       = 1;
-        dlsch0_harq->delta_PUCCH  = delta_PUCCH_lut[TPC&3];
-        dlsch1_harq->delta_PUCCH  = delta_PUCCH_lut[TPC&3];
+        dlsch0_harq->delta_PUCCH  = nr_delta_PUCCH_lut[TPC&3];
+        dlsch1_harq->delta_PUCCH  = nr_delta_PUCCH_lut[TPC&3];
         dlsch0_harq->dl_power_off = 1;
         dlsch1_harq->dl_power_off = 1;
 
@@ -7472,7 +7472,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
       //dlsch1_harq->nb_rb                               = dlsch0_harq->nb_rb;
 
       dlsch0_harq->mcs             = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs;
-      dlsch0_harq->delta_PUCCH     = delta_PUCCH_lut[((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->TPC&3];
+      dlsch0_harq->delta_PUCCH     = nr_delta_PUCCH_lut[((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->TPC&3];
 
 
 
@@ -8614,15 +8614,15 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     if (ue->ul_power_control_dedicated[eNB_id].accumulationEnabled == 1) {
       LOG_D(PHY,"[UE %d][PUSCH %d] Frame %d nr_tti_rx %d: f_pusch (ACC) %d, adjusting by %d (TPC %d)\n",
             ue->Mod_id,harq_pid,proc->frame_rx,nr_tti_rx,ulsch->f_pusch,
-            delta_PUSCH_acc[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC],
+            nr_delta_PUSCH_acc[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC],
             ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC);
-      ulsch->f_pusch += delta_PUSCH_acc[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC];
+      ulsch->f_pusch += nr_delta_PUSCH_acc[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC];
     } else {
       LOG_D(PHY,"[UE %d][PUSCH %d] Frame %d nr_tti_rx %d: f_pusch (ABS) %d, adjusting to %d (TPC %d)\n",
             ue->Mod_id,harq_pid,proc->frame_rx,nr_tti_rx,ulsch->f_pusch,
-            delta_PUSCH_abs[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC],
+            nr_delta_PUSCH_abs[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC],
             ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC);
-      ulsch->f_pusch = delta_PUSCH_abs[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC];
+      ulsch->f_pusch = nr_delta_PUSCH_abs[ue->ulsch[eNB_id]->harq_processes[harq_pid]->TPC];
     }
 
     if (ulsch->harq_processes[harq_pid]->first_tx==1) {

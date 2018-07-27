@@ -417,3 +417,12 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
 
 	return CONNECTION_OK;
 }
+
+
+uint32_t
+ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
+      uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe)
+{
+
+    return 0;
+}

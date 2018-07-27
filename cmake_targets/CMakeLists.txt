@@ -1046,7 +1046,7 @@ add_library(SCHED_UE_LIB ${SCHED_SRC_UE})
 
 set(SCHED_SRC_NR_UE
   ${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_ue.c
-# ${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_common_ue.c
+  ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/fapi_nr_ue_l1.c 
   ${OPENAIR1_DIR}/SCHED_NR_UE/phy_frame_config_nr.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/harq_nr.c
@@ -1528,14 +1528,45 @@ add_library(L2
 add_library(L2_UE
   ${L2_SRC_UE}
   ${MAC_SRC_UE}
-  ${MAC_NR_SRC_UE}
+  #${MAC_NR_SRC_UE}
 )
 
 add_library( NR_L2_UE
-    ${L2_SRC_UE}
+    #${L2_SRC_UE}
     ${NR_L2_SRC_UE}
     ${MAC_NR_SRC_UE}
-    ${MAC_SRC_UE}
+    #${MAC_SRC_UE}
+)
+
+set ( NR_LTE_UE_REUSE_SRC
+    ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_timefreq.c
+  ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_common.c
+  #${OPENAIR1_DIR}/SCHED_UE/phy_procedures_lte_ue.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_mcs.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch_common.c
+
+  ${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_dl_cell_spec.c
+  ${OPENAIR1_DIR}/PHY/CODING/lte_segmentation.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach_common.c
+#  ${OPENAIR1_DIR}/PHY/INIT/lte_init_ue.c
+  ${OPENAIR1_DIR}/PHY/CODING/crc_byte.c
+  ${OPENAIR1_DIR}/PHY/CODING/viterbi_lte.c
+  ${OPENAIR1_DIR}/PHY/CODING/viterbi.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/phich_common.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci_tools_common.c
+  ${OPENAIR1_DIR}/PHY/CODING/lte_rate_matching.c
+  ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte_lte.c
+  ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte.c
+  ${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_gold.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_est_freq_offset.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
+)
+
+add_library( NR_LTE_UE_REUSE_LIB
+    ${NR_LTE_UE_REUSE_SRC}
 )
 
 include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
@@ -2300,7 +2331,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/nr-ue.c
   ${OPENAIR_TARGETS}/RT/USER/nr-uesoftmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
+#  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
@@ -2315,7 +2346,7 @@ add_executable(nr-uesoftmodem
 
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB PHY_NR_UE PHY_COMMON PHY_UE PHY_RU LFDS NR_L2_UE 
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_NR_UE_LIB PHY_NR_UE PHY_RU LFDS NR_L2_UE NR_LTE_UE_REUSE_LIB 
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
   -Wl,--end-group z dl)
 

@@ -6494,5 +6494,51 @@ void phy_procedures_UE_lte(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
   } // slot
 }
+
+
+
+
 #endif
 
+
+uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id)
+{
+  int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
+  CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[gNB_id].CQI_ReportPeriodic;
+
+  //LOG_I(PHY,"[UE %d][CRNTI %x] AbsSubFrame %d.%d Checking for CQI TXOp (cqi_ConfigIndex %d) isCQIOp %d\n",
+  //      ue->Mod_id,ue->pdcch_vars[gNB_id]->crnti,frame,subframe,
+  //      cqirep->cqi_PMI_ConfigIndex,
+  //      (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI));
+
+  if (cqirep->cqi_PMI_ConfigIndex==-1)
+    return(0);
+  else if (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI)
+    return(1);
+  else
+    return(0);
+}
+
+
+uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id)
+{
+
+
+  int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
+  CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[gNB_id].CQI_ReportPeriodic;
+  int log2Mri = cqirep->ri_ConfigIndex/161;
+  int N_OFFSET_RI = cqirep->ri_ConfigIndex % 161;
+
+  //LOG_I(PHY,"[UE %d][CRNTI %x] AbsSubFrame %d.%d Checking for RI TXOp (ri_ConfigIndex %d) isRIOp %d\n",
+  //      ue->Mod_id,ue->pdcch_vars[gNB_id]->crnti,frame,subframe,
+  //      cqirep->ri_ConfigIndex,
+  //      (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0));
+  if (cqirep->ri_ConfigIndex==-1)
+    return(0);
+  else if (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0)
+    return(1);
+  else
+    return(0);
+}

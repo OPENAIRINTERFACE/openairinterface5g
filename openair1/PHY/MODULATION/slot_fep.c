@@ -46,7 +46,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
   unsigned int subframe_offset;//,subframe_offset_F;
   unsigned int slot_offset;
-  int i;
+  //int i;
   unsigned int frame_length_samples = frame_parms->samples_per_subframe * 10;
   unsigned int rx_offset;
   //NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns>>1]][0];

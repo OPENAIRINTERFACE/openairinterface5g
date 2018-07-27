@@ -98,4 +98,18 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
     const slot_t tx_slot);
 
 #endif
+
+
+
+/* \brief Get SR payload (0,1) from UE MAC
+@param Mod_id Instance id of UE in machine
+@param CC_id Component Carrier index
+@param eNB_id Index of eNB that UE is attached to
+@param rnti C_RNTI of UE
+@param subframe subframe number
+@returns 0 for no SR, 1 for SR
+*/
+uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
+       uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe);
+
 /** @}*/
