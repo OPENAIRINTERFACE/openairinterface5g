@@ -1324,6 +1324,26 @@ fill_nfapi_ulsch_harq_information(module_id_t                            module_
   }				// get Tmode
 }
 
+uint8_t Np[6][4]= {{0,1,3,5},
+                   {0,3,8,13},
+		   {0,5,13,22},
+		   {0,11,27,44},
+		   {0,16,41,66},
+		   {0,22,55,88}};
+
+// This is part of the PUCCH allocation procedure (see Section 10.1 36.213)
+uint16_t getNp(int dl_Bandwidth,uint8_t nCCE,uint8_t plus1)
+{
+  AssertFatal(dl_Bandwidth<6,"dl_Bandwidth %d>5\n",dl_Bandwidth);
+
+  if (nCCE>=Np[dl_Bandwidth][2])
+    return(Np[dl_Bandwidth][2+plus1]);
+  else if (nCCE>=Np[dl_Bandwidth][1])
+    return(Np[dl_Bandwidth][1+plus1]);
+  else
+    return(Np[dl_Bandwidth][0+plus1]);
+}
+
 void
 fill_nfapi_harq_information(module_id_t                      module_idP,
 			    int                              CC_idP,
@@ -1365,8 +1385,7 @@ fill_nfapi_harq_information(module_id_t                      module_idP,
         harq_information->harq_information_rel10_tdd.ack_nack_mode         = 0;        // bundling
       }
       harq_information->harq_information_rel10_tdd.tl.tag                    = NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL10_TDD_TAG;
-      LTE_DL_FRAME_PARMS *frame_parms = &RC.eNB[module_idP][CC_idP]->frame_parms;
-      harq_information->harq_information_rel10_tdd.n_pucch_1_0               = get_Np(frame_parms->N_RB_DL,cce_idxP,0) +
+      harq_information->harq_information_rel10_tdd.n_pucch_1_0               = getNp(cc->mib->message.dl_Bandwidth,cce_idxP,0) +
                                                                                cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + cce_idxP;
       harq_information->harq_information_rel10_tdd.number_of_pucch_resources = 1;
     } else {
@@ -3157,7 +3176,7 @@ allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP,
             cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + fCCE;
           else
            ul_req->ul_config_pdu_list[ack_int].uci_harq_pdu.harq_information.harq_information_rel10_tdd.n_pucch_1_0 =
-            cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + fCCE + get_Np(to_prb(cc->mib->message.dl_Bandwidth),fCCE,0) ;
+            cc->radioResourceConfigCommon->pucch_ConfigCommon.n1PUCCH_AN + fCCE + getNp(cc->mib->message.dl_Bandwidth,fCCE,0) ;
         }
        }
       }
@@ -3362,6 +3381,132 @@ uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, su
     return -1;
 }
 
+unsigned char ul_ACK_subframe2M(TDD_Config_t *tdd_Config,unsigned char subframe)
+{
+
+  if (tdd_Config == NULL) {
+    return(1);
+  } else {
+    switch (tdd_Config->subframeAssignment) {
+    case 1:
+        return 1; // don't ACK special subframe for now
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        return(2);
+      } else if (subframe == 3) { // ACK subframe 9
+        return(1);  // To be updated
+      } else if (subframe == 7) { // ACK subframes 0 and 1
+        return(2);  // To be updated
+      } else if (subframe == 8) { // ACK subframe 4
+        return(1);  // To be updated
+      } else {
+	AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+		    subframe,tdd_Config->subframeAssignment);
+
+      }
+
+      break;
+    case 3:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        return(2); // should be 3
+      } else if (subframe == 3) { // ACK subframes 7 and 8
+        return(2);  // To be updated
+      } else if (subframe == 4) { // ACK subframes 9 and 0
+        return(2);
+      } else {
+	AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+		    subframe,tdd_Config->subframeAssignment);
+      }
+
+      break;
+
+    case 4:
+          if (subframe == 2) {  // ACK subframes 0,4 and 5
+            return(3); // should be 4
+          } else if (subframe == 3) { // ACK subframes 6,7,8 and 9
+            return(4);
+          } else {
+	    AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+			subframe,tdd_Config->subframeAssignment);
+          }
+
+          break;
+
+    case 5:
+              if (subframe == 2) {  // ACK subframes 0,3,4,5,6,7,8 and 9
+                return(8); // should be 3
+              } else {
+		AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+			    subframe,tdd_Config->subframeAssignment);
+              }
+
+              break;
+    }
+  }
+
+  return(0);
+}
+
+unsigned char ul_ACK_subframe2dl_subframe(TDD_Config_t *tdd_Config,unsigned char subframe,unsigned char ACK_index)
+{
+
+  if (tdd_Config == NULL) {
+    return((subframe<4) ? subframe+6 : subframe-4);
+  } else {
+    switch (tdd_Config->subframeAssignment) {
+    case 3:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        if (ACK_index==2)
+          return(1);
+
+        return(5+ACK_index);
+      } else if (subframe == 3) { // ACK subframes 7 and 8
+        return(7+ACK_index);  // To be updated
+      } else if (subframe == 4) { // ACK subframes 9 and 0
+        return((9+ACK_index)%10);
+      } else {
+        AssertFatal(1==0,"illegal subframe %d for tdd_config->subframeAssignment %d\n",
+              subframe,tdd_Config->subframeAssignment);
+      }
+
+      break;
+
+    case 4:
+          if (subframe == 2) {  // ACK subframes 0, 4 and 5
+            //if (ACK_index==2)
+            //  return(1); TBC
+            if (ACK_index==2)
+            return(0);
+
+            return(4+ACK_index);
+          } else if (subframe == 3) { // ACK subframes 6, 7 8 and 9
+            return(6+ACK_index);  // To be updated
+          } else {
+            AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+                  subframe,tdd_Config->subframeAssignment);
+          }
+
+          break;
+
+    case 1:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        return(5+ACK_index);
+      } else if (subframe == 3) { // ACK subframe 9
+        return(9);  // To be updated
+      } else if (subframe == 7) { // ACK subframes 0 and 1
+        return(ACK_index);  // To be updated
+      } else if (subframe == 8) { // ACK subframe 4
+        return(4);  // To be updated
+      } else {
+        AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+              subframe,tdd_Config->subframeAssignment);
+      }
+
+      break;
+    }
+  }
+
+  return(0);
+}
 
 void
 extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
@@ -3381,11 +3526,10 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
   int tmode[5];
   int i, j, m;
   uint8_t *pdu;
-  LTE_DL_FRAME_PARMS    *fp;
   sub_frame_t subframe_tx;
   int frame_tx;
   uint8_t harq_pid;
-
+  
 #if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
   if (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated != NULL &&
       UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL &&
@@ -3396,27 +3540,26 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	      && (format == 1))))
     spatial_bundling = 1;
 #endif
-  fp=&(RC.eNB[mod_idP][CC_idP]->frame_parms);
   for (i = 0; i < numCC; i++)
     tmode[i] = get_tmode(mod_idP, i, UE_id);
-
+  
   if (cc->tdd_Config) {
     harq_indication_tdd = (nfapi_harq_indication_tdd_rel13_t *) harq_indication;
     //    pdu = &harq_indication_tdd->harq_tb_n[0];
-
+    
     num_ack_nak = harq_indication_tdd->number_of_ack_nack;
-
+    
     switch (harq_indication_tdd->mode) {
     case 0:		// Format 1a/b bundling
       AssertFatal(numCC == 1, "numCC %d > 1, should not be using Format1a/b\n", numCC);
-      int M = ul_ACK_subframe2_M(fp,subframeP);
+      int M = ul_ACK_subframe2M(cc->tdd_Config,subframeP);
       for(m=0;m<M;m++){
-       subframe_tx = ul_ACK_subframe2_dl_subframe(fp,subframeP,m);
-       if(frameP==1023&&subframeP>5)
-        frame_tx=-1;
-       else
-        frame_tx = subframeP < 4 ? frameP -1 : frameP;
-       harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame_tx,subframe_tx);
+	subframe_tx = ul_ACK_subframe2dl_subframe(cc->tdd_Config,subframeP,m);
+	if(frameP==1023&&subframeP>5)
+	  frame_tx=-1;
+	else
+	  frame_tx = subframeP < 4 ? frameP -1 : frameP;
+	harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame_tx,subframe_tx);
         RA_t *ra = &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
 
        if(num_ack_nak==1){
@@ -3425,9 +3568,12 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
            sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
            LOG_D(MAC,"frame %d subframe %d Acking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
          }else{ //nack
-         if( sched_ctl->round[CC_idP][harq_pid]<8)
-           sched_ctl->round[CC_idP][harq_pid]++;
-       LOG_D(MAC,"frame %d subframe %d Nacking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
+	   if( sched_ctl->round[CC_idP][harq_pid]<8) sched_ctl->round[CC_idP][harq_pid]++;
+           if (sched_ctl->round[CC_idP][harq_pid] == 4) {
+             sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
+             sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
+           }
+           LOG_D(MAC,"frame %d subframe %d Nacking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
       if(sched_ctl->round[CC_idP][harq_pid] == 8){
        for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
         if((ra[ra_i].rnti == rnti) && (ra[ra_i].state == WAITMSG4ACK)){
@@ -4266,6 +4412,9 @@ cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 			pdu, rel9->length);
 
       LOG_D(MAC,"Frame %d Subframe %d update CQI:%d\n",frameP,subframeP,sched_ctl->dl_cqi[CC_idP]);
+
+      sched_ctl->cqi_req_flag &= (~(1 << subframeP));
+      sched_ctl->cqi_received = 1;
     }
 
     // timing advance
@@ -4336,8 +4485,11 @@ static int nack_or_dtx_reported(
   int i;
 
   if (cc->tdd_Config) {
-    AssertFatal(0==1, "TDD to be done. FAPI structures (see nfapi_harq_indication_tdd_rel13_t) are not clean. To be cleaned as well?\n");
-    abort();
+    nfapi_harq_indication_tdd_rel13_t *hi = &harq_pdu->harq_indication_tdd_rel13;
+    for (i = 0; i < hi->number_of_ack_nack; hi++)
+      if (hi->harq_data[0].bundling.value_0 != 1) //only bundling is used for tdd for now
+        return 1;
+    return 0;
   } else {
     nfapi_harq_indication_fdd_rel13_t *hi = &harq_pdu->harq_indication_fdd_rel13;
     for (i = 0; i < hi->number_of_ack_nack; hi++)

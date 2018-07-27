@@ -37,7 +37,7 @@
 #include "PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
-
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 //#define DEBUG_DLSCH_MODULATION
 #define NEW_ALLOC_RE
 
@@ -714,8 +714,8 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
   int first_layer0 = -1; //= dlsch0_harq->first_layer;
   int Nlayers0 = -1; //  = dlsch0_harq->Nlayers;
-  uint8_t mod_order0=0; 
-  uint8_t mod_order1=0; 
+  uint8_t mod_order0=0;
+  uint8_t mod_order1=0;
   uint8_t precoder_index0,precoder_index1;
 
   uint8_t *x1=NULL;

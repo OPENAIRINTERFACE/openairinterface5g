@@ -58,7 +58,7 @@
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
 
 #include "TLVDecoder.h"
-#include "S1ap-NAS-PDU.h"
+#include "S1AP_NAS-PDU.h"
 #include "flexran_agent_common_internal.h"
 
 extern RAN_CONTEXT_t RC;
@@ -678,7 +678,8 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
     return;
   }
 
-  asn_enc_rval_t ret = uper_encode_to_buffer(&asn_DEF_UECapabilityInformation, ueCapabilityInformation, buf, 4096);
+  asn_enc_rval_t ret = uper_encode_to_buffer(&asn_DEF_UECapabilityInformation, NULL, ueCapabilityInformation, buf, 4096);
+
   if (ret.encoded == -1) abort();
 
   memset(&rac, 0, sizeof(UERadioAccessCapabilityInformation_t));
@@ -692,7 +693,9 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
   /* 8192 is arbitrary, should be big enough */
   buf2 = malloc16(8192);
   if (buf2 == NULL) abort();
-  ret = uper_encode_to_buffer(&asn_DEF_UERadioAccessCapabilityInformation, &rac, buf2, 8192);
+
+  ret = uper_encode_to_buffer(&asn_DEF_UERadioAccessCapabilityInformation, NULL, &rac, buf2, 8192);
+
   if (ret.encoded == -1) abort();
 
   MessageDef *msg_p;
@@ -1937,7 +1940,7 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
 
               /* insert data to UE_PF_PO or update data in UE_PF_PO */
               pthread_mutex_lock(&ue_pf_po_mutex);
-              uint8_t i = 0;
+              uint16_t i = 0;
               for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
                 if ((UE_PF_PO[CC_id][i].enable_flag == TRUE && UE_PF_PO[CC_id][i].ue_index_value == (uint16_t)(S1AP_PAGING_IND(msg_p).ue_index_value))
                     || (UE_PF_PO[CC_id][i].enable_flag != TRUE)) {

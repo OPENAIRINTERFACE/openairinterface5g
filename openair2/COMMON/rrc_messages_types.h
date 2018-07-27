@@ -35,7 +35,7 @@
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
 #else
-#include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
+#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
 #endif
 #include "SL-OffsetIndicator-r12.h"
 #include "SubframeBitmapSL-r12.h"

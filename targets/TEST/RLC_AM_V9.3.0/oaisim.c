@@ -35,7 +35,7 @@
 #include "LAYER2/MAC/vars.h"
 #include "UTIL/LOG/log_if.h"
 #include "UTIL/LOG/log_extern.h"
-#include "RRC/LITE/vars.h"
+#include "RRC/LTE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/OCG/OCG.h"
 

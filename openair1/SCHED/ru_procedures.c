@@ -343,25 +343,27 @@ void feptx_ofdm(RU_t *ru) {
        }
      }
       */
-     if ((fp->frame_type == TDD) && 
-         ((fp->tdd_config==0) ||
-	   (fp->tdd_config==1) ||
-	   (fp->tdd_config==2) ||
-	   (fp->tdd_config==6)) && 
-	     ((subframe==0) || (subframe==5))) {
-       // turn on tx switch N_TA_offset before
-       //LOG_D(HW,"subframe %d, time to switch to tx (N_TA_offset %d, slot_offset %d) \n",subframe,ru->N_TA_offset,slot_offset);
-       for (i=0; i<ru->N_TA_offset; i++) {
-         tx_offset = (int)slot_offset+i-ru->N_TA_offset/2;
-         if (tx_offset<0)
-           tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
-	 
-         if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti))
-           tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
-	 
-         ru->common.txdata[aa][tx_offset] = 0x00000000;
-       }
-     }
+
+//     if ((fp->frame_type == TDD) &&
+//         ((fp->tdd_config==0) ||
+//	   (fp->tdd_config==1) ||
+//	   (fp->tdd_config==2) ||
+//	   (fp->tdd_config==6)) &&
+//	     ((subframe==0) || (subframe==5))) {
+//       // turn on tx switch N_TA_offset before
+//       //LOG_D(HW,"subframe %d, time to switch to tx (N_TA_offset %d, slot_offset %d) \n",subframe,ru->N_TA_offset,slot_offset);
+//       for (i=0; i<ru->N_TA_offset; i++) {
+//         tx_offset = (int)slot_offset+i-ru->N_TA_offset/2;
+//         if (tx_offset<0)
+//           tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
+//
+//         if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti))
+//           tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti;
+//
+//         ru->common.txdata[aa][tx_offset] = 0x00000000;
+//       }
+//     }
+
      stop_meas(&ru->ofdm_mod_stats);
      LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, subframe %d: txp (time %p) %d dB, txp (freq) %d dB\n",
 	   ru->proc.frame_tx,subframe,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->samples_per_tti)),

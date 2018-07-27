@@ -504,7 +504,7 @@ char openair_rrc_ue_init( const module_id_t ue_mod_idP, const unsigned char eNB_
   rrc_set_state (ue_mod_idP, RRC_STATE_INACTIVE);
   rrc_set_sub_state (ue_mod_idP, RRC_SUB_STATE_INACTIVE);
 
-  LOG_D(RRC,"[UE %d] INIT State = RRC_IDLE (eNB %d)\n",ctxt.module_id,eNB_index);
+  LOG_I(RRC,"[UE %d] INIT State = RRC_IDLE (eNB %d)\n",ctxt.module_id,eNB_index);
   UE_rrc_inst[ctxt.module_id].Info[eNB_index].State=RRC_IDLE;
   UE_rrc_inst[ctxt.module_id].Info[eNB_index].T300_active = 0;
   UE_rrc_inst[ctxt.module_id].Info[eNB_index].T304_active = 0;
@@ -1926,6 +1926,7 @@ rrc_ue_process_securityModeCommand(
 	  ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, eNB_index, securityModeCommand->rrc_TransactionIdentifier);
     
     enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+                                     NULL,
 				     (void*)&ul_dcch_msg,
 				     buffer,
 				     100);
@@ -2039,7 +2040,7 @@ rrc_ue_process_ueCapabilityEnquiry(
 		       &ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
 		       &ue_CapabilityRAT_Container);
       
-      enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, (void*) &ul_dcch_msg, buffer, 100);
+      enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message, NULL, (void*) &ul_dcch_msg, buffer, 100);
       AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
 		   enc_rval.failed_type->name, enc_rval.encoded);
       
@@ -3022,7 +3023,7 @@ int decode_BCCH_DLSCH_Message(
                 &bcch_message->message.choice.c1.choice.systemInformation,
                 sizeof(SystemInformation_t) );
 
-        LOG_D( RRC, "[UE %"PRIu8"] Decoding SI for frameP %"PRIu32"\n",
+        LOG_I( RRC, "[UE %"PRIu8"] Decoding SI for frameP %"PRIu32"\n",
                ctxt_pP->module_id,
                ctxt_pP->frame );
         decode_SI( ctxt_pP, eNB_index );
@@ -3247,6 +3248,7 @@ int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, 
 #endif
 			);
 
+  LOG_I(RRC,"Setting SIStatus bit 0 to 1\n");
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus = 1;
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIB1systemInfoValueTag = sib1->systemInfoValueTag;
 

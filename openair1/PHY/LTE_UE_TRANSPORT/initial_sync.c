@@ -387,6 +387,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
       // Now TDD normal prefix
       frame_parms->Ncp=NORMAL;
       frame_parms->frame_type=TDD;
+      frame_parms->tdd_config=1;
       init_frame_parms(frame_parms,1);
 
       if (sync_pos >= frame_parms->nb_prefix_samples)
@@ -426,6 +427,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
         // Now TDD extended prefix
         frame_parms->Ncp=EXTENDED;
         frame_parms->frame_type=TDD;
+	frame_parms->tdd_config=1;
         init_frame_parms(frame_parms,1);
         sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
 
@@ -493,17 +495,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     #endif
 
 // send sync status to higher layers later when timing offset converge to target timing
-#if OAISIM
-      if (ue->mac_enabled==1) {
-	LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
-	//mac_resynch();
-	dl_phy_sync_success(ue->Mod_id,ue->proc.proc_rxtx[0].frame_rx,0,1);//ue->common_vars.eNb_id);
-	ue->UE_mode[0] = PRACH;
-      }
-      else {
-	ue->UE_mode[0] = PUSCH;
-      }
-#endif
 
       generate_pcfich_reg_mapping(frame_parms);
       generate_phich_reg_mapping(frame_parms);

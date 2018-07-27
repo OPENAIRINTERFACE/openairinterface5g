@@ -1717,19 +1717,12 @@ static void* ru_thread( void* param ) {
     first_phy_tx = 0;
 #endif
 
-/*
-    LOG_D(PHY,"AFTER fh_south_in - SFN/SF:%d%d RU->proc[RX:%d%d TX:%d%d] RC.eNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
-        frame,subframe,
-        proc->frame_rx,proc->subframe_rx,
-        proc->frame_tx,proc->subframe_tx,
-        RC.eNB[0][0]->proc.frame_rx,RC.eNB[0][0]->proc.subframe_rx,
-        RC.eNB[0][0]->proc.frame_tx);
 
       LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
           ru->do_prach,
           is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
           proc->frame_rx,proc->subframe_rx);
-*/ 
+ 
     if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
       wakeup_prach_ru(ru);
     }
@@ -1782,7 +1775,7 @@ static void* ru_thread( void* param ) {
     if (ru->num_eNB>0) wakeup_eNBs(ru);
     
 #ifndef PHY_TX_THREAD
-    if(get_nprocs() <= 4){
+    if(get_nprocs() <= 4 || ru->num_eNB==0){
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);
       
@@ -2460,12 +2453,12 @@ void configure_rru(int idx,
   ru->frame_parms.dl_CarrierFreq                                           = config->tx_freq[0];
   ru->frame_parms.ul_CarrierFreq                                           = config->rx_freq[0];
   if (ru->frame_parms.dl_CarrierFreq == ru->frame_parms.ul_CarrierFreq) {
-     ru->frame_parms.frame_type                                            = TDD;
-     ru->frame_parms.tdd_config                                            = config->tdd_config[0];
-     ru->frame_parms.tdd_config_S                                          = config->tdd_config_S[0]; 
+    LOG_I(PHY,"Setting RRU to TDD frame type\n");
+    ru->frame_parms.frame_type                                            = TDD;
+    ru->frame_parms.tdd_config                                            = config->tdd_config[0];
+    ru->frame_parms.tdd_config_S                                          = config->tdd_config_S[0]; 
   }
-  else
-     ru->frame_parms.frame_type                                            = FDD;
+  else ru->frame_parms.frame_type                                            = FDD;
   ru->att_tx                                                               = config->att_tx[0];
   ru->att_rx                                                               = config->att_rx[0];
   ru->frame_parms.N_RB_DL                                                  = config->N_RB_DL[0];
@@ -2473,9 +2466,9 @@ void configure_rru(int idx,
   ru->frame_parms.threequarter_fs                                          = config->threequarter_fs[0];
   ru->frame_parms.pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
   if (ru->function==NGFI_RRU_IF4p5) {
-  ru->frame_parms.att_rx = ru->att_rx;
-  ru->frame_parms.att_tx = ru->att_tx;
-
+    ru->frame_parms.att_rx = ru->att_rx;
+    ru->frame_parms.att_tx = ru->att_tx;
+    
     LOG_I(PHY,"Setting ru->function to NGFI_RRU_IF4p5, prach_FrequOffset %d, prach_ConfigIndex %d, att (%d,%d)\n",
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0],ru->att_tx,ru->att_rx);
     ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset  = config->prach_FreqOffset[0]; 
@@ -2770,7 +2763,10 @@ void init_RU(char *rf_config_file) {
 
 
 void stop_ru(RU_t *ru) {
- 
+
+#if defined(PRE_SCD_THREAD) || defined(PHY_TX_THREAD)
+  int *status;
+#endif
   printf("Stopping RU %p processing threads\n",(void*)ru);
 #if defined(PRE_SCD_THREAD)
   if(ru){
@@ -2828,7 +2824,7 @@ void RCconfig_RU(void) {
 
 
 
-    RC.ru_mask=(1<<NB_RU) - 1;
+    RC.ru_mask=(1<<RC.nb_RU) - 1;
     printf("Set RU mask to %lx\n",RC.ru_mask);
 
     for (j = 0; j < RC.nb_RU; j++) {

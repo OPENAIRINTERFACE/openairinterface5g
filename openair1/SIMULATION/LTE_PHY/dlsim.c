@@ -524,6 +524,7 @@ int main(int argc, char **argv)
   int k,i,j,aa;
   int re;
 
+
   int s,Kr,Kr_bytes;
 
   double SNR,snr0=-2.0,snr1,rate = 0;
@@ -1140,10 +1141,10 @@ int main(int argc, char **argv)
   }
   else {
     eNB->te = dlsch_encoding_2threads;
-    extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
-    extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
-    init_td_thread(eNB,NULL);
-    init_te_thread(eNB,NULL);
+    extern void init_td_thread(PHY_VARS_eNB *);
+    extern void init_te_thread(PHY_VARS_eNB *);
+    init_td_thread(eNB);
+    init_te_thread(eNB);
   }
 
   // callback functions required for phy_procedures_tx
@@ -1309,7 +1310,9 @@ int main(int argc, char **argv)
     }
   */
 
+
   UE->pdcch_vars[UE->current_thread_id[subframe]][0]->crnti = n_rnti;
+  UE->n_connected_eNB = 1;
 
   printf("Allocating %dx%d eNB->UE channel descriptor\n",eNB->frame_parms.nb_antennas_tx,UE->frame_parms.nb_antennas_rx);
   eNB2UE[0] = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
@@ -1321,8 +1324,10 @@ int main(int argc, char **argv)
                                    rx_sample_offset,
                                    0);
 
+  reset_meas(&eNB2UE[0]->random_channel);
+  reset_meas(&eNB2UE[0]->interp_time);
   if(num_rounds>1) {
-    for(n=1; n<4; n++)
+    for(n=1; n<4; n++) {
       eNB2UE[n] = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
                                        UE->frame_parms.nb_antennas_rx,
                                        channel_model,
@@ -1331,8 +1336,11 @@ int main(int argc, char **argv)
 				       forgetting_factor,
                                        rx_sample_offset,
                                        0);
+      reset_meas(&eNB2UE[n]->random_channel);
+      reset_meas(&eNB2UE[n]->interp_time);
+    }
   }
-
+  
   if (eNB2UE[0]==NULL) {
     printf("Problem generating channel model. Exiting.\n");
     exit(-1);
