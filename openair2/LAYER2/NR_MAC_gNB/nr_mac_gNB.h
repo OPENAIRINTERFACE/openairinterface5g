@@ -34,8 +34,8 @@
 
 /*@}*/
 
-#ifndef __LAYER2_NR_MAC_DEFS_H__
-#define __LAYER2_NR_MAC_DEFS_H__
+#ifndef __LAYER2_NR_MAC_GNB_H__
+#define __LAYER2_NR_MAC_GNB_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,13 +52,13 @@
 
 #include "PHY/TOOLS/time_meas.h"
 
-#include "PHY/defs_common.h" // for PRACH_RESOURCES_t
+#include "PHY/defs_gNB.h"
 
 #include "targets/ARCH/COMMON/common_lib.h"
 
 #include "LAYER2/MAC/mac.h" // temporary
 
-/*! \brief eNB common channels */
+/*! \brief gNB common channels */
 typedef struct {
     int physCellId;
     int p_gNB;
@@ -163,4 +163,4 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_pch;
 } gNB_MAC_INST;
 
-#endif /*__LAYER2_NR_MAC_DEFS_H__ */
+#endif /*__LAYER2_NR_MAC_GNB_H__ */

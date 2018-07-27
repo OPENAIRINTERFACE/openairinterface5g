@@ -42,15 +42,13 @@ void nr_feptx_ofdm(RU_t *ru);
 void nr_feptx_ofdm_2thread(RU_t *ru);
 void nr_feptx0(RU_t *ru,int slot);
 
-void nr_get_pdcch_vars_from_mib(nr_pdcch_vars_t *pdcch_vars,
-                          nr_scs_e scs_common,
-                          nr_scs_e pdcch_scs,
-                          nr_frequency_range_e freq_range,
-                          uint8_t rmsi_pdcch_config,
-                          uint16_t N_RB);
-void nr_get_pdcch_type_0_monitoring_period(nr_pdcch_vars_t *pdcch_vars,
-                                           uint8_t mu,
-                                           uint8_t nb_slots_per_frame,
-                                           uint8_t ssb_idx);
+void nr_configure_css_dci_from_mib(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
+                               nr_scs_e scs_common,
+                               nr_scs_e pdcch_scs,
+                               nr_frequency_range_e freq_range,
+                               uint8_t rmsi_pdcch_config,
+                               uint8_t ssb_idx,
+                               uint16_t nb_slots_per_frame,
+                               uint16_t N_RB);
 
 #endif

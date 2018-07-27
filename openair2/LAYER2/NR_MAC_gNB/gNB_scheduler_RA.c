@@ -19,30 +19,44 @@
  *      contact@openairinterface.org
  */
 
-#ifndef __PHY_NR_TRANSPORT_DCI__H
-#define __PHY_NR_TRANSPORT_DCI__H
+/*! \file gNB_scheduler_RA.c
+ * \brief primitives used for random access
+ * \author
+ * \date
+ * \email:
+ * \version
+ */
 
-#include "PHY/defs_gNB.h"
-#include "PHY/NR_REFSIG/nr_refsig.h"
+#include nr_mac_gNB.h
 
-typedef unsigned __int128 uint128_t;
+void
+schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
+{
 
-uint8_t nr_get_dci_size(nfapi_nr_dci_format_e format,
-                        nfapi_nr_rnti_type_e rnti_type,
-                        NR_BWP_PARMS* bwp,
-                        nfapi_nr_config_request_t* config);
+  eNB_MAC_INST *mac = RC.mac[module_idP];
+  COMMON_channels_t *cc = mac->common_channels;
+  RA_t *ra;
+  uint8_t i;
 
-uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
-                            uint32_t *gold_pdcch_dmrs,
-                            int32_t** txdataF,
-                            int16_t amp,
-                            NR_DL_FRAME_PARMS frame_parms,
-                            nfapi_nr_config_request_t config);
+  start_meas(&mac->schedule_ra);
 
-void nr_pdcch_scrambling(uint32_t *in,
-                         uint8_t size,
-                         uint32_t Nid,
-                         uint32_t n_RNTI,
-                         uint32_t* out);
 
-#endif //__PHY_NR_TRANSPORT_DCI__H
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+
+    for (i = 0; i < NB_RA_PROC_MAX; i++) {
+
+	    ra = (RA_t *) & cc[CC_id].ra[i];
+      //LOG_D(MAC,"RA[state:%d]\n",ra->state);
+
+	    if (ra->state == MSG2)
+        generate_Msg2(module_idP, CC_id, frameP, subframeP, ra);
+	    else if (ra->state == MSG4)
+        generate_Msg4(module_idP, CC_id, frameP, subframeP, ra);
+	    else if (ra->state == WAITMSG4ACK)
+        check_Msg4_retransmission(module_idP, CC_id, frameP, subframeP, ra);
+
+	}			// for i=0 .. N_RA_PROC-1
+    }				// CC_id
+
+    stop_meas(&mac->schedule_ra);
+}

@@ -417,42 +417,13 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_mib(module_idP, frameP, subframeP);
   }
 
-  /*
-   * Temporary DCI scheduling for PDCCH testing in the absence of phy-test mode and pending proper scheduling
-   * currently schedules PDCCH type 1 for RA-RNTI*/
-   
-
-
-  /*
-  if (phy_test == 0){
-    // This schedules SI for legacy LTE and eMTC starting in subframeP
-    schedule_SI(module_idP, frameP, subframeP);
-    // This schedules Paging in subframeP
-    schedule_PCH(module_idP,frameP,subframeP);
-    // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
-    schedule_RA(module_idP, frameP, subframeP);
-    // copy previously scheduled UL resources (ULSCH + HARQ)
-    copy_nr_ulreq(module_idP, frameP, subframeP);
-    // This schedules SRS in subframeP
-    schedule_nr_SRS(module_idP, frameP, subframeP);
-    // This schedules ULSCH in subframeP (dci0)
-    schedule_ulsch(module_idP, frameP, subframeP);
-    // This schedules UCI_SR in subframeP
-    schedule_nr_SR(module_idP, frameP, subframeP);
-    // This schedules UCI_CSI in subframeP
-    schedule_nr_CSI(module_idP, frameP, subframeP);
-    // This schedules DLSCH in subframeP
-    schedule_dlsch(module_idP, frameP, subframeP, mbsfn_status);
+  if (phy_test == 0) {
+    
   }
-  else{
-    schedule_ulsch_phy_test(module_idP,frameP,subframeP);
-    schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
+  else {
+      void nr_schedule_css_dlsch_phytest(module_idP, frameP, subframeP);
   }
-  */
 
-  if (RC.flexran[module_idP]->enabled)
-    flexran_agent_send_update_stats(module_idP);
-  
   /*
   // Allocate CCEs for good after scheduling is done
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)

@@ -20,7 +20,6 @@
  */
 
 #include "PHY/defs_gNB.h"
-#include "SCHED/sched_eNB.h"
 #include "PHY/phy_extern.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/INIT/phy_init.h"

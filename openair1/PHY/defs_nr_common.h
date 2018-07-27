@@ -112,27 +112,6 @@ typedef struct NR_BWP_PARMS {
   uint16_t ofdm_symbol_size;
 } NR_BWP_PARMS;
 
-typedef enum {
-  nr_ssb_and_cset_mux_pattern_type_1=0,
-  nr_ssb_and_cset_mux_pattern_type_2,
-  nr_ssb_and_cset_mux_pattern_type_3
-} nr_ssb_and_cset_mux_pattern_type_e;
-
-typedef enum {
-  nr_cce_reg_mapping_interleaved=0,
-  nr_cce_reg_mapping_non_interleaved
-} nr_cce_reg_mapping_type_e;
-
-typedef enum {
-  nr_cset_config_mib_sib1=0,
-  nr_cset_config_pdcch_config
-} nr_coreset_config_type_e;
-
-typedef enum {
-  nr_cset_same_as_reg_bundle=0,
-  nr_cset_all_contiguous_rbs
-} nr_coreset_precoder_granularity_type_e;
-
 typedef struct {
   uint8_t reg_idx;
   uint8_t start_sc_idx;

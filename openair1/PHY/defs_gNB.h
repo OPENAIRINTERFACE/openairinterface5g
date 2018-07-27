@@ -292,6 +292,7 @@ typedef struct PHY_VARS_gNB_s {
 
   Sched_Rsp_t          Sched_INFO;
   NR_gNB_PDCCH        pdcch_vars;
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_type0_params;
   LTE_eNB_PHICH        phich_vars[2];
 
   NR_gNB_COMMON       common_vars;

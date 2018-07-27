@@ -173,7 +173,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   /// DMRS QPSK modulation
     /*There is a need to shift from which index the pregenerated DMRS sequence is used
      * see 38211 r15.2.0 section 7.4.1.3.2: assumption is the reference point for k refers to the DMRS sequence*/
-  if (pdcch_params.config_type == nr_cset_config_pdcch_config)
+  if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
     gold_pdcch_dmrs += ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*3/32;
 
   for (int i=0; i<NR_MAX_PDCCH_DMRS_LENGTH>>1; i++) {
@@ -219,7 +219,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
     if (cset_start_sc >= frame_parms.ofdm_symbol_size)
       cset_start_sc -= frame_parms.ofdm_symbol_size;
 
-    if (pdcch_params.precoder_granularity == nr_cset_same_as_reg_bundle) {
+    if (pdcch_params.precoder_granularity == NFAPI_NR_CSET_SAME_AS_REG_BUNDLE) {
 
       for (int cce_idx=0; cce_idx<dci_alloc.L; cce_idx++){
         cce = dci_alloc.cce_list[cce_idx];
@@ -247,7 +247,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
       }
     }
 
-    else { //nr_cset_all_contiguous_rbs
+    else { //NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS
     }
 
   }
