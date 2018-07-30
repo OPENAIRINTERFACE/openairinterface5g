@@ -71,8 +71,11 @@ mapping log_options[] = {
 
 
 mapping log_maskmap[] = {
-  {"prach",  DEBUG_PRACH},
-  {"RU",     DEBUG_RU},
+  {"prach",       DEBUG_PRACH},
+  {"RU",          DEBUG_RU},
+  {"ctrlsocket",  DEBUG_CTRLSOCKET},
+  {"UE_PHYPROC",  DEBUG_UE_PHYPROC},
+  {"UE_TIMING",   UE_TIMING},
   {NULL,-1}
 };
 
@@ -377,7 +380,6 @@ int logInit (void)
   register_log_component("RLC","log",RLC);
   register_log_component("PDCP","log",PDCP);
   register_log_component("RRC","log",RRC);
-  register_log_component("EMU","log",EMU);
   register_log_component("OMG","csv",OMG);
   register_log_component("OTG","log",OTG);
   register_log_component("OTG_LATENCY","dat",OTG_LATENCY);
@@ -399,7 +401,7 @@ int logInit (void)
   register_log_component("FLEXRAN_AGENT","log",FLEXRAN_AGENT); 
   register_log_component("TMR","",TMR); 
   register_log_component("USIM","txt",USIM);   
-
+  register_log_component("SIM","txt",SIM);  
 
   /* following log component are used for the localization*/
   register_log_component("LOCALIZE","log",LOCALIZE);
@@ -465,14 +467,15 @@ int logInit (void)
 
 
 
-char *log_getthreadname(char *threadname) {
-      
-      if (pthread_getname_np(pthread_self(), threadname, sizeof(threadname)) != 0)
-      {
-        return "thread?";
-      } else {
-        return threadname;
-      }
+char *log_getthreadname(char *threadname, int bufsize) {
+
+int rt =   pthread_getname_np(pthread_self(), threadname,bufsize) ;  
+   if (rt == 0)
+   {
+     return threadname;
+   } else {
+     return "thread?";
+   }
 }
 
 
@@ -495,7 +498,7 @@ void logRecord_mt(const char *file, const char *func, int line, int comp, int le
   	   ( (g_log->flag & FLAG_NOCOLOR)?"":log_level_highlight_start[level]),
   	   g_log->log_component[comp].name,
   	   ( (g_log->flag & FLAG_LEVEL)?g_log->level2string[level]:""),
-  	   ( (g_log->flag & FLAG_THREAD)?log_getthreadname(threadname):""),
+  	   ( (g_log->flag & FLAG_THREAD)?log_getthreadname(threadname,PR_SET_NAME+1):""),
   	   format);
 
   g_log->log_component[comp].fwrite(g_log->log_component[comp].stream,log_buffer, args);

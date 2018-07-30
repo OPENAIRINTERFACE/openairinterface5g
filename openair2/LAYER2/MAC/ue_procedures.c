@@ -2298,8 +2298,6 @@ ue_scheduler(const module_id_t module_idP,
 
 #if defined(ENABLE_ITTI)
     MessageDef *msg_p;
-    const char *msg_name;
-    instance_t instance;
     int result;
 #endif
 #if UE_TIMING_TRACE
@@ -2318,14 +2316,12 @@ ue_scheduler(const module_id_t module_idP,
 	itti_poll_msg(TASK_MAC_UE, &msg_p);
 
 	if (msg_p != NULL) {
-	    msg_name = ITTI_MSG_NAME(msg_p);
-	    instance = ITTI_MSG_INSTANCE(msg_p);
 
 	    switch (ITTI_MSG_ID(msg_p)) {
 	    case RRC_MAC_CCCH_DATA_REQ:
 		LOG_I(MAC,
 		      "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
-		      msg_name, ITTI_MSG_ORIGIN_NAME(msg_p), instance,
+		      ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_INSTANCE(msg_p),
 		      RRC_MAC_CCCH_DATA_REQ(msg_p).frame,
 		      RRC_MAC_CCCH_DATA_REQ(msg_p).enb_index);
 
@@ -2334,7 +2330,7 @@ ue_scheduler(const module_id_t module_idP,
 
 
 	    default:
-		LOG_E(MAC, "Received unexpected message %s\n", msg_name);
+		LOG_E(MAC, "Received unexpected message %s\n", ITTI_MSG_NAME(msg_p));
 		break;
 	    }
 

@@ -361,7 +361,7 @@ int s = sscanf(buf,"%ms %i-%i\n",&logsubcmd, &idx1,&idx2);
       int  l;
       int optbit;
 
-      l=sscanf(logsubcmd,"%m[^'_']_%m[^'_']",&logparam,&opt);
+      l=sscanf(logsubcmd,"%m[^'_']_%ms",&logparam,&opt);
       if (l == 2 && strcmp(logparam,"print") == 0){
          optbit=map_str_to_int(log_options,opt);
          if (optbit < 0) {

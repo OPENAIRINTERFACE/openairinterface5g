@@ -4476,7 +4476,6 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 
 
   uint8_t                             buffer[RRC_BUF_SIZE];
-  uint16_t                            size;
   int                                 i;
   uint8_t                             rv[2];
   uint16_t                            Idx;
@@ -5287,7 +5286,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   //  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.measConfig->reportConfigToAddModList = ReportConfig_list;
   memset(buffer, 0, RRC_BUF_SIZE);
 
-  size = do_RRCConnectionReconfiguration(
+ int size=do_RRCConnectionReconfiguration(
            ctxt_pP,
            buffer,
            rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),   //Transaction_id,
@@ -5313,7 +5312,11 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
            , NULL   // SCellToAddMod_r10_t
 #endif
          );
-
+ if (size <= 0)
+  LOG_E(RRC,
+        "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration for handover (bytes %d, UE rnti %x) failed\n",
+        ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
+ else
   LOG_I(RRC,
         "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration for handover (bytes %d, UE rnti %x)\n",
         ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
@@ -6368,8 +6371,8 @@ rrc_eNB_decode_ccch(
           if (InitialUE_Identity_PR_randomValue == rrcConnectionRequest->ue_Identity.present) {
           if(rrcConnectionRequest->ue_Identity.choice.randomValue.size != 5)
           {
-            LOG_I(RRC, "wrong InitialUE-Identity randomValue size, expected 5, provided %d",
-                         rrcConnectionRequest->ue_Identity.choice.randomValue.size);
+            LOG_I(RRC, "wrong InitialUE-Identity randomValue size, expected 5, provided %lu",
+                         (long unsigned int)rrcConnectionRequest->ue_Identity.choice.randomValue.size);
             return -1;
           }
             memcpy(((uint8_t*) & random_value) + 3,

@@ -40,7 +40,7 @@ rlc_um_display_rx_window(
 {
   unsigned long sn = 0;
   unsigned long end_sn = 0;
-  char          str[4];
+  LOG_USEDINLOG_VAR(char,str[4]);
   char          time_out_str[11];
   int           str_index;
   char          color[32];

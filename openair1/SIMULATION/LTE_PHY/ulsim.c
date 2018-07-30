@@ -1144,7 +1144,7 @@ int main(int argc, char **argv)
 	  else if (mcs < 21) modulation_type = 4;
 	  else if (mcs < 29) modulation_type = 6;
           else {
-             LOG_E(USIM,"mcs %i is not valid\n",mcs);
+             LOG_E(SIM,"mcs %i is not valid\n",mcs);
              exit(-1);
           }
 
@@ -1492,23 +1492,23 @@ int main(int argc, char **argv)
 
       if (dump_table == 1 ) {
         int n;
-        set_component_filelog(USIM); // file located in /tmp/usim.txt
-        LOG_F(USIM,"The transmitter raw data: \n");
+        set_component_filelog(SIM); // file located in /tmp/usim.txt
+        LOG_F(SIM,"The transmitter raw data: \n");
 
         for (n=0; n< time_vector_tx.size; n++) {
           //   printf("%f ", table_tx[n]);
-          LOG_F(USIM,"%f ", table_tx[n]);
+          LOG_F(SIM,"%f ", table_tx[n]);
         }
 
-        LOG_F(USIM,"\n");
-        LOG_F(USIM,"The receiver raw data: \n");
+        LOG_F(SIM,"\n");
+        LOG_F(SIM,"The receiver raw data: \n");
 
         for (n=0; n< time_vector_rx.size; n++) {
           // printf("%f ", table_rx[n]);
-          LOG_F(USIM,"%f ", table_rx[n]);
+          LOG_F(SIM,"%f ", table_rx[n]);
         }
 
-        LOG_F(USIM,"\n");
+        LOG_F(SIM,"\n");
       }
 
       double tx_median = table_tx[time_vector_tx.size/2];

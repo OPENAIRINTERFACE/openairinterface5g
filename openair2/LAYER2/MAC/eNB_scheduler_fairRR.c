@@ -2264,7 +2264,6 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
   uint32_t           tbs;
   int16_t            tx_power;
   int                UE_id;
-  rnti_t             rnti;
   COMMON_channels_t *cc;
   LOG_D(MAC,"In ulsch_preprocessor: ulsch ue select\n");
   //ue select
@@ -2308,11 +2307,10 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
         continue;
       }
 
-      rnti = UE_RNTI(CC_id,UE_id);
 
       if (first_rb[CC_id] >= frame_parms->N_RB_UL-num_pucch_rb ) {
          LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-               module_idP,frameP,subframeP,UE_id,rnti,CC_id);
+               module_idP,frameP,subframeP,UE_id,UE_RNTI(CC_id,UE_id),CC_id);
          break;
       }
       total_rbs = frame_parms->N_RB_UL-num_pucch_rb-first_rb[CC_id];
@@ -2390,7 +2388,7 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
               rb_table_index = find_rb_table_index(average_rbs);
               if (rb_table_index>=34){
                   LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: average RBs %d > 100\n",
-                         module_idP,frameP,subframeP,UE_id,rnti,CC_id,average_rbs);
+                         module_idP,frameP,subframeP,UE_id,UE_RNTI(CC_id,UE_id),CC_id,average_rbs);
                   break;
               }
               first_rb[CC_id] = first_rb[CC_id] + rb_table[rb_table_index];

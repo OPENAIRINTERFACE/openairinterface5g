@@ -684,31 +684,9 @@ void vnf_deallocate(void* ptr) {
 void vnf_trace(nfapi_trace_level_t nfapi_level, const char* message, ...) {
 
   va_list args;
-  int oai_level;
-
-  if (nfapi_level==NFAPI_TRACE_ERROR)
-  {
-    oai_level = LOG_ERR;
-  }
-  else if (nfapi_level==NFAPI_TRACE_WARN)
-  {
-    oai_level = LOG_WARNING;
-  }
-  else if (nfapi_level==NFAPI_TRACE_NOTE)
-  {
-    oai_level = LOG_INFO;
-  }
-  else if (nfapi_level==NFAPI_TRACE_INFO)
-  {
-    oai_level = LOG_INFO;
-  }
-  else
-  {
-    oai_level = LOG_INFO;
-  }
 
   va_start(args, message);
-  nfapi_log("FILE>", "FUNC", 999, PHY, oai_level, message, args);
+  nfapi_log("FILE>", "FUNC", 999, PHY, nfapitooai_level(nfapi_level), message, args);
   va_end(args);
 }
 

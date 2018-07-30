@@ -151,7 +151,6 @@ int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP,
   unsigned int e2  = 0;
   unsigned int li2 = 0;
   *num_li_pP = 0;
-  int pdu_size = *data_size_pP;
 
   while ((continue_loop)) {
     //msg("[RLC_UM] e_liP->b1 = %02X\n", e_liP->b1);
@@ -170,7 +169,7 @@ int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP,
       *num_li_pP = *num_li_pP +1;
 
       if (!(*data_size_pP >= 0)) LOG_E(RLC, "Invalid data_size=%d! (pdu_size=%d loop=%d e1=%d e2=%d li2=%d e_liP=%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x)\n",
-          *data_size_pP, pdu_size, continue_loop, e1, e2, li2,
+          *data_size_pP, *data_size_pP, continue_loop, e1, e2, li2,
           (e_liP-(continue_loop-1)+0)->b1,
           (e_liP-(continue_loop-1)+0)->b2,
           (e_liP-(continue_loop-1)+0)->b3,
@@ -190,7 +189,7 @@ int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP,
       }
     } else {
       if (!(*data_size_pP >= 0)) LOG_E(RLC, "Invalid data_size=%d! (pdu_size=%d loop=%d e1=%d li1=%d e_liP=%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x)\n",
-          *data_size_pP, pdu_size, continue_loop, e1, li1,
+          *data_size_pP, *data_size_pP, continue_loop, e1, li1,
           (e_liP-(continue_loop-1)+0)->b1,
           (e_liP-(continue_loop-1)+0)->b2,
           (e_liP-(continue_loop-1)+0)->b3,

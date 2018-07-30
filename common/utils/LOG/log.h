@@ -131,8 +131,11 @@ extern "C" {
  *            it allows to dynamically activate or not blocks of code 
  *  @brief 
  * @{*/
-#define DEBUG_PRACH    (1<<0)
-#define DEBUG_RU       (1<<1)
+#define DEBUG_PRACH        (1<<0)
+#define DEBUG_RU           (1<<1)
+#define DEBUG_UE_PHYPROC   (1<<2)
+#define DEBUG_CTRLSOCKET   (1<<10)
+#define UE_TIMING          (1<<20)
 
 #define SET_LOG_DEBUG(O)   g_log->debug_mask = (g_log->debug_mask | O)
 #define CLEAR_LOG_DEBUG(O) g_log->debug_mask = (g_log->debug_mask & (~O))
@@ -340,6 +343,8 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_M_BEGIN(D) if (g_log->matlab_mask & D) {
 #    define LOG_M_END   }
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)/* */
+     /* define variable only used in LOG macro's */
+#    define LOG_VAR(A,B) A B
 #  else /* T_TRACER: remove all debugging and tracing messages, except errors */
 #    define LOG_I(c, x...) /* */
 #    define LOG_W(c, x...) /* */
@@ -353,10 +358,15 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_M_BEGIN(D) if (0) {
 #    define LOG_M_END   }
 #    define LOG_M(file, vector, data, len, dec, format) 
-
+#    define LOG_VAR(A,B)
 #  endif /* T_TRACER */
+/* avoid warnings for variables only used in LOG macro's but set outside debug section */
+#define LOG_USEDINLOG_VAR(A,B) __attribute__((unused)) A B 
 
+/* unfiltered macros, usefull for simulators or messages at init time, before log is configured */
+#define LOG_UM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
 
+#define LOG_UI(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)
 /* @}*/
 
 

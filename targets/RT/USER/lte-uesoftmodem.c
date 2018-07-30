@@ -327,6 +327,7 @@ void exit_fun(const char* s)
 {
   int CC_id;
 
+  logClean();
   if (s != NULL) {
     printf("%s %s() Exiting OAI softmodem: %s\n",__FILE__, __FUNCTION__, s);
   }
@@ -830,17 +831,17 @@ int main( int argc, char **argv )
   set_taus_seed (0);
 
 
-    set_log(HW,      LOG_DEBUG,   1);
-    set_log(PHY,     LOG_INFO,    1);
-    set_log(MAC,     LOG_INFO,    1);
-    set_log(RLC,     LOG_INFO,    1);
-    set_log(PDCP,    LOG_INFO,    1);
-    set_log(OTG,     LOG_INFO,    1);
-    set_log(RRC,     LOG_INFO,    1);
+    set_log(HW,      OAILOG_DEBUG,   1);
+    set_log(PHY,     OAILOG_INFO,    1);
+    set_log(MAC,     OAILOG_INFO,    1);
+    set_log(RLC,     OAILOG_INFO,    1);
+    set_log(PDCP,    OAILOG_INFO,    1);
+    set_log(OTG,     OAILOG_INFO,    1);
+    set_log(RRC,     OAILOG_INFO,    1);
 #if defined(ENABLE_ITTI)
-    set_comp_log(SIM,     LOG_INFO,   1);
+    set_log(SIM,     OAILOG_INFO,   1);
 # if defined(ENABLE_USE_MME)
-    set_log(NAS,     LOG_INFO,    1);
+    set_log(NAS,     OAILOG_INFO,    1);
 # endif
 #endif
 

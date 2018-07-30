@@ -3399,7 +3399,7 @@ unsigned char ul_ACK_subframe2M(TDD_Config_t *tdd_Config,unsigned char subframe)
       } else if (subframe == 8) { // ACK subframe 4
         return(1);  // To be updated
       } else {
-	AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+	AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
 		    subframe,tdd_Config->subframeAssignment);
 
       }
@@ -3413,7 +3413,7 @@ unsigned char ul_ACK_subframe2M(TDD_Config_t *tdd_Config,unsigned char subframe)
       } else if (subframe == 4) { // ACK subframes 9 and 0
         return(2);
       } else {
-	AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+	AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
 		    subframe,tdd_Config->subframeAssignment);
       }
 
@@ -3425,7 +3425,7 @@ unsigned char ul_ACK_subframe2M(TDD_Config_t *tdd_Config,unsigned char subframe)
           } else if (subframe == 3) { // ACK subframes 6,7,8 and 9
             return(4);
           } else {
-	    AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+	    AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
 			subframe,tdd_Config->subframeAssignment);
           }
 
@@ -3435,7 +3435,7 @@ unsigned char ul_ACK_subframe2M(TDD_Config_t *tdd_Config,unsigned char subframe)
               if (subframe == 2) {  // ACK subframes 0,3,4,5,6,7,8 and 9
                 return(8); // should be 3
               } else {
-		AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+		AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
 			    subframe,tdd_Config->subframeAssignment);
               }
 
@@ -3464,7 +3464,7 @@ unsigned char ul_ACK_subframe2dl_subframe(TDD_Config_t *tdd_Config,unsigned char
       } else if (subframe == 4) { // ACK subframes 9 and 0
         return((9+ACK_index)%10);
       } else {
-        AssertFatal(1==0,"illegal subframe %d for tdd_config->subframeAssignment %d\n",
+        AssertFatal(1==0,"illegal subframe %d for tdd_config->subframeAssignment %ld\n",
               subframe,tdd_Config->subframeAssignment);
       }
 
@@ -3481,7 +3481,7 @@ unsigned char ul_ACK_subframe2dl_subframe(TDD_Config_t *tdd_Config,unsigned char
           } else if (subframe == 3) { // ACK subframes 6, 7 8 and 9
             return(6+ACK_index);  // To be updated
           } else {
-            AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+            AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
                   subframe,tdd_Config->subframeAssignment);
           }
 
@@ -3497,7 +3497,7 @@ unsigned char ul_ACK_subframe2dl_subframe(TDD_Config_t *tdd_Config,unsigned char
       } else if (subframe == 8) { // ACK subframe 4
         return(4);  // To be updated
       } else {
-        AssertFatal(1==0,"illegal subframe %d for tdd_config %d\n",
+        AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
               subframe,tdd_Config->subframeAssignment);
       }
 

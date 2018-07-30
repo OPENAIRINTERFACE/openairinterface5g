@@ -409,7 +409,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
   int               num_enbs                      = 0;
  
-  int               num_component_carriers        = 0;
   int               j,k                           = 0;
   int32_t     enb_id                        = 0;
   int               nb_cc                         = 0;
@@ -703,17 +702,10 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	  sprintf(enbpath,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k),
 	  config_getlist( &CCsParamList,NULL,0,enbpath); 
 	  
-	  LOG_I(RRC,"num component carriers %d \n", num_component_carriers);  
+	  LOG_I(RRC,"num component carriers %d \n",CCsParamList.numelt);  
 	  if ( CCsParamList.numelt> 0) {
 	    char ccspath[MAX_OPTNAME_SIZE*2 + 16];
 	    
-
-	    
-
-	    
-	    //enb_properties_loc.properties[enb_properties_loc_index]->nb_cc = num_component_carriers;
-
-
 	    for (j = 0; j < CCsParamList.numelt ;j++) { 
 
 	      sprintf(ccspath,"%s.%s.[%i]",enbpath,ENB_CONFIG_STRING_COMPONENT_CARRIERS,j);

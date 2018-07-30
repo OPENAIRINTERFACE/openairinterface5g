@@ -208,19 +208,21 @@ LOG_M_BEGIN(PRACH)
         int32_t en0=signal_energy((int32_t*)prach[aa],fp->samples_per_tti);
         int8_t dbEn0 = dB_fixed(en0);
         int8_t rach_dBm = dbEn0 - ru->rx_total_gain_dB;
+        char buffer[80];
         if (dbEn0>32 && prach[0]!= NULL)
         {
           static int counter=0;
-
-          char buffer[80];
-          //counter++;
           sprintf(buffer, "%s%d", "/tmp/prach_rx",counter);
           LOG_M(buffer,"prach_rx",prach[0],fp->samples_per_tti,1,13);
         }
       if (dB_fixed(en0)>32)
       {
+        sprintf(buffer, "rach_dBm:%d",rach_dBm);
         if (prach[0]!= NULL) LOG_M("prach_rx","prach_rx",prach[0],fp->samples_per_tti,1,1);
-        LOG_I(PHY,"RU %d, br_flag %d ce_level %d frame %d subframe %d per_tti:%d prach:%p (energy %d) TA:%d rach_dBm:%d rxdata:%p index:%d\n",ru->idx,br_flag,ce_level,ru->proc.frame_prach,subframe,fp->samples_per_tti,prach[aa],dbEn0,ru->N_TA_offset,rach_dBm,ru->common.rxdata[aa], (subframe*fp->samples_per_tti)-ru->N_TA_offset);
+        LOG_I(PHY,"RU %d, br_flag %d ce_level %d frame %d subframe %d per_tti:%d prach:%p (energy %d) TA:%d %s rxdata:%p index:%d\n",
+              ru->idx,br_flag,ce_level,ru->proc.frame_prach,subframe,fp->samples_per_tti,
+              prach[aa],dbEn0,ru->N_TA_offset,buffer,ru->common.rxdata[aa], 
+              (subframe*fp->samples_per_tti)-ru->N_TA_offset);
         }
 LOG_M_END
     }
