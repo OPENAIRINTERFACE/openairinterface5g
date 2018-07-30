@@ -165,7 +165,7 @@ class SSHConnection():
 			self.command('git checkout -f ' + self.eNBCommitID, '\$', 5)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
-		if self.eNBBranch != 'develop':
+		if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
 			self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
