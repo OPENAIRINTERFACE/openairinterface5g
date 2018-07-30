@@ -123,10 +123,14 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   nr_polar_init(&fp->pbch_polar_params, 1);
   //PDCCH DMRS init
   pdcch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t**));
+  AssertFatal(pdcch_dmrs!=NULL, "NR init: pdcch_dmrs malloc failed\n");
   for (int slot=0; slot<fp->slots_per_frame; slot++) {
-    pdcch_dmrs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot);
-    for (int symb=0; symb<fp->symbols_per_slot; symb++)
-      pdcch_dmrs[slot][symb] = (uint32_t *)malloc16(NR_MAX_PDCCH_DMRS_LENGTH_DWORD);
+    pdcch_dmrs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t*));
+    AssertFatal(pdcch_dmrs[slot]!=NULL, "NR init: pdcch_dmrs for slot %d - malloc failed\n", slot);
+    for (int symb=0; symb<fp->symbols_per_slot; symb++){
+      pdcch_dmrs[slot][symb] = (uint32_t *)malloc16(NR_MAX_PDCCH_DMRS_LENGTH_DWORD*sizeof(uint32_t));
+      AssertFatal(pdcch_dmrs[slot][symb]!=NULL, "NR init: pdcch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
+    }
   }
 
   nr_init_pdcch_dmrs(gNB, cfg->sch_config.physical_cell_id.value);
