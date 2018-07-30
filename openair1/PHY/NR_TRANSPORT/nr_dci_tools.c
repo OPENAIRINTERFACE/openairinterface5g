@@ -30,29 +30,25 @@
  * \warning
  */
 
-#include "nfapi_nr_interface.h"
+#include "nr_dci.h"
 
 void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 						   int frame,
 						   int subframe,
 						   gNB_rxtx_proc_t *proc,
-						   NR_DCI_ALLOC_t *dci_alloc,
-						   nfapi_nr_dl_config_dci_pdu_rel15_t *pdu)
+						   NR_gNB_DCI_ALLOC_t *dci_alloc,
+						   nfapi_nr_dl_config_request_pdu_t *pdu)
 {
 	NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-	uint8_t *dci_pdu = &dci_alloc->dci_pdu[0];
-	nfapi_nr_dl_config_dci_pdu_rel15_t *rel15 = &pdu->dci_dl_pdu_rel15;
+	uint32_t *dci_pdu = &dci_alloc->dci_pdu[0];
+	nfapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &pdu->dci_dl_pdu.dci_dl_pdu_rel15;
 	nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
 
 	dci_alloc->L        = rel15->aggregation_level;
-	dci_alloc->firstCCE = rel15->cce_idx;
-	dci_alloc->rnti     = rel15->rnti;
-	dci_alloc->ra_flag  = 0;
-	//dci_alloc->search_space = ???
 
 	if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0) {
-		dci_alloc->format = format1_0;
-		dci_alloc->dci_length = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,&cfg);
+		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_1_0;
+		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
 		if (rel15->rnti_type == NFAPI_NR_RNTI_C
 		 || rel15->rnti_type == NFAPI_NR_RNTI_CS
 		 || rel15->rnti_type == NFAPI_NR_RNTI_new) {
@@ -62,7 +58,6 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 		} else if (rel15->rnti_type == NFAPI_NR_RNTI_SI) {
 
 		} else if (rel15->rnti_type == NFAPI_NR_RNTI_RA) {
-			dci_alloc->ra_flag = 1;
 
 		} else if (rel15->rnti_type == NFAPI_NR_RNTI_TC) {
 
@@ -70,26 +65,26 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 			AssertFatal(1==0, "[nr_fill_dci_and_dlsch] Incorrect DCI Format(%d) and RNTI Type(%d) combination",rel15->dci_format, rel15->rnti_type);
 		}
 	} else if (rel15->dci_format == NFAPI_NR_UL_DCI_FORMAT_0_0) {
-		dci_alloc->format = format0_0;
-		dci_alloc->dci_length = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_ul ,&cfg);
+		dci_alloc->format = NFAPI_NR_UL_DCI_FORMAT_0_0;
+		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_ul ,cfg);
 	} else if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_1_1) {
-		dci_alloc->format = format1_1;
-		dci_alloc->dci_length = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,&cfg);
+		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_1_1;
+		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
 	} else if (rel15->dci_format == NFAPI_NR_UL_DCI_FORMAT_0_1) {
-		dci_alloc->format = format0_1;
-		dci_alloc->dci_length = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_ul ,&cfg);
+		dci_alloc->format = NFAPI_NR_UL_DCI_FORMAT_0_1;
+		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_ul ,cfg);
 	} else if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_2_0) {
-		dci_alloc->format = format2_0;
-		dci_alloc->dci_length = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,&cfg);
+		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_2_0;
+		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
 	} else if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_2_1) {
-		dci_alloc->format = format2_1;
-		dci_alloc->dci_length = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,&cfg);
+		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_2_1;
+		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
 	} else if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_2_2) {
-		dci_alloc->format = format2_2;
-		dci_alloc->dci_length = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,&cfg);
+		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_2_2;
+		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
 	} else if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_2_3) {
-		dci_alloc->format = format2_3;
-		dci_alloc->dci_length = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,&cfg);
+		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_2_3;
+		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
 	} else {
 		AssertFatal(1==0, "[nr_fill_dci_and_dlsch] Incorrect DCI Format(%d)",rel15->dci_format);
 	}

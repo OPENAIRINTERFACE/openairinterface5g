@@ -17,7 +17,7 @@ typedef struct {
 	uint32_t value;
 } nfapi_uint32_tlv_t;
 
-typedef struct {
+/*typedef struct {
 	nfapi_tl_t tl;
 	int64_t value;
 } nfapi_int64_tlv_t;
@@ -25,7 +25,7 @@ typedef struct {
 typedef struct {
 	nfapi_tl_t tl;
 	uint64_t value;
-} nfapi_uint64_tlv_t;
+} nfapi_uint64_tlv_t;*/
 
 // nFAPI enums
 typedef enum {
@@ -397,9 +397,6 @@ uint8_t *block_numbers;
 } nfapi_nr_dl_config_dci_dl_pdu_rel15_t;
 //#define NFAPI_NR_DL_CONFIG_REQUEST_DCI_DL_PDU_REL15_TAG 0x????
 
-typedef struct {
-	nfapi_nr_dl_config_dci_pdu_rel15_t dci_dl_pdu_rel15;
-} nfapi_dl_config_dci_dl_pdu;
 
 typedef struct{
   uint8_t  coreset_id;
