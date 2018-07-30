@@ -223,7 +223,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   nfapi_ul_config_request_body_t *ul_req       = &mac->UL_req[CC_id].ul_config_request_body;
 
 
-  //mac->UL_req[CC_id].sfn_sf   = (sched_frame<<4) + sched_subframe;
+  mac->UL_req[CC_id].sfn_sf   = (sched_frame<<4) + sched_subframe;
   hi_dci0_req->sfn_sf = (frameP << 4) + subframeP;
   
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -302,7 +302,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index               = UE_template->DAI_ul[sched_subframe];
           hi_dci0_pdu->dci_pdu.dci_pdu_rel8.harq_pid                          = harq_pid;
 
-	    
+
 	  hi_dci0_req_body->number_of_dci++;
 	    
 	  ul_req_index = 0;
