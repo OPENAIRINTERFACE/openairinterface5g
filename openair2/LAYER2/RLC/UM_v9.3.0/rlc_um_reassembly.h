@@ -35,21 +35,6 @@
 #    ifndef __RLC_UM_REASSEMBLY_PROTO_EXTERN_H__
 #        define __RLC_UM_REASSEMBLY_PROTO_EXTERN_H__
 //-----------------------------------------------------------------------------
-#        ifdef RLC_UM_REASSEMBLY_C
-#            define private_rlc_um_reassembly(x)    x
-#            define protected_rlc_um_reassembly(x)  x
-#            define public_rlc_um_reassembly(x)     x
-#        else
-#            ifdef RLC_UM_MODULE
-#                define private_rlc_um_reassembly(x)
-#                define protected_rlc_um_reassembly(x)  extern x
-#                define public_rlc_um_reassembly(x)     extern x
-#            else
-#                define private_rlc_um_reassembly(x)
-#                define protected_rlc_um_reassembly(x)
-#                define public_rlc_um_reassembly(x)     extern x
-#            endif
-#        endif
 #        include "rlc_um_entity.h"
 //-----------------------------------------------------------------------------
 /*! \fn void rlc_um_clear_rx_sdu (const protocol_ctxt_t* const ctxtP, rlc_um_entity_t *rlcP)
@@ -57,7 +42,7 @@
 * \param[in]  ctxtP       Running context.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
 */
-protected_rlc_um_reassembly(void rlc_um_clear_rx_sdu (const protocol_ctxt_t* const ctxtP, rlc_um_entity_t *rlcP));
+void rlc_um_clear_rx_sdu (const protocol_ctxt_t* const ctxtP, rlc_um_entity_t *rlcP);
 
 /*! \fn void rlc_um_reassembly (uint8_t * srcP, int32_t lengthP, rlc_um_entity_t *rlcP, frame_t frame)
 * \brief    Reassembly lengthP bytes to the end of the SDU in construction.
@@ -66,13 +51,13 @@ protected_rlc_um_reassembly(void rlc_um_clear_rx_sdu (const protocol_ctxt_t* con
 * \param[in]  srcP        Pointer on data to be reassemblied.
 * \param[in]  lengthP     Length to reassembly.
 */
-protected_rlc_um_reassembly(void     rlc_um_reassembly (const protocol_ctxt_t* const ctxtP, rlc_um_entity_t *rlcP, uint8_t * srcP, int32_t lengthP));
+void     rlc_um_reassembly (const protocol_ctxt_t* const ctxtP, rlc_um_entity_t *rlcP, uint8_t * srcP, int32_t lengthP);
 
 /*! \fn void rlc_um_send_sdu (const protocol_ctxt_t* const ctxtP, rlc_um_entity_t *rlcP)
 * \brief    Send SDU if any reassemblied to upper layer.
 * \param[in]  ctxtP       Running context.
 * \param[in]  rlcP        RLC UM protocol instance pointer.
 */
-protected_rlc_um_reassembly(void     rlc_um_send_sdu (const protocol_ctxt_t* const ctxtP, rlc_um_entity_t *rlcP));
+void     rlc_um_send_sdu (const protocol_ctxt_t* const ctxtP, rlc_um_entity_t *rlcP);
 /** @} */
 #    endif

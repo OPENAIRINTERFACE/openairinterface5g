@@ -34,7 +34,7 @@
 #include "LAYER2/MAC/vars.h"
 #include "UTIL/LOG/log_if.h"
 #include "UTIL/LOG/log_extern.h"
-#include "RRC/LITE/vars.h"
+#include "RRC/LTE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/OCG/OCG.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
@@ -148,7 +148,7 @@ void pdcp_rlc_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_dat
           data_indP->no_tb  += 1;
         } else {
           printf("Out of memory error\n");
-          exit(-1);
+//          exit(-1);
         }
       } else {
         printf("[RLC-LOOP] DROPPING 1 TB\n");

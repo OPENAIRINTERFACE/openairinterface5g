@@ -41,10 +41,6 @@
 
 #ifndef CHECK_PROTOTYPE_ONLY
 
-const char * const messages_definition_xml = {
-#include "messages_xml.h"
-};
-
 /* Map task id to printable name. */
 const task_info_t tasks_info[] = {
   {0, TASK_UNKNOWN, 0, 0, "TASK_UNKNOWN"},
@@ -71,8 +67,7 @@ const message_info_t messages_info[] = {
  * \param messages_info Pointer on messages information as created by this include file
  **/
 int itti_init(task_id_t task_max, thread_id_t thread_max, MessagesIds messages_id_max, const task_info_t *tasks_info,
-              const message_info_t *messages_info, const char * const messages_definition_xml,
-              const char * const dump_file_name);
+              const message_info_t *messages_info);
 
 #endif /* INTERTASK_INTERFACE_INIT_H_ */
 /* @} */

@@ -44,7 +44,7 @@
 #include "SystemInformationBlockType2.h"
 #include "rrc_messages_types.h"
 #else
-#include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
+#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
 #endif
 #include "intertask_interface_types.h"
 #include "RRC/LTE/rrc_defs.h"

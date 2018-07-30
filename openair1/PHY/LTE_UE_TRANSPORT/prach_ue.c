@@ -41,6 +41,8 @@
 
 #include "../LTE_TRANSPORT/prach_extern.h"
 
+//#define PRACH_DEBUG 1
+
 int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf )
 {
 
@@ -98,7 +100,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
 #else //normal case (simulation)
   prach_start = subframe*ue->frame_parms.samples_per_tti-ue->N_TA_offset;
-  LOG_D(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
+  LOG_I(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
     prach_start,
     ue->rx_offset,
     ue->hw_timing_advance,
@@ -523,9 +525,9 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
   
 #if defined(PRACH_WRITE_OUTPUT_DEBUG)
-  write_output("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);
-  write_output("prach_tx0.m","prachtx0",prach+(Ncp<<1),prach_len-Ncp,1,1);
-  write_output("txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][0]),2*ue->frame_parms.samples_per_tti,1,1);
+  LOG_M("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);
+  LOG_M("prach_tx0.m","prachtx0",prach+(Ncp<<1),prach_len-Ncp,1,1);
+  LOG_M("txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][0]),2*ue->frame_parms.samples_per_tti,1,1);
   exit(-1);
 #endif
 

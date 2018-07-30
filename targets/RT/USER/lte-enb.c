@@ -216,7 +216,9 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
     wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);
 #endif
   }
-//LOG_I(PHY,"eNB_uespec_RX proc RX %d.%d TX %d.%d \n", proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);/////////////*********added
+
+  release_UE_in_freeList(eNB->Mod_id);
+
   // UE-specific RX processing for subframe n
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     phy_procedures_eNB_uespec_RX(eNB, proc);
@@ -237,31 +239,35 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   eNB->UL_INFO.subframe  = proc->subframe_rx;
   eNB->UL_INFO.module_id = eNB->Mod_id;
   eNB->UL_INFO.CC_id     = eNB->CC_id;
-//LOG_I(PHY,"UL_INFO %d.%d \n", eNB->UL_INFO.frame, eNB->UL_INFO.subframe);/////////////*********added
 
   eNB->if_inst->UL_indication(&eNB->UL_INFO);
 
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-  
+  /* this conflict resolution may be totally wrong, to be tested */
+  /* CONFLICT RESOLUTION: BEGIN */
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 0 );
   if(oai_exit) return(-1);
   if(eNB->single_thread_flag || get_nprocs() <= 4){
+#ifndef PHY_TX_THREAD
     phy_procedures_eNB_TX(eNB, proc, 1);
+#endif
   }
+  /* CONFLICT RESOLUTION: what about this release_thread call, has it to be done? if yes, where? */
+  //if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) return(-1);
+  /* CONFLICT RESOLUTION: END */
 
   stop_meas( &softmodem_stats_rxtx_sf );
 
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);
 
-#if 0
   LOG_D(PHY, "rxtx:%lld nfapi:%lld phy:%lld tx:%lld rx:%lld prach:%lld ofdm:%lld ",
       softmodem_stats_rxtx_sf.diff_now, nfapi_meas.diff_now,
       TICK_TO_US(eNB->phy_proc),
       TICK_TO_US(eNB->phy_proc_tx),
       TICK_TO_US(eNB->phy_proc_rx),
       TICK_TO_US(eNB->rx_prach),
-      TICK_TO_US(eNB->ofdm_mod_stats),
-      softmodem_stats_rxtx_sf.diff_now, nfapi_meas.diff_now);
+      TICK_TO_US(eNB->ofdm_mod_stats)
+      );
   LOG_D(PHY,
     "dlsch[enc:%lld mod:%lld scr:%lld rm:%lld t:%lld i:%lld] rx_dft:%lld ",
       TICK_TO_US(eNB->dlsch_encoding_stats),
@@ -293,7 +299,6 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
       TICK_TO_US(eNB->ulsch_tc_intl1_stats),
       TICK_TO_US(eNB->ulsch_tc_intl2_stats)
       );
-#endif
   
   return(0);
 }
@@ -417,11 +422,13 @@ static void* eNB_thread_rxtx( void* param ) {
       exit_fun( "ERROR pthread_cond_signal" );
     }
     pthread_mutex_unlock( &proc->mutex_rxtx );
-    if(get_nprocs() >= 8)      wakeup_tx(eNB,eNB->proc.ru_proc);
-    else if(get_nprocs() > 4)
-    {  
-      phy_procedures_eNB_TX(eNB, proc, 1);
-      wakeup_txfh(proc,eNB->proc.ru_proc);
+    if (nfapi_mode!=2){
+    	if(get_nprocs() >= 8)      wakeup_tx(eNB,eNB->proc.ru_proc);
+    	else
+    	{
+    		phy_procedures_eNB_TX(eNB, proc, 1);
+    		wakeup_txfh(proc,eNB->proc.ru_proc);
+    	}
     }
 
   } // while !oai_exit
@@ -433,30 +440,6 @@ static void* eNB_thread_rxtx( void* param ) {
   eNB_thread_rxtx_status = 0;
   return &eNB_thread_rxtx_status;
 }
-
-
-#if 0 //defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-// Wait for eNB application initialization to be complete (eNB registration to MME)
-static void wait_system_ready (char *message, volatile int *start_flag) {
-  
-  static char *indicator[] = {".    ", "..   ", "...  ", ".... ", ".....",
-			      " ....", "  ...", "   ..", "    .", "     "};
-  int i = 0;
-  
-  while ((!oai_exit) && (*start_flag == 0)) {
-    LOG_N(EMU, message, indicator[i]);
-    fflush(stdout);
-    i = (i + 1) % (sizeof(indicator) / sizeof(indicator[0]));
-    usleep(200000);
-  }
-  
-  LOG_D(EMU,"\n");
-}
-#endif
-
-
-
-
 
 void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t *ru)
 {
@@ -778,6 +761,7 @@ void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 }
 #endif
 
+
 /*!
  * \brief The prach receive thread of eNB.
  * \param param is a \ref eNB_proc_t structure which contains the info what to process.
@@ -1075,7 +1059,7 @@ void kill_eNB_proc(int inst) {
     pthread_join( proc->pthread_prach_br, (void**)&status );    
     pthread_mutex_destroy( &proc->mutex_prach_br );
     pthread_cond_destroy( &proc->cond_prach_br );
-#endif         
+#endif
     LOG_I(PHY, "Destroying UL_INFO mutex\n");
     pthread_mutex_destroy(&eNB->UL_INFO_mutex);
     for (i=0;i<2;i++) {
@@ -1140,7 +1124,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
   LOG_I(PHY, "Initialise transport\n");
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
     for (j=0; j<2; j++) {
       eNB->dlsch[i][j] = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL,0,fp);
       if (!eNB->dlsch[i][j]) {
@@ -1152,7 +1136,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
       }
     }
     
-    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+    LOG_D(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
     eNB->ulsch[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
     
     if (!eNB->ulsch[1+i]) {

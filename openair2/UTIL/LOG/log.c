@@ -49,6 +49,26 @@
 // main log variables
 
 
+typedef struct {
+	char* buf_p;
+	int buf_index;
+  int enable_flag;
+} log_mem_cnt_t;
+
+log_mem_cnt_t log_mem_d[2];
+int log_mem_flag=0;
+int log_mem_multi=1;
+volatile int log_mem_side=0;
+pthread_mutex_t log_mem_lock;
+pthread_cond_t log_mem_notify;
+pthread_t log_mem_thread;
+int log_mem_file_cnt=0;
+volatile int log_mem_write_flag=0;
+volatile int log_mem_write_side=0;
+
+char __log_mem_filename[1024]={0};
+char * log_mem_filename = &__log_mem_filename[0];
+
 mapping log_level_names[] = {
   {"emerg", LOG_EMERG},
   {"alert", LOG_ALERT},
@@ -60,6 +80,7 @@ mapping log_level_names[] = {
   {"debug", LOG_DEBUG},
   {"file", LOG_FILE},
   {"trace", LOG_TRACE},
+  {"matlab", LOG_MATLAB},
   {NULL, -1}
 };
 mapping log_verbosity_names[] = {
@@ -93,25 +114,181 @@ static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG
 static log_instance_type_t log_instance_type;
 #endif
 
+int write_file_matlab(const char *fname,const char *vname,void *data,int length,int dec,char format)
+{
+
+  FILE *fp=NULL;
+  int i;
+
+
+  //printf("Writing %d elements of type %d to %s\n",length,format,fname);
+
+
+  if (format == 10 || format ==11 || format == 12 || format == 13 || format == 14) {
+    fp = fopen(fname,"a+");
+  } else if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14) {
+    fp = fopen(fname,"w+");
+  }
+
+
+
+  if (fp== NULL) {
+    printf("[OPENAIR][FILE OUTPUT] Cannot open file %s\n",fname);
+    return(-1);
+  }
+
+  if (format != 10 && format !=11  && format != 12 && format != 13 && format != 14)
+    fprintf(fp,"%s = [",vname);
+
+
+  switch (format) {
+  case 0:   // real 16-bit
+
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%d\n",((short *)data)[i]);
+    }
+
+    break;
+
+  case 1:  // complex 16-bit
+  case 13:
+  case 14:
+  case 15:
+
+    for (i=0; i<length<<1; i+=(2*dec)) {
+      fprintf(fp,"%d + j*(%d)\n",((short *)data)[i],((short *)data)[i+1]);
+
+    }
+
+
+    break;
+
+  case 2:  // real 32-bit
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%d\n",((int *)data)[i]);
+    }
+
+    break;
+
+  case 3: // complex 32-bit
+    for (i=0; i<length<<1; i+=(2*dec)) {
+      fprintf(fp,"%d + j*(%d)\n",((int *)data)[i],((int *)data)[i+1]);
+    }
+
+    break;
+
+  case 4: // real 8-bit
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%d\n",((char *)data)[i]);
+    }
+
+    break;
+
+  case 5: // complex 8-bit
+    for (i=0; i<length<<1; i+=(2*dec)) {
+      fprintf(fp,"%d + j*(%d)\n",((char *)data)[i],((char *)data)[i+1]);
+    }
+
+    break;
+
+  case 6:  // real 64-bit
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%lld\n",((long long*)data)[i]);
+    }
+
+    break;
+
+  case 7: // real double
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%g\n",((double *)data)[i]);
+    }
+
+    break;
+
+  case 8: // complex double
+    for (i=0; i<length<<1; i+=2*dec) {
+      fprintf(fp,"%g + j*(%g)\n",((double *)data)[i], ((double *)data)[i+1]);
+    }
+
+    break;
+
+  case 9: // real unsigned 8-bit
+    for (i=0; i<length; i+=dec) {
+      fprintf(fp,"%d\n",((unsigned char *)data)[i]);
+    }
+
+    break;
+
+
+  case 10 : // case eren 16 bit complex :
+
+    for (i=0; i<length<<1; i+=(2*dec)) {
+
+      if((i < 2*(length-1)) && (i > 0))
+        fprintf(fp,"%d + j*(%d),",((short *)data)[i],((short *)data)[i+1]);
+      else if (i == 2*(length-1))
+        fprintf(fp,"%d + j*(%d);",((short *)data)[i],((short *)data)[i+1]);
+      else if (i == 0)
+        fprintf(fp,"\n%d + j*(%d),",((short *)data)[i],((short *)data)[i+1]);
+
+
+
+    }
+
+    break;
+
+  case 11 : //case eren 16 bit real for channel magnitudes:
+    for (i=0; i<length; i+=dec) {
+
+      if((i <(length-1))&& (i > 0))
+        fprintf(fp,"%d,",((short *)data)[i]);
+      else if (i == (length-1))
+        fprintf(fp,"%d;",((short *)data)[i]);
+      else if (i == 0)
+        fprintf(fp,"\n%d,",((short *)data)[i]);
+    }
+
+    printf("\n erennnnnnnnnnnnnnn: length :%d",length);
+    break;
+
+  case 12 : // case eren for log2_maxh real unsigned 8 bit
+    fprintf(fp,"%d \n",((unsigned char *)&data)[0]);
+    break;
+
+  }
+
+  if (format != 10 && format !=11 && format !=12 && format != 13 && format != 15) {
+    fprintf(fp,"];\n");
+    fclose(fp);
+    return(0);
+  } else if (format == 10 || format ==11 || format == 12 || format == 13 || format == 15) {
+    fclose(fp);
+    return(0);
+  }
+
+  return 0;
+}
+
 /* get log parameters from configuration file */
 void  log_getconfig(log_t *g_log) {
   char *gloglevel = NULL;
   char *glogverbo = NULL;
   int level,verbosity;
   paramdef_t logparams_defaults[] = LOG_GLOBALPARAMS_DESC;
-  paramdef_t logparams_level[MAX_LOG_COMPONENTS];
-  paramdef_t logparams_verbosity[MAX_LOG_COMPONENTS];
-  paramdef_t logparams_logfile[MAX_LOG_COMPONENTS];
+  paramdef_t logparams_level[MAX_LOG_PREDEF_COMPONENTS];
+  paramdef_t logparams_verbosity[MAX_LOG_PREDEF_COMPONENTS];
+  paramdef_t logparams_logfile[MAX_LOG_PREDEF_COMPONENTS];
   
   int ret = config_get( logparams_defaults,sizeof(logparams_defaults)/sizeof(paramdef_t),CONFIG_STRING_LOG_PREFIX);
   if (ret <0) {
        fprintf(stderr,"[LOG] init aborted, configuration couldn't be performed");
        return;
   } 
-  memset(logparams_level,    0, sizeof(paramdef_t)*MAX_LOG_COMPONENTS);
-  memset(logparams_verbosity,0, sizeof(paramdef_t)*MAX_LOG_COMPONENTS);
-  memset(logparams_logfile,  0, sizeof(paramdef_t)*MAX_LOG_COMPONENTS);
-  for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
+
+  memset(logparams_level,    0, sizeof(paramdef_t)*MAX_LOG_PREDEF_COMPONENTS);
+  memset(logparams_verbosity,0, sizeof(paramdef_t)*MAX_LOG_PREDEF_COMPONENTS);
+  memset(logparams_logfile,  0, sizeof(paramdef_t)*MAX_LOG_PREDEF_COMPONENTS);
+  for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_PREDEF_COMPONENTS; i++) {
     if(g_log->log_component[i].name == NULL) {
        g_log->log_component[i].name = malloc(16);
        sprintf((char *)g_log->log_component[i].name,"comp%i?",i);
@@ -133,24 +310,63 @@ void  log_getconfig(log_t *g_log) {
 /* */
     logparams_level[i].defstrval     = gloglevel;
     logparams_verbosity[i].defstrval = glogverbo; 
-
+    logparams_logfile[i].defstrval   = malloc(strlen(g_log->log_component[i].name) + 16);
+    sprintf(logparams_logfile[i].defstrval,"/tmp/oai%s.log",g_log->log_component[i].name);
+    logparams_logfile[i].numelt      = 0;
+    logparams_verbosity[i].numelt    = 0;
+    logparams_level[i].numelt        = 0;
     logparams_level[i].type          = TYPE_STRING;
     logparams_verbosity[i].type      = TYPE_STRING;
     logparams_logfile[i].type        = TYPE_UINT;
 
     logparams_logfile[i].paramflags  = logparams_logfile[i].paramflags|PARAMFLAG_BOOL;
     }
-  config_get( logparams_level,    MAX_LOG_COMPONENTS,CONFIG_STRING_LOG_PREFIX); 
-  config_get( logparams_verbosity,MAX_LOG_COMPONENTS,CONFIG_STRING_LOG_PREFIX); 
-  config_get( logparams_logfile,  MAX_LOG_COMPONENTS,CONFIG_STRING_LOG_PREFIX); 
-  for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
+  config_get( logparams_level,    MAX_LOG_PREDEF_COMPONENTS,CONFIG_STRING_LOG_PREFIX); 
+  config_get( logparams_verbosity,MAX_LOG_PREDEF_COMPONENTS,CONFIG_STRING_LOG_PREFIX); 
+  config_get( logparams_logfile,  MAX_LOG_PREDEF_COMPONENTS,CONFIG_STRING_LOG_PREFIX); 
+  for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_PREDEF_COMPONENTS; i++) {
     verbosity = map_str_to_int(log_verbosity_names,*(logparams_verbosity[i].strptr));
     level     = map_str_to_int(log_level_names,    *(logparams_level[i].strptr));
     set_comp_log(i, level,verbosity,1);
-    set_component_filelog(*(logparams_logfile[i].uptr));
+    /* HOTFIX: the following statement crashes, it is thus commented
+     * TODO: proper fix
+     */
+    /*set_component_filelog(*(logparams_logfile[i].uptr));*/
+    if ( logparams_logfile[i].defstrval != NULL) {
+       free (logparams_logfile[i].defstrval);
+    }
     }
 }
 
+int register_log_component(char *name, char *fext, int compidx)
+{
+int computed_compidx=compidx;
+
+  if (strlen(fext) > 3) {
+      fext[3]=0;  /* limit log file extension to 3 chars */
+  }
+  if (compidx < 0) { /* this is not a pre-defined component */
+      for (int i = MAX_LOG_PREDEF_COMPONENTS; i< MAX_LOG_COMPONENTS; i++) {
+            if (g_log->log_component[i].name == NULL) {
+                computed_compidx=i;
+                break;
+            }
+      }
+  }
+  if (computed_compidx >= 0 && computed_compidx <MAX_LOG_COMPONENTS) {
+      g_log->log_component[computed_compidx].name = strdup(name);
+      g_log->log_component[computed_compidx].level = LOG_ALERT;
+      g_log->log_component[computed_compidx].flag =  LOG_MED;
+      g_log->log_component[computed_compidx].interval =  1;
+      g_log->log_component[computed_compidx].fd = 0;
+      g_log->log_component[computed_compidx].filelog = 0;
+      g_log->log_component[computed_compidx].filelog_name = malloc(strlen(name)+16);/* /tmp/<name>.%s rounded to ^2 */
+      sprintf(g_log->log_component[computed_compidx].filelog_name,"/tmp/%s.%s",name,fext);
+  } else {
+      fprintf(stderr,"{LOG} %s %d Couldn't register componemt %s\n",__FILE__,__LINE__,name);
+  }
+return computed_compidx;
+}
 
 int logInit (void)
 {
@@ -164,287 +380,54 @@ int logInit (void)
 
 
 #if ! defined(CN_BUILD)
-  g_log->log_component[PHY].name = "PHY";
-  g_log->log_component[PHY].level = LOG_EMERG;
-  g_log->log_component[PHY].flag =  LOG_MED;
-  g_log->log_component[PHY].interval =  1;
-  g_log->log_component[PHY].fd = 0;
-  g_log->log_component[PHY].filelog = 0;
-  g_log->log_component[PHY].filelog_name = "/tmp/phy.log";
 
-  g_log->log_component[MAC].name = "MAC";
-  g_log->log_component[MAC].level = LOG_EMERG;
-  g_log->log_component[MAC].flag =  LOG_MED;
-  g_log->log_component[MAC].interval =  1;
-  g_log->log_component[MAC].fd = 0;
-  g_log->log_component[MAC].filelog = 0;
-  g_log->log_component[MAC].filelog_name = "/tmp/mac.log";
+  register_log_component("PHY","log",PHY);
+  register_log_component("MAC","log",MAC);
+  register_log_component("OPT","log",OPT);
+  register_log_component("RLC","log",RLC);
+  register_log_component("PDCP","log",PDCP);
+  register_log_component("RRC","log",RRC);
+  register_log_component("SIM","log",SIM);
+  register_log_component("OMG","csv",OMG);
+  register_log_component("OTG","log",OTG);
+  register_log_component("OTG_LATENCY","dat",OTG_LATENCY);
+  register_log_component("OTG_LATENCY_BG","dat",OTG_LATENCY_BG);
+  register_log_component("OTG_GP","dat",OTG_GP);
+  register_log_component("OTG_GP_BG","dat",OTG_GP_BG);
+  register_log_component("OTG_JITTER","dat",OTG_JITTER);
+  register_log_component("OCG","",OCG);
+  register_log_component("PERF","",PERF);
+  register_log_component("OIP","",OIP); 
+  register_log_component("CLI","",CLI); 
+  register_log_component("MSC","log",MSC); 
+  register_log_component("OCM","log",OCM); 
+  register_log_component("HW","",HW); 
+  register_log_component("OSA","",OSA); 
+  register_log_component("eRAL","",RAL_ENB); 
+  register_log_component("mRAL","",RAL_UE); 
+  register_log_component("ENB_APP","log",ENB_APP); 
+  register_log_component("FLEXRAN_AGENT","log",FLEXRAN_AGENT); 
+  register_log_component("TMR","",TMR); 
+  register_log_component("USIM","txt",USIM);   
 
-  g_log->log_component[OPT].name = "OPT";
-  g_log->log_component[OPT].level = LOG_EMERG;
-  g_log->log_component[OPT].flag = LOG_MED;
-  g_log->log_component[OPT].interval =  1;
-  g_log->log_component[OPT].fd = 0;
-  g_log->log_component[OPT].filelog = 0;
-  g_log->log_component[OPT].filelog_name = "";
-
-  g_log->log_component[RLC].name = "RLC";
-  g_log->log_component[RLC].level = LOG_INFO;
-  g_log->log_component[RLC].flag = LOG_MED;
-  g_log->log_component[RLC].interval =  1;
-  g_log->log_component[RLC].fd = 0;
-  g_log->log_component[RLC].filelog = 0;
-  g_log->log_component[RLC].filelog_name = "/tmp/rlc.log";
-
-  g_log->log_component[PDCP].name = "PDCP";
-  g_log->log_component[PDCP].level = LOG_INFO;
-  g_log->log_component[PDCP].flag = LOG_MED;
-  g_log->log_component[PDCP].interval =  1;
-  g_log->log_component[PDCP].fd = 0;
-  g_log->log_component[PDCP].filelog = 0;
-  g_log->log_component[PDCP].filelog_name = "/tmp/pdcp.log";
-
-  g_log->log_component[RRC].name = "RRC";
-  g_log->log_component[RRC].level = LOG_TRACE;
-  g_log->log_component[RRC].flag = LOG_MED;
-  g_log->log_component[RRC].interval =  1;
-  g_log->log_component[RRC].fd = 0;
-  g_log->log_component[RRC].filelog = 0;
-  g_log->log_component[RRC].filelog_name = "/tmp/rrc.log";
-
-  g_log->log_component[EMU].name = "EMU";
-  g_log->log_component[EMU].level = LOG_EMERG;
-  g_log->log_component[EMU].flag =  LOG_MED;
-  g_log->log_component[EMU].interval =  1;
-  g_log->log_component[EMU].fd = 0;
-  g_log->log_component[EMU].filelog = 0;
-  g_log->log_component[EMU].filelog_name = "";
-
-  g_log->log_component[OMG].name = "OMG";
-  g_log->log_component[OMG].level = LOG_EMERG;
-  g_log->log_component[OMG].flag =  LOG_MED;
-  g_log->log_component[OMG].interval =  1;
-  g_log->log_component[OMG].fd = 0;
-  g_log->log_component[OMG].filelog = 0;
-  g_log->log_component[OMG].filelog_name = "/tmp/omg.csv";
-
-  g_log->log_component[OTG].name = "OTG";
-  g_log->log_component[OTG].level = LOG_EMERG;
-  g_log->log_component[OTG].flag =  LOG_MED;
-  g_log->log_component[OTG].interval =  1;
-  g_log->log_component[OTG].fd = 0;
-  g_log->log_component[OTG].filelog = 0;
-  g_log->log_component[OTG].filelog_name = "/tmp/otg.log";
-
-  g_log->log_component[OTG_LATENCY].name = "OTG_LATENCY";
-  g_log->log_component[OTG_LATENCY].level = LOG_EMERG;
-  g_log->log_component[OTG_LATENCY].flag =  LOG_MED;
-  g_log->log_component[OTG_LATENCY].interval =  1;
-  g_log->log_component[OTG_LATENCY].fd = 0;
-  g_log->log_component[OTG_LATENCY].filelog = 0;
-  g_log->log_component[OTG_LATENCY].filelog_name = "/tmp/otg_latency.dat";
-
-  g_log->log_component[OTG_LATENCY_BG].name = "OTG_LATENCY_BG";
-  g_log->log_component[OTG_LATENCY_BG].level = LOG_EMERG;
-  g_log->log_component[OTG_LATENCY_BG].flag =  LOG_MED;
-  g_log->log_component[OTG_LATENCY_BG].interval =  1;
-  g_log->log_component[OTG_LATENCY_BG].fd = 0;
-  g_log->log_component[OTG_LATENCY_BG].filelog = 0;
-  g_log->log_component[OTG_LATENCY_BG].filelog_name = "/tmp/otg_latency_bg.dat";
-
-  g_log->log_component[OTG_GP].name = "OTG_GP";
-  g_log->log_component[OTG_GP].level = LOG_EMERG;
-  g_log->log_component[OTG_GP].flag =  LOG_MED;
-  g_log->log_component[OTG_GP].interval =  1;
-  g_log->log_component[OTG_GP].fd = 0;
-  g_log->log_component[OTG_GP].filelog = 0;
-  g_log->log_component[OTG_GP].filelog_name = "/tmp/otg_goodput.dat";
-
-  g_log->log_component[OTG_GP_BG].name = "OTG_GP_BG";
-  g_log->log_component[OTG_GP_BG].level = LOG_EMERG;
-  g_log->log_component[OTG_GP_BG].flag =  LOG_MED;
-  g_log->log_component[OTG_GP_BG].interval =  1;
-  g_log->log_component[OTG_GP_BG].fd = 0;
-  g_log->log_component[OTG_GP_BG].filelog = 0;
-  g_log->log_component[OTG_GP_BG].filelog_name = "/tmp/otg_goodput_bg.dat";
-
-  g_log->log_component[OTG_JITTER].name = "OTG_JITTER";
-  g_log->log_component[OTG_JITTER].level = LOG_EMERG;
-  g_log->log_component[OTG_JITTER].flag =  LOG_MED;
-  g_log->log_component[OTG_JITTER].interval =  1;
-  g_log->log_component[OTG_JITTER].fd = 0;
-  g_log->log_component[OTG_JITTER].filelog = 0;
-  g_log->log_component[OTG_JITTER].filelog_name = "/tmp/otg_jitter.dat";
-
-  g_log->log_component[OCG].name = "OCG";
-  g_log->log_component[OCG].level = LOG_EMERG;
-  g_log->log_component[OCG].flag =  LOG_MED;
-  g_log->log_component[OCG].interval =  1;
-  g_log->log_component[OCG].fd = 0;
-  g_log->log_component[OCG].filelog = 0;
-  g_log->log_component[OCG].filelog_name = "";
-
-  g_log->log_component[PERF].name = "PERF";
-  g_log->log_component[PERF].level = LOG_EMERG;
-  g_log->log_component[PERF].flag =  LOG_MED;
-  g_log->log_component[PERF].interval =  1;
-  g_log->log_component[PERF].fd = 0;
-  g_log->log_component[PERF].filelog = 0;
-  g_log->log_component[PERF].filelog_name = "";
-
-  g_log->log_component[OIP].name = "OIP";
-  g_log->log_component[OIP].level = LOG_EMERG;
-  g_log->log_component[OIP].flag =  LOG_MED;
-  g_log->log_component[OIP].interval =  1;
-  g_log->log_component[OIP].fd = 0;
-  g_log->log_component[OIP].filelog = 0;
-  g_log->log_component[OIP].filelog_name = "";
-
-  g_log->log_component[CLI].name = "CLI";
-  g_log->log_component[CLI].level = LOG_EMERG;
-  g_log->log_component[CLI].flag =  LOG_MED;
-  g_log->log_component[CLI].interval =  1;
-  g_log->log_component[CLI].fd = 0;
-  g_log->log_component[CLI].filelog =  0;
-  g_log->log_component[CLI].filelog_name = "";
-
-  g_log->log_component[MSC].name = "MSC";
-  g_log->log_component[MSC].level = LOG_EMERG;
-  g_log->log_component[MSC].flag =  LOG_MED;
-  g_log->log_component[MSC].interval =  1;
-  g_log->log_component[MSC].fd = 0;
-  g_log->log_component[MSC].filelog =  0;
-  g_log->log_component[MSC].filelog_name = "/tmp/msc.log";
-
-  g_log->log_component[OCM].name = "OCM";
-  g_log->log_component[OCM].level = LOG_EMERG;
-  g_log->log_component[OCM].flag =  LOG_MED;
-  g_log->log_component[OCM].interval =  1;
-  g_log->log_component[OCM].fd = 0;
-  g_log->log_component[OCM].filelog =  0;
-  g_log->log_component[OCM].filelog_name = "/tmp/ocm.log";
-
-  g_log->log_component[HW].name = "HW";
-  g_log->log_component[HW].level = LOG_EMERG;
-  g_log->log_component[HW].flag = LOG_MED;
-  g_log->log_component[HW].interval = 1;
-  g_log->log_component[HW].fd = 0;
-  g_log->log_component[HW].filelog = 0;
-  g_log->log_component[HW].filelog_name = "";
-
-  g_log->log_component[OSA].name = "OSA";
-  g_log->log_component[OSA].level = LOG_EMERG;
-  g_log->log_component[OSA].flag = LOG_MED;
-  g_log->log_component[OSA].interval = 1;
-  g_log->log_component[OSA].fd = 0;
-  g_log->log_component[OSA].filelog = 0;
-  g_log->log_component[OSA].filelog_name = "";
-
-  g_log->log_component[RAL_ENB].name = "eRAL";
-  g_log->log_component[RAL_ENB].level = LOG_EMERG;
-  g_log->log_component[RAL_ENB].flag = LOG_MED;
-  g_log->log_component[RAL_ENB].interval = 1;
-  g_log->log_component[RAL_ENB].fd = 0;
-  g_log->log_component[RAL_ENB].filelog = 0;
-  g_log->log_component[RAL_ENB].filelog_name = "";
-
-  g_log->log_component[RAL_UE].name = "mRAL";
-  g_log->log_component[RAL_UE].level = LOG_EMERG;
-  g_log->log_component[RAL_UE].flag = LOG_MED;
-  g_log->log_component[RAL_UE].interval = 1;
-  g_log->log_component[RAL_UE].fd = 0;
-  g_log->log_component[RAL_UE].filelog = 0;
-  g_log->log_component[RAL_UE].filelog_name = "";
-
-  g_log->log_component[ENB_APP].name = "ENB_APP";
-  g_log->log_component[ENB_APP].level = LOG_EMERG;
-  g_log->log_component[ENB_APP].flag = LOG_MED;
-  g_log->log_component[ENB_APP].interval = 1;
-  g_log->log_component[ENB_APP].fd = 0;
-  g_log->log_component[ENB_APP].filelog = 0;
-  g_log->log_component[ENB_APP].filelog_name = "";
-
-  g_log->log_component[FLEXRAN_AGENT].name = "FLEXRAN_AGENT";
-  g_log->log_component[FLEXRAN_AGENT].level = LOG_DEBUG;
-  g_log->log_component[FLEXRAN_AGENT].flag = LOG_MED;
-  g_log->log_component[FLEXRAN_AGENT].interval = 1;
-  g_log->log_component[FLEXRAN_AGENT].fd = 0;
-  g_log->log_component[FLEXRAN_AGENT].filelog = 0;
-  g_log->log_component[FLEXRAN_AGENT].filelog_name = "";
-  
-  g_log->log_component[TMR].name = "TMR";
-  g_log->log_component[TMR].level = LOG_EMERG;
-  g_log->log_component[TMR].flag = LOG_MED;
-  g_log->log_component[TMR].interval = 1;
-  g_log->log_component[TMR].fd = 0;
-  g_log->log_component[TMR].filelog = 0;
-  g_log->log_component[TMR].filelog_name = "";
-
-  g_log->log_component[USIM].name = "USIM";
-  g_log->log_component[USIM].level = LOG_DEBUG;
-  g_log->log_component[USIM].flag = LOG_NONE;
-  g_log->log_component[USIM].interval = 1;
-  g_log->log_component[USIM].fd = 0;
-  g_log->log_component[USIM].filelog = 0;
-  g_log->log_component[USIM].filelog_name = "/tmp/usim.txt";
 
   /* following log component are used for the localization*/
-  g_log->log_component[LOCALIZE].name = "LOCALIZE";
-  g_log->log_component[LOCALIZE].level = LOG_EMERG;
-  g_log->log_component[LOCALIZE].flag =  LOG_MED;
-  g_log->log_component[LOCALIZE].interval =  1;
-  g_log->log_component[LOCALIZE].fd = 0;
-  g_log->log_component[LOCALIZE].filelog = 0;
-  g_log->log_component[LOCALIZE].filelog_name = "/tmp/localize.log";
+  register_log_component("LOCALIZE","log",LOCALIZE);
 #endif // ! defined(CN_BUILD)
-
-  g_log->log_component[NAS].name = "NAS";
-  g_log->log_component[NAS].level = LOG_TRACE;
-  g_log->log_component[NAS].flag = LOG_MED;
-  g_log->log_component[NAS].interval =  1;
-  g_log->log_component[NAS].fd = 0;
-  g_log->log_component[NAS].filelog = 0;
-  g_log->log_component[NAS].filelog_name = "/tmp/nas.log";
-
-  g_log->log_component[UDP_].name = "UDP";
-  g_log->log_component[UDP_].level = LOG_EMERG;
+  register_log_component("NAS","log",NAS);
+  register_log_component("UDP","",UDP_);
   g_log->log_component[UDP_].flag = LOG_FULL;
-  g_log->log_component[UDP_].interval = 1;
-  g_log->log_component[UDP_].fd = 0;
-  g_log->log_component[UDP_].filelog = 0;
-  g_log->log_component[UDP_].filelog_name = "";
 
-  g_log->log_component[GTPU].name = "GTPV1U";
-  g_log->log_component[GTPU].level = LOG_EMERG;
+  register_log_component("GTPV1U","",GTPU);
   g_log->log_component[GTPU].flag = LOG_FULL;
-  g_log->log_component[GTPU].interval = 1;
-  g_log->log_component[GTPU].fd = 0;
-  g_log->log_component[GTPU].filelog = 0;
-  g_log->log_component[GTPU].filelog_name = "";
 
-  g_log->log_component[S1AP].name = "S1AP";
-  g_log->log_component[S1AP].level = LOG_EMERG;
+  register_log_component("S1AP","",S1AP);
   g_log->log_component[S1AP].flag = LOG_FULL;
-  g_log->log_component[S1AP].interval = 1;
-  g_log->log_component[S1AP].fd = 0;
-  g_log->log_component[S1AP].filelog = 0;
-  g_log->log_component[S1AP].filelog_name = "";
 
-  g_log->log_component[SCTP].name = "SCTP";
-  g_log->log_component[SCTP].level = LOG_EMERG;
-  g_log->log_component[SCTP].flag = LOG_MED;
-  g_log->log_component[SCTP].interval = 1;
-  g_log->log_component[SCTP].fd = 0;
-  g_log->log_component[SCTP].filelog = 0;
-  g_log->log_component[SCTP].filelog_name = "";
+  register_log_component("SCTP","",SCTP);
+  register_log_component("RRH","",RRH);
  
-  g_log->log_component[RRH].name = "RRH";
-  g_log->log_component[RRH].level = LOG_EMERG;
-  g_log->log_component[RRH].flag = LOG_MED;
-  g_log->log_component[RRH].interval = 1;
-  g_log->log_component[RRH].fd = 0;
-  g_log->log_component[RRH].filelog = 0;
-  g_log->log_component[RRH].filelog_name = "";
+
   
   g_log->level2string[LOG_EMERG]         = "G"; //EMERG
   g_log->level2string[LOG_ALERT]         = "A"; // ALERT
@@ -456,6 +439,7 @@ int logInit (void)
   g_log->level2string[LOG_DEBUG]         = "D"; // DEBUG
   g_log->level2string[LOG_FILE]          = "F"; // file
   g_log->level2string[LOG_TRACE]         = "T"; // TRACE
+  g_log->level2string[LOG_MATLAB]        = "M"; // MATLAB
 
   g_log->onlinelog = 1; //online log file
   g_log->syslog = 0;
@@ -474,7 +458,7 @@ int logInit (void)
 
   if (g_log->syslog) {
 #if ! defined(CN_BUILD)
-    openlog(g_log->log_component[EMU].name, LOG_PID, g_log->config.facility);
+    openlog(g_log->log_component[SIM].name, LOG_PID, g_log->config.facility);
 #endif // ! defined(CN_BUILD)
   }
   log_getconfig(g_log);
@@ -489,13 +473,96 @@ int logInit (void)
                                         O_WRONLY | O_CREAT | O_APPEND, 0666);
     }
   }
-
+  // set all unused component items to 0, they are for non predefined components
+  for (i=MAX_LOG_PREDEF_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
+        memset(&(g_log->log_component[i]),0,sizeof(log_component_t));
+  }
   printf("log init done\n");
 
   return 0;
 }
 
-void nfapi_log(char *file, char *func, int line, int comp, int level, const char* format, va_list args)
+
+extern int oai_exit;
+void log_mem_write(void)
+{
+  int fp;
+  char f_name[1024];
+  struct timespec slp_tm;
+  slp_tm.tv_sec = 0;
+  slp_tm.tv_nsec = 10000;
+  
+  pthread_setname_np( pthread_self(), "log_mem_write");
+
+  while (!oai_exit) {
+    pthread_mutex_lock(&log_mem_lock);
+    log_mem_write_flag=0;
+    pthread_cond_wait(&log_mem_notify, &log_mem_lock);
+    log_mem_write_flag=1;
+    pthread_mutex_unlock(&log_mem_lock);
+    // write!
+    if(log_mem_d[log_mem_write_side].enable_flag==0){
+      if(log_mem_file_cnt>1){
+        log_mem_file_cnt=1;
+        printf("log over write!!!\n");
+      }
+      snprintf(f_name,1024, "%s_%d.log",log_mem_filename,log_mem_file_cnt);
+      fp=open(f_name, O_WRONLY | O_CREAT, 0666);
+      int ret = write(fp, log_mem_d[log_mem_write_side].buf_p, log_mem_d[log_mem_write_side].buf_index);
+      if ( ret < 0) {
+          fprintf(stderr,"{LOG} %s %d Couldn't write in %s \n",__FILE__,__LINE__,f_name);
+          exit(EXIT_FAILURE);
+      }
+      close(fp);
+      log_mem_file_cnt++;
+      log_mem_d[log_mem_write_side].buf_index=0;
+      log_mem_d[log_mem_write_side].enable_flag=1;
+    }else{
+      printf("If you'd like to write log, you should set enable flag to 0!!!\n");
+      nanosleep(&slp_tm,NULL);
+    }
+  }
+}
+
+int logInit_log_mem (void)
+{
+  if(log_mem_flag==1){
+    if(log_mem_multi==1){
+      printf("log-mem multi!!!\n");
+      log_mem_d[0].buf_p = malloc(LOG_MEM_SIZE);
+      log_mem_d[0].buf_index=0;
+      log_mem_d[0].enable_flag=1;
+      log_mem_d[1].buf_p = malloc(LOG_MEM_SIZE);
+      log_mem_d[1].buf_index=0;
+      log_mem_d[1].enable_flag=1;
+      log_mem_side=0;
+      if ((pthread_mutex_init (&log_mem_lock, NULL) != 0)
+          || (pthread_cond_init (&log_mem_notify, NULL) != 0)) {
+        log_mem_d[1].enable_flag=0;
+        return -1;
+      }
+      pthread_create(&log_mem_thread, NULL, (void *(*)(void *))log_mem_write, (void*)NULL);
+    }else{
+      printf("log-mem single!!!\n");
+      log_mem_d[0].buf_p = malloc(LOG_MEM_SIZE);
+      log_mem_d[0].buf_index=0;
+      log_mem_d[0].enable_flag=1;
+      log_mem_d[1].enable_flag=0;
+      log_mem_side=0;
+    }
+  }else{
+    log_mem_d[0].buf_p=NULL;
+    log_mem_d[1].buf_p=NULL;
+    log_mem_d[0].enable_flag=0;
+    log_mem_d[1].enable_flag=0;
+  }
+
+  printf("log init done\n");
+  
+  return 0;
+}
+
+void nfapi_log(const char *file, const char *func, int line, int comp, int level, const char* format,va_list args)
 {
   //logRecord_mt(file,func,line, pthread_self(), comp, level, format, ##args)
   int len = 0;
@@ -512,6 +579,7 @@ void nfapi_log(char *file, char *func, int line, int comp, int level, const char
   /* for no gcc warnings */
   (void)log_start;
   (void)log_end;
+
 
   c = &g_log->log_component[comp];
 
@@ -604,21 +672,44 @@ void nfapi_log(char *file, char *func, int line, int comp, int level, const char
   va_end(args);
 
   // OAI printf compatibility
-  if ((g_log->onlinelog == 1) && (level != LOG_FILE))
-#ifdef RTAI
-    if (len > MAX_LOG_TOTAL) {
-      rt_printk ("[OPENAIR] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
+  if ((g_log->onlinelog == 1) && (level != LOG_FILE)) {
+    if(log_mem_flag==1){
+      if(log_mem_d[log_mem_side].enable_flag==1){
+        int temp_index;
+        temp_index=log_mem_d[log_mem_side].buf_index;
+        if(temp_index+len+1 < LOG_MEM_SIZE){
+          log_mem_d[log_mem_side].buf_index+=len;
+          memcpy(&log_mem_d[log_mem_side].buf_p[temp_index],log_buffer,len);
+        }else{
+          log_mem_d[log_mem_side].enable_flag=0;
+          if(log_mem_d[1-log_mem_side].enable_flag==1){
+            temp_index=log_mem_d[1-log_mem_side].buf_index;
+            if(temp_index+len+1 < LOG_MEM_SIZE){
+              log_mem_d[1-log_mem_side].buf_index+=len;
+              log_mem_side=1-log_mem_side;
+              memcpy(&log_mem_d[log_mem_side].buf_p[temp_index],log_buffer,len);
+              /* write down !*/
+              if (pthread_mutex_lock(&log_mem_lock) != 0) {
+                return;
+              }
+              if(log_mem_write_flag==0){
+                log_mem_write_side=1-log_mem_side;
+                if(pthread_cond_signal(&log_mem_notify) != 0) {
+                }
+              }
+              if(pthread_mutex_unlock(&log_mem_lock) != 0) {
+                return;
+              }
+            }else{
+              log_mem_d[1-log_mem_side].enable_flag=0;
+            }
+          }
+        }
+      }
+    }else{
+      fwrite(log_buffer, len, 1, stdout);
     }
-
-  if (len > 0) {
-    rtf_put (FIFO_PRINTF_NO, log_buffer, len);
   }
-
-#else
-  fwrite(log_buffer, len, 1, stdout);
-#endif
-
-#ifndef RTAI
 
   if (g_log->syslog) {
     syslog(g_log->level, "%s", log_buffer);
@@ -636,14 +727,6 @@ void nfapi_log(char *file, char *func, int line, int comp, int level, const char
     }
   }
 
-#else
-
-  // online print messges
-  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-    printf(log_buffer);
-  }
-
-#endif
 
 #if defined(ENABLE_ITTI)
 
@@ -785,46 +868,13 @@ void nfapi_log(char *file, char *func, int line, int comp, int level, const char
   }
 
 #endif
-#if 0
-  LOG_params log_params;
-  int        len;
+}
 
-  len = vsnprintf(log_params.l_buff_info, MAX_LOG_INFO-1, format, args);
-
-  //2 first parameters must be passed as 'const' to the thread function
-  log_params.file = strdup(file);
-  log_params.func = strdup(func);
-  log_params.line = line;
-  log_params.comp = PHY;//comp;
-  log_params.level = 6; // INFO - level;
-  log_params.format = format;
-  log_params.len = len;
-
-  if (pthread_mutex_lock(&log_lock) != 0) {
-    return;
-  }
-
-  log_list_tail++;
-  log_list[log_list_tail - 1] = log_params;
-
-  if (log_list_tail >= 1000) {
-    log_list_tail = 0;
-  }
-
-  if (log_list_nb_elements < 1000) {
-    log_list_nb_elements++;
-  }
-
-  if(pthread_cond_signal(&log_notify) != 0) {
-    pthread_mutex_unlock(&log_lock);
-    return;
-  }
-
-  if(pthread_mutex_unlock(&log_lock) != 0) {
-    return;
-  }
-
-#endif
+void logRecord_mt(const char *file, const char *func, int line, int comp, int level, const char* format, ... )
+{
+  va_list    args;
+  va_start(args, format);
+  nfapi_log(file,func,line,comp,level, format,args);
 }
 
 //log record: add to a list
@@ -1026,542 +1076,14 @@ void *log_thread_function(void *list)
 }
 #endif
 
-#if 0
-/* This function does not work. When multiple threads call it at the same time
- * for the same component, both threads end up using the same buffer.
- * The output is the completely messed up/wrong.
- * Kept in case the fix below is not correct or acceptable.
- */
-//log record, format, and print:  executed in the main thread (mt)
-void logRecord_mt(const char *file, const char *func, int line, int comp,
-                  int level, const char *format, ...)
-{
-  int len = 0;
-  va_list args;
-  log_component_t *c;
-  char *log_start;
-  char *log_end;
 
-  /* for no gcc warnings */
-  (void)log_start;
-  (void)log_end;
-
-  c = &g_log->log_component[comp];
-
-  // do not apply filtering for LOG_F
-  // only log messages which are enabled and are below the global log level and component's level threshold
-  if ((level != LOG_FILE) && ((level > c->level) || (level > g_log->level))) {
-    /* if ((level != LOG_FILE) &&
-          ((level > c->level) ||
-           (level > g_log->level) ||
-           ( c->level > g_log->level))) {
-    */
-    return;
-  }
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,
-                                          VCD_FUNCTION_IN);
-
-  va_start(args, format);
-
-  // adjust syslog level for TRACE messages
-  if (g_log->syslog) {
-    if (g_log->level > LOG_DEBUG) {
-      g_log->level = LOG_DEBUG;
-    }
-  }
-
-  // make sure that for log trace the extra info is only printed once, reset when the level changes
-  if ((level == LOG_FILE) || (c->flag == LOG_NONE) || (level == LOG_TRACE)) {
-    log_start = c->log_buffer;
-    len = vsnprintf(c->log_buffer, MAX_LOG_TOTAL-1, format, args);
-    log_end = c->log_buffer + len;
-  } else {
-    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "%s",
-                      log_level_highlight_start[level]);
-    }
-
-    log_start = c->log_buffer + len;
-
-    if ( (g_log->flag & FLAG_COMP) || (c->flag & FLAG_COMP) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "[%s]",
-                      g_log->log_component[comp].name);
-    }
-
-    if ( (g_log->flag & FLAG_LEVEL) || (c->flag & FLAG_LEVEL) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "[%s]",
-                      g_log->level2string[level]);
-    }
-
-    if ( (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "[%s] ",
-                      func);
-    }
-
-    if ( (g_log->flag & FLAG_FILE_LINE) || (c->flag & FLAG_FILE_LINE) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "[%s:%d]",
-                      file, line);
-    }
-
-    len += vsnprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, format, args);
-    log_end = c->log_buffer + len;
-
-    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) ) {
-      len += snprintf(&c->log_buffer[len], MAX_LOG_TOTAL - len, "%s",
-                      log_level_highlight_end[level]);
-    }
-  }
-
-  va_end(args);
-
-  // OAI printf compatibility
-  if ((g_log->onlinelog == 1) && (level != LOG_FILE))
-    fwrite(c->log_buffer, len, 1, stdout);
-
-  if (g_log->syslog) {
-    syslog(g_log->level, "%s", c->log_buffer);
-  }
-
-  if (g_log->filelog) {
-    if (write(gfd, c->log_buffer, len) < len) {
-      // TODO assert ?
-    }
-  }
-
-  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-    if (write(g_log->log_component[comp].fd, c->log_buffer, len) < len) {
-      // TODO assert ?
-    }
-  }
-
-#if defined(ENABLE_ITTI)
-
-  if (level <= LOG_DEBUG) {
-    task_id_t origin_task_id = TASK_UNKNOWN;
-    MessagesIds messages_id;
-    MessageDef *message_p;
-    size_t      message_string_size;
-    char       *message_msg_p;
-
-    message_string_size = log_end - log_start;
-
-#if !defined(DISABLE_ITTI_DETECT_SUB_TASK_ID)
-
-    /* Try to identify sub task ID from log information (comp, log_instance_type) */
-    switch (comp) {
-    case PHY:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_PHY_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_PHY_UE;
-        break;
-
-      default:
-        break;
-      }
-
-      break;
-
-    case MAC:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_MAC_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_MAC_UE;
-
-      default:
-        break;
-      }
-
-      break;
-
-    case RLC:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_RLC_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_RLC_UE;
-
-      default:
-        break;
-      }
-
-      break;
-
-    case PDCP:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_PDCP_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_PDCP_UE;
-
-      default:
-        break;
-      }
-
-      break;
-
-    default:
-      break;
-    }
-
-#endif
-
-    switch (level) {
-    case LOG_EMERG:
-    case LOG_ALERT:
-    case LOG_CRIT:
-    case LOG_ERR:
-      messages_id = ERROR_LOG;
-      break;
-
-    case LOG_WARNING:
-      messages_id = WARNING_LOG;
-      break;
-
-    case LOG_NOTICE:
-      messages_id = NOTICE_LOG;
-      break;
-
-    case LOG_INFO:
-      messages_id = INFO_LOG;
-      break;
-
-    default:
-      messages_id = DEBUG_LOG;
-      break;
-    }
-
-    message_p = itti_alloc_new_message_sized(origin_task_id, messages_id, message_string_size);
-
-    switch (level) {
-    case LOG_EMERG:
-    case LOG_ALERT:
-    case LOG_CRIT:
-    case LOG_ERR:
-      message_msg_p = (char *) &message_p->ittiMsg.error_log;
-      break;
-
-    case LOG_WARNING:
-      message_msg_p = (char *) &message_p->ittiMsg.warning_log;
-      break;
-
-    case LOG_NOTICE:
-      message_msg_p = (char *) &message_p->ittiMsg.notice_log;
-      break;
-
-    case LOG_INFO:
-      message_msg_p = (char *) &message_p->ittiMsg.info_log;
-      break;
-
-    default:
-      message_msg_p = (char *) &message_p->ittiMsg.debug_log;
-      break;
-    }
-
-    memcpy(message_msg_p, log_start, message_string_size);
-
-    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-  }
-
-#endif
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,
-                                          VCD_FUNCTION_OUT);
-}
-#endif /* #if 0 */
-
-//log record, format, and print:  executed in the main thread (mt)
-void logRecord_mt(const char *file, const char *func, int line, int comp,
-                  int level, const char *format, ...)
-{
-  int len = 0;
-  va_list args;
-  log_component_t *c;
-  char *log_start;
-  char *log_end;
-  /* The main difference with the version above is the use of this local log_buffer.
-   * The other difference is the return value of snprintf which was not used
-   * correctly. It was not a big problem because in practice MAX_LOG_TOTAL is
-   * big enough so that the buffer is never full.
-   */
-  char log_buffer[MAX_LOG_TOTAL];
-
-  /* for no gcc warnings */
-  (void)log_start;
-  (void)log_end;
-
-  c = &g_log->log_component[comp];
-
-  // do not apply filtering for LOG_F
-  // only log messages which are enabled and are below the global log level and component's level threshold
-  if ((level != LOG_FILE) && ((level > c->level) || (level > g_log->level))) {
-    /* if ((level != LOG_FILE) &&
-          ((level > c->level) ||
-           (level > g_log->level) ||
-           ( c->level > g_log->level))) {
-    */
-    return;
-  }
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,
-                                          VCD_FUNCTION_IN);
-
-  va_start(args, format);
-
-  // adjust syslog level for TRACE messages
-  if (g_log->syslog) {
-    if (g_log->level > LOG_DEBUG) {
-      g_log->level = LOG_DEBUG;
-    }
-  }
-
-  // make sure that for log trace the extra info is only printed once, reset when the level changes
-  if ((level == LOG_FILE) || (c->flag == LOG_NONE) || (level == LOG_TRACE)) {
-    log_start = log_buffer;
-    len = vsnprintf(log_buffer, MAX_LOG_TOTAL, format, args);
-    if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    log_end = log_buffer + len;
-  } else {
-    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "%s",
-                      log_level_highlight_start[level]);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-
-    log_start = log_buffer + len;
-
-    if ( (g_log->flag & FLAG_COMP) || (c->flag & FLAG_COMP) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]",
-                      g_log->log_component[comp].name);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-
-    if ( (g_log->flag & FLAG_LEVEL) || (c->flag & FLAG_LEVEL) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]",
-                      g_log->level2string[level]);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-
-    if ( (g_log->flag & FLAG_THREAD) || (c->flag & FLAG_THREAD) ) {
-#     define THREAD_NAME_LEN 128
-      char threadname[THREAD_NAME_LEN];
-      if (pthread_getname_np(pthread_self(), threadname, THREAD_NAME_LEN) != 0)
-      {
-        perror("pthread_getname_np : ");
-      } else {
-        len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]", threadname);
-        if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-      }
-#     undef THREAD_NAME_LEN
-    }
-
-    if ( (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s] ",
-                      func);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-
-    if ( (g_log->flag & FLAG_FILE_LINE) || (c->flag & FLAG_FILE_LINE) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s:%d]",
-                      file, line);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-
-    len += vsnprintf(&log_buffer[len], MAX_LOG_TOTAL - len, format, args);
-    if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    log_end = log_buffer + len;
-
-    if ( (g_log->flag & FLAG_COLOR) || (c->flag & FLAG_COLOR) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "%s",
-                      log_level_highlight_end[level]);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-  }
-
-  va_end(args);
-
-  // OAI printf compatibility
-  if ((g_log->onlinelog == 1) && (level != LOG_FILE))
-    fwrite(log_buffer, len, 1, stdout);
-
-  if (g_log->syslog) {
-    syslog(g_log->level, "%s", log_buffer);
-  }
-
-  if (g_log->filelog) {
-    if (write(gfd, log_buffer, len) < len) {
-      // TODO assert ?
-    }
-  }
-
-  if ((g_log->log_component[comp].filelog) && (level == LOG_FILE)) {
-    if (write(g_log->log_component[comp].fd, log_buffer, len) < len) {
-      // TODO assert ?
-    }
-  }
-
-#if defined(ENABLE_ITTI)
-
-  if (level <= LOG_DEBUG) {
-    task_id_t origin_task_id = TASK_UNKNOWN;
-    MessagesIds messages_id;
-    MessageDef *message_p;
-    size_t      message_string_size;
-    char       *message_msg_p;
-
-    message_string_size = log_end - log_start;
-
-#if !defined(DISABLE_ITTI_DETECT_SUB_TASK_ID)
-
-    /* Try to identify sub task ID from log information (comp, log_instance_type) */
-    switch (comp) {
-    case PHY:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_PHY_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_PHY_UE;
-        break;
-
-      default:
-        break;
-      }
-
-      break;
-
-    case MAC:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_MAC_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_MAC_UE;
-
-      default:
-        break;
-      }
-
-      break;
-
-    case RLC:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_RLC_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_RLC_UE;
-
-      default:
-        break;
-      }
-
-      break;
-
-    case PDCP:
-      switch (log_instance_type) {
-      case LOG_INSTANCE_ENB:
-        origin_task_id = TASK_PDCP_ENB;
-        break;
-
-      case LOG_INSTANCE_UE:
-        origin_task_id = TASK_PDCP_UE;
-
-      default:
-        break;
-      }
-
-      break;
-
-    default:
-      break;
-    }
-
-#endif
-
-    switch (level) {
-    case LOG_EMERG:
-    case LOG_ALERT:
-    case LOG_CRIT:
-    case LOG_ERR:
-      messages_id = ERROR_LOG;
-      break;
-
-    case LOG_WARNING:
-      messages_id = WARNING_LOG;
-      break;
-
-    case LOG_NOTICE:
-      messages_id = NOTICE_LOG;
-      break;
-
-    case LOG_INFO:
-      messages_id = INFO_LOG;
-      break;
-
-    default:
-      messages_id = DEBUG_LOG;
-      break;
-    }
-
-    message_p = itti_alloc_new_message_sized(origin_task_id, messages_id, message_string_size);
-
-    switch (level) {
-    case LOG_EMERG:
-    case LOG_ALERT:
-    case LOG_CRIT:
-    case LOG_ERR:
-      message_msg_p = (char *) &message_p->ittiMsg.error_log;
-      break;
-
-    case LOG_WARNING:
-      message_msg_p = (char *) &message_p->ittiMsg.warning_log;
-      break;
-
-    case LOG_NOTICE:
-      message_msg_p = (char *) &message_p->ittiMsg.notice_log;
-      break;
-
-    case LOG_INFO:
-      message_msg_p = (char *) &message_p->ittiMsg.info_log;
-      break;
-
-    default:
-      message_msg_p = (char *) &message_p->ittiMsg.debug_log;
-      break;
-    }
-
-    memcpy(message_msg_p, log_start, message_string_size);
-
-    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-  }
-
-#endif
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD,
-                                          VCD_FUNCTION_OUT);
-}
 
 int set_log(int component, int level, int interval)
 {
   /* Checking parameters */
   DevCheck((component >= MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS),
            component, MIN_LOG_COMPONENTS, MAX_LOG_COMPONENTS);
-  DevCheck((level <= LOG_TRACE) && (level >= LOG_EMERG), level, LOG_TRACE,
+  DevCheck((level < NUM_LOG_LEVEL) && (level >= LOG_EMERG), level, NUM_LOG_LEVEL,
            LOG_EMERG);
   DevCheck((interval >= 0) && (interval <= 0xFF), interval, 0, 0xFF);
 
@@ -1595,19 +1117,11 @@ int set_comp_log(int component, int level, int verbosity, int interval)
   /* Checking parameters */
   DevCheck((component >= MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS),
            component, MIN_LOG_COMPONENTS, MAX_LOG_COMPONENTS);
-  DevCheck((level <= LOG_TRACE) && (level >= LOG_EMERG), level, LOG_TRACE,
+  DevCheck((level < NUM_LOG_LEVEL) && (level >= LOG_EMERG), level, NUM_LOG_LEVEL,
            LOG_EMERG);
   DevCheck((interval >= 0) && (interval <= 0xFF), interval, 0, 0xFF);
 
-#if 0
-  if ((verbosity == LOG_NONE) || (verbosity == LOG_LOW) ||
-      (verbosity == LOG_MED) || (verbosity == LOG_FULL) ||
-      (verbosity == LOG_HIGH)) {
-    g_log->log_component[component].flag = verbosity;
-  }
-#else
   g_log->log_component[component].flag = verbosity;
-#endif
 
   g_log->log_component[component].level = level;
   g_log->log_component[component].interval = interval;
@@ -1720,7 +1234,51 @@ void log_set_instance_type (log_instance_type_t instance)
   log_instance_type = instance;
 }
 #endif
+  
+void output_log_mem(void){
+  int fp;
+  char f_name[1024];
 
+  if(log_mem_flag==1){
+    log_mem_d[0].enable_flag=0;
+    log_mem_d[1].enable_flag=0;
+    usleep(10); // wait for log writing
+    while(log_mem_write_flag==1){
+      usleep(100);
+    }
+    if(log_mem_multi==1){
+      snprintf(f_name,1024, "%s_%d.log",log_mem_filename,log_mem_file_cnt);
+      fp=open(f_name, O_WRONLY | O_CREAT, 0666);
+      int ret = write(fp, log_mem_d[0].buf_p, log_mem_d[0].buf_index);
+      if ( ret < 0) {
+          fprintf(stderr,"{LOG} %s %d Couldn't write in %s \n",__FILE__,__LINE__,f_name);
+          exit(EXIT_FAILURE);
+      }
+      close(fp);
+      free(log_mem_d[0].buf_p);
+      
+      snprintf(f_name,1024, "%s_%d.log",log_mem_filename,log_mem_file_cnt);
+      fp=open(f_name, O_WRONLY | O_CREAT, 0666);
+      ret = write(fp, log_mem_d[1].buf_p, log_mem_d[1].buf_index);
+      if ( ret < 0) {
+          fprintf(stderr,"{LOG} %s %d Couldn't write in %s \n",__FILE__,__LINE__,f_name);
+          exit(EXIT_FAILURE);
+      }
+      close(fp);
+      free(log_mem_d[1].buf_p);
+    }else{
+      fp=open(log_mem_filename, O_WRONLY | O_CREAT, 0666);
+      int ret = write(fp, log_mem_d[0].buf_p, log_mem_d[0].buf_index);
+      if ( ret < 0) {
+          fprintf(stderr,"{LOG} %s %d Couldn't write in %s \n",__FILE__,__LINE__,log_mem_filename);
+          exit(EXIT_FAILURE);
+       }
+      close(fp);
+      free(log_mem_d[0].buf_p);
+    }
+  }
+}
+  
 #ifdef LOG_TEST
 
 int main(int argc, char *argv[])
@@ -1737,16 +1295,16 @@ int main(int argc, char *argv[])
 int test_log(void)
 {
   LOG_ENTER(MAC); // because the default level is DEBUG
-  LOG_I(EMU, "1 Starting OAI logs version %s Build date: %s on %s\n",
+  LOG_I(SIM, "1 Starting OAI logs version %s Build date: %s on %s\n",
         BUILD_VERSION, BUILD_DATE, BUILD_HOST);
   LOG_D(MAC, "1 debug  MAC \n");
   LOG_N(MAC, "1 notice MAC \n");
   LOG_W(MAC, "1 warning MAC \n");
 
-  set_comp_log(EMU, LOG_INFO, FLAG_ONLINE);
+  set_comp_log(SIM, LOG_INFO, FLAG_ONLINE);
   set_comp_log(MAC, LOG_WARNING, 0);
 
-  LOG_I(EMU, "2 Starting OAI logs version %s Build date: %s on %s\n",
+  LOG_I(SIM, "2 Starting OAI logs version %s Build date: %s on %s\n",
         BUILD_VERSION, BUILD_DATE, BUILD_HOST);
   LOG_E(MAC, "2 emerge MAC\n");
   LOG_D(MAC, "2 debug  MAC \n");
@@ -1758,7 +1316,7 @@ int test_log(void)
   set_comp_log(MAC, LOG_NOTICE, 1);
 
   LOG_ENTER(MAC);
-  LOG_I(EMU, "3 Starting OAI logs version %s Build date: %s on %s\n",
+  LOG_I(SIM, "3 Starting OAI logs version %s Build date: %s on %s\n",
         BUILD_VERSION, BUILD_DATE, BUILD_HOST);
   LOG_D(MAC, "3 debug  MAC \n");
   LOG_N(MAC, "3 notice MAC \n");
@@ -1766,10 +1324,10 @@ int test_log(void)
   LOG_I(MAC, "3 info MAC \n");
 
   set_comp_log(MAC, LOG_DEBUG,1);
-  set_comp_log(EMU, LOG_DEBUG,1);
+  set_comp_log(SIM, LOG_DEBUG,1);
 
   LOG_ENTER(MAC);
-  LOG_I(EMU, "4 Starting OAI logs version %s Build date: %s on %s\n",
+  LOG_I(SIM, "4 Starting OAI logs version %s Build date: %s on %s\n",
         BUILD_VERSION, BUILD_DATE, BUILD_HOST);
   LOG_D(MAC, "4 debug  MAC \n");
   LOG_N(MAC, "4 notice MAC \n");
@@ -1778,7 +1336,7 @@ int test_log(void)
 
 
   set_comp_log(MAC, LOG_DEBUG,0);
-  set_comp_log(EMU, LOG_DEBUG,0);
+  set_comp_log(SIM, LOG_DEBUG,0);
 
   LOG_I(LOG, "5 Starting OAI logs version %s Build date: %s on %s\n",
         BUILD_VERSION, BUILD_DATE, BUILD_HOST);
@@ -1789,7 +1347,7 @@ int test_log(void)
 
 
   set_comp_log(MAC, LOG_TRACE,0X07F);
-  set_comp_log(EMU, LOG_TRACE,0X07F);
+  set_comp_log(SIM, LOG_TRACE,0X07F);
 
   LOG_ENTER(MAC);
   LOG_I(LOG, "6 Starting OAI logs version %s Build date: %s on %s\n",

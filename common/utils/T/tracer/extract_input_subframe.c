@@ -117,12 +117,7 @@ err:
              e.e[frame_arg].i, e.e[subframe_arg].i, e.e[buffer_arg].bsize);
     if (!(frame == e.e[frame_arg].i && subframe == e.e[subframe_arg].i))
       continue;
-#if 0
-for (i = 0; i < e.e[buffer_arg].bsize/2; i++) {
-short *x = e.e[buffer_arg].b;
-x[i] *= 14;
-}
-#endif
+
     if (fwrite(e.e[buffer_arg].b, e.e[buffer_arg].bsize, 1, out) != 1)
       { perror(output_file); exit(1); }
     processed_subframes++;

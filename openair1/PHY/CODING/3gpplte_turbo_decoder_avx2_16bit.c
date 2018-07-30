@@ -46,7 +46,6 @@
 #include "PHY/defs_common.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "extern_3GPPinterleaver.h"
 #else
 
 #include "defs.h"
@@ -893,8 +892,6 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
 						  uint8_t *decoded_bytes,
 						  uint8_t *decoded_bytes2,
 						  uint16_t n,
-						  uint16_t f1,
-						  uint16_t f2,
 						  uint8_t max_iterations,
 						  uint8_t crc_type,
 						  uint8_t F,
@@ -989,134 +986,6 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
   yp1 = yparity1;
   yp2 = yparity2;
 
-
-#if 0
-  __m128i *yp128,*yp128_cw2;
-  __m128i tmpe,tmpe_cw2;
-  yp128 = (__m128i*)y;
-  yp128_cw2 = (__m128i*)y2;
-
-
-
-  for (i=0; i<n; i+=8) {
-    pi2_p = &pi2tab16avx2[iind][i];
-
-    j=pi2_p[0];
-
-
-    tmpe  = _mm_load_si128(yp128);
-    tmpe_cw2 = _mm_load_si128(yp128_cw2);
-    //    fprintf(fdavx2,"yp128 %p\n",yp128);
-    //    print_shorts("tmpe",(int16_t*)&tmpe);
-
-    s[j]     = _mm_extract_epi16(tmpe,0);
-    yp1[j]   = _mm_extract_epi16(tmpe,1);
-    yp2[j]   = _mm_extract_epi16(tmpe,2);
-    s[j+8]   = _mm_extract_epi16(tmpe_cw2,0);
-    yp1[j+8] = _mm_extract_epi16(tmpe_cw2,1);
-    yp2[j+8] = _mm_extract_epi16(tmpe_cw2,2);
-
-#ifdef DEBUG_LOGMAP
-    fprintf(fdavx2,"init0: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j],yp1[j],yp2[j]);
-    fprintf(fdavx2b,"init0: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j+8],yp1[j+8],yp2[j+8]);
-#endif
-
-    j=pi2_p[1];
-
-    s[j]   = _mm_extract_epi16(tmpe,3);
-    yp1[j] = _mm_extract_epi16(tmpe,4);
-    yp2[j] = _mm_extract_epi16(tmpe,5);
-    s[j+8]   = _mm_extract_epi16(tmpe_cw2,3);
-    yp1[j+8] = _mm_extract_epi16(tmpe_cw2,4);
-    yp2[j+8] = _mm_extract_epi16(tmpe_cw2,5);
-#ifdef DEBUG_LOGMAP
-    fprintf(fdavx2,"init1: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j],yp1[j],yp2[j]);
-    fprintf(fdavx2b,"init1: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j+8],yp1[j+8],yp2[j+8]);
-#endif
-    j=pi2_p[2];
-
-    s[j]   = _mm_extract_epi16(tmpe,6);
-    yp1[j] = _mm_extract_epi16(tmpe,7);
-    tmpe = _mm_load_si128(&yp128[1]);
-    yp2[j] = _mm_extract_epi16(tmpe,0);
-    s[j+8]   = _mm_extract_epi16(tmpe_cw2,6);
-    yp1[j+8] = _mm_extract_epi16(tmpe_cw2,7);
-    tmpe_cw2 = _mm_load_si128(&yp128_cw2[1]);
-    yp2[j+8] = _mm_extract_epi16(tmpe_cw2,0);
-#ifdef DEBUG_LOGMAP
-    fprintf(fdavx2,"init2: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j],yp1[j],yp2[j]);
-    fprintf(fdavx2b,"init2: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j+8],yp1[j+8],yp2[j+8]);
-#endif
-    j=pi2_p[3];
-
-    s[j]   = _mm_extract_epi16(tmpe,1);
-    yp1[j] = _mm_extract_epi16(tmpe,2);
-    yp2[j] = _mm_extract_epi16(tmpe,3);
-    s[j+8]   = _mm_extract_epi16(tmpe_cw2,1);
-    yp1[j+8] = _mm_extract_epi16(tmpe_cw2,2);
-    yp2[j+8] = _mm_extract_epi16(tmpe_cw2,3);
-#ifdef DEBUG_LOGMAP
-    fprintf(fdavx2,"init3: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j],yp1[j],yp2[j]);
-    fprintf(fdavx2b,"init3: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j+8],yp1[j+8],yp2[j+8]);
-#endif
-    j=pi2_p[4];
-
-    s[j]   = _mm_extract_epi16(tmpe,4);
-    yp1[j] = _mm_extract_epi16(tmpe,5);
-    yp2[j] = _mm_extract_epi16(tmpe,6);
-    s[j+8]   = _mm_extract_epi16(tmpe_cw2,4);
-    yp1[j+8] = _mm_extract_epi16(tmpe_cw2,5);
-    yp2[j+8] = _mm_extract_epi16(tmpe_cw2,6);
-#ifdef DEBUG_LOGMAP
-    fprintf(fdavx2,"init4: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j],yp1[j],yp2[j]);
-    fprintf(fdavx2b,"init4: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j+8],yp1[j+8],yp2[j+8]);
-#endif
-    j=pi2_p[5];
-
-    s[j]   = _mm_extract_epi16(tmpe,7);
-    tmpe = _mm_load_si128(&yp128[2]);
-    yp1[j] = _mm_extract_epi16(tmpe,0);
-    yp2[j] = _mm_extract_epi16(tmpe,1);
-    s[j+8]   = _mm_extract_epi16(tmpe_cw2,7);
-    tmpe_cw2 = _mm_load_si128(&yp128_cw2[2]);
-    yp1[j+8] = _mm_extract_epi16(tmpe_cw2,0);
-    yp2[j+8] = _mm_extract_epi16(tmpe_cw2,1);
-#ifdef DEBUG_LOGMAP
-    fprintf(fdavx2,"init5: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j],yp1[j],yp2[j]);
-    fprintf(fdavx2b,"init5: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j+8],yp1[j+8],yp2[j+8]);
-#endif
-    j=pi2_p[6];
-
-    s[j]   = _mm_extract_epi16(tmpe,2);
-    yp1[j] = _mm_extract_epi16(tmpe,3);
-    yp2[j] = _mm_extract_epi16(tmpe,4);
-    s[j+8]   = _mm_extract_epi16(tmpe_cw2,2);
-    yp1[j+8] = _mm_extract_epi16(tmpe_cw2,3);
-    yp2[j+8] = _mm_extract_epi16(tmpe_cw2,4);
-#ifdef DEBUG_LOGMAP
-    fprintf(fdavx2,"init6: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j],yp1[j],yp2[j]);
-    fprintf(fdavx2b,"init6: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j+8],yp1[j+8],yp2[j+8]);
-#endif
-    j=pi2_p[7];
-
-    s[j]   = _mm_extract_epi16(tmpe,5);
-    yp1[j] = _mm_extract_epi16(tmpe,6);
-    yp2[j] = _mm_extract_epi16(tmpe,7);
-    s[j+8]   = _mm_extract_epi16(tmpe_cw2,5);
-    yp1[j+8] = _mm_extract_epi16(tmpe_cw2,6);
-    yp2[j+8] = _mm_extract_epi16(tmpe_cw2,7);
-#ifdef DEBUG_LOGMAP
-    fprintf(fdavx2,"init7: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j],yp1[j],yp2[j]);
-    fprintf(fdavx2b,"init7: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",((j>>4)<<3)+(j&7),s[j+8],yp1[j+8],yp2[j+8]);
-#endif
-    yp128+=3;
-    yp128_cw2+=3;
-
-  }
-  yp=(llr_t*)yp128;
-  yp_cw2=(llr_t*)yp128_cw2;
-#else
-  
   pi2_p    = &pi2tab16avx2[iind][0];
   for (i=0,j=0; i<n; i++) {
     s[*pi2_p]     = y[j];
@@ -1128,8 +997,6 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
   }    
   yp=(llr_t*)&y[j];
   yp_cw2=(llr_t*)&y2[j];
-#endif
-
 
   // Termination
   for (i=0; i<3; i++) {
@@ -1417,8 +1284,6 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
 						  uint8_t *decoded_bytes,
 						  uint8_t *decoded_bytes2,
 						  uint16_t n,
-						  uint16_t f1,
-						  uint16_t f2,
 						  uint8_t max_iterations,
 						  uint8_t crc_type,
 						  uint8_t F,

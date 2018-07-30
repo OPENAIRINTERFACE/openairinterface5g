@@ -67,8 +67,6 @@ void generate_qpsk_table(void)
 void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 {
 
-  crcTableInit();
-
   ccodedot11_init();
   ccodedot11_init_inv();
 

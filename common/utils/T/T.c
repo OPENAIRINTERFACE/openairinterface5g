@@ -9,6 +9,8 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 
+#include "common/config/config_userapi.h"
+
 #define QUIT(x) do { \
   printf("T tracer: QUIT: %s\n", x); \
   exit(1); \
@@ -17,6 +19,7 @@
 /* array used to activate/disactivate a log */
 static int T_IDs[T_NUMBER_OF_IDS];
 int *T_active = T_IDs;
+int T_stdout;
 
 static int T_socket;
 
@@ -156,4 +159,23 @@ void T_init(int remote_port, int wait_for_tracer, int dont_fork)
   close(T_shm_fd);
 
   new_thread(T_receive_thread, NULL);
+}
+
+void T_Config_Init(void)
+{
+int T_port;            /* by default we wait for the tracer */
+int T_nowait;	      /* default port to listen to to wait for the tracer */
+int T_dont_fork;       /* default is to fork, see 'T_init' to understand */
+
+paramdef_t ttraceparams[] = CMDLINE_TTRACEPARAMS_DESC ;
+
+/* for a cleaner config file, TTracer params should be defined in a specific section... */
+  config_get( ttraceparams,sizeof(ttraceparams)/sizeof(paramdef_t),TTRACER_CONFIG_PREFIX);
+
+/* compatibility: look for TTracer command line options in root section */
+  config_process_cmdline( ttraceparams,sizeof(ttraceparams)/sizeof(paramdef_t),NULL);
+
+  if (T_stdout == 0) {
+    T_init(T_port, 1-T_nowait, T_dont_fork);
+  }
 }

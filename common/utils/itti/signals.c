@@ -42,8 +42,8 @@
 #include "log.h"
 
 #if defined (LOG_D) && defined (LOG_E)
-# define SIG_DEBUG(x, args...)  LOG_D(EMU, x, ##args)
-# define SIG_ERROR(x, args...)  LOG_E(EMU, x, ##args)
+# define SIG_DEBUG(x, args...)  LOG_D(RRC, x, ##args)
+# define SIG_ERROR(x, args...)  LOG_E(RRC, x, ##args)
 #endif
 
 #ifndef SIG_DEBUG
@@ -117,16 +117,19 @@ int signal_handle(int *end)
     case SIGUSR1:
       SIG_DEBUG("Received SIGUSR1\n");
       *end = 1;
+      output_log_mem();
       break;
 
     case SIGSEGV:   /* Fall through */
     case SIGABRT:
       SIG_DEBUG("Received SIGABORT\n");
+      output_log_mem();
       backtrace_handle_signal(&info);
       break;
 
     case SIGINT:
       printf("Received SIGINT\n");
+      output_log_mem();
       itti_send_terminate_message(TASK_UNKNOWN);
       *end = 1;
       break;

@@ -179,8 +179,8 @@ int main(int argc, char **argv)
   generate_drs_puch(lte_frame_parms,lte_ue_common_vars->txdataF[0],AMP,0,first_rb,nb_rb);
 
 #ifdef IFFT_FPGA
-  write_output("txsigF0.m","txsF0", lte_ue_common_vars->txdataF[0],300*120,1,4);
-  //write_output("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],300*120,1,4);
+  LOG_M("txsigF0.m","txsF0", lte_ue_common_vars->txdataF[0],300*120,1,4);
+  //LOG_M("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],300*120,1,4);
 
   // do talbe lookup and write results to txdataF2
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
@@ -197,8 +197,8 @@ int main(int argc, char **argv)
     printf("l=%d\n",l);
   }
 
-  write_output("txsigF20.m","txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  //write_output("txsigF21.m","txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  LOG_M("txsigF20.m","txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  //LOG_M("txsigF21.m","txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++)
     PHY_ofdm_mod(txdataF2[aa],        // input
@@ -211,8 +211,8 @@ int main(int argc, char **argv)
                  CYCLIC_PREFIX);
 
 #else
-  write_output("txsigF0.m","txsF0", lte_ue_common_vars->txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-  //write_output("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  LOG_M("txsigF0.m","txsF0", lte_ue_common_vars->txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+  //LOG_M("txsigF1.m","txsF1", lte_ue_common_vars->txdataF[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
   for (aa=0; aa<lte_frame_parms->nb_antennas_tx; aa++) {
     PHY_ofdm_mod(lte_ue_common_vars->txdataF[aa],        // input
@@ -228,8 +228,8 @@ int main(int argc, char **argv)
 #endif
 
 
-  write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  LOG_M("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  //LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
   // multipath channel
   randominit(0);
@@ -253,7 +253,7 @@ int main(int argc, char **argv)
                       channel_length,
                       0);
 
-    //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+    //LOG_M("channel0.m","chan0",ch[0],channel_length,1,8);
 
     // scale by path_loss = NOW - P_noise
     //sigma2       = pow(10,sigma2_dB/10);
@@ -304,8 +304,8 @@ int main(int argc, char **argv)
       }
     }
 
-    write_output("rxsig0.m","rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("rxsig1.m","rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("rxsig0.m","rxs0", lte_eNB_common_vars->rxdata[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("rxsig1.m","rxs1", lte_eNB_common_vars->rxdata[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
     /*
     // optional: read rx_frame from file
@@ -351,15 +351,15 @@ int main(int argc, char **argv)
 
   }
 
-  write_output("rxsigF0.m","rxsF0", lte_eNB_common_vars->rxdataF[0][0],512*12*2,2,1);
-  write_output("rxsigF1.m","rxsF1", lte_eNB_common_vars->rxdataF[0][1],512*12*2,2,1);
-  write_output("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
-  write_output("srs_est0.m","srsest0",lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
-  write_output("srs_est1.m","srsest1",lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
-  write_output("rxsigF0_ext.m","rxsF0_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
-  write_output("rxsigF1_ext.m","rxsF1_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][1],300*12*2,2,1);
-  write_output("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
-  write_output("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
+  LOG_M("rxsigF0.m","rxsF0", lte_eNB_common_vars->rxdataF[0][0],512*12*2,2,1);
+  LOG_M("rxsigF1.m","rxsF1", lte_eNB_common_vars->rxdataF[0][1],512*12*2,2,1);
+  LOG_M("srs_seq.m","srs",lte_eNB_common_vars->srs,2*lte_frame_parms->ofdm_symbol_size,2,1);
+  LOG_M("srs_est0.m","srsest0",lte_eNB_common_vars->srs_ch_estimates[0][0],512,1,1);
+  LOG_M("srs_est1.m","srsest1",lte_eNB_common_vars->srs_ch_estimates[0][1],512,1,1);
+  LOG_M("rxsigF0_ext.m","rxsF0_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][0],300*12*2,2,1);
+  LOG_M("rxsigF1_ext.m","rxsF1_ext", lte_eNB_ulsch_vars[0]->rxdataF_ext[0][1],300*12*2,2,1);
+  LOG_M("drs_est0.m","drsest0",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][0],300*12,1,1);
+  LOG_M("drs_est1.m","drsest1",lte_eNB_ulsch_vars[0]->drs_ch_estimates[0][1],300*12,1,1);
 
 
 #ifdef IFFT_FPGA

@@ -127,7 +127,7 @@ void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc);
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param br_flag indicator for eMTC PRACH
 */
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void prach_procedures(PHY_VARS_eNB *eNB,
 		      int br_flag);
 #else
@@ -208,7 +208,7 @@ LTE_eNB_UE_stats* get_UE_stats(uint8_t Mod_id, uint8_t CC_id,uint16_t rnti);
 lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subframe);
 
 
-int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *phy_vars_eNB,uint8_t UE_id,uint8_t harq_pid, uint8_t bw_factor);
+int16_t get_hundred_times_delta_IF_eNB(PHY_VARS_eNB *phy_vars_eNB,uint16_t UE_id,uint8_t harq_pid, uint8_t bw_factor);
 
 int16_t get_hundred_times_delta_IF_mac(module_id_t module_idP, uint8_t CC_id, rnti_t rnti, uint8_t harq_pid);
 

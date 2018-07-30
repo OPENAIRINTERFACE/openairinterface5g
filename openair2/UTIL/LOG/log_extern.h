@@ -32,3 +32,6 @@ extern int log_shutdown;
 
 extern mapping log_level_names[];
 extern mapping log_verbosity_names[];
+
+extern int log_mem_flag;
+extern char * log_mem_filename;

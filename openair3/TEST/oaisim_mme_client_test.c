@@ -35,7 +35,6 @@
 #include "s1ap_common.h"
 #include "s1ap_eNB.h"
 #include "s1ap_mme.h"
-#include "s1ap_ies_defs.h"
 
 char ip_addr[] = "127.0.0.1";
 

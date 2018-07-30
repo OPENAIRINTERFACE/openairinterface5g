@@ -200,7 +200,7 @@ void
 config_req_rlc_am (
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t             srb_flagP,
-  rlc_am_info_t  * const       config_am_pP,
+  const rlc_am_info_t  *       config_am_pP,
   const rb_id_t                rb_idP,
   const logical_chan_id_t      chan_idP 
 )
@@ -509,6 +509,7 @@ rlc_am_rx (
 
   default:
     LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE 0x%02X\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc), rlc->protocol_state);
+    list_free (&data_indP.data);
   }
 }
 
@@ -551,7 +552,9 @@ rlc_am_mac_status_indication (
 
   rlc->last_absolute_subframe_status_indication = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
 
-  rlc->nb_bytes_requested_by_mac = tb_sizeP;
+  if (tb_sizeP > 0) {
+    rlc->nb_bytes_requested_by_mac = tb_sizeP;
+  }
 
   status_resp.buffer_occupancy_in_bytes = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, rlc);
 
@@ -585,7 +588,6 @@ rlc_am_mac_status_indication (
 
     sdu_size            = ((rlc_am_tx_sdu_management_t *) (rlc->input_sdus[rlc->current_sdu_index].mem_block->data))->sdu_size;
     sdu_remaining_size  = ((rlc_am_tx_sdu_management_t *) (rlc->input_sdus[rlc->current_sdu_index].mem_block->data))->sdu_remaining_size;
-
     status_resp.head_sdu_remaining_size_to_send = sdu_remaining_size;
 
     if (sdu_size == sdu_remaining_size)  {
