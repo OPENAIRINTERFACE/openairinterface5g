@@ -254,9 +254,7 @@ class SSHConnection():
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		# Replacing with a nohup and a direct redirection of stdout to a file
-		self.command('echo ' + self.eNBPassword + ' | nohup sudo -S -E ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + ' > enb_' + SSH.testCase_id + '.log 2>&1 &', '\$', 5)
-		# Using a tail -f with result with an unexpected timeout message
-		#self.command('tail -f enb_' + SSH.testCase_id + '.log', 'got sync', 60)
+		self.command('echo ' + self.eNBPassword + ' | nohup sudo -S -E stdbuf -o0 ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + ' > enb_' + SSH.testCase_id + '.log 2>&1 &', '\$', 5)
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 10

@@ -204,6 +204,29 @@ pipeline {
                         //}
                     }
                 }
+		stage ("Test FDD - Band 7 - B210") {
+                    steps {
+                        script {
+                            if ("MERGE".equals(env.gitlabActionType)) {
+                                build job: 'eNB-CI-FDD-Band7-B210',
+                                   parameters: [
+                                       string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                       string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                                       string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                                       booleanParam(name: 'eNB_mergeRequest', value: true)
+                                   ]
+                            } else {
+                                build job: 'eNB-CI-FDD-Band7-B210',
+                                   parameters: [
+                                       string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                       string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                                       string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                                       booleanParam(name: 'eNB_mergeRequest', value: false)
+                                   ]
+                            }
+                        }
+                    }
+                }
             }
             post {
                 always {
