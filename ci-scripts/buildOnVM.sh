@@ -1,4 +1,24 @@
 #!/bin/bash
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
 
 function usage {
     echo "OAI VM Build Check script"
@@ -65,6 +85,7 @@ VM_TEMPLATE=ci-
 JOB_NAME=XX
 BUILD_ID=XX
 VM_NAME=ci-enb-usrp
+VM_MEMORY=2048
 ARCHIVES_LOC=enb_usrp
 LOG_PATTERN=.Rel14.txt
 NB_PATTERN_FILES=4
@@ -126,6 +147,7 @@ case $key in
     ;;
     -v4)
     VM_NAME=ci-cppcheck
+    VM_MEMORY=4096
     ARCHIVES_LOC=cppcheck
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
@@ -174,6 +196,7 @@ case $key in
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck
+        VM_MEMORY=4096
         ARCHIVES_LOC=cppcheck
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
@@ -247,7 +270,7 @@ then
     echo "############################################################"
     echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
     echo "############################################################"
-    uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+    uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
 fi
 
 echo "Waiting for VM to be started"
