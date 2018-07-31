@@ -134,6 +134,7 @@ extern "C" {
 #define DEBUG_PRACH        (1<<0)
 #define DEBUG_RU           (1<<1)
 #define DEBUG_UE_PHYPROC   (1<<2)
+#define DEBUG_LTEESTIM     (1<<3)
 #define DEBUG_CTRLSOCKET   (1<<10)
 #define UE_TIMING          (1<<20)
 
@@ -143,13 +144,6 @@ extern "C" {
 #define SET_LOG_MATLAB(O)   g_log->matlab_mask = (g_log->matlab_mask | O)
 #define CLEAR_LOG_MATLAB(O) g_log->matlab_mask = (g_log->matlab_mask & (~O))
 
-/* @}*/
-
-#define OAI_OK 0    /*!< \brief all ok */
-#define OAI_ERR 1   /*!< \brief generic error */
-#define OAI_ERR_READ_ONLY 2 /*!< \brief tried to write to read-only item */
-#define OAI_ERR_NOTFOUND 3  /*!< \brief something wasn't found */
-/* @}*/
 
 
 typedef enum {

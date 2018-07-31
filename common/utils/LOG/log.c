@@ -73,6 +73,7 @@ mapping log_options[] = {
 mapping log_maskmap[] = {
   {"prach",       DEBUG_PRACH},
   {"RU",          DEBUG_RU},
+  {"LTEESTIM",    DEBUG_LTEESTIM},
   {"ctrlsocket",  DEBUG_CTRLSOCKET},
   {"UE_PHYPROC",  DEBUG_UE_PHYPROC},
   {"UE_TIMING",   UE_TIMING},
@@ -315,10 +316,14 @@ void  log_getconfig(log_t *g_log) {
       logparams_debug[i].defuintval  = 0;
       logparams_debug[i].type        = TYPE_UINT;
       logparams_debug[i].paramflags  = PARAMFLAG_BOOL;
+      logparams_debug[i].uptr        = NULL;
+      logparams_debug[i].chkPptr     = NULL;
       logparams_debug[i].numelt      = 0;
       logparams_matlab[i].defuintval  = 0;
       logparams_matlab[i].type        = TYPE_UINT;
       logparams_matlab[i].paramflags  = PARAMFLAG_BOOL;
+      logparams_matlab[i].uptr        = NULL;
+      logparams_matlab[i].chkPptr     = NULL;
       logparams_matlab[i].numelt      = 0;
   }
   config_get( logparams_debug,(sizeof(log_maskmap)/sizeof(mapping)) - 1 ,CONFIG_STRING_LOG_PREFIX);
