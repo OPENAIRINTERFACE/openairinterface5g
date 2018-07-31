@@ -253,8 +253,9 @@ class SSHConnection():
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
-		# Replacing with a nohup and a direct redirection of stdout to a file
-		self.command('echo ' + self.eNBPassword + ' | nohup sudo -S -E stdbuf -o0 ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + ' > enb_' + SSH.testCase_id + '.log 2>&1 &', '\$', 5)
+		self.command('echo "./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + '" > ./my-lte-softmodem-run.sh ', '\$', 5)
+		self.command('chmod 775 ./my-lte-softmodem-run.sh ', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + SSH.testCase_id + '.log ./my-lte-softmodem-run.sh', '\$', 5)
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 10
@@ -733,6 +734,9 @@ class SSHConnection():
 
 	def TerminateeNB(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+		self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S daemon --name=enb_daemon --stop', '\$', 5)
+		self.command('rm -f my-lte-softmodem-run.sh', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGINT lte-softmodem || true', '\$', 5)
 		time.sleep(5)
 		self.command('stdbuf -o0  ps -aux | grep -v grep | grep lte-softmodem', '\$', 5)
