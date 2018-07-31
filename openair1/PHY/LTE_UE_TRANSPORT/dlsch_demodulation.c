@@ -3979,11 +3979,6 @@ void dlsch_channel_level_median(int **dl_ch_estimates_ext,
                     ((int32_t*)&norm128D)[2] +
                     ((int32_t*)&norm128D)[3];
 
-        if (ii<1){
-          print_ints("norm128D",&norm128D[0]);
-          printf("norm_pack[%d] %d\n", aatx*n_rx + aarx, norm_pack);
-        }
-
         if (norm_pack > max)
           max = norm_pack;
         if (norm_pack < min)
