@@ -361,11 +361,14 @@ message( FATAL_ERROR "The script ${asn1c_call} must be present" )
 endif(NOT EXISTS ${asn1c_call})
 
 message("calling ASN1C_PREFIX=NR_ asn1c -findirect-choice -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
+
 execute_process(COMMAND ${asn1c_call}  
 			${NR_RRC_FULL_DIR} 
 			${NR_RRC_GRAMMAR}
 			NR_RRC
-                        RESULT_VARIABLE ret)
+                        RESULT_VARIABLE ret
+                        OUTPUT_QUIET
+                        ERROR_QUIET )
 
 if (NOT ${ret} STREQUAL 0)
    message(FATAL_ERROR "${asn1c_call}: error")
@@ -374,7 +377,6 @@ endif (NOT ${ret} STREQUAL 0)
 if(NOT EXISTS ${fix_asn1c_call})
   message( FATAL_ERROR "The script ${fix_asn1c_call} must be present" )
 endif(NOT EXISTS ${fix_asn1c_call})
-
 execute_process(COMMAND ${fix_asn1c_call} 
 			${NR_RRC_FULL_DIR} 
 			NR_RRC 
@@ -397,6 +399,7 @@ include_directories ("${NR_RRC_FULL_DIR}")
 
 # add the command to generate the source code
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
+
 
 add_custom_command (
   OUTPUT ${NR_RRC_FULL_DIR}/asn1_constants.h
@@ -434,7 +437,11 @@ message("calling ASN1C_PREFIX=S1AP_ asn1c -fcompound-names -fno-include-deps -ge
 
 execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret
+                OUTPUT_QUIET
+                ERROR_QUIET
+)
+
 
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
@@ -499,7 +506,9 @@ message("calling asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -
 
 execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret 
+                OUTPUT_QUIET
+                ERROR_QUIET )
 
 #execute_process(COMMAND ${asn1c_call}  
 #			${X2AP_C_DIR} 
@@ -1458,6 +1467,7 @@ set(NR_L2_SRC_UE
   ${NR_UE_RRC_DIR}/main_ue.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
 #  ${NR_UE_RRC_DIR}/mac_vars.c
+#${RRC_DIR}/rrc_UE.c
   )
 
 set (MAC_SRC

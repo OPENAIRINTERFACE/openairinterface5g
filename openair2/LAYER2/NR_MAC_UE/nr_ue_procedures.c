@@ -36,6 +36,7 @@
 #include "assertions.h"
 
 #include <stdio.h>
+#include <math.h>
 
 typedef enum subcarrier_spacing_e {
 	scs_15kHz  = 0x1,
@@ -59,23 +60,29 @@ typedef enum frequency_range_e {
     FR2
 } frequency_range_t;
 
+uint32_t get_ssb_slot(uint32_t ssb_index){
+    //  this function now only support f <= 3GHz
+    return ssb_index & 0x3 ;
+
+    //  return first_symbol(case, freq, ssb_index) / 14
+
+}
+
 int8_t nr_ue_decode_mib(
 	module_id_t module_id,
 	int 		cc_id,
 	uint8_t 	gNB_index,
 	uint8_t 	extra_bits,	//	8bits 38.212 c7.1.1
-	uint32_t    l_ssb_equal_64,
-	//uint32_t 	*ssb_index,	//	from decoded MIB
-	//uint32_t 	*frameP,	//	10 bits = 6(in decoded MIB)+4(in extra bits from L1)
-	void 		*pduP,		//	encoded MIB
-	uint16_t 	pdu_len){
+	uint32_t    ssb_length,
+	uint32_t 	ssb_index,
+	void 		*pduP ){
 
     printf("[L2][MAC] decode mib\n");
 
 	NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
     nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index,
-		     NR_BCCH_BCH, (uint8_t *) pduP, pdu_len );
+		     NR_BCCH_BCH, (uint8_t *) pduP, 3 );
     
 
     if(mac->mib != NULL){
@@ -86,13 +93,13 @@ int8_t nr_ue_decode_mib(
 	    
 	    uint32_t ssb_subcarrier_offset = mac->mib->ssb_SubcarrierOffset;
 
-	    uint32_t ssb_index = 0;    //  TODO: ssb_index should obtain from L1 in case Lssb != 64
+	    //uint32_t ssb_index = 0;    //  TODO: ssb_index should obtain from L1 in case Lssb != 64
 
 	    frame = frame << 4;
 	    frame = frame | frame_number_4lsb;
 
-	    if(l_ssb_equal_64){
-	    	ssb_index = (( extra_bits >> 5 ) & 0x7 );                                   //	extra bits[5:7]
+	    if(ssb_length == 64){
+	    	ssb_index = ssb_index & (( extra_bits >> 2 ) & 0x1C );    //	{ extra_bits[5:7], ssb_index[2:0] }
 	    }else{
 			if(ssb_subcarrier_offset_msb){
 			    ssb_subcarrier_offset = ssb_subcarrier_offset | 0x10;
@@ -120,7 +127,6 @@ int8_t nr_ue_decode_mib(
         frequency_range_t frequency_range = FR1;
         uint32_t index_4msb = (mac->mib->pdcch_ConfigSIB1 >> 4) & 0xf;
         uint32_t index_4lsb = (mac->mib->pdcch_ConfigSIB1 & 0xf);
-
         int32_t num_rbs = -1;
         int32_t num_symbols = -1;
         int32_t rb_offset = -1;
@@ -243,29 +249,43 @@ int8_t nr_ue_decode_mib(
         AssertFatal(rb_offset != -1, "Type0 PDCCH coreset rb_offset undefined");
         
         uint32_t cell_id = 0;   //  obtain from L1 later
-        mac->type0_pdcch_ss.coreset.rb_start = rb_offset;
-        mac->type0_pdcch_ss.coreset.rb_end = rb_offset + num_rbs - 1;
-        mac->type0_pdcch_ss.coreset.duration = num_symbols;
-        mac->type0_pdcch_ss.coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
-        mac->type0_pdcch_ss.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L
-        mac->type0_pdcch_ss.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R
-        mac->type0_pdcch_ss.coreset.cce_reg_interleaved_shift_index = cell_id;
-        mac->type0_pdcch_ss.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
-        mac->type0_pdcch_ss.coreset.pdcch_dmrs_scrambling_id = cell_id;
+        mac->type0_pdcch_coreset.rb_start = rb_offset;
+        mac->type0_pdcch_coreset.rb_end = rb_offset + num_rbs - 1;
+        mac->type0_pdcch_coreset.duration = num_symbols;
+        mac->type0_pdcch_coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
+        mac->type0_pdcch_coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L
+        mac->type0_pdcch_coreset.cce_reg_interleaved_interleaver_size = 2;  //  R
+        mac->type0_pdcch_coreset.cce_reg_interleaved_shift_index = cell_id;
+        mac->type0_pdcch_coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
+        mac->type0_pdcch_coreset.pdcch_dmrs_scrambling_id = cell_id;
 
 
 
         // type0-pdcch search space
         float big_o;
-        uint32_t number_of_search_space_per_slot;
         float big_m;
+        uint32_t temp;
+        SFN_C_TYPE sfn_c;
+        uint32_t n_c;
+        uint32_t number_of_search_space_per_slot;
         uint32_t first_symbol_index;
+
+const uint32_t scs_index = 0;
+const uint32_t num_slot_per_frame = 10;
 
         /// MUX PATTERN 1
         if(mac->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR1){
             big_o = table_38213_13_11_c1[index_4lsb];
             number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
             big_m = table_38213_13_11_c3[index_4lsb];
+
+            temp = (uint32_t)(big_o*pow(2, scs_index)) + (uint32_t)(ssb_index*big_m);
+            n_c = temp / num_slot_per_frame;
+            if((temp/num_slot_per_frame) & 0x1){
+                sfn_c = SFN_C_MOD_2_EQ_1;
+            }else{
+                sfn_c = SFN_C_MOD_2_EQ_0;
+            }
 
             if((index_4lsb == 1 || index_4lsb == 3 || index_4lsb == 5 || index_4lsb == 7) && (ssb_index&1)){
                 first_symbol_index = num_symbols;
@@ -291,12 +311,13 @@ int8_t nr_ue_decode_mib(
         
         /// MUX PATTERN 2
         if(mac->type0_pdcch_ss_mux_pattern == 2){
+            
             if((scs_ssb == scs_120kHz) && (scs_pdcch == scs_60kHz)){
                 //  38.213 Table 13-13
                 AssertFatal(index_4lsb == 0, "38.213 Table 13-13 4 LSB out of range\n");
                 //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
-                //  TODO Type0SS_frame = SSB_frame
-                //  TODO Type0SS_slot = SSB_slot
+                sfn_c = SFN_C_EQ_SFN_SSB;
+                n_c = get_ssb_slot(ssb_index);
                 switch(ssb_index & 0x3){    //  ssb_index(i) mod 4
                     case 0: 
                         first_symbol_index = 0;
@@ -317,7 +338,8 @@ int8_t nr_ue_decode_mib(
                 //  38.213 Table 13-14
                 AssertFatal(index_4lsb == 0, "38.213 Table 13-14 4 LSB out of range\n");
                 //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
-                //  TODO Type0SS_frame = SSB_frame
+                sfn_c = SFN_C_EQ_SFN_SSB;
+                n_c = get_ssb_slot(ssb_index);
                 switch(ssb_index & 0x7){    //  ssb_index(i) mod 8
                     case 0: 
                         first_symbol_index = 0;
@@ -333,11 +355,11 @@ int8_t nr_ue_decode_mib(
                         break;
                     case 4: 
                         first_symbol_index = 12;
-                        //  TODO Type0SS_slot = SSB_slot - 1
+                        n_c = get_ssb_slot(ssb_index) - 1;
                         break;
                     case 5: 
                         first_symbol_index = 13;
-                        //  TODO Type0SS_slot = SSB_slot - 1
+                        n_c = get_ssb_slot(ssb_index) - 1;
                         break;
                     case 6: 
                         first_symbol_index = 0;
@@ -356,8 +378,8 @@ int8_t nr_ue_decode_mib(
                 //  38.213 Table 13-15
                 AssertFatal(index_4lsb == 0, "38.213 Table 13-15 4 LSB out of range\n");
                 //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
-                //  TODO Type0SS_frame = SSB_frame
-                //  TODO Type0SS_slot = SSB_slot
+                sfn_c = SFN_C_EQ_SFN_SSB;
+                n_c = get_ssb_slot(ssb_index);
                 switch(ssb_index & 0x3){    //  ssb_index(i) mod 4
                     case 0: 
                         first_symbol_index = 4;
@@ -376,9 +398,11 @@ int8_t nr_ue_decode_mib(
             }else{ ; }
         }
 
-        mac->type0_pdcch_ss_big_o = big_o;
+        //mac->type0_pdcch_ss_big_o = big_o;
+        mac->type0_pdcch_ss_sfn_c = sfn_c;
+        mac->type0_pdcch_ss_n_c = n_c;
         mac->type0_pdcch_ss_number_of_search_space_per_slot = number_of_search_space_per_slot;
-        mac->type0_pdcch_ss_big_m = big_m;
+        //mac->type0_pdcch_ss_big_m = big_m;
         mac->type0_pdcch_ss_first_symbol_index = first_symbol_index;
 
 	    // fill in the elements in config request inside P5 message
@@ -400,19 +424,53 @@ int8_t nr_ue_decode_mib(
     return 0;
 }
 
+typedef enum seach_space_mask_e {
+    type0_pdcch  = 0x1, 
+    type0a_pdcch = 0x2,
+    type1_pdcch  = 0x4, 
+    type2_pdcch  = 0x8
+} search_space_mask_t;
+
+//  TODO: change to UE parameter, scs: 15KHz, slot duration: 1ms
+#define NUM_SLOT_FRAME 10
+
 // Performs :
 // 1. TODO: Call RRC for link status return to PHY
 // 2. TODO: Perform SR/BSR procedures for scheduling feedback
 // 3. TODO: Perform PHR procedures
-
 NR_UE_L2_STATE_t nr_ue_scheduler(
     const module_id_t module_id,
     const uint8_t gNB_index,
     const int cc_id,
     const frame_t rx_frame,
     const slot_t rx_slot,
+    const int32_t ssb_index,
     const frame_t tx_frame,
-    const slot_t tx_slot){
+    const slot_t tx_slot ){
+
+    uint32_t search_space_mask = 0;
+
+    NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+
+    //  check type0 from 38.213 13
+    if(ssb_index != -1){
+
+        if(mac->type0_pdcch_ss_mux_pattern == 1){
+            //  now bigO and bigM use floating point implementation, after can optimize to use fixed point implementation by change mac_vars table and operation 'multiple'
+
+
+        }
+        if(mac->type0_pdcch_ss_mux_pattern == 2){
+            if(ssb_index != -1){
+                search_space_mask = search_space_mask & type0_pdcch;
+            }
+        }
+        if(mac->type0_pdcch_ss_mux_pattern == 3){
+            if(ssb_index != -1){
+                search_space_mask = search_space_mask & type0_pdcch;
+            }
+        }
+    }
 
 
 	return CONNECTION_OK;

@@ -59,6 +59,13 @@
 
 #define NB_NR_UE_MAC_INST 1
 
+typedef enum {
+    SFN_C_MOD_2_EQ_0, 
+    SFN_C_MOD_2_EQ_1, 
+    SFN_C_EQ_SFN_SSB
+} SFN_C_TYPE;
+
+
 /*!\brief Top level UE MAC structure */
 typedef struct {
     
@@ -72,12 +79,16 @@ typedef struct {
 	NR_MIB_t 			            *mib;
 
     ///     Type0-PDCCH seach space coreset
-    fapi_nr_search_space_t type0_pdcch_ss;
+    fapi_nr_coreset_t type0_pdcch_coreset;
     uint32_t type0_pdcch_ss_mux_pattern;
-    float type0_pdcch_ss_big_o;
+//    float type0_pdcch_ss_big_o;
     uint32_t type0_pdcch_ss_number_of_search_space_per_slot;
-    float type0_pdcch_ss_big_m;
+//    float type0_pdcch_ss_big_m;
     uint32_t type0_pdcch_ss_first_symbol_index;
+
+    SFN_C_TYPE type0_pdcch_ss_sfn_c;
+    uint32_t type0_pdcch_ss_n_c;
+
     ///     Type0-PDCCH seach space
 
 

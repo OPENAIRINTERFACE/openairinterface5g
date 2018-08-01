@@ -40,17 +40,17 @@
 static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 
 
-int8_t handle_bcch_bch(uint32_t pdu_len, uint8_t *pduP){
+int8_t handle_bcch_bch(uint8_t *pduP, uint8_t additional_bits, uint32_t ssb_index, uint32_t l_ssb){
 
     //  pdu_len = 4, 32bits
-    uint8_t extra_bits = pduP[0];
+    //uint8_t extra_bits = pduP[0];
     nr_ue_decode_mib(   (module_id_t)0,
                         0,
                         0,
-                        extra_bits,
-                        0,  //  Lssb = 64 is not support
-                        &pduP[1],
-                        pdu_len );
+                        additional_bits,
+                        l_ssb,  //  Lssb = 64 is not support    
+                        ssb_index,
+                        &pduP[1] );
 
 
 
@@ -72,6 +72,7 @@ int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
         ul_info->cc_id,
         ul_info->frame,
         ul_info->slot,
+        ul_info->ssb_index, 
         0, 0); //  TODO check tx/rx frame/slot is need for NR version
 
     switch(ret){
@@ -92,29 +93,33 @@ int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
 int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     
+    int32_t i;
     module_id_t module_id = dl_info->module_id;
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
     //  clean up scheduled_response structure
 
-    //if(dl_info->rx_ind != NULL){
+    if(dl_info->rx_ind != NULL){
         printf("[L2][IF MODULE][DL INDICATION][RX_IND]\n");
-        switch(dl_info->rx_ind.rx_request_body.pdu_index){
-            case FAPI_NR_RX_PDU_BCCH_BCH_TYPE:
-                    handle_bcch_bch(dl_info->rx_ind.rx_request_body.pdu_length, dl_info->rx_ind.rx_request_body.pdu);
-                break;
-            case FAPI_NR_RX_PDU_BCCH_DLSCH_TYPE:
-                    handle_bcch_dlsch(dl_info->rx_ind.rx_request_body.pdu_length, dl_info->rx_ind.rx_request_body.pdu);
-                break;
-            default:
-                break;
+        for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
+            switch(dl_info->rx_ind->rx_request_body[i].pdu_type){
+                case FAPI_NR_RX_PDU_BCCH_BCH_TYPE:
+                        handle_bcch_bch(dl_info->rx_ind->rx_request_body[i].mib_pdu.pdu, dl_info->rx_ind->rx_request_body[i].mib_pdu.additional_bits, dl_info->rx_ind->rx_request_body[i].mib_pdu.ssb_index, dl_info->rx_ind->rx_request_body[i].mib_pdu.l_ssb);
+                    break;
+                case FAPI_NR_RX_PDU_BCCH_DLSCH_TYPE:
+                        
+                    break;
+                default:
+                    break;
 
+            }
         }
-    //}
+        
+    }
 
-    //if(dl_info->dci_ind != NULL){
+    if(dl_info->dci_ind != NULL){
 
-    //}
+    }
 
     if(nr_ue_if_module_inst[module_id] != NULL){
         nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);

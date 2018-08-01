@@ -58,7 +58,7 @@ int8_t openair_rrc_top_init_ue_nr(void);
    \param buffer  encoded NR-RRC-Connection-Reconfiguration/Secondary-Cell-Group-Config message.
    \param size    length of buffer*/
 //TODO check to use which one
-int8_t nr_rrc_ue_decode_rrcReconfiguration(const uint8_t *buffer, const uint32_t size);
+//int8_t nr_rrc_ue_decode_rrcReconfiguration(const uint8_t *buffer, const uint32_t size);
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const uint8_t *buffer, const uint32_t size);
    
 

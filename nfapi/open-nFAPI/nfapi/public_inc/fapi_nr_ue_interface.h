@@ -186,7 +186,7 @@ typedef struct {
 		uint8_t dci_type;
 		uint8_t dci_size;
         fapi_nr_dci_pdu_rel15_t dci;
-	}fapi_nr_dci_indication_pdu_t;
+	} fapi_nr_dci_indication_pdu_t;
 
 	typedef struct {
 		fapi_nr_tl_t tl;
@@ -201,20 +201,41 @@ typedef struct {
   	fapi_nr_dci_indication_body_t dci_indication_body;
 } fapi_nr_dci_indication_t;
 
-	#define FAPI_NR_TX_MAX_PDU 100
+
+    typedef struct {
+        uint32_t pdu_length;
+        uint8_t* pdu;
+    } fapi_nr_pdsch_pdu_t;
+
+    typedef struct {
+        uint8_t* pdu;   //  3bytes
+        uint8_t additional_bits;
+        uint8_t ssb_index;
+        uint8_t l_ssb;
+    } fapi_nr_mib_pdu_t;
+
+    typedef struct {
+        uint32_t pdu_length;
+        uint8_t* pdu;
+    } fapi_nr_sib_pdu_t;
+
 	typedef struct {
 		fapi_nr_tl_t tl;
-        uint32_t pdu_index;
-        uint32_t pdu_length;
-		uint8_t* pdu;
+        uint8_t pdu_type;
+        union {
+            fapi_nr_pdsch_pdu_t pdsch_pdu;
+            fapi_nr_mib_pdu_t mib_pdu;
+            fapi_nr_sib_pdu_t sib_pdu;
+        };
+        
 	} fapi_nr_rx_request_body_t;
-	#define FAPI_NR_TX_REQUEST_BODY_TAG 0x2022
 
 ///
 typedef struct {
 	fapi_nr_p7_message_header_t header;
 	uint16_t sfn_sf_slot;
-	fapi_nr_rx_request_body_t rx_request_body;
+    uint16_t number_pdus;
+	fapi_nr_rx_request_body_t *rx_request_body;
 } fapi_nr_rx_indication_t;
 
 	typedef struct {
@@ -225,21 +246,18 @@ typedef struct {
 	} fapi_nr_tx_config_t;
 
 
-    #define FAPI_NR_TX_MAX_SEGMENTS 32
 	typedef struct {
 		uint16_t pdu_length;
 		uint16_t pdu_index;
         uint8_t* pdu;
 	} fapi_nr_tx_request_pdu_t;
 
-	#define FAPI_NR_RX_IND_MAX_PDU 100
 	typedef struct {
 		fapi_nr_tl_t tl;
 		fapi_nr_tx_config_t tx_config;
 		uint16_t number_of_pdus;
 		fapi_nr_tx_request_pdu_t* tx_pdu_list;
 	} fapi_nr_tx_request_body_t;
-	#define FAPI_NR_RX_INDICATION_BODY_TAG 0x2023
 
 ///
 typedef struct {

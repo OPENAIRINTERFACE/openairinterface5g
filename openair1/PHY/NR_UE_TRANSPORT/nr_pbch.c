@@ -701,9 +701,9 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   }
 	  //#endif
      
-    ue->dl_indication.rx_ind.rx_request_body.pdu_index = FAPI_NR_RX_PDU_BCCH_BCH_TYPE;
-    ue->dl_indication.rx_ind.rx_request_body.pdu_length = 3;
-    ue->dl_indication.rx_ind.rx_request_body.pdu = &decoded_output[0];
-    ue->if_inst->dl_indication(&ue->dl_indication);
+    //ue->dl_indication.rx_ind.rx_request_body.pdu_index = FAPI_NR_RX_PDU_BCCH_BCH_TYPE;
+    //ue->dl_indication.rx_ind.rx_request_body.pdu_length = 3;
+    //ue->dl_indication.rx_ind.rx_request_body.pdu = &decoded_output[0];
+    //ue->if_inst->dl_indication(&ue->dl_indication);
     
 }

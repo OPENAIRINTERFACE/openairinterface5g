@@ -49,9 +49,9 @@ int8_t nr_ue_decode_mib(
     int cc_id, 
     uint8_t gNB_index, 
     uint8_t extra_bits, 
-    uint32_t l_ssb_equal_64, 
-    void *pduP, 
-    uint16_t pdu_len);
+    uint32_t ssb_length, 
+    uint32_t ssb_index,
+    void *pduP );
 
 
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
@@ -94,11 +94,9 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
     const int cc_id,
     const frame_t rx_frame,
     const slot_t rx_slot,
+    const int32_t ssb_index,
     const frame_t tx_frame,
     const slot_t tx_slot);
-
-#endif
-
 
 
 /* \brief Get SR payload (0,1) from UE MAC
@@ -112,4 +110,5 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
 uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
        uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe);
 
+#endif
 /** @}*/

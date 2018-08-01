@@ -48,10 +48,10 @@ typedef struct {
 
     /// NR UE FAPI-like P7 message, direction: L1 to L2
     /// data reception indication structure
-    fapi_nr_rx_indication_t rx_ind;
+    fapi_nr_rx_indication_t *rx_ind;
 
     /// dci reception indication structure
-    fapi_nr_dci_indication_t dci_ind;
+    fapi_nr_dci_indication_t *dci_ind;
 
 } nr_downlink_indication_t;
 
@@ -67,6 +67,8 @@ typedef struct {
     frame_t frame;
     /// slot
     uint32_t slot;
+    /// ssb_index, if ssb is not present in current TTI, thie value set to -1
+    int8_t ssb_index;
 } nr_uplink_indication_t;
 
 // Downlink subframe P7
@@ -177,9 +179,11 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info);
 
 
 /**\brief handle BCCH-BCH message from dl_indication
-   \param pdu_len   length(bytes) of pdu
-   \param pduP      pointer to pdu*/
-int8_t handle_bcch_bch(uint32_t pdu_len, uint8_t *pduP);
+   \param 
+   \param 
+   \param 
+   \param */
+int8_t handle_bcch_bch(uint8_t *pduP, uint8_t additional_bits, uint32_t ssb_index, uint32_t l_ssb);
 
 
 /**\brief handle BCCH-DL-SCH message from dl_indication

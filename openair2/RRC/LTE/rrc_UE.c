@@ -1807,9 +1807,10 @@ rrc_ue_process_rrcConnectionReconfiguration(
         LOG_I(RRC,"Radio Resource Configuration is present\n");
         rrc_ue_process_radioResourceConfigDedicated(ctxt_pP,eNB_index, rrcConnectionReconfiguration_r8->radioResourceConfigDedicated);
       }
-      
-      
-/*      void *non_criticical_ext_iterator = rrcConnectionReconfiguration_r8;
+    
+//  LTE Rel 15 not yet here
+#if Rel15
+      void *non_criticical_ext_iterator = rrcConnectionReconfiguration_r8;
       RCCConnectionReconfiguration_v1510_IEs_t *rrc_connection_reconfiguration_v1510_IEs = (RRCConnectionReconfiguration_v1510_IEs_t *)0;
       // fetch EN-DC for NR_RRC here
       // r8
@@ -1851,8 +1852,8 @@ rrc_ue_process_rrcConnectionReconfiguration(
             case nr_Config_r15_PR_setup:
               //  process NR sCell config
               if(rrc_connection_reconfiguration_v1510_IEs->nr_Config_r15.choice.setup->nr_SecondaryCellGroupConfig_r15 != (OCTET_STRING_t *)0){
-                nr_rrc_ue_decode_rrcReconfiguration(  rrc_connection_reconfiguration_v1510_IEs->nr_Config_r15.choice.setup->nr_SecondaryCellGroupConfig_r15->buffer, 
-                                                      rrc_connection_reconfiguration_v1510_IEs->nr_Config_r15.choice.setup->nr_SecondaryCellGroupConfig_r15.size); 
+                nr_rrc_ue_decode_secondary_cellgroup_config(  rrc_connection_reconfiguration_v1510_IEs->nr_Config_r15.choice.setup->nr_SecondaryCellGroupConfig_r15->buffer, 
+                                                              rrc_connection_reconfiguration_v1510_IEs->nr_Config_r15.choice.setup->nr_SecondaryCellGroupConfig_r15.size); 
               }
              
               break;
@@ -1862,7 +1863,8 @@ rrc_ue_process_rrcConnectionReconfiguration(
               break;
           }
         }
-      }*/
+      }
+#endif
 
 #if defined(ENABLE_ITTI)
 
