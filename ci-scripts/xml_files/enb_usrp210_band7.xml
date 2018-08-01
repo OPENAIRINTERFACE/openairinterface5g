@@ -104,22 +104,22 @@
 
 	<testCase id="040611">
 		<class>Iperf</class>
-		<desc>iperf (10MHz - DL/6Mbps/UDP)(60 sec)</desc>
-		<iperf_args>-u -b 6M -t 60 -i 1</iperf_args>
+		<desc>iperf (10MHz - DL/10Mbps/UDP)(60 sec)</desc>
+		<iperf_args>-u -b 10M -t 60 -i 1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 	</testCase>
 
         <testCase id="040612">
 		<class>Iperf</class>
-		<desc>iperf (10MHz - DL/13Mbps/UDP)(60 sec)</desc>
-		<iperf_args>-u -b 13M -t 60 -i 1</iperf_args>
+		<desc>iperf (10MHz - DL/20Mbps/UDP)(60 sec)</desc>
+		<iperf_args>-u -b 20M -t 60 -i 1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
         </testCase>
 
         <testCase id="040613">
 		<class>Iperf</class>
-		<desc>iperf (10MHz - DL/15Mbps/UDP)(60 sec)</desc>
-		<iperf_args>-u -b 15M -t 60 -i 1</iperf_args>
+		<desc>iperf (10MHz - DL/30Mbps/UDP)(60 sec)</desc>
+		<iperf_args>-u -b 30M -t 60 -i 1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
         </testCase>
 

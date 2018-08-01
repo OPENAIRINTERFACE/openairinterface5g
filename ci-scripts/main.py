@@ -527,6 +527,9 @@ class SSHConnection():
 		try:
 			useIperf3 = False
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			# if by chance ADB server and EPC are on the same remote host, at least log collection will take of it
+			self.command('if [ ! -d ' + self.EPCSourceCodePath + '/scripts ]; then mkdir -p ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
+			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			# Checking if iperf / iperf3 are installed
 			self.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
 			result = re.search('iperf3', str(self.ssh.before))
@@ -541,7 +544,7 @@ class SSHConnection():
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
 			else:
 				self.command('rm -f /tmp/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
-				self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > /tmp/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+				self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
 			time.sleep(0.5)
 			self.close()
 
@@ -605,10 +608,11 @@ class SSHConnection():
 					else:
 						logging.debug('\u001B[1;37;41m Server Report and Connection refused Not Found! \u001B[0m')
 					sys.exit(1)
-				result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
+				result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/.\d+) (\((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
 				if result is not None:
 					bitrate = result.group('bitrate')
 					packetloss = result.group('packetloss')
+					jitter = result.group('jitter')
 					lock.acquire()
 					logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
 					if bitrate is not None:
@@ -619,6 +623,8 @@ class SSHConnection():
 							logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
 							lock.release()
 							sys.exit(1)
+					if jitter is not None:
+						logging.debug('\u001B[1;34m    Jitter      : ' + jitter + '\u001B[0m')
 					lock.release()
 			self.close()
 
@@ -826,22 +832,25 @@ class SSHConnection():
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
+		self.command('rm -f build.log.zip', '\$', 5)
 		self.command('zip build.log.zip build_log_*/*', '\$', 60)
-		self.command('rm -rf build_log_*', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -rf build_log_*', '\$', 5)
 		self.close()
 
 	def LogCollecteNB(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
+		self.command('rm -f enb.log.zip', '\$', 5)
 		self.command('zip enb.log.zip enb*.log', '\$', 60)
-		self.command('rm enb*.log', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log', '\$', 5)
 		self.close()
 
 	def LogCollectPing(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 		self.command('cd scripts', '\$', 5)
+		self.command('rm -f ping.log.zip', '\$', 5)
 		self.command('zip ping.log.zip ping*.log', '\$', 60)
 		self.command('rm ping*.log', '\$', 5)
 		self.close()
@@ -850,6 +859,7 @@ class SSHConnection():
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 		self.command('cd scripts', '\$', 5)
+		self.command('rm -f iperf.log.zip', '\$', 5)
 		self.command('zip iperf.log.zip iperf*.log', '\$', 60)
 		self.command('rm iperf*.log', '\$', 5)
 		self.close()
@@ -858,6 +868,7 @@ class SSHConnection():
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 		self.command('cd scripts', '\$', 5)
+		self.command('rm -f hss.log.zip', '\$', 5)
 		if re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('zip hss.log.zip hss*.log', '\$', 60)
 			self.command('rm hss*.log', '\$', 5)
@@ -870,6 +881,7 @@ class SSHConnection():
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 		self.command('cd scripts', '\$', 5)
+		self.command('rm -f mme.log.zip', '\$', 5)
 		if re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('zip mme.log.zip mme*.log', '\$', 60)
 			self.command('rm mme*.log', '\$', 5)
@@ -882,6 +894,7 @@ class SSHConnection():
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 		self.command('cd scripts', '\$', 5)
+		self.command('rm -f spgw.log.zip', '\$', 5)
 		if re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('zip spgw.log.zip spgw*.log', '\$', 60)
 			self.command('rm spgw*.log', '\$', 5)

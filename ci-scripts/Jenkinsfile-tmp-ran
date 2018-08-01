@@ -387,6 +387,24 @@ pipeline {
                         }
                     }
                 }
+                stage('Log Collection (Iperf)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (Iperf)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectIperf --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (Iperf)\u001B[0m'
+                            sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/iperf.log.zip ./iperf.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("iperf.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "iperf.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
             }
         }
     }
