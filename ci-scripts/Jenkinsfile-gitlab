@@ -41,6 +41,7 @@ pipeline {
         timestamps()
         gitLabConnection('OAI GitLab')
         gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim"])
+        ansiColor('xterm')
     }
 
     stages {
@@ -214,13 +215,22 @@ pipeline {
                 always {
                     script {
                         dir ('archives') {
-                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth"
+                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth red_hat"
                         }
                         if(fileExists('archives/vm_build_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_build_logs.zip'
                         }
                         if ("MERGE".equals(env.gitlabActionType)) {
                             sh "./ci-scripts/reportBuildLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger merge-request --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+                            sh "./ci-scripts/checkAddedWarnings.sh --src-branch ${env.gitlabSourceBranch} --target-branch ${env.gitlabTargetBranch}"
+                            def res=readFile('./oai_warning_files.txt').trim();
+                            if ("0".equals(res)) {
+                                echo "No issues w/ warnings/errors in this merge request"
+                            } else {
+                                def fileList=eadFile('./oai_warning_files_list.txt').trim();
+                                def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Some modified files in Merge Request MAY have INTRODUCED WARNINGS (" + fileList + ")"
+                                addGitLabMRComment comment: message
+                            }
                         } else {
                             sh "./ci-scripts/reportBuildLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger push --branch ${GIT_BRANCH} --commit ${GIT_COMMIT}"
                         }

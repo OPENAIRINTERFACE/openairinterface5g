@@ -105,7 +105,7 @@ function details_table {
     do
         if [[ $MESSAGE == *"/home/ubuntu/tmp"* ]]
         then
-            FILENAME=`echo $MESSAGE | sed -e "s#^/home/ubuntu/tmp/##" | awk -F ":" '{print $1}'`
+            FILENAME=`echo $MESSAGE | sed -e "s#^/home/ubuntu/tmp/##" -e "s#^.*/tmp/CI-eNB/##" | awk -F ":" '{print $1}'`
             LINENB=`echo $MESSAGE | awk -F ":" '{print $2}'`
             if [ "$COMPLETE_MESSAGE" != "start" ]
             then
