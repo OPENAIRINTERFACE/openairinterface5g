@@ -597,7 +597,7 @@ check_install_oai_software() {
         echo "EPEL repos not present. Installing them."
         $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
       fi
-      $SUDO $INSTALLER install -y python-epdb
+      $SUDO $INSTALLER install -y python-epdb vim-common
     else
       $SUDO $INSTALLER install -y mscgen pydb
     fi
