@@ -30,6 +30,8 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
     }
 }
 
+def doRedHatBuild = false
+
 pipeline {
     agent {
         label 'bellatrix'
@@ -42,6 +44,30 @@ pipeline {
     }
 
     stages {
+        stage ("Verify Parameters") {
+            steps {
+                script {
+                    echo '\u2705 \u001B[32mVerify Parameters\u001B[0m'
+                    def allParametersPresent = true
+
+                    if (params.RedHatRemoteServer == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.RedHatRemoteCredentials == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.RedHatWorkingPath == null) {
+                        allParametersPresent = false
+                    }
+                    if (allParametersPresent) {
+			echo "Performing Red Hat Build"
+                        doRedHatBuild = true
+                    } else {
+                        doRedHatBuild = false
+                    }
+                }
+            }
+        }
         stage ("Verify Guidelines") {
             steps {
                 echo "Git URL         is ${GIT_URL}"
@@ -162,6 +188,24 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Build eNb-USRP on Red Hat") {
+                    when {
+                        expression {doRedHatBuild}
+                    }
+                    steps {
+                        script {
+                            try {
+                                withCredentials([
+                                    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.RedHatRemoteCredentials}", usernameVariable: 'RH_Username', passwordVariable: 'RH_Password']
+                                ]) {
+                                    sh "./ci-scripts/buildOnRH.sh --workspace $WORKSPACE --job-name ${JOB_NAME} --build-id ${BUILD_ID} --remote-host ${params.RedHatRemoteServer} --remote-path ${params.RedHatWorkingPath} --remote-user-name ${RH_Username} --remote-password ${RH_Password}"
+                                }
+                            } catch (Exception e) {
+                                echo "Red Hat build failed not an error now"
+                            }
                         }
                     }
                 }

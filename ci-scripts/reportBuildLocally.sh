@@ -498,6 +498,8 @@ then
     echo "   </table>" >> ./build_results.html
 fi
 
+echo "   <h2>Ubuntu 16.04 LTS -- Summary</h2>" >> ./build_results.html
+
 sca_summary_table_header "OAI Static Code Analysis with CPPCHECK"
 sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized variable" uninitvar
 sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized struct member" uninitStructMember
@@ -547,6 +549,15 @@ summary_table_row "RB Tools - Release 14" ./archives/ue_eth/rb_tool.Rel14.txt "B
 summary_table_row "NAS Mesh - Release 14" ./archives/ue_eth/nasmesh.Rel14.txt "Built target nasmesh" ./ue_eth_row6.html
 summary_table_footer
 
+echo "   <h2>Red Hat (CentOS Linux release 7.4.1708) -- Summary</h2>" >> ./build_results.html
+
+summary_table_header "Red Hat -- OAI Build eNB -- USRP option"
+summary_table_row "LTE SoftModem - Release 14" ./archives/red_hat/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_rh_row1.html
+summary_table_row "Coding - Release 14" ./archives/red_hat/coding.Rel14.txt "Built target coding" ./enb_usrp_rh_row2.html
+summary_table_row "OAI USRP device if - Release 14" ./archives/red_hat/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_rh_row3.html
+summary_table_row "Parameters Lib Config - Release 14" ./archives/red_hat/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_rh_row4.html
+summary_table_footer
+
 echo "   <h3>Details</h3>" >> ./build_results.html
 
 for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
@@ -569,7 +580,11 @@ for DETAILS_TABLE in `ls ./ue_eth_row*.html`
 do
     cat $DETAILS_TABLE >> ./build_results.html
 done
-rm -f ./enb_usrp_row*.html ./basic_sim_row*.html ./phy_sim_row*.html ./enb_eth_row*.html ./ue_eth_row*.html
+for DETAILS_TABLE in `ls ./enb_usrp_rh_row*.html`
+do
+    cat $DETAILS_TABLE >> ./build_results.html
+done
+rm -f ./enb_usrp_row*.html ./basic_sim_row*.html ./phy_sim_row*.html ./enb_eth_row*.html ./ue_eth_row*.html ./enb_usrp_rh_row*.html
 
 echo "</body>" >> ./build_results.html
 echo "</html>" >> ./build_results.html
