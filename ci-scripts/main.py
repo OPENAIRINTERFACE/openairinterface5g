@@ -59,6 +59,7 @@ class SSHConnection():
 		self.eNBIPAddress = ''
 		self.eNBRepository = ''
 		self.eNBBranch = ''
+		self.eNB_AllowMerge = False
 		self.eNBCommitID = ''
 		self.eNBUserName = ''
 		self.eNBPassword = ''
@@ -165,8 +166,9 @@ class SSHConnection():
 			self.command('git checkout -f ' + self.eNBCommitID, '\$', 5)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
-			self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+		if (self.eNB_AllowMerge):
+			if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
+				self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('mkdir -p  log', '\$', 5)
@@ -998,6 +1000,11 @@ while len(argvs) > 1:
 	elif re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
 		SSH.eNBRepository = matchReg.group(1)
+	elif re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
+		doMerge = matchReg.group(1)
+		if ((doMerge == 'true') or (doMerge == 'True')):
+			SSH.eNB_AllowMerge = True
 	elif re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
 		SSH.eNBBranch = matchReg.group(1)
