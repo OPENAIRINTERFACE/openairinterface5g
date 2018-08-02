@@ -353,15 +353,18 @@ add_custom_command (
 add_list2_option(NR_RRC_ASN1_VERSION "NR_Rel15" "ASN.1 version of NR_RRC interface")
 
 if (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
-  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-38331-f10.asn)
+  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-Definitions.asn)
 endif  (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
 
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
 
 message("calling ASN1C_PREFIX=NR_ asn1c -gen-PER -fcompound-names -findirect-choice -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}")
 execute_process(COMMAND mkdir -p ${NR_RRC_FULL_DIR}
-                COMMAND env "ASN1C_PREFIX=NR_" asn1c -gen-PER -fcompound-names -findirect-choice -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
-                RESULT_VARIABLE ret)
+                COMMAND env "ASN1C_PREFIX=NR_" asn1c -fcompound-names -findirect-choice -gen-PER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
+                RESULT_VARIABLE ret
+                OUTPUT_QUIET
+                ERROR_QUIET
+		)
 
 
 if (NOT ${ret} STREQUAL 0)
@@ -381,12 +384,11 @@ include_directories ("${NR_RRC_FULL_DIR}")
 # add the command to generate the source code
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 
-add_custom_command (
-  OUTPUT ${NR_RRC_FULL_DIR}/NR_asn1_constants.h
-  COMMAND mkdir -p ${NR_RRC_FULL_DIR}
-  COMMAND env "ASN1C_PREFIX=NR_" asn1c -gen-PER -fcompound-names -findirect-choice -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
-  DEPENDS ${NR_RRC_GRAMMAR}
-  )
+add_custom_command (OUTPUT ${NR_RRC_FULL_DIR}/NR_asn1_constants.h
+  		    COMMAND mkdir -p ${NR_RRC_FULL_DIR}
+                    #COMMAND env "ASN1C_PREFIX=NR_" asn1c -gen-PER -fcompound-names -findirect-choice -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
+                    DEPENDS ${NR_RRC_GRAMMAR}
+                    )
 
 # S1AP
 # Same limitation as described in RRC: unknown generated file list
@@ -417,7 +419,9 @@ message("calling ASN1C_PREFIX=S1AP_ asn1c -fcompound-names -fno-include-deps -ge
 
 execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret
+		OUTPUT_QUIET
+		ERROR_QUIET)
 
 
 if (NOT ${ret} STREQUAL 0)
@@ -484,7 +488,9 @@ message("calling asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -
 
 execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret
+		OUTPUT_QUIET
+		ERROR_QUIET)
 
 #execute_process(COMMAND ${asn1c_call}  
 #			${X2AP_C_DIR} 
@@ -2177,6 +2183,7 @@ target_link_libraries (lte-uesoftmodem-nos1 ${T_LIB})
 
 add_executable(nr-softmodem
   ${rrc_h}
+  ${nr_rrc_h}
   ${s1ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
