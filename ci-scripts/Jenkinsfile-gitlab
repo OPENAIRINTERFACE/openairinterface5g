@@ -227,7 +227,7 @@ pipeline {
                             if ("0".equals(res)) {
                                 echo "No issues w/ warnings/errors in this merge request"
                             } else {
-                                def fileList=eadFile('./oai_warning_files_list.txt').trim();
+                                def fileList=readFile('./oai_warning_files_list.txt').trim();
                                 def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Some modified files in Merge Request MAY have INTRODUCED WARNINGS (" + fileList + ")"
                                 addGitLabMRComment comment: message
                             }
