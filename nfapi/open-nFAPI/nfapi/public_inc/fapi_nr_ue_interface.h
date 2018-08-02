@@ -15,20 +15,11 @@
  */
 
 
-#ifndef _FAPI_NR_INTERFACE_NR_EXTENSION_H_
-#define _FAPI_NR_INTERFACE_NR_EXTENSION_H_
-#define _FAPI_NR_INTERFACE_H_
+#ifndef _FAPI_NR_UE_INTERFACE_H_
+#define _FAPI_NR_UE_INTERFACE_H_
 
 #include "stddef.h"
-
-
-
-#define FAPI_NR_MAX_NUM_DL_ALLOCATIONS             16
-#define FAPI_NR_MAX_NUM_UL_ALLOCATIONS             16
-#define FAPI_NR_MAX_NUM_SERVING_CELLS              32
-#define FAPI_NR_MAX_NUM_ZP_CSI_RS_RESOURCE_PER_SET 16
-#define FAPI_NR_MAX_NUM_CANDIDATE_BEAMS            16
-#define FAPI_NR_MAX_RA_OCCASION_PER_CSIRS          64
+#include "fapi_nr_ue_constants.h"
 
 typedef unsigned int	uint32_t;
 typedef unsigned short	uint16_t;
@@ -36,35 +27,6 @@ typedef unsigned char	uint8_t;
 typedef signed int		int32_t;
 typedef signed short	int16_t;
 typedef signed char		int8_t;
-
-
-typedef enum {
-    FAPI_NR_RX_PDU_BCCH_BCH_TYPE = 0,
-    FAPI_NR_RX_PDU_BCCH_DLSCH_TYPE
-} fapi_nr_rx_pdu_type_e;
-
-
-typedef struct {
-	uint16_t phy_id;
-	uint16_t message_id;
-	uint16_t message_length;
-	uint16_t spare;
-} fapi_nr_p4_p5_message_header_t;
-
-typedef struct {
-	uint16_t phy_id;
-	uint16_t message_id;
-	uint16_t message_length;
-	uint16_t m_segment_sequence; /* This consists of 3 fields - namely, M, Segement & Sequence number*/
-	uint32_t checksum;
-	uint32_t transmit_timestamp;
-} fapi_nr_p7_message_header_t;
-
-typedef struct {
-	uint16_t tag;
-	uint16_t length;
-} fapi_nr_tl_t;
-#define FAPI_NR_TAG_LENGTH_PACKED_LEN 4
 
 typedef struct {
     //  dci pdu
@@ -107,7 +69,6 @@ typedef struct {
     uint8_t short_messages;
     uint8_t tb_scaling;
 
-
     uint8_t prb_bundling_size_indicator;    //  38.214 chapter 5.1.2.3
     uint8_t rate_matching_indicator;
     uint8_t zp_csi_rs_trigger;
@@ -130,10 +91,8 @@ typedef struct {
     uint8_t dci2_3_tpc_command;
 
 } fapi_nr_dci_pdu_rel15_t;
-#define FAPI_NR_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG 0x2020
 
 typedef struct {
-    fapi_nr_tl_t tl;
     uint8_t uci_format;
     uint8_t uci_channel;
     uint8_t harq_ack_bits;
@@ -144,15 +103,7 @@ typedef struct {
     uint32_t sr;
 } fapi_nr_uci_pdu_rel15_t;
 
-    typedef enum {
-        CCE_REG_MAPPING_TYPE_INTERLEAVED,
-        CCE_REG_MAPPING_TYPE_NON_INTERLEAVED,
-    } coreset_cce_reg_mapping_type_t;
-
-    typedef enum{
-        PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE, 
-        PRECODER_GRANULARITY_ALL_CONTIGUOUS_RBS
-    } coreset_precoder_granularity_t;
+    
 
     typedef struct {
         /// frequency_domain_resource;
@@ -160,11 +111,11 @@ typedef struct {
         uint32_t rb_end;
 
         uint8_t duration;
-        coreset_cce_reg_mapping_type_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
+        uint8_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
         uint8_t cce_reg_interleaved_reg_bundle_size;    //  valid if CCE to REG mapping type is interleaved type
         uint8_t cce_reg_interleaved_interleaver_size;   //  valid if CCE to REG mapping type is interleaved type
         uint8_t cce_reg_interleaved_shift_index;        //  valid if CCE to REG mapping type is interleaved type
-        coreset_precoder_granularity_t precoder_granularity;
+        uint8_t precoder_granularity;
         uint8_t tci_state_pdcch;
 
         uint8_t tci_present_in_dci;
@@ -189,15 +140,13 @@ typedef struct {
 	} fapi_nr_dci_indication_pdu_t;
 
 	typedef struct {
-		fapi_nr_tl_t tl;
 		uint16_t number_of_dcis;
 		fapi_nr_dci_indication_pdu_t* dci_list;
 	} fapi_nr_dci_indication_body_t;
 
 ///
 typedef struct {
-  	fapi_nr_p7_message_header_t header;
-  	uint16_t sfn_sf_slot;
+  	uint32_t sfn_slot;
   	fapi_nr_dci_indication_body_t dci_indication_body;
 } fapi_nr_dci_indication_t;
 
@@ -220,31 +169,26 @@ typedef struct {
     } fapi_nr_sib_pdu_t;
 
 	typedef struct {
-		fapi_nr_tl_t tl;
         uint8_t pdu_type;
         union {
             fapi_nr_pdsch_pdu_t pdsch_pdu;
             fapi_nr_mib_pdu_t mib_pdu;
             fapi_nr_sib_pdu_t sib_pdu;
         };
-        
 	} fapi_nr_rx_request_body_t;
 
 ///
 typedef struct {
-	fapi_nr_p7_message_header_t header;
-	uint16_t sfn_sf_slot;
+	uint32_t sfn_slot;
     uint16_t number_pdus;
 	fapi_nr_rx_request_body_t *rx_request_body;
 } fapi_nr_rx_indication_t;
 
 	typedef struct {
-		fapi_nr_tl_t tl;
 		uint8_t ul_cqi;
 		uint16_t timing_advance;
         uint16_t rnti;
 	} fapi_nr_tx_config_t;
-
 
 	typedef struct {
 		uint16_t pdu_length;
@@ -253,7 +197,6 @@ typedef struct {
 	} fapi_nr_tx_request_pdu_t;
 
 	typedef struct {
-		fapi_nr_tl_t tl;
 		fapi_nr_tx_config_t tx_config;
 		uint16_t number_of_pdus;
 		fapi_nr_tx_request_pdu_t* tx_pdu_list;
@@ -261,8 +204,7 @@ typedef struct {
 
 ///
 typedef struct {
-	fapi_nr_p7_message_header_t header;
-	uint16_t sfn_sf_slot;
+	uint32_t sfn_slot;
 	fapi_nr_tx_request_body_t tx_request_body;
 } fapi_nr_tx_request_t;
 
@@ -276,13 +218,11 @@ typedef struct {
 	} fapi_nr_ul_config_request_pdu_t;
 
 	typedef struct {
-		fapi_nr_tl_t tl;
 		fapi_nr_ul_config_request_pdu_t ul_config_pdu_list;
 	} fapi_nr_ul_config_request_body_t;
 ///
 typedef struct {
-	fapi_nr_p7_message_header_t header;
-	uint16_t sfn_sf_slot;
+	uint32_t sfn_slot;
 	fapi_nr_ul_config_request_body_t ul_config_request_body;
 } fapi_nr_ul_config_request_t;
 
@@ -292,8 +232,7 @@ typedef struct {
 
         fapi_nr_coreset_t coreset;
         uint32_t duration;
-        uint8_t aggregation_level;
-        uint8_t number_of_candidates;
+        uint8_t number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16 
         uint16_t monitoring_symbols_within_slot;
         //  DCI foramt-specific
         uint8_t format_2_0_number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16
@@ -324,11 +263,9 @@ typedef struct {
 	} fapi_nr_dl_config_request_pdu_t;
 
 typedef struct {
-	fapi_nr_p7_message_header_t header;
-	uint16_t sfn_sf_slot;
-    uint8_t number_dci;
-    uint8_t number_pdsch;
-	fapi_nr_dl_config_request_pdu_t *dl_config_request_body;
+	uint32_t sfn_slot;
+    uint8_t number_pdus;
+	fapi_nr_dl_config_request_pdu_t dl_config_request_body[10];        //  TODO MARCO
 } fapi_nr_dl_config_request_t;
 
 
@@ -435,7 +372,6 @@ typedef struct {
     } fapi_nr_pbch_config_t;
 
     typedef struct {
-        fapi_nr_tl_t tl;
         
         fapi_nr_pdcch_config_common_t pdcch_config_common;
         fapi_nr_pdsch_config_common_t pdsch_config_common;
@@ -779,8 +715,6 @@ typedef struct {
 #define FAPI_NR_CONFIG_REQUEST_MASK_UL_BWP_DEDICATED    0x10
 
 typedef struct {
-    fapi_nr_p4_p5_message_header_t header;
-    uint8_t num_tlv;
     uint32_t config_mask;
 
     fapi_nr_pbch_config_t pbch_config;  //  MIB

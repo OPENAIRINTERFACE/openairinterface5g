@@ -249,15 +249,15 @@ int8_t nr_ue_decode_mib(
         AssertFatal(rb_offset != -1, "Type0 PDCCH coreset rb_offset undefined");
         
         uint32_t cell_id = 0;   //  obtain from L1 later
-        mac->type0_pdcch_coreset.rb_start = rb_offset;
-        mac->type0_pdcch_coreset.rb_end = rb_offset + num_rbs - 1;
-        mac->type0_pdcch_coreset.duration = num_symbols;
-        mac->type0_pdcch_coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
-        mac->type0_pdcch_coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L
-        mac->type0_pdcch_coreset.cce_reg_interleaved_interleaver_size = 2;  //  R
-        mac->type0_pdcch_coreset.cce_reg_interleaved_shift_index = cell_id;
-        mac->type0_pdcch_coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
-        mac->type0_pdcch_coreset.pdcch_dmrs_scrambling_id = cell_id;
+        mac->type0_pdcch_dci_config.coreset.rb_start = rb_offset;
+        mac->type0_pdcch_dci_config.coreset.rb_end = rb_offset + num_rbs - 1;
+        //mac->type0_pdcch_dci_config.type0_pdcch_coreset.duration = num_symbols;
+        mac->type0_pdcch_dci_config.coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
+        mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L
+        mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R
+        mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_shift_index = cell_id;
+        mac->type0_pdcch_dci_config.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
+        mac->type0_pdcch_dci_config.coreset.pdcch_dmrs_scrambling_id = cell_id;
 
 
 
@@ -269,9 +269,14 @@ int8_t nr_ue_decode_mib(
         uint32_t n_c;
         uint32_t number_of_search_space_per_slot;
         uint32_t first_symbol_index;
-
+        uint32_t search_space_duration;  //  element of search space
+        uint32_t coreset_duration;  //  element of coreset
 const uint32_t scs_index = 0;
 const uint32_t num_slot_per_frame = 10;
+        
+        //  38.213 table 10.1-1
+        
+
 
         /// MUX PATTERN 1
         if(mac->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR1){
@@ -292,6 +297,8 @@ const uint32_t num_slot_per_frame = 10;
             }else{
                 first_symbol_index = table_38213_13_11_c4[index_4lsb];
             }
+            //  38.213 chapter 13: over two consecutive slots
+            search_space_duration = 2;
         }
 
         if(mac->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR2){
@@ -306,6 +313,8 @@ const uint32_t num_slot_per_frame = 10;
             }else{
                 first_symbol_index = 0;
             }
+            //  38.213 chapter 13: over two consecutive slots
+            search_space_duration = 2;
         }
 
         
@@ -370,6 +379,8 @@ const uint32_t num_slot_per_frame = 10;
                     default: break; 
                 }
             }else{ ; }
+            //  38.213 chapter 13: over one slot
+            search_space_duration = 1;
         }
 
         /// MUX PATTERN 3
@@ -396,14 +407,22 @@ const uint32_t num_slot_per_frame = 10;
                     default: break; 
                 }
             }else{ ; }
+            //  38.213 chapter 13: over one slot
+            search_space_duration = 1;
         }
 
-        //mac->type0_pdcch_ss_big_o = big_o;
+        coreset_duration = num_symbols * number_of_search_space_per_slot;
+
+        mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[0];   //  CCE aggregation level = 4
+        mac->type0_pdcch_dci_config.number_of_candidates[3] = table_38213_10_1_1_c2[1];   //  CCE aggregation level = 8
+        mac->type0_pdcch_dci_config.number_of_candidates[4] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 16
+        mac->type0_pdcch_dci_config.duration = search_space_duration;
+        mac->type0_pdcch_dci_config.coreset.duration = coreset_duration;   //  coreset
+        mac->type0_pdcch_dci_config.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
+
         mac->type0_pdcch_ss_sfn_c = sfn_c;
         mac->type0_pdcch_ss_n_c = n_c;
-        mac->type0_pdcch_ss_number_of_search_space_per_slot = number_of_search_space_per_slot;
-        //mac->type0_pdcch_ss_big_m = big_m;
-        mac->type0_pdcch_ss_first_symbol_index = first_symbol_index;
+        
 
 	    // fill in the elements in config request inside P5 message
 	    mac->phy_config.config_req.pbch_config.system_frame_number = frame;    //  after calculation
@@ -428,11 +447,16 @@ typedef enum seach_space_mask_e {
     type0_pdcch  = 0x1, 
     type0a_pdcch = 0x2,
     type1_pdcch  = 0x4, 
-    type2_pdcch  = 0x8
+    type2_pdcch  = 0x8,
+    type3_pdcch  = 0x10
 } search_space_mask_t;
 
 //  TODO: change to UE parameter, scs: 15KHz, slot duration: 1ms
 #define NUM_SLOT_FRAME 10
+
+uint32_t get_ssb_frame(){
+	return 0;
+}
 
 // Performs :
 // 1. TODO: Call RRC for link status return to PHY
@@ -449,29 +473,75 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
     const slot_t tx_slot ){
 
     uint32_t search_space_mask = 0;
-
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-
+    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
     //  check type0 from 38.213 13
     if(ssb_index != -1){
 
         if(mac->type0_pdcch_ss_mux_pattern == 1){
-            //  now bigO and bigM use floating point implementation, after can optimize to use fixed point implementation by change mac_vars table and operation 'multiple'
-
-
+            //	38.213 chapter 13
+            if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_0) && !(rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+            	search_space_mask = search_space_mask | type0_pdcch;
+            }
+            if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_1) &&  (rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+            	search_space_mask = search_space_mask | type0_pdcch;
+            }
+            if((mac->type0_pdcch_ss_sfn_c == SFN_C_EQ_SFN_SSB) && ( get_ssb_frame() )){
+            	search_space_mask = search_space_mask | type0_pdcch;
+            }
         }
         if(mac->type0_pdcch_ss_mux_pattern == 2){
-            if(ssb_index != -1){
-                search_space_mask = search_space_mask & type0_pdcch;
+            //	38.213 Table 13-13, 13-14
+            if((rx_frame == get_ssb_frame()) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+                search_space_mask = search_space_mask | type0_pdcch;
             }
         }
         if(mac->type0_pdcch_ss_mux_pattern == 3){
-            if(ssb_index != -1){
-                search_space_mask = search_space_mask & type0_pdcch;
+        	//	38.213 Table 13-15
+            if((rx_frame == get_ssb_frame()) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+                search_space_mask = search_space_mask | type0_pdcch;
             }
         }
     }
 
+#if 0
+		uint16_t rnti;
+
+        fapi_nr_coreset_t coreset;
+        uint32_t duration;
+        uint8_t aggregation_level;
+        uint8_t number_of_candidates;
+        uint16_t monitoring_symbols_within_slot;
+        //  DCI foramt-specific
+        uint8_t format_2_0_number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16
+        uint8_t format_2_3_monitorying_periodicity;
+        uint8_t format_2_3_number_of_candidates;
+#endif
+
+    if(search_space_mask & type0_pdcch){
+
+        dl_config->dl_config_request_body[dl_config->number_pdus].dci_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
+        //dl_config->dl_config_request_body[dl_config->number_pdus].pdu_type = ;
+        dl_config->number_pdus = dl_config->number_pdus + 1;
+    	
+    	dl_config->dl_config_request_body[dl_config->number_pdus].dci_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
+    }
+
+    if(search_space_mask & type0a_pdcch){
+    }
+
+    if(search_space_mask & type1_pdcch){
+    }
+
+    if(search_space_mask & type2_pdcch){
+    }
+
+    if(search_space_mask & type3_pdcch){
+    }
+
+
+    mac->scheduled_response.dl_config = dl_config;
+    
 
 	return CONNECTION_OK;
 }

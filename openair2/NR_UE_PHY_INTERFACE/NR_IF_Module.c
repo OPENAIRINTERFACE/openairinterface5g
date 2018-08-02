@@ -65,6 +65,8 @@ int8_t handle_bcch_dlsch(uint32_t pdu_len, uint8_t *pduP){
 int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
     NR_UE_L2_STATE_t ret;
+    module_id_t module_id = ul_info->module_id;
+    NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
     ret = nr_ue_scheduler(
         ul_info->module_id,
@@ -88,6 +90,9 @@ int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
             break;
     }
 
+
+    mac->if_module->scheduled_response(&mac->scheduled_response);
+
     return 0;
 }
 
@@ -103,11 +108,13 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
         printf("[L2][IF MODULE][DL INDICATION][RX_IND]\n");
         for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
             switch(dl_info->rx_ind->rx_request_body[i].pdu_type){
-                case FAPI_NR_RX_PDU_BCCH_BCH_TYPE:
+                case FAPI_NR_RX_PDU_TYPE_MIB:
                         handle_bcch_bch(dl_info->rx_ind->rx_request_body[i].mib_pdu.pdu, dl_info->rx_ind->rx_request_body[i].mib_pdu.additional_bits, dl_info->rx_ind->rx_request_body[i].mib_pdu.ssb_index, dl_info->rx_ind->rx_request_body[i].mib_pdu.l_ssb);
                     break;
-                case FAPI_NR_RX_PDU_BCCH_DLSCH_TYPE:
+                case FAPI_NR_RX_PDU_TYPE_SIB:
                         
+                    break;
+                case FAPI_NR_RX_PDU_TYPE_DLSCH:
                     break;
                 default:
                     break;

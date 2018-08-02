@@ -78,26 +78,21 @@ typedef struct {
     NR_RNTI_Value_t 	            *cs_RNTI;
 	NR_MIB_t 			            *mib;
 
-    ///     Type0-PDCCH seach space coreset
-    fapi_nr_coreset_t type0_pdcch_coreset;
+    ///     Type0-PDCCH seach space
+    fapi_nr_dl_config_dci_dl_pdu_rel15_t type0_pdcch_dci_config;
     uint32_t type0_pdcch_ss_mux_pattern;
-//    float type0_pdcch_ss_big_o;
-    uint32_t type0_pdcch_ss_number_of_search_space_per_slot;
-//    float type0_pdcch_ss_big_m;
-    uint32_t type0_pdcch_ss_first_symbol_index;
-
     SFN_C_TYPE type0_pdcch_ss_sfn_c;
     uint32_t type0_pdcch_ss_n_c;
 
-    ///     Type0-PDCCH seach space
 
-
-	////	FAPI-like interface
+	////	FAPI-like interface message
 	fapi_nr_tx_request_t tx_request;
 	fapi_nr_ul_config_request_t ul_config_request;
 	fapi_nr_dl_config_request_t dl_config_request;
 	fapi_nr_dci_indication_t dci_indication;
 	fapi_nr_rx_indication_t rx_indication;
+
+
 
 	///     Interface module instances
 	nr_ue_if_module_t *if_module;
