@@ -59,6 +59,7 @@ class SSHConnection():
 		self.eNBIPAddress = ''
 		self.eNBRepository = ''
 		self.eNBBranch = ''
+		self.eNB_AllowMerge = False
 		self.eNBCommitID = ''
 		self.eNBUserName = ''
 		self.eNBPassword = ''
@@ -82,6 +83,10 @@ class SSHConnection():
 		self.iperf_packetloss_threshold = ''
 		self.UEDevices = []
 		self.UEIPAddresses = []
+		self.htmlFile = ''
+		self.htmlHeaderCreated = False
+		self.htmlFooterCreated = False
+		self.htmlUEConnected = 0
 
 	def open(self, ipaddress, username, password):
 		self.ssh = pexpect.spawn('ssh', [username + '@' + ipaddress], timeout = 5)
@@ -165,8 +170,9 @@ class SSHConnection():
 			self.command('git checkout -f ' + self.eNBCommitID, '\$', 5)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
-			self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+		if (self.eNB_AllowMerge):
+			if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
+				self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('mkdir -p  log', '\$', 5)
@@ -176,6 +182,7 @@ class SSHConnection():
 		self.command('echo ' + self.eNBPassword + ' | sudo -S mv log/* ' + 'build_log_' + SSH.testCase_id, '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S mv compile_oai_enb.log ' + 'build_log_' + SSH.testCase_id, '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', 0)
 
 	def InitializeHSS(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -196,6 +203,7 @@ class SSHConnection():
 			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss.log daemon.log', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real  ', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow(self.EPCType, 'OK', 0)
 
 	def InitializeMME(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -217,6 +225,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./start_mme', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow(self.EPCType, 'OK', 0)
 
 	def InitializeSPGW(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -232,6 +241,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./start_xGw', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow(self.EPCType, 'OK', 0)
 
 	def InitializeeNB(self):
 		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
@@ -264,6 +274,7 @@ class SSHConnection():
 			if (loopCounter == 0):
 				doLoop = False
 				logging.debug('\u001B[1;37;43m eNB logging system did not show got sync! See with attach later \u001B[0m')
+				self.CreateHtmlTestRow(config_file, 'eNB not showing got sync!', 0)
 				# Not getting got sync is bypassed for the moment
 				#sys.exit(1)
 			self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log', '\$', 10)
@@ -272,6 +283,7 @@ class SSHConnection():
 				time.sleep(6)
 			else:
 				doLoop = False
+				self.CreateHtmlTestRow(config_file, 'OK', 0)
 				logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 
 		self.close()
@@ -304,6 +316,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def AttachUE_common(self, device_id):
 		try:
@@ -351,6 +364,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', len(self.UEDevices))
 
 	def DetachUE_common(self, device_id):
 		try:
@@ -375,6 +389,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def RebootUE_common(self, device_id):
 		try:
@@ -429,6 +444,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def GetAllUEDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
@@ -522,6 +538,7 @@ class SSHConnection():
 			i = i + 1
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow(self.ping_args, 'OK', 0)
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, ue_num):
 		try:
@@ -658,6 +675,7 @@ class SSHConnection():
 			i = i + 1
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow(self.iperf_args, 'OK', 0)
 
 	def CheckProcessExist(self, initialize_eNB_flag):
 		multi_jobs = []
@@ -751,6 +769,7 @@ class SSHConnection():
 		if result is not None:
 			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def TerminateHSS(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -772,6 +791,7 @@ class SSHConnection():
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./kill_hss.sh', '\$', 5)
 			self.command('rm ./kill_hss.sh', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def TerminateMME(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -800,6 +820,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_xGw', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def TerminateUE_common(self, device_id):
 		try:
@@ -827,6 +848,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def LogCollectBuild(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
@@ -902,6 +924,115 @@ class SSHConnection():
 			self.command('cp /opt/ltebox/var/log/xGwLog.0 .', '\$', 5)
 			self.command('zip spgw.log.zip xGwLog.0', '\$', 60)
 		self.close()
+#-----------------------------------------------------------
+# HTML Reporting....
+#-----------------------------------------------------------
+	def CreateHtmlHeader(self):
+		if (not self.htmlHeaderCreated):
+			self.htmlFile = open('test_results.html', 'w')
+			self.htmlFile.write('<!DOCTYPE html>\n')
+			self.htmlFile.write('<html class="no-js" lang="en-US">\n')
+			self.htmlFile.write('<head>\n')
+			self.htmlFile.write('  <title>Test Results for TEMPLATE_JOB_NAME job build #TEMPLATE_BUILD_ID</title>\n')
+			self.htmlFile.write('  <base href = "http://www.openairinterface.org/" />\n')
+			self.htmlFile.write('</head>\n')
+			self.htmlFile.write('<body>\n')
+			self.htmlFile.write('  <table style="border-collapse: collapse; border: none;">\n')
+			self.htmlFile.write('    <tr style="border-collapse: collapse; border: none;">\n')
+			self.htmlFile.write('      <td style="border-collapse: collapse; border: none;">\n')
+			self.htmlFile.write('        <a href="http://www.openairinterface.org/">\n')
+			self.htmlFile.write('           <img src="/wp-content/uploads/2016/03/cropped-oai_final_logo2.png" alt="" border="none" height=50 width=150>\n')
+			self.htmlFile.write('           </img>\n')
+			self.htmlFile.write('        </a>\n')
+			self.htmlFile.write('      </td>\n')
+			self.htmlFile.write('      <td style="border-collapse: collapse; border: none; vertical-align: center;">\n')
+			self.htmlFile.write('        <b><font size = "6">Job Summary -- Job: TEMPLATE_JOB_NAME -- Build-ID: TEMPLATE_BUILD_ID</font></b>\n')
+			self.htmlFile.write('      </td>\n')
+			self.htmlFile.write('    </tr>\n')
+			self.htmlFile.write('  </table>\n')
+			self.htmlFile.write('  <br>\n')
+			self.htmlFile.write('  <table border = "1">\n')
+			self.htmlFile.write('     <tr>\n')
+			self.htmlFile.write('       <td bgcolor = "lightcyan" >GIT Repository</td>\n')
+			self.htmlFile.write('       <td>' + SSH.eNBRepository + '</td>\n')
+			self.htmlFile.write('     </tr>\n')
+			self.htmlFile.write('     <tr>\n')
+			self.htmlFile.write('       <td bgcolor = "lightcyan" >Job Trigger</td>\n')
+			if (SSH.eNB_AllowMerge):
+				self.htmlFile.write('       <td>Merge-Request</td>\n')
+			else:
+				self.htmlFile.write('       <td>Push to Branch</td>\n')
+			self.htmlFile.write('     </tr>\n')
+			self.htmlFile.write('     <tr>\n')
+			if (SSH.eNB_AllowMerge):
+				self.htmlFile.write('       <td bgcolor = "lightcyan" >Source Branch</td>\n')
+			else:
+				self.htmlFile.write('       <td bgcolor = "lightcyan" >Branch</td>\n')
+			self.htmlFile.write('       <td>' + SSH.eNBBranch + '</td>\n')
+			self.htmlFile.write('     </tr>\n')
+			self.htmlFile.write('     <tr>\n')
+			if (SSH.eNB_AllowMerge):
+				self.htmlFile.write('       <td bgcolor = "lightcyan" >Source Commit ID</td>\n')
+			else:
+				self.htmlFile.write('       <td bgcolor = "lightcyan" >Commit ID</td>\n')
+			self.htmlFile.write('       <td>' + SSH.eNBCommitID + '</td>\n')
+			self.htmlFile.write('     </tr>\n')
+			if (SSH.eNB_AllowMerge):
+				self.htmlFile.write('     <tr>\n')
+				self.htmlFile.write('       <td bgcolor = "lightcyan" >Target Branch</td>\n')
+				self.htmlFile.write('       <td>develop</td>\n')
+				self.htmlFile.write('     </tr>\n')
+			self.htmlFile.write('  </table>\n')
+
+			terminate_ue_flag = True
+			SSH.GetAllUEDevices(terminate_ue_flag)
+			self.htmlUEConnected = len(self.UEDevices)
+			self.htmlFile.write('<h2>' + str(self.htmlUEConnected) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
+
+			self.htmlFile.write('  <br>\n')
+			self.htmlFile.write('  <h2>Test Summary for ' + SSH.testXMLfile + '</h2>\n')
+			self.htmlFile.write('  <table border = "1">\n')
+			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+			self.htmlFile.write('        <th>Test Id</th>\n')
+			self.htmlFile.write('        <th>Test Desc</th>\n')
+			self.htmlFile.write('        <th>Test Options</th>\n')
+			self.htmlFile.write('        <th>Test Status</th>\n')
+			i = 0
+			while (i < self.htmlUEConnected):
+				self.htmlFile.write('        <th>UE' + str(i) + ' Status</th>\n')
+				i += 1
+			self.htmlFile.write('      </tr>\n')
+		self.htmlHeaderCreated = True
+
+	def CreateHtmlFooter(self):
+		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			self.htmlFile.write('  </table>\n')
+			self.htmlFile.write('</body>\n')
+			self.htmlFile.write('</html>\n')
+			self.htmlFile.close()
+		self.htmlFooterCreated = False
+
+	def CreateHtmlTestRow(self, options, status, ue_status):
+		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + SSH.testCase_id  + '</td>\n')
+			self.htmlFile.write('        <td>' + SSH.desc  + '</td>\n')
+			self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
+			if (str(status) == 'OK'):
+				self.htmlFile.write('        <td bgcolor = "lightgreen" >' + str(status)  + '</td>\n')
+			elif (str(status) == 'KO'):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+			else:
+				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
+			i = 0
+			while (i < self.htmlUEConnected):
+				if (i < ue_status):
+					self.htmlFile.write('        <td>-</td>\n')
+				else:
+					self.htmlFile.write('        <td>-</td>\n')
+				i += 1
+			self.htmlFile.write('      </tr>\n')
+
 #-----------------------------------------------------------
 # Usage()
 #-----------------------------------------------------------
@@ -998,6 +1129,11 @@ while len(argvs) > 1:
 	elif re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
 		SSH.eNBRepository = matchReg.group(1)
+	elif re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
+		doMerge = matchReg.group(1)
+		if ((doMerge == 'true') or (doMerge == 'True')):
+			SSH.eNB_AllowMerge = True
 	elif re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
 		SSH.eNBBranch = matchReg.group(1)
@@ -1116,6 +1252,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 		Usage()
 		sys.exit('Insufficient Parameter')
 
+	SSH.CreateHtmlHeader()
+
 	#read test_case_list.xml file
         # if no parameters for XML file, use default value
 	if SSH.testXMLfile == '':
@@ -1214,6 +1352,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 				SSH.TerminateSPGW()
 			else:
 				sys.exit('Invalid action')
+
+	SSH.CreateHtmlFooter()
 else:
 	Usage()
 	sys.exit('Invalid mode')

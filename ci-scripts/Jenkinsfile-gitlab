@@ -40,7 +40,7 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim"])
+        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test-FDD-Band7"])
         ansiColor('xterm')
     }
 
@@ -197,15 +197,17 @@ pipeline {
                         expression {doRedHatBuild}
                     }
                     steps {
-                        script {
-                            try {
-                                withCredentials([
-                                    [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.RedHatRemoteCredentials}", usernameVariable: 'RH_Username', passwordVariable: 'RH_Password']
-                                ]) {
-                                    sh "./ci-scripts/buildOnRH.sh --workspace $WORKSPACE --job-name ${JOB_NAME} --build-id ${BUILD_ID} --remote-host ${params.RedHatRemoteServer} --remote-path ${params.RedHatWorkingPath} --remote-user-name ${RH_Username} --remote-password ${RH_Password}"
+                        gitlabCommitStatus(name: "Build eNb-USRP-CentOS") {
+                            script {
+                                try {
+                                    withCredentials([
+                                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.RedHatRemoteCredentials}", usernameVariable: 'RH_Username', passwordVariable: 'RH_Password']
+                                    ]) {
+                                        sh "./ci-scripts/buildOnRH.sh --workspace $WORKSPACE --job-name ${JOB_NAME} --build-id ${BUILD_ID} --remote-host ${params.RedHatRemoteServer} --remote-path ${params.RedHatWorkingPath} --remote-user-name ${RH_Username} --remote-password ${RH_Password}"
+                                    }
+                                } catch (Exception e) {
+                                    echo "Red Hat build failed not an error now"
                                 }
-                            } catch (Exception e) {
-                                echo "Red Hat build failed not an error now"
                             }
                         }
                     }
@@ -260,23 +262,25 @@ pipeline {
                 }
 		stage ("Test FDD - Band 7 - B210") {
                     steps {
-                        script {
-                            if ("MERGE".equals(env.gitlabActionType)) {
-                                build job: 'eNB-CI-FDD-Band7-B210',
-                                   parameters: [
-                                       string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                       string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                       string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                       booleanParam(name: 'eNB_mergeRequest', value: true)
-                                   ]
-                            } else {
-                                build job: 'eNB-CI-FDD-Band7-B210',
-                                   parameters: [
-                                       string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                       string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                       string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                       booleanParam(name: 'eNB_mergeRequest', value: false)
-                                   ]
+                        gitlabCommitStatus(name: "Test-FDD-Band7") {
+                            script {
+                                if ("MERGE".equals(env.gitlabActionType)) {
+                                    build job: 'eNB-CI-FDD-Band7-B210',
+                                       parameters: [
+                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                                           booleanParam(name: 'eNB_mergeRequest', value: true)
+                                       ]
+                                } else {
+                                    build job: 'eNB-CI-FDD-Band7-B210',
+                                       parameters: [
+                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                                           booleanParam(name: 'eNB_mergeRequest', value: false)
+                                       ]
+                                }
                             }
                         }
                     }
