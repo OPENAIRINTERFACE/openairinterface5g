@@ -56,7 +56,10 @@
 
 #include "targets/ARCH/COMMON/common_lib.h"
 
-#include "LAYER2/MAC/mac.h" // temporary
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_proto.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "common/ran_context.h"
 
 /*! \brief gNB common channels */
 typedef struct {

@@ -29,7 +29,7 @@
  */
 
 #include "nr_mac_gNB.h"
-#include "PHY/SCHED/sched_nr.h"
+#include "SCHED_NR/sched_nr.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -49,11 +49,12 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_I(MAC, "Scheduling common search space DCI type 1 for CC_id %d\n",CC_id);
 
-    PHY_VARS_gNB_s                *gNB      = RC.gNB[module_idP][CC_id];
-    nfapi_nr_config_request_t     *config   = gNB->gNB_config;
+    PHY_VARS_gNB                *gNB      = RC.gNB[module_idP][CC_id];
+    nfapi_nr_config_request_t     *cfg   = &gNB->gNB_config;
+    NR_DL_FRAME_PARMS             *fp    = &gNB->frame_parms;
 
     dl_req = &gNB_mac->DL_req[CC_id].dl_config_request_body;
-    dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_of_pdus];
+    dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
     memset((void*)dl_config_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
     dl_config_pdu->pdu_type = NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE;
     dl_config_pdu->pdu_size = (uint8_t)(2+sizeof(nfapi_nr_dl_config_dci_dl_pdu));
@@ -61,7 +62,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel15;
     nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &dl_config_pdu->dci_dl_pdu.pdcch_params_rel15;
     nr_configure_css_dci_from_mib(&gNB->pdcch_type0_params,
-                               kHz30, kHz30, NR_FR1, 0, 0,
+                               kHz30, kHz30, nr_FR1, 0, 0,
                                fp->slots_per_frame,
                                cfg->rf_config.dl_channel_bandwidth.value);
 

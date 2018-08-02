@@ -35,9 +35,9 @@
 #include "msc.h"
 
 #include "PHY/types.h"
+#include "common/ran_context.h"
 
 #include "PHY/defs_gNB.h"
-#include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
