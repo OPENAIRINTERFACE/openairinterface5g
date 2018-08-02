@@ -8,6 +8,7 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+#include "PHY/defs_gNB.h"
 #include "SIMULATION/TOOLS/sim.h"
 
 int main(int argc, char *argv[]) {
@@ -21,7 +22,7 @@ int main(int argc, char *argv[]) {
 
 	randominit(0);
 	//Default simulation values (Aim for iterations = 1000000.)
-	int itr, iterations = 1000, arguments, polarMessageType = 1; //0=DCI, 1=PBCH, 2=UCI
+	int itr, iterations = 1000, arguments, polarMessageType = 0; //0=PBCH, 1=DCI, -1=UCI
 	double SNRstart = -20.0, SNRstop = 0.0, SNRinc= 0.5; //dB
 
 	double SNR, SNR_lin;
@@ -69,13 +70,13 @@ int main(int argc, char *argv[]) {
 			abort ();
 	}
 
-	if (polarMessageType == 0) { //DCI
-		//testLength = ;
-		//coderLength = ;
-	} else if (polarMessageType == 1) { //PBCH
+	if (polarMessageType == 0) { //PBCH
 		testLength = NR_POLAR_PBCH_PAYLOAD_BITS;
 		coderLength = NR_POLAR_PBCH_E;
-	} else if (polarMessageType == 2) { //UCI
+	} else if (polarMessageType == 1) { //DCI
+		//testLength = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_ul ,cfg);
+		//coderLength = ;
+	} else if (polarMessageType == -1) { //UCI
 		//testLength = ;
 		//coderLength = ;
 	}
@@ -110,12 +111,21 @@ int main(int argc, char *argv[]) {
 	double *channelOutput  = malloc (sizeof(double) * coderLength); //add noise
 	uint8_t *estimatedOutput = malloc(sizeof(uint8_t) * testLength); //decoder output
 
-	t_nrPolar_params nrPolar_params;
-	nr_polar_init(&nrPolar_params, polarMessageType);
+	t_nrPolar_paramsPtr nrPolar_params = NULL;
+	nr_polar_init(&nrPolar_params, polarMessageType, testLength);
+
+	t_nrPolar_paramsPtr currentPtr = nrPolar_params;
+	while (currentPtr != NULL) {
+		if (currentPtr->idx == (polarMessageType * testLength)) {
+			break;
+		} else {
+			currentPtr = currentPtr->nextPtr;
+		}
+	}
 
 	// We assume no a priori knowledge available about the payload.
-	double aPrioriArray[nrPolar_params.payloadBits];
-	for (int i=0; i<nrPolar_params.payloadBits; i++) aPrioriArray[i] = NAN;
+	double aPrioriArray[currentPtr->payloadBits];
+	for (int i=0; i<currentPtr->payloadBits; i++) aPrioriArray[i] = NAN;
 
 	for (SNR = SNRstart; SNR <= SNRstop; SNR += SNRinc) {
 		SNR_lin = pow(10, SNR/10);
@@ -124,7 +134,7 @@ int main(int argc, char *argv[]) {
 		for(int i=0; i<testLength; i++) testInput[i]=(uint8_t) (rand() % 2);
 
 		start_meas(&timeEncoder);
-		polar_encoder(testInput, encoderOutput, &nrPolar_params);
+		polar_encoder(testInput, encoderOutput, currentPtr);
 		stop_meas(&timeEncoder);
 
 		//BPSK modulation
@@ -139,7 +149,12 @@ int main(int argc, char *argv[]) {
 
 
 		start_meas(&timeDecoder);
-		decoderState = polar_decoder(channelOutput, estimatedOutput, &nrPolar_params, decoderListSize, aPrioriArray, pathMetricAppr);
+		decoderState = polar_decoder(channelOutput,
+									 estimatedOutput,
+									 currentPtr,
+									 decoderListSize,
+									 aPrioriArray,
+									 pathMetricAppr);
 		stop_meas(&timeDecoder);
 
 		//calculate errors

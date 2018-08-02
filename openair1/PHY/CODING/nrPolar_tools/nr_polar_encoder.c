@@ -25,7 +25,7 @@
 void polar_encoder(
 		uint8_t *input,
 		uint8_t *output,
-		t_nrPolar_params *polarParams)
+		t_nrPolar_paramsPtr polarParams)
 {
 
 	/*

@@ -31,7 +31,7 @@
 int8_t polar_decoder(
 		double *input,
 		uint8_t *output,
-		t_nrPolar_params *polarParams,
+		t_nrPolar_paramsPtr polarParams,
 		uint8_t listSize,
 		double *aPrioriPayload,
 		uint8_t pathMetricAppr)

@@ -120,7 +120,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
   // Polar encoder init for PBCH
-  nr_polar_init(&fp->pbch_polar_params, 1);
+  nr_polar_init(&fp->pbch_polar_params, 1, NR_POLAR_PBCH_PAYLOAD_BITS);
   //PDCCH DMRS init
   pdcch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t**));
   AssertFatal(pdcch_dmrs!=NULL, "NR init: pdcch_dmrs malloc failed\n");

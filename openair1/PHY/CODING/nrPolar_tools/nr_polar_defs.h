@@ -31,6 +31,10 @@
 static const uint8_t nr_polar_subblock_interleaver_pattern[32] = { 0, 1, 2, 4, 3, 5, 6, 7, 8, 16, 9, 17, 10, 18, 11, 19, 12, 20, 13, 21, 14, 22, 15, 23, 24, 25, 26, 28, 27, 29, 30, 31 };
 
 struct nrPolar_params {
+	//messageType: 0=PBCH, 1=DCI, -1=UCI
+	int8_t idx; //idx = messageType*messageLength;
+	struct nrPolar_params *nextPtr;
+
 	uint8_t n_max;
 	uint8_t i_il;
 	uint8_t i_seg;
@@ -65,13 +69,14 @@ struct nrPolar_params {
 	uint8_t *nr_polar_d;
 } __attribute__ ((__packed__));
 typedef struct nrPolar_params t_nrPolar_params;
+typedef t_nrPolar_params *t_nrPolar_paramsPtr;
 
-void polar_encoder(uint8_t *input, uint8_t *output, t_nrPolar_params* polarParams);
+void polar_encoder(uint8_t *input, uint8_t *output, t_nrPolar_paramsPtr polarParams);
 
-int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_params *polarParams,
+int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_paramsPtr polarParams,
 		uint8_t listSize, double *aPrioriPayload, uint8_t pathMetricAppr);
 
-void nr_polar_init(t_nrPolar_params* polarParams, int messageType);
+void nr_polar_init(t_nrPolar_paramsPtr *polarParams, int8_t messageType, uint16_t messageLength);
 
 uint8_t** nr_polar_kronecker_power_matrices(uint8_t n);
 
