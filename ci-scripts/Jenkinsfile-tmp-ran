@@ -186,11 +186,6 @@ pipeline {
                                 [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
                             ]) {
                                 sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${testXMLFile}"
-                                if(fileExists("test_results.html")) {
-                                    sh "mv test_results.html test_results-${JOB_NAME}.html"
-                                    sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's#TEMPLATE_BUILD_ID#${BUILD_ID}#' test_results-${JOB_NAME}.html"
-                                    archiveArtifacts "test_results-${JOB_NAME}.html"
-                                }
                             }
                         } catch (Exception e) {
                             currentBuild.result = 'FAILURE'
@@ -323,6 +318,11 @@ pipeline {
                             if(fileExists("enb.log.${env.BUILD_ID}.zip")) {
                                 archiveArtifacts "enb.log.${env.BUILD_ID}.zip"
                             }
+                        }
+                        if(fileExists("ci-scripts/test_results.html")) {
+                            sh "mv ci-scripts/test_results.html test_results-${JOB_NAME}.html"
+                            sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's#TEMPLATE_BUILD_ID#${BUILD_ID}#' test_results-${JOB_NAME}.html"
+                            archiveArtifacts "test_results-${JOB_NAME}.html"
                         }
                     }
                 }
