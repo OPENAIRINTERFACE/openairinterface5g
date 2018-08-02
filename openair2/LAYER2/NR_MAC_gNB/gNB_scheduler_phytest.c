@@ -97,6 +97,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->nb_slots,
                 params_rel15->sfn_mod2,
                 params_rel15->first_slot);
+  dl_req->number_dci++;
+  dl_req->number_pdu++;
     
   }
 }

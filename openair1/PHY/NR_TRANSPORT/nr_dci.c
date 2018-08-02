@@ -78,8 +78,8 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
       break;
 
     case NFAPI_NR_DL_DCI_FORMAT_1_0:
-      /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 --24
-      size += 24;
+      /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 Time Domain assgnmt 4 -- 28
+      size += 28;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
       // Time domain assignment
       break;
@@ -181,6 +181,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
     mod_dmrs[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
     mod_dmrs[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PDCCH_DMRS
+  printf("DMRS modulation\n");
   printf("i %d idx %d gold seq %d b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, gold_pdcch_dmrs[(i<<1)>>5], (((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1),
   (((gold_pdcch_dmrs[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), mod_dmrs[(i<<1)], mod_dmrs[(i<<1)+1]);
 #endif
@@ -201,6 +202,11 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
     idx = (((scrambled_payload[i<<1]>>(i<<1))&1)<<1) ^ ((scrambled_payload[(i<<1)+1]>>((i<<1)+1))&1);
     mod_dci[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
     mod_dci[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+#ifdef DEBUG_DCI
+  printf("DCI modulation\n");
+  printf("i %d idx %d b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, (((scrambled_payload[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+  (((scrambled_payload[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), mod_dci[(i<<1)], mod_dci[(i<<1)+1]);
+#endif
   }
 
   /// Resource mapping
