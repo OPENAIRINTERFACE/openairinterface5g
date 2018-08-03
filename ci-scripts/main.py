@@ -81,6 +81,7 @@ class SSHConnection():
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
 		self.iperf_packetloss_threshold = ''
+		self.iperf_profile = ''
 		self.UEDevices = []
 		self.UEIPAddresses = []
 		self.htmlFile = ''
@@ -547,13 +548,23 @@ class SSHConnection():
 			sys.exit(1)
 		return result.group('iperf_time')
 
-	def Iperf_ComputeModifiedBW(self, ue_num):
+	def Iperf_ComputeModifiedBW(self, idx, ue_num):
 		result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', str(self.iperf_args))
 		if result is None:
 			logging.debug('\u001B[1;37;41m Iperf bandwidth Not Found! \u001B[0m')
 			sys.exit(1)
 		iperf_bandwidth = result.group('iperf_bandwidth')
-		iperf_bandwidth_new = float(iperf_bandwidth)/ue_num
+		if SSH.iperf_profile == 'balanced':
+			iperf_bandwidth_new = float(iperf_bandwidth)/ue_num
+		if SSH.iperf_profile == 'single-ue':
+			iperf_bandwidth_new = float(iperf_bandwidth)
+		if SSH.iperf_profile == 'unbalanced':
+			# residual is 2% of max bw
+			residualBW = float(iperf_bandwidth) / 50
+			if idx == 0:
+				iperf_bandwidth_new = float(iperf_bandwidth) - ((ue_num - 1) * residualBW)
+			else:
+				iperf_bandwidth_new = residualBW
 		iperf_bandwidth_str = '-b ' + iperf_bandwidth
 		iperf_bandwidth_str_new = '-b ' + str(iperf_bandwidth_new)
 		result = re.sub(iperf_bandwidth_str, iperf_bandwidth_str_new, str(self.iperf_args))
@@ -571,7 +582,7 @@ class SSHConnection():
 			else:
 				logging.debug('\u001B[1;37;41m Server Report and Connection refused Not Found! \u001B[0m')
 			sys.exit(1)
-		result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/.\d+) (\((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
+		result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/..\d+) (\((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
 		if result is not None:
 			bitrate = result.group('bitrate')
 			packetloss = result.group('packetloss')
@@ -633,7 +644,7 @@ class SSHConnection():
 		iperf_time = self.Iperf_ComputeTime()
 		time.sleep(0.5)
 
-		modified_options = self.Iperf_ComputeModifiedBW(ue_num)
+		modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
 		time.sleep(0.5)
 
 		self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
@@ -647,6 +658,9 @@ class SSHConnection():
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num):
 		try:
+			# Single-UE profile -- iperf only on one UE
+			if SSH.iperf_profile == 'single-ue' and idx != 0:
+				return
 			useIperf3 = False
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			# if by chance ADB server and EPC are on the same remote host, at least log collection will take of it
@@ -683,7 +697,7 @@ class SSHConnection():
 			iperf_time = self.Iperf_ComputeTime()
 			time.sleep(0.5)
 
-			modified_options = self.Iperf_ComputeModifiedBW(ue_num)
+			modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
 			time.sleep(0.5)
 
 			self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
@@ -1145,6 +1159,13 @@ def GetParametersFromXML(action):
 	if action == 'Iperf':
 		SSH.iperf_args = test.findtext('iperf_args')
 		SSH.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
+		SSH.iperf_profile = test.findtext('iperf_profile')
+		if (SSH.iperf_profile is None):
+			SSH.iperf_profile = 'balanced'
+		else:
+			if SSH.iperf_profile != 'balanced' and SSH.iperf_profile != 'unbalanced' and SSH.iperf_profile != 'single-ue':
+				logging.debug('ERROR: test-case has wrong profile ' + SSH.iperf_profile)
+				SSH.iperf_profile = 'balanced'
 
 #check if given test is in list
 #it is in list if one of the strings in 'list' is at the beginning of 'test'
