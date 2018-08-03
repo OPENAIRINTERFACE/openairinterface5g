@@ -67,6 +67,7 @@
 #include "common/config/config_load_configmodule.h"
 #include "PHY/INIT/phy_init.h"
 
+
 void feptx_ofdm(RU_t *ru);
 void feptx_prec(RU_t *ru);
 
@@ -82,6 +83,8 @@ int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
 int codingw = 0;
+
+int emulate_rf = 0;
 
 void handler(int sig)
 {

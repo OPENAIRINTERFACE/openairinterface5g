@@ -358,10 +358,10 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	if (prach_fmt == 4) {
 	  dft256(prach2,rxsigF[aa],1);
 	} else {
-	  dft3072(prach2,rxsigF[aa]);
+	  dft3072(prach2,rxsigF[aa],1);
 	  
 	  if (prach_fmt>1)
-	    dft3072(prach2+6144,rxsigF[aa]+6144);
+	    dft3072(prach2+6144,rxsigF[aa]+6144,1);
 	}
 	
 	break;
@@ -372,10 +372,10 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	  dft1024(prach2,rxsigF[aa],1);
 	  fft_size = 1024;
 	} else {
-	  dft6144(prach2,rxsigF[aa]);
+	  dft6144(prach2,rxsigF[aa],1);
 	  
 	  if (prach_fmt>1)
-	    dft6144(prach2+12288,rxsigF[aa]+12288);
+	    dft6144(prach2+12288,rxsigF[aa]+12288,1);
 	  
 	  fft_size = 6144;
 	}
@@ -386,22 +386,22 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	if (prach_fmt == 4) {
 	  dft2048(prach2,rxsigF[aa],1);
 	} else {
-	  dft12288(prach2,rxsigF[aa]);
+	  dft12288(prach2,rxsigF[aa],1);
 	  
 	  if (prach_fmt>1)
-	    dft12288(prach2+24576,rxsigF[aa]+24576);
+	    dft12288(prach2+24576,rxsigF[aa]+24576,1);
 	}
 	
 	break;
 	
       case 75:
 	if (prach_fmt == 4) {
-	  dft3072(prach2,rxsigF[aa]);
+	  dft3072(prach2,rxsigF[aa],1);
 	} else {
-	  dft18432(prach2,rxsigF[aa]);
+	  dft18432(prach2,rxsigF[aa],1);
 	  
 	  if (prach_fmt>1)
-	    dft18432(prach2+36864,rxsigF[aa]+36864);
+	    dft18432(prach2+36864,rxsigF[aa]+36864,1);
 	}
 	
 	break;
@@ -411,19 +411,19 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 	  if (prach_fmt == 4) {
 	    dft4096(prach2,rxsigF[aa],1);
 	  } else {
-	    dft24576(prach2,rxsigF[aa]);
+	    dft24576(prach2,rxsigF[aa],1);
 	    
 	    if (prach_fmt>1)
-	      dft24576(prach2+49152,rxsigF[aa]+49152);
+	      dft24576(prach2+49152,rxsigF[aa]+49152,1);
 	  }
 	} else {
 	  if (prach_fmt == 4) {
-	    dft3072(prach2,rxsigF[aa]);
+	    dft3072(prach2,rxsigF[aa],1);
 	  } else {
-	    dft18432(prach2,rxsigF[aa]);
+	    dft18432(prach2,rxsigF[aa],1);
 	    
 	    if (prach_fmt>1)
-	      dft18432(prach2+36864,rxsigF[aa]+36864);
+	      dft18432(prach2+36864,rxsigF[aa]+36864,1);
 	  }
 	}
 	
