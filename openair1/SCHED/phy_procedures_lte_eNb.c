@@ -415,7 +415,6 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
       &eNB->dlsch_turbo_encoding_wakeup_stats1,
 	  &eNB->dlsch_interleaving_stats);
     stop_meas(&eNB->dlsch_encoding_stats);
-  //////////////////////////////////////////////////*******************************************
   if(eNB->dlsch_encoding_stats.diff_now>500*3000 && opp_enabled == 1)
   {
     print_meas_now(&eNB->dlsch_encoding_stats,"total coding",stderr);
@@ -1505,7 +1504,7 @@ void init_te_thread(PHY_VARS_eNB *eNB) {
     pthread_cond_init( &proc->tep[i].cond_te, NULL);
     pthread_attr_init( &proc->tep[i].attr_te);
     
-    printf("Creating te_thread 0\n");
+    LOG_I(PHY,"Creating te_thread %d\n",i);
     pthread_create(&proc->tep[i].pthread_te, &proc->tep[i].attr_te, te_thread, (void*)&proc->tep[i]);
   }
 }

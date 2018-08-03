@@ -194,11 +194,11 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_synch;
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
-  /// condition varible for RU RX FEP thread
+  /// condition variable for RU RX FEP thread
   pthread_cond_t cond_fep;
-  /// condition varible for RU TX FEP thread
+  /// condition variable for RU TX FEP thread
   pthread_cond_t cond_feptx;
-  /// condition varible for emulated RF
+  /// condition variable for emulated RF
   pthread_cond_t cond_emulateRF;
   /// condition variable for eNB signal
   pthread_cond_t cond_eNBs;
@@ -260,6 +260,7 @@ typedef struct RU_proc_t_s {
   /// pipeline ready state
   int ru_rx_ready;
   int ru_tx_ready;
+  int emulate_rf_busy;
 } RU_proc_t;
 
 typedef enum {
