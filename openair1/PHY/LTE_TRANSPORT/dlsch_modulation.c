@@ -2419,6 +2419,11 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
           allocate_REs_in_RB_no_pilots_64QAM_siso :
           allocate_REs_in_RB;
       }
+      /* TODO: this is a quick hack to be removed. There is a problem
+       * with above code that needs to be analyzed and fixed. In the
+       * meantime, let's use the generic function.
+       */
+      allocate_REs = allocate_REs_in_RB;
       break;
 
     }
