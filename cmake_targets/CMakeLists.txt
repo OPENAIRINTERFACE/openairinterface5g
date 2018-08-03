@@ -1215,6 +1215,11 @@ set(PHY_MEX_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
   ${OPENAIR_DIR}/common/utils/LOG/log.c
+  ${OPENAIR_DIR}/common/utils/T/T.c
+  ${OPENAIR_DIR}/common/utils/T/local_tracer.c
+  ${OPENAIR_DIR}/common/config/config_cmdline.c
+  ${OPENAIR_DIR}/common/config/config_userapi.c
+  ${OPENAIR_DIR}/common/config/config_load_configmodule.c
   )
 add_library(PHY_MEX ${PHY_MEX_UE})
 
@@ -2182,7 +2187,7 @@ if (${T_TRACER})
         oai_eth_transpro
         FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
         SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL CN_UTILS
-        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB)
+        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB PHY_MEX)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()
