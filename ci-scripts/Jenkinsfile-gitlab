@@ -31,6 +31,7 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
 }
 
 def doRedHatBuild = false
+def FDD_Band7_B210_Status
 
 pipeline {
     agent {
@@ -265,7 +266,7 @@ pipeline {
                         gitlabCommitStatus(name: "Test-FDD-Band7") {
                             script {
                                 if ("MERGE".equals(env.gitlabActionType)) {
-                                    build job: 'eNB-CI-FDD-Band7-B210',
+                                    FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
                                        parameters: [
                                            string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
                                            string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
@@ -273,13 +274,25 @@ pipeline {
                                            booleanParam(name: 'eNB_mergeRequest', value: true)
                                        ]
                                 } else {
-                                    build job: 'eNB-CI-FDD-Band7-B210',
+                                    FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
                                        parameters: [
                                            string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
                                            string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
                                            string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
                                            booleanParam(name: 'eNB_mergeRequest', value: false)
                                        ]
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            script {
+                                copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
+                                              filter: 'test_results*.html',
+                                              selector: specific("${FDD_Band7_B210_Status.number}"))
+                                if (fileExist('test_results-eNB-CI-FDD-Band7-B210.html')) {
+                                    archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
                                 }
                             }
                         }
