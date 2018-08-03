@@ -41,6 +41,8 @@
 typedef struct {
     /// module id
     module_id_t module_id;
+    /// gNB index
+    uint32_t gNB_index;
     /// component carrier id
     int cc_id;
     /// frame 
@@ -179,20 +181,21 @@ int8_t nr_ue_if_module_kill(uint32_t module_id);
    \param dl_info including dci_ind and rx_request messages*/
 int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info);
 
-
+//  TODO check
 /**\brief handle BCCH-BCH message from dl_indication
-   \param 
-   \param 
-   \param 
-   \param */
-int8_t handle_bcch_bch(uint8_t *pduP, uint8_t additional_bits, uint32_t ssb_index, uint32_t l_ssb);
+   \param pduP            pointer to bch pdu
+   \param additional_bits corresponding to 38.212 ch.7
+   \param ssb_index       SSB index within 0 - (L_ssb-1) corresponding to 38.331 ch.13 parameter i
+   \param ssb_length      corresponding to L1 parameter L_ssb */
+int8_t handle_bcch_bch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint8_t *pduP, uint8_t additional_bits, uint32_t ssb_index, uint32_t ssb_length);
 
-
+//  TODO check
 /**\brief handle BCCH-DL-SCH message from dl_indication
    \param pdu_len   length(bytes) of pdu
    \param pduP      pointer to pdu*/
-int8_t handle_bcch_dlsch(uint32_t pdu_len, uint8_t *pduP);
+int8_t handle_bcch_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len);
 
+int8_t handle_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type);
 
 #endif
 

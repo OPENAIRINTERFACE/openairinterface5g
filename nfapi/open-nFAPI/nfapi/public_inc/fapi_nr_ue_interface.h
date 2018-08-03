@@ -116,10 +116,10 @@ typedef struct {
         uint8_t cce_reg_interleaved_interleaver_size;   //  valid if CCE to REG mapping type is interleaved type
         uint8_t cce_reg_interleaved_shift_index;        //  valid if CCE to REG mapping type is interleaved type
         uint8_t precoder_granularity;
-        uint8_t tci_state_pdcch;
-
-        uint8_t tci_present_in_dci;
         uint16_t pdcch_dmrs_scrambling_id;
+
+        uint8_t tci_state_pdcch;
+        uint8_t tci_present_in_dci;
     } fapi_nr_coreset_t;
 
 //
@@ -135,19 +135,15 @@ typedef struct {
 	typedef struct {
 		uint16_t rnti;
 		uint8_t dci_type;
-		uint8_t dci_size;
         fapi_nr_dci_pdu_rel15_t dci;
 	} fapi_nr_dci_indication_pdu_t;
 
-	typedef struct {
-		uint16_t number_of_dcis;
-		fapi_nr_dci_indication_pdu_t* dci_list;
-	} fapi_nr_dci_indication_body_t;
 
 ///
 typedef struct {
   	uint32_t sfn_slot;
-  	fapi_nr_dci_indication_body_t dci_indication_body;
+    uint16_t number_of_dcis;
+  	fapi_nr_dci_indication_pdu_t *dci_list;
 } fapi_nr_dci_indication_t;
 
 
@@ -160,12 +156,15 @@ typedef struct {
         uint8_t* pdu;   //  3bytes
         uint8_t additional_bits;
         uint8_t ssb_index;
-        uint8_t l_ssb;
+        uint8_t ssb_length;
+        uint16_t cell_id;
+
     } fapi_nr_mib_pdu_t;
 
     typedef struct {
         uint32_t pdu_length;
         uint8_t* pdu;
+        uint32_t sibs_mask;
     } fapi_nr_sib_pdu_t;
 
 	typedef struct {
@@ -255,7 +254,7 @@ typedef struct {
 
 	typedef struct {
 		uint8_t pdu_type;
-		uint8_t pdu_size;
+		//uint8_t pdu_size;
 		union {
             fapi_nr_dl_config_dci_pdu dci_pdu;
             fapi_nr_dl_config_dlsch_pdu dlsch_pdu;

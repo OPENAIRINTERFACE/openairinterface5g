@@ -32,6 +32,7 @@
 
 #include "NR_IF_Module.h"
 #include "mac_proto.h"
+#include "assertions.h"
 
 #include <stdio.h>
 
@@ -39,27 +40,29 @@
 
 static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 
+//  L2 Abstraction Layer
+int8_t handle_bcch_bch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint8_t *pduP, uint8_t additional_bits, uint32_t ssb_index, uint32_t ssb_length){
 
-int8_t handle_bcch_bch(uint8_t *pduP, uint8_t additional_bits, uint32_t ssb_index, uint32_t l_ssb){
+    return nr_ue_decode_mib( module_id,
+                             cc_id,
+                             gNB_index,
+                             additional_bits,
+                             ssb_length,  //  Lssb = 64 is not support    
+                             ssb_index,
+                             pduP );
 
-    //  pdu_len = 4, 32bits
-    //uint8_t extra_bits = pduP[0];
-    nr_ue_decode_mib(   (module_id_t)0,
-                        0,
-                        0,
-                        additional_bits,
-                        l_ssb,  //  Lssb = 64 is not support    
-                        ssb_index,
-                        &pduP[1] );
+}
 
-
+//  L2 Abstraction Layer
+int8_t handle_bcch_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len){
 
     return 0;
 }
+//  L2 Abstraction Layer
+int8_t handle_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type){
 
-int8_t handle_bcch_dlsch(uint32_t pdu_len, uint8_t *pduP){
+    return nr_ue_decode_dci(module_id, cc_id, gNB_index, dci, rnti, dci_type);
 
-    return 0;
 }
 
 int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
@@ -99,6 +102,7 @@ int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     
     int32_t i;
+    uint32_t ret_mask = 0x0;
     module_id_t module_id = dl_info->module_id;
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -109,29 +113,80 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
         for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
             switch(dl_info->rx_ind->rx_request_body[i].pdu_type){
                 case FAPI_NR_RX_PDU_TYPE_MIB:
-                        handle_bcch_bch(dl_info->rx_ind->rx_request_body[i].mib_pdu.pdu, dl_info->rx_ind->rx_request_body[i].mib_pdu.additional_bits, dl_info->rx_ind->rx_request_body[i].mib_pdu.ssb_index, dl_info->rx_ind->rx_request_body[i].mib_pdu.l_ssb);
+                    ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+                                (dl_info->rx_ind->rx_request_body+i)->mib_pdu.pdu, 
+                                (dl_info->rx_ind->rx_request_body+i)->mib_pdu.additional_bits, 
+                                (dl_info->rx_ind->rx_request_body+i)->mib_pdu.ssb_index, 
+                                (dl_info->rx_ind->rx_request_body+i)->mib_pdu.ssb_length )) << FAPI_NR_RX_PDU_TYPE_MIB;
                     break;
                 case FAPI_NR_RX_PDU_TYPE_SIB:
-                        
+                    ret_mask |= (handle_bcch_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+                                (dl_info->rx_ind->rx_request_body+i)->sib_pdu.sibs_mask,
+                                (dl_info->rx_ind->rx_request_body+i)->sib_pdu.pdu,
+                                (dl_info->rx_ind->rx_request_body+i)->sib_pdu.pdu_length )) << FAPI_NR_RX_PDU_TYPE_SIB;
                     break;
                 case FAPI_NR_RX_PDU_TYPE_DLSCH:
+                    ret_mask |= (0) << FAPI_NR_RX_PDU_TYPE_DLSCH;
                     break;
                 default:
+
                     break;
 
             }
         }
-        
     }
+
+    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
 
     if(dl_info->dci_ind != NULL){
+        printf("[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
+        for(i=0; dl_info->dci_ind->number_of_dcis; ++i){
+            fapi_nr_dci_pdu_rel15_t *dci = &(dl_info->dci_ind->dci_list+i)->dci;
+            switch((dl_info->dci_ind->dci_list+i)->dci_type){
+                case FAPI_NR_DCI_TYPE_0_0:
+                case FAPI_NR_DCI_TYPE_0_1:
+                case FAPI_NR_DCI_TYPE_1_1:
+                case FAPI_NR_DCI_TYPE_2_0:
+                case FAPI_NR_DCI_TYPE_2_1:
+                case FAPI_NR_DCI_TYPE_2_2:
+                case FAPI_NR_DCI_TYPE_2_3:
+                    AssertFatal(1==0, "Not yet support at this moment!\n");
+                    break;
+                
+                case FAPI_NR_DCI_TYPE_1_0:
+                    
+                    dl_config->dl_config_request_body[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+                    dl_config->dl_config_request_body[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15.dci_config = *dci;
+                    dl_config->dl_config_request_body[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15.rnti = 0x0000;   //  UE-spec
+                    dl_config->number_pdus = dl_config->number_pdus + 1;
 
+                    ret_mask |= (handle_dci(
+                                dl_info->module_id,
+                                dl_info->cc_id,
+                                dl_info->gNB_index,
+                                dci, 
+                                (dl_info->dci_ind->dci_list+i)->rnti, 
+                                (dl_info->dci_ind->dci_list+i)->dci_type)) << FAPI_NR_DCI_IND;
+
+                    
+
+                    break;
+
+                default:
+                    break;
+            }
+
+
+            //(dl_info->dci_list+i)->rnti
+            
+            
+
+
+        }
     }
 
-    if(nr_ue_if_module_inst[module_id] != NULL){
-        nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
-    }
-
+    AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is void!\n" );
+    nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
 
     return 0;
 }

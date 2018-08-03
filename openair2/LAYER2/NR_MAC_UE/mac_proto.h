@@ -110,5 +110,13 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
 uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
        uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe);
 
+
+int8_t nr_ue_decode_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type);
+
+uint32_t get_ssb_frame(void);
+uint32_t get_ssb_slot(uint32_t ssb_index);
+
+
+uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
 #endif
 /** @}*/

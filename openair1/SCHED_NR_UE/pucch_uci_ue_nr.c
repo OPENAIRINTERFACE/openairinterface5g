@@ -154,7 +154,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     if (ue->mac_enabled == 1) {
 
       /* sr_payload = 1 means that this is a positive SR, sr_payload = 0 means that it is a negative SR */
-      sr_payload = ue_get_SR(Mod_id,
+      sr_payload = nr_ue_get_SR(Mod_id,
                             CC_id,
                             frame_tx,
                             gNB_id,

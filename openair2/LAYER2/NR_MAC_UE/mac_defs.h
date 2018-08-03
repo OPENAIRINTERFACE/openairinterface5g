@@ -65,7 +65,6 @@ typedef enum {
     SFN_C_EQ_SFN_SSB
 } SFN_C_TYPE;
 
-
 /*!\brief Top level UE MAC structure */
 typedef struct {
     
@@ -84,6 +83,9 @@ typedef struct {
     SFN_C_TYPE type0_pdcch_ss_sfn_c;
     uint32_t type0_pdcch_ss_n_c;
 
+    ///     Random access parameter
+    uint16_t ra_rnti;
+
 
 	////	FAPI-like interface message
 	fapi_nr_tx_request_t tx_request;
@@ -100,7 +102,41 @@ typedef struct {
 	nr_phy_config_t phy_config;
 
 
+
+
 } NR_UE_MAC_INST_t;
+
+typedef enum seach_space_mask_e {
+    type0_pdcch  = 0x1, 
+    type0a_pdcch = 0x2,
+    type1_pdcch  = 0x4, 
+    type2_pdcch  = 0x8,
+    type3_pdcch  = 0x10
+} search_space_mask_t;
+
+typedef enum subcarrier_spacing_e {
+    scs_15kHz  = 0x1,
+    scs_30kHz  = 0x2,
+    scs_60kHz  = 0x4,
+    scs_120kHz = 0x8,
+    scs_240kHz = 0x16
+} subcarrier_spacing_t;
+
+typedef enum channel_bandwidth_e {
+    bw_5MHz   = 0x1,
+    bw_10MHz  = 0x2,
+    bw_20MHz  = 0x4,
+    bw_40MHz  = 0x8,
+    bw_80MHz  = 0x16,
+    bw_100MHz = 0x32
+} channel_bandwidth_t;
+
+typedef enum frequency_range_e {
+    FR1 = 0, 
+    FR2
+} frequency_range_t;
+
+#define NUM_SLOT_FRAME 10
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

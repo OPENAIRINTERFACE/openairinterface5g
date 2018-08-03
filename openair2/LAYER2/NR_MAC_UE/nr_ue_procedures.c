@@ -38,34 +38,11 @@
 #include <stdio.h>
 #include <math.h>
 
-typedef enum subcarrier_spacing_e {
-	scs_15kHz  = 0x1,
-	scs_30kHz  = 0x2,
-	scs_60kHz  = 0x4,
-	scs_120kHz = 0x8,
-	scs_240kHz = 0x16
-} subcarrier_spacing_t;
-
-typedef enum channel_bandwidth_e {
-	bw_5MHz   = 0x1,
-	bw_10MHz  = 0x2,
-	bw_20MHz  = 0x4,
-	bw_40MHz  = 0x8,
-	bw_80MHz  = 0x16,
-	bw_100MHz = 0x32
-} channel_bandwidth_t;
-
-typedef enum frequency_range_e {
-    FR1 = 0, 
-    FR2
-} frequency_range_t;
-
 uint32_t get_ssb_slot(uint32_t ssb_index){
     //  this function now only support f <= 3GHz
     return ssb_index & 0x3 ;
 
     //  return first_symbol(case, freq, ssb_index) / 14
-
 }
 
 int8_t nr_ue_decode_mib(
@@ -249,6 +226,7 @@ int8_t nr_ue_decode_mib(
         AssertFatal(rb_offset != -1, "Type0 PDCCH coreset rb_offset undefined");
         
         uint32_t cell_id = 0;   //  obtain from L1 later
+
         mac->type0_pdcch_dci_config.coreset.rb_start = rb_offset;
         mac->type0_pdcch_dci_config.coreset.rb_end = rb_offset + num_rbs - 1;
         //mac->type0_pdcch_dci_config.type0_pdcch_coreset.duration = num_symbols;
@@ -443,16 +421,10 @@ const uint32_t num_slot_per_frame = 10;
     return 0;
 }
 
-typedef enum seach_space_mask_e {
-    type0_pdcch  = 0x1, 
-    type0a_pdcch = 0x2,
-    type1_pdcch  = 0x4, 
-    type2_pdcch  = 0x8,
-    type3_pdcch  = 0x10
-} search_space_mask_t;
+
 
 //  TODO: change to UE parameter, scs: 15KHz, slot duration: 1ms
-#define NUM_SLOT_FRAME 10
+
 
 uint32_t get_ssb_frame(){
 	return 0;
@@ -474,7 +446,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
 
     uint32_t search_space_mask = 0;
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+    
     //  check type0 from 38.213 13
     if(ssb_index != -1){
 
@@ -517,11 +489,11 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
         uint8_t format_2_3_monitorying_periodicity;
         uint8_t format_2_3_number_of_candidates;
 #endif
-
+    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
     if(search_space_mask & type0_pdcch){
 
         dl_config->dl_config_request_body[dl_config->number_pdus].dci_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
-        //dl_config->dl_config_request_body[dl_config->number_pdus].pdu_type = ;
+        dl_config->dl_config_request_body[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
         dl_config->number_pdus = dl_config->number_pdus + 1;
     	
     	dl_config->dl_config_request_body[dl_config->number_pdus].dci_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
@@ -546,10 +518,18 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
 	return CONNECTION_OK;
 }
 
+int8_t nr_ue_decode_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type){
 
-uint32_t
-ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
-      uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe)
+    NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+
+    if(rnti == SI_RNTI){
+
+    }else if(rnti == mac->ra_rnti){
+
+    }
+}
+
+int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe)
 {
 
     return 0;

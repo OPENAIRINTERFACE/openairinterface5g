@@ -700,10 +700,47 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   	  printf("[PBCH] decoder_output[%d] = %x\n",i,decoded_output[i]);
   }
 	  //#endif
-     
-    //ue->dl_indication.rx_ind.rx_request_body.pdu_index = FAPI_NR_RX_PDU_BCCH_BCH_TYPE;
-    //ue->dl_indication.rx_ind.rx_request_body.pdu_length = 3;
-    //ue->dl_indication.rx_ind.rx_request_body.pdu = &decoded_output[0];
-    //ue->if_inst->dl_indication(&ue->dl_indication);
+    ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance
+    //ue->rx_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
+    ue->rx_ind.number_pdus = ue->rx_ind.number_pdus + 1;
+    ue->rx_ind.rx_request_body = (fapi_nr_rx_request_body_t *)malloc(sizeof(fapi_nr_rx_request_body_t));
+    ue->rx_ind.rx_request_body->pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
+    ue->rx_ind.rx_request_body->mib_pdu.pdu = &decoded_output[1];
+    ue->rx_ind.rx_request_body->mib_pdu.additional_bits = decoded_output[0];
+    ue->rx_ind.rx_request_body->mib_pdu.ssb_index = ssb_index;            //  confirm with TCL
+    ue->rx_ind.rx_request_body->mib_pdu.ssb_length = Lmax;                //  confirm with TCL
+    ue->rx_ind.rx_request_body->mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
+
+    ue->if_inst->dl_indication(&ue->dl_indication);
+
+//  dci reception part, should be put into dci_nr.c ? TBD
+#if 0
+    ue->dl_indication.dci_ind = &ue->dci_ind; //  hang on rx_ind instance
+    //ue->dci_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
+    uint32_t num_dci = 1;
+    uint32_t ii;
+
+    ue->dci_ind.number_of_dcis = num_dci;
+    ue->dci_ind.dci_list = (fapi_nr_dci_indication_pdu_t *)malloc(num_dci * sizeof(fapi_nr_dci_indication_pdu_t));
     
+    for(ii=0; ii<num_dci; ++ii){
+        //TODO check this part
+        (ue->dci_ind.dci_list+ii)->rnti = 0x0000;
+        (ue->dci_ind.dci_list+ii)->dci_type = 0;
+        
+        //  TODO to be fill with TCL
+        //ue->dci_ind.dci_list[ii]->dci.
+
+    }
+
+    ue->if_inst->dl_indication(&ue->dl_indication);
+#endif 
+
+
+    return 0;    
 }
+
+
+
+    
+
