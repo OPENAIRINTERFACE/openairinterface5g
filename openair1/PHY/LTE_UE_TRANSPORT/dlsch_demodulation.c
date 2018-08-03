@@ -1315,13 +1315,12 @@ void dlsch_channel_compensation(int **rxdataF_ext,
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aatx*2 + aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx + aarx][symbol*frame_parms->N_RB_DL*12];
       //print_shorts("dl_ch128[0]=",&dl_ch128[0]);*/
-      dl_ch_mag128      = (__m128i *)&dl_ch_mag[aatx*2 + aarx][symbol*frame_parms->N_RB_DL*12];
-      dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aatx*2 + aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch_mag128      = (__m128i *)&dl_ch_mag[aatx*frame_parms->nb_antennas_rx + aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aatx*frame_parms->nb_antennas_rx + aarx][symbol*frame_parms->N_RB_DL*12];
       rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*2 + aarx][symbol*frame_parms->N_RB_DL*12];
-
+      rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx + aarx][symbol*frame_parms->N_RB_DL*12];
 
       for (rb=0; rb<nb_rb; rb++) {
         if (mod_order>2) {
@@ -1772,11 +1771,11 @@ void dlsch_channel_compensation_core(int **rxdataF_ext,
 
     for (aarx=0; aarx<n_rx; aarx++) {
 
-    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aatx*2 + aarx][start_point];
-    dl_ch_mag128      = (__m128i *)&dl_ch_mag[aatx*2 + aarx][start_point];
-    dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aatx*2 + aarx][start_point];
+    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aatx*n_rx + aarx][start_point];
+    dl_ch_mag128      = (__m128i *)&dl_ch_mag[aatx*n_rx + aarx][start_point];
+    dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aatx*n_rx + aarx][start_point];
     rxdataF128        = (__m128i *)&rxdataF_ext[aarx][start_point];
-    rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*2 + aarx][start_point];
+    rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*n_rx + aarx][start_point];
 
       length_mod8 = length&7;
       if (length_mod8 == 0){
@@ -3973,11 +3972,6 @@ void dlsch_channel_level_median(int **dl_ch_estimates_ext,
                     ((int32_t*)&norm128D)[1] +
                     ((int32_t*)&norm128D)[2] +
                     ((int32_t*)&norm128D)[3];
-
-        if (ii<1){
-//        print_ints("norm128D",&norm128D[0]);
-          printf("norm_pack[%d] %d\n", aatx*n_rx + aarx, norm_pack);
-        }
 
         if (norm_pack > max)
           max = norm_pack;
