@@ -40,7 +40,7 @@
 #include <fstream>
 #include <cmath>
 #include <time.h>
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "common_lib.h"
 #include "assertions.h"
 #include <sys/sysinfo.h>

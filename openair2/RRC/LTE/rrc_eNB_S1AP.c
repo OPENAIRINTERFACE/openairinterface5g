@@ -1735,7 +1735,6 @@ MSC_LOG_TX_MESSAGE(
   return 0;
 }
 int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *msg_name, instance_t instance){
-    uint16_t                        mme_ue_s1ap_id;
     uint32_t                        eNB_ue_s1ap_id;
     struct rrc_eNB_ue_context_s*    ue_context_p = NULL;
     protocol_ctxt_t                 ctxt;
@@ -1750,7 +1749,6 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
     e_rab_release_drb = 0;
     memcpy(&e_rab_release_params[0], &(S1AP_E_RAB_RELEASE_COMMAND (msg_p).e_rab_release_params[0]), sizeof(e_rab_release_t)*S1AP_MAX_E_RAB);
 
-    mme_ue_s1ap_id  = S1AP_E_RAB_RELEASE_COMMAND (msg_p).mme_ue_s1ap_id;
     eNB_ue_s1ap_id = S1AP_E_RAB_RELEASE_COMMAND (msg_p).eNB_ue_s1ap_id;
     nb_e_rabs_torelease = S1AP_E_RAB_RELEASE_COMMAND (msg_p).nb_e_rabs_torelease;
     ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
@@ -1760,7 +1758,7 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
         xid = rrc_eNB_get_next_transaction_identifier(ctxt.module_id);
 
         LOG_D(RRC,"S1AP-E-RAB Release Command: MME_UE_S1AP_ID %d  ENB_UE_S1AP_ID %d release_e_rabs %d \n",
-            mme_ue_s1ap_id, eNB_ue_s1ap_id,nb_e_rabs_torelease);
+            S1AP_E_RAB_RELEASE_COMMAND (msg_p).mme_ue_s1ap_id, eNB_ue_s1ap_id,nb_e_rabs_torelease);
         for(erab = 0; erab < nb_e_rabs_torelease; erab++){
             b_existed = 0;
             is_existed = 0;

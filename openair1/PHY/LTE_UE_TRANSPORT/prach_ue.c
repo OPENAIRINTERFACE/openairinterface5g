@@ -37,7 +37,7 @@
 
 #include "SCHED_UE/sched_UE.h"
 #include "SCHED/sched_common_extern.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "../LTE_TRANSPORT/prach_extern.h"
 

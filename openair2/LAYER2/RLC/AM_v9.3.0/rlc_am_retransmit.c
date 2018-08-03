@@ -27,7 +27,7 @@
 #include "rlc_am.h"
 #include "rlc.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "msc.h"
 //-----------------------------------------------------------------------------
 boolean_t rlc_am_nack_pdu (

@@ -31,7 +31,7 @@
 #include "list.h"
 #include "rlc_um.h"
 #include "rlc_primitives.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 //-----------------------------------------------------------------------------
 void

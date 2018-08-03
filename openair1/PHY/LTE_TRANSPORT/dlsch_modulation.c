@@ -35,7 +35,7 @@
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/LTE_TRANSPORT/transport_eNB.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 //#define DEBUG_DLSCH_MODULATION

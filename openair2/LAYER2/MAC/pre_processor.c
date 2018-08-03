@@ -36,8 +36,8 @@
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -1047,7 +1047,6 @@ dlsch_scheduler_pre_processor_reset(int module_idP,
   int i, j;
   UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-  rnti_t rnti = UE_RNTI(module_idP, UE_id);
 
   uint8_t *vrb_map = RC.mac[module_idP]->common_channels[CC_id].vrb_map;
   int N_RB_DL =
@@ -1058,7 +1057,7 @@ dlsch_scheduler_pre_processor_reset(int module_idP,
 #endif
 
 
-  LOG_D(MAC, "Running preprocessor for UE %d (%x)\n", UE_id, rnti);
+  LOG_D(MAC, "Running preprocessor for UE %d (%x)\n", UE_id,(int)(UE_RNTI(module_idP, UE_id)));
   // initialize harq_pid and round
 
   if (ue_sched_ctl->ta_timer)

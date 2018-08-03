@@ -25,7 +25,7 @@
 #include "PHY/impl_defs_top.h"
 #include "openair2/LAYER2/MAC/mac_proto.h"
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #define DEBUG_PHY
 

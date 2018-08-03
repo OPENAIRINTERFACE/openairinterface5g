@@ -31,7 +31,7 @@
 #include "platform_types.h"
 #include "rrc_defs.h"
 #include "rrc_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "rrc_eNB_UE_context.h"
 #include "pdcp.h"
 #include "msc.h"
@@ -350,7 +350,7 @@ rrc_data_ind_ue(
 {
   rb_id_t    DCCH_index = Srb_id;
 
-    LOG_N(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
+    LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
           ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
 
 #if defined(ENABLE_ITTI)

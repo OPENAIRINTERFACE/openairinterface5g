@@ -62,11 +62,13 @@ Description Defines the identification EMM procedure executed by the
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
 /****************************************************************************/
 
+char *emm_identity_type2str(int id_type) {
 /* String representation of the requested identity type */
-static const char *_emm_identity_type_str[] = {
+static char *_emm_identity_type_str[] = {
   "NOT AVAILABLE", "IMSI", "IMEI", "IMEISV", "TMSI"
 };
-
+  return _emm_identity_type_str[id_type];
+}
 /*
  * --------------------------------------------------------------------------
  *  Internal data handled by the identification procedure in the UE
@@ -111,7 +113,7 @@ int emm_proc_identification_request(nas_user_t *user, emm_proc_identity_type_t t
   emm_sap_t emm_sap;
 
   LOG_TRACE(INFO, "EMM-PROC  - Identification requested type = %s (%d)",
-            _emm_identity_type_str[type], type);
+            emm_identity_type2str(type), type);
 
   /* Setup EMM procedure handler to be executed upon receiving
    * lower layer notification */

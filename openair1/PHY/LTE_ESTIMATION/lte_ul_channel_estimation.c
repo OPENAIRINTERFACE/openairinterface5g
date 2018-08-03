@@ -23,9 +23,8 @@
 #include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 //#define DEBUG_CH
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
-#include "T.h"
 #include "lte_estimation.h"
 
 // round(exp(sqrt(-1)*(pi/2)*[0:1:N-1]/N)*pow2(15))

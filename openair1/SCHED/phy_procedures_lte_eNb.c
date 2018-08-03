@@ -37,10 +37,8 @@
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-
-#include "T.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "assertions.h"
 #include "msc.h"
@@ -324,7 +322,6 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
   LTE_DL_eNB_HARQ_t *dlsch_harq=dlsch->harq_processes[harq_pid];
-  int input_buffer_length = dlsch_harq->TBS/8;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   if (dlsch->rnti == 0x02) {//frame < 200) {
@@ -332,7 +329,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
     LOG_D(PHY,
 	  "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", pdsch_start %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	  eNB->Mod_id, dlsch->rnti,harq_pid,
-	  frame, subframe, input_buffer_length, dlsch_harq->pdsch_start,
+	  frame, subframe, dlsch_harq->TBS/8, dlsch_harq->pdsch_start,
 	  get_G(fp,
 		dlsch_harq->nb_rb,
 		dlsch_harq->rb_alloc,
@@ -356,7 +353,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 		     NULL,0,
 		     "%05u:%02u PDSCH/DLSCH input size = %"PRIu16", G %d, nb_rb %"PRIu16", TBS %"PRIu16", pmi_alloc %"PRIx16", rv %"PRIu8" (round %"PRIu8")",
 		     frame, subframe,
-		     input_buffer_length,
+		     dlsch_harq->TBS/8,
 		     get_G(fp,
 			   dlsch_harq->nb_rb,
 			   dlsch_harq->rb_alloc,
@@ -481,12 +478,11 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   LTE_UL_eNB_HARQ_t *ulsch_harq;
 
-  int offset = eNB->CC_id;//proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(eNB->CC_id),1);
   if (do_meas==1) start_meas(&eNB->phy_proc_tx);
 
   // clear the transmit data array for the current subframe
@@ -648,7 +644,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 		     AMP);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_PHICH,0);
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,0);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(eNB->CC_id),0);
   if (do_meas==1) stop_meas(&eNB->phy_proc_tx);
   
 }

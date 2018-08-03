@@ -47,7 +47,7 @@
 #include "LAYER2/MAC/mac_vars.h"
 
 #include "OCG_vars.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/LISTS/list.h"
 
 #include "unitary_defs.h"
@@ -650,7 +650,6 @@ int main(int argc, char **argv)
   int two_thread_flag=0;
   int DLSCH_RB_ALLOC = 0;
 
-  int log_level = LOG_ERR;
   int dci_received;
   PHY_VARS_eNB *eNB;
   RU_t *ru;
@@ -1002,7 +1001,7 @@ int main(int argc, char **argv)
       break;
 
     case 'L':
-      log_level=atoi(optarg);
+      set_glog(atoi(optarg));
       break;
 
     case 'h':
@@ -1050,8 +1049,7 @@ int main(int argc, char **argv)
 	      "cannot load configuration module, exiting\n");
   logInit();
   // enable these lines if you need debug info
-  set_comp_log(PHY,LOG_INFO,LOG_HIGH,1);
-  set_glog(log_level,LOG_HIGH);
+  set_glog(LOG_DEBUG);
   // moreover you need to init itti with the following line
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt

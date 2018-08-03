@@ -33,8 +33,8 @@
 #include "PHY/phy_extern_ue.h" 
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
 

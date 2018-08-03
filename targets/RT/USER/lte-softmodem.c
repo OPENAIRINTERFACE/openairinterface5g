@@ -34,9 +34,6 @@
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
 
-
-#include "T.h"
-
 #include "rt_wrapper.h"
 
 
@@ -72,11 +69,11 @@
 #include "PHY/TOOLS/smbv.h"
 unsigned short config_frames[4] = {2,9,11,13};
 #endif
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
 //#include "PHY/TOOLS/time_meas.h"
@@ -144,7 +141,6 @@ static int8_t                     threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
-char logmem_filename[1024] = {0};
 
 // This is a dummy declaration (dlsch_demodulation.c is no longer compiled for eNodeB)
 int16_t dlsch_demod_shift = 0;
@@ -524,12 +520,12 @@ static void get_options(void) {
  
   
   uint32_t online_log_messages;
-  uint32_t glog_level, glog_verbosity;
+  uint32_t glog_level ;
   uint32_t start_telnetsrv;
 
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
-
+  CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL); 
 
   if (strlen(in_path) > 0) {
@@ -542,25 +538,17 @@ static void get_options(void) {
       opt_type = OPT_WIRESHARK;
       printf("Enabling OPT for wireshark for local interface");
   }
-
+  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
   config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
+
   if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
       set_glog_onlinelog(online_log_messages);
   }
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-      set_glog(glog_level, -1);
-  }
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGVERBO_IDX)) {
-      set_glog(-1, glog_verbosity);
+      set_glog(glog_level);
   }
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
-  }
-  if (strlen(logmem_filename) > 0) {
-    log_mem_filename = &logmem_filename[0];
-    log_mem_flag = 1;
-    printf("Enabling OPT for log save at memory %s\n",log_mem_filename);
-    logInit_log_mem();
   }
 
 
@@ -978,7 +966,6 @@ int main( int argc, char **argv )
   cpuf=get_cpu_freq_GHz();
 
 #if defined(ENABLE_ITTI)
-  log_set_instance_type (LOG_INSTANCE_ENB);
 
   printf("ITTI init\n");
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);

@@ -64,6 +64,7 @@ Description Defines the EPS Mobility Management procedures executed at
  */
 
 /* String representation of EMM events */
+const char *emm_fsm_event2str(int evt) {
 static const char *_emm_fsm_event_str[] = {
   "S1_ENABLED",
   "S1_DISABLED",
@@ -93,7 +94,10 @@ static const char *_emm_fsm_event_str[] = {
   "LOWERLAYER_FAILURE",
   "LOWERLAYER_RELEASE",
 };
+  return  _emm_fsm_event_str[evt];
+}
 
+const char *emm_fsm_status2str(int status) {
 /* String representation of EMM status */
 static const char *_emm_fsm_status_str[EMM_STATE_MAX] = {
   "INVALID",
@@ -120,7 +124,8 @@ static const char *_emm_fsm_status_str[EMM_STATE_MAX] = {
   "TRACKING-AREA-UPDATING-INITIATED",
   "SERVICE-REQUEST-INITIATED",
 };
-
+  return _emm_fsm_status_str[status];
+}
 /*
  * -----------------------------------------------------------------------------
  *      EPS Mobility Management state machine handlers
@@ -229,8 +234,8 @@ int emm_fsm_set_status(nas_user_t *user,
 
   if ( status < EMM_STATE_MAX ) {
     LOG_TRACE(INFO, "EMM-FSM   - Status changed: %s ===> %s",
-              _emm_fsm_status_str[user->emm_fsm_status],
-              _emm_fsm_status_str[status]);
+              emm_fsm_status2str(user->emm_fsm_status),
+              emm_fsm_status2str(status));
 
     if (status != user->emm_fsm_status) {
       user->emm_fsm_status = status;
@@ -280,17 +285,15 @@ int emm_fsm_process(nas_user_t *user, const emm_reg_t *evt)
 {
   int rc;
   emm_fsm_state_t status;
-  emm_reg_primitive_t primitive;
 
   LOG_FUNC_IN;
 
-  primitive = evt->primitive;
 
   status = user->emm_fsm_status;
 
   LOG_TRACE(INFO, "EMM-FSM   - Received event %s (%d) in state %s",
-            _emm_fsm_event_str[primitive - _EMMREG_START - 1], primitive,
-            _emm_fsm_status_str[status]);
+            emm_fsm_event2str(evt->primitive - _EMMREG_START - 1), evt->primitive,
+            emm_fsm_status2str(status));
 
 
   /* Execute the EMM state machine */

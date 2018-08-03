@@ -897,7 +897,7 @@ set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/FIFO/pad_list.c
   ${OPENAIR2_DIR}/UTIL/LISTS/list.c
   ${OPENAIR2_DIR}/UTIL/LISTS/list2.c
-  ${OPENAIR2_DIR}/UTIL/LOG/log.c
+  ${OPENAIR_DIR}/common/utils/LOG/log.c
 #  ${OPENAIR2_DIR}/UTIL/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
   ${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
@@ -1214,7 +1214,7 @@ set(PHY_MEX_UE
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
-  ${OPENAIR2_DIR}/UTIL/LOG/log.c
+  ${OPENAIR_DIR}/common/utils/LOG/log.c
   )
 add_library(PHY_MEX ${PHY_MEX_UE})
 
@@ -2175,7 +2175,7 @@ if (${T_TRACER})
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
         lte-softmodem lte-softmodem-nos1 lte-uesoftmodem lte-uesoftmodem-nos1
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
-        pdcchsim pucchsim prachsim syncsim
+        pdcchsim pucchsim prachsim syncsim ulsim
         #all "add_library" definitions
         ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB
         oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif

@@ -44,10 +44,10 @@
 #include "gtpv1u_eNB_defs.h"
 #include "gtpv1_u_messages_types.h"
 #include "udp_eNB_task.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/ran_context.h"
 #include "gtpv1u_eNB_defs.h"
 

@@ -33,7 +33,7 @@
 #include <arpa/inet.h>
 
 #include "nas_config.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 #include "NETWORK_DRIVER/MESH/rrc_nas_primitives.h"
 #include "NETWORK_DRIVER/MESH/ioctl.h"

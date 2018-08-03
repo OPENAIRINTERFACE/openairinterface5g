@@ -39,7 +39,7 @@
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "transport_eNB.h"
 #include "PHY/phy_extern.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
                       int mbsfn_flag,

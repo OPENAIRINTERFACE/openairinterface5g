@@ -31,7 +31,7 @@
 
 #include "mac.h"
 #include "mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "mac_proto.h"
 
 int8_t get_Po_NOMINAL_PUSCH(module_id_t module_idP, uint8_t CC_id)

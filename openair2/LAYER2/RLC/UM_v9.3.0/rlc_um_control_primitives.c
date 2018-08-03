@@ -29,7 +29,7 @@
 #include "list.h"
 #include "rrm_config_structs.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 #include "rlc_um_control_primitives.h"
 #include "T-Reordering.h"

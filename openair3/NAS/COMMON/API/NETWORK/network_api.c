@@ -144,10 +144,8 @@ int network_api_initialize(const char* host, const char* port)
 #endif
 
   if (_network_api_id.endpoint == NULL) {
-    const char* error = ( (errno < 0) ?
-                          gai_strerror(errno) : strerror(errno) );
     LOG_TRACE(ERROR, "NET-API   - Failed to open connection endpoint, %s",
-              error);
+              ((errno < 0) ? gai_strerror(errno) : strerror(errno)));
     LOG_FUNC_RETURN (RETURNerror);
   }
 
