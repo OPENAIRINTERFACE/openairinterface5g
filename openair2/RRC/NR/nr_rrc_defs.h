@@ -338,6 +338,16 @@ typedef struct gNB_RRC_UE_s {
   uint32_t                           ue_reestablishment_timer;
   uint32_t                           ue_reestablishment_timer_thres;
   uint8_t                            e_rab_release_command_flag;
+//------------------------------------------------------------------------------//
+  NR_CellGroupId_t                                      cellGroupId;
+  struct NR_SpCellConfig                                *spCellConfig;
+  struct NR_CellGroupConfig__sCellToAddModList          *sCellconfig;
+  struct NR_CellGroupConfig__sCellToReleaseList         *sCellconfigRelease;
+  struct NR_CellGroupConfig__rlc_BearerToAddModList     *rlc_BearerBonfig;
+  struct NR_CellGroupConfig__rlc_BearerToReleaseList    *rlc_BearerRelease;
+  struct NR_MAC_CellGroupConfig                         *mac_CellGroupConfig;
+  struct NR_PhysicalCellGroupConfig                     *physicalCellGroupConfig;
+  
 } gNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;

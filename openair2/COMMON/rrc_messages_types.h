@@ -405,7 +405,6 @@ typedef struct NRRrcConfigurationReq_s {
   long                    PDCCH_TCI_StateId[MAX_NUM_CCs];
   BOOLEAN_t               tci_PresentInDCI[MAX_NUM_CCs];
   uint32_t                PDCCH_DMRS_ScramblingID[MAX_NUM_CCs];
-  uint8_t                 frequencyDomainResources_buf[6];
 
   //NR PDCCH-ConfigCommon commonSearchSpaces
   long                    SearchSpaceId[MAX_NUM_CCs];

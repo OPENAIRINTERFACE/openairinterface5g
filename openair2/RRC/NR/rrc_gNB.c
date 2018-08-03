@@ -144,6 +144,40 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
      rrc_gNB_ue_context_t   *const ue_context_pP
      ){
 
+  uint8_t size;
+  uint8_t buffer[100];
+  int     CC_id = ue_context_pP->ue_context.primaryCC_id;
+  /*
+  NR_CellGroupId_t                                    cellGroupId;
+  struct NR_CellGroupConfig__rlc_BearerToAddModList   *rlc_BearerToAddModList;
+  struct NR_MAC_CellGroupConfig                       *mac_CellGroupConfig;
+  struct NR_PhysicalCellGroupConfig                   *physicalCellGroupConfig;
+  struct NR_SpCellConfig                              *spCellConfig;
+  struct NR_CellGroupConfig__sCellToAddModList        *sCellToAddModList;
+  */
+  gNB_RrcConfigurationReq  *common_configuration;
+  common_configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
+
+  //Fill config
+  rrc_config_servingcellconfigcommon(ctxt_pP->module_id,
+                                     ue_context_pP->ue_context.primaryCC_id
+                                     #if defined(ENABLE_ITTI)
+                                     ,common_configuration
+                                     #endif
+                                    );
+  //Fill config to structure
+  do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
+                             ue_context_pP->ue_context.primaryCC_id,
+                             #if defined(ENABLE_ITTI)
+                             common_configuration,
+                             #endif
+                             0
+                             );
+/*
+  memcpy( (*spCellConfig)->reconfigurationWithSync->spCellConfigCommon , 
+          RC.nrrrc[ctxt_pP->module_id]->carrier[0].servingcellconfigcommon,
+          sizeof(struct NR_ServingCellConfigCommon));
+*/
 
 }
 
@@ -184,10 +218,11 @@ static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
                                                                             );
 
   do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
-                             CC_id
+                             CC_id,
                              #if defined(ENABLE_ITTI)
-                             ,configuration
+                             configuration,
                              #endif
+                             1
                              );
   
   LOG_I(NR_RRC,"Done init_NR_SI\n");

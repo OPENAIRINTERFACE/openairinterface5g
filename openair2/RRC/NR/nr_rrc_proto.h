@@ -58,6 +58,13 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
      rrc_gNB_ue_context_t   *const ue_context_pP
      );
 
+void rrc_config_servingcellconfigcommon(uint8_t Mod_id,
+                                        int CC_id
+                                        #if defined(ENABLE_ITTI)
+                                        ,gNB_RrcConfigurationReq *common_configuration
+                                        #endif
+                                       );
+
 #if defined(ENABLE_ITTI)
 /**\brief RRC eNB task.
    \param void *args_p Pointer on arguments to start the task. */
