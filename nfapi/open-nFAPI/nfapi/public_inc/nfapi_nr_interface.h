@@ -299,72 +299,28 @@ typedef enum {
 } nfapi_nr_coreset_precoder_granularity_type_e;
 
 // P7 Sub Structures
-//formats 0_0 and 0_1
+
 typedef struct {
 
 nfapi_tl_t tl;
 
-uint8_t cce_idx;
-uint8_t aggregation_level;
-uint16_t rnti;
-uint8_t rnti_type;
-
-uint8_t dci_format; //1 bit
-uint16_t frequency_domain_resource_assignment; //up to 9 bits
-uint8_t time_domain_resource_assignment; //0, 1, 2, 3 or 4 bits
+uint8_t format_indicator; //1 bit
+uint16_t frequency_domain_assignment; //up to 9 bits
+uint8_t time_domain_assignment; // 4 bits
 uint8_t frequency_hopping_flag; //1 bit
-uint8_t mcs; //5 bits
-uint8_t new_data_indicator; //1 bit
-uint8_t redundancy_version; //2 bits
-uint8_t harq_process; //4 bits
-uint8_t tpc; //2 bits
-uint16_t padding;
-uint8_t ul_sul_indicator; //0 or 1 bit
-
-uint8_t carrier_indicator; //0 or 3 bits
-uint8_t bwp_indicator; //0, 1 or 2 bits
-uint8_t downlink_assignment_index1; //1 or 2 bits
-uint8_t downlink_assignment_index2; //0 or 2 bits
-uint8_t srs_resource_indicator;
-uint8_t precoding_information;
-uint8_t antenna_ports;
-uint8_t srs_request;
-uint8_t csi_request;
-uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
-uint8_t ptrs_dmrs_association;
-uint8_t beta_offset_indicator; //0 or 2 bits
-uint8_t dmrs_sequence_initialization; //0 or 1 bit
-uint8_t ul_sch_indicator; //1 bit
-
-} nfapi_nr_ul_config_dci_ul_pdu_rel15_t;
-//#define NFAPI_NR_UL_CONFIG_REQUEST_DCI_UL_PDU_REL15_TAG 0x????
-
-//formats 1_0, 1_1, 2_0, 2_1, 2_2 and 2_3
-typedef struct {
-
-nfapi_tl_t tl;
-
-uint8_t cce_idx;
-uint8_t aggregation_level;
-uint16_t rnti;
-uint8_t rnti_type;
-
-uint8_t dci_format; //1 bit
-uint16_t frequency_domain_resource_assignment; //up to 9 bits
 
 uint8_t ra_preamble_index; //6 bits
-uint8_t ul_sul_indicator; //1 bit
 uint8_t ss_pbch_index; //6 bits
 uint8_t prach_mask_index; //4 bits
-uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
 
-uint8_t time_domain_resource_assignment; //0, 1, 2, 3 or 4 bits
 uint8_t vrb_to_prb_mapping; //0 or 1 bit
 uint8_t mcs; //5 bits
-uint8_t new_data_indicator; //1 bit
-uint8_t redundancy_version; //2 bits
-uint8_t harq_process; //4 bits
-uint8_t downlink_assignment_index; //0, 2 or 4 bits
+uint8_t ndi; //1 bit
+uint8_t rv; //2 bits
+uint8_t harq_pid; //4 bits
+uint8_t dai; //0, 2 or 4 bits
+uint8_t dai1; //1 or 2 bits
+uint8_t dai2; //0 or 2 bits
 uint8_t tpc; //2 bits
 uint8_t pucch_resource_indicator; //3 bits
 uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
@@ -378,12 +334,17 @@ uint8_t bwp_indicator; //0, 1 or 2 bits
 uint8_t prb_bundling_size_indicator; //0 or 1 bits
 uint8_t rate_matching_indicator; //0, 1 or 2 bits
 uint8_t zp_csi_rs_trigger; //0, 1 or 2 bits
-uint8_t antenna_ports; //4, 5 or 6 bits
 uint8_t transmission_configuration_indication; //0 or 3 bits
 uint8_t srs_request; //2 bits
 uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
 uint8_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
 uint8_t dmrs_sequence_initialization; //0 or 1 bit
+
+uint8_t srs_resource_indicator;
+uint8_t precoding_information;
+uint8_t csi_request;
+uint8_t ptrs_dmrs_association;
+uint8_t beta_offset_indicator; //0 or 2 bits
 
 uint8_t slot_format_indicator_count;
 uint8_t *slot_format_indicators;
@@ -394,11 +355,18 @@ uint16_t *pre_emption_indications; //14 bit
 uint8_t block_number_count;
 uint8_t *block_numbers;
 
+uint8_t ul_sul_indicator; //0 or 1 bit
+uint8_t antenna_ports;
+
+uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
+uint16_t padding;
+
 } nfapi_nr_dl_config_dci_dl_pdu_rel15_t;
 //#define NFAPI_NR_DL_CONFIG_REQUEST_DCI_DL_PDU_REL15_TAG 0x????
 
 
 typedef struct{
+  nfapi_tl_t tl;
   uint8_t  coreset_id;
   uint64_t  frequency_domain_resources;
   uint8_t  duration;
@@ -413,6 +381,7 @@ typedef struct{
 } nfapi_nr_coreset_t;
 
 typedef struct{
+  nfapi_tl_t tl;
   uint8_t   search_space_id;
   uint8_t   coreset_id;
   uint8_t   search_space_type;
@@ -435,6 +404,8 @@ typedef struct {
   uint8_t rnti;
   uint8_t rnti_type;
   uint8_t dci_format;
+  uint8_t config_type;
+  uint8_t search_space_type;  
   uint8_t aggregation_level;
   uint8_t n_rb;
   uint8_t n_symb;
@@ -442,13 +413,11 @@ typedef struct {
   uint8_t cr_mapping_type;
   uint8_t mux_pattern;
   uint8_t precoder_granularity;
-  uint8_t config_type;
   uint8_t first_slot;
   uint8_t first_symbol;
   uint8_t nb_ss_sets_per_slot;
   uint8_t nb_slots;
   uint8_t sfn_mod2;
-  uint8_t search_space_type;
   uint16_t scrambling_id;
   nfapi_bf_vector_t   bf_vector;
 } nfapi_nr_dl_config_pdcch_parameters_rel15_t;

@@ -47,18 +47,10 @@ typedef struct {
 } NR_gNB_PBCH;
 
 typedef struct {
-  /// Length of DCI in bits
+  /// Length of DCI payload in bits
   uint8_t size;
   /// Aggregation level
   uint8_t L;
-  /// rnti
-  uint16_t rnti;
-  /// rnti type
-  nfapi_nr_rnti_type_e rnti_type;
-  /// search space type
-  nfapi_nr_search_space_type_e search_space_type;
-  /// Format
-  nfapi_nr_dci_format_e format;
   /// PDCCH parameters
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params;
   /// CCE list

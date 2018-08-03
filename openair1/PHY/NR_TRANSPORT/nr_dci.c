@@ -51,8 +51,8 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
+      size += nr_get_dci_size(NFAPI_NR_DL_DCI_FORMAT_1_0, rnti_type, bwp, config) - size; // Padding to match 1_0 size
       // UL/SUL indicator assumed to be 0
-      // Padding
       break;
 
     case NFAPI_NR_UL_DCI_FORMAT_0_1:
@@ -81,7 +81,7 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
       /// fixed: Format identifier 1, VRB2PRB 1, MCS 5, NDI 1, RV 2, HARQ PID 4, DAI 2, PUCCH TPC 2, PUCCH RInd 3, PDSCH to HARQ TInd 3 Time Domain assgnmt 4 -- 28
       size += 28;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
-      // Time domain assignment
+
       break;
 
     case NFAPI_NR_DL_DCI_FORMAT_1_1:
@@ -160,7 +160,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
                             nfapi_nr_config_request_t config)
 {
 
-  uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH<<1];
+  uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH>>1];
   uint8_t idx=0;
   uint16_t a;
   int k,l,k_prime,dci_idx, dmrs_idx;
@@ -181,7 +181,6 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
     mod_dmrs[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
     mod_dmrs[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PDCCH_DMRS
-  printf("DMRS modulation\n");
   printf("i %d idx %d gold seq %d b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, gold_pdcch_dmrs[(i<<1)>>5], (((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1),
   (((gold_pdcch_dmrs[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), mod_dmrs[(i<<1)], mod_dmrs[(i<<1)+1]);
 #endif
@@ -192,8 +191,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   
     // scrambling
   uint32_t scrambled_payload[4];
-  uint32_t Nid = (dci_alloc.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
-  uint32_t n_RNTI = (dci_alloc.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? dci_alloc.rnti : 0;
+  uint32_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
+  uint32_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.rnti : 0;
   nr_pdcch_scrambling(dci_alloc.dci_pdu, dci_alloc.size, Nid, n_RNTI, scrambled_payload);
 
     // QPSK modulation
@@ -203,8 +202,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
     mod_dci[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
     mod_dci[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_DCI
-  printf("DCI modulation\n");
-  printf("i %d idx %d b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, (((scrambled_payload[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+  printf("i %d idx %d b0-b1 %d-%d mod_dci %d %d\n", i, idx, (((scrambled_payload[(i<<1)>>5])>>((i<<1)&0x1f))&1),
   (((scrambled_payload[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), mod_dci[(i<<1)], mod_dci[(i<<1)+1]);
 #endif
   }

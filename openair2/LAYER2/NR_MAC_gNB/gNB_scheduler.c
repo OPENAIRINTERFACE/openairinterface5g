@@ -417,12 +417,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_mib(module_idP, frameP, subframeP);
   }
 
-  if (phy_test == 0) {
-    
-  }
-  else {
-      void nr_schedule_css_dlsch_phytest(module_idP, frameP, subframeP);
-  }
+  // Phytest scheduling/ option not activated because of pending bug
+  nr_schedule_css_dlsch_phytest(module_idP, frameP, subframeP);
+
 
   /*
   // Allocate CCEs for good after scheduling is done

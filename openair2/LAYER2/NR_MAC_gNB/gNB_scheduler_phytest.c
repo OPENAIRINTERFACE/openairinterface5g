@@ -41,8 +41,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 {
   uint8_t  CC_id;
 
-  gNB_MAC_INST                        *gNB_mac      = RC.mac[module_idP];
-  NR_COMMON_channels_t                *cc           = gNB_mac->common_channels;
+  gNB_MAC_INST                        *nr_mac      = RC.nrmac[module_idP];
+  NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
   nfapi_nr_dl_config_request_body_t   *dl_req;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_pdu;
 
@@ -53,7 +53,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     nfapi_nr_config_request_t     *cfg   = &gNB->gNB_config;
     NR_DL_FRAME_PARMS             *fp    = &gNB->frame_parms;
 
-    dl_req = &gNB_mac->DL_req[CC_id].dl_config_request_body;
+    dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
     dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
     memset((void*)dl_config_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
     dl_config_pdu->pdu_type = NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE;
@@ -61,33 +61,33 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
     nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel15;
     nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &dl_config_pdu->dci_dl_pdu.pdcch_params_rel15;
+
     nr_configure_css_dci_from_mib(&gNB->pdcch_type0_params,
                                kHz30, kHz30, nr_FR1, 0, 0,
                                fp->slots_per_frame,
                                cfg->rf_config.dl_channel_bandwidth.value);
+    memcpy((void*)params_rel15, (void*)&gNB->pdcch_type0_params, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
 
-    pdu_rel15->frequency_domain_resource_assignment = 5;
-    pdu_rel15->time_domain_resource_assignment = 2;
+    pdu_rel15->frequency_domain_assignment = 5;
+    pdu_rel15->time_domain_assignment = 2;
     pdu_rel15->vrb_to_prb_mapping = 0;
     pdu_rel15->tb_scaling = 1;
-    LOG_I(PHY, "DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, tb_scaling %d\n",
-                pdu_rel15->frequency_domain_resource_assignment,
-                pdu_rel15->time_domain_resource_assignment,
+    LOG_I(MAC, "DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, tb_scaling %d\n",
+                pdu_rel15->frequency_domain_assignment,
+                pdu_rel15->time_domain_assignment,
                 pdu_rel15->vrb_to_prb_mapping,
                 pdu_rel15->tb_scaling);
 
     params_rel15->rnti = 0x03;
     params_rel15->rnti_type = NFAPI_NR_RNTI_RA;
     params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
-    params_rel15->aggregation_level = 4;
-    LOG_I(PHY, "DCI type 1 params: rmsi_pdcch_config, rnti %d, rnti_type %d, dci_format, L %d\n \
+    LOG_I(MAC, "DCI type 1 params: rmsi_pdcch_config %d, rnti %d, rnti_type %d, dci_format %d\n \
                 coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
                 ss params : nb_ss_sets_per_slot %d, first symb %d, nb_slots %d, sfn_mod2 %d, first slot %d\n",
                 0,
                 params_rel15->rnti,
                 params_rel15->rnti_type,
                 params_rel15->dci_format,
-                params_rel15->aggregation_level,
                 params_rel15->mux_pattern,
                 params_rel15->n_rb,
                 params_rel15->n_symb,
