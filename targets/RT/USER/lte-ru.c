@@ -1257,7 +1257,7 @@ void wakeup_eNBs(RU_t *ru) {
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
 
-  if ((ru->num_eNB==1 && ru->eNB_top!=0 && get_nprocs() <= 4) || single_thread_flag) {
+  if (ru->num_eNB==1 && ru->eNB_top!=0 && (get_nprocs() <= 4 || single_thread_flag)) {
     // call eNB function directly
   
     char string[20];
@@ -2194,7 +2194,7 @@ void init_RU_proc(RU_t *ru) {
   if(emulate_rf)
     pthread_create( &proc->pthread_emulateRF, attr_emulateRF, emulatedRF_thread, (void*)proc );
 
-  if (get_nprocs() > 4)
+  if (!single_thread_flag && get_nprocs() > 4)
     pthread_create( &proc->pthread_FH1, attr_FH1, ru_thread_tx, (void*)ru );
 
   if (ru->function == NGFI_RRU_IF4p5) {
