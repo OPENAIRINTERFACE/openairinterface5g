@@ -277,7 +277,7 @@ class SSHConnection():
 				self.CreateHtmlTestRow(config_file, 'eNB not showing got sync!', 0)
 				# Not getting got sync is bypassed for the moment
 				#sys.exit(1)
-			self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log', '\$', 10)
+			self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | grep -i sync', '\$', 10)
 			result = re.search('got sync', str(self.ssh.before))
 			if result is None:
 				time.sleep(6)
@@ -540,7 +540,112 @@ class SSHConnection():
 			job.join()
 		self.CreateHtmlTestRow(self.ping_args, 'OK', 0)
 
-	def Iperf_common(self, lock, UE_IPAddress, device_id, ue_num):
+	def Iperf_ComputeTime(self):
+		result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
+		if result is None:
+			logging.debug('\u001B[1;37;41m Iperf time Not Found! \u001B[0m')
+			sys.exit(1)
+		return result.group('iperf_time')
+
+	def Iperf_ComputeModifiedBW(self, ue_num):
+		result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', str(self.iperf_args))
+		if result is None:
+			logging.debug('\u001B[1;37;41m Iperf bandwidth Not Found! \u001B[0m')
+			sys.exit(1)
+		iperf_bandwidth = result.group('iperf_bandwidth')
+		iperf_bandwidth_new = float(iperf_bandwidth)/ue_num
+		iperf_bandwidth_str = '-b ' + iperf_bandwidth
+		iperf_bandwidth_str_new = '-b ' + str(iperf_bandwidth_new)
+		result = re.sub(iperf_bandwidth_str, iperf_bandwidth_str_new, str(self.iperf_args))
+		if result is None:
+			logging.debug('\u001B[1;37;41m Calculate Iperf bandwidth Failed! \u001B[0m')
+			sys.exit(1)
+		return result
+
+	def Iperf_analyzeV2Output(self, lock, UE_IPAddress):
+		result = re.search('Server Report:', str(self.ssh.before))
+		if result is None:
+			result = re.search('read failed: Connection refused', str(self.ssh.before))
+			if result is not None:
+				logging.debug('\u001B[1;37;41m Could not connect to iperf server! \u001B[0m')
+			else:
+				logging.debug('\u001B[1;37;41m Server Report and Connection refused Not Found! \u001B[0m')
+			sys.exit(1)
+		result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/.\d+) (\((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
+		if result is not None:
+			bitrate = result.group('bitrate')
+			packetloss = result.group('packetloss')
+			jitter = result.group('jitter')
+			lock.acquire()
+			logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
+			if bitrate is not None:
+				logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
+			if packetloss is not None:
+				logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
+				if float(packetloss) > float(self.iperf_packetloss_threshold):
+					logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
+					lock.release()
+					sys.exit(1)
+			if jitter is not None:
+				logging.debug('\u001B[1;34m    Jitter      : ' + jitter + '\u001B[0m')
+			lock.release()
+
+	def Iperf_analyzeV3Output(self, lock, UE_IPAddress):
+		result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', str(self.ssh.before))
+		if result is None:
+			result = re.search('(?P<error>iperf: error - [a-zA-Z0-9 :]+)', str(self.ssh.before))
+			if result is not None:
+				logging.debug('\u001B[1;37;41m ' + result.group('error') + ' \u001B[0m')
+			else:
+				logging.debug('\u001B[1;37;41m Bitrate and/or Packet Loss Not Found! \u001B[0m')
+			sys.exit(1)
+		bitrate = result.group('bitrate')
+		packetloss = result.group('packetloss')
+		lock.acquire()
+		logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
+		logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
+		if packetloss is not None:
+			logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
+			if float(packetloss) > float(self.iperf_packetloss_threshold):
+				logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
+				lock.release()
+				sys.exit(1)
+		lock.release()
+
+	def Iperf_UL_common(self, lock, UE_IPAddress, device_id, idx, ue_num):
+		ipnumbers = UE_IPAddress.split('.')
+		if (len(ipnumbers) == 4):
+			ipnumbers[3] = '1'
+		EPC_Iperf_UE_IPAddress = ipnumbers[0] + '.' + ipnumbers[1] + '.' + ipnumbers[2] + '.' + ipnumbers[3]
+
+		# Launch iperf server on EPC side
+		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+		self.command('rm -f iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
+		port = 5001 + idx
+		self.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+		time.sleep(0.5)
+		self.close()
+
+		# Launch iperf client on UE
+		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+		iperf_time = self.Iperf_ComputeTime()
+		time.sleep(0.5)
+
+		modified_options = self.Iperf_ComputeModifiedBW(ue_num)
+		time.sleep(0.5)
+
+		self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
+		self.command('stdbuf -o0 adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '" 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+		self.Iperf_analyzeV2Output(lock, UE_IPAddress)
+
+		# Launch iperf server on EPC side
+		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		self.command('killall --signal SIGKILL iperf', self.EPCUserName, 5)
+		self.close()
+
+	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num):
 		try:
 			useIperf3 = False
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -557,92 +662,39 @@ class SSHConnection():
 					sys.exit(1)
 			else:
 				useIperf3 = True
+			# in case of iperf, UL has its own function
+			if (not useIperf3):
+				result = re.search('-R', str(self.iperf_args))
+				if result is not None:
+					self.close()
+					self.Iperf_UL_common(lock, UE_IPAddress, device_id, idx, ue_num)
+					return
+
 			if (useIperf3):
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
 			else:
-				self.command('rm -f /tmp/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
+				self.command('rm -f iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
 				self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
 			time.sleep(0.5)
 			self.close()
 
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
-			self.command('cd scripts', '\$', 5)
-			result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
-			if result is None:
-				logging.debug('\u001B[1;37;41m Iperf time Not Found! \u001B[0m')
-				sys.exit(1)
-			iperf_time = result.group('iperf_time')
+			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+			iperf_time = self.Iperf_ComputeTime()
 			time.sleep(0.5)
 
-			result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', str(self.iperf_args))
-			if result is None:
-				logging.debug('\u001B[1;37;41m Iperf bandwidth Not Found! \u001B[0m')
-				sys.exit(1)
-			iperf_bandwidth = result.group('iperf_bandwidth')
+			modified_options = self.Iperf_ComputeModifiedBW(ue_num)
 			time.sleep(0.5)
-
-			iperf_bandwidth_new = float(iperf_bandwidth)/ue_num
-			iperf_bandwidth_str = '-b ' + iperf_bandwidth
-			iperf_bandwidth_str_new = '-b ' + str(iperf_bandwidth_new)
-			result = re.sub(iperf_bandwidth_str, iperf_bandwidth_str_new, str(self.iperf_args))
-			if result is None:
-				logging.debug('\u001B[1;37;41m Calculate Iperf bandwidth Failed! \u001B[0m')
-				sys.exit(1)
 
 			self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
 			if (useIperf3):
-				self.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + result + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+				self.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
-				result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', str(self.ssh.before))
-				if result is None:
-					result = re.search('(?P<error>iperf: error - [a-zA-Z0-9 :]+)', str(self.ssh.before))
-					if result is not None:
-						logging.debug('\u001B[1;37;41m ' + result.group('error') + ' \u001B[0m')
-					else:
-						logging.debug('\u001B[1;37;41m Bitrate and/or Packet Loss Not Found! \u001B[0m')
-					sys.exit(1)
-				bitrate = result.group('bitrate')
-				packetloss = result.group('packetloss')
-				lock.acquire()
-				logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
-				logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
-				if packetloss is not None:
-					logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
-					if float(packetloss) > float(self.iperf_packetloss_threshold):
-						logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
-						lock.release()
-						sys.exit(1)
-				lock.release()
+				self.Iperf_analyzeV3Output(lock, UE_IPAddress)
 			else:
-				self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + result + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+				self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
-				result = re.search('Server Report:', str(self.ssh.before))
-				if result is None:
-					result = re.search('read failed: Connection refused', str(self.ssh.before))
-					if result is not None:
-						logging.debug('\u001B[1;37;41m Could not connect to iperf server! \u001B[0m')
-					else:
-						logging.debug('\u001B[1;37;41m Server Report and Connection refused Not Found! \u001B[0m')
-					sys.exit(1)
-				result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/.\d+) (\((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
-				if result is not None:
-					bitrate = result.group('bitrate')
-					packetloss = result.group('packetloss')
-					jitter = result.group('jitter')
-					lock.acquire()
-					logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
-					if bitrate is not None:
-						logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
-					if packetloss is not None:
-						logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
-						if float(packetloss) > float(self.iperf_packetloss_threshold):
-							logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
-							lock.release()
-							sys.exit(1)
-					if jitter is not None:
-						logging.debug('\u001B[1;34m    Jitter      : ' + jitter + '\u001B[0m')
-					lock.release()
+				self.Iperf_analyzeV2Output(lock, UE_IPAddress)
 			self.close()
 
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -668,7 +720,7 @@ class SSHConnection():
 		lock = Lock()
 		for UE_IPAddress in self.UEIPAddresses:
 			device_id = self.UEDevices[i]
-			p = Process(target = SSH.Iperf_common, args = (lock,UE_IPAddress,device_id,ue_num,))
+			p = Process(target = SSH.Iperf_common, args = (lock,UE_IPAddress,device_id,i,ue_num,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)

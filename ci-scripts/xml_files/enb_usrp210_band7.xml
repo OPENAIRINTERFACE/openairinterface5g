@@ -21,7 +21,7 @@
 
 -->
 <testCaseList>
-	<TestCaseRequestedList>010101 050101 060101 070101 040101 030101 040301 040501 040601 040602 040603 040401 040201 030201 030111 040301 040511 040611 040612 040613 040401 040201 030201 030112 040301 040512 040621 040622 040623 040401 040201 030201 </TestCaseRequestedList>
+	<TestCaseRequestedList>010101 050101 060101 070101 040101 030101 040301 040501 040601 040602 040603 040641 040401 040201 030201 030111 040301 040511 040611 040612 040613 040651 040401 040201 030201 030121 040301 040521 040621 040622 040623 040661 040401 040201 030201 </TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
 	<testCase id="010101">
@@ -42,7 +42,7 @@
 		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.50PRB.usrpb210.conf</Initialize_eNB_args>
 	</testCase>
 
-	<testCase id="030112">
+	<testCase id="030121">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band7/20MHz)</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.100PRB.usrpb210.conf</Initialize_eNB_args>
@@ -87,7 +87,7 @@
                 <ping_packetloss_threshold>5</ping_packetloss_threshold>
         </testCase>
 
-        <testCase id="040512">
+        <testCase id="040521">
                 <class>Ping</class>
                 <desc>ping (20MHz - 20 sec)</desc>
                 <ping_args>-c 20</ping_args>
@@ -115,6 +115,13 @@
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
         </testCase>
 
+	<testCase id="040641">
+		<class>Iperf</class>
+		<desc>iperf (5MHz - UL/9Mbps/UDP)(60 sec)</desc>
+		<iperf_args>-u -b 9M -t 60 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
 	<testCase id="040611">
 		<class>Iperf</class>
 		<desc>iperf (10MHz - DL/10Mbps/UDP)(60 sec)</desc>
@@ -136,6 +143,13 @@
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
         </testCase>
 
+	<testCase id="040651">
+		<class>Iperf</class>
+		<desc>iperf (10MHz - UL/20Mbps/UDP)(60 sec)</desc>
+		<iperf_args>-u -b 20M -t 60 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
+
 	<testCase id="040621">
 		<class>Iperf</class>
 		<desc>iperf (20MHz - DL/20Mbps/UDP)(60 sec)</desc>
@@ -156,6 +170,13 @@
 		<iperf_args>-u -b 70M -t 60 -i 1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
         </testCase>
+
+	<testCase id="040661">
+		<class>Iperf</class>
+		<desc>iperf (20MHz - UL/20Mbps/UDP)(60 sec)</desc>
+		<iperf_args>-u -b 20M -t 60 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+	</testCase>
 
         <testCase id="050101">
 		<class>Initialize_HSS</class>
