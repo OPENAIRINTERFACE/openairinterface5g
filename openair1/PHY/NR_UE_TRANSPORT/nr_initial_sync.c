@@ -58,6 +58,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   uint8_t l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   char phich_resource[6];
+  int ret =-1;
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
@@ -68,28 +69,31 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   frame_parms->nb_prefix_samples0 = 0;
 
   //symbol 1
-  slot_fep_pbch(ue,
-    	   1,
+  nr_slot_fep(ue,
+    	   5,
     	   0,
     	   ue->rx_offset,
     	   0,
-    	   1);
+    	   1,
+		   NR_PBCH_EST);
 
   //symbol 2
-  slot_fep_pbch(ue,
-    	   2,
+  nr_slot_fep(ue,
+    	   6,
     	   0,
     	   ue->rx_offset,
     	   0,
-    	   1);
+    	   1,
+		   NR_PBCH_EST);
 
   //symbol 3
-  slot_fep_pbch(ue,
-    	   3,
+  nr_slot_fep(ue,
+    	   7,
     	   0,
     	   ue->rx_offset,
     	   0,
-    	   1);
+    	   1,
+		   NR_PBCH_EST);
 
   frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
 
@@ -98,7 +102,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   printf("pbch_detection nid_cell %d\n",frame_parms->Nid_cell);
   
   //for (frame_mod4=0; frame_mod4<4; frame_mod4++) {
-    pbch_tx_ant = nr_rx_pbch(ue,
+    ret = nr_rx_pbch(ue,
 						  &ue->proc.proc_rxtx[0],
                           ue->pbch_vars[0],
                           frame_parms,
@@ -112,9 +116,9 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   //}
 
 
-  if (pbch_decoded) {
+  if (ret==0) {
 
-    frame_parms->nb_antenna_ports_eNB = pbch_tx_ant;
+    frame_parms->nb_antenna_ports_eNB = 1; //pbch_tx_ant;
 
     // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
     //frame_parms->mode1_flag = (pbch_tx_ant==1);
@@ -128,13 +132,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     for(int i=0; i<RX_NB_TH;i++)
     {
-        ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
-        ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
 
-#ifndef USER_MODE
-        // one frame delay
-        ue->proc.proc_rxtx[i].frame_rx ++;
-#endif
         ue->proc.proc_rxtx[i].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
     }
 #ifdef DEBUG_INITIAL_SYNCH
@@ -157,7 +155,7 @@ char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
 
-  int32_t sync_pos, sync_pos2, k_ssb, N_ssb_crb;
+  int32_t sync_pos, sync_pos2, k_ssb, N_ssb_crb, sync_pos_slot;
   int32_t metric_fdd_ncp=0;
   uint8_t phase_fdd_ncp;
 
@@ -200,8 +198,21 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   /* process pss search on received buffer */
   sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
 
+  sync_pos_slot = (frame_parms->samples_per_tti>>1) - 3*(frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+
+  if (sync_pos >= frame_parms->nb_prefix_samples)
+      sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
+    else
+      sync_pos2 = sync_pos + FRAME_LENGTH_COMPLEX_SAMPLES - frame_parms->nb_prefix_samples;
+
   /* offset is used by sss serach as it is returned from pss search */
-  ue->rx_offset = sync_pos;
+  if (sync_pos2 >= sync_pos_slot)
+      ue->rx_offset = sync_pos2 - sync_pos_slot;
+    else
+      ue->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + sync_pos2 - sync_pos_slot;
+
+  printf("sync_pos %d sync_pos_slot %d rx_offset\n",sync_pos,sync_pos_slot, ue->rx_offset);
+
 
   //  write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 
@@ -223,7 +234,14 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     nr_gold_pbch(ue);
     ret = nr_pbch_detection(ue,mode);
-    ret = -1;  //to be deleted
+
+LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
+              ue->Mod_id,
+              ue->proc.proc_rxtx[0].frame_rx,
+              ue->rx_offset,
+              ue->common_vars.freq_offset );
+
+    //ret = -1;  //to be deleted
     //   write_output("rxdata2.m","rxd2",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
@@ -369,9 +387,9 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     rx_power = 0;
 
     // do a measurement on the best guess of the PSS
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
-      rx_power += signal_energy(&ue->common_vars.rxdata[aarx][sync_pos2],
-				frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+    //for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
+    //  rx_power += signal_energy(&ue->common_vars.rxdata[aarx][sync_pos2],
+	//			frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
 
     /*
     // do a measurement on the full frame
@@ -393,7 +411,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 #ifndef OAI_BLADERF
 #ifndef OAI_LMSSDR
 #ifndef OAI_ADRV9371_ZC706
-  phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
+  //phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
 #endif
 #endif
 #endif
@@ -406,7 +424,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 #ifndef OAI_BLADERF
 #ifndef OAI_LMSSDR
 #ifndef OAI_ADRV9371_ZC706
-  phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
+  //phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
 #endif
 #endif
 #endif

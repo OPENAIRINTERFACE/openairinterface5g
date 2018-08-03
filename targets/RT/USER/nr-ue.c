@@ -40,9 +40,10 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
+#include "fapi_nr_ue_l1.h"
 #include "PHY/phy_extern_nr_ue.h"
-//#include "LAYER2/NR_MAC_UE/extern.h"
-#include "LAYER2/NR_MAC_UE/proto.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "RRC/NR_UE/rrc_proto.h"
 
 #include "SCHED_NR/extern.h"
 //#ifndef NO_RAT_NR
@@ -213,19 +214,28 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
 
 void init_UE(int nb_inst)
 {
-  int inst;
-  for (inst=0; inst < nb_inst; inst++) {
-    //    UE->rfdevice.type      = NONE_DEV;
-    PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
-    LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
-        PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
+    int inst;
+    NR_UE_MAC_INST_t *mac_inst;
+    for (inst=0; inst < nb_inst; inst++) {
+        //    UE->rfdevice.type      = NONE_DEV;
+        PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
+        LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
+            PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
 
+        AssertFatal((UE->if_inst = nr_ue_if_module_init(inst)) != NULL, "can not initial IF module\n");
+        nr_l3_init_ue();
+        nr_l2_init_ue();
+        
+        mac_inst = get_mac_inst(0);
+        mac_inst->if_module = UE->if_inst;
+        UE->if_inst->scheduled_response = nr_ue_scheduled_response;
+        UE->if_inst->phy_config_request = nr_ue_phy_config_request;
 
-    AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
-                                    &UE->proc.attr_ue,
-                                    UE_thread,
-                                    (void*)UE), "");
-  }
+        AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
+                                        &UE->proc.attr_ue,
+                                        UE_thread,
+                                        (void*)UE), "");
+    }
 
   printf("UE threads created by %ld\n", gettid());
 #if 0
@@ -613,6 +623,23 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #endif
         if (UE->mac_enabled==1) {
 
+            //  trigger L2 to run ue_scheduler thru IF module
+            //  [TODO] mapping right after NR initial sync
+            if(1)
+            if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
+                UE->ul_indication.module_id = 0;
+                UE->ul_indication.gNB_index = 0;
+                UE->ul_indication.cc_id = 0;
+
+                //  [TODO] mapping right after NR initial sync
+                //UE->ul_indication.frame = ; 
+                //UE->ul_indication.slot = ;
+                
+                UE->if_inst->ul_indication(&UE->ul_indication);
+            }
+
+
+
 #ifdef NEW_MAC
           ret = mac_xface->ue_scheduler(UE->Mod_id,
                                           proc->frame_rx,
@@ -664,7 +691,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #endif
 
         // Prepare the future Tx data
-#if 1
+#if 0
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
                 (UE->frame_parms.frame_type == FDD) )
             if (UE->mode != loop_through_memory)
@@ -674,7 +701,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
                 (UE->frame_parms.frame_type == TDD))
             if (UE->mode != loop_through_memory)
-                phy_procedures_UE_S_TX(UE,0,0,no_relay);
+                //phy_procedures_UE_S_TX(UE,0,0,no_relay);
         updateTimes(current, &t3, 10000, timing_proc_name);
 
         if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
@@ -819,7 +846,7 @@ void *UE_thread(void *arg) {
                                                             (void**)UE->common_vars.rxdata,
                                                             UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
                                                             UE->frame_parms.nb_antennas_rx),"");
-                    slot_fep_pbch(UE,0, 0, 0, 0, 0);
+                    nr_slot_fep(UE,0, 0, 0, 0, 0, NR_PBCH_EST);
                 } //UE->mode != loop_through_memory
                 else
                     rt_sleep_ns(1000*1000);

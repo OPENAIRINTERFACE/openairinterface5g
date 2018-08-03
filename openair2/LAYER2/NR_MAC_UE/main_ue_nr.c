@@ -19,18 +19,19 @@
  *      contact@openairinterface.org
  */
 
-/*! \file main.c
+/* \file main_ue_nr.c
  * \brief top init of Layer 2
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \version 1.0
- * \email: navid.nikaein@eurecom.fr
- * @ingroup _mac
-
+ * \author R. Knopp, K.H. HSU
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom / NTUST
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
+ * \note
+ * \warning
  */
 
-#include "defs.h"
-#include "proto.h"
+//#include "defs.h"
+#include "mac_proto.h"
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
@@ -48,6 +49,6 @@ nr_l2_init_ue(void)
     return (1);
 }
 
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t Mod_idP){
-    return &nr_ue_mac_inst[(int)Mod_idP];
+NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id){
+    return &nr_ue_mac_inst[(int)module_id];
 }

@@ -871,7 +871,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
   if (abstraction_flag == 0) {
     for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-        phy_init_lte_ue__PDSCH( (*pdsch_vars_th)[th_id][eNB_id], fp );
+        //phy_init_lte_ue__PDSCH( (*pdsch_vars_th)[th_id][eNB_id], fp );
         (*pdsch_vars_th)[th_id][eNB_id]->llr[1] = (int16_t*)malloc16_clear( (8*((3*8*8448)+12))*sizeof(int16_t) );
     }
 

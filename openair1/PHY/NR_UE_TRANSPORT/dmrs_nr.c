@@ -30,7 +30,6 @@
 *
 ************************************************************************/
 
-//#include "PHY/LTE_REFSIG/defs.h"
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 

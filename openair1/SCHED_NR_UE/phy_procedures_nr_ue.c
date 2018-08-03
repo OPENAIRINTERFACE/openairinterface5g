@@ -36,13 +36,14 @@
 #include "defs.h"
 //#include "PHY/defs.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/phy_vars_nr_ue.h"
+//#include "PHY/phy_vars_nr_ue.h"
+#include "PHY/phy_extern_nr_ue.h"
 //#include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 //#include "PHY/extern.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SCHED_NR/extern.h"
-#include <sched.h>
-#include "targets/RT/USER/nr-softmodem.h"
+//#include <sched.h>
+//#include "targets/RT/USER/nr-softmodem.h"
 
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
@@ -59,7 +60,6 @@
 #define PUCCH
 #endif
 
-#include "LAYER2/NR_MAC_UE/extern.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
 #include "UTIL/LOG/log.h"
 
@@ -3133,7 +3133,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
     int do_pdcch_monitoring_current_slot=0;
     // For Type0-PDCCH searchspace, we need to calculate the monitoring slot from Tables 13-1 .. 13-15 in TS 38.213 Subsection 13
     NR_UE_SLOT_PERIOD_OFFSET_t sl_period_offset_mon = pdcch_vars2->searchSpace[nb_searchspace_active].monitoringSlotPeriodicityAndOffset;
-    if (sl_period_offset_mon == sl1) {
+    if (sl_period_offset_mon == srs_sl1) {
       do_pdcch_monitoring_current_slot=1; // PDCCH monitoring in every slot
     } else if (nr_tti_rx%(int)sl_period_offset_mon == pdcch_vars2->searchSpace[nb_searchspace_active].monitoringSlotPeriodicityAndOffset_offset) {
       do_pdcch_monitoring_current_slot=1; // PDCCH monitoring in every monitoringSlotPeriodicityAndOffset slot with offset
@@ -5901,6 +5901,7 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
   LOG_D(PHY," ------  --> FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
 
+  nr_gold_pdcch(ue,ue->frame_parms.Nid_cell, 0, 3);
 
   for (; l<=3; l++) {
     if (abstraction_flag == 0) {
@@ -5908,12 +5909,13 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
         start_meas(&ue->ofdm_demod_stats);
 #endif
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
-      slot_fep_pbch(ue,
+      nr_slot_fep(ue,
          l,
          (nr_tti_rx<<1),
          0,
          0,
-         0);
+         0,
+		 NR_PDCCH_EST);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
       stop_meas(&ue->ofdm_demod_stats);
@@ -5970,6 +5972,17 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 #endif
 
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+  //to update from pdsch config
+  nr_gold_pdsch(ue,0,ue->frame_parms.Nid_cell, 0, 1);
+
+  nr_slot_fep(ue,
+          2,  //to be updated from higher layer
+          (nr_tti_rx<<1),
+          0,
+          0,
+          0,
+ 		  NR_PDSCH_EST);
+
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat);
 #endif
@@ -5994,7 +6007,6 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
   if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_IN);
     ue_pdsch_procedures(ue,
-
 			proc,
 			eNB_id,
 			SI_PDSCH,
@@ -6482,5 +6494,51 @@ void phy_procedures_UE_lte(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
   } // slot
 }
+
+
+
+
 #endif
 
+
+uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id)
+{
+  int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
+  CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[gNB_id].CQI_ReportPeriodic;
+
+  //LOG_I(PHY,"[UE %d][CRNTI %x] AbsSubFrame %d.%d Checking for CQI TXOp (cqi_ConfigIndex %d) isCQIOp %d\n",
+  //      ue->Mod_id,ue->pdcch_vars[gNB_id]->crnti,frame,subframe,
+  //      cqirep->cqi_PMI_ConfigIndex,
+  //      (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI));
+
+  if (cqirep->cqi_PMI_ConfigIndex==-1)
+    return(0);
+  else if (((10*frame + subframe) % cqirep->Npd) == cqirep->N_OFFSET_CQI)
+    return(1);
+  else
+    return(0);
+}
+
+
+uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id)
+{
+
+
+  int subframe = proc->subframe_tx;
+  int frame    = proc->frame_tx;
+  CQI_REPORTPERIODIC *cqirep = &ue->cqi_report_config[gNB_id].CQI_ReportPeriodic;
+  int log2Mri = cqirep->ri_ConfigIndex/161;
+  int N_OFFSET_RI = cqirep->ri_ConfigIndex % 161;
+
+  //LOG_I(PHY,"[UE %d][CRNTI %x] AbsSubFrame %d.%d Checking for RI TXOp (ri_ConfigIndex %d) isRIOp %d\n",
+  //      ue->Mod_id,ue->pdcch_vars[gNB_id]->crnti,frame,subframe,
+  //      cqirep->ri_ConfigIndex,
+  //      (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0));
+  if (cqirep->ri_ConfigIndex==-1)
+    return(0);
+  else if (((10*frame + subframe + cqirep->N_OFFSET_CQI - N_OFFSET_RI) % (cqirep->Npd<<log2Mri)) == 0)
+    return(1);
+  else
+    return(0);
+}
