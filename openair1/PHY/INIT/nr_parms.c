@@ -40,7 +40,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
   LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB, Ncp);
 #endif
 
-  if (Ncp == EXTENDED)
+  if (Ncp == NFAPI_CP_EXTENDED)
     AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
 
   switch(mu) {
@@ -147,6 +147,14 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
                                       (frame_parms->nb_prefix_samples * frame_parms->slots_per_subframe * (frame_parms->symbols_per_slot - 1)));
   frame_parms->samples_per_frame = 10 * frame_parms->samples_per_subframe;
   frame_parms->freq_range = (frame_parms->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
+
+  // Initial bandwidth part configuration -- full carrier bandwidth
+  frame_parms->initial_bwp_dl.bwp_id = 0;
+  frame_parms->initial_bwp_dl.scs = frame_parms->subcarrier_spacing;
+  frame_parms->initial_bwp_dl.location = 0;
+  frame_parms->initial_bwp_dl.N_RB = N_RB;
+  frame_parms->initial_bwp_dl.cyclic_prefix = Ncp;
+  frame_parms->initial_bwp_dl.ofdm_symbol_size = frame_parms->ofdm_symbol_size;
 
   return 0;
 }
@@ -300,4 +308,10 @@ void nr_dump_frame_parms(NR_DL_FRAME_PARMS *frame_parms)
   LOG_I(PHY,"frame_parms->samples_per_frame_wCP=%d\n",frame_parms->samples_per_frame_wCP);
   LOG_I(PHY,"frame_parms->samples_per_subframe=%d\n",frame_parms->samples_per_subframe);
   LOG_I(PHY,"frame_parms->samples_per_frame=%d\n",frame_parms->samples_per_frame);
+  LOG_I(PHY,"frame_parms->initial_bwp_dl.bwp_id=%d\n",frame_parms->initial_bwp_dl.bwp_id);
+  LOG_I(PHY,"frame_parms->initial_bwp_dl.scs=%d\n",frame_parms->initial_bwp_dl.scs);
+  LOG_I(PHY,"frame_parms->initial_bwp_dl.N_RB=%d\n",frame_parms->initial_bwp_dl.N_RB);
+  LOG_I(PHY,"frame_parms->initial_bwp_dl.cyclic_prefix=%d\n",frame_parms->initial_bwp_dl.cyclic_prefix);
+  LOG_I(PHY,"frame_parms->initial_bwp_dl.location=%d\n",frame_parms->initial_bwp_dl.location);
+  LOG_I(PHY,"frame_parms->initial_bwp_dl.ofdm_symbol_size=%d\n",frame_parms->initial_bwp_dl.ofdm_symbol_size);
 }

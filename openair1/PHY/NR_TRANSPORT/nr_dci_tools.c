@@ -32,6 +32,7 @@
 
 #include "nr_dci.h"
 
+
 void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
                            int frame,
                            int subframe,
@@ -76,6 +77,9 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
     case NFAPI_NR_UL_DCI_FORMAT_0_0:
       break;
   }
+
+  LOG_I(MAC, "DCI PDU: [0]->0x%08x \t [0]->0x%08x [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+              dci_pdu[0], dci_pdu[1], dci_pdu[2], dci_pdu[3]);
 
   /// rest of DCI alloc
   memcpy((void*)&dci_alloc->pdcch_params, (void*)params_rel15, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));

@@ -106,14 +106,18 @@ typedef enum {
 } nr_frequency_range_e;
 
 typedef struct NR_BWP_PARMS {
-  /// Associated numerology index
-  uint8_t numerology_index;
-  /// Freq domain location
+  /// BWP ID
+  uint8_t bwp_id;
+  /// Subcarrier spacing
+  nr_scs_e scs;
+  /// Freq domain location -- 1st CRB index
   uint8_t location;
   /// Bandwidth in PRB
   uint16_t N_RB;
   /// Size of FFT/IFFT
   uint16_t ofdm_symbol_size;
+  /// Cyclic prefix
+  uint8_t cyclic_prefix;
 } NR_BWP_PARMS;
 
 typedef struct {
@@ -191,7 +195,6 @@ typedef struct NR_DL_FRAME_PARMS {
   uint8_t ttis_per_subframe;
   /// NR number of slots per tti . Assumption only 2 Slot per TTI is supported (Slot Config 1 in 38.211)
   uint8_t slots_per_tti;
-//#endif
   /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
