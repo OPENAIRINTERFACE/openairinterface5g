@@ -1399,6 +1399,7 @@ set(L2_SRC
   ${NR_RRC_DIR}/rrc_gNB.c
   ${NR_RRC_DIR}/nr_rrc_common.c
   ${NR_RRC_DIR}/L2_nr_interface.c
+  ${NR_RRC_DIR}/nr_rrc_config.c
   )
 
 set(L2_SRC_UE

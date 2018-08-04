@@ -280,13 +280,13 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
   return((enc_rval.encoded+7)/8);
 }
 
-void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
-                                int     CC_id,
-                                #if defined(ENABLE_ITTI)
-                                gNB_RrcConfigurationReq *configuration,
-                                #endif
-                                int initial_flag
-                                )
+void fill_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
+                                  int     CC_id,
+                                  #if defined(ENABLE_ITTI)
+                                  gNB_RrcConfigurationReq *configuration,
+                                  #endif
+                                  int initial_flag
+                                  )
 { 
   NR_ServingCellConfigCommon_t    **servingcellconfigcommon  =  &RC.nrrrc[Mod_id]->carrier[CC_id].servingcellconfigcommon;
   NR_FreqBandIndicatorNR_t                        *dl_frequencyBandList;
@@ -819,3 +819,4 @@ void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
   (*servingcellconfigcommon)->ss_PBCH_BlockPower           = configuration->ServingCellConfigCommon_ss_PBCH_BlockPower[CC_id];
 
 }
+

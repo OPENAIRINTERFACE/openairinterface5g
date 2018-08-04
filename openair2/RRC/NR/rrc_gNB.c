@@ -42,7 +42,7 @@
 #include "UTIL/LOG/log.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
-
+#include "nr_rrc_config.h"
 
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_UL-DCCH-Message.h"
@@ -143,41 +143,60 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
      const protocol_ctxt_t  *const ctxt_pP,
      rrc_gNB_ue_context_t   *const ue_context_pP
      ){
-
+  
   uint8_t size;
   uint8_t buffer[100];
   int     CC_id = ue_context_pP->ue_context.primaryCC_id;
-  /*
-  NR_CellGroupId_t                                    cellGroupId;
+  OCTET_STRING_t                                      *secondaryCellGroup;
+  NR_CellGroupConfig_t                                *cellGroupconfig;
   struct NR_CellGroupConfig__rlc_BearerToAddModList   *rlc_BearerToAddModList;
   struct NR_MAC_CellGroupConfig                       *mac_CellGroupConfig;
   struct NR_PhysicalCellGroupConfig                   *physicalCellGroupConfig;
   struct NR_SpCellConfig                              *spCellConfig;
   struct NR_CellGroupConfig__sCellToAddModList        *sCellToAddModList;
-  */
+
+  cellGroupconfig                           = CALLOC(1,sizeof(NR_CellGroupConfig_t));
+  cellGroupconfig->rlc_BearerToAddModList   = CALLOC(1,sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
+  cellGroupconfig->mac_CellGroupConfig      = CALLOC(1,sizeof(struct NR_MAC_CellGroupConfig));
+  cellGroupconfig->physicalCellGroupConfig  = CALLOC(1,sizeof(struct NR_PhysicalCellGroupConfig));
+  cellGroupconfig->spCellConfig             = CALLOC(1,sizeof(struct NR_SpCellConfig));
+  cellGroupconfig->sCellToAddModList        = CALLOC(1,sizeof(struct NR_CellGroupConfig__sCellToAddModList));
+
+  rlc_BearerToAddModList   = cellGroupconfig->rlc_BearerToAddModList;
+  mac_CellGroupConfig      = cellGroupconfig->mac_CellGroupConfig;
+  physicalCellGroupConfig  = cellGroupconfig->physicalCellGroupConfig;
+  spCellConfig             = cellGroupconfig->spCellConfig;
+  sCellToAddModList        = cellGroupconfig->sCellToAddModList;
+
+  //rrc_config_rlc_bearer();
+  //rrc_config_mac_cellgroup();
+  //rrc_config_physicalcellgroup();
+
   gNB_RrcConfigurationReq  *common_configuration;
   common_configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
 
-  //Fill config
+  //Fill servingcellconfigcommon config value
   rrc_config_servingcellconfigcommon(ctxt_pP->module_id,
                                      ue_context_pP->ue_context.primaryCC_id
                                      #if defined(ENABLE_ITTI)
                                      ,common_configuration
                                      #endif
                                     );
-  //Fill config to structure
-  do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
-                             ue_context_pP->ue_context.primaryCC_id,
-                             #if defined(ENABLE_ITTI)
-                             common_configuration,
-                             #endif
-                             0
-                             );
+  //Fill common config to structure
+  fill_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
+                               ue_context_pP->ue_context.primaryCC_id,
+                               #if defined(ENABLE_ITTI)
+                               common_configuration,
+                               #endif
+                               0
+                               );
 /*
   memcpy( (*spCellConfig)->reconfigurationWithSync->spCellConfigCommon , 
           RC.nrrrc[ctxt_pP->module_id]->carrier[0].servingcellconfigcommon,
           sizeof(struct NR_ServingCellConfigCommon));
 */
+
+
 
 }
 
@@ -217,13 +236,13 @@ static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
                                                                             #endif
                                                                             );
 
-  do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
-                             CC_id,
-                             #if defined(ENABLE_ITTI)
-                             configuration,
-                             #endif
-                             1
-                             );
+  fill_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
+                               CC_id,
+                               #if defined(ENABLE_ITTI)
+                               configuration,
+                               #endif
+                               1
+                               );
   
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   
