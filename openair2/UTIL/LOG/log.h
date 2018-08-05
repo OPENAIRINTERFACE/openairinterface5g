@@ -92,7 +92,8 @@ extern "C" {
 # define  LOG_DEBUG 7 /*!< \brief debug-level messages */
 # define  LOG_FILE        8 /*!< \brief message sequence chart -level  */
 # define  LOG_TRACE 9 /*!< \brief trace-level messages */
-#define NUM_LOG_LEVEL  10 /*!< \brief the number of message levels users have with LOG */
+# define  LOG_MATLAB 10 /*!< \brief output to matlab file */
+#define NUM_LOG_LEVEL  11 /*!< \brief the number of message levels users have with LOG */
 /* @}*/
 
 
@@ -150,7 +151,7 @@ typedef enum {
     MIN_LOG_COMPONENTS = 0,
     PHY = MIN_LOG_COMPONENTS,
     MAC,
-    EMU,
+    SIM,
     OCG,
     OMG,
     OPT,
@@ -185,6 +186,8 @@ typedef enum {
     LOCALIZE,
     RRH,
     X2AP,
+    LOADER,
+    MAX_LOG_PREDEF_COMPONENTS,
     GNB_APP,
     NR_RRC,
     NR_MAC,
@@ -193,6 +196,8 @@ typedef enum {
 }
 comp_name_t;
 
+#define MAX_LOG_DYNALLOC_COMPONENTS 20
+#define MAX_LOG_COMPONENTS (MAX_LOG_PREDEF_COMPONENTS + MAX_LOG_DYNALLOC_COMPONENTS)
 //#define msg printf
 
 typedef struct {
@@ -234,6 +239,7 @@ typedef struct {
     int                     syslog;
     int                     filelog;
     char*                   filelog_name;
+    int                     async;       // asynchronous mode, via dedicated log thread + log buffer
 } log_t;
 
 typedef struct LOG_params {
@@ -256,6 +262,11 @@ typedef enum log_instance_type_e {
 
 void log_set_instance_type (log_instance_type_t instance);
 #endif
+
+#define LOG_MEM_SIZE 100*1024*1024
+#define LOG_MEM_FILE "./logmem.log"
+int logInit_log_mem(void);
+void output_log_mem(void);
 
 #ifdef LOG_MAIN
 log_t *g_log;
@@ -287,17 +298,27 @@ char *map_int_to_str(mapping *map, int val);
 void logClean (void);
 int  is_newline( char *str, int size);
 void *log_thread_function(void * list);
-
+int register_log_component(char *name, char *fext, int compidx);
 /** @defgroup _logIt logIt function
  *  @ingroup _macro
  *  @brief Macro used to call tr_log_full_ex with file, function and line information
  * @{*/
-#ifdef LOG_NO_THREAD
+
 #define logIt(component, level, format, args...) (g_log->log_component[component].interval?logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
-#else //default
-#define logIt(component, level, format, args...) (g_log->log_component[component].interval?logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
-#endif
+
+
 /* @}*/
+
+/*!\fn int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);
+\brief Write output file from signal data
+@param fname output file name
+@param vname  output vector name (for MATLAB/OCTAVE)
+@param data   point to data
+@param length length of data vector to output
+@param dec    decimation level
+@param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
+*/
+int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);
 
 /*----------------macro definitions for reading log configuration from the config module */
 #define CONFIG_STRING_LOG_PREFIX                           "log_config"
@@ -310,15 +331,16 @@ void *log_thread_function(void * list);
 #define LOG_CONFIG_LEVEL_FORMAT                            "%s_log_level"
 #define LOG_CONFIG_VERBOSITY_FORMAT                        "%s_log_verbosity"
 #define LOG_CONFIG_LOGFILE_FORMAT                          "%s_log_infile"
+
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                       LOG globalconfiguration parameters										        */
-/*   optname                              helpstr   paramflags    XXXptr	             defXXXval				      type	     numelt	*/
+/*   optname                            help   paramflags       XXXptr	                   defXXXval				      type	 numelt	*/
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define LOG_GLOBALPARAMS_DESC { \
-{LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    NULL,	    0,  	 strptr:(char **)&gloglevel, defstrval:log_level_names[2].name,       TYPE_STRING,  0}, \
-{LOG_CONFIG_STRING_GLOBAL_LOG_VERBOSITY,NULL,	    0,  	 strptr:(char **)&glogverbo, defstrval:log_verbosity_names[2].name,   TYPE_STRING,  0}, \
-{LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   NULL,	    0,  	 iptr:&(g_log->onlinelog),   defintval:1,                             TYPE_INT,      0,              }, \
-{LOG_CONFIG_STRING_GLOBAL_LOG_INFILE,   NULL,	    0,  	 iptr:&(g_log->filelog),     defintval:0,                             TYPE_INT,      0,              }, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    NULL, 0,  	      strptr:(char **)&gloglevel, defstrval:log_level_names[2].name,       TYPE_STRING,  0}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_VERBOSITY,NULL, 0,  	      strptr:(char **)&glogverbo, defstrval:log_verbosity_names[2].name,   TYPE_STRING,  0}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   NULL, 0,  	      iptr:&(g_log->onlinelog),   defintval:1,                             TYPE_INT,     0}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_INFILE,   NULL, 0,  	      iptr:&(g_log->filelog),     defintval:0,                             TYPE_INT,     0}, \
 }
 /*----------------------------------------------------------------------------------*/
 /** @defgroup _debugging debugging macros
@@ -326,43 +348,32 @@ void *log_thread_function(void * list);
  *  @brief Macro used to call logIt function with different message levels
  * @{*/
 
-// debugging macros
+// debugging macros(g_log->log_component[component].interval?logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
 #  if T_TRACER
 #    include "T.h"
-#    define LOG_I(c, x...) T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))
-#    define LOG_W(c, x...) T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x))
-#    define LOG_E(c, x...) T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))
-#    define LOG_D(c, x...) T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))
-#    define LOG_T(c, x...) T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))
+#    define LOG_I(c, x...) do { if (T_stdout) { logIt(c, LOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0) 
+#    define LOG_W(c, x...) do { if (T_stdout) { logIt(c, LOG_WARNING, x) ;} else { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)) ;}} while (0) 
+#    define LOG_E(c, x...) do { if (T_stdout) { logIt(c, LOG_ERR, x)     ;} else { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))   ;}} while (0) 
+#    define LOG_D(c, x...) do { if (T_stdout) { logIt(c, LOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0) 
+#    define LOG_T(c, x...) do { if (T_stdout) { logIt(c, LOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0) 
+#    define LOG_G(c, x...) do { if (T_stdout) { logIt(c, LOG_EMERG, x)   ;}} while (0) /* */
+#    define LOG_A(c, x...) do { if (T_stdout) { logIt(c, LOG_ALERT, x)   ;}} while (0) /* */
+#    define LOG_C(c, x...) do { if (T_stdout) { logIt(c, LOG_CRIT, x)    ;}} while (0) /* */
+#    define LOG_N(c, x...) do { if (T_stdout) { logIt(c, LOG_NOTICE, x)  ;}} while (0) /* */
+#    define LOG_F(c, x...) do { if (T_stdout) { logIt(c, LOG_FILE, x)  ;}}   while (0)  /* */
+#    define LOG_M(file, vector, data, len, dec, format) write_file_matlab(file, vector, data, len, dec, format)/* */
+#  else /* T_TRACER */
+#    define LOG_I(c, x...) /* */
+#    define LOG_W(c, x...) /* */
+#    define LOG_E(c, x...) /* */
+#    define LOG_D(c, x...) /* */
+#    define LOG_T(c, x...) /* */
 #    define LOG_G(c, x...) /* */
 #    define LOG_A(c, x...) /* */
 #    define LOG_C(c, x...) /* */
 #    define LOG_N(c, x...) /* */
 #    define LOG_F(c, x...) /* */
-#  else /* T_TRACER */
-#    if DISABLE_LOG_X
-#        define LOG_I(c, x...) /* */
-#        define LOG_W(c, x...) /* */
-#        define LOG_E(c, x...) /* */
-#        define LOG_D(c, x...) /* */
-#        define LOG_T(c, x...) /* */
-#        define LOG_G(c, x...) /* */
-#        define LOG_A(c, x...) /* */
-#        define LOG_C(c, x...) /* */
-#        define LOG_N(c, x...) /* */
-#        define LOG_F(c, x...) /* */
-#    else  /*DISABLE_LOG_X*/
-#        define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
-#        define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
-#        define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
-#        define LOG_E(c, x...) logIt(c, LOG_ERR, x)
-#        define LOG_W(c, x...) logIt(c, LOG_WARNING, x)
-#        define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
-#        define LOG_I(c, x...) logIt(c, LOG_INFO, x)
-#        define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
-#        define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
-#        define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
-#    endif /*DISABLE_LOG_X*/
+#    define LOG_M(file, vector, data, len, dec, format) /* */
 #  endif /* T_TRACER */
 /* @}*/
 
@@ -377,9 +388,9 @@ void *log_thread_function(void * list);
 /* @}*/
 
 static __inline__ uint64_t rdtsc(void) {
-  uint64_t a, d;
+  uint32_t a, d;
   __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
-  return (d<<32) | a;
+  return (((uint64_t)d)<<32) | ((uint64_t)a);
 }
 
 #define DEBUG_REALTIME 1

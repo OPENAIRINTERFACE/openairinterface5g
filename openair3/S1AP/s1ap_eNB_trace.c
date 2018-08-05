@@ -47,9 +47,11 @@ void s1ap_eNB_generate_trace_failure(struct s1ap_eNB_ue_context_s *ue_desc_p,
   S1AP_TraceFailureIndicationIEs_t   *ie;
   uint8_t                            *buffer = NULL;
   uint32_t                            length;
+
   DevAssert(ue_desc_p != NULL);
   DevAssert(trace_id  != NULL);
   DevAssert(cause_p   != NULL);
+
   /* Prepare the S1AP message to encode */
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = S1AP_S1AP_PDU_PR_initiatingMessage;
@@ -57,24 +59,32 @@ void s1ap_eNB_generate_trace_failure(struct s1ap_eNB_ue_context_s *ue_desc_p,
   pdu.choice.initiatingMessage.criticality = S1AP_Criticality_ignore;
   pdu.choice.initiatingMessage.value.present = S1AP_InitiatingMessage__value_PR_TraceFailureIndication;
   out = &pdu.choice.initiatingMessage.value.choice.TraceFailureIndication;
+
+  /* mandatory */
   ie = (S1AP_TraceFailureIndicationIEs_t *)calloc(1, sizeof(S1AP_TraceFailureIndicationIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID;
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_TraceFailureIndicationIEs__value_PR_MME_UE_S1AP_ID;
   ie->value.choice.MME_UE_S1AP_ID = ue_desc_p->mme_ue_s1ap_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
   ie = (S1AP_TraceFailureIndicationIEs_t *)calloc(1, sizeof(S1AP_TraceFailureIndicationIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID;
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_TraceFailureIndicationIEs__value_PR_ENB_UE_S1AP_ID;
   ie->value.choice.ENB_UE_S1AP_ID = ue_desc_p->eNB_ue_s1ap_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
   ie = (S1AP_TraceFailureIndicationIEs_t *)calloc(1, sizeof(S1AP_TraceFailureIndicationIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_E_UTRAN_Trace_ID;
   ie->criticality = S1AP_Criticality_ignore;
   ie->value.present = S1AP_TraceFailureIndicationIEs__value_PR_E_UTRAN_Trace_ID;
   memcpy(&ie->value.choice.E_UTRAN_Trace_ID, trace_id, sizeof(S1AP_E_UTRAN_Trace_ID_t));
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
   ie = (S1AP_TraceFailureIndicationIEs_t *)calloc(1, sizeof(S1AP_TraceFailureIndicationIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_Cause;
   ie->criticality = S1AP_Criticality_ignore;
@@ -99,15 +109,18 @@ int s1ap_eNB_handle_trace_start(uint32_t         assoc_id,
   S1AP_TraceStartIEs_t         *ie;
   struct s1ap_eNB_ue_context_s *ue_desc_p;
   struct s1ap_eNB_mme_data_s   *mme_ref_p;
+
   DevAssert(pdu != NULL);
+
   container = &pdu->choice.initiatingMessage.value.choice.TraceStart;
+
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_TraceStartIEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID, TRUE);
   mme_ref_p = s1ap_eNB_get_MME(NULL, assoc_id, 0);
   DevAssert(mme_ref_p != NULL);
 
   if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_ref_p->s1ap_eNB_instance,
-                   ie->value.choice.ENB_UE_S1AP_ID)) == NULL) {
+                                           ie->value.choice.ENB_UE_S1AP_ID)) == NULL) {
     /* Could not find context associated with this eNB_ue_s1ap_id -> generate
      * trace failure indication.
      */
@@ -130,5 +143,6 @@ int s1ap_eNB_handle_deactivate_trace(uint32_t         assoc_id,
   //     S1AP_DeactivateTraceIEs_t *deactivate_trace_p;
   //
   //     deactivate_trace_p = &message_p->msg.deactivateTraceIEs;
+
   return 0;
 }

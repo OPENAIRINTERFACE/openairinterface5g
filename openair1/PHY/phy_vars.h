@@ -38,7 +38,6 @@ int16_t *primary_synch1_time;
 int16_t *primary_synch2_time;
 
 
-#include "PHY/CODING/coding_vars.h"
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
 
@@ -67,7 +66,6 @@ char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
 
-unsigned char NB_RU=0;
 
 #ifndef OPENAIR2
 unsigned char NB_eNB_INST=0;

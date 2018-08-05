@@ -300,6 +300,20 @@ static void forward(void *_forwarder, char *buf, int size)
   if (f->tail != NULL) f->tail->next = new;
   f->tail = new;
 
+#if BASIC_SIMULATOR
+  /* When runnng the basic simulator, the tracer may be too slow.
+   * Let's not take too much memory in the tracee and
+   * wait if there is too much data to send. 200MB is
+   * arbitrary.
+   */
+  while (f->memusage > 200 * 1024 * 1024) {
+    if (pthread_cond_signal(&f->cond)) abort();
+    if (pthread_mutex_unlock(&f->lock)) abort();
+    usleep(1000);
+    if (pthread_mutex_lock(&f->lock)) abort();
+  }
+#endif /* BASIC_SIMULATOR */
+
   f->memusage += size+4;
   /* warn every 100MB */
   if (f->memusage > f->last_warning_memusage &&
@@ -326,17 +340,17 @@ static void wait_message(void)
   while (T_local_cache[T_busylist_head].busy == 0) usleep(1000);
 }
 
-static void init_shm(void)
+static void init_shm(char *shm_file)
 {
   int i;
-  int s = shm_open(T_SHM_FILENAME, O_RDWR | O_CREAT /*| O_SYNC*/, 0666);
-  if (s == -1) { perror(T_SHM_FILENAME); abort(); }
+  int s = shm_open(shm_file, O_RDWR | O_CREAT /*| O_SYNC*/, 0666);
+  if (s == -1) { perror(shm_file); abort(); }
   if (ftruncate(s, T_CACHE_SIZE * sizeof(T_cache_t)))
-    { perror(T_SHM_FILENAME); abort(); }
+    { perror(shm_file); abort(); }
   T_local_cache = mmap(NULL, T_CACHE_SIZE * sizeof(T_cache_t),
                        PROT_READ | PROT_WRITE, MAP_SHARED, s, 0);
-  if (T_local_cache == NULL)
-    { perror(T_SHM_FILENAME); abort(); }
+  if (T_local_cache == MAP_FAILED)
+    { perror(shm_file); abort(); }
   close(s);
 
   /* let's garbage the memory to catch some potential problems
@@ -347,26 +361,30 @@ static void init_shm(void)
 }
 
 void T_local_tracer_main(int remote_port, int wait_for_tracer,
-    int local_socket)
+    int local_socket, char *shm_file)
 {
   int s;
   int port = remote_port;
   int dont_wait = wait_for_tracer ? 0 : 1;
   void *f;
-
+  printf("local tracer starting\n");
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
-  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
+  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR){
+       printf("local tracer received SIGPIPE\n");
+       abort();
+   }
 
-  init_shm();
+  init_shm(shm_file);
   s = local_socket;
-
+  printf("local tracer starting step 2\n");
   if (dont_wait) {
     char t = 2;
+  printf("local tracer in no wait mode \n");
     if (write(s, &t, 1) != 1) abort();
   }
-
+  printf("local tracer starting step 3\n");
   f = forwarder(port, s);
-
+  printf("local tracer main loop.... \n");
   /* read messages */
   while (1) {
     wait_message();

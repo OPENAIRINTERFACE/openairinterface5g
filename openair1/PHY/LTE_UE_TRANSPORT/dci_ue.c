@@ -1357,7 +1357,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 
     if (subframe==5) {
       printf("Writing output s0\n");
-      write_output("rxF_comp_d0.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][0*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+      LOG_M("rxF_comp_d0.m","rxF_c_d",&pdcch_vars[eNB_id]->rxdataF_comp[0][0*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
     }
 #endif
 
@@ -1435,7 +1435,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 #ifdef DEBUG_PHY
 	
       if (subframe==5) {
-	write_output("rxF_comp_ds.m","rxF_c_ds",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
+	LOG_M("rxF_comp_ds.m","rxF_c_ds",&pdcch_vars[eNB_id]->rxdataF_comp[0][s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
       }
 #endif
 	
@@ -1460,7 +1460,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
 		(char *)pdcch_vars[eNB_id]->llr,
 		s);
       /*#ifdef DEBUG_PHY
-        write_output("llr8_seq.m","llr8",&pdcch_vars[eNB_id]->llr[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
+        LOG_M("llr8_seq.m","llr8",&pdcch_vars[eNB_id]->llr[s*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,4);
         #endif*/
     }
   

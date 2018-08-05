@@ -66,6 +66,21 @@ mac_rrc_data_req_ue(
   LOG_I(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
 #endif
 
+
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+     LOG_D(RRC,"[UE %d] Frame %d Filling SL DISCOVERY SRB_ID %d\n",Mod_idP,frameP,Srb_id);
+     LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].SL_Discovery[eNB_index].Tx_buffer.payload_size);
+
+   //TTN (for D2D)
+     if (Srb_id  == SL_DISCOVERY && UE_rrc_inst[Mod_idP].SL_Discovery[eNB_index].Tx_buffer.payload_size > 0){
+        memcpy(&buffer_pP[0],&UE_rrc_inst[Mod_idP].SL_Discovery[eNB_index].Tx_buffer.Payload[0],UE_rrc_inst[Mod_idP].SL_Discovery[eNB_index].Tx_buffer.payload_size);
+        uint8_t Ret_size=UE_rrc_inst[Mod_idP].SL_Discovery[eNB_index].Tx_buffer.payload_size;
+        LOG_I(RRC,"[UE %d] Sending SL_Discovery, size %d bytes\n",Mod_idP,Ret_size);
+        UE_rrc_inst[Mod_idP].SL_Discovery[eNB_index].Tx_buffer.payload_size = 0;
+        return(Ret_size);
+     }
+#endif
+
   LOG_D(RRC,"[UE %d] Frame %d Filling CCCH SRB_ID %d\n",Mod_idP,frameP,Srb_id);
   LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].Srb0[eNB_index].Tx_buffer.payload_size);
 
@@ -206,7 +221,7 @@ mac_rrc_data_ind_ue(
       }
     }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     if ((srb_idP & RAB_OFFSET) == MCCH) {
       LOG_T(RRC,"[UE %d] Frame %d: Received SDU on MBSFN sync area %d for MCCH on SRB %d from eNB %d\n",
@@ -236,8 +251,13 @@ mac_rrc_data_ind_ue(
       decode_MCCH_Message(&ctxt, eNB_indexP, sduP, sdu_lenP, mbsfn_sync_areaP);
 #endif
     }
+    //TTN (for D2D)
+    if(srb_idP == SL_DISCOVERY) {
+    	LOG_I(RRC,"[UE %d] Received SDU (%d bytes) for SL_DISCOVERY on SRB %d from eNB %d\n",module_idP, sdu_lenP, srb_idP,eNB_indexP);
+    	decode_SL_Discovery_Message(&ctxt, eNB_indexP, sduP, sdu_lenP);
+    }
 
-#endif // Rel10 || Rel14
+#endif // #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   return(0);
 
@@ -310,7 +330,11 @@ rrc_data_req_ue(
            confirmP,
            sdu_sizeP,
            buffer_pP,
-           modeP);
+           modeP
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+           ,NULL, NULL
+#endif
+           );
 #endif
 }
 

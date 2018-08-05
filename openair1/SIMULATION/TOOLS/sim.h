@@ -22,7 +22,7 @@
 #ifndef __SIMULATION_TOOLS_DEFS_H__
 #define __SIMULATION_TOOLS_DEFS_H__
 #include "PHY/defs_common.h"
-
+#include <pthread.h>
 /** @defgroup _numerical_ Useful Numerical Functions
  *@{
 The present clause specifies several numerical functions for testing of digital communication systems.
@@ -180,6 +180,31 @@ typedef enum {
   EPA_medium,
   EPA_high,
 } SCM_t;
+
+#include "platform_constants.h"
+
+typedef struct {
+ channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
+ channel_desc_t *UE2RU[NUMBER_OF_UE_MAX][NUMBER_OF_RU_MAX][MAX_NUM_CCs];
+ double r_re_DL[NUMBER_OF_UE_MAX][2][30720];
+ double r_im_DL[NUMBER_OF_UE_MAX][2][30720];
+ double r_re_UL[NUMBER_OF_eNB_MAX][2][30720];
+ double r_im_UL[NUMBER_OF_eNB_MAX][2][30720];
+ int RU_output_mask[NUMBER_OF_UE_MAX];
+ int UE_output_mask[NUMBER_OF_RU_MAX];
+ pthread_mutex_t RU_output_mutex[NUMBER_OF_UE_MAX];
+ pthread_mutex_t UE_output_mutex[NUMBER_OF_RU_MAX];
+ pthread_mutex_t subframe_mutex;
+ int subframe_ru_mask;
+ int subframe_UE_mask;
+ openair0_timestamp current_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
+ openair0_timestamp current_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
+ openair0_timestamp last_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
+ openair0_timestamp last_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
+ double ru_amp[NUMBER_OF_RU_MAX];
+ pthread_t rfsim_thread;
+} sim_t;
+
 
 /**
 \brief This routine initializes a new channel descriptor
@@ -372,6 +397,20 @@ void multipath_tv_channel(channel_desc_t *desc,
 
 double N_RB2sampling_rate(uint16_t N_RB);
 double N_RB2channel_bandwidth(uint16_t N_RB);
+
+#include "targets/RT/USER/rfsim.h"
+
+void do_DL_sig(sim_t *sim,
+               uint16_t subframe,
+               uint32_t offset,
+               uint32_t length,
+               uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *ue_frame_parms,
+               uint8_t UE_id,
+               int CC_id);
+
+void do_UL_sig(sim_t *sim,
+               uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms, 
+               uint32_t frame,int ru_id,uint8_t CC_id);
 
 #endif
 

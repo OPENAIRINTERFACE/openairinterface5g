@@ -33,7 +33,6 @@
 #ifndef __PHY_IMPLEMENTATION_DEFS_LTE_H__
 #define __PHY_IMPLEMENTATION_DEFS_LTE_H__
 
-
 #include "types.h"
 #include "nfapi_interface.h"
 //#include "defs.h"

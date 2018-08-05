@@ -24,7 +24,7 @@
 #include <sys/sysinfo.h>
 #include "rt_wrapper.h"
 #include "../../ARCH/COMMON/common_lib.h"
-#undef MALLOC
+//#undef MALLOC
 #include "assertions.h"
 #include "msc.h"
 #include "PHY/types.h"
@@ -52,6 +52,8 @@
 #define CONFIG_HLP_DBGUEPR       "UE run normal prach power ramping, but don't continue random-access\n"
 #define CONFIG_HLP_CALPRACH      "UE run normal prach with maximum power, but don't continue random-access\n"
 #define CONFIG_HLP_NOL2CN        "bypass L2 and upper layers\n"
+#define CONFIG_HLP_SIML1         "activate RF simulator instead of HW\n"
+#define CONFIG_HLP_NUMUE         "number of UE instances\n"
 #define CONFIG_HLP_UERXG         "set UE RX gain\n"
 #define CONFIG_HLP_UERXGOFF      "external UE amplifier offset\n"
 #define CONFIG_HLP_UETXG         "set UE TX gain\n"
@@ -75,13 +77,15 @@
 #define CONFIG_HLP_DLMCS         "Set the maximum downlink MCS\n"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
 #define CONFIG_HLP_PRB           "Set the PRB, valid values: 6, 25, 50, 100  \n"    
+#define CONFIG_HLP_EMULIFACE     "Set the interface name for the multicast transport for emulation mode (e.g. eth0, lo, etc.)  \n"
+//#define CONFIG_HLP_NUMUES		 "Set the number of UEs for the emulation"
 #define CONFIG_HLP_MSLOTS        "Skip the missed slots/subframes \n"    
 #define CONFIG_HLP_ULMCS         "Set the maximum uplink MCS\n"
 #define CONFIG_HLP_TDD           "Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n"
+#define CONFIG_HLP_SNR           "Set average SNR in dB (for --siml1 option)\n"
 #define CONFIG_HLP_UE            "Set the lte softmodem as a UE\n"
 #define CONFIG_HLP_L2MONW        "Enable L2 wireshark messages on localhost \n"
 #define CONFIG_HLP_L2MONP        "Enable L2 pcap  messages on localhost \n"
-#define CONFIG_HLP_VCD           "Enable VCD (generated file will is named openair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n"
 #define CONFIG_HLP_TQFS          "Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n"
 #define CONFIG_HLP_TPORT         "tracer port\n"
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
@@ -129,13 +133,18 @@
 /*   optname                     helpstr             paramflags                      XXXptr                  defXXXval       type          numelt   */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_UEPARAMS_DESC {  \
-{"ue-rxgain",        	       CONFIG_HLP_UERXG,      0,		dblptr:&(rx_gain[0][0]),	    defdblval:0,    TYPE_DOUBLE,   0},     \
+{"siml1",                      CONFIG_HLP_SIML1,      PARAMFLAG_BOOL,   iptr:&simL1flag,                    defintval:0,    TYPE_INT,      0}, \
+{"U",			       CONFIG_HLP_NUMUE,      0,                u8ptr:&NB_UE_INST,                   defuintval:1,    TYPE_UINT,      0}, \
+{"ue-rxgain",        	       CONFIG_HLP_UERXG,      0,		dblptr:&(rx_gain[0][0]),	    defdblval:130,    TYPE_DOUBLE,   0},     \
 {"ue-rxgain-off",    	       CONFIG_HLP_UERXGOFF,   0,		dblptr:&rx_gain_off,		    defdblval:0,    TYPE_DOUBLE,   0},     \
 {"ue-txgain",        	       CONFIG_HLP_UETXG,      0,		dblptr:&(tx_gain[0][0]),	    defdblval:0,    TYPE_DOUBLE,   0},     \
 {"ue-nb-ant-rx",     	       CONFIG_HLP_UENANTR,    0,		u8ptr:&nb_antenna_rx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-nb-ant-tx",     	       CONFIG_HLP_UENANTT,    0,		u8ptr:&nb_antenna_tx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-scan-carrier",  	       CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL,	iptr:&UE_scan_carrier,  	    defintval:0,    TYPE_INT,	   0},     \
-{"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:90,   TYPE_INT,	   0},     \
+{"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:23,   TYPE_INT,	   0},     \
+{"emul-iface",                 CONFIG_HLP_EMULIFACE,  0,                strptr:&emul_iface,                 defstrval:"lo", TYPE_STRING,   100},   \
+{"L2-emul",                    NULL,  		      0,                u8ptr:&nfapi_mode,                  defuintval:3, TYPE_UINT8,   0}, \
+{"num-ues",     	       		   NULL,		      	  0,				u8ptr:&(NB_UE_INST),	    defuintval:1,   	TYPE_UINT8,	   0},     \
 {"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT8,    0},     \
 {"dlsch-demod-shift",     	 CONFIG_HLP_DLSHIFT,	0,		  iptr:(int32_t *)&dlsch_demod_shift,	defintval:0,			   TYPE_INT,	  0},			   \
 }
@@ -167,15 +176,14 @@
 {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&chain_offset,                 defintval:0,                    TYPE_INT,       0},                     \
 {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
 {"E" ,                      CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,         i8ptr:&threequarter_fs,             defintval:0,                    TYPE_INT8,      0},                     \
-{"K" ,                      CONFIG_HLP_ITTIL,       PARAMFLAG_NOFREE,       strptr:&itti_dump_file,             defstrval:"/tmp/itti.dump",     TYPE_STRING,    0},                     \
 {"m" ,                      CONFIG_HLP_DLMCS,       0,                      uptr:&target_dl_mcs,                defintval:0,                    TYPE_UINT,      0},                     \
 {"t" ,                      CONFIG_HLP_ULMCS,       0,                      uptr:&target_ul_mcs,                defintval:0,                    TYPE_UINT,      0},                     \
 {"W" ,                      CONFIG_HLP_L2MONW,      0,                      strptr:(char **)&in_ip,             defstrval:"127.0.0.1",          TYPE_STRING,    sizeof(in_ip)},         \
 {"P" ,                      CONFIG_HLP_L2MONP,      0,                      strptr:(char **)&in_path,           defstrval:"/tmp/oai_opt.pcap",  TYPE_STRING,    sizeof(in_path)},       \
-{"V" ,                      CONFIG_HLP_VCD,         PARAMFLAG_BOOL,         iptr:&ouput_vcd,                    defintval:0,                    TYPE_INT,       0},                     \
 {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
 {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
 {"T" ,                      CONFIG_HLP_TDD,         PARAMFLAG_BOOL,         iptr:&tddflag,                      defintval:0,                    TYPE_INT,       0},                     \
+{"s" ,                      CONFIG_HLP_SNR,         0,                      iptr:&snr_dB,                       defintval:25,                   TYPE_INT,       0},                     \
 {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0},                     \
 {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                   defintval:0,                    TYPE_INT,       0},                     \
 {"codingw" ,                CONFIG_HLP_CODINGW,     PARAMFLAG_BOOL,         iptr:&codingw,                      defintval:0,                    TYPE_INT,       0},                     \
@@ -196,26 +204,12 @@
 {"g" ,  		  	 CONFIG_HLP_LOGL,	0,		  uptr:&glog_level,			defintval:0,			   TYPE_UINT,     0},			   \
 {"G" ,                           CONFIG_HLP_LOGV,	0,		  uptr:&glog_verbosity,		        defintval:0,			   TYPE_UINT16,   0},			   \
 {"telnetsrv",    		 CONFIG_HLP_TELN,	PARAMFLAG_BOOL,	  uptr:&start_telnetsrv,		defintval:0,			   TYPE_UINT,     0},			   \
+{"log-mem",                       NULL,                  0,                strptr:(char **)&logmem_filename,    defstrval:"./logmem.log",          TYPE_STRING,   sizeof(logmem_filename)},    \
 }
 #define CMDLINE_ONLINELOG_IDX     0 
 #define CMDLINE_GLOGLEVEL_IDX     1
 #define CMDLINE_GLOGVERBO_IDX     2              
 #define CMDLINE_STARTTELN_IDX     3
-
-
-extern int T_port;
-extern int T_nowait;
-extern int T_dont_fork;
-
-/*------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters for TTRACE utility                                                    */
-/*   optname                     helpstr                paramflags           XXXptr           defXXXval         type       numelt           */
-/*------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_TTRACEPARAMS_DESC {  \
-{"T_port",                     CONFIG_HLP_TPORT,      0,		iptr:&T_port,	     defintval:0,	TYPE_INT,   0},	   \
-{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,	iptr:&T_nowait,      defintval:0,	TYPE_INT,   0},	   \
-{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,	iptr:&T_dont_fork,   defintval:1,	TYPE_INT,   0},	   \
-} 
 
 
 /***************************************************************************************************************************************/  
@@ -258,6 +252,7 @@ extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
 extern void init_RU(const char*);
+extern void stop_ru(RU_t *ru);
 extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
 extern void kill_RU_proc(int inst);
@@ -267,7 +262,7 @@ extern void set_function_spec_param(RU_t *ru);
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
 
-extern void init_UE(int,int,int,int);
+extern void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax, LTE_DL_FRAME_PARMS *fp);
 extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char * name);
 
 extern void reset_opp_meas(void);
@@ -279,6 +274,10 @@ extern void init_te_thread(PHY_VARS_eNB *);
 extern void kill_td_thread(PHY_VARS_eNB *);
 extern void kill_te_thread(PHY_VARS_eNB *);
 
+extern void RCConfig_sim(void);
+extern void init_ocm(double,double);
+extern void init_ue_devices(PHY_VARS_UE *);
+
 PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t UE_id,
                           uint8_t abstraction_flag);
@@ -286,5 +285,12 @@ void init_eNB_afterRU(void);
 
 extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
+
+
+extern void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, char *emul_iface);
+
+extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
+                          uint8_t UE_id,
+                          uint8_t abstraction_flag);
 
 #endif

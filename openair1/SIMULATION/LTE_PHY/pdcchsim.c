@@ -787,8 +787,8 @@ int main(int argc, char **argv)
     }
 
     printf("Read in %d samples\n",i/4);
-    write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    //    write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    //    LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     tx_lev = signal_energy(&txdata[0][0],
                            OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
     tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
@@ -949,13 +949,13 @@ int main(int argc, char **argv)
           
         }
 
-        //  write_output("pilotsF.m","rsF",txdataF[0],lte_eNB->frame_parms.ofdm_symbol_size,1,1);
+        //  LOG_M("pilotsF.m","rsF",txdataF[0],lte_eNB->frame_parms.ofdm_symbol_size,1,1);
 
         if (n_frames==1) {
-          write_output("txsigF0.m","txsF0", eNB->common_vars.txdataF[eNb_id][0],4*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+          LOG_M("txsigF0.m","txsF0", eNB->common_vars.txdataF[eNb_id][0],4*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
           if (eNB->frame_parms.nb_antenna_ports_eNB > 1)
-            write_output("txsigF1.m","txsF1", eNB->common_vars.txdataF[eNb_id][1],4*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+            LOG_M("txsigF1.m","txsF1", eNB->common_vars.txdataF[eNb_id][1],4*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX,1,1);
         }
 
         tx_lev = 0;
@@ -1009,7 +1009,7 @@ int main(int argc, char **argv)
                           2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0);
       }
 
-      //write_output("channel0.m","chan0",ch[0],channel_length,1,8);
+      //LOG_M("channel0.m","chan0",ch[0],channel_length,1,8);
 
       // scale by path_loss = NOW - P_noise
       //sigma2       = pow(10,sigma2_dB/10);
@@ -1056,8 +1056,8 @@ int main(int argc, char **argv)
             // fill in perfect channel estimates
             freq_channel(eNB2UE,UE->frame_parms.N_RB_DL,12*UE->frame_parms.N_RB_DL + 1);
 
-            //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
-            //write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
+            //LOG_M("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
+            //LOG_M("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
             for(k=0; k<NUMBER_OF_eNB_MAX; k++) {
               for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                 for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -1084,7 +1084,7 @@ int main(int argc, char **argv)
 
         if (l==((eNB->frame_parms.Ncp==0)?4:3)) {
 
-          //      write_output("H00.m","h00",&(UE->common_vars.dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+          //      LOG_M("H00.m","h00",&(UE->common_vars.dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
           // do PDCCH procedures here
           UE->pdcch_vars[0][0]->crnti = n_rnti;
@@ -1206,27 +1206,27 @@ int main(int argc, char **argv)
  
 
   if (n_frames==1) {
-    write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
     if (n_tx>1)
-      write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
-    write_output("rxsig0.m","rxs0", UE->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
-    write_output("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
+    LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
+    LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[0],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
 
     if (n_rx>1) {
-      write_output("rxsig1.m","rxs1", UE->common_vars.rxdata[1],10*frame_parms->samples_per_tti,1,1);
-      write_output("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[1],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
+      LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],10*frame_parms->samples_per_tti,1,1);
+      LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].rxdataF[1],NUMBER_OF_OFDM_CARRIERS*2*((frame_parms->Ncp==0)?14:12),2,1);
     }
 
-    write_output("H00.m","h00",&(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+    LOG_M("H00.m","h00",&(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
     if (n_tx==2)
-      write_output("H10.m","h10",&(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
+      LOG_M("H10.m","h10",&(UE->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(eNB->frame_parms.ofdm_symbol_size),1,1);
 
-    write_output("pdcch_rxF_ext0.m","pdcch_rxF_ext0",UE->pdcch_vars[0][eNb_id]->rxdataF_ext[0],3*12*UE->frame_parms.N_RB_DL,1,1);
-    write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[0][eNb_id]->rxdataF_comp[0],4*12*UE->frame_parms.N_RB_DL,1,1);
-    write_output("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNb_id]->llr,2400,1,4);
+    LOG_M("pdcch_rxF_ext0.m","pdcch_rxF_ext0",UE->pdcch_vars[0][eNb_id]->rxdataF_ext[0],3*12*UE->frame_parms.N_RB_DL,1,1);
+    LOG_M("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[0][eNb_id]->rxdataF_comp[0],4*12*UE->frame_parms.N_RB_DL,1,1);
+    LOG_M("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNb_id]->llr,2400,1,4);
   }
 
   lte_sync_time_free();

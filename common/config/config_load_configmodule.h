@@ -41,17 +41,19 @@
 #define CONFIG_MAX_ALLOCATEDPTRS  1024   // maximum number of parameters that can be dynamicaly allocated in the config module
 
 /* default values for configuration module parameters */
-#define DEFAULT_CFGMODE           "libconfig"  // use libconfig file
-#define DEFAULT_CFGFILENAME       "oai.conf"   // default config file
+#define CONFIG_LIBCONFIGFILE        "libconfig"  // use libconfig file
+#define CONFIG_CMDLINEONLY          "cmdline"    // use only command line options
+#define DEFAULT_CFGFILENAME         "oai.conf"   // default config file
 
 /* rtflags bit position definitions */
-#define CONFIG_PRINTPARAMS    1               // print parameters values while processing
-#define CONFIG_DEBUGPTR       1<<1            // print memory allocation/free debug messages
-#define CONFIG_DEBUGCMDLINE   1<<2            // print command line processing messages
-#define CONFIG_NOABORTONCHKF  1<<3            // disable abort execution when parameter checking function fails
-#define CONFIG_HELP           1<<20           // print help message
-#define CONFIG_ABORT          1<<21           // config failed,abort execution 
-#define CONFIG_NOOOPT         1<<22           // no -O option found when parsing command line
+#define CONFIG_PRINTPARAMS    1                 // print parameters values while processing
+#define CONFIG_DEBUGPTR       (1<<1)            // print memory allocation/free debug messages
+#define CONFIG_DEBUGCMDLINE   (1<<2)            // print command line processing messages
+#define CONFIG_NOABORTONCHKF  (1<<3)            // disable abort execution when parameter checking function fails
+#define CONFIG_NOEXITONHELP   (1<<19)           // do not exit after printing help
+#define CONFIG_HELP           (1<<20)           // print help message
+#define CONFIG_ABORT          (1<<21)           // config failed,abort execution 
+#define CONFIG_NOOOPT         (1<<22)           // no -O option found when parsing command line
 typedef int(*configmodule_initfunc_t)(char *cfgP[],int numP);
 typedef int(*configmodule_getfunc_t)(paramdef_t *,int numparams, char *prefix);
 typedef int(*configmodule_getlistfunc_t)(paramlist_def_t *, paramdef_t *,int numparams, char *prefix);
@@ -75,7 +77,7 @@ typedef struct configmodule_interface
 #ifdef CONFIG_LOADCONFIG_MAIN
 configmodule_interface_t *cfgptr=NULL;
 
-static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbg[debugflags]> \n \
+static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbgl[debugflags]> \n \
           debugflags can also be defined in the config_libconfig section of the config file\n \
           debugflags: mask,    1->print parameters, 2->print memory allocations debug messages\n \
                                4->print command line processing debug messages\n ";
@@ -97,9 +99,9 @@ extern configmodule_interface_t *cfgptr;
 #endif
 
 
-#define printf_params(...) if ( (cfgptr->rtflags & CONFIG_PRINTPARAMS) != 0 )  { printf ( __VA_ARGS__ ); }
-#define printf_ptrs(...)   if ( (cfgptr->rtflags & CONFIG_DEBUGPTR) != 0 )     { printf ( __VA_ARGS__ ); }     
-#define printf_cmdl(...)   if ( (cfgptr->rtflags & CONFIG_DEBUGCMDLINE) != 0 ) { printf ( __VA_ARGS__ ); }
+#define printf_params(...) if ( (cfgptr->rtflags & (CONFIG_PRINTPARAMS)) != 0 )  { printf ( __VA_ARGS__ ); }
+#define printf_ptrs(...)   if ( (cfgptr->rtflags & (CONFIG_DEBUGPTR)) != 0 )     { printf ( __VA_ARGS__ ); }     
+#define printf_cmdl(...)   if ( (cfgptr->rtflags & (CONFIG_DEBUGCMDLINE)) != 0 ) { printf ( __VA_ARGS__ ); }
  
 extern configmodule_interface_t *load_configmodule(int argc, char **argv);
 extern void end_configmodule(void);

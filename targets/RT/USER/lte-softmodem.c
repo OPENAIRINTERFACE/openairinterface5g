@@ -117,6 +117,8 @@ int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 uint8_t nfapi_mode = 0; // Default to monolithic mode
 
+uint16_t sf_ahead=4;
+
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
@@ -142,17 +144,16 @@ static int8_t                     threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
+char logmem_filename[1024] = {0};
+
 // This is a dummy declaration (dlsch_demodulation.c is no longer compiled for eNodeB)
 int16_t dlsch_demod_shift = 0;
-
-#if defined(ENABLE_ITTI)
-static char                    *itti_dump_file = NULL;
-#endif
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
-
+int simL1flag;
+int snr_dB;
 FILE *input_fd=NULL;
 
 
@@ -338,10 +339,14 @@ void exit_fun(const char* s)
     if (RC.ru == NULL)
         exit(-1); // likely init not completed, prevent crash or hang, exit now...
     for (ru_id=0; ru_id<RC.nb_RU;ru_id++) {
-      if (RC.ru[ru_id] && RC.ru[ru_id]->rfdevice.trx_end_func)
+      if (RC.ru[ru_id] && RC.ru[ru_id]->rfdevice.trx_end_func) {
 	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
-      if (RC.ru[ru_id] && RC.ru[ru_id]->ifdevice.trx_end_func)
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+      }
+      if (RC.ru[ru_id] && RC.ru[ru_id]->ifdevice.trx_end_func) {
 	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+      }
     }
 
 
@@ -457,7 +462,7 @@ void *l2l1_task(void *arg) {
       switch (ITTI_MSG_ID(message_p)) {
       case INITIALIZE_MESSAGE:
 	/* Start eNB thread */
-	LOG_D(EMU, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
+	printf("L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
 	start_eNB = 1;
 	break;
 
@@ -469,7 +474,7 @@ void *l2l1_task(void *arg) {
 	break;
 
       default:
-	LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
+	printf("Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
 	break;
       }
     } while (ITTI_MSG_ID(message_p) != INITIALIZE_MESSAGE);
@@ -496,11 +501,11 @@ void *l2l1_task(void *arg) {
       break;
 
     case MESSAGE_TEST:
-      LOG_I(EMU, "Received %s\n", ITTI_MSG_NAME(message_p));
+      printf("Received %s\n", ITTI_MSG_NAME(message_p));
       break;
 
     default:
-      LOG_E(EMU, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
+      printf("Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
       break;
     }
 
@@ -551,19 +556,21 @@ static void get_options(void) {
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
   }
+  if (strlen(logmem_filename) > 0) {
+    log_mem_filename = &logmem_filename[0];
+    log_mem_flag = 1;
+    printf("Enabling OPT for log save at memory %s\n",log_mem_filename);
+    logInit_log_mem();
+  }
 
-#if T_TRACER
-  paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
-  config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);   
-#endif
+
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
       memset((void*)&RC,0,sizeof(RC));
       /* Read RC configuration file */
       RCConfig();
       NB_eNB_INST = RC.nb_inst;
-      NB_RU	  = RC.nb_RU;
-      printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,NB_RU);
+      printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,RC.nb_RU);
       if (nonbiotflag <= 0) {
          load_NB_IoT();
          printf("               nb_nbiot_rrc_inst %d, nb_nbiot_L1_inst %d, nb_nbiot_macrlc_inst %d\n",
@@ -576,11 +583,6 @@ static void get_options(void) {
 }
 
 
-#if T_TRACER
-int T_nowait = 0;     /* by default we wait for the tracer */
-int T_port = 2021;    /* default port to listen to to wait for the tracer */
-int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
-#endif
 
 
 
@@ -911,7 +913,16 @@ static  void wait_nfapi_init(char *thread_name) {
   
   pthread_mutex_unlock(&nfapi_sync_mutex);
   
+  /*
+   * Raphael Defosseux: temporary workaround for CI
+   * -- Repeating the message thrice to make sure
+   * -- it is present during flush.
+   */
   printf( "NFAPI: got sync (%s)\n", thread_name);
+  printf( "NFAPI: got sync (%s)\n", thread_name);
+  printf( "NFAPI: got sync (%s)\n", thread_name);
+  fflush(stdout);
+  fflush(stderr);
 }
 
 int main( int argc, char **argv )
@@ -931,10 +942,6 @@ int main( int argc, char **argv )
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   } 
       
-#ifdef DEBUG_CONSOLE
-  setvbuf(stdout, NULL, _IONBF, 0);
-  setvbuf(stderr, NULL, _IONBF, 0);
-#endif
 
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
@@ -955,7 +962,7 @@ int main( int argc, char **argv )
 
 
 #if T_TRACER
-  T_init(T_port, 1-T_nowait, T_dont_fork);
+  T_Config_Init();
 #endif
 
 
@@ -964,11 +971,6 @@ int main( int argc, char **argv )
   set_taus_seed (0);
 
   printf("configuring for RAU/RRU\n");
-
-
-  if (ouput_vcd) {
-      VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_eNB.vcd");
-  }
 
   if (opp_enabled ==1) {
     reset_opp_meas();
@@ -979,7 +981,7 @@ int main( int argc, char **argv )
   log_set_instance_type (LOG_INSTANCE_ENB);
 
   printf("ITTI init\n");
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
@@ -1149,6 +1151,13 @@ int main( int argc, char **argv )
     pthread_mutex_init(&sync_mutex, NULL);
   }
   
+  if (nfapi_mode)
+  {
+    printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
+    pthread_cond_init(&sync_cond,NULL);
+    pthread_mutex_init(&sync_mutex, NULL);
+  }
+
   const char *nfapi_mode_str = "<UNKNOWN>";
 
   switch(nfapi_mode) {
@@ -1224,6 +1233,7 @@ int main( int argc, char **argv )
   
   // connect the TX/RX buffers
  
+  sleep(1); /* wait for thread activation */
   
   printf("Sending sync to all threads\n");
   
@@ -1275,8 +1285,12 @@ int main( int argc, char **argv )
   printf("stopping MODEM threads\n");
 
   // cleanup
+  for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+    stop_ru(RC.ru[ru_id]);
+  }
+
     stop_eNB(NB_eNB_INST);
-    stop_RU(NB_RU);
+    stop_RU(RC.nb_RU);
     /* release memory used by the RU/eNB threads (incomplete), after all
      * threads have been stopped (they partially use the same memory) */
     for (int inst = 0; inst < NB_eNB_INST; inst++) {
@@ -1285,7 +1299,7 @@ int main( int argc, char **argv )
         phy_free_lte_eNB(RC.eNB[inst][cc_id]);
       }
     }
-    for (int inst = 0; inst < NB_RU; inst++) {
+    for (int inst = 0; inst < RC.nb_RU; inst++) {
       phy_free_RU(RC.ru[inst]);
     }
     free_lte_top();
@@ -1304,15 +1318,17 @@ int main( int argc, char **argv )
 
   // *** Handle per CC_id openair0
 
-    for(ru_id=0; ru_id<NB_RU; ru_id++) {
-      if (RC.ru[ru_id]->rfdevice.trx_end_func)
-	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);  
-      if (RC.ru[ru_id]->ifdevice.trx_end_func)
-	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
 
+    for(ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+      if (RC.ru[ru_id]->rfdevice.trx_end_func) {
+        RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+      }
+      if (RC.ru[ru_id]->ifdevice.trx_end_func) {
+        RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+      }
     }
-  if (ouput_vcd)
-    VCD_SIGNAL_DUMPER_CLOSE();
   
   if (opt_enabled == 1)
     terminate_opt();

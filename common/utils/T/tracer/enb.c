@@ -12,7 +12,6 @@
 #include "gui/gui.h"
 #include "filter/filter.h"
 #include "utils.h"
-#include "../T_defs.h"
 #include "event_selector.h"
 #include "openair_logo.h"
 #include "config.h"
@@ -875,6 +874,8 @@ int main(int n, char **v)
   if (pthread_mutex_init(&enb_data.lock, NULL)) abort();
   setup_event_selector(g, database, is_on, is_on_changed, &enb_data);
 
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
 restart:
   clear_remote_config();
   enb_data.socket = connect_to(ip, port);
@@ -884,9 +885,8 @@ restart:
 
   /* read messages */
   while (1) {
-    char v[T_BUFFER_MAX];
     event e;
-    e = get_event(enb_data.socket, v, database);
+    e = get_event(enb_data.socket, &ebuf, database);
     if (e.type == -1) goto restart;
     if (pthread_mutex_lock(&enb_data.lock)) abort();
     handle_event(h, e);

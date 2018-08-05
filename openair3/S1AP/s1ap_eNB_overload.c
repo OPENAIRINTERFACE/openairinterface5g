@@ -50,13 +50,18 @@ int s1ap_eNB_handle_overload_start(uint32_t         assoc_id,
   s1ap_eNB_mme_data_t     *mme_desc_p;
   S1AP_OverloadStart_t    *container;
   S1AP_OverloadStartIEs_t *ie;
+
   DevAssert(pdu != NULL);
+
   container = &pdu->choice.initiatingMessage.value.choice.OverloadStart;
+
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_OverloadStartIEs_t, ie, container,
-                             S1AP_ProtocolIE_ID_id_OverloadResponse, TRUE);
+                             S1AP_ProtocolIE_ID_id_OverloadResponse, true);
+
   DevCheck(ie->value.choice.OverloadResponse.present ==
            S1AP_OverloadResponse_PR_overloadAction,
            S1AP_OverloadResponse_PR_overloadAction, 0, 0);
+
   /* Non UE-associated signalling -> stream 0 */
   DevCheck(stream == 0, stream, 0, 0);
 
@@ -71,6 +76,7 @@ int s1ap_eNB_handle_overload_start(uint32_t         assoc_id,
   mme_desc_p->state = S1AP_ENB_OVERLOAD;
   mme_desc_p->overload_state =
     ie->value.choice.OverloadResponse.choice.overloadAction;
+
   return 0;
 }
 
@@ -83,7 +89,9 @@ int s1ap_eNB_handle_overload_stop(uint32_t         assoc_id,
    * Information Element.
    */
   DevAssert(pdu != NULL);
+
   s1ap_eNB_mme_data_t *mme_desc_p;
+
   /* Non UE-associated signalling -> stream 0 */
   DevCheck(stream == 0, stream, 0, 0);
 

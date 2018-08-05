@@ -51,6 +51,19 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t 
   @param phy_vars_rn pointer to RN variables
 */
 int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode);
+
+/*! \brief Scheduling for UE Sidelink RX procedures in normal subframes.
+  @param ue Pointer to UE variables on which to act
+  @param proc Pointer to RXn_TXnp4 proc information
+*/
+void phy_procedures_UE_SL_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc);
+
+/*! \brief Scheduling for UE Sidelink TX procedures in normal subframes.
+  @param ue Pointer to UE variables on which to act
+  @param proc Pointer to RXn_TXnp4 proc information
+*/
+void phy_procedures_UE_SL_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc);
+
 int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
                                               uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode);
 #ifdef UE_SLOT_PARALLELISATION

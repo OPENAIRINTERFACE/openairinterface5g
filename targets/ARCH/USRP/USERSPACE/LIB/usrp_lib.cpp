@@ -376,6 +376,7 @@ static void trx_usrp_end(openair0_device *device) {
     s->tx_md.end_of_burst = true;
     s->tx_stream->send("", 0, s->tx_md);
     s->tx_md.end_of_burst = false;
+    sleep(1);
 #if defined(USRP_REC_PLAY)
     }
 #endif
@@ -483,7 +484,11 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
     s->tx_md.start_of_burst = false;
     s->tx_md.end_of_burst = false;
   }
-  
+  if(flags==10){ // fail safe mode
+    s->tx_md.has_time_spec = false;
+    s->tx_md.start_of_burst = false;
+    s->tx_md.end_of_burst = true;
+  } 
   if (cc>1) {
     std::vector<void *> buff_ptrs;
     for (int i=0; i<cc; i++)

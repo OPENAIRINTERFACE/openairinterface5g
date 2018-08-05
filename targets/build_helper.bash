@@ -23,7 +23,7 @@
 # brief
 # author Lionel Gauthier and Navid Nikaein
 # company Eurecom
-# email: lionel.gauthier@eurecom.fr and navid.nikaein@eurecom.fr 
+# email: lionel.gauthier@eurecom.fr and navid.nikaein@eurecom.fr
 #
 #######################################
 #            Helper Func
@@ -42,30 +42,30 @@ declare UBUNTU_REL=`lsb_release -r | cut  -f2`
 declare UBUNTU_REL_NAME=`lsb_release -cs`
 
 set_build_from_makefile(){
-    BUILD_FROM_MAKEFILE=$1   
+    BUILD_FROM_MAKEFILE=$1
 }
 
 check_for_root_rights() {
-    
+
   #  if [[ $EUID -ne $ROOT_EUID ]]; then
     if [ $USER != "root" ]; then
         SUDO="sudo -E "
-        echo "Run as a sudoers" 
+        echo "Run as a sudoers"
         return 1
-    else 
-        echo  "Run as a root" 
+    else
+        echo  "Run as a root"
         return 0
     fi
 }
 
 test_install_package() {
   # usage: test_install_package package_name
- 
+
  if [ $# -eq 1 ]; then
       dpkg -s "$1" > /dev/null 2>&1 && {
-          echo "$1 is installed." 
+          echo "$1 is installed."
       } || {
-          echo "$1 is not installed." 
+          echo "$1 is not installed."
           OAI_INSTALLED=0
           $SUDO apt-get install -y $@
       }
@@ -73,13 +73,13 @@ test_install_package() {
 }
 
 test_uninstall_package() {
-  
+
  if [ $# -eq 1 ]; then
       dpkg -s "$1" > /dev/null 2>&1 && {
-          $SUDO apt-get remove --assume-yes $1  
-          echo "$1 is uninstalled." 
+          $SUDO apt-get remove --assume-yes $1
+          echo "$1 is uninstalled."
       } || {
-          echo "$1 is not installed." 
+          echo "$1 is not installed."
       }
   fi
 }
@@ -97,8 +97,8 @@ check_for_machine_type(){
     else
         if [ ${MACHINE_TYPE} = "i686" ]; then
             return 32 # 32-bit stuff here
-        else 
-            return -1 
+        else
+            return -1
         fi
     fi
 }
@@ -108,7 +108,7 @@ check_for_machine_type(){
 #####################################################
 
 ####################################################
-# 1. install the required packages 
+# 1. install the required packages
 ####################################################
 
 make_certs(){
@@ -118,32 +118,32 @@ make_certs(){
     mkdir -m 777 -p demoCA
     echo 01 > demoCA/serial
     touch demoCA/index.txt
-    
+
     echo "creating the certificate"
-    
+
     user=$(whoami)
     HOSTNAME=$(hostname -f)
 
     echo "Creating certificate for user '$HOSTNAME'"
-    
+
 # CA self certificate
     openssl req  -new -batch -x509 -days 3650 -nodes -newkey rsa:1024 -out cacert.pem -keyout cakey.pem -subj /CN=eur/C=FR/ST=PACA/L=Aix/O=Eurecom/OU=CM
-    
+
    # openssl genrsa -out user.key.pem 1024
     openssl genrsa -out hss.key.pem 1024
     #openssl req -new -batch -out user.csr.pem -key user.key.pem -subj /CN=$HOSTNAME.eur/C=FR/ST=PACA/L=Aix/O=Eurecom/OU=CM
     openssl req -new -batch -out hss.csr.pem -key hss.key.pem -subj /CN=hss.eur/C=FR/ST=PACA/L=Aix/O=Eurecom/OU=CM
     openssl ca -cert cacert.pem -keyfile cakey.pem -in hss.csr.pem -out hss.cert.pem -outdir . -batch
-    
+
     if [ ! -d /usr/local/etc/freeDiameter ];  then
         echo "Creating non existing directory: /usr/local/etc/freeDiameter/"
         $SUDO mkdir /usr/local/etc/freeDiameter/
     fi
-    
+
     echo "Copying *.pem to /usr/local/etc/freeDiameter/"
     $SUDO cp *.pem /usr/local/etc/freeDiameter/
     mv *.pem bin/
-    
+
 # openssl genrsa -out ubuntu.key.pem 1024
 # openssl req -new -batch -x509 -out ubuntu.csr.pem -key ubuntu.key.pem -subj /CN=ubuntu.localdomain/C=FR/ST=BdR/L=Aix/O=fD/OU=Tests
 # openssl ca -cert cacert.pem -keyfile cakey.pem -in ubuntu.csr.pem -out ubuntu.cert.pem -outdir . -batch
@@ -151,25 +151,25 @@ make_certs(){
 }
 
 check_install_nettle(){
-    if [ ! -f ./.lock_oaibuild ]; then 
-	if [ $UBUNTU_REL = "12.04" ]; then 
+    if [ ! -f ./.lock_oaibuild ]; then
+	if [ $UBUNTU_REL = "12.04" ]; then
 	    test_uninstall_package nettle-dev
 	    test_uninstall_package nettle-bin
-	
+
 	    if [ ! -d /usr/local/src/ ]; then
 		echo "/usr/local/src/ doesn't exist please create one"
 		exit -1
 	    fi
-	    
+
 	    if [ ! -w /usr/local/src/ ];  then
 		echo "You don't have permissions to write to /usr/local/src/, installing as a sudoer"
 		#	exit -1
 	    fi
-	    
+
 	    cd /usr/local/src/
-	    
+
 	    echo "Downloading nettle archive"
-	    
+
 	    if [ -f nettle-2.5.tar.gz ]; then
 		$SUDO rm -f nettle-2.5.tar.gz
 	    fi
@@ -179,44 +179,44 @@ check_install_nettle(){
 	    if [ -d nettle-2.5 ];  then
 		$SUDO rm -rf nettle-2.5/
 	    fi
-	    
-	    
-	    $SUDO wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz 
-	    $SUDO gunzip nettle-2.5.tar.gz 
+
+
+	    $SUDO wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz
+	    $SUDO gunzip nettle-2.5.tar.gz
 	    $SUDO echo "Uncompressing nettle archive"
 	    $SUDO tar -xf nettle-2.5.tar
 	    cd nettle-2.5/
-	    $SUDO ./configure --disable-openssl --enable-shared --prefix=/usr 
+	    $SUDO ./configure --disable-openssl --enable-shared --prefix=/usr
 	    if [ $? -ne 0 ]; then
 		exit -1
 	    fi
 	    echo "Compiling nettle"
-	    $SUDO make -j $NUM_CPU  
-	    $SUDO make check 
-	    $SUDO make install 
+	    $SUDO make -j $NUM_CPU
+	    $SUDO make check
+	    $SUDO make install
 	    cd ../
 	fi
     fi
 }
 
 check_install_freediamter(){
-    
-    if [ $UBUNTU_REL = "12.04" ]; then 
+
+    if [ $UBUNTU_REL = "12.04" ]; then
 
 	if [ ! -d /usr/local/src/ ]; then
 	    echo "/usr/local/src/ doesn't exist please create one"
 	    exit -1
 	fi
-	
+
 	if [ ! -w /usr/local/src/ ];  then
 	    echo "You don't have permissions to write to /usr/local/src/, installing as a sudoer"
 #	exit -1
 	fi
-	
+
 	cd /usr/local/src/
-	
+
 	echo "Downloading nettle archive"
-	
+
 	if [ -f nettle-2.5.tar.gz ]; then
 	    $SUDO rm -f nettle-2.5.tar.gz
 	fi
@@ -226,36 +226,36 @@ check_install_freediamter(){
 	if [ -d nettle-2.5 ];  then
 	    $SUDO rm -rf nettle-2.5/
 	fi
-	
-	
-	$SUDO wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz 
-	$SUDO gunzip nettle-2.5.tar.gz 
+
+
+	$SUDO wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz
+	$SUDO gunzip nettle-2.5.tar.gz
 	$SUDO echo "Uncompressing nettle archive"
 	$SUDO tar -xf nettle-2.5.tar
 	cd nettle-2.5/
-	$SUDO ./configure --disable-openssl --enable-shared --prefix=/usr 
+	$SUDO ./configure --disable-openssl --enable-shared --prefix=/usr
 	if [ $? -ne 0 ]; then
 	    exit -1
 	fi
 	echo "Compiling nettle"
-	$SUDO make -j $NUM_CPU  
-	$SUDO make check 
-	$SUDO make install 
+	$SUDO make -j $NUM_CPU
+	$SUDO make check
+	$SUDO make install
 	cd ../
     fi
-    
+
     echo "Downloading gnutls archive"
-    
+
     if [ -f gnutls-3.1.23.tar.xz ];  then
 	$SUDO rm -f gnutls-3.1.23.tar.xz
     fi
     if [ -d gnutls-3.1.23/ ];  then
 	$SUDO rm -rf gnutls-3.1.23/
     fi
-    
+
     test_uninstall_package libgnutls-dev
-    
-    $SUDO wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz 
+
+    $SUDO wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz
     $SUDO tar -xf gnutls-3.1.23.tar.xz
     echo "Uncompressing gnutls archive ($PWD)"
     cd gnutls-3.1.23/
@@ -264,38 +264,38 @@ check_install_freediamter(){
 	exit -1
     fi
     echo "Compiling gnutls"
-    $SUDO make -j $NUM_CPU 
-    $SUDO make install 
+    $SUDO make -j $NUM_CPU
+    $SUDO make install
     cd ../
-    
+
     echo "Downloading freeDiameter archive"
-    
+
     if [ -f 1.1.5.tar.gz ];  then
 	$SUDO rm -f 1.1.5.tar.gz
     fi
     if [ -d freeDiameter-1.1.5/ ];   then
 	$SUDO rm -rf freeDiameter-1.1.5/
     fi
-    
-    $SUDO wget http://www.freediameter.net/hg/freeDiameter/archive/1.1.5.tar.gz 
-    $SUDO tar -xzf 1.1.5.tar.gz 
+
+    $SUDO wget http://www.freediameter.net/hg/freeDiameter/archive/1.1.5.tar.gz
+    $SUDO tar -xzf 1.1.5.tar.gz
     echo "Uncompressing freeDiameter archive"
     cd freeDiameter-1.1.5
-    $SUDO patch -p1 < $OPENAIR3_DIR/S6A/freediameter/freediameter-1.1.5.patch 
+    $SUDO patch -p1 < $OPENAIR3_DIR/S6A/freediameter/freediameter-1.1.5.patch
     $SUDO mkdir build
     cd build
-    $SUDO cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ../ 
+    $SUDO cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ../
     if [ $? -ne 0 ];  then
 	exit -1
     fi
     echo "Compiling freeDiameter"
-    $SUDO make -j $NUM_CPU 
+    $SUDO make -j $NUM_CPU
 #make help
-    $SUDO make test 
-    $SUDO sudo make install 
-  
+    $SUDO make test
+    $SUDO sudo make install
+
 #    make_certs
-   
+
 }
 
 
@@ -339,7 +339,7 @@ check_hss_s6a_certificate() {
             then
                 echo_success "HSS S6A: Found valid certificate in /usr/local/etc/freeDiameter"
                 return 0
-            else 
+            else
                 echo_error "Bad hss hostname found in cert file: "$full_hostname " hostname is "`hostname`
             fi
         fi
@@ -357,43 +357,43 @@ check_hss_s6a_certificate() {
 }
 
 check_install_usrp_uhd_driver(){
-    if [ ! -f /etc/apt/sources.list.d/ettus.list ] ; then 
+    if [ ! -f /etc/apt/sources.list.d/ettus.list ] ; then
         $SUDO bash -c 'echo "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/`lsb_release -cs` `lsb_release -cs` main" >> /etc/apt/sources.list.d/ettus.list'
         $SUDO apt-get update
-    fi 
+    fi
     $SUDO apt-get install -t $UBUNTU_REL_NAME uhd
-    test_install_package python 
-    test_install_package libboost-all-dev 
+    test_install_package python
+    test_install_package libboost-all-dev
     test_install_package libusb-1.0-0-dev
     #test_install_package uhd
 }
 
 check_install_oai_software() {
-    
-    if [ ! -f ./.lock_oaibuild ]; then 
+
+    if [ ! -f ./.lock_oaibuild ]; then
         $SUDO apt-get update
-        if [ $UBUNTU_REL = "12.04" ]; then 
+        if [ $UBUNTU_REL = "12.04" ]; then
             test_uninstall_package nettle-dev
             test_uninstall_package nettle-bin
-        else 
+        else
             test_install_package nettle-dev
             test_install_package nettle-bin
-        fi 
-        test_install_package autoconf 
-        test_install_package automake 
-        test_install_package bison 
+        fi
+        test_install_package autoconf
+        test_install_package automake
+        test_install_package bison
         test_install_package build-essential
         test_install_package dialog
-        test_install_package flex 
+        test_install_package flex
         test_install_package gawk
         test_install_package gcc
-        test_install_package gdb 
+        test_install_package gdb
         test_install_package make
         test_install_package cmake
         test_install_package openssh-client
         test_install_package openssh-server
         sudo service ssh start
-        test_install_package unzip 
+        test_install_package unzip
         test_install_package autoconf
         test_install_package automake
         test_install_package bison
@@ -405,7 +405,7 @@ check_install_oai_software() {
         test_install_package gawk
         test_install_package gcc
         test_install_package gccxml
-        test_install_package gdb 
+        test_install_package gdb
         test_install_package guile-2.0-dev
         test_install_package iperf
         test_install_package iproute
@@ -414,6 +414,8 @@ check_install_oai_software() {
         test_install_package libatlas-dev
         test_install_package libblas3gf
         test_install_package libblas-dev
+        test_install_package liblapack-dev
+        test_install_package liblapack-dev
 #	if [ $MACHINE_ARCH = 64 ]; then
             test_install_package libconfig8-dev
 #	else
@@ -436,7 +438,7 @@ check_install_oai_software() {
         test_install_package libxml2-dev
 #       test_install_package linux-headers-`uname -r`
         test_install_package openssl
-        test_install_package libssl-dev 
+        test_install_package libssl-dev
         test_install_package pkg-config
         test_install_package python-dev
         test_install_package python-pexpect
@@ -445,90 +447,90 @@ check_install_oai_software() {
         test_install_package valgrind
         test_install_package doxygen
         test_install_package graphviz
-	
+
 #        test_install_package libboost-all-dev
-	
-        if [ $OAI_INSTALLED = 1 ]; then 
+
+        if [ $OAI_INSTALLED = 1 ]; then
             touch ./.lock_oaibuild
-        fi 
-    
+        fi
+
      else
         echo_info "All the required packages installed: skip"
-    fi 
-    
+    fi
+
 }
 
 check_install_hss_software() {
-    if [ ! -f ./.lock_oaibuild ]; then 
+    if [ ! -f ./.lock_oaibuild ]; then
         $SUDO apt-get update
-        if [ $UBUNTU_REL = "12.04" ]; then 
+        if [ $UBUNTU_REL = "12.04" ]; then
             test_uninstall_package nettle-dev
             test_uninstall_package nettle-bin
-        else 
+        else
             test_install_package nettle-dev
             test_install_package nettle-bin
-        fi 
-	test_install_package autoconf 
-	test_install_package automake 
-	test_install_package bison 
+        fi
+	test_install_package autoconf
+	test_install_package automake
+	test_install_package bison
 	test_install_package build-essential
 	test_install_package cmake
-	test_install_package cmake-curses-gui 
+	test_install_package cmake-curses-gui
     test_install_package dialog
     test_install_package dkms
-	test_install_package flex 
+	test_install_package flex
 	test_install_package gawk
 	test_install_package gcc
-	test_install_package gdb 
-	test_install_package guile-2.0-dev 
+	test_install_package gdb
+	test_install_package guile-2.0-dev
 	test_install_package g++
-	test_install_package libgmp-dev 
-	test_install_package libgcrypt11-dev 
-	test_install_package libidn11-dev 
-	test_install_package libidn2-0-dev 
-	test_install_package libmysqlclient-dev 
-	test_install_package libtasn1-3-dev 
-	test_install_package libsctp1 
-	test_install_package libsctp-dev 
-	test_install_package libxml2-dev 
-#	test_install_package linux-headers-`uname -r` 
+	test_install_package libgmp-dev
+	test_install_package libgcrypt11-dev
+	test_install_package libidn11-dev
+	test_install_package libidn2-0-dev
+	test_install_package libmysqlclient-dev
+	test_install_package libtasn1-3-dev
+	test_install_package libsctp1
+	test_install_package libsctp-dev
+	test_install_package libxml2-dev
+#	test_install_package linux-headers-`uname -r`
 	test_install_package make
-	test_install_package mysql-client 
-	test_install_package mysql-server-core-5.5 
+	test_install_package mysql-client
+	test_install_package mysql-server-core-5.5
 	test_install_package mysql-server
 	test_install_package openssh-client
 	test_install_package openssh-server
         sudo service ssh start
 	test_install_package phpmyadmin
-	test_install_package python-dev 
+	test_install_package python-dev
 	test_install_package sshfs
-	test_install_package swig 
-	test_install_package unzip 
+	test_install_package swig
+	test_install_package unzip
 #	test_install_package nettle-bin
 #	test_install_package nettle-dev
-	test_install_package valgrind 
+	test_install_package valgrind
 
-	if [ $OAI_INSTALLED = 1 ]; then 
+	if [ $OAI_INSTALLED = 1 ]; then
 	    touch ./.lock_oaibuild
-	fi 
-	
+	fi
+
     else
 	echo_info "All the required packages installed: skip"
-    fi 
+    fi
 
 }
 
 check_install_epc_software() {
 
-    if [ ! -f ./.lock_oaibuild ]; then 
+    if [ ! -f ./.lock_oaibuild ]; then
         $SUDO apt-get update
-        if [ $UBUNTU_REL = "12.04" ]; then 
+        if [ $UBUNTU_REL = "12.04" ]; then
             test_uninstall_package nettle-dev
             test_uninstall_package nettle-bin
-        else 
+        else
             test_install_package nettle-dev
             test_install_package nettle-bin
-        fi 
+        fi
         test_install_package autoconf
         test_install_package automake
         test_install_package bison
@@ -543,7 +545,7 @@ check_install_epc_software() {
         test_install_package gawk
         test_install_package gcc
         test_install_package gccxml
-        test_install_package gdb 
+        test_install_package gdb
         test_install_package guile-2.0-dev
         test_install_package gtkwave
         test_install_package iperf
@@ -573,7 +575,7 @@ check_install_epc_software() {
         test_install_package libsctp-dev
         test_install_package libssl-dev
         test_install_package libtasn1-3-dev
-        test_install_package libtool 
+        test_install_package libtool
         test_install_package libxml2
         test_install_package libxml2-dev
 #        test_install_package linux-headers-`uname -r`
@@ -593,21 +595,21 @@ check_install_epc_software() {
         test_install_package unzip
         test_install_package valgrind
         test_install_package vlan
-	
-        if [ $OAI_INSTALLED = 1 ]; then 
+
+        if [ $OAI_INSTALLED = 1 ]; then
             touch ./.lock_oaibuild
-        fi 
-    
+        fi
+
     else
         echo_info "All the required packages installed: skip"
-    fi 
+    fi
 
 }
 
 check_install_asn1c(){
-    
+
     test_command_install_script   "asn1c" "$OPENAIR_TARGETS/SCRIPTS/install_asn1c_0.9.24.modified.bash $SUDO"
-    
+
     # One mor check about version of asn1c
     ASN1C_COMPILER_REQUIRED_VERSION_MESSAGE="ASN.1 Compiler, v0.9.24"
     ASN1C_COMPILER_VERSION_MESSAGE=`asn1c -h 2>&1 | grep -i ASN\.1\ Compiler`
@@ -624,15 +626,15 @@ check_install_asn1c(){
             fi
         done
     fi
-    
+
 }
 
 #################################################
-# 2. compile 
+# 2. compile
 ################################################
 compile_hss() {
     cd $OPENAIR3_DIR/OPENAIRHSS
-    
+
     if [ "$1" -eq 1 ]; then
         echo_info "build a clean HSS"
         rm -rfv obj*
@@ -642,14 +644,14 @@ compile_hss() {
     fi
 
     OBJ_DIR=`find . -maxdepth 1 -type d -iname obj*`
-    
+
     if [ ! -n "$OBJ_DIR" ]; then
         OBJ_DIR="objs"
         mkdir --verbose -m 777 ./$OBJ_DIR
     else
         OBJ_DIR=`basename $OBJ_DIR`
     fi
-    
+
     if [ ! -f "$OBJ_DIR"/Makefile ]; then
         if [ ! -d m4 ]; then
             mkdir --verbose -m 777 m4
@@ -661,7 +663,7 @@ compile_hss() {
         fi
         cd $OBJ_DIR
         echo_success "Invoking configure"
-        ../configure 
+        ../configure
         if [ $? -ne 0 ]; then
             return 1
         fi
@@ -675,7 +677,7 @@ compile_hss() {
         if [ $? -ne 0 ]; then
             echo_error "Build failed, exiting"
             return 1
-        else 
+        else
             return 0
         fi
     else
@@ -705,11 +707,11 @@ compile_epc() {
         fi
         bash_exec "autoreconf -i -f"
         echo_success "Invoking autogen"
-        bash_exec "libtoolize"        
+        bash_exec "libtoolize"
         bash_exec "./autogen.sh"
         cd ./$OBJ_DIR
         echo_success "Invoking configure"
-        if [ $DEBUG -ne 0 ]; then 
+        if [ $DEBUG -ne 0 ]; then
             ../configure --enable-debug --enable-standalone-epc --enable-gtp1u-in-kernel LDFLAGS=-L/usr/local/lib
         else
             ../configure                --enable-standalone-epc --enable-gtp1u-in-kernel LDFLAGS=-L/usr/local/lib
@@ -727,30 +729,30 @@ compile_epc() {
         if [ $? -ne 0 ]; then
             echo_error "Build failed, exiting"
             return 1
-        else 
+        else
             cp -pf ./OAI_EPC/oai_epc  $OPENAIR_TARGETS/bin
         fi
     else
         echo_error "Configure failed, exiting"
         return 1
     fi
-    
+
     cd $OPENAIR3_DIR/GTPV1-U/GTPUAH;
     make
     if [ $? -ne 0 ]; then
         echo_error "Build GTPUAH module failed, exiting"
         return 1
-    else 
+    else
        	$SUDO cp -pfv ./Bin/libxt_*.so /lib/xtables
         $SUDO cp -pfv ./Bin/*.ko $OPENAIR_TARGETS/bin
     fi
-    
+
     cd $OPENAIR3_DIR/GTPV1-U/GTPURH;
     make
     if [ $? -ne 0 ]; then
         echo_error "Build GTPURH module failed, exiting"
         return 1
-    else 
+    else
        $SUDO cp -pfv ./Bin/libxt_*.so /lib/xtables
        $SUDO cp -pfv ./Bin/*.ko $OPENAIR_TARGETS/bin
     fi
@@ -777,15 +779,15 @@ compile_ltesoftmodem() {
         if [ $? -ne 0 ]; then
             # to locate easily compilation error in log file
             make  $SOFTMODEM_DIRECTIVES
-        fi 
+        fi
         if [ $? -ne 0 ]; then
-            if [ ! -f ./lte-softmodem ]; then 
+            if [ ! -f ./lte-softmodem ]; then
                 echo_error "Build lte-softmodem failed, returning"
                 return 1
-            else 
+            else
                 cp -pf ./lte-softmodem  $OPENAIR_TARGETS/bin
                 return 0
-            fi 
+            fi
         else
             cp -pf ./lte-softmodem  $OPENAIR_TARGETS/bin
             return 0
@@ -801,11 +803,11 @@ compile_oaisim() {
     if [ -f Makefile ]; then
         echo "Compiling for oaisim  target ($OAISIM_DIRECTIVES)"
         make cleanall > /dev/null
-        make -j $NUM_CPU $OAISIM_DIRECTIVES 
+        make -j $NUM_CPU $OAISIM_DIRECTIVES
         if [ $? -ne 0 ]; then
             echo_error "Build oaisim failed, returning"
             return 1
-        else 
+        else
             cp -pf ./oaisim $OPENAIR_TARGETS/bin
             return 0
         fi
@@ -820,11 +822,11 @@ compile_unisim() {
     if [ -f Makefile ]; then
         echo "Compiling for UNISIM target ..."
         make cleanall
-        make  -j $NUM_CPU all 
+        make  -j $NUM_CPU all
         if [ $? -ne 0 ]; then
             echo_error "Build unisim failed, returning"
             return 1
-        else 
+        else
             cp -pf ./dlsim     $OPENAIR_TARGETS/bin
             cp -pf ./ulsim     $OPENAIR_TARGETS/bin
             cp -pf ./pucchsim  $OPENAIR_TARGETS/bin
@@ -843,9 +845,9 @@ compile_unisim() {
 compile_nas_tools() {
 
     export NVRAM_DIR=$OPENAIR_TARGETS/bin
-    
+
     cd $NVRAM_DIR
-    
+
         if [ ! -f /tmp/nas_cleaned ]; then
             echo_success "make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS/tools veryveryclean"
             make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS/tools veryveryclean
@@ -963,11 +965,11 @@ check_for_nas_ue_executable() {
 ###############################################
 
 # arg1 is RT
-# arg2 is HW 
+# arg2 is HW
 # arg3 is ENB_S1
 install_ltesoftmodem() {
     # RT
-    if [ $1 = "RTAI" ]; then 
+    if [ $1 = "RTAI" ]; then
         if [ ! -f /tmp/init_rt_done.tmp ]; then
             echo_info "  8.1 Insert RTAI modules"
             $SUDO insmod /usr/realtime/modules/rtai_hal.ko     > /dev/null 2>&1
@@ -982,46 +984,46 @@ install_ltesoftmodem() {
         fi
     fi
     #HW
-    if [ $2 = "EXMIMO" ]; then 
+    if [ $2 = "EXMIMO" ]; then
 	echo_info "  8.2 [EXMIMO] creating RTAI fifos"
-	for i in `seq 0 64`; do 
+	for i in `seq 0 64`; do
 	    have_rtfX=`ls /dev/ |grep -c rtf$i`;
-	    if [ "$have_rtfX" -eq 0 ] ; then 
-		$SUDO mknod -m 666 /dev/rtf$i c 150 $i; 
+	    if [ "$have_rtfX" -eq 0 ] ; then
+		$SUDO mknod -m 666 /dev/rtf$i c 150 $i;
 	    fi;
 	done
 	echo_info "  8.3 [EXMIMO] Build lte-softmodemdrivers"
 	cd $OPENAIR_TARGETS/ARCH/EXMIMO/DRIVER/eurecom && make clean && make  # || exit 1
 	cd $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT && make clean && make  # || exit 1
-	
+
 	echo_info "  8.4 [EXMIMO] Setup RF card"
 	cd $OPENAIR_TARGETS/RT/USER
 	. ./init_exmimo2.sh
-    else 
+    else
 	if [ $2 = "USRP" ]; then
 	    echo_info "  8.2 [USRP] "
 	fi
 
     fi
-    
+
     # ENB_S1
-    if [ $3 = 0 ]; then 
+    if [ $3 = 0 ]; then
         cd $OPENAIR2_DIR && make clean && make nasmesh_netlink.ko  #|| exit 1
         cd $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL && make clean && make  # || exit 1
     fi
-    
+
 }
 
 # arg1 is ENB_S1 'boolean'
 install_oaisim() {
-   if [ $1 = 0 ]; then 
+   if [ $1 = 0 ]; then
        cd $OPENAIR2_DIR && make clean && make nasmesh_netlink.ko  #|| exit 1
        cd $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL && make clean && make  # || exit 1
    else
        compile_ue_ip_nw_driver
        install_nas_tools
-   fi 
-   
+   fi
+
 }
 
 
@@ -1041,7 +1043,7 @@ install_nas_tools() {
 }
 
 install_nasmesh(){
-    echo_success "LOAD NASMESH IP DRIVER FOR UE AND eNB" 
+    echo_success "LOAD NASMESH IP DRIVER FOR UE AND eNB"
     (cd $OPENAIR2_DIR/NAS/DRIVER/MESH/RB_TOOL && make clean && make)
     (cd $OPENAIR2_DIR && make clean && make nasmesh_netlink_address_fix.ko)
     $SUDO rmmod nasmesh
@@ -1069,7 +1071,7 @@ create_hss_database(){
     fi
 
     set_openair_env
-    
+
     # removed %
     #Q1="GRANT ALL PRIVILEGES ON *.* TO '$3'@'%' IDENTIFIED BY '$4' WITH GRANT OPTION;"
     Q1="GRANT ALL PRIVILEGES ON *.* TO '$3'@'localhost' IDENTIFIED BY '$4' WITH GRANT OPTION;"
@@ -1082,8 +1084,8 @@ create_hss_database(){
     else
        echo_success "$3 permissions succeeded"
     fi
-    
-    
+
+
     Q1="CREATE DATABASE IF NOT EXISTS ${BTICK}$5${BTICK};"
     SQL="${Q1}"
     $MYSQL -u $3 --password=$4 -e "$SQL"
@@ -1093,12 +1095,12 @@ create_hss_database(){
     else
        echo_success "$5 creation succeeded"
     fi
-    
-    
+
+
     # test if tables have been created
     mysql -u $3 --password=$4  -e "desc $5.users" > /dev/null 2>&1
-    
-    if [ $? -eq 1 ]; then 
+
+    if [ $? -eq 1 ]; then
         $MYSQL -u $3 --password=$4 $5 < $OPENAIR3_DIR/OPENAIRHSS/db/oai_db.sql
         if [ $? -ne 0 ]; then
             echo_error "$5 tables creation failed"
@@ -1107,7 +1109,7 @@ create_hss_database(){
             echo_success "$5 tables creation succeeded"
         fi
     fi
-    
+
     return 0
 }
 
@@ -1176,7 +1178,7 @@ print_help_perf(){
 
 }
 ###############################
-## echo and  family 
+## echo and  family
 ###############################
 black='\E[30m'
 red='\E[31m'
@@ -1196,10 +1198,10 @@ cecho()   # Color-echo
     local default_msg="No Message."
     message=${1:-$default_msg}
     color=${2:-$green}
-    if [ $BUILD_FROM_MAKEFILE = 0 ]; then 
+    if [ $BUILD_FROM_MAKEFILE = 0 ]; then
 	echo -e -n "$color$message$reset_color"
 	echo
-    else 
+    else
 	echo "$message"
     fi
     return
@@ -1304,7 +1306,7 @@ assert() {
     if [ -z "$2" ] ; then # Not enought parameters passed.
         return $E_PARAM_ERR
     fi
-    
+
     lineno=$2
     if [ ! $1 ]; then
         echo_error "Assertion failed:  \"$1\""

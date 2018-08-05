@@ -148,7 +148,10 @@ typedef struct paramdef
 #define TYPE_MASK       10
 #define TYPE_DOUBLE     16
 #define TYPE_IPV4ADDR   20
+#define TYPE_LASTSCALAR 25
 
+#define PARAM_ISLISTORARRAY(P)  (P->type >  TYPE_LASTSCALAR )
+#define PARAM_ISSCALAR(P)       (P->type <  TYPE_LASTSCALAR )
 
 #define TYPE_STRINGLIST 50
 #define TYPE_INTARRAY   51

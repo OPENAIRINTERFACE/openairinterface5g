@@ -18,7 +18,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file RRC/LITE/defs_NB_IoT.h
+/*! \file RRC/LTE/defs_NB_IoT.h
 * \brief NB-IoT RRC struct definitions and function prototypes
 * \author Navid Nikaein, Raymond Knopp and Michele Paffetti
 * \date 2010 - 2014, 2017
@@ -122,7 +122,7 @@ typedef struct UE_RRC_INFO_NB_IoT_s {
   uint8_t SIB1systemInfoValueTag;
   uint32_t SIStatus;
   uint32_t SIcnt;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t MCCHStatus[8]; // MAX_MBSFN_AREA
 #endif
   uint8_t SIwindowsize; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
@@ -513,7 +513,7 @@ typedef struct UE_RRC_INST_NB_IoT_s {
   SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   SystemInformationBlockType11_t *sib11[NB_CNX_UE];
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t                           MBMS_flag;
   uint8_t *MCCH_MESSAGE[NB_CNX_UE];
   uint8_t sizeof_MCCH_MESSAGE[NB_CNX_UE];

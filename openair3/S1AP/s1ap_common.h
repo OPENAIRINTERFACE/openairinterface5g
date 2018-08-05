@@ -87,7 +87,6 @@ extern int asn1_xer_print;
 # define S1AP_DEBUG(x, args...) do { fprintf(stdout, "[S1AP][D]"x, ##args); } while(0)
 #endif
 
-
 #define S1AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \
   do {\
     IE_TYPE **ptr; \

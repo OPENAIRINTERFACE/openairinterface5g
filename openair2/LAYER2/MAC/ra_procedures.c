@@ -44,6 +44,11 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 #include "SIMULATION/TOOLS/sim.h"	// for taus
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
+
+extern uint8_t  nfapi_mode;
+extern UE_MODE_t get_ue_mode(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
 /// This routine implements Section 5.1.2 (UE Random Access Resource Selection) from 36.321
 void
@@ -54,7 +59,6 @@ get_prach_resources(module_id_t module_idP,
 		    uint8_t first_Msg3,
 		    RACH_ConfigDedicated_t * rach_ConfigDedicated)
 {
-
     uint8_t Msg3_size = UE_mac_inst[module_idP].RA_Msg3_size;
     PRACH_RESOURCES_t *prach_resources =
 	&UE_mac_inst[module_idP].RA_prach_resources;
@@ -293,9 +297,18 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 			       sub_frame_t subframeP)
 {
 
-
     uint8_t Size = 0;
-    UE_MODE_t UE_mode = get_ue_mode(module_idP, 0, eNB_indexP);
+    UE_MODE_t UE_mode;
+    // Modification for phy_stub_ue operation
+    if(nfapi_mode == 3) { // phy_stub_ue mode
+        UE_mode = UE_mac_inst[module_idP].UE_mode[0];
+        LOG_D(MAC, "ue_get_rach , UE_mode: %d", UE_mode);
+    }
+    else { // Full stack mode
+        UE_mode = get_ue_mode(module_idP,0,eNB_indexP);
+    }
+
+
     uint8_t lcid = CCCH;
     uint16_t Size16;
     struct RACH_ConfigCommon *rach_ConfigCommon =
@@ -310,6 +323,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 		"Transmission on secondary CCs is not supported yet\n");
 
     if (UE_mode == PRACH) {
+        LOG_D(MAC, "ue_get_rach 3, RA_active value: %d", UE_mac_inst[module_idP].RA_active);
 	if (UE_mac_inst[module_idP].radioResourceConfigCommon) {
 	    rach_ConfigCommon =
 		&UE_mac_inst[module_idP].
@@ -341,7 +355,6 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 		  module_idP, frameP, Size);
 
 	    if (Size > 0) {
-
 		UE_mac_inst[module_idP].RA_active = 1;
 		UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER =
 		    1;
@@ -396,7 +409,12 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 		    mac_rlc_status_ind(module_idP,
 				       UE_mac_inst[module_idP].crnti,
 				       eNB_indexP, frameP, subframeP,
-				       ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6);
+				       ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+               ,0, 0
+#endif
+               );
+
 
 		if (UE_mac_inst[module_idP].crnti_before_ho)
 		    LOG_D(MAC,
@@ -412,7 +430,13 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 			  dcch_header_len);
 
 		sdu_lengths[0] = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti, eNB_indexP, frameP, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6,	//not used
-						  (char *) &ulsch_buff[0]);
+						  (char *) &ulsch_buff[0]
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+						  ,0,
+						  0
+#endif
+                                     );
+
 
 		LOG_D(MAC, "[UE %d] TX Got %d bytes for DCCH\n",
 		      module_idP, sdu_lengths[0]);

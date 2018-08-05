@@ -83,6 +83,10 @@ boolean_t pdcp_data_req(
   const sdu_size_t     sdu_buffer_sizeP,
   unsigned char *const sdu_buffer_pP,
   const pdcp_transmission_mode_t modeP
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    ,const uint32_t * const sourceL2Id
+    ,const uint32_t * const destinationL2Id
+#endif
 )
 //-----------------------------------------------------------------------------
 {
@@ -165,7 +169,11 @@ boolean_t pdcp_data_req(
                                 (unsigned char*)&pdcp_pdu_p->data[0],
                                 sdu_buffer_sizeP);
 #endif
-      rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p);
+      rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                ,NULL, NULL
+#endif
+                                );
     } else {
       rlc_status = RLC_OP_STATUS_OUT_OF_RESSOURCES;
       LOG_W(PDCP,PROTOCOL_CTXT_FMT" PDCP_DATA_REQ SDU DROPPED, OUT OF MEMORY \n",
@@ -351,7 +359,12 @@ boolean_t pdcp_data_req(
 
     LOG_F(PDCP,"\n");
 #endif
-    rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+    rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                             ,sourceL2Id
+                             ,destinationL2Id
+#endif
+                             );
 
   }
 
@@ -582,9 +595,7 @@ pdcp_data_ind(
     }
 
     if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp_p, srb_flagP) == TRUE) {
-#if 0
       LOG_T(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window\n", sequence_number);
-#endif
       /* if (dc == PDCP_DATA_PDU )
       LOG_D(PDCP, "Passing piggybacked SDU to NAS driver...\n");
       else
@@ -599,13 +610,9 @@ pdcp_data_ind(
        * XXX Till we implement in-sequence delivery and duplicate discarding
        * mechanism all out-of-order packets will be delivered to RRC/IP
        */
-#if 0
-      LOG_D(PDCP, "Ignoring PDU...\n");
-      free_mem_block(sdu_buffer, __func__);
+      LOG_W(PDCP, "Ignoring PDU...\n");
+      free_mem_block(sdu_buffer_pP, __func__);
       return FALSE;
-#else
-      //LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
-#endif
     }
 
     // SRB1/2: control-plane data
@@ -780,6 +787,8 @@ pdcp_data_ind(
       } else {
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * maxDRB);
       }
+      ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+
 #ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
       static uint32_t pdcp_inst = 0;
       ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst = pdcp_inst++;
@@ -851,7 +860,7 @@ pdcp_data_ind(
 
 void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
 
-  uint8_t            pdcp_uid = 0;
+  uint16_t           pdcp_uid = 0;
   uint8_t            rb_id     = 0;
   
  // these stats are measured for both eNB and UE on per seond basis 
@@ -914,6 +923,7 @@ pdcp_run (
   protocol_ctxt_t  ctxt;
 #endif
 
+
   
   if (ctxt_pP->enb_flag) {
     start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_run);
@@ -965,7 +975,11 @@ pdcp_run (
                                 RRC_DCCH_DATA_REQ (msg_p).confirmp,
                                 RRC_DCCH_DATA_REQ (msg_p).sdu_size,
                                 RRC_DCCH_DATA_REQ (msg_p).sdu_p,
-                                RRC_DCCH_DATA_REQ (msg_p).mode);
+                                RRC_DCCH_DATA_REQ (msg_p).mode
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                , NULL, NULL
+#endif
+                                );
         if (result != TRUE)
           LOG_E(PDCP, "PDCP data request failed!\n");
 
@@ -999,29 +1013,6 @@ pdcp_run (
     }
   } while(msg_p != NULL);
 
-# if 0
-  {
-    MessageDef *msg_resp_p;
-
-    msg_resp_p = itti_alloc_new_message(TASK_PDCP_ENB, MESSAGE_TEST);
-
-    itti_send_msg_to_task(TASK_RRC_ENB, 1, msg_resp_p);
-  }
-  {
-    MessageDef *msg_resp_p;
-
-    msg_resp_p = itti_alloc_new_message(TASK_PDCP_ENB, MESSAGE_TEST);
-
-    itti_send_msg_to_task(TASK_ENB_APP, 2, msg_resp_p);
-  }
-  {
-    MessageDef *msg_resp_p;
-
-    msg_resp_p = itti_alloc_new_message(TASK_PDCP_ENB, MESSAGE_TEST);
-
-    itti_send_msg_to_task(TASK_MAC_ENB, 3, msg_resp_p);
-  }
-# endif
 #endif
 
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
@@ -1143,7 +1134,7 @@ rrc_pdcp_config_asn1_req (
   uint8_t                  *const kRRCenc_pP,
   uint8_t                  *const kRRCint_pP,
   uint8_t                  *const kUPenc_pP
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   ,PMCH_InfoList_r9_t*  const pmch_InfoList_r9_pP
 #endif
   ,rb_id_t                 *const defaultDRB 
@@ -1170,7 +1161,7 @@ rrc_pdcp_config_asn1_req (
   hashtable_rc_t  h_rc;
   hash_key_t      key_defaultDRB = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_defaultDRB_rc;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   int i,j;
   MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
   MBMS_SessionInfo_r9_t     *MBMS_SessionInfo_p        = NULL;
@@ -1468,7 +1459,7 @@ rrc_pdcp_config_asn1_req (
     }
   }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 
   if (pmch_InfoList_r9_pP != NULL) {
     for (i=0; i<pmch_InfoList_r9_pP->list.count; i++) {
@@ -1678,7 +1669,7 @@ pdcp_config_req_asn1 (
 
     memset(pdcp_pP, 0, sizeof(pdcp_t));
     break;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   case CONFIG_ACTION_MBMS_ADD:
   case CONFIG_ACTION_MBMS_MODIFY:
@@ -1794,6 +1785,7 @@ rrc_pdcp_config_req (
 
     if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
       pdcp_p->is_ue = TRUE;
+      pdcp_UE_UE_module_id_to_rnti[ctxt_pP->module_id] = ctxt_pP->rnti;
     } else {
       pdcp_p->is_ue = FALSE;
     }
@@ -1812,9 +1804,9 @@ rrc_pdcp_config_req (
     }
 
     pdcp_p->first_missing_pdu = -1;
-      LOG_D(PDCP,PROTOCOL_PDCP_CTXT_FMT" Config request : Action ADD:  radio bearer id %d (already added) configured\n",
-            PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_p),
-            rb_idP);
+    LOG_D(PDCP,PROTOCOL_PDCP_CTXT_FMT" Config request : Action ADD:  radio bearer id %d (already added) configured\n",
+	  PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_p),
+	  rb_idP);
     break;
 
   case CONFIG_ACTION_MODIFY:
@@ -1871,10 +1863,10 @@ rrc_pdcp_config_req (
 
         if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
           pdcp_p->is_ue = TRUE;
-
+	  pdcp_UE_UE_module_id_to_rnti[ctxt_pP->module_id] = ctxt_pP->rnti;
         } else {
           pdcp_p->is_ue = FALSE;
-}
+	}
 
         pdcp_p->next_pdcp_tx_sn = 0;
         pdcp_p->next_pdcp_rx_sn = 0;
@@ -1998,7 +1990,7 @@ void pdcp_layer_init(void)
 
   module_id_t       instance;
   int i,j;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   mbms_session_id_t session_id;
   mbms_service_id_t service_id;
 #endif
@@ -2010,7 +2002,7 @@ void pdcp_layer_init(void)
   AssertFatal(pdcp_coll_p != NULL, "UNRECOVERABLE error, PDCP hashtable_create failed");
 
   for (instance = 0; instance < MAX_MOBILES_PER_ENB; instance++) {
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     for (service_id = 0; service_id < maxServiceCount; service_id++) {
       for (session_id = 0; session_id < maxSessionPerPMCH; session_id++) {
@@ -2024,7 +2016,7 @@ void pdcp_layer_init(void)
 
     
   for (instance = 0; instance < NUMBER_OF_eNB_MAX; instance++) {
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     for (service_id = 0; service_id < maxServiceCount; service_id++) {
       for (session_id = 0; session_id < maxSessionPerPMCH; session_id++) {
