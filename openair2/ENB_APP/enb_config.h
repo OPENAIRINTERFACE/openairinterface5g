@@ -47,6 +47,7 @@
 #include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
 #endif
 #include "RRC/LTE/rrc_defs.h"
+#include <intertask_interface.h>
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\
             struct in_addr inp;\
