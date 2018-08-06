@@ -47,7 +47,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 	nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
 
   uint16_t N_RB = fp->initial_bwp_dl.N_RB;
-  uint8_t fsize = 0;
+  uint8_t fsize=0, pos=0;
 
   /// Payload generation
   switch(params_rel15->dci_format) {
@@ -59,15 +59,21 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
           fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
           for (int i=0; i<fsize; i++)
             *dci_pdu |= ((pdu_rel15->frequency_domain_assignment>>(fsize-i))&1)<<i;
+          pos += fsize;
+          // VRB to PRB mapping
+          *dci_pdu |= (pdu_rel15->vrb_to_prb_mapping&1)<<pos;
+          pos++;
           // Time domain assignment
           for (int i=0; i<4; i++)
-            *dci_pdu |= ((pdu_rel15->time_domain_assignment>>(4-i))&1)<<i;
+            *dci_pdu |= ((pdu_rel15->time_domain_assignment>>(4-i))&1)<<(pos+i);
+          pos += 4;
           //MCS
           for (int i=0; i<5; i++)
-            *dci_pdu |= ((pdu_rel15->mcs>>(5-i))&1)<<i;
+            *dci_pdu |= ((pdu_rel15->mcs>>(5-i))&1)<<(pos+i);
+          pos += 5;
           // TB scaling
           for (int i=0; i<2; i++)
-            *dci_pdu |= ((pdu_rel15->tb_scaling>>(2-i))&1)<<i;
+            *dci_pdu |= ((pdu_rel15->tb_scaling>>(2-i))&1)<<(pos+i);
           
           break;
 
@@ -78,15 +84,16 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
       break;
   }
 
-  LOG_I(MAC, "DCI PDU: [0]->0x%08x \t [0]->0x%08x [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+  LOG_I(PHY, "DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
               dci_pdu[0], dci_pdu[1], dci_pdu[2], dci_pdu[3]);
 
   /// rest of DCI alloc
   memcpy((void*)&dci_alloc->pdcch_params, (void*)params_rel15, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
-  dci_alloc->size = nr_get_dci_size(NFAPI_NR_DL_DCI_FORMAT_1_0,
-                        NFAPI_NR_RNTI_RA,
+  dci_alloc->size = nr_get_dci_size(dci_alloc->pdcch_params.dci_format,
+                        dci_alloc->pdcch_params.rnti_type,
                         &fp->initial_bwp_dl,
                         cfg);
+  LOG_I(PHY, "DCI type %d payload (size %d) generated\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size);
   
   
 
