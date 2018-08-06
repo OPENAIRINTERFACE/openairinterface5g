@@ -64,8 +64,9 @@
 //#include "AS-Context.h"
 #include "NR_UE-NR-Capability.h"
 #include "NR_MeasResults.h"
+#include "NR_MeasResults.h"
+#include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
-
 //-------------------
 
 #if defined(ENABLE_ITTI)

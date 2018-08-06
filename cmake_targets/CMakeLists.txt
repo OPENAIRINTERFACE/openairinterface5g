@@ -184,8 +184,7 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CU
 # these changes are related to hardcoded path to include .h files
 add_definitions(-DCMAKER)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
-#set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2")
 
 
 set(GIT_BRANCH        "UNKNOWN")
@@ -324,7 +323,9 @@ set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
 message("calling asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
 execute_process(COMMAND mkdir -p ${RRC_FULL_DIR}
                 COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret
+		OUTPUT_QUIET
+                ERROR_QUIET)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -354,18 +355,18 @@ add_custom_command (
 add_list2_option(NR_RRC_ASN1_VERSION "NR_Rel15" "ASN.1 version of NR_RRC interface")
 
 if (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
-  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-38331-f21.asn)
+  make_version(NR_RRC_VERSION 15 2 1)
+  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-15.2.1.asn1)
 endif  (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
-
+add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
 
-message("calling ASN1C_PREFIX=NR_ asn1c -gen-PER -fcompound-names -findirect-choice -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}")
+message("calling ASN1C_PREFIX=NR_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}")
 execute_process(COMMAND mkdir -p ${NR_RRC_FULL_DIR}
-                COMMAND env "ASN1C_PREFIX=NR_" asn1c -fcompound-names -findirect-choice -gen-PER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
+                COMMAND env "ASN1C_PREFIX=NR_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
                 RESULT_VARIABLE ret
-                OUTPUT_QUIET
-                ERROR_QUIET
-		)
+		OUTPUT_QUIET
+                ERROR_QUIET)
 
 if (NOT ${ret} STREQUAL 0)
    message(FATAL_ERROR "${ret}: error")
@@ -373,8 +374,8 @@ endif (NOT ${ret} STREQUAL 0)
 
 file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
 file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
-set(nr_rrc_h ${nr_rrc_h} ${NR_RRC_FULL_DIR}/NR_asn1_constants.h)
-set_source_files_properties(${nr_rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
+set(nr_rrc_h ${nr_rrc_h} ${NR_RRC_FULL_DIR}/NR_asn_constant.h)
+#set_source_files_properties(${nr_rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
 add_library(NR_RRC_LIB 
 	    ${nr_rrc_h} 
 	    ${nr_rrc_source}
@@ -384,9 +385,9 @@ include_directories ("${NR_RRC_FULL_DIR}")
 # add the command to generate the source code
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
 
-add_custom_command (OUTPUT ${NR_RRC_FULL_DIR}/NR_asn1_constants.h
+add_custom_command (OUTPUT ${NR_RRC_FULL_DIR}/NR_asn_constant.h
   		    COMMAND mkdir -p ${NR_RRC_FULL_DIR}
-                    #COMMAND env "ASN1C_PREFIX=NR_" asn1c -gen-PER -fcompound-names -findirect-choice -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
+                    COMMAND env "ASN1C_PREFIX=NR_" asn1c -gen-PER -fcompound-names -findirect-choice -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
                     DEPENDS ${NR_RRC_GRAMMAR}
                     )
 
@@ -428,10 +429,13 @@ set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${S1AP_RELEASE})
 message("calling ASN1C_PREFIX=S1AP_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}")
 execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret
+		OUTPUT_QUIET
+                ERROR_QUIET)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
+file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 
 file(GLOB s1ap_h ${S1AP_C_DIR}/*.h)
 set(s1ap_h ${s1ap_h})
@@ -453,6 +457,7 @@ include_directories ("${S1AP_DIR}")
 add_library(S1AP_ENB
   ${S1AP_DIR}/s1ap_eNB.c
   ${S1AP_DIR}/s1ap_eNB_context_management_procedures.c
+  ${S1AP_DIR}/s1ap_eNB_decoder.c
   ${S1AP_DIR}/s1ap_eNB_encoder.c
   ${S1AP_DIR}/s1ap_eNB_handlers.c
   ${S1AP_DIR}/s1ap_eNB_itti_messaging.c
@@ -462,7 +467,6 @@ add_library(S1AP_ENB
   ${S1AP_DIR}/s1ap_eNB_overload.c
   ${S1AP_DIR}/s1ap_eNB_trace.c
   ${S1AP_DIR}/s1ap_eNB_ue_context.c
-  ${S1AP_DIR}/s1ap_eNB_decoder.c
   )
 
 #X2AP
@@ -494,7 +498,9 @@ set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
 message("calling ASN1C_PREFIX=X2AP_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}")
 execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret
+                OUTPUT_QUIET
+                ERROR_QUIET)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -509,13 +515,6 @@ add_custom_command (
   COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
   DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
   )
-
-#add_custom_command (
-#  OUTPUT ${X2AP_C_DIR}/X2AP_asn_constant.h
-#  COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES} X2AP
-#  COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_VERSION}
-#  DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
-#  )
 
 add_library(X2AP_LIB
   ${X2AP_source}
@@ -1267,6 +1266,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_time.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_timefreq.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_adjust_sync.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_adjust_sync_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_bf_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_mbsfn_channel_estimation.c
@@ -1278,7 +1278,7 @@ set(PHY_SRC_UE
 
   set(PHY_NR_SRC
   # depend on code generation from asn1c
-  ${RRC_FULL_DIR}/asn1_constants.h
+  ${RRC_FULL_DIR}/asn_constant.h
   # actual source
   ${OPENAIR1_DIR}/PHY/INIT/nr_init.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
@@ -1303,7 +1303,7 @@ set(PHY_SRC_UE
 
   set(PHY_NR_UE_SRC
   # depend on code generation from asn1c
-  ${RRC_FULL_DIR}/asn1_constants.h
+  ${RRC_FULL_DIR}/asn_constant.h
   # actual source
   ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
@@ -1495,12 +1495,12 @@ set (MAC_SRC
   #${PHY_INTERFACE_DIR}/phy_stub_UE.c
   ${PHY_INTERFACE_DIR}/IF_Module.c
   ${MAC_DIR}/main.c
-  ${MAC_DIR}/main_ue.c
-  ${MAC_DIR}/ue_procedures.c
-  ${MAC_DIR}/ra_procedures.c
+  #${MAC_DIR}/main_ue.c
+  #${MAC_DIR}/ue_procedures.c
+  #${MAC_DIR}/ra_procedures.c
   ${MAC_DIR}/l1_helpers.c
   ${MAC_DIR}/rar_tools.c
-  ${MAC_DIR}/rar_tools_ue.c
+  #${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/eNB_scheduler.c
   ${MAC_DIR}/eNB_scheduler_dlsch.c
   ${MAC_DIR}/eNB_scheduler_ulsch.c
@@ -1512,7 +1512,7 @@ set (MAC_SRC
   ${MAC_DIR}/eNB_scheduler_phytest.c
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
-  ${MAC_DIR}/config_ue.c
+  #${MAC_DIR}/config_ue.c
   ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
   ${NR_MAC_DIR}/main.c
   ${NR_MAC_DIR}/config.c
@@ -2168,7 +2168,7 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2 
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2 
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
@@ -2613,13 +2613,13 @@ endif()
 add_custom_command (
   OUTPUT ${OPENAIR_BIN_DIR}/messages.xml
   COMMAND ${xml_command}
-  DEPENDS ${S1AP_OAI_generated} ${RRC_FULL_DIR}/asn1_constants.h
+  DEPENDS ${S1AP_OAI_generated} ${RRC_FULL_DIR}/asn_constant.h
   )
 
 add_custom_command (
   OUTPUT ${OPENAIR_BIN_DIR}/messages_xml.h
   COMMAND sed -e 's/ *//'   -e 's/\"/\\\\\"/g' -e 's/^/\"/' -e 's/$$/\\\\n\"/' ${OPENAIR_BIN_DIR}/messages.xml  > ${OPENAIR_BIN_DIR}/messages_xml.h
-  DEPENDS ${OPENAIR_BIN_DIR}/messages.xml ${RRC_FULL_DIR}/asn1_constants.h
+  DEPENDS ${OPENAIR_BIN_DIR}/messages.xml ${RRC_FULL_DIR}/asn_constant.h
   )
 
 ################
