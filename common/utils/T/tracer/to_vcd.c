@@ -304,8 +304,7 @@ int main(int n, char **v)
   /* setup traces */
   for (i = 0; i < nvars; i++) {
     char format[256];
-    if (strlen(vars[i].arg) > 256-3) abort();
-    if (strlen(vars[i].vcd_name) > 256-1) abort();
+    if (strlen(vars[i].arg) + strlen(vars[i].vcd_name) > 256-16) abort();
     sprintf(format, "%c [%s] %s",
         vars[i].boolean ? 'b' : 'l',
         vars[i].arg,
