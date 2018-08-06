@@ -46,7 +46,6 @@ Description Timer utilities
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
-# include "timer.h"
 #else
 # include <signal.h>
 # include <time.h>   // clock_gettime

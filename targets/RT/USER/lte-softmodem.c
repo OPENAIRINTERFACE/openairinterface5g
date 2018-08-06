@@ -83,7 +83,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 #if defined(ENABLE_ITTI)
-#include "intertask_interface_init.h"
 #include "create_tasks.h"
 #endif
 

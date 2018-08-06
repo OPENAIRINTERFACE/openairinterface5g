@@ -46,7 +46,6 @@
 
 # include "tree.h"
 # include "intertask_interface.h"
-# include "timer.h"
 
 #define FLEXRAN_VERSION 0
 

@@ -46,7 +46,6 @@
 #else
 #include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
 #endif
-#include "intertask_interface_types.h"
 #include "RRC/LTE/rrc_defs.h"
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\

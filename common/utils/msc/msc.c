@@ -34,7 +34,6 @@
 
 #include "liblfds611.h"
 #include "intertask_interface.h"
-#include "timer.h"
 
 #include "msc.h"
 #include "assertions.h"

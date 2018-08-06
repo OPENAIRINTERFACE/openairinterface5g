@@ -39,7 +39,6 @@
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
-# include "timer.h"
 # if defined(ENABLE_USE_MME)
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
