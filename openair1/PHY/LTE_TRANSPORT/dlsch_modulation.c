@@ -2428,6 +2428,12 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
     }
 
+    /* TODO: hack, to be removed. The power is too different from
+     * previous version. Some more work/validation is needed before
+     * we switch to the new version.
+     */
+    allocate_REs = allocate_REs_in_RB;
+
     switch (mod_order1) {
     case 2:
       qam_table_s1 = NULL;
