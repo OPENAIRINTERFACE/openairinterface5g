@@ -43,11 +43,11 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 	NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
 	uint32_t *dci_pdu = dci_alloc->dci_pdu;
 	nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &pdu->dci_dl_pdu.dci_dl_pdu_rel15;
-  nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &pdu->dci_dl_pdu.pdcch_params_rel15;
+	nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &pdu->dci_dl_pdu.pdcch_params_rel15;
 	nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
 
-  uint16_t N_RB = fp->initial_bwp_dl.N_RB;
-  uint8_t fsize = 0;
+	uint16_t N_RB = fp->initial_bwp_dl.N_RB;
+	uint8_t fsize = 0;
 
   /// Payload generation
   switch(params_rel15->dci_format) {
@@ -68,7 +68,6 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
           // TB scaling
           for (int i=0; i<2; i++)
             *dci_pdu |= ((pdu_rel15->tb_scaling>>(2-i))&1)<<i;
-          
           break;
 
       }

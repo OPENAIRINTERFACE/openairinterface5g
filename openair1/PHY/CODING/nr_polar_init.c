@@ -20,13 +20,16 @@
  */
 
 #include "nrPolar_tools/nr_polar_defs.h"
-#include "nrPolar_tools/nr_polar_pbch_defs.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 				   int8_t messageType,
-				   uint16_t messageLength) {
-
+				   uint16_t messageLength,
+				   uint8_t aggregation_level)
+{
 	t_nrPolar_paramsPtr currentPtr = *polarParams;
 	t_nrPolar_paramsPtr previousPtr = NULL;
 
@@ -55,34 +58,44 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 			newPolarInitNode->n_pc = NR_POLAR_PBCH_N_PC;
 			newPolarInitNode->n_pc_wm = NR_POLAR_PBCH_N_PC_WM;
 			newPolarInitNode->i_bil = NR_POLAR_PBCH_I_BIL;
+			newPolarInitNode->crcParityBits = NR_POLAR_PBCH_CRC_PARITY_BITS;
 			newPolarInitNode->payloadBits = NR_POLAR_PBCH_PAYLOAD_BITS;
 			newPolarInitNode->encoderLength = NR_POLAR_PBCH_E;
-			newPolarInitNode->crcParityBits = NR_POLAR_PBCH_CRC_PARITY_BITS;
 			newPolarInitNode->crcCorrectionBits = NR_POLAR_PBCH_CRC_ERROR_CORRECTION_BITS;
-
-			newPolarInitNode->K = newPolarInitNode->payloadBits + newPolarInitNode->crcParityBits; // Number of bits to encode.
-			newPolarInitNode->N = nr_polar_output_length(newPolarInitNode->K, newPolarInitNode->encoderLength, newPolarInitNode->n_max);
-			newPolarInitNode->n = log2(newPolarInitNode->N);
-
-			newPolarInitNode->crc_generator_matrix = crc24c_generator_matrix(newPolarInitNode->payloadBits);
-			newPolarInitNode->G_N = nr_polar_kronecker_power_matrices(newPolarInitNode->n);
-
-			//polar_encoder vectors:
-			newPolarInitNode->nr_polar_crc = malloc(sizeof(uint8_t) * newPolarInitNode->crcParityBits);
-			newPolarInitNode->nr_polar_cPrime = malloc(sizeof(uint8_t) * newPolarInitNode->K);
-			newPolarInitNode->nr_polar_d = malloc(sizeof(uint8_t) * newPolarInitNode->N);
-
-			//Polar Coding vectors
-			newPolarInitNode->nr_polar_u = malloc(sizeof(uint8_t) * newPolarInitNode->N); //Decoder: nr_polar_uHat
-			newPolarInitNode->nr_polar_cPrime = malloc(sizeof(uint8_t) * newPolarInitNode->K); //Decoder: nr_polar_cHat
-			newPolarInitNode->nr_polar_b = malloc(sizeof(uint8_t) * newPolarInitNode->K); //Decoder: nr_polar_bHat
 		} else if (messageType == 1) { //DCI
-
+			newPolarInitNode->n_max = NR_POLAR_DCI_N_MAX;
+			newPolarInitNode->i_il = NR_POLAR_DCI_I_IL;
+			newPolarInitNode->i_seg = NR_POLAR_DCI_I_SEG;
+			newPolarInitNode->n_pc = NR_POLAR_DCI_N_PC;
+			newPolarInitNode->n_pc_wm = NR_POLAR_DCI_N_PC_WM;
+			newPolarInitNode->i_bil = NR_POLAR_DCI_I_BIL;
+			newPolarInitNode->crcParityBits = NR_POLAR_DCI_CRC_PARITY_BITS;
+			newPolarInitNode->payloadBits = messageLength;
+			newPolarInitNode->encoderLength = aggregation_level*108;
+			newPolarInitNode->crcCorrectionBits = NR_POLAR_DCI_CRC_ERROR_CORRECTION_BITS;
 		} else if (messageType == -1) { //UCI
 
 		} else {
 			AssertFatal(1 == 0, "[nr_polar_init] Incorrect Message Type(%d)", messageType);
 		}
+
+		newPolarInitNode->K = newPolarInitNode->payloadBits + newPolarInitNode->crcParityBits; // Number of bits to encode.
+		newPolarInitNode->N = nr_polar_output_length(newPolarInitNode->K, newPolarInitNode->encoderLength, newPolarInitNode->n_max);
+		newPolarInitNode->n = log2(newPolarInitNode->N);
+
+		newPolarInitNode->crc_generator_matrix = crc24c_generator_matrix(newPolarInitNode->payloadBits);
+		newPolarInitNode->G_N = nr_polar_kronecker_power_matrices(newPolarInitNode->n);
+
+		//polar_encoder vectors:
+		newPolarInitNode->nr_polar_crc = malloc(sizeof(uint8_t) * newPolarInitNode->crcParityBits);
+		newPolarInitNode->nr_polar_cPrime = malloc(sizeof(uint8_t) * newPolarInitNode->K);
+		newPolarInitNode->nr_polar_d = malloc(sizeof(uint8_t) * newPolarInitNode->N);
+
+		//Polar Coding vectors
+		newPolarInitNode->nr_polar_u = malloc(sizeof(uint8_t) * newPolarInitNode->N); //Decoder: nr_polar_uHat
+		newPolarInitNode->nr_polar_cPrime = malloc(sizeof(uint8_t) * newPolarInitNode->K); //Decoder: nr_polar_cHat
+		newPolarInitNode->nr_polar_b = malloc(sizeof(uint8_t) * newPolarInitNode->K); //Decoder: nr_polar_bHat
+
 
 		newPolarInitNode->Q_0_Nminus1 = nr_polar_sequence_pattern(newPolarInitNode->n);
 
@@ -140,4 +153,36 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 	}
 	currentPtr->nextPtr= newPolarInitNode;
 	return;
+}
+
+void nr_polar_print_polarParams(t_nrPolar_paramsPtr polarParams)
+{
+	uint8_t i = 0;
+	if (polarParams == NULL) {
+		printf("polarParams is empty.\n");
+	} else {
+		while (polarParams != NULL){
+			printf("polarParams[%d] = %d\n", i, polarParams->idx);
+			polarParams = polarParams->nextPtr;
+			i++;
+		}
+	}
+	return;
+}
+
+t_nrPolar_paramsPtr nr_polar_params (t_nrPolar_paramsPtr polarParams,
+									 int8_t messageType,
+									 uint16_t messageLength)
+{
+	t_nrPolar_paramsPtr currentPtr;
+
+	while (polarParams != NULL) {
+		if (polarParams->idx == (messageType * messageLength)) {
+			currentPtr = polarParams;
+			break;
+		} else {
+			polarParams = polarParams->nextPtr;
+		}
+	}
+	return currentPtr;
 }

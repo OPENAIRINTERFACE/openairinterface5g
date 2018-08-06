@@ -48,7 +48,7 @@ typedef struct {
 
 typedef struct {
   /// Length of DCI payload in bits
-  uint8_t size;
+  uint16_t size;
   /// Aggregation level
   uint8_t L;
   /// PDCCH parameters
@@ -462,6 +462,8 @@ typedef struct PHY_VARS_gNB_s {
   int32_t pusch_stats_mcs[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
+
+  t_nrPolar_paramsPtr nrPolar_params;
 } PHY_VARS_gNB;
 
 #endif
