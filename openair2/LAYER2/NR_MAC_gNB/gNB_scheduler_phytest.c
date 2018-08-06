@@ -45,6 +45,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
   nfapi_nr_dl_config_request_body_t   *dl_req;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_pdu;
+  nfapi_tx_request_pdu_t            *TX_req;
+  uint16_t sfn_sf = frameP << 4 | subframeP;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_I(MAC, "Scheduling common search space DCI type 1 for CC_id %d\n",CC_id);
@@ -72,7 +74,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdu_rel15->time_domain_assignment = 2;
     pdu_rel15->vrb_to_prb_mapping = 0;
     pdu_rel15->tb_scaling = 1;
-    LOG_I(MAC, "DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, tb_scaling %d\n",
+    LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, tb_scaling %d\n",
                 pdu_rel15->frequency_domain_assignment,
                 pdu_rel15->time_domain_assignment,
                 pdu_rel15->vrb_to_prb_mapping,
@@ -100,6 +102,17 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->first_slot);
   dl_req->number_dci++;
   dl_req->number_pdu++;
+
+  TX_req = &nr_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
+  TX_req->pdu_length = 6;
+  TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
+  TX_req->num_segments = 1;
+  TX_req->segments[0].segment_length = 8;
+  //TX_req->segments[0].segment_data = (uint8_t*)pdu_rel15;
+  nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
+  nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
+  nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
+  nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
     
   }
 }
