@@ -20,7 +20,6 @@
  */
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
-#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 
 void polar_encoder(
 		uint8_t *input,

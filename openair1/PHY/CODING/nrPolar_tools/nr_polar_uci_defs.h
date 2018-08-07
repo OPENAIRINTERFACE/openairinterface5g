@@ -33,4 +33,7 @@
 #ifndef __NR_POLAR_UCI_DEFS__H__
 #define __NR_POLAR_UCI_DEFS__H__
 
+#define NR_POLAR_UCI_MESSAGE_TYPE -1 //int8_t
+#define NR_POLAR_UCI_CRC_ERROR_CORRECTION_BITS 3
+
 #endif

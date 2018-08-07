@@ -7,7 +7,7 @@
 #include <time.h>
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
-#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+#include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "PHY/defs_gNB.h"
 #include "SIMULATION/TOOLS/sim.h"
 
@@ -20,6 +20,16 @@ int main(int argc, char *argv[]) {
 	reset_meas(&timeEncoder);
 	reset_meas(&timeDecoder);
 
+	//gNB scheduler
+	/*PHY_VARS_gNB *gNB = RC.gNB[0][0];
+	NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+	nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
+
+	nfapi_nr_dl_config_request_pdu_t *pdu;
+	nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &pdu->dci_dl_pdu.pdcch_params_rel15;
+	params_rel15->rnti_type = NFAPI_NR_RNTI_RA;
+	params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;*/
+
 	randominit(0);
 	//Default simulation values (Aim for iterations = 1000000.)
 	int itr, iterations = 1000, arguments, polarMessageType = 0; //0=PBCH, 1=DCI, -1=UCI
@@ -31,7 +41,7 @@ int main(int argc, char *argv[]) {
 	uint16_t testLength, coderLength, blockErrorCumulative=0, bitErrorCumulative=0;
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
 
-	uint8_t decoderListSize = 8, pathMetricAppr = 0; //0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
+	uint8_t aggregation_level, decoderListSize = 8, pathMetricAppr = 0; //0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
 
 	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:")) != -1)
 	switch (arguments)
@@ -73,9 +83,11 @@ int main(int argc, char *argv[]) {
 	if (polarMessageType == 0) { //PBCH
 		testLength = NR_POLAR_PBCH_PAYLOAD_BITS;
 		coderLength = NR_POLAR_PBCH_E;
+		aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
 	} else if (polarMessageType == 1) { //DCI
-		//testLength = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_ul ,cfg);
-		//coderLength = ;
+		//testLength = nr_get_dci_size(params_rel15->dci_format, params_rel15->rnti_type, &fp->initial_bwp_dl, cfg);
+		testLength = 20;
+		coderLength = 108; //to be changed by aggregate level function.
 	} else if (polarMessageType == -1) { //UCI
 		//testLength = ;
 		//coderLength = ;
@@ -112,16 +124,8 @@ int main(int argc, char *argv[]) {
 	uint8_t *estimatedOutput = malloc(sizeof(uint8_t) * testLength); //decoder output
 
 	t_nrPolar_paramsPtr nrPolar_params = NULL;
-	nr_polar_init(&nrPolar_params, polarMessageType, testLength);
-
-	t_nrPolar_paramsPtr currentPtr = nrPolar_params;
-	while (currentPtr != NULL) {
-		if (currentPtr->idx == (polarMessageType * testLength)) {
-			break;
-		} else {
-			currentPtr = currentPtr->nextPtr;
-		}
-	}
+	nr_polar_init(&nrPolar_params, polarMessageType, testLength, aggregation_level);
+	t_nrPolar_paramsPtr currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength);
 
 	// We assume no a priori knowledge available about the payload.
 	double aPrioriArray[currentPtr->payloadBits];

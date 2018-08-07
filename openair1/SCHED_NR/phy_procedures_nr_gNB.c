@@ -151,8 +151,8 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
 }
 
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
-			   gNB_rxtx_proc_t *proc,
-			   int do_meas)
+						   gNB_rxtx_proc_t *proc,
+						   int do_meas)
 {
   int aa;
   int frame=proc->frame_tx;
@@ -188,6 +188,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
     if (nfapi_mode == 0 || nfapi_mode == 1)
       nr_generate_dci_top(gNB->pdcch_vars,
+    		  	  	  	  &gNB->nrPolar_params,
                           gNB->nr_gold_pdcch_dmrs[0][0],
                           gNB->common_vars.txdataF,
                           AMP, *fp, *cfg);

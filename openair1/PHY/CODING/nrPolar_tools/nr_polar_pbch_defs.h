@@ -33,7 +33,9 @@
 #ifndef __NR_POLAR_PBCH_DEFS__H__
 #define __NR_POLAR_PBCH_DEFS__H__
 
-#define NR_POLAR_PBCH_PAYLOAD_BITS 32 //uint16_t
+#define NR_POLAR_PBCH_AGGREGATION_LEVEL 0 //uint8_t
+#define NR_POLAR_PBCH_MESSAGE_TYPE 0      //int8_t
+#define NR_POLAR_PBCH_PAYLOAD_BITS 32     //uint16_t
 #define NR_POLAR_PBCH_CRC_PARITY_BITS 24
 #define NR_POLAR_PBCH_CRC_ERROR_CORRECTION_BITS 3
 //Assumed 3 by 3GPP when NR_POLAR_PBCH_L>8 to meet false alarm rate requirements.

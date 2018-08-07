@@ -28,6 +28,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+
 static const uint8_t nr_polar_subblock_interleaver_pattern[32] = { 0, 1, 2, 4, 3, 5, 6, 7, 8, 16, 9, 17, 10, 18, 11, 19, 12, 20, 13, 21, 14, 22, 15, 23, 24, 25, 26, 28, 27, 29, 30, 31 };
 
 struct nrPolar_params {
@@ -76,7 +80,14 @@ void polar_encoder(uint8_t *input, uint8_t *output, t_nrPolar_paramsPtr polarPar
 int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_paramsPtr polarParams,
 		uint8_t listSize, double *aPrioriPayload, uint8_t pathMetricAppr);
 
-void nr_polar_init(t_nrPolar_paramsPtr *polarParams, int8_t messageType, uint16_t messageLength);
+void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
+				   int8_t messageType,
+				   uint16_t messageLength,
+				   uint8_t aggregation_level);
+void nr_polar_print_polarParams(t_nrPolar_paramsPtr polarParams);
+t_nrPolar_paramsPtr nr_polar_params (t_nrPolar_paramsPtr polarParams,
+									 int8_t messageType,
+									 uint16_t messageLength);
 
 uint8_t** nr_polar_kronecker_power_matrices(uint8_t n);
 
@@ -102,7 +113,9 @@ void nr_polar_info_bit_pattern(uint8_t *ibp, int16_t *Q_I_N, int16_t *Q_F_N,
 void nr_polar_info_bit_extraction(uint8_t *input, uint8_t *output,
 		uint8_t *pattern, uint16_t size);
 
-void nr_byte2bit(uint8_t *array, uint8_t arraySize, uint8_t *bitArray);
+void nr_byte2bit(uint8_t *in, uint16_t arraySize, uint32_t *out);
+void nr_byte2bit_uint8(uint8_t *array, uint8_t arraySize, uint8_t *bitArray);
+void nr_bit2byte(uint32_t *in, uint16_t arraySize, uint8_t *out);
 
 void nr_polar_bit_insertion(uint8_t *input, uint8_t *output, uint16_t N,
 		uint16_t K, int16_t *Q_I_N, int16_t *Q_PC_N, uint8_t n_PC);
