@@ -52,17 +52,17 @@ int8_t nr_ue_decode_mib(
 	uint8_t 	extra_bits,	//	8bits 38.212 c7.1.1
 	uint32_t    ssb_length,
 	uint32_t 	ssb_index,
-	void 		*pduP ){
+	void 		*pduP,
+    uint16_t    cell_id ){
 
     printf("[L2][MAC] decode mib\n");
 
 	NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-    nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index,
-		     NR_BCCH_BCH, (uint8_t *) pduP, 3 );
+    nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
     
-
-    if(mac->mib != NULL){
+    AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
+    //if(mac->mib != NULL){
 	    uint32_t frame = (mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused);
 	    uint32_t frame_number_4lsb = (uint32_t)(extra_bits & 0xf);                      //	extra bits[0:3]
 	    uint32_t half_frame_bit = (uint32_t)(( extra_bits >> 4 ) & 0x1 );               //	extra bits[4]
@@ -96,11 +96,20 @@ int8_t nr_ue_decode_mib(
 		printf("ssb index(extra bits):         %d\n", (int)ssb_index);
 #endif
 
-	    subcarrier_spacing_t scs_ssb = scs_15kHz;      //  default for testing
-	    subcarrier_spacing_t scs_pdcch = scs_15kHz;    //  default for testing
-	    channel_bandwidth_t min_channel_bw = bw_5MHz;  //  deafult for testing
+	    subcarrier_spacing_t scs_ssb = scs_30kHz;      //  default for testing
+	    subcarrier_spacing_t scs_pdcch;
+
+        //  assume carrier frequency < 6GHz
+        if(mac->mib->subCarrierSpacingCommon == NR_MIB__subCarrierSpacingCommon_scs15or60){
+            scs_pdcch = scs_15kHz;
+        }else{  //NR_MIB__subCarrierSpacingCommon_scs30or120
+            scs_pdcch = scs_30kHz;
+        }
+
+
+	    channel_bandwidth_t min_channel_bw = bw_40MHz;  //  deafult for testing
 	    
-        uint32_t is_condition_A = 1;
+        uint32_t is_condition_A = (ssb_subcarrier_offset == 0);   //  38.213 ch.13
         frequency_range_t frequency_range = FR1;
         uint32_t index_4msb = (mac->mib->pdcch_ConfigSIB1 >> 4) & 0xf;
         uint32_t index_4lsb = (mac->mib->pdcch_ConfigSIB1 & 0xf);
@@ -225,14 +234,14 @@ int8_t nr_ue_decode_mib(
         AssertFatal(num_symbols != -1, "Type0 PDCCH coreset num_symbols undefined");
         AssertFatal(rb_offset != -1, "Type0 PDCCH coreset rb_offset undefined");
         
-        uint32_t cell_id = 0;   //  obtain from L1 later
+        //uint32_t cell_id = 0;   //  obtain from L1 later
 
         mac->type0_pdcch_dci_config.coreset.rb_start = rb_offset;
         mac->type0_pdcch_dci_config.coreset.rb_end = rb_offset + num_rbs - 1;
         //mac->type0_pdcch_dci_config.type0_pdcch_coreset.duration = num_symbols;
         mac->type0_pdcch_dci_config.coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
-        mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L
-        mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R
+        mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2
+        mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R 38.211 7.3.2.2
         mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_shift_index = cell_id;
         mac->type0_pdcch_dci_config.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
         mac->type0_pdcch_dci_config.coreset.pdcch_dmrs_scrambling_id = cell_id;
@@ -243,14 +252,15 @@ int8_t nr_ue_decode_mib(
         float big_o;
         float big_m;
         uint32_t temp;
-        SFN_C_TYPE sfn_c;
+        SFN_C_TYPE sfn_c;   //  only valid for mux=1
         uint32_t n_c;
         uint32_t number_of_search_space_per_slot;
         uint32_t first_symbol_index;
         uint32_t search_space_duration;  //  element of search space
         uint32_t coreset_duration;  //  element of coreset
+
 const uint32_t scs_index = 0;
-const uint32_t num_slot_per_frame = 10;
+const uint32_t num_slot_per_frame = 20;
         
         //  38.213 table 10.1-1
         
@@ -303,7 +313,7 @@ const uint32_t num_slot_per_frame = 10;
                 //  38.213 Table 13-13
                 AssertFatal(index_4lsb == 0, "38.213 Table 13-13 4 LSB out of range\n");
                 //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
-                sfn_c = SFN_C_EQ_SFN_SSB;
+//                sfn_c = SFN_C_EQ_SFN_SSB;
                 n_c = get_ssb_slot(ssb_index);
                 switch(ssb_index & 0x3){    //  ssb_index(i) mod 4
                     case 0: 
@@ -325,7 +335,7 @@ const uint32_t num_slot_per_frame = 10;
                 //  38.213 Table 13-14
                 AssertFatal(index_4lsb == 0, "38.213 Table 13-14 4 LSB out of range\n");
                 //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
-                sfn_c = SFN_C_EQ_SFN_SSB;
+//                sfn_c = SFN_C_EQ_SFN_SSB;
                 n_c = get_ssb_slot(ssb_index);
                 switch(ssb_index & 0x7){    //  ssb_index(i) mod 8
                     case 0: 
@@ -367,7 +377,7 @@ const uint32_t num_slot_per_frame = 10;
                 //  38.213 Table 13-15
                 AssertFatal(index_4lsb == 0, "38.213 Table 13-15 4 LSB out of range\n");
                 //  PDCCH monitoring occasions (SFN and slot number) same as SSB frame-slot
-                sfn_c = SFN_C_EQ_SFN_SSB;
+//                sfn_c = SFN_C_EQ_SFN_SSB;
                 n_c = get_ssb_slot(ssb_index);
                 switch(ssb_index & 0x3){    //  ssb_index(i) mod 4
                     case 0: 
@@ -417,15 +427,13 @@ const uint32_t num_slot_per_frame = 10;
 	    if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL){
 		mac->if_module->phy_config_request(&mac->phy_config);
 	    }
-    }
+    //}
     return 0;
 }
 
 
 
 //  TODO: change to UE parameter, scs: 15KHz, slot duration: 1ms
-
-
 uint32_t get_ssb_frame(){
 	return 0;
 }
@@ -458,9 +466,9 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
             if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_1) &&  (rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
             	search_space_mask = search_space_mask | type0_pdcch;
             }
-            if((mac->type0_pdcch_ss_sfn_c == SFN_C_EQ_SFN_SSB) && ( get_ssb_frame() )){
-            	search_space_mask = search_space_mask | type0_pdcch;
-            }
+            //if((mac->type0_pdcch_ss_sfn_c == SFN_C_EQ_SFN_SSB) && ( get_ssb_frame() )){
+            //	search_space_mask = search_space_mask | type0_pdcch;
+            //}
         }
         if(mac->type0_pdcch_ss_mux_pattern == 2){
             //	38.213 Table 13-13, 13-14
@@ -526,11 +534,20 @@ int8_t nr_ue_decode_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fap
 
     }else if(rnti == mac->ra_rnti){
 
+    }else if(rnti == P_RNTI){
+
+    }else{  //  c-rnti
+
+        ///  check if this is pdcch order 
+        //dci->random_access_preamble_index;
+        //dci->ss_pbch_index;
+        //dci->prach_mask_index;
+
+        ///  else normal DL-SCH grant
     }
 }
 
-int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe)
-{
+int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe){
 
     return 0;
 }

@@ -191,20 +191,16 @@ typedef struct {
 
 	typedef struct {
 		uint16_t pdu_length;
-		uint16_t pdu_index;
+        uint16_t pdu_index;
         uint8_t* pdu;
-	} fapi_nr_tx_request_pdu_t;
-
-	typedef struct {
-		fapi_nr_tx_config_t tx_config;
-		uint16_t number_of_pdus;
-		fapi_nr_tx_request_pdu_t* tx_pdu_list;
 	} fapi_nr_tx_request_body_t;
 
 ///
 typedef struct {
 	uint32_t sfn_slot;
-	fapi_nr_tx_request_body_t tx_request_body;
+    fapi_nr_tx_config_t tx_config;
+    uint16_t number_of_pdus;
+	fapi_nr_tx_request_body_t *tx_request_body;
 } fapi_nr_tx_request_t;
 
 
@@ -244,8 +240,20 @@ typedef struct {
     } fapi_nr_dl_config_dci_pdu;
 
     typedef struct {
-        uint16_t rnti;
-        fapi_nr_dci_pdu_rel15_t dci_config;
+
+        uint8_t format_indicator; //1 bit
+        uint16_t frequency_domain_assignment; //up to 9 bits
+        uint8_t time_domain_assignment; // 4 bits
+        uint8_t vrb_to_prb_mapping; //0 or 1 bit
+        uint8_t mcs; //5 bits
+        uint8_t ndi; //1 bit
+        uint8_t rv; //2 bits
+        uint8_t harq_pid; //4 bits
+        uint8_t dai; //0, 2 or 4 bits
+        uint8_t tpc; //2 bits
+        uint8_t pucch_resource_indicator; //3 bits
+        uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
+
     } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
     typedef struct {
@@ -726,4 +734,4 @@ typedef struct {
 
 } fapi_nr_config_request_t;
 
-#endif /* _FAPI_INTERFACE_H_ */
+#endif

@@ -43,7 +43,8 @@
    \param extra_bits     extra bits for frame calculation
    \param l_ssb_equal_64 check if ssb number of candicate is equal 64, 1=equal; 0=non equal. Reference 38.212 7.1.1
    \param pduP           pointer to pdu
-   \param pdu_length     length of pdu*/
+   \param pdu_length     length of pdu
+   \param cell_id        cell id */
 int8_t nr_ue_decode_mib(
     module_id_t module_id, 
     int cc_id, 
@@ -51,7 +52,8 @@ int8_t nr_ue_decode_mib(
     uint8_t extra_bits, 
     uint32_t ssb_length, 
     uint32_t ssb_index,
-    void *pduP );
+    void *pduP, 
+    uint16_t cell_id );
 
 
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)

@@ -186,8 +186,9 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info);
    \param pduP            pointer to bch pdu
    \param additional_bits corresponding to 38.212 ch.7
    \param ssb_index       SSB index within 0 - (L_ssb-1) corresponding to 38.331 ch.13 parameter i
-   \param ssb_length      corresponding to L1 parameter L_ssb */
-int8_t handle_bcch_bch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint8_t *pduP, uint8_t additional_bits, uint32_t ssb_index, uint32_t ssb_length);
+   \param ssb_length      corresponding to L1 parameter L_ssb 
+   \param cell_id         cell id */
+int8_t handle_bcch_bch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint8_t *pduP, uint8_t additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id);
 
 //  TODO check
 /**\brief handle BCCH-DL-SCH message from dl_indication

@@ -61,8 +61,7 @@
 
 typedef enum {
     SFN_C_MOD_2_EQ_0, 
-    SFN_C_MOD_2_EQ_1, 
-    SFN_C_EQ_SFN_SSB
+    SFN_C_MOD_2_EQ_1
 } SFN_C_TYPE;
 
 /*!\brief Top level UE MAC structure */
