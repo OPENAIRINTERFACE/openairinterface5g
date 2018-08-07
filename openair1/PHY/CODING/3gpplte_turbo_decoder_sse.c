@@ -41,7 +41,6 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "extern_3GPPinterleaver.h"
 #else
 
 #include "defs.h"
@@ -1983,8 +1982,6 @@ void init_td()
 unsigned char phy_threegpplte_turbo_decoder(short *y,
     unsigned char *decoded_bytes,
     unsigned short n,
-    unsigned short f1,
-    unsigned short f2,
     unsigned char max_iterations,
     unsigned char crc_type,
     unsigned char F,
@@ -2619,8 +2616,6 @@ int test_logmap8()
   test[2] = 0x11;
   test[3] = 0x92;
   test[4] = 0xfe;
-
-  crcTableInit();
 
   crc = crc24a(test,
                40)>>8;

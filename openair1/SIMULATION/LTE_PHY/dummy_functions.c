@@ -60,7 +60,7 @@ void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 		     uint8_t * sdu, uint16_t sdu_len, uint8_t eNB_index,
 		     uint8_t sync_area){}
 
-int ue_query_mch(uint8_t Mod_id, uint8_t CC_id, uint32_t frame,
+int ue_query_mch(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
 		 sub_frame_t subframe, uint8_t eNB_index,
 		 uint8_t * sync_area, uint8_t * mcch_active){ return(0);}
 

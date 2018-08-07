@@ -37,9 +37,11 @@
 
 #include "SCHED_UE/sched_UE.h"
 #include "SCHED/sched_common_extern.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "../LTE_TRANSPORT/prach_extern.h"
+
+//#define PRACH_DEBUG 1
 
 int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf )
 {
@@ -98,7 +100,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
 #else //normal case (simulation)
   prach_start = subframe*ue->frame_parms.samples_per_tti-ue->N_TA_offset;
-  LOG_D(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
+  LOG_I(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
     prach_start,
     ue->rx_offset,
     ue->hw_timing_advance,
@@ -374,7 +376,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       memmove( prach, prach+1024, Ncp<<2 );
       prach_len = 512+Ncp;
     } else {
-      idft3072(prachF,prach2);
+      idft3072(prachF,prach2,1);
       memmove( prach, prach+6144, Ncp<<2 );
       prach_len = 3072+Ncp;
 
@@ -393,7 +395,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       memmove( prach, prach+2048, Ncp<<2 );
       prach_len = 1024+Ncp;
     } else {
-      idft6144(prachF,prach2);
+      idft6144(prachF,prach2,1);
       /*for (i=0;i<6144*2;i++)
       prach2[i]<<=1;*/
       memmove( prach, prach+12288, Ncp<<2 );
@@ -413,7 +415,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       memmove( prach, prach+4096, Ncp<<2 );
       prach_len = 2048+Ncp;
     } else {
-      idft12288(prachF,prach2);
+      idft12288(prachF,prach2,1);
       memmove( prach, prach+24576, Ncp<<2 );
       prach_len = 12288+Ncp;
 
@@ -427,12 +429,12 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
   case 75:
     if (prach_fmt == 4) {
-      idft3072(prachF,prach2);
+      idft3072(prachF,prach2,1);
       //TODO: account for repeated format in dft output
       memmove( prach, prach+6144, Ncp<<2 );
       prach_len = 3072+Ncp;
     } else {
-      idft18432(prachF,prach2);
+      idft18432(prachF,prach2,1);
       memmove( prach, prach+36864, Ncp<<2 );
       prach_len = 18432+Ncp;
 
@@ -451,7 +453,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 	memmove( prach, prach+8192, Ncp<<2 );
 	prach_len = 4096+Ncp;
       } else {
-	idft24576(prachF,prach2);
+	idft24576(prachF,prach2,1);
 	memmove( prach, prach+49152, Ncp<<2 );
 	prach_len = 24576+Ncp;
 	
@@ -463,12 +465,12 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
     }
     else {
       if (prach_fmt == 4) {
-	idft3072(prachF,prach2);
+	idft3072(prachF,prach2,1);
 	//TODO: account for repeated format in dft output
 	memmove( prach, prach+6144, Ncp<<2 );
 	prach_len = 3072+Ncp;
       } else {
-	idft18432(prachF,prach2);
+	idft18432(prachF,prach2,1);
 	memmove( prach, prach+36864, Ncp<<2 );
 	prach_len = 18432+Ncp;
 	printf("Generated prach for 100 PRB, 3/4 sampling\n");
@@ -523,9 +525,9 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
   
 #if defined(PRACH_WRITE_OUTPUT_DEBUG)
-  write_output("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);
-  write_output("prach_tx0.m","prachtx0",prach+(Ncp<<1),prach_len-Ncp,1,1);
-  write_output("txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][0]),2*ue->frame_parms.samples_per_tti,1,1);
+  LOG_M("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);
+  LOG_M("prach_tx0.m","prachtx0",prach+(Ncp<<1),prach_len-Ncp,1,1);
+  LOG_M("txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][0]),2*ue->frame_parms.samples_per_tti,1,1);
   exit(-1);
 #endif
 

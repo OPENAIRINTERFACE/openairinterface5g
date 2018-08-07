@@ -42,10 +42,10 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 #include "otg_rx.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include <inttypes.h>
 #include "platform_constants.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "msc.h"
 
 #if defined(ENABLE_SECURITY)
@@ -83,7 +83,7 @@ boolean_t pdcp_data_req(
   const sdu_size_t     sdu_buffer_sizeP,
   unsigned char *const sdu_buffer_pP,
   const pdcp_transmission_mode_t modeP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     ,const uint32_t * const sourceL2Id
     ,const uint32_t * const destinationL2Id
 #endif
@@ -170,7 +170,7 @@ boolean_t pdcp_data_req(
                                 sdu_buffer_sizeP);
 #endif
       rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,NULL, NULL
 #endif
                                 );
@@ -360,7 +360,7 @@ boolean_t pdcp_data_req(
     LOG_F(PDCP,"\n");
 #endif
     rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                              ,sourceL2Id
                              ,destinationL2Id
 #endif
@@ -595,9 +595,7 @@ pdcp_data_ind(
     }
 
     if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp_p, srb_flagP) == TRUE) {
-#if 0
       LOG_T(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window\n", sequence_number);
-#endif
       /* if (dc == PDCP_DATA_PDU )
       LOG_D(PDCP, "Passing piggybacked SDU to NAS driver...\n");
       else
@@ -612,13 +610,9 @@ pdcp_data_ind(
        * XXX Till we implement in-sequence delivery and duplicate discarding
        * mechanism all out-of-order packets will be delivered to RRC/IP
        */
-#if 0
-      LOG_D(PDCP, "Ignoring PDU...\n");
-      free_mem_block(sdu_buffer, __func__);
+      LOG_W(PDCP, "Ignoring PDU...\n");
+      free_mem_block(sdu_buffer_pP, __func__);
       return FALSE;
-#else
-      //LOG_W(PDCP, "Delivering out-of-order SDU to upper layer...\n");
-#endif
     }
 
     // SRB1/2: control-plane data
@@ -866,7 +860,7 @@ pdcp_data_ind(
 
 void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
 
-  uint8_t            pdcp_uid = 0;
+  uint16_t           pdcp_uid = 0;
   uint8_t            rb_id     = 0;
   
  // these stats are measured for both eNB and UE on per seond basis 
@@ -921,16 +915,6 @@ pdcp_run (
 //-----------------------------------------------------------------------------
 {
   
-#if defined(ENABLE_ITTI)
-  MessageDef   *msg_p;
-  const char   *msg_name;
-  instance_t    instance;
-  int           result;
-  protocol_ctxt_t  ctxt;
-#endif
-
-
-  
   if (ctxt_pP->enb_flag) {
     start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_run);
   } else {
@@ -945,14 +929,15 @@ pdcp_run (
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_IN);
 
 #if defined(ENABLE_ITTI)
+  MessageDef   *msg_p;
+  int           result;
+  protocol_ctxt_t  ctxt;
 
   do {
     // Checks if a message has been sent to PDCP sub-task
     itti_poll_msg (ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, &msg_p);
 
     if (msg_p != NULL) {
-      msg_name = ITTI_MSG_NAME (msg_p);
-      instance = ITTI_MSG_INSTANCE (msg_p);
 
       switch (ITTI_MSG_ID(msg_p)) {
       case RRC_DCCH_DATA_REQ:
@@ -966,9 +951,9 @@ pdcp_run (
 	  RRC_DCCH_DATA_REQ (msg_p).eNB_index);
         LOG_I(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
               PROTOCOL_CTXT_ARGS(&ctxt),
-              msg_name,
+              ITTI_MSG_NAME (msg_p),
               ITTI_MSG_ORIGIN_NAME(msg_p),
-              instance,
+              ITTI_MSG_INSTANCE (msg_p),
               RRC_DCCH_DATA_REQ (msg_p).rb_id,
               RRC_DCCH_DATA_REQ (msg_p).muip,
               RRC_DCCH_DATA_REQ (msg_p).confirmp,
@@ -982,7 +967,7 @@ pdcp_run (
                                 RRC_DCCH_DATA_REQ (msg_p).sdu_size,
                                 RRC_DCCH_DATA_REQ (msg_p).sdu_p,
                                 RRC_DCCH_DATA_REQ (msg_p).mode
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 , NULL, NULL
 #endif
                                 );
@@ -1010,7 +995,7 @@ pdcp_run (
       break;
 
       default:
-        LOG_E(PDCP, "Received unexpected message %s\n", msg_name);
+        LOG_E(PDCP, "Received unexpected message %s\n", ITTI_MSG_NAME (msg_p));
         break;
       }
 
@@ -1019,29 +1004,6 @@ pdcp_run (
     }
   } while(msg_p != NULL);
 
-# if 0
-  {
-    MessageDef *msg_resp_p;
-
-    msg_resp_p = itti_alloc_new_message(TASK_PDCP_ENB, MESSAGE_TEST);
-
-    itti_send_msg_to_task(TASK_RRC_ENB, 1, msg_resp_p);
-  }
-  {
-    MessageDef *msg_resp_p;
-
-    msg_resp_p = itti_alloc_new_message(TASK_PDCP_ENB, MESSAGE_TEST);
-
-    itti_send_msg_to_task(TASK_ENB_APP, 2, msg_resp_p);
-  }
-  {
-    MessageDef *msg_resp_p;
-
-    msg_resp_p = itti_alloc_new_message(TASK_PDCP_ENB, MESSAGE_TEST);
-
-    itti_send_msg_to_task(TASK_MAC_ENB, 3, msg_resp_p);
-  }
-# endif
 #endif
 
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
@@ -1612,7 +1574,7 @@ pdcp_config_req_asn1 (
     pdcp_pP->first_missing_pdu                = -1;
     pdcp_pP->rx_hfn_offset                    = 0;
 
-    LOG_N(PDCP, PROTOCOL_PDCP_CTXT_FMT" Action ADD  LCID %d (%s id %d) "
+    LOG_I(PDCP, PROTOCOL_PDCP_CTXT_FMT" Action ADD  LCID %d (%s id %d) "
             "configured with SN size %d bits and RLC %s\n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           lc_idP,
@@ -1661,7 +1623,7 @@ pdcp_config_req_asn1 (
       pdcp_pP->seq_num_size=5;
     }
 
-    LOG_N(PDCP,PROTOCOL_PDCP_CTXT_FMT" Action MODIFY LCID %d "
+    LOG_I(PDCP,PROTOCOL_PDCP_CTXT_FMT" Action MODIFY LCID %d "
             "RB id %d reconfigured with SN size %d and RLC %s \n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           lc_idP,

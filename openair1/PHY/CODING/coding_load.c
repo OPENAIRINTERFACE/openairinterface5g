@@ -35,6 +35,7 @@
 
 #include "PHY/defs_common.h"
 #include "PHY/phy_extern.h"
+#include "PHY/CODING/coding_extern.h"
 #include "common/utils/load_module_shlib.h" 
 #include "common/utils/telnetsrv/telnetsrv.h" 
 
@@ -55,28 +56,26 @@ loader_shlibfunc_t shlib_fdesc[DECODE_NUM_FPTR];
 
 /* encoding decoding functions pointers, filled here and used when encoding/decoding */
 /*defined as extern in PHY?CODING/extern.h */
-decoder_if_t    decoder16;
-decoder_if_t    decoder8;
-encoder_if_t    encoder;
+decoder_if_t    *decoder16;
+decoder_if_t    *decoder8;
+encoder_if_t    *encoder;
 
 extern int _may_i_use_cpu_feature(unsigned __int64);
-uint8_t  nodecod(short *y,
-    short *y2,
-    unsigned char *decoded_bytes,
-    unsigned char *decoded_bytes2,
-    unsigned short n,
-    unsigned short f1,
-    unsigned short f2,
-    unsigned char max_iterations,
-    unsigned char crc_type,
-    unsigned char F,
-    time_stats_t *init_stats,
-    time_stats_t *alpha_stats,
-    time_stats_t *beta_stats,
-    time_stats_t *gamma_stats,
-    time_stats_t *ext_stats,
-    time_stats_t *intl1_stats,
-    time_stats_t *intl2_stats)
+uint8_t  nodecod(int16_t *y,
+                               int16_t *y2,
+                               uint8_t *decoded_bytes,
+                               uint8_t *decoded_bytes2,
+                               uint16_t n,
+                               uint8_t max_iterations,
+                               uint8_t crc_type,
+                               uint8_t F,
+                               time_stats_t *init_stats,
+                               time_stats_t *alpha_stats,
+                               time_stats_t *beta_stats,
+                               time_stats_t *gamma_stats,
+                               time_stats_t *ext_stats,
+                               time_stats_t *intl1_stats,
+                               time_stats_t *intl2_stats)
 {
  return max_iterations+1;
 };
@@ -86,24 +85,24 @@ void decoding_setmode (int mode) {
        case MODE_DECODE_NONE:
           decoder8=nodecod;
           decoder16=nodecod;
-          encoder=(encoder_if_t)shlib_fdesc[ENCODE_C_FPTRIDX].fptr;
+          encoder=(encoder_if_t*)shlib_fdesc[ENCODE_C_FPTRIDX].fptr;
        break;
        case MODE_DECODE_C:
-          decoder16=(decoder_if_t)shlib_fdesc[DECODE_TD_C_FPTRIDX].fptr;
-          decoder8=(decoder_if_t)shlib_fdesc[DECODE_TD_C_FPTRIDX].fptr;
-          encoder=(encoder_if_t)shlib_fdesc[ENCODE_C_FPTRIDX].fptr;   
+          decoder16=(decoder_if_t*)shlib_fdesc[DECODE_TD_C_FPTRIDX].fptr;
+          decoder8=(decoder_if_t*)shlib_fdesc[DECODE_TD_C_FPTRIDX].fptr;
+          encoder=(encoder_if_t*)shlib_fdesc[ENCODE_C_FPTRIDX].fptr;   
        break;
        case MODE_DECODE_AVX2:
-          decoder16=(decoder_if_t)shlib_fdesc[DECODE_TD16_AVX2_FPTRIDX].fptr;
-          decoder8=(decoder_if_t)shlib_fdesc[DECODE_TD8_SSE_FPTRIDX].fptr; 
-          encoder=(encoder_if_t)shlib_fdesc[ENCODE_SSE_FPTRIDX].fptr;  
+          decoder16=(decoder_if_t*)shlib_fdesc[DECODE_TD16_AVX2_FPTRIDX].fptr;
+          decoder8=(decoder_if_t*)shlib_fdesc[DECODE_TD8_SSE_FPTRIDX].fptr; 
+          encoder=(encoder_if_t*)shlib_fdesc[ENCODE_SSE_FPTRIDX].fptr;  
        break;
        default:
            mode=MODE_DECODE_SSE;
        case MODE_DECODE_SSE:
-          decoder8=(decoder_if_t)shlib_fdesc[DECODE_TD8_SSE_FPTRIDX].fptr; 
-          decoder16=(decoder_if_t)shlib_fdesc[DECODE_TD16_SSE_FPTRIDX].fptr;
-          encoder=(encoder_if_t)shlib_fdesc[ENCODE_SSE_FPTRIDX].fptr;
+          decoder8=(decoder_if_t*)shlib_fdesc[DECODE_TD8_SSE_FPTRIDX].fptr; 
+          decoder16=(decoder_if_t*)shlib_fdesc[DECODE_TD16_SSE_FPTRIDX].fptr;
+          encoder=(encoder_if_t*)shlib_fdesc[ENCODE_SSE_FPTRIDX].fptr;
        break;
    }
    curmode=mode;

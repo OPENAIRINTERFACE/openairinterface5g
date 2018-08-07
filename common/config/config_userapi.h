@@ -38,10 +38,15 @@
 extern "C"
 {
 #endif
+/* get rid of "exit_fun undeclared" warning */
+extern void exit_fun(const char* s);
+
 #define CONFIG_GETSOURCE    ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgmode       )
 #define CONFIG_GETNUMP      ( (config_get_if()==NULL) ? 0    : config_get_if()->num_cfgP      )
 #define CONFIG_GETP(P)      ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgP[P]       )
 #define CONFIG_ISFLAGSET(P) ( (config_get_if()==NULL) ? 0    : !!(config_get_if()->rtflags & P))
+#define CONFIG_SETRTFLAG(P)   if (config_get_if()) { config_get_if()->rtflags |= P; }
+#define CONFIG_CLEARRTFLAG(P) if (config_get_if()) { config_get_if()->rtflags &= (~P); }
 #define CONFIG_ISPARAMFLAGSET(P,F) ( !!(P.paramflags & F))
 /* utility functions, to be used by configuration module and/or configuration libraries */
 extern configmodule_interface_t *config_get_if(void);
@@ -50,6 +55,7 @@ extern void config_printhelp(paramdef_t *,int numparams);
 extern int config_process_cmdline(paramdef_t *params,int numparams, char *prefix);
 extern void config_assign_processedint(paramdef_t *cfgoption, int val);
 extern void config_assign_int(paramdef_t *cfgoptions, char *fullname, int val);
+extern int config_assign_ipv4addr(paramdef_t *cfgoptions, char *ipv4addr);
 
 /* apis to get parameters, to be used by oai modules, at configuration time */
 extern int config_get(paramdef_t *params,int numparams, char *prefix);
@@ -65,6 +71,15 @@ extern int config_check_modify_integer(paramdef_t *param);
 extern int config_check_intrange(paramdef_t *param);
 extern int config_check_strval(paramdef_t *param);
 extern int config_checkstr_assign_integer(paramdef_t *param);
+
+/* functions to set a parameter to its default value */
+extern int config_setdefault_string(paramdef_t *cfgoptions, char *prefix);
+extern int config_setdefault_stringlist(paramdef_t *cfgoptions, char *prefix);
+extern int config_setdefault_int(paramdef_t *cfgoptions, char *prefix);
+extern int config_setdefault_int64(paramdef_t *cfgoptions, char *prefix);
+extern int config_setdefault_intlist(paramdef_t *cfgoptions, char *prefix);
+extern int config_setdefault_double(paramdef_t *cfgoptions, char *prefix);
+extern int config_setdefault_ipv4addr(paramdef_t *cfgoptions, char *prefix);
 
 #define CONFIG_GETCONFFILE (config_get_if()->cfgP[0])
 

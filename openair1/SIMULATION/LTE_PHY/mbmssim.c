@@ -381,10 +381,10 @@ int main(int argc, char **argv)
                    CYCLIC_PREFIX);
 
       if (n_frames==1) {
-        write_output("txsigF0.m","txsF0", &eNB->common_vars.txdataF[0][0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],
+        LOG_M("txsigF0.m","txsF0", &eNB->common_vars.txdataF[0][0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],
                      nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
         //if (eNB->frame_parms.nb_antennas_tx>1)
-        //write_output("txsigF1.m","txsF1", &eNB->lte_eNB_common_vars.txdataF[eNB_id][1][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
+        //LOG_M("txsigF1.m","txsF1", &eNB->lte_eNB_common_vars.txdataF[eNB_id][1][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
       }
 
       tx_lev = 0;
@@ -399,7 +399,7 @@ int main(int argc, char **argv)
 
       if (n_frames==1) {
         printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
-        //    write_output("txsig0.m","txs0", &eNB->common_vars.txdata[0][0][subframe* eNB->frame_parms.samples_per_tti],
+        //    LOG_M("txsig0.m","txs0", &eNB->common_vars.txdata[0][0][subframe* eNB->frame_parms.samples_per_tti],
 
         //     eNB->frame_parms.samples_per_tti,1,1);
       }

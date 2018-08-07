@@ -87,7 +87,6 @@
 #define CONFIG_HLP_UE            "Set the lte softmodem as a UE\n"
 #define CONFIG_HLP_L2MONW        "Enable L2 wireshark messages on localhost \n"
 #define CONFIG_HLP_L2MONP        "Enable L2 pcap  messages on localhost \n"
-#define CONFIG_HLP_VCD           "Enable VCD (generated file will is named openair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n"
 #define CONFIG_HLP_TQFS          "Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n"
 #define CONFIG_HLP_TPORT         "tracer port\n"
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
@@ -165,7 +164,7 @@
 {"mmapped-dma",             CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,         uptr:&mmapped_dma,                  defintval:0,                    TYPE_INT,       0},                     \
 {"external-clock",          CONFIG_HLP_EXCCLK,      PARAMFLAG_BOOL,         uptr:&clock_source,                 defintval:0,                    TYPE_INT,       0},                     \
 {"wait-for-sync",           NULL,                   PARAMFLAG_BOOL,         iptr:&wait_for_sync,                defintval:0,                    TYPE_INT,       0},                     \
-{"single-thread-disable",   CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&single_thread_flag,           defintval:1,                    TYPE_INT,       0},                     \
+{"single-thread-enable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&single_thread_flag,           defintval:0,                    TYPE_INT,       0},                     \
 {"threadIQ",                NULL,                   0,                      iptr:&(threads.iq),                 defintval:1,                    TYPE_INT,       0},                     \
 {"threadOneSubframe",       NULL,                   0,                      iptr:&(threads.one),                defintval:1,                    TYPE_INT,       0},                     \
 {"threadTwoSubframe",       NULL,                   0,                      iptr:&(threads.two),                defintval:1,                    TYPE_INT,       0},                     \
@@ -178,12 +177,10 @@
 {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&chain_offset,                 defintval:0,                    TYPE_INT,       0},                     \
 {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
 {"E" ,                      CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,         i8ptr:&threequarter_fs,             defintval:0,                    TYPE_INT8,      0},                     \
-{"K" ,                      CONFIG_HLP_ITTIL,       PARAMFLAG_NOFREE,       strptr:&itti_dump_file,             defstrval:"/tmp/itti.dump",     TYPE_STRING,    0},                     \
 {"m" ,                      CONFIG_HLP_DLMCS,       0,                      uptr:&target_dl_mcs,                defintval:0,                    TYPE_UINT,      0},                     \
 {"t" ,                      CONFIG_HLP_ULMCS,       0,                      uptr:&target_ul_mcs,                defintval:0,                    TYPE_UINT,      0},                     \
 {"W" ,                      CONFIG_HLP_L2MONW,      0,                      strptr:(char **)&in_ip,             defstrval:"127.0.0.1",          TYPE_STRING,    sizeof(in_ip)},         \
 {"P" ,                      CONFIG_HLP_L2MONP,      0,                      strptr:(char **)&in_path,           defstrval:"/tmp/oai_opt.pcap",  TYPE_STRING,    sizeof(in_path)},       \
-{"V" ,                      CONFIG_HLP_VCD,         PARAMFLAG_BOOL,         iptr:&ouput_vcd,                    defintval:0,                    TYPE_INT,       0},                     \
 {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
 {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
 {"T" ,                      CONFIG_HLP_TDD,         PARAMFLAG_BOOL,         iptr:&tddflag,                      defintval:0,                    TYPE_INT,       0},                     \
@@ -197,7 +194,6 @@
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
 #define CONFIG_HLP_LOGL          "Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n"
-#define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters for LOG utility                                                                                        */
@@ -206,28 +202,11 @@
 #define CMDLINE_LOGPARAMS_DESC {  \
 {"R" ,  		  	 CONFIG_HLP_FLOG,	0,                uptr:&online_log_messages,		defintval:1,			   TYPE_INT,	  0},			   \
 {"g" ,  		  	 CONFIG_HLP_LOGL,	0,		  uptr:&glog_level,			defintval:0,			   TYPE_UINT,     0},			   \
-{"G" ,                           CONFIG_HLP_LOGV,	0,		  uptr:&glog_verbosity,		        defintval:0,			   TYPE_UINT16,   0},			   \
 {"telnetsrv",    		 CONFIG_HLP_TELN,	PARAMFLAG_BOOL,	  uptr:&start_telnetsrv,		defintval:0,			   TYPE_UINT,     0},			   \
 }
 #define CMDLINE_ONLINELOG_IDX     0 
 #define CMDLINE_GLOGLEVEL_IDX     1
-#define CMDLINE_GLOGVERBO_IDX     2              
-#define CMDLINE_STARTTELN_IDX     3
-
-
-extern int T_port;
-extern int T_nowait;
-extern int T_dont_fork;
-
-/*------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters for TTRACE utility                                                    */
-/*   optname                     helpstr                paramflags           XXXptr           defXXXval         type       numelt           */
-/*------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_TTRACEPARAMS_DESC {  \
-{"T_port",                     CONFIG_HLP_TPORT,      0,		iptr:&T_port,	     defintval:0,	TYPE_INT,   0},	   \
-{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,	iptr:&T_nowait,      defintval:0,	TYPE_INT,   0},	   \
-{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,	iptr:&T_dont_fork,   defintval:1,	TYPE_INT,   0},	   \
-} 
+#define CMDLINE_STARTTELN_IDX     2
 
 
 /***************************************************************************************************************************************/  
@@ -269,7 +248,9 @@ extern void stop_eNB(int);
 extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
+
 extern void init_RU(const char*,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
+//extern void stop_ru(RU_t *ru);
 extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
 extern void kill_RU_proc(int inst);
@@ -279,7 +260,7 @@ extern void set_function_spec_param(RU_t *ru);
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
 
-extern void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax, int nb_rx, int nb_tx);
+extern void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correction, int phy_test, int UE_scan, int UE_scan_carrier, runmode_t mode,int rxgain,int txpowermax, LTE_DL_FRAME_PARMS *fp);
 extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char * name);
 
 extern void reset_opp_meas(void);

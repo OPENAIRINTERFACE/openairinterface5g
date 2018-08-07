@@ -36,7 +36,7 @@
 \param reset resets the generator
 \return 32 bits of the gold sequence
 */
-unsigned int lte_gold_generic(unsigned int *x1, unsigned int *x2, unsigned char reset);
+uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
 
 
 /*!\brief This function generates the LTE Gold sequence (36-211, Sec 7.2), specifically for DL reference signals.
@@ -45,8 +45,7 @@ unsigned int lte_gold_generic(unsigned int *x1, unsigned int *x2, unsigned char 
 @param Nid_cell Cell Id (to compute sequences for local and adjacent cells) */
 
 void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_table[20][2][14],uint16_t Nid_cell);
-
-void lte_gold_ue_spec(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_uespec_table[2][20][2][21],uint16_t Nid_cell, uint16_t *n_idDMRS);
+void lte_gold_ue_spec(uint32_t lte_gold_uespec_table[2][20][2][21],uint16_t Nid_cell, uint16_t *n_idDMRS);
 
 void lte_gold_ue_spec_port5(uint32_t lte_gold_uespec_port5_table[20][38],uint16_t Nid_cell, uint16_t n_rnti);
 

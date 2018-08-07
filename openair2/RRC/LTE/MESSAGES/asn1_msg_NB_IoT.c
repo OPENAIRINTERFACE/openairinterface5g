@@ -34,7 +34,7 @@
 #include <string.h> /* for strerror(3) */
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
@@ -131,6 +131,7 @@ uint8_t do_MIB_NB_IoT(
 		 (uint32_t)hsfn_LSB);
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message_NB,
+                                   NULL,
                                    (void*)mib_NB_IoT,
                                    carrier->MIB_NB_IoT,
                                    100);
@@ -387,6 +388,7 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
 
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message_NB,
+                                   NULL,
                                    (void*)bcch_message,
                                    carrier->SIB1_NB_IoT,
                                    100);
@@ -669,6 +671,7 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
   xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message_NB, (void*)bcch_message);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message_NB,
+                                   NULL,
                                    (void*)bcch_message,
                                    carrier->SIB23_NB_IoT,
                                    900);
@@ -888,6 +891,7 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
  xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
 #endif
  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
+                                  NULL,
                                   (void*)&dl_ccch_msg_NB_IoT,
                                   buffer,
                                   100);
@@ -939,6 +943,7 @@ uint8_t do_SecurityModeCommand_NB_IoT(
   xer_fprint(stdout, &asn_DEF_DL_DCCH_Message_NB, (void*)&dl_dcch_msg_NB_IoT);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message_NB,
+                                   NULL,
                                    (void*)&dl_dcch_msg_NB_IoT,
                                    buffer,
                                    100);
@@ -1000,6 +1005,7 @@ uint8_t do_UECapabilityEnquiry_NB_IoT(
   xer_fprint(stdout, &asn_DEF_DL_DCCH_Message_NB, (void*)&dl_dcch_msg_NB_IoT);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message_NB,
+                                   NULL,
                                    (void*)&dl_dcch_msg_NB_IoT,
                                    buffer,
                                    100);
@@ -1094,6 +1100,7 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
   rrcConnectionReconfiguration_NB->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r13.fullConfig_r13 = NULL;
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message_NB,
+                                   NULL,
                                    (void*)&dl_dcch_msg_NB_IoT,
                                    buffer,
                                    RRC_BUF_SIZE);
@@ -1140,6 +1147,7 @@ uint8_t do_RRCConnectionReestablishmentReject_NB_IoT(
   xer_fprint(stdout, &asn_DEF_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
+                                   NULL,
                                    (void*)&dl_ccch_msg_NB_IoT,
                                    buffer,
                                    100);
@@ -1210,6 +1218,7 @@ uint8_t do_RRCConnectionReject_NB_IoT(
   xer_fprint(stdout, &asn_DEF_DL_CCCH_Message_NB, (void*)&dl_ccch_msg);
 #endif
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
+                                   NULL,
                                    (void*)&dl_ccch_msg_NB_IoT,
                                    buffer,
                                    100);
@@ -1336,6 +1345,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
 	rrcConnectionReestablishment_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r13.nextHopChainingCount_r13=0;
 
 	enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
+                                           NULL,
 	                                   (void*)&dl_ccch_msg_NB_IoT,
 	                                   buffer,
 	                                   RRC_BUF_SIZE);
@@ -1405,6 +1415,7 @@ uint8_t do_RRCConnectionRelease_NB_IoT(
       sizeof(*rrcConnectionRelease_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r13.nonCriticalExtension));
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message_NB,
+                                   NULL,
                                    (void*)&dl_dcch_msg_NB_IoT,
                                    buffer,
                                    RRC_BUF_SIZE);//check

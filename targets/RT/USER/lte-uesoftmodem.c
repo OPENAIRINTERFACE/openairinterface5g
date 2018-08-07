@@ -70,11 +70,11 @@
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
 
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
 //#include "PHY/TOOLS/time_meas.h"
@@ -148,10 +148,6 @@ uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
-
-#if defined(ENABLE_ITTI)
-static char                    *itti_dump_file = NULL;
-#endif
 
 int UE_scan = 1;
 int UE_scan_carrier = 0;
@@ -331,6 +327,7 @@ void exit_fun(const char* s)
 {
   int CC_id;
 
+  logClean();
   if (s != NULL) {
     printf("%s %s() Exiting OAI softmodem: %s\n",__FILE__, __FUNCTION__, s);
   }
@@ -338,8 +335,11 @@ void exit_fun(const char* s)
   oai_exit = 1;
 
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-	if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
-	  PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+     if (PHY_vars_UE_g)
+      if (PHY_vars_UE_g[0])
+         if (PHY_vars_UE_g[0][CC_id])
+	    if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
+	        PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
     }
 
 #if defined(ENABLE_ITTI)
@@ -476,13 +476,14 @@ static void get_options(void) {
   char *loopfile=NULL;
   int dumpframe;
   uint32_t online_log_messages;
-  uint32_t glog_level, glog_verbosity;
+  uint32_t glog_level;
   uint32_t start_telnetsrv;
 
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
 
   set_default_frame_parms(frame_parms);
+  CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL); 
 
   if (strlen(in_path) > 0) {
@@ -501,10 +502,7 @@ static void get_options(void) {
       set_glog_onlinelog(online_log_messages);
   }
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-      set_glog(glog_level, -1);
-  }
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGVERBO_IDX)) {
-      set_glog(-1, glog_verbosity);
+      set_glog(glog_level);
   }
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
@@ -515,6 +513,7 @@ static void get_options(void) {
 
 
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
+  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
   if (loopfile != NULL) {
       printf("Input file for hardware emulation: %s",loopfile);
@@ -575,10 +574,6 @@ static void get_options(void) {
     	tx_gain[0][CC_id] = tx_gain[0][0];
   }
 
-#if T_TRACER
-  paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
-  config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);   
-#endif
   /*
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT))  && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
     // Here the configuration file is the XER encoded UE capabilities
@@ -589,14 +584,6 @@ static void get_options(void) {
     	uecap_xer_in=1;
 	} *//* UE with config file  */
 }
-
-
-#if T_TRACER
-int T_nowait = 0;     /* by default we wait for the tracer */
-int T_port = 2021;    /* default port to listen to to wait for the tracer */
-int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
-#endif
-
 
 
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
@@ -797,10 +784,6 @@ int main( int argc, char **argv )
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   } 
       
-#ifdef DEBUG_CONSOLE
-  setvbuf(stdout, NULL, _IONBF, 0);
-  setvbuf(stderr, NULL, _IONBF, 0);
-#endif
 
 
   mode = normal_txrx;
@@ -825,7 +808,7 @@ int main( int argc, char **argv )
 
   printf("NFAPI_MODE value: %d \n", nfapi_mode);
 
-  // Panos: Not sure if the following is needed here
+  // Not sure if the following is needed here
   /*if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
       if (UE_flag == 0) {
         fprintf(stderr,"Getting configuration failed\n");
@@ -839,7 +822,7 @@ int main( int argc, char **argv )
 
 
 #if T_TRACER
-  T_init(T_port, 1-T_nowait, T_dont_fork);
+  T_Config_Init();
 #endif
 
 
@@ -848,37 +831,31 @@ int main( int argc, char **argv )
   set_taus_seed (0);
 
 
-    set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
-    set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(MAC,     LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(RLC,     LOG_INFO,   LOG_HIGH | FLAG_THREAD, 1);
-    set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(OTG,     LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(RRC,     LOG_INFO,   LOG_HIGH, 1);
+    set_log(HW,      OAILOG_DEBUG,   1);
+    set_log(PHY,     OAILOG_INFO,    1);
+    set_log(MAC,     OAILOG_INFO,    1);
+    set_log(RLC,     OAILOG_INFO,    1);
+    set_log(PDCP,    OAILOG_INFO,    1);
+    set_log(OTG,     OAILOG_INFO,    1);
+    set_log(RRC,     OAILOG_INFO,    1);
 #if defined(ENABLE_ITTI)
-    set_comp_log(SIM,     LOG_INFO,   LOG_MED, 1);
+    set_log(SIM,     OAILOG_INFO,   1);
 # if defined(ENABLE_USE_MME)
-    set_comp_log(NAS,     LOG_INFO,   LOG_HIGH, 1);
+    set_log(NAS,     OAILOG_INFO,    1);
 # endif
 #endif
 
-
-  if (ouput_vcd) {
-      VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_UE.vcd");
-  }
-
   cpuf=get_cpu_freq_GHz();
-
-#if defined(ENABLE_ITTI)
-
-  log_set_instance_type (LOG_INSTANCE_UE);
 
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
 
+#if defined(ENABLE_ITTI)
+
+
 
   printf("ITTI init\n");
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
@@ -905,7 +882,7 @@ int main( int argc, char **argv )
 #endif
 
 //TTN for D2D
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   printf ("RRC control socket\n");
   rrc_control_socket_init();
   printf ("PDCP PC5S socket\n");
@@ -975,8 +952,7 @@ int main( int argc, char **argv )
   }
   else {
       init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
-              frame_parms[0]->nb_antennas_rx,
-              frame_parms[0]->nb_antennas_tx);
+              frame_parms[0]);
   }
 
 
@@ -1045,7 +1021,7 @@ int main( int argc, char **argv )
       printf("cannot create ITTI tasks\n");
       exit(-1); // need a softer mode
     }
-    if(nfapi_mode==3){ //Panos: Here we should add another nfapi_mode for the case of Supervised LTE-D2D
+    if(nfapi_mode==3){ // Here we should add another nfapi_mode for the case of Supervised LTE-D2D
     	UE_config_stub_pnf();
     }
     printf("ITTI tasks created\n");
@@ -1054,7 +1030,67 @@ int main( int argc, char **argv )
   
   mlockall(MCL_CURRENT | MCL_FUTURE);
   
-  
+ 
+  rt_sleep_ns(10*100000000ULL);
+
+  const char *nfapi_mode_str = "<UNKNOWN>";
+
+    switch(nfapi_mode)
+    {
+      case 0:
+        nfapi_mode_str = "MONOLITHIC";
+        break;
+      case 1:
+        nfapi_mode_str = "PNF";
+        break;
+      case 2:
+        nfapi_mode_str = "VNF";
+        break;
+      case 3:
+        nfapi_mode_str = "UE_STUB_PNF";
+        break;
+      case 4:
+        nfapi_mode_str = "UE_STUB_OFFNET";
+        break;
+      default:
+        nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
+        break;
+    }
+    printf("NFAPI MODE:%s\n", nfapi_mode_str);
+
+
+  // connect the TX/RX buffers
+
+      
+    /*  
+    if(nfapi_mode!=3) {
+    	if (setup_ue_buffers(PHY_vars_UE_g[0],&openair0_cfg[0])!=0) {
+    		printf("Error setting up eNB buffer\n");
+    		exit(-1);
+    	}
+    }
+   */ 
+    
+    
+
+    if (input_fd) {
+      printf("Reading in from file to antenna buffer %d\n",0);
+      if (fread(PHY_vars_UE_g[0][0]->common_vars.rxdata[0],
+		sizeof(int32_t),
+		frame_parms[0]->samples_per_tti*10,
+		input_fd) != frame_parms[0]->samples_per_tti*10)
+	printf("error reading from file\n");
+    }
+    //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
+
+ 
+  if (simL1flag==1)  {
+     init_ocm((double)snr_dB,0);
+     PHY_vars_UE_g[0][0]->no_timing_correction = 1;
+  }
+ 
+
+
 #ifdef XFORMS
   int UE_id;
   
@@ -1090,71 +1126,15 @@ int main( int argc, char **argv )
   
 #endif
   
-  rt_sleep_ns(10*100000000ULL);
+  printf("Sending sync to all threads (%p,%p,%p)\n",&sync_var,&sync_cond,&sync_mutex);
 
-  const char *nfapi_mode_str = "<UNKNOWN>";
-
-    switch(nfapi_mode)
-    {
-      case 0:
-        nfapi_mode_str = "MONOLITHIC";
-        break;
-      case 1:
-        nfapi_mode_str = "PNF";
-        break;
-      case 2:
-        nfapi_mode_str = "VNF";
-        break;
-      case 3:
-        nfapi_mode_str = "UE_STUB_PNF";
-        break;
-      case 4:
-        nfapi_mode_str = "UE_STUB_OFFNET";
-        break;
-      default:
-        nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
-        break;
-    }
-    printf("NFAPI MODE:%s\n", nfapi_mode_str);
-
-
-
-  
-  // connect the TX/RX buffers
-
-      
-    /*  
-    if(nfapi_mode!=3) {
-    	if (setup_ue_buffers(PHY_vars_UE_g[0],&openair0_cfg[0])!=0) {
-    		printf("Error setting up eNB buffer\n");
-    		exit(-1);
-    	}
-    }
-   */ 
-    
-    
-
-    if (input_fd) {
-      printf("Reading in from file to antenna buffer %d\n",0);
-      if (fread(PHY_vars_UE_g[0][0]->common_vars.rxdata[0],
-		sizeof(int32_t),
-		frame_parms[0]->samples_per_tti*10,
-		input_fd) != frame_parms[0]->samples_per_tti*10)
-	printf("error reading from file\n");
-    }
-    //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
- 
-  if (simL1flag==1)  {
-     init_ocm((double)snr_dB,0);
-     PHY_vars_UE_g[0][0]->no_timing_correction = 1;
-  }
- 
-  printf("Sending sync to all threads (%p,%p,%p)\n",&sync_var,&sync_mutex,&sync_cond);
   
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);
   pthread_mutex_unlock(&sync_mutex);
+
+  printf("sync sent\n");
 /*
   printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   end_configmodule();
@@ -1203,9 +1183,6 @@ int main( int argc, char **argv )
   // *** Handle per CC_id openair0
   if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
     PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
-  
-  if (ouput_vcd)
-    VCD_SIGNAL_DUMPER_CLOSE();
   
   if (opt_enabled == 1)
     terminate_opt();

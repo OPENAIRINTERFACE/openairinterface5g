@@ -208,11 +208,11 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_synch;
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
-  /// condition varible for RU RX FEP thread
+  /// condition variable for RU RX FEP thread
   pthread_cond_t cond_fep;
-  /// condition varible for RU TX FEP thread
+  /// condition variable for RU TX FEP thread
   pthread_cond_t cond_feptx;
-  /// condition varible for emulated RF
+  /// condition variable for emulated RF
   pthread_cond_t cond_emulateRF;
   /// condition variable for eNB signal
   pthread_cond_t cond_eNBs;
@@ -252,9 +252,38 @@ typedef struct RU_proc_t_s {
   int                  num_slaves;
   /// array of pointers to slaves
   struct RU_proc_t_s           **slave_proc;
+#ifdef PHY_TX_THREAD
+  /// pthread structure for PRACH thread
+  pthread_t pthread_phy_tx;
+  pthread_mutex_t mutex_phy_tx;
+  pthread_cond_t cond_phy_tx;
+  /// \internal This variable is protected by \ref mutex_phy_tx.
+  int instance_cnt_phy_tx;
+  /// frame to act upon for transmission
+  int frame_phy_tx;
+  /// subframe to act upon for transmission
+  int subframe_phy_tx;
+  /// timestamp to send to "slave rru"
+  openair0_timestamp timestamp_phy_tx;
+  /// pthread structure for RF TX thread
+  pthread_t pthread_rf_tx;
+  pthread_mutex_t mutex_rf_tx;
+  pthread_cond_t cond_rf_tx;
+  /// \internal This variable is protected by \ref mutex_rf_tx.
+  int instance_cnt_rf_tx;
+#endif
+#if defined(PRE_SCD_THREAD)
+  pthread_t pthread_pre_scd;
+  /// condition variable for time processing thread
+  pthread_cond_t cond_pre_scd;
+  /// mutex for time thread
+  pthread_mutex_t mutex_pre_scd;
+  int instance_pre_scd;
+#endif
   /// pipeline ready state
   int ru_rx_ready;
   int ru_tx_ready;
+  int emulate_rf_busy;
 } RU_proc_t;
 
 typedef enum {

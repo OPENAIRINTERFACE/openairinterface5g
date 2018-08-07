@@ -35,8 +35,7 @@
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log_if.h"
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
 #include "UTIL/OCG/OCG.h"
@@ -45,11 +44,7 @@
 #include "UTIL/FIFO/types.h"
 
 #define RF
-//#define DEBUG_SIM
-/*
-#undef LOG_D
-#define LOG_D(A,B,C...) printf(B,C)
-*/
+
 
 
 
@@ -319,7 +314,7 @@ void do_UL_sig(sim_t *sim,
   double tx_pwr, rx_pwr;
   int32_t rx_pwr2;
   uint32_t i,aa;
-  uint32_t sf_offset;
+  uint32_t sf_offset,sf_offset_tdd;
 
   uint8_t hold_channel=0;
 
@@ -361,35 +356,41 @@ void do_UL_sig(sim_t *sim,
     
     txdata = PHY_vars_UE_g[UE_id][CC_id]->common_vars.txdata;
     AssertFatal(txdata != NULL,"txdata is null\n");
+
     sf_offset = subframe*frame_parms->samples_per_tti;
+    if (subframe>0) sf_offset_tdd = sf_offset - PHY_vars_UE_g[UE_id][CC_id]->N_TA_offset;
+    else            sf_offset_tdd = sf_offset;
+
+    LOG_D(OCM,"txdata for subframe %d (%d), power %d\n",subframe,sf_offset_tdd,dB_fixed(signal_energy(&txdata[0][sf_offset_tdd],frame_parms->samples_per_tti)));
+
     if (((double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe] +
 	 sim->UE2RU[UE_id][ru_id][CC_id]->path_loss_dB) <= -125.0) {
       // don't simulate a UE that is too weak
-      LOG_D(OCM,"[SIM][UL] ULPOWERS UE %d tx_pwr %d dBm (num_RE %d) for subframe %d (sf_offset %d)\n",
+      LOG_D(OCM,"[SIM][UL] ULPOWERS UE %d tx_pwr %d dBm (num_RE %d) for subframe %d (sf_offset %d,sf_offset_tdd %d)\n",
 	    UE_id,
 	    PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe],
 	    PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe],
-	    subframe,sf_offset);	
+	    subframe,sf_offset,sf_offset_tdd);	
     } else {
       tx_pwr = dac_fixed_gain((double**)s_re,
 			      (double**)s_im,
 			      txdata,
-			      sf_offset,
+			      sf_offset_tdd,
 			      nb_antennas_tx,
 			      frame_parms->samples_per_tti,
-			      sf_offset,
+			      sf_offset_tdd,
 			      frame_parms->ofdm_symbol_size,
 			      14,
 			      (double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe]-10*log10((double)PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe]),
 			      1,
 			      NULL,
 			      PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe]);  // This make the previous argument the total power
-      LOG_D(OCM,"[SIM][UL] ULPOWERS UE %d tx_pwr %f dBm (target %d dBm, num_RE %d) for subframe %d (sf_offset %d)\n",
+      LOG_D(OCM,"[SIM][UL] ULPOWERS UE %d tx_pwr %f dBm (target %d dBm, num_RE %d) for subframe %d (sf_offset %d,sf_offset_tdd %d)\n",
 	    UE_id,
 	    10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe]),
 	    PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe],
 	    PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe],
-	    subframe,sf_offset);
+	    subframe,sf_offset,sf_offset_tdd);
       
       
       multipath_channel(sim->UE2RU[UE_id][ru_id][CC_id],s_re,s_im,r_re0,r_im0,
@@ -452,20 +453,22 @@ void do_UL_sig(sim_t *sim,
   
   rxdata = RC.ru[ru_id]->common.rxdata;
   sf_offset = subframe*frame_parms->samples_per_tti;
+  if (subframe>0) sf_offset_tdd = sf_offset - RC.ru[ru_id]->N_TA_offset;
+  else            sf_offset_tdd = sf_offset;
   
   
   adc(r_re_p,
       r_im_p,
       0,
-      sf_offset,
+      sf_offset_tdd,
       rxdata,
       nb_antennas_rx,
       frame_parms->samples_per_tti,
       12);
   
 #ifdef DEBUG_SIM
-  rx_pwr2 = signal_energy(rxdata[0]+sf_offset,frame_parms->samples_per_tti)*(double)frame_parms->ofdm_symbol_size/(12.0*frame_parms->N_RB_DL);
-  LOG_D(OCM,"[SIM][UL] RU %d rx_pwr (ADC out) %f dB (%d) for subframe %d (offset %d) = %p\n",ru_id,10*log10((double)rx_pwr2),rx_pwr2,subframe,sf_offset,rxdata[0]+sf_offset);
+  rx_pwr2 = signal_energy(rxdata[0]+sf_offset_tdd,frame_parms->samples_per_tti)*(double)frame_parms->ofdm_symbol_size/(12.0*frame_parms->N_RB_DL);
+  LOG_D(OCM,"[SIM][UL] RU %d rx_pwr (ADC out) %f dB (%d) for subframe %d (offset %d) = %p\n",ru_id,10*log10((double)rx_pwr2),rx_pwr2,subframe,sf_offset,rxdata[0]+sf_offset_tdd);
 #else
   UNUSED_VARIABLE(tx_pwr);
   UNUSED_VARIABLE(rx_pwr);

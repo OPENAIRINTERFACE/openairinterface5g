@@ -27,7 +27,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 #include "MBSFN-SubframeConfigList.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
 
@@ -109,7 +109,7 @@ int phy_init_RU(RU_t *ru) {
     AssertFatal(RC.nb_L1_inst <= NUMBER_OF_eNB_MAX,"eNB instances %d > %d\n",
 		RC.nb_L1_inst,NUMBER_OF_eNB_MAX);
 
-    LOG_E(PHY,"[INIT] %s() RC.nb_L1_inst:%d \n", __FUNCTION__, RC.nb_L1_inst);
+    LOG_D(PHY,"[INIT] %s() RC.nb_L1_inst:%d \n", __FUNCTION__, RC.nb_L1_inst);
 
     for (i=0; i<RC.nb_L1_inst; i++) {
       for (p=0;p<15;p++) {

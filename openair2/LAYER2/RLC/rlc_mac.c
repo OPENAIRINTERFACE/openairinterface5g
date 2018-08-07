@@ -30,12 +30,13 @@
 //-----------------------------------------------------------------------------
 #define RLC_MAC_C
 #include "rlc.h"
+#include "LAYER2/RLC/UM_v9.3.0/rlc_um.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"
 #include "hashtable.h"
 #include "assertions.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 //#define DEBUG_MAC_INTERFACE 1
 
@@ -127,7 +128,7 @@ tbs_size_t mac_rlc_data_req(
   const logical_chan_id_t channel_idP,
   const tb_size_t         tb_sizeP,
   char             *buffer_pP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t sourceL2Id
   ,const uint32_t destinationL2Id
 #endif
@@ -157,9 +158,17 @@ tbs_size_t mac_rlc_data_req(
 #endif // DEBUG_MAC_INTERFACE
 
   if (MBMS_flagP) {
-    AssertFatal (channel_idP < RLC_MAX_MBMS_LC,        "channel id is too high (%u/%d)!\n",     channel_idP, RLC_MAX_MBMS_LC);
+    //AssertFatal (channel_idP < RLC_MAX_MBMS_LC,        "channel id is too high (%u/%d)!\n",     channel_idP, RLC_MAX_MBMS_LC);
+  	if(channel_idP >= RLC_MAX_MBMS_LC){
+  		LOG_E(RLC, "channel id is too high (%u/%d)!\n", channel_idP, RLC_MAX_MBMS_LC);
+  		return 0;
+  	}
   } else {
-    AssertFatal (channel_idP < NB_RB_MAX,        "channel id is too high (%u/%d)!\n",     channel_idP, NB_RB_MAX);
+    //AssertFatal (channel_idP < NB_RB_MAX,        "channel id is too high (%u/%d)!\n",     channel_idP, NB_RB_MAX);
+  	if(channel_idP >= NB_RB_MAX){
+  		LOG_E(RLC, "channel id is too high (%u/%d)!\n", channel_idP, NB_RB_MAX);
+  		return 0;
+  	}
   }
 
   if (MBMS_flagP) {
@@ -171,7 +180,7 @@ tbs_size_t mac_rlc_data_req(
     }
   } else {
     key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if ((sourceL2Id > 0) && (destinationL2Id > 0))
        key = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(module_idP, rntiP, enb_flagP, channel_idP, sourceL2Id, destinationL2Id, srb_flag);
 #endif
@@ -183,7 +192,8 @@ tbs_size_t mac_rlc_data_req(
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    AssertFatal (0 , "RLC not configured lcid %u RNTI %x!\n", channel_idP, rntiP);
+    //AssertFatal (0 , "RLC not configured lcid %u RNTI %x!\n", channel_idP, rntiP);
+  	LOG_E(RLC, "RLC not configured lcid %u RNTI %x!\n", channel_idP, rntiP);
   }
 
   switch (rlc_mode) {
@@ -192,6 +202,7 @@ tbs_size_t mac_rlc_data_req(
     break;
 
   case RLC_MODE_AM:
+    rlc_am_mui.rrc_mui_num = 0;
     if (!enb_flagP) rlc_am_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.am,tb_sizeP);
 	data_request = rlc_am_mac_data_request(&ctxt, &rlc_union_p->rlc.am,enb_flagP);
     ret_tb_size =mac_rlc_serialize_tb(buffer_pP, data_request.data);
@@ -224,7 +235,7 @@ tbs_size_t mac_rlc_data_req(
 void mac_rlc_data_ind     (
   const module_id_t         module_idP,
   const rnti_t              rntiP,
-  const module_id_t         eNB_index,
+  const eNB_index_t         eNB_index,
   const frame_t             frameP,
   const eNB_flag_t          enb_flagP,
   const MBMS_flag_t         MBMS_flagP,
@@ -289,6 +300,7 @@ void mac_rlc_data_ind     (
   switch (rlc_mode) {
   case RLC_MODE_NONE:
     //handle_event(WARNING,"FILE %s FONCTION mac_rlc_data_ind() LINE %s : no radio bearer configured :%d\n", __FILE__, __LINE__, channel_idP);
+    list_free (&data_ind.data);
     break;
 
   case RLC_MODE_AM:
@@ -318,7 +330,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   const MBMS_flag_t       MBMS_flagP,
   const logical_chan_id_t channel_idP,
   const tb_size_t         tb_sizeP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t sourceL2Id
   ,const uint32_t destinationL2Id
 #endif
@@ -351,25 +363,22 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
 
     key = RLC_COLL_KEY_MBMS_VALUE(module_idP, rntiP, enb_flagP, mbms_id_p->service_id, mbms_id_p->session_id);
   } else {
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if ((sourceL2Id > 0) && (destinationL2Id > 0)) {
        key = RLC_COLL_KEY_SOURCE_DEST_VALUE(module_idP, rntiP, enb_flagP, channel_idP, sourceL2Id, destinationL2Id, srb_flag);
     } else
 #endif
     {
-    	//LOG_I(RLC, "Panos-D mac_rlc_status_ind 1 enb_flagP: %d, channel_idP: %d, srb_flag: %d \n", enb_flagP, channel_idP, srb_flag);
     key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
     }
 }
 
-  //LOG_I(RLC, "Panos-D mac_rlc_status_ind 2 enb_flagP: %d, channel_idP: %d, srb_flag: %d \n", enb_flagP, channel_idP, srb_flag);
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
 
   if (h_rc == HASH_TABLE_OK) {
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    //LOG_D(RLC , "Panos-D: mac_rlc_status_ind() In RLC_MODE_NONE \n");
     //LOG_W(RLC , "[%s] RLC not configured lcid %u module %u!\n", __FUNCTION__, channel_idP, module_idP);
     //LOG_D(RLC , "[%s] RLC not configured rb id %u lcid %u module %u!\n", __FUNCTION__, rb_id, channel_idP, ue_module_idP);
   }
@@ -441,8 +450,12 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
   /* Assumptions : for UE only */
   /* At each TTI, Buffer Occupancy is first computed in mac_rlc_status_ind called by MAC ue_scheduler() function */
   /* Then this function is called during MAC multiplexing ue_get_sdu(), and it may be call several times for the same bearer if it is in AM mode and there are several PDU types to transmit */
-  AssertFatal(enb_flagP == FALSE,"RLC Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%d\n", channel_idP);
-
+  //AssertFatal(enb_flagP == FALSE,"RLC Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%d\n", channel_idP);
+	if(enb_flagP != FALSE){
+		LOG_E(RLC, "Tx mac_rlc_get_buffer_occupancy_ind function is not implemented for eNB LcId=%u\n", channel_idP);
+		return 0;
+	}
+	
 
   key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
 

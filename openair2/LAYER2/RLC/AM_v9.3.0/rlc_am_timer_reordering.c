@@ -27,7 +27,7 @@
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
 # include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils//LOG/log.h"
 #include "msc.h"
 //-----------------------------------------------------------------------------
 void
@@ -70,7 +70,12 @@ rlc_am_check_timer_reordering(
                              PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP));
 #endif
 
-      AssertFatal (rlc_pP->vr_x != RLC_SN_UNDEFINED, "RLC AM TReordering Expiry vrX not defined LcId=%d\n", rlc_pP->channel_id);
+      //AssertFatal (rlc_pP->vr_x != RLC_SN_UNDEFINED, "RLC AM TReordering Expiry vrX not defined LcId=%d\n", rlc_pP->channel_id);
+      if(rlc_pP->vr_x == RLC_SN_UNDEFINED){
+      	LOG_E(RLC, "RLC AM TReordering Expiry vrX not defined LcId=%d\n", rlc_pP->channel_id);
+      	return;
+      }
+      	
 
       rlc_pP->t_reordering.running   = 0;
       rlc_pP->t_reordering.timed_out = 1;
@@ -81,8 +86,12 @@ rlc_am_check_timer_reordering(
       cursor    =  rlc_pP->receiver_buffer.head;
       rlc_usn_t vr_ms_new = rlc_pP->vr_x;
 
-      AssertFatal (cursor != NULL, "RLC AM TReordering Expiry Rx PDU list empty LcId=%d\n", rlc_pP->channel_id);
-
+      //AssertFatal (cursor != NULL, "RLC AM TReordering Expiry Rx PDU list empty LcId=%d\n", rlc_pP->channel_id);
+      if(cursor == NULL){
+      	LOG_E(RLC, "RLC AM TReordering Expiry Rx PDU list empty LcId=%d\n", rlc_pP->channel_id);
+      	return;
+      }
+      	
       /* go to memblock up to vrX*/
       pdu_info =  &((rlc_am_rx_pdu_management_t*)(cursor->data))->pdu_info;
       while ((cursor != NULL) && (RLC_AM_DIFF_SN(pdu_info->sn,rlc_pP->vr_r) < RLC_AM_DIFF_SN(vr_ms_new,rlc_pP->vr_r))) {

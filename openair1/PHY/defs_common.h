@@ -72,13 +72,11 @@
 
 #include <pthread.h>
 
-#include "targets/ARCH/COMMON/common_lib.h"
 #include "targets/COMMON/openairinterface5g_limits.h"
 
 #include "types.h"
 #include "nfapi_interface.h"
 //#include "defs.h"
-#include "openair2/COMMON/platform_types.h"
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2
@@ -159,7 +157,7 @@ typedef struct {
   PRACH_CONFIG_INFO prach_ConfigInfo;
 } PRACH_CONFIG_COMMON;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 /// PRACH-eMTC-Config from 36.331 RRC spec
 typedef struct {
@@ -192,7 +190,7 @@ typedef struct {
   /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
   uint8_t prach_Config_enabled;
   /// PRACH Configuration Information
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
 #endif  
 } PRACH_eMTC_CONFIG_COMMON;
@@ -644,7 +642,7 @@ typedef struct {
   uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// PRACH_eMTC_CONFIG
   PRACH_eMTC_CONFIG_COMMON prach_emtc_config_common;
 #endif
@@ -678,7 +676,8 @@ typedef struct {
   uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[MAX_MBSFN_AREA];
-
+  /// for fair RR scheduler
+  uint32_t ue_multiple_max;
 } LTE_DL_FRAME_PARMS;
 
 typedef enum {
@@ -931,7 +930,7 @@ typedef enum {
 
 void exit_fun(const char* s);
 
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log_extern.h"
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
@@ -958,13 +957,11 @@ extern int sync_var;
 #define DECODE_NUM_FPTR              13
 
 
-typedef uint8_t(*decoder_if_t)(int16_t *y,
+typedef uint8_t(decoder_if_t)(int16_t *y,
                                int16_t *y2,
     		               uint8_t *decoded_bytes,
     		               uint8_t *decoded_bytes2,
 	   		       uint16_t n,
-	   		       uint16_t f1,
-	   		       uint16_t f2,
 	   		       uint8_t max_iterations,
 	   		       uint8_t crc_type,
 	   		       uint8_t F,
@@ -976,17 +973,15 @@ typedef uint8_t(*decoder_if_t)(int16_t *y,
 	   		       time_stats_t *intl1_stats,
                                time_stats_t *intl2_stats);
 
-typedef uint8_t(*encoder_if_t)(uint8_t *input,
+typedef uint8_t(encoder_if_t)(uint8_t *input,
                                uint16_t input_length_bytes,
                                uint8_t *output,
-                               uint8_t F,
-                               uint16_t interleaver_f1,
-                               uint16_t interleaver_f2);
+                               uint8_t F);
 
 
 static inline void wait_sync(char *thread_name) {
 
-  printf( "waiting for sync (%s,%p,%p,%p)\n",thread_name,&sync_var,&sync_cond,&sync_mutex);
+  printf( "waiting for sync (%s,%d/%p,%p,%p)\n",thread_name,sync_var,&sync_var,&sync_cond,&sync_mutex);
   pthread_mutex_lock( &sync_mutex );
   
   while (sync_var<0)

@@ -34,21 +34,6 @@
 */
 #    ifndef __RLC_UM_H__
 #        define __RLC_UM_H__
-#        ifdef RLC_UM_C
-#            define private_rlc_um(x)
-#            define protected_rlc_um(x)
-#            define public_rlc_um(x)
-#        else
-#            ifdef RLC_UM_MODULE
-#                define private_rlc_um(x)
-#                define protected_rlc_um(x)  extern x
-#                define public_rlc_um(x)     extern x
-#            else
-#                define private_rlc_um(x)
-#                define protected_rlc_um(x)
-#                define public_rlc_um(x)     extern x
-#            endif
-#        endif
 #        include <errno.h>
 #        include "platform_types.h"
 #        include "rlc_def.h"
@@ -141,40 +126,40 @@
 * \param[out] stat_rx_data_bytes_out_of_window     Number of data bytes received out of the receive window.
 * \param[out] stat_timer_reordering_timed_out      Number of times the timer "reordering" has timed-out.
 */
-public_rlc_um(void     rlc_um_stat_req     (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,
-              unsigned int* stat_tx_pdcp_sdu,
-              unsigned int* stat_tx_pdcp_bytes,
-              unsigned int* stat_tx_pdcp_sdu_discarded,
-              unsigned int* stat_tx_pdcp_bytes_discarded,
-              unsigned int* stat_tx_data_pdu,
-              unsigned int* stat_tx_data_bytes,
-              unsigned int* stat_rx_pdcp_sdu,
-              unsigned int* stat_rx_pdcp_bytes,
-              unsigned int* stat_rx_data_pdus_duplicate,
-              unsigned int* stat_rx_data_bytes_duplicate,
-              unsigned int* stat_rx_data_pdu,
-              unsigned int* stat_rx_data_bytes,
-              unsigned int* stat_rx_data_pdu_dropped,
-              unsigned int* stat_rx_data_bytes_dropped,
-              unsigned int* stat_rx_data_pdu_out_of_window,
-              unsigned int* stat_rx_data_bytes_out_of_window,
-              unsigned int* stat_timer_reordering_timed_out);)
+void rlc_um_stat_req     (rlc_um_entity_t *rlc_pP,
+                          unsigned int* stat_tx_pdcp_sdu,
+                          unsigned int* stat_tx_pdcp_bytes,
+                          unsigned int* stat_tx_pdcp_sdu_discarded,
+                          unsigned int* stat_tx_pdcp_bytes_discarded,
+                          unsigned int* stat_tx_data_pdu,
+                          unsigned int* stat_tx_data_bytes,
+                          unsigned int* stat_rx_pdcp_sdu,
+                          unsigned int* stat_rx_pdcp_bytes,
+                          unsigned int* stat_rx_data_pdus_duplicate,
+                          unsigned int* stat_rx_data_bytes_duplicate,
+                          unsigned int* stat_rx_data_pdu,
+                          unsigned int* stat_rx_data_bytes,
+                          unsigned int* stat_rx_data_pdu_dropped,
+                          unsigned int* stat_rx_data_bytes_dropped,
+                          unsigned int* stat_rx_data_pdu_out_of_window,
+                          unsigned int* stat_rx_data_bytes_out_of_window,
+                          unsigned int* stat_timer_reordering_timed_out);
 
 /*! \fn void     rlc_um_get_pdus (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
 * \brief    Request the segmentation of SDUs based on status previously sent by MAC.
 * \param[in]  ctxt_pP                   Running context.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 */
-private_rlc_um(   void     rlc_um_get_pdus (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP);)
-
+void
+rlc_um_get_pdus (const protocol_ctxt_t* const ctxt_pP, void *argP);
 /*! \fn void rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, struct mac_data_ind data_indication)
 * \brief    Process the received PDUs from lower layer.
 * \param[in]  ctxt_pP                   Running context.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 * \param[in]  data_indication           PDUs from MAC.
 */
-protected_rlc_um( void     rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, struct mac_data_ind data_indication);)
-
+void
+rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, void *argP, struct mac_data_ind data_indP);
 /*! \fn struct mac_status_resp rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP)
 * \brief    Request the maximum number of bytes that can be served by RLC instance to MAC and fix the amount of bytes requested by MAC for next RLC transmission.
 * \param[in]  ctxt_pP                   Running context.
@@ -183,14 +168,19 @@ protected_rlc_um( void     rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, rlc_
 * \param[in]  tx_statusP                Transmission status given by MAC on previous MAC transmission of the PDU.
 * \return     The maximum number of bytes that can be served by RLC instance to MAC.
 */
-public_rlc_um(    struct mac_status_resp rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP, const eNB_flag_t enb_flagP);)
+struct mac_status_resp
+rlc_um_mac_status_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP, uint16_t tbs_sizeP, struct mac_status_ind tx_statusP,const eNB_flag_t enb_flagP);
 
 /*! \fn void     rlc_um_set_nb_bytes_requested_by_mac (rlc_um_entity_t * const rlc_pP, const tb_size_t		tb_sizeP)
 * \brief    Set available TBS size for MAC Tx.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 * \param[in]  tb_sizeP                 remaining TBS in bytes.
 */
-public_rlc_um(   void     rlc_um_set_nb_bytes_requested_by_mac (rlc_um_entity_t * const rlc_pP, const tb_size_t		tb_sizeP);)
+void
+rlc_um_set_nb_bytes_requested_by_mac (
+  void *                                rlc_pP,
+  const tb_size_t               tb_sizeP
+);
 
 /*! \fn struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,const eNB_flag_t  enb_flagP)
 * \brief    Gives PDUs to lower layer MAC.
@@ -199,8 +189,8 @@ public_rlc_um(   void     rlc_um_set_nb_bytes_requested_by_mac (rlc_um_entity_t 
 * \param[in]  enb_flagP                 eNB or UE flag.
 * \return     A PDU of the previously requested number of bytes, and the updated maximum number of bytes that can be served by RLC instance to MAC for next RLC transmission.
 */
-public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,const eNB_flag_t  enb_flagP);)
-
+struct mac_data_req
+rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP,const eNB_flag_t  enb_flagP);
 
 /*! \fn void     rlc_um_mac_data_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,struct mac_data_ind data_indP)
 * \brief    Receive PDUs from lower layer MAC.
@@ -208,13 +198,12 @@ public_rlc_um(    struct mac_data_req rlc_um_mac_data_request (const protocol_ct
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 * \param[in]  data_indP                 PDUs from MAC.
 */
-public_rlc_um(   void     rlc_um_mac_data_indication (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, struct mac_data_ind data_indP);)
 
 /*! \fn uint32_t rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlc_pP)
 * \brief    Gets Tx Buffer Occupancy.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.)
 */
-public_rlc_um(    uint32_t rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlc_pP);)
+uint32_t rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlc_pP);
 
 /*! \fn void     rlc_um_data_req (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, mem_block_t *sduP)
 * \brief    Interface with higher layers, buffer higher layer SDUS for transmission.
@@ -222,6 +211,9 @@ public_rlc_um(    uint32_t rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlc_pP)
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 * \param[in]  sduP                      SDU. (A struct rlc_um_data_req is mapped on sduP->data.)
 */
-public_rlc_um(    void     rlc_um_data_req (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, mem_block_t *sduP);)
+void
+rlc_um_mac_data_indication (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP, struct mac_data_ind data_indP);
+void
+rlc_um_data_req (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP, mem_block_t *sdu_pP) ;
 /** @} */
 #    endif

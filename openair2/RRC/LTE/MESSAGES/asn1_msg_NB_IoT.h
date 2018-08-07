@@ -44,7 +44,7 @@
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 
 
-#include "RRC/LITE/defs_NB_IoT.h"
+#include "RRC/LTE/defs_NB_IoT.h"
 
 /*
  * The variant of the above function which dumps the BASIC-XER (XER_F_BASIC)

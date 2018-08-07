@@ -56,10 +56,13 @@ Description Defines functions used to handle ESM procedure transactions.
 /****************************************************************************/
 
 /* String representation of ESM procedure transaction status */
+const char *esm_pt_state2str( int esmptstate){
 static const char *_esm_pt_state_str[ESM_PT_STATE_MAX] = {
   "PROCEDURE TRANSACTION INACTIVE",
   "PROCEDURE TRANSACTION PENDING"
 };
+  return _esm_pt_state_str[esmptstate];
+}
 
 /* Return the index of the next available entry in the list of procedure
  * transaction data */
@@ -380,7 +383,7 @@ int esm_pt_set_status(esm_pt_data_t *esm_pt_data, int pti, esm_pt_state status)
   if (status < ESM_PT_STATE_MAX) {
     LOG_TRACE(INFO, "ESM-FSM   - Status of procedure transaction %d changed:"
               " %s ===> %s", pti,
-              _esm_pt_state_str[old_status], _esm_pt_state_str[status]);
+              esm_pt_state2str(old_status), esm_pt_state2str(status));
 
     if (status != old_status) {
       ctx->status = status;

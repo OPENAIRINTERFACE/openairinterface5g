@@ -94,6 +94,7 @@ umts_add_timer_list_up (list2_t * atimer_listP, void (*procP) (void *, void *), 
   uint8_t              inserted = 0;
 
   mb = get_free_mem_block (sizeof (struct timer_unit), __func__);
+  if(mb==NULL) return NULL;
   ((struct timer_unit *) (mb->data))->proc = procP;
   ((struct timer_unit *) (mb->data))->protocol = protocolP;
   ((struct timer_unit *) (mb->data))->timer_id = timer_idP;

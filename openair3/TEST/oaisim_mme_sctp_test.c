@@ -35,7 +35,6 @@
 #include "s1ap_common.h"
 #include "s1ap_eNB.h"
 #include "s1ap_mme.h"
-#include "s1ap_ies_defs.h"
 
 #include "s1ap_eNB_encoder.h"
 #include "s1ap_eNB_decoder.h"

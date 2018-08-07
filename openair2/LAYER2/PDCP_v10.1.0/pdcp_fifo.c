@@ -52,10 +52,10 @@ extern int otg_enabled;
 //#include "SIMULATION/ETH_TRANSPORT/extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/FIFO/pad_list.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "platform_constants.h"
 #include "msc.h"
 #include "pdcp.h"
@@ -202,7 +202,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
       cont = 0;
 
 //TTN - for D2D (PC5S)
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       sidelink_pc5s_element *sl_pc5s_msg_recv = NULL;
       char send_buf[BUFSIZE];
       int rb_id = ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id;
@@ -452,7 +452,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
       pdcp_data_req(&ctxt, SRB_FLAG_NO, rab_id, RLC_MUI_UNDEFINED,
                     RLC_SDU_CONFIRM_NO, len, (unsigned char *)nl_rx_buf,
                     PDCP_TRANSMISSION_MODE_DATA
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                     , NULL, NULL
 #endif
                    );
@@ -488,10 +488,9 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
    pdcp_t*                        pdcp_p    = NULL;
 
 //TTN for D2D (PC5S)
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
    int prose_addr_len;
    char send_buf[BUFSIZE], receive_buf[BUFSIZE];
-   // Panos: Remove the following definitions due to warnings of unused variables.
    //int optval;
    int bytes_received;
    sidelink_pc5s_element *sl_pc5s_msg_recv = NULL;
@@ -568,7 +567,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                data_p->pdcp_read_header.data_size,
                data_p->data,
                pdcp_mode
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,NULL, NULL
 #endif
                );
@@ -596,7 +595,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                      data_p->pdcp_read_header.data_size,
                      data_p->data,
                      PDCP_TRANSMISSION_MODE_DATA
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                      ,NULL, NULL
 #endif
                      );
@@ -613,7 +612,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                data_p->pdcp_read_header.data_size,
                data_p->data,
                PDCP_TRANSMISSION_MODE_DATA
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,NULL, NULL
 #endif
                );
@@ -633,7 +632,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
 
 //TTN for D2D (PC5S)
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
    prose_addr_len = sizeof(prose_pdcp_addr);
    // receive a message from ProSe App
    memset(receive_buf, 0, BUFSIZE);
@@ -775,7 +774,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                         pc5s_header->data_size,
                         (unsigned char *)receive_buf,
                         PDCP_TRANSMISSION_MODE_DATA
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,&pc5s_header->sourceL2Id
                         ,&pc5s_header->destinationL2Id
 #endif
@@ -833,7 +832,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                      pc5s_header->data_size,
                      (unsigned char *)receive_buf,
                      PDCP_TRANSMISSION_MODE_DATA
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                      ,&pc5s_header->sourceL2Id
                      ,&pc5s_header->destinationL2Id
 #endif
@@ -980,7 +979,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                               pdcp_read_header_g.data_size,
                               (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                               PDCP_TRANSMISSION_MODE_DATA
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                               ,NULL, NULL
 #endif
                               );
@@ -1017,7 +1016,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                                  pdcp_read_header_g.data_size,
                                  (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                                  PDCP_TRANSMISSION_MODE_DATA
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,NULL, NULL
 #endif
                                 );
@@ -1083,7 +1082,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                               pdcp_read_header_g.data_size,
                               (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                               PDCP_TRANSMISSION_MODE_DATA
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                               ,&pdcp_read_header_g.sourceL2Id
                               ,&pdcp_read_header_g.destinationL2Id
 #endif
@@ -1141,7 +1140,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                            pdcp_read_header_g.data_size,
                            (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                            PDCP_TRANSMISSION_MODE_DATA
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            ,&pdcp_read_header_g.sourceL2Id
                            ,&pdcp_read_header_g.destinationL2Id
 #endif
@@ -1189,7 +1188,7 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
 }
 
 //TTN for D2D (PC5S)
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 void
 pdcp_pc5_socket_init() {

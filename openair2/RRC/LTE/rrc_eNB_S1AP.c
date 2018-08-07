@@ -58,7 +58,7 @@
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
 
 #include "TLVDecoder.h"
-#include "S1ap-NAS-PDU.h"
+#include "S1AP_NAS-PDU.h"
 #include "flexran_agent_common_internal.h"
 
 extern RAN_CONTEXT_t RC;
@@ -678,7 +678,8 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
     return;
   }
 
-  asn_enc_rval_t ret = uper_encode_to_buffer(&asn_DEF_UECapabilityInformation, ueCapabilityInformation, buf, 4096);
+  asn_enc_rval_t ret = uper_encode_to_buffer(&asn_DEF_UECapabilityInformation, NULL, ueCapabilityInformation, buf, 4096);
+
   if (ret.encoded == -1) abort();
 
   memset(&rac, 0, sizeof(UERadioAccessCapabilityInformation_t));
@@ -692,7 +693,9 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
   /* 8192 is arbitrary, should be big enough */
   buf2 = malloc16(8192);
   if (buf2 == NULL) abort();
-  ret = uper_encode_to_buffer(&asn_DEF_UERadioAccessCapabilityInformation, &rac, buf2, 8192);
+
+  ret = uper_encode_to_buffer(&asn_DEF_UERadioAccessCapabilityInformation, NULL, &rac, buf2, 8192);
+
   if (ret.encoded == -1) abort();
 
   MessageDef *msg_p;
@@ -1289,62 +1292,6 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const ch
                   instance,
                   eNB_ue_s1ap_id);
     */
-    {
-      int      e_rab;
-      //int      mod_id = 0;
-      MessageDef *msg_delete_tunnels_p = NULL;
-
-      MSC_LOG_TX_MESSAGE(
-            MSC_RRC_ENB,
-            MSC_GTPU_ENB,
-            NULL,0,
-            "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ",
-            eNB_ue_s1ap_id);
-
-      msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-      memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p),
-             0,
-             sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-
-      // do not wait response
-      GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-
-      for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-        GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
-          ue_context_p->ue_context.enb_gtp_ebi[e_rab];
-        // erase data
-        ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
-        memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
-        ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
-      }
-
-      itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
-
-
-      MSC_LOG_TX_MESSAGE(
-            MSC_RRC_ENB,
-            MSC_S1AP_ENB,
-            NULL,0,
-            "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
-            eNB_ue_s1ap_id);
-
-      MessageDef *msg_complete_p = NULL;
-      msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
-      S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-      itti_send_msg_to_task(TASK_S1AP, instance, msg_complete_p);
-
-      rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(
-      		RC.rrc[instance],
-      		UE_INITIAL_ID_INVALID,
-      		eNB_ue_s1ap_id);
-
-      if (NULL != rrc_ue_s1ap_ids) {
-        rrc_eNB_S1AP_remove_ue_ids(
-      		  RC.rrc[instance],
-      		  rrc_ue_s1ap_ids);
-      }
-    }
-
     return (0);
   }
 }
@@ -1788,7 +1735,6 @@ MSC_LOG_TX_MESSAGE(
   return 0;
 }
 int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *msg_name, instance_t instance){
-    uint16_t                        mme_ue_s1ap_id;
     uint32_t                        eNB_ue_s1ap_id;
     struct rrc_eNB_ue_context_s*    ue_context_p = NULL;
     protocol_ctxt_t                 ctxt;
@@ -1803,7 +1749,6 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
     e_rab_release_drb = 0;
     memcpy(&e_rab_release_params[0], &(S1AP_E_RAB_RELEASE_COMMAND (msg_p).e_rab_release_params[0]), sizeof(e_rab_release_t)*S1AP_MAX_E_RAB);
 
-    mme_ue_s1ap_id  = S1AP_E_RAB_RELEASE_COMMAND (msg_p).mme_ue_s1ap_id;
     eNB_ue_s1ap_id = S1AP_E_RAB_RELEASE_COMMAND (msg_p).eNB_ue_s1ap_id;
     nb_e_rabs_torelease = S1AP_E_RAB_RELEASE_COMMAND (msg_p).nb_e_rabs_torelease;
     ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
@@ -1813,7 +1758,7 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
         xid = rrc_eNB_get_next_transaction_identifier(ctxt.module_id);
 
         LOG_D(RRC,"S1AP-E-RAB Release Command: MME_UE_S1AP_ID %d  ENB_UE_S1AP_ID %d release_e_rabs %d \n",
-            mme_ue_s1ap_id, eNB_ue_s1ap_id,nb_e_rabs_torelease);
+            S1AP_E_RAB_RELEASE_COMMAND (msg_p).mme_ue_s1ap_id, eNB_ue_s1ap_id,nb_e_rabs_torelease);
         for(erab = 0; erab < nb_e_rabs_torelease; erab++){
             b_existed = 0;
             is_existed = 0;
@@ -1993,7 +1938,7 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
 
               /* insert data to UE_PF_PO or update data in UE_PF_PO */
               pthread_mutex_lock(&ue_pf_po_mutex);
-              uint8_t i = 0;
+              uint16_t i = 0;
               for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
                 if ((UE_PF_PO[CC_id][i].enable_flag == TRUE && UE_PF_PO[CC_id][i].ue_index_value == (uint16_t)(S1AP_PAGING_IND(msg_p).ue_index_value))
                     || (UE_PF_PO[CC_id][i].enable_flag != TRUE)) {
@@ -2039,6 +1984,11 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
                                   buffer,
                                   S1AP_PAGING_IND(msg_p).ue_paging_identity,
                                   S1AP_PAGING_IND(msg_p).cn_domain);
+              if(length == -1)
+              {
+                LOG_I(RRC, "do_Paging error");
+                return -1;
+              }
               message_buffer = itti_malloc (TASK_RRC_ENB, TASK_PDCP_ENB, length);
               /* Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling). */
               memcpy (message_buffer, buffer, length);

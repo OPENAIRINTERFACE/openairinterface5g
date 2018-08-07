@@ -31,7 +31,7 @@
 #include <openssl/cmac.h>
 #include <openssl/evp.h>
 
-#include "UTIL/LOG/log.h"
+#include "common/utils//LOG/log.h"
 
 #include "osa_defs.h"
 #include "osa_snow3g.h"

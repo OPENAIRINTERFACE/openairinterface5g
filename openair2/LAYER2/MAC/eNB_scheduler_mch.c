@@ -33,8 +33,8 @@
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -633,7 +633,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 			       MTCH,
 			       TBS - header_len_mcch - header_len_msi -
 			       sdu_length_total - header_len_mtch
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                     ,0, 0
 #endif
                                     );
@@ -652,7 +652,7 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 	    sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 0, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_YES, MTCH, 0,	//not used
 						     (char *)
 						     &mch_buffer[sdu_length_total]
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,0,
                                  0
 #endif

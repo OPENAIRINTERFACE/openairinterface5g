@@ -256,9 +256,9 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *ue,
 
 
 
-//extern int write_output(const char *,const char *,void *,int,int,char);
+//extern int LOG_M(const char *,const char *,void *,int,int,char);
 // flag change eren
-extern int write_output(const char *,const char *,void *,int,int,char);
+extern int LOG_M(const char *,const char *,void *,int,int,char);
 main()
 {
 
@@ -317,10 +317,10 @@ main()
                    0);
 
 
-  write_output("dl_cell_spec00.m","dl_cs00",output00,1024,1,1);
-  write_output("dl_cell_spec01.m","dl_cs01",output01,1024,1,1);
-  write_output("dl_cell_spec10.m","dl_cs10",output10,1024,1,1);
-  write_output("dl_cell_spec11.m","dl_cs11",output11,1024,1,1);
+  LOG_M("dl_cell_spec00.m","dl_cs00",output00,1024,1,1);
+  LOG_M("dl_cell_spec01.m","dl_cs01",output01,1024,1,1);
+  LOG_M("dl_cell_spec10.m","dl_cs10",output10,1024,1,1);
+  LOG_M("dl_cell_spec11.m","dl_cs11",output11,1024,1,1);
 }
 
 #endif

@@ -35,6 +35,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <dlfcn.h>
+#include <arpa/inet.h>
+
 #include "config_userapi.h"
 extern void exit_fun(const char* s);  // lte-softmodem clean exit function
 
@@ -50,10 +52,30 @@ configmodule_interface_t *config_get_if(void)
 
 char * config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) 
 {
-
+     if (ptr == NULL ) {
+        ptr = malloc(sizeof(char *));
+        if (ptr != NULL) {
+            *ptr=NULL;
+            cfgoptions->strptr=ptr;
+            if ( (cfgoptions->paramflags & PARAMFLAG_NOFREE) == 0) {
+            	config_get_if()->ptrs[config_get_if()->numptrs] = (char *)ptr;
+            	config_get_if()->numptrs++;
+            }
+        } else {		 
+            fprintf(stderr, "[CONFIG] %s %d option %s, cannot allocate pointer: %s \n", 
+                    __FILE__, __LINE__, cfgoptions->optname, strerror(errno));
+            exit(-1);
+        }         
+     }
      printf_ptrs("[CONFIG] %s ptr: 0x%08lx requested size: %i\n",cfgoptions->optname,(uintptr_t)(ptr),length);
-     if(cfgoptions->numelt > 0) { /* already allocated */
-          return *ptr;
+     if(cfgoptions->numelt > 0 && PARAM_ISSCALAR(cfgoptions)  ) { /* already allocated */
+          if (*ptr != NULL) {
+              return *ptr;
+          } else {
+              fprintf(stderr,"[CONFIG] %s %d option %s, definition error: value pointer is NULL, declared as %i bytes allocated\n", 
+                       __FILE__, __LINE__,cfgoptions->optname, cfgoptions->numelt);
+              exit(-1);
+          }
      }
 
      if (*ptr == NULL) {
@@ -75,7 +97,7 @@ char * config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length)
 void config_assign_int(paramdef_t *cfgoptions, char *fullname, int val)
 {
 int tmpval=val;
-  if ( ((cfgoptions->paramflags &PARAMFLAG_BOOL) != 0) && tmpval >1) {
+  if ( ((cfgoptions->paramflags &PARAMFLAG_BOOL) != 0) && tmpval >0) {
       tmpval =1;
   }
   switch (cfgoptions->type) {
@@ -160,7 +182,7 @@ int st=0;
        }
    }
    if (st != 0) {
-      fprintf(stderr,"[CONFIG] config_execcheck: %i parameters with wrong value\n", -st); 
+      fprintf(stderr,"[CONFIG] config_execcheck: section %s %i parameters with wrong value\n", prefix, -st); 
       if ( CONFIG_ISFLAGSET(CONFIG_NOABORTONCHKF) == 0) {
           exit_fun("exit because configuration failed\n");
       }
@@ -173,7 +195,7 @@ int config_get(paramdef_t *params,int numparams, char *prefix)
 int ret= -1;
 
 if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
-    fprintf(stderr,"[CONFIG] config_get skipped, config module not properly initialized\n");
+    fprintf(stderr,"[CONFIG] config_get, section %s skipped, config module not properly initialized\n",prefix);
     return ret;
 }
 configmodule_interface_t *cfgif = config_get_if();
@@ -283,3 +305,115 @@ int config_checkstr_assign_integer(paramdef_t *param)
 
     return -1;
 }
+
+int config_setdefault_string(paramdef_t *cfgoptions, char *prefix)
+{
+  int status = 0;
+  if( cfgoptions->defstrval != NULL) {
+     status=1;
+
+     if (cfgoptions->numelt == 0 ) {
+	 config_check_valptr(cfgoptions, (char **)(cfgoptions->strptr), sizeof(char *));
+	 config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(cfgoptions->defstrval)+1);
+	 sprintf(*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
+	 printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, *(cfgoptions->strptr));
+     } else {
+	sprintf((char *)*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
+	printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (char *)*(cfgoptions->strptr));
+     }
+  }
+  return status;
+}
+
+int config_setdefault_stringlist(paramdef_t *cfgoptions, char *prefix)
+{
+  int status = 0;
+  if( cfgoptions->defstrlistval != NULL) {
+     cfgoptions->strlistptr=cfgoptions->defstrlistval;
+     status=1;
+     for(int j=0; j<cfgoptions->numelt; j++)
+  	 printf_params("[CONFIG] %s.%s[%i] set to default value %s\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname,j, cfgoptions->strlistptr[j]);
+  }
+  return status;
+}
+
+int config_setdefault_int(paramdef_t *cfgoptions, char *prefix)
+{
+  int status = 0;
+  config_check_valptr(cfgoptions, (char **)(&(cfgoptions->iptr)),sizeof(int32_t));
+  if( ((cfgoptions->paramflags & PARAMFLAG_MANDATORY) == 0)) {
+     config_assign_int(cfgoptions,cfgoptions->optname,cfgoptions->defintval);
+     status=1;
+     printf_params("[CONFIG] %s.%s set to default value\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname);
+  }
+  return status;
+}	
+
+int config_setdefault_int64(paramdef_t *cfgoptions, char *prefix)
+{
+  int status = 0;
+  config_check_valptr(cfgoptions, (char **)&(cfgoptions->i64ptr),sizeof(long long));
+  if( ((cfgoptions->paramflags & PARAMFLAG_MANDATORY) == 0)) {
+     *(cfgoptions->u64ptr)=cfgoptions->defuintval;
+     status=1;
+     printf_params("[CONFIG] %s.%s set to default value %llu\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (long long unsigned)(*(cfgoptions->u64ptr)));
+  }
+  return status;
+}
+
+int config_setdefault_intlist(paramdef_t *cfgoptions, char *prefix)
+{
+  int status = 0;	  
+  if( cfgoptions->defintarrayval != NULL) {
+    config_check_valptr(cfgoptions,(char **)&(cfgoptions->iptr), sizeof(int32_t*));
+    cfgoptions->iptr=cfgoptions->defintarrayval;
+    status=1;
+    for (int j=0; j<cfgoptions->numelt ; j++) {
+  	printf_params("[CONFIG] %s[%i] set to default value %i\n",cfgoptions->optname ,j,(int)cfgoptions->iptr[j]);
+    }
+  }
+  return status;
+}
+
+int config_setdefault_double(paramdef_t *cfgoptions, char *prefix)
+{
+  int status = 0;
+  config_check_valptr(cfgoptions, (char **)&(cfgoptions->dblptr),sizeof(double));
+  if( ((cfgoptions->paramflags & PARAMFLAG_MANDATORY) == 0)) {
+     *(cfgoptions->u64ptr)=cfgoptions->defdblval;
+     status=1;
+     printf_params("[CONFIG] %s set to default value %lf\n",cfgoptions->optname , *(cfgoptions->dblptr));
+  }
+  return status;
+} 
+
+int config_assign_ipv4addr(paramdef_t *cfgoptions, char *ipv4addr)
+{
+  config_check_valptr(cfgoptions,(char **)&(cfgoptions->uptr), sizeof(int));
+  int rst=inet_pton(AF_INET, ipv4addr ,cfgoptions->uptr ); 
+  if (rst == 1 && *(cfgoptions->uptr) > 0) {
+     printf_params("[CONFIG] %s: %s\n",cfgoptions->optname, ipv4addr);
+     return 1;
+  } else {
+     if ( strncmp(ipv4addr,ANY_IPV4ADDR_STRING,sizeof(ANY_IPV4ADDR_STRING)) == 0) {
+  	printf_params("[CONFIG] %s:%s (INADDR_ANY) \n",cfgoptions->optname,ipv4addr);
+  	*cfgoptions->uptr=INADDR_ANY;
+        return 1;
+     } else {
+  	fprintf(stderr,"[CONFIG] %s not valid for %s \n", ipv4addr, cfgoptions->optname);
+     	return -1;
+     }
+  }
+  return 0;
+}
+
+
+int config_setdefault_ipv4addr(paramdef_t *cfgoptions,  char *prefix)
+{
+  int status = 0;
+ 
+  if (cfgoptions->defstrval != NULL) {
+     status = config_assign_ipv4addr(cfgoptions, cfgoptions->defstrval);
+  }
+  return status;
+}    
