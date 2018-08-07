@@ -33,7 +33,7 @@
 #include "PHY/phy_extern.h"
 #include "SCHED/sched_eNB.h"
 #include "LAYER2/MAC/mac.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "assertions.h"
 

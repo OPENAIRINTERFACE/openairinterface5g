@@ -58,7 +58,7 @@
 #define LOG_T(c, x...) printf(x)
 typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
 #else
-#include "../UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #endif
 
 

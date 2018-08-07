@@ -35,7 +35,7 @@
 #include <string.h> /* for strerror(3) */
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
@@ -1399,7 +1399,6 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv)
 
   asn_enc_rval_t enc_rval;
   uint8_t buf[5],buf2=0;
-  uint8_t ecause=0;
 
   UL_CCCH_Message_t ul_ccch_msg;
 
@@ -1472,7 +1471,7 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv)
 # endif
 #endif
 
-  LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %zd bits (%zd bytes), ecause %d\n",enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+  LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %zd bits (%zd bytes) \n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 
   return((enc_rval.encoded+7)/8);
 
@@ -1806,7 +1805,6 @@ do_RRCConnectionSetup(
 {
 
   asn_enc_rval_t enc_rval;
-  uint8_t ecause=0;
   eNB_RRC_INST *rrc               = RC.rrc[ctxt_pP->module_id];
   rrc_eNB_carrier_data_t *carrier = &rrc->carrier[CC_id];
  
@@ -2200,8 +2198,8 @@ do_RRCConnectionSetup(
 # endif
 #endif
 
-  LOG_D(RRC,"RRCConnectionSetup Encoded %zd bits (%zd bytes), ecause %d\n",
-        enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+  LOG_D(RRC,"RRCConnectionSetup Encoded %zd bits (%zd bytes) \n",
+        enc_rval.encoded,(enc_rval.encoded+7)/8);
 
   //  FREEMEM(SRB_list);
   //  free(SRB1_config);

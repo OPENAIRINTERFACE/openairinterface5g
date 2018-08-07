@@ -33,13 +33,13 @@
 #include "mac_extern.h"
 #include "mac.h"
 #include "mac_proto.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
 #include "SCHED_UE/sched_UE.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -314,9 +314,8 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
     struct RACH_ConfigCommon *rach_ConfigCommon =
 	(struct RACH_ConfigCommon *) NULL;
     int32_t frame_diff = 0;
-    mac_rlc_status_resp_t rlc_status;
     uint8_t dcch_header_len = 0;
-    uint16_t sdu_lengths[8];
+    uint16_t sdu_lengths;
     uint8_t ulsch_buff[MAX_ULSCH_PAYLOAD_BYTES];
 
     AssertFatal(CC_id == 0,
@@ -405,8 +404,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 						 [DCCH]] > 0) {
 		// This is for triggering a transmission on DCCH using PRACH (during handover, or sending SR for example)
 		dcch_header_len = 2 + 2;	/// SHORT Subheader + C-RNTI control element
-		rlc_status =
-		    mac_rlc_status_ind(module_idP,
+                LOG_USEDINLOG_VAR(mac_rlc_status_resp_t,rlc_status)=mac_rlc_status_ind(module_idP,
 				       UE_mac_inst[module_idP].crnti,
 				       eNB_indexP, frameP, subframeP,
 				       ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6
@@ -414,7 +412,6 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
                ,0, 0
 #endif
                );
-
 
 		if (UE_mac_inst[module_idP].crnti_before_ho)
 		    LOG_D(MAC,
@@ -429,7 +426,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 			  module_idP, frameP, rlc_status.bytes_in_buffer,
 			  dcch_header_len);
 
-		sdu_lengths[0] = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti, eNB_indexP, frameP, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6,	//not used
+		sdu_lengths = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti, eNB_indexP, frameP, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6,	//not used
 						  (char *) &ulsch_buff[0]
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 						  ,0,
@@ -437,9 +434,13 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 #endif
                                      );
 
+                if(sdu_lengths > 0)
+		   LOG_D(MAC, "[UE %d] TX Got %d bytes for DCCH\n",
+		         module_idP, sdu_lengths);
+                else
+                  LOG_E(MAC, "[UE %d] TX DCCH error\n",
+                         module_idP );
 
-		LOG_D(MAC, "[UE %d] TX Got %d bytes for DCCH\n",
-		      module_idP, sdu_lengths[0]);
 		update_bsr(module_idP, frameP, subframeP, eNB_indexP);
 		UE_mac_inst[module_idP].
 		    scheduling_info.BSR[UE_mac_inst[module_idP].

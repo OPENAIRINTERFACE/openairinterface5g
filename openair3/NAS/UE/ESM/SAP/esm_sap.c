@@ -72,6 +72,8 @@ static int _esm_sap_send(nas_user_t *user, int msg_type, int is_standalone, int 
 /*
  * String representation of ESM-SAP primitives
  */
+
+const char *esm_sap_primitive2str(int esmsapp) {
 static const char *_esm_sap_primitive_str[] = {
   "ESM_DEFAULT_EPS_BEARER_CONTEXT_ACTIVATE_REQ",
   "ESM_DEFAULT_EPS_BEARER_CONTEXT_ACTIVATE_CNF",
@@ -94,7 +96,8 @@ static const char *_esm_sap_primitive_str[] = {
   "ESM_BEARER_RESOURCE_MODIFY_REJ",
   "ESM_UNITDATA_IND",
 };
-
+  return _esm_sap_primitive_str[esmsapp];
+}
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -152,7 +155,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
   assert( (primitive > ESM_START) && (primitive < ESM_END));
 
   LOG_TRACE(INFO, "ESM-SAP   - Received primitive %s (%d)",
-            _esm_sap_primitive_str[primitive - ESM_START - 1], primitive);
+            esm_sap_primitive2str(primitive - ESM_START - 1), primitive);
 
   switch (primitive) {
   case ESM_PDN_CONNECTIVITY_REQ:

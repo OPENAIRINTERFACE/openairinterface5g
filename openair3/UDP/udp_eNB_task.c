@@ -42,8 +42,8 @@
 #include "assertions.h"
 #include "udp_eNB_task.h"
 
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "msc.h"
 
 
@@ -431,7 +431,7 @@ on_error:
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UDP_ENB_TASK, VCD_FUNCTION_OUT);
   }
 
-  LOG_N(UDP_, "Task UDP eNB exiting\n");
+  LOG_I(UDP_, "Task UDP eNB exiting\n");
   return NULL;
 }
 

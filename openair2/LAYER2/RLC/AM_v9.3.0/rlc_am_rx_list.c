@@ -28,7 +28,7 @@
 #include "list.h"
 #include "rlc_am.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 
 boolean_t rlc_am_rx_check_vr_reassemble(

@@ -56,10 +56,13 @@ Description Defines functions used to handle state of EPS bearer contexts
 /****************************************************************************/
 
 /* String representation of EPS bearer context status */
+const char *esm_ebr_state2str(int esmebrstate) {
 static const char *_esm_ebr_state_str[ESM_EBR_STATE_MAX] = {
   "BEARER CONTEXT INACTIVE",
   "BEARER CONTEXT ACTIVE",
 };
+  return _esm_ebr_state_str[esmebrstate];
+}
 
 /*
  * ----------------------
@@ -318,7 +321,7 @@ int esm_ebr_set_status(user_api_id_t *user_api_id, esm_ebr_data_t *esm_ebr_data,
   if (status < ESM_EBR_STATE_MAX) {
     LOG_TRACE(INFO, "ESM-FSM   - Status of EPS bearer context %d changed:"
               " %s ===> %s", ebi,
-              _esm_ebr_state_str[old_status], _esm_ebr_state_str[status]);
+              esm_ebr_state2str(old_status), esm_ebr_state2str(status));
 
     if (status != old_status) {
       ebr_ctx->status = status;

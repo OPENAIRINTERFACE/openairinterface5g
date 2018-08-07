@@ -346,11 +346,10 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
                          nfapi_ul_config_request_pdu_t *ul_config_pdu,
                          uint16_t frame,uint8_t subframe,uint8_t srs_present, int index)
 {
-  nfapi_ul_config_ulsch_pdu_rel8_t *rel8 = &ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8;
 
   if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
     LOG_D(PHY,"Applying UL config for UE, rnti %x for frame %d, subframe %d\n",
-         rel8->rnti,frame,subframe);
+         (ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8).rnti,frame,subframe);
     uint8_t ulsch_buffer[5477] __attribute__ ((aligned(32)));
     uint16_t buflen = ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.size;
 
@@ -561,17 +560,15 @@ int ul_config_req_UE_MAC(nfapi_ul_config_request_t* req, int timer_frame, int ti
 
 int tx_req_UE_MAC(nfapi_tx_request_t* req)
 {
-  uint16_t sfn = NFAPI_SFNSF2SFN(req->sfn_sf);
-  uint16_t sf = NFAPI_SFNSF2SF(req->sfn_sf);
 
-  LOG_D(PHY,"%s() SFN/SF:%d/%d PDUs:%d\n", __FUNCTION__, sfn, sf, req->tx_request_body.number_of_pdus);
+  LOG_D(PHY,"%s() SFN/SF:%d/%d PDUs:%d\n", __FUNCTION__, NFAPI_SFNSF2SFN(req->sfn_sf), NFAPI_SFNSF2SF(req->sfn_sf), req->tx_request_body.number_of_pdus);
 
 
     for (int i=0; i<req->tx_request_body.number_of_pdus; i++)
     {
       LOG_D(PHY,"%s() SFN/SF:%d/%d number_of_pdus:%d [PDU:%d] pdu_length:%d pdu_index:%d num_segments:%d\n",
           __FUNCTION__,
-          sfn, sf,
+          NFAPI_SFNSF2SFN(req->sfn_sf), NFAPI_SFNSF2SF(req->sfn_sf),
           req->tx_request_body.number_of_pdus,
           i,
           req->tx_request_body.tx_pdu_list[i].pdu_length,

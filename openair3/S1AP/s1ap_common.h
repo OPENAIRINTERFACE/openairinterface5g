@@ -71,7 +71,7 @@ extern int asn_debug;
 extern int asn1_xer_print;
 
 #if defined(ENB_MODE)
-# include "UTIL/LOG/log.h"
+# include "common/utils/LOG/log.h"
 # include "s1ap_eNB_default_values.h"
 # define S1AP_ERROR(x, args...) LOG_E(S1AP, x, ##args)
 # define S1AP_WARN(x, args...)  LOG_W(S1AP, x, ##args)
