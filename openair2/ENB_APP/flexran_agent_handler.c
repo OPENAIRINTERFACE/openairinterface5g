@@ -130,16 +130,15 @@ void * flexran_agent_pack_message(Protocol__FlexranMessage *msg,
 				  int * size){
 
   void * buffer;
-  err_code_t err_code = PROTOCOL__FLEXRAN_ERR__NO_ERR;
   
   if (flexran_agent_serialize_message(msg, &buffer, size) < 0 ) {
-    err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENCODING;
+    LOG_E(FLEXRAN_AGENT,"errno %d occured\n",PROTOCOL__FLEXRAN_ERR__MSG_ENCODING);
     goto error;
   }
   
   // free the msg --> later keep this in the data struct and just update the values
   //TODO call proper destroy function
-  err_code = ((*message_destruction_callback[msg->msg_case-1])(msg));
+  ((*message_destruction_callback[msg->msg_case-1])(msg));
   
   DevAssert(buffer !=NULL);
   
@@ -148,8 +147,6 @@ void * flexran_agent_pack_message(Protocol__FlexranMessage *msg,
   return buffer;
   
  error : 
-  LOG_E(FLEXRAN_AGENT,"errno %d occured\n",err_code);
-  
   return NULL;   
 }
 

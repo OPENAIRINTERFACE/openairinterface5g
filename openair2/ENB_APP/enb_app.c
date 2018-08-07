@@ -113,8 +113,6 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, 
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     {
-      s1ap_register_enb_req_t *s1ap_register_eNB;
-
       /* note:  there is an implicit relationship between the data structure and the message name */
       msg_p = itti_alloc_new_message (TASK_ENB_APP, S1AP_REGISTER_ENB_REQ);
 
@@ -122,8 +120,7 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, 
 
       if (enb_id == 0) RCconfig_gtpu();
 
-      s1ap_register_eNB = &S1AP_REGISTER_ENB_REQ(msg_p);
-      LOG_I(ENB_APP,"default drx %d\n",s1ap_register_eNB->default_drx);
+      LOG_I(ENB_APP,"default drx %d\n",((S1AP_REGISTER_ENB_REQ(msg_p)).default_drx));
 
       LOG_I(ENB_APP,"[eNB %d] eNB_app_register for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
 
@@ -152,7 +149,6 @@ void *eNB_app_task(void *args_p)
 # endif
   uint32_t                        enb_id;
   MessageDef                     *msg_p           = NULL;
-  const char                     *msg_name        = NULL;
   instance_t                      instance;
   int                             result;
   /* for no gcc warnings */
@@ -200,7 +196,6 @@ void *eNB_app_task(void *args_p)
     // Wait for a message
     itti_receive_msg (TASK_ENB_APP, &msg_p);
 
-    msg_name = ITTI_MSG_NAME (msg_p);
     instance = ITTI_MSG_INSTANCE (msg_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
@@ -216,7 +211,7 @@ void *eNB_app_task(void *args_p)
 # if defined(ENABLE_USE_MME)
 
     case S1AP_REGISTER_ENB_CNF:
-      LOG_I(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, msg_name,
+      LOG_I(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
             S1AP_REGISTER_ENB_CNF(msg_p).nb_mme);
 
       DevAssert(register_enb_pending > 0);
@@ -237,10 +232,8 @@ void *eNB_app_task(void *args_p)
           itti_send_msg_to_task (TASK_L2L1, INSTANCE_DEFAULT, msg_init_p);
 
         } else {
-          uint32_t not_associated = enb_nb - registered_enb;
-
-          LOG_W(ENB_APP, " %d eNB %s not associated with a MME, retrying registration in %d seconds ...\n",
-                not_associated, not_associated > 1 ? "are" : "is", ENB_REGISTER_RETRY_DELAY);
+          LOG_W(ENB_APP, " %d eNB not associated with a MME, retrying registration in %d seconds ...\n",
+                enb_nb - registered_enb,  ENB_REGISTER_RETRY_DELAY);
 
           /* Restart the eNB registration process in ENB_REGISTER_RETRY_DELAY seconds */
           if (timer_setup (ENB_REGISTER_RETRY_DELAY, 0, TASK_ENB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
@@ -258,14 +251,14 @@ void *eNB_app_task(void *args_p)
       break;
 
     case S1AP_DEREGISTERED_ENB_IND:
-      LOG_W(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, msg_name,
+      LOG_W(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
             S1AP_DEREGISTERED_ENB_IND(msg_p).nb_mme);
 
       /* TODO handle recovering of registration */
       break;
 
     case TIMER_HAS_EXPIRED:
-      LOG_I(ENB_APP, " Received %s: timer_id %ld\n", msg_name, TIMER_HAS_EXPIRED(msg_p).timer_id);
+      LOG_I(ENB_APP, " Received %s: timer_id %ld\n", ITTI_MSG_NAME (msg_p), TIMER_HAS_EXPIRED(msg_p).timer_id);
 
       if (TIMER_HAS_EXPIRED (msg_p).timer_id == enb_register_retry_timer_id) {
         /* Restart the registration process */
@@ -277,7 +270,7 @@ void *eNB_app_task(void *args_p)
 # endif
 
     default:
-      LOG_E(ENB_APP, "Received unexpected message %s\n", msg_name);
+      LOG_E(ENB_APP, "Received unexpected message %s\n", ITTI_MSG_NAME (msg_p));
       break;
     }
 

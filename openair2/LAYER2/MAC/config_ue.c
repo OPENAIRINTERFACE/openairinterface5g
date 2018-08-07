@@ -46,8 +46,8 @@
 #include "mac.h"
 #include "mac_proto.h"
 #include "mac_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/INIT/phy_init.h"
 
 #include "common/ran_context.h"

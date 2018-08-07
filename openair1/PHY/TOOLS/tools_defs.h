@@ -174,27 +174,27 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
 
 void idft1536(int16_t *sigF,int16_t *sig,int scale);
 
-void idft6144(int16_t *sigF,int16_t *sig);
+void idft6144(int16_t *sigF,int16_t *sig,int scale);
 
-void idft12288(int16_t *sigF,int16_t *sig);
+void idft12288(int16_t *sigF,int16_t *sig,int scale);
 
-void idft18432(int16_t *sigF,int16_t *sig);
+void idft18432(int16_t *sigF,int16_t *sig,int scale);
 
-void idft3072(int16_t *sigF,int16_t *sig);
+void idft3072(int16_t *sigF,int16_t *sig,int scale);
 
-void idft24576(int16_t *sigF,int16_t *sig);
+void idft24576(int16_t *sigF,int16_t *sig,int scale);
 
 void dft1536(int16_t *sigF,int16_t *sig,int scale);
 
-void dft6144(int16_t *sigF,int16_t *sig);
+void dft6144(int16_t *sigF,int16_t *sig,int scale);
 
-void dft12288(int16_t *sigF,int16_t *sig);
+void dft12288(int16_t *sigF,int16_t *sig,int scale);
 
-void dft18432(int16_t *sigF,int16_t *sig);
+void dft18432(int16_t *sigF,int16_t *sig,int scale);
 
-void dft3072(int16_t *sigF,int16_t *sig);
+void dft3072(int16_t *sigF,int16_t *sig,int scale);
 
-void dft24576(int16_t *sigF,int16_t *sig);
+void dft24576(int16_t *sigF,int16_t *sig,int scale);
 
 
 /*!\fn int32_t rotate_cpx_vector(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N,uint16_t output_shift)

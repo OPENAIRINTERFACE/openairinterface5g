@@ -35,7 +35,7 @@
 #include "PHY/CODING/coding_extern.h"
 #include "SCHED/sched_common_extern.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 //#define DEBUG_DLSCH_DECODING
 #define UE_DEBUG_TRACE 1

@@ -33,7 +33,7 @@
 #include "PHY/defs_common.h"
 #include "PHY/phy_extern.h"
 #include "PHY/phy_extern_ue.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 
 uint16_t NCS_unrestricted[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};

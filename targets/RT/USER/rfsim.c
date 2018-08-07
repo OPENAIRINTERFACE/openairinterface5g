@@ -51,7 +51,7 @@
 #include "common/ran_context.h"
 #include "PHY/defs_UE.h"
 #include "PHY/defs_eNB.h"
-#include "vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 RAN_CONTEXT_t RC;
 extern PHY_VARS_UE ***PHY_vars_UE_g;

@@ -508,7 +508,9 @@ function main() {
          lte_exec=lte-uesoftmodem
       fi
   fi
-
+  if [ "$T_TRACER" =  "False" ] ; then
+      lte_build_dir=${lte_build_dir}_noLOG
+  fi
 # configuration module libraries, one currently available, using libconfig 
   config_libconfig_shlib=params_libconfig
   

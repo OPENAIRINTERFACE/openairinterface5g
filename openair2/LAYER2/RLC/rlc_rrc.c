@@ -32,7 +32,7 @@
 #include "rlc_am.h"
 #include "rlc_um.h"
 #include "rlc_tm.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "RLC-Config.h"
 #include "DRB-ToAddMod.h"
 #include "DRB-ToAddModList.h"

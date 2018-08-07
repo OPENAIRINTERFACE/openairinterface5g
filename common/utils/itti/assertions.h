@@ -39,7 +39,6 @@ void output_log_mem(void);
 #define _Assert_Exit_                           \
 {                                               \
     fprintf(stderr, "\nExiting execution\n");   \
-    output_log_mem();                           \
     display_backtrace();                        \
     fflush(stdout);                             \
     fflush(stderr);                             \

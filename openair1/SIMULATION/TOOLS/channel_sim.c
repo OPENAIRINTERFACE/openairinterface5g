@@ -35,8 +35,7 @@
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log_if.h"
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
 #include "UTIL/OCG/OCG.h"
@@ -45,10 +44,6 @@
 #include "UTIL/FIFO/types.h"
 
 #define RF
-//#define DEBUG_SIM
-
-//#undef LOG_D
-//#define LOG_D(A,B,C...) printf(B,C)
 
 
 

@@ -34,10 +34,9 @@
 #include "LAYER2/MAC/mac.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
-#include "T.h"
 
 //uint8_t ncs_cell[20][7];
 //#define DEBUG_PUCCH_TXS

@@ -33,7 +33,7 @@
 #include <string.h>
 #include <limits.h>
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "rrc_eNB_UE_context.h"
 #include "msc.h"
 
