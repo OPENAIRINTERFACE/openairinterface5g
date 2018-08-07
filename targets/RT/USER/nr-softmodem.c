@@ -929,7 +929,7 @@ int main( int argc, char **argv )
 
 
 #if T_TRACER
-  T_init(T_port, 1-T_nowait, T_dont_fork);
+  T_Config_Init();
 #endif
 
 
@@ -938,11 +938,6 @@ int main( int argc, char **argv )
   set_taus_seed (0);
 
   printf("configuring for RAU/RRU\n");
-
-
-  if (ouput_vcd) {
-      VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_gNB.vcd");
-  }
 
   if (opp_enabled ==1) {
     reset_opp_meas();
@@ -953,8 +948,8 @@ int main( int argc, char **argv )
   log_set_instance_type (LOG_INSTANCE_ENB);
 
   printf("ITTI init\n");
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
-
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
@@ -1285,8 +1280,6 @@ int main( int argc, char **argv )
 	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
 
     }
-  if (ouput_vcd)
-    VCD_SIGNAL_DUMPER_CLOSE();
   
   if (opt_enabled == 1)
     terminate_opt();

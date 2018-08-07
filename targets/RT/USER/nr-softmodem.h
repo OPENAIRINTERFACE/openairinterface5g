@@ -163,7 +163,6 @@
 {"t" ,  		  	 CONFIG_HLP_ULMCS,	0,		  uptr:&target_ul_mcs,  		defintval:0,			   TYPE_UINT,	  0},			   \
 {"W" ,  		  	 CONFIG_HLP_L2MONW,	0,		  strptr:(char **)&in_ip,		defstrval:"127.0.0.1",  	   TYPE_STRING,   sizeof(in_ip)},	   \
 {"P" ,  		  	 CONFIG_HLP_L2MONP,	0,		  strptr:(char **)&in_path,		defstrval:"/tmp/oai_opt.pcap",     TYPE_STRING,   sizeof(in_path)},	   \
-{"V" ,  		  	 CONFIG_HLP_VCD,	PARAMFLAG_BOOL,   iptr:&ouput_vcd,			defintval:0,			   TYPE_INT,	  0},			   \
 {"q" ,  		  	 CONFIG_HLP_STMON,	PARAMFLAG_BOOL,   iptr:&opp_enabled,			defintval:0,			   TYPE_INT,	  0},			   \
 {"S" ,  		  	 CONFIG_HLP_MSLOTS,	PARAMFLAG_BOOL,   u8ptr:&exit_missed_slots,		defintval:1,			   TYPE_UINT8,    0},			   \
 {"T" ,  		  	 CONFIG_HLP_TDD,	PARAMFLAG_BOOL,   iptr:&tddflag,			defintval:0,			   TYPE_INT,	  0},			   \
@@ -193,16 +192,6 @@
 extern int T_port;
 extern int T_nowait;
 extern int T_dont_fork;
-
-/*------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters for TTRACE utility                                                    */
-/*   optname                     helpstr                paramflags           XXXptr           defXXXval         type       numelt           */
-/*------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_TTRACEPARAMS_DESC {  \
-{"T_port",                     CONFIG_HLP_TPORT,      0,		iptr:&T_port,	     defintval:0,	TYPE_INT,   0},	   \
-{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,	iptr:&T_nowait,      defintval:0,	TYPE_INT,   0},	   \
-{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,	iptr:&T_dont_fork,   defintval:1,	TYPE_INT,   0},	   \
-} 
 
 
 /***************************************************************************************************************************************/  

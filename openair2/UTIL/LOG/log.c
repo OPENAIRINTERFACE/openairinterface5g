@@ -384,6 +384,7 @@ int logInit (void)
   register_log_component("NR_PHY","log",NR_PHY);
   register_log_component("MAC","log",MAC);
   register_log_component("NR_MAC","log",NR_MAC);
+  register_log_component("EMU","log",EMU);
   register_log_component("OPT","log",OPT);
   register_log_component("RLC","log",RLC);
   register_log_component("PDCP","log",PDCP);

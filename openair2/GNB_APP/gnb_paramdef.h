@@ -1048,4 +1048,3 @@ typedef enum {
 #define MACRLC_REMOTE_S_PORTC_IDX                              14
 #define MACRLC_LOCAL_S_PORTD_IDX                               15
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
-#define MACRLC_PHY_TEST_IDX                                    17

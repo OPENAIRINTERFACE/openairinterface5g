@@ -201,7 +201,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_rxtx_proc_t *proc, char *thread_nam
   // ****************************************
   // Common RX procedures subframe n
 
-  T(T_gNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx));
+  T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx));
 /*
   // if this is IF5 or 3GPP_gNB
   if (gNB && gNB->RU_list && gNB->RU_list[0] && gNB->RU_list[0]->function < NGFI_RAU_IF4p5) {

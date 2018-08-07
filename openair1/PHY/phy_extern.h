@@ -68,7 +68,7 @@ extern int flagMag;
 
 extern char mode_string[4][20];
 
-
+extern unsigned char NB_RU;
 
 
 #ifndef OPENAIR2

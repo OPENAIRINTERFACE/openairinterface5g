@@ -151,6 +151,7 @@ typedef enum {
     MIN_LOG_COMPONENTS = 0,
     PHY = MIN_LOG_COMPONENTS,
     MAC,
+    EMU,
     SIM,
     OCG,
     OMG,
@@ -186,13 +187,12 @@ typedef enum {
     LOCALIZE,
     RRH,
     X2AP,
-    LOADER,
-    MAX_LOG_PREDEF_COMPONENTS,
     GNB_APP,
     NR_RRC,
     NR_MAC,
     NR_PHY,
-    MAX_LOG_COMPONENTS,
+    LOADER,
+    MAX_LOG_PREDEF_COMPONENTS,
 }
 comp_name_t;
 

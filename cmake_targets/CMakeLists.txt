@@ -361,9 +361,9 @@ endif  (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
 add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
 
-message("calling ASN1C_PREFIX=NR_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}")
+message("calling ASN1C_PREFIX=NR_ asn1c -pdu=all -fcompound-names -findirect-choice -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}")
 execute_process(COMMAND mkdir -p ${NR_RRC_FULL_DIR}
-                COMMAND env "ASN1C_PREFIX=NR_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
+                COMMAND env "ASN1C_PREFIX=NR_" asn1c -fcompound-names -findirect-choice -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
                 RESULT_VARIABLE ret
 		OUTPUT_QUIET
                 ERROR_QUIET)
@@ -387,7 +387,7 @@ include_directories ("${NR_RRC_FULL_DIR}")
 
 add_custom_command (OUTPUT ${NR_RRC_FULL_DIR}/NR_asn_constant.h
   		    COMMAND mkdir -p ${NR_RRC_FULL_DIR}
-                    COMMAND env "ASN1C_PREFIX=NR_" asn1c -gen-PER -fcompound-names -findirect-choice -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
+                    #COMMAND env "ASN1C_PREFIX=NR_" asn1c -fcompound-names -findirect-choice -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
                     DEPENDS ${NR_RRC_GRAMMAR}
                     )
 
