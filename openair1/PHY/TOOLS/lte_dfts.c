@@ -8618,8 +8618,8 @@ void init_rad5_rep(int N,int16_t *twa,int16_t *twb,int16_t *twc,int16_t *twd) {
 }
 
 
-init_dfts() {
-
+void init_dfts(void)
+{
   init_rad4(1024,tw1024);
   init_rad2(2048,tw2048);
   init_rad4(4096,tw4096);
@@ -9095,7 +9095,7 @@ int main(int argc, char**argv)
   //  LOG_M("x64.m","x64",x,64,1,1);
   LOG_M("y64.m","y64",y,64,1,1);
   LOG_M("x64.m","x64",x,64,1,1);
-  *
+  */
 /*
   printf("X: ");
   for (i=0;i<16;i++)
