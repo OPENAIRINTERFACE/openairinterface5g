@@ -42,6 +42,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 {
 	NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
 	uint32_t *dci_pdu = dci_alloc->dci_pdu;
+  memset((void*)dci_pdu,0,4*sizeof(uint32_t));
 	nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &pdu->dci_dl_pdu.dci_dl_pdu_rel15;
   nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &pdu->dci_dl_pdu.pdcch_params_rel15;
 	nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
@@ -58,22 +59,22 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
           // Freq domain assignment
           fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
           for (int i=0; i<fsize; i++)
-            *dci_pdu |= ((pdu_rel15->frequency_domain_assignment>>(fsize-i))&1)<<i;
+            *dci_pdu |= ((pdu_rel15->frequency_domain_assignment>>(fsize-i-1))&1)<<i;
           pos += fsize;
+          // Time domain assignment
+          for (int i=0; i<4; i++)
+            *dci_pdu |= ((pdu_rel15->time_domain_assignment>>(3-i))&1)<<(pos+i);
+          pos += 4;
           // VRB to PRB mapping
           *dci_pdu |= (pdu_rel15->vrb_to_prb_mapping&1)<<pos;
           pos++;
-          // Time domain assignment
-          for (int i=0; i<4; i++)
-            *dci_pdu |= ((pdu_rel15->time_domain_assignment>>(4-i))&1)<<(pos+i);
-          pos += 4;
           //MCS
           for (int i=0; i<5; i++)
-            *dci_pdu |= ((pdu_rel15->mcs>>(5-i))&1)<<(pos+i);
+            *dci_pdu |= ((pdu_rel15->mcs>>(4-i))&1)<<(pos+i);
           pos += 5;
           // TB scaling
           for (int i=0; i<2; i++)
-            *dci_pdu |= ((pdu_rel15->tb_scaling>>(2-i))&1)<<(pos+i);
+            *dci_pdu |= ((pdu_rel15->tb_scaling>>(1-i))&1)<<(pos+i);
           
           break;
 

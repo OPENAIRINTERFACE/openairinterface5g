@@ -73,11 +73,13 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdu_rel15->frequency_domain_assignment = 5;
     pdu_rel15->time_domain_assignment = 2;
     pdu_rel15->vrb_to_prb_mapping = 0;
+    pdu_rel15->mcs = 12;
     pdu_rel15->tb_scaling = 1;
-    LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, tb_scaling %d\n",
+    LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d\n",
                 pdu_rel15->frequency_domain_assignment,
                 pdu_rel15->time_domain_assignment,
                 pdu_rel15->vrb_to_prb_mapping,
+                pdu_rel15->mcs,
                 pdu_rel15->tb_scaling);
 
     params_rel15->rnti = 0x03;

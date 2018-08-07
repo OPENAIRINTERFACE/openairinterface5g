@@ -305,7 +305,7 @@ typedef struct {
 nfapi_tl_t tl;
 
 uint8_t format_indicator; //1 bit
-uint16_t frequency_domain_assignment; //up to 9 bits
+uint16_t frequency_domain_assignment; //up to 16 bits
 uint8_t time_domain_assignment; // 4 bits
 uint8_t frequency_hopping_flag; //1 bit
 

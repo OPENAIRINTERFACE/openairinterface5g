@@ -32,8 +32,8 @@
 
 #include "nr_dci.h"
 
-#define DEBUG_PDCCH_DMRS
-#define DEBUG_DCI
+//#define DEBUG_PDCCH_DMRS
+//#define DEBUG_DCI
 
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
