@@ -486,11 +486,11 @@ void nr_pbch_quantize(int8_t *pbch_llr8,
   uint16_t i;
 
   for (i=0; i<len; i++) {
-    /*if (pbch_llr[i]>7)
-      pbch_llr8[i]=7;
-    else if (pbch_llr[i]<-8)
-      pbch_llr8[i]=-8;
-    else*/
+    if (pbch_llr[i]>127)
+      pbch_llr8[i]=127;
+    else if (pbch_llr[i]<-128)
+      pbch_llr8[i]=-128;
+    else
       pbch_llr8[i] = (char)(pbch_llr[i]);
 
   }

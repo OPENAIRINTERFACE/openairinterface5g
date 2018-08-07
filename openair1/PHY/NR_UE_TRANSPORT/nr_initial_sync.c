@@ -47,6 +47,7 @@
 extern openair0_config_t openair0_cfg[];
 static  nfapi_nr_config_request_t config_t;
 static  nfapi_nr_config_request_t* config =&config_t;
+int cnt=0;
 /* forward declarations */
 void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms);
 
@@ -194,7 +195,9 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   *                     --------------------------
   *          sync_pos            SS/PBCH block
   */
-
+  cnt++;
+  if (cnt >100){
+	  cnt =0;
   /* process pss search on received buffer */
   sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
 
@@ -253,6 +256,10 @@ LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"FDD Normal prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
+  }
+  }
+  else {
+	  ret = -1;
   }
 
   /* Consider this is a false detection if the offset is > 1000 Hz */
