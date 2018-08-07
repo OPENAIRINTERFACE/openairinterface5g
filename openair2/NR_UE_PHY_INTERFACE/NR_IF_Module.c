@@ -160,7 +160,7 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
                     dl_config->dl_config_request_body[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
 
                     //  mapping into DL_CONFIG_REQ for DL-SCH
-                    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_request_body[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15
+                    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_request_body[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15;
                     dlsch_config_pdu->format_indicator = dci->dci_format;
                     dlsch_config_pdu->frequency_domain_assignment = dci->frequency_domain_resouce_assignment;
                     dlsch_config_pdu->time_domain_assignment = dci->time_domain_resource_assignment;
