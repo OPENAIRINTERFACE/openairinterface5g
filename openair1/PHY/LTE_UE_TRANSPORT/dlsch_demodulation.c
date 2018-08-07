@@ -3987,7 +3987,7 @@ void dlsch_channel_level_median(int **dl_ch_estimates_ext,
         if (norm_pack < min)
           min = norm_pack;
 
-          dl_ch128+=1;
+        dl_ch128+=1;
       }
 
         median[aatx*n_rx + aarx]  = (max+min)>>1;
