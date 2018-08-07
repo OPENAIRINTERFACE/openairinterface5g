@@ -68,7 +68,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
           // VRB to PRB mapping
           *dci_pdu |= (pdu_rel15->vrb_to_prb_mapping&1)<<pos;
           pos++;
-          //MCS
+          // MCS
           for (int i=0; i<5; i++)
             *dci_pdu |= ((pdu_rel15->mcs>>(4-i))&1)<<(pos+i);
           pos += 5;
@@ -89,6 +89,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
               dci_pdu[0], dci_pdu[1], dci_pdu[2], dci_pdu[3]);
 
   /// rest of DCI alloc
+  dci_alloc->L = 2;
   memcpy((void*)&dci_alloc->pdcch_params, (void*)params_rel15, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
   dci_alloc->size = nr_get_dci_size(dci_alloc->pdcch_params.dci_format,
                         dci_alloc->pdcch_params.rnti_type,

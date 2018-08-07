@@ -170,6 +170,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   /*First iteration: single DCI*/
   NR_gNB_DCI_ALLOC_t dci_alloc = pdcch_vars.dci_alloc[0];
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc.pdcch_params;
+  uint16_t dmrs_length = dci_alloc.L*36; //2(QPSK)*3(per RB)*6(REG per CCE)
+  uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
 
   /// DMRS QPSK modulation
     /*There is a need to shift from which index the pregenerated DMRS sequence is used
@@ -177,19 +179,19 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
     gold_pdcch_dmrs += ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*3/32;
 
-  for (int i=0; i<NR_MAX_PDCCH_DMRS_LENGTH>>1; i++) {
+  for (int i=0; i<dmrs_length>>1; i++) {
     idx = ((((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((gold_pdcch_dmrs[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
     mod_dmrs[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
     mod_dmrs[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PDCCH_DMRS
-  printf("i %d idx %d gold seq %d b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, gold_pdcch_dmrs[(i<<1)>>5], (((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+  printf("i %d idx %d gold seq %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, gold_pdcch_dmrs[(i<<1)>>5], (((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1),
   (((gold_pdcch_dmrs[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), mod_dmrs[(i<<1)], mod_dmrs[(i<<1)+1]);
 #endif
   }
 
   /// DCI payload processing
   //channel coding
-  uint8_t *encoderInput = malloc(sizeof(uint8_t) * dci_alloc.size);
+  /*uint8_t *encoderInput = malloc(sizeof(uint8_t) * dci_alloc.size);
   nr_bit2byte(dci_alloc.dci_pdu, dci_alloc.size, encoderInput);
 
   nr_polar_init(&nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, pdcch_params.aggregation_level);
@@ -200,17 +202,17 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   uint8_t *encoderOutput = malloc(sizeof(uint8_t) * currentPtr->encoderLength);
   polar_encoder(encoderInput, encoderOutput, currentPtr);
   uint32_t encoded_payload[4];
-  nr_byte2bit(encoderOutput,currentPtr->encoderLength,encoded_payload);
+  nr_byte2bit(encoderOutput,currentPtr->encoderLength,encoded_payload);*/
   
     // scrambling
   uint32_t scrambled_payload[4];
   uint32_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
   uint32_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.rnti : 0;
-  nr_pdcch_scrambling(encoded_payload, dci_alloc.size, Nid, n_RNTI, scrambled_payload);
+  nr_pdcch_scrambling(dci_alloc.dci_pdu, dci_alloc.size, Nid, n_RNTI, scrambled_payload);
 
     // QPSK modulation
-  uint32_t mod_dci[NR_MAX_DCI_SIZE>>1];
-  for (int i=0; i<dci_alloc.size>>1; i++) {
+  uint16_t mod_dci[NR_MAX_DCI_SIZE>>1];
+  for (int i=0; i<encoded_length>>1; i++) {
     idx = (((scrambled_payload[i<<1]>>(i<<1))&1)<<1) ^ ((scrambled_payload[(i<<1)+1]>>((i<<1)+1))&1);
     mod_dci[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
     mod_dci[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
