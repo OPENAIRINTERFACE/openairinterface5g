@@ -267,14 +267,6 @@ typedef struct {
 
 
 
-
-
-
-
-
-
-
-
 typedef enum {
   NFAPI_NR_DL_DCI_FORMAT_1_0 = 0,
   NFAPI_NR_DL_DCI_FORMAT_1_1,
@@ -400,51 +392,62 @@ uint8_t block_number_count;
 uint8_t *block_numbers;
 
 } nfapi_nr_dl_config_dci_dl_pdu_rel15_t;
+
 //#define NFAPI_NR_DL_CONFIG_REQUEST_DCI_DL_PDU_REL15_TAG 0x????
 
+typedef struct {
+  nfapi_nr_dl_config_dci_dl_pdu_rel15_t   dci_dl_pdu_rel15;
+} nfapi_nr_dl_config_dci_dl_pdu;
+
+typedef struct {
+  nfapi_nr_ul_config_dci_ul_pdu_rel15_t   dci_ul_pdu_rel15;
+} nfapi_nr_ul_config_dci_ul_pdu;
 
 typedef struct {
   nfapi_tl_t tl;
   uint16_t length;
-  uint16_t pdu_index;
+  int16_t pdu_index;
   uint16_t transmission_power;
-}nfapi_nr_dl_config_bch_pdu_rel15_t;
+} nfapi_nr_dl_config_bch_pdu_rel15_t;
 #define NFAPI_NR_DL_CONFIG_REQUEST_BCH_PDU_REL15_TAG 0x5025
 
+typedef struct {
+  nfapi_nr_dl_config_bch_pdu_rel15_t bch_pdu_rel15;
+} nfapi_nr_dl_config_bch_pdu;
 
 typedef struct {
 
-}nfapi_nr_dl_config_dlsch_pdu_rel15_t;
+} nfapi_nr_dl_config_dlsch_pdu;
 
 typedef struct {
   nfapi_tl_t tl;
   nfapi_nr_SearchSpace_t           pagingSearchSpace;
-}nfapi_nr_dl_config_pch_pdu_rel15_t;
+} nfapi_nr_dl_config_pch_pdu;
 
 typedef struct {
   
-}nfapi_nr_dl_config_nbch_pdu_rel15_t;
+} nfapi_nr_dl_config_nbch_pdu;
 
 typedef struct {
   
-}nfapi_nr_dl_config_npdcch_pdu_rel15_t;
+} nfapi_nr_dl_config_npdcch_pdu;
 
 typedef struct {
   
-}nfapi_nr_dl_config_ndlsch_pdu_rel15_t;
+} nfapi_nr_dl_config_ndlsch_pdu;
 
 typedef struct {
   uint8_t pdu_type;
   uint8_t pdu_size;
   union {
-    nfapi_nr_dl_config_dci_dl_pdu_rel15_t     dci_dl_pdu_rel15;
-    nfapi_nr_ul_config_dci_ul_pdu_rel15_t     dci_ul_pdu_rel15;
-    nfapi_nr_dl_config_bch_pdu_rel15_t        bch_pdu_rel15;
-    nfapi_nr_dl_config_dlsch_pdu_rel15_t      dlsch_pdu_rel15;
-    nfapi_nr_dl_config_pch_pdu_rel15_t        pch_pdu_rel15;
-    nfapi_nr_dl_config_nbch_pdu_rel15_t       nbch_pdu_rel15;
-    nfapi_nr_dl_config_npdcch_pdu_rel15_t     npdcch_pdu_rel15;
-    nfapi_nr_dl_config_ndlsch_pdu_rel15_t     ndlsch_pdu_rel15;
+    nfapi_nr_dl_config_dci_dl_pdu     dci_dl_pdu;
+    nfapi_nr_ul_config_dci_ul_pdu     dci_ul_pdu;
+    nfapi_nr_dl_config_bch_pdu        bch_pdu;
+    nfapi_nr_dl_config_dlsch_pdu      dlsch_pdu;
+    nfapi_nr_dl_config_pch_pdu        pch_pdu;
+    nfapi_nr_dl_config_nbch_pdu       nbch_pdu;
+    nfapi_nr_dl_config_npdcch_pdu     npdcch_pdu;
+    nfapi_nr_dl_config_ndlsch_pdu     ndlsch_pdu;
   };
 } nfapi_nr_dl_config_request_pdu_t;
  
