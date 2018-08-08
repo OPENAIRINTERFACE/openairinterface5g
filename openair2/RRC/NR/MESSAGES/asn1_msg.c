@@ -41,7 +41,6 @@
 #include <per_encoder.h>
 
 #include "asn1_msg.h"
-#include "RRC/NR/nr_rrc_defs.h"
 #include "RRC/NR/nr_rrc_extern.h"
 
 #if defined(NR_Rel15)
@@ -280,13 +279,13 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
   return((enc_rval.encoded+7)/8);
 }
 
-void fill_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
-                                  int     CC_id,
-                                  #if defined(ENABLE_ITTI)
-                                  gNB_RrcConfigurationReq *configuration,
-                                  #endif
-                                  int initial_flag
-                                  )
+void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
+                                int     CC_id,
+                                #if defined(ENABLE_ITTI)
+                                gNB_RrcConfigurationReq *configuration,
+                                #endif
+                                int initial_flag
+                                )
 { 
   NR_ServingCellConfigCommon_t    **servingcellconfigcommon  =  &RC.nrrrc[Mod_id]->carrier[CC_id].servingcellconfigcommon;
   NR_FreqBandIndicatorNR_t                        *dl_frequencyBandList;
@@ -691,6 +690,8 @@ void fill_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
 
   (*servingcellconfigcommon)->uplinkConfigCommon->timeAlignmentTimerCommon = configuration->UL_timeAlignmentTimerCommon[CC_id];
 
+  (*servingcellconfigcommon)->n_TimingAdvanceOffset = CALLOC(1,sizeof(long));
+  *((*servingcellconfigcommon)->n_TimingAdvanceOffset)=configuration->ServingCellConfigCommon_n_TimingAdvanceOffset[CC_id];
   //ssb_PositionsInBurst
   (*servingcellconfigcommon)->ssb_PositionsInBurst->present = configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id];
 
@@ -820,3 +821,23 @@ void fill_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
 
 }
 
+void  do_RLC_BEARER(uint8_t Mod_id,
+                    int CC_id,
+                    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,
+                    rlc_bearer_config_t  *rlc_config){
+
+}
+
+void  do_MAC_CELLGROUP(uint8_t Mod_id,
+                       int CC_id,
+                       struct NR_MAC_CellGroupConfig *mac_CellGroupConfig,
+                       mac_cellgroup_t  *mac_cellgroup_config){
+
+}
+
+void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
+                           int CC_id,
+                           struct NR_PhysicalCellGroupConfig *physicalCellGroupConfig,
+                           physicalcellgroup_t *physicalcellgroup_config){
+
+}

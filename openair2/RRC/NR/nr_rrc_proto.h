@@ -32,7 +32,6 @@
  */
 
 #include "RRC/NR/nr_rrc_defs.h"
-
 #include "flexran_agent_extern.h"
 
 int rrc_init_nr_global_param(void);
@@ -57,6 +56,7 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
      const protocol_ctxt_t  *const ctxt_pP,
      rrc_gNB_ue_context_t   *const ue_context_pP
      );
+
 
 #if defined(ENABLE_ITTI)
 /**\brief RRC eNB task.

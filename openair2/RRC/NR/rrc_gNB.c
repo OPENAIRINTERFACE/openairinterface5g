@@ -30,6 +30,7 @@
 #define RRC_GNB_C
 #define RRC_GNB_C
 
+#include "nr_rrc_config.h"
 #include "nr_rrc_defs.h"
 #include "nr_rrc_extern.h"
 #include "assertions.h"
@@ -42,7 +43,6 @@
 #include "UTIL/LOG/log.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
-#include "nr_rrc_config.h"
 
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_UL-DCCH-Message.h"
@@ -167,23 +167,57 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
   physicalCellGroupConfig  = cellGroupconfig->physicalCellGroupConfig;
   spCellConfig             = cellGroupconfig->spCellConfig;
   sCellToAddModList        = cellGroupconfig->sCellToAddModList;
+  
+  rlc_bearer_config_t *rlc_config;
+  rlc_config = CALLOC(1,sizeof(rlc_bearer_config_t));
+  //Fill rlc_bearer config value
+  rrc_config_rlc_bearer(ctxt_pP->module_id,
+                        ue_context_pP->ue_context.primaryCC_id,
+                        rlc_config
+                       );
+  //Fill rlc_bearer config to structure
+  do_RLC_BEARER(ctxt_pP->module_id,
+                ue_context_pP->ue_context.primaryCC_id,
+                rlc_BearerToAddModList,
+                rlc_config);
 
-  //rrc_config_rlc_bearer();
-  //rrc_config_mac_cellgroup();
-  //rrc_config_physicalcellgroup();
+  mac_cellgroup_t *mac_cellgroup_config;
+  mac_cellgroup_config = CALLOC(1,sizeof(mac_cellgroup_t));
+  //Fill mac_cellgroup_config config value
+  rrc_config_mac_cellgroup(ctxt_pP->module_id,
+                           ue_context_pP->ue_context.primaryCC_id,
+                           mac_cellgroup_config
+                          );
+  //Fill mac_cellgroup config to structure
+  do_MAC_CELLGROUP(ctxt_pP->module_id,
+                   ue_context_pP->ue_context.primaryCC_id,
+                   mac_CellGroupConfig,
+                   mac_cellgroup_config);
+
+  physicalcellgroup_t *physicalcellgroup_config;
+  physicalcellgroup_config = CALLOC(1,sizeof(physicalcellgroup_t));
+  //Fill physicalcellgroup_config config value
+  rrc_config_physicalcellgroup(ctxt_pP->module_id,
+                               ue_context_pP->ue_context.primaryCC_id,
+                               physicalcellgroup_config
+                              );
+  //Fill physicalcellgroup config to structure
+  do_PHYSICALCELLGROUP(ctxt_pP->module_id,
+                       ue_context_pP->ue_context.primaryCC_id,
+                       physicalCellGroupConfig,
+                       physicalcellgroup_config);
 
   gNB_RrcConfigurationReq  *common_configuration;
   common_configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
-
   //Fill servingcellconfigcommon config value
   rrc_config_servingcellconfigcommon(ctxt_pP->module_id,
                                      ue_context_pP->ue_context.primaryCC_id
                                      #if defined(ENABLE_ITTI)
                                      ,common_configuration
                                      #endif
-                                    );
+                                     );
   //Fill common config to structure
-  fill_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
+  do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
                                ue_context_pP->ue_context.primaryCC_id,
                                #if defined(ENABLE_ITTI)
                                common_configuration,
@@ -236,13 +270,13 @@ static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
                                                                             #endif
                                                                             );
 
-  fill_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
-                               CC_id,
-                               #if defined(ENABLE_ITTI)
-                               configuration,
-                               #endif
-                               1
-                               );
+  do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
+                             CC_id,
+                             #if defined(ENABLE_ITTI)
+                             configuration,
+                             #endif
+                             1
+                             );
   
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   

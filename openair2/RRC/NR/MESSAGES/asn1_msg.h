@@ -40,6 +40,8 @@
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 
 #include "RRC/NR/nr_rrc_defs.h"
+#include "RRC/NR/nr_rrc_config.h"
+
 
 /*
  * The variant of the above function which dumps the BASIC-XER (XER_F_BASIC)
@@ -79,13 +81,28 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
 
 uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,int Mod_id,int CC_id, gNB_RrcConfigurationReq *configuration);
 
-void fill_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
-                                  int CC_id,
-                                  #if defined(ENABLE_ITTI)
-                                  gNB_RrcConfigurationReq *configuration,
-                                  #endif
-                                  int initial_flag
-                                  );
+void do_SERVINGCELLCONFIGCOMMON(uint8_t Mod_id,
+                                int CC_id,
+                                #if defined(ENABLE_ITTI)
+                                gNB_RrcConfigurationReq *configuration,
+                                #endif
+                                int initial_flag
+                                );
+
+void  do_RLC_BEARER(uint8_t Mod_id,
+                    int CC_id,
+                    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,
+                    rlc_bearer_config_t  *rlc_config);
+
+void  do_MAC_CELLGROUP(uint8_t Mod_id,
+                       int CC_id,
+                       struct NR_MAC_CellGroupConfig *mac_CellGroupConfig,
+                       mac_cellgroup_t  *mac_cellgroup_config);
+
+void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
+                           int CC_id,
+                           struct NR_PhysicalCellGroupConfig *physicalCellGroupConfig,
+                           physicalcellgroup_t *physicalcellgroup_config);
 
 
 
