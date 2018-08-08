@@ -33,7 +33,7 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                         nfapi_nr_config_request_t* config);
 
 uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
-							t_nrPolar_paramsPtr *nrPolar_params,
+                            t_nrPolar_paramsPtr *nrPolar_params,
                             uint32_t *gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
@@ -45,5 +45,15 @@ void nr_pdcch_scrambling(uint32_t *in,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t* out);
+
+void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
+                           int frame,
+                           int subframe,
+                           gNB_rxtx_proc_t *proc,
+                           NR_gNB_DCI_ALLOC_t *dci_alloc,
+                           nfapi_nr_dl_config_request_pdu_t *pdu);
+
+void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m);
+
 
 #endif //__PHY_NR_TRANSPORT_DCI__H

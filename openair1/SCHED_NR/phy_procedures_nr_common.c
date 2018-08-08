@@ -168,6 +168,8 @@ void nr_configure_css_dci_from_mib(nfapi_nr_dl_config_pdcch_parameters_rel15_t* 
   pdcch_params->config_type = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
   pdcch_params->cr_mapping_type = NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED;
   pdcch_params->precoder_granularity = NFAPI_NR_CSET_SAME_AS_REG_BUNDLE;
+  pdcch_params->reg_bundle_size = 6;
+  pdcch_params->interleaver_size = 2;
 }
 
 void nr_configure_css_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,

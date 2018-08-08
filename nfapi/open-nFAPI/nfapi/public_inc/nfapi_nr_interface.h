@@ -411,6 +411,9 @@ typedef struct {
   uint8_t n_symb;
   uint8_t rb_offset;
   uint8_t cr_mapping_type;
+  uint8_t reg_bundle_size;
+  uint8_t interleaver_size;
+  uint8_t shift_index;
   uint8_t mux_pattern;
   uint8_t precoder_granularity;
   uint8_t first_slot;

@@ -161,7 +161,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
                             nfapi_nr_config_request_t config)
 {
 
-  uint16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH>>1];
+  int16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH>>1];
   uint8_t idx=0;
   uint16_t a;
   int k,l,k_prime,dci_idx, dmrs_idx;
@@ -211,7 +211,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   nr_pdcch_scrambling(dci_alloc.dci_pdu, dci_alloc.size, Nid, n_RNTI, scrambled_payload);
 
     // QPSK modulation
-  uint16_t mod_dci[NR_MAX_DCI_SIZE>>1];
+  int16_t mod_dci[NR_MAX_DCI_SIZE>>1];
   for (int i=0; i<encoded_length>>1; i++) {
     idx = (((scrambled_payload[i<<1]>>(i<<1))&1)<<1) ^ ((scrambled_payload[(i<<1)+1]>>((i<<1)+1))&1);
     mod_dci[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];

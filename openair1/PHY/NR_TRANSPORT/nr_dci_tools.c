@@ -33,6 +33,54 @@
 #include "nr_dci.h"
 
 
+
+void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m) {
+
+  nr_cce_t* cce;
+  nr_reg_t* reg;
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params = &dci_alloc->pdcch_params;
+
+  uint8_t L = dci_alloc->L;
+  uint8_t bsize = pdcch_params->reg_bundle_size;
+  uint8_t R = pdcch_params->interleaver_size;
+  uint16_t N_reg = pdcch_params->n_rb * pdcch_params->n_symb;
+  uint16_t Y, N_cce, M_s_max, n_CI=0, tmp, C;
+
+  if (pdcch_params->config_type == NFAPI_NR_CSET_CONFIG_MIB_SIB1)
+    AssertFatal(L>=4, "Invalid aggregation level for SIB1 configured PDCCH %d\n", L);
+
+  N_cce = N_reg / NR_NB_REG_PER_CCE;
+  /*Max number of candidates per aggregation level*/
+  M_s_max = (L==4)?4:(L==8)?2:1;
+
+  if (pdcch_params->search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON)
+    Y = 0;
+  else { //NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC
+  }
+
+  AssertFatal((N_reg%(bsize*R))==0, "CCE to REG interleaving: Invalid configuration leading to non integer C\n");
+  C = N_reg/(bsize*R);
+
+  tmp = L * (( Y + (uint16_t)(floor((m*N_cce)/(L*M_s_max))) + n_CI ) % ((uint16_t)floor(N_cce/L)));
+
+  LOG_I(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d tmp %d\n", m, bsize, R, tmp);
+  for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
+    cce = &dci_alloc->cce_list[cce_idx];
+    cce->cce_idx = tmp + cce_idx;
+    LOG_I(PHY, "cce_idx %d\n", cce->cce_idx);
+
+    for (uint8_t reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
+      reg = &cce->reg_list[reg_idx];
+      if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
+        
+      }
+      else { // NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED
+        
+      }
+    }
+  }
+}
+
 void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
                            int frame,
                            int subframe,
@@ -41,6 +89,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
                            nfapi_nr_dl_config_request_pdu_t *pdu)
 {
 	NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  uint8_t n_shift;
 	uint32_t *dci_pdu = dci_alloc->dci_pdu;
   memset((void*)dci_pdu,0,4*sizeof(uint32_t));
 	nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &pdu->dci_dl_pdu.dci_dl_pdu_rel15;
@@ -48,7 +97,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 	nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
 
   uint16_t N_RB = fp->initial_bwp_dl.N_RB;
-  uint8_t fsize=0, pos=0;
+  uint8_t fsize=0, pos=0, cand_idx=0;
 
   /// Payload generation
   switch(params_rel15->dci_format) {
@@ -89,12 +138,15 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
               dci_pdu[0], dci_pdu[1], dci_pdu[2], dci_pdu[3]);
 
   /// rest of DCI alloc
-  dci_alloc->L = 2;
+  dci_alloc->L = 4;
   memcpy((void*)&dci_alloc->pdcch_params, (void*)params_rel15, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
   dci_alloc->size = nr_get_dci_size(dci_alloc->pdcch_params.dci_format,
                         dci_alloc->pdcch_params.rnti_type,
                         &fp->initial_bwp_dl,
                         cfg);
+  n_shift = (dci_alloc->pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_MIB_SIB1)?
+                      cfg->sch_config.physical_cell_id.value : dci_alloc->pdcch_params.shift_index;
+  nr_fill_cce_list(dci_alloc, n_shift, cand_idx);
   LOG_I(PHY, "DCI type %d payload (size %d) generated\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size);
   
   
@@ -144,4 +196,3 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 
 	return;
 }
-
