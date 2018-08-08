@@ -878,6 +878,7 @@ int main(int n, char **v)
 
 restart:
   clear_remote_config();
+  if (enb_data.socket != -1) close(enb_data.socket);
   enb_data.socket = connect_to(ip, port);
 
   /* send the first message - activate selected traces */
