@@ -60,3 +60,9 @@ void verify_config(void)
     abort();
   }
 }
+
+void get_local_config(char **txt, int *len)
+{
+  *txt = local;
+  *len = local_size;
+}

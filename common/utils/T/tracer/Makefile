@@ -7,7 +7,7 @@ LIBS=-lm
 XLIBS=-lX11 -lpng -lXft
 
 all: record replay extract_config textlog enb ue vcd macpdu2wireshark \
-     extract_input_subframe extract_output_subframe to_vcd extract
+     extract_input_subframe extract_output_subframe to_vcd extract multi
 
 record: utils.o record.o database.o config.o
 	$(CC) $(CFLAGS) -o record $^ $(LIBS)
@@ -57,6 +57,9 @@ macpdu2wireshark: macpdu2wireshark.o database.o utils.o handler.o event.o \
                   config.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
+multi: multi.o utils.o database.o config.o
+	$(CC) $(CFLAGS) -o multi $^ $(LIBS)
+
 .PHONY: all gui/gui.a view/view.a logger/logger.a filter/filter.a
 
 gui/gui.a:
@@ -77,7 +80,7 @@ filter/filter.a:
 clean:
 	rm -f *.o core tracer_remote textlog enb ue vcd record replay
 	rm -f extract_config macpdu2wireshark extract_input_subframe
-	rm -f extract_output_subframe to_vcd extract
+	rm -f extract_output_subframe to_vcd extract multi
 	cd gui && make clean
 	cd view && make clean
 	cd logger && make clean
