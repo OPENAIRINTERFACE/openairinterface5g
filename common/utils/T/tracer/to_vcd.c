@@ -12,7 +12,14 @@
 #include "logger/logger.h"
 #include "view/view.h"
 
+enum var_type {
+  DEFAULT,
+  VCD_FUNCTION,
+  VCD_VARIABLE
+};
+
 typedef struct {
+  enum var_type type;
   char *event;
   char *arg;
   char *vcd_name;
@@ -44,16 +51,39 @@ void vcd_write_header(vcd_vars *v, int n)
 "$version\n"
 "  to_vcd\n"
 "$end\n"
-"$timescale 1ns $end\n"
-"$scope module logic $end\n") <= 0) abort();
-
-  for (i = 0; i < n; i++)
-    if (fprintf(out, "$var wire %d %s %s $end\n",
-           v[i].boolean ? 1 : 64,
-           v[i].vcd_name, v[i].vcd_name) <= 0) abort();
+"$timescale 1ns $end\n") <= 0) abort();
 
   if (fprintf(out,
-"$upscope $end\n"
+"$scope module logic $end\n") <= 0) abort();
+  for (i = 0; i < n; i++)
+    if (v[i].type == DEFAULT)
+      if (fprintf(out, "$var wire %d %s %s $end\n",
+             v[i].boolean ? 1 : 64,
+             v[i].vcd_name, v[i].vcd_name) <= 0) abort();
+  if (fprintf(out,
+"$upscope $end\n") <= 0) abort();
+
+  if (fprintf(out,
+"$scope module functions $end\n") <= 0) abort();
+  for (i = 0; i < n; i++)
+    if (v[i].type == VCD_FUNCTION)
+      if (fprintf(out, "$var wire %d %s %s $end\n",
+             v[i].boolean ? 1 : 64,
+             v[i].vcd_name, v[i].vcd_name) <= 0) abort();
+  if (fprintf(out,
+"$upscope $end\n") <= 0) abort();
+
+  if (fprintf(out,
+"$scope module variables $end\n") <= 0) abort();
+  for (i = 0; i < n; i++)
+    if (v[i].type == VCD_VARIABLE)
+      if (fprintf(out, "$var wire %d %s %s $end\n",
+             v[i].boolean ? 1 : 64,
+             v[i].vcd_name, v[i].vcd_name) <= 0) abort();
+  if (fprintf(out,
+"$upscope $end\n") <= 0) abort();
+
+  if (fprintf(out,
 "$enddefinitions $end\n"
 "$dumpvars\n") <= 0) abort();
 
@@ -194,12 +224,13 @@ void force_stop(int x)
 }
 
 vcd_vars *add_var(vcd_vars *vars, int nvars,
-    char *event, char *arg, char *vcd_name, int is_boolean)
+    char *event, char *arg, char *vcd_name, int is_boolean, enum var_type t)
 {
   if (nvars % 64 == 0) {
     vars = realloc(vars, (nvars+64) * sizeof(vcd_vars));
     if (vars == NULL) abort();
   }
+  vars[nvars].type = t;
   vars[nvars].event = event;
   vars[nvars].arg = arg;
   vars[nvars].vcd_name = vcd_name;
@@ -240,7 +271,7 @@ int main(int n, char **v)
       char *event    = v[++i];
       char *arg      = v[++i];
       char *vcd_name = v[++i];
-      vars = add_var(vars, nvars, event, arg, vcd_name, 1);
+      vars = add_var(vars, nvars, event, arg, vcd_name, 1, DEFAULT);
       nvars++;
       continue;
     }
@@ -248,7 +279,7 @@ int main(int n, char **v)
       char *event    = v[++i];
       char *arg      = v[++i];
       char *vcd_name = v[++i];
-      vars = add_var(vars, nvars, event, arg, vcd_name, 0);
+      vars = add_var(vars, nvars, event, arg, vcd_name, 0, DEFAULT);
       nvars++;
       continue;
     }
@@ -283,20 +314,30 @@ int main(int n, char **v)
     /* activate all VCD traces */
     for (i = 0; i < number_of_events; i++) {
       int is_boolean;
+      enum var_type type;
       int prefix_length;
       char *name = event_name_from_id(database, i);
+      char *vcd_name;
       char *var_prefix = "VCD_VARIABLE_";
       char *fun_prefix = "VCD_FUNCTION_";
       if (!strncmp(name, var_prefix, strlen(var_prefix))) {
         prefix_length = strlen(var_prefix);
         is_boolean = 0;
+        type = VCD_VARIABLE;
       } else if (!strncmp(name, fun_prefix, strlen(fun_prefix))) {
         prefix_length = strlen(fun_prefix);
         is_boolean = 1;
+        type = VCD_FUNCTION;
       } else
         continue;
+      vcd_name = event_vcd_name_from_id(database, i);
+      if (vcd_name == NULL) {
+        vcd_name = name+prefix_length;
+        printf("WARNING: ID %s does not define VCD_NAME in the file %s, using %s\n",
+              name, database_filename, vcd_name);
+      }
       vars = add_var(vars, nvars,
-          name, "value", name+prefix_length, is_boolean);
+          name, "value", vcd_name, is_boolean, type);
       nvars++;
     }
   }
