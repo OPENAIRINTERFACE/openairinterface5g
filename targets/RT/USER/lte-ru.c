@@ -1558,34 +1558,34 @@ static void* ru_thread( void* param ) {
 
   }
   else if (ru->has_ctrl_prt == 0){
-        // There is no control port: start everything here
-	LOG_I(PHY, "RU %d has not ctrl port\n",ru->idx);
-        if (ru->if_south == LOCAL_RF){
-                fill_rf_config(ru,ru->rf_config_file);
-                init_frame_parms(&ru->frame_parms,1);
-                ru->frame_parms.nb_antennas_rx = ru->nb_rx;
-                phy_init_RU(ru);
-
-
-                ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
-
-                if (setup_RU_buffers(ru)!=0) {
-                  printf("Exiting, cannot initialize RU Buffers\n");
-                  exit(-1);
-                }
-                pthread_mutex_lock(&RC.ru_mutex);
-                RC.ru_mask &= ~(1<<ru->idx);
-                pthread_cond_signal(&RC.ru_cond);
-                pthread_mutex_unlock(&RC.ru_mutex);
-        }
-        pthread_mutex_lock(&RC.ru_mutex);
-        RC.ru_mask &= ~(1<<ru->idx);
-        pthread_cond_signal(&RC.ru_cond);
-        pthread_mutex_unlock(&RC.ru_mutex);
-
-        ru->state = RU_RUN;
-
-
+    // There is no control port: start everything here
+    LOG_I(PHY, "RU %d has not ctrl port\n",ru->idx);
+    if (ru->if_south == LOCAL_RF){
+      fill_rf_config(ru,ru->rf_config_file);
+      init_frame_parms(&ru->frame_parms,1);
+      ru->frame_parms.nb_antennas_rx = ru->nb_rx;
+      phy_init_RU(ru);
+      
+      
+      ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+      
+      if (setup_RU_buffers(ru)!=0) {
+	printf("Exiting, cannot initialize RU Buffers\n");
+	exit(-1);
+      }
+      pthread_mutex_lock(&RC.ru_mutex);
+      RC.ru_mask &= ~(1<<ru->idx);
+      pthread_cond_signal(&RC.ru_cond);
+      pthread_mutex_unlock(&RC.ru_mutex);
+    }
+    pthread_mutex_lock(&RC.ru_mutex);
+    RC.ru_mask &= ~(1<<ru->idx);
+    pthread_cond_signal(&RC.ru_cond);
+    pthread_mutex_unlock(&RC.ru_mutex);
+    
+    ru->state = RU_RUN;
+    
+    
   }
 
   pthread_mutex_lock(&proc->mutex_FH1);
@@ -1780,7 +1780,7 @@ static void* ru_thread( void* param ) {
 	  // do OFDM if needed
 	  if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
 	  if(!emulate_rf){
-      // do outgoing fronthaul (south) if needed
+	    // do outgoing fronthaul (south) if needed
 	    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
 	    
 	    if (ru->fh_north_out) ru->fh_north_out(ru);
@@ -1797,8 +1797,9 @@ static void* ru_thread( void* param ) {
 	  continue;
 	}
 #endif
-    }
-      
+      } // else wait_cnt == 0
+    } // ru->state = RU_RU
+  } // while !oai_exit
 
   printf( "Exiting ru_thread \n");
 
