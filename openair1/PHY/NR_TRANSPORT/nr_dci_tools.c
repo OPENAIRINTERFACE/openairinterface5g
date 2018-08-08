@@ -67,15 +67,17 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
     cce = &dci_alloc->cce_list[cce_idx];
     cce->cce_idx = tmp + cce_idx;
-    LOG_I(PHY, "cce_idx %d\n", cce->cce_idx);
+    LOG_D(PHY, "cce_idx %d\n", cce->cce_idx);
 
     for (uint8_t reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
       reg = &cce->reg_list[reg_idx];
-      if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
+      if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED) {
         
       }
       else { // NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED
-        
+        reg->start_sc_idx = (cce->cce_idx/pdcch_params->n_symb*NR_NB_REG_PER_CCE + reg_idx) * NR_NB_SC_PER_RB;
+        reg->symb_idx = cce->cce_idx % pdcch_params->n_symb;
+        LOG_I(PHY, "reg %d symbol %d start subcarrier %d\n", reg_idx, reg->symb_idx, reg->start_sc_idx);
       }
     }
   }
