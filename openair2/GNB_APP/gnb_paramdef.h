@@ -270,6 +270,7 @@ typedef enum {
 #define GNB_CONFIG_STRING_UL_BWP_PREFIX_TYPE                                           "UL_BWP_prefix_type"
 #define GNB_CONFIG_STRING_UL_TIMEALIGNMENTTIMERCOMMON                                  "UL_timeAlignmentTimerCommon"
 
+#define GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_N_TIMINGADVANCEOFFSET                "ServingCellConfigCommon_n_TimingAdvanceOffset"
 #define GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR              "ServingCellConfigCommon_ssb_PositionsInBurst_PR"
 #define GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_PERIODICITYSERVINGCELL           "ServingCellConfigCommon_ssb_periodicityServingCell"
 #define GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_DMRS_TYPEA_POSITION                  "ServingCellConfigCommon_dmrs_TypeA_Position"
@@ -341,7 +342,7 @@ typedef enum {
   //PDSCH-TIMEDOMAINRESOURCEALLOCATION
 #define GNB_CONFIG_STRING_PDSCH_TIMEDOMAINRESOURCEALLOCATION_K0                        "PDSCH_TimeDomainResourceAllocation_k0"
 #define GNB_CONFIG_STRING_PDSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE               "PDSCH_TimeDomainResourceAllocation_mappingType"
-
+#define GNB_CONFIG_STRING_PDSCH_TIMEDOMAINRESOURCEALLOCATION_STARTSYMBOLANDLENGTH      "PDSCH_TimeDomainResourceAllocation_startSymbolAndLength"
   //RATEMATCHPATTERN  IS USED TO CONFIGURE ONE RATE MATCHING PATTERN FOR PDSCH
 #define GNB_CONFIG_STRING_RATEMATCHPATTERNID                                           "rateMatchPatternId"
 #define GNB_CONFIG_STRING_RATEMATCHPATTERN_PATTERNTYPE                                 "RateMatchPattern_patternType"
@@ -400,15 +401,7 @@ typedef enum {
 
 /* init for checkedparam_t structure */
 
-#define NRCCPARAMS_CHECK                 {                                     \
-             { .s5= {NULL }} ,                 \
-             { .s5= {NULL }} ,                 \
-             { .s5= {NULL }} ,                 \
-             { .s5= {NULL }} ,                 \
-             { .s5= {NULL }} ,                 \
-             { .s5= {NULL }} ,                 \
-             { .s5= {NULL }} ,                 \
-             { .s5= {NULL }} ,                 \
+#define NRCCPARAMS_CHECK  {                                     \
              { .s5= {NULL }} ,                 \
              { .s5= {NULL }} ,                 \
              { .s5= {NULL }} ,                 \
@@ -596,6 +589,7 @@ typedef enum {
 {GNB_CONFIG_STRING_UL_BWP_SUBCARRIERSPACING,                                         NULL,        0,        strptr:&UL_BWP_SubcarrierSpacing,                                       defstrval:"kHz15",              TYPE_STRING,     0},  \
 {GNB_CONFIG_STRING_UL_BWP_PREFIX_TYPE,                                               NULL,        0,        strptr:&UL_BWP_prefix_type,                                             defstrval:"NORMAL",             TYPE_STRING,     0},  \
 {GNB_CONFIG_STRING_UL_TIMEALIGNMENTTIMERCOMMON,                                      NULL,        0,        strptr:&UL_timeAlignmentTimerCommon,                                    defstrval:"infinity",           TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_N_TIMINGADVANCEOFFSET,                    NULL,        0,        strptr:&ServingCellConfigCommon_n_TimingAdvanceOffset,                  defstrval:"n0",                 TYPE_STRING,     0},  \
 {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR,                  NULL,        0,        strptr:&ServingCellConfigCommon_ssb_PositionsInBurst_PR,                defstrval:"shortBitmap",        TYPE_STRING,     0},  \
 {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_SSB_PERIODICITYSERVINGCELL,               NULL,        0,        iptr:&ServingCellConfigCommon_ssb_periodicityServingCell,               defintval:10,                   TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON_DMRS_TYPEA_POSITION,                      NULL,        0,        iptr:&ServingCellConfigCommon_dmrs_TypeA_Position,                      defintval:0,                    TYPE_UINT,       0},  \
@@ -650,6 +644,7 @@ typedef enum {
 {GNB_CONFIG_STRING_P0_NOMINAL,                                                       NULL,        0,        iptr:&p0_nominal,                                                       defintval:-30,                  TYPE_INT,        0},  \
 {GNB_CONFIG_STRING_PDSCH_TIMEDOMAINRESOURCEALLOCATION_K0,                            NULL,        0,        iptr:&PDSCH_TimeDomainResourceAllocation_k0,                            defintval:2,                    TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_PDSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE,                   NULL,        0,        strptr:&PDSCH_TimeDomainResourceAllocation_mappingType,                 defstrval:"typeA",              TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_PDSCH_TIMEDOMAINRESOURCEALLOCATION_STARTSYMBOLANDLENGTH,          NULL,        0,        iptr:&PDSCH_TimeDomainResourceAllocation_startSymbolAndLength,          defintval:0,                    TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_RATEMATCHPATTERNID,                                               NULL,        0,        iptr:&rateMatchPatternId,                                               defintval:0,                    TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_RATEMATCHPATTERN_PATTERNTYPE,                                     NULL,        0,        strptr:&RateMatchPattern_patternType,                                   defstrval:"bitmaps",            TYPE_STRING,     0},  \
 {GNB_CONFIG_STRING_SYMBOLSINRESOURCEBLOCK,                                           NULL,        0,        strptr:&symbolsInResourceBlock,                                         defstrval:"oneSlot",            TYPE_STRING,     0},  \
@@ -743,8 +738,9 @@ typedef enum {
 #define GNB_CONFIG_UL_LOCATIONANDBANDWIDTH_IDX                                      41
 #define GNB_CONFIG_UL_BWP_SUBCARRIERSPACING_IDX                                     42
 #define GNB_CONFIG_UL_BWP_PREFIX_TYPE_IDX                                           43
-#define GNB_CONFIG_TIMEALIGNMENTTIMERCOMMON_IDX                                     
-#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR_IDX              44
+#define GNB_CONFIG_TIMEALIGNMENTTIMERCOMMON_IDX                                     44
+#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_N_TIMINGADVANCEOFFSET_IDX
+#define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SSB_POSITIONSINBURST_PR_IDX              45
 #define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_SSB_PERIODICITYSERVINGCELL_IDX           46
 #define GNB_CONFIG_SERVINGCELLCONFIGCOMMON_DMRS_TYPEA_POSITION_IDX                  47
 #define GNB_CONFIG_NIA_SUBCARRIERSPACING_IDX                                        48
@@ -769,63 +765,64 @@ typedef enum {
 #define GNB_CONFIG_RACH_RA_MSG3SIZEGROUPA_IDX                                       67
 #define GNB_CONFIG_RACH_MESSAGEPOWEROFFSETGROUPB_IDX                                68
 #define GNB_CONFIG_RACH_NUMBEROFRA_PREAMBLESGROUPA_IDX                              69
-#define GNB_CONFIG_RACH_RA_CONTENTIONRESOLUTIONTIMER_IDX                            60
-#define GNB_CONFIG_RSRP_THRESHOLDSSB_IDX                                            70
-#define GNB_CONFIG_RSRP_THRESHOLDSSB_SUL_IDX                                        71
-#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_CHOICE_IDX                               72
-#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_L839_IDX                                 73
-#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_L139_IDX                                 74
-#define GNB_CONFIG_PRACH_MSG1_SUBCARRIERSPACING_IDX                                 75
-#define GNB_CONFIG_RESTRICTEDSETCONFIG_IDX                                          76
-#define GNB_CONFIG_MSG3_TRANSFORMPRECODING_IDX                                      77
-#define GNB_CONFIG_PRACH_CONFIGURATIONINDEX_IDX                                     78
-#define GNB_CONFIG_PRACH_MSG1_FDM_IDX                                               79
-#define GNB_CONFIG_PRACH_MSG1_FREQUENCYSTART_IDX                                    80
-#define GNB_CONFIG_ZEROCORRELATIONZONECONFIG_IDX                                    81
-#define GNB_CONFIG_PREAMBLERECEIVEDTARGETPOWER_IDX                                  82
-#define GNB_CONFIG_PREAMBLETRANSMAX_IDX                                             83
-#define GNB_CONFIG_POWERRAMPINGSTEP_IDX                                             84
-#define GNB_CONFIG_RA_RESPONSEWINDOW_IDX                                            85
-#define GNB_CONFIG_GROUPHOPPINGENABLEDTRANSFORMPRECODING_IDX                        86
-#define GNB_CONFIG_MSG3_DELTAPREAMBLE_IDX                                           87
-#define GNB_CONFIG_P0_NOMINALWITHGRANT_IDX                                          88
-#define GNB_CONFIG_PUSCH_TIMEDOMAINRESOURCEALLOCATION_K2_IDX                        89
-#define GNB_CONFIG_PUSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE_IDX               90
-#define GNB_CONFIG_PUSCH_TIMEDOMAINRESOURCEALLOCATION_STARTSYMBOLANDLENGTH_IDX      
-#define GNB_CONFIG_PUCCH_RESOURCECOMMON_IDX                                         
-#define GNB_CONFIG_PUCCH_GROUPHOPPING_IDX                                           91
-#define GNB_CONFIG_HOPPINGID_IDX                                                    
-#define GNB_CONFIG_P0_NOMINAL_IDX                                                   92
-#define GNB_CONFIG_PDSCH_TIMEDOMAINRESOURCEALLOCATION_K0_IDX                        93
-#define GNB_CONFIG_PDSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE_IDX               94
-#define GNB_CONFIG_RATEMATCHPATTERNID_IDX                                           95
-#define GNB_CONFIG_RATEMATCHPATTERN_PATTERNTYPE_IDX                                 96
-#define GNB_CONFIG_SYMBOLSINRESOURCEBLOCK_IDX                                       97
-#define GNB_CONFIG_PERIODICITYANDPATTERN_IDX                                        98
-#define GNB_CONFIG_RATEMATCHPATTERN_CONTROLRESOURCESET_IDX                          99
-#define GNB_CONFIG_RATEMATCHPATTERN_SUBCARRIERSPACING_IDX                           100
-#define GNB_CONFIG_RATEMATCHPATTERN_MODE_IDX                                        101
-#define GNB_CONFIG_CONTROLRESOURCESETZERO_IDX                                       
-#define GNB_CONFIG_SEARCHSPACEZERO_IDX                                              
-#define GNB_CONFIG_SEARCHSPACESIB1_IDX                                              102
-#define GNB_CONFIG_SEARCHSPACEOTHERSYSTEMINFORMATION_IDX                            103
-#define GNB_CONFIG_PAGINGSEARCHSPACE_IDX                                            104
-#define GNB_CONFIG_RA_SEARCHSPACE_IDX                                               105
-#define GNB_CONFIG_PDCCH_COMMON_CONTROLRESOURCESETID_IDX                            107
-#define GNB_CONFIG_PDCCH_COMMON_CONTROLRESOURCESET_DURATION_IDX                     108
-#define GNB_CONFIG_PDCCH_CCE_REG_MAPPINGTYPE_IDX                                    109
-#define GNB_CONFIG_PDCCH_REG_BUNDLESIZE_IDX                                         110
-#define GNB_CONFIG_PDCCH_INTERLEAVERSIZE_IDX                                        111
-#define GNB_CONFIG_PDCCH_SHIFTINDEX_IDX                                             112
-#define GNB_CONFIG_PDCCH_PRECODERGRANULARITY_IDX                                    113
-#define GNB_CONFIG_PDCCH_TCI_STATEID_IDX                                            114
-#define GNB_CONFIG_TCI_PRESENTINDCI_IDX                                             115
-#define GNB_CONFIG_PDCCH_DMRS_SCRAMBLINGID_IDX                                      
-#define GNB_CONFIG_SEARCHSPACEID_IDX                                                116
-#define GNB_CONFIG_COMMONSEARCHSPACES_CONTROLRESOURCESETID_IDX                      117
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_CHOICE_IDX        118
-#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_VALUE_IDX         
-#define GNB_CONFIG_SEARCHSPACE_DURATION_IDX                                         
+#define GNB_CONFIG_RACH_RA_CONTENTIONRESOLUTIONTIMER_IDX                            70
+#define GNB_CONFIG_RSRP_THRESHOLDSSB_IDX                                            71
+#define GNB_CONFIG_RSRP_THRESHOLDSSB_SUL_IDX                                        72
+#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_CHOICE_IDX                               73
+#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_L839_IDX                                 74
+#define GNB_CONFIG_PRACH_ROOTSEQUENCEINDEX_L139_IDX                                 75
+#define GNB_CONFIG_PRACH_MSG1_SUBCARRIERSPACING_IDX                                 76
+#define GNB_CONFIG_RESTRICTEDSETCONFIG_IDX                                          77
+#define GNB_CONFIG_MSG3_TRANSFORMPRECODING_IDX                                      78
+#define GNB_CONFIG_PRACH_CONFIGURATIONINDEX_IDX                                     79
+#define GNB_CONFIG_PRACH_MSG1_FDM_IDX                                               80
+#define GNB_CONFIG_PRACH_MSG1_FREQUENCYSTART_IDX                                    81
+#define GNB_CONFIG_ZEROCORRELATIONZONECONFIG_IDX                                    82
+#define GNB_CONFIG_PREAMBLERECEIVEDTARGETPOWER_IDX                                  83
+#define GNB_CONFIG_PREAMBLETRANSMAX_IDX                                             84
+#define GNB_CONFIG_POWERRAMPINGSTEP_IDX                                             85
+#define GNB_CONFIG_RA_RESPONSEWINDOW_IDX                                            86
+#define GNB_CONFIG_GROUPHOPPINGENABLEDTRANSFORMPRECODING_IDX                        87
+#define GNB_CONFIG_MSG3_DELTAPREAMBLE_IDX                                           88
+#define GNB_CONFIG_P0_NOMINALWITHGRANT_IDX                                          89
+#define GNB_CONFIG_PUSCH_TIMEDOMAINRESOURCEALLOCATION_K2_IDX                        90
+#define GNB_CONFIG_PUSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE_IDX               91
+#define GNB_CONFIG_PUSCH_TIMEDOMAINRESOURCEALLOCATION_STARTSYMBOLANDLENGTH_IDX      92
+#define GNB_CONFIG_PUCCH_RESOURCECOMMON_IDX                                         93
+#define GNB_CONFIG_PUCCH_GROUPHOPPING_IDX                                           94
+#define GNB_CONFIG_HOPPINGID_IDX                                                    95
+#define GNB_CONFIG_P0_NOMINAL_IDX                                                   96
+#define GNB_CONFIG_PDSCH_TIMEDOMAINRESOURCEALLOCATION_K0_IDX                        97
+#define GNB_CONFIG_PDSCH_TIMEDOMAINRESOURCEALLOCATION_MAPPINGTYPE_IDX               98
+#define GNB_CONFIG_PDSCH_TIMEDOMAINRESOURCEALLOCATION_STARTSYMBOLANDLENGTH          
+#define GNB_CONFIG_RATEMATCHPATTERNID_IDX                                           99
+#define GNB_CONFIG_RATEMATCHPATTERN_PATTERNTYPE_IDX                                 100
+#define GNB_CONFIG_SYMBOLSINRESOURCEBLOCK_IDX                                       101
+#define GNB_CONFIG_PERIODICITYANDPATTERN_IDX                                        102
+#define GNB_CONFIG_RATEMATCHPATTERN_CONTROLRESOURCESET_IDX                          103
+#define GNB_CONFIG_RATEMATCHPATTERN_SUBCARRIERSPACING_IDX                           104
+#define GNB_CONFIG_RATEMATCHPATTERN_MODE_IDX                                        105
+#define GNB_CONFIG_CONTROLRESOURCESETZERO_IDX                                       106
+#define GNB_CONFIG_SEARCHSPACEZERO_IDX                                              107
+#define GNB_CONFIG_SEARCHSPACESIB1_IDX                                              108
+#define GNB_CONFIG_SEARCHSPACEOTHERSYSTEMINFORMATION_IDX                            109
+#define GNB_CONFIG_PAGINGSEARCHSPACE_IDX                                            110
+#define GNB_CONFIG_RA_SEARCHSPACE_IDX                                               111
+#define GNB_CONFIG_PDCCH_COMMON_CONTROLRESOURCESETID_IDX                            112
+#define GNB_CONFIG_PDCCH_COMMON_CONTROLRESOURCESET_DURATION_IDX                     113
+#define GNB_CONFIG_PDCCH_CCE_REG_MAPPINGTYPE_IDX                                    114
+#define GNB_CONFIG_PDCCH_REG_BUNDLESIZE_IDX                                         115
+#define GNB_CONFIG_PDCCH_INTERLEAVERSIZE_IDX                                        116
+#define GNB_CONFIG_PDCCH_SHIFTINDEX_IDX                                             117
+#define GNB_CONFIG_PDCCH_PRECODERGRANULARITY_IDX                                    118
+#define GNB_CONFIG_PDCCH_TCI_STATEID_IDX                                            119
+#define GNB_CONFIG_TCI_PRESENTINDCI_IDX                                             120
+#define GNB_CONFIG_PDCCH_DMRS_SCRAMBLINGID_IDX                                      121
+#define GNB_CONFIG_SEARCHSPACEID_IDX                                                122
+#define GNB_CONFIG_COMMONSEARCHSPACES_CONTROLRESOURCESETID_IDX                      123
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_CHOICE_IDX        124
+#define GNB_CONFIG_SEARCHSPACE_MONITORINGSLOTPERIODICITYANDOFFSET_VALUE_IDX         125
+#define GNB_CONFIG_SEARCHSPACE_DURATION_IDX                                         126
 #define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL1_IDX                 127
 #define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL2_IDX                 128
 #define GNB_CONFIG_SEARCHSPACE_NROFCANDIDATES_AGGREGATIONLEVEL4_IDX                 129
@@ -839,14 +836,14 @@ typedef enum {
 #define GNB_CONFIG_COMMON_DCI_FORMAT2_0_NROFCANDIDATES_SFI_AGGREGATIONLEVEL16_IDX   137
 #define GNB_CONFIG_COMMON_DCI_FORMAT2_3_MONITORINGPERIODICITY_IDX                   138
 #define GNB_CONFIG_COMMON_DCI_FORMAT2_3_NROFPDCCH_CANDIDATES_IDX                    139
-#define GNB_CONFIG_UE_SPECIFIC__DCI_FORMATS_IDX                                     141
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_CARRIERFREQDL_IDX                        142
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_CARRIERBANDWIDTHDL_IDX                   143
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_NROFCRS_PORTS_IDX                        144
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_V_SHIFT_IDX                              145
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONPERIOD_IDX           146
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONOFFSET_IDX           147
-#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_SUBFRAMEALLOCATION_CHOICE_IDX            148
+#define GNB_CONFIG_UE_SPECIFIC__DCI_FORMATS_IDX                                     140
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_CARRIERFREQDL_IDX                        141
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_CARRIERBANDWIDTHDL_IDX                   142
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_NROFCRS_PORTS_IDX                        143
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_V_SHIFT_IDX                              144
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONPERIOD_IDX           145
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_RADIOFRAMEALLOCATIONOFFSET_IDX           146
+#define GNB_CONFIG_RATEMATCHPATTERNLTE_CRS_SUBFRAMEALLOCATION_CHOICE_IDX            147
 
 
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/

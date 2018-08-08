@@ -82,6 +82,7 @@ void RCconfig_nr_flexran()
             *DL_SCS_SubcarrierSpacing, *DL_BWP_SubcarrierSpacing, *DL_BWP_prefix_type,
             *UL_frequencyShift7p5khz, *UL_SCS_SubcarrierSpacing, *UL_BWP_SubcarrierSpacing,
             *UL_BWP_prefix_type, *UL_timeAlignmentTimerCommon, 
+            *ServingCellConfigCommon_n_TimingAdvanceOffset,
             *ServingCellConfigCommon_ssb_PositionsInBurst_PR,
             *NIA_SubcarrierSpacing, *referenceSubcarrierSpacing, *dl_UL_TransmissionPeriodicity,
             *rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,
@@ -126,6 +127,7 @@ void RCconfig_nr_flexran()
             PUSCH_TimeDomainResourceAllocation_k2,
             PUSCH_TimeDomainResourceAllocation_startSymbolAndLength,
             pucch_ResourceCommon, hoppingId, p0_nominal, PDSCH_TimeDomainResourceAllocation_k0,
+            PDSCH_TimeDomainResourceAllocation_startSymbolAndLength,
             rateMatchPatternId, periodicityAndPattern, RateMatchPattern_controlResourceSet,
             controlResourceSetZero, searchSpaceZero,
             searchSpaceSIB1, searchSpaceOtherSystemInformation, pagingSearchSpace,
@@ -397,7 +399,7 @@ void RCconfig_nr_macrlc() {
 
 }
 
-int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
+void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
   int                    num_gnbs                                                      = 0;
   int                    num_component_carriers                                        = 0;
@@ -461,7 +463,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   char*                  UL_BWP_prefix_type                                            = NULL; 
   char*                  UL_timeAlignmentTimerCommon                                   = 0;
   
-  int32_t                ServingCellConfigCommon_n_TimingAdvanceOffset                 = 0;
+  char*                  ServingCellConfigCommon_n_TimingAdvanceOffset                 = 0;
   char*                  ServingCellConfigCommon_ssb_PositionsInBurst_PR               = 0;
   int32_t                ServingCellConfigCommon_ssb_periodicityServingCell            = 0;
   int32_t                ServingCellConfigCommon_dmrs_TypeA_Position                   = 0;
@@ -591,14 +593,14 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int32_t                RateMatchPatternLTE_CRS_radioframeAllocationPeriod            = 0;
   int32_t                RateMatchPatternLTE_CRS_radioframeAllocationOffset            = 0;
   char*                  RateMatchPatternLTE_CRS_subframeAllocation_choice             = NULL;
-
+/*
   int32_t                srb1_timer_poll_retransmit    = 0;
   int32_t                srb1_timer_reordering         = 0;
   int32_t                srb1_timer_status_prohibit    = 0;
   int32_t                srb1_poll_pdu                 = 0;
   int32_t                srb1_poll_byte                = 0;
   int32_t                srb1_max_retx_threshold       = 0;
-
+*/
   //int32_t             my_int;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
@@ -610,7 +612,12 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramdef_t CCsParams[] = NRCCPARAMS_DESC;
   paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
   
-  paramdef_t SRB1Params[] = SRB1PARAMS_DESC;  
+  //paramdef_t SRB1Params[] = SRB1PARAMS_DESC;  
+
+  /* map parameter checking array instances to parameter definition array instances */
+  for (int I = 0; I < (sizeof(CCsParams) / sizeof(paramdef_t)); I++) {
+    CCsParams[I].chkPptr = &(config_check_CCparams[I]);
+  }
 
   /* get global parameters, defined outside any section in the config file */
  
@@ -1057,6 +1064,17 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_timeAlignmentTimerCommon choice: ms500,ms750,ms1280,ms1920,ms2560,ms5120,ms10240,infinity!\n",
                            RC.config_file_name, i, UL_timeAlignmentTimerCommon);
             }
+
+            if (strcmp(ServingCellConfigCommon_n_TimingAdvanceOffset,"n0")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_n_TimingAdvanceOffset[j] = NR_ServingCellConfigCommon__n_TimingAdvanceOffset_n0;
+            }else if (strcmp(ServingCellConfigCommon_n_TimingAdvanceOffset,"n25600")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_n_TimingAdvanceOffset[j] = NR_ServingCellConfigCommon__n_TimingAdvanceOffset_n25600;
+            }else if (strcmp(ServingCellConfigCommon_n_TimingAdvanceOffset,"n39936")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_n_TimingAdvanceOffset[j] = NR_ServingCellConfigCommon__n_TimingAdvanceOffset_n39936;
+            }else { 
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for ServingCellConfigCommon_n_TimingAdvanceOffset choice n0,n25600,n39936!\n",
+                           RC.config_file_name, i, ServingCellConfigCommon_n_TimingAdvanceOffset);
+            }        
 
             if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"shortBitmap")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap;
@@ -1863,6 +1881,12 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for PDSCH_TimeDomainResourceAllocation_mappingType !\n",
                            RC.config_file_name, i, PDSCH_TimeDomainResourceAllocation_mappingType);
+            }
+
+            NRRRC_CONFIGURATION_REQ (msg_p).PDSCH_TimeDomainResourceAllocation_startSymbolAndLength[j] = PDSCH_TimeDomainResourceAllocation_startSymbolAndLength;
+            if ((PDSCH_TimeDomainResourceAllocation_startSymbolAndLength <0) || (PDSCH_TimeDomainResourceAllocation_startSymbolAndLength>127)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDSCH_TimeDomainResourceAllocation_startSymbolAndLength choice: 0..127 !\n",
+                           RC.config_file_name, i, PDSCH_TimeDomainResourceAllocation_startSymbolAndLength);
             }
 
             //////////////////////////////////NR RateMatchPattern///////////////////////////

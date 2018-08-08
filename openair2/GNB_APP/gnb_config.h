@@ -101,7 +101,7 @@ extern void NRRCConfig(void);
 //void                          enb_config_display(void);
 //void                          ru_config_display(void);
 
-int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc);
+void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc);
 int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i);
 
 #endif /* GNB_CONFIG_H_ */
