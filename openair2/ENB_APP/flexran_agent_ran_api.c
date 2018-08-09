@@ -140,7 +140,11 @@ rlc_buffer_occupancy_t flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logi
   rnti_t rnti = flexran_get_ue_crnti(mod_id, ue_id);
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
-  mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id,rnti, mod_id, frame, subframe, ENB_FLAG_YES,MBMS_FLAG_NO, channel_id, 0);
+  mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id,rnti, mod_id, frame, subframe, ENB_FLAG_YES,MBMS_FLAG_NO, channel_id, 0
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                                    ,0, 0
+#endif
+                                                    );
   return rlc_status.bytes_in_buffer;
 }
 
@@ -149,7 +153,11 @@ rlc_buffer_occupancy_t flexran_get_num_pdus_buffer(mid_t mod_id, mid_t ue_id, lo
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
-  mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id,rnti, mod_id, frame, subframe, ENB_FLAG_YES,MBMS_FLAG_NO, channel_id, 0);
+  mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id,rnti, mod_id, frame, subframe, ENB_FLAG_YES,MBMS_FLAG_NO, channel_id, 0
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                                    ,0, 0
+#endif
+                                                    );
   return rlc_status.pdus_in_buffer;
 }
 
@@ -158,7 +166,11 @@ frame_t flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t chann
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
-  mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id, rnti, mod_id, frame, subframe, ENB_FLAG_YES, MBMS_FLAG_NO, channel_id, 0);
+  mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id, rnti, mod_id, frame, subframe, ENB_FLAG_YES, MBMS_FLAG_NO, channel_id, 0
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                                    ,0, 0
+#endif
+                                                    );
   return rlc_status.head_sdu_creation_time;
 }
 
@@ -1207,7 +1219,7 @@ void flexran_set_pdcp_rx_stat_window(const mid_t mod_id, const mid_t ue_id, uint
 
 /*PDCP num tx pdu status flexRAN*/
 uint32_t flexran_get_pdcp_tx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid){
-  if (mod_id <0 || mod_id> MAX_NUM_CCs || ue_id<0 || ue_id> NUMBER_OF_UE_MAX || lcid<0 || lcid>NB_RB_MAX)
+  if (mod_id <0 || mod_id> MAX_NUM_CCs || ue_id<0 || ue_id> MAX_MOBILES_PER_ENB || lcid<0 || lcid>NB_RB_MAX)
     return -1;
   return Pdcp_stats_tx[mod_id][ue_id][lcid];
 }

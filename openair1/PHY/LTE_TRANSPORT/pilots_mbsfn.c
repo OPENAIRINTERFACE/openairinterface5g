@@ -29,9 +29,9 @@
 * \note
 * \warning
 */
-//#include "defs.h"
-#include "PHY/defs.h"
 
+#include "PHY/defs_eNB.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 int generate_mbsfn_pilot(PHY_VARS_eNB *eNB,
 			 eNB_rxtx_proc_t *proc,

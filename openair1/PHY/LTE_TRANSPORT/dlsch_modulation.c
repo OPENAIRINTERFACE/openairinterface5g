@@ -29,16 +29,17 @@
  * \note
  * \warning
  */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/CODING/defs.h"
-#include "PHY/CODING/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/CODING/coding_defs.h"
+#include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "PHY/LTE_TRANSPORT/defs.h"
-#include "defs.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-
-//#define DEBUG_DLSCH_MODULATION 1
+#include "PHY/LTE_TRANSPORT/transport_eNB.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+//#define DEBUG_DLSCH_MODULATION
+//#define NEW_ALLOC_RE
 
 //#define is_not_pilot(pilots,re,nushift,use2ndpilots) ((pilots==0) || ((re!=nushift) && (re!=nushift+6)&&((re!=nushift+3)||(use2ndpilots==1))&&((re!=nushift+9)||(use2ndpilots==1)))?1:0)
 
@@ -94,31 +95,7 @@ uint8_t is_not_UEspecRS(int8_t lprime, uint8_t re, uint8_t nushift, uint8_t Ncp,
   return(0);
 }
 
-void generate_64qam_table(void)
-{
 
-  int a,b,c,index;
-
-
-  for (a=-1; a<=1; a+=2)
-    for (b=-1; b<=1; b+=2)
-      for (c=-1; c<=1; c+=2) {
-        index = (1+a)*2 + (1+b) + (1+c)/2;
-        qam64_table[index] = -a*(QAM64_n1 + b*(QAM64_n2 + (c*QAM64_n3))); // 0 1 2
-      }
-}
-
-void generate_16qam_table(void)
-{
-
-  int a,b,index;
-
-  for (a=-1; a<=1; a+=2)
-    for (b=-1; b<=1; b+=2) {
-      index = (1+a) + (1+b)/2;
-      qam16_table[index] = -a*(QAM16_n1 + (b*QAM16_n2));
-    }
-}
 
 
 
@@ -156,6 +133,158 @@ void layer1prec2A(int32_t *antenna0_sample, int32_t *antenna1_sample, uint8_t pr
 
 uint32_t FOUR[2]={0,4};
 uint32_t TWO[2]={0,2};
+
+int allocate_REs_in_RB_no_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
+                                           int **txdataF,
+                                           uint32_t *jj,
+                                           uint32_t *jj2,
+                                           uint16_t re_offset,
+                                           uint32_t symbol_offset,
+                                           LTE_DL_eNB_HARQ_t *dlsch0_harq,
+                                           LTE_DL_eNB_HARQ_t *dlsch1_harq,
+                                           uint8_t pilots,
+                                           int16_t amp,
+                                           uint8_t precoder_index,
+                                           int16_t *qam_table_s0,
+                                           int16_t *qam_table_s1,
+                                           uint32_t *re_allocated,
+                                           uint8_t skip_dc,
+                                           uint8_t skip_half,
+                                           uint8_t lprime,
+                                           uint8_t mprime,
+                                           uint8_t Ns,
+                                           int *P1_SHIFT,
+                                           int *P2_SHIFT)
+{
+
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->frame_parms;
+  uint8_t *x0             = dlsch0_harq->e;
+  uint32_t qpsk_table_offset_re = 0;
+  uint32_t qpsk_table_offset_im = 0;
+
+  uint32_t tti_offset;
+  uint8_t re;
+  uint8_t *x0p;
+
+  if (skip_dc == 0) {
+    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0;
+         re<12;
+         re++,x0p+=2,tti_offset++) {
+
+      qpsk_table_offset_re=x0p[0];
+      qpsk_table_offset_im=x0p[1];
+      ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qpsk_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
+    }
+  }
+  else {
+    // 1st half of PRB
+    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0;
+         re<6;
+         re++,x0p+=2,tti_offset++) {
+
+      qpsk_table_offset_re=x0p[0];
+      qpsk_table_offset_im=x0p[1];
+      ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qpsk_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
+    }
+    // 2nd half of PRB
+    for (tti_offset=symbol_offset+re_offset-frame_parms->ofdm_symbol_size+7;
+         re<12;
+         re++,x0p+=2,tti_offset++) {
+
+      qpsk_table_offset_re=x0p[0];
+      qpsk_table_offset_im=x0p[1];
+      ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qpsk_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
+    }
+  }
+  *re_allocated = *re_allocated + 12;
+  *jj=*jj + 24;
+
+    return(0);
+}
+
+int allocate_REs_in_RB_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
+                                        int **txdataF,
+                                        uint32_t *jj,
+                                        uint32_t *jj2,
+                                        uint16_t re_offset,
+                                        uint32_t symbol_offset,
+                                        LTE_DL_eNB_HARQ_t *dlsch0_harq,
+                                        LTE_DL_eNB_HARQ_t *dlsch1_harq,
+                                        uint8_t pilots,
+                                        int16_t amp,
+                                        uint8_t precoder_index,
+                                        int16_t *qam_table_s0,
+                                        int16_t *qam_table_s1,
+                                        uint32_t *re_allocated,
+                                        uint8_t skip_dc,
+                                        uint8_t skip_half,
+                                        uint8_t lprime,
+                                        uint8_t mprime,
+                                        uint8_t Ns,
+                                        int *P1_SHIFT,
+                                        int *P2_SHIFT)
+{
+
+
+  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->frame_parms;
+
+  uint8_t *x0             = dlsch0_harq->e;
+  uint32_t qpsk_table_offset_re = 0;
+  uint32_t qpsk_table_offset_im = 0;
+
+  uint32_t tti_offset;
+  uint8_t re;
+  uint8_t *x0p;
+
+
+  if (skip_dc == 0) {
+    //    printf("pilots: P1_SHIFT[0] %d\n",P1_SHIFT[0]);
+    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+P1_SHIFT[0],re=P1_SHIFT[0];
+         re<12;
+         x0p+=2) {
+
+      qpsk_table_offset_re=x0p[0];
+      qpsk_table_offset_im=x0p[1];
+      ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qpsk_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
+      //      printf("pilots: re %d, tti_offset %d, P1_SHIFT %d\n",re,tti_offset,P1_SHIFT[re+1]);
+      tti_offset+=P1_SHIFT[re+1];
+      re+=P1_SHIFT[re+1];
+    }
+  }
+  else {
+    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+P1_SHIFT[0],re=P1_SHIFT[0];
+         re<6;
+         x0p+=2) {
+
+      qpsk_table_offset_re+=x0p[0];
+      qpsk_table_offset_im+=x0p[1];
+      ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qpsk_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
+      tti_offset+=P1_SHIFT[re+1];
+      re+=P1_SHIFT[re+1];
+    }
+
+    for (tti_offset=symbol_offset+re_offset-frame_parms->ofdm_symbol_size+6+P1_SHIFT[6];
+         re<12;
+         x0p+=2) {
+
+      qpsk_table_offset_re+=x0p[0];
+      qpsk_table_offset_im+=x0p[1];
+      ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qpsk_table_offset_re];
+      ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
+      tti_offset+=P1_SHIFT[re+1];
+      re+=P1_SHIFT[re+1];
+    }
+  }
+  *re_allocated = *re_allocated + 10;
+  *jj=*jj + 20;
+
+  return(0);
+}
 
 int allocate_REs_in_RB_no_pilots_16QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
                                             int **txdataF,
@@ -577,6 +706,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
                        int *P2_SHIFT)
 {
 
+
   uint8_t *x0 = NULL;
   MIMO_mode_t mimo_mode = -1;
 
@@ -585,8 +715,8 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
 
   int first_layer0 = -1; //= dlsch0_harq->first_layer;
   int Nlayers0 = -1; //  = dlsch0_harq->Nlayers;
-  uint8_t mod_order0=0; 
-  uint8_t mod_order1=0; 
+  uint8_t mod_order0=0;
+  uint8_t mod_order1=0;
   uint8_t precoder_index0,precoder_index1;
 
   uint8_t *x1=NULL;
@@ -1806,48 +1936,6 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
   return(0);
 }
 
-uint8_t get_pmi(uint8_t N_RB_DL, MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb)
-{
-  /*
-  MIMO_mode_t mode   = dlsch_harq->mimo_mode;
-  uint32_t pmi_alloc = dlsch_harq->pmi_alloc;
-  */
-
-  switch (N_RB_DL) {
-    case 6:   // 1 PRB per subband
-      if (mode <= PUSCH_PRECODING1)
-        return((pmi_alloc>>(rb<<1))&3);
-      else
-        return((pmi_alloc>>rb)&1);
-
-      break;
-
-    default:
-    case 25:  // 4 PRBs per subband
-      if (mode <= PUSCH_PRECODING1)
-        return((pmi_alloc>>((rb>>2)<<1))&3);
-      else
-        return((pmi_alloc>>(rb>>2))&1);
-
-      break;
-
-    case 50: // 6 PRBs per subband
-      if (mode <= PUSCH_PRECODING1)
-        return((pmi_alloc>>((rb/6)<<1))&3);
-      else
-        return((pmi_alloc>>(rb/6))&1);
-
-      break;
-
-    case 100: // 8 PRBs per subband
-      if (mode <= PUSCH_PRECODING1)
-        return((pmi_alloc>>((rb>>3)<<1))&3);
-      else
-        return((pmi_alloc>>(rb>>3))&1);
-
-      break;
-  }
-}
 
 
 inline int check_skip(int rb,int subframe_offset,LTE_DL_FRAME_PARMS *frame_parms,int l,int nsymb) __attribute__((always_inline));
@@ -1990,6 +2078,7 @@ inline int check_skip_dc(int rb,LTE_DL_FRAME_PARMS *frame_parms) {
 int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
                      int32_t **txdataF,
                      int16_t amp,
+                     int frame,
                      uint32_t subframe_offset,
                      uint8_t num_pdcch_symbols,
                      LTE_eNB_DLSCH_t *dlsch0,
@@ -2011,12 +2100,10 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   uint8_t mod_order0 = 0;
   uint8_t mod_order1 = 0;
   int16_t amp_rho_a, amp_rho_b;
-  int16_t qam16_table_a0[4],qam64_table_a0[8],qam16_table_b0[4],qam64_table_b0[8];
-  int16_t qam16_table_a1[4],qam64_table_a1[8],qam16_table_b1[4],qam64_table_b1[8];
+  int16_t qam16_table_a0[4],qam64_table_a0[8],qam16_table_b0[4],qam64_table_b0[8],qpsk_table_a0[2],qpsk_table_b0[2];
+  int16_t qam16_table_a1[4],qam64_table_a1[8],qam16_table_b1[4],qam64_table_b1[8],qpsk_table_a1[2],qpsk_table_b1[2];
 
   int16_t *qam_table_s0=NULL,*qam_table_s1=NULL;
-#if 0
-  /* TODO: variable to be removed? */
   int (*allocate_REs)(PHY_VARS_eNB*,
                       int **,
                       uint32_t*,
@@ -2038,7 +2125,8 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
                       uint8_t,
                       int *,
                       int *);
-#endif
+
+
 
   int P1_SHIFT[13],P2_SHIFT[13];
   int offset,nushiftmod3;
@@ -2062,7 +2150,11 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   if ((dlsch0 != NULL) && (dlsch1 != NULL)){
 
-    harq_pid = dlsch0->harq_ids[subframe_offset];
+    harq_pid = dlsch0->harq_ids[frame%2][subframe_offset];
+    if(harq_pid >= dlsch0->Mdlharq) {
+      LOG_E(PHY,"illegal harq_pid %d\n", harq_pid);
+      return(-1);
+    }
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
     mimo_mode = dlsch0_harq->mimo_mode;
     mod_order0 = dlsch0_harq->Qm;
@@ -2079,7 +2171,11 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   }else if ((dlsch0 != NULL) && (dlsch1 == NULL)){
 
-    harq_pid = dlsch0->harq_ids[subframe_offset];
+    harq_pid = dlsch0->harq_ids[frame%2][subframe_offset];
+    if(harq_pid >= dlsch0->Mdlharq) {
+      LOG_E(PHY,"illegal harq_pid %d\n", harq_pid);
+      return(-1);
+    }
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
     mimo_mode = dlsch0_harq->mimo_mode;
     mod_order0 = dlsch0_harq->Qm;
@@ -2096,7 +2192,11 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
   }else if ((dlsch0 == NULL) && (dlsch1 != NULL)){
 
-    harq_pid = dlsch1->harq_ids[subframe_offset];
+    harq_pid = dlsch1->harq_ids[frame%2][subframe_offset];
+    if(harq_pid >= dlsch1->Mdlharq) {
+      LOG_E(PHY,"illegal harq_pid %d\n", harq_pid);
+      return(-1);
+    }
     dlsch1_harq = dlsch1->harq_processes[harq_pid];
     mimo_mode = dlsch1_harq->mimo_mode;
     mod_order0 = dlsch1_harq->Qm;
@@ -2125,8 +2225,15 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   amp_rho_b = (int16_t)(((int32_t)amp*dlsch1->sqrt_rho_b)>>13);
   }
 
-
-  if (mod_order0 == 4)
+  if(mod_order0 == 2)
+  {
+    for(i=0;i<2;i++)
+    {
+      qpsk_table_a0[i] = (int16_t)(((int32_t)qpsk_table[i]*amp_rho_a)>>15);
+      qpsk_table_b0[i] = (int16_t)(((int32_t)qpsk_table[i]*amp_rho_b)>>15);
+    }
+  }
+  else if (mod_order0 == 4)
     for (i=0;i<4; i++) {
       qam16_table_a0[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_a)>>15);
       qam16_table_b0[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_b)>>15);
@@ -2137,7 +2244,14 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
       qam64_table_b0[i] = (int16_t)(((int32_t)qam64_table[i]*amp_rho_b)>>15);
     }
 
-  if (mod_order1 == 4)
+  if (mod_order1 == 2)
+  {
+    for (i=0; i<2; i++) {
+      qpsk_table_a1[i] = (int16_t)(((int32_t)qpsk_table[i]*amp_rho_a)>>15);
+      qpsk_table_b1[i] = (int16_t)(((int32_t)qpsk_table[i]*amp_rho_b)>>15);
+    }
+  }
+  else if (mod_order1 == 4)
     for (i=0; i<4; i++) {
       qam16_table_a1[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_a)>>15);
       qam16_table_b1[i] = (int16_t)(((int32_t)qam16_table[i]*amp_rho_b)>>15);
@@ -2258,34 +2372,36 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
     re_offset = frame_parms->first_carrier_offset;
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe_offset*nsymb));
-
-#if 0
-    /* TODO: remove this code? */
     allocate_REs = allocate_REs_in_RB;
-#endif
 
     switch (mod_order0) {
     case 2:
       qam_table_s0 = NULL;
+      if (pilots) {
+        qam_table_s0 = qpsk_table_b0;
+        allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
+          allocate_REs_in_RB_pilots_QPSK_siso :
+          allocate_REs_in_RB;
+      }
+      else {
+        qam_table_s0 = qpsk_table_a0;
+        allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
+          allocate_REs_in_RB_no_pilots_QPSK_siso :
+          allocate_REs_in_RB;
+      }
       break;
     case 4:
       if (pilots) {
         qam_table_s0 = qam16_table_b0;
-#if 0
-        /* TODO: remove this code? */
         allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
           allocate_REs_in_RB_pilots_16QAM_siso :
           allocate_REs_in_RB;
-#endif
       }
       else {
         qam_table_s0 = qam16_table_a0;
-#if 0
-        /* TODO: remove this code? */
         allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
           allocate_REs_in_RB_no_pilots_16QAM_siso :
           allocate_REs_in_RB;
-#endif
 
       }
       break;
@@ -2293,33 +2409,41 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     case 6:
       if (pilots) {
         qam_table_s0 = qam64_table_b0;
-#if 0
-        /* TODO: remove this code? */
         allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
           allocate_REs_in_RB_pilots_64QAM_siso :
           allocate_REs_in_RB;
-#endif
       }
       else {
         qam_table_s0 = qam64_table_a0;
-#if 0
-        /* TODO: remove this code? */
         allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
           allocate_REs_in_RB_no_pilots_64QAM_siso :
           allocate_REs_in_RB;
-#endif
       }
+      /* TODO: this is a quick hack to be removed. There is a problem
+       * with above code that needs to be analyzed and fixed. In the
+       * meantime, let's use the generic function.
+       */
+      allocate_REs = allocate_REs_in_RB;
       break;
 
     }
 
+    /* TODO: hack, to be removed. The power is too different from
+     * previous version. Some more work/validation is needed before
+     * we switch to the new version.
+     */
+    allocate_REs = allocate_REs_in_RB;
+
     switch (mod_order1) {
     case 2:
       qam_table_s1 = NULL;
-#if 0
-        /* TODO: remove this code? */
       allocate_REs = allocate_REs_in_RB;
-#endif
+      if (pilots) {
+        qam_table_s1 = qpsk_table_b1;
+      }
+      else {
+        qam_table_s1 = qpsk_table_a1;
+      }
       break;
     case 4:
       if (pilots) {
@@ -2395,7 +2519,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
                                rb);
 
 
-      allocate_REs_in_RB(phy_vars_eNB,
+      allocate_REs(phy_vars_eNB,
                          txdataF,
                          &jj,
                          &jj2,

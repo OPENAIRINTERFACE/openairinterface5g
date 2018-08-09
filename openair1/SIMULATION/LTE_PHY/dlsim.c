@@ -36,17 +36,18 @@
 #include <execinfo.h>
 #include <signal.h>
 
-#include "SIMULATION/TOOLS/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
 #include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/vars.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_vars.h"
 
-#include "SCHED/defs.h"
-#include "SCHED/vars.h"
-#include "LAYER2/MAC/vars.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED/sched_common_vars.h"
+#include "LAYER2/MAC/mac_vars.h"
 
 #include "OCG_vars.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/LISTS/list.h"
 
 #include "unitary_defs.h"
@@ -56,7 +57,19 @@
 
 #include "dummy_functions.c"
 
+#include "PHY/MODULATION/modulation_common.h"
+#include "PHY/MODULATION/modulation_eNB.h"
+#include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "SCHED/sched_eNB.h"
+#include "SCHED_UE/sched_UE.h"
+#include "common/config/config_load_configmodule.h"
+#include "PHY/INIT/phy_init.h"
 
+
+void feptx_ofdm(RU_t *ru);
+void feptx_prec(RU_t *ru);
 
 double cpuf;
 
@@ -68,6 +81,10 @@ double t_tx_min = 1000000000; /*!< \brief initial min process time for tx */
 double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
+
+int codingw = 0;
+
+int emulate_rf = 0;
 
 void handler(int sig)
 {
@@ -171,8 +188,8 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
       // fill in perfect channel estimates
       freq_channel(eNB2UE[round],UE->frame_parms.N_RB_DL,12*UE->frame_parms.N_RB_DL + 1);
       /*
-	write_output("channel.m","ch",eNB2UE[round]->ch[0],eNB2UE[round]->channel_length,1,8);
-	write_output("channelF.m","chF",eNB2UE[round]->chF[0],12*UE->frame_parms.N_RB_DL + 1,1,8);
+	LOG_M("channel.m","ch",eNB2UE[round]->ch[0],eNB2UE[round]->channel_length,1,8);
+	LOG_M("channelF.m","chF",eNB2UE[round]->chF[0],12*UE->frame_parms.N_RB_DL + 1,1,8);
       */
     }
   }
@@ -507,6 +524,7 @@ int main(int argc, char **argv)
   int k,i,j,aa;
   int re;
 
+
   int s,Kr,Kr_bytes;
 
   double SNR,snr0=-2.0,snr1,rate = 0;
@@ -538,7 +556,6 @@ int main(int argc, char **argv)
   DCI_ALLOC_t da;
   DCI_ALLOC_t *dci_alloc = &da;
 
-  unsigned int ret;
   unsigned int coded_bits_per_codeword=0,nsymb; //,tbs=0;
 
   unsigned int tx_lev=0,tx_lev_dB=0,trials;
@@ -561,16 +578,6 @@ int main(int argc, char **argv)
   unsigned char input_trch_file=0;
   FILE *input_fd=NULL;
   unsigned char input_file=0;
-  //  char input_val_str[50],input_val_str2[50];
-
-  char input_trch_val[16];
-
-  //  unsigned char pbch_pdu[6];
-
-
-
-
-  //  FILE *rx_frame_file;
 
   int n_frames;
   int n_ch_rlz = 1;
@@ -593,7 +600,7 @@ int main(int argc, char **argv)
   // void *data;
   // int ii;
   //  int bler;
-  double blerr[4],uncoded_ber=0; //,avg_ber;
+  double blerr[4];
   short *uncoded_ber_bit=NULL;
   uint8_t N_RB_DL=25,osf=1;
   frame_t frame_type = FDD;
@@ -643,7 +650,6 @@ int main(int argc, char **argv)
   int two_thread_flag=0;
   int DLSCH_RB_ALLOC = 0;
 
-  int log_level = LOG_ERR;
   int dci_received;
   PHY_VARS_eNB *eNB;
   RU_t *ru;
@@ -995,7 +1001,7 @@ int main(int argc, char **argv)
       break;
 
     case 'L':
-      log_level=atoi(optarg);
+      set_glog(atoi(optarg));
       break;
 
     case 'h':
@@ -1043,8 +1049,7 @@ int main(int argc, char **argv)
 	      "cannot load configuration module, exiting\n");
   logInit();
   // enable these lines if you need debug info
-  set_comp_log(PHY,LOG_INFO,LOG_HIGH,1);
-  set_glog(log_level,LOG_HIGH);
+  set_glog(LOG_DEBUG);
   // moreover you need to init itti with the following line
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
@@ -1134,10 +1139,10 @@ int main(int argc, char **argv)
   }
   else {
     eNB->te = dlsch_encoding_2threads;
-    extern void init_td_thread(PHY_VARS_eNB *, pthread_attr_t *);
-    extern void init_te_thread(PHY_VARS_eNB *, pthread_attr_t *);
-    init_td_thread(eNB,NULL);
-    init_te_thread(eNB,NULL);
+    extern void init_td_thread(PHY_VARS_eNB *);
+    extern void init_te_thread(PHY_VARS_eNB *);
+    init_td_thread(eNB);
+    init_te_thread(eNB);
   }
 
   // callback functions required for phy_procedures_tx
@@ -1303,7 +1308,9 @@ int main(int argc, char **argv)
     }
   */
 
+
   UE->pdcch_vars[UE->current_thread_id[subframe]][0]->crnti = n_rnti;
+  UE->n_connected_eNB = 1;
 
   printf("Allocating %dx%d eNB->UE channel descriptor\n",eNB->frame_parms.nb_antennas_tx,UE->frame_parms.nb_antennas_rx);
   eNB2UE[0] = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
@@ -1315,8 +1322,10 @@ int main(int argc, char **argv)
                                    rx_sample_offset,
                                    0);
 
+  reset_meas(&eNB2UE[0]->random_channel);
+  reset_meas(&eNB2UE[0]->interp_time);
   if(num_rounds>1) {
-    for(n=1; n<4; n++)
+    for(n=1; n<4; n++) {
       eNB2UE[n] = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
                                        UE->frame_parms.nb_antennas_rx,
                                        channel_model,
@@ -1325,8 +1334,11 @@ int main(int argc, char **argv)
 				       forgetting_factor,
                                        rx_sample_offset,
                                        0);
+      reset_meas(&eNB2UE[n]->random_channel);
+      reset_meas(&eNB2UE[n]->interp_time);
+    }
   }
-
+  
   if (eNB2UE[0]==NULL) {
     printf("Problem generating channel model. Exiting.\n");
     exit(-1);
@@ -1592,13 +1604,13 @@ int main(int argc, char **argv)
 
 	    eNB->abstraction_flag=0;
 	    schedule_response(&sched_resp);
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,1);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,1);
 
 	    if (uncoded_ber_bit == NULL) {
 	      // this is for user 0 only
 	      printf("nb_rb %d, rb_alloc %x, mcs %d\n",
 		     eNB->dlsch[0][0]->harq_processes[0]->nb_rb,
-		     eNB->dlsch[0][0]->harq_processes[0]->rb_alloc,
+		     eNB->dlsch[0][0]->harq_processes[0]->rb_alloc[0],
 		     eNB->dlsch[0][0]->harq_processes[0]->mcs);
 
 	      coded_bits_per_codeword = get_G(&eNB->frame_parms,
@@ -1634,7 +1646,7 @@ int main(int argc, char **argv)
 	    proc_eNB->subframe_tx = subframe+1;
 	    sched_resp.subframe=subframe+1;
 	    schedule_response(&sched_resp);
-	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL,0);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,0);
 
 
 	    ru->proc.subframe_tx=(subframe+1)%10;
@@ -1659,13 +1671,13 @@ int main(int argc, char **argv)
             if (n_frames==1) {
               printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
 
-              write_output("txsig0.m","txs0", &ru->common.txdata[0][subframe* eNB->frame_parms.samples_per_tti], eNB->frame_parms.samples_per_tti,1,1);
+              LOG_M("txsig0.m","txs0", &ru->common.txdata[0][subframe* eNB->frame_parms.samples_per_tti], eNB->frame_parms.samples_per_tti,1,1);
 
               if (transmission_mode<7) {
-	        write_output("txsigF0.m","txsF0x", &ru->common.txdataF_BF[0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
+	        LOG_M("txsigF0.m","txsF0x", &ru->common.txdataF_BF[0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
               } else if (transmission_mode == 7) {
-                write_output("txsigF0.m","txsF0", &ru->common.txdataF_BF[5][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
-                write_output("txsigF0_BF.m","txsF0_BF", &ru->common.txdataF_BF[0][0],eNB->frame_parms.ofdm_symbol_size,1,1);
+                LOG_M("txsigF0.m","txsF0", &ru->common.txdataF_BF[5][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
+                LOG_M("txsigF0_BF.m","txsF0_BF", &ru->common.txdataF_BF[0][0],eNB->frame_parms.ofdm_symbol_size,1,1);
               }
             }
 	  }
@@ -1723,7 +1735,7 @@ int main(int argc, char **argv)
 
 	  dci_received = UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id]->dci_received;
 
-	  phy_procedures_UE_RX(UE,proc,0,0,dci_flag,normal_txrx,no_relay,NULL);
+	  phy_procedures_UE_RX(UE,proc,0,0,dci_flag,normal_txrx);
 
 	  dci_received = dci_received - UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id]->dci_received;
 
@@ -1731,14 +1743,14 @@ int main(int argc, char **argv)
 	    printf("DCI not received\n");
 	    dci_errors[round]++;
 
-	    write_output("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[0][eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
-	    write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",UE->pdcch_vars[0][eNB_id]->dl_ch_estimates_ext[0],300*3,1,1);
+	    LOG_M("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[0][eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
+	    LOG_M("pdcch00_ch0_ext.m","pdcch00_ch0_ext",UE->pdcch_vars[0][eNB_id]->dl_ch_estimates_ext[0],300*3,1,1);
 
-	    write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[0][eNB_id]->rxdataF_comp[0],4*300,1,1);
-	    write_output("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNB_id]->llr,2400,1,4);
+	    LOG_M("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[0][eNB_id]->rxdataF_comp[0],4*300,1,1);
+	    LOG_M("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNB_id]->llr,2400,1,4);
 
-	    write_output("rxsig0.m","rxs0", &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
-	    write_output("rxsigF0.m","rxsF0", &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+	    LOG_M("rxsig0.m","rxs0", &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
+	    LOG_M("rxsigF0.m","rxsF0", &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
 
 	    exit(-1);
@@ -1771,38 +1783,38 @@ int main(int argc, char **argv)
 		*/
 	      }
 
-	    write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
-	    write_output("ch0.m","ch0",eNB2UE[0]->ch[0],eNB2UE[0]->channel_length,1,8);
+	    LOG_M("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
+	    LOG_M("ch0.m","ch0",eNB2UE[0]->ch[0],eNB2UE[0]->channel_length,1,8);
 
 	    if (eNB->frame_parms.nb_antennas_tx>1)
-	      write_output("ch1.m","ch1",eNB2UE[0]->ch[eNB->frame_parms.nb_antennas_rx],eNB2UE[0]->channel_length,1,8);
+	      LOG_M("ch1.m","ch1",eNB2UE[0]->ch[eNB->frame_parms.nb_antennas_rx],eNB2UE[0]->channel_length,1,8);
 
 	    //common vars
-	    write_output("rxsig0.m","rxs0", &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
+	    LOG_M("rxsig0.m","rxs0", &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
 
-	    write_output("rxsigF0.m","rxsF0", &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+	    LOG_M("rxsigF0.m","rxsF0", &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
 	    if (UE->frame_parms.nb_antennas_rx>1) {
-	      write_output("rxsig1.m","rxs1", UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
-	      write_output("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+	      LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
+	      LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 	    }
 
-	    write_output("dlsch00_r0.m","dl00_r0",
+	    LOG_M("dlsch00_r0.m","dl00_r0",
 			 &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0]),
 			 UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
 	    if (UE->frame_parms.nb_antennas_rx>1)
-	      write_output("dlsch01_r0.m","dl01_r0",
+	      LOG_M("dlsch01_r0.m","dl01_r0",
 			   &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][1][0]),
 			   UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
 	    if (eNB->frame_parms.nb_antennas_tx>1)
-	      write_output("dlsch10_r0.m","dl10_r0",
+	      LOG_M("dlsch10_r0.m","dl10_r0",
 			   &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2][0]),
 			   UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
 	    if ((UE->frame_parms.nb_antennas_rx>1) && (eNB->frame_parms.nb_antennas_tx>1))
-	      write_output("dlsch11_r0.m","dl11_r0",
+	      LOG_M("dlsch11_r0.m","dl11_r0",
 			   &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][3][0]),
 			   UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
 
@@ -1811,14 +1823,14 @@ int main(int argc, char **argv)
 
 	    dump_dlsch2(UE,eNB_id,subframe,&coded_bits_per_codeword,round, UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid);
 
-	    write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
+	    LOG_M("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
 
 	    //pdcch_vars
-	    write_output("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[0][eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
-	    write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",UE->pdcch_vars[0][eNB_id]->dl_ch_estimates_ext[0],300*3,1,1);
+	    LOG_M("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[0][eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
+	    LOG_M("pdcch00_ch0_ext.m","pdcch00_ch0_ext",UE->pdcch_vars[0][eNB_id]->dl_ch_estimates_ext[0],300*3,1,1);
 
-	    write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[0][eNB_id]->rxdataF_comp[0],4*300,1,1);
-	    write_output("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNB_id]->llr,2400,1,4);
+	    LOG_M("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[0][eNB_id]->rxdataF_comp[0],4*300,1,1);
+	    LOG_M("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNB_id]->llr,2400,1,4);
 
 	  }
 
@@ -1866,31 +1878,31 @@ int main(int argc, char **argv)
 
               sprintf(fname,"rxsig0_r%d.m",round);
               sprintf(vname,"rxs0_r%d",round);
-              write_output(fname,vname, &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
+              LOG_M(fname,vname, &UE->common_vars.rxdata[0][0],10*UE->frame_parms.samples_per_tti,1,1);
               sprintf(fname,"rxsigF0_r%d.m",round);
               sprintf(vname,"rxs0F_r%d",round);
 
-              write_output(fname,vname, &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+              LOG_M(fname,vname, &UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[0][0],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
               if (UE->frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"rxsig1_r%d.m",round);
                 sprintf(vname,"rxs1_r%d.m",round);
-                write_output(fname,vname, UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
+                LOG_M(fname,vname, UE->common_vars.rxdata[1],UE->frame_parms.samples_per_tti,1,1);
                 sprintf(fname,"rxsigF1_r%d.m",round);
                 sprintf(vname,"rxs1F_r%d.m",round);
-                write_output(fname,vname, UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
+                LOG_M(fname,vname, UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].rxdataF[1],UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
               }
 
               sprintf(fname,"dlsch00_r%d.m",round);
               sprintf(vname,"dl00_r%d",round);
-              write_output(fname,vname,
+              LOG_M(fname,vname,
                            &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0]),
                            UE->frame_parms.ofdm_symbol_size*nsymb,1,1);
 
               if (UE->frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"dlsch01_r%d.m",round);
                 sprintf(vname,"dl01_r%d",round);
-                write_output(fname,vname,
+                LOG_M(fname,vname,
                              &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][1][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
@@ -1898,7 +1910,7 @@ int main(int argc, char **argv)
               if (eNB->frame_parms.nb_antennas_tx>1) {
                 sprintf(fname,"dlsch10_r%d.m",round);
                 sprintf(vname,"dl10_r%d",round);
-                write_output(fname,vname,
+                LOG_M(fname,vname,
                              &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
@@ -1906,7 +1918,7 @@ int main(int argc, char **argv)
               if ((UE->frame_parms.nb_antennas_rx>1) && (eNB->frame_parms.nb_antennas_tx>1)) {
                 sprintf(fname,"dlsch11_r%d.m",round);
                 sprintf(vname,"dl11_r%d",round);
-                write_output(fname,vname,
+                LOG_M(fname,vname,
                              &(UE->common_vars.common_vars_rx_data_per_thread[UE->current_thread_id[subframe]].dl_ch_estimates[eNB_id][3][0]),
                              UE->frame_parms.ofdm_symbol_size*nsymb/2,1,1);
               }
@@ -1915,16 +1927,16 @@ int main(int argc, char **argv)
               dump_dlsch2(UE,eNB_id,subframe,&coded_bits_per_codeword,round, UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid);
 
 
-              //write_output("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
-              //write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
-              //write_output("dlsch_w.m","w",eNB->dlsch[0][0]->harq_processes[0]->w[0],3*(tbs+64),1,4);
-              //write_output("dlsch_w.m","w",UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->w[0],3*(tbs+64),1,0);
+              //LOG_M("dlsch_e.m","e",eNB->dlsch[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
+              //LOG_M("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
+              //LOG_M("dlsch_w.m","w",eNB->dlsch[0][0]->harq_processes[0]->w[0],3*(tbs+64),1,4);
+              //LOG_M("dlsch_w.m","w",UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->w[0],3*(tbs+64),1,0);
 	      //pdcch_vars
-	      write_output("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[0][eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
-	      write_output("pdcch00_ch0_ext.m","pdcch00_ch0_ext",UE->pdcch_vars[0][eNB_id]->dl_ch_estimates_ext[0],300*3,1,1);
+	      LOG_M("pdcchF0_ext.m","pdcchF_ext", UE->pdcch_vars[0][eNB_id]->rxdataF_ext[0],2*3*UE->frame_parms.ofdm_symbol_size,1,1);
+	      LOG_M("pdcch00_ch0_ext.m","pdcch00_ch0_ext",UE->pdcch_vars[0][eNB_id]->dl_ch_estimates_ext[0],300*3,1,1);
 
-	      write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[0][eNB_id]->rxdataF_comp[0],4*300,1,1);
-	      write_output("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNB_id]->llr,2400,1,4);
+	      LOG_M("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",UE->pdcch_vars[0][eNB_id]->rxdataF_comp[0],4*300,1,1);
+	      LOG_M("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNB_id]->llr,2400,1,4);
 
               if (round == 3) exit(-1);
             }

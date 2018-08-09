@@ -29,7 +29,8 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
+#include "PHY/defs_common.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_GROUPHOP 1
 

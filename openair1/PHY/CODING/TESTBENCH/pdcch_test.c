@@ -29,7 +29,6 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "MAC_INTERFACE/vars.h"
 #include "PHY/CODING/defs.h"
-//#include "PHY/CODING/lte_interleaver.h"
 //#include "PHY/CODING/lte_interleaver_inline.h"
 
 
@@ -51,8 +50,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx)
 
   randominit(0);
   set_taus_seed(0);
-
-  crcTableInit();
 
   lte_frame_parms = &(PHY_config->lte_frame_parms);   //openair1/PHY/impl_defs_lte.h
   lte_ue_common_vars = &(PHY_vars->lte_ue_common_vars);
@@ -249,7 +246,6 @@ int main(int argc, char *argv[])
   randominit(0);
   set_taus_seed(0);
 
-  crcTableInit();
   ccodelte_init();
   ccodelte_init_inv();
 

@@ -26,10 +26,8 @@
    date: 09.2012
 */
 #ifndef TC_MAIN
-#include "defs.h"
-#include "extern_3GPPinterleaver.h"
+#include "coding_defs.h"
 #else
-#include "vars.h"
 #include <stdint.h>
 #endif
 #include <stdio.h>
@@ -539,9 +537,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
 void threegpplte_turbo_encoder_sse(unsigned char *input,
                                    unsigned short input_length_bytes,
                                    unsigned char *output,
-                                   unsigned char F,
-                                   unsigned short interleaver_f1,
-                                   unsigned short interleaver_f2)
+                                   unsigned char F)
 {
 
   int i;
@@ -699,9 +695,7 @@ int main(int argc,char **argv)
   threegpplte_turbo_encoder_sse(&input[0],
                             INPUT_LENGTH,
                             &output[0],
-                            0,
-                            F1,
-                            F2);
+                            0);
 
 
   for (i=0;i<12+(INPUT_LENGTH*24);i++)

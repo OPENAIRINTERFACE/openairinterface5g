@@ -66,11 +66,13 @@ Description Defines the detach related EMM procedure executed by the
 /****************************************************************************/
 
 /* String representation of the detach type */
-static const char *_emm_detach_type_str[] = {
+char *emm_detach_type2str(int type) {
+static char *_emm_detach_type_str[] = {
   "EPS", "IMSI", "EPS/IMSI",
   "RE-ATTACH REQUIRED", "RE-ATTACH NOT REQUIRED", "RESERVED"
 };
-
+  return _emm_detach_type_str[type];
+}
 /*
  * --------------------------------------------------------------------------
  *      Internal data handled by the detach procedure in the UE
@@ -123,7 +125,7 @@ int emm_proc_detach(nas_user_t *user, emm_proc_detach_type_t type, int switch_of
   int rc;
 
   LOG_TRACE(INFO, "EMM-PROC  - Initiate EPS detach type = %s (%d)",
-            _emm_detach_type_str[type], type);
+            emm_detach_type2str(type), type);
 
   /* Initialize the detach procedure internal data */
   emm_detach_data->count = 0;

@@ -42,8 +42,8 @@
 #include "assertions.h"
 #include "udp_eNB_task.h"
 
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "msc.h"
 
 
@@ -276,13 +276,10 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
        * if the queue is full.
        */
       /* look for HACK_RLC_UM_LIMIT for others places related to the hack. Please do not remove this comment. */
-      //if (itti_send_msg_to_task(udp_sock_pP->task_id, INSTANCE_DEFAULT, message_p) < 0) {
       if (itti_try_send_msg_to_task(udp_sock_pP->task_id, INSTANCE_DEFAULT, message_p) < 0) {
-#if 0
-        LOG_I(UDP_, "Failed to send message %d to task %d\n",
+        LOG_E(UDP_, "Failed to send message %d to task %d\n",
               UDP_DATA_IND,
               udp_sock_pP->task_id);
-#endif
         itti_free(TASK_UDP, message_p);
         itti_free(TASK_UDP, forwarded_buffer);
         return;
@@ -434,7 +431,7 @@ on_error:
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UDP_ENB_TASK, VCD_FUNCTION_OUT);
   }
 
-  LOG_N(UDP_, "Task UDP eNB exiting\n");
+  LOG_I(UDP_, "Task UDP eNB exiting\n");
   return NULL;
 }
 

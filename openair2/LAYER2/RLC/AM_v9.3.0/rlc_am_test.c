@@ -534,7 +534,7 @@ void rlc_am_v9_3_0_test_send_sdu(rlc_am_entity_t *am_txP, int sdu_indexP)
     assert(g_send_id_write_index[am_txP->rb_id] < TEST_MAX_SEND_SDU);
   } else {
     printf("Out of memory error\n");
-    exit(-1);
+//    exit(-1);
   }
 }
 //-----------------------------------------------------------------------------
@@ -577,7 +577,7 @@ void rlc_am_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
           data_indP->no_tb  += 1;
         } else {
           printf("Out of memory error\n");
-          exit(-1);
+//          exit(-1);
         }
       } else {
         printf("[RLC-LOOP] DROPPING 1 TB\n");

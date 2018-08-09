@@ -35,6 +35,7 @@
 #ifndef ASSERTIONS_H_
 #define ASSERTIONS_H_
 
+void output_log_mem(void);
 #define _Assert_Exit_                           \
 {                                               \
     fprintf(stderr, "\nExiting execution\n");   \

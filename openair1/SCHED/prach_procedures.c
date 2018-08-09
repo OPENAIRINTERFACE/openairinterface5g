@@ -30,17 +30,15 @@
  * \warning
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "SCHED/sched_eNB.h"
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
 #include "nfapi_pnf.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
-#include "T.h"
 
 #include "assertions.h"
 #include "msc.h"
@@ -56,7 +54,7 @@ extern uint32_t nfapi_mode;
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 
 void prach_procedures(PHY_VARS_eNB *eNB
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                       ,
 		      int br_flag
 #endif
@@ -65,7 +63,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
   uint16_t i;
   int frame,subframe;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (br_flag==1) {
     subframe = eNB->proc.subframe_prach_br;
     frame = eNB->proc.frame_prach_br;
@@ -95,7 +93,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
     ru=eNB->RU_list[i];
     for (ru_aa=0,aa=0;ru_aa<ru->nb_rx;ru_aa++,aa++) {
       eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       int ce_level;
 
       if (br_flag==1)
@@ -111,7 +109,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
 	   &max_preamble_delay[0],
 	   frame,
 	   0
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	   ,br_flag
 #endif
 	   );
@@ -123,17 +121,14 @@ void prach_procedures(PHY_VARS_eNB *eNB
         max_preamble_delay[0],
 	eNB->prach_energy_counter);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (br_flag==1) {
 
-    int prach_mask;
-      
-    prach_mask = is_prach_subframe(&eNB->frame_parms,eNB->proc.frame_prach_br,eNB->proc.subframe_prach_br);
-    
     eNB->UL_INFO.rach_ind_br.rach_indication_body.preamble_list                              = eNB->preamble_list_br;
     int ind=0;
     int ce_level=0;
-    /* Save for later, it doesn't work    
+    /* Save for later, it doesn't work 
+    int prach_mask = is_prach_subframe(&eNB->frame_parms,eNB->proc.frame_prach_br,eNB->proc.subframe_prach_br);   
     for (int ind=0,ce_level=0;ce_level<4;ce_level++) {
       
       if ((eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[ce_level]==1)&&
@@ -155,7 +150,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
 	LOG_D(PHY,"Filling NFAPI indication for RACH %d CELevel %d (mask %x) : TA %d, Preamble %d, rnti %x, rach_resource_type %d\n",
 	      ind,
 	      ce_level,
-	      prach_mask,
+	      is_prach_subframe(&eNB->frame_parms,eNB->proc.frame_prach_br,eNB->proc.subframe_prach_br),
 	      eNB->preamble_list_br[ind].preamble_rel8.timing_advance,
 	      eNB->preamble_list_br[ind].preamble_rel8.preamble,
 	      eNB->preamble_list_br[ind].preamble_rel8.rnti,
@@ -217,7 +212,8 @@ void prach_procedures(PHY_VARS_eNB *eNB
             }
 
 	    pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-      
+	    /*	    write_output("prach.m","prachsig",eNB->prach_vars.rxsigF[0][0],839,1,1);
+		    exit(-1);*/
       } // max_preamble_energy > prach_I0 + 100 
       else {
          eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0*900)>>10) + ((max_preamble_energy[0]*124)>>10); 

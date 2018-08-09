@@ -52,10 +52,10 @@
 #include "queue.h"
 #include "liblfds611.h"
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 
 #include "pdcp.h"
 #include "pdcp_primitives.h"

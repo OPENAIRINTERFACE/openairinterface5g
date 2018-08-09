@@ -929,7 +929,7 @@ void calibrate_rf(openair0_device *device) {
   bladerf_set_loopback(brf->dev,BLADERF_LB_NONE);
   bladerf_set_gain(brf->dev, BLADERF_MODULE_RX, (unsigned int) device->openair0_cfg->rx_gain[0]-device->openair0_cfg[0].rx_gain_offset[0]);
   bladerf_set_gain(brf->dev, BLADERF_MODULE_TX, (unsigned int) device->openair0_cfg->tx_gain[0]);
-  //  write_output("blade_rf_test.m","rxs",calib_buff,RXDCLENGTH,1,1);
+  //  LOG_M("blade_rf_test.m","rxs",calib_buff,RXDCLENGTH,1,1);
 }
 
 /*! \brief Initialize Openair BLADERF target. It returns 0 if OK 

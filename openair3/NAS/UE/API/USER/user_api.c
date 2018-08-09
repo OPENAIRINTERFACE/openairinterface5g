@@ -134,10 +134,8 @@ int user_api_initialize(user_api_id_t *user_api_id, const char* host, const char
     user_api_id->endpoint = user_api_id->open(SOCKET_SERVER, host, port);
 
     if (user_api_id->endpoint == NULL) {
-      const char* error = ( (errno < 0) ?
-                            gai_strerror(errno) : strerror(errno) );
       LOG_TRACE(ERROR, "USR-API   - Failed to open connection endpoint, "
-                "%s", error);
+                "%s", ( (errno < 0) ?gai_strerror(errno) : strerror(errno) ));
       LOG_FUNC_RETURN (RETURNerror);
     }
 

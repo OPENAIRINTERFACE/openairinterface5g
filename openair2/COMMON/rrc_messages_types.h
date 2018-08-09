@@ -35,8 +35,14 @@
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
 #else
-#include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
+#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
 #endif
+#include "SL-OffsetIndicator-r12.h"
+#include "SubframeBitmapSL-r12.h"
+#include "SL-CP-Len-r12.h"
+#include "SL-PeriodComm-r12.h"
+#include "SL-DiscResourcePool-r12.h"
+
 
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
@@ -117,9 +123,9 @@ typedef struct RrcConfigurationReq_s {
   long                    pucch_delta_shift[MAX_NUM_CCs];
   long                    pucch_nRB_CQI[MAX_NUM_CCs];
   long                    pucch_nCS_AN[MAX_NUM_CCs];
-#if !defined(Rel10) && !defined(Rel14)
+//#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
   long                    pucch_n1_AN[MAX_NUM_CCs];
-#endif
+//#endif
   long                    pdsch_referenceSignalPower[MAX_NUM_CCs];
   long                    pdsch_p_b[MAX_NUM_CCs];
   long                    pusch_n_SB[MAX_NUM_CCs];
@@ -168,8 +174,56 @@ typedef struct RrcConfigurationReq_s {
   long                    ue_TimersAndConstants_n310[MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
   long                    ue_TransmissionMode[MAX_NUM_CCs];
+  long                    ue_multiple_max[MAX_NUM_CCs];
+
+  //TTN - for D2D
+  //SIB18
+  e_SL_CP_Len_r12                rxPool_sc_CP_Len[MAX_NUM_CCs];
+  e_SL_PeriodComm_r12            rxPool_sc_Period[MAX_NUM_CCs];
+  e_SL_CP_Len_r12                rxPool_data_CP_Len[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_prb_Num[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_prb_Start[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_prb_End[MAX_NUM_CCs];
+  SL_OffsetIndicator_r12_PR      rxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
+  SubframeBitmapSL_r12_PR        rxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  char*                          rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
+
+  //SIB19
+  //for discRxPool
+  SL_CP_Len_r12_t                discRxPool_cp_Len[MAX_NUM_CCs];
+  e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPool_discPeriod[MAX_NUM_CCs];
+  long                           discRxPool_numRetx[MAX_NUM_CCs];
+  long                           discRxPool_numRepetition[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_prb_Num[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_prb_Start[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_prb_End[MAX_NUM_CCs];
+  SL_OffsetIndicator_r12_PR      discRxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
+  SubframeBitmapSL_r12_PR        discRxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  char*                          discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
+  //for discRxPoolPS
+  SL_CP_Len_r12_t                discRxPoolPS_cp_Len[MAX_NUM_CCs];
+  e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPoolPS_discPeriod[MAX_NUM_CCs];
+  long                           discRxPoolPS_numRetx[MAX_NUM_CCs];
+  long                           discRxPoolPS_numRepetition[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_prb_Num[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_prb_Start[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_prb_End[MAX_NUM_CCs];
+  SL_OffsetIndicator_r12_PR      discRxPoolPS_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
+  SubframeBitmapSL_r12_PR        discRxPoolPS_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  char*                          discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
 } RrcConfigurationReq;
+
 #define MAX_NUM_NBIOT_CELEVELS    3
+
 typedef struct NbIoTRrcConfigurationReq_s {
   uint32_t            cell_identity;
 

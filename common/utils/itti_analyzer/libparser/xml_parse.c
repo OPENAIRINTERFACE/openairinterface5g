@@ -740,25 +740,6 @@ int xml_parse_buffer(char *xml_buffer, const int size) {
     return xml_parse_doc(doc);
 }
 
-#if 0 /* Not used anymore */
-int xml_parse_file(const char *filename) {
-    xmlDocPtr doc; /* the resulting document tree */
-
-    if (filename == NULL) {
-        return RC_NULL_POINTER;
-    }
-
-    doc = xmlReadFile (filename, NULL, 0);
-
-    if (doc == NULL) {
-        ui_notification_dialog(GTK_MESSAGE_ERROR, FALSE, "parse messages format definition", "Failed to parse file \"%s\"", filename);
-        return RC_FAIL;
-    }
-
-    return xml_parse_doc(doc);
-}
-#endif
-
 static int update_filters() {
     types_t *types;
 

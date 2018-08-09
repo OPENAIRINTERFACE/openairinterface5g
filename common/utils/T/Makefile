@@ -13,7 +13,7 @@ $(GENIDS): $(GENIDS_OBJS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 T_messages.txt.h: T_messages.txt
-	xxd -i T_messages.txt > T_messages.txt.h
+	xxd -i T_messages.txt T_messages.txt.h
 
 T_IDs.h: $(GENIDS) T_messages.txt
 	./$(GENIDS) T_messages.txt T_IDs.h

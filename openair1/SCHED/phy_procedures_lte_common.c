@@ -29,10 +29,10 @@
 * \note
 * \warning
 */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "SCHED/sched_common_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
                     unsigned char current_subframe,
@@ -336,6 +336,29 @@ unsigned char ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsig
   return(0);
 }
 
+int ul_ACK_subframe2_dl_frame(LTE_DL_FRAME_PARMS *frame_parms,int frame, unsigned char subframe,unsigned char subframe_tx)
+{
+
+  if (frame_parms->frame_type == FDD) {
+    return (((subframe_tx > subframe ) ? frame-1 : frame)+1024)%1024;
+  } else {
+    switch (frame_parms->tdd_config) {
+    case 1:
+      return(((subframe_tx > subframe ) ? frame-1 : frame)+1024)%1024;
+      break;
+    case 3:
+        //TODO
+      break;
+    case 4:
+        //TODO
+      break;
+    }
+  }
+
+  return(0);
+}
+
+
 unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe)
 {
 
@@ -343,6 +366,23 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
     return(1);
   } else {
     switch (frame_parms->tdd_config) {
+    case 1:
+        return 1; // don't ACK special subframe for now
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        return(2);
+      } else if (subframe == 3) { // ACK subframe 9
+        return(1);  // To be updated
+      } else if (subframe == 7) { // ACK subframes 0 and 1
+        return(2);  // To be updated
+      } else if (subframe == 8) { // ACK subframe 4
+        return(1);  // To be updated
+      } else {
+        LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+              subframe,frame_parms->tdd_config);
+        return(0);
+      }
+
+      break;
     case 3:
       if (subframe == 2) {  // ACK subframes 5 and 6
         return(2); // should be 3
@@ -381,23 +421,6 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
               }
 
               break;
-
-    case 1:
-      if (subframe == 2) {  // ACK subframes 5 and 6
-        return(2);
-      } else if (subframe == 3) { // ACK subframe 9
-        return(1);  // To be updated
-      } else if (subframe == 7) { // ACK subframes 0 and 1
-        return(2);  // To be updated
-      } else if (subframe == 8) { // ACK subframe 4
-        return(1);  // To be updated
-      } else {
-        LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
-              subframe,frame_parms->tdd_config);
-        return(0);
-      }
-
-      break;
     }
   }
 
@@ -428,7 +451,7 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
     o_ACK[cw_idx] = harq_ack[subframe_dl0].ack;
     status = harq_ack[subframe_dl0].send_harq_status;
 
-    //LOG_I(PHY,"dl subframe %d send_harq_status %d cw_idx %d, reset %d\n",subframe_dl0, status, cw_idx, do_reset);
+    LOG_D(PHY,"dl subframe %d send_harq_status %d cw_idx %d, reset %d\n",subframe_dl0, status, cw_idx, do_reset);
     if(do_reset)
     	harq_ack[subframe_dl0].send_harq_status = 0;
     //printf("get_ack: Getting ACK/NAK for PDSCH (subframe %d) => %d\n",subframe_dl,o_ACK[0]);
@@ -608,7 +631,7 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
           pN_bundled[0] = harq_ack[subframe_rx].vDAI_UL;
           status = harq_ack[subframe_dl0].send_harq_status + harq_ack[subframe_dl1].send_harq_status + harq_ack[subframe_dl2].send_harq_status + harq_ack[subframe_dl3].send_harq_status;
 
-          LOG_I(PHY,"TDD Config3 UL Sfn %d, dl Sfn0 %d status %d o_Ack %d, dl Sfn1 %d status %d o_Ack %d dl Sfn2 %d status %d o_Ack %d dl Sfn3 %d status %d o_Ack %d subframe_rx %d N_bundled %d status %d\n",
+          LOG_D(PHY,"TDD Config3 UL Sfn %d, dl Sfn0 %d status %d o_Ack %d, dl Sfn1 %d status %d o_Ack %d dl Sfn2 %d status %d o_Ack %d dl Sfn3 %d status %d o_Ack %d subframe_rx %d N_bundled %d status %d\n",
                 subframe_tx, subframe_dl0, harq_ack[subframe_dl0].send_harq_status,harq_ack[subframe_dl0].ack,
               subframe_dl1, harq_ack[subframe_dl1].send_harq_status,harq_ack[subframe_dl1].ack,
               subframe_dl2, harq_ack[subframe_dl2].send_harq_status,harq_ack[subframe_dl2].ack,
@@ -831,17 +854,12 @@ dci_detect_mode_t dci_detect_mode_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
   return ret;
 }
 
-lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subframe)
-{
 
-  return(subframe_select(&RC.eNB[Mod_id][CC_id]->frame_parms,subframe));
-
-}
 
 uint8_t phich_subframe_to_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t subframe)
 {
 
-  LOG_I(PHY,"phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
+  LOG_D(PHY,"phich_subframe_to_harq_pid.c: frame %d, subframe %d\n",frame,subframe);
   return(subframe2harq_pid(frame_parms,
                            phich_frame2_pusch_frame(frame_parms,frame,subframe),
                            phich_subframe2_pusch_subframe(frame_parms,subframe)));
@@ -1065,4 +1083,74 @@ void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeri
 	AssertFatal(isrs<=636,"Isrs out of range %d>636\n",isrs);
 	
       }
+}
+
+// uint8_t eNB_id,uint8_t harq_pid, uint8_t UE_id,
+int16_t estimate_ue_tx_power(uint32_t tbs, uint32_t nb_rb, uint8_t control_only, lte_prefix_type_t ncp, uint8_t use_srs)
+{
+
+  /// The payload + CRC size in bits, "B"
+  uint32_t B;
+  /// Number of code segments
+  uint32_t C;
+  /// Number of "small" code segments
+  uint32_t Cminus;
+  /// Number of "large" code segments
+  uint32_t Cplus;
+  /// Number of bits in "small" code segments (<6144)
+  uint32_t Kminus;
+  /// Number of bits in "large" code segments (<6144)
+  uint32_t Kplus;
+  /// Total number of bits across all segments
+  uint32_t sumKr;
+  /// Number of "Filler" bits
+  uint32_t F;
+  // num resource elements
+  uint32_t num_re=0.0;
+  // num symbols
+  uint32_t num_symb=0.0;
+  /// effective spectral efficiency of the PUSCH
+  uint32_t MPR_x100=0;
+  /// beta_offset
+  uint16_t beta_offset_pusch_x8=8;
+  /// delta mcs
+  float delta_mcs=0.0;
+  /// bandwidth factor
+  float bw_factor=0.0;
+
+  B= tbs+24;
+  lte_segmentation(NULL,
+                   NULL,
+                   B,
+                   &C,
+                   &Cplus,
+                   &Cminus,
+                   &Kplus,
+                   &Kminus,
+                   &F);
+
+
+  sumKr = Cminus*Kminus + Cplus*Kplus;
+  num_symb = 12-(ncp<<1)-(use_srs==0?0:1);
+  num_re = num_symb * nb_rb * 12;
+
+  if (num_re == 0)
+    return(0);
+
+  MPR_x100 = 100*sumKr/num_re;
+
+  if (control_only == 1 )
+    beta_offset_pusch_x8=8; // fixme
+
+  //(beta_offset_pusch_x8=ue->ulsch[eNB_id]->harq_processes[harq_pid]->control_only == 1) ? ue->ulsch[eNB_id]->beta_offset_cqi_times8:8;
+
+  // if deltamcs_enabledm
+  delta_mcs = ((hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_times10((beta_offset_pusch_x8)>>3))/100.0);
+  bw_factor = (hundred_times_log10_NPRB[nb_rb-1]/100.0);
+#ifdef DEBUG_SEGMENTATION
+  printf("estimated ue tx power %d (num_re %d, sumKr %d, mpr_x100 %d, delta_mcs %f, bw_factor %f)\n",
+         (int16_t)ceil(delta_mcs + bw_factor), num_re, sumKr, MPR_x100, delta_mcs, bw_factor);
+#endif
+  return (int16_t)ceil(delta_mcs + bw_factor);
+
 }

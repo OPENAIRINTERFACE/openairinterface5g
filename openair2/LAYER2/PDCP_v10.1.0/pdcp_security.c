@@ -29,12 +29,12 @@
 
 #include "assertions.h"
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OSA/osa_defs.h"
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 
 #include "pdcp.h"
 #include "msc.h"

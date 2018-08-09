@@ -37,7 +37,8 @@
 #include "vendor_ext.h"
 
 #include "nfapi_vnf.h"
-
+#include "PHY/defs_eNB.h"
+#include "PHY/LTE_TRANSPORT/transport_proto.h"
 
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
@@ -201,8 +202,8 @@ void oai_create_enb(void) {
   eNB->CC_id   = bodge_counter;
   eNB->abstraction_flag   = 0;
   eNB->single_thread_flag = 0;//single_thread_flag;
-  eNB->td                   = ulsch_decoding_data;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-  eNB->te                   = dlsch_encoding;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
+  eNB->td                   = ulsch_decoding_data_all;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+  eNB->te                   = dlsch_encoding_all;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 
   RC.nb_CC[bodge_counter] = 1;
 
@@ -355,18 +356,6 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
 
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-
-#if 0
-  /* accept some delay in processing - up to 5ms */
-  for (i = 0; i < 10 && proc_rxtx->instance_cnt_rxtx == 0; i++) {
-    LOG_W( PHY,"[eNB] sfn/sf:%d:%d proc_rxtx[%d]:TXsfn:%d/%d eNB RXn-TXnp4 thread busy!! (cnt_rxtx %i)\n", sfn, sf, sf&1, proc_rxtx->frame_tx, proc_rxtx->subframe_tx, proc_rxtx->instance_cnt_rxtx);
-    usleep(500);
-  }
-  if (proc_rxtx->instance_cnt_rxtx == 0) {
-    exit_fun( "TX thread busy" );
-    return(-1);
-  }
-#endif
 
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
@@ -691,36 +680,13 @@ void vnf_deallocate(void* ptr) {
   free(ptr);
 }
 
-extern void nfapi_log(char *file, char *func, int line, int comp, int level, const char* format, va_list args);
 
 void vnf_trace(nfapi_trace_level_t nfapi_level, const char* message, ...) {
 
   va_list args;
-  int oai_level;
-
-  if (nfapi_level==NFAPI_TRACE_ERROR)
-  {
-    oai_level = LOG_ERR;
-  }
-  else if (nfapi_level==NFAPI_TRACE_WARN)
-  {
-    oai_level = LOG_WARNING;
-  }
-  else if (nfapi_level==NFAPI_TRACE_NOTE)
-  {
-    oai_level = LOG_INFO;
-  }
-  else if (nfapi_level==NFAPI_TRACE_INFO)
-  {
-    oai_level = LOG_INFO;
-  }
-  else
-  {
-    oai_level = LOG_INFO;
-  }
 
   va_start(args, message);
-  nfapi_log("FILE>", "FUNC", 999, PHY, oai_level, message, args);
+  nfapi_log("FILE>", "FUNC", 999, PHY, nfapitooai_level(nfapi_level), message, args);
   va_end(args);
 }
 

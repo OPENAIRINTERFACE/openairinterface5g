@@ -20,8 +20,8 @@
  */
 
 #include "PHY/types.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 
 void
 phy_adjust_gain (PHY_VARS_UE *ue, uint32_t rx_power_fil_dB, uint8_t eNB_id)

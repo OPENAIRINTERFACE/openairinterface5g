@@ -20,15 +20,16 @@
  */
 
 #include <string.h>
-#include "defs.h"
-#include "SCHED/defs.h"
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
 #include "filt96_32.h"
 #include "T.h"
 //#define DEBUG_CH
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "SCHED_UE/sched_UE.h"
 
 int lte_dl_channel_estimation(PHY_VARS_UE *ue,
-                              uint8_t eNB_id,
+                              module_id_t eNB_id,
                               uint8_t eNB_offset,
                               unsigned char Ns,
                               unsigned char p,

@@ -104,8 +104,8 @@ int trx_eth_start(openair0_device *device) {
     printf("Setting ETHERNET to UDP_IF4p5_MODE\n");
     if (eth_socket_init_udp(device)!=0)   return -1;
 
-    printf("Setting Timeout to 999999 usecs\n");
-    if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
+    printf("Setting Timeout to 4999999 usecs\n");
+    if(ethernet_tune (device,RCV_TIMEOUT,4999999)!=0)  return -1;
 
     /*
     if (device->host_type == RAU_HOST) {

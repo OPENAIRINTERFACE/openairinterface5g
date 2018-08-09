@@ -20,12 +20,13 @@
  */
 
 #include <string.h>
-#include "defs.h"
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
+#include "lte_estimation.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_CH
 int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
-                                    uint8_t eNB_id,
+                                    module_id_t eNB_id,
                                     uint8_t eNB_offset,
                                     int subframe,
                                     unsigned char l)

@@ -33,8 +33,8 @@
 #include "rlc_um.h"
 #include "rlc_primitives.h"
 #include "list.h"
-#include "LAYER2/MAC/extern.h"
-#include "UTIL/LOG/log.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "common/utils/LOG/log.h"
 #include "msc.h"
 
 //-----------------------------------------------------------------------------

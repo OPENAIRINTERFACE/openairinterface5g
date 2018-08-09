@@ -30,22 +30,22 @@
 * \warning
 */
 
-//#include "defs.h"
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/CODING/extern.h"
-#include "extern.h"
-#include "SCHED/extern.h"
-#ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
-#endif
+#include <syscall.h>
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/CODING/coding_extern.h"
+#include "SCHED/sched_eNB.h"
+#include "LAYER2/MAC/mac.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 //#define DEBUG_ULSCH_DECODING
+#include "targets/RT/USER/rt_wrapper.h"
+#include "transport_proto.h"
+
+extern int codingw;
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch)
 {
@@ -221,8 +221,6 @@ uint8_t extract_cqi_crc(uint8_t *cqi,uint8_t CQI_LENGTH)
 
 
 
-
-
 int ulsch_decoding_data_2thread0(td_params* tdp) {
 
   PHY_VARS_eNB *eNB = tdp->eNB;
@@ -230,7 +228,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
   int harq_pid      = tdp->harq_pid;
   int llr8_flag     = tdp->llr8_flag;
 
-  unsigned int r,r_offset=0,Kr,Kr_bytes,iind;
+  unsigned int r,r_offset=0,Kr,Kr_bytes;
   uint8_t crc_type;
   int offset = 0;
   int ret = 1;
@@ -242,7 +240,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
   uint32_t E=0;
   uint32_t Gp,GpmodC,Nl=1;
   uint32_t C = ulsch_harq->C;
-  decoder_if_t tc;
+  decoder_if_t *tc;
 
   if (llr8_flag == 0)
     tc = decoder16;
@@ -261,18 +259,6 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
       Kr = ulsch_harq->Kplus;
 
     Kr_bytes = Kr>>3;
-
-    if (Kr_bytes<=64)
-      iind = (Kr_bytes-5);
-    else if (Kr_bytes <=128)
-      iind = 59 + ((Kr_bytes-64)>>1);
-    else if (Kr_bytes <= 256)
-      iind = 91 + ((Kr_bytes-128)>>2);
-    else if (Kr_bytes <= 768)
-      iind = 123 + ((Kr_bytes-256)>>3);
-    else {
-      AssertFatal(1==0,"ulsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-    }
 
     // This is stolen from rate-matching algorithm to get the value of E
     
@@ -305,23 +291,6 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
       Kr = ulsch_harq->Kplus;
 
     Kr_bytes = Kr>>3;
-
-    if (Kr_bytes<=64)
-      iind = (Kr_bytes-5);
-    else if (Kr_bytes <=128)
-      iind = 59 + ((Kr_bytes-64)>>1);
-    else if (Kr_bytes <= 256)
-      iind = 91 + ((Kr_bytes-128)>>2);
-    else if (Kr_bytes <= 768)
-      iind = 123 + ((Kr_bytes-256)>>3);
-    else {
-      LOG_E(PHY,"ulsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      return(-1);
-    }
-
-#ifdef DEBUG_ULSCH_DECODING
-    printf("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? ulsch_harq->F : 0);
-#endif
 
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
@@ -368,14 +337,12 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
     else
       crc_type = CRC24_B;
     
-    
+   
     ret = tc(&ulsch_harq->d[r][96],
              NULL,
 	     ulsch_harq->c[r],
              NULL,
 	     Kr,
-	     f1f2mat_old[iind*2],
-	     f1f2mat_old[(iind*2)+1],
 	     ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
 	     crc_type,
 	     (r==0) ? ulsch_harq->F : 0,
@@ -414,13 +381,20 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 
 extern int oai_exit;
 void *td_thread(void *param) {
-  pthread_setname_np( pthread_self(), "td processing");
   PHY_VARS_eNB *eNB = ((td_params*)param)->eNB;
   eNB_proc_t *proc  = &eNB->proc;
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  
+  thread_top_init("td_thread",1,200000,250000,500000);
+  pthread_setname_np( pthread_self(),"td processing");
+  LOG_I(PHY,"thread td created id=%ld\n", syscall(__NR_gettid));
+  //wait_sync("td_thread");
 
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_td,&proc->cond_td,&proc->instance_cnt_td,"td thread")<0) break;  
+    if(oai_exit) break;
 
     ((td_params*)param)->ret = ulsch_decoding_data_2thread0((td_params*)param);
 
@@ -439,7 +413,7 @@ void *td_thread(void *param) {
 int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) {
 
   eNB_proc_t *proc = &eNB->proc;
-  unsigned int r,r_offset=0,Kr,Kr_bytes,iind;
+  unsigned int r,r_offset=0,Kr,Kr_bytes;
   uint8_t crc_type;
   int offset = 0;
   int ret = 1;
@@ -450,7 +424,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
   int G = ulsch_harq->G;
   unsigned int E;
   int Cby2;
-  decoder_if_t tc;
+  decoder_if_t *tc;
 
   struct timespec wait;
 
@@ -511,23 +485,6 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 
     Kr_bytes = Kr>>3;
 
-    if (Kr_bytes<=64)
-      iind = (Kr_bytes-5);
-    else if (Kr_bytes <=128)
-      iind = 59 + ((Kr_bytes-64)>>1);
-    else if (Kr_bytes <= 256)
-      iind = 91 + ((Kr_bytes-128)>>2);
-    else if (Kr_bytes <= 768)
-      iind = 123 + ((Kr_bytes-256)>>3);
-    else {
-      LOG_E(PHY,"ulsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      return(-1);
-    }
-
-#ifdef DEBUG_ULSCH_DECODING
-    printf("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? ulsch_harq->F : 0);
-#endif
-
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
                                           (uint8_t*)&dummy_w[r][0],
@@ -584,8 +541,6 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 	     ulsch_harq->c[r],
              NULL,
 	     Kr,
-	     f1f2mat_old[iind*2],
-	     f1f2mat_old[(iind*2)+1],
 	     ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
 	     crc_type,
 	     (r==0) ? ulsch_harq->F : 0,
@@ -623,6 +578,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
       break;
     }
     stop_meas(&eNB->ulsch_turbo_decoding_stats);    
+  //printf("/////////////////////////////////////////**************************loop for %d time in ulsch_decoding main\n",r);
   }
 
    // wait for worker to finish
@@ -634,7 +590,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 
 int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) {
 
-  unsigned int r,r_offset=0,Kr,Kr_bytes,iind;
+  unsigned int r,r_offset=0,Kr,Kr_bytes;
   uint8_t crc_type;
   int offset = 0;
   int ret = 1;
@@ -644,7 +600,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 
   int G = ulsch_harq->G;
   unsigned int E;
-  decoder_if_t tc;
+  decoder_if_t *tc;
 
   if (llr8_flag == 0)
     tc = *decoder16;
@@ -662,23 +618,6 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
       Kr = ulsch_harq->Kplus;
 
     Kr_bytes = Kr>>3;
-
-    if (Kr_bytes<=64)
-      iind = (Kr_bytes-5);
-    else if (Kr_bytes <=128)
-      iind = 59 + ((Kr_bytes-64)>>1);
-    else if (Kr_bytes <= 256)
-      iind = 91 + ((Kr_bytes-128)>>2);
-    else if (Kr_bytes <= 768)
-      iind = 123 + ((Kr_bytes-256)>>3);
-    else {
-      LOG_E(PHY,"ulsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      return(-1);
-    }
-
-#ifdef DEBUG_ULSCH_DECODING
-    printf("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? ulsch_harq->F : 0);
-#endif
 
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
@@ -728,7 +667,8 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
       crc_type = CRC24_A;
     else
       crc_type = CRC24_B;
-   
+  
+ 
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     
     ret = tc(&ulsch_harq->d[r][96],
@@ -736,8 +676,6 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 	     ulsch_harq->c[r],
              NULL,
 	     Kr,
-	     f1f2mat_old[iind*2],
-	     f1f2mat_old[(iind*2)+1],
 	     ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
 	     crc_type,
 	     (r==0) ? ulsch_harq->F : 0,
@@ -780,6 +718,20 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   }
 
   return(ret);
+}
+
+int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
+{
+  int ret = 0;
+  /*if(codingw)
+  {
+    ret = ulsch_decoding_data_2thread(eNB,UE_id,harq_pid,llr8_flag);
+  }
+  else*/
+  {
+    ret = ulsch_decoding_data(eNB,UE_id,harq_pid,llr8_flag);
+  }
+  return ret;
 }
 
 static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, unsigned char reset) __attribute__((always_inline));
@@ -895,8 +847,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
         nb_rb);
 	
   //#endif
-
-  if (ulsch_harq->round == 0) {
+  //if (ulsch_harq->round == 0) { // delete for RB shortage pattern
     // This is a new packet, so compute quantities regarding segmentation
     ulsch_harq->B = A+24;
     lte_segmentation(NULL,
@@ -909,8 +860,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                      &ulsch_harq->Kminus,
                      &ulsch_harq->F);
     //  CLEAR LLR's HERE for first packet in process
-  }
-
+  //}
   //  printf("after segmentation c[%d] = %p\n",0,ulsch_harq->c[0]);
 
   sumKr = 0;

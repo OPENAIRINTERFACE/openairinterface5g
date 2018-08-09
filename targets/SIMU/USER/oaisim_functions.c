@@ -1072,7 +1072,7 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   *ptimestamp = last_ru_rx_timestamp[ru_id][CC_id];
 
 
-  LOG_D(EMU,"RU_trx_read nsamps %d TS(%llu,%llu) => subframe %d\n",nsamps,
+  LOG_D(PHY,"RU_trx_read nsamps %d TS(%llu,%llu) => subframe %d\n",nsamps,
         (unsigned long long)current_ru_rx_timestamp[ru_id][CC_id],
         (unsigned long long)last_ru_rx_timestamp[ru_id][CC_id],
 	(int)((*ptimestamp/RC.ru[ru_id]->frame_parms.samples_per_tti)%10));
@@ -1087,20 +1087,27 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
     
     subframe = (last_ru_rx_timestamp[ru_id][CC_id]/RC.ru[ru_id]->frame_parms.samples_per_tti)%10;
-    LOG_D(EMU,"RU_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
-	  subframe,(unsigned long long)*ptimestamp,
-	  (unsigned long long)current_ru_rx_timestamp[ru_id][CC_id]);
-    
-    do_UL_sig(UE2RU,
-	      enb_data,
-	      ue_data,
-	      subframe,
-	      0,  // abstraction_flag
-	      &RC.ru[ru_id]->frame_parms,
-	      0,  // frame is only used for abstraction
-	      ru_id,
-	      CC_id);
-  
+
+    if (RC.ru[ru_id]->frame_parms.frame_type == FDD || 
+	subframe_select(&RC.ru[ru_id]->frame_parms,subframe) != SF_DL) { 
+      LOG_D(PHY,"RU_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
+
+    //if (subframe_select(&RC.ru[ru_id]->frame_parms,subframe) != SF_DL || RC.ru[ru_id]->frame_parms.frame_type == FDD) { 
+      //LOG_D(EMU,"RU_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
+
+	    subframe,(unsigned long long)*ptimestamp,
+	    (unsigned long long)current_ru_rx_timestamp[ru_id][CC_id]);
+      
+      do_UL_sig(UE2RU,
+		enb_data,
+		ue_data,
+		subframe,
+		0,  // abstraction_flag
+		&RC.ru[ru_id]->frame_parms,
+		0,  // frame is only used for abstraction
+		ru_id,
+		CC_id);
+    }
     last_ru_rx_timestamp[ru_id][CC_id] += RC.ru[ru_id]->frame_parms.samples_per_tti;
     sample_count += RC.ru[ru_id]->frame_parms.samples_per_tti;
   }
@@ -1352,9 +1359,6 @@ void init_devices(void){
 	PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_set_freq_func    = UE_trx_set_freq;
 	PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_set_gains_func   = UE_trx_set_gains;
 	last_UE_rx_timestamp[UE_id][CC_id] = 0;
-
-
-
       }
     }
   }

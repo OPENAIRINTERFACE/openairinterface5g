@@ -24,7 +24,7 @@
    author: raymond.knopp@eurecom.fr
    date: 21.10.2009
 */
-#include "defs.h"
+#include "coding_defs.h"
 
 //#define DEBUG_CCODE 1
 

@@ -47,11 +47,10 @@ void *flexran_agent_task(void *args){
   Protocol__FlexranMessage *msg;
   void *data;
   int size;
-  err_code_t err_code;
+  err_code_t err_code=0;
   int                   priority = 0;
 
   MessageDef                     *msg_p           = NULL;
-  const char                     *msg_name        = NULL;
   int                             result;
   struct flexran_agent_timer_element_s * elem = NULL;
 
@@ -61,7 +60,6 @@ void *flexran_agent_task(void *args){
     // Wait for a message
     itti_receive_msg (TASK_FLEXRAN_AGENT, &msg_p);
     DevAssert(msg_p != NULL);
-    msg_name = ITTI_MSG_NAME (msg_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
     case TERMINATE_MESSAGE:
@@ -88,7 +86,7 @@ void *flexran_agent_task(void *args){
       break;
 
     default:
-      LOG_E(FLEXRAN_AGENT, "Received unexpected message %s\n", msg_name);
+      LOG_E(FLEXRAN_AGENT, "Received unexpected message %s\n", ITTI_MSG_NAME (msg_p));
       break;
     }
 
@@ -96,7 +94,8 @@ void *flexran_agent_task(void *args){
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
     continue;
   error:
-    LOG_E(FLEXRAN_AGENT,"flexran_agent_task: error %d occured\n",err_code);
+    if (err_code != 0)
+      LOG_E(FLEXRAN_AGENT,"flexran_agent_task: error %d occured\n",err_code);
   } while (1);
 
   return NULL;
@@ -108,18 +107,18 @@ void *receive_thread(void *args) {
   void                  *data;
   int                   size;
   int                   priority;
-  err_code_t             err_code;
+  err_code_t             err_code=0;
 
   Protocol__FlexranMessage *msg;
   
   while (1) {
 
-    while (flexran_agent_msg_recv(d->enb_id, FLEXRAN_AGENT_DEFAULT, &data, &size, &priority) == 0) {
+    while (flexran_agent_msg_recv(d->mod_id, FLEXRAN_AGENT_DEFAULT, &data, &size, &priority) == 0) {
       
       LOG_D(FLEXRAN_AGENT,"received message with size %d\n", size);
   
       // Invoke the message handler
-      msg=flexran_agent_handle_message(d->enb_id, data, size);
+      msg=flexran_agent_handle_message(d->mod_id, data, size);
 
       free(data);
     
@@ -127,7 +126,7 @@ void *receive_thread(void *args) {
       if (msg != NULL){
 	data=flexran_agent_pack_message(msg,&size);
 
-	if (flexran_agent_msg_send(d->enb_id, FLEXRAN_AGENT_DEFAULT, data, size, priority)) {
+	if (flexran_agent_msg_send(d->mod_id, FLEXRAN_AGENT_DEFAULT, data, size, priority)) {
 	  err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
 	  goto error;
 	}
@@ -140,7 +139,8 @@ void *receive_thread(void *args) {
   return NULL;
 
 error:
-  LOG_E(FLEXRAN_AGENT,"receive_thread: error %d occured\n",err_code);
+  if (err_code != 0)
+     LOG_E(FLEXRAN_AGENT,"receive_thread: error %d occured\n",err_code);
   return NULL;
 }
 
@@ -190,13 +190,6 @@ int flexran_agent_start(mid_t mod_id)
     LOG_I(FLEXRAN_AGENT, "FlexRAN Agent for eNB %d is DISABLED\n", mod_id);
     return 100;
   }
-  
-  flexran->enb_id = mod_id;
-  /* assume for the moment the monolithic case, i.e. agent can provide
-   * information for all layers */
-  flexran->capability_mask = FLEXRAN_CAP_LOL1 | FLEXRAN_CAP_HIL1
-                           | FLEXRAN_CAP_LOL2 | FLEXRAN_CAP_HIL2
-                           | FLEXRAN_CAP_PDCP | FLEXRAN_CAP_RRC;
 
   /*
    * Initialize the channel container
@@ -306,7 +299,7 @@ Protocol__FlexranMessage *flexran_agent_timeout(void* args){
   //memcpy (timer_args, args, sizeof(*timer_args));
   flexran_agent_timer_args_t *timer_args = (flexran_agent_timer_args_t *) args;
   
-  LOG_I(FLEXRAN_AGENT, "flexran_agent %d timeout\n", timer_args->mod_id);
+  LOG_UI(FLEXRAN_AGENT, "flexran_agent %d timeout\n", timer_args->mod_id);
   //LOG_I(FLEXRAN_AGENT, "eNB action %d ENB flags %d \n", timer_args->cc_actions,timer_args->cc_report_flags);
   //LOG_I(FLEXRAN_AGENT, "UE action %d UE flags %d \n", timer_args->ue_actions,timer_args->ue_report_flags);
   

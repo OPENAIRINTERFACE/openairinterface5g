@@ -22,8 +22,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "defs.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/impl_defs_top.h"
 
 //extern unsigned int lte_gold_table[3][20][2][14];
 //#define DEBUG_DL_CELL_SPEC
@@ -255,9 +256,9 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *ue,
 
 
 
-//extern int write_output(const char *,const char *,void *,int,int,char);
+//extern int LOG_M(const char *,const char *,void *,int,int,char);
 // flag change eren
-extern int write_output(const char *,const char *,void *,int,int,char);
+extern int LOG_M(const char *,const char *,void *,int,int,char);
 main()
 {
 
@@ -316,10 +317,10 @@ main()
                    0);
 
 
-  write_output("dl_cell_spec00.m","dl_cs00",output00,1024,1,1);
-  write_output("dl_cell_spec01.m","dl_cs01",output01,1024,1,1);
-  write_output("dl_cell_spec10.m","dl_cs10",output10,1024,1,1);
-  write_output("dl_cell_spec11.m","dl_cs11",output11,1024,1,1);
+  LOG_M("dl_cell_spec00.m","dl_cs00",output00,1024,1,1);
+  LOG_M("dl_cell_spec01.m","dl_cs01",output01,1024,1,1);
+  LOG_M("dl_cell_spec10.m","dl_cs10",output10,1024,1,1);
+  LOG_M("dl_cell_spec11.m","dl_cs11",output11,1024,1,1);
 }
 
 #endif

@@ -195,6 +195,11 @@ time_stats_t oaisim_stats_f;
 time_stats_t dl_chan_stats;
 time_stats_t ul_chan_stats;
 
+int emulate_rf = 0;
+int numerology = 0;
+int codingw = 0;
+int fepw = 0;
+
 // this should reflect the channel models in openair1/SIMULATION/TOOLS/defs.h
 mapping small_scale_names[] = { 
   { "custom", custom }, { "SCM_A", SCM_A },
@@ -740,8 +745,12 @@ l2l1_task (void *args_p)
         while (all_done==0) {
 
           pthread_mutex_lock(&subframe_mutex);
-          int subframe_ru_mask_local = subframe_ru_mask; //((1<<NB_RU)-1));
-          int subframe_UE_mask_local  = subframe_UE_mask;
+          int subframe_ru_mask_local  = (subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_UL) ? subframe_ru_mask : ((1<<NB_RU)-1);
+
+          int subframe_UE_mask_local  = (subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_DL) ? subframe_UE_mask : ((1<<NB_UE_INST)-1);
+
+          //int subframe_UE_mask_local  = (RC.ru[0]->frame_parms.frame_type == FDD || subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_DL) ? subframe_UE_mask : ((1<<NB_UE_INST)-1);
+
           pthread_mutex_unlock(&subframe_mutex);
           LOG_D(EMU,"Frame %d, Subframe %d, NB_RU %d, NB_UE %d: Checking masks %x,%x\n",frame,sf,NB_RU,NB_UE_INST,subframe_ru_mask_local,subframe_UE_mask_local);
           if ((subframe_ru_mask_local == ((1<<NB_RU)-1)) &&
@@ -1065,6 +1074,7 @@ void set_UE_defaults(int nb_ue) {
 	PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[i][0]->agregationLevel      = 0xFF;
       }
       PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
+      PHY_vars_UE_g[UE_id][CC_id]->tx_power_max_dBm = 23;
     }
   }
 }

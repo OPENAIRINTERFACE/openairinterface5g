@@ -46,7 +46,7 @@
 
 #include "gtpv1u.h"
 #if defined(ENB_MODE)
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #endif
 
 #define NW_GTPV1U_EPC_SPECIFIC_HEADER_SIZE                             (12)   /**< Size of GTPv1u EPC specific header */

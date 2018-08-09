@@ -29,7 +29,7 @@
 #include "flexran_agent_async.h"
 #include "flexran_agent_defs.h"
 
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port) {
 

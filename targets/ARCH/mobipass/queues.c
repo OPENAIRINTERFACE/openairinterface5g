@@ -182,16 +182,6 @@ static void get_sample_from_mobipass(queue_state_t *qstate, char *I, char *Q, ui
   struct mobipass_header *mh = NULL;
   uint32_t packet_timestamp = 0;
 
-#if 0
-uint32_t old_start = qstate->from_mobipass.start;
-uint32_t old_len = qstate->from_mobipass.len;
-b = qstate->from_mobipass.buf[qstate->from_mobipass.start];
-mh = (struct mobipass_header *)(b+14);
-uint32_t old_pts = qstate->from_mobipass.len ? ntohl(mh->timestamp) : -1;
-b=NULL;
-mh=NULL;
-#endif
-
   while (qstate->from_mobipass.len) {
     b = qstate->from_mobipass.buf[qstate->from_mobipass.start];
     mh = (struct mobipass_header *)(b+14);
@@ -222,10 +212,6 @@ nodata:
   *Q = 0;
 
   log_missed_sample(qstate, timestamp);
-
-#if 0
-printf("no sample timestamp %u pt %u start %d old_start %d old_pt %u len %d old len %d\n", timestamp, packet_timestamp, qstate->from_mobipass.start, old_start, old_pts, qstate->from_mobipass.len, old_len);
-#endif
 }
 
 /* doesn't work with delay more than 1s */
