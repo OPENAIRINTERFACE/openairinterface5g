@@ -107,6 +107,7 @@ typedef struct physicalcellgroup_s{
   long        tpc_PUCCH_RNTI[MAX_NUM_CCs];
   long        tpc_PUSCH_RNTI[MAX_NUM_CCs];
   long        sp_CSI_RNTI[MAX_NUM_CCs];
+  long        RNTI_Value_PR[MAX_NUM_CCs];
   long        RNTI_Value[MAX_NUM_CCs];
 }physicalcellgroup_t;
 

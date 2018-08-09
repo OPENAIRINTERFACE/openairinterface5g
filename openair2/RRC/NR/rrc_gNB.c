@@ -230,8 +230,6 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
           sizeof(struct NR_ServingCellConfigCommon));
 */
 
-
-
 }
 
 ///---------------------------------------------------------------------------------------------------------------///
