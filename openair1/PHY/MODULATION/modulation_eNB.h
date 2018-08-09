@@ -50,23 +50,21 @@ int beam_precoding(int32_t **txdataF,
 	           int32_t **txdataF_BF,
                    LTE_DL_FRAME_PARMS *frame_parms,
 	           int32_t ***beam_weights,
-                   int slot,
                    int symbol,
-                   int aa);
+		   int aa,
+		   int p);
 				   
 /** \brief This function performs beamforming precoding for common
- * data for only one eNB
+ * data for only one eNB, fdragon
     @param txdataF Table of pointers for frequency-domain TX signals
     @param txdataF_BF Table of pointers for frequency-domain TX signals
-    @param beam_weights Beamforming weights applied on each
-antenna element and each carrier
-    @param subfram subframe number
-    @param nb_antenna_ports physical antenna number
-    @param nb_tx total number of physical antenna
     @param frame_parms Frame descriptor structure
 after beamforming
-*/
-
+    @param beam_weights Beamforming weights applied on each
+antenna element and each carrier
+    @param slot Slot number
+    @param symbol Symbol index on which to act
+    @param aa physical antenna index*/
 int beam_precoding_one_eNB(int32_t **txdataF,
                            int32_t **txdataF_BF,
 						   int32_t ***beam_weights,
