@@ -29,6 +29,18 @@
  * \note
  * \warning
  */
+ 
+ /*! \function beam_precoding_one_eNB
+ * \brief Create and Implementation of beamforming in one eNB
+ * \author TY Hsu, SY Yeh(fdragon), TH Wang(Judy)
+ * \date 2018
+ * \version 0.1
+ * \company NCTU and Eurecom
+ * \email: tyhsu@cs.nctu.edu.tw,fdragon.cs96g@g2.nctu.edu.tw,Tsu-Han.Wang@eurecom.fr
+ * \note
+ * \warning
+ */
+ 
 #include "PHY/defs_common.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
@@ -90,7 +102,7 @@ int beam_precoding(int32_t **txdataF,
   return 0;
 }
 
-// fdragon
+
 int beam_precoding_one_eNB(int32_t **txdataF,
                            int32_t **txdataF_BF,
 						   int32_t ***beam_weights,
