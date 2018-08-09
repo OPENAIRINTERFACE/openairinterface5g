@@ -35,7 +35,7 @@
  * \author TY Hsu, SY Yeh(fdragon), TH Wang(Judy)
  * \date 2018
  * \version 0.1
- * \company NCTU and Eurecom
+ * \company ISIP@NCTU and Eurecom
  * \email: tyhsu@cs.nctu.edu.tw,fdragon.cs96g@g2.nctu.edu.tw,Tsu-Han.Wang@eurecom.fr
  * \note
  * \warning
