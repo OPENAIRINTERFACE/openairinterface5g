@@ -372,7 +372,13 @@ tracer_error:
       remove_tracer(&m, j);
       j--;
     }
-    if (is_on_changed && s != -1) send_is_on(s, number_of_events, is_on);
+    if (is_on_changed && s != -1)
+      if (send_is_on(s, number_of_events, is_on) == -1) {
+        clear_remote_config();
+        shutdown(s, SHUT_RDWR);
+        close(s);
+        s = -1;
+      }
   }
 
   return 0;
