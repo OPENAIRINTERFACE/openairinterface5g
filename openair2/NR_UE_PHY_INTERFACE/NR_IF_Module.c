@@ -173,9 +173,10 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
                     dlsch_config_pdu->tpc = dci->tpc_command;
                     dlsch_config_pdu->pucch_resource_indicator = dci->pucch_resource_indicator;
                     dlsch_config_pdu->pdsch_to_harq_feedback_timing_indicator = dci->pdsch_to_harq_feedback_timing_indicator;
-
-                    dl_config->dl_config_list[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15.rnti = 0x0000;   //  TX RNTI: UE-spec
                     */
+                    dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = 0x0000;   //  TX RNTI: UE-spec
+                    memcpy(dlsch_config_pdu, dci, sizeof(fapi_nr_dci_pdu_rel15_t));
+
                     dl_config->number_pdus = dl_config->number_pdus + 1;
 
                     ret_mask |= (handle_dci(

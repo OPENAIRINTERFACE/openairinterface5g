@@ -1349,6 +1349,10 @@ if (${COMPILATION_AVX2} STREQUAL "True")
   set(PHY_SRC_UE ${PHY_SRC_UE} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
 endif ()
 
+if (${COMPILATION_AVX2} STREQUAL "True")
+  set(PHY_NR_UE_SRC ${PHY_NR_UE_SRC} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
+endif ()
+
 add_library(PHY_COMMON ${PHY_SRC_COMMON})
 add_library(PHY ${PHY_SRC})
 add_library(PHY_UE ${PHY_SRC_UE})
@@ -1573,7 +1577,7 @@ set ( NR_LTE_UE_REUSE_SRC
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
-  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c
+  #${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c
 )
 
 add_library( NR_LTE_UE_REUSE_LIB

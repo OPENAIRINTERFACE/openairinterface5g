@@ -19,14 +19,17 @@
 #define _FAPI_NR_UE_INTERFACE_H_
 
 #include "stddef.h"
+#include "platform_types.h"
 #include "fapi_nr_ue_constants.h"
 
-typedef unsigned int	uint32_t;
-typedef unsigned short	uint16_t;
-typedef unsigned char	uint8_t;
-typedef signed int		int32_t;
-typedef signed short	int16_t;
-typedef signed char		int8_t;
+/*
+typedef unsigned int	   uint32_t;
+typedef unsigned short	   uint16_t;
+typedef unsigned char	   uint8_t;
+typedef signed int		   int32_t;
+typedef signed short	   int16_t;
+typedef signed char		   int8_t;
+*/
 
 typedef struct {
     uint8_t identifier_dci_formats          ; // 0  IDENTIFIER_DCI_FORMATS:
@@ -257,6 +260,7 @@ typedef struct {
     typedef fapi_nr_dci_pdu_rel15_t fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
     typedef struct {
+        uint16_t rnti;
         fapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config_rel15;
     } fapi_nr_dl_config_dlsch_pdu;
 
