@@ -62,7 +62,7 @@ int8_t handle_bcch_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, ui
 //  L2 Abstraction Layer
 int8_t handle_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type){
 
-    return nr_ue_decode_dci(module_id, cc_id, gNB_index, dci, rnti, dci_type);
+    return nr_ue_process_dci(module_id, cc_id, gNB_index, dci, rnti, dci_type);
 
 }
 
@@ -157,10 +157,10 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
                 
                 case FAPI_NR_DCI_TYPE_1_0:
                     
-                    dl_config->dl_config_request_body[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+                    dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
 
                     //  mapping into DL_CONFIG_REQ for DL-SCH
-                    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_request_body[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15;
+                    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15;
                     dlsch_config_pdu->format_indicator = dci->dci_format;
                     dlsch_config_pdu->frequency_domain_assignment = dci->frequency_domain_resouce_assignment;
                     dlsch_config_pdu->time_domain_assignment = dci->time_domain_resource_assignment;
@@ -174,7 +174,7 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
                     dlsch_config_pdu->pucch_resource_indicator = dci->pucch_resource_indicator;
                     dlsch_config_pdu->pdsch_to_harq_feedback_timing_indicator = dci->pdsch_to_harq_feedback_timing_indicator;
 
-                    dl_config->dl_config_request_body[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15.rnti = 0x0000;   //  TX RNTI: UE-spec
+                    dl_config->dl_config_list[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15.rnti = 0x0000;   //  TX RNTI: UE-spec
                     dl_config->number_pdus = dl_config->number_pdus + 1;
 
                     ret_mask |= (handle_dci(

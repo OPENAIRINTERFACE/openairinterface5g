@@ -401,9 +401,11 @@ const uint32_t num_slot_per_frame = 20;
 
         coreset_duration = num_symbols * number_of_search_space_per_slot;
 
-        mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[0];   //  CCE aggregation level = 4
-        mac->type0_pdcch_dci_config.number_of_candidates[3] = table_38213_10_1_1_c2[1];   //  CCE aggregation level = 8
-        mac->type0_pdcch_dci_config.number_of_candidates[4] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 16
+        mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
+        mac->type0_pdcch_dci_config.number_of_candidates[1] = table_38213_10_1_1_c2[1];
+        mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
+        mac->type0_pdcch_dci_config.number_of_candidates[3] = table_38213_10_1_1_c2[3];   //  CCE aggregation level = 8
+        mac->type0_pdcch_dci_config.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
         mac->type0_pdcch_dci_config.duration = search_space_duration;
         mac->type0_pdcch_dci_config.coreset.duration = coreset_duration;   //  coreset
         mac->type0_pdcch_dci_config.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
@@ -462,9 +464,11 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
             //	38.213 chapter 13
             if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_0) && !(rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
             	search_space_mask = search_space_mask | type0_pdcch;
+                mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.duration;
             }
             if((mac->type0_pdcch_ss_sfn_c == SFN_C_MOD_2_EQ_1) &&  (rx_frame & 0x1) && (rx_slot == mac->type0_pdcch_ss_n_c)){
             	search_space_mask = search_space_mask | type0_pdcch;
+                mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.duration;
             }
             //if((mac->type0_pdcch_ss_sfn_c == SFN_C_EQ_SFN_SSB) && ( get_ssb_frame() )){
             //	search_space_mask = search_space_mask | type0_pdcch;
@@ -474,12 +478,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
             //	38.213 Table 13-13, 13-14
             if((rx_frame == get_ssb_frame()) && (rx_slot == mac->type0_pdcch_ss_n_c)){
                 search_space_mask = search_space_mask | type0_pdcch;
+                mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.duration;
             }
         }
         if(mac->type0_pdcch_ss_mux_pattern == 3){
         	//	38.213 Table 13-15
             if((rx_frame == get_ssb_frame()) && (rx_slot == mac->type0_pdcch_ss_n_c)){
                 search_space_mask = search_space_mask | type0_pdcch;
+                mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.duration;
             }
         }
     }
@@ -498,13 +504,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
         uint8_t format_2_3_number_of_candidates;
 #endif
     fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-    if(search_space_mask & type0_pdcch){
+    if((search_space_mask & type0_pdcch) || ( mac->type0_pdcch_consecutive_slots != 0 )){
+        mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_consecutive_slots - 1;
 
-        dl_config->dl_config_request_body[dl_config->number_pdus].dci_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
-        dl_config->dl_config_request_body[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
+        dl_config->dl_config_list[dl_config->number_pdus].dci_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
+        dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
         dl_config->number_pdus = dl_config->number_pdus + 1;
     	
-    	dl_config->dl_config_request_body[dl_config->number_pdus].dci_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
+    	dl_config->dl_config_list[dl_config->number_pdus].dci_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
     }
 
     if(search_space_mask & type0a_pdcch){
@@ -526,7 +533,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
 	return CONNECTION_OK;
 }
 
-int8_t nr_ue_decode_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type){
+int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type){
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -550,4 +557,56 @@ int8_t nr_ue_decode_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fap
 int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe){
 
     return 0;
+}
+
+
+
+void nr_ue_process_mac_pdu(
+    module_id_t module_idP,
+    uint8_t CC_id,
+    uint8_t *pduP, 
+    uint16_t pdu_len, 
+    uint8_t eNB_index){
+
+    uint8_t *pdu_ptr = pduP;
+    uint8_t sub_pdu_len;
+
+    //  variable-size MAC CE(known by LCID), padding, MSG3, MAC SDU
+    //  |0|1|2|3|4|5|6|7|  bit-wise
+    //  |R|F|   LCID    |
+    //  |       L       |
+
+    //  variable-size MAC CE(known by LCID), padding, MSG3, MAC SDU
+    //  |0|1|2|3|4|5|6|7|  bit-wise
+    //  |R|F|   LCID    |
+    //  |       L       |
+    //  |       L       |
+
+    //  fixed-size MAC CE(known by LCID), padding, MSG3
+    //  |0|1|2|3|4|5|6|7|  bit-wise
+    //  |R|R|   LCID    |
+
+    //  LCID: The Logical Channel ID field identifies the logical channel instance of the corresponding MAC SDU or the type of the corresponding MAC CE or padding as described in Tables 6.2.1-1 and 6.2.1-2 for the DL-SCH and UL-SCH respectively. There is one LCID field per MAC subheader. The LCID field size is 6 bits;
+    //  L: The Length field indicates the length of the corresponding MAC SDU or variable-sized MAC CE in bytes. There is one L field per MAC subheader except for subheaders corresponding to fixed-sized MAC CEs and padding. The size of the L field is indicated by the F field;
+    //  F: lenght of L is 8 or 16 bits wide
+    //  R: Reserved bit, set to zero.
+
+    
+    while (!done) {
+
+        switch(((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID){
+            //  Control element
+            case DL_SCH_LCID_PADDING:
+                done = 1;
+                //  end of MAC PDU, there is nothing right after padding
+                break;
+
+            //  MAC SDU
+
+            default:
+                printf("[MAC] get lcid: %d which not support yet\n", ((NR_MAC_SUBHEADER_FIXED *)buf_ptr)->LCID);
+                break;
+        }
+        pdu_ptr += sub_pdu_len;
+    }
 }

@@ -37,9 +37,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NR_BCCH_DL_SCH 3			// SI
+#define NR_BCCH_DL_SCH 3            // SI
 
-#define NR_BCCH_BCH 5			// MIB
+#define NR_BCCH_BCH 5           // MIB
 
 /*!\brief UE layer 2 status */
 typedef enum {
@@ -49,5 +49,32 @@ typedef enum {
     PHY_HO_PRACH
 } NR_UE_L2_STATE_t;
 
+typedef struct {
+    uint8_t LCID:6;     // octet 1 [5:0]
+    uint8_t F:1;        // octet 1 [6]
+    uint8_t R:1;        // octet 1 [7]
+    uint8_t L:8;        // octet 2 [7:0]
+} __attribute__ ((__packed__)) NR_MAC_SUBHEADER_SHORT;
+
+typedef struct {
+    uint8_t LCID:6;     // octet 1 [5:0]
+    uint8_t F:1;        // octet 1 [6]
+    uint8_t R:1;        // octet 1 [7]
+    uint8_t L1:8;       // octet 2 [7:0]
+    uint8_t L2:8;       // octet 3 [7:0]
+} __attribute__ ((__packed__)) NR_MAC_SUBHEADER_LONG;
+
+typedef struct {
+    uint8_t LCID:5;     // octet 1 [5:0]
+    uint8_t R:2;        // octet 1 [7:6]
+} __attribute__ ((__packed__)) NR_MAC_SUBHEADER_FIXED;
+
+#define DL_SCH_LCID_CCCH 0x0
+#define DL_SCH_LCID_R_BITRATE 0x2f
+#define DL_SCH_LCID_L_DRX 0x3b
+#define DL_SCH_LCID_DRX 0x3c
+#define DL_SCH_LCID_TA 0x3d
+#define DL_SCH_LCID_CONTENTION_RESOLUTION_ID 0x3e
+#define DL_SCH_LCID_PADDING 0x3f
 
 #endif /*__LAYER2_MAC_DEFS_H__ */

@@ -80,4 +80,4 @@ extern const float   table_38213_13_12_c1[16];
 extern const int32_t table_38213_13_12_c2[16];
 extern const float   table_38213_13_12_c3[16];
 
-extern const int32_t table_38213_10_1_1_c2[3];
+extern const int32_t table_38213_10_1_1_c2[5];

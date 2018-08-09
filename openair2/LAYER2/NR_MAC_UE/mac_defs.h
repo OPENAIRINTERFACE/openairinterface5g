@@ -81,6 +81,7 @@ typedef struct {
     uint32_t type0_pdcch_ss_mux_pattern;
     SFN_C_TYPE type0_pdcch_ss_sfn_c;
     uint32_t type0_pdcch_ss_n_c;
+    uint32_t type0_pdcch_consecutive_slots;
 
     ///     Random access parameter
     uint16_t ra_rnti;

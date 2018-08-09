@@ -713,30 +713,6 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
     ue->if_inst->dl_indication(&ue->dl_indication);
 
-//  dci reception part, should be put into dci_nr.c ? TBD
-#if 0
-    ue->dl_indication.dci_ind = &ue->dci_ind; //  hang on rx_ind instance
-    //ue->dci_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
-    uint32_t num_dci = 1;
-    uint32_t ii;
-
-    ue->dci_ind.number_of_dcis = num_dci;
-    ue->dci_ind.dci_list = (fapi_nr_dci_indication_pdu_t *)malloc(num_dci * sizeof(fapi_nr_dci_indication_pdu_t));
-    
-    for(ii=0; ii<num_dci; ++ii){
-        //TODO check this part
-        (ue->dci_ind.dci_list+ii)->rnti = 0x0000;
-        (ue->dci_ind.dci_list+ii)->dci_type = 0;
-        
-        //  TODO to be fill with TCL
-        //ue->dci_ind.dci_list[ii]->dci.
-
-    }
-
-    ue->if_inst->dl_indication(&ue->dl_indication);
-#endif 
-
-
     return 0;    
 }
 

@@ -3432,6 +3432,9 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   //emos_dump_UE.dci_cnt[nr_tti_rx] = dci_cnt;
 #endif
 
+      ue->dci_ind.number_of_dcis = dci_cnt;
+      ue->dl_indication.dci_ind = &ue->dci_ind; //  hang on rx_ind instance
+
       for (i=0; i<dci_cnt; i++) {
         /*
          * This is the NR part
@@ -3485,7 +3488,17 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                                 n_RB_DLBWP,
                                                 crc_scrambled_values);
 
+        //ue->dci_ind.dci_list = (fapi_nr_dci_indication_pdu_t *)malloc(num_dci * sizeof(fapi_nr_dci_indication_pdu_t));
+    
+        ue->dci_ind.dci_list[i].rnti = 0x0000;
+        ue->dci_ind.dci_list[i].dci_type = 0;
+        NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted;
+        memcpy(&ue->dci_ind.dci_list[i].dci, nr_dci_info_extracted, sizeof(fapi_nr_dci_pdu_rel15_t) );
+        
+        //  TODO: check where should we send up this message.
+        //ue->if_inst->dl_indication(&ue->dl_indication);
 
+        
 	/*
 	 * This is the LTE part to be removed
 

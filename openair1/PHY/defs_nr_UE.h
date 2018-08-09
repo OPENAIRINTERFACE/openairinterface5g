@@ -921,6 +921,8 @@ typedef struct {
   // SEARCHSPACE structure, where maximum number of SEARCHSPACEs to be handled is 10 (according to 38.331 V15.1.0)
   // Each SearchSpace is associated with one ControlResourceSet 
   NR_UE_PDCCH_SEARCHSPACE searchSpace[NR_NBR_SEARCHSPACE_ACT_BWP];
+
+  uint32_t nb_search_space;
   #endif
 } NR_UE_PDCCH;
 
