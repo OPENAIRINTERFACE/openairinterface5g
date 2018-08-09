@@ -65,7 +65,7 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
     cce = &dci_alloc->cce_list[cce_idx];
     cce->cce_idx = tmp + cce_idx;
-    LOG_D(PHY, "cce_idx %d\n", cce->cce_idx);
+    LOG_I(PHY, "cce_idx %d\n", cce->cce_idx);
 
     if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
       LOG_I(PHY, "Interleaved CCE to REG mapping\n");
@@ -80,10 +80,10 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
         LOG_I(PHY, "bundle idx = %d \n j = %d \t j_prime = %d \t r = %d \t c = %d\n", idx, j , j_prime, r, c);
 
         for (uint8_t reg_idx=0; reg_idx<bsize; reg_idx++) {
-          reg = &cce->reg_list[reg_idx];          
-          reg->reg_idx = bsize*bundle_idx + reg_idx;
-          reg->start_sc_idx = (idx/pdcch_params->n_symb) * NR_NB_SC_PER_RB;
-          reg->symb_idx = idx % pdcch_params->n_symb;
+          reg = &cce->reg_list[reg_idx];
+          reg->reg_idx = bsize*idx + reg_idx;
+          reg->start_sc_idx = (reg->reg_idx/pdcch_params->n_symb) * NR_NB_SC_PER_RB;
+          reg->symb_idx = reg->reg_idx % pdcch_params->n_symb;
           LOG_I(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
         }
       }
