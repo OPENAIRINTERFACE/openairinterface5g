@@ -507,11 +507,11 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
     if((search_space_mask & type0_pdcch) || ( mac->type0_pdcch_consecutive_slots != 0 )){
         mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_consecutive_slots - 1;
 
-        dl_config->dl_config_list[dl_config->number_pdus].dci_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
+        dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
         dl_config->number_pdus = dl_config->number_pdus + 1;
     	
-    	dl_config->dl_config_list[dl_config->number_pdus].dci_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
+    	dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
     }
 
     if(search_space_mask & type0a_pdcch){
@@ -590,7 +590,7 @@ void nr_ue_process_mac_pdu(
     //  L: The Length field indicates the length of the corresponding MAC SDU or variable-sized MAC CE in bytes. There is one L field per MAC subheader except for subheaders corresponding to fixed-sized MAC CEs and padding. The size of the L field is indicated by the F field;
     //  F: lenght of L is 8 or 16 bits wide
     //  R: Reserved bit, set to zero.
-
+    uint8_t done = 0;
     
     while (!done) {
 
@@ -604,7 +604,7 @@ void nr_ue_process_mac_pdu(
             //  MAC SDU
 
             default:
-                printf("[MAC] get lcid: %d which not support yet\n", ((NR_MAC_SUBHEADER_FIXED *)buf_ptr)->LCID);
+                printf("[MAC] get lcid: %d which not support yet\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID);
                 break;
         }
         pdu_ptr += sub_pdu_len;

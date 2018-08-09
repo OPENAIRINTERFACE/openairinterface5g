@@ -48,46 +48,48 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     uint32_t i;
 
     if(scheduled_response != NULL){
+        NR_UE_PDCCH *pdcch_vars2 = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[0][0];
+        
         if(scheduled_response->dl_config != NULL){
             fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
-
+            
 
             for(i=0; i<dl_config->number_pdus; ++i){
                 if(dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI){
-                    PHY_vars_UE_g[module_id][cc_id]->nb_search_space = PHY_vars_UE_g[module_id][cc_id]->nb_search_space + 1;
+                    pdcch_vars2->nb_search_space = pdcch_vars2->nb_search_space + 1;
                     fapi_nr_dl_config_dci_dl_pdu_rel15_t *dci_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
                     
-                    pdcch_vars2->searchSpace[i].monitoringSymbolWithinSlot = dci_config.monitoring_symbols_within_slot;
+                    pdcch_vars2->searchSpace[i].monitoringSymbolWithinSlot = dci_config->monitoring_symbols_within_slot;
                     
-                    pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel1  = dci_config.number_of_candidates[0];
-                    pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel2  = dci_config.number_of_candidates[1];
-                    pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel4  = dci_config.number_of_candidates[2];
-                    pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel8  = dci_config.number_of_candidates[3];
-                    pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel16 = dci_config.number_of_candidates[4];
+                    pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel1  = dci_config->number_of_candidates[0];
+                    pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel2  = dci_config->number_of_candidates[1];
+                    pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel4  = dci_config->number_of_candidates[2];
+                    pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel8  = dci_config->number_of_candidates[3];
+                    pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel16 = dci_config->number_of_candidates[4];
 
-                    pdcch_vars2->coreset[i].duration = dci_config.coreset.duration;
+                    pdcch_vars2->coreset[i].duration = dci_config->coreset.duration;
                     //pdcch_vars2->coreset[i].frequencyDomainResources;
                     //dci_config.coreset.rb_start;
                     //dci_config.coreset.rb_end;
 
-                    if(dci_config.cce_reg_mapping_type == CCE_REG_MAPPING_TYPE_INTERLEAVED){
-                        pdcch_vars2->coreset[i].cce_reg_mappingType.shiftIndex = cce_reg_interleaved_shift_index;
-                        pdcch_vars2->coreset[i].cce_reg_mappingType.reg_bundlesize = cce_reg_interleaved_reg_bundle_size;
-                        pdcch_vars2->coreset[i].cce_reg_mappingType.interleaversize = cce_reg_interleaved_interleaver_size;
+                    if(dci_config->coreset.cce_reg_mapping_type == CCE_REG_MAPPING_TYPE_INTERLEAVED){
+                        pdcch_vars2->coreset[i].cce_reg_mappingType.shiftIndex = dci_config->coreset.cce_reg_interleaved_shift_index;
+                        pdcch_vars2->coreset[i].cce_reg_mappingType.reg_bundlesize = dci_config->coreset.cce_reg_interleaved_reg_bundle_size;
+                        pdcch_vars2->coreset[i].cce_reg_mappingType.interleaversize = dci_config->coreset.cce_reg_interleaved_interleaver_size;
                     }else{
                         ;
                     }
                     
-                    pdcch_vars2->coreset[i].precoderGranularity = dci_config.precoder_granularity;
+                    pdcch_vars2->coreset[i].precoderGranularity = dci_config->coreset.precoder_granularity;
                     //pdcch_vars2->coreset[i].tciStatesPDCCH;
                     //pdcch_vars2->coreset[i].tciPresentInDCI;
-                    pdcch_vars2->coreset[i].pdcchDMRSScramblingID = dci_config.pdcch_dmrs_scrambling_id;
+                    pdcch_vars2->coreset[i].pdcchDMRSScramblingID = dci_config->coreset.pdcch_dmrs_scrambling_id;
                 }else{  //FAPI_NR_DL_CONFIG_TYPE_DLSCH
                     //  dlsch config pdu
                 }
             }
         }else{
-            PHY_vars_UE_g[module_id][cc_id]->nb_search_space = 0;
+            pdcch_vars2->nb_search_space = 0;
         }
 
         if(scheduled_response->ul_config != NULL){

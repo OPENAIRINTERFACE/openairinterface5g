@@ -252,7 +252,7 @@ typedef struct {
         fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15;
     } fapi_nr_dl_config_dci_pdu;
 
-    typedef fapi_nr_dl_config_dlsch_pdu_rel15_t fapi_nr_dci_pdu_rel15_t;
+    typedef fapi_nr_dci_pdu_rel15_t fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
     typedef struct {
         fapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config_rel15;

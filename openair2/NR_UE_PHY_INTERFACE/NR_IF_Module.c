@@ -143,7 +143,7 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     if(dl_info->dci_ind != NULL){
         printf("[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
         for(i=0; dl_info->dci_ind->number_of_dcis; ++i){
-            fapi_nr_dci_pdu_rel15_t *dci = &(dl_info->dci_ind->dci_list+i)->dci;
+            fapi_nr_dci_pdu_rel15_t *dci = &dl_info->dci_ind->dci_list[i].dci;
             switch((dl_info->dci_ind->dci_list+i)->dci_type){
                 case FAPI_NR_DCI_TYPE_0_0:
                 case FAPI_NR_DCI_TYPE_0_1:
@@ -160,8 +160,8 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
                     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
 
                     //  mapping into DL_CONFIG_REQ for DL-SCH
-                    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15;
-                    dlsch_config_pdu->format_indicator = dci->dci_format;
+                    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+                    /*dlsch_config_pdu->format_indicator = dci->dci_format;
                     dlsch_config_pdu->frequency_domain_assignment = dci->frequency_domain_resouce_assignment;
                     dlsch_config_pdu->time_domain_assignment = dci->time_domain_resource_assignment;
                     dlsch_config_pdu->vrb_to_prb_mapping = dci->vrb_to_prb_mapping;
@@ -175,6 +175,7 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
                     dlsch_config_pdu->pdsch_to_harq_feedback_timing_indicator = dci->pdsch_to_harq_feedback_timing_indicator;
 
                     dl_config->dl_config_list[dl_config->number_pdus].dlsch_pdu.dlsch_config_rel15.rnti = 0x0000;   //  TX RNTI: UE-spec
+                    */
                     dl_config->number_pdus = dl_config->number_pdus + 1;
 
                     ret_mask |= (handle_dci(
