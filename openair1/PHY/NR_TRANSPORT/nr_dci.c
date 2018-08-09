@@ -205,7 +205,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   nr_byte2bit(encoderOutput,currentPtr->encoderLength,encoded_payload);*/
   
     // scrambling
-  uint32_t scrambled_payload[4];
+  uint32_t scrambled_payload[NR_MAX_DCI_SIZE_DWORD];
   uint32_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
   uint32_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.rnti : 0;
   nr_pdcch_scrambling(dci_alloc.dci_pdu, dci_alloc.size, Nid, n_RNTI, scrambled_payload);

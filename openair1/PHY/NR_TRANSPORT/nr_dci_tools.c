@@ -56,7 +56,8 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   else { //NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC
   }
 
-  AssertFatal((N_reg%(bsize*R))==0, "CCE to REG interleaving: Invalid configuration leading to non integer C\n");
+  uint8_t cond = N_reg%(bsize*R);
+  AssertFatal(cond==0, "CCE to REG interleaving: Invalid configuration leading to non integer C\n");
   C = N_reg/(bsize*R);
 
   tmp = L * (( Y + (uint16_t)(floor((m*N_cce)/(L*M_s_max))) + n_CI ) % ((uint16_t)floor(N_cce/L)));
@@ -65,10 +66,10 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
     cce = &dci_alloc->cce_list[cce_idx];
     cce->cce_idx = tmp + cce_idx;
-    LOG_I(PHY, "cce_idx %d\n", cce->cce_idx);
+    LOG_D(PHY, "cce_idx %d\n", cce->cce_idx);
 
     if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-      LOG_I(PHY, "Interleaved CCE to REG mapping\n");
+      LOG_D(PHY, "Interleaved CCE to REG mapping\n");
       uint8_t j = cce->cce_idx, j_prime;
       uint8_t r,c,idx;
 
@@ -77,14 +78,14 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
         r = j_prime%R;
         c = (j_prime-r)/R;
         idx = (r*C + c + n_shift)%(N_reg/bsize);
-        LOG_I(PHY, "bundle idx = %d \n j = %d \t j_prime = %d \t r = %d \t c = %d\n", idx, j , j_prime, r, c);
+        LOG_D(PHY, "bundle idx = %d \n j = %d \t j_prime = %d \t r = %d \t c = %d\n", idx, j , j_prime, r, c);
 
         for (uint8_t reg_idx=0; reg_idx<bsize; reg_idx++) {
           reg = &cce->reg_list[reg_idx];
           reg->reg_idx = bsize*idx + reg_idx;
           reg->start_sc_idx = (reg->reg_idx/pdcch_params->n_symb) * NR_NB_SC_PER_RB;
           reg->symb_idx = reg->reg_idx % pdcch_params->n_symb;
-          LOG_I(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
+          LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
         }
       }
     }
@@ -130,22 +131,18 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
           // Freq domain assignment
           fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
           for (int i=0; i<fsize; i++)
-            *dci_pdu |= ((pdu_rel15->frequency_domain_assignment>>(fsize-i-1))&1)<<i;
-          pos += fsize;
+            *dci_pdu |= ((pdu_rel15->frequency_domain_assignment>>(fsize-i-1))&1)<<pos++;
           // Time domain assignment
           for (int i=0; i<4; i++)
-            *dci_pdu |= ((pdu_rel15->time_domain_assignment>>(3-i))&1)<<(pos+i);
-          pos += 4;
+            *dci_pdu |= ((pdu_rel15->time_domain_assignment>>(3-i))&1)<<pos++;
           // VRB to PRB mapping
-          *dci_pdu |= (pdu_rel15->vrb_to_prb_mapping&1)<<pos;
-          pos++;
+          *dci_pdu |= (pdu_rel15->vrb_to_prb_mapping&1)<<pos++;
           // MCS
           for (int i=0; i<5; i++)
-            *dci_pdu |= ((pdu_rel15->mcs>>(4-i))&1)<<(pos+i);
-          pos += 5;
+            *dci_pdu |= ((pdu_rel15->mcs>>(4-i))&1)<<pos++;
           // TB scaling
           for (int i=0; i<2; i++)
-            *dci_pdu |= ((pdu_rel15->tb_scaling>>(1-i))&1)<<(pos+i);
+            *dci_pdu |= ((pdu_rel15->tb_scaling>>(1-i))&1)<<pos++;
           
           break;
 
