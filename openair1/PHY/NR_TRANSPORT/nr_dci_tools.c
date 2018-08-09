@@ -72,18 +72,20 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
       uint8_t j = cce->cce_idx, j_prime;
       uint8_t r,c,idx;
 
-
-      for (uint8_t reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
-        reg = &cce->reg_list[reg_idx];
-        j_prime = 6*j/bsize + reg_idx;
+      for (uint8_t bundle_idx=0; bundle_idx<NR_NB_REG_PER_CCE/bsize; bundle_idx++) {
+        j_prime = 6*j/bsize + bundle_idx;
         r = j_prime%R;
         c = (j_prime-r)/R;
         idx = (r*C + c + n_shift)%(N_reg/bsize);
-        reg->reg_idx = idx;
-        LOG_I(PHY, "j = %d \t j_prime = %d \t r = %d \t c = %d \t idx = %d\n", j , j_prime, r, c, idx);
-        reg->start_sc_idx = (idx/pdcch_params->n_symb) * NR_NB_SC_PER_RB;
-        reg->symb_idx = idx % pdcch_params->n_symb;
-        LOG_I(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
+        LOG_I(PHY, "bundle idx = %d \n j = %d \t j_prime = %d \t r = %d \t c = %d\n", idx, j , j_prime, r, c);
+
+        for (uint8_t reg_idx=0; reg_idx<bsize; reg_idx++) {
+          reg = &cce->reg_list[reg_idx];          
+          reg->reg_idx = bsize*bundle_idx + reg_idx;
+          reg->start_sc_idx = (idx/pdcch_params->n_symb) * NR_NB_SC_PER_RB;
+          reg->symb_idx = idx % pdcch_params->n_symb;
+          LOG_I(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
+        }
       }
     }
     else { // NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED
