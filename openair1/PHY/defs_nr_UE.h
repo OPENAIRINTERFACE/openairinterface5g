@@ -774,7 +774,7 @@ typedef struct {
   int tciStatesPDCCH;
   int tciPresentInDCI;
   uint16_t pdcchDMRSScramblingID;
-
+  uint16_t rb_offset;
 } NR_UE_PDCCH_CORESET;
 
 // Slots for PDCCH Monitoring configured as periodicity and offset

@@ -236,8 +236,17 @@ int8_t nr_ue_decode_mib(
         
         //uint32_t cell_id = 0;   //  obtain from L1 later
 
-        mac->type0_pdcch_dci_config.coreset.rb_start = rb_offset;
-        mac->type0_pdcch_dci_config.coreset.rb_end = rb_offset + num_rbs - 1;
+        //mac->type0_pdcch_dci_config.coreset.rb_start = rb_offset;
+        //mac->type0_pdcch_dci_config.coreset.rb_end = rb_offset + num_rbs - 1;
+        uint64_t mask = 0x0;
+        uint8_t i;
+        for(i=0; i<(num_rbs/6); ++i){   //  38.331 Each bit corresponds a group of 6 RBs
+            mask = mask >> 1;
+            mask = mask | 0x100000000000;
+        }
+        mac->type0_pdcch_dci_config.coreset.frequency_domain_resource = mask;
+        mac->type0_pdcch_dci_config.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
+
         //mac->type0_pdcch_dci_config.type0_pdcch_coreset.duration = num_symbols;
         mac->type0_pdcch_dci_config.coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
         mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2

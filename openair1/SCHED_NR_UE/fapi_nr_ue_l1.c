@@ -68,16 +68,18 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
                     pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel16 = dci_config->number_of_candidates[4];
 
                     pdcch_vars2->coreset[i].duration = dci_config->coreset.duration;
-                    //pdcch_vars2->coreset[i].frequencyDomainResources;
-                    //dci_config.coreset.rb_start;
-                    //dci_config.coreset.rb_end;
+                    
+                    pdcch_vars2->coreset[i].frequencyDomainResources = dci_config.coreset.frequency_domain_resource;
+                    pdcch_vars2->coreset[i].rb_offset = dci_config.coreset.rb_offset;
 
                     if(dci_config->coreset.cce_reg_mapping_type == CCE_REG_MAPPING_TYPE_INTERLEAVED){
                         pdcch_vars2->coreset[i].cce_reg_mappingType.shiftIndex = dci_config->coreset.cce_reg_interleaved_shift_index;
                         pdcch_vars2->coreset[i].cce_reg_mappingType.reg_bundlesize = dci_config->coreset.cce_reg_interleaved_reg_bundle_size;
                         pdcch_vars2->coreset[i].cce_reg_mappingType.interleaversize = dci_config->coreset.cce_reg_interleaved_interleaver_size;
-                    }else{
-                        ;
+                    }else{  //CCE_REG_MAPPING_TYPE_NON_INTERLEAVED
+                        pdcch_vars2->coreset[i].cce_reg_mappingType.shiftIndex = 0;
+                        pdcch_vars2->coreset[i].cce_reg_mappingType.reg_bundlesize = 0;
+                        pdcch_vars2->coreset[i].cce_reg_mappingType.interleaversize = 0;
                     }
                     
                     pdcch_vars2->coreset[i].precoderGranularity = dci_config->coreset.precoder_granularity;

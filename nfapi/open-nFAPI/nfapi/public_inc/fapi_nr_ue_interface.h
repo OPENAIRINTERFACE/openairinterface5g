@@ -115,8 +115,10 @@ typedef struct {
 
     typedef struct {
         /// frequency_domain_resource;
-        uint32_t rb_start;
-        uint32_t rb_end;
+        //uint32_t rb_start;
+        //uint32_t rb_end;
+        uint64_t frequency_domain_resource;
+        uint16_t rb_offset;
 
         uint8_t duration;
         uint8_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
