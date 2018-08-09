@@ -192,7 +192,8 @@ void feptx_ofdm_2thread(RU_t *ru) {
 
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+ru->idx , 1 );
+  if(ru->idx<2)
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+ru->idx , 1 );
   start_meas(&ru->ofdm_mod_stats);
 
   if (subframe_select(fp,subframe) == SF_UL) return;
@@ -240,7 +241,8 @@ void feptx_ofdm_2thread(RU_t *ru) {
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
 
   stop_meas(&ru->ofdm_mod_stats);
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+ru->idx , 0 );
+  if(ru->idx<2)
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+ru->idx , 0 );
 
 }
 
@@ -259,7 +261,8 @@ void feptx_ofdm(RU_t *ru) {
 
 //  int CC_id = ru->proc.CC_id;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+ru->idx , 1 );
+  if(ru->idx<2)
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+ru->idx , 1 );
   slot_offset_F = 0;
 
   slot_offset = subframe*fp->samples_per_tti;
@@ -381,7 +384,8 @@ void feptx_ofdm(RU_t *ru) {
 	   dB_fixed(signal_energy_nodc(ru->common.txdataF_BF[aa],2*slot_sizeF)));
     }
   }
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+ru->idx , 0 );
+  if(ru->idx<2)
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+ru->idx , 0 );
 }
 
 void feptx_prec(RU_t *ru) {
@@ -424,10 +428,11 @@ void feptx_prec(RU_t *ru) {
     }*/
     
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+ru->idx , 1);
+    if(ru->idx<2)
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+ru->idx , 1);
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RU_FEPTX_PREC+ru->idx,1);
 
-	printf("///////////*******ru id %d:executing Theoni's beamforming\n",ru->idx);
+	// printf("///////////*******ru id %d:executing Theoni's beamforming\n",ru->idx);
 	
     for (aa=0;aa<ru->nb_tx;aa++) {
 	memset(ru->common.txdataF_BF[aa],0,sizeof(int32_t)*(fp->ofdm_symbol_size));
@@ -490,8 +495,9 @@ void feptx_prec(RU_t *ru) {
 	   } // if (p<fp->nb_antenna_ports_eNB) ...
 	} // for (p=0...)
     } // for (aa=0 ...)
-  
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+ru->idx , 0);
+
+    if(ru->idx<2)
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+ru->idx , 0);
     // VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RU_FEPTX_PREC+ru->idx,0);
 	
 	///////////////////////////////////////////////////	  
@@ -675,7 +681,8 @@ void ru_fep_full_2thread(RU_t *ru) {
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+ru->idx, 1 );
+  if(ru->idx<2)
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+ru->idx, 1 );
   start_meas(&ru->ofdm_demod_stats);
 
   if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
@@ -715,7 +722,8 @@ void ru_fep_full_2thread(RU_t *ru) {
   }
 
   stop_meas(&ru->ofdm_demod_stats);
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+ru->idx, 0 );
+  if(ru->idx<2)
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+ru->idx, 0 );
 }
 
 
