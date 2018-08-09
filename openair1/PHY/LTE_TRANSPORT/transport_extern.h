@@ -44,7 +44,7 @@ extern unsigned short scfdma_amps[26];
 
 extern char dci_format_strings[15][13];
 
-extern int16_t d0_sss[504*62],d5_sss[504*62];
+extern int16_t *d0_sss,*d5_sss;
 
 extern uint8_t wACK[5][4];
 extern int8_t wACK_RX[5][4];
