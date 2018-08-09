@@ -148,7 +148,7 @@ void init_eNB(int,int);
 void stop_eNB(int nb_inst);
 
 int wakeup_tx(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc);
-int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc);
+int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB);
 void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
@@ -306,9 +306,10 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
 static void* tx_thread(void* param) {
 
-  eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
+  PHY_VARS_eNB *eNB = (PHY_VARS_eNB *)param;
+  eNB_proc_t *eNB_proc  = &eNB->proc;
   eNB_rxtx_proc_t *proc = &eNB_proc->proc_rxtx[1];
-  PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
+  //PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
   
   char thread_name[100];
   sprintf(thread_name,"TXnp4_%d\n",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
@@ -342,7 +343,7 @@ static void* tx_thread(void* param) {
       exit_fun( "ERROR pthread_cond_signal" );
     }
     pthread_mutex_unlock( &proc->mutex_rxtx );
-    wakeup_txfh(proc,eNB_proc->ru_proc);
+    wakeup_txfh(proc,eNB);
   }
 
   return 0;
@@ -365,7 +366,8 @@ static void* eNB_thread_rxtx( void* param ) {
 	  proc = (eNB_rxtx_proc_t*)param;
   }
   else{
-	  eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
+    PHY_VARS_eNB *eNB = (PHY_VARS_eNB *)param;
+	  eNB_proc_t *eNB_proc  = &eNB->proc;
 	  proc = &eNB_proc->proc_rxtx[0];
   }
 
@@ -427,7 +429,7 @@ static void* eNB_thread_rxtx( void* param ) {
     	else
     	{
     		phy_procedures_eNB_TX(eNB, proc, 1);
-    		wakeup_txfh(proc,eNB->proc.ru_proc);
+    		wakeup_txfh(proc,eNB);
     	}
     }
 
@@ -467,45 +469,48 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
   }
 }
 
-int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc) {
+int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
   
-	if(ru_proc == NULL)
-		return(0);
+  RU_proc_t *ru_proc;
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
+  int MAX_RU = 2;
 
-  
-  if(wait_on_condition(&ru_proc->mutex_eNBs,&ru_proc->cond_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", ru_proc->frame_tx, ru_proc->subframe_tx);
-    return(-1);
-  }
-  if (release_thread(&ru_proc->mutex_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) return(-1);
-  
-  if (ru_proc->instance_cnt_eNBs == 0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
-    return(-1);
-  }
-  if (pthread_mutex_timedlock(&ru_proc->mutex_eNBs,&wait) != 0) {
-    LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->subframe_rx&1,ru_proc->instance_cnt_eNBs );
-    exit_fun( "error locking mutex_eNB" );
-    return(-1);
-  }
+  for(int ru_id=0; ru_id<MAX_RU; ru_id++){
+    ru_proc = &eNB->RU_list[ru_id]->proc;
+    if(ru_proc == NULL)
+		return(0);
+    if(wait_on_condition(&ru_proc->mutex_eNBs,&ru_proc->cond_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) {
+      LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", ru_proc->frame_tx, ru_proc->subframe_tx);
+      return(-1);
+    }
+    if (release_thread(&ru_proc->mutex_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) return(-1);
+    
+    if (ru_proc->instance_cnt_eNBs == 0) {
+      LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
+      return(-1);
+    }
+    if (pthread_mutex_timedlock(&ru_proc->mutex_eNBs,&wait) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->subframe_rx&1,ru_proc->instance_cnt_eNBs );
+      exit_fun( "error locking mutex_eNB" );
+      return(-1);
+    }
 
-    ++ru_proc->instance_cnt_eNBs;
-    ru_proc->timestamp_tx = proc->timestamp_tx;
-    ru_proc->subframe_tx  = proc->subframe_tx;
-    ru_proc->frame_tx     = proc->frame_tx;
-  
-  // the thread can now be woken up
-  if (pthread_cond_signal(&ru_proc->cond_eNBs) != 0) {
-    LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
-    exit_fun( "ERROR pthread_cond_signal" );
-    return(-1);
+      ++ru_proc->instance_cnt_eNBs;
+      ru_proc->timestamp_tx = proc->timestamp_tx;
+      ru_proc->subframe_tx  = proc->subframe_tx;
+      ru_proc->frame_tx     = proc->frame_tx;
+    
+    // the thread can now be woken up
+    if (pthread_cond_signal(&ru_proc->cond_eNBs) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+      return(-1);
+    }
+    
+    pthread_mutex_unlock( &ru_proc->mutex_eNBs );
   }
-  
-  pthread_mutex_unlock( &ru_proc->mutex_eNBs );
-
   return(0);
 }
 
@@ -965,8 +970,8 @@ void init_eNB_proc(int inst) {
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 
     if (eNB->single_thread_flag==0 && nfapi_mode!=2) {
-      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
-      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
+      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, eNB );
+      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, eNB);
     }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
