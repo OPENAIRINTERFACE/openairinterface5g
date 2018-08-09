@@ -29,6 +29,17 @@
  * \note
  * \warning
  */
+ 
+/*! \function feptx_prec
+ * \brief Implementation of precoding for beamforming in one eNB
+ * \author TY Hsu, SY Yeh(fdragon), TH Wang(Judy)
+ * \date 2018
+ * \version 0.1
+ * \company NCTU and Eurecom
+ * \email: tyhsu@cs.nctu.edu.tw,fdragon.cs96g@g2.nctu.edu.tw,Tsu-Han.Wang@eurecom.fr
+ * \note
+ * \warning
+ */
 
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
