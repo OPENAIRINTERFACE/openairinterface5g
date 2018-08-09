@@ -36,8 +36,6 @@ typedef struct {
   int length;
 } T_cache_t;
 
-#define T_SHM_FILENAME "/T_shm_segment"
-
 /* number of VCD functions (to be kept up to date! see in T_messages.txt) */
 #define VCD_NUM_FUNCTIONS 190
 
