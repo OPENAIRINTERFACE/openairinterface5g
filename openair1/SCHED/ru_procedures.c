@@ -41,6 +41,7 @@
  * \warning
  */
 
+
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
 #include "SCHED/sched_eNB.h"
@@ -384,14 +385,117 @@ void feptx_ofdm(RU_t *ru) {
 }
 
 void feptx_prec(RU_t *ru) {
+	
+  // Theoni's
+  int l,i,aa,rb,p;
+  int subframe = ru->proc.subframe_tx;
+  PHY_VARS_eNB **eNB_list = ru->eNB_list,*eNB; 
+  LTE_DL_FRAME_PARMS *fp;
+  int32_t ***bw;
+  RU_proc_t *proc  = &ru->proc;
 
+  /* fdragon
   int l,i,aa;
   PHY_VARS_eNB **eNB_list = ru->eNB_list,*eNB;
   LTE_DL_FRAME_PARMS *fp;
   int32_t ***bw;
   int subframe = ru->proc.subframe_tx;
+  */
 
   if (ru->num_eNB == 1) {
+	  // Theoni's part ////////////////////////////////////
+	  eNB = eNB_list[0];
+    fp  = &eNB->frame_parms;
+    LTE_eNB_PDCCH *pdcch_vars = &eNB->pdcch_vars[subframe&1]; 
+    //int bf_mask_pdcch = 1;
+ 
+    //int bf_mask[15][fp->N_RB_DL];
+    /*for (p=0;p<15;p++) { 
+       for (int j=0;j<fp->N_RB_DL;j++){
+         // set p=5 to bfmask=2 (beamforming) except in subframes 0 and 5
+         // p=0,1 bf_mask=0 for subframes different than 0,5 and to  
+         if (subframe != 0 && subframe != 5) 
+	    if (p<fp->nb_antenna_ports_eNB || p!=5) bf_mask[p][j]=0; else bf_mask[p][j]=2;
+         else
+            if (p<fp->nb_antenna_ports_eNB) bf_mask[p][j]=1; else bf_mask[p][j]=0;
+       }
+
+       //printf("subframe %d : bf_mask[%d][0] %d\n",subframe,p,bf_mask[p][0]);
+    }*/
+    
+    //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC , 1);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RU_FEPTX_PREC+ru->idx,1);
+
+	printf("///////////*******ru id %d:executing Theoni's beamforming\n",ru->idx);
+	
+    for (aa=0;aa<ru->nb_tx;aa++) {
+	memset(ru->common.txdataF_BF[aa],0,sizeof(int32_t)*(fp->ofdm_symbol_size));
+	for (p=0;p<NB_ANTENNA_PORTS_ENB;p++) {
+           if (p<fp->nb_antenna_ports_eNB) {				
+// pdcch region, copy entire signal from txdataF->txdataF_BF (bf_mask = 1)
+// else do beamforming for pdcch according to beam_weights
+// to be updated for eMBMS (p=4)
+
+            /* AssertFatal(bf_mask[p][0]>=0 && bf_mask[p][0] < 3,
+                         "Illegal bf_mask[%d][0] %d\n",p,bf_mask[p][0]);
+            */
+             /*if (bf_mask_pdcch == 1)
+                memcpy((void*)ru->common.txdataF_BF[aa],
+                       (void*)&eNB->common_vars.txdataF[p][0],
+                       pdcch_vars->num_pdcch_symbols*fp->ofdm_symbol_size*sizeof(int32_t));
+             else if (bf_mask_pdcch == 2) {*/
+                for (l=0;l<pdcch_vars->num_pdcch_symbols;l++)
+                 // for (rb=0;rb<fp->N_RB_DL;rb++)
+                      beam_precoding(eNB->common_vars.txdataF,
+                                     ru->common.txdataF_BF,
+                                     fp,
+                                     ru->beam_weights,
+                                     l,
+                                     aa,
+                                     p);
+             //} // else if (bf_mask_pdcch == 2)
+           } //if (p<fp->nb_antenna_ports_eNB)
+
+// PDSCH region
+           if (p<fp->nb_antenna_ports_eNB || p==5 || p==7 || p==8) {
+		for (l=pdcch_vars->num_pdcch_symbols;l<fp->symbols_per_tti;l++) {
+			beam_precoding(eNB->common_vars.txdataF,
+                             	       ru->common.txdataF_BF,
+                                       fp,
+                                       ru->beam_weights,
+                                       l,
+                                       aa,
+                                       p);			
+	/*for (rb=0;rb<fp->N_RB_DL;rb++) {
+                                        AssertFatal(bf_mask[p][rb]>=0 && bf_mask[p][rb] < 3,
+                                                    "Illegal bf_mask[%d][%d] %d\n",p,rb,bf_mask[p][rb]);
+					if (bf_mask[p][rb]==1) {
+						memcpy((void*)&ru->common.txdataF_BF[aa][l*fp->ofdm_symbol_size],
+							(void*)&eNB->common_vars.txdataF[p][l*fp->ofdm_symbol_size],
+							fp->ofdm_symbol_size*sizeof(int32_t));
+					} else if (bf_mask[p][rb]==2) {
+						beam_precoding(eNB->common_vars.txdataF,
+								ru->common.txdataF_BF,
+								fp,
+								ru->beam_weights,
+								l,
+								aa,
+								p,
+								rb,
+								0);
+				        } // else if (bf_mask[p][rb]==1)
+				}// for (rb=0;rb<...)*/ 
+			} // for (l=pdcch_vars ....)			
+	   } // if (p<fp->nb_antenna_ports_eNB) ...
+	} // for (p=0...)
+    } // for (aa=0 ...)
+  
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RU_FEPTX_PREC+ru->idx,0);
+	
+	///////////////////////////////////////////////////	  
+	  
+	  
+	  /* fdragon
     eNB = eNB_list[0];
 	bw  = ru->beam_weights[0];
     fp  = &eNB->frame_parms;
@@ -399,12 +503,6 @@ void feptx_prec(RU_t *ru) {
     
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+ru->idx , 1);
 
-	/*
-    for (aa=0;aa<ru->nb_tx;aa++)
-      memcpy((void*)ru->common.txdataF_BF[aa],
-	     (void*)&eNB->common_vars.txdataF[aa][subframe*fp->symbols_per_tti*fp->ofdm_symbol_size],
-	     fp->symbols_per_tti*fp->ofdm_symbol_size*sizeof(int32_t));
-	*/
 printf("///////////*******ru id %d:executing beam_precoding_one_eNB\n",ru->idx);
 	
 	beam_precoding_one_eNB(eNB->common_vars.txdataF,
@@ -416,6 +514,9 @@ printf("///////////*******ru id %d:executing beam_precoding_one_eNB\n",ru->idx);
 						   fp);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+ru->idx , 0);
+	
+	
+	*/
   }
   else {
     for (i=0;i<ru->num_eNB;i++) {
