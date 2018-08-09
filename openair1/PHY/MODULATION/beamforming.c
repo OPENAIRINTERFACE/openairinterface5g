@@ -72,7 +72,7 @@ int beam_precoding(int32_t **txdataF,
   //printf("aa = %d, p = %d,  symbol = %d\n",aa,p,symbol);
 
   
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTADD,1);
+  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTADD,1);
 
   multadd_cpx_vector((int16_t*)&txdataF[p][rb_offset_neg+(symbol*frame_parms->ofdm_symbol_size)],
 		     (int16_t*)&beam_weights[p][aa][rb_offset_neg], 
@@ -96,7 +96,7 @@ int beam_precoding(int32_t **txdataF,
         ((int16_t*)&txdataF_BF[aa][(rb_offset+1)+re])[1] += (int16_t)((((int16_t*)&txdataF[p][(rb_offset+1)+(symbol*frame_parms->ofdm_symbol_size)+re])[1]*((int16_t*)&beam_weights[p][aa][(rb_offset+1)+re])[0])>>15);
       }
 */ 
-   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTADD,0);
+   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTADD,0);
 
       return 0;
 }
