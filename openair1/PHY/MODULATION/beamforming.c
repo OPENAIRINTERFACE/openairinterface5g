@@ -89,3 +89,63 @@ int beam_precoding(int32_t **txdataF,
   }
   return 0;
 }
+
+// fdragon
+int beam_precoding_one_eNB(int32_t **txdataF,
+                           int32_t **txdataF_BF,
+						   int32_t ***beam_weights,
+						   int subframe,
+						   int nb_antenna_ports,
+						   int nb_tx, // total physical antenna
+						   LTE_DL_FRAME_PARMS *frame_parms
+						   )
+{
+  int p, re, symbol, aa; // loop index
+  int re_offset;
+  int ofdm_symbol_size     = frame_parms->ofdm_symbol_size;
+  int symbols_per_tti      = frame_parms->symbols_per_tti;
+  int nb_antenna_ports_eNB = frame_parms->nb_antenna_ports_eNB; // logic antenna ports
+  
+  
+  re_offset = ofdm_symbol_size*symbols_per_tti*subframe;
+
+  
+  // txdataF_BF[aa][re] = sum(beam_weghts[p][aa][re]*txdataF[p][re]), p=0~nb_antenna_ports-1
+  // real part and image part need to compute separately
+  
+  for (aa=0; aa<nb_tx; aa++) {
+	  memset(txdataF_BF[aa],0,sizeof(int32_t)*(ofdm_symbol_size*symbols_per_tti));
+	  for(p=0;p<nb_antenna_ports;p++){
+		  if (p<nb_antenna_ports_eNB || p==5){
+			  for (symbol=0; symbol<symbols_per_tti; symbol++){
+				  
+				  multadd_cpx_vector((int16_t*)&txdataF[p][symbol*ofdm_symbol_size+re_offset],
+				                     (int16_t*)beam_weights[p][aa], 
+									 (int16_t*)&txdataF_BF[aa][symbol*ofdm_symbol_size], 
+									 0, 
+									 ofdm_symbol_size, 
+									 15);
+				  
+				  
+				  /*
+				  for (re=0; re<ofdm_symbol_size; re++){
+					  // direct
+					  ((int16_t*)&txdataF_BF[aa][re])[0] += (int16_t)((((int16_t*)&txdataF[p][re+symbol*ofdm_symbol_size+re_offset])[0]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
+					  ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[p][re+symbol*ofdm_symbol_size+re_offset])[1]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
+					  ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][re+symbol*ofdm_symbol_size+re_offset])[0]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
+					  ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][re+symbol*ofdm_symbol_size+re_offset])[1]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
+				  }
+				  */
+			  }
+		  }
+	  }
+  }
+
+  
+	  
+	  
+	  
+		  
+
+  return 0;
+}
