@@ -125,7 +125,7 @@ typedef struct {
   /// codeword this transport block is mapped to
   uint8_t codeword;
 #ifdef PHY_TX_THREAD
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
   uint8_t sib1_br_flag;
   /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling

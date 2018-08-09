@@ -290,7 +290,7 @@ set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 # RRC
 ######
 
-add_list2_option(RRC_ASN1_VERSION "Rel14" "ASN.1 version of RRC interface" "Rel8" "Rel10" "Rel14" "CBA")
+add_list2_option(RRC_ASN1_VERSION "Rel15" "ASN.1 version of RRC interface" "Rel8" "Rel10" "Rel14" "CBA")
 
 if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
   make_version(RRC_VERSION 8 6 0)
@@ -316,7 +316,7 @@ elseif (${RRC_ASN1_VERSION} STREQUAL "Rel14")
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-14.7.0.asn1)
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel15")
   make_version(RRC_VERSION 15 2 2)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.2.2.asn1)
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/RRC-36331-f22.asn)
 endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 add_definitions(-DRRC_VERSION=${RRC_VERSION})
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})

@@ -982,7 +982,7 @@ static void* ru_thread_prach( void* param ) {
     /*if (ru->gNB_list[0]){
       prach_procedures(
         ru->gNB_list[0]
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
         ,0
 #endif
         );
@@ -995,7 +995,7 @@ static void* ru_thread_prach( void* param ) {
                 NULL,
                 proc->frame_prach,
                 0
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	        ,0
 #endif
 	        );
@@ -1612,7 +1612,7 @@ void init_RU_proc(RU_t *ru) {
   RU_proc_t *proc;
   pthread_attr_t *attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL;// *attr_synch=NULL;
   //pthread_attr_t *attr_fep=NULL;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   //pthread_attr_t *attr_prach_br=NULL;
 #endif
   char name[100];

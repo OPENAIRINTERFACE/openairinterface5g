@@ -127,7 +127,7 @@ typedef struct RU_proc_t_s {
   int subframe_tx;
   /// subframe to act upon for reception of prach
   int subframe_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// subframe to act upon for reception of prach BL/CE UEs
   int subframe_prach_br;
 #endif
@@ -139,7 +139,7 @@ typedef struct RU_proc_t_s {
   int frame_tx_unwrap;
   /// frame to act upon for reception of prach
   int frame_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// frame to act upon for reception of prach
   int frame_prach_br;
 #endif
@@ -151,7 +151,7 @@ typedef struct RU_proc_t_s {
   int instance_cnt_FH1;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach_br;
 #endif
@@ -174,7 +174,7 @@ typedef struct RU_proc_t_s {
   pthread_t pthread_FH1;
   /// pthread structure for RU prach processing thread
   pthread_t pthread_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread structure for RU prach processing thread BL/CE UEs
   pthread_t pthread_prach_br;
 #endif
@@ -197,7 +197,7 @@ typedef struct RU_proc_t_s {
   pthread_attr_t attr_FH1;
   /// pthread attributes for RU prach
   pthread_attr_t attr_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread attributes for RU prach BL/CE UEs
   pthread_attr_t attr_prach_br;
 #endif
@@ -216,7 +216,7 @@ typedef struct RU_proc_t_s {
   struct sched_param sched_param_FH1;
   /// scheduling parameters for RU prach thread
   struct sched_param sched_param_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// scheduling parameters for RU prach thread BL/CE UEs
   struct sched_param sched_param_prach_br;
 #endif
@@ -229,7 +229,7 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_FH1;
   /// condition variable for RU prach thread
   pthread_cond_t cond_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// condition variable for RU prach thread BL/CE UEs
   pthread_cond_t cond_prach_br;
 #endif
@@ -251,7 +251,7 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_FH1;
   /// mutex for RU prach
   pthread_mutex_t mutex_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mutex for RU prach BL/CE UEs
   pthread_mutex_t mutex_prach_br;
 #endif
@@ -383,7 +383,7 @@ typedef struct RU_t_s{
   void (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
 
   void (*wakeup_prach_gNB)(struct PHY_VARS_gNB_s *gNB,struct RU_t_s *ru,int frame,int subframe);
-  #ifdef Rel14
+  #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
   #endif
@@ -511,7 +511,7 @@ typedef struct RRU_config_s {
   int prach_FreqOffset[MAX_BANDS_PER_RRU];
   /// prach_ConfigIndex for IF4p5
   int prach_ConfigIndex[MAX_BANDS_PER_RRU];
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int emtc_prach_CElevel_enable[MAX_BANDS_PER_RRU][4];
   /// emtc_prach_FreqOffset for IF4p5 per CE Level
   int emtc_prach_FreqOffset[MAX_BANDS_PER_RRU][4];
