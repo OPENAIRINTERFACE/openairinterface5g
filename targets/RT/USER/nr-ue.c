@@ -697,12 +697,13 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             if (UE->mode != loop_through_memory)
                 phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
 #endif
-
+#if 0
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
                 (UE->frame_parms.frame_type == TDD))
             if (UE->mode != loop_through_memory)
                 //phy_procedures_UE_S_TX(UE,0,0,no_relay);
         updateTimes(current, &t3, 10000, timing_proc_name);
+#endif
 
         if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
           LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );

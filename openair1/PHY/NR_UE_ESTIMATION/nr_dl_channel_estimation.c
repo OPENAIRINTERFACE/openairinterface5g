@@ -112,21 +112,21 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
       multadd_complex_vector_real_scalar(dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
                                          ue->ch_est_alpha,dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
                                          1,ue->frame_parms.ofdm_symbol_size);
-#ifdef DEBUG_CH
+//#ifdef DEBUG_CH
     printf("ch est pilot addr %p RB_DL %d\n",&pilot[p][0], ue->frame_parms.N_RB_DL);
     printf("k %d, first_carrier %d\n",k,ue->frame_parms.first_carrier_offset);
     printf("rxF addr %p\n", rxF);
     printf("dl_ch addr %p\n",dl_ch);
-#endif
-    if ((ue->frame_parms.N_RB_DL&1)==0) {
+//#endif
+    //if ((ue->frame_parms.N_RB_DL&1)==0) {
 
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-#ifdef DEBUG_CH
+//#ifdef DEBUG_CH
       printf("ch 0 %d\n",((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1]));
       printf("pilot 0 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
-#endif
+//#endif
       multadd_real_vector_complex_scalar(fl,
                                          ch,
                                          dl_ch,
@@ -214,7 +214,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
       }
 
 
-    }
+    //}
 
   }
 
