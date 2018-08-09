@@ -29,6 +29,18 @@
  * \note
  * \warning
  */
+ 
+/*! \function wakeup_txfh
+ * \brief Implementation of creating multiple RU threads for beamforming emulation
+ * \author TH Wang(Judy), TY Hsu, SY Yeh(fdragon)
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom and ISIP@NCTU
+ * \email: Tsu-Han.Wang@eurecom.fr,tyhsu@cs.nctu.edu.tw,fdragon.cs96g@g2.nctu.edu.tw
+ * \note
+ * \warning
+ */
+
 
 #define _GNU_SOURCE
 #include <pthread.h>
