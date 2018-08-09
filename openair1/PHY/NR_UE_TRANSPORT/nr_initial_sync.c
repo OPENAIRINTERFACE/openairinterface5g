@@ -55,7 +55,7 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRA
 
 int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
-
+  printf("nr pbch detec RB_DL %d\n", ue->frame_parms.N_RB_DL);
   uint8_t l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   char phich_resource[6];
@@ -175,9 +175,10 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   //  LOG_I(PHY,"**************************************************************\n");
   // First try FDD normal prefix
   frame_parms->Ncp=NORMAL;
-  frame_parms->frame_type=FDD;
+  frame_parms->frame_type=TDD;
   set_default_frame_parms_single(config,frame_parms);
-  nr_init_frame_parms_ue(config,frame_parms);
+  nr_init_frame_parms_ue(frame_parms);
+  printf("nr_initial sync ue RB_DL %d\n", ue->frame_parms.N_RB_DL);
   /*
   write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
   exit(-1);
