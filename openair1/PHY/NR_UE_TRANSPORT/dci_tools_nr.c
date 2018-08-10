@@ -4815,6 +4815,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       }
     }
   }
+
   #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
     printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> Ending function nr_extract_dci_info()\n");
   #endif

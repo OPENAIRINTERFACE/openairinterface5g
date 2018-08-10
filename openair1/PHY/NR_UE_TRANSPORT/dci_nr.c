@@ -535,17 +535,19 @@ void nr_pdcch_deinterleaving(NR_DL_FRAME_PARMS *frame_parms, uint16_t *z,
  * reg_bundle_size (2,3,6)
  */
 #ifdef NR_PDCCH_DCI_DEBUG
-  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_deinterleaving)-> coreset_nbr_rb=(%lld), reg_bundle_size_L=(%d)\n",
-		  coreset_nbr_rb,reg_bundle_size_L);
+  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_deinterleaving)-> coreset_nbr_rb=(%lld), reg_bundle_size_L=(%d), coreset_interleaver_size_R=(%d), n_shift=(%d)\n",
+		  coreset_nbr_rb,reg_bundle_size_L,coreset_interleaver_size_R,n_shift);
 #endif
 /*
  * First verify that CORESET is interleaved or not interleaved depending on parameter cce-REG-MappingType
- * To be done
- * if non-interleaved then do nothing: wbar table stays as it is
+ * if non-interleaved then do nothing: wbar table stays as it is (if REG bundle size is set to 0 by higher layer, then we consider that there is no interleaving)
+ */
+  int coreset_interleaved = 1;
+  if (reg_bundle_size_L==0) coreset_interleaved=0;
+/*
  * if interleaved then do this: wbar table has bundles interleaved. We have to de-interleave then
  * following procedure described in 38.211 Section 7.3.2.2:
-  */
-  int coreset_interleaved = 1;
+ */
   uint32_t bundle_id, bundle_interleaved, c=0 ,r=-1, k, l, i=0;
   uint32_t coreset_C = (uint32_t)(coreset_nbr_rb / (coreset_interleaver_size_R*reg_bundle_size_L));
   uint16_t *wptr;
@@ -553,34 +555,34 @@ void nr_pdcch_deinterleaving(NR_DL_FRAME_PARMS *frame_parms, uint16_t *z,
   z = &wtemp_rx[0];
   bundle_id=0;
   for (k=0 ; k<9*coreset_nbr_rb*coreset_time_dur; k++){
-#ifdef NR_PDCCH_DCI_DEBUG
-    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_deinterleaving)-> k=%d \t coreset_interleaved=%d reg_bundle_size_L=%d coreset_C=%d coreset_interleaver_R=%d",
-           k,coreset_interleaved,reg_bundle_size_L, coreset_C,coreset_interleaver_size_R);
-#endif
+    #ifdef NR_PDCCH_DCI_DEBUG
+      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_deinterleaving)-> k=%d \t coreset_interleaved=%d reg_bundle_size_L=%d coreset_C=%d coreset_interleaver_R=%d",
+              k,coreset_interleaved,reg_bundle_size_L, coreset_C,coreset_interleaver_size_R);
+    #endif
     if (k%(9*reg_bundle_size_L)==0) {
       // calculate offset properly
       if (r==coreset_interleaver_size_R-1) {
       //if (bundle_id>=(c+1)*coreset_interleaver_size_R) {
         c++;
         r=0;
-      } else{
+      } else {
         r++;
       }
-#ifdef NR_PDCCH_DCI_DEBUG
-      printf("\t --> time to modify bundle_interleaved and bundle_id --> r=%d c=%d",r,c);
-#endif
+      #ifdef NR_PDCCH_DCI_DEBUG
+       printf("\t --> time to modify bundle_interleaved and bundle_id --> r=%d c=%d",r,c);
+      #endif
       bundle_id=c*coreset_interleaver_size_R+r;
       bundle_interleaved=(r*coreset_C+c+n_shift)%(coreset_nbr_rb * coreset_time_dur/reg_bundle_size_L);
     }
     if (coreset_interleaved == 1){
       //wptr[i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L]=wbar[i];
-#ifdef NR_PDCCH_DCI_DEBUG
-      printf("\n\t\t\t\t\t\t\t\t\t wptr[%d] <-> wbar[%d]",i,i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L);
-#endif
+      #ifdef NR_PDCCH_DCI_DEBUG
+        printf("\n\t\t\t\t\t\t\t\t\t wptr[%d] <-> wbar[%d]",i,i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L);
+      #endif
       wptr[i]=wbar[i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L];
-#ifdef NR_PDCCH_DCI_DEBUG
-      printf("\t\t bundle_id = %d \t bundle_interleaved = %d\n",bundle_id,bundle_interleaved);
-#endif
+      #ifdef NR_PDCCH_DCI_DEBUG
+        printf("\t\t bundle_id = %d \t bundle_interleaved = %d (r=%d, c=%d)\n",bundle_id,bundle_interleaved,r,c);
+      #endif
       i++;
     } else {
       wptr[i]=wbar[i];
@@ -2758,11 +2760,11 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
  * pdcch-Config
  * pdcch-ConfigCommon
  */
-
+#if 0
 /*
  * initialize this values for testing
  */
-#if 0
+
         pdcch_vars2->coreset[nb_coreset_active].frequencyDomainResources                  = 0x1FFF2FF00000;
         //pdcch_vars2->coreset[nb_coreset_active].frequencyDomainResources                  = 0x1E0000000000;
         pdcch_vars2->coreset[nb_coreset_active].duration                                  = 2;
@@ -2782,10 +2784,11 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
           pdcch_vars[eNB_id]->searchSpace[i].searchSpaceType.sfi_nrofCandidates_aggrlevel8  = 3;
           pdcch_vars[eNB_id]->searchSpace[i].searchSpaceType.sfi_nrofCandidates_aggrlevel16 = 1;
         }
-#endif //(0)
+
 /*
  * to be removed after testing
  */
+#endif //(0)
 
   // number of RB (1 symbol) or REG (12 RE) in one CORESET: higher-layer parameter CORESET-freq-dom
   // (bit map 45 bits: each bit indicates 6 RB in CORESET -> 1 bit MSB indicates PRB 0..6 are part of CORESET)
@@ -2805,19 +2808,24 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 
   // The UE can be assigned 4 different BWP but only one active at a time.
   // For each BWP the number of CORESETs is limited to 3 (including initial CORESET Id=0 -> ControlResourceSetId (0..maxNrofControlReourceSets-1) (0..12-1)
-  uint32_t n_BWP_start = 0;
+  //uint32_t n_BWP_start = 0;
+  uint32_t n_rb_offset = 0;
+  //uint32_t n_rb_offset = pdcch_vars2->coreset[nb_coreset_active].rb_offset;
   // start time position for CORESET
   // parameter symbol_mon is a 14 bits bitmap indicating monitoring symbols within a slot
   uint8_t start_symbol = 0;
 
   // at the moment we are considering that the PDCCH is always starting at symbol 0 of current slot
   // the following code to initialize start_symbol must be activated once we implement PDCCH demapping on symbol not equal to 0 (considering symbol_mon)
-  /*for (int i=0; i < 14; i++) {
+  for (int i=0; i < 14; i++) {
     if (symbol_mon >> (13-i) != 0) {
       start_symbol = i;
       i=14;
     }
-  }*/
+  }
+#ifdef NR_PDCCH_DCI_DEBUG
+  printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> symbol_mon=(%d) and start_symbol=%d\n",symbol_mon,start_symbol);
+#endif
 
   //
   // according to 38.213 v15.1.0: a PDCCH monitoring pattern within a slot,
@@ -2860,7 +2868,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   for (int s = start_symbol; s < (start_symbol + coreset_time_dur); s++) {
     printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter process pdcch ofdm symbol s=%d where coreset_time_dur=%d\n",s,coreset_time_dur);
 
-	if (is_secondary_ue == 1) {
+/*	if (is_secondary_ue == 1) {
 		pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
 				common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id+1], //add 1 to eNB_id to compensate for the shifted B/F'd pilots from the SeNB
 				pdcch_vars[eNB_id]->rxdataF_ext,
@@ -2885,7 +2893,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 				0,
 				high_speed_flag,
 				frame_parms);
-	} else {
+	} else {*/
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter nr_pdcch_extract_rbs_single(is_secondary_ue=%d) to remove DM-RS PDCCH\n",
               is_secondary_ue);
@@ -2899,7 +2907,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                                 frame_parms,
                                 coreset_freq_dom,
                                 coreset_nbr_rb,
-                                n_BWP_start);
+                                n_rb_offset);
 /*
 	printf("\t### in nr_rx_pdcch() function we enter pdcch_extract_rbs_single(is_secondary_ue=%d) to remove DM-RS PDCCH\n",is_secondary_ue);
 	pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
@@ -2911,7 +2919,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 			frame_parms);
 */
 
-}
+//}
 
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",avgP);
@@ -3016,9 +3024,9 @@ printf("\t### in nr_rx_pdcch() function we enter pdcch_channel_compensation(log2
     }
     if (mimo_mode == SISO) {
       #ifdef NR_PDCCH_DCI_DEBUG
-       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter pdcch_siso(for symbol 0) ---> pdcch_vars[eNB_id]->rxdataF_comp\n");
+       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter pdcch_siso ---> pdcch_vars[eNB_id]->rxdataF_comp Nothing to do here. TO BE REMOVED!!!\n");
       #endif
-      pdcch_siso(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
+      //pdcch_siso(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
     } else pdcch_alamouti(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
 
 #ifdef MU_RECEIVER
@@ -3060,21 +3068,11 @@ printf("\t### in nr_rx_pdcch() function we enter pdcch_channel_compensation(log2
 #ifdef MU_RECEIVER
 }
 #endif //MU_RECEIVER
-
 #if T_TRACER
 T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
   T_INT(n_pdcch_symbols),
   T_BUFFER(pdcch_vars[eNB_id]->rxdataF_comp, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
 #endif
-
-    /* We do not enter this function: in NR the number of PDCCH symbols is determined by higher layers parameter CORESET-time-dur
-    /*/
-    printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we do not enter function rx_pcfich()\n as the number of PDCCH symbols is determined by higher layers parameter CORESET-time-dur and n_pdcch_symbols=%d\n",n_pdcch_symbols);
-    /*
-    // decode pcfich here and find out pdcch ofdm symbol number
-    n_pdcch_symbols = rx_pcfich(frame_parms, nr_tti_rx, pdcch_vars[eNB_id],mimo_mode);
-    if (n_pdcch_symbols > 3) n_pdcch_symbols = 1;
-    */
 #ifdef DEBUG_DCI_DECODING
 	printf("demapping: nr_tti_rx %d, mi %d, tdd_config %d\n",nr_tti_rx,get_mi(frame_parms,nr_tti_rx),frame_parms->tdd_config);
 #endif

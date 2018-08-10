@@ -611,13 +611,13 @@ typedef struct {
 } NR_UE_PDSCH_FLP;
 
 #define NR_PDCCH_DEFS_NR_UE
-#define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
-#define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearchSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
+#define NR_NBR_CORESET_ACT_BWP      3  // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
+#define NR_NBR_SEARCHSPACE_ACT_BWP  10 // The number of SearchSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
 #ifdef NR_PDCCH_DEFS_NR_UE
 
-#define MAX_NR_DCI_DECODED_SLOT 10
-#define NBR_NR_FORMATS         8
-#define NBR_NR_DCI_FIELDS     56
+#define MAX_NR_DCI_DECODED_SLOT     10    // This value is not specified
+#define NBR_NR_FORMATS              8     // The number of formats is 8 (0_0, 0_1, 1_0, 1_1, 2_0, 2_1, 2_2, 2_3)
+#define NBR_NR_DCI_FIELDS           56    // The number of different dci fields defined in TS 38.212 subclause 7.3.1
 
 #define IDENTIFIER_DCI_FORMATS           0
 #define CARRIER_IND                      1
@@ -655,7 +655,6 @@ typedef struct {
 #define TPC_PUCCH                       33
 #define PUCCH_RESOURCE_IND              34
 #define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 35
-//#define SHORT_MESSAGE_IND             33
 #define SRS_RESOURCE_IND                36
 #define PRECOD_NBR_LAYERS               37
 #define ANTENNA_PORTS                   38
@@ -778,7 +777,7 @@ typedef struct {
 } NR_UE_PDCCH_CORESET;
 
 // Slots for PDCCH Monitoring configured as periodicity and offset
-typedef enum {nr_sl1=1,nr_sl2=2,nr_sl4=4,nr_sl5=5,nr_sl8=8,nr_sl10=10,nr_sl16=16,nr_sl20=20} NR_UE_SLOT_PERIOD_OFFSET_t;
+typedef enum {nr_sl1=1,nr_sl2=2,nr_sl4=4,nr_sl5=5,nr_sl8=8,nr_sl10=10,nr_sl16=16,nr_sl20=20,nr_sl40=40,nr_sl80=80,nr_sl160=160,nr_sl320=320,nr_sl640=640,nr_sl1280=1280,nr_sl2560=2560} NR_UE_SLOT_PERIOD_OFFSET_t;
 typedef enum {nc0=0,nc1=1,nc2=2,nc3=3,nc4=4,nc5=5,nc6=6,nc8=8} NR_UE_SEARCHSPACE_nbrCAND_t;
 typedef enum {nsfi1=1,nsfi2=2} NR_UE_SEARCHSPACE_nbrCAND_SFI_t;
 typedef enum {n2_3_1=1,n2_3_2=2} NR_UE_SEARCHSPACE_nbrCAND_2_3_t;
@@ -848,9 +847,12 @@ typedef struct {
   // INTEGER (0..maxNrofSearchSpaces-1) (0..40-1)
   int searchSpaceId;
   int controlResourceSetId;
-  // FIXME! Verify type to be used for this parameter (sl1, sl2, sl4, sl5, sl8, sl10, sl16, sl20). Maybe enum.
   NR_UE_SLOT_PERIOD_OFFSET_t monitoringSlotPeriodicityAndOffset;
-  int monitoringSlotPeriodicityAndOffset_offset;
+  uint16_t monitoringSlotPeriodicityAndOffset_offset;
+  // duration is number of consecutive slots that a SearchSpace lasts in every occasion, i.e., upon every period as given in the periodicityAndOffset
+  // if the field is absent, the UE applies the value 1 slot
+  // the maximum valid duration is peridicity-1 (periodicity as given in the monitoringSlotPeriodicityAndOffset)
+  uint16_t duration;
   // bit string size 14. Bitmap to indicate symbols within slot where PDCCH has to be monitored
   // the MSB (left) bit represents first OFDM in slot
   uint16_t monitoringSymbolWithinSlot;
@@ -916,6 +918,7 @@ typedef struct {
   uint8_t dciFormat;
   uint8_t agregationLevel;
   #ifdef NR_PDCCH_DEFS_NR_UE
+  int nb_searchSpaces;
   // CORESET structure, where maximum number of CORESETs to be handled is 3 (according to 38.331 V15.1.0)
   NR_UE_PDCCH_CORESET coreset[NR_NBR_CORESET_ACT_BWP];
   // SEARCHSPACE structure, where maximum number of SEARCHSPACEs to be handled is 10 (according to 38.331 V15.1.0)

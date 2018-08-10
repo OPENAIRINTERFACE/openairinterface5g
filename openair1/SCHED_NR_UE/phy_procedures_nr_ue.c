@@ -3104,7 +3104,8 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   uint8_t next1_thread_id = ue->current_thread_id[nr_tti_rx]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[nr_tti_rx]+1);
   uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1);
 
-  // this table contains dci_fields_sizes for each time a dci is decoded in the slot. Each element represents the size in bits for each dci field
+  // table dci_fields_sizes_cnt contains dci_fields_sizes for each time a dci is decoded in the slot
+  // each element represents the size in bits for each dci field, for each decoded dci -> [dci_cnt-1]
   // each time a dci is decode at dci_cnt, the values of the table dci_fields_sizes[i][j] will be copied at table dci_fields_sizes_cnt[dci_cnt-1][i][j]
   // table dci_fields_sizes_cnt[dci_cnt-1][i][j] will then be used in function nr_extract_dci_info
   uint8_t dci_fields_sizes_cnt[MAX_NR_DCI_DECODED_SLOT][NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {0};
@@ -3115,42 +3116,50 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   uint16_t tpc_pusch_rnti =1; // FIXME
   uint16_t tpc_pucch_rnti = 1; // FIXME
   uint16_t tpc_srs_rnti = 1; // FIXME
-  // s in TS 38.212 Subclause 10.1, for each active BWP the UE can deal with 10 different search spaces
-  // FIXME ! this value has to be obtained by higher-layer parameters
-  int nb_searchspace_total = NR_NBR_SEARCHSPACE_ACT_BWP - 1;
-  // p in TS 38.212 Subclause 10.1, for each active BWP the UE can deal with 3 different CORESETs (including coresetId 0 for common search space)
-  // FIXME ! this value will be obtained from IE PDCCH-Config or PDCCH-ConfigCommon (SIB)
-  int nb_coreset_total = NR_NBR_CORESET_ACT_BWP - 1;
   int nb_searchspace_active=0;
   NR_UE_PDCCH **pdcch_vars = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]];
   NR_UE_PDCCH *pdcch_vars2 = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id];
+  // s in TS 38.212 Subclause 10.1, for each active BWP the UE can deal with 10 different search spaces
+  // Higher layers have updated the number of searchSpaces with are active in the current slot and this value is stored in variable nb_searchspace_total
+  int nb_searchspace_total = pdcch_vars2->nb_search_space;
+  #ifdef NR_PDCCH_SCHED_DEBUG
+    printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> the number of searchSpaces active in the current slot(%d) is %d) \n",
+            nr_tti_rx,nb_searchspace_total);
+  #endif
+  // p in TS 38.212 Subclause 10.1, for each active BWP the UE can deal with 3 different CORESETs (including coresetId 0 for common search space)
+  int nb_coreset_total = NR_NBR_CORESET_ACT_BWP;
 
   // First we have to identify each searchSpace active at a time and do PDCCH monitoring corresponding to current searchSpace
   // Up to 10 searchSpaces can be configured to UE (s<=10)
   for (nb_searchspace_active=0; nb_searchspace_active<nb_searchspace_total; nb_searchspace_active++){
-    int nb_coreset_active=0;
+    int nb_coreset_active=nb_searchspace_active;
+    int do_pdcch_monitoring_current_slot=1; // this variable can be removed and fapi is handling
+    /*
+     * The following code has been removed as it is handled by higher layers (fapi)
+     *
     // Verify that monitoring is required at the slot nr_tti_rx. We will run pdcch procedure only if do_pdcch_monitoring_current_slot=1
-    int do_pdcch_monitoring_current_slot=0;
     // For Type0-PDCCH searchspace, we need to calculate the monitoring slot from Tables 13-1 .. 13-15 in TS 38.213 Subsection 13
     NR_UE_SLOT_PERIOD_OFFSET_t sl_period_offset_mon = pdcch_vars2->searchSpace[nb_searchspace_active].monitoringSlotPeriodicityAndOffset;
-    if (sl_period_offset_mon == srs_sl1) {
+    if (sl_period_offset_mon == nr_sl1) {
       do_pdcch_monitoring_current_slot=1; // PDCCH monitoring in every slot
-    } else if (nr_tti_rx%(int)sl_period_offset_mon == pdcch_vars2->searchSpace[nb_searchspace_active].monitoringSlotPeriodicityAndOffset_offset) {
+    } else if (nr_tti_rx%(uint16_t)sl_period_offset_mon == pdcch_vars2->searchSpace[nb_searchspace_active].monitoringSlotPeriodicityAndOffset_offset) {
       do_pdcch_monitoring_current_slot=1; // PDCCH monitoring in every monitoringSlotPeriodicityAndOffset slot with offset
-    }
+    }*/
     /*
      * FIXME
      * For PDCCH monitoring when overlap with SS/PBCH according to 38.213 v15.1.0 Section 10
      * To be implemented LATER !!!
      */
-    int _offset,_index,_M;
+    //int _offset,_index,_M;
     int searchSpace_id                              = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceId;
-    if (searchSpace_id == 0){ // Implementing TS 38.213 subclause 13, UE procedure for monitoring Type0-PDCCH common search space
     /*
+     * The following code has been removed as it is handled by higher layers (fapi)
+     if (searchSpace_id == 0){ // Implementing TS 38.213 subclause 13, UE procedure for monitoring Type0-PDCCH common search space
+     *
      * according to TS 38.213 subclause 13
      * For the SS/PBCH block and control resource set (CORESET) multiplexing pattern 1,
      * a UE monitors PDCCH in the Type0-PDCCH common search space over two consecutive slots starting from slot n0
-     */
+     *
       if (frame_rx%2 == 0) {
         if ((((_offset*2+((_index*_M)/20))%2) != 0) || ((((_offset*2)+(_index*_M))%20) != nr_tti_rx) || ((((_offset*2)+(_index*_M))%20) != nr_tti_rx-1)){
           do_pdcch_monitoring_current_slot = 0;
@@ -3161,14 +3170,14 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
           do_pdcch_monitoring_current_slot = 0;
         }
       }
-    }
+    }*/
     #ifdef NR_PDCCH_SCHED_DEBUG
-      printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> nb_searchspace_active=%d do_pdcch_monitoring_current_slot=%d\n",
+      printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> nb_searchspace_active=%d do_pdcch_monitoring_current_slot=%d (to be removed)\n",
               nb_searchspace_active,
               do_pdcch_monitoring_current_slot);
     #endif
 
-    if (do_pdcch_monitoring_current_slot) {
+//    if (do_pdcch_monitoring_current_slot) {
       // the searchSpace indicates that we need to monitor PDCCH in current nr_tti_rx
       // get the parameters describing the current SEARCHSPACE
       // the CORESET id applicable to the current SearchSpace
@@ -3184,16 +3193,23 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
       NR_UE_SEARCHSPACE_nbrCAND_t num_cand_L16        = pdcch_vars2->searchSpace[nb_searchspace_active].nrofCandidates_aggrlevel16;
                                                                                                   // FIXME! A table of five enum elements
       // searchSpaceType indicates whether this is a common search space or a UE-specific search space
-      int searchSpaceType                             = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceType.type;
+      //int searchSpaceType                             = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceType.type;
+      int searchSpaceType                             = common;
+      #ifdef NR_PDCCH_SCHED_DEBUG
+        printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> searchSpaceType=%d is hardcoded THIS HAS TO BE FIXED!!!\n",
+                searchSpaceType);
+      #endif
 
-      while ((searchSpace_coreset_id != pdcch_vars2->coreset[nb_coreset_active].controlResourceSetId) && (nb_coreset_active<nb_coreset_total)) {
+      /*while ((searchSpace_coreset_id != pdcch_vars2->coreset[nb_coreset_active].controlResourceSetId) && (nb_coreset_active<nb_coreset_total)) {
         // we need to identify the CORESET associated to the active searchSpace
         nb_coreset_active++;
       if (nb_coreset_active >= nb_coreset_total) return 0; // the coreset_id could not be found. There is a problem
-      }
+      }*/
 
       unsigned int dci_cnt=0, i;
-
+      /*
+       * we do not need these parameters yet
+       *
       // get the parameters describing the current CORESET
       int coreset_duration                                      = pdcch_vars2->coreset[nb_coreset_active].duration;
       uint64_t coreset_freq_dom                                 = pdcch_vars2->coreset[nb_coreset_active].frequencyDomainResources;
@@ -3204,13 +3220,13 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
       int tci_statesPDCCH                                       = pdcch_vars2->coreset[nb_coreset_active].tciStatesPDCCH;
       int tci_present                                           = pdcch_vars2->coreset[nb_coreset_active].tciPresentInDCI;
       uint16_t pdcch_DMRS_scrambling_id                         = pdcch_vars2->coreset[nb_coreset_active].pdcchDMRSScramblingID;
-
+      */
       // this table contains 56 (NBR_NR_DCI_FIELDS) elements for each dci field and format described in TS 38.212. Each element represents the size in bits for each dci field
       uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {0};
       // this is the UL bandwidth part. FIXME! To be defined where this value comes from
-      uint16_t n_RB_ULBWP = 100;
+      uint16_t n_RB_ULBWP = 106;
       // this is the DL bandwidth part. FIXME! To be defined where this value comes from
-      uint16_t n_RB_DLBWP = 100;
+      uint16_t n_RB_DLBWP = 106;
 
       // A set of PDCCH candidates for a UE to monitor is defined in terms of PDCCH search spaces.
       // Searchspace types:
@@ -3251,8 +3267,8 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
               ue->high_speed_flag,
               ue->is_secondary_ue);*/ //removed for nr_ue_pdcch_procedures
         #ifdef NR_PDCCH_SCHED_DEBUG
-          printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_rx_pdcch(nb_coreset_active=%d, searchSpaceType=%d)\n",
-                  nb_coreset_active,
+          printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_rx_pdcch(nb_coreset_active=%d, (symbol_within_slot_mon&0x3FFF)=%d, searchSpaceType=%d)\n",
+                  nb_coreset_active,(symbol_within_slot_mon&0x3FFF),
                   searchSpaceType);
         #endif
         nr_rx_pdcch(ue,
@@ -3267,8 +3283,8 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                     (symbol_within_slot_mon&0x3FFF),
                     searchSpaceType);
         #ifdef NR_PDCCH_SCHED_DEBUG
-          printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_rx_pdcch(nb_coreset_active=%d, searchSpaceType=%d)\n",
-                  nb_coreset_active,
+          printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_rx_pdcch(nb_coreset_active=%d, (symbol_within_slot_mon&0x3FFF)=%d, searchSpaceType=%d)\n",
+                  nb_coreset_active,(symbol_within_slot_mon&0x3FFF),
                   searchSpaceType);
         #endif
 
@@ -3773,7 +3789,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_OUT);
 
-    } // end if do_pdcch_monitoring_current_slot
+//    } // end if do_pdcch_monitoring_current_slot
   } // end for loop nb_searchspace_active
   return(0);
 }
