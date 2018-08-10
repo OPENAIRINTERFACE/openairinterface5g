@@ -96,7 +96,9 @@ int8_t nr_ue_decode_mib(
 		printf("ssb index(extra bits):         %d\n", (int)ssb_index);
 #endif
 
-	    subcarrier_spacing_t scs_ssb = scs_30kHz;      //  default for testing
+	    subcarrier_spacing_t scs_ssb = scs_30kHz;      //  default for 
+        //const uint32_t scs_index = 0;
+        const uint32_t num_slot_per_frame = 20;
 	    subcarrier_spacing_t scs_pdcch;
 
         //  assume carrier frequency < 6GHz
@@ -268,8 +270,7 @@ int8_t nr_ue_decode_mib(
         uint32_t search_space_duration;  //  element of search space
         uint32_t coreset_duration;  //  element of coreset
 
-const uint32_t scs_index = 0;
-const uint32_t num_slot_per_frame = 20;
+
         
         //  38.213 table 10.1-1
         
@@ -281,7 +282,7 @@ const uint32_t num_slot_per_frame = 20;
             number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
             big_m = table_38213_13_11_c3[index_4lsb];
 
-            temp = (uint32_t)(big_o*pow(2, scs_index)) + (uint32_t)(ssb_index*big_m);
+            temp = (uint32_t)(big_o*pow(2, scs_pdcch)) + (uint32_t)(ssb_index*big_m);
             n_c = temp / num_slot_per_frame;
             if((temp/num_slot_per_frame) & 0x1){
                 sfn_c = SFN_C_MOD_2_EQ_1;
@@ -445,8 +446,8 @@ const uint32_t num_slot_per_frame = 20;
 
 
 //  TODO: change to UE parameter, scs: 15KHz, slot duration: 1ms
-uint32_t get_ssb_frame(){
-	return 0;
+uint32_t get_ssb_frame(uint32_t test){
+	return test;
 }
 
 // Performs :
@@ -485,14 +486,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
         }
         if(mac->type0_pdcch_ss_mux_pattern == 2){
             //	38.213 Table 13-13, 13-14
-            if((rx_frame == get_ssb_frame()) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+            if((rx_frame == get_ssb_frame(rx_frame)) && (rx_slot == mac->type0_pdcch_ss_n_c)){
                 search_space_mask = search_space_mask | type0_pdcch;
                 mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.duration;
             }
         }
         if(mac->type0_pdcch_ss_mux_pattern == 3){
         	//	38.213 Table 13-15
-            if((rx_frame == get_ssb_frame()) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+            if((rx_frame == get_ssb_frame(rx_frame)) && (rx_slot == mac->type0_pdcch_ss_n_c)){
                 search_space_mask = search_space_mask | type0_pdcch;
                 mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.duration;
             }
@@ -574,48 +575,175 @@ void nr_ue_process_mac_pdu(
     module_id_t module_idP,
     uint8_t CC_id,
     uint8_t *pduP, 
-    uint16_t pdu_len, 
+    uint16_t mac_pdu_len, 
     uint8_t eNB_index){
 
     uint8_t *pdu_ptr = pduP;
-    uint8_t sub_pdu_len;
+    uint16_t pdu_len = mac_pdu_len;
 
-    //  variable-size MAC CE(known by LCID), padding, MSG3, MAC SDU
+    uint16_t mac_ce_len;
+    uint16_t mac_subheader_len;
+    uint16_t mac_sdu_len;
+
+    //  For both DL/UL-SCH
+    //  Except:
+    //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
+    //   - UL/DL-SCH: padding
+    //   - UL-SCH:    MSG3 48-bits
     //  |0|1|2|3|4|5|6|7|  bit-wise
     //  |R|F|   LCID    |
     //  |       L       |
-
-    //  variable-size MAC CE(known by LCID), padding, MSG3, MAC SDU
     //  |0|1|2|3|4|5|6|7|  bit-wise
     //  |R|F|   LCID    |
     //  |       L       |
     //  |       L       |
 
-    //  fixed-size MAC CE(known by LCID), padding, MSG3
+    //  For both DL/UL-SCH
+    //  For:
+    //   - UL/DL-SCH: fixed-size MAC CE(known by LCID)
+    //   - UL/DL-SCH: padding, for single/multiple 1-oct padding CE(s)
+    //   - UL-SCH:    MSG3 48-bits
     //  |0|1|2|3|4|5|6|7|  bit-wise
     //  |R|R|   LCID    |
-
     //  LCID: The Logical Channel ID field identifies the logical channel instance of the corresponding MAC SDU or the type of the corresponding MAC CE or padding as described in Tables 6.2.1-1 and 6.2.1-2 for the DL-SCH and UL-SCH respectively. There is one LCID field per MAC subheader. The LCID field size is 6 bits;
     //  L: The Length field indicates the length of the corresponding MAC SDU or variable-sized MAC CE in bytes. There is one L field per MAC subheader except for subheaders corresponding to fixed-sized MAC CEs and padding. The size of the L field is indicated by the F field;
-    //  F: lenght of L is 8 or 16 bits wide
+    //  F: lenght of L is 0:8 or 1:16 bits wide
     //  R: Reserved bit, set to zero.
+
     uint8_t done = 0;
     
-    while (!done) {
-
+    while (!done || pdu_len <= 0){
+        mac_ce_len = 0x0000;
+        mac_subheader_len = 0x0001; //  default to fixed-length subheader = 1-oct
+        mac_sdu_len = 0x0000;
         switch(((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID){
-            //  Control element
+            //  MAC CE
+            case DL_SCH_LCID_CCCH:
+                //  MSG4 RRC Connection Setup 38.331
+                //  varialbe length
+                mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+                mac_subheader_len = 2;
+                if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+                    mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+                    mac_subheader_len = 3;
+                }
+                break;
+            case DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH:
+                //  38.321 Ch6.1.3.14
+                //  varialbe length
+                mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+                mac_subheader_len = 2;
+                if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+                    mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+                    mac_subheader_len = 3;
+                }
+                break;
+            case DL_SCH_LCID_APERIODIC_CSI_TRI_STATE_SUBSEL:
+                //  38.321 Ch6.1.3.13
+                //  varialbe length
+                mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+                mac_subheader_len = 2;
+                if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+                    mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+                    mac_subheader_len = 3;
+                }
+                break;
+            case DL_SCH_LCID_SP_CSI_RS_CSI_IM_RES_SET_ACT:
+                //  38.321 Ch6.1.3.12
+                //  varialbe length
+                mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+                mac_subheader_len = 2;
+                if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+                    mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+                    mac_subheader_len = 3;
+                }
+                break;
+            case DL_SCH_LCID_SP_SRS_ACTIVATION:
+                //  38.321 Ch6.1.3.17
+                //  varialbe length
+                mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+                mac_subheader_len = 2;
+                if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+                    mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+                    mac_subheader_len = 3;
+                }
+                break;
+            
+            case DL_SCH_LCID_RECOMMENDED_BITRATE:
+                //  38.321 Ch6.1.3.20
+                mac_ce_len = 2;
+                break;
+            case DL_SCH_LCID_SP_ZP_CSI_RS_RES_SET_ACT:
+                //  38.321 Ch6.1.3.19
+                mac_ce_len = 2;
+                break;
+            case DL_SCH_LCID_PUCCH_SPATIAL_RELATION_ACT:
+                //  38.321 Ch6.1.3.18
+                mac_ce_len = 3;
+                break;
+            case DL_SCH_LCID_SP_CSI_REP_PUCCH_ACT:
+                //  38.321 Ch6.1.3.16
+                mac_ce_len = 2;
+                break;
+            case DL_SCH_LCID_TCI_STATE_IND_UE_SPEC_PDCCH:
+                //  38.321 Ch6.1.3.15
+                mac_ce_len = 2;
+                break;
+            case DL_SCH_LCID_DUPLICATION_ACT:
+                //  38.321 Ch6.1.3.11
+                mac_ce_len = 1;
+                break;
+            case DL_SCH_LCID_SCell_ACT_4_OCT:
+                //  38.321 Ch6.1.3.10
+                mac_ce_len = 4;
+                break;
+            case DL_SCH_LCID_SCell_ACT_1_OCT:
+                //  38.321 Ch6.1.3.10
+                mac_ce_len = 1;
+                break;
+            case DL_SCH_LCID_L_DRX:
+                //  38.321 Ch6.1.3.6
+                //  fixed length but not yet specify.
+                mac_ce_len = 0;
+                break;
+            case DL_SCH_LCID_DRX:
+                //  38.321 Ch6.1.3.5
+                //  fixed length but not yet specify.
+                mac_ce_len = 0;
+                break;
+            case DL_SCH_LCID_TA_COMMAND:
+                //  38.321 Ch6.1.3.4
+                mac_ce_len = 1;
+                break;
+            case DL_SCH_LCID_CON_RES_ID:
+                //  38.321 Ch6.1.3.3
+                mac_ce_len = 6;
+                break;
             case DL_SCH_LCID_PADDING:
                 done = 1;
-                //  end of MAC PDU, there is nothing right after padding
+                //  end of MAC PDU, can ignore the rest.
                 break;
 
             //  MAC SDU
-
+            case DL_SCH_LCID_SRB1:
+                //  check if LCID is valid at current time.
+            case UL_SCH_LCID_SRB2:
+                //  check if LCID is valid at current time.
+            case UL_SCH_LCID_SRB3:
+                //  check if LCID is valid at current time.
             default:
-                printf("[MAC] get lcid: %d which not support yet\n", ((NR_MAC_SUBHEADER_FIXED *)pdu_ptr)->LCID);
+                //  check if LCID is valid at current time.
+                mac_sdu_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->L;
+                mac_subheader_len = 2;
+                if(((NR_MAC_SUBHEADER_SHORT *)pdu_ptr)->F){
+                    mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pdu_ptr)->L2)<<8;
+                    mac_subheader_len = 3;
+                }
+                //  DRB LCID by RRC
                 break;
         }
-        pdu_ptr += sub_pdu_len;
+        pdu_ptr += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
+        pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
+        AssertFatal(pdu_len >= 0, "[MAC] nr_ue_process_mac_pdu, residual mac pdu length < 0!\n");
     }
 }
