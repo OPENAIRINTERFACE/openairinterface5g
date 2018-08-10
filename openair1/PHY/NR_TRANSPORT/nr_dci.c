@@ -154,14 +154,14 @@ void nr_pdcch_scrambling(uint32_t *in,
 
 uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 							t_nrPolar_paramsPtr *nrPolar_params,
-                            uint32_t *gold_pdcch_dmrs,
+                            uint32_t **gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS frame_parms,
                             nfapi_nr_config_request_t config)
 {
 
-  int16_t mod_dmrs[NR_MAX_PDCCH_DMRS_LENGTH>>1];
+  int16_t mod_dmrs[3][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
   uint8_t idx=0;
   uint16_t a;
   int k,l,k_prime,dci_idx, dmrs_idx;
@@ -173,20 +173,31 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   uint16_t dmrs_length = dci_alloc.L*36; //2(QPSK)*3(per RB)*6(REG per CCE)
   uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
 
+  /*The coreset is initialised
+  * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset
+  * in time: by its first slot and its first symbol*/
+  uint8_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*NR_NB_SC_PER_RB;
+  uint8_t cset_start_symb = pdcch_params.first_slot*frame_parms.symbols_per_slot + pdcch_params.first_symbol;
+  dci_idx = 0;
+  dmrs_idx = 0;
+
   /// DMRS QPSK modulation
     /*There is a need to shift from which index the pregenerated DMRS sequence is used
      * see 38211 r15.2.0 section 7.4.1.3.2: assumption is the reference point for k refers to the DMRS sequence*/
   if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
     gold_pdcch_dmrs += ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*3/32;
 
-  for (int i=0; i<dmrs_length>>1; i++) {
-    idx = ((((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((gold_pdcch_dmrs[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
-    mod_dmrs[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
-    mod_dmrs[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
-#ifdef DEBUG_PDCCH_DMRS
-  printf("i %d idx %d gold seq %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, gold_pdcch_dmrs[(i<<1)>>5], (((gold_pdcch_dmrs[(i<<1)>>5])>>((i<<1)&0x1f))&1),
-  (((gold_pdcch_dmrs[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), mod_dmrs[(i<<1)], mod_dmrs[(i<<1)+1]);
-#endif
+  for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++) {
+    for (int i=0; i<dmrs_length>>1; i++) {
+      idx = ((((gold_pdcch_dmrs[symb][(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((gold_pdcch_dmrs[symb][((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
+      mod_dmrs[symb][i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+      mod_dmrs[symb][(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+  #ifdef DEBUG_PDCCH_DMRS
+    printf("symb %d i %d idx %d gold seq %u b0-b1 %d-%d mod_dmrs %d %d\n", symb, i, idx, gold_pdcch_dmrs[symb][(i<<1)>>5],
+    (((gold_pdcch_dmrs[symb][(i<<1)>>5])>>((i<<1)&0x1f))&1), (((gold_pdcch_dmrs[symb][((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1),
+     mod_dmrs[symb][(i<<1)], mod_dmrs[symb][(i<<1)+1]);
+  #endif
+    }
   }
 
   /// DCI payload processing
@@ -225,14 +236,6 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   /// Resource mapping
   a = (config.rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
-   /*The coreset is initialised
-    * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset
-    * in time: by its first slot and its first symbol*/
-  uint8_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*NR_NB_SC_PER_RB;
-  uint8_t cset_start_symb = pdcch_params.first_slot*frame_parms.symbols_per_slot + pdcch_params.first_symbol;
-  dci_idx = 0;
-  dmrs_idx = 0;
-
   for (int aa = 0; aa < config.rf_config.tx_antenna_ports.value; aa++)
   {
     if (cset_start_sc >= frame_parms.ofdm_symbol_size)
@@ -248,8 +251,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
             k_prime = 0;
             for (int m=0; m<NR_NB_SC_PER_RB; m++) {
               if ( m == (k_prime<<2)+1) { // DMRS
-                ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dmrs[dmrs_idx<<1]) >> 15;
-                ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
+                ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dmrs[l][dmrs_idx<<1]) >> 15;
+                ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
                 k_prime++;
                 dmrs_idx++;
               }
