@@ -53,7 +53,7 @@ int wt2[12][2] = {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1
 
 short nr_rx_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,23170,-23170,-23170,23170,23170,-23170,23170,23170,-23170,-23170,-23170,23170};
 
-int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
+/*int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
 						uint8_t eNB_offset,
 						unsigned int Ns,
 						unsigned int nr_gold_pdcch[7][20][3][10],
@@ -65,8 +65,6 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
   int32_t qpsk[4],n;
   int w,ind,l,ind_dword,ind_qpsk_symb,kp,k;
   short pamp;
-
-  // Compute the correct pilot amplitude, sqrt_rho_b = Q3.13
   pamp = ONE_OVER_SQRT2_Q15;
 
   // This includes complex conjugate for channel estimation
@@ -80,7 +78,6 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
   ((short *)&qpsk[3])[1] = pamp;
 
   if (p==2000) {
-	  // r_n from 38.211 7.4.1.3
         for (n=0; n<nb_rb_coreset*3; n++) {
         	for (l =0; l<length_dmrs; l++){
         		for (kp=0; kp<3; kp++){
@@ -106,7 +103,7 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
   }
 
   return(0);
-}
+}*/
 
 int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
 						uint8_t eNB_offset,
@@ -187,6 +184,34 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
   }
 
   return(0);
+}
+
+int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
+						uint8_t eNB_offset,
+						unsigned int Ns,
+						unsigned int *nr_gold_pdcch,
+						int32_t *output,
+						unsigned short p,
+						unsigned short nb_rb_coreset)
+{
+
+	uint8_t idx=0;
+	uint8_t pdcch_rb_offset =0;
+	//nr_gold_pdcch += ((int)floor(ue->frame_parms.ssb_start_subcarrier/12)+pdcch_rb_offset)*3/32;
+
+	if (p==2000) {
+    	for (int i=0; i<((nb_rb_coreset*6)>>1); i++) {
+    		idx = ((((nr_gold_pdcch[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((nr_gold_pdcch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
+    		((int16_t*)output)[i<<1] = nr_rx_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+    		((int16_t*)output)[(i<<1)+1] = nr_rx_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+#ifdef DEBUG_PDCCH
+	  printf("i %d idx %d pdcch gold %d b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pdcch[(i<<1)>>5], (((nr_gold_pdcch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+	  (((nr_gold_pdcch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(m<<1)+1],&output[0]);
+#endif
+	    }
+	}
+
+	return(0);
 }
 
 int nr_pbch_dmrs_rx(unsigned int *nr_gold_pbch,

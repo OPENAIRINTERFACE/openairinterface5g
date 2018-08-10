@@ -5931,7 +5931,7 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
   LOG_D(PHY," ------  --> FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
 
-  nr_gold_pdcch(ue,ue->frame_parms.Nid_cell, 0, 3);
+  nr_gold_pdcch(ue,0, 3);
 
   for (; l<=3; l++) {
     if (abstraction_flag == 0) {
