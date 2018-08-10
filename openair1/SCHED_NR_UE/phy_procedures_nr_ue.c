@@ -3484,7 +3484,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         }
         if ((dci_alloc_rx[i].format == format1_1)){ // This format not implemented at a first time. FIXME
         }
-        NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted;
+        NR_DCI_INFO_EXTRACTED_t nr_dci_info_extracted;
         nr_generate_ue_ul_dlsch_params_from_dci(ue,
                                                 eNB_id,
                                                 frame_rx,
@@ -3510,7 +3510,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
     
         ue->dci_ind.dci_list[i].rnti = 0x0000;
         ue->dci_ind.dci_list[i].dci_type = 0;
-        memcpy(&ue->dci_ind.dci_list[i].dci, nr_dci_info_extracted, sizeof(fapi_nr_dci_pdu_rel15_t) );
+        memcpy(&ue->dci_ind.dci_list[i].dci, &nr_dci_info_extracted, sizeof(fapi_nr_dci_pdu_rel15_t) );
         
         //  TODO: check where should we send up this message.
         //ue->if_inst->dl_indication(&ue->dl_indication);
