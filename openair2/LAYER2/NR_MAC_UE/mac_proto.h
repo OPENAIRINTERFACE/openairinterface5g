@@ -120,5 +120,12 @@ uint32_t get_ssb_slot(uint32_t ssb_index);
 
 
 uint32_t mr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
+
+void nr_ue_process_mac_pdu(
+    module_id_t module_idP,
+    uint8_t CC_id,
+    uint8_t *pduP, 
+    uint16_t mac_pdu_len, 
+    uint8_t eNB_index);
 #endif
 /** @}*/
