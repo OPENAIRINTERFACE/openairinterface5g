@@ -487,9 +487,8 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-  int MAX_RU = 5;
 
-  for(int ru_id=0; ru_id<MAX_RU; ru_id++){
+  for(int ru_id=0; ru_id<eNB->num_RU; ru_id++){
     ru_proc = &eNB->RU_list[ru_id]->proc;
     if(ru_proc == NULL)
 		return(0);
