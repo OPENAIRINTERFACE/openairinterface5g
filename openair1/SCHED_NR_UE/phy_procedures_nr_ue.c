@@ -5951,7 +5951,7 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
       stop_meas(&ue->ofdm_demod_stats);
 #endif
     }
-
+  }
     //ue_measurement_procedures(l-1,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
 
     if (do_pdcch_flag) {
@@ -5971,7 +5971,7 @@ int phy_procedures_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
 //      }
     }
 
-  } // for l=1..l2
+//  } // for l=1..l2
 
 #if 0
   ue_measurement_procedures(l-1,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
