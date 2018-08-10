@@ -446,8 +446,8 @@ int8_t nr_ue_decode_mib(
 
 
 //  TODO: change to UE parameter, scs: 15KHz, slot duration: 1ms
-uint32_t get_ssb_frame(){
-	return 0;
+uint32_t get_ssb_frame(uint32_t test){
+	return test;
 }
 
 // Performs :
@@ -486,14 +486,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
         }
         if(mac->type0_pdcch_ss_mux_pattern == 2){
             //	38.213 Table 13-13, 13-14
-            if((rx_frame == get_ssb_frame()) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+            if((rx_frame == get_ssb_frame(rx_frame)) && (rx_slot == mac->type0_pdcch_ss_n_c)){
                 search_space_mask = search_space_mask | type0_pdcch;
                 mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.duration;
             }
         }
         if(mac->type0_pdcch_ss_mux_pattern == 3){
         	//	38.213 Table 13-15
-            if((rx_frame == get_ssb_frame()) && (rx_slot == mac->type0_pdcch_ss_n_c)){
+            if((rx_frame == get_ssb_frame(rx_frame)) && (rx_slot == mac->type0_pdcch_ss_n_c)){
                 search_space_mask = search_space_mask | type0_pdcch;
                 mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.duration;
             }
