@@ -6935,7 +6935,8 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
         uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
         uint16_t n_RB_ULBWP,
         uint16_t n_RB_DLBWP,
-        uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES])
+        uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],
+        NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted)
 {
   /*
    * Note only format0_0 and format1_0 are implemented
@@ -6947,7 +6948,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
   NR_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
   NR_DL_UE_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
   NR_UE_ULSCH_t *ulsch0=NULL,*ulsch1=NULL;
-  NR_DCI_INFO_EXTRACTED_t nr_dci_info_extracted;
+  //NR_DCI_INFO_EXTRACTED_t nr_dci_info_extracted;
   uint8_t status=0,left_shift=0;
   uint64_t pdu_bitmap = 0xFFFFFFFFFFFFFFFF;
   pdu_bitmap = (pdu_bitmap << (64 - dci_length)) >> (64 - dci_length); // this variable will help to remove the bits of other fields when left-switching
