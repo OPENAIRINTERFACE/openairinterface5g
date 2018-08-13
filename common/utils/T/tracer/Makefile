@@ -63,16 +63,16 @@ multi: multi.o utils.o database.o config.o
 .PHONY: all gui/gui.a view/view.a logger/logger.a filter/filter.a
 
 gui/gui.a:
-	cd gui && make
+	cd gui && $(MAKE)
 
 view/view.a:
-	cd view && make
+	cd view && $(MAKE)
 
 logger/logger.a:
-	cd logger && make
+	cd logger && $(MAKE)
 
 filter/filter.a:
-	cd filter && make
+	cd filter && $(MAKE)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -81,8 +81,8 @@ clean:
 	rm -f *.o core tracer_remote textlog enb ue vcd record replay
 	rm -f extract_config macpdu2wireshark extract_input_subframe
 	rm -f extract_output_subframe to_vcd extract multi
-	cd gui && make clean
-	cd view && make clean
-	cd logger && make clean
-	cd filter && make clean
-	cd hacks && make clean
+	cd gui && $(MAKE) clean
+	cd view && $(MAKE) clean
+	cd logger && $(MAKE) clean
+	cd filter && $(MAKE) clean
+	cd hacks && $(MAKE) clean
