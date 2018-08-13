@@ -700,8 +700,8 @@ int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid
     );
 int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 
-void store_dlsch_buffer(module_id_t Mod_id, slice_id_t slice_id, frame_t frameP, sub_frame_t subframeP);
-void assign_rbs_required(module_id_t Mod_id, slice_id_t slice_id, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB], int min_rb_unit[NFAPI_CC_MAX]);
+void store_dlsch_buffer(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframeP);
+void assign_rbs_required(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB], int min_rb_unit[NFAPI_CC_MAX]);
 
 int maxround(module_id_t Mod_id, uint16_t rnti, int frame,
 	     sub_frame_t subframe, uint8_t ul_flag);

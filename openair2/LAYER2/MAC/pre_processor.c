@@ -177,8 +177,8 @@ assign_rbs_required(module_id_t Mod_id,
                     int slice_idx,
                     frame_t frameP,
                     sub_frame_t subframe,
-                    int min_rb_unit[NFAPI_CC_MAX],
-                    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB])
+                    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+                    int min_rb_unit[NFAPI_CC_MAX])
 {
 
   uint16_t TBS = 0;
@@ -1279,9 +1279,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
   store_dlsch_buffer(Mod_id, slice_idx, frameP, subframeP);
 
   // Calculate the number of RBs required by each UE on the basis of logical channel's buffer
-  assign_rbs_required(Mod_id, slice_idx, frameP, subframeP,
-                      min_rb_unit,
-                      nb_rbs_required);
+  assign_rbs_required(Mod_id, slice_idx, frameP, subframeP, nb_rbs_required, min_rb_unit);
 
   // Sorts the user on the basis of dlsch logical channel buffer and CQI
   sort_UEs(Mod_id, slice_idx, frameP, subframeP);
