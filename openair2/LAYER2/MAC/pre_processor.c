@@ -1401,8 +1401,8 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
   int UE_id;
   uint8_t CC_id;
   int i, j;
-  UE_list_t *UE_list = &RC.mac[module_idP]->UE_list;
-  UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  UE_list_t *UE_list;
+  UE_sched_ctrl *ue_sched_ctl;
   int N_RB_DL, RBGsize, RBGsize_last;
   int N_RBG[NFAPI_CC_MAX];
 
@@ -1411,8 +1411,6 @@ dlsch_scheduler_pre_processor_reset(module_id_t module_idP,
 #endif
 
   rnti_t rnti;
-  UE_list_t *UE_list;
-  UE_sched_ctrl *ue_sched_ctl;
   uint8_t *vrb_map;
   COMMON_channels_t *cc;
 //
