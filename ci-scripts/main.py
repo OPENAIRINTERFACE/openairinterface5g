@@ -45,7 +45,7 @@ import xml.etree.ElementTree as ET
 import logging
 import datetime
 import signal
-from multiprocessing import Process,Lock
+from multiprocessing import Process, Lock, SimpleQueue
 logging.basicConfig(
 	level=logging.DEBUG,
 	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
@@ -319,21 +319,32 @@ class SSHConnection():
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
-	def AttachUE_common(self, device_id):
+	def AttachUE_common(self, device_id, statusQueue, lock):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
 			time.sleep(2)
-			count = 45
+			max_count = 45
+			count = max_count
 			while count > 0:
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry | grep mDataConnectionState', '\$', 15)
 				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', str(self.ssh.before))
 				if result is None:
 					logging.debug('\u001B[1;37;41m mDataConnectionState Not Found! \u001B[0m')
-					sys.exit(1)
+					lock.acquire()
+					statusQueue.put(-1)
+					statusQueue.put(device_id)
+					statusQueue.put('mDataConnectionState Not Found!')
+					lock.release()
+					break
 				mDataConnectionState = int(result.group('state'))
 				if mDataConnectionState == 2:
 					logging.debug('\u001B[1mUE (' + device_id + ') Attach Completed\u001B[0m')
+					lock.acquire()
+					statusQueue.put(max_count - count)
+					statusQueue.put(device_id)
+					statusQueue.put('Attach Completed')
+					lock.release()
 					break
 				count = count - 1
 				if count == 15 or count == 30:
@@ -342,11 +353,15 @@ class SSHConnection():
 					time.sleep(0.5)
 					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
 					time.sleep(0.5)
-				logging.debug('\u001B[1mWait UE (' + device_id + ') a second until mDataConnectionState=2 (' + str(45-count) + ' times)\u001B[0m')
+				logging.debug('\u001B[1mWait UE (' + device_id + ') a second until mDataConnectionState=2 (' + str(max_count-count) + ' times)\u001B[0m')
 				time.sleep(1)
 			if count == 0:
 				logging.debug('\u001B[1;37;41m UE (' + device_id + ') Attach Failed \u001B[0m')
-				sys.exit(1)
+				lock.acquire()
+				statusQueue.put(-1)
+				statusQueue.put(device_id)
+				statusQueue.put('Attach Failed')
+				lock.release()
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -358,14 +373,39 @@ class SSHConnection():
 		initialize_eNB_flag = False
 		self.CheckProcessExist(initialize_eNB_flag)
 		multi_jobs = []
+		status_queue = SimpleQueue()
+		lock = Lock()
 		for device_id in self.UEDevices:
-			p = Process(target = SSH.AttachUE_common, args = (device_id,))
+			p = Process(target = SSH.AttachUE_common, args = (device_id, status_queue, lock,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
-		self.CreateHtmlTestRow('N/A', 'OK', len(self.UEDevices))
+
+		if (status_queue.empty()):
+			self.CreateHtmlTestRow('N/A', 'KO', len(self.UEDevices))
+			sys.exit(1)
+		else:
+			attach_status = True
+			html_queue = SimpleQueue()
+			while (not status_queue.empty()):
+				count = status_queue.get()
+				if (count < 0):
+					attach_status = False
+				device_id = status_queue.get()
+				message = status_queue.get()
+				if (count < 0):
+					html_cell = "<pre>UE (" + device_id + ")\n" + message + "</pre>"
+				else:
+					html_cell = "<pre>UE (" + device_id + ")\n" + message + ' in ' + str(count + 2) + ' seconds</pre>'
+				html_queue.put(html_cell)
+			if (attach_status):
+				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
+			else:
+				self.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
+				self.CreateHtmlFooter()
+				sys.exit(1)
 
 	def DetachUE_common(self, device_id):
 		try:
@@ -481,7 +521,7 @@ class SSHConnection():
 			self.UEIPAddresses.append(UE_IPAddress)
 		self.close()
 
-	def Ping_common(self, lock, UE_IPAddress, device_id):
+	def Ping_common(self, lock, UE_IPAddress, device_id,statusQueue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
@@ -490,32 +530,65 @@ class SSHConnection():
 			self.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee -a ping_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
 			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
 			if result is None:
-				logging.debug('\u001B[1;37;41m Packet Loss Not Found! \u001B[0m')
-				sys.exit(1)
+				message = 'Packet Loss Not Found!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				lock.acquire()
+				statusQueue.put(-1)
+				statusQueue.put(device_id)
+				statusQueue.put(message)
+				lock.release()
+				return
 			packetloss = result.group('packetloss')
 			if float(packetloss) == 100:
-				logging.debug('\u001B[1;37;41m Packet Loss is 100% \u001B[0m')
-				sys.exit(1)
+				message = 'Packet Loss is 100%'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				lock.acquire()
+				statusQueue.put(-1)
+				statusQueue.put(device_id)
+				statusQueue.put(message)
+				lock.release()
+				return
 			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
 			if result is None:
-				logging.debug('\u001B[1;37;41m Ping RTT_Min RTT_Avg RTT_Max Not Found! \u001B[0m')
-				sys.exit(1)
+				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				lock.acquire()
+				statusQueue.put(-1)
+				statusQueue.put(device_id)
+				statusQueue.put(message)
+				lock.release()
+				return
 			rtt_min = result.group('rtt_min')
 			rtt_avg = result.group('rtt_avg')
 			rtt_max = result.group('rtt_max')
+			pal_msg = 'Packet Loss : ' + packetloss + '%'
+			min_msg = 'RTT(Min)    : ' + rtt_min + ' ms'
+			avg_msg = 'RTT(Avg)    : ' + rtt_avg + ' ms'
+			max_msg = 'RTT(Max)    : ' + rtt_max + ' ms'
 			lock.acquire()
 			logging.debug('\u001B[1;37;44m ping result (' + UE_IPAddress + ') \u001B[0m')
-			logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
-			logging.debug('\u001B[1;34m    RTT(Min)    : ' + rtt_min + ' ms' + '\u001B[0m')
-			logging.debug('\u001B[1;34m    RTT(Avg)    : ' + rtt_avg + ' ms' + '\u001B[0m')
-			logging.debug('\u001B[1;34m    RTT(Max)    : ' + rtt_max + ' ms' + '\u001B[0m')
-			lock.release()
+			logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
+			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg
+			packetLossOK = True
 			if packetloss is not None:
 				if float(packetloss) > float(self.ping_packetloss_threshold):
+					qMsg += '\nPacket Loss too high'
 					logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
-					sys.exit(1)
+					packetLossOK = False
 				elif float(packetloss) > 0:
+					qMsg += '\nPacket Loss is not 0%'
 					logging.debug('\u001B[1;37;43m Packet Loss is not 0% \u001B[0m')
+			if (packetLossOK):
+				statusQueue.put(0)
+			else:
+				statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put(qMsg)
+			lock.release()
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -530,16 +603,38 @@ class SSHConnection():
 		multi_jobs = []
 		i = 0
 		lock = Lock()
+		status_queue = SimpleQueue()
 		for UE_IPAddress in self.UEIPAddresses:
 			device_id = self.UEDevices[i]
-			p = Process(target = SSH.Ping_common, args = (lock,UE_IPAddress,device_id,))
+			p = Process(target = SSH.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
 			i = i + 1
 		for job in multi_jobs:
 			job.join()
-		self.CreateHtmlTestRow(self.ping_args, 'OK', 0)
+
+		if (status_queue.empty()):
+			self.CreateHtmlTestRow(self.ping_args, 'KO', len(self.UEDevices))
+			sys.exit(1)
+		else:
+			ping_status = True
+			html_queue = SimpleQueue()
+			while (not status_queue.empty()):
+				count = status_queue.get()
+				if (count < 0):
+					ping_status = False
+				device_id = status_queue.get()
+				ip_addr = status_queue.get()
+				message = status_queue.get()
+				html_cell = "<pre>UE (" + device_id + ")\nIP Address  : " + ip_addr + "\n" + message + "</pre>"
+				html_queue.put(html_cell)
+			if (ping_status):
+				self.CreateHtmlTestRowQueue(self.ping_args, 'OK', len(self.UEDevices), html_queue)
+			else:
+				self.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
+				self.CreateHtmlFooter()
+				sys.exit(1)
 
 	def Iperf_ComputeTime(self):
 		result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
@@ -573,15 +668,22 @@ class SSHConnection():
 			sys.exit(1)
 		return result
 
-	def Iperf_analyzeV2Output(self, lock, UE_IPAddress):
+	def Iperf_analyzeV2Output(self, lock, UE_IPAddress, device_id, statusQueue):
 		result = re.search('Server Report:', str(self.ssh.before))
 		if result is None:
 			result = re.search('read failed: Connection refused', str(self.ssh.before))
+			lock.acquire()
+			statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
 			if result is not None:
 				logging.debug('\u001B[1;37;41m Could not connect to iperf server! \u001B[0m')
+				statusQueue.put('Could not connect to iperf server!')
 			else:
 				logging.debug('\u001B[1;37;41m Server Report and Connection refused Not Found! \u001B[0m')
-			sys.exit(1)
+				statusQueue.put('Server Report and Connection refused Not Found!')
+			lock.release()
+			return
 		result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/..\d+) (\((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
 		if result is not None:
 			bitrate = result.group('bitrate')
@@ -589,41 +691,69 @@ class SSHConnection():
 			jitter = result.group('jitter')
 			lock.acquire()
 			logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
+			iperfStatus = True
+			msg = ''
 			if bitrate is not None:
+				msg += 'Bitrate     : ' + bitrate + '\n'
 				logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
 			if packetloss is not None:
+				msg += 'Packet Loss : ' + packetloss + '%\n'
 				logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
 				if float(packetloss) > float(self.iperf_packetloss_threshold):
+					msg += 'Packet Loss too high!\n'
 					logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
-					lock.release()
-					sys.exit(1)
+					iperfStatus = False
 			if jitter is not None:
+				msg += 'Jitter      : ' + jitter + '\n'
 				logging.debug('\u001B[1;34m    Jitter      : ' + jitter + '\u001B[0m')
+			if (iperfStatus):
+				statusQueue.put(0)
+			else:
+				statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put(msg)
 			lock.release()
 
-	def Iperf_analyzeV3Output(self, lock, UE_IPAddress):
+	def Iperf_analyzeV3Output(self, lock, UE_IPAddress, device_id, statusQueue):
 		result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', str(self.ssh.before))
 		if result is None:
 			result = re.search('(?P<error>iperf: error - [a-zA-Z0-9 :]+)', str(self.ssh.before))
+			lock.acquire()
+			statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
 			if result is not None:
 				logging.debug('\u001B[1;37;41m ' + result.group('error') + ' \u001B[0m')
+				statusQueue.put(result.group('error'))
 			else:
 				logging.debug('\u001B[1;37;41m Bitrate and/or Packet Loss Not Found! \u001B[0m')
-			sys.exit(1)
+				statusQueue.put('Bitrate and/or Packet Loss Not Found!')
+			lock.release()
+
 		bitrate = result.group('bitrate')
 		packetloss = result.group('packetloss')
 		lock.acquire()
 		logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
 		logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
+		msg = 'Bitrate     : ' + bitrate + '\n'
+		iperfStatus = True
 		if packetloss is not None:
 			logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
+			msg += 'Packet Loss : ' + packetloss + '%\n'
 			if float(packetloss) > float(self.iperf_packetloss_threshold):
 				logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
-				lock.release()
-				sys.exit(1)
+				msg += 'Packet Loss too high!\n'
+				iperfStatus = False
+		if (iperfStatus):
+			statusQueue.put(0)
+		else:
+			statusQueue.put(-1)
+		statusQueue.put(device_id)
+		statusQueue.put(UE_IPAddress)
 		lock.release()
 
-	def Iperf_UL_common(self, lock, UE_IPAddress, device_id, idx, ue_num):
+	def Iperf_UL_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
 		ipnumbers = UE_IPAddress.split('.')
 		if (len(ipnumbers) == 4):
 			ipnumbers[3] = '1'
@@ -645,25 +775,26 @@ class SSHConnection():
 		time.sleep(0.5)
 
 		modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
+		modified_options = modified_options.replace('-R','')
 		time.sleep(0.5)
 
 		self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
 		self.command('stdbuf -o0 adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '" 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-		self.Iperf_analyzeV2Output(lock, UE_IPAddress)
+		self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue)
 
 		# Launch iperf server on EPC side
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('killall --signal SIGKILL iperf', self.EPCUserName, 5)
 		self.close()
 
-	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num):
+	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
 		try:
 			# Single-UE profile -- iperf only on one UE
 			if SSH.iperf_profile == 'single-ue' and idx != 0:
 				return
 			useIperf3 = False
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			# if by chance ADB server and EPC are on the same remote host, at least log collection will take of it
+			# if by chance ADB server and EPC are on the same remote host, at least log collection will take care of it
 			self.command('if [ ! -d ' + self.EPCSourceCodePath + '/scripts ]; then mkdir -p ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
 			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			# Checking if iperf / iperf3 are installed
@@ -672,8 +803,16 @@ class SSHConnection():
 			if result is None:
 				result = re.search('iperf', str(self.ssh.before))
 				if result is None:
-					logging.debug('\u001B[1;37;41m Neither iperf nor iperf3 installed on UE! \u001B[0m')
-					sys.exit(1)
+					message = 'Neither iperf nor iperf3 installed on UE!'
+					lock.acquire()
+					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+					statusQueue.put(-1)
+					statusQueue.put(device_id)
+					statusQueue.put(UE_IPAddress)
+					statusQueue.put(message)
+					lock.release()
+					return
+					#sys.exit(1)
 			else:
 				useIperf3 = True
 			# in case of iperf, UL has its own function
@@ -681,7 +820,7 @@ class SSHConnection():
 				result = re.search('-R', str(self.iperf_args))
 				if result is not None:
 					self.close()
-					self.Iperf_UL_common(lock, UE_IPAddress, device_id, idx, ue_num)
+					self.Iperf_UL_common(lock, UE_IPAddress, device_id, idx, ue_num, statusQueue)
 					return
 
 			if (useIperf3):
@@ -704,11 +843,11 @@ class SSHConnection():
 			if (useIperf3):
 				self.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
-				self.Iperf_analyzeV3Output(lock, UE_IPAddress)
+				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue)
 			else:
 				self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
-				self.Iperf_analyzeV2Output(lock, UE_IPAddress)
+				self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue)
 			self.close()
 
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -732,16 +871,38 @@ class SSHConnection():
 		i = 0
 		ue_num = len(self.UEIPAddresses)
 		lock = Lock()
+		status_queue = SimpleQueue()
 		for UE_IPAddress in self.UEIPAddresses:
 			device_id = self.UEDevices[i]
-			p = Process(target = SSH.Iperf_common, args = (lock,UE_IPAddress,device_id,i,ue_num,))
+			p = Process(target = SSH.Iperf_common, args = (lock,UE_IPAddress,device_id,i,ue_num,status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
 			i = i + 1
 		for job in multi_jobs:
 			job.join()
-		self.CreateHtmlTestRow(self.iperf_args, 'OK', 0)
+
+		if (status_queue.empty()):
+			self.CreateHtmlTestRow(self.iperf_args, 'KO', len(self.UEDevices))
+			sys.exit(1)
+		else:
+			iperf_status = True
+			html_queue = SimpleQueue()
+			while (not status_queue.empty()):
+				count = status_queue.get()
+				if (count < 0):
+					iperf_status = False
+				device_id = status_queue.get()
+				ip_addr = status_queue.get()
+				message = status_queue.get()
+				html_cell = "<pre>UE (" + device_id + ")\nIP Address  : " + ip_addr + "\n" + message + "</pre>"
+				html_queue.put(html_cell)
+			if (iperf_status):
+				self.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
+			else:
+				self.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
+				self.CreateHtmlFooter()
+				sys.exit(1)
 
 	def CheckProcessExist(self, initialize_eNB_flag):
 		multi_jobs = []
@@ -872,6 +1033,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_mme', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def TerminateSPGW(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -1094,6 +1256,30 @@ class SSHConnection():
 			while (i < self.htmlUEConnected):
 				if (i < ue_status):
 					self.htmlFile.write('        <td>-</td>\n')
+				else:
+					self.htmlFile.write('        <td>-</td>\n')
+				i += 1
+			self.htmlFile.write('      </tr>\n')
+
+	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):
+		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + SSH.testCase_id  + '</td>\n')
+			self.htmlFile.write('        <td>' + SSH.desc  + '</td>\n')
+			self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
+			if (str(status) == 'OK'):
+				self.htmlFile.write('        <td bgcolor = "lightgreen" >' + str(status)  + '</td>\n')
+			elif (str(status) == 'KO'):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+			else:
+				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
+			i = 0
+			while (i < self.htmlUEConnected):
+				if (i < ue_status):
+					if (not ue_queue.empty()):
+						self.htmlFile.write('        <td>' + str(ue_queue.get()) + '</td>\n')
+					else:
+						self.htmlFile.write('        <td>-</td>\n')
 				else:
 					self.htmlFile.write('        <td>-</td>\n')
 				i += 1
