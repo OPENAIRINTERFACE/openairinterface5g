@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 	double SNR, SNR_lin;
 	int16_t nBitError = 0; // -1 = Decoding failed (All list entries have failed the CRC checks).
 	int8_t decoderState=0, blockErrorState=0; //0 = Success, -1 = Decoding failed, 1 = Block Error.
-	uint16_t testLength, coderLength, blockErrorCumulative=0, bitErrorCumulative=0;
+	uint16_t testLength = 0, coderLength = 0, blockErrorCumulative=0, bitErrorCumulative=0;
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
 
 	uint8_t aggregation_level, decoderListSize = 8, pathMetricAppr = 0; //0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)

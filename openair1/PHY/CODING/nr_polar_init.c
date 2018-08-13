@@ -31,16 +31,11 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 				   uint8_t aggregation_level)
 {
 	t_nrPolar_paramsPtr currentPtr = *polarParams;
-	t_nrPolar_paramsPtr previousPtr = NULL;
 
 	//Parse the list. If the node is already created, return without initialization.
 	while (currentPtr != NULL) {
-		if (currentPtr->idx == (messageType * messageLength)) {
-			return;
-		} else {
-			previousPtr = currentPtr;
-			currentPtr = currentPtr->nextPtr;
-		}
+		if (currentPtr->idx == (messageType * messageLength)) return;
+		else currentPtr = currentPtr->nextPtr;
 	}
 
 	//Else, initialize and add node to the end of the linked list.
@@ -174,7 +169,7 @@ t_nrPolar_paramsPtr nr_polar_params (t_nrPolar_paramsPtr polarParams,
 									 int8_t messageType,
 									 uint16_t messageLength)
 {
-	t_nrPolar_paramsPtr currentPtr;
+	t_nrPolar_paramsPtr currentPtr = NULL;
 
 	while (polarParams != NULL) {
 		if (polarParams->idx == (messageType * messageLength)) {
