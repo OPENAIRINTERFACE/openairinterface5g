@@ -924,30 +924,9 @@ ID = buf_test
 #VCD variables and functions
 
 #be careful! this must be synchronized with the code!
-#also keep up to date VCD_NUM_VARIABLES and VCD_NUM_FUNCTIONS in T_defs.h
-
-#to synchronize: copy/paste from openair2/UTIL/LOG/vcd_signal_dumper.h
-#the variables and functions name, replace "SIGNAL_DUMPER_VARIABLES" by
-#"VARIABLE" and "SIGNAL_DUMPER_FUNCTIONS" by "FUNCTION" (check that
-#everything is fine! for example we have
-#VCD_SIGNAL_DUMPER_VARIABLE_ITTI_SEND_MSG that has VARIABLE without S)
-#and then process with sed
-
-#to generate variables:
-#sed -e "s/  VCD_VARIABLE_\(.*\)/ID = VCD_VARIABLE_\1\n    DESC = VCD variable \1\n    GROUP = ALL:VCD:ENB\n    FORMAT = ulong,value/" < VCD >> T_messages.txt
-
-#to generate functions:
-#sed -e "s/  VCD_FUNCTION_\(.*\)/ID = VCD_FUNCTION_\1\n    DESC = VCD function \1\n    GROUP = ALL:VCD:ENB\n    FORMAT = int,value/" < VCD.functions >> T_messages.txt
-
-#you may want to manually edit groups for UE instead of eNB
-
-#then count functions and variables and update VCD_NUM_FUNCTIONS and
-#VCD_NUM_VARIABLES in T_defs.h
-
-#also verify that VCD_FIRST_FUNCTION and VCD_FIRST_VARIABLE are correct
-#in T_defs.h. They have to point to the first function and variable
-#as defined below. Note also that the order of the VCD functions
-#and variables must be the same as in the code.
+#also keep up to date VCD_NUM_VARIABLES, VCD_NUM_FUNCTIONS,
+#VCD_FIRST_FUNCTION and VCD_FIRST_VARIABLE in T_defs.h
+#to check that everything is correct you can run: make _check_vcd
 
 #variables
 

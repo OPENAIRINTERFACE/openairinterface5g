@@ -1880,9 +1880,13 @@ endif (${T_TRACER})
 #This rule and the following deal with it.
 add_custom_command (
   OUTPUT ${OPENAIR_DIR}/common/utils/T/T_IDs.h
+  COMMAND make clean
   COMMAND make
+  COMMAND make check_vcd
   WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
   DEPENDS ${OPENAIR_DIR}/common/utils/T/T_messages.txt
+          ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
+          ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.h
   )
 
 #This rule is specifically needed to generate T files
@@ -2187,7 +2191,8 @@ if (${T_TRACER})
         oai_eth_transpro
         FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
         SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL CN_UTILS
-        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB PHY_MEX)
+        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB PHY_MEX
+        coding)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()
