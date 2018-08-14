@@ -119,7 +119,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
   // Polar encoder init for PBCH
-  nr_polar_init(&fp->pbch_polar_params,
+  nr_polar_init(&gNB->nrPolar_params,
 		  	  	NR_POLAR_PBCH_MESSAGE_TYPE,
 				NR_POLAR_PBCH_PAYLOAD_BITS,
 				NR_POLAR_PBCH_AGGREGATION_LEVEL);

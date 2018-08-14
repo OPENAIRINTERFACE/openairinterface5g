@@ -202,8 +202,14 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 
   /// DCI payload processing
   //channel coding
-  /*uint8_t *encoderInput = malloc(sizeof(uint8_t) * dci_alloc.size);
+#ifdef DEBUG_POLAR_PARAMS
+  uint8_t *encoderInput = malloc(sizeof(uint8_t) * dci_alloc.size);
+  printf("\ndci_alloc.dci_pdu\n[0]=%d [1]=%d [2]=%d [3]=%d\n",dci_alloc.dci_pdu[0],dci_alloc.dci_pdu[1],dci_alloc.dci_pdu[2],dci_alloc.dci_pdu[3]);
   nr_bit2byte(dci_alloc.dci_pdu, dci_alloc.size, encoderInput);
+  printf("\ndci_alloc.dci_pdu\n[0]=%d [1]=%d [2]=%d [3]=%d\n",dci_alloc.dci_pdu[0],dci_alloc.dci_pdu[1],dci_alloc.dci_pdu[2],dci_alloc.dci_pdu[3]);
+  for (int i=0;i<dci_alloc.size;i++)
+	  printf("encoderInput[%d]=%d\n",i,encoderInput[i]);
+  return (0);
 
   nr_polar_init(&nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, pdcch_params.aggregation_level);
   t_nrPolar_paramsPtr currentPtr = nr_polar_params(nrPolar_params,
@@ -213,7 +219,9 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   uint8_t *encoderOutput = malloc(sizeof(uint8_t) * currentPtr->encoderLength);
   polar_encoder(encoderInput, encoderOutput, currentPtr);
   uint32_t encoded_payload[4];
-  nr_byte2bit(encoderOutput,currentPtr->encoderLength,encoded_payload);*/
+  nr_byte2bit(encoderOutput,currentPtr->encoderLength,encoded_payload);
+  return (0);
+#endif
   
     // scrambling
   uint32_t scrambled_payload[NR_MAX_DCI_SIZE_DWORD];

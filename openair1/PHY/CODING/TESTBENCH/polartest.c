@@ -11,6 +11,8 @@
 #include "PHY/defs_gNB.h"
 #include "SIMULATION/TOOLS/sim.h"
 
+#define DEBUG_POLAR_PARAMS
+
 int main(int argc, char *argv[]) {
 
 	//Initiate timing. (Results depend on CPU Frequency. Therefore, might change due to performance variances during simulation.)
@@ -125,6 +127,15 @@ int main(int argc, char *argv[]) {
 
 	t_nrPolar_paramsPtr nrPolar_params = NULL;
 	nr_polar_init(&nrPolar_params, polarMessageType, testLength, aggregation_level);
+#ifdef DEBUG_POLAR_PARAMS
+	nr_polar_init(&nrPolar_params, polarMessageType, testLength, aggregation_level);
+	nr_polar_init(&nrPolar_params, 1, 20, 1);
+	nr_polar_init(&nrPolar_params, 1, 21, 1);
+	nr_polar_init(&nrPolar_params, polarMessageType, testLength, aggregation_level);
+	nr_polar_print_polarParams(nrPolar_params);
+	return (0);
+#endif
+
 	t_nrPolar_paramsPtr currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength);
 
 	// We assume no a priori knowledge available about the payload.
