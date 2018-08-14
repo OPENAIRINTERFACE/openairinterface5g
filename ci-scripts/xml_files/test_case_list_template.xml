@@ -29,13 +29,13 @@
 	<testCase id="010101">
 		<class>Build_eNB</class>
 		<desc>Build eNB (USRP)</desc>
-		<Build_eNB_args>-w USRP -x -c --eNB</Build_eNB_args>
+		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
 	</testCase>
 
 	<testCase id="010102">
 		<class>Build_eNB</class>
 		<desc>Build eNB (USRP)</desc>
-		<Build_eNB_args>-w BLADERF -x -c --eNB</Build_eNB_args>
+		<Build_eNB_args>-w BLADERF -c --eNB</Build_eNB_args>
 	</testCase>
 
 	<testCase id="030101">

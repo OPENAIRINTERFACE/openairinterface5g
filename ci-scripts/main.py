@@ -154,6 +154,34 @@ class SSHConnection():
 		else:
 			logging.debug('\u001B[1;37;41m Unexpected Others \u001B[0m')
 
+	def copy(self, ipaddress, username, password, source, destination):
+		logging.debug('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination)
+		scp_spawn = pexpect.spawn('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination, timeout = 5)
+		scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+		if scp_response == 0:
+			scp_spawn.sendline('yes')
+			scp_spawn.expect('password:')
+			scp_spawn.sendline(password)
+			scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+			if scp_response == 0:
+				pass
+			else:
+				logging.debug('1 - scp_response = ' + str(scp_response))
+				sys.exit('SCP failed')
+		elif scp_response == 1:
+			scp_spawn.sendline(password)
+			scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+			if scp_response == 0 or scp_response == 3:
+				pass
+			else:
+				logging.debug('2 - scp_response = ' + str(scp_response))
+				sys.exit('SCP failed')
+		elif scp_response == 2:
+			pass
+		else:
+			logging.debug('3 - scp_response = ' + str(scp_response))
+			sys.exit('SCP failed')
+
 	def BuildeNB(self):
 		if self.eNBIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
 			Usage()
@@ -274,7 +302,7 @@ class SSHConnection():
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
 				doLoop = False
-				logging.debug('\u001B[1;37;43m eNB logging system did not show got sync! See with attach later \u001B[0m')
+				logging.debug('\u001B[1;30;43m eNB logging system did not show got sync! See with attach later \u001B[0m')
 				self.CreateHtmlTestRow(config_file, 'eNB not showing got sync!', 0)
 				# Not getting got sync is bypassed for the moment
 				#sys.exit(1)
@@ -672,18 +700,11 @@ class SSHConnection():
 		result = re.search('Server Report:', str(self.ssh.before))
 		if result is None:
 			result = re.search('read failed: Connection refused', str(self.ssh.before))
-			lock.acquire()
-			statusQueue.put(-1)
-			statusQueue.put(device_id)
-			statusQueue.put(UE_IPAddress)
 			if result is not None:
 				logging.debug('\u001B[1;37;41m Could not connect to iperf server! \u001B[0m')
-				statusQueue.put('Could not connect to iperf server!')
 			else:
 				logging.debug('\u001B[1;37;41m Server Report and Connection refused Not Found! \u001B[0m')
-				statusQueue.put('Server Report and Connection refused Not Found!')
-			lock.release()
-			return
+			return -1
 		result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/..\d+) (\((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
 		if result is not None:
 			bitrate = result.group('bitrate')
@@ -714,6 +735,121 @@ class SSHConnection():
 			statusQueue.put(UE_IPAddress)
 			statusQueue.put(msg)
 			lock.release()
+			return 0
+
+	def Iperf_analyzeV2Server(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options):
+		if (not os.path.isfile('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')):
+			lock.acquire()
+			statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put('Could not analyze from server log')
+			lock.release()
+			return
+		# Computing the requested bandwidth in float
+		result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', str(iperf_real_options))
+		if result is None:
+			logging.debug('Iperf bandwidth Not Found!')
+			lock.acquire()
+			statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put('Could not compute Iperf bandwidth!')
+			lock.release()
+			return
+		else:
+			req_bandwidth = result.group('iperf_bandwidth')
+			req_bw = float(req_bandwidth)
+			result = re.search('-b [0-9\.]+K', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Kbits/sec' % req_bw
+				req_bw = req_bw * 1000
+			result = re.search('-b [0-9\.]+M', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Mbits/sec' % req_bw
+				req_bw = req_bw * 1000000
+			result = re.search('-b [0-9\.]+G', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Gbits/sec' % req_bw
+				req_bw = req_bw * 1000000000
+
+		server_file = open('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', 'r')
+		br_sum = 0.0
+		ji_sum = 0.0
+		pl_sum = 0
+		ps_sum = 0
+		row_idx = 0
+		for line in server_file.readlines():
+			result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)/ +(?P<sentPack>[0-9]+)', str(line))
+			if result is not None:
+				bitrate = result.group('bitrate')
+				jitter = result.group('jitter')
+				packetlost = result.group('lostPack')
+				packetsent = result.group('sentPack')
+				br = bitrate.split(' ')
+				ji = jitter.split(' ')
+				row_idx = row_idx + 1
+				curr_br = float(br[0])
+				pl_sum = pl_sum + int(packetlost)
+				ps_sum = ps_sum + int(packetsent)
+				if (br[1] == 'Kbits/sec'):
+					curr_br = curr_br * 1000
+				if (br[1] == 'Mbits/sec'):
+					curr_br = curr_br * 1000 * 1000
+				br_sum = curr_br + br_sum
+				ji_sum = float(ji[0]) + ji_sum
+		if (row_idx > 0):
+			br_sum = br_sum / row_idx
+			ji_sum = ji_sum / row_idx
+			br_loss = 100 * br_sum / req_bw
+			if (br_sum > 1000):
+				br_sum = br_sum / 1000
+				if (br_sum > 1000):
+					br_sum = br_sum / 1000
+					bitrate = '%.2f Mbits/sec' % br_sum
+				else:
+					bitrate = '%.2f Kbits/sec' % br_sum
+			else:
+				bitrate = '%.2f bits/sec' % br_sum
+			bitperf = '%.2f ' % br_loss
+			bitperf += '%'
+			jitter = '%.2f ms' % (ji_sum)
+			if (ps_sum > 0):
+				pl = float(100 * pl_sum / ps_sum)
+				packetloss = '%2.1f ' % (pl)
+				packetloss += '%'
+			else:
+				packetloss = 'unknown'
+			lock.acquire()
+			if (br_loss < 90):
+				statusQueue.put(1)
+			else:
+				statusQueue.put(0)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			req_msg = 'Req Bitrate : ' + req_bandwidth
+			bir_msg = 'Bitrate     : ' + bitrate
+			brl_msg = 'Bitrate Perf: ' + bitperf
+			jit_msg = 'Jitter      : ' + jitter
+			pal_msg = 'Packet Loss : ' + packetloss
+			statusQueue.put(req_msg + '\n' + bir_msg + '\n' + brl_msg + '\n' + jit_msg + '\n' + pal_msg + '\n')
+			logging.debug('\u001B[1;37;45m iperf result (' + UE_IPAddress + ') \u001B[0m')
+			logging.debug('\u001B[1;35m    ' + req_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + bir_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + brl_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + jit_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + pal_msg + '\u001B[0m')
+			lock.release()
+		else:
+			lock.acquire()
+			statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put('Could not analyze from server log')
+			lock.release()
+
+		server_file.close()
+
 
 	def Iperf_analyzeV3Output(self, lock, UE_IPAddress, device_id, statusQueue):
 		result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', str(self.ssh.before))
@@ -780,12 +916,18 @@ class SSHConnection():
 
 		self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
 		self.command('stdbuf -o0 adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '" 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-		self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue)
+		clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue)
 
 		# Launch iperf server on EPC side
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('killall --signal SIGKILL iperf', self.EPCUserName, 5)
 		self.close()
+		if (clientStatus == -1):
+			time.sleep(1)
+			if (os.path.isfile('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')):
+				os.remove('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')
+			self.copy(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '.')
+			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
 		try:
@@ -843,11 +985,12 @@ class SSHConnection():
 			if (useIperf3):
 				self.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
+				clientStatus = 0
 				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue)
 			else:
 				self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
-				self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue)
+				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue)
 			self.close()
 
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -857,6 +1000,12 @@ class SSHConnection():
 				pid_iperf = result.group('pid')
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell kill -KILL ' + pid_iperf, '\$', 5)
 			self.close()
+			if (clientStatus == -1):
+				time.sleep(1)
+				if (os.path.isfile('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')):
+					os.remove('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')
+				self.copy(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '.')
+				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -887,17 +1036,22 @@ class SSHConnection():
 			sys.exit(1)
 		else:
 			iperf_status = True
+			iperf_noperf = False
 			html_queue = SimpleQueue()
 			while (not status_queue.empty()):
 				count = status_queue.get()
 				if (count < 0):
 					iperf_status = False
+				if (count > 0):
+					iperf_noperf = True
 				device_id = status_queue.get()
 				ip_addr = status_queue.get()
 				message = status_queue.get()
 				html_cell = "<pre>UE (" + device_id + ")\nIP Address  : " + ip_addr + "\n" + message + "</pre>"
 				html_queue.put(html_cell)
-			if (iperf_status):
+			if (iperf_noperf and iperf_status):
+				self.CreateHtmlTestRowQueue(self.iperf_args, 'PERF NOT MET', len(self.UEDevices), html_queue)
+			elif (iperf_status):
 				self.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
 			else:
 				self.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
@@ -1263,6 +1417,7 @@ class SSHConnection():
 
 	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			addOrangeBK = False
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + SSH.testCase_id  + '</td>\n')
 			self.htmlFile.write('        <td>' + SSH.desc  + '</td>\n')
@@ -1272,12 +1427,16 @@ class SSHConnection():
 			elif (str(status) == 'KO'):
 				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
 			else:
+				addOrangeBK = True
 				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
 			i = 0
 			while (i < self.htmlUEConnected):
 				if (i < ue_status):
 					if (not ue_queue.empty()):
-						self.htmlFile.write('        <td>' + str(ue_queue.get()) + '</td>\n')
+						if (addOrangeBK):
+							self.htmlFile.write('        <td bgcolor = "orange" >' + str(ue_queue.get()) + '</td>\n')
+						else:
+							self.htmlFile.write('        <td>' + str(ue_queue.get()) + '</td>\n')
 					else:
 						self.htmlFile.write('        <td>-</td>\n')
 				else:
