@@ -48,7 +48,7 @@
  * @{
  */
 
-#define SHRT_MAX   32767
+//#define SHRT_MAX   32767
 
 typedef struct {
   /// Indicator of first transmission

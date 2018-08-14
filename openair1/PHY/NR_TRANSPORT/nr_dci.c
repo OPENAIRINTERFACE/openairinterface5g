@@ -34,6 +34,7 @@
 
 //#define DEBUG_PDCCH_DMRS
 //#define DEBUG_DCI
+#define DEBUG_POLAR_PARAMS
 
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
