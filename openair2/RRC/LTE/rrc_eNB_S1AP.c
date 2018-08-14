@@ -945,16 +945,8 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
                S1AP_DOWNLINK_NAS (msg_p).nas_pdu.length,
                S1AP_DOWNLINK_NAS (msg_p).nas_pdu.buffer);
 
-#ifdef RRC_MSG_PRINT
-    int i=0;
-    LOG_F(RRC,"[MSG] RRC DL Information Transfer\n");
+    LOG_DUMPMSG(RRC,DEBUG_RRC,buffer,length,"[MSG] RRC DL Information Transfer\n");
 
-    for (i = 0; i < length; i++) {
-      LOG_F(RRC,"%02x ", ((uint8_t*)buffer)[i]);
-    }
-
-    LOG_F(RRC,"\n");
-#endif
     /* 
      * switch UL or DL NAS message without RRC piggybacked to SRB2 if active. 
      */

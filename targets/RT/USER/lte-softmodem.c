@@ -788,7 +788,7 @@ int stop_L1L2(module_id_t enb_id)
   oai_exit = 1;
 
   if (!RC.ru) {
-    LOG_F(ENB_APP, "no RU configured\n");
+    LOG_UI(ENB_APP, "no RU configured\n");
     return -1;
   }
 
@@ -967,7 +967,7 @@ int main( int argc, char **argv )
 
 #if defined(ENABLE_ITTI)
 
-  printf("ITTI init\n");
+  printf("ITTI init, useMME: %i\n" ,EPC_MODE_ENABLED);
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI

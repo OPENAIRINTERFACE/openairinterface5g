@@ -3851,24 +3851,9 @@ PMI_FEEDBACK:
       qsort (table_rx, time_vector_rx.size, sizeof(double), &compare);
 
       if (dump_table == 1 ) {
-        set_component_filelog(USIM);  // file located in /tmp/usim.txt
-        int n;
-        LOG_F(USIM,"The transmitter raw data: \n");
-
-        for (n=0; n< time_vector_tx.size; n++) {
-          printf("%f ", table_tx[n]);
-          LOG_F(USIM,"%f ", table_tx[n]);
-        }
-
-        LOG_F(USIM,"\n");
-        LOG_F(USIM,"The receiver raw data: \n");
-
-        for (n=0; n< time_vector_rx.size; n++) {
-          // printf("%f ", table_rx[n]);
-          LOG_F(USIM,"%f ", table_rx[n]);
-        }
-
-        LOG_F(USIM,"\n");
+        set_component_filelog(SIM);  // file located in /tmp/usim.txt
+        LOG_UDUMPMSG(SIM,table_tx,time_vector_tx.size,LOG_DUMP_DOUBLE,"The transmitter raw data: \n");
+        LOG_UDUMPMSG(SIM,table_rx,time_vector_rx.size,LOG_DUMP_DOUBLE,"The receiver raw data: \n");
       }
 
       double tx_median = table_tx[time_vector_tx.size/2];

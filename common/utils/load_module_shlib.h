@@ -72,13 +72,13 @@ typedef int(*getfarrayfunc_t)(loader_shlibfunc_t **funcarray);
 #define DEFAULT_MAXSHLIBS 10
 loader_data_t loader_data;
 
-/*------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                       LOADER parameters                                                                                        */
-/*   optname               helpstr   paramflags           XXXptr	                           defXXXval	              type       numelt   */
-/*------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                       LOADER parameters                                                                                                  */
+/*   optname               helpstr   paramflags           XXXptr	                           defXXXval	              type       numelt   check func*/
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define LOADER_PARAMS_DESC { \
-{"shlibpath",                NULL,    PARAMFLAG_NOFREE, strptr:(char **)&(loader_data.shlibpath), defstrval:DEFAULT_PATH,      TYPE_STRING, 0}, \
-{"maxshlibs",                NULL,    0,                uptr:&(loader_data.maxshlibs),            defintval:DEFAULT_MAXSHLIBS, TYPE_UINT32, 0}, \
+{"shlibpath",                NULL,    PARAMFLAG_NOFREE, strptr:(char **)&(loader_data.shlibpath), defstrval:DEFAULT_PATH,      TYPE_STRING, 0,    NULL},\
+{"maxshlibs",                NULL,    0,                uptr:&(loader_data.maxshlibs),            defintval:DEFAULT_MAXSHLIBS, TYPE_UINT32, 0,   NULL}\
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/

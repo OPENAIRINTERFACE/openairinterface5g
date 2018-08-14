@@ -83,11 +83,10 @@ extern "C" {
  * @{*/
 
 # define  OAILOG_ERR     0 /*!< \brief critical error conditions, impact on "must have" fuctinalities */
-# define  OAILOG_FILE    1 /*!< \brief important informational messages, but everything OK  */
-# define  OAILOG_WARNING 2 /*!< \brief warning conditions, shouldn't happen but doesn't impact "must have" functionalities */
-# define  OAILOG_INFO    3 /*!< \brief informational messages most people don't need, shouldn't impact real-time behavior */
-# define  OAILOG_DEBUG   4 /*!< \brief first level debug-level messages, for developers , may impact real-time behavior */
-# define  OAILOG_TRACE   5 /*!< \brief  second level debug-level messages, for developers ,likely impact real-time behavior*/
+# define  OAILOG_WARNING 1 /*!< \brief warning conditions, shouldn't happen but doesn't impact "must have" functionalities */
+# define  OAILOG_INFO    2 /*!< \brief informational messages most people don't need, shouldn't impact real-time behavior */
+# define  OAILOG_DEBUG   3 /*!< \brief first level debug-level messages, for developers , may impact real-time behavior */
+# define  OAILOG_TRACE   4 /*!< \brief  second level debug-level messages, for developers ,likely impact real-time behavior*/
 
 #define NUM_LOG_LEVEL 6 /*!< \brief the number of message levels users have with LOG */
 /* @}*/
@@ -128,21 +127,47 @@ extern "C" {
 
 /** @defgroup macros to identify a debug entity
  *  @ingroup each macro is a bit mask where the unique bit set identifies an entity to be debugged
- *            it allows to dynamically activate or not blocks of code 
+ *            it allows to dynamically activate or not blocks of code. The  LOG_MASKMAP_INIT macro 
+ *            is used to map a character string name to each debug bit, it allows to set or clear
+ *            the corresponding bit via the defined name, from the configuration or from the telnet
+ *            server.
  *  @brief 
  * @{*/
 #define DEBUG_PRACH        (1<<0)
 #define DEBUG_RU           (1<<1)
 #define DEBUG_UE_PHYPROC   (1<<2)
 #define DEBUG_LTEESTIM     (1<<3)
+#define DEBUG_DLCELLSPEC   (1<<4)
+#define DEBUG_ULSCH        (1<<5)
+#define DEBUG_RRC          (1<<6)
+#define DEBUG_PDCP         (1<<7)
+#define DEBUG_DFT          (1<<8)
 #define DEBUG_CTRLSOCKET   (1<<10)
 #define UE_TIMING          (1<<20)
 
-#define SET_LOG_DEBUG(O)   g_log->debug_mask = (g_log->debug_mask | O)
-#define CLEAR_LOG_DEBUG(O) g_log->debug_mask = (g_log->debug_mask & (~O))
 
-#define SET_LOG_MATLAB(O)   g_log->matlab_mask = (g_log->matlab_mask | O)
-#define CLEAR_LOG_MATLAB(O) g_log->matlab_mask = (g_log->matlab_mask & (~O))
+#define LOG_MASKMAP_INIT {\
+  {"PRACH",       DEBUG_PRACH},\
+  {"RU",          DEBUG_RU},\
+  {"LTEESTIM",    DEBUG_LTEESTIM},\
+  {"CTRLSOCKET",  DEBUG_CTRLSOCKET},\
+  {"UE_PHYPROC",  DEBUG_UE_PHYPROC},\
+  {"DLCELLSPEC",  DEBUG_DLCELLSPEC},\
+  {"ULSCH",       DEBUG_ULSCH},\
+  {"RRC",         DEBUG_RRC},\
+  {"PDCP",        DEBUG_PDCP},\
+  {"DFT",         DEBUG_DFT},\
+  {"UE_TIMING",   UE_TIMING},\
+  {NULL,-1}\
+}
+
+
+
+#define SET_LOG_DEBUG(B)   g_log->debug_mask = (g_log->debug_mask | B)
+#define CLEAR_LOG_DEBUG(B) g_log->debug_mask = (g_log->debug_mask & (~B))
+
+#define SET_LOG_DUMP(B)   g_log->genfile_mask = (g_log->genfile_mask | B)
+#define CLEAR_LOG_DUMP(B) g_log->genfile_mask = (g_log->genfile_mask & (~B))
 
 
 
@@ -199,17 +224,18 @@ typedef struct {
     int value;  /*!< \brief integer value of mapping */
 } mapping;
 
-typedef int(*log_write_func_t)(FILE *stream, const char *format, va_list ap );
-
+typedef int(*log_vprint_func_t)(FILE *stream, const char *format, va_list ap );
+typedef int(*log_print_func_t)(FILE *stream, const char *format, ... );
 typedef struct  {
-    const char       *name;
-    int              level;
-    int              flag;
-    int              interval;
-    int              filelog;
-    char             *filelog_name;
-    FILE             *stream;
-    log_write_func_t fwrite;
+    const char        *name;
+    int               level;
+    int               savedlevel;
+    int               flag;
+    int               filelog;
+    char              *filelog_name;
+    FILE              *stream;
+    log_vprint_func_t vprint;
+    log_print_func_t  print;
     /* SR: make the log buffer component relative */
     char             log_buffer[MAX_LOG_TOTAL];
 } log_component_t;
@@ -218,12 +244,10 @@ typedef struct  {
 typedef struct {
     log_component_t         log_component[MAX_LOG_COMPONENTS];
     char*                   level2string[NUM_LOG_LEVEL];
-    int                     onlinelog;
     int                     flag;
-    int                     filelog;
     char*                   filelog_name;
     uint64_t                debug_mask;
-    uint64_t                matlab_mask;
+    uint64_t                genfile_mask;
 } log_t;
 
 
@@ -254,14 +278,15 @@ extern log_t *g_log;
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
-
-int  set_log(int component, int level, int interval);
+void log_dump(int component, void *buffer, int buffsize,int datatype, const char* format, ... );
+int  set_log(int component, int level);
 void set_glog(int level);
 
 void set_glog_onlinelog(int enable);
 void set_glog_filelog(int enable);
 void set_component_filelog(int comp);
-
+void close_component_filelog(int comp);
+void set_component_consolelog(int comp);
 int  map_str_to_int(mapping *map, const char *str);
 char *map_int_to_str(mapping *map, int val);
 void logClean (void);
@@ -293,7 +318,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_CONFIG_LEVEL_FORMAT                            "%s_log_level"
 #define LOG_CONFIG_LOGFILE_FORMAT                          "%s_log_infile"
 #define LOG_CONFIG_DEBUG_FORMAT                            "%s_debug"
-#define LOG_CONFIG_MATLAB_FORMAT                           "%s_matlab"
+#define LOG_CONFIG_GENFILE_FORMAT                           "%s_genfile"
 
 #define LOG_CONFIG_HELP_OPTIONS      " list of comma separated options to enable log module behavior. Available options: \n"\
                                      " nocolor:   disable color usage in log messages\n"\
@@ -309,7 +334,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define LOG_GLOBALPARAMS_DESC { \
 {LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    "Default log level for all componemts\n",              0,  	      strptr:(char **)&gloglevel,    defstrval:log_level_names[2].name,    TYPE_STRING,    0}, \
-{LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   "Default console output option, for all components\n", 0,  	      iptr:&(g_log->onlinelog),      defintval:1,                          TYPE_INT,       0}, \
+{LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   "Default console output option, for all components\n", 0,  	      iptr:&(consolelog),            defintval:1,                          TYPE_INT,       0}, \
 {LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS,  LOG_CONFIG_HELP_OPTIONS,                               0,  	      strlistptr:NULL,               defstrlistval:NULL,                   TYPE_STRINGLIST,0} \
 }
 
@@ -319,23 +344,25 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
  *  @ingroup _macro
  *  @brief Macro used to call logIt function with different message levels
  * @{*/
-
-// debugging macros(g_log->log_component[component].interval?logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args):(void)0)
+#define LOG_DUMP_CHAR       0
+#define LOG_DUMP_DOUBLE     1
+// debugging macros
+#define LOG_F  LOG_I           /* because  LOG_F was originaly to dump a message or buffer but is also used as a regular level...., to dump use LOG_DUMPMSG */
 #  if T_TRACER 
      /* per component, level dependant macros */
-#    define LOG_I(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0) 
-#    define LOG_W(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_WARNING) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;} else { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)) ;}} while (0) 
 #    define LOG_E(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_ERR    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;} else { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))   ;}} while (0) 
+#    define LOG_W(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_WARNING) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;} else { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)) ;}} while (0) 
+#    define LOG_I(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0) 
 #    define LOG_D(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_DEBUG  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0) 
 #    define LOG_T(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_TRACE  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0) 
-#    define LOG_F(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_FILE   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_FILE, x)  ;}}   while (0)  /* */
+    /* macro used to dump a buffer or a message as in openair2/RRC/LTE/RRC_eNB.c, replaces LOG_F macro */
+#    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->genfile_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
 #    define nfapi_log(FILE, FNC, LN, COMP, LVL, F...)  do { if (T_stdout) { logRecord_mt(__FILE__, __FUNCTION__, __LINE__,COMP, LVL, F)  ;}}   while (0)  /* */
      /* bitmask dependant macros, to isolate debugging code */
-#    define LOG_DEBUG_BEGIN(D) if (g_log->debug_mask & D) {
-#    define LOG_DEBUG_END   }
-     /* bitmask dependant macros, to generate matlab files */
-#    define LOG_M_BEGIN(D) if (g_log->matlab_mask & D) {
-#    define LOG_M_END   }
+#    define LOG_DEBUGFLAG(D) (g_log->debug_mask & D)
+
+     /* bitmask dependant macros, to generate debug file such as matlab file or message dump */
+#    define LOG_GENFILEFLAG(D) (g_log->genfile_mask & D)
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)/* */
      /* define variable only used in LOG macro's */
 #    define LOG_VAR(A,B) A B
@@ -345,12 +372,11 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_E(c, x...) /* */
 #    define LOG_D(c, x...) /* */
 #    define LOG_T(c, x...) /* */
-#    define LOG_F(c, x...) /* */
+
+#    define LOG_DUMPMSG(c, b, s, x...) /* */
 #    define nfapi_log(FILE, FNC, LN, COMP, LVL, FMT...) 
-#    define LOG_DEBUG_BEGIN(D) if (0) {
-#    define LOG_DEBUG_END   }
-#    define LOG_M_BEGIN(D) if (0) {
-#    define LOG_M_END   }
+#    define LOG_DEBUGFLAG(D)  ( 0 )
+#    define LOG_GENFILEFLAG(D) ( 0 ) 
 #    define LOG_M(file, vector, data, len, dec, format) 
 #    define LOG_VAR(A,B)
 #  endif /* T_TRACER */
@@ -359,8 +385,8 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 
 /* unfiltered macros, usefull for simulators or messages at init time, before log is configured */
 #define LOG_UM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
-
 #define LOG_UI(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)
+#define LOG_UDUMPMSG(c, b, s, f, x...) do { log_dump(c, b, s, f, x)  ;}   while (0)  /* */
 /* @}*/
 
 

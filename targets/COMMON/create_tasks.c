@@ -60,7 +60,7 @@ int create_tasks(uint32_t enb_nb)
     }
   }
 
-#   if defined(ENABLE_USE_MME)
+  if (EPC_MODE_ENABLED) {
       if (enb_nb > 0) {
         if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
           LOG_E(SCTP, "Create task for SCTP failed\n");
@@ -84,7 +84,7 @@ int create_tasks(uint32_t enb_nb)
         }
       }
 
-#      endif
+  } /* if (EPC_MODE_ENABLED) */
 
     if (enb_nb > 0) {
       LOG_I(RRC,"Creating RRC eNB Task\n");

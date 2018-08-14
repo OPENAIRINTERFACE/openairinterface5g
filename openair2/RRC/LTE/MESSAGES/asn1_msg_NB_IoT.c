@@ -136,7 +136,7 @@ uint8_t do_MIB_NB_IoT(
                                    carrier->MIB_NB_IoT,
                                    100);
   if(enc_rval.encoded <= 0) {
-      LOG_F(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
+      LOG_E(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
 
@@ -394,7 +394,7 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
                                    100);
 
   if (enc_rval.encoded > 0){ 
-       LOG_F(RRC,"ASN1 message encoding failed (%s, %lu)!\n",
+       LOG_E(RRC,"ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
 
@@ -897,7 +897,7 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
                                   100);
 
  if (enc_rval.encoded <= 0) {
-     LOG_F(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
+     LOG_E(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
               enc_rval.failed_type->name, enc_rval.encoded);
  }
 
@@ -948,7 +948,7 @@ uint8_t do_SecurityModeCommand_NB_IoT(
                                    buffer,
                                    100);
   if (enc_rval.encoded <= 0) {
-      LOG_F(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
+      LOG_E(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
 
@@ -1010,7 +1010,7 @@ uint8_t do_UECapabilityEnquiry_NB_IoT(
                                    buffer,
                                    100);
   if (enc_rval.encoded <= 0) {
-     LOG_F(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
+     LOG_E(RRC, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
     }
 
@@ -1105,7 +1105,7 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
                                    buffer,
                                    RRC_BUF_SIZE);
   if (enc_rval.encoded <= 0) {
-     LOG_F(RRC, "ASN1 message encoding failed %s, %li\n",
+     LOG_E(RRC, "ASN1 message encoding failed %s, %li\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
 
@@ -1152,7 +1152,7 @@ uint8_t do_RRCConnectionReestablishmentReject_NB_IoT(
                                    buffer,
                                    100);
   if (enc_rval.encoded <= 0) {
-     LOG_F(RRC,"ASN1 message encoding failed (%s, %lu)!\n",
+     LOG_E(RRC,"ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
 
@@ -1223,7 +1223,7 @@ uint8_t do_RRCConnectionReject_NB_IoT(
                                    buffer,
                                    100);
   if (enc_rval.encoded <= 0) {
-     LOG_F(RRC, "ASN1 message encoding failed (%s, %ld)!\n",
+     LOG_E(RRC, "ASN1 message encoding failed (%s, %ld)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   }
 
@@ -1351,7 +1351,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
 	                                   RRC_BUF_SIZE);
 
 	if (enc_rval.encoded <= 0) {
-           LOG_F(RRC, "ASN1 message encoding failed (%s, %li)!\n",
+           LOG_E(RRC, "ASN1 message encoding failed (%s, %li)!\n",
 	               enc_rval.failed_type->name, enc_rval.encoded);
         }
 

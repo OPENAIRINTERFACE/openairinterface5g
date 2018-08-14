@@ -5016,24 +5016,11 @@ int main(int argc, char **argv)
 
       if (dump_table == 1 ) {
         set_component_filelog(USIM);  // file located in /tmp/usim.txt
-        int n;
-        LOG_F(USIM,"The transmitter raw data: \n");
+        LOG_UDUMPMSG(RRC,(char *)table_tx,time_vector_tx.size,LOG_DUMP_DOUBLE,
+                     "The transmitter raw data: \n");
+        LOG_UDUMPMSG(RRC,(char *)table_rx,time_vector_rx.size,LOG_DUMP_DOUBLE,
+                     "The receiver raw data: \n");
 
-        for (n=0; n< time_vector_tx.size; n++) {
-          printf("%f ", table_tx[n]);
-          LOG_F(USIM,"%f ", table_tx[n]);
-        }
-
-        LOG_F(USIM,"\n");
-        LOG_F(USIM,"The receiver raw data: \n");
-
-        for (n=0; n< time_vector_rx.size; n++) {
-          // printf("%f ", table_rx[n]);
-          LOG_F(USIM,"%f ", table_rx[n]);
-        }
-
-        LOG_F(USIM,"\n");
-      }
 
       double tx_median = table_tx[time_vector_tx.size/2];
       double tx_q1 = table_tx[time_vector_tx.size/4];

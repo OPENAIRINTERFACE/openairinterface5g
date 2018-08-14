@@ -831,17 +831,17 @@ int main( int argc, char **argv )
   set_taus_seed (0);
 
 
-    set_log(HW,      OAILOG_DEBUG,   1);
-    set_log(PHY,     OAILOG_INFO,    1);
-    set_log(MAC,     OAILOG_INFO,    1);
-    set_log(RLC,     OAILOG_INFO,    1);
-    set_log(PDCP,    OAILOG_INFO,    1);
-    set_log(OTG,     OAILOG_INFO,    1);
-    set_log(RRC,     OAILOG_INFO,    1);
+    set_log(HW,      OAILOG_DEBUG );
+    set_log(PHY,     OAILOG_INFO  );
+    set_log(MAC,     OAILOG_INFO  );
+    set_log(RLC,     OAILOG_INFO  );
+    set_log(PDCP,    OAILOG_INFO  );
+    set_log(OTG,     OAILOG_INFO  );
+    set_log(RRC,     OAILOG_INFO  );
 #if defined(ENABLE_ITTI)
-    set_log(SIM,     OAILOG_INFO,   1);
+    set_log(SIM,     OAILOG_INFO );
 # if defined(ENABLE_USE_MME)
-    set_log(NAS,     OAILOG_INFO,    1);
+    set_log(NAS,     OAILOG_INFO  );
 # endif
 #endif
 
