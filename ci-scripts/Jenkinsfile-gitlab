@@ -286,13 +286,29 @@ pipeline {
                         }
                     }
                     post {
-                        always {
+                        // In case of success we really pick the report from the exact slave build number
+                        success {
                             script {
                                 copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
                                               filter: 'test_results*.html',
                                               selector: specific("${FDD_Band7_B210_Status.number}"))
                                 if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
                                     archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
+                                }
+                            }
+                        }
+                        // In case of any non-success, we are retrieving the HTML report of the last completed
+                        // slave job. Note that we could use that syntax also in case of success.
+                        // The only drop-back is that we may retrieve the HTML report of a previous build
+                        cleanup {
+                            script {
+                                if (!fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
+                                    copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
+                                                  filter: 'test_results*.html',
+                                                  selector: lastCompleted())
+                                    if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
+                                        archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
+                                    }
                                 }
                             }
                         }
