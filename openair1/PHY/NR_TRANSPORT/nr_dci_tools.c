@@ -130,7 +130,15 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
       switch(params_rel15->rnti_type) {
         case NFAPI_NR_RNTI_RA:
 #ifdef DEBUG_NFAPI_NR_RNTI_RA
-printf("\npdu_rel15->frequency_domain_assignment = %d = 0x%x",pdu_rel15->frequency_domain_assignment,pdu_rel15->frequency_domain_assignment);
+printf("frequency_domain_assignment = %05d = %#08x\n"
+		"   time_domain_assignment = %05d = %#08x\n"
+		"       vrb_to_prb_mapping = %05d = %#08x\n"
+		"                      MCS = %05d = %#08x\n"
+		"               tb_scaling = %05d = %#08x\n",
+		pdu_rel15->frequency_domain_assignment,pdu_rel15->frequency_domain_assignment,
+		pdu_rel15->time_domain_assignment,pdu_rel15->time_domain_assignment,
+		pdu_rel15->vrb_to_prb_mapping,pdu_rel15->vrb_to_prb_mapping,
+		pdu_rel15->mcs,pdu_rel15->mcs,pdu_rel15->tb_scaling,pdu_rel15->tb_scaling);
 #endif
           // Freq domain assignment
           fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
