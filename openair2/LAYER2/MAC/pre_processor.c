@@ -578,11 +578,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
       CC_id = UE_list->ordered_CCids[i][UE_id];
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
       cc = &RC.mac[Mod_id]->common_channels[CC_id];
-      // FIXME: Can we use subframe2harqpid() here?
-      if (cc->tdd_Config)
-        harq_pid = ((frameP * 10) + subframeP) % 10;
-      else
-        harq_pid = ((frameP * 10) + subframeP) & 7;
+      harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frameP ,subframeP);
       round = ue_sched_ctl->round[CC_id][harq_pid];
 
       if (nb_rbs_required[CC_id][UE_id] > 0) {
