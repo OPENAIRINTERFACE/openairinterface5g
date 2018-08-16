@@ -1120,10 +1120,10 @@ void free_transport(PHY_VARS_eNB *eNB)
   int j;
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    LOG_I(PHY, "Freeing Transport Channel Buffers for DLSCH, UE %d\n",i);
+    LOG_D(PHY, "Freeing Transport Channel Buffers for DLSCH, UE %d\n",i);
     for (j=0; j<2; j++) free_eNB_dlsch(eNB->dlsch[i][j]);
 
-    LOG_I(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
+    LOG_D(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
     free_eNB_ulsch(eNB->ulsch[1+i]);
   }
   free_eNB_ulsch(eNB->ulsch[0]);
