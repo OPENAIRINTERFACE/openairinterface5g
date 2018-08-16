@@ -771,25 +771,6 @@ int stop_L1L2(module_id_t enb_id)
     return -1;
   }
 
-  /* stop trx devices, multiple carrier currently not supported by RU */
-  if (RC.ru[enb_id]) {
-    if (RC.ru[enb_id]->rfdevice.trx_stop_func) {
-      RC.ru[enb_id]->rfdevice.trx_stop_func(&RC.ru[enb_id]->rfdevice);
-      LOG_I(ENB_APP, "turned off RU rfdevice\n");
-    } else {
-      LOG_W(ENB_APP, "can not turn off rfdevice due to missing trx_stop_func callback, proceding anyway!\n");
-    }
-    if (RC.ru[enb_id]->ifdevice.trx_stop_func) {
-      RC.ru[enb_id]->ifdevice.trx_stop_func(&RC.ru[enb_id]->ifdevice);
-      LOG_I(ENB_APP, "turned off RU ifdevice\n");
-    } else {
-      LOG_W(ENB_APP, "can not turn off ifdevice due to missing trx_stop_func callback, proceding anyway!\n");
-    }
-  } else {
-    LOG_W(ENB_APP, "no RU found for index %d\n", enb_id);
-    return -1;
-  }
-
   /* these tasks need to pick up new configuration */
   terminate_task(enb_id, TASK_ENB_APP, TASK_RRC_ENB);
   terminate_task(enb_id, TASK_ENB_APP, TASK_L2L1);
