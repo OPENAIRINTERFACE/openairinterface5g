@@ -543,7 +543,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
 
   rnti_t rnti;
   uint8_t harq_pid, round;
-  uint16_t available_rbs;
+  uint16_t available_rbs[NFAPI_CC_MAX];
   uint8_t rbs_retx[NFAPI_CC_MAX];
   uint16_t average_rbs_per_user[NFAPI_CC_MAX];
   int total_ue_count[NFAPI_CC_MAX];
@@ -562,6 +562,7 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
     ue_count_retx[CC_id] = 0;
     rbs_retx[CC_id] = 0;
     average_rbs_per_user[CC_id] = 0;
+    available_rbs[CC_id] = 0;
     //for (UE_id = 0; UE_id < NFAPI_CC_MAX; ++UE_id) {
     //  ue_retx_flag[CC_id][UE_id] = 0;
     //}
@@ -600,10 +601,18 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
   // Reduces the available RBs according to slicing configuration
   dlsch_scheduler_pre_processor_partitioning(Mod_id, slice_idx, rbs_retx);
 
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[Mod_id]; ++CC_id) {
+    if (UE_list->head < 0) continue; // no UEs in list
+      // max_rbs_allowed_slice is saved in every UE, so take it from the first one
+    ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_list->head];
+    available_rbs[CC_id] = ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_idx];
+  }
+
   switch (RC.mac[Mod_id]->slice_info.dl[slice_idx].accounting) {
 
     // If greedy scheduling, try to account all the required RBs
     case POL_GREEDY:
+
       for (UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
         rnti = UE_RNTI(Mod_id, UE_id);
         if (rnti == NOT_A_RNTI) continue;
@@ -612,7 +621,9 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
 
         for (i = 0; i < UE_num_active_CC(UE_list, UE_id); i++) {
           CC_id = UE_list->ordered_CCids[i][UE_id];
-          nb_rbs_accounted[CC_id][UE_id] = nb_rbs_required[CC_id][UE_id];
+          if (available_rbs[CC_id] == 0) continue;
+          nb_rbs_accounted[CC_id][UE_id] = cmin(nb_rbs_required[CC_id][UE_id], available_rbs[CC_id]);
+          available_rbs[CC_id] -= nb_rbs_accounted[CC_id][UE_id];
         }
       }
       break;
@@ -634,12 +645,12 @@ void dlsch_scheduler_pre_processor_accounting(module_id_t Mod_id,
 
           CC_id = UE_list->ordered_CCids[i][UE_id];
           ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
-          available_rbs = ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_idx];
+          available_rbs[CC_id] = ue_sched_ctl->max_rbs_allowed_slice[CC_id][slice_idx];
 
           if (ue_count_newtx[CC_id] == 0) {
             average_rbs_per_user[CC_id] = 0;
-          } else if (min_rb_unit[CC_id]*ue_count_newtx[CC_id] <= available_rbs) {
-            average_rbs_per_user[CC_id] = (uint16_t)floor(available_rbs/ue_count_newtx[CC_id]);
+          } else if (min_rb_unit[CC_id]*ue_count_newtx[CC_id] <= available_rbs[CC_id]) {
+            average_rbs_per_user[CC_id] = (uint16_t)floor(available_rbs[CC_id]/ue_count_newtx[CC_id]);
           } else {
             // consider the total number of use that can be scheduled UE
             average_rbs_per_user[CC_id] = (uint16_t)min_rb_unit[CC_id];
