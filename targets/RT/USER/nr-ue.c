@@ -42,6 +42,8 @@
 
 #include "fapi_nr_ue_l1.h"
 #include "PHY/phy_extern_nr_ue.h"
+#include "PHY/INIT/phy_init.h"
+#include "PHY/MODULATION/modulation_UE.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
@@ -331,7 +333,7 @@ static void *UE_thread_synch(void *arg) {
         switch (sync_mode) {
         case pss:
             LOG_I(PHY,"[SCHED][UE] Scanning band %d (%d), freq %u\n",bands_to_scan.band_info[current_band].band, current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
-            lte_sync_timefreq(UE,current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
+            //lte_sync_timefreq(UE,current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
             current_offset += 20000000; // increase by 20 MHz
 
             if (current_offset > bands_to_scan.band_info[current_band].dl_max-bands_to_scan.band_info[current_band].dl_min) {
@@ -425,7 +427,7 @@ static void *UE_thread_synch(void *arg) {
                     //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
                     //UE->rfdevice.trx_stop_func(&UE->rfdevice);
                     // sleep(1);
-		    nr_init_frame_parms_ue(config,&UE->frame_parms);
+		            nr_init_frame_parms_ue(&UE->frame_parms);
                     /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
                         LOG_E(HW,"Could not start the device\n");
                         oai_exit=1;
@@ -614,7 +616,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #ifdef UE_SLOT_PARALLELISATION
             phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
-            phy_procedures_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+            phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #endif
         }
 
@@ -1099,7 +1101,7 @@ void fill_ue_band_info(void) {
 int setup_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg) {
 
     int i, CC_id;
-    LTE_DL_FRAME_PARMS *frame_parms;
+    NR_DL_FRAME_PARMS *frame_parms;
     openair0_rf_map *rf_map;
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

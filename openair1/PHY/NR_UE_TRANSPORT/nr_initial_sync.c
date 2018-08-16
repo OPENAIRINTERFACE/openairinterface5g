@@ -215,7 +215,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     else
       ue->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + sync_pos2 - sync_pos_slot;
 
-  printf("sync_pos %d sync_pos_slot %d rx_offset\n",sync_pos,sync_pos_slot, ue->rx_offset);
+  printf("sync_pos %d sync_pos_slot %d rx_offset %d\n",sync_pos,sync_pos_slot, ue->rx_offset);
 
 
   //  write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
