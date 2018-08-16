@@ -133,6 +133,14 @@ int main(int argc, char *argv[]) {
 	nr_polar_init(&nrPolar_params, 1, 21, 1);
 	nr_polar_init(&nrPolar_params, polarMessageType, testLength, aggregation_level);
 	nr_polar_print_polarParams(nrPolar_params);
+
+	uint32_t in[4];
+	in[0]=0x01189400;
+	in[1]=0xffffff0f;
+	uint8_t *out = malloc(sizeof(uint8_t) * 41);
+	nr_bit2byte(in, 41, out);
+	for (int i=0;i<41;i++)
+		printf("out[%d]=%d\n",i,out[i]);
 	return (0);
 #endif
 

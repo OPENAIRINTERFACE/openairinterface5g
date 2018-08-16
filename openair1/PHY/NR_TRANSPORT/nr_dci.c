@@ -204,15 +204,15 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   /// DCI payload processing
   //channel coding
 #ifdef DEBUG_POLAR_PARAMS
-  dci_alloc.dci_pdu[1]=10;
+  dci_alloc.dci_pdu[1]=0xffffffff;
   uint8_t *encoderInput = malloc(sizeof(uint8_t) * dci_alloc.size);
-  printf("\n[TY]DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+  printf("[TY]DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
 		  dci_alloc.dci_pdu[0], dci_alloc.dci_pdu[1], dci_alloc.dci_pdu[2], dci_alloc.dci_pdu[3]);
   nr_bit2byte(dci_alloc.dci_pdu, dci_alloc.size, encoderInput);
   for (int i=0;i<dci_alloc.size;i++)
 	  printf("encoderInput[%d]=%d\n",i,encoderInput[i]);
   nr_byte2bit(encoderInput,dci_alloc.size,dci_alloc.dci_pdu);
-  printf("\n[TY]DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+  printf("[TY]DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
   		  dci_alloc.dci_pdu[0], dci_alloc.dci_pdu[1], dci_alloc.dci_pdu[2], dci_alloc.dci_pdu[3]);
   return (0);
 

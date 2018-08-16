@@ -21,29 +21,21 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
-void nr_byte2bit_uint8(uint8_t *array, uint8_t arraySize, uint8_t *bitArray) {
-	//First 2 parameters are in bytes.
-
-	for (int i = 0; i < arraySize; i++) {
-		bitArray[(7 + (i * 8))] = (array[i] >> 0 & 0x01);
-		bitArray[(6 + (i * 8))] = (array[i] >> 1 & 0x01);
-		bitArray[(5 + (i * 8))] = (array[i] >> 2 & 0x01);
-		bitArray[(4 + (i * 8))] = (array[i] >> 3 & 0x01);
-		bitArray[(3 + (i * 8))] = (array[i] >> 4 & 0x01);
-		bitArray[(2 + (i * 8))] = (array[i] >> 5 & 0x01);
-		bitArray[(1 + (i * 8))] = (array[i] >> 6 & 0x01);
-		bitArray[(i * 8)] = (array[i] >> 7 & 0x01);
+void nr_bit2byte_uint32_8_t(uint32_t *in, uint16_t arraySize, uint8_t *out) {
+	uint8_t arrayInd = ceil(arraySize / 32.0);
+	for (int i = 0; i < arrayInd; i++) {
+		for (int j = 0; j < 32; j++) {
+			out[j+(i*32)] = (in[i] >> j) & 1;
+		}
 	}
 }
 
-void nr_bit2byte(uint32_t *in, uint16_t arraySize, uint8_t *out) {
-	for (int i = 0; i < arraySize; i++) {
-		out[i] = ((*in) >> i) & 1;
-	}
-}
-
-void nr_byte2bit(uint8_t *in, uint16_t arraySize, uint32_t *out) {
-	for (int i = 0; i < arraySize; i++) {
-		*out = (*out) << i | in[i];
+void nr_byte2bit_uint8_32_t(uint8_t *in, uint16_t arraySize, uint32_t *out) {
+	uint8_t arrayInd = ceil(arraySize / 32.0);
+	for (int i = 0; i < arrayInd; i++) {
+		for (int j = 0; j < 32; j++) {
+			out[i]|=in[j+(i*32)];
+			out[i]<<=1;
+		}
 	}
 }

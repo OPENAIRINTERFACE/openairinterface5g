@@ -113,9 +113,8 @@ void nr_polar_info_bit_pattern(uint8_t *ibp, int16_t *Q_I_N, int16_t *Q_F_N,
 void nr_polar_info_bit_extraction(uint8_t *input, uint8_t *output,
 		uint8_t *pattern, uint16_t size);
 
-void nr_byte2bit(uint8_t *in, uint16_t arraySize, uint32_t *out);
-void nr_byte2bit_uint8(uint8_t *array, uint8_t arraySize, uint8_t *bitArray);
-void nr_bit2byte(uint32_t *in, uint16_t arraySize, uint8_t *out);
+void nr_bit2byte_uint32_8_t(uint32_t *in, uint16_t arraySize, uint8_t *out);
+void nr_byte2bit_uint8_32_t(uint8_t *in, uint16_t arraySize, uint32_t *out);
 
 void nr_polar_bit_insertion(uint8_t *input, uint8_t *output, uint16_t N,
 		uint16_t K, int16_t *Q_I_N, int16_t *Q_PC_N, uint8_t n_PC);
