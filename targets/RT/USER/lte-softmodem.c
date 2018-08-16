@@ -801,7 +801,9 @@ int restart_L1L2(module_id_t enb_id)
   LOG_W(ENB_APP, "restarting lte-softmodem\n");
 
   /* block threads */
+  pthread_mutex_lock(&sync_mutex);
   sync_var = -1;
+  pthread_mutex_unlock(&sync_mutex);
 
   for (cc_id = 0; cc_id < RC.nb_L1_CC[enb_id]; cc_id++) {
     RC.eNB[enb_id][cc_id]->configured = 0;
