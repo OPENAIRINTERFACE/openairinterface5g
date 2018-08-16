@@ -592,12 +592,12 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int32_t                RateMatchPatternLTE_CRS_radioframeAllocationOffset            = 0;
   char*                  RateMatchPatternLTE_CRS_subframeAllocation_choice             = NULL;
 
-  int32_t                srb1_timer_poll_retransmit    = 0;
+  /*int32_t                srb1_timer_poll_retransmit    = 0;
   int32_t                srb1_timer_reordering         = 0;
   int32_t                srb1_timer_status_prohibit    = 0;
   int32_t                srb1_poll_pdu                 = 0;
   int32_t                srb1_poll_byte                = 0;
-  int32_t                srb1_max_retx_threshold       = 0;
+  int32_t                srb1_max_retx_threshold       = 0;*/
 
   //int32_t             my_int;
 

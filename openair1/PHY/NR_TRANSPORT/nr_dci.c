@@ -205,6 +205,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   //channel coding
 #ifdef DEBUG_POLAR_PARAMS
   uint8_t *encoderInput = malloc(sizeof(uint8_t) * dci_alloc.size);
+  printf("\n[TY]DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+		  dci_alloc.dci_pdu[0], dci_alloc.dci_pdu[1], dci_alloc.dci_pdu[2], dci_alloc.dci_pdu[3]);
   printf("\ndci_alloc.dci_pdu\n[0]=%d [1]=%d [2]=%d [3]=%d\n",dci_alloc.dci_pdu[0],dci_alloc.dci_pdu[1],dci_alloc.dci_pdu[2],dci_alloc.dci_pdu[3]);
   nr_bit2byte(dci_alloc.dci_pdu, dci_alloc.size, encoderInput);
   printf("\ndci_alloc.dci_pdu\n[0]=%d [1]=%d [2]=%d [3]=%d\n",dci_alloc.dci_pdu[0],dci_alloc.dci_pdu[1],dci_alloc.dci_pdu[2],dci_alloc.dci_pdu[3]);
