@@ -11,7 +11,7 @@
 #include "PHY/defs_gNB.h"
 #include "SIMULATION/TOOLS/sim.h"
 
-#define DEBUG_POLAR_PARAMS
+//#define DEBUG_POLAR_PARAMS
 
 int main(int argc, char *argv[]) {
 
@@ -138,9 +138,12 @@ int main(int argc, char *argv[]) {
 	in[0]=0x01189400;
 	in[1]=0xffffff0f;
 	uint8_t *out = malloc(sizeof(uint8_t) * 41);
-	nr_bit2byte(in, 41, out);
+	nr_bit2byte_uint32_8_t(in, 41, out);
 	for (int i=0;i<41;i++)
 		printf("out[%d]=%d\n",i,out[i]);
+	uint32_t inn[4];
+	nr_byte2bit_uint8_32_t(out, 41, inn);
+	printf("inn[0]=%#x, inn[1]=%#x\n",inn[0],inn[1]);
 	return (0);
 #endif
 
