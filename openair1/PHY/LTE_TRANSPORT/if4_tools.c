@@ -105,7 +105,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 				 		
       packet_header->frame_status &= ~(0x000f<<26);
       packet_header->frame_status |= (symbol_id&0x000f)<<26; 
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );		
+      if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 1 );		
       if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
 				       symbol_id,
 				       &tx_buffer,
@@ -114,7 +114,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 				       IF4p5_PDLFFT)) < 0) {
         perror("ETHERNET write for IF4p5_PDLFFT\n");
       }
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );
+      if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 0 );
       slotoffsetF  += fp->ofdm_symbol_size;
       blockoffsetF += fp->ofdm_symbol_size;    
     }
@@ -186,7 +186,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
         packet_header->frame_status |= ru->nb_rx-1;
 	packet_header->frame_status &= ~(0x000f<<26);
 	packet_header->frame_status |= (symbol_id&0x000f)<<26; 
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );  
+	if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 1 );  
 	start_meas(&ru->transport);
 	if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
 					 symbol_id,
@@ -197,7 +197,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 	  perror("ETHERNET write for IF4p5_PULFFT\n");
 	}
 	stop_meas(&ru->transport);
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );
+	if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 0 );
 	slotoffsetF  += fp->ofdm_symbol_size;
 	blockoffsetF += fp->ofdm_symbol_size;
       }    
@@ -250,7 +250,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
                PRACH_BLOCK_SIZE_BYTES);
       }
     }
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );
+    if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 1 );
     if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
 				     symbol_id,
 				     &tx_buffer_prach,
@@ -260,7 +260,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
       perror("ETHERNET write for IF4p5_PRACH\n");
     }
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );      
+    if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 0 );      
   } else {    
     AssertFatal(1==0, "send_IF4p5 - Unknown packet_type %x", packet_type);     
   }
@@ -298,7 +298,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
   uint16_t *data_block=NULL, *i=NULL;
 
   LOG_D(PHY,"recv IF4p5: RU %d waiting (%d samples)\n",ru->idx,db_fulllength);    
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 1 );   
+  if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0+ru->idx, 1 );   
   int read_cnt=0;
   while (ru->ifdevice.trx_read_func(&ru->ifdevice,
 				 (int64_t*) packet_type,
@@ -312,7 +312,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
       return;
     }
   }
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );
+  if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0+ru->idx, 0 );
   if (eth->flags == ETH_RAW_IF4p5_MODE) {
     packet_header = (IF4p5_header_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES);
     data_block = (uint16_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES+sizeof_IF4p5_header_t);

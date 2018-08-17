@@ -164,7 +164,7 @@
 {"usim-test",               CONFIG_HLP_USIM,        PARAMFLAG_BOOL,         u8ptr:&usim_test,                   defintval:0,                    TYPE_UINT8,     0},                     \
 {"mmapped-dma",             CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,         uptr:&mmapped_dma,                  defintval:0,                    TYPE_INT,       0},                     \
 {"external-clock",          CONFIG_HLP_EXCCLK,      PARAMFLAG_BOOL,         uptr:&clock_source,                 defintval:0,                    TYPE_INT,       0},                     \
-{"external-timesource",     CONFIG_HLP_EXTS,        PARAMFLAG_BOOL,         uptr:&time_source,                  defintval:0,                    TYPE_INT,       0},                   \ 
+{"external-timesource",     CONFIG_HLP_EXTS,        PARAMFLAG_BOOL,         uptr:&time_source,                  defintval:0,                    TYPE_INT,       0},                   \
 {"wait-for-sync",           NULL,                   PARAMFLAG_BOOL,         iptr:&wait_for_sync,                defintval:0,                    TYPE_INT,       0},                     \
 {"single-thread-enable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&single_thread_flag,           defintval:0,                    TYPE_INT,       0},                     \
 {"threadIQ",                NULL,                   0,                      iptr:&(threads.iq),                 defintval:1,                    TYPE_INT,       0},                     \

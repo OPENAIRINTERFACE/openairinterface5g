@@ -231,10 +231,11 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   proc->subframe_rx  = sf;
   proc->frame_rx     = f;
   proc->timestamp_rx = ((proc->frame_rx * 10)  + proc->subframe_rx ) * fp->samples_per_tti ;
-  //  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
-  proc->subframe_tx  = (sf+sf_ahead)%10;
-  proc->frame_tx     = (sf>(9-sf_ahead)) ? (f+1)&1023 : f;
- 
+  if (get_nprocs()<=4) {
+     proc->subframe_tx  = (sf+sf_ahead)%10;
+     proc->frame_tx     = (sf>(9-sf_ahead)) ? (f+1)&1023 : f;
+  }
+
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
       LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
