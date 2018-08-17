@@ -578,10 +578,10 @@ extern int *T_active;
 /*   optname                     helpstr                paramflags           XXXptr           defXXXval         type       numelt           */
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_TTRACEPARAMS_DESC {  \
-{"T_port",                     CONFIG_HLP_TPORT,      0,		iptr:&T_port,	     defintval:2021,	TYPE_INT,   0},	   \
-{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,	iptr:&T_nowait,      defintval:0,	TYPE_INT,   0},	   \
-{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,	iptr:&T_dont_fork,   defintval:0,	TYPE_INT,   0},	   \
-{"T_stdout",                   CONFIG_HLP_STDOUT,     PARAMFLAG_BOOL,	iptr:&T_stdout,      defintval:1,	TYPE_INT,   0},	   \
+{"T_port",                     CONFIG_HLP_TPORT,      0,                iptr:&T_port,        defintval:2021,     TYPE_INT,   0},           \
+{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,   iptr:&T_nowait,      defintval:0,        TYPE_INT,   0},           \
+{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,   iptr:&T_dont_fork,   defintval:0,        TYPE_INT,   0},           \
+{"T_stdout",                   CONFIG_HLP_STDOUT,     PARAMFLAG_BOOL,   iptr:&T_stdout,      defintval:1,        TYPE_INT,   0},           \
 } 
 
 

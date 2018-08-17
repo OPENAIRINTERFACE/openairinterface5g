@@ -39,6 +39,7 @@ void remove_7_5_kHz(RU_t *ru,uint8_t subframe);
  * data
     @param txdataF Table of pointers for frequency-domain TX signals
     @param txdataF_BF Table of pointers for frequency-domain TX signals
+    @param subframe subframe index
     @param frame_parms Frame descriptor structure
 after beamforming
     @param beam_weights Beamforming weights applied on each
@@ -48,6 +49,7 @@ antenna element and each carrier
     @param aa physical antenna index*/
 int beam_precoding(int32_t **txdataF,
 	           int32_t **txdataF_BF,
+		   int submframe,
                    LTE_DL_FRAME_PARMS *frame_parms,
 	           int32_t ***beam_weights,
                    int symbol,

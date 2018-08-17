@@ -1,35 +1,31 @@
 [*]
-[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Fri Aug 17 06:51:37 2018
+[*] GTKWave Analyzer v3.3.61 (w)1999-2014 BSI
+[*] Fri Aug 17 14:21:15 2018
 [*]
-[dumpfile] "/home/mimo/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Fri Aug 17 06:30:36 2018"
-[dumpfile_size] 56125171
-[savefile] "/home/mimo/oai/openairinterface5g/targets/RT/USER/rcc_if4.gtkw"
-[timestart] 33298540000
-[size] 980 744
+[dumpfile] "/tmp/openair_dump_eNB.vcd"
+[dumpfile_mtime] "Fri Aug 17 11:03:54 2018"
+[dumpfile_size] 15491138
+[savefile] "/home/knopp/oai/openairinterface5g/targets/RT/USER/rcc_if4.gtkw"
+[timestart] 293296100000
+[size] 1650 600
 [pos] -1 -1
-*-21.793451 33300747408 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[sst_width] 450
-[signals_width] 254
+*-25.000000 293330000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 351
+[signals_width] 262
 [sst_expanded] 1
-[sst_vpaned_height] 383
+[sst_vpaned_height] 139
 @29
-logic.TRX_READ_IF
+functions.send_if4
 @28
-logic.RECV_IF4
+functions.recv_if4
 @24
-logic.RECV_IF4_SYMBOL[63:0]
-@28
-logic.SEND_IF4
-@24
-logic.SUBFRAME_NUMBER_RX0_RU[63:0]
-logic.SUBFRAME_NUMBER_RX1_RU[63:0]
-logic.SUBFRAME_NUMBER_TX0_RU[63:0]
-logic.SUBFRAME_NUMBER_TX1_RU[63:0]
-logic.FRAME_NUMBER_RX0_RU[63:0]
-logic.FRAME_NUMBER_RX1_RU[63:0]
-logic.FRAME_NUMBER_TX0_RU[63:0]
-logic.FRAME_NUMBER_TX1_RU[63:0]
+variables.subframe_number_RX0_RU[63:0]
+variables.subframe_number_RX0_eNB[63:0]
+variables.subframe_number_TX0_RU[63:0]
+variables.subframe_number_TX0_eNB[63:0]
+variables.frame_number_TX0_RU[63:0]
+variables.frame_number_TX0_eNB[63:0]
+variables.frame_number_RX0_eNB[63:0]
+variables.frame_number_RX0_RU[63:0]
 [pattern_trace] 1
 [pattern_trace] 0

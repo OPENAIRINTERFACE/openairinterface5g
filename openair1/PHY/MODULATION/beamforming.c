@@ -54,49 +54,30 @@
 
 int beam_precoding(int32_t **txdataF,
 	           int32_t **txdataF_BF,
+		   int subframe,
                    LTE_DL_FRAME_PARMS *frame_parms,
 	           int32_t ***beam_weights,
                    int symbol,
 		   int aa,
 		   int p)
 {
-  //LOG_I(PHY,"Starting precoding for symbol %d, physical antenna %d, logical port %d\n",symbol,aa,p);
-  int rb_offset_neg = frame_parms->ofdm_symbol_size - (6*frame_parms->N_RB_DL);
-/*  if(rb<(frame_parms->N_RB_DL/2)) {
-	rb_offset = rb*12;
-  }else if(rb>=(frame_parms->N_RB_DL/2)) {
-	rb_offset = 12*(rb-(frame_parms->N_RB_DL/2));
-        //rb_offset = 1+(12*(rb-(frame_parms->N_RB_DL>>1)));
-  }*/
-  //printf("aa = %d, p = %d,  symbol = %d, rb = %d, rb_offset = %d, orisma = %d\n",aa,p,symbol,rb,rb_offset,rb_offset+symbol*12);
-  //printf("aa = %d, p = %d,  symbol = %d\n",aa,p,symbol);
-
-  
-  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTADD,1);
+  LOG_D(PHY,"Starting precoding for symbol %d, physical antenna %d, logical port %d\n",symbol,aa,p);
+  int rb_offset_neg0 = frame_parms->ofdm_symbol_size - (6*frame_parms->N_RB_DL);
+  int rb_offset_neg  = (subframe*frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti) + rb_offset_neg0;
+  int rb_offset_pos  = (subframe*frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti);
 
   multadd_cpx_vector((int16_t*)&txdataF[p][rb_offset_neg+(symbol*frame_parms->ofdm_symbol_size)],
-		     (int16_t*)&beam_weights[p][aa][rb_offset_neg], 
-	             (int16_t*)&txdataF_BF[aa][rb_offset_neg+(symbol*frame_parms->ofdm_symbol_size)], 
+		     (int16_t*)&beam_weights[p][aa][rb_offset_neg0], 
+	             (int16_t*)&txdataF_BF[aa][rb_offset_neg0+(symbol*frame_parms->ofdm_symbol_size)], 
 		     0, 
                      6*frame_parms->N_RB_DL, 
 		     15);
-  multadd_cpx_vector((int16_t*)&txdataF[p][(symbol*frame_parms->ofdm_symbol_size)],
+  multadd_cpx_vector((int16_t*)&txdataF[p][rb_offset_pos+(symbol*frame_parms->ofdm_symbol_size)],
                      (int16_t*)&beam_weights[p][aa][0], 
                      (int16_t*)&txdataF_BF[aa][(symbol*frame_parms->ofdm_symbol_size)], 
                      0, 
                      7*frame_parms->N_RB_DL, // to allow for extra RE at the end, 12 useless multipy-adds (first one at DC and 11 at end)
                      15);
-/*
-      if (last_prb == 1 && rb>=(frame_parms->N_RB_DL/2)) {
-        // do extra complex multiplication for remaining RE
-      	uint16_t re = frame_parms->ofdm_symbol_size-1;
-        ((int16_t*)&txdataF_BF[aa][(rb_offset+1)+re])[0] += (int16_t)((((int16_t*)&txdataF[p][(rb_offset+1)+(symbol*frame_parms->ofdm_symbol_size)+re])[0]*((int16_t*)&beam_weights[p][aa][(rb_offset+1)+re])[0])>>15);
-        ((int16_t*)&txdataF_BF[aa][(rb_offset+1)+re])[0] -= (int16_t)((((int16_t*)&txdataF[p][(rb_offset+1)+(symbol*frame_parms->ofdm_symbol_size)+re])[1]*((int16_t*)&beam_weights[p][aa][(rb_offset+1)+re])[1])>>15);
-        ((int16_t*)&txdataF_BF[aa][(rb_offset+1)+re])[1] += (int16_t)((((int16_t*)&txdataF[p][(rb_offset+1)+(symbol*frame_parms->ofdm_symbol_size)+re])[0]*((int16_t*)&beam_weights[p][aa][(rb_offset+1)+re])[1])>>15);
-        ((int16_t*)&txdataF_BF[aa][(rb_offset+1)+re])[1] += (int16_t)((((int16_t*)&txdataF[p][(rb_offset+1)+(symbol*frame_parms->ofdm_symbol_size)+re])[1]*((int16_t*)&beam_weights[p][aa][(rb_offset+1)+re])[0])>>15);
-      }
-*/ 
-   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MULTADD,0);
 
       return 0;
 }

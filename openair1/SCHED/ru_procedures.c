@@ -425,60 +425,55 @@ void feptx_prec(RU_t *ru) {
   if (ru->idx != 0) return;
 
   if (ru->num_eNB == 1) {
-	  // Theoni's part ////////////////////////////////////
-	  eNB = eNB_list[0];
+
+    eNB = eNB_list[0];
     fp  = &eNB->frame_parms;
     LTE_eNB_PDCCH *pdcch_vars = &eNB->pdcch_vars[subframe&1]; 
-    //int bf_mask_pdcch = 1;
- 
-    //int bf_mask[15][fp->N_RB_DL];
-    /*for (p=0;p<15;p++) { 
-       for (int j=0;j<fp->N_RB_DL;j++){
-         // set p=5 to bfmask=2 (beamforming) except in subframes 0 and 5
-         // p=0,1 bf_mask=0 for subframes different than 0,5 and to  
-         if (subframe != 0 && subframe != 5) 
-	    if (p<fp->nb_antenna_ports_eNB || p!=5) bf_mask[p][j]=0; else bf_mask[p][j]=2;
-         else
-            if (p<fp->nb_antenna_ports_eNB) bf_mask[p][j]=1; else bf_mask[p][j]=0;
-       }
-
-       //printf("subframe %d : bf_mask[%d][0] %d\n",subframe,p,bf_mask[p][0]);
-    }*/
     
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+ru->idx , 1);
 
     for (aa=0;aa<ru->nb_tx;aa++) {
-	memset(ru->common.txdataF_BF[aa],0,sizeof(int32_t)*(fp->ofdm_symbol_size));
-	for (p=0;p<NB_ANTENNA_PORTS_ENB;p++) {
-           if (p<fp->nb_antenna_ports_eNB) {				
-// pdcch region, copy entire signal from txdataF->txdataF_BF (bf_mask = 1)
-// else do beamforming for pdcch according to beam_weights
-// to be updated for eMBMS (p=4)
-// For the moment this does nothing different than below.	     
-	     for (l=0;l<pdcch_vars->num_pdcch_symbols;l++)
-	       // for (rb=0;rb<fp->N_RB_DL;rb++)
-	       beam_precoding(eNB->common_vars.txdataF,
-			      ru->common.txdataF_BF,
-			      fp,
-			      ru->beam_weights,
-			      l,
-			      aa,
-			      p);
-           } //if (p<fp->nb_antenna_ports_eNB)
-	   
-	   // PDSCH region
-           if (p<fp->nb_antenna_ports_eNB || p==5 || p==7 || p==8) {
-	     for (l=pdcch_vars->num_pdcch_symbols;l<fp->symbols_per_tti;l++) {
-	       beam_precoding(eNB->common_vars.txdataF,
-			      ru->common.txdataF_BF,
-			      fp,
-			      ru->beam_weights,
-			      l,
-			      aa,
-			      p);			
-	     } // for (l=pdcch_vars ....)			
-	   } // if (p<fp->nb_antenna_ports_eNB) ...
-	} // for (p=0...)
+      memset(ru->common.txdataF_BF[aa],0,sizeof(int32_t)*fp->ofdm_symbol_size*fp->symbols_per_tti);
+      for (p=0;p<NB_ANTENNA_PORTS_ENB;p++) {
+
+#ifdef NO_PRECODING	
+	memcpy((void*)ru->common.txdataF_BF[aa],
+	       (void*)&eNB->common_vars.txdataF[aa][subframe*fp->symbols_per_tti*fp->ofdm_symbol_size],
+	       sizeof(int32_t)*fp->ofdm_symbol_size*fp->symbols_per_tti);
+#else
+	
+	if (p<fp->nb_antenna_ports_eNB) {				
+	  // pdcch region, copy entire signal from txdataF->txdataF_BF (bf_mask = 1)
+	  // else do beamforming for pdcch according to beam_weights
+	  // to be updated for eMBMS (p=4)
+	  // For the moment this does nothing different than below.	     
+	  for (l=0;l<pdcch_vars->num_pdcch_symbols;l++)
+	    beam_precoding(eNB->common_vars.txdataF,
+			   ru->common.txdataF_BF,
+			   subframe,
+			   fp,
+			   ru->beam_weights,
+			   l,
+			   aa,
+			   p);
+	} //if (p<fp->nb_antenna_ports_eNB)
+	
+	  // PDSCH region
+	if (p<fp->nb_antenna_ports_eNB || p==5 || p==7 || p==8) {
+	  for (l=pdcch_vars->num_pdcch_symbols;l<fp->symbols_per_tti;l++) {
+	    beam_precoding(eNB->common_vars.txdataF,
+			   ru->common.txdataF_BF,
+			   subframe,
+			   fp,
+			   ru->beam_weights,
+			   l,
+			   aa,
+			   p);			
+	  } // for (l=pdcch_vars ....)
+	} // if (p<fp->nb_antenna_ports_eNB) ...
+#endif //NO_PRECODING
+	
+      } // for (p=0...)
     } // for (aa=0 ...)
     
     if(ru->idx<2)
@@ -522,6 +517,7 @@ void feptx_prec(RU_t *ru) {
 	for (aa=0;aa<ru->nb_tx;aa++) {
 	  beam_precoding(eNB->common_vars.txdataF,
 			 ru->common.txdataF_BF,
+			 subframe,
 			 fp,
 			 bw,
 			 subframe<<1,

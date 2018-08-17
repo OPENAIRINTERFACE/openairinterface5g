@@ -79,6 +79,36 @@ list *list_append(list *l, void *data)
 /* socket                                                                   */
 /****************************************************************************/
 
+int create_listen_socket(char *addr, int port)
+{
+  struct sockaddr_in a;
+  int s;
+  int v;
+
+  s = socket(AF_INET, SOCK_STREAM, 0);
+  if (s == -1) { perror("socket"); exit(1); }
+  v = 1;
+  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &v, sizeof(int)))
+    { perror("setsockopt"); exit(1); }
+
+  a.sin_family = AF_INET;
+  a.sin_port = htons(port);
+  a.sin_addr.s_addr = inet_addr(addr);
+
+  if (bind(s, (struct sockaddr *)&a, sizeof(a))) { perror("bind"); exit(1); }
+  if (listen(s, 5)) { perror("listen"); exit(1); }
+
+  return s;
+}
+
+int socket_accept(int s)
+{
+  struct sockaddr_in a;
+  socklen_t alen;
+  alen = sizeof(a);
+  return accept(s, (struct sockaddr *)&a, &alen);
+}
+
 int socket_send(int socket, void *buffer, int size)
 {
   char *x = buffer;
@@ -94,26 +124,13 @@ int socket_send(int socket, void *buffer, int size)
 
 int get_connection(char *addr, int port)
 {
-  struct sockaddr_in a;
-  socklen_t alen;
   int s, t;
 
   printf("waiting for connection on %s:%d\n", addr, port);
 
-  s = socket(AF_INET, SOCK_STREAM, 0);
-  if (s == -1) { perror("socket"); exit(1); }
-  t = 1;
-  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &t, sizeof(int)))
-    { perror("setsockopt"); exit(1); }
+  s = create_listen_socket(addr, port);
 
-  a.sin_family = AF_INET;
-  a.sin_port = htons(port);
-  a.sin_addr.s_addr = inet_addr(addr);
-
-  if (bind(s, (struct sockaddr *)&a, sizeof(a))) { perror("bind"); exit(1); }
-  if (listen(s, 5)) { perror("bind"); exit(1); }
-  alen = sizeof(a);
-  t = accept(s, (struct sockaddr *)&a, &alen);
+  t = socket_accept(s);
   if (t == -1) { perror("accept"); exit(1); }
   close(s);
 
@@ -137,14 +154,11 @@ int fullread(int fd, void *_buf, int count)
   return ret;
 }
 
-int connect_to(char *addr, int port)
+int try_connect_to(char *addr, int port)
 {
   int s;
   struct sockaddr_in a;
 
-  printf("connecting to %s:%d\n", addr, port);
-
-again:
   s = socket(AF_INET, SOCK_STREAM, 0);
   if (s == -1) { perror("socket"); exit(1); }
 
@@ -155,6 +169,21 @@ again:
   if (connect(s, (struct sockaddr *)&a, sizeof(a)) == -1) {
     perror("connect");
     close(s);
+    return -1;
+  }
+
+  return s;
+}
+
+int connect_to(char *addr, int port)
+{
+  int s;
+
+  printf("connecting to %s:%d\n", addr, port);
+
+again:
+  s = try_connect_to(addr, port);
+  if (s == -1) {
     printf("trying again in 1s\n");
     sleep(1);
     goto again;
