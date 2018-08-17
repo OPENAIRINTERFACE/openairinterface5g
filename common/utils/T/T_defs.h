@@ -31,6 +31,10 @@
 #endif
 
 typedef struct {
+  /* 'busy' is a bit field
+   * bit 0: 1 means that slot is acquired by writer
+   * bit 1: 1 means that slot is ready for consumption
+   */
   volatile int busy;
   char buffer[T_BUFFER_MAX];
   int length;
