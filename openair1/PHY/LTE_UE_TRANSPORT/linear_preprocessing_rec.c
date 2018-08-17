@@ -13,9 +13,14 @@ data storage. */
 #include <stdlib.h>
 #include <cblas.h>
 #include <string.h>
+#include <linux/version.h>
+#if RHEL_RELEASE_CODE >= 1796
+#include <lapacke/lapacke_utils.h>
+#include <lapacke/lapacke.h>
+#else
 #include <lapacke_utils.h>
 #include <lapacke.h>
-
+#endif
 //#define DEBUG_PREPROC
 
 
