@@ -745,7 +745,7 @@ void itti_exit_task(void)
 
 #if defined(OAI_EMU) || defined(RTAI)
   if (task_id > TASK_UNKNOWN) {
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLE_ITTI_RECV_MSG,
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_ITTI_RECV_MSG,
                                             __sync_and_and_fetch (&itti_desc.vcd_receive_msg, ~(1L << task_id)));
   }
 #endif
