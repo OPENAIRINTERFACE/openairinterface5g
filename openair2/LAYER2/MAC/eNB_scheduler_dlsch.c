@@ -386,6 +386,7 @@ set_ul_DAI(int module_idP, int UE_idP, int CC_idP, int frameP,
         UE_list->UE_template[CC_idP][UE_idP].DAI_ul[3] = DAI;
         break;
       }
+      break;
 
     case 2:
       //      if ((subframeP==3)||(subframeP==8))

@@ -2355,12 +2355,12 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
 #endif
 	      } 
 	      if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
-		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[j].ipv4 = 1;
+		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 1;
 	      } else if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
-		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[j].ipv6 = 1;
+		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6 = 1;
 	      } else if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
-		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[j].ipv4 = 1;
-		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[j].ipv6 = 1;
+		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 1;
+		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6 = 1;
 	      }
 	    }
 
