@@ -1131,13 +1131,6 @@ int main( int argc, char **argv )
   
   rt_sleep_ns(10*100000000ULL);
 
-  if (nfapi_mode) {
-
-    printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
-    pthread_cond_init(&sync_cond,NULL);
-    pthread_mutex_init(&sync_mutex, NULL);
-  }
-  
   if (nfapi_mode)
   {
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
