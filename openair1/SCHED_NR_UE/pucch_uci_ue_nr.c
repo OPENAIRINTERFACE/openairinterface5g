@@ -482,6 +482,73 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                                                   nb_of_prbs, N_sc_ctrl_RB, nb_symbols, N_UCI, O_SR, O_CSI, O_ACK,
                                                   O_CRC, n_HARQ_ACK);
 
+
+
+  switch(format) {
+    case pucch_format0_nr:
+    {
+      nr_generate_pucch0(ue->common_vars.txdataF,
+                         &ue->frame_parms,
+                         &ue->pucch_config_dedicated_nr[gNB_id],
+                         pucch_tx_power,
+                         nr_tti_tx,
+                         (uint8_t)m_CS,
+                         nb_symbols,
+                         starting_symbol_index,
+                         starting_prb);
+      break;
+    }
+    case pucch_format1_nr:
+    {
+      nr_generate_pucch1(ue->common_vars.txdataF,
+                         &ue->frame_parms,
+                         &ue->pucch_config_dedicated_nr[gNB_id],
+                         pucch_payload,
+                         pucch_tx_power,
+                         nr_tti_tx,
+                         nb_symbols,
+                         starting_symbol_index,
+                         starting_prb,
+                         second_hop,
+                         (uint8_t)time_domain_occ,
+                         (uint8_t)N_UCI);
+      break;
+    }
+    case pucch_format2_nr:
+    {
+      nr_generate_pucch2(ue->common_vars.txdataF,
+                         &ue->frame_parms,
+                         &ue->pucch_config_dedicated_nr[gNB_id],
+                         pucch_payload,
+                         pucch_tx_power,
+                         nr_tti_tx,
+                         nb_symbols,
+                         starting_symbol_index,
+                         nb_of_prbs,
+                         starting_prb,
+                         (uint8_t)N_UCI);
+      break;
+    }
+    case pucch_format3_nr:
+    case pucch_format4_nr:
+    {
+      nr_generate_pucch3_4(ue->common_vars.txdataF,
+                           &ue->frame_parms,
+                           format,
+                           &ue->pucch_config_dedicated_nr[gNB_id],
+                           pucch_payload,
+                           pucch_tx_power,
+                           nr_tti_tx,
+                           nb_symbols,
+                           starting_symbol_index,
+                           nb_of_prbs,
+                           starting_prb,
+                           (uint8_t)N_UCI,
+                           (uint8_t)occ_length,
+                           (uint8_t)occ_Index);
+      break;
+    }
+  }
   return (TRUE);
 }
 
