@@ -130,7 +130,7 @@ volatile int             start_UE = 0;
 #endif
 volatile int             oai_exit = 0;
 
-static clock_source_t clock_source = internal;
+clock_source_t clock_source = internal;
 static int wait_for_sync = 0;
 
 unsigned int                    mmapped_dma=0;
@@ -942,7 +942,7 @@ int main( int argc, char **argv )
 
   printf("Reading in command-line options\n");
 
-  get_options (); 
+  get_options ();
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
       fprintf(stderr,"Getting configuration failed\n");
       exit(-1);

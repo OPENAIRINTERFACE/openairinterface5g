@@ -121,7 +121,7 @@ extern int emulate_rf;
 extern int numerology;
 extern int fepw;
 extern int single_thread_flag;
-
+extern clock_source_t clock_source;
 
 extern void  phy_init_RU(RU_t*);
 extern void  phy_free_RU(RU_t*);
@@ -1411,7 +1411,8 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   cfg->num_rb_dl=fp->N_RB_DL;
   cfg->tx_num_channels=ru->nb_tx;
   cfg->rx_num_channels=ru->nb_rx;
-  
+  cfg->clock_source=clock_source;
+
   for (i=0; i<ru->nb_tx; i++) {
     
     cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
