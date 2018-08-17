@@ -204,10 +204,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   /// DCI payload processing
   //channel coding
 #ifdef DEBUG_POLAR_PARAMS
-  nr_polar_init(&nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, pdcch_params.aggregation_level);
-  t_nrPolar_paramsPtr currentPtr = nr_polar_params(nrPolar_params,
-		  	  	  	  	  	  	  	  	  	  	   NR_POLAR_DCI_MESSAGE_TYPE,
-												   dci_alloc.size);
+  nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
+  t_nrPolar_paramsPtr currentPtr = nr_polar_params(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE,dci_alloc.size);
 
   uint8_t *encoderInput = malloc(sizeof(uint8_t) * dci_alloc.size);
   uint8_t *encoderOutput = malloc(sizeof(uint8_t) * currentPtr->encoderLength);
