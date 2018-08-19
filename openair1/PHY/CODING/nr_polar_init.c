@@ -19,6 +19,17 @@
  *      contact@openairinterface.org
  */
 
+/*!\file PHY/CODING/nr_polar_init.h
+ * \brief
+ * \author Turker Yilmaz
+ * \date 2018
+ * \version 0.1
+ * \company EURECOM
+ * \email turker.yilmaz@eurecom.fr
+ * \note
+ * \warning
+*/
+
 #include "nrPolar_tools/nr_polar_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
@@ -83,13 +94,15 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 
 		//polar_encoder vectors:
 		newPolarInitNode->nr_polar_crc = malloc(sizeof(uint8_t) * newPolarInitNode->crcParityBits);
-		newPolarInitNode->nr_polar_cPrime = malloc(sizeof(uint8_t) * newPolarInitNode->K);
 		newPolarInitNode->nr_polar_d = malloc(sizeof(uint8_t) * newPolarInitNode->N);
+		newPolarInitNode->nr_polar_e = malloc(sizeof(uint8_t) * newPolarInitNode->encoderLength);
 
 		//Polar Coding vectors
 		newPolarInitNode->nr_polar_u = malloc(sizeof(uint8_t) * newPolarInitNode->N); //Decoder: nr_polar_uHat
 		newPolarInitNode->nr_polar_cPrime = malloc(sizeof(uint8_t) * newPolarInitNode->K); //Decoder: nr_polar_cHat
 		newPolarInitNode->nr_polar_b = malloc(sizeof(uint8_t) * newPolarInitNode->K); //Decoder: nr_polar_bHat
+		newPolarInitNode->nr_polar_a = malloc(sizeof(uint8_t) * newPolarInitNode->payloadBits); //Decoder: nr_polar_aHat
+
 
 
 		newPolarInitNode->Q_0_Nminus1 = nr_polar_sequence_pattern(newPolarInitNode->n);

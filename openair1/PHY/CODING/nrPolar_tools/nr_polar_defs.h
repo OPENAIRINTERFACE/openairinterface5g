@@ -19,6 +19,17 @@
  *      contact@openairinterface.org
  */
 
+/*!\file PHY/CODING/nrPolar_tools/nr_polar_defs.h
+ * \brief
+ * \author Turker Yilmaz
+ * \date 2018
+ * \version 0.1
+ * \company EURECOM
+ * \email turker.yilmaz@eurecom.fr
+ * \note
+ * \warning
+*/
+
 #ifndef __NR_POLAR_DEFS__H__
 #define __NR_POLAR_DEFS__H__
 
@@ -31,6 +42,9 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+
+#define NR_POLAR_DECODER_LISTSIZE 8 //uint8_t
+#define NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION 0 //uint8_t; 0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
 
 static const uint8_t nr_polar_subblock_interleaver_pattern[32] = { 0, 1, 2, 4, 3, 5, 6, 7, 8, 16, 9, 17, 10, 18, 11, 19, 12, 20, 13, 21, 14, 22, 15, 23, 24, 25, 26, 28, 27, 29, 30, 31 };
 
@@ -65,20 +79,33 @@ struct nrPolar_params {
 	uint8_t **crc_generator_matrix; //G_P
 	uint8_t **G_N;
 
-	//polar_encoder vectors:
+	//polar_encoder vectors
 	uint8_t *nr_polar_crc;
-	uint8_t *nr_polar_b;
-	uint8_t *nr_polar_cPrime;
-	uint8_t *nr_polar_u;
 	uint8_t *nr_polar_d;
+	uint8_t *nr_polar_e;
+
+	//Polar Coding vectors
+	uint8_t *nr_polar_a;
+	uint8_t *nr_polar_cPrime;
+	uint8_t *nr_polar_b;
+	uint8_t *nr_polar_u;
 } __attribute__ ((__packed__));
 typedef struct nrPolar_params t_nrPolar_params;
 typedef t_nrPolar_params *t_nrPolar_paramsPtr;
 
-void polar_encoder(uint8_t *input, uint8_t *output, t_nrPolar_paramsPtr polarParams);
+void polar_encoder(uint32_t *input, uint32_t *output, t_nrPolar_paramsPtr polarParams);
 
-int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_paramsPtr polarParams,
-		uint8_t listSize, double *aPrioriPayload, uint8_t pathMetricAppr);
+int8_t polar_decoder(double *input,
+		 	 	 	 uint32_t *output,
+					 t_nrPolar_paramsPtr polarParams,
+					 uint8_t listSize,
+					 uint8_t pathMetricAppr);
+int8_t polar_decoder_aPriori(double *input,
+							 uint32_t *output,
+							 t_nrPolar_paramsPtr polarParams,
+							 uint8_t listSize,
+							 uint8_t pathMetricAppr,
+							 double *aPrioriPayload);
 
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 				   int8_t messageType,

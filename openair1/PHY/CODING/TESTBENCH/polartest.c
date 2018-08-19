@@ -7,8 +7,6 @@
 #include <time.h>
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
-#include "PHY/NR_TRANSPORT/nr_dci.h"
-#include "PHY/defs_gNB.h"
 #include "SIMULATION/TOOLS/sim.h"
 
 //#define DEBUG_POLAR_PARAMS
@@ -22,16 +20,6 @@ int main(int argc, char *argv[]) {
 	reset_meas(&timeEncoder);
 	reset_meas(&timeDecoder);
 
-	//gNB scheduler
-	/*PHY_VARS_gNB *gNB = RC.gNB[0][0];
-	NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-	nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
-
-	nfapi_nr_dl_config_request_pdu_t *pdu;
-	nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &pdu->dci_dl_pdu.pdcch_params_rel15;
-	params_rel15->rnti_type = NFAPI_NR_RNTI_RA;
-	params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;*/
-
 	randominit(0);
 	//Default simulation values (Aim for iterations = 1000000.)
 	int itr, iterations = 1000, arguments, polarMessageType = 0; //0=PBCH, 1=DCI, -1=UCI
@@ -42,8 +30,7 @@ int main(int argc, char *argv[]) {
 	int8_t decoderState=0, blockErrorState=0; //0 = Success, -1 = Decoding failed, 1 = Block Error.
 	uint16_t testLength = 0, coderLength = 0, blockErrorCumulative=0, bitErrorCumulative=0;
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
-
-	uint8_t aggregation_level, decoderListSize = 8, pathMetricAppr = 0; //0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
+	uint8_t aggregation_level;
 
 	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:")) != -1)
 	switch (arguments)
@@ -171,16 +158,24 @@ int main(int argc, char *argv[]) {
 				modulatedInput[i]=(-1)/sqrt(2);
 
 			channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
+			printf("%f\n",channelOutput[i]);
 		}
 
 
+
 		start_meas(&timeDecoder);
-		decoderState = polar_decoder(channelOutput,
+		/*decoderState = polar_decoder(channelOutput,
 									 estimatedOutput,
 									 currentPtr,
-									 decoderListSize,
+									 NR_POLAR_DECODER_LISTSIZE,
 									 aPrioriArray,
-									 pathMetricAppr);
+									 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION);*/
+		decoderState = polar_decoder_aPriori(channelOutput,
+											 estimatedOutput,
+											 currentPtr,
+											 NR_POLAR_DECODER_LISTSIZE,
+											 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
+											 aPrioriArray);
 		stop_meas(&timeDecoder);
 
 		//calculate errors
