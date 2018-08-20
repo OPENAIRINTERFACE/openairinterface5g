@@ -112,20 +112,20 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     if(dl_info->rx_ind != NULL){
         printf("[L2][IF MODULE][DL INDICATION][RX_IND]\n");
         for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
-            switch(dl_info->rx_ind->rx_request_body[i].pdu_type){
+            switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
                 case FAPI_NR_RX_PDU_TYPE_MIB:
                     ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-                                (dl_info->rx_ind->rx_request_body+i)->mib_pdu.pdu, 
-                                (dl_info->rx_ind->rx_request_body+i)->mib_pdu.additional_bits, 
-                                (dl_info->rx_ind->rx_request_body+i)->mib_pdu.ssb_index, 
-                                (dl_info->rx_ind->rx_request_body+i)->mib_pdu.ssb_length,
-                                (dl_info->rx_ind->rx_request_body+i)->mib_pdu.cell_id )) << FAPI_NR_RX_PDU_TYPE_MIB;
+                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu, 
+                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits, 
+                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_index, 
+                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_length,
+                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.cell_id )) << FAPI_NR_RX_PDU_TYPE_MIB;
                     break;
                 case FAPI_NR_RX_PDU_TYPE_SIB:
                     ret_mask |= (handle_bcch_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-                                (dl_info->rx_ind->rx_request_body+i)->sib_pdu.sibs_mask,
-                                (dl_info->rx_ind->rx_request_body+i)->sib_pdu.pdu,
-                                (dl_info->rx_ind->rx_request_body+i)->sib_pdu.pdu_length )) << FAPI_NR_RX_PDU_TYPE_SIB;
+                                (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.sibs_mask,
+                                (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu,
+                                (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu_length )) << FAPI_NR_RX_PDU_TYPE_SIB;
                     break;
                 case FAPI_NR_RX_PDU_TYPE_DLSCH:
                     ret_mask |= (0) << FAPI_NR_RX_PDU_TYPE_DLSCH;
@@ -138,13 +138,23 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
         }
     }
 
-    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+    
 
     if(dl_info->dci_ind != NULL){
         printf("[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
         for(i=0; dl_info->dci_ind->number_of_dcis; ++i){
             fapi_nr_dci_pdu_rel15_t *dci = &dl_info->dci_ind->dci_list[i].dci;
-            switch((dl_info->dci_ind->dci_list+i)->dci_type){
+
+            ret_mask |= (handle_dci(
+                dl_info->module_id,
+                dl_info->cc_id,
+                dl_info->gNB_index,
+                dci, 
+                (dl_info->dci_ind->dci_list+i)->rnti, 
+                (dl_info->dci_ind->dci_list+i)->dci_format)) << FAPI_NR_DCI_IND;
+
+
+            /*switch((dl_info->dci_ind->dci_list+i)->dci_type){
                 case FAPI_NR_DCI_TYPE_0_0:
                 case FAPI_NR_DCI_TYPE_0_1:
                 case FAPI_NR_DCI_TYPE_1_1:
@@ -161,19 +171,7 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 
                     //  mapping into DL_CONFIG_REQ for DL-SCH
                     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
-                    /*dlsch_config_pdu->format_indicator = dci->dci_format;
-                    dlsch_config_pdu->frequency_domain_assignment = dci->frequency_domain_resouce_assignment;
-                    dlsch_config_pdu->time_domain_assignment = dci->time_domain_resource_assignment;
-                    dlsch_config_pdu->vrb_to_prb_mapping = dci->vrb_to_prb_mapping;
-                    dlsch_config_pdu->mcs = dci->mcs;
-                    dlsch_config_pdu->ndi = dci->new_data_indication;
-                    dlsch_config_pdu->rv = dci->redundancy_version;
-                    dlsch_config_pdu->harq_pid = dci->harq_process;
-                    dlsch_config_pdu->dai = dci->downlink_assignment_index;
-                    dlsch_config_pdu->tpc = dci->tpc_command;
-                    dlsch_config_pdu->pucch_resource_indicator = dci->pucch_resource_indicator;
-                    dlsch_config_pdu->pdsch_to_harq_feedback_timing_indicator = dci->pdsch_to_harq_feedback_timing_indicator;
-                    */
+                    
                     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = 0x0000;   //  TX RNTI: UE-spec
                     memcpy(dlsch_config_pdu, dci, sizeof(fapi_nr_dci_pdu_rel15_t));
 
@@ -193,7 +191,7 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 
                 default:
                     break;
-            }
+            }*/
 
 
             //(dl_info->dci_list+i)->rnti

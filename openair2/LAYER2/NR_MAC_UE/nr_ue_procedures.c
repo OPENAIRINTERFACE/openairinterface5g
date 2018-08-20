@@ -34,6 +34,7 @@
 #include "mac_extern.h"
 #include "RRC/NR_UE/rrc_proto.h"
 #include "assertions.h"
+#include "PHY/defs_nr_UE.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -83,7 +84,7 @@ int8_t nr_ue_decode_mib(
 			}
 	    }
 
-#if 0
+#ifdef DEBUG_MIB
 		printf("system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
 		printf("system frame number(with LSB): %d\n", (int)frame);
 		printf("subcarrier spacing:            %d\n", (int)mac->mib->subCarrierSpacingCommon);
@@ -269,12 +270,8 @@ int8_t nr_ue_decode_mib(
         uint32_t first_symbol_index;
         uint32_t search_space_duration;  //  element of search space
         uint32_t coreset_duration;  //  element of coreset
-
-
         
         //  38.213 table 10.1-1
-        
-
 
         /// MUX PATTERN 1
         if(mac->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR1){
@@ -315,7 +312,6 @@ int8_t nr_ue_decode_mib(
             search_space_duration = 2;
         }
 
-        
         /// MUX PATTERN 2
         if(mac->type0_pdcch_ss_mux_pattern == 2){
             
@@ -423,7 +419,6 @@ int8_t nr_ue_decode_mib(
         mac->type0_pdcch_ss_sfn_c = sfn_c;
         mac->type0_pdcch_ss_n_c = n_c;
         
-
 	    // fill in the elements in config request inside P5 message
 	    mac->phy_config.config_req.pbch_config.system_frame_number = frame;    //  after calculation
 	    mac->phy_config.config_req.pbch_config.subcarrier_spacing_common = mac->mib->subCarrierSpacingCommon;
@@ -543,9 +538,137 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
 	return CONNECTION_OK;
 }
 
-int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type){
+int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+    fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
+    const uint16_t n_RB_ULBWP = 106;
+    const uint16_t n_RB_DLBWP = 106;
+
+    uint32_t k_offset;
+    uint32_t sliv_S;
+    uint32_t sliv_L;
+
+    uint32_t l_RB;
+    uint32_t start_RB;
+    uint32_t tmp_RIV;
+
+    switch(dci_format){
+        case format0_0:
+            /* TIME_DOM_RESOURCE_ASSIGNMENT */
+            // 0, 1, 2, 3, or 4 bits as defined in:
+            //         Subclause 6.1.2.1 of [6, TS 38.214] for formats format0_0,format0_1
+            //         Subclause 5.1.2.1 of [6, TS 38.214] for formats format1_0,format1_1
+            // The bitwidth for this field is determined as log2(I) bits,
+            // where I the number of entries in the higher layer parameter pusch-AllocationList
+            k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][0];
+            sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][1];
+            sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][2];
+
+            /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
+            // At the moment we are supporting only format 1_0 (and not format 1_1), so we only support resource allocation type 1 (and not type 0).
+            // For resource allocation type 1, the resource allocation field consists of a resource indication value (RIV):
+            // RIV = n_RB_ULBWP * (l_RB - 1) + start_RB                                  if (l_RB - 1) <= floor (n_RB_ULBWP/2)
+            // RIV = n_RB_ULBWP * (n_RB_ULBWP - l_RB + 1) + (n_RB_ULBWP - 1 - start_RB)  if (l_RB - 1)  > floor (n_RB_ULBWP/2)
+            // the following two expressions apply only if (l_RB - 1) <= floor (n_RB_ULBWP/2)
+            l_RB = floor(dci->freq_dom_resource_assignment_DL/n_RB_ULBWP) + 1;
+            start_RB = dci->freq_dom_resource_assignment_DL%n_RB_ULBWP;
+            // if (l_RB - 1)  > floor (n_RB_ULBWP/2) we need to recalculate them using the following lines
+            tmp_RIV = n_RB_ULBWP * (l_RB - 1) + start_RB;
+            if (tmp_RIV != dci->freq_dom_resource_assignment_DL) { // then (l_RB - 1)  > floor (n_RB_ULBWP/2) and we need to recalculate l_RB and start_RB
+                l_RB = n_RB_ULBWP - l_RB + 2;
+                start_RB = n_RB_ULBWP - start_RB - 1;
+            }
+
+            //  UL_CONFIG_REQ
+            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_PUSCH;
+            ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
+            fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
+            ulsch_config_pdu->number_rbs = l_RB;
+            ulsch_config_pdu->start_rb = start_RB;
+            ulsch_config_pdu->number_symbols = sliv_L;
+            ulsch_config_pdu->start_symbol = sliv_S;
+            ulsch_config_pdu->mcs = dci->mcs;
+            //ulsch0->harq_processes[dci->harq_process_number]->first_rb = start_RB;
+            //ulsch0->harq_processes[dci->harq_process_number]->nb_rb    = l_RB;
+            //ulsch0->harq_processes[dci->harq_process_number]->mcs = dci->mcs;
+            //ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi= nr_pdci_info_extracted->ndi;
+            break;
+
+        case format0_1:
+            break;
+
+        case format1_0: 
+
+            /* TIME_DOM_RESOURCE_ASSIGNMENT */
+            // Subclause 5.1.2.1 of [6, TS 38.214]
+            // the Time domain resource assignment field of the DCI provides a row index of a higher layer configured table pdsch-symbolAllocation
+            // FIXME! To clarify which parameters to update after reception of row index
+            k_offset = table_5_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][0];
+            sliv_S   = table_5_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][1];
+            sliv_L   = table_5_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][2];
+
+
+            /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
+            // only uplink resource allocation type 1
+            // At the moment we are supporting only format 0_0 (and not format 0_1), so we only support resource allocation type 1 (and not type 0).
+            // For resource allocation type 1, the resource allocation field consists of a resource indication value (RIV):
+            // RIV = n_RB_DLBWP * (l_RB - 1) + start_RB                                  if (l_RB - 1) <= floor (n_RB_DLBWP/2)
+            // RIV = n_RB_DLBWP * (n_RB_DLBWP - l_RB + 1) + (n_RB_DLBWP - 1 - start_RB)  if (l_RB - 1)  > floor (n_RB_DLBWP/2)
+            // the following two expressions apply only if (l_RB - 1) <= floor (n_RB_DLBWP/2)
+            
+            l_RB = floor(dci->freq_dom_resource_assignment_DL/n_RB_DLBWP) + 1;
+            start_RB = dci->freq_dom_resource_assignment_DL%n_RB_DLBWP;
+            // if (l_RB - 1)  > floor (n_RB_DLBWP/2) we need to recalculate them using the following lines
+            tmp_RIV = n_RB_DLBWP * (l_RB - 1) + start_RB;
+            if (tmp_RIV != dci->freq_dom_resource_assignment_DL) { // then (l_RB - 1)  > floor (n_RB_DLBWP/2) and we need to recalculate l_RB and start_RB
+                l_RB = n_RB_DLBWP - l_RB + 2;
+                start_RB = n_RB_DLBWP - start_RB - 1;
+            }
+            
+
+            //  DL_CONFIG_REQ
+            dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+            dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
+            fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+            dlsch_config_pdu->number_rbs = l_RB;
+            dlsch_config_pdu->start_rb = start_RB;
+            dlsch_config_pdu->number_symbols = sliv_L;
+            dlsch_config_pdu->start_symbol = sliv_S;
+            dlsch_config_pdu->mcs = dci->mcs;
+
+
+            //pdlsch0_harq->nb_rb = l_RB;
+            //pdlsch0->current_harq_pid = dci->harq_process_number;
+            //pdlsch0->active           = 1;
+            //pdlsch0->rnti             = rnti;
+            //pdlsch0_harq->mcs = nr_pdci_info_extracted->mcs;
+            //pdlsch0_harq->DCINdi = nr_pdci_info_extracted->ndi;
+
+            dl_config->number_pdus = dl_config->number_pdus + 1;
+            break;
+
+        case format1_1:        
+            break;
+
+        case format2_0:        
+            break;
+
+        case format2_1:        
+            break;
+
+        case format2_2:        
+            break;
+
+        case format2_3:
+            break;
+
+        default: 
+            break;
+    }
+
+
 
     if(rnti == SI_RNTI){
 

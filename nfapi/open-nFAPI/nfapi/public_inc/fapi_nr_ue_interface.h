@@ -103,6 +103,8 @@ typedef struct {
     uint8_t reserved_nr_dci                 ; // 55 RESERVED_NR_DCI
 } fapi_nr_dci_pdu_rel15_t;
 
+
+
 typedef struct {
     uint8_t uci_format;
     uint8_t uci_channel;
@@ -147,7 +149,7 @@ typedef struct {
 
 	typedef struct {
 		uint16_t rnti;
-		uint8_t dci_type;
+		uint8_t dci_format;
         fapi_nr_dci_pdu_rel15_t dci;
 	} fapi_nr_dci_indication_pdu_t;
 
@@ -187,13 +189,13 @@ typedef struct {
             fapi_nr_mib_pdu_t mib_pdu;
             fapi_nr_sib_pdu_t sib_pdu;
         };
-	} fapi_nr_rx_request_body_t;
+	} fapi_nr_rx_indication_body_t;
 
 ///
 typedef struct {
 	uint32_t sfn_slot;
     uint16_t number_pdus;
-	fapi_nr_rx_request_body_t *rx_request_body;
+	fapi_nr_rx_indication_body_t *rx_indication_body;
 } fapi_nr_rx_indication_t;
 
 	typedef struct {
@@ -224,11 +226,25 @@ typedef struct {
 
     } fapi_nr_ul_config_pucch_pdu;
 
+    typedef struct {
+        uint16_t number_rbs;
+        uint16_t start_rb;
+        uint16_t number_symbols;
+        uint16_t start_symbol;
+        uint8_t mcs;
+    } fapi_nr_ul_config_pusch_pdu_rel15_t;
+
+    typedef struct {
+        uint16_t rnti;
+        fapi_nr_ul_config_pusch_pdu_rel15_t ulsch_pdu_rel15;
+    } fapi_nr_ul_config_pusch_pdu;
+
 	typedef struct {
 		uint8_t pdu_type;
 		union {
-            fapi_nr_ul_config_rach_pdu rach_pdu;
-            fapi_nr_ul_config_pucch_pdu pucch_pdu;
+            fapi_nr_ul_config_rach_pdu prach_config_pdu;
+            fapi_nr_ul_config_pucch_pdu pucch_config_pdu;
+            fapi_nr_ul_config_pusch_pdu ulsch_config_pdu;
 		};
 	} fapi_nr_ul_config_request_pdu_t;
 
@@ -257,7 +273,16 @@ typedef struct {
         fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15;
     } fapi_nr_dl_config_dci_pdu;
 
-    typedef fapi_nr_dci_pdu_rel15_t fapi_nr_dl_config_dlsch_pdu_rel15_t;
+    //typedef fapi_nr_dci_pdu_rel15_t fapi_nr_dl_config_dlsch_pdu_rel15_t;
+    typedef struct {
+        uint16_t number_rbs;
+        uint16_t start_rb;
+        uint16_t number_symbols;
+        uint16_t start_symbol;
+        uint8_t mcs;
+        uint8_t rv;
+        //  to be check the fields needed to L1 with NR_DL_UE_HARQ_t and NR_UE_DLSCH_t
+    } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
     typedef struct {
         uint16_t rnti;

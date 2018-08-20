@@ -703,13 +703,13 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance
     //ue->rx_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
     ue->rx_ind.number_pdus = ue->rx_ind.number_pdus + 1;
-    ue->rx_ind.rx_request_body = (fapi_nr_rx_request_body_t *)malloc(sizeof(fapi_nr_rx_request_body_t));
-    ue->rx_ind.rx_request_body->pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
-    ue->rx_ind.rx_request_body->mib_pdu.pdu = &decoded_output[1];
-    ue->rx_ind.rx_request_body->mib_pdu.additional_bits = decoded_output[0];
-    ue->rx_ind.rx_request_body->mib_pdu.ssb_index = ssb_index;            //  confirm with TCL
-    ue->rx_ind.rx_request_body->mib_pdu.ssb_length = Lmax;                //  confirm with TCL
-    ue->rx_ind.rx_request_body->mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
+    ue->rx_ind.rx_indication_body = (fapi_nr_rx_indication_body_t *)malloc(sizeof(fapi_nr_rx_indication_body_t));
+    ue->rx_ind.rx_indication_body->pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
+    ue->rx_ind.rx_indication_body->mib_pdu.pdu = &decoded_output[1];
+    ue->rx_ind.rx_indication_body->mib_pdu.additional_bits = decoded_output[0];
+    ue->rx_ind.rx_indication_body->mib_pdu.ssb_index = ssb_index;            //  confirm with TCL
+    ue->rx_ind.rx_indication_body->mib_pdu.ssb_length = Lmax;                //  confirm with TCL
+    ue->rx_ind.rx_indication_body->mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
 
     ue->if_inst->dl_indication(&ue->dl_indication);
 
