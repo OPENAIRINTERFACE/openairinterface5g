@@ -142,6 +142,7 @@ printf("frequency_domain_assignment = %05d = %#010x\n"
 #endif
           // Freq domain assignment
           fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+          printf("N_RB=%d & fsize=%d\n\n",N_RB,fsize);
           for (int i=0; i<fsize; i++)
             *dci_pdu |= ((pdu_rel15->frequency_domain_assignment>>(fsize-i-1))&1)<<pos++;
           // Time domain assignment

@@ -32,6 +32,8 @@ int main(int argc, char *argv[]) {
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
 	uint8_t aggregation_level;
 
+	uint32_t dci_pdu[4];
+
 	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:")) != -1)
 	switch (arguments)
 	{
@@ -105,8 +107,10 @@ int main(int argc, char *argv[]) {
       }
     fprintf(logFile,",SNR,nBitError,blockErrorState,t_encoder[us],t_decoder[us]\n");
 
-	uint8_t *testInput = malloc(sizeof(uint8_t) * testLength); //generate randomly
-	uint8_t *encoderOutput = malloc(sizeof(uint8_t) * coderLength);
+	//uint8_t *testInput = malloc(sizeof(uint8_t) * testLength); //generate randomly
+	//uint8_t *encoderOutput = malloc(sizeof(uint8_t) * coderLength);
+	uint32_t testInput[4], encoderOutput[4];
+
 	double *modulatedInput = malloc (sizeof(double) * coderLength); //channel input
 
 	double *channelOutput  = malloc (sizeof(double) * coderLength); //add noise
