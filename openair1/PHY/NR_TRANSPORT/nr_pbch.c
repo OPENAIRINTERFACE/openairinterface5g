@@ -177,26 +177,26 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
   }
 }
 
-/* This portion of code is temporarily kept until the optimized version is validated
- * uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6, 24, 7, 0, 5, 3, 2, 1, 4,
+// This portion of code is temporarily kept until the optimized version is validated
+uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6, 24, 7, 0, 5, 3, 2, 1, 4,
                                                 9, 11, 12, 13, 14, 15, 19, 20, 21, 22, 25, 26, 27, 28, 29, 31};
 
 uint8_t nr_pbch_payload_interleaver(uint8_t i) {
-  uint8_t j_sfn=0, j_hrf=10, j_ssb=11, j_other=14;
+  uint8_t j_sfn=6, j_hrf=10, j_ssb=11, j_other=14;
 
-  if (18<=i && i<=27) //Sfn bits
-    return nr_pbch_payload_interleaving_pattern[j_sfn + i -18];
+  if (24<=i && i<=27) //Sfn bits
+    return nr_pbch_payload_interleaving_pattern[j_sfn + i -24];
   else if (i==28) // Hrf bit
     return nr_pbch_payload_interleaving_pattern[j_hrf];
   else if (29<=i) // Ssb bits
     return nr_pbch_payload_interleaving_pattern[j_ssb + (i-29)];
   else
-    return nr_pbch_payload_interleaving_pattern[j_other + i];
-}*/
+    return nr_pbch_payload_interleaving_pattern[(j_other + i)&0x1f];
+}
 
 /*This pattern takes into account the adjustments for the field specific counters j_sfn, j_hrf, j_ssb and j_other*/
-uint8_t nr_pbch_payload_interleaving_pattern[32] = {1,4,9,11,12,13,14,15,19,20,21,22,25,26,27,28,
-                                                    29,31,16,23,18,17,8,30,10,6,24,7,0,5,3,2};
+//uint8_t nr_pbch_payload_interleaving_pattern[32] = {1,4,9,11,12,13,14,15,19,20,21,22,25,26,27,28,
+//                                                    29,31,16,23,18,17,8,30,10,6,24,7,0,5,3,2};
 
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
                      uint8_t *pbch_pdu,
@@ -256,9 +256,9 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
     in |= (uint32_t)(pbch->pbch_a[i]<<((3-i)<<3));
 
   for (int i=0; i<32; i++) {
-    out |= ((in>>i)&1)<<(nr_pbch_payload_interleaving_pattern[i]);
+    out |= ((in>>i)&1)<<(nr_pbch_payload_interleaver(i));//nr_pbch_payload_interleaving_pattern[i]
 #ifdef DEBUG_PBCH_ENCODING
-  printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, in, out, nr_pbch_payload_interleaving_pattern[i], (in>>i)&1);
+  printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) %d\n", i, in, out, nr_pbch_payload_interleaver(i), (in>>i)&1);
 #endif
   }
 

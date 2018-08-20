@@ -19,20 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file LAYER2/MAC/defs.h
-* \brief MAC data structures, constant, and function prototype
-* \author Navid Nikaein and Raymond Knopp
-* \date 2011
-* \version 0.5
-* \email navid.nikaein@eurecom.fr
-
-*/
-/** @defgroup _oai2  openair2 Reference Implementation
- * @ingroup _ref_implementation_
- * @{
+/* \file mac_defs.h
+ * \brief MAC data structures, constant, and function prototype
+ * \author R. Knopp, K.H. HSU
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom / NTUST
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
+ * \note
+ * \warning
  */
-
-/*@}*/
 
 #ifndef __LAYER2_NR_MAC_DEFS_H__
 #define __LAYER2_NR_MAC_DEFS_H__
@@ -67,15 +63,23 @@
 typedef struct {
     
     ////  MAC config
-    NR_DRX_Config_t    	*drx_Config;    /* OPTIONAL */
-    NR_SchedulingRequestConfig_t   *schedulingRequestConfig;   /* OPTIONAL */
-    NR_BSR_Config_t    	*bsr_Config;    /* OPTIONAL */
-    NR_TAG_Config_t		*tag_Config;    /* OPTIONAL */
-    NR_PHR_Config_t		*phr_Config;    /* OPTIONAL */
-    
-    NR_RNTI_Value_t 	*cs_RNTI;   /* OPTIONAL */
+    NR_DRX_Config_t    	            *drx_Config;
+    NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
+    NR_BSR_Config_t    	            *bsr_Config;
+    NR_TAG_Config_t		            *tag_Config;
+    NR_PHR_Config_t		            *phr_Config;
+    NR_RNTI_Value_t 	            *cs_RNTI;
+	NR_MIB_t 			            *mib;
 
-	NR_MIB_t 			*mib;
+    ///     Type0-PDCCH seach space coreset
+    fapi_nr_search_space_t type0_pdcch_ss;
+    uint32_t type0_pdcch_ss_mux_pattern;
+    float type0_pdcch_ss_big_o;
+    uint32_t type0_pdcch_ss_number_of_search_space_per_slot;
+    float type0_pdcch_ss_big_m;
+    uint32_t type0_pdcch_ss_first_symbol_index;
+    ///     Type0-PDCCH seach space
+
 
 	////	FAPI-like interface
 	fapi_nr_tx_request_t tx_request;
@@ -84,9 +88,12 @@ typedef struct {
 	fapi_nr_dci_indication_t dci_indication;
 	fapi_nr_rx_indication_t rx_indication;
 
+	///     Interface module instances
 	nr_ue_if_module_t *if_module;
 	nr_scheduled_response_t	scheduled_response;
 	nr_phy_config_t phy_config;
+
+
 } NR_UE_MAC_INST_t;
 
 /*@}*/

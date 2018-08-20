@@ -19,23 +19,33 @@
  *      contact@openairinterface.org
  */
 
-/*! \file rrc_UE.c
- * \brief rrc procedures for UE
- * \author Navid Nikaein and Raymond Knopp
- * \date 2011 - 2014
- * \version 1.0
- * \company Eurecom
- * \email: navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr
+/* \file rrc_UE.c
+ * \brief RRC procedures
+ * \author R. Knopp, K.H. HSU
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom / NTUST
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
+ * \note
+ * \warning
  */
 
 #define RRC_UE
 #define RRC_UE_C
 
+#include "NR_DL-DCCH-Message.h"     //asn_DEF_NR_DL_DCCH_Message
+#include "NR_BCCH-BCH-Message.h"    //asn_DEF_NR_BCCH_BCH_Message
+#include "NR_CellGroupConfig.h"     //asn_DEF_NR_CellGroupConfig
+#include "NR_BWP-Downlink.h"        //asn_DEF_NR_BWP_Downlink
+
 #include "rrc_list.h"
 #include "rrc_defs.h"
 #include "rrc_proto.h"
 #include "rrc_vars.h"
-#include "LAYER2/NR_MAC_UE/proto.h"
+#include "mac_proto.h"
+
+
+
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
@@ -55,7 +65,6 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
         nr_rrc_ue_process_scg_config(cellGroupConfig);
     }else{
         nr_rrc_ue_process_scg_config(cellGroupConfig);
-        //asn_DEF_NR_CellGroupConfig.free_struct(asn_DEF_NR_CellGroupConfig, cellGroupConfig, 0);
         SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 0);
     }
 
@@ -94,7 +103,6 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(NR_RRCReconfiguration_t *rrcReconfig
                 }else{
                     //  after first time, update it and free the memory after.
                     nr_rrc_ue_process_scg_config(cellGroupConfig);
-                    //asn_DEF_NR_CellGroupConfig.free_struct(asn_DEF_NR_CellGroupConfig, cellGroupConfig, 0);
                     SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 0);
                 }
                 
@@ -291,31 +299,38 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
         SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)mib, 1 );
     }
 
+
+    for(i=0; i<buffer_len; ++i){
+        printf("[RRC] MIB PDU : %d\n", bufferP[i]);
+    }
+
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
                             &asn_DEF_NR_BCCH_BCH_Message,
                             (void **)&bcch_message,
                             (const void *)bufferP,
-                            buffer_len );
+                            buffer_len
+		    );
 
-    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-        
-        for (i=0; i<buffer_len; i++)
-            printf("%02x ",bufferP[i]);
+    if(bcch_message->message.choice.mib->systemFrameNumber.buf != 0){
+	    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+		
+		for (i=0; i<buffer_len; i++)
+		    printf("%02x ",bufferP[i]);
 
-        printf("\n");
-        // free the memory
-        SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
-        return -1;
+		printf("\n");
+		// free the memory
+		SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
+		return -1;
+	    }
+
+	    //  link to rrc instance
+	    mib = bcch_message->message.choice.mib;
+	    //memcpy( (void *)mib,
+	    //    (void *)&bcch_message->message.choice.mib,
+	    //    sizeof(NR_MIB_t) );
+
+	    nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
     }
-
-    //  link to rrc instance
-    mib = bcch_message->message.choice.mib;
-    //memcpy( (void *)mib,
-    //    (void *)&bcch_message->message.choice.mib,
-    //    sizeof(NR_MIB_t) );
-
-    nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
-
     return 0;
 }
 

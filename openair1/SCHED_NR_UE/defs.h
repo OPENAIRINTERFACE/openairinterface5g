@@ -219,6 +219,7 @@ void ra_failed(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
  */
 void ra_succeeded(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
+#if 0
 /*! \brief Compute ACK/NACK information for PUSCH/PUCCH for UE transmission in subframe n. This function implements table 10.1-1 of 36.213, p. 69.
   @param frame_parms Pointer to DL frame parameter descriptor
   @param harq_ack Pointer to dlsch_ue harq_ack status descriptor
@@ -264,6 +265,7 @@ uint8_t nr_ul_ACK_subframe2_M(NR_DL_FRAME_PARMS *frame_parms,unsigned char subfr
   @param eNB_id ID of eNB which is to receive the SR
   @returns 1 if TXOp is active.
 */
+#endif
 uint8_t nr_is_SR_TXOp(PHY_VARS_NR_UE *phy_vars_ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id);
 
 /*! \brief Gives the UL subframe corresponding to a PDDCH order in subframe n
@@ -295,6 +297,7 @@ unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb
 
 void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
+#if 0
 /*! \brief This function retrives the resource (n1_pucch) corresponding to a PDSCH transmission in
 subframe n-4 which is acknowledged in subframe n (for FDD) according to n1_pucch = Ncce + N1_pucch.  For
 TDD, this routine computes the complex procedure described in Section 10.1 of 36.213 (through tables 10.1-1,10.1-2)
@@ -313,7 +316,7 @@ uint16_t nr_get_n1_pucch(PHY_VARS_NR_UE *phy_vars_ue,
                       uint8_t *b,
                       uint8_t SR);
 
-
+#endif
 /*! \brief This function retrieves the PHY UE mode. It is used as a helper function for the UE MAC.
   @param Mod_id Local UE index on which to act
   @param CC_id Component Carrier Index

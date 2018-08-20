@@ -1141,16 +1141,15 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
     if (high_speed_flag == 1){
-      dl_ch0 = &dl_ch_estimates[aarx][5 + (symbol * (frame_parms->ofdm_symbol_size))];
+      dl_ch0 = &dl_ch_estimates[aarx][(symbol * (frame_parms->ofdm_symbol_size))];
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][5 + (symbol * (frame_parms->ofdm_symbol_size (%d))) = (%d)]\n",
-               aarx,frame_parms->ofdm_symbol_size,5 + (symbol * (frame_parms->ofdm_symbol_size)));
-        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> why pointer is pointing to that position (what does '5' mean)?\n");
+        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][ (symbol * (frame_parms->ofdm_symbol_size (%d))) = (%d)]\n",
+               aarx,frame_parms->ofdm_symbol_size,(symbol * (frame_parms->ofdm_symbol_size)));
       #endif
     } else {
-      dl_ch0 = &dl_ch_estimates[aarx][5];
+      dl_ch0 = &dl_ch_estimates[aarx][0];
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][5]\n",aarx);
+        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][0]\n",aarx);
       #endif
     }
 
@@ -4109,13 +4108,14 @@ void nr_dci_decoding_procedure0(int s,                                          
   #endif
   for (m = 0; m < nb_candidates; m++) {
     int n_ci = 0;
+    if (nCCE[p] < L2) return;
     int debug1 = nCCE[p] / L2;
     int debug2 = L2*m_p_s_L_max;
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug1(%d)=nCCE[p]/L2 | nCCE[%d](%d) | L2(%d)\n",debug1,p,nCCE[p],L2);
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug2(%d)=L2*m_p_s_L_max | L2(%d) | m_p_s_L_max(%d)\n",debug2,L2,m_p_s_L_max);
     #endif
-    CCEind = (((Yk + ((m*nCCE[p])/(L2*m_p_s_L_max)) + n_ci) % (nCCE[p] / L2)) * L2);
+    CCEind = (((Yk + (uint16_t)(floor((m*nCCE[p])/(L2*m_p_s_L_max))) + n_ci) % (uint16_t)(floor(nCCE[p] / L2))) * L2);
     #ifdef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> CCEind(%d) = (((Yk(%d) + ((m(%d)*nCCE[p](%d))/(L2(%d)*m_p_s_L_max(%d)))) % (nCCE[p] / L2)) * L2)\n",
                CCEind,Yk,m,nCCE[p],L2,m_p_s_L_max);

@@ -19,22 +19,25 @@
  *      contact@openairinterface.org
  */
 
-/*! \file config.c
+/* \file config_ue.c
  * \brief UE and eNB configuration performed by RRC or as a consequence of RRC procedures
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
+ * \author R. Knopp, K.H. HSU
+ * \date 2018
  * \version 0.1
- * \email: navid.nikaein@eurecom.fr
- * @ingroup _mac
-
+ * \company Eurecom / NTUST
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
+ * \note
+ * \warning
  */
-#include "defs.h"
-#include "proto.h"
 
-int
-nr_rrc_mac_config_req_ue(
+//#include "mac_defs.h"
+#include "mac_proto.h"
+
+#include "NR_MAC-CellGroupConfig.h"
+
+int nr_rrc_mac_config_req_ue(
     module_id_t                     module_id,
-    int                             CC_idP,
+    int                             cc_idP,
     uint8_t                         gNB_index,
     NR_MIB_t                        *mibP,
     NR_MAC_CellGroupConfig_t        *mac_cell_group_configP,
@@ -52,7 +55,18 @@ nr_rrc_mac_config_req_ue(
 
     if(mac_cell_group_configP != NULL){
         if(mac_cell_group_configP->drx_Config != NULL ){
-            mac->drx_Config = mac_cell_group_configP->drx_Config;
+            switch(mac_cell_group_configP->drx_Config->present){
+                case NR_SetupRelease_DRX_Config_PR_NOTHING:
+                    break;
+                case NR_SetupRelease_DRX_Config_PR_release:
+                    mac->drx_Config = NULL;
+                    break;
+                case NR_SetupRelease_DRX_Config_PR_setup:
+                    mac->drx_Config = mac_cell_group_configP->drx_Config->choice.setup;
+                    break;
+                default:
+                    break;
+            }
         }
 
         if(mac_cell_group_configP->schedulingRequestConfig != NULL ){
@@ -68,11 +82,35 @@ nr_rrc_mac_config_req_ue(
         }
 
         if(mac_cell_group_configP->phr_Config != NULL ){
-            mac->phr_Config = mac_cell_group_configP->phr_Config;
+            switch(mac_cell_group_configP->phr_Config->present){
+                case NR_SetupRelease_PHR_Config_PR_NOTHING:
+                    break;
+                case NR_SetupRelease_PHR_Config_PR_release:
+                    mac->phr_Config = NULL;
+                    break;
+                case NR_SetupRelease_PHR_Config_PR_setup:
+                    mac->phr_Config = mac_cell_group_configP->phr_Config->choice.setup;
+                    break;
+                default:
+                    break;
+            }
+            
         }
 
         if(mac_cell_group_configP->cs_RNTI != NULL ){
-            mac->cs_RNTI = mac_cell_group_configP->cs_RNTI;
+            switch(mac_cell_group_configP->cs_RNTI->present){
+                case NR_SetupRelease_RNTI_Value_PR_NOTHING:
+                    break;
+                case NR_SetupRelease_RNTI_Value_PR_release:
+                    mac->cs_RNTI = NULL;
+                    break;
+                case NR_SetupRelease_RNTI_Value_PR_setup:
+                    mac->cs_RNTI = &mac_cell_group_configP->cs_RNTI->choice.setup;
+                    break;
+                default:
+                    break;
+            }
+            
         }
     }
     

@@ -31,7 +31,9 @@
 */
 #ifndef __NR_TRANSPORT_UE__H__
 #define __NR_TRANSPORT_UE__H__
-#include "PHY/defs_nr_UE.h"
+#include <limits.h>
+#include "PHY/impl_defs_top.h"
+//#include "PHY/defs_nr_UE.h"
 //#include "../LTE_TRANSPORT/dci.h"
 //#include "../LTE_TRANSPORT/mdci.h"
 //#include "../LTE_TRANSPORT/uci_common.h"
@@ -48,7 +50,31 @@
  * @{
  */
 
-#define SHRT_MAX   32767
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+typedef struct {
+  /// HARQ process id
+  uint8_t harq_id;
+  /// ACK bits (after decoding) 0:NACK / 1:ACK / 2:DTX
+  uint8_t ack;
+  /// send status (for PUCCH)
+  uint8_t send_harq_status;
+  /// nCCE (for PUCCH)
+  uint8_t nCCE;
+  /// DAI value detected from DCI1/1a/1b/1d/2/2a/2b/2c. 0xff indicates not touched
+  uint8_t vDAI_DL;
+  /// DAI value detected from DCI0/4. 0xff indicates not touched
+  uint8_t vDAI_UL;
+  /// allow to define pucch parameters TS 38.213 9.2.3 UE procedure for reporting HARQ-ACK
+  uint8_t  pucch_resource_indicator;
+  /// slot on which feedback ack should be send to network
+  uint16_t slot_for_feedback_ack;
+  /// index of a first CCE for the PDCCH reception
+  uint8_t  n_CCE;
+  /// number of CCEs in a control resource set of a PDCCH reception conveying DCI format 1_0
+  uint8_t  N_CCE;
+} NR_UE_HARQ_STATUS_t;
+#endif
 
 typedef struct {
   /// Indicator of first transmission
@@ -128,9 +154,15 @@ typedef struct {
   /// Current Number of Symbols
   uint8_t Nsymb_pusch;
   /// SRS active flag
-  uint8_t srs_active;
-  /// Pointers to 8 HARQ processes for the ULSCH
-  NR_UL_UE_HARQ_t *harq_processes[8];
+  uint8_t srs_active; 
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+  // Pointers to HARQ processes for the ULSCH
+  NR_UL_UE_HARQ_t *harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES];
+  int harq_process_id[NR_MAX_SLOTS_PAR_FRAME];
+  // UL number of harq processes
+  uint8_t number_harq_processes_for_pusch;
+#endif 
   /// Pointer to CQI data (+1 for 8 bits crc)
   uint8_t o[1+MAX_CQI_BYTES];
   /// Length of CQI data (bits)
@@ -196,9 +228,6 @@ typedef struct {
   /// UL max-harq-retransmission
   uint8_t Mlimit;
 } NR_UE_ULSCH_t;
-
-
-
 
 typedef struct {
   /// Indicator of first transmission
@@ -269,23 +298,9 @@ typedef struct {
   uint32_t errors[8];
   /// codeword this transport block is mapped to
   uint8_t codeword;
+  /// HARQ-ACKs
+  NR_UE_HARQ_STATUS_t harq_ack;
 } NR_DL_UE_HARQ_t;
-
-
-typedef struct {
-  /// HARQ process id
-  uint8_t harq_id;
-  /// ACK bits (after decoding) 0:NACK / 1:ACK / 2:DTX
-  uint8_t ack;
-  /// send status (for PUCCH)
-  uint8_t send_harq_status;
-  /// nCCE (for PUCCH)
-  uint8_t nCCE;
-  /// DAI value detected from DCI1/1a/1b/1d/2/2a/2b/2c. 0xff indicates not touched
-  uint8_t vDAI_DL;
-  /// DAI value detected from DCI0/4. 0xff indicates not touched
-  uint8_t vDAI_UL;
-} nr_harq_status_t;
 
 typedef struct {
   /// RNTI
@@ -310,10 +325,17 @@ typedef struct {
   uint32_t cqi_alloc2;
   /// saved subband PMI allocation from last PUSCH/PUCCH report
   uint16_t pmi_alloc;
-  /// HARQ-ACKs
-  nr_harq_status_t harq_ack[10];
-  /// Pointers to up to 8 HARQ processes
-  NR_DL_UE_HARQ_t *harq_processes[8];
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+  /// Pointers to up to HARQ processes
+  NR_DL_UE_HARQ_t *harq_processes[NR_MAX_DLSCH_HARQ_PROCESSES];
+  // DL number of harq processes
+  uint8_t number_harq_processes_for_pdsch;
+  /* higher layer parameter for reception of two transport blocks TS 38.213 9.1.3.1 Type-2 HARQ-ACK codebook dtermination */
+  uint8_t Number_MCS_HARQ_DL_DCI;
+  /* spatial bundling of PUCCH */
+  uint8_t HARQ_ACK_spatial_bundling_PUCCH;
+#endif
   /// Maximum number of HARQ processes(for definition see 36-212 V8.6 2009-03, p.17
   uint8_t Mdlharq;
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
@@ -363,6 +385,13 @@ typedef struct {
   dci_space_t search_space;
   /// DCI pdu
   uint8_t dci_pdu[8];
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+  /// harq information
+  uint8_t harq_pid_pusch;
+  /// delay between current slot and slot to transmit
+  uint8_t number_slots_rx_to_tx;
+#endif
 } NR_DCI_ALLOC_t;
 
 

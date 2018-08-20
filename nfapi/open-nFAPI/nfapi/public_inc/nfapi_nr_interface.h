@@ -189,6 +189,7 @@ typedef struct {
   nfapi_uint16_tlv_t  p0_nominal;                                                     ///// L1 parameter 'p0-nominal-pucch'
 } nfapi_nr_pucch_config_t;
 
+
 typedef struct {
 //NR TDD-UL-DL-ConfigCommon                ///// L1 parameter 'UL-DL-configuration-common'
   nfapi_uint16_tlv_t  referenceSubcarrierSpacing;                                     ///// L1 parameter 'reference-SCS'
@@ -224,7 +225,7 @@ typedef struct {
 
 typedef struct {
   nfapi_p4_p5_message_header_t              header;
-  uint8_t 									num_tlv;
+  uint8_t num_tlv;
   nfapi_nr_subframe_config_t                subframe_config;
   nfapi_nr_rf_config_t                      rf_config;
   nfapi_nr_sch_config_t                     sch_config;

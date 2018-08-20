@@ -64,11 +64,54 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 
 }
 
-void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned int nr_gold_pdsch[2][20][2][21],unsigned int Nid_cell, unsigned short *n_idDMRS, unsigned short length_dmrs)
+void nr_gold_pdcch(PHY_VARS_NR_UE* ue,unsigned int Nid_cell, unsigned short n_idDMRS, unsigned short length_dmrs)
 {
 
   unsigned char ns,l;
-  unsigned int n,x1,x2,x2tmp0,x2tmp1, x2tmp2,x2s;
+  unsigned int n,x1,x2,x2tmp0;
+  unsigned int nid;
+
+    if (n_idDMRS)
+      nid = n_idDMRS;
+    else
+      nid = Nid_cell;
+
+    for (ns=0; ns<20; ns++) {
+
+      for (l=0; l<length_dmrs; l++) {
+
+    	x2tmp0 = ((14*ns+l+1)*((nid<<1)+1))<<17;
+        x2 = (x2tmp0+(nid<<1))%(1<<31);  //cinit
+
+        x1 = 1+ (1<<31);
+        x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
+
+        // skip first 50 double words (1600 bits)
+        for (n=1; n<50; n++) {
+          x1 = (x1>>1) ^ (x1>>4);
+          x1 = x1 ^ (x1<<31) ^ (x1<<28);
+          x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
+          x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
+            //printf("x1 : %x, x2 : %x\n",x1,x2);
+        }
+
+        for (n=0; n<10; n++) {
+          x1 = (x1>>1) ^ (x1>>4);
+          x1 = x1 ^ (x1<<31) ^ (x1<<28);
+          x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
+          x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
+          ue->nr_gold_pdcch[0][ns][l][n] = x1^x2;
+            //printf("n=%d : c %x\n",n,x1^x2);
+        }
+      }
+    }
+}
+
+void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned int Nid_cell, unsigned short *n_idDMRS, unsigned short length_dmrs)
+{
+
+  unsigned char ns,l;
+  unsigned int n,x1,x2,x2tmp0;
   int nscid;
   unsigned int nid;
 
@@ -86,7 +129,7 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned int nr_gold_p
       for (l=0; l<length_dmrs; l++) {
 
     	x2tmp0 = ((14*ns+(lbar+l)+1)*((nid<<1)+1))<<17;
-        x2 = (x2tmp0+(nid<<1))%(1<<31);  //cinit
+        x2 = (x2tmp0+(nid<<1)+nscid)%(1<<31);  //cinit
 
         x1 = 1+ (1<<31);
         x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
@@ -105,7 +148,7 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned int nr_gold_p
           x1 = x1 ^ (x1<<31) ^ (x1<<28);
           x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
           x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
-          nr_gold_pdsch[nscid][ns][l][n] = x1^x2;
+          ue->nr_gold_pdsch[nscid][ns][l][n] = x1^x2;
             //printf("n=%d : c %x\n",n,x1^x2);
         }
 

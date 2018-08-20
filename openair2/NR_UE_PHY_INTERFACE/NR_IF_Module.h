@@ -19,16 +19,17 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/PHY_INTERFACE/IF_Module.h
-* \brief data structures for PHY/MAC interface modules
-* \author EURECOM/NTUST
-* \date 2018
-* \version 0.1
-* \company Eurecom
-* \email: raymond.knopp@eurecom.fr
-* \note
-* \warning
-*/
+/* \file NR_IF_Module.h
+ * \brief data structures for L1/L2 interface modules
+ * \author R. Knopp, K.H. HSU
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom / NTUST
+ * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
+ * \note
+ * \warning
+ */
+
 #ifndef __NR_IF_MODULE_H__
 #define __NR_IF_MODULE_H__
 
@@ -39,22 +40,34 @@ typedef struct {
     /// module id
     module_id_t module_id;
     /// component carrier id
-    int CC_id;
+    int cc_id;
     /// frame 
     frame_t frame;
-    /// subframe
-    sub_frame_t subframe;
     /// slot
     uint8_t slot;
 
     /// NR UE FAPI-like P7 message, direction: L1 to L2
     /// data reception indication structure
-    fapi_nr_rx_indication_t *rx_ind;
+    fapi_nr_rx_indication_t rx_ind;
 
     /// dci reception indication structure
-    fapi_nr_dci_indication_t *dci_ind;
+    fapi_nr_dci_indication_t dci_ind;
 
 } nr_downlink_indication_t;
+
+
+typedef struct {
+    /// module id
+    module_id_t module_id;
+    /// gNB index
+    uint32_t gNB_index;
+    /// component carrier id
+    int cc_id;
+    /// frame 
+    frame_t frame;
+    /// slot
+    uint32_t slot;
+} nr_uplink_indication_t;
 
 // Downlink subframe P7
 
@@ -103,7 +116,7 @@ typedef struct {
  *  -1: Failed to consume bytes. Abort the mission.
  * Non-negative return values indicate success, and ignored.
  */
-typedef int8_t(nr_ue_scheduled_response_f)(nr_scheduled_response_t *scheduled_response);
+typedef int8_t (nr_ue_scheduled_response_f)(nr_scheduled_response_t *scheduled_response);
 
 
 /*
@@ -113,7 +126,7 @@ typedef int8_t(nr_ue_scheduled_response_f)(nr_scheduled_response_t *scheduled_re
  *  -1: Failed to consume bytes. Abort the mission.
  * Non-negative return values indicate success, and ignored.
  */
-typedef int8_t(nr_ue_phy_config_request_f)(nr_phy_config_t *phy_config);
+typedef int8_t (nr_ue_phy_config_request_f)(nr_phy_config_t *phy_config);
 
 
 /*
@@ -123,18 +136,27 @@ typedef int8_t(nr_ue_phy_config_request_f)(nr_phy_config_t *phy_config);
  *  -1: Failed to consume bytes. Abort the mission.
  * Non-negative return values indicate success, and ignored.
  */
-typedef int8_t(nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
+typedef int8_t (nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
 
+/*
+ * Generic type of an application-defined callback to return various
+ * types of data to the application.
+ * EXPECTED RETURN VALUES:
+ *  -1: Failed to consume bytes. Abort the mission.
+ * Non-negative return values indicate success, and ignored.
+ */
+typedef int8_t (nr_ue_ul_indication_f)(nr_uplink_indication_t *ul_info);
 
 //  TODO check this stuff can be reuse of need modification
 typedef struct nr_ue_if_module_s {
     nr_ue_scheduled_response_f *scheduled_response;
     nr_ue_phy_config_request_f *phy_config_request;
     nr_ue_dl_indication_f      *dl_indication;
+    nr_ue_ul_indication_f      *ul_indication;
 
-    uint32_t CC_mask;
-    uint16_t current_frame;
-    uint8_t current_subframe;
+    uint32_t cc_mask;
+    uint32_t current_frame;
+    uint32_t current_slot;
     //pthread_mutex_t nr_if_mutex;
 } nr_ue_if_module_t;
 
