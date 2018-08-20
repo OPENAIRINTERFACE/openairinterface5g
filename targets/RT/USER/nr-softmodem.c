@@ -396,8 +396,8 @@ static void *scope_thread(void *arg) {
 	for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 	  if ((ue_cnt<scope_enb_num_ue)) {
 	    phy_scope_eNB(form_enb[CC_id][ue_cnt],
-			  RC.gNB[0][CC_id],
-			  UE_id);
+			          RC.gNB[0][CC_id],
+					  UE_id);
 	    ue_cnt++;
 	  }
 	}

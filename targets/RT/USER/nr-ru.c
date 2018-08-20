@@ -604,7 +604,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   RU_proc_t *proc        = &ru->proc;
 
   uint16_t packet_type;
-  uint32_t symbol_number,symbol_mask,symbol_mask_full;
+  uint32_t symbol_number,symbol_mask,symbol_mask_full=0;
   int subframe_tx,frame_tx;
 
   LOG_D(PHY, "%s(ru:%p frame, subframe)\n", __FUNCTION__, ru);

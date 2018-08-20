@@ -535,13 +535,13 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   unsigned short idx_demod =0;
   int8_t decoderState=0;
   uint8_t decoderListSize = 8, pathMetricAppr = 0;
-  double aPrioriArray[frame_parms->pbch_polar_params.payloadBits];  // assume no a priori knowledge available about the payload.
 
   memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
 
   //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
 
-  for (int i=0; i<frame_parms->pbch_polar_params.payloadBits; i++) aPrioriArray[i] = NAN;
+  /*double aPrioriArray[frame_parms->pbch_polar_params.payloadBits];  // assume no a priori knowledge available about the payload.
+  for (int i=0; i<frame_parms->pbch_polar_params.payloadBits; i++) aPrioriArray[i] = NAN;*/
 
   int subframe_rx = proc->subframe_rx;
 
@@ -651,7 +651,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 //#endif
 		
   //polar decoding de-rate matching
-  decoderState = polar_decoder(demod_pbch_e, pbch_a_b, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
+  decoderState = polar_decoder(demod_pbch_e, pbch_a, &frame_parms->pbch_polar_params, decoderListSize, pathMetricAppr);
   printf("polar decoder state %d\n", decoderState);
   if(decoderState == -1)
   	return(decoderState);

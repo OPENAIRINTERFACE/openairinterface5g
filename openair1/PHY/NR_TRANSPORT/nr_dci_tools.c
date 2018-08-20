@@ -31,6 +31,7 @@
  */
 
 #include "nr_dci.h"
+#define DEBUG_NFAPI_NR_RNTI_RA
 
 void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m) {
 
@@ -128,6 +129,17 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
     case NFAPI_NR_DL_DCI_FORMAT_1_0:
       switch(params_rel15->rnti_type) {
         case NFAPI_NR_RNTI_RA:
+#ifdef DEBUG_NFAPI_NR_RNTI_RA
+printf("frequency_domain_assignment = %05d = %#010x\n"
+		"     time_domain_assignment = %05d = %#010x\n"
+		"         vrb_to_prb_mapping = %05d = %#010x\n"
+		"                        MCS = %05d = %#010x\n"
+		"                 tb_scaling = %05d = %#010x\n",
+		pdu_rel15->frequency_domain_assignment,pdu_rel15->frequency_domain_assignment,
+		pdu_rel15->time_domain_assignment,pdu_rel15->time_domain_assignment,
+		pdu_rel15->vrb_to_prb_mapping,pdu_rel15->vrb_to_prb_mapping,
+		pdu_rel15->mcs,pdu_rel15->mcs,pdu_rel15->tb_scaling,pdu_rel15->tb_scaling);
+#endif
           // Freq domain assignment
           fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
           for (int i=0; i<fsize; i++)

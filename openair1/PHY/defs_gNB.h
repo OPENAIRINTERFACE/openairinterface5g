@@ -283,15 +283,16 @@ typedef struct PHY_VARS_gNB_s {
   /// NFAPI PRACH information
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
 
-  Sched_Rsp_t          Sched_INFO;
+  Sched_Rsp_t         Sched_INFO;
   NR_gNB_PDCCH        pdcch_vars;
+  NR_gNB_PBCH         pbch;
+  t_nrPolar_paramsPtr nrPolar_params;
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_type0_params;
-  LTE_eNB_PHICH        phich_vars[2];
+  LTE_eNB_PHICH       phich_vars[2];
 
   NR_gNB_COMMON       common_vars;
   LTE_eNB_UCI          uci_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
-  NR_gNB_PBCH         pbch;
   LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PRACH        prach_vars;
   LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
@@ -462,8 +463,6 @@ typedef struct PHY_VARS_gNB_s {
   int32_t pusch_stats_mcs[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
-
-  t_nrPolar_paramsPtr nrPolar_params;
 } PHY_VARS_gNB;
 
 #endif
