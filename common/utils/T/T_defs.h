@@ -31,12 +31,14 @@
 #endif
 
 typedef struct {
+  /* 'busy' is a bit field
+   * bit 0: 1 means that slot is acquired by writer
+   * bit 1: 1 means that slot is ready for consumption
+   */
   volatile int busy;
   char buffer[T_BUFFER_MAX];
   int length;
 } T_cache_t;
-
-#define T_SHM_FILENAME "/T_shm_segment"
 
 /* number of VCD functions (to be kept up to date! see in T_messages.txt) */
 #define VCD_NUM_FUNCTIONS 190
