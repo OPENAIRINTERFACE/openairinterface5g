@@ -179,8 +179,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   * in time: by its first slot and its first symbol*/
   uint16_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*NR_NB_SC_PER_RB;
   uint8_t cset_start_symb = pdcch_params.first_slot*frame_parms.symbols_per_slot + pdcch_params.first_symbol;
+  uint8_t cset_nsymb = pdcch_params.n_symb;
   dci_idx = 0;
-  dmrs_idx = 0;
 
   /// DMRS QPSK modulation
     /*There is a need to shift from which index the pregenerated DMRS sequence is used
@@ -256,6 +256,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
             if (k >= frame_parms.ofdm_symbol_size)
                 k -= frame_parms.ofdm_symbol_size;
             l = cset_start_symb + cce.reg_list[reg_idx].symb_idx;
+            dmrs_idx = (cce.reg_list[reg_idx].reg_idx/cset_nsymb)*3;
             k_prime = 0;
             for (int m=0; m<NR_NB_SC_PER_RB; m++) {
               if ( m == (k_prime<<2)+1) { // DMRS
