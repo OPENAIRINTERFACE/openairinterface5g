@@ -253,6 +253,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
         cce = dci_alloc.cce_list[cce_idx];
           for (int reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
             k = cset_start_sc + cce.reg_list[reg_idx].start_sc_idx;
+            if (k >= frame_parms.ofdm_symbol_size)
+                k -= frame_parms.ofdm_symbol_size;
             l = cset_start_symb + cce.reg_list[reg_idx].symb_idx;
             k_prime = 0;
             for (int m=0; m<NR_NB_SC_PER_RB; m++) {
