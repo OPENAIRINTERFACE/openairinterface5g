@@ -177,7 +177,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   /*The coreset is initialised
   * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset
   * in time: by its first slot and its first symbol*/
-  uint8_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*NR_NB_SC_PER_RB;
+  uint16_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*NR_NB_SC_PER_RB;
   uint8_t cset_start_symb = pdcch_params.first_slot*frame_parms.symbols_per_slot + pdcch_params.first_symbol;
   dci_idx = 0;
   dmrs_idx = 0;
