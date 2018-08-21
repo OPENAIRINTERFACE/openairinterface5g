@@ -3090,6 +3090,23 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *pro
 
 #endif //(0)
 
+unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb)
+{
+
+  int gain_dB = power_dBm - power_max_dBm;
+  double gain_lin;
+
+  gain_lin = pow(10,.1*gain_dB);
+  if ((nb_rb >0) && (nb_rb <= N_RB_UL)) {
+    return((int)(AMP*sqrt(gain_lin*N_RB_UL/(double)nb_rb)));
+  }
+  else {
+    LOG_E(PHY,"Illegal nb_rb/N_RB_UL combination (%d/%d)\n",nb_rb,N_RB_UL);
+    //mac_xface->macphy_exit("");
+  }
+  return(0);
+}
+
 #ifdef NR_PDCCH_SCHED
 
 int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t abstraction_flag)

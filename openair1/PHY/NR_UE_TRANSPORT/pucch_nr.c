@@ -643,11 +643,11 @@ void nr_generate_pucch1(int32_t **txdataF,
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
   uint8_t u=0,v=0,delta=0;
   // depending on the value of the PUCCH_GroupHopping, we will obtain different values for u,v
-  uint8_t PUCCH_GroupHopping; // from higher layers FIXME!!
+  uint8_t PUCCH_GroupHopping=0; // from higher layers FIXME!!
   // n_id is hoppingId from PUCCH-ConfigCommon:
   // Cell-Specific scrambling ID for group hoppping and sequence hopping if enabled
   // Corresponds to L1 parameter 'HoppingID' (see 38.211, section 6.3.2.2) BIT STRING (SIZE (10))
-  uint32_t n_id; // from higher layers FIXME!!
+  uint32_t n_id=0; // from higher layers FIXME!!
   // if frequency hopping is disabled, intraSlotFrequencyHopping is not provided
   //              n_hop = 0
   // if frequency hopping is enabled,  intraSlotFrequencyHopping is     provided
@@ -671,6 +671,10 @@ void nr_generate_pucch1(int32_t **txdataF,
 
   // y_n contains the complex value d multiplied by the sequence r_u_v
   int16_t y_n_re[12],y_n_im[12];
+  #ifdef DEBUG_NR_PUCCH_TX
+    printf("\t [nr_generate_pucch1] entering function nr_group_sequence_hopping with PUCCH_GroupHopping=%d,n_id=%d, n_hop=%d, nr_tti_tx=%d\n",
+            PUCCH_GroupHopping,n_id,n_hop,nr_tti_tx);
+  #endif
   nr_group_sequence_hopping(PUCCH_GroupHopping,n_id,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
   alpha = nr_cyclic_shift_hopping(n_id,m0,mcs,lnormal,lprime,nr_tti_tx);
   for (int n=0; n<12; n++){

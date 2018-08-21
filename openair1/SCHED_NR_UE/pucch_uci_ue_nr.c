@@ -385,7 +385,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
 
     /* TS 38.212 6.3.1.2  Code block segmentation and CRC attachment */
-    /* crc attachment can be done depending of paylaod size */
+    /* crc attachment can be done depending of payload size */
     if (N_UCI < 11) {
       O_CRC = 0;  /* no additional crc bits */
     }
@@ -468,8 +468,8 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   NR_TST_PHY_PRINTF("PUCCH ( AbsSubframe : %d.%d ) ( total payload size %d data 0x%02x ) ( ack length %d data 0x%02x ) ( sr length %d value %d ) ( csi length %d data : 0x%02x ) \n",
                          frame_tx%1024, nr_tti_tx, N_UCI,  pucch_payload, O_ACK, pucch_ack_payload, O_SR, sr_payload, csi_status, csi_payload);
 
-  NR_TST_PHY_PRINTF("PUCCH ( format : %d ) ( modulation : %s ) ( nb prb : %d ) ( nb symbols : %d ) ( max code rate*100 : %d ) ( starting_symbol_index : %d ) \n",
-                        format, (Q_m == BITS_PER_SYMBOL_QPSK ? " QPSK " : " BPSK "), nb_of_prbs, nb_symbols, max_code_rate, starting_symbol_index);
+  NR_TST_PHY_PRINTF("PUCCH ( format : %d ) ( modulation : %s ) ( nb prb : %d ) ( nb symbols total: %d ) ( nb symbols : %d ) ( max code rate*100 : %d ) ( starting_symbol_index : %d ) \n",
+                        format, (Q_m == BITS_PER_SYMBOL_QPSK ? " QPSK " : " BPSK "), nb_of_prbs, nb_symbols_total, nb_symbols, max_code_rate, starting_symbol_index);
 
   NR_TST_PHY_PRINTF("PUCCH ( starting_prb : %d ) ( second_hop : %d ) ( m_0 : %d ) ( m_CS : %d ) ( time_domain_occ %d ) (occ_length : %d ) ( occ_Index : %d ) \n",
                          starting_prb,         second_hop,         m_0,         m_CS,         time_domain_occ,      occ_length,         occ_Index);
@@ -482,7 +482,21 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                                                   nb_of_prbs, N_sc_ctrl_RB, nb_symbols, N_UCI, O_SR, O_CSI, O_ACK,
                                                   O_CRC, n_HARQ_ACK);
 
+  /* set tx power */
+  ue->tx_power_dBm[nr_tti_tx] = pucch_tx_power;
+  ue->tx_total_RE[nr_tti_tx] = nb_of_prbs*N_SC_RB;
 
+  int tx_amp;
+
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
+
+  tx_amp = get_tx_amp(pucch_tx_power,
+                      ue->tx_power_max_dBm,
+                      ue->frame_parms.N_RB_UL,
+					  nb_of_prbs);
+#else
+  tx_amp = AMP;
+#endif
 
   switch(format) {
     case pucch_format0_nr:
@@ -490,10 +504,10 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       nr_generate_pucch0(ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
-                         pucch_tx_power,
+						 tx_amp,
                          nr_tti_tx,
                          (uint8_t)m_CS,
-                         nb_symbols,
+						 nb_symbols_total,
                          starting_symbol_index,
                          starting_prb);
       break;
@@ -504,9 +518,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
                          pucch_payload,
-                         pucch_tx_power,
+						 tx_amp,
                          nr_tti_tx,
-                         nb_symbols,
+						 nb_symbols_total,
                          starting_symbol_index,
                          starting_prb,
                          second_hop,
@@ -520,9 +534,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
                          pucch_payload,
-                         pucch_tx_power,
+						 tx_amp,
                          nr_tti_tx,
-                         nb_symbols,
+						 nb_symbols_total,
                          starting_symbol_index,
                          nb_of_prbs,
                          starting_prb,
@@ -537,9 +551,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                            format,
                            &ue->pucch_config_dedicated_nr[gNB_id],
                            pucch_payload,
-                           pucch_tx_power,
+						   tx_amp,
                            nr_tti_tx,
-                           nb_symbols,
+						   nb_symbols_total,
                            starting_symbol_index,
                            nb_of_prbs,
                            starting_prb,
@@ -1012,7 +1026,7 @@ boolean_t check_pucch_format(PHY_VARS_NR_UE *ue, uint8_t gNB_id, pucch_format_nr
     }
   }
 
-  NR_TST_PHY_PRINTF("PUCCH format %d nb symbols %d uci size %d selected format %d \n", format_pucch, nb_symbols_for_tx, uci_size, selected_pucch_format);
+  NR_TST_PHY_PRINTF("PUCCH format %d nb symbols total %d uci size %d selected format %d \n", format_pucch, nb_symbols_for_tx, uci_size, selected_pucch_format);
 
   if (format_pucch != selected_pucch_format) {
     if (format_pucch != selected_pucch_format_second) {

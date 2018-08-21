@@ -67,6 +67,69 @@ extern double cpuf;
 static  nfapi_nr_config_request_t config_t;
 static  nfapi_nr_config_request_t* config =&config_t;
 
+/*
+ *  NR SLOT PROCESSING SEQUENCE
+ *
+ *  Processing occurs with following steps for connected mode:
+ *
+ *  - Rx samples for a slot are received,
+ *  - PDCCH processing (including DCI extraction for downlink and uplink),
+ *  - PDSCH processing (including transport blocks decoding),
+ *  - PUCCH/PUSCH (transmission of acknowledgements, CSI, ... or data).
+ *
+ *  Time between reception of the slot and related transmission depends on UE processing performance.
+ *  It is defined by the value NR_UE_CAPABILITY_SLOT_RX_TO_TX.
+ *
+ *  In NR, network gives the duration between Rx slot and Tx slot in the DCI:
+ *  - for reception of a PDSCH and its associated acknowledgment slot (with a PUCCH or a PUSCH),
+ *  - for reception of an uplink grant and its associated PUSCH slot.
+ *
+ *  So duration between reception and it associated transmission depends on its transmission slot given in the DCI.
+ *  NR_UE_CAPABILITY_SLOT_RX_TO_TX means the minimum duration but higher duration can be given by the network because UE can support it.
+ *
+*                                                                                                    Slot k
+*                                                                                  -------+------------+--------
+*                Frame                                                                    | Tx samples |
+*                Subframe                                                                 |   buffer   |
+*                Slot n                                                            -------+------------+--------
+*       ------ +------------+--------                                                     |
+*              | Rx samples |                                                             |
+*              |   buffer   |                                                             |
+*       -------+------------+--------                                                     |
+*                           |                                                             |
+*                           V                                                             |
+*                           +------------+                                                |
+*                           |   PDCCH    |                                                |
+*                           | processing |                                                |
+*                           +------------+                                                |
+*                           |            |                                                |
+*                           |            v                                                |
+*                           |            +------------+                                   |
+*                           |            |   PDSCH    |                                   |
+*                           |            | processing | decoding result                   |
+*                           |            +------------+    -> ACK/NACK of PDSCH           |
+*                           |                         |                                   |
+*                           |                         v                                   |
+*                           |                         +-------------+------------+        |
+*                           |                         | PUCCH/PUSCH | Tx samples |        |
+*                           |                         |  processing | transfer   |        |
+*                           |                         +-------------+------------+        |
+*                           |                                                             |
+*                           |/___________________________________________________________\|
+*                            \  duration between reception and associated transmission   /
+*
+* Remark: processing is done slot by slot, it can be distribute on different threads which are executed in parallel.
+* This is an architecture optimization in order to cope with real time constraints.
+* By example, for LTE, subframe processing is spread over 4 different threads.
+*
+ */
+
+#ifndef NO_RAT_NR
+  #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
+#else
+  #define DURATION_RX_TO_TX           (4)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
+#endif
+
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
 #define FIFO_PRIORITY   40
@@ -586,9 +649,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
 #ifndef NO_RAT_NR
         // Process Rx data for one sub-frame
-        nr_slot_t nr_slot ; //= slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx);
-
-        if (nr_slot == NR_TDD_DOWNLINK_SLOT) {
+        if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
 #else
         // Process Rx data for one sub-frame
         lte_subframe_t sf_type = subframe_select( &UE->frame_parms, proc->subframe_rx);
@@ -695,10 +756,14 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
         // Prepare the future Tx data
 #if 0
+#ifndef NO_RAT_NR
+        if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_UPLINK_SLOT)
+#else
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
                 (UE->frame_parms.frame_type == FDD) )
             if (UE->mode != loop_through_memory)
                 phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
+#endif
 #endif
 #if 0
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
@@ -810,7 +875,7 @@ void *UE_thread(void *arg) {
                 if (UE->mode != loop_through_memory) {
                     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
                         rxp[i] = (void*)&dummy_rx[i][0];
-                    for (int sf=0; sf<10; sf++)
+                    for (int sf=0; sf<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME; sf++)
                         //	    printf("Reading dummy sf %d\n",sf);
                           UE->rfdevice.trx_read_func(&UE->rfdevice,
                                               &timestamp,
@@ -857,7 +922,8 @@ void *UE_thread(void *arg) {
 
             } else {
                 tti_nr++;
-                tti_nr%=10*UE->frame_parms.ttis_per_subframe;
+                int ttis_per_frame = LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*UE->frame_parms.ttis_per_subframe;
+                tti_nr %= ttis_per_frame;               
                 UE_nr_rxtx_proc_t *proc = &UE->proc.proc_rxtx[thread_idx];
                 // update thread index for received subframe
                 UE->current_thread_id[tti_nr] = thread_idx;
@@ -878,7 +944,7 @@ void *UE_thread(void *arg) {
                         txp[i] = (void*)&UE->common_vars.txdata[i][((tti_nr+2)%10*UE->frame_parms.ttis_per_subframe)*UE->frame_parms.samples_per_tti];
 
                     int readBlockSize, writeBlockSize;
-                    if (tti_nr<(10*UE->frame_parms.ttis_per_subframe-1)) {
+                    if (tti_nr<(ttis_per_frame - 1)) {
                         readBlockSize=UE->frame_parms.samples_per_tti;
                         writeBlockSize=UE->frame_parms.samples_per_tti;
                     } else {
@@ -917,7 +983,7 @@ void *UE_thread(void *arg) {
                                          writeBlockSize,
                                          UE->frame_parms.nb_antennas_tx,
                                          1),"");
-                    if( tti_nr==(10*UE->frame_parms.ttis_per_subframe-1)) {
+                    if( tti_nr==(ttis_per_frame-1)) {
                         // read in first symbol of next frame and adjust for timing drift
                         int first_symbols=writeBlockSize-readBlockSize;
                         if ( first_symbols > 0 )
@@ -954,13 +1020,19 @@ void *UE_thread(void *arg) {
                     for (th_id=0; th_id < RX_NB_TH; th_id++) {
                         UE->proc.proc_rxtx[th_id].gotIQs=readTime(gotIQs);
                     }
+
                     proc->nr_tti_rx=tti_nr;
-                    proc->nr_tti_tx=(tti_nr+4)%(10*UE->frame_parms.ttis_per_subframe);
                     proc->subframe_rx=tti_nr>>((uint8_t)(log2 (UE->frame_parms.ttis_per_subframe)));
-                    proc->frame_tx = proc->frame_rx + (proc->subframe_rx>5?1:0);
+
+                    proc->frame_tx = proc->frame_rx;
+                    proc->nr_tti_tx= tti_nr + DURATION_RX_TO_TX;
+                    if (proc->nr_tti_tx > ttis_per_frame) {
+                      proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
+                      proc->nr_tti_tx %= ttis_per_frame;
+                    }
                     proc->subframe_tx=(proc->nr_tti_tx)>>((uint8_t)(log2 (UE->frame_parms.ttis_per_subframe)));
                     proc->timestamp_tx = timestamp+
-                                         (4*UE->frame_parms.samples_per_tti)-
+                                         (DURATION_RX_TO_TX*UE->frame_parms.samples_per_tti)-
                                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
                     proc->instance_cnt_rxtx++;
