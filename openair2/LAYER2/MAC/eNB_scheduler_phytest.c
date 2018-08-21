@@ -202,7 +202,8 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   int32_t           normalized_rx_power;
   int32_t           target_rx_power= 178;
   int               CC_id = 0;
-  int               nb_rb = 96;
+  int               nb_rb;
+  int               N_RB_UL;
   eNB_MAC_INST      *mac = RC.mac[module_idP];
   COMMON_channels_t *cc  = &mac->common_channels[0];
   UE_list_t         *UE_list=&mac->UE_list;
@@ -222,6 +223,18 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   //nfapi_ul_config_request_pdu_t  *ul_config_pdu = &ul_req->ul_config_pdu_list[0];;
   nfapi_ul_config_request_body_t *ul_req       = &mac->UL_req[CC_id].ul_config_request_body;
 
+  N_RB_UL         = to_prb(cc->mib->message.dl_Bandwidth);
+  switch(N_RB_UL){
+  case 100:
+    nb_rb = 96;
+    break;
+  case 50:
+    nb_rb = 48;
+    break;
+  case 25:
+    nb_rb = 24;
+    break;
+  }
 
   mac->UL_req[CC_id].sfn_sf   = (sched_frame<<4) + sched_subframe;
   hi_dci0_req->sfn_sf = (frameP << 4) + subframeP;
