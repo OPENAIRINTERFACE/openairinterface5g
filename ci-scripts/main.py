@@ -282,7 +282,13 @@ class SSHConnection():
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		# Initialize_eNB_args usually start with -O and followed by the location in repository
 		full_config_file = self.Initialize_eNB_args.replace('-O ','')
-		config_path, config_file = os.path.split(full_config_file)
+		extIdx = full_config_file.find('.conf')
+		if (extIdx > 0):
+			extra_options = full_config_file[extIdx + 5:]
+			full_config_file = full_config_file[:extIdx + 5]
+			config_path, config_file = os.path.split(full_config_file)
+		else:
+			sys.exit('Insufficient Parameter')
 		ci_full_config_file = config_path + '/ci-' + config_file
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
@@ -292,7 +298,7 @@ class SSHConnection():
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
-		self.command('echo "./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + '" > ./my-lte-softmodem-run.sh ', '\$', 5)
+		self.command('echo "./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run.sh ', '\$', 5)
 		self.command('chmod 775 ./my-lte-softmodem-run.sh ', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + SSH.testCase_id + '.log ./my-lte-softmodem-run.sh', '\$', 5)
 		time.sleep(6)
@@ -696,7 +702,7 @@ class SSHConnection():
 			sys.exit(1)
 		return result
 
-	def Iperf_analyzeV2Output(self, lock, UE_IPAddress, device_id, statusQueue):
+	def Iperf_analyzeV2Output(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options):
 		result = re.search('Server Report:', str(self.ssh.before))
 		if result is None:
 			result = re.search('read failed: Connection refused', str(self.ssh.before))
@@ -705,6 +711,24 @@ class SSHConnection():
 			else:
 				logging.debug('\u001B[1;37;41m Server Report and Connection refused Not Found! \u001B[0m')
 			return -1
+		# Computing the requested bandwidth in float
+		result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', str(iperf_real_options))
+		if result is not None:
+			req_bandwidth = result.group('iperf_bandwidth')
+			req_bw = float(req_bandwidth)
+			result = re.search('-b [0-9\.]+K', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Kbits/sec' % req_bw
+				req_bw = req_bw * 1000
+			result = re.search('-b [0-9\.]+M', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Mbits/sec' % req_bw
+				req_bw = req_bw * 1000000
+			result = re.search('-b [0-9\.]+G', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Gbits/sec' % req_bw
+				req_bw = req_bw * 1000000000
+
 		result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/..\d+) (\((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
 		if result is not None:
 			bitrate = result.group('bitrate')
@@ -713,10 +737,27 @@ class SSHConnection():
 			lock.acquire()
 			logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
 			iperfStatus = True
-			msg = ''
+			msg = 'Req Bitrate : ' + req_bandwidth + '\n'
+			logging.debug('\u001B[1;34m    Req Bitrate : ' + req_bandwidth + '\u001B[0m')
 			if bitrate is not None:
 				msg += 'Bitrate     : ' + bitrate + '\n'
 				logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
+				result = re.search('(?P<real_bw>[0-9\.]+) [KMG]bits/sec', str(bitrate))
+				if result is not None:
+					actual_bw = float(str(result.group('real_bw')))
+					result = re.search('[0-9\.]+ K', bitrate)
+					if result is not None:
+						actual_bw = actual_bw * 1000
+					result = re.search('[0-9\.]+ M', bitrate)
+					if result is not None:
+						actual_bw = actual_bw * 1000000
+					result = re.search('[0-9\.]+ G', bitrate)
+					if result is not None:
+						actual_bw = actual_bw * 1000000000
+					br_loss = 100 * actual_bw / req_bw
+					bitperf = '%.2f ' % br_loss
+					msg += 'Bitrate Perf: ' + bitperf + '%\n'
+					logging.debug('\u001B[1;34m    Bitrate Perf: ' + bitperf + '%\u001B[0m')
 			if packetloss is not None:
 				msg += 'Packet Loss : ' + packetloss + '%\n'
 				logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
@@ -916,7 +957,7 @@ class SSHConnection():
 
 		self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
 		self.command('stdbuf -o0 adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '" 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-		clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue)
+		clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 
 		# Launch iperf server on EPC side
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -990,7 +1031,7 @@ class SSHConnection():
 			else:
 				self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
-				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue)
+				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 			self.close()
 
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
