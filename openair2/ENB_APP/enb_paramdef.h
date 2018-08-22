@@ -704,6 +704,31 @@ typedef enum {
 #define ENB_MME_IP_ADDRESS_ACTIVE_IDX     2
 #define ENB_MME_IP_ADDRESS_PREFERENCE_IDX 3
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* X2 configuration parameters section name */
+#define ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS                "target_enb_x2_ip_address"
+
+/* X2 configuration parameters names   */
+
+
+#define ENB_CONFIG_STRING_TARGET_ENB_X2_IPV4_ADDRESS              "ipv4"
+#define ENB_CONFIG_STRING_TARGET_ENB_X2_IPV6_ADDRESS              "ipv6"
+#define ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS_PREFERENCE     "preference"
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            X2 configuration parameters                                                             */
+/*   optname                                          helpstr   paramflags    XXXptr       defXXXval         type           numelt     */
+/*-------------------------------------------------------------------------------------------------------------------------------------*/
+#define X2PARAMS_DESC {  \
+{ENB_CONFIG_STRING_TARGET_ENB_X2_IPV4_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
+{ENB_CONFIG_STRING_TARGET_ENB_X2_IPV6_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
+{ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS_PREFERENCE,          NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
+}
+
+#define ENB_X2_IPV4_ADDRESS_IDX          0
+#define ENB_X2_IPV6_ADDRESS_IDX          1
+#define ENB_X2_IP_ADDRESS_PREFERENCE_IDX 2
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
 /* SCTP configuration parameters section name */
 #define ENB_CONFIG_STRING_SCTP_CONFIG                    "SCTP"
@@ -735,6 +760,12 @@ typedef enum {
 #define ENB_INTERFACE_NAME_FOR_S1U_IDX             2
 #define ENB_IPV4_ADDR_FOR_S1U_IDX                  3
 #define ENB_PORT_FOR_S1U_IDX                       4
+#define ENB_INTERFACE_NAME_FOR_X2C		   5
+#define ENB_IPV4_ADDR_FOR_X2C_IDX		   6
+#define ENB_PORT_FOR_X2C			   7
+#define ENB_INTERFACE_NAME_FOR_X2U		   8
+#define ENB_IPV4_ADDR_FOR_X2U			   9
+#define ENB_PORT_FOR_X2U  			  10
 
 /* S1 interface configuration parameters names   */
 #define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1_MME "ENB_INTERFACE_NAME_FOR_S1_MME"
@@ -743,8 +774,16 @@ typedef enum {
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U         "ENB_IPV4_ADDRESS_FOR_S1U"
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
+/* X2 interface configuration parameters names */
+#define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_X2C    "ENB_INTERFACE_NAME_FOR_X2C"
+#define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C         "ENB_IPV4_ADDRESS_FOR_X2C"
+#define ENB_CONFIG_STRING_ENB_PORT_FOR_X2C              "ENB_PORT_FOR_X2C"
+#define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_X2U    "ENB_INTERFACE_NAME_FOR_X2U"
+#define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2U         "ENB_IPV4_ADDRESS_FOR_X2U"
+#define ENB_CONFIG_STRING_ENB_PORT_FOR_X2U              "ENB_PORT_FOR_X2U"
+
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            S1 interface configuration parameters                                                                 */
+/*                                            S1/X2 interface configuration parameters                                                                 */
 /*   optname                                            helpstr   paramflags    XXXptr              defXXXval             type           numelt     */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define NETPARAMS_DESC {  \
@@ -752,7 +791,13 @@ typedef enum {
 {ENB_CONFIG_STRING_ENB_IPV4_ADDRESS_FOR_S1_MME,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0}       \
+{ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
+{ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_X2C,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{ENB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
+{ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_X2U,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2U,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{ENB_CONFIG_STRING_ENB_PORT_FOR_X2U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0}       \
 }   
 
 
