@@ -1238,7 +1238,7 @@ int main( int argc, char **argv ) {
    //}
 
     // connect the TX/RX buffers
-    if (UE_flag==1) {
+    //if (UE_flag==1) {
 
         for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -1265,7 +1265,7 @@ int main( int argc, char **argv ) {
                 printf("error reading from file\n");
         }
         //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
-    }
+    //}
     sleep(3);
 
 

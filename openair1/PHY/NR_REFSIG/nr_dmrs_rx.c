@@ -205,8 +205,9 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
     		((int16_t*)output)[i<<1] = nr_rx_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
     		((int16_t*)output)[(i<<1)+1] = nr_rx_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PDCCH
-	  printf("i %d idx %d pdcch gold %d b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pdcch[(i<<1)>>5], (((nr_gold_pdcch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
-	  (((nr_gold_pdcch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(m<<1)+1],&output[0]);
+      if (i<8)
+	  printf("i %d idx %d pdcch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pdcch[(i<<1)>>5], (((nr_gold_pdcch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+	  (((nr_gold_pdcch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1],&output[0]);
 #endif
 	    }
 	}

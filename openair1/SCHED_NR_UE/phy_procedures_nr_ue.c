@@ -54,9 +54,9 @@
 #define DEBUG_PHY_PROC
 
 #define NR_PDCCH_SCHED
-#define NR_PDCCH_SCHED_DEBUG
-#define NR_PUCCH_SCHED
-#define NR_PUCCH_SCHED_DEBUG
+//#define NR_PDCCH_SCHED_DEBUG
+//#define NR_PUCCH_SCHED
+//#define NR_PUCCH_SCHED_DEBUG
 
 #ifndef PUCCH
 #define PUCCH
@@ -5522,28 +5522,28 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   LOG_D(PHY," ------ slot 0 Processing: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   LOG_D(PHY," ------  --> FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
-
-  nr_gold_pdcch(ue,0, 3);
-
-  for (; l<=3; l++) {
+  //nr_gold_pdcch(ue,0, 2);
+/*
+  for (l=0; l<2; l++) {
     if (abstraction_flag == 0) {
 #if UE_TIMING_TRACE
         start_meas(&ue->ofdm_demod_stats);
 #endif
+
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
       nr_slot_fep(ue,
          l,
-         (nr_tti_rx<<1),
+         nr_tti_rx,
          0,
-         0,
-         0,
+         1,
+         1,
 		 NR_PDCCH_EST);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
       stop_meas(&ue->ofdm_demod_stats);
 #endif
     }
-  }
+  }*/
     //ue_measurement_procedures(l-1,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
 
     if (do_pdcch_flag) {
@@ -5594,7 +5594,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
 
 #endif
-
+#if 0
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   //to update from pdsch config
   nr_gold_pdsch(ue,0,0, 1);
@@ -5932,6 +5932,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",nr_tti_rx,ue->phy_proc_rx[ue->current_thread_id[nr_tti_rx]].p_time/(cpuf*1000.0));
 #endif
 #endif
+
+#endif //pdsch
 
   LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
   return (0);
