@@ -857,6 +857,7 @@ int main(int n, char **v)
 
 restart:
   clear_remote_config();
+  if (ue_data.socket != -1) close(ue_data.socket);
   ue_data.socket = connect_to(ip, port);
 
   /* send the first message - activate selected traces */
