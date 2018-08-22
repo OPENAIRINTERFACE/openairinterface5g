@@ -2535,7 +2535,8 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
      * previous version. Some more work/validation is needed before
      * we switch to the new version.
      */
-    //allocate_REs = allocate_REs_in_RB;
+    //if (frame_parms->N_RB_DL==25)
+      //allocate_REs = allocate_REs_in_RB;
 
     switch (mod_order1) {
     case 2:
@@ -2588,9 +2589,6 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
       skip_half = check_skiphalf(rb,subframe_offset,frame_parms,l,nsymb);
       skip_dc   = check_skip_dc(rb,frame_parms);
-      /*if(skip_half>0)
-        allocate_REs = allocate_REs_in_RB;
-      */
 
      if (dlsch0) {
         if (dlsch0_harq->Nlayers>1) {
