@@ -109,7 +109,7 @@ void polar_encoder(uint32_t *input,
 void polar_encoder_dci(uint32_t *in,
 					   uint32_t *out,
 					   t_nrPolar_paramsPtr polarParams,
-					   uint32_t n_RNTI);
+					   uint16_t n_RNTI);
 
 int8_t polar_decoder(double *input,
 		 	 	 	 uint32_t *output,
@@ -297,14 +297,7 @@ uint8_t **crc11_generator_matrix(uint16_t payloadSizeBits);
 
 uint8_t **crc6_generator_matrix(uint16_t payloadSizeBits);
 
-static inline void nr_polar_rate_matcher(uint8_t *input,
-										 unsigned char *output,
-										 uint16_t *pattern,
-										 uint16_t size)
-{
-	for (int i=0; i<size; i++) output[i]=input[pattern[i]];
-}
-
+//Also nr_polar_rate_matcher
 static inline void nr_polar_interleaver(uint8_t *input,
 										uint8_t *output,
 										uint16_t *pattern,

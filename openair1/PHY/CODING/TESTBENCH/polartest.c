@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     printf("testInput: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
     			testInput[0], testInput[1], testInput[2], testInput[3]);
 	return (0);
-	currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength);
+	currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength, aggregation_level);
 	polar_encoder(testInput, encoderOutput, currentPtr);
 	printf("AFTER POLAR ENCODING\n");
 	printf("testInput: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
 	return (0);
 #endif
 
-	currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength);
+	currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength, aggregation_level);
 
 	// We assume no a priori knowledge available about the payload.
 	double aPrioriArray[currentPtr->payloadBits];

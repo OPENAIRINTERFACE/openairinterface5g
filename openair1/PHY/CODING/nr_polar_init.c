@@ -201,9 +201,10 @@ t_nrPolar_paramsPtr nr_polar_params (t_nrPolar_paramsPtr polarParams,
 
 uint16_t nr_polar_aggregation_prime (uint8_t aggregation_level)
 {
-	if (aggregation_level == 1) return NR_POLAR_AGGREGATION_LEVEL_1_PRIME;
+	if (aggregation_level == 0) return 0;
+	else if (aggregation_level == 1) return NR_POLAR_AGGREGATION_LEVEL_1_PRIME;
 	else if (aggregation_level == 2) return NR_POLAR_AGGREGATION_LEVEL_2_PRIME;
 	else if (aggregation_level == 4) return NR_POLAR_AGGREGATION_LEVEL_4_PRIME;
 	else if (aggregation_level == 8) return NR_POLAR_AGGREGATION_LEVEL_8_PRIME;
-	else return NR_POLAR_AGGREGATION_LEVEL_16_PRIME;
+	else return NR_POLAR_AGGREGATION_LEVEL_16_PRIME; //aggregation_level == 16
 }
