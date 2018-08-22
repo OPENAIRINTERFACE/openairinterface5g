@@ -202,30 +202,21 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   }
 
   /// DCI payload processing
-  //channel coding
-  nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
-  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size);
-
-  uint8_t *encoderInput = malloc(sizeof(uint8_t) * dci_alloc.size);
-  uint8_t *encoderOutput = malloc(sizeof(uint8_t) * currentPtr->encoderLength);
-  uint32_t encoded_payload[4];
-
-  nr_bit2byte_uint32_8_t(dci_alloc.dci_pdu,dci_alloc.size,encoderInput);
-  polar_encoder(encoderInput, encoderOutput, currentPtr);
-  nr_byte2bit_uint8_32_t(encoderOutput, currentPtr->encoderLength, encoded_payload);
+  // CRC attachment + Scrambling + Channel coding + Rate matching
+  uint32_t scrambled_payload[NR_MAX_DCI_SIZE_DWORD];
+  uint32_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.rnti : 0;
+  //nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
+  //t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
+  //polar_encoder_dci(dci_alloc.dci_pdu, scrambled_payload, currentPtr, n_RNTI);
 
 #ifdef DEBUG_POLAR_PARAMS
-  printf("DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+  printf("\n\nInt = %d \t Hex = 0x%08x\n\n",n_RNTI,n_RNTI);
+  /*printf("DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
     		  dci_alloc.dci_pdu[0], dci_alloc.dci_pdu[1], dci_alloc.dci_pdu[2], dci_alloc.dci_pdu[3]);
   printf("Encoded Payload: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-		  encoded_payload[0], encoded_payload[1], encoded_payload[2], encoded_payload[3]);
+		  scrambled_payload[0], scrambled_payload[1], scrambled_payload[2], scrambled_payload[3]);*/
+  return 0;
 #endif
-
-    // scrambling
-  uint32_t scrambled_payload[NR_MAX_DCI_SIZE_DWORD];
-  uint32_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
-  uint32_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.rnti : 0;
-  nr_pdcch_scrambling(encoded_payload, dci_alloc.size, Nid, n_RNTI, scrambled_payload);
 
     // QPSK modulation
   int16_t mod_dci[NR_MAX_DCI_SIZE>>1];

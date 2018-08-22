@@ -2492,7 +2492,7 @@ target_link_libraries (dlsim_tm4
   )
 
 add_executable(polartest ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c)
-target_link_libraries(polartest m SIMU PHY PHY_NR -lm ${ATLAS_LIBRARIES})
+target_link_libraries(polartest m SIMU PHY PHY_NR PHY_COMMON -lm ${ATLAS_LIBRARIES})
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 
