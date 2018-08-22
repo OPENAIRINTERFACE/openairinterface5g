@@ -114,21 +114,24 @@ void polar_encoder_dci(uint32_t *in,
 #ifdef DEBUG_POLAR_ENCODER_DCI
 	printf("[polar_encoder_dci] crc: 0x%08x\n", polarParams->crcBit);
 #endif
+
 	//(a to b)
-	//Using "nr_polar_aPrime" to hold "nr_polar_b".
-	uint8_t arrayInd = ceil(polarParams->payloadBits / 32.0);
-	for (int j=0; j<arrayInd-1; j++) {
-		for (int i=0; i<32; i++) {
-			polarParams->nr_polar_B[i+j*32] = (in[j]>>i)&1;
+	/*
+	 * Bytewise operations
+	 */
+	uint8_t arrayInd = ceil(polarParams->payloadBits / 8.0);
+	for (int i=0; i<arrayInd-1; i++){
+		for (int j=0; j<8; j++) {
+			polarParams->nr_polar_B[j+(i*8)] = ((polarParams->nr_polar_aPrime[3+i]>>(7-j)) & 1);
 		}
 	}
-	for (int i=0; i<((polarParams->payloadBits)%32); i++) {
-		polarParams->nr_polar_B[i+(arrayInd-1)*32] = (in[(arrayInd-1)]>>i)&1;
+	for (int i=0; i<((polarParams->payloadBits)%8); i++) {
+			polarParams->nr_polar_B[i+(arrayInd-1)*8] = ((polarParams->nr_polar_aPrime[3+(arrayInd-1)]>>(7-i)) & 1);
 	}
 	for (int i=0; i<8; i++) {
 		polarParams->nr_polar_B[polarParams->payloadBits+i] = ((polarParams->crcBit)>>(31-i))&1;
 	}
-	//Scrambling
+	//Scrambling (b to c)
 	for (int i=0; i<16; i++) {
 		polarParams->nr_polar_B[polarParams->payloadBits+8+i] =
 				( (((polarParams->crcBit)>>(23-i))&1) + ((n_RNTI>>(15-i))&1) ) % 2;
@@ -175,8 +178,10 @@ void polar_encoder_dci(uint32_t *in,
 	 */
 	nr_byte2bit_uint8_32_t(polarParams->nr_polar_E, polarParams->encoderLength, out);
 #ifdef DEBUG_POLAR_ENCODER_DCI
+	printf("[polar_encoder_dci] E: ");
+	for (int i = 0; i < polarParams->encoderLength; i++) printf("%d-", polarParams->nr_polar_E[i]);
 	uint8_t outputInd = ceil(polarParams->encoderLength / 32.0);
-	printf("[polar_encoder_dci] out: ");
+	printf("\n[polar_encoder_dci] out: ");
 	for (int i = 0; i < outputInd; i++) {
 		printf("[%d]->0x%08x\t", i, out[i]);
 	}
