@@ -133,6 +133,11 @@ void polar_encoder_dci(uint32_t *in,
 		polarParams->nr_polar_B[polarParams->payloadBits+8+i] =
 				( (((polarParams->crcBit)>>(23-i))&1) + ((n_RNTI>>(15-i))&1) ) % 2;
 	}
+#ifdef DEBUG_POLAR_ENCODER_DCI
+	printf("[polar_encoder_dci] B: ");
+	for (int i = 0; i < polarParams->K; i++) printf("%d-", polarParams->nr_polar_B[i]);
+	printf("\n");
+#endif
 
 	//Interleaving (c to c')
 	nr_polar_interleaver(polarParams->nr_polar_B,
