@@ -50,22 +50,34 @@
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(
     const uint8_t *buffer,
-    const uint32_t size
-){
-    NR_CellGroupConfig_t *cellGroupConfig = NULL;
+    const uint32_t size ){
+    
+    NR_CellGroupConfig_t *cell_group_config = NULL;
+    uint32_t i;
 
-    uper_decode(NULL,
-                &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
-                (void **)&cellGroupConfig,
-                (uint8_t *)buffer,
-                size, 0, 0); 
+    asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+                                                    &asn_DEF_NR_CellGroupConfig,
+                                                    (void **)&cell_group_config,
+                                                    (uint8_t *)buffer,
+                                                    size ); 
+
+    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+            printf("NR_CellGroupConfig decode error\n");
+            for (i=0; i<size; i++){
+                printf("%02x ",buffer[i]);
+            }
+            printf("\n");
+            // free the memory
+            SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 1 );
+            return -1;
+    }
 
     if(NR_UE_rrc_inst->cell_group_config == NULL){
-        NR_UE_rrc_inst->cell_group_config = cellGroupConfig;
-        nr_rrc_ue_process_scg_config(cellGroupConfig);
+        NR_UE_rrc_inst->cell_group_config = cell_group_config;
+        nr_rrc_ue_process_scg_config(cell_group_config);
     }else{
-        nr_rrc_ue_process_scg_config(cellGroupConfig);
-        SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 0);
+        nr_rrc_ue_process_scg_config(cell_group_config);
+        SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 0);
     }
 
     //nr_rrc_mac_config_req_ue( module_id_t module_id, int CC_id, uint8_t gNB_index, NR_MIB_t *mibP, NR_MAC_CellGroupConfig_t *mac_cell_group_configP, NR_PhysicalCellGroupConfig_t *phy_cell_group_configP, NR_SpCellConfig_t *spcell_configP );
@@ -263,34 +275,34 @@ int8_t openair_rrc_top_init_ue_nr(void){
 int8_t nr_ue_process_rlc_bearer_list(NR_CellGroupConfig_t *cell_group_config){
 
     return 0;
-};
+}
 
 int8_t nr_ue_process_secondary_cell_list(NR_CellGroupConfig_t *cell_group_config){
 
     return 0;
-};
+}
 
 int8_t nr_ue_process_mac_cell_group_config(NR_MAC_CellGroupConfig_t *mac_cell_group_config){
 
     return 0;
-};
+}
 
 int8_t nr_ue_process_physical_cell_group_config(NR_PhysicalCellGroupConfig_t *phy_cell_group_config){
 
     return 0;
-};
+}
 
 int8_t nr_ue_process_spcell_config(NR_SpCellConfig_t *spcell_config){
 
     return 0;
-};
+}
 
 /*brief decode BCCH-BCH (MIB) message*/
 int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     const module_id_t module_id,
     const uint8_t     gNB_index,
     uint8_t           *const bufferP,
-    const uint8_t     buffer_len){
+    const uint8_t     buffer_len ){
     int i;
     NR_BCCH_BCH_Message_t *bcch_message = NULL;
     NR_MIB_t *mib = NR_UE_rrc_inst->mib;
@@ -305,22 +317,21 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
     }
 
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-                            &asn_DEF_NR_BCCH_BCH_Message,
-                            (void **)&bcch_message,
-                            (const void *)bufferP,
-                            buffer_len
-		    );
+                                                    &asn_DEF_NR_BCCH_BCH_Message,
+                                                   (void **)&bcch_message,
+                                                   (const void *)bufferP,
+                                                   buffer_len );
 
     if(bcch_message->message.choice.mib->systemFrameNumber.buf != 0){
-	    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-		
-		for (i=0; i<buffer_len; i++)
-		    printf("%02x ",bufferP[i]);
-
-		printf("\n");
-		// free the memory
-		SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
-		return -1;
+        if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
+            printf("NR_CellGroupConfig decode error\n");
+            for (i=0; i<buffer_len; i++){
+                printf("%02x ",bufferP[i]);
+            }
+            printf("\n");
+            // free the memory
+            SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
+            return -1;
 	    }
 
 	    //  link to rrc instance
@@ -331,6 +342,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
 
 	    nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
     }
+    
     return 0;
 }
 
@@ -340,8 +352,9 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
     const module_id_t module_id,
     const uint8_t     gNB_index,
     const uint8_t    *bufferP,
-    const uint32_t    buffer_len){
+    const uint32_t    buffer_len ){
     //  uper_decode by nr R15 rrc_connection_reconfiguration
+    
     int32_t i;
     NR_DL_DCCH_Message_t *nr_dl_dcch_msg = NULL;
 
@@ -349,9 +362,9 @@ int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(
                                             &asn_DEF_NR_DL_DCCH_Message,    
                                             (void**)&nr_dl_dcch_msg,
                                             (uint8_t *)bufferP,
-                                            buffer_len, 0, 0); 
+                                            buffer_len, 0, 0);
 
-    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+    if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
 
         for (i=0; i<buffer_len; i++)
             printf("%02x ",bufferP[i]);

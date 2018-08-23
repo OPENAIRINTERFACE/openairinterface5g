@@ -247,16 +247,16 @@ int8_t polar_decoder(
 
 	for (uint8_t i = 0; i < fmin(listSize, (pow(2,polarParams->crcCorrectionBits)) ); i++) {
 		if ( crcState[listIndex[i]] == 1 ) {
-			for (int j = 0; j < polarParams->N; j++) polarParams->nr_polar_u[j]=bit[j][0][listIndex[i]];
+			for (int j = 0; j < polarParams->N; j++) polarParams->nr_polar_U[j]=bit[j][0][listIndex[i]];
 
 			//Extract the information bits (û to ĉ)
-			nr_polar_info_bit_extraction(polarParams->nr_polar_u, polarParams->nr_polar_cPrime, polarParams->information_bit_pattern, polarParams->N);
+			nr_polar_info_bit_extraction(polarParams->nr_polar_U, polarParams->nr_polar_CPrime, polarParams->information_bit_pattern, polarParams->N);
 
 			//Deinterleaving (ĉ to b)
-			nr_polar_deinterleaver(polarParams->nr_polar_cPrime, polarParams->nr_polar_b, polarParams->interleaving_pattern, polarParams->K);
+			nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
 
 			//Remove the CRC (â)
-			for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_a[j]=polarParams->nr_polar_b[j];
+			for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];
 
 			break;
 		}
@@ -274,7 +274,7 @@ int8_t polar_decoder(
 	/*
 	 * Return bits.
 	 */
-	nr_byte2bit_uint8_32_t(polarParams->nr_polar_a, polarParams->payloadBits, out);
+	nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
 	return(0);
 }
 
@@ -500,16 +500,16 @@ int8_t polar_decoder_aPriori(
 
 	for (uint8_t i = 0; i < fmin(listSize, (pow(2,polarParams->crcCorrectionBits)) ); i++) {
 		if ( crcState[listIndex[i]] == 1 ) {
-			for (int j = 0; j < polarParams->N; j++) polarParams->nr_polar_u[j]=bit[j][0][listIndex[i]];
+			for (int j = 0; j < polarParams->N; j++) polarParams->nr_polar_U[j]=bit[j][0][listIndex[i]];
 
 			//Extract the information bits (û to ĉ)
-			nr_polar_info_bit_extraction(polarParams->nr_polar_u, polarParams->nr_polar_cPrime, polarParams->information_bit_pattern, polarParams->N);
+			nr_polar_info_bit_extraction(polarParams->nr_polar_U, polarParams->nr_polar_CPrime, polarParams->information_bit_pattern, polarParams->N);
 
 			//Deinterleaving (ĉ to b)
-			nr_polar_deinterleaver(polarParams->nr_polar_cPrime, polarParams->nr_polar_b, polarParams->interleaving_pattern, polarParams->K);
+			nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
 
 			//Remove the CRC (â)
-			for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_a[j]=polarParams->nr_polar_b[j];
+			for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];
 
 			break;
 		}
@@ -527,6 +527,6 @@ int8_t polar_decoder_aPriori(
 	/*
 	 * Return bits.
 	 */
-	nr_byte2bit_uint8_32_t(polarParams->nr_polar_a, polarParams->payloadBits, out);
+	nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
 	return(0);
 }

@@ -486,11 +486,11 @@ void nr_pbch_quantize(int8_t *pbch_llr8,
   uint16_t i;
 
   for (i=0; i<len; i++) {
-    /*if (pbch_llr[i]>7)
-      pbch_llr8[i]=7;
-    else if (pbch_llr[i]<-8)
-      pbch_llr8[i]=-8;
-    else*/
+    if (pbch_llr[i]>127)
+      pbch_llr8[i]=127;
+    else if (pbch_llr[i]<-128)
+      pbch_llr8[i]=-128;
+    else
       pbch_llr8[i] = (char)(pbch_llr[i]);
 
   }
@@ -696,14 +696,27 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   //#ifdef DEBUG_PBCH
   for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++){
-  	  printf("unscrambling pbch_a[%d] = %x \n", i,pbch_a[i]);
-  	  printf("[PBCH] decoder_output[%d] = %x\n",i,decoded_output[i]);
+  	  //printf("unscrambling pbch_a[%d] = %x \n", i,pbch_a[i]);
+  	  printf("[PBCH] decoder payload[%d] = %x\n",i,decoded_output[i]);
   }
 	  //#endif
-     
-    ue->dl_indication.rx_ind.rx_request_body.pdu_index = FAPI_NR_RX_PDU_BCCH_BCH_TYPE;
-    ue->dl_indication.rx_ind.rx_request_body.pdu_length = 3;
-    ue->dl_indication.rx_ind.rx_request_body.pdu = &decoded_output[0];
+    ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance
+    //ue->rx_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
+    ue->rx_ind.number_pdus = ue->rx_ind.number_pdus + 1;
+    ue->rx_ind.rx_indication_body = (fapi_nr_rx_indication_body_t *)malloc(sizeof(fapi_nr_rx_indication_body_t));
+    ue->rx_ind.rx_indication_body->pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
+    ue->rx_ind.rx_indication_body->mib_pdu.pdu = &decoded_output[1];
+    ue->rx_ind.rx_indication_body->mib_pdu.additional_bits = decoded_output[0];
+    ue->rx_ind.rx_indication_body->mib_pdu.ssb_index = ssb_index;            //  confirm with TCL
+    ue->rx_ind.rx_indication_body->mib_pdu.ssb_length = Lmax;                //  confirm with TCL
+    ue->rx_ind.rx_indication_body->mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
+
     ue->if_inst->dl_indication(&ue->dl_indication);
-    
+
+    return 0;    
 }
+
+
+
+    
+

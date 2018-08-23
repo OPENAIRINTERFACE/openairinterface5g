@@ -250,26 +250,26 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms)
 *
 *********************************************************************/
 
-nr_slot_t slot_select_nr(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti)
+int slot_select_nr(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti)
 {
   /* for FFD all slot can be considered as an uplink */
   if (frame_parms->frame_type == FDD) {
-    return (NR_TDD_UPLINK_SLOT);
+    return (NR_UPLINK_SLOT | NR_DOWNLINK_SLOT );
   }
 
   if (nr_frame%2 == 0) {
     if (frame_parms->tdd_uplink_nr[nr_tti] == NR_TDD_UPLINK_SLOT) {
-      return (NR_TDD_UPLINK_SLOT);
+      return (NR_UPLINK_SLOT);
     }
     else {
-      return (NR_TDD_DOWNLINK_SLOT);
+      return (NR_DOWNLINK_SLOT);
     }
   }
   else if ((frame_parms->tdd_uplink_nr[(frame_parms->ttis_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME) + nr_tti] == NR_TDD_UPLINK_SLOT)) {
-    return (NR_TDD_UPLINK_SLOT);
+    return (NR_UPLINK_SLOT);
   }
   else {
-    return (NR_TDD_DOWNLINK_SLOT);
+    return (NR_DOWNLINK_SLOT);
   }
 }
 

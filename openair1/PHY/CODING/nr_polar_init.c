@@ -42,10 +42,11 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 				   uint8_t aggregation_level)
 {
 	t_nrPolar_paramsPtr currentPtr = *polarParams;
+	uint16_t aggregation_prime = nr_polar_aggregation_prime(aggregation_level);
 
 	//Parse the list. If the node is already created, return without initialization.
 	while (currentPtr != NULL) {
-		if (currentPtr->idx == (messageType * messageLength)) return;
+		if (currentPtr->idx == (messageType * messageLength * aggregation_prime)) return;
 		else currentPtr = currentPtr->nextPtr;
 	}
 
@@ -54,7 +55,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 
 	if (newPolarInitNode != NULL) {
 
-		newPolarInitNode->idx = (messageType * messageLength);
+		newPolarInitNode->idx = (messageType * messageLength * aggregation_prime);
 		newPolarInitNode->nextPtr = NULL;
 
 		if (messageType == 0) { //PBCH
@@ -94,14 +95,15 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 
 		//polar_encoder vectors:
 		newPolarInitNode->nr_polar_crc = malloc(sizeof(uint8_t) * newPolarInitNode->crcParityBits);
-		newPolarInitNode->nr_polar_d = malloc(sizeof(uint8_t) * newPolarInitNode->N);
-		newPolarInitNode->nr_polar_e = malloc(sizeof(uint8_t) * newPolarInitNode->encoderLength);
+		newPolarInitNode->nr_polar_aPrime = malloc(sizeof(uint8_t) * ((ceil((newPolarInitNode->payloadBits)/32.0)*4)+3));
+		newPolarInitNode->nr_polar_D = malloc(sizeof(uint8_t) * newPolarInitNode->N);
+		newPolarInitNode->nr_polar_E = malloc(sizeof(uint8_t) * newPolarInitNode->encoderLength);
 
 		//Polar Coding vectors
-		newPolarInitNode->nr_polar_u = malloc(sizeof(uint8_t) * newPolarInitNode->N); //Decoder: nr_polar_uHat
-		newPolarInitNode->nr_polar_cPrime = malloc(sizeof(uint8_t) * newPolarInitNode->K); //Decoder: nr_polar_cHat
-		newPolarInitNode->nr_polar_b = malloc(sizeof(uint8_t) * newPolarInitNode->K); //Decoder: nr_polar_bHat
-		newPolarInitNode->nr_polar_a = malloc(sizeof(uint8_t) * newPolarInitNode->payloadBits); //Decoder: nr_polar_aHat
+		newPolarInitNode->nr_polar_U = malloc(sizeof(uint8_t) * newPolarInitNode->N); //Decoder: nr_polar_uHat
+		newPolarInitNode->nr_polar_CPrime = malloc(sizeof(uint8_t) * newPolarInitNode->K); //Decoder: nr_polar_cHat
+		newPolarInitNode->nr_polar_B = malloc(sizeof(uint8_t) * newPolarInitNode->K); //Decoder: nr_polar_bHat
+		newPolarInitNode->nr_polar_A = malloc(sizeof(uint8_t) * newPolarInitNode->payloadBits); //Decoder: nr_polar_aHat
 
 
 
@@ -180,12 +182,14 @@ void nr_polar_print_polarParams(t_nrPolar_paramsPtr polarParams)
 
 t_nrPolar_paramsPtr nr_polar_params (t_nrPolar_paramsPtr polarParams,
 									 int8_t messageType,
-									 uint16_t messageLength)
+									 uint16_t messageLength,
+									 uint8_t aggregation_level)
 {
 	t_nrPolar_paramsPtr currentPtr = NULL;
 
 	while (polarParams != NULL) {
-		if (polarParams->idx == (messageType * messageLength)) {
+		if (polarParams->idx ==
+				(messageType * messageLength * (nr_polar_aggregation_prime(aggregation_level)) )) {
 			currentPtr = polarParams;
 			break;
 		} else {
@@ -193,4 +197,14 @@ t_nrPolar_paramsPtr nr_polar_params (t_nrPolar_paramsPtr polarParams,
 		}
 	}
 	return currentPtr;
+}
+
+uint16_t nr_polar_aggregation_prime (uint8_t aggregation_level)
+{
+	if (aggregation_level == 0) return 0;
+	else if (aggregation_level == 1) return NR_POLAR_AGGREGATION_LEVEL_1_PRIME;
+	else if (aggregation_level == 2) return NR_POLAR_AGGREGATION_LEVEL_2_PRIME;
+	else if (aggregation_level == 4) return NR_POLAR_AGGREGATION_LEVEL_4_PRIME;
+	else if (aggregation_level == 8) return NR_POLAR_AGGREGATION_LEVEL_8_PRIME;
+	else return NR_POLAR_AGGREGATION_LEVEL_16_PRIME; //aggregation_level == 16
 }

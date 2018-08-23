@@ -113,12 +113,12 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          ue->ch_est_alpha,dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
                                          1,ue->frame_parms.ofdm_symbol_size);
 #ifdef DEBUG_CH
-    printf("ch est pilot addr %p RB_DL %d\n",&pilot[p][0], ue->frame_parms.N_RB_DL);
+    printf("pbch ch est pilot addr %p RB_DL %d\n",&pilot[p][0], ue->frame_parms.N_RB_DL);
     printf("k %d, first_carrier %d\n",k,ue->frame_parms.first_carrier_offset);
     printf("rxF addr %p\n", rxF);
     printf("dl_ch addr %p\n",dl_ch);
 #endif
-    if ((ue->frame_parms.N_RB_DL&1)==0) {
+    //if ((ue->frame_parms.N_RB_DL&1)==0) {
 
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -214,7 +214,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
       }
 
 
-    }
+    //}
 
   }
 
@@ -257,7 +257,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   k = coreset_start_subcarrier;
 
 #ifdef DEBUG_CH
-  printf("PBCH Channel Estimation : ThreadId %d, eNB_offset %d cell_id %d ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns>>1], eNB_offset,Nid_cell,ch_offset,ue->frame_parms.ofdm_symbol_size,
+  printf("PDCCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns>>1], eNB_offset,ch_offset,ue->frame_parms.ofdm_symbol_size,
          ue->frame_parms.Ncp,l,Ns,k, symbol);
 #endif
 
@@ -266,7 +266,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   fr = filt16a_r1;
 
   // generate pilot
-  nr_pdcch_dmrs_rx(ue,eNB_offset,Ns,ue->nr_gold_pdcch[eNB_offset][Ns][symbol], &pilot[p][0],2000,symbol, nb_rb_coreset);
+  nr_pdcch_dmrs_rx(ue,eNB_offset,Ns,ue->nr_gold_pdcch[eNB_offset][Ns][symbol], &pilot[p][0],2000,nb_rb_coreset);
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -279,12 +279,12 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
       multadd_complex_vector_real_scalar(dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
                                          ue->ch_est_alpha,dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),
                                          1,ue->frame_parms.ofdm_symbol_size);
-#ifdef DEBUG_CH
-    printf("ch est pilot addr %p RB_DL %d\n",&pilot[p][0], ue->frame_parms.N_RB_DL);
+//#ifdef DEBUG_CH
+    printf("pdcch ch est pilot addr %p RB_DL %d\n",&pilot[p][0], ue->frame_parms.N_RB_DL);
     printf("k %d, first_carrier %d\n",k,ue->frame_parms.first_carrier_offset);
     printf("rxF addr %p\n", rxF);
     printf("dl_ch addr %p\n",dl_ch);
-#endif
+//#endif
     if ((ue->frame_parms.N_RB_DL&1)==0) {
 
       // Treat first 2 pilots specially (left edge)

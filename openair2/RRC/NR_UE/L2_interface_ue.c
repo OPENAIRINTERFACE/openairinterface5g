@@ -32,6 +32,7 @@
 
 #include "rrc_defs.h"
 #include "rrc_proto.h"
+#include "assertions.h"
 
 typedef uint32_t channel_t;
 
@@ -46,7 +47,7 @@ nr_mac_rrc_data_ind_ue(
 
     switch(channel){
         case NR_BCCH_BCH:
-            nr_rrc_ue_decode_NR_BCCH_BCH_Message( module_id, gNB_index, (uint8_t*)pduP, pdu_len);
+            AssertFatal( nr_rrc_ue_decode_NR_BCCH_BCH_Message( module_id, gNB_index, (uint8_t*)pduP, pdu_len) == 0, "UE decode BCCH-BCH error!\n");
             break;
         default:
             break;

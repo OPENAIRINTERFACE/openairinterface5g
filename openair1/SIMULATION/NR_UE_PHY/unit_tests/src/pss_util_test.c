@@ -256,7 +256,7 @@ int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission
   frame_parms->threequarter_fs      = 0;
   frame_parms->numerology_index     = NUMEROLOGY_INDEX_MAX_NR;
 
-  nr_init_frame_parms_ue(config,frame_parms);
+  nr_init_frame_parms_ue(frame_parms);
 
   PHY_vars_UE->frame_parms.Nid_cell = (3 * N_ID_1_NUMBER) + N_ID_2_NUMBER; /* set to unvalid value */
 
