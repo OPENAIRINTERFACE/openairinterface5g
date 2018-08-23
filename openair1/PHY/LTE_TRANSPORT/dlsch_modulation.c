@@ -549,13 +549,10 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
   uint32_t tti_offset;
   uint8_t re;
   uint8_t *x0p;
-  uint8_t first_re,last_re;
+  uint8_t first_re;
 
-  last_re=12;
   first_re=0;
-  if (skip_half==1)
-    last_re=6;
-  else if (skip_half==2)
+  if (skip_half==2)
     first_re=6;
   re=first_re;
 
@@ -614,7 +611,7 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
         ((int16_t *)&txdataF[0][tti_offset])[16]=qam_table_s0[qam64_table_offset_re];
         ((int16_t *)&txdataF[0][tti_offset])[17]=qam_table_s0[qam64_table_offset_im];
 
-       qam64_table_offset_re=(x0p[54]<<2)|(x0p[56]<<1)|x0p[58];
+        qam64_table_offset_re=(x0p[54]<<2)|(x0p[56]<<1)|x0p[58];
         qam64_table_offset_im=(x0p[55]<<2)|(x0p[57]<<1)|x0p[59];
         ((int16_t *)&txdataF[0][tti_offset])[18]=qam_table_s0[qam64_table_offset_re];
         ((int16_t *)&txdataF[0][tti_offset])[19]=qam_table_s0[qam64_table_offset_im];
