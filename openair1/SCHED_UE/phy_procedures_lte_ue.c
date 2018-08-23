@@ -2617,7 +2617,7 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
       dummy[0] = ue->pbch_vars[eNB_id]->decoded_output[2];
       dummy[1] = ue->pbch_vars[eNB_id]->decoded_output[1];
       dummy[2] = ue->pbch_vars[eNB_id]->decoded_output[0];
-      trace_pdu(1, dummy, 3, ue->Mod_id, 0, 0,
+      trace_pdu( DIRECTION_DOWNLINK, dummy, WS_C_RNTI, ue->Mod_id, 0, 0,
           frame_rx, subframe_rx, 0, 0);
       LOG_D(OPT,"[UE %d][PBCH] Frame %d trace pdu for PBCH\n",
           ue->Mod_id, subframe_rx);

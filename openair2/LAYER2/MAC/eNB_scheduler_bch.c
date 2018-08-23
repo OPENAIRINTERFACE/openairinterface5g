@@ -281,10 +281,10 @@ schedule_SIB1_BR(module_id_t module_idP,
         eNB->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
 
 	if (opt_enabled == 1) {
-	    trace_pdu(1,
+	    trace_pdu(DIRECTION_DOWNLINK,
 		      &cc->BCCH_BR_pdu[0].payload[0],
 		      bcch_sdu_length,
-		      0xffff, 4, 0xffff, eNB->frame, eNB->subframe, 0, 0);
+		      0xffff, WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
 	    LOG_D(OPT,
 		  "[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
 		  module_idP, frameP, CC_id, 0xffff, bcch_sdu_length);
@@ -472,11 +472,11 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
                         eNB->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
 
 			if (opt_enabled == 1) {
-			    trace_pdu(1,
+			    trace_pdu(DIRECTION_DOWNLINK,
 				      &cc->BCCH_BR_pdu[i + 1].payload[0],
 				      bcch_sdu_length,
 				      0xffff,
-				      4,
+				      WS_SI_RNTI,
 				      0xffff, eNB->frame, eNB->subframe, 0,
 				      0);
 			    LOG_D(OPT,
@@ -759,11 +759,11 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		}
 
 		if (opt_enabled == 1) {
-		    trace_pdu(1,
+		    trace_pdu(DIRECTION_DOWNLINK,
 			      &cc->BCCH_pdu.payload[0],
 			      bcch_sdu_length,
 			      0xffff,
-			      4, 0xffff, eNB->frame, eNB->subframe, 0, 0);
+			     WS_SI_RNTI, 0xffff, eNB->frame, eNB->subframe, 0, 0);
 		    LOG_D(OPT,
 			  "[eNB %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
 			  module_idP, frameP, CC_id, 0xffff,

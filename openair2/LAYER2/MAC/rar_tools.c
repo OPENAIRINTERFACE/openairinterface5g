@@ -96,7 +96,7 @@ fill_rar(const module_id_t module_idP,
 	((ra->msg3_ULdelay & 1) << 1) | (ra->msg3_cqireq & 1);
 
     if (opt_enabled) {
-	trace_pdu(1, dlsch_buffer, input_buffer_length, module_idP, 2, 1,
+	trace_pdu(DIRECTION_DOWNLINK , dlsch_buffer, input_buffer_length, module_idP,  WS_RA_RNTI , 1,
 		  RC.mac[module_idP]->frame, RC.mac[module_idP]->subframe,
 		  0, 0);
 	LOG_D(OPT,
@@ -181,7 +181,7 @@ fill_rar_br(eNB_MAC_INST * eNB,
 	  ra->preamble_index, ra->timing_offset);
 
     if (opt_enabled) {
-	trace_pdu(1, dlsch_buffer, input_buffer_length, eNB->Mod_id, 2, 1,
+	trace_pdu(DIRECTION_DOWNLINK , dlsch_buffer, input_buffer_length, eNB->Mod_id,  WS_RA_RNTI , 1,
 		  eNB->frame, eNB->subframe, 0, 0);
 	LOG_D(OPT,
 	      "[RAPROC] RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n",

@@ -150,7 +150,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
     (VCD_SIGNAL_DUMPER_FUNCTIONS_RX_SDU, 1);
   if (opt_enabled == 1) {
-    trace_pdu(0, sduP, sdu_lenP, 0, 3, current_rnti, frameP, subframeP,
+    trace_pdu(DIRECTION_UPLINK, sduP, sdu_lenP, 0, WS_C_RNTI, current_rnti, frameP, subframeP,
 	      0, 0);
     LOG_D(OPT, "[eNB %d][ULSCH] Frame %d  rnti %x  with size %d\n",
 	  enb_mod_idP, frameP, current_rnti, sdu_lenP);
