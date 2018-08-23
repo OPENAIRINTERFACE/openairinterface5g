@@ -760,12 +760,8 @@ typedef enum {
 #define ENB_INTERFACE_NAME_FOR_S1U_IDX             2
 #define ENB_IPV4_ADDR_FOR_S1U_IDX                  3
 #define ENB_PORT_FOR_S1U_IDX                       4
-#define ENB_INTERFACE_NAME_FOR_X2C		   5
-#define ENB_IPV4_ADDR_FOR_X2C_IDX		   6
-#define ENB_PORT_FOR_X2C			   7
-#define ENB_INTERFACE_NAME_FOR_X2U		   8
-#define ENB_IPV4_ADDR_FOR_X2U			   9
-#define ENB_PORT_FOR_X2U  			  10
+#define ENB_IPV4_ADDR_FOR_X2C_IDX		   5
+#define ENB_PORT_FOR_X2C_IDX			   6
 
 /* S1 interface configuration parameters names   */
 #define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1_MME "ENB_INTERFACE_NAME_FOR_S1_MME"
@@ -775,12 +771,8 @@ typedef enum {
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
 /* X2 interface configuration parameters names */
-#define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_X2C    "ENB_INTERFACE_NAME_FOR_X2C"
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C         "ENB_IPV4_ADDRESS_FOR_X2C"
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_X2C              "ENB_PORT_FOR_X2C"
-#define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_X2U    "ENB_INTERFACE_NAME_FOR_X2U"
-#define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2U         "ENB_IPV4_ADDRESS_FOR_X2U"
-#define ENB_CONFIG_STRING_ENB_PORT_FOR_X2U              "ENB_PORT_FOR_X2U"
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            S1/X2 interface configuration parameters                                                                 */
@@ -792,12 +784,8 @@ typedef enum {
 {ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
-{ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_X2C,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{ENB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
-{ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_X2U,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2U,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{ENB_CONFIG_STRING_ENB_PORT_FOR_X2U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0}       \
+{ENB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0},      \
 }   
 
 

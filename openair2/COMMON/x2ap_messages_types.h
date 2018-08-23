@@ -87,6 +87,9 @@ typedef struct x2ap_register_enb_req_s {
   /* Number of SCTP streams used for associations */
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;
+
+  /* eNB port for X2C*/
+  uint32_t enb_port_for_X2C;
 } x2ap_register_enb_req_t;
 
 //-------------------------------------------------------------------------------------------//
