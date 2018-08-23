@@ -46,6 +46,11 @@ uint32_t (*p_nr_ue_get_SR)(module_id_t module_idP,int CC_id,frame_t frameP,uint8
 
 /*****************functions****************************************/
 
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe)
+{
+	return(0);
+}
+
 PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 			       frame_t frameP, uint8_t new_Msg3,
 			       sub_frame_t subframe){ return(NULL);}
@@ -61,7 +66,7 @@ void Msg1_transmitted(module_id_t module_idP, uint8_t CC_id,
 void Msg3_transmitted(module_id_t module_idP, uint8_t CC_id,
 		      frame_t frameP, uint8_t eNB_id){}
 
-uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
+uint32_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
 		   uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe){
 
 	uint32_t value = 0;
@@ -193,3 +198,8 @@ void exit_fun(const char* s)
   undefined_function(__FUNCTION__);
 }
 
+uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
+		          uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe){
+	uint32_t value = 0;
+	return(value);
+}

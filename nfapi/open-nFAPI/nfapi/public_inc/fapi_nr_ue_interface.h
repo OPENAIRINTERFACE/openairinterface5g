@@ -15,125 +15,97 @@
  */
 
 
-#ifndef _FAPI_NR_INTERFACE_NR_EXTENSION_H_
-#define _FAPI_NR_INTERFACE_NR_EXTENSION_H_
-#define _FAPI_NR_INTERFACE_H_
+#ifndef _FAPI_NR_UE_INTERFACE_H_
+#define _FAPI_NR_UE_INTERFACE_H_
 
 #include "stddef.h"
+#include "platform_types.h"
+#include "fapi_nr_ue_constants.h"
 
-
-
-#define FAPI_NR_MAX_NUM_DL_ALLOCATIONS             16
-#define FAPI_NR_MAX_NUM_UL_ALLOCATIONS             16
-#define FAPI_NR_MAX_NUM_SERVING_CELLS              32
-#define FAPI_NR_MAX_NUM_ZP_CSI_RS_RESOURCE_PER_SET 16
-#define FAPI_NR_MAX_NUM_CANDIDATE_BEAMS            16
-#define FAPI_NR_MAX_RA_OCCASION_PER_CSIRS          64
-
-typedef unsigned int	uint32_t;
-typedef unsigned short	uint16_t;
-typedef unsigned char	uint8_t;
-typedef signed int		int32_t;
-typedef signed short	int16_t;
-typedef signed char		int8_t;
-
-
-typedef enum {
-    FAPI_NR_RX_PDU_BCCH_BCH_TYPE = 0,
-    FAPI_NR_RX_PDU_BCCH_DLSCH_TYPE
-} fapi_nr_rx_pdu_type_e;
-
+/*
+typedef unsigned int	   uint32_t;
+typedef unsigned short	   uint16_t;
+typedef unsigned char	   uint8_t;
+typedef signed int		   int32_t;
+typedef signed short	   int16_t;
+typedef signed char		   int8_t;
+*/
 
 typedef struct {
-	uint16_t phy_id;
-	uint16_t message_id;
-	uint16_t message_length;
-	uint16_t spare;
-} fapi_nr_p4_p5_message_header_t;
-
-typedef struct {
-	uint16_t phy_id;
-	uint16_t message_id;
-	uint16_t message_length;
-	uint16_t m_segment_sequence; /* This consists of 3 fields - namely, M, Segement & Sequence number*/
-	uint32_t checksum;
-	uint32_t transmit_timestamp;
-} fapi_nr_p7_message_header_t;
-
-typedef struct {
-	uint16_t tag;
-	uint16_t length;
-} fapi_nr_tl_t;
-#define FAPI_NR_TAG_LENGTH_PACKED_LEN 4
-
-typedef struct {
-    //  dci pdu
-	uint8_t dci_format; 
-    uint8_t frequency_domain_resouce_assignment;    //  38.214 chapter 5.1.2.2
-    uint8_t time_domain_resource_assignment;        //  38.214 chapter 5.1.2.1
-	uint8_t frequency_hopping_enabled_flag;
-	uint8_t frequency_hopping_bits;
-	uint8_t mcs;
-	uint8_t new_data_indication;
-	uint8_t redundancy_version;
-    uint8_t harq_process;
-    uint8_t tpc_command;
-    uint8_t padding_bits;
-    uint8_t ul_sul_ind;
-    uint8_t ul_sch_indicator;
-
-    uint8_t random_access_preamble_index;
-    uint8_t ss_pbch_index;
-    uint8_t prach_mask_index;
-
-    uint8_t carrier_indicator;
-    uint8_t bwp_indndicator;
-    uint8_t vrb_to_prb_mapping;
-    uint8_t downlink_assignment_index1;
-    uint8_t downlink_assignment_index2;
-    uint8_t srs_resource_indicator;
-    uint8_t precoding_information;
-    uint8_t antenna_ports;
-    uint8_t srs_request;
-    uint8_t cqi_csi_request;
-    uint8_t cbg_transmission_information;
-    uint8_t ptrs_dmrs_association;
-    
-    uint8_t downlink_assignment_index;
-    uint8_t pucch_resource_indicator;
-    uint8_t pdsch_to_harq_feedback_timing_indicator;
-
-    uint8_t short_messages_indicator;
-    uint8_t short_messages;
-    uint8_t tb_scaling;
-
-
-    uint8_t prb_bundling_size_indicator;    //  38.214 chapter 5.1.2.3
-    uint8_t rate_matching_indicator;
-    uint8_t zp_csi_rs_trigger;
-    uint8_t transmission_configuration_indication;
-    uint8_t cbg_flushing_out_information;
-    
-    uint8_t slot_format_count;
-    uint8_t *slot_format_indicators;    //  38.213 chapter 11.1.1
-     
-    uint8_t preemption_indication_count;
-    uint8_t *preemption_indications;    //  38.213 chapter 11.2
-
-    uint8_t block_number_count;         //  for F22 and F23
-    uint8_t *block_numbers;             //  for F22 and F23
-    uint8_t closed_loop_indicator;
-
-    uint8_t tpc_command_count;
-    uint8_t *tpc_command_numbers;
-    uint8_t dci2_3_srs_request;    //  38.212 table 7.3.1.1.2-5   
-    uint8_t dci2_3_tpc_command;
-
+    uint8_t identifier_dci_formats          ; // 0  IDENTIFIER_DCI_FORMATS:
+    uint8_t carrier_ind                     ; // 1  CARRIER_IND: 0 or 3 bits, as defined in Subclause x.x of [5, TS38.213]
+    uint8_t sul_ind_0_1                     ; // 2  SUL_IND_0_1:
+    uint8_t slot_format_ind                 ; // 3  SLOT_FORMAT_IND: size of DCI format 2_0 is configurable by higher layers up to 128 bits, according to Subclause 11.1.1 of [5, TS 38.213]
+    uint8_t pre_emption_ind                 ; // 4  PRE_EMPTION_IND: size of DCI format 2_1 is configurable by higher layers up to 126 bits, according to Subclause 11.2 of [5, TS 38.213]. Each pre-emption indication is 14 bits
+    uint8_t tpc_cmd_number                  ; // 5  TPC_CMD_NUMBER: The parameter xxx provided by higher layers determines the index to the TPC command number for an UL of a cell. Each TPC command number is 2 bits
+    uint8_t block_number                    ; // 6  BLOCK_NUMBER: starting position of a block is determined by the parameter startingBitOfFormat2_3
+    uint8_t bandwidth_part_ind              ; // 7  BANDWIDTH_PART_IND:
+    uint8_t short_message_ind               ; // 8  SHORT_MESSAGE_IND:
+    uint8_t short_messages                  ; // 9  SHORT_MESSAGES:
+    uint16_t freq_dom_resource_assignment_UL; // 10 FREQ_DOM_RESOURCE_ASSIGNMENT_UL: PUSCH hopping with resource allocation type 1 not considered
+                                              //    (NOTE 1) If DCI format 0_0 is monitored in common search space
+                                              //    and if the number of information bits in the DCI format 0_0 prior to padding
+                                              //    is larger than the payload size of the DCI format 1_0 monitored in common search space
+                                              //    the bitwidth of the frequency domain resource allocation field in the DCI format 0_0
+                                              //    is reduced such that the size of DCI format 0_0 equals to the size of the DCI format 1_0
+    uint16_t freq_dom_resource_assignment_DL; // 11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+    uint8_t time_dom_resource_assignment    ; // 12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 6.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+                                              //    where I the number of entries in the higher layer parameter pusch-AllocationList
+    uint8_t vrb_to_prb_mapping              ; // 13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+    uint8_t prb_bundling_size_ind           ; // 14 PRB_BUNDLING_SIZE_IND:0 bit if the higher layer parameter PRB_bundling is not configured or is set to 'static', or 1 bit if the higher layer parameter PRB_bundling is set to 'dynamic' according to Subclause 5.1.2.3 of [6, TS 38.214]
+    uint8_t rate_matching_ind               ; // 15 RATE_MATCHING_IND: 0, 1, or 2 bits according to higher layer parameter rate-match-PDSCH-resource-set
+    uint8_t zp_csi_rs_trigger               ; // 16 ZP_CSI_RS_TRIGGER:
+    uint8_t freq_hopping_flag               ; // 17 FREQ_HOPPING_FLAG: 0 bit if only resource allocation type 0
+    uint8_t tb1_mcs                         ; // 18 TB1_MCS:
+    uint8_t tb1_ndi                         ; // 19 TB1_NDI:
+    uint8_t tb1_rv                          ; // 20 TB1_RV:
+    uint8_t tb2_mcs                         ; // 21 TB2_MCS:
+    uint8_t tb2_ndi                         ; // 22 TB2_NDI:
+    uint8_t tb2_rv                          ; // 23 TB2_RV:
+    uint8_t mcs                             ; // 24 MCS:
+    uint8_t ndi                             ; // 25 NDI:
+    uint8_t rv                              ; // 26 RV:
+    uint8_t harq_process_number             ; // 27 HARQ_PROCESS_NUMBER:
+    uint8_t dai                             ; // 28 DAI: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
+                                              //    2 if one serving cell is configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 bits are the counter DAI
+                                              //    0 otherwise
+    uint8_t first_dai                       ; // 29 FIRST_DAI: (1 or 2 bits) 1 bit for semi-static HARQ-ACK
+    uint8_t second_dai                      ; // 30 SECOND_DAI: (0 or 2 bits) 2 bits for dynamic HARQ-ACK codebook with two HARQ-ACK sub-codebooks
+    uint8_t tb_scaling                      ; // 31 TB_SCALING:
+    uint8_t tpc_pusch                       ; // 32 TPC_PUSCH:
+    uint8_t tpc_pucch                       ; // 33 TPC_PUCCH:
+    uint8_t pucch_resource_ind              ; // 34 PUCCH_RESOURCE_IND:
+    uint8_t pdsch_to_harq_feedback_time_ind ; // 35 PDSCH_TO_HARQ_FEEDBACK_TIME_IND:
+    uint8_t srs_resource_ind                ; // 36 SRS_RESOURCE_IND:
+    uint8_t precod_nbr_layers               ; // 37 PRECOD_NBR_LAYERS:
+    uint8_t antenna_ports                   ; // 38 ANTENNA_PORTS:
+    uint8_t tci                             ; // 39 TCI: 0 bit if higher layer parameter tci-PresentInDCI is not enabled; otherwise 3 bits
+    uint8_t srs_request                     ; // 40 SRS_REQUEST:
+    uint8_t tpc_cmd_number_format2_3        ; // 41 TPC_CMD_NUMBER_FORMAT2_3:
+    uint8_t csi_request                     ; // 42 CSI_REQUEST:
+    uint8_t cbgti                           ; // 43 CBGTI: 0, 2, 4, 6, or 8 bits determined by higher layer parameter maxCodeBlockGroupsPerTransportBlock for the PDSCH
+    uint8_t cbgfi                           ; // 44 CBGFI: 0 or 1 bit determined by higher layer parameter codeBlockGroupFlushIndicator
+    uint8_t ptrs_dmrs                       ; // 45 PTRS_DMRS:
+    uint8_t beta_offset_ind                 ; // 46 BETA_OFFSET_IND:
+    uint8_t dmrs_seq_ini                    ; // 47 DMRS_SEQ_INI: 1 bit if the cell has two ULs and the number of bits for DCI format 1_0 before padding
+                                              //    is larger than the number of bits for DCI format 0_0 before padding; 0 bit otherwise
+    uint8_t ul_sch_ind                      ; // 48 UL_SCH_IND:  value of "1" indicates UL-SCH shall be transmitted on the PUSCH and a value of "0" indicates UL-SCH shall not be transmitted on the PUSCH
+    uint16_t padding_nr_dci                 ; // 49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
+                                              //    and if the number of information bits in the DCI format 0_0 prior to padding
+                                              //    is less than the payload size of the DCI format 1_0 monitored in common search space
+                                              //    zeros shall be appended to the DCI format 0_0
+                                              //    until the payload size equals that of the DCI format 1_0
+    uint8_t sul_ind_0_0                     ; // 50 SUL_IND_0_0:
+    uint8_t ra_preamble_index               ; // 51 RA_PREAMBLE_INDEX:
+    uint8_t sul_ind_1_0                     ; // 52 SUL_IND_1_0:
+    uint8_t ss_pbch_index                   ; // 53 SS_PBCH_INDEX
+    uint8_t prach_mask_index                ; // 54 PRACH_MASK_INDEX
+    uint8_t reserved_nr_dci                 ; // 55 RESERVED_NR_DCI
 } fapi_nr_dci_pdu_rel15_t;
-#define FAPI_NR_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG 0x2020
+
+
 
 typedef struct {
-    fapi_nr_tl_t tl;
     uint8_t uci_format;
     uint8_t uci_channel;
     uint8_t harq_ack_bits;
@@ -144,31 +116,25 @@ typedef struct {
     uint32_t sr;
 } fapi_nr_uci_pdu_rel15_t;
 
-    typedef enum {
-        CCE_REG_MAPPING_TYPE_INTERLEAVED,
-        CCE_REG_MAPPING_TYPE_NON_INTERLEAVED,
-    } coreset_cce_reg_mapping_type_t;
-
-    typedef enum{
-        PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE, 
-        PRECODER_GRANULARITY_ALL_CONTIGUOUS_RBS
-    } coreset_precoder_granularity_t;
+    
 
     typedef struct {
         /// frequency_domain_resource;
-        uint32_t rb_start;
-        uint32_t rb_end;
+        //uint32_t rb_start;
+        //uint32_t rb_end;
+        uint64_t frequency_domain_resource;
+        uint16_t rb_offset;
 
         uint8_t duration;
-        coreset_cce_reg_mapping_type_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
+        uint8_t cce_reg_mapping_type;                   //  interleaved or noninterleaved
         uint8_t cce_reg_interleaved_reg_bundle_size;    //  valid if CCE to REG mapping type is interleaved type
         uint8_t cce_reg_interleaved_interleaver_size;   //  valid if CCE to REG mapping type is interleaved type
         uint8_t cce_reg_interleaved_shift_index;        //  valid if CCE to REG mapping type is interleaved type
-        coreset_precoder_granularity_t precoder_granularity;
-        uint8_t tci_state_pdcch;
-
-        uint8_t tci_present_in_dci;
+        uint8_t precoder_granularity;
         uint16_t pdcch_dmrs_scrambling_id;
+
+        uint8_t tci_state_pdcch;
+        uint8_t tci_present_in_dci;
     } fapi_nr_coreset_t;
 
 //
@@ -183,89 +149,110 @@ typedef struct {
 
 	typedef struct {
 		uint16_t rnti;
-		uint8_t dci_type;
-		uint8_t dci_size;
+		uint8_t dci_format;
         fapi_nr_dci_pdu_rel15_t dci;
-	}fapi_nr_dci_indication_pdu_t;
+	} fapi_nr_dci_indication_pdu_t;
 
-	typedef struct {
-		fapi_nr_tl_t tl;
-		uint16_t number_of_dcis;
-		fapi_nr_dci_indication_pdu_t* dci_list;
-	} fapi_nr_dci_indication_body_t;
 
 ///
 typedef struct {
-  	fapi_nr_p7_message_header_t header;
-  	uint16_t sfn_sf_slot;
-  	fapi_nr_dci_indication_body_t dci_indication_body;
+  	uint32_t sfn_slot;
+    uint16_t number_of_dcis;
+  	fapi_nr_dci_indication_pdu_t dci_list[10];
 } fapi_nr_dci_indication_t;
 
-	#define FAPI_NR_TX_MAX_PDU 100
-	typedef struct {
-		fapi_nr_tl_t tl;
-        uint32_t pdu_index;
+
+    typedef struct {
         uint32_t pdu_length;
-		uint8_t* pdu;
-	} fapi_nr_rx_request_body_t;
-	#define FAPI_NR_TX_REQUEST_BODY_TAG 0x2022
+        uint8_t* pdu;
+    } fapi_nr_pdsch_pdu_t;
+
+    typedef struct {
+        uint8_t* pdu;   //  3bytes
+        uint8_t additional_bits;
+        uint8_t ssb_index;
+        uint8_t ssb_length;
+        uint16_t cell_id;
+
+    } fapi_nr_mib_pdu_t;
+
+    typedef struct {
+        uint32_t pdu_length;
+        uint8_t* pdu;
+        uint32_t sibs_mask;
+    } fapi_nr_sib_pdu_t;
+
+	typedef struct {
+        uint8_t pdu_type;
+        union {
+            fapi_nr_pdsch_pdu_t pdsch_pdu;
+            fapi_nr_mib_pdu_t mib_pdu;
+            fapi_nr_sib_pdu_t sib_pdu;
+        };
+	} fapi_nr_rx_indication_body_t;
 
 ///
 typedef struct {
-	fapi_nr_p7_message_header_t header;
-	uint16_t sfn_sf_slot;
-	fapi_nr_rx_request_body_t rx_request_body;
+	uint32_t sfn_slot;
+    uint16_t number_pdus;
+	fapi_nr_rx_indication_body_t *rx_indication_body;
 } fapi_nr_rx_indication_t;
 
 	typedef struct {
-		fapi_nr_tl_t tl;
 		uint8_t ul_cqi;
 		uint16_t timing_advance;
         uint16_t rnti;
 	} fapi_nr_tx_config_t;
 
-
-    #define FAPI_NR_TX_MAX_SEGMENTS 32
 	typedef struct {
 		uint16_t pdu_length;
-		uint16_t pdu_index;
+        uint16_t pdu_index;
         uint8_t* pdu;
-	} fapi_nr_tx_request_pdu_t;
-
-	#define FAPI_NR_RX_IND_MAX_PDU 100
-	typedef struct {
-		fapi_nr_tl_t tl;
-		fapi_nr_tx_config_t tx_config;
-		uint16_t number_of_pdus;
-		fapi_nr_tx_request_pdu_t* tx_pdu_list;
 	} fapi_nr_tx_request_body_t;
-	#define FAPI_NR_RX_INDICATION_BODY_TAG 0x2023
 
 ///
 typedef struct {
-	fapi_nr_p7_message_header_t header;
-	uint16_t sfn_sf_slot;
-	fapi_nr_tx_request_body_t tx_request_body;
+	uint32_t sfn_slot;
+    fapi_nr_tx_config_t tx_config;
+    uint16_t number_of_pdus;
+	fapi_nr_tx_request_body_t *tx_request_body;
 } fapi_nr_tx_request_t;
 
+    typedef struct {
+
+    } fapi_nr_ul_config_rach_pdu;
+
+    typedef struct {
+
+    } fapi_nr_ul_config_pucch_pdu;
+
+    typedef struct {
+        uint16_t number_rbs;
+        uint16_t start_rb;
+        uint16_t number_symbols;
+        uint16_t start_symbol;
+        uint8_t mcs;
+    } fapi_nr_ul_config_pusch_pdu_rel15_t;
+
+    typedef struct {
+        uint16_t rnti;
+        fapi_nr_ul_config_pusch_pdu_rel15_t ulsch_pdu_rel15;
+    } fapi_nr_ul_config_pusch_pdu;
 
 	typedef struct {
 		uint8_t pdu_type;
-		uint8_t pdu_size;
 		union {
-
+            fapi_nr_ul_config_rach_pdu prach_config_pdu;
+            fapi_nr_ul_config_pucch_pdu pucch_config_pdu;
+            fapi_nr_ul_config_pusch_pdu ulsch_config_pdu;
 		};
 	} fapi_nr_ul_config_request_pdu_t;
 
-	typedef struct {
-		fapi_nr_tl_t tl;
-		fapi_nr_ul_config_request_pdu_t ul_config_pdu_list;
-	} fapi_nr_ul_config_request_body_t;
 ///
 typedef struct {
-	fapi_nr_p7_message_header_t header;
-	uint16_t sfn_sf_slot;
-	fapi_nr_ul_config_request_body_t ul_config_request_body;
+	uint32_t sfn_slot;
+    uint8_t number_pdus;
+    fapi_nr_ul_config_request_pdu_t ul_config_list[FAPI_NR_UL_CONFIG_LIST_NUM];
 } fapi_nr_ul_config_request_t;
 
 
@@ -274,8 +261,7 @@ typedef struct {
 
         fapi_nr_coreset_t coreset;
         uint32_t duration;
-        uint8_t aggregation_level;
-        uint8_t number_of_candidates;
+        uint8_t number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16 
         uint16_t monitoring_symbols_within_slot;
         //  DCI foramt-specific
         uint8_t format_2_0_number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16
@@ -287,30 +273,34 @@ typedef struct {
         fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15;
     } fapi_nr_dl_config_dci_pdu;
 
+    //typedef fapi_nr_dci_pdu_rel15_t fapi_nr_dl_config_dlsch_pdu_rel15_t;
     typedef struct {
-        uint16_t rnti;
-        fapi_nr_dci_pdu_rel15_t dci_config;
+        uint16_t number_rbs;
+        uint16_t start_rb;
+        uint16_t number_symbols;
+        uint16_t start_symbol;
+        uint8_t mcs;
+        uint8_t rv;
+        //  to be check the fields needed to L1 with NR_DL_UE_HARQ_t and NR_UE_DLSCH_t
     } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
     typedef struct {
+        uint16_t rnti;
         fapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config_rel15;
     } fapi_nr_dl_config_dlsch_pdu;
 
 	typedef struct {
 		uint8_t pdu_type;
-		uint8_t pdu_size;
 		union {
-            fapi_nr_dl_config_dci_pdu dci_pdu;
-            fapi_nr_dl_config_dlsch_pdu dlsch_pdu;
+            fapi_nr_dl_config_dci_pdu dci_config_pdu;
+            fapi_nr_dl_config_dlsch_pdu dlsch_config_pdu;
 		};
 	} fapi_nr_dl_config_request_pdu_t;
 
 typedef struct {
-	fapi_nr_p7_message_header_t header;
-	uint16_t sfn_sf_slot;
-    uint8_t number_dci;
-    uint8_t number_pdsch;
-	fapi_nr_dl_config_request_pdu_t *dl_config_request_body;
+	uint32_t sfn_slot;
+    uint8_t number_pdus;
+	fapi_nr_dl_config_request_pdu_t dl_config_list[FAPI_NR_DL_CONFIG_LIST_NUM];
 } fapi_nr_dl_config_request_t;
 
 
@@ -417,7 +407,6 @@ typedef struct {
     } fapi_nr_pbch_config_t;
 
     typedef struct {
-        fapi_nr_tl_t tl;
         
         fapi_nr_pdcch_config_common_t pdcch_config_common;
         fapi_nr_pdsch_config_common_t pdsch_config_common;
@@ -761,8 +750,6 @@ typedef struct {
 #define FAPI_NR_CONFIG_REQUEST_MASK_UL_BWP_DEDICATED    0x10
 
 typedef struct {
-    fapi_nr_p4_p5_message_header_t header;
-    uint8_t num_tlv;
     uint32_t config_mask;
 
     fapi_nr_pbch_config_t pbch_config;  //  MIB
@@ -775,4 +762,4 @@ typedef struct {
 
 } fapi_nr_config_request_t;
 
-#endif /* _FAPI_INTERFACE_H_ */
+#endif

@@ -51,10 +51,16 @@
 #define  PSS_SC_START_NR              (52)     /* see from TS 38.211 table 7.4.3.1-1: Resources within an SS/PBCH block for PSS... */
 
 /* define ofdm symbol offset in the SS/PBCH block of NR synchronisation */
-#define  PSS_SYMBOL_NB                (4)     /* symbol numbers for each element */
-#define  PBCH_SYMBOL_NB               (5)
-#define  SSS_SYMBOL_NB                (6)
-#define  PBCH_LAST_SYMBOL_NB          (7)
+#ifdef NR_UNIT_TEST
+#define OFFSET_SS_PBCH                (0)
+#else
+#define OFFSET_SS_PBCH                (4)
+#endif
+
+#define  PSS_SYMBOL_NB                ((0) + OFFSET_SS_PBCH)   /* symbol numbers for each element */
+#define  PBCH_SYMBOL_NB               ((1) + OFFSET_SS_PBCH)
+#define  SSS_SYMBOL_NB                ((2) + OFFSET_SS_PBCH)
+#define  PBCH_LAST_SYMBOL_NB          ((3) + OFFSET_SS_PBCH)
 
 /* SS/PBCH parameters */
 #define  N_RB_SS_PBCH_BLOCK           (20)

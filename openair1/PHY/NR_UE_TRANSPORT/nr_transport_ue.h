@@ -282,6 +282,12 @@ typedef struct {
   uint32_t G;
   /// Current Number of RBs
   uint16_t nb_rb;
+  /// Starting RB number
+  uint16_t start_rb;
+  /// Number of Symbols
+  uint16_t nb_symbols;
+  /// Starting Symbol number
+  uint16_t start_symbol;
   /// Current subband PMI allocation
   uint16_t pmi_alloc;
   /// Current RB allocation (even slots)

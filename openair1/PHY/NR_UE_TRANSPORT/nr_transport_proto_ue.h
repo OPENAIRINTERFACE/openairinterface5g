@@ -1352,24 +1352,6 @@ int dump_dci(NR_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
 int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue, UE_nr_rxtx_proc_t *proc, char* buffer, int length, runmode_t mode, int input_level_dBm);
 
-
-
-void generate_pcfich_reg_mapping(NR_DL_FRAME_PARMS *frame_parms);
-
-
-void pcfich_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
-                         uint8_t subframe,
-                         int16_t *d);
-
-
-uint8_t rx_pcfich(NR_DL_FRAME_PARMS *frame_parms,
-                  uint8_t subframe,
-                  NR_UE_PDCCH *lte_ue_pdcch_vars,
-                  MIMO_mode_t mimo_mode);
-
-void generate_phich_reg_mapping(NR_DL_FRAME_PARMS *frame_parms);
-
-
 void init_transport_channels(uint8_t);
 
 void generate_RIV_tables(void);
@@ -1381,7 +1363,7 @@ void generate_RIV_tables(void);
   parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
   @param phy_vars_ue Pointer to UE variables
 */
-int initial_sync(PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
+int nr_initial_sync(PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
 
 
 /*!

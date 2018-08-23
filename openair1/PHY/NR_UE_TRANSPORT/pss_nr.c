@@ -369,7 +369,7 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
      assert(0);
     }
 
-    size = LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms_ue->samples_per_subframe;
+    size = NR_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms_ue->samples_per_subframe;
     q = malloc16(size);
     if (q != NULL) {
       pss_corr_ue[i] = q;
@@ -578,7 +578,7 @@ void restore_frame_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue, int rate_ch
 void decimation_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change, int **rxdata)
 {
   NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
-  int samples_for_frame = LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti;
+  int samples_for_frame = NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti;
 
 #if TEST_SYNCHRO_TIMING_PSS
 
@@ -631,7 +631,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
 
 #ifdef DBG_PSS_NR
 
-  int samples_for_frame = frame_parms->samples_per_subframe*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  int samples_for_frame = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
 
   write_output("rxdata0_rand.m","rxd0_rand", &PHY_vars_UE->common_vars.rxdata[0][0], samples_for_frame, 1, 1);
 
@@ -772,7 +772,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
   int result;
   int synchro_out;
   unsigned int tmp[NUMBER_PSS_SEQUENCE];
-  unsigned int length = (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->ttis_per_subframe*frame_parms->samples_per_tti);  /* 1 frame for now, it should be 2 TODO_NR */
+  unsigned int length = (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->ttis_per_subframe*frame_parms->samples_per_tti);  /* 1 frame for now, it should be 2 TODO_NR */
 
   for (int i = 0; i < NUMBER_PSS_SEQUENCE; i++) {
 	  tmp[i] = 0;
