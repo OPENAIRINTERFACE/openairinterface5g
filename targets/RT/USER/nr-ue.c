@@ -696,8 +696,8 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                 UE->ul_indication.slot = 0;     //  to be fill
                 UE->ul_indication.frame = 0;    //  to be fill
                 //  [TODO] mapping right after NR initial sync
-                //UE->ul_indication.frame = ; 
-                //UE->ul_indication.slot = ;
+                UE->ul_indication.frame = proc->frame_rx; 
+                UE->ul_indication.slot = proc->nr_tti_rx;
                 
                 UE->if_inst->ul_indication(&UE->ul_indication);
             }

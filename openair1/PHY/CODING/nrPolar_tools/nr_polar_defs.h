@@ -112,7 +112,7 @@ void polar_encoder_dci(uint32_t *in,
 					   uint16_t n_RNTI);
 
 int8_t polar_decoder(double *input,
-		 	 	 	 uint32_t *output,
+		 	 	 	 uint8_t *output,
 					 t_nrPolar_paramsPtr polarParams,
 					 uint8_t listSize,
 					 uint8_t pathMetricAppr);
