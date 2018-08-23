@@ -888,6 +888,7 @@ static  void wait_nfapi_init(char *thread_name) {
 
 int main( int argc, char **argv )
 {
+	crcTableInit();
   int i;
 #if defined (XFORMS)
   //void *status;

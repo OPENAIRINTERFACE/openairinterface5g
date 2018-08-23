@@ -341,6 +341,14 @@ based on 3GPP UMTS/LTE specifications.
 */
 uint32_t crc24b (uint8_t *inPtr, int32_t bitlen);
 
+/*!\fn uint32_t crc24c(uint8_t *inPtr, int32_t bitlen)
+\brief This computes a 24-bit crc ('c' variant for transport-block segments)
+based on 3GPP Rel 15 specifications.
+@param inPtr Pointer to input byte stream
+@param bitlen length of inputs in bits
+*/
+uint32_t crc24c (uint8_t *inPtr, int32_t bitlen);
+
 /*!\fn uint32_t crc16(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 16-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
