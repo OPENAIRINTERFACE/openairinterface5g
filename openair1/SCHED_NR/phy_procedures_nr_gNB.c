@@ -140,7 +140,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
     nr_generate_pss(gNB->d_pss, txdataF, AMP, ssb_start_symbol, cfg, fp);
     nr_generate_sss(gNB->d_sss, txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
 
-    if ((frame_mod8) == 0){
+    if (!(frame&7)){
       if (gNB->pbch_configured != 1)return;
       gNB->pbch_configured = 0;
     }
