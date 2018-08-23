@@ -467,43 +467,20 @@ rrc_pdcp_config_security(
                      &kRRCint);
 
 #if !defined(USRP_REC_PLAY)
-#define DEBUG_SECURITY 1
+  SET_LOG_DUMP(DEBUG_SECURITY) ;
 #endif
   
-#if defined (DEBUG_SECURITY)
-#undef msg
-#define msg printf
 
-  if (print_keys ==1 ) {
-    print_keys =0;
-    int i;
-    msg("\nKeNB:");
+  if ( LOG_DUMPFLAG( DEBUG_SECURITY ) ) {
+    if (print_keys ==1 ) {
+      print_keys =0;
 
-    for(i = 0; i < 32; i++) {
-      msg("%02x", ue_context_pP->ue_context.kenb[i]);
+      LOG_DUMPMSG(RRC, DEBUG_SECURITY, ue_context_pP->ue_context.kenb, 32,"\nKeNB:" );
+      LOG_DUMPMSG(RRC, DEBUG_SECURITY, kRRCenc, 32,"\nKRRCenc:" );
+      LOG_DUMPMSG(RRC, DEBUG_SECURITY, kRRCint, 32,"\nKRRCint:" );
     }
-
-    msg("\n");
-
-    msg("\nKRRCenc:");
-
-    for(i = 0; i < 32; i++) {
-      msg("%02x", kRRCenc[i]);
-    }
-
-    msg("\n");
-
-    msg("\nKRRCint:");
-
-    for(i = 0; i < 32; i++) {
-      msg("%02x", kRRCint[i]);
-    }
-
-    msg("\n");
-
   }
 
-#endif //DEBUG_SECURITY
   key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
   h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
 

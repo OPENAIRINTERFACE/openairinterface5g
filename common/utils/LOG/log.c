@@ -235,14 +235,13 @@ int write_file_matlab(const char *fname,const char *vname,void *data,int length,
 void  log_getconfig(log_t *g_log) {
   char *gloglevel = NULL;
   int consolelog ;
-  int level;
   
   
   paramdef_t logparams_defaults[] = LOG_GLOBALPARAMS_DESC;
   paramdef_t logparams_level[MAX_LOG_PREDEF_COMPONENTS];
   paramdef_t logparams_logfile[MAX_LOG_PREDEF_COMPONENTS];
   paramdef_t logparams_debug[sizeof(log_maskmap)/sizeof(mapping)];
-  paramdef_t logparams_genfile[sizeof(log_maskmap)/sizeof(mapping)];
+  paramdef_t logparams_dump[sizeof(log_maskmap)/sizeof(mapping)];
 
   int ret = config_get( logparams_defaults,sizeof(logparams_defaults)/sizeof(paramdef_t),CONFIG_STRING_LOG_PREFIX);
   if (ret <0) {
@@ -296,37 +295,37 @@ void  log_getconfig(log_t *g_log) {
   config_get( logparams_logfile,  MAX_LOG_PREDEF_COMPONENTS,CONFIG_STRING_LOG_PREFIX); 
 /* now set the log levels and infile option, according to what we read */
   for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_PREDEF_COMPONENTS; i++) {
-    level     = map_str_to_int(log_level_names,    *(logparams_level[i].strptr));
-    set_log(i, level);
+    g_log->log_component[i].level = map_str_to_int(log_level_names,    *(logparams_level[i].strptr));
+    set_log(i, g_log->log_component[i].level);
     if (*(logparams_logfile[i].uptr) == 1)
         set_component_filelog(i);
   }
 
-/* build then read the debug and genfile parameter array */
+/* build then read the debug and dump parameter array */
   for (int i=0;log_maskmap[i].name != NULL ; i++) {
-      sprintf(logparams_debug[i].optname,    LOG_CONFIG_DEBUG_FORMAT, log_maskmap[i].name);
-      sprintf(logparams_genfile[i].optname,   LOG_CONFIG_GENFILE_FORMAT, log_maskmap[i].name);
+      sprintf(logparams_debug[i].optname,  LOG_CONFIG_DEBUG_FORMAT, log_maskmap[i].name);
+      sprintf(logparams_dump[i].optname,   LOG_CONFIG_DUMP_FORMAT, log_maskmap[i].name);
       logparams_debug[i].defuintval  = 0;
       logparams_debug[i].type        = TYPE_UINT;
       logparams_debug[i].paramflags  = PARAMFLAG_BOOL;
       logparams_debug[i].uptr        = NULL;
       logparams_debug[i].chkPptr     = NULL;
       logparams_debug[i].numelt      = 0;
-      logparams_genfile[i].defuintval  = 0;
-      logparams_genfile[i].type        = TYPE_UINT;
-      logparams_genfile[i].paramflags  = PARAMFLAG_BOOL;
-      logparams_genfile[i].uptr        = NULL;
-      logparams_genfile[i].chkPptr     = NULL;
-      logparams_genfile[i].numelt      = 0;
+      logparams_dump[i].defuintval  = 0;
+      logparams_dump[i].type        = TYPE_UINT;
+      logparams_dump[i].paramflags  = PARAMFLAG_BOOL;
+      logparams_dump[i].uptr        = NULL;
+      logparams_dump[i].chkPptr     = NULL;
+      logparams_dump[i].numelt      = 0;
   }
   config_get( logparams_debug,(sizeof(log_maskmap)/sizeof(mapping)) - 1 ,CONFIG_STRING_LOG_PREFIX);
-  config_get( logparams_genfile,(sizeof(log_maskmap)/sizeof(mapping)) - 1 ,CONFIG_STRING_LOG_PREFIX);
+  config_get( logparams_dump,(sizeof(log_maskmap)/sizeof(mapping)) - 1 ,CONFIG_STRING_LOG_PREFIX);
 /* set the debug mask according to the debug parameters values */
   for (int i=0; log_maskmap[i].name != NULL ; i++) {
     if (*(logparams_debug[i].uptr) )
         g_log->debug_mask = g_log->debug_mask | log_maskmap[i].value;
-    if (*(logparams_genfile[i].uptr) )
-        g_log->genfile_mask = g_log->genfile_mask | log_maskmap[i].value;
+    if (*(logparams_dump[i].uptr) )
+        g_log->dump_mask = g_log->dump_mask | log_maskmap[i].value;
   } 
 /* log globally enabled/disabled */
   set_glog_onlinelog(consolelog);
@@ -349,10 +348,9 @@ int computed_compidx=compidx;
   }
   if (computed_compidx >= 0 && computed_compidx <MAX_LOG_COMPONENTS) {
       g_log->log_component[computed_compidx].name = strdup(name);
-      g_log->log_component[computed_compidx].savedlevel = LOG_ERR;
       g_log->log_component[computed_compidx].stream = stdout;
       g_log->log_component[computed_compidx].filelog = 0;
-      g_log->log_component[computed_compidx].filelog_name = malloc(strlen(name)+16);/* /tmp/<name>.%s rounded to ^2 */
+      g_log->log_component[computed_compidx].filelog_name = malloc(strlen(name)+16);/* /tmp/<name>.%s  */
       sprintf(g_log->log_component[computed_compidx].filelog_name,"/tmp/%s.%s",name,fext);
   } else {
       fprintf(stderr,"{LOG} %s %d Couldn't register componemt %s\n",__FILE__,__LINE__,name);
@@ -415,19 +413,15 @@ int logInit (void)
 
 
   register_log_component("SCTP","",SCTP);
-  register_log_component("RRH","",RRH);
- 
-
+  register_log_component("X2AP","",X2AP);
+  register_log_component("LOADER","log",LOADER);
+  register_log_component("ASN","log",ASN);
   
 
 
+  for (int i=0 ; log_level_names[i].name != NULL ; i++)
+      g_log->level2string[i]           = toupper(log_level_names[i].name[0]); // uppercased first letter of level name
 
-  g_log->level2string[OAILOG_ERR]           = "E"; // ERROR
-  g_log->level2string[OAILOG_WARNING]       = "W"; // WARNING
-  g_log->level2string[OAILOG_INFO]          = "I"; //INFO
-  g_log->level2string[OAILOG_DEBUG]         = "D"; // DEBUG
-//  g_log->level2string[OAILOG_FILE]          = "F"; // file
-  g_log->level2string[OAILOG_TRACE]         = "T"; // TRACE
 
  
 
@@ -459,11 +453,19 @@ int rt =   pthread_getname_np(pthread_self(), threadname,bufsize) ;
    }
 }
 
+int inline log_header(char *log_buffer, int buffsize, int comp, int level,const char *format) {
+  char threadname[PR_SET_NAME];
+return  snprintf(log_buffer, buffsize , "%s%s[%s]%c %s %s",
+  	   log_level_highlight_end[level],
+  	   ( (g_log->flag & FLAG_NOCOLOR)?"":log_level_highlight_start[level]),
+  	   g_log->log_component[comp].name,
+  	   ( (g_log->flag & FLAG_LEVEL)?g_log->level2string[level]:' '),
+  	   ( (g_log->flag & FLAG_THREAD)?log_getthreadname(threadname,PR_SET_NAME+1):""),
+  	   format);
+}
 
 void logRecord_mt(const char *file, const char *func, int line, int comp, int level, const char* format, ... )
   {
-
-  char threadname[PR_SET_NAME];
   char log_buffer[MAX_LOG_TOTAL];
   va_list args;
 
@@ -472,16 +474,7 @@ void logRecord_mt(const char *file, const char *func, int line, int comp, int le
 
 
 
-
-
-  snprintf(log_buffer, MAX_LOG_TOTAL , "%s%s[%s]%s %s %s",
-  	   log_level_highlight_end[level],
-  	   ( (g_log->flag & FLAG_NOCOLOR)?"":log_level_highlight_start[level]),
-  	   g_log->log_component[comp].name,
-  	   ( (g_log->flag & FLAG_LEVEL)?g_log->level2string[level]:""),
-  	   ( (g_log->flag & FLAG_THREAD)?log_getthreadname(threadname,PR_SET_NAME+1):""),
-  	   format);
-
+  log_header(log_buffer,MAX_LOG_TOTAL ,comp, level,format);
   g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer, args);
   va_end(args);
 
@@ -492,20 +485,23 @@ void log_dump(int component, void *buffer, int buffsize,int datatype, const char
 va_list args;
 char *wbuf; 
 
+
     switch(datatype) {
        case LOG_DUMP_DOUBLE:
-            wbuf=malloc((buffsize * 10)  + 64 );
+            wbuf=malloc((buffsize * 10)  + 64 + MAX_LOG_TOTAL);
        break;
        case LOG_DUMP_CHAR:
        default:
-            wbuf=malloc((buffsize * 3 ) + 64 );
+            wbuf=malloc((buffsize * 3 ) + 64 + MAX_LOG_TOTAL);
        break;
-    }        
-    va_start(args, format);
-    g_log->log_component[component].vprint(g_log->log_component[component].stream,format, args);
-    va_end(args);
-    if (wbuf != NULL) {
-       int pos=0;
+    }
+    if (wbuf != NULL) {       
+       va_start(args, format);
+       int pos=log_header(wbuf,MAX_LOG_TOTAL ,component, OAILOG_INFO,"");
+       int pos2=vsprintf(wbuf+pos,format, args);
+       pos=pos+pos2;
+       va_end(args);
+      
        for (int i=0; i<buffsize; i++) {
             switch(datatype) {
                case LOG_DUMP_DOUBLE:
@@ -528,12 +524,12 @@ int set_log(int component, int level)
   /* Checking parameters */
   DevCheck((component >= MIN_LOG_COMPONENTS) && (component < MAX_LOG_COMPONENTS),
            component, MIN_LOG_COMPONENTS, MAX_LOG_COMPONENTS);
-  DevCheck((level < NUM_LOG_LEVEL) && (level >= OAILOG_ERR), level, NUM_LOG_LEVEL,
+  DevCheck((level < NUM_LOG_LEVEL) && (level >= OAILOG_DISABLE), level, NUM_LOG_LEVEL,
            OAILOG_ERR);
 
-
+  if ( g_log->log_component[component].level != OAILOG_DISABLE )
+      g_log->log_component[component].savedlevel = g_log->log_component[component].level;
   g_log->log_component[component].level = level;
-  g_log->log_component[component].savedlevel = level;
 
   return 0;
 }
@@ -557,7 +553,7 @@ void set_glog_onlinelog(int enable)
         g_log->log_component[c].print = fprintf;
         g_log->log_component[c].stream = stdout;
       } else {
-        g_log->log_component[c].level = -1;
+        g_log->log_component[c].level = OAILOG_DISABLE;
       }
   }  
 }

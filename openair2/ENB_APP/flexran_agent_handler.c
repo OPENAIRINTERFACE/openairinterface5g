@@ -33,7 +33,7 @@
 #include "flexran_agent_pdcp.h"
 #include "flexran_agent_timer.h"
 #include "flexran_agent_ran_api.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 #include "assertions.h"
 

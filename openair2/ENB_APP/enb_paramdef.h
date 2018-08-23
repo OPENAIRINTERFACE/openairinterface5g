@@ -55,11 +55,6 @@
 
 
 
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-extern int asn_debug;
-extern int asn1_xer_print;
-#endif
-
 #ifdef LIBCONFIG_LONG
 #define libconfig_int long
 #else

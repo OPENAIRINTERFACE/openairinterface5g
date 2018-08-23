@@ -81,14 +81,14 @@ extern "C" {
  *  @ingroup _macro
  *  @brief LOG defines 9 levels of messages for users. Importance of these levels decrease gradually from 0 to 8
  * @{*/
+# define  OAILOG_DISABLE -1 /*!< \brief disable all LOG messages, cannot be used in LOG macros, use only in LOG module */
+# define  OAILOG_ERR      0 /*!< \brief critical error conditions, impact on "must have" fuctinalities */
+# define  OAILOG_WARNING  1 /*!< \brief warning conditions, shouldn't happen but doesn't impact "must have" functionalities */
+# define  OAILOG_INFO     2 /*!< \brief informational messages most people don't need, shouldn't impact real-time behavior */
+# define  OAILOG_DEBUG    3 /*!< \brief first level debug-level messages, for developers , may impact real-time behavior */
+# define  OAILOG_TRACE    4 /*!< \brief  second level debug-level messages, for developers ,likely impact real-time behavior*/
 
-# define  OAILOG_ERR     0 /*!< \brief critical error conditions, impact on "must have" fuctinalities */
-# define  OAILOG_WARNING 1 /*!< \brief warning conditions, shouldn't happen but doesn't impact "must have" functionalities */
-# define  OAILOG_INFO    2 /*!< \brief informational messages most people don't need, shouldn't impact real-time behavior */
-# define  OAILOG_DEBUG   3 /*!< \brief first level debug-level messages, for developers , may impact real-time behavior */
-# define  OAILOG_TRACE   4 /*!< \brief  second level debug-level messages, for developers ,likely impact real-time behavior*/
-
-#define NUM_LOG_LEVEL 6 /*!< \brief the number of message levels users have with LOG */
+#define NUM_LOG_LEVEL 5 /*!< \brief the number of message levels users have with LOG (OAILOG_DISABLE is not available to user as a level, so it is not included)*/
 /* @}*/
 
 
@@ -142,21 +142,27 @@ extern "C" {
 #define DEBUG_RRC          (1<<6)
 #define DEBUG_PDCP         (1<<7)
 #define DEBUG_DFT          (1<<8)
+#define DEBUG_ASN1         (1<<9)
 #define DEBUG_CTRLSOCKET   (1<<10)
+#define DEBUG_SECURITY     (1<<11)
+#define DEBUG_NAS          (1<<12)
 #define UE_TIMING          (1<<20)
 
 
 #define LOG_MASKMAP_INIT {\
   {"PRACH",       DEBUG_PRACH},\
   {"RU",          DEBUG_RU},\
-  {"LTEESTIM",    DEBUG_LTEESTIM},\
-  {"CTRLSOCKET",  DEBUG_CTRLSOCKET},\
   {"UE_PHYPROC",  DEBUG_UE_PHYPROC},\
+  {"LTEESTIM",    DEBUG_LTEESTIM},\
   {"DLCELLSPEC",  DEBUG_DLCELLSPEC},\
   {"ULSCH",       DEBUG_ULSCH},\
   {"RRC",         DEBUG_RRC},\
   {"PDCP",        DEBUG_PDCP},\
   {"DFT",         DEBUG_DFT},\
+  {"ASN1",        DEBUG_ASN1},\
+  {"CTRLSOCKET",  DEBUG_CTRLSOCKET},\
+  {"SECURITY",    DEBUG_SECURITY},\
+  {"NAS",         DEBUG_NAS},\
   {"UE_TIMING",   UE_TIMING},\
   {NULL,-1}\
 }
@@ -166,8 +172,8 @@ extern "C" {
 #define SET_LOG_DEBUG(B)   g_log->debug_mask = (g_log->debug_mask | B)
 #define CLEAR_LOG_DEBUG(B) g_log->debug_mask = (g_log->debug_mask & (~B))
 
-#define SET_LOG_DUMP(B)   g_log->genfile_mask = (g_log->genfile_mask | B)
-#define CLEAR_LOG_DUMP(B) g_log->genfile_mask = (g_log->genfile_mask & (~B))
+#define SET_LOG_DUMP(B)   g_log->dump_mask = (g_log->dump_mask | B)
+#define CLEAR_LOG_DUMP(B) g_log->dump_mask = (g_log->dump_mask & (~B))
 
 
 
@@ -208,9 +214,9 @@ typedef enum {
     TMR,
     USIM,
     LOCALIZE,
-    RRH,
     X2AP,
     LOADER,
+    ASN,
     MAX_LOG_PREDEF_COMPONENTS,
 }
 comp_name_t;
@@ -243,11 +249,11 @@ typedef struct  {
 
 typedef struct {
     log_component_t         log_component[MAX_LOG_COMPONENTS];
-    char*                   level2string[NUM_LOG_LEVEL];
+    char                    level2string[NUM_LOG_LEVEL];
     int                     flag;
     char*                   filelog_name;
     uint64_t                debug_mask;
-    uint64_t                genfile_mask;
+    uint64_t                dump_mask;
 } log_t;
 
 
@@ -318,7 +324,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_CONFIG_LEVEL_FORMAT                            "%s_log_level"
 #define LOG_CONFIG_LOGFILE_FORMAT                          "%s_log_infile"
 #define LOG_CONFIG_DEBUG_FORMAT                            "%s_debug"
-#define LOG_CONFIG_GENFILE_FORMAT                           "%s_genfile"
+#define LOG_CONFIG_DUMP_FORMAT                             "%s_dump"
 
 #define LOG_CONFIG_HELP_OPTIONS      " list of comma separated options to enable log module behavior. Available options: \n"\
                                      " nocolor:   disable color usage in log messages\n"\
@@ -356,13 +362,13 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_D(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_DEBUG  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0) 
 #    define LOG_T(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_TRACE  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0) 
     /* macro used to dump a buffer or a message as in openair2/RRC/LTE/RRC_eNB.c, replaces LOG_F macro */
-#    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->genfile_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
+#    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
 #    define nfapi_log(FILE, FNC, LN, COMP, LVL, F...)  do { if (T_stdout) { logRecord_mt(__FILE__, __FUNCTION__, __LINE__,COMP, LVL, F)  ;}}   while (0)  /* */
      /* bitmask dependant macros, to isolate debugging code */
 #    define LOG_DEBUGFLAG(D) (g_log->debug_mask & D)
 
      /* bitmask dependant macros, to generate debug file such as matlab file or message dump */
-#    define LOG_GENFILEFLAG(D) (g_log->genfile_mask & D)
+#    define LOG_DUMPFLAG(D) (g_log->dump_mask & D)
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)/* */
      /* define variable only used in LOG macro's */
 #    define LOG_VAR(A,B) A B
@@ -376,12 +382,13 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_DUMPMSG(c, b, s, x...) /* */
 #    define nfapi_log(FILE, FNC, LN, COMP, LVL, FMT...) 
 #    define LOG_DEBUGFLAG(D)  ( 0 )
-#    define LOG_GENFILEFLAG(D) ( 0 ) 
+#    define LOG_DUMPFLAG(D) ( 0 ) 
 #    define LOG_M(file, vector, data, len, dec, format) 
 #    define LOG_VAR(A,B)
 #  endif /* T_TRACER */
 /* avoid warnings for variables only used in LOG macro's but set outside debug section */
-#define LOG_USEDINLOG_VAR(A,B) __attribute__((unused)) A B 
+#define	GCC_NOTUSED		__attribute__((unused))
+#define LOG_USEDINLOG_VAR(A,B) GCC_NOTUSED A B 
 
 /* unfiltered macros, usefull for simulators or messages at init time, before log is configured */
 #define LOG_UM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
@@ -394,9 +401,12 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
  *  @ingroup _macro
  *  @brief Macro of some useful functions defined by LOG
  * @{*/
-#define LOG_ENTER(c) do {LOG_T(c, "Entering\n");}while(0) /*!< \brief Macro to log a message with severity DEBUG when entering a function */
-#define LOG_EXIT(c) do {LOG_T(c,"Exiting\n"); return;}while(0)  /*!< \brief Macro to log a message with severity TRACE when exiting a function */
-#define LOG_RETURN(c,x) do {uint32_t __rv;__rv=(unsigned int)(x);LOG_T(c,"Returning %08x\n", __rv);return((typeof(x))__rv);}while(0)  /*!< \brief Macro to log a function exit, including integer value, then to return a value to the calling function */
+#define LOG_ENTER(c) do {LOG_T(c, "Entering %s\n",__FUNCTION__);}while(0) /*!< \brief Macro to log a message with severity DEBUG when entering a function */
+#define LOG_END(c) do {LOG_T(c, "End of  %s\n",__FUNCTION__);}while(0) /*!< \brief Macro to log a message with severity DEBUG when entering a function */
+#define LOG_EXIT(c)  do { LOG_END(c); return;}while(0)  /*!< \brief Macro to log a message with severity TRACE when exiting a function */
+#define LOG_RETURN(c,r) do {LOG_T(c,"Leaving %s (rc = %08lx)\n", __FUNCTION__ , (unsigned long)(r) );return(r);}while(0)  /*!< \brief Macro to log a function exit, including integer value, then to return a value to the calling function */
+
+
 /* @}*/
 
 static __inline__ uint64_t rdtsc(void) {

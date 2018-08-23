@@ -22,7 +22,7 @@
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
 # include "create_tasks.h"
-# include "log.h"
+# include "common/utils/LOG/log.h"
 
 # ifdef OPENAIR2
 #   if defined(ENABLE_USE_MME)

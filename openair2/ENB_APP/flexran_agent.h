@@ -39,7 +39,7 @@
 #include "flexran_agent_mac.h"
 #include "flexran_agent_rrc.h"
 #include "flexran_agent_pdcp.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 #include "assertions.h"
 
 /* Initiation of the eNodeB agent */

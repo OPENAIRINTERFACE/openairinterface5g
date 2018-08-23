@@ -221,7 +221,7 @@ int proccmd_show(char *buf, int debug, telnet_printfunc_t prnt)
        for (int i=0; log_maskmap[i].name != NULL ; i++) {
                prnt("%02i %17.17s %5.5s   %5.5s\n",i ,log_maskmap[i].name, 
 	             ((g_log->debug_mask &  log_maskmap[i].value)?"Y":"N"),
-                     ((g_log->genfile_mask & log_maskmap[i].value)?"Y":"N") );
+                     ((g_log->dump_mask & log_maskmap[i].value)?"Y":"N") );
        }
    }
    if (strcasestr(buf,"config") != NULL) {
@@ -343,7 +343,7 @@ int s = sscanf(buf,"%ms %i-%i\n",&logsubcmd, &idx1,&idx2);
           for (int i=0; log_options[i].name != NULL; i++)
              prnt("%s ",log_options[i].name);
           prnt("\n\n");
-          prnt("Available debug or genfile options: \n   ");
+          prnt("Available debug and dump options: \n   ");
           for (int i=0; log_maskmap[i].name != NULL; i++)
              prnt("%s ",log_maskmap[i].name);
           prnt("\n\n");
@@ -402,31 +402,36 @@ int s = sscanf(buf,"%ms %i-%i\n",&logsubcmd, &idx1,&idx2);
       if (logparam != NULL) free(logparam);
       if (opt != NULL)      free(opt); 
    } else if ( s == 3 && logsubcmd != NULL) {
-      int level, enable, filelog;
+      int level, enable,filelog;
       char *tmpstr=NULL;
       char *logparam=NULL;
       int l;
 
-      level = enable = filelog = -1;
+      level = OAILOG_DISABLE - 1;
+      filelog = -1;
+      enable=-1; 
       l=sscanf(logsubcmd,"%m[^'_']_%m[^'_']",&logparam,&tmpstr);
       if (debug > 0)
           prnt("l=%i, %s %s\n",l,((logparam==NULL)?"\"\"":logparam), ((tmpstr==NULL)?"\"\"":tmpstr));
       if (l ==2 ) {
          if (strcmp(logparam,"level") == 0) {
              level=map_str_to_int(log_level_names,tmpstr);
-             if (level < 0)  prnt("level %s unknown\n",tmpstr);
+             if (level < 0) {
+                 prnt("level %s unknown\n",tmpstr);
+                 level=OAILOG_DISABLE - 1;
+              }
          } else {
              prnt("%s%s unknown log sub command \n",logparam, tmpstr);
          }
       } else if (l ==1 ) {
          if (strcmp(logparam,"enable") == 0) {
-              enable = 1;
+            enable=1;
          } else if (strcmp(logparam,"disable") == 0) {
-              enable = 0;
+             level=OAILOG_DISABLE;
          } else if (strcmp(logparam,"file") == 0) {
-              filelog = 1 ;
+             filelog = 1 ;
          } else if (strcmp(logparam,"nofile") == 0) {
-              filelog = 0 ;
+             filelog = 0 ;
          } else {
              prnt("%s%s unknown log sub command \n",logparam, tmpstr);
          }
@@ -436,27 +441,18 @@ int s = sscanf(buf,"%ms %i-%i\n",&logsubcmd, &idx1,&idx2);
       if (logparam != NULL) free(logparam);
       if (tmpstr != NULL)   free(tmpstr);
       for (int i=idx1; i<=idx2 ; i++) {
-        if ( level >= 0 || enable >= 0) {
-          if (level < 0) {
-              level=g_log->log_component[i].level;
-           }
-          if (enable < 0) {
-              level= -1;
-           }
-          set_log(i, level);
-        }
-        if ( filelog == 1 ) {
+        if (level >= OAILOG_DISABLE)
+           set_log(i, level);
+        else if ( enable == 1)
+           set_log(i,g_log->log_component[i].savedlevel);
+        else if ( filelog == 1 ) {
            set_component_filelog(i);
-        }
-        if ( filelog == 0 ) {
+        } else if ( filelog == 0 ) {
            close_component_filelog(i);
         } 
-        prnt("log level  comp %i %s set to %s (%s)   output: %s\n",
-              i,((g_log->log_component[i].name==NULL)?"":g_log->log_component[i].name),
-              map_int_to_str(log_level_names,g_log->log_component[i].level),
-              ((g_log->log_component[i].level>=0)?"enabled":"disabled"),
-              ((g_log->log_component[i].filelog>0)?g_log->log_component[i].filelog_name:"stdout"));	  
-      }     
+          
+      }
+     proccmd_show("loglvl",debug,prnt);
    } else {
        prnt("%s: wrong log command...\n",buf);
    }

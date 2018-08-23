@@ -99,7 +99,7 @@ void get_dumpparam(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id, uint8_t 
 
 void dump_dlsch(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid)
 {
-  if (LOG_GENFILEFLAG(DEBUG_UE_PHYPROC)) { 
+  if (LOG_DUMPFLAG(DEBUG_UE_PHYPROC)) { 
     unsigned int coded_bits_per_codeword;
     uint8_t nsymb ;
 
@@ -131,7 +131,7 @@ void dump_dlsch(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subf
 
 void dump_dlsch_SI(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe)
 {
-  if (LOG_GENFILEFLAG(DEBUG_UE_PHYPROC)){
+  if (LOG_DUMPFLAG(DEBUG_UE_PHYPROC)){
     unsigned int coded_bits_per_codeword;
     uint8_t nsymb;
 
@@ -234,7 +234,7 @@ unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb
 
 void dump_dlsch_ra(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t subframe)
 {
-  if (LOG_GENFILEFLAG(DEBUG_UE_PHYPROC)){
+  if (LOG_DUMPFLAG(DEBUG_UE_PHYPROC)){
     unsigned int coded_bits_per_codeword;
     uint8_t nsymb ;
 
@@ -2708,7 +2708,7 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
 
   } else { 
 
-    if (LOG_GENFILEFLAG(DEBUG_UE_PHYPROC)) {
+    if (LOG_DUMPFLAG(DEBUG_UE_PHYPROC)) {
       LOG_E(PHY,"[UE %d] frame %d, subframe %d, Error decoding PBCH!\n",
       ue->Mod_id,frame_rx, subframe_rx);
 
@@ -4906,7 +4906,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,
     start_meas(&ue->generic_stat);
   }
 
-  if (LOG_GENFILEFLAG(DEBUG_UE_PHYPROC)) {
+  if (LOG_DUMPFLAG(DEBUG_UE_PHYPROC)) {
     if(subframe_rx==5 &&  ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0]->harq_processes[ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0]->current_harq_pid]->nb_rb > 20){
   	 //LOG_M("decoder_llr.m","decllr",dlsch_llr,G,1,0);
   	 //LOG_M("llr.m","llr",  &ue->pdsch_vars[eNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);

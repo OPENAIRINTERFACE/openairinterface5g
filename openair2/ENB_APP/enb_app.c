@@ -35,7 +35,7 @@
 #include "assertions.h"
 #include "common/ran_context.h"
 
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"

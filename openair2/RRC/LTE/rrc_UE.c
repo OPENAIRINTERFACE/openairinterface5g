@@ -99,10 +99,6 @@ int send_ue_information = 0;
 // for malloc_clear
 #include "PHY/defs_UE.h"
 
-//#define XER_PRINT
-
-
-
 extern void pdcp_config_set_security(
   const protocol_ctxt_t* const  ctxt_pP,
   pdcp_t         * const pdcp_pP,
@@ -733,9 +729,9 @@ int rrc_ue_decode_ccch( const protocol_ctxt_t* const ctxt_pP, const SRB_INFO* co
                          (uint8_t*)Srb_info->Rx_buffer.Payload,
                          100,0,0);
 
-#ifdef XER_PRINT
-  xer_fprint(stdout,&asn_DEF_DL_CCCH_Message,(void*)dl_ccch_msg);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout,&asn_DEF_DL_CCCH_Message,(void*)dl_ccch_msg);
+  }
 
 #if defined(ENABLE_ITTI)
 # if defined(DISABLE_ITTI_XER_PRINT)
@@ -1931,9 +1927,9 @@ rrc_ue_process_securityModeCommand(
     AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
 		 enc_rval.failed_type->name, enc_rval.encoded);
     
-#ifdef XER_PRINT
-    xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
-#endif
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+    }
     
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
@@ -2042,9 +2038,9 @@ rrc_ue_process_ueCapabilityEnquiry(
       AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
 		   enc_rval.failed_type->name, enc_rval.encoded);
       
-#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
-#endif
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+         xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+      }
       
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
@@ -2429,9 +2425,9 @@ rrc_ue_decode_dcch(
               (uint8_t*)Buffer,
               RRC_BUF_SIZE,0,0);
 
-#ifdef XER_PRINT
-  xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)dl_dcch_msg);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)dl_dcch_msg);
+  }
 
 #if defined(ENABLE_ITTI)
 # if defined(DISABLE_ITTI_XER_PRINT)
@@ -4560,9 +4556,9 @@ int decode_MCCH_Message( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB
       return -1;
     }
 
-#ifdef XER_PRINT
-    xer_fprint(stdout, &asn_DEF_MCCH_Message, (void*)mcch);
-#endif
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+      xer_fprint(stdout, &asn_DEF_MCCH_Message, (void*)mcch);
+    }
 
     if (mcch->message.present == MCCH_MessageType_PR_c1) {
       LOG_D(RRC,"[UE %d] Found mcch message \n",

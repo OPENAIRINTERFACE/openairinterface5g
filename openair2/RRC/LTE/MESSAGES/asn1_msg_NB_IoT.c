@@ -382,9 +382,9 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
   ASN_SEQUENCE_ADD(&(*sib1_NB_IoT)->systemInfoValueTagList_r13->list,&systemInfoValueTagSI);
 
 
-#ifdef XER_PRINT //generate xml files
-  xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message_NB, (void*)bcch_message);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message_NB, (void*)bcch_message);
+  }
 
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message_NB,
@@ -667,9 +667,9 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
   ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.choice.systemInformation_r13.sib_TypeAndInfo_r13.list,
                    sib3_NB_part);
 
-#ifdef XER_PRINT
-  xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message_NB, (void*)bcch_message);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message_NB, (void*)bcch_message);
+  }
   enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message_NB,
                                    NULL,
                                    (void*)bcch_message,
@@ -887,9 +887,9 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
  rrcConnectionSetup_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r13.radioResourceConfigDedicated_r13.physicalConfigDedicated_r13 = physicalConfigDedicated2_NB_IoT;
  rrcConnectionSetup_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r13.radioResourceConfigDedicated_r13.mac_MainConfig_r13 = NULL;
 
-#ifdef XER_PRINT
- xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
-#endif
+ if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
+ }
  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
                                   NULL,
                                   (void*)&dl_ccch_msg_NB_IoT,
@@ -939,9 +939,9 @@ uint8_t do_SecurityModeCommand_NB_IoT(
     = (e_SecurityAlgorithmConfig__integrityProtAlgorithm)integrityProtAlgorithm;
 
 //only changed "asn_DEF_DL_DCCH_Message_NB"
-#ifdef XER_PRINT
-  xer_fprint(stdout, &asn_DEF_DL_DCCH_Message_NB, (void*)&dl_dcch_msg_NB_IoT);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_DL_DCCH_Message_NB, (void*)&dl_dcch_msg_NB_IoT);
+  }
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message_NB,
                                    NULL,
                                    (void*)&dl_dcch_msg_NB_IoT,
@@ -1001,9 +1001,9 @@ uint8_t do_UECapabilityEnquiry_NB_IoT(
   //no ue_CapabilityRequest (list of RAT_Type)
 
 //only changed "asn_DEF_DL_DCCH_Message_NB"
-#ifdef XER_PRINT
-  xer_fprint(stdout, &asn_DEF_DL_DCCH_Message_NB, (void*)&dl_dcch_msg_NB_IoT);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_DL_DCCH_Message_NB, (void*)&dl_dcch_msg_NB_IoT);
+  }
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message_NB,
                                    NULL,
                                    (void*)&dl_dcch_msg_NB_IoT,
@@ -1110,9 +1110,9 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
   }
 
   //changed only asn_DEF_DL_DCCH_Message_NB
-#ifdef XER_PRINT
-  xer_fprint(stdout,&asn_DEF_DL_DCCH_Message_NB,(void*)&dl_dcch_msg_NB_IoT);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout,&asn_DEF_DL_DCCH_Message_NB,(void*)&dl_dcch_msg_NB_IoT);
+  }
 
 //#if defined(ENABLE_ITTI)
 //# if !defined(DISABLE_XER_SPRINT)...
@@ -1143,9 +1143,9 @@ uint8_t do_RRCConnectionReestablishmentReject_NB_IoT(
   rrcConnectionReestablishmentReject->criticalExtensions.present = RRCConnectionReestablishmentReject__criticalExtensions_PR_rrcConnectionReestablishmentReject_r8;
 
   //Only change in "asn_DEF_DL_CCCH_Message_NB"
-#ifdef XER_PRINT
-  xer_fprint(stdout, &asn_DEF_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
+  }
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
                                    NULL,
                                    (void*)&dl_ccch_msg_NB_IoT,
@@ -1214,9 +1214,9 @@ uint8_t do_RRCConnectionReject_NB_IoT(
 		  RRCConnectionReject_NB_r13_IEs__rrc_SuspendIndication_r13_true;
 
   //Only Modified "asn_DEF_DL_CCCH_Message_NB"
-#ifdef XER_PRINT
-  xer_fprint(stdout, &asn_DEF_DL_CCCH_Message_NB, (void*)&dl_ccch_msg);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
+  }
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
                                    NULL,
                                    (void*)&dl_ccch_msg_NB_IoT,
@@ -1355,9 +1355,9 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
 	               enc_rval.failed_type->name, enc_rval.encoded);
         }
 
-#ifdef XER_PRINT
-  xer_fprint(stdout,&asn_DEF_DL_CCCH_Message_NB,(void*)&dl_ccch_msg_NB_IoT);
-#endif
+        if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+           xer_fprint(stdout,&asn_DEF_DL_CCCH_Message_NB,(void*)&dl_ccch_msg_NB_IoT);
+        }
 
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)

@@ -211,7 +211,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   int               sched_frame=frameP;
   int               sched_subframe = (subframeP+4)%10;
   uint16_t          ul_req_index;
-  uint8_t           dlsch_flag;
+
   
   if (sched_subframe<subframeP) sched_frame++;
 
@@ -306,10 +306,9 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  hi_dci0_req_body->number_of_dci++;
 	    
 	  ul_req_index = 0;
-            dlsch_flag = 0;
+
             for(ul_req_index = 0;ul_req_index < ul_req->number_of_pdus;ul_req_index++){
               if(ul_req->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE){
-                dlsch_flag = 1;
                 LOG_D(MAC,"Frame %d, Subframe %d:rnti %x ul_req_index %d Switched UCI HARQ to ULSCH HARQ(first)\n",frameP,subframeP,rnti,ul_req_index);
                 break;
               }

@@ -1382,7 +1382,6 @@ include_directories(${NFAPI_USER_DIR})
 add_library(CN_UTILS
   ${OPENAIR3_DIR}/UTILS/conversions.c
   ${OPENAIR3_DIR}/UTILS/enum_string.c
-  ${OPENAIR3_DIR}/UTILS/log.c
   ${OPENAIR3_DIR}/UTILS/mcc_mnc_itu.c
   )
 
@@ -1557,7 +1556,6 @@ set(libnas_ies_OBJS
 set (libnas_utils_OBJS
   ${NAS_SRC}COMMON/UTIL/device.c
   ${NAS_SRC}COMMON/UTIL/memory.c
-  ${NAS_SRC}COMMON/UTIL/nas_log.c
   ${NAS_SRC}COMMON/UTIL/nas_timer.c
   ${NAS_SRC}COMMON/UTIL/socket.c
   ${NAS_SRC}COMMON/UTIL/stty.c

@@ -571,26 +571,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   AssertFatal (i<num_enbs,
    	       "Failed to parse config file no %ith element in %s \n",i, ENB_CONFIG_STRING_ACTIVE_ENBS);
   
-#if defined(ENABLE_ITTI)
-
-  if (EPC_MODE_ENABLED) {
-    if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    } else if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 1;
-    } else if (strcasecmp(*(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr) , ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 2;
-    } else {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    }
-  }
-
-#endif
-  
 
   
   if (num_enbs>0) {
@@ -2231,24 +2211,7 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
   
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
   
-#if defined(ENABLE_ITTI) 
-    if (EPC_MODE_ENABLED) {
-      if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
-  	asn_debug      = 0;
-  	asn1_xer_print = 0;
-      } else if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
-  	asn_debug      = 1;
-  	asn1_xer_print = 1;
-      } else if (strcasecmp(*(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr) , ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
-  	asn_debug      = 1;
-  	asn1_xer_print = 2;
-      } else {
-  	asn_debug      = 0;
-  	asn1_xer_print = 0;
-      }
-    }
 
-#endif
 
     AssertFatal (i<ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt,
 		 "Failed to parse config file %s, %uth attribute %s \n",

@@ -2035,7 +2035,7 @@ static inline void transpose4_ooff(int16x4_t *x,int16x4_t *y,int off)
 
 #endif
 
-// 16-point optimized DEBUG_DFT kernel
+// 16-point optimized DFT kernel
 
 const static int16_t tw16[24] __attribute__((aligned(32))) = { 32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,
                                                   32767,0,23169,-23170,0     ,-32767,-23170,-23170,
@@ -3097,7 +3097,7 @@ void dft128(int16_t *x,int16_t *y,int scale)
 
   dft64((int16_t*)(xtmp),(int16_t*)ytmp,1);
   dft64((int16_t*)(xtmp+32),(int16_t*)(ytmp+16),1);
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("dft128a.m","dfta",ytmp,64,1,1);
     LOG_M("dft128b.m","dftb",ytmp+16,64,1,1);*/
   }
@@ -3149,7 +3149,7 @@ void dft128(int16_t *x,int16_t *y,int scale)
 
 
   }
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
      LOG_M("dft128out.m","dft128",y,128,1,1);
      exit(-1);
   }
@@ -3177,14 +3177,14 @@ void dft128(int16_t *x,int16_t *y,int scale)
   transpose4_ooff_simd256(x256+10,xtmp+5,8);
   transpose4_ooff_simd256(x256+12,xtmp+6,8);
   transpose4_ooff_simd256(x256+14,xtmp+7,8);
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {  
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {  
      LOG_M("dft128ina_256.m","dftina",xtmp,64,1,1);
      LOG_M("dft128inb_256.m","dftinb",xtmp+8,64,1,1);
   }
 
   dft64((int16_t*)(xtmp),(int16_t*)ytmp,1);
   dft64((int16_t*)(xtmp+8),(int16_t*)(ytmp+8),1);
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {  
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {  
     LOG_M("dft128outa_256.m","dftouta",ytmp,64,1,1);
     LOG_M("dft128outb_256.m","dftoutb",ytmp+8,64,1,1);
   }
@@ -3220,7 +3220,7 @@ void dft128(int16_t *x,int16_t *y,int scale)
     y256[15] = mulhi_int16_simd256(y256[15],ONE_OVER_SQRT2_Q15_256);
 
   }
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {  
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {  
    LOG_M("dft128.m","dft",y256,128,1,1);
    exit(-1);
   }
@@ -5424,7 +5424,7 @@ void dft1536(int16_t *input, int16_t *output, int scale)
     tmpo[1][i] = tmpo[1][i<<1];
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("dft1536out0.m","o0",tmpo[0],2048,1,1);
     LOG_M("dft1536out1.m","o1",tmpo[1],2048,1,1);
     LOG_M("dft1536out2.m","o2",tmpo[2],2048,1,1);
@@ -5588,7 +5588,7 @@ void idft6144(int16_t *input, int16_t *output,int scale)
   idft2048((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
   idft2048((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
 
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("idft6144in.m","in",input,6144,1,1);
     LOG_M("idft6144out0.m","o0",tmpo[0],2048,1,1);
     LOG_M("idft6144out1.m","o1",tmpo[1],2048,1,1);
@@ -5624,9 +5624,6 @@ void idft6144(int16_t *input, int16_t *output,int scale)
     }
   }
 
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
-   LOG_M("idft6144out.m","out",output,6144,1,1);
-  }
   _mm_empty();
   _m_empty();
 
@@ -5657,7 +5654,7 @@ void dft6144(int16_t *input, int16_t *output,int scale)
     tmpo[1][i] = tmpo[1][i<<1];
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("ft6144out0.m","o0",tmpo[0],2048,1,1);
     LOG_M("ft6144out1.m","o1",tmpo[1],2048,1,1);
     LOG_M("ft6144out2.m","o2",tmpo[2],2048,1,1);
@@ -5722,7 +5719,7 @@ void dft12288(int16_t *input, int16_t *output,int scale)
     tmpo[1][i] = tmpo[1][i<<1];
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("dft12288out0.m","o0",tmpo[0],4096,1,1);
     LOG_M("dft12288out1.m","o1",tmpo[1],4096,1,1);
     LOG_M("dft12288out2.m","o2",tmpo[2],4096,1,1);
@@ -5779,7 +5776,7 @@ void idft12288(int16_t *input, int16_t *output,int scale)
   idft4096((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),scale);
   idft4096((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),scale);
 
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("idft12288in.m","in",input,12288,1,1);
     LOG_M("idft12288out0.m","o0",tmpo[0],4096,1,1);
     LOG_M("idft12288out1.m","o1",tmpo[1],4096,1,1);
@@ -5815,7 +5812,7 @@ void idft12288(int16_t *input, int16_t *output,int scale)
   }
   _mm_empty();
   _m_empty();
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
      LOG_M("idft12288out.m","out",output,6144,1,1);
   }
 }
@@ -5946,7 +5943,7 @@ void dft24576(int16_t *input, int16_t *output,int scale)
     tmpo[1][i] = tmpo[1][i<<1];
     tmpo[2][i] = tmpo[2][i<<1];
     }*/
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("dft24576out0.m","o0",tmpo[0],8192,1,1);
     LOG_M("dft24576out1.m","o1",tmpo[1],8192,1,1);
     LOG_M("dft24576out2.m","o2",tmpo[2],8192,1,1);
@@ -5981,14 +5978,12 @@ void dft24576(int16_t *input, int16_t *output,int scale)
   }
   _mm_empty();
   _m_empty();
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
      LOG_M("out.m","out",output,24576,1,1);
   }
 }
 
-
-
-void idft24576(int16_t *input, int16_t *output)
+void idft24576(int16_t *input, int16_t *output,int scale)
 {
   int i,i2,j;
   uint32_t tmp[3][8192] __attribute__((aligned(32)));
@@ -6006,7 +6001,7 @@ void idft24576(int16_t *input, int16_t *output)
   idft8192((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
   idft8192((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
   
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("idft24576in.m","in",input,24576,1,1);
     LOG_M("idft24576out0.m","o0",tmpo[0],8192,1,1);
     LOG_M("idft24576out1.m","o1",tmpo[1],8192,1,1);
@@ -6042,7 +6037,7 @@ void idft24576(int16_t *input, int16_t *output)
   _mm_empty();
   _m_empty();
 
-  if (LOG_GENFILEFLAG(DEBUG_DFT)) {
+  if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("idft24576out.m","out",output,24576,1,1);
   }
 }

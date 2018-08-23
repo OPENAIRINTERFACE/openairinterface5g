@@ -274,7 +274,7 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
 
 
 
-  if ( LOG_GENFILEFLAG(DEBUG_LTEESTIM)){
+  if ( LOG_DUMPFLAG(DEBUG_LTEESTIM)){
     LOG_M("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size,1,1);
     LOG_M("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size,1,1);
     LOG_M("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size,1,1);
@@ -460,7 +460,7 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   LOG_I(PHY,"[UE] lte_sync_time: Sync source = %d, Peak found at pos %d, val = %d (%d dB)\n",sync_source,peak_pos,peak_val,dB_fixed(peak_val)/2);
 
 
-  if ( LOG_GENFILEFLAG(DEBUG_LTEESTIM)){
+  if ( LOG_DUMPFLAG(DEBUG_LTEESTIM)){
     static int debug_cnt;
     if (debug_cnt == 0) {
       LOG_M("sync_corr0_ue.m","synccorr0",sync_corr_ue0,2*length,1,2);

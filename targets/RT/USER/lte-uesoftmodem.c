@@ -830,21 +830,6 @@ int main( int argc, char **argv )
   //randominit (0);
   set_taus_seed (0);
 
-
-    set_log(HW,      OAILOG_DEBUG );
-    set_log(PHY,     OAILOG_INFO  );
-    set_log(MAC,     OAILOG_INFO  );
-    set_log(RLC,     OAILOG_INFO  );
-    set_log(PDCP,    OAILOG_INFO  );
-    set_log(OTG,     OAILOG_INFO  );
-    set_log(RRC,     OAILOG_INFO  );
-#if defined(ENABLE_ITTI)
-    set_log(SIM,     OAILOG_INFO );
-# if defined(ENABLE_USE_MME)
-    set_log(NAS,     OAILOG_INFO  );
-# endif
-#endif
-
   cpuf=get_cpu_freq_GHz();
 
   pthread_cond_init(&sync_cond,NULL);

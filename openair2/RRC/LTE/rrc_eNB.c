@@ -100,7 +100,6 @@
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
-//#define XER_PRINT
 
 extern RAN_CONTEXT_t RC;
 
@@ -6898,9 +6897,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             DCCH,
             sdu_sizeP);
-#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
-#endif
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+         xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
+      }
       // confirm with PDCP about the security mode for DCCH
       //rrc_pdcp_config_req (enb_mod_idP, frameP, 1,CONFIG_ACTION_SET_SECURITY_MODE, (ue_mod_idP * NB_RB_MAX) + DCCH, 0x77);
       // continue the procedure
@@ -6932,9 +6931,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             DCCH,
             sdu_sizeP);
-#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
-#endif
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+         xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
+      }
       // cancel the security mode in PDCP
 
       // followup with the remaining procedure
@@ -6974,9 +6973,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             DCCH,
             sdu_sizeP);
-#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
-#endif
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+          xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
+      }
       LOG_I(RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
       if (ue_context_p->ue_context.UE_Capability) {
         LOG_I(RRC, "freeing old UE capabilities for UE %x\n", ctxt_pP->rnti);
@@ -6993,9 +6992,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
                              ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
                              choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
                              array[0]->ueCapabilityRAT_Container.size, 0, 0);
-#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, ue_context_p->ue_context.UE_Capability);
-#endif
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+         xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, ue_context_p->ue_context.UE_Capability);
+      }
 
       if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
         LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Failed to decode UE capabilities (%zu bytes)\n",

@@ -192,7 +192,7 @@
 }
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
-#define CONFIG_HLP_LOGL          "Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n"
+#define CONFIG_HLP_LOGL          "Set the global log level, valide options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters for LOG utility                                                                                        */
