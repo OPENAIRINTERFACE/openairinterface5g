@@ -36,6 +36,7 @@
 #endif
 //#include "PHY/defs.h"
 #include "PHY/defs_nr_UE.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
 //#include "PHY/extern.h"
 //#include "SCHED/defs.h"
 //#include "SIMULATION/TOOLS/defs.h" // for taus 
@@ -3719,67 +3720,34 @@ uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 
 void dci_decoding(uint8_t DCI_LENGTH,
                   uint8_t aggregation_level,
-                  int8_t *e,
+                  t_nrPolar_paramsPtr currentPtr,
+                  double *e,
                   uint8_t *decoded_output)
 {
+	
+	int8_t decoderState=0;
 
-  uint8_t dummy_w_rx[3*(MAX_DCI_SIZE_BITS+16+64)];
-  int8_t w_rx[3*(MAX_DCI_SIZE_BITS+16+32)],d_rx[96+(3*(MAX_DCI_SIZE_BITS+16))];
-
-  uint16_t RCC;
-
-  uint16_t D=(DCI_LENGTH+16+64);
-  uint16_t coded_bits;
 #ifdef DEBUG_DCI_DECODING
   int32_t i;
 #endif
 
-  if (aggregation_level>3) {
+  if (aggregation_level>16) {
     LOG_I(PHY," dci.c: dci_decoding FATAL, illegal aggregation_level %d\n",aggregation_level);
     return;
   }
 
-  coded_bits = 72 * (1<<aggregation_level);
 
 #ifdef DEBUG_DCI_DECODING
   LOG_I(PHY," Doing DCI decoding for %d bits, DCI_LENGTH %d,coded_bits %d, e %p\n",3*(DCI_LENGTH+16),DCI_LENGTH,coded_bits,e);
 #endif
 
-  // now do decoding
-  memset((void*)dummy_w_rx,0,3*D);
-  RCC = generate_dummy_w_cc(DCI_LENGTH+16,
-                            dummy_w_rx);
-
-
-
-#ifdef DEBUG_DCI_DECODING
-  LOG_I(PHY," Doing DCI Rate Matching RCC %d, w %p\n",RCC,w);
-#endif
-
-  lte_rate_matching_cc_rx(RCC,coded_bits,w_rx,dummy_w_rx,e);
-
-  sub_block_deinterleaving_cc((uint32_t)(DCI_LENGTH+16),
-                              &d_rx[96],
-                              &w_rx[0]);
-
-#ifdef DEBUG_DCI_DECODING
-
-  for (i=0; i<16+DCI_LENGTH; i++)
-    LOG_I(PHY," DCI %d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
-
-#endif
-  memset(decoded_output,0,2+((16+DCI_LENGTH)>>3));
-
-#ifdef DEBUG_DCI_DECODING
-  printf("Before Viterbi\n");
-
-  for (i=0; i<16+DCI_LENGTH; i++)
-    printf("%d : (%d,%d,%d)\n",i,*(d_rx+96+(3*i)),*(d_rx+97+(3*i)),*(d_rx+98+(3*i)));
-
-#endif
-  //debug_printf("Doing DCI Viterbi \n");
-  phy_viterbi_lte_sse2(d_rx+96,decoded_output,16+DCI_LENGTH);
-  //debug_printf("Done DCI Viterbi \n");
+   
+  decoderState = polar_decoder(e,
+							   decoded_output,
+							   currentPtr,
+							   8,
+							   0);
+									 
 }
 
 
@@ -3954,7 +3922,8 @@ void nr_dci_decoding_procedure0(int s,                                          
                                 NR_DCI_ALLOC_t *dci_alloc,                                                       //x
                                 int16_t eNB_id,                                                               //x
                                 uint8_t current_thread_id,                                                    //x
-                                NR_DL_FRAME_PARMS *frame_parms,                                              //x
+                                NR_DL_FRAME_PARMS *frame_parms,
+                                t_nrPolar_paramsPtr *nrPolar_params,                                              //x
                                 uint8_t mi,
                                 uint16_t crc_scrambled_values[13],                                            //x
                                 uint8_t L,
@@ -3974,6 +3943,7 @@ void nr_dci_decoding_procedure0(int s,                                          
   int L2 = (1 << L);
   unsigned int Yk, nb_candidates = 0, i, m;
   unsigned int CCEmap_cand;
+  double *polar_input = malloc (sizeof(double) * 108*L);
 
   // A[p], p is the current active CORESET
   uint16_t A[3]={39827,39829,39839};
@@ -4171,7 +4141,12 @@ void nr_dci_decoding_procedure0(int s,                                          
         printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we enter function dci_decoding(sizeof_bits=%d L=%d) -----\n",sizeof_bits,L);
         printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
       #endif
-      dci_decoding(sizeof_bits, L, &pdcch_vars[eNB_id]->e_rx[CCEind * 72], &dci_decoded_output[current_thread_id][0]);
+      //&pdcch_vars[eNB_id]->e_rx[CCEind * 54]
+      
+      nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, sizeof_bits, L);
+	  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, sizeof_bits,L);
+      
+      dci_decoding(sizeof_bits, L, currentPtr, polar_input, &dci_decoded_output[current_thread_id][0]);
       /*
       for (i=0;i<3+(sizeof_bits>>3);i++)
       printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
@@ -5124,6 +5099,7 @@ uint8_t nr_dci_decoding_procedure(int s,
 
   NR_UE_PDCCH **pdcch_vars = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]];
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  t_nrPolar_paramsPtr *nrPolar_params = &ue->nrPolar_params;
   uint8_t mi;// = get_mi(&ue->frame_parms, nr_tti_rx);
   // we need to initialize this values as crc is going to be compared with them
   uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
@@ -5223,7 +5199,7 @@ uint8_t nr_dci_decoding_procedure(int s,
                 css_dci_format,(1<<2));
       #endif
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms,nrPolar_params, mi,
                 crc_scrambled_values, 2,
                 cformat0_0_and_1_0, uformat0_0_and_1_0,
                 format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
@@ -5241,7 +5217,7 @@ uint8_t nr_dci_decoding_procedure(int s,
                 css_dci_format,(1<<3));
       #endif
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, nrPolar_params,mi,
                 crc_scrambled_values, 3,
                 cformat0_0_and_1_0, uformat0_0_and_1_0,
                 format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
@@ -5259,7 +5235,7 @@ uint8_t nr_dci_decoding_procedure(int s,
                 css_dci_format,(1<<4));
       #endif
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms,nrPolar_params, mi,
                 crc_scrambled_values, 4,
                 cformat0_0_and_1_0, uformat0_0_and_1_0,
                 format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
@@ -5285,7 +5261,7 @@ uint8_t nr_dci_decoding_procedure(int s,
       #endif
       // for aggregation level 1. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, nrPolar_params,mi,
                 crc_scrambled_values, 0,
                 cformat2_0, uformat0_0_and_1_0,
                 format_2_0_size_bits, format_2_0_size_bytes, &dci_cnt,
@@ -5298,7 +5274,7 @@ uint8_t nr_dci_decoding_procedure(int s,
       }
       // for aggregation level 2. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, nrPolar_params,mi,
                 crc_scrambled_values, 1,
                 cformat2_0, uformat0_0_and_1_0,
                 format_2_0_size_bits, format_2_0_size_bytes, &dci_cnt,
@@ -5311,7 +5287,7 @@ uint8_t nr_dci_decoding_procedure(int s,
       }
       // for aggregation level 4. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms,nrPolar_params, mi,
                 crc_scrambled_values, 2,
                 cformat2_0, uformat0_0_and_1_0,
                 format_2_0_size_bits, format_2_0_size_bytes, &dci_cnt,
@@ -5324,7 +5300,7 @@ uint8_t nr_dci_decoding_procedure(int s,
       }
       // for aggregation level 8. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms,nrPolar_params, mi,
                 crc_scrambled_values, 3,
                 cformat2_0, uformat0_0_and_1_0,
                 format_2_0_size_bits, format_2_0_size_bytes, &dci_cnt,
@@ -5337,7 +5313,7 @@ uint8_t nr_dci_decoding_procedure(int s,
       }
       // for aggregation level 16. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, nrPolar_params,mi,
                 crc_scrambled_values, 4,
                 cformat2_0, uformat0_0_and_1_0,
                 format_2_0_size_bits, format_2_0_size_bytes, &dci_cnt,
@@ -5403,7 +5379,7 @@ uint8_t nr_dci_decoding_procedure(int s,
 /*
  * To be removed until here
  */
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms,nrPolar_params, mi,
                 crc_scrambled_values, 0,
                 cformat0_0_and_1_0, uformat0_0_and_1_0,
                 format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
@@ -5431,7 +5407,7 @@ uint8_t nr_dci_decoding_procedure(int s,
                 uss_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms,nrPolar_params, mi,
                 crc_scrambled_values, 1,
                 cformat0_0_and_1_0, uformat0_0_and_1_0,
                 format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
@@ -5448,7 +5424,7 @@ uint8_t nr_dci_decoding_procedure(int s,
                 uss_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms,nrPolar_params, mi,
                 crc_scrambled_values, 2,
                 cformat0_0_and_1_0, uformat0_0_and_1_0,
                 format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
@@ -5465,7 +5441,7 @@ uint8_t nr_dci_decoding_procedure(int s,
                 uss_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, nrPolar_params,mi,
                 crc_scrambled_values, 3,
                 cformat0_0_and_1_0, uformat0_0_and_1_0,
                 format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
@@ -5482,7 +5458,7 @@ uint8_t nr_dci_decoding_procedure(int s,
                 uss_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
       old_dci_cnt = dci_cnt;
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
+      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, nrPolar_params,mi,
                 crc_scrambled_values, 4,
                 cformat0_0_and_1_0, uformat0_0_and_1_0,
                 format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,

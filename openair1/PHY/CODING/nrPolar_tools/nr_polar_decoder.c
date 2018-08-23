@@ -40,7 +40,7 @@
 
 int8_t polar_decoder(
 		double *input,
-		uint32_t *out,
+		uint8_t *out,
 		t_nrPolar_paramsPtr polarParams,
 		uint8_t listSize,
 		uint8_t pathMetricAppr)
@@ -274,7 +274,7 @@ int8_t polar_decoder(
 	/*
 	 * Return bits.
 	 */
-	nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
+	//nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
 	return(0);
 }
 

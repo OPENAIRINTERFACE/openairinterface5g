@@ -933,8 +933,9 @@ void nr_lte_ue_transport(PHY_VARS_UE *ue,int abstraction_flag) {
 
 }*/
 
-void phy_init_nr_top(NR_DL_FRAME_PARMS *frame_parms)
+void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 {
+	NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   crcTableInit();
 
@@ -960,7 +961,11 @@ void phy_init_nr_top(NR_DL_FRAME_PARMS *frame_parms)
   generate_ul_reference_signal_sequences(SHRT_MAX);
 
   // Polar encoder init for PBCH
-  nr_polar_init(&frame_parms->pbch_polar_params, 1);
+  //nr_polar_init(&frame_parms->pbch_polar_params, 1);
+  nr_polar_init(&ue->nrPolar_params,
+    		  	  	NR_POLAR_PBCH_MESSAGE_TYPE,
+					NR_POLAR_PBCH_PAYLOAD_BITS,
+					NR_POLAR_PBCH_AGGREGATION_LEVEL);
 
   //lte_sync_time_init(frame_parms);
 
