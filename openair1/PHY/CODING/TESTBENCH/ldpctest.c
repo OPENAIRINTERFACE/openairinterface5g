@@ -102,9 +102,10 @@ int test_ldpc(short No_iteration,
   //Table of possible lifting sizes
   short lift_size[51]= {2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,30,32,36,40,44,48,52,56,60,64,72,80,88,96,104,112,120,128,144,160,176,192,208,224,240,256,288,320,352,384};
   int n_segments=8;
+  int N; //length encoded block
 
   t_nrLDPC_dec_params decParams;
-  //int n_iter;
+  int n_iter;
 
   *errors=0;
   *crc_misses=0;
@@ -176,7 +177,12 @@ int test_ldpc(short No_iteration,
     }
   }
 
-  printf("ldpc_test: block_length %d, BG %d, Zc %d, Kb %d\n",block_length,BG, Zc, Kb);
+  if (BG==1)
+    N=66*Zc;
+  else if (BG==2)
+    N=50*Zc;
+
+  printf("ldpc_test: block_length %d, BG %d, Zc %d, Kb %d, N %d\n",block_length,BG, Zc, Kb, N);
   //no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*(1/((float)nom_rate/(float)denom_rate)))/Zc;
   //  printf("puncture:%d\n",no_punctured_columns);
   //removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length/((float)nom_rate/(float)denom_rate));
@@ -227,8 +233,13 @@ int test_ldpc(short No_iteration,
           modulated_input[i]=-1/sqrt(2);
 
         channel_output[i] = modulated_input[i] + gaussdouble(0.0,1.0) * 1/sqrt(2*SNR);
-        channel_output_fixed[i] = (char) ((channel_output[i]*128)<0?(channel_output[i]*128-0.5):(channel_output[i]*128+0.5)); //fixed point 9-7
-	//printf("llr[%d]=%d\n",i,channel_output_fixed[i]);
+	if (channel_output[i]>1.0)
+	  channel_output_fixed[i]=127;
+	else if (channel_output[i]<-1.0)
+	  channel_output_fixed[i]=-128;
+	else
+	  channel_output_fixed[i] = (char) ((channel_output[i]*128)<0?(channel_output[i]*128-0.5):(channel_output[i]*128+0.5)); //fixed point 9-7
+	//printf("llr[%d]=%d (%f)\n",i,channel_output_fixed[i],channel_output[i]);
       }
 
       /*
@@ -247,7 +258,7 @@ int test_ldpc(short No_iteration,
       // decoder supports BG2, Z=128 & 256
       //estimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
 
-      nrLDPC_decoder(&decParams, (int8_t*) channel_output_fixed, (int8_t*) estimated_output, NULL);
+      n_iter = nrLDPC_decoder(&decParams, (int8_t*) channel_output_fixed, (int8_t*) estimated_output, NULL);
 
       //for (i=(Kb+nrows) * Zc-5;i<(Kb+nrows) * Zc;i++)
       //  printf("esimated_output[%d]=%d\n",i,esimated_output[i]);
