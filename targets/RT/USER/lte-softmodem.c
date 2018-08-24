@@ -944,7 +944,7 @@ int main( int argc, char **argv )
 
   printf("Reading in command-line options\n");
 
-  get_options (); 
+  get_options ();
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
       fprintf(stderr,"Getting configuration failed\n");
       exit(-1);
@@ -1133,13 +1133,6 @@ int main( int argc, char **argv )
   
   rt_sleep_ns(10*100000000ULL);
 
-  if (nfapi_mode) {
-
-    printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
-    pthread_cond_init(&sync_cond,NULL);
-    pthread_mutex_init(&sync_mutex, NULL);
-  }
-  
   if (nfapi_mode)
   {
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");

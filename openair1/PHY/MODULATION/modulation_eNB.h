@@ -46,15 +46,18 @@ after beamforming
 antenna element and each carrier
     @param slot Slot number
     @param symbol Symbol index on which to act
-    @param aa physical antenna index*/
+    @param aa physical antenna index
+    @param p logical antenna index
+    @param l1_id L1 instance id*/
 int beam_precoding(int32_t **txdataF,
 	           int32_t **txdataF_BF,
-		   int submframe,
+		   int subframe,
                    LTE_DL_FRAME_PARMS *frame_parms,
-	           int32_t ***beam_weights,
+                   int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15],
                    int symbol,
 		   int aa,
-		   int p);
+		   int p,
+                   int l1_id);
 				   
 /** \brief This function performs beamforming precoding for common
  * data for only one eNB, fdragon
@@ -69,12 +72,11 @@ antenna element and each carrier
     @param aa physical antenna index*/
 int beam_precoding_one_eNB(int32_t **txdataF,
                            int32_t **txdataF_BF,
-						   int32_t ***beam_weights,
-						   int subframe,
-						   int nb_antenna_ports,
-						   int nb_tx, // total physical antenna
-						   LTE_DL_FRAME_PARMS *frame_parms
-						   );
+                           int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15],
+			   int subframe,
+			   int nb_antenna_ports,
+			   int nb_tx, // total physical antenna
+			   LTE_DL_FRAME_PARMS *frame_parms);
 
 int f_read(char *calibF_fname, int nb_ant, int nb_freq, int32_t **tdd_calib_coeffs);
 

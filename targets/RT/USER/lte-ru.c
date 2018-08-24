@@ -122,7 +122,6 @@ extern int numerology;
 extern int fepw;
 extern int single_thread_flag;
 
-
 extern void  phy_init_RU(RU_t*);
 extern void  phy_free_RU(RU_t*);
 
@@ -156,8 +155,10 @@ static inline void fh_if5_south_out(RU_t *ru) {
 static inline void fh_if4p5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.subframe_tx);
-  if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) 
+  if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) {
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
+    ru->south_out_cnt++;
+  }
 }
 
 /*************************************************************/
@@ -1194,7 +1195,6 @@ void wakeup_eNBs(RU_t *ru) {
   }
   else { 
 
-    LOG_I(PHY,"ru->num_eNB:%d\n", ru->num_eNB);
 
     for (i=0;i<ru->num_eNB;i++)
 
@@ -1340,7 +1340,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   cfg->num_rb_dl=fp->N_RB_DL;
   cfg->tx_num_channels=ru->nb_tx;
   cfg->rx_num_channels=ru->nb_rx;
-  
+
   for (i=0; i<ru->nb_tx; i++) {
     
     cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
@@ -1440,6 +1440,7 @@ static void* ru_stats_thread(void* param) {
           print_meas(&ru->compression,"compression",NULL,NULL);
           print_meas(&ru->transport,"transport",NULL,NULL);
        }
+       LOG_I(PHY,"ru->south_out_cnt = %d\n",ru->south_out_cnt);
      }
   }
   return(NULL);
@@ -1474,10 +1475,10 @@ static void* ru_thread_tx( void* param ) {
     if (oai_exit) break;   
 
 
-	LOG_I(PHY,"ru_thread_tx: Waiting for TX processing\n");
+    LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
 	// wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
-    LOG_I(PHY,"ru_thread_tx: Woken from condition\n");
+    LOG_D(PHY,"ru_thread_tx: Woken from condition\n");
     if (oai_exit) break;
   	       
     // do TX front-end processing if needed (precoding and/or IDFTs)
@@ -2578,6 +2579,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
        ru->generate_dmrs_sync=send_dmrssync;
     }
     ru->cmd	     = EMPTY;
+    ru->south_out_cnt= 0;
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
     ru->openair0_cfg.clock_source  = clock_source;
