@@ -307,10 +307,12 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
 				 0) < 0) {
     perror("ETHERNET read");
     read_cnt++;
+/*
     if (read_cnt == 2) {
       ru->cmd = STOP_RU;
       return;
-    }
+    }*/
+    LOG_E(PHY,"if4p5 read_cnt %d\n",read_cnt);
   }
   if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0+ru->idx, 0 );
   if (eth->flags == ETH_RAW_IF4p5_MODE) {

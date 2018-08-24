@@ -2208,10 +2208,11 @@ void init_RU_proc(RU_t *ru) {
     
     if ((ru->if_timing == synch_to_other) ||
 	(ru->function == NGFI_RRU_IF5) ||
-	(ru->function == NGFI_RRU_IF4p5)) 
-	{
-		pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, ru_thread_asynch_rxtx, (void*)ru );
-	}
+	(ru->function == NGFI_RRU_IF4p5)) {
+        LOG_I(PHY,"Starting ru_thread_asynch_rxtx, ru->is_slave %d, ru->generate_dmrs_sync %d\n",
+              ru->is_slave,ru->generate_dmrs_sync);
+	pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, ru_thread_asynch_rxtx, (void*)ru );
+    }
     
     
   }
@@ -2243,7 +2244,7 @@ void init_RU_proc(RU_t *ru) {
 
   if (ru->function == eNodeB_3GPP) {
     usleep(10000);
-    LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d) is ready in state %s\n",ru->idx,ru->is_slave,ru_states[ru->state]);
+    LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d,send_dmrs %d) is ready in state %s\n",ru->idx,ru->is_slave,ru->generate_dmrs_sync,ru_states[ru->state]);
     pthread_mutex_lock(&RC.ru_mutex);
     RC.ru_mask &= ~(1<<ru->idx);
     pthread_cond_signal(&RC.ru_cond);
@@ -2567,7 +2568,15 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     ru->rf_config_file = rf_config_file;
     ru->idx          = ru_id;              
     ru->ts_offset    = 0;
-    ru->in_synch     = (ru->is_slave == 1) ? 0 : 1;
+    if (ru->is_slave == 1) {
+       ru->in_synch    = 0;
+       ru->dmrssync   = 0;
+    }
+    else {
+       ru->in_synch    = 1;
+       ru->dmrssync    = 0;
+       ru->generate_dmrs_sync=send_dmrssync;
+    }
     ru->cmd	     = EMPTY;
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
@@ -2598,7 +2607,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
 
     set_function_spec_param(ru);
-    LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
+    LOG_I(PHY,"Starting ru_thread %d, is_slave %d, send_dmrs %d\n",ru_id,ru->is_slave,ru->dmrssync);
 
     init_RU_proc(ru);
 

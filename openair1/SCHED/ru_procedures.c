@@ -97,9 +97,10 @@ void feptx0(RU_t *ru,int slot) {
 					                      fp->nb_prefix_samples,
 					                      CYCLIC_PREFIX);
     else {
-      AssertFatal(ru->generate_dmrs_sync==1 && (fp->frame_type != TDD || ru->is_slave == 1),
-		  "ru->generate_dmrs_sync should not be set, frame_type %d, is_slave %d\n",
-		  fp->frame_type,ru->is_slave);
+      AssertFatal(ru->generate_dmrs_sync == 0 ||
+                  ru->generate_dmrs_sync==1 && (fp->frame_type != TDD || ru->is_slave == 1),
+		  "ru->generate_dmrs_sync should not be set (%d), frame_type %s, is_slave %d\n",
+		  ru->generate_dmrs_sync,(fp->frame_type==1)?"TDD":"FDD",ru->is_slave);
 
       if (ru->generate_dmrs_sync == 1 && slot == 0 && subframe == 1 && aa==0) {
 	generate_drs_pusch((PHY_VARS_UE *)NULL,
