@@ -308,17 +308,25 @@ class SSHConnection():
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
 				doLoop = False
+				# Checking if process is still alive
+				self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never lte-softmodem', '\$', 5)
+				result = re.search('lte-softmodem', str(self.ssh.before))
+				if result is None:
+					logging.debug('\u001B[1;37;41m eNB process is already down \u001B[0m')
+					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', 0)
+					self.CreateHtmlFooter()
+					sys.exit(1)
 				logging.debug('\u001B[1;30;43m eNB logging system did not show got sync! See with attach later \u001B[0m')
-				self.CreateHtmlTestRow(config_file, 'eNB not showing got sync!', 0)
+				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'eNB not showing got sync!', 0)
 				# Not getting got sync is bypassed for the moment
 				#sys.exit(1)
-			self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | grep -i sync', '\$', 10)
+			self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | grep --color=never -i sync', '\$', 10)
 			result = re.search('got sync', str(self.ssh.before))
 			if result is None:
 				time.sleep(6)
 			else:
 				doLoop = False
-				self.CreateHtmlTestRow(config_file, 'OK', 0)
+				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', 0)
 				logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 
 		self.close()
@@ -650,6 +658,7 @@ class SSHConnection():
 
 		if (status_queue.empty()):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', len(self.UEDevices))
+			self.CreateHtmlFooter()
 			sys.exit(1)
 		else:
 			ping_status = True
@@ -695,7 +704,7 @@ class SSHConnection():
 			else:
 				iperf_bandwidth_new = residualBW
 		iperf_bandwidth_str = '-b ' + iperf_bandwidth
-		iperf_bandwidth_str_new = '-b ' + str(iperf_bandwidth_new)
+		iperf_bandwidth_str_new = '-b ' + ('%.2f' % iperf_bandwidth_new)
 		result = re.sub(iperf_bandwidth_str, iperf_bandwidth_str_new, str(self.iperf_args))
 		if result is None:
 			logging.debug('\u001B[1;37;41m Calculate Iperf bandwidth Failed! \u001B[0m')
@@ -1074,6 +1083,7 @@ class SSHConnection():
 
 		if (status_queue.empty()):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', len(self.UEDevices))
+			self.CreateHtmlFooter()
 			sys.exit(1)
 		else:
 			iperf_status = True
