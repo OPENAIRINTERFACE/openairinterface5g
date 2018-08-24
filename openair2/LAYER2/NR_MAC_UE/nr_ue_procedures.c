@@ -475,9 +475,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
             	search_space_mask = search_space_mask | type0_pdcch;
                 mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.duration;
             }
-            //if((mac->type0_pdcch_ss_sfn_c == SFN_C_EQ_SFN_SSB) && ( get_ssb_frame() )){
-            //	search_space_mask = search_space_mask | type0_pdcch;
-            //}
         }
         if(mac->type0_pdcch_ss_mux_pattern == 2){
             //	38.213 Table 13-13, 13-14
@@ -495,20 +492,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
         }
     }
 
-#if 0
-		uint16_t rnti;
-
-        fapi_nr_coreset_t coreset;
-        uint32_t duration;
-        uint8_t aggregation_level;
-        uint8_t number_of_candidates;
-        uint16_t monitoring_symbols_within_slot;
-        //  DCI foramt-specific
-        uint8_t format_2_0_number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16
-        uint8_t format_2_3_monitorying_periodicity;
-        uint8_t format_2_3_number_of_candidates;
-#endif
     fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+    //  Type0 PDCCH search space
     if((search_space_mask & type0_pdcch) || ( mac->type0_pdcch_consecutive_slots != 0 )){
         mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_consecutive_slots - 1;
 
@@ -582,7 +567,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
             }
 
             //  UL_CONFIG_REQ
-            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_PUSCH;
+            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
             ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
             fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
             ulsch_config_pdu->number_rbs = l_RB;
@@ -590,6 +575,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
             ulsch_config_pdu->number_symbols = sliv_L;
             ulsch_config_pdu->start_symbol = sliv_S;
             ulsch_config_pdu->mcs = dci->mcs;
+            
             //ulsch0->harq_processes[dci->harq_process_number]->first_rb = start_RB;
             //ulsch0->harq_processes[dci->harq_process_number]->nb_rb    = l_RB;
             //ulsch0->harq_processes[dci->harq_process_number]->mcs = dci->mcs;
@@ -637,14 +623,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
             dlsch_config_pdu->number_symbols = sliv_L;
             dlsch_config_pdu->start_symbol = sliv_S;
             dlsch_config_pdu->mcs = dci->mcs;
-
-
-            //pdlsch0_harq->nb_rb = l_RB;
-            //pdlsch0->current_harq_pid = dci->harq_process_number;
-            //pdlsch0->active           = 1;
-            //pdlsch0->rnti             = rnti;
-            //pdlsch0_harq->mcs = nr_pdci_info_extracted->mcs;
-            //pdlsch0_harq->DCINdi = nr_pdci_info_extracted->ndi;
+            dlsch_config_pdu->ndi = dci->ndi;
+            dlsch_config_pdu->harq_pid = dci->harq_process_number;
 
             dl_config->number_pdus = dl_config->number_pdus + 1;
             break;

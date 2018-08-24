@@ -674,6 +674,12 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                         (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
             }
 #endif
+
+            //clean previous FAPI MESSAGE
+            UE->rx_ind.number_pdus = 0;
+            UE->dci_ind.number_of_dcis = 0;
+            //clean previous FAPI MESSAGE
+
 #ifdef UE_SLOT_PARALLELISATION
             phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else

@@ -91,8 +91,6 @@ typedef struct {
 	fapi_nr_tx_request_t tx_request;
 	fapi_nr_ul_config_request_t ul_config_request;
 	fapi_nr_dl_config_request_t dl_config_request;
-	fapi_nr_dci_indication_t dci_indication;
-	fapi_nr_rx_indication_t rx_indication;
 
 
 
