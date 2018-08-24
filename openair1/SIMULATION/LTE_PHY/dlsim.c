@@ -523,7 +523,7 @@ int main(int argc, char **argv)
   int c;
   int k,i,j,aa;
   int re;
-
+  int loglvl=OAILOG_DEBUG;
 
   int s,Kr,Kr_bytes;
 
@@ -1001,7 +1001,7 @@ int main(int argc, char **argv)
       break;
 
     case 'L':
-      set_glog(atoi(optarg));
+      loglvl = atoi(optarg);
       break;
 
     case 'h':
@@ -1049,7 +1049,7 @@ int main(int argc, char **argv)
 	      "cannot load configuration module, exiting\n");
   logInit();
   // enable these lines if you need debug info
-  set_glog(LOG_DEBUG);
+  set_glog(loglvl);
   // moreover you need to init itti with the following line
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
