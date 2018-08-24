@@ -514,7 +514,7 @@ void *l2l1_task(void *arg) {
 #endif
 
 
-static void get_options(void) {
+static void get_options(unsigned int *start_msc) {
  
   int tddflag, nonbiotflag;
  
@@ -548,10 +548,8 @@ static void get_options(void) {
       set_glog(glog_level);
   }
   if (start_telnetsrv) {
-     load_module_shlib("telnetsrv",NULL,0);
+     load_module_shlib("telnetsrv",NULL,0,NULL);
   }
-
-
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
       memset((void*)&RC,0,sizeof(RC));
@@ -925,6 +923,7 @@ int main( int argc, char **argv )
 #if defined (XFORMS)
   int ret;
 #endif
+  unsigned int start_msc=0;
 
   if ( load_configmodule(argc,argv) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
@@ -942,7 +941,7 @@ int main( int argc, char **argv )
 
   printf("Reading in command-line options\n");
 
-  get_options ();
+  get_options (&start_msc);
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
       fprintf(stderr,"Getting configuration failed\n");
       exit(-1);
@@ -968,9 +967,13 @@ int main( int argc, char **argv )
 #if defined(ENABLE_ITTI)
 
   printf("ITTI init, useMME: %i\n" ,EPC_MODE_ENABLED);
+
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI
+  if (start_msc) {
+     load_module_shlib("msc",NULL,0,&msc_interface);
+  }
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
 

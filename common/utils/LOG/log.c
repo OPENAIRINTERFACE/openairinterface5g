@@ -455,13 +455,14 @@ int rt =   pthread_getname_np(pthread_self(), threadname,bufsize) ;
 
 int inline log_header(char *log_buffer, int buffsize, int comp, int level,const char *format) {
   char threadname[PR_SET_NAME];
-return  snprintf(log_buffer, buffsize , "%s%s[%s]%c %s %s",
+return  snprintf(log_buffer, buffsize , "%s%s[%s]%c %s %s%s",
   	   log_level_highlight_end[level],
   	   ( (g_log->flag & FLAG_NOCOLOR)?"":log_level_highlight_start[level]),
   	   g_log->log_component[comp].name,
   	   ( (g_log->flag & FLAG_LEVEL)?g_log->level2string[level]:' '),
   	   ( (g_log->flag & FLAG_THREAD)?log_getthreadname(threadname,PR_SET_NAME+1):""),
-  	   format);
+  	   format,
+           log_level_highlight_end[level]);
 }
 
 void logRecord_mt(const char *file, const char *func, int line, int comp, int level, const char* format, ... )

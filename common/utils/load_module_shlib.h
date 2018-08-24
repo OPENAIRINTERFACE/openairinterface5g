@@ -59,7 +59,8 @@ typedef struct {
 
 /* function type of functions which may be implemented by a module */
 /* 1: init function, called when loading, if found in the shared lib */
-typedef int(*initfunc_t)(void);
+typedef int(*initfunc_t)(void *);
+
 /* 2: version checking function, called when loading, if it returns -1, trigger main exec abort  */
 typedef int(*checkverfunc_t)(char * mainexec_version, char ** shlib_version);
 /* 3: get function array function, called when loading when a module doesn't provide */
@@ -83,7 +84,7 @@ loader_data_t loader_data;
 
 /*-------------------------------------------------------------------------------------------------------------*/
 #else  /* LOAD_MODULE_SHLIB_MAIN */
-extern int load_module_shlib(char *modname, loader_shlibfunc_t *farray, int numf);
+extern int load_module_shlib(char *modname, loader_shlibfunc_t *farray, int numf, void *initfunc_arg);
 extern void * get_shlibmodule_fptr(char *modname, char *fname);
 extern loader_data_t loader_data;
 #endif /* LOAD_MODULE_SHLIB_MAIN */
