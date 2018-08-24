@@ -44,6 +44,8 @@
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
 #   include "gtpv1u_eNB_task.h"
+# else
+#    define EPC_MODE_ENABLED 0
 # endif
 
 #include "openair1/PHY/INIT/phy_init.h"
@@ -182,15 +184,15 @@ void *eNB_app_task(void *args_p)
     configure_rrc(enb_id);
   }
 
-  if (EPC_MODE_ENABLED) {
+# if defined(ENABLE_USE_MME)
   /* Try to register each eNB */
     registered_enb = 0;
     register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
-  } else {
+#else
   /* Start L2L1 task */
     msg_p = itti_alloc_new_message(TASK_ENB_APP, INITIALIZE_MESSAGE);
     itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
-  }
+#endif
 
   do {
     // Wait for a message
@@ -209,7 +211,7 @@ void *eNB_app_task(void *args_p)
       break;
 
     case S1AP_REGISTER_ENB_CNF:
-      if (EPC_MODE_ENABLED) {
+# if defined(ENABLE_USE_MME)
   	LOG_I(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
   	      S1AP_REGISTER_ENB_CNF(msg_p).nb_mme);
 
@@ -246,7 +248,7 @@ void *eNB_app_task(void *args_p)
   	    }
   	  }
   	}
-      } /*if (EPC_MODE_ENABLED) */
+#endif
       break;
 
     case S1AP_DEREGISTERED_ENB_IND:
@@ -259,7 +261,7 @@ void *eNB_app_task(void *args_p)
       break;
 
     case TIMER_HAS_EXPIRED:
-      if (EPC_MODE_ENABLED) {
+# if defined(ENABLE_USE_MME)
   	LOG_I(ENB_APP, " Received %s: timer_id %ld\n", ITTI_MSG_NAME (msg_p), TIMER_HAS_EXPIRED(msg_p).timer_id);
 
   	if (TIMER_HAS_EXPIRED (msg_p).timer_id == enb_register_retry_timer_id) {
@@ -267,7 +269,7 @@ void *eNB_app_task(void *args_p)
   	  registered_enb = 0;
   	  register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
   	}
-      } /*if (EPC_MODE_ENABLED) */ 
+#endif
       break;
 
 

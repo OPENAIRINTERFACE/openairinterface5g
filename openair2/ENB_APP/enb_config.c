@@ -40,7 +40,9 @@
 # if defined(ENABLE_USE_MME) 
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
-# endif
+# else
+#  define EPC_MODE_ENABLED 0
+# endif 
 #endif
 #include "sctp_default_values.h"
 #include "SystemInformationBlockType2.h"
@@ -2350,7 +2352,9 @@ void RCConfig(void) {
   printf("Getting ENBSParams\n");
  
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL); 
+# if defined(ENABLE_USE_MME)
   EPC_MODE_ENABLED = ((*ENBSParams[ENB_NOS1_IDX].uptr) == 0);
+#endif
   RC.nb_inst = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
 
   if (RC.nb_inst > 0) {

@@ -108,6 +108,10 @@ unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
 #endif //XFORMS
 
+#ifndef ENABLE_USE_MME
+#define EPC_MODE_ENABLED 0
+#endif
+
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex

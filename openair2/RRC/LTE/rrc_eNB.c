@@ -85,6 +85,8 @@
 #   else
 #      include "../../S1AP/s1ap_eNB.h"
 #   endif
+#else
+# define EPC_MODE_ENABLED 0
 #endif
 
 #include "pdcp.h"
@@ -1415,7 +1417,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   ue_context_pP->ue_context.Srb1.Active = 1;
   //ue_context_pP->ue_context.Srb2.Srb_info.Srb_id = 2;
 
-  if (EPC_MODE_ENABLED) {
+#if defined(ENABLE_USE_MME) 
     hashtable_rc_t    h_rc;
     int               j;
     rrc_ue_s1ap_ids_t* rrc_ue_s1ap_ids_p = NULL;
@@ -1459,18 +1461,18 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
               ctxt_pP->instance,
               &create_tunnel_req,
               reestablish_rnti);
-  } /* EPC_MODE_ENABLED */
+#endif
   /* Update RNTI in ue_context */
   ue_context_pP->ue_id_rnti                    = ctxt_pP->rnti; // here ue_id_rnti is just a key, may be something else
   ue_context_pP->ue_context.rnti               = ctxt_pP->rnti;
-  if(EPC_MODE_ENABLED) {
+#if defined(ENABLE_USE_MME)
     uint8_t send_security_mode_command = FALSE;
     rrc_pdcp_config_security(
         ctxt_pP,
         ue_context_pP,
         send_security_mode_command);
     LOG_D(RRC, "set security successfully \n");
-  }
+#endif
   // Measurement ID list
   MeasId_list = CALLOC(1, sizeof(*MeasId_list));
   memset((void *)MeasId_list, 0, sizeof(*MeasId_list));
@@ -6662,7 +6664,7 @@ rrc_eNB_decode_dcch(
 	}
       }
 #if defined(ENABLE_ITTI)
-      if (EPC_MODE_ENABLED == 1) {
+#if defined(ENABLE_USE_MME)
 	if (dedicated_DRB == 1){
 //	  rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(ctxt_pP,
 //					     ue_context_p,
@@ -6727,7 +6729,7 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
                }
              }
          }
-      }    
+#endif   
 #else  // establish a dedicated bearer 
       if (dedicated_DRB == 0 ) {
 	//	ue_context_p->ue_context.e_rab[0].status = E_RAB_STATUS_ESTABLISHED;

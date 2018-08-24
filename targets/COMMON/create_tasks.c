@@ -31,6 +31,8 @@
 #     include "nas_ue_task.h"
 #     include "udp_eNB_task.h"
 #     include "gtpv1u_eNB_task.h"
+#   else
+#     define EPC_MODE_ENABLED 0
 #   endif
 #   if ENABLE_RAL
 #     include "lteRALue.h"
@@ -59,7 +61,7 @@ int create_tasks(uint32_t enb_nb)
       return -1;
     }
   }
-
+# if defined(ENABLE_USE_MME)
   if (EPC_MODE_ENABLED) {
       if (enb_nb > 0) {
         if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
@@ -85,7 +87,7 @@ int create_tasks(uint32_t enb_nb)
       }
 
   } /* if (EPC_MODE_ENABLED) */
-
+#endif
     if (enb_nb > 0) {
       LOG_I(RRC,"Creating RRC eNB Task\n");
 
