@@ -285,8 +285,8 @@ int allocate_REs_in_RB_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
          re<6;
          x0p+=2) {
 
-      qpsk_table_offset_re+=x0p[0];
-      qpsk_table_offset_im+=x0p[1];
+      qpsk_table_offset_re=x0p[0];
+      qpsk_table_offset_im=x0p[1];
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qpsk_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
       tti_offset+=P1_SHIFT[re+1];
@@ -297,8 +297,8 @@ int allocate_REs_in_RB_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
          re<12;
          x0p+=2) {
 
-      qpsk_table_offset_re+=x0p[0];
-      qpsk_table_offset_im+=x0p[1];
+      qpsk_table_offset_re=x0p[0];
+      qpsk_table_offset_im=x0p[1];
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qpsk_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
       tti_offset+=P1_SHIFT[re+1];
