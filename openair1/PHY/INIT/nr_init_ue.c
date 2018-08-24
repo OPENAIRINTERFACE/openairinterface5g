@@ -658,7 +658,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   
-  //phy_init_nr_top(&ue->frame_parms);
+  phy_init_nr_top(ue);
   //nr_init_frame_parms_ue(&ue->frame_parms);
 
   // many memory allocation sizes are hard coded

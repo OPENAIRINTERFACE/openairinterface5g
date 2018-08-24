@@ -1001,7 +1001,7 @@ int main( int argc, char **argv ) {
     nr_init_frame_parms_ue(frame_parms[CC_id]);
     printf("after init frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
     //   phy_init_top(frame_parms[CC_id]);
-    phy_init_nr_top(frame_parms[CC_id]);
+    //phy_init_nr_top(frame_parms[CC_id]);
   }
 
 

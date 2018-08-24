@@ -35,6 +35,7 @@
 //#define DEBUG_PDCCH_DMRS
 //#define DEBUG_DCI
 //#define DEBUG_POLAR_PARAMS
+#define PDCCH_TEST_POLAR_TEMP_FIX
 
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
@@ -205,15 +206,21 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   // CRC attachment + Scrambling + Channel coding + Rate matching
   uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
   uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.rnti : 0;
+#ifdef PDCCH_TEST_POLAR_TEMP_FIX
+  t_nrPolar_paramsPtr currentPtr = NULL;//, polarParams = NULL;
+  nr_polar_init(&currentPtr, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
+//  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
+#else 
   nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
   t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
+#endif
   polar_encoder_dci(dci_alloc.dci_pdu, encoder_output, currentPtr, n_RNTI);
 
 #ifdef DEBUG_POLAR_PARAMS
-  /*printf("DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+  printf("DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
     		  dci_alloc.dci_pdu[0], dci_alloc.dci_pdu[1], dci_alloc.dci_pdu[2], dci_alloc.dci_pdu[3]);
   printf("Encoded Payload: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-		  encoder_output[0], encoder_output[1], encoder_output[2], encoder_output[3]);*/
+		  encoder_output[0], encoder_output[1], encoder_output[2], encoder_output[3]);
 #endif
 
     // QPSK modulation
