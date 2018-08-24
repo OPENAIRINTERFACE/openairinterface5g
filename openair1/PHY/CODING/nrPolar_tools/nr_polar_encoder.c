@@ -30,7 +30,7 @@
  * \warning
 */
 
-#define DEBUG_POLAR_ENCODER_DCI
+//#define DEBUG_POLAR_ENCODER_DCI
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
