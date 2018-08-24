@@ -56,24 +56,25 @@ int beam_precoding(int32_t **txdataF,
 	           int32_t **txdataF_BF,
 		   int subframe,
                    LTE_DL_FRAME_PARMS *frame_parms,
-	           int32_t ***beam_weights,
+                   int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15],
                    int symbol,
 		   int aa,
-		   int p)
+		   int p,
+                   int l1_id)
 {
-  LOG_D(PHY,"Starting precoding for symbol %d, physical antenna %d, logical port %d\n",symbol,aa,p);
   int rb_offset_neg0 = frame_parms->ofdm_symbol_size - (6*frame_parms->N_RB_DL);
   int rb_offset_neg  = (subframe*frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti) + rb_offset_neg0;
   int rb_offset_pos  = (subframe*frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti);
 
+
   multadd_cpx_vector((int16_t*)&txdataF[p][rb_offset_neg+(symbol*frame_parms->ofdm_symbol_size)],
-		     (int16_t*)&beam_weights[p][aa][rb_offset_neg0], 
+		     (int16_t*)&beam_weights[l1_id][p][aa][rb_offset_neg0], 
 	             (int16_t*)&txdataF_BF[aa][rb_offset_neg0+(symbol*frame_parms->ofdm_symbol_size)], 
 		     0, 
                      6*frame_parms->N_RB_DL, 
 		     15);
   multadd_cpx_vector((int16_t*)&txdataF[p][rb_offset_pos+(symbol*frame_parms->ofdm_symbol_size)],
-                     (int16_t*)&beam_weights[p][aa][0], 
+                     (int16_t*)&beam_weights[l1_id][p][aa][0], 
                      (int16_t*)&txdataF_BF[aa][(symbol*frame_parms->ofdm_symbol_size)], 
                      0, 
                      7*frame_parms->N_RB_DL, // to allow for extra RE at the end, 12 useless multipy-adds (first one at DC and 11 at end)
@@ -85,7 +86,7 @@ int beam_precoding(int32_t **txdataF,
 
 int beam_precoding_one_eNB(int32_t **txdataF,
                            int32_t **txdataF_BF,
-						   int32_t ***beam_weights,
+                           int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15],
 						   int subframe,
 						   int nb_antenna_ports,
 						   int nb_tx, // total physical antenna
@@ -112,7 +113,7 @@ int beam_precoding_one_eNB(int32_t **txdataF,
 			  for (symbol=0; symbol<symbols_per_tti; symbol++){
 				  
 				  multadd_cpx_vector((int16_t*)&txdataF[p][symbol*ofdm_symbol_size+re_offset],
-				                     (int16_t*)beam_weights[p][aa], 
+				                     (int16_t*)beam_weights[0][p][aa], 
 									 (int16_t*)&txdataF_BF[aa][symbol*ofdm_symbol_size], 
 									 0, 
 									 ofdm_symbol_size, 

@@ -406,13 +406,10 @@ void feptx_ofdm(RU_t *ru) {
 
 void feptx_prec(RU_t *ru) {
 	
-  // Theoni's
-  int l,i,aa,rb,p;
+  int l,i,aa,p;
   int subframe = ru->proc.subframe_tx;
   PHY_VARS_eNB **eNB_list = ru->eNB_list,*eNB; 
   LTE_DL_FRAME_PARMS *fp;
-  int32_t ***bw;
-  RU_proc_t *proc  = &ru->proc;
 
   /* fdragon
   int l,i,aa;
@@ -422,7 +419,6 @@ void feptx_prec(RU_t *ru) {
   int subframe = ru->proc.subframe_tx;
   */
 
-  if (ru->idx != 0) return;
 
   if (ru->num_eNB == 1) {
 
@@ -430,6 +426,8 @@ void feptx_prec(RU_t *ru) {
     fp  = &eNB->frame_parms;
     LTE_eNB_PDCCH *pdcch_vars = &eNB->pdcch_vars[subframe&1]; 
     
+    if (subframe_select(fp,subframe) == SF_UL) return;
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+ru->idx , 1);
 
     for (aa=0;aa<ru->nb_tx;aa++) {
@@ -443,10 +441,7 @@ void feptx_prec(RU_t *ru) {
 #else
 	
 	if (p<fp->nb_antenna_ports_eNB) {				
-	  // pdcch region, copy entire signal from txdataF->txdataF_BF (bf_mask = 1)
-	  // else do beamforming for pdcch according to beam_weights
-	  // to be updated for eMBMS (p=4)
-	  // For the moment this does nothing different than below.	     
+	  // For the moment this does nothing different than below, except ignore antenna ports 5,7,8.	     
 	  for (l=0;l<pdcch_vars->num_pdcch_symbols;l++)
 	    beam_precoding(eNB->common_vars.txdataF,
 			   ru->common.txdataF_BF,
@@ -455,7 +450,8 @@ void feptx_prec(RU_t *ru) {
 			   ru->beam_weights,
 			   l,
 			   aa,
-			   p);
+			   p,
+			   eNB->Mod_id);
 	} //if (p<fp->nb_antenna_ports_eNB)
 	
 	  // PDSCH region
@@ -468,7 +464,8 @@ void feptx_prec(RU_t *ru) {
 			   ru->beam_weights,
 			   l,
 			   aa,
-			   p);			
+			   p,
+                           eNB->Mod_id);			
 	  } // for (l=pdcch_vars ....)
 	} // if (p<fp->nb_antenna_ports_eNB) ...
 #endif //NO_PRECODING
@@ -511,7 +508,6 @@ void feptx_prec(RU_t *ru) {
     for (i=0;i<ru->num_eNB;i++) {
       eNB = eNB_list[i];
       fp  = &eNB->frame_parms;
-      bw  = ru->beam_weights[i];
       
       for (l=0;l<fp->symbols_per_tti;l++) {
 	for (aa=0;aa<ru->nb_tx;aa++) {
@@ -519,10 +515,11 @@ void feptx_prec(RU_t *ru) {
 			 ru->common.txdataF_BF,
 			 subframe,
 			 fp,
-			 bw,
+			 ru->beam_weights,
 			 subframe<<1,
 			 l,
-			 aa);
+			 aa,
+			 eNB->Mod_id);
 	}
       }
     }

@@ -579,10 +579,8 @@ typedef struct {
   /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
   int32_t **rxdataF;
   /// \brief holds the transmit data in the frequency domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
-  /// - third index: sample [0..]
+  /// - first index: tx antenna [0..14[ where 14 is the total supported antenna ports.
+  /// - second index: sample [0..]
   int32_t **txdataF;
 } LTE_eNB_COMMON;
 
