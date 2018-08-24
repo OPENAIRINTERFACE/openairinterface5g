@@ -27,4 +27,6 @@ check_vcd:
 
 clean:
 	rm -f *.o $(GENIDS) core T_IDs.h T_messages.txt.h _check_vcd
+
+cleanall: clean
 	cd tracer && $(MAKE) clean

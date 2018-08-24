@@ -122,7 +122,6 @@ extern int numerology;
 extern int fepw;
 extern int single_thread_flag;
 
-
 extern void  phy_init_RU(RU_t*);
 extern void  phy_free_RU(RU_t*);
 
@@ -156,8 +155,10 @@ static inline void fh_if5_south_out(RU_t *ru) {
 static inline void fh_if4p5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
   LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.subframe_tx);
-  if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) 
+  if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) {
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
+    ru->south_out_cnt++;
+  }
 }
 
 /*************************************************************/
@@ -1339,7 +1340,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   cfg->num_rb_dl=fp->N_RB_DL;
   cfg->tx_num_channels=ru->nb_tx;
   cfg->rx_num_channels=ru->nb_rx;
-  
+
   for (i=0; i<ru->nb_tx; i++) {
     
     cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
@@ -1439,6 +1440,7 @@ static void* ru_stats_thread(void* param) {
           print_meas(&ru->compression,"compression",NULL,NULL);
           print_meas(&ru->transport,"transport",NULL,NULL);
        }
+       LOG_I(PHY,"ru->south_out_cnt = %d\n",ru->south_out_cnt);
      }
   }
   return(NULL);
@@ -2568,6 +2570,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     ru->ts_offset    = 0;
     ru->in_synch     = (ru->is_slave == 1) ? 0 : 1;
     ru->cmd	     = EMPTY;
+    ru->south_out_cnt= 0;
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
     ru->openair0_cfg.clock_source  = clock_source;

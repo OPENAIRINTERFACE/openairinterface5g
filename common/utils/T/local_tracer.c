@@ -337,7 +337,7 @@ static void forward(void *_forwarder, char *buf, int size)
 
 static void wait_message(void)
 {
-  while (T_local_cache[T_busylist_head].busy == 0) usleep(1000);
+  while ((T_local_cache[T_busylist_head].busy & 0x02) == 0) usleep(1000);
 }
 
 void T_local_tracer_main(int remote_port, int wait_for_tracer,

@@ -330,6 +330,8 @@ typedef struct RU_t_s{
   int in_synch;
   /// timing offset
   int rx_offset;        
+  /// south out counter
+  int south_out_cnt;
   /// flag to indicate the RU is a slave to another source
   int is_slave;
   /// flag to indicate that the RU should generate the DMRS sequence in slot 2 (subframe 1) for OTA synchronization and calibration
