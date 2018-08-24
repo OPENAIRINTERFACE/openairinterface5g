@@ -300,6 +300,7 @@ class SSHConnection():
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('echo "./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run.sh ', '\$', 5)
 		self.command('chmod 775 ./my-lte-softmodem-run.sh ', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf enb_' + SSH.testCase_id + '.log', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + SSH.testCase_id + '.log ./my-lte-softmodem-run.sh', '\$', 5)
 		time.sleep(6)
 		doLoop = True
@@ -309,26 +310,34 @@ class SSHConnection():
 			if (loopCounter == 0):
 				doLoop = False
 				# Checking if process is still alive
-				self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never lte-softmodem', '\$', 5)
-				result = re.search('lte-softmodem', str(self.ssh.before))
-				if result is None:
-					logging.debug('\u001B[1;37;41m eNB process is already down \u001B[0m')
-					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', 0)
-					self.CreateHtmlFooter()
-					sys.exit(1)
+				#self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never lte-softmodem', '\$', 5)
+				#result = re.search('lte-softmodem', str(self.ssh.before))
+				#if result is None:
+				#	self.command('rsync -v enb_' + SSH.testCase_id + '.log enb_' + SSH.testCase_id + '.txt; stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | egrep --color=never -i "segmentation fault"', '\$', 5)
+				#	result = re.search('egmentation fault', str(self.ssh.before))
+				#	logging.debug('\u001B[1;37;41m eNB process is already down \u001B[0m')
+				#	if result is not None:
+				#		logging.debug('\u001B[1;37;41m Segmentation fault \u001B[0m')
+				#	logging.debug(str(self.ssh.before))
+				#	self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', 0)
+				#	self.CreateHtmlFooter()
+				#	self.close()
+				#	sys.exit(1)
 				logging.debug('\u001B[1;30;43m eNB logging system did not show got sync! See with attach later \u001B[0m')
 				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'eNB not showing got sync!', 0)
 				# Not getting got sync is bypassed for the moment
 				#sys.exit(1)
-			self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | grep --color=never -i sync', '\$', 10)
-			result = re.search('got sync', str(self.ssh.before))
-			if result is None:
-				time.sleep(6)
 			else:
-				doLoop = False
-				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', 0)
-				logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
+				self.command('rsync -v enb_' + SSH.testCase_id + '.log enb_' + SSH.testCase_id + '.txt; stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | grep --color=never -i sync', '\$', 4)
+				result = re.search('got sync', str(self.ssh.before))
+				if result is None:
+					time.sleep(6)
+				else:
+					doLoop = False
+					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', 0)
+					logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 
+		self.command('rm -f enb_' + SSH.testCase_id + '.txt', '\$', 5)
 		self.close()
 
 	def InitializeUE_common(self, device_id):
