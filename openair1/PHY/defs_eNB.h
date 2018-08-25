@@ -82,7 +82,6 @@
 
 
 
-#endif
 #define NUMBER_OF_SUBBANDS_MAX 13
 #define NUMBER_OF_HARQ_PID_MAX 8
 

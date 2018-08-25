@@ -1249,10 +1249,6 @@ LOG_DEBUG_END
   ulsch_start = (frame_parms->samples_per_tti*subframe_tx)-ue->N_TA_offset; //-ue->timing_advance;
 #endif //else EXMIMO
 
-<<<<<<< HEAD
-//#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-=======
->>>>>>> origin/develop
   if (empty_subframe)
   {
     overflow = ulsch_start - 9*frame_parms->samples_per_tti;
@@ -2160,22 +2156,6 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   case pucch_format1a:
   case pucch_format1b:
   {
-<<<<<<< HEAD
-      if (ue->mac_enabled == 1) {
-          Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
-      }
-      else {
-          Po_PUCCH = ue->tx_power_max_dBm;
-      }
-      ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
-      ue->tx_total_RE[subframe_tx] = 12;
-
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-      tx_amp = get_tx_amp(Po_PUCCH,
-              ue->tx_power_max_dBm,
-              ue->frame_parms.N_RB_UL,
-              1);
-=======
     if (ue->mac_enabled == 1) {
       Po_PUCCH = pucch_power_cntl(ue,proc,subframe_tx,eNB_id,format);
     }
@@ -2190,7 +2170,6 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			ue->tx_power_max_dBm,
 			ue->frame_parms.N_RB_UL,
 			1);
->>>>>>> origin/develop
 #else
     tx_amp = AMP;
 #endif

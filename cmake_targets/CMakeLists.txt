@@ -375,7 +375,7 @@ set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
 
 message("calling ASN1C_PREFIX=NR asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}")
 execute_process(COMMAND mkdir -p ${NR_RRC_FULL_DIR}
-                COMMAND env "ASN1C_PREFIX=NR" asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
+                COMMAND env "ASN1C_PREFIX=NR_" asn1c -findirect-choice -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
                 RESULT_VARIABLE ret)
 
 if (NOT ${ret} STREQUAL 0)
