@@ -228,6 +228,7 @@ function main() {
             nrUE=1
             NR="True"
             echo_info "Will compile NR UE"
+	    shift;;
        --mu)
             UE_EXPANSION="True"
             echo_info "Will compile with UE_EXPANSION"
