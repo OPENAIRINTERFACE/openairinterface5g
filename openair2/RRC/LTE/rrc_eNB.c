@@ -5478,28 +5478,28 @@ openair_rrc_eNB_init(
       RC.rrc[ctxt.module_id]->carrier[CC_id].paging[ue_id] = (uint8_t *) malloc16(256);
       
     }
-  }
-  rrc_init_global_param();
-
+    
+    rrc_init_global_param();
+    
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     switch (RC.rrc[ctxt.module_id]->carrier[CC_id].MBMS_flag) {
-      case 1:
-      case 2:
-      case 3:
-        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Configuring 1 MBSFN sync area\n", PROTOCOL_RRC_CTXT_ARGS(&ctxt));
-        RC.rrc[ctxt.module_id]->carrier[CC_id].num_mbsfn_sync_area = 1;
-        break;
-
-      case 4:
-        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Configuring 2 MBSFN sync area\n", PROTOCOL_RRC_CTXT_ARGS(&ctxt));
-        RC.rrc[ctxt.module_id]->carrier[CC_id].num_mbsfn_sync_area = 2;
-        break;
-
-      default:
-        RC.rrc[ctxt.module_id]->carrier[CC_id].num_mbsfn_sync_area = 0;
-        break;
+    case 1:
+    case 2:
+    case 3:
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Configuring 1 MBSFN sync area\n", PROTOCOL_RRC_CTXT_ARGS(&ctxt));
+      RC.rrc[ctxt.module_id]->carrier[CC_id].num_mbsfn_sync_area = 1;
+      break;
+      
+    case 4:
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Configuring 2 MBSFN sync area\n", PROTOCOL_RRC_CTXT_ARGS(&ctxt));
+      RC.rrc[ctxt.module_id]->carrier[CC_id].num_mbsfn_sync_area = 2;
+      break;
+      
+    default:
+      RC.rrc[ctxt.module_id]->carrier[CC_id].num_mbsfn_sync_area = 0;
+      break;
     }
-
+    
     // if we are here the RC.rrc[enb_mod_idP]->MBMS_flag > 0,
     /// MCCH INIT
     if (RC.rrc[ctxt.module_id]->carrier[CC_id].MBMS_flag > 0) {
@@ -5507,7 +5507,7 @@ openair_rrc_eNB_init(
       /// MTCH data bearer init
       init_MBMS(ctxt.module_id, CC_id, 0);
     }
-
+    
 #endif
     openair_rrc_top_init_eNB(RC.rrc[ctxt.module_id]->carrier[CC_id].MBMS_flag,0);
   }
@@ -5857,7 +5857,7 @@ rrc_eNB_decode_ccch(
           MSC_AS_TIME_ARGS(ctxt_pP),
           ue_context_p->ue_context.rnti,
           dec_rval.consumed);
-      } else {
+    } else {
         rrcConnectionRequest = &ul_ccch_msg->message.choice.c1.choice.rrcConnectionRequest.criticalExtensions.choice.rrcConnectionRequest_r8;
         {
           if (InitialUE_Identity_PR_randomValue == rrcConnectionRequest->ue_Identity.present) {
