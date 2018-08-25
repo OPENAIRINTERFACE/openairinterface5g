@@ -165,10 +165,19 @@ int allocate_REs_in_RB_no_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
   uint32_t tti_offset;
   uint8_t re;
   uint8_t *x0p;
+  uint8_t first_re,last_re;
+
+  last_re=12;
+  first_re=0;
+  if (skip_half==1)
+    last_re=6;
+  else if (skip_half==2)
+    first_re=6;
+  re=first_re;
 
   if (skip_dc == 0) {
-    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0;
-         re<12;
+    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+re;
+         re<last_re;
          re++,x0p+=2,tti_offset++) {
 
       qpsk_table_offset_re=x0p[0];
@@ -199,8 +208,16 @@ int allocate_REs_in_RB_no_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
     }
   }
-  *re_allocated = *re_allocated + 12;
-  *jj=*jj + 24;
+  if(skip_half!=0)
+  {
+    *re_allocated = *re_allocated + 6;
+    *jj=*jj + 12;
+  }
+  else
+  {
+    *re_allocated = *re_allocated + 12;
+    *jj=*jj + 24;
+  }
 
     return(0);
 }
@@ -238,12 +255,20 @@ int allocate_REs_in_RB_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
   uint32_t tti_offset;
   uint8_t re;
   uint8_t *x0p;
+  uint8_t first_re,last_re;
 
+  last_re=12;
+  first_re=0;
+  if (skip_half==1)
+    last_re=6;
+  else if (skip_half==2)
+    first_re=6;
+  re=first_re+P1_SHIFT[0];
 
   if (skip_dc == 0) {
     //    printf("pilots: P1_SHIFT[0] %d\n",P1_SHIFT[0]);
-    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+P1_SHIFT[0],re=P1_SHIFT[0];
-         re<12;
+    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+re;
+         re<last_re;
          x0p+=2) {
 
       qpsk_table_offset_re=x0p[0];
@@ -260,8 +285,8 @@ int allocate_REs_in_RB_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
          re<6;
          x0p+=2) {
 
-      qpsk_table_offset_re+=x0p[0];
-      qpsk_table_offset_im+=x0p[1];
+      qpsk_table_offset_re=x0p[0];
+      qpsk_table_offset_im=x0p[1];
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qpsk_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
       tti_offset+=P1_SHIFT[re+1];
@@ -272,16 +297,24 @@ int allocate_REs_in_RB_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
          re<12;
          x0p+=2) {
 
-      qpsk_table_offset_re+=x0p[0];
-      qpsk_table_offset_im+=x0p[1];
+      qpsk_table_offset_re=x0p[0];
+      qpsk_table_offset_im=x0p[1];
       ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qpsk_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qpsk_table_offset_im];
       tti_offset+=P1_SHIFT[re+1];
       re+=P1_SHIFT[re+1];
     }
   }
-  *re_allocated = *re_allocated + 10;
-  *jj=*jj + 20;
+  if(skip_half!=0)
+  {
+    *re_allocated = *re_allocated + 5;
+    *jj=*jj + 10;
+  }
+  else
+  {
+    *re_allocated = *re_allocated + 10;
+    *jj=*jj + 20;
+  }
 
   return(0);
 }
@@ -317,10 +350,19 @@ int allocate_REs_in_RB_no_pilots_16QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
   uint32_t tti_offset;
   uint8_t re;
   uint8_t *x0p;
+  uint8_t first_re,last_re;
+
+  last_re=12;
+  first_re=0;
+  if (skip_half==1)
+    last_re=6;
+  else if (skip_half==2)
+    first_re=6;
+  re=first_re;
 
   if (skip_dc == 0) {
-    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0;
-         re<12;
+    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+re;
+         re<last_re;
          re++,x0p+=4,tti_offset++) {
 
       qam16_table_offset_re=TWO[x0p[0]];
@@ -357,8 +399,16 @@ int allocate_REs_in_RB_no_pilots_16QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
       ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qam16_table_offset_im];
     }
   }
-  *re_allocated = *re_allocated + 12;
-  *jj=*jj + 48;
+  if(skip_half!=0)
+  {
+    *re_allocated = *re_allocated + 6;
+    *jj=*jj + 24;
+  }
+  else
+  {
+    *re_allocated = *re_allocated + 12;
+    *jj=*jj + 48;
+  }
 
     return(0);
 }
@@ -396,12 +446,21 @@ int allocate_REs_in_RB_pilots_16QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
   uint32_t tti_offset;
   uint8_t re;
   uint8_t *x0p;
+  uint8_t first_re,last_re;
+
+  last_re=12;
+  first_re=0;
+  if (skip_half==1)
+    last_re=6;
+  else if (skip_half==2)
+    first_re=6;
+  re=first_re+P1_SHIFT[0];
 
 
   if (skip_dc == 0) {
     //    LOG_I(PHY,"pilots: P1_SHIFT[0] %d\n",P1_SHIFT[0]);
-    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+P1_SHIFT[0],re=P1_SHIFT[0];
-         re<12;
+    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+re;
+         re<last_re;
          x0p+=4) {
 
       qam16_table_offset_re=TWO[x0p[0]];
@@ -444,8 +503,16 @@ int allocate_REs_in_RB_pilots_16QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
       re+=P1_SHIFT[re+1];
     }
   }
-  *re_allocated = *re_allocated + 10;
-  *jj=*jj + 40;
+  if(skip_half!=0)
+  {
+    *re_allocated = *re_allocated + 5;
+    *jj=*jj + 20;
+  }
+  else
+  {
+    *re_allocated = *re_allocated + 10;
+    *jj=*jj + 40;
+  }
 
   return(0);
 }
@@ -482,10 +549,16 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
   uint32_t tti_offset;
   uint8_t re;
   uint8_t *x0p;
+  uint8_t first_re;
+
+  first_re=0;
+  if (skip_half==2)
+    first_re=6;
+  re=first_re;
 
   if (skip_dc == 0) {
 
-    x0p=&x0[*jj],tti_offset=symbol_offset+re_offset;
+      x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+re;
 
     /*    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset,re=0;
          re<12;
@@ -521,36 +594,38 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
       ((int16_t *)&txdataF[0][tti_offset])[10]=qam_table_s0[qam64_table_offset_re];
       ((int16_t *)&txdataF[0][tti_offset])[11]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=(x0p[36]<<2)|(x0p[38]<<1)|x0p[40];
-      qam64_table_offset_im=(x0p[37]<<2)|(x0p[39]<<1)|x0p[41];
-      ((int16_t *)&txdataF[0][tti_offset])[12]=qam_table_s0[qam64_table_offset_re];
-      ((int16_t *)&txdataF[0][tti_offset])[13]=qam_table_s0[qam64_table_offset_im];
+      if(skip_half==0)
+      {
+        qam64_table_offset_re=(x0p[36]<<2)|(x0p[38]<<1)|x0p[40];
+        qam64_table_offset_im=(x0p[37]<<2)|(x0p[39]<<1)|x0p[41];
+        ((int16_t *)&txdataF[0][tti_offset])[12]=qam_table_s0[qam64_table_offset_re];
+        ((int16_t *)&txdataF[0][tti_offset])[13]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=(x0p[42]<<2)|(x0p[44]<<1)|x0p[46];
-      qam64_table_offset_im=(x0p[43]<<2)|(x0p[45]<<1)|x0p[47];
-      ((int16_t *)&txdataF[0][tti_offset])[14]=qam_table_s0[qam64_table_offset_re];
-      ((int16_t *)&txdataF[0][tti_offset])[15]=qam_table_s0[qam64_table_offset_im];
+        qam64_table_offset_re=(x0p[42]<<2)|(x0p[44]<<1)|x0p[46];
+        qam64_table_offset_im=(x0p[43]<<2)|(x0p[45]<<1)|x0p[47];
+        ((int16_t *)&txdataF[0][tti_offset])[14]=qam_table_s0[qam64_table_offset_re];
+        ((int16_t *)&txdataF[0][tti_offset])[15]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=(x0p[48]<<2)|(x0p[50]<<1)|x0p[52];
-      qam64_table_offset_im=(x0p[49]<<2)|(x0p[51]<<1)|x0p[53];
-      ((int16_t *)&txdataF[0][tti_offset])[16]=qam_table_s0[qam64_table_offset_re];
-      ((int16_t *)&txdataF[0][tti_offset])[17]=qam_table_s0[qam64_table_offset_im];
+        qam64_table_offset_re=(x0p[48]<<2)|(x0p[50]<<1)|x0p[52];
+        qam64_table_offset_im=(x0p[49]<<2)|(x0p[51]<<1)|x0p[53];
+        ((int16_t *)&txdataF[0][tti_offset])[16]=qam_table_s0[qam64_table_offset_re];
+        ((int16_t *)&txdataF[0][tti_offset])[17]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=(x0p[54]<<2)|(x0p[56]<<1)|x0p[58];
-      qam64_table_offset_im=(x0p[55]<<2)|(x0p[57]<<1)|x0p[59];
-      ((int16_t *)&txdataF[0][tti_offset])[18]=qam_table_s0[qam64_table_offset_re];
-      ((int16_t *)&txdataF[0][tti_offset])[19]=qam_table_s0[qam64_table_offset_im];
+       qam64_table_offset_re=(x0p[54]<<2)|(x0p[56]<<1)|x0p[58];
+        qam64_table_offset_im=(x0p[55]<<2)|(x0p[57]<<1)|x0p[59];
+        ((int16_t *)&txdataF[0][tti_offset])[18]=qam_table_s0[qam64_table_offset_re];
+        ((int16_t *)&txdataF[0][tti_offset])[19]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=(x0p[60]<<2)|(x0p[62]<<1)|x0p[64];
-      qam64_table_offset_im=(x0p[61]<<2)|(x0p[63]<<1)|x0p[65];
-      ((int16_t *)&txdataF[0][tti_offset])[20]=qam_table_s0[qam64_table_offset_re];
-      ((int16_t *)&txdataF[0][tti_offset])[21]=qam_table_s0[qam64_table_offset_im];
+        qam64_table_offset_re=(x0p[60]<<2)|(x0p[62]<<1)|x0p[64];
+        qam64_table_offset_im=(x0p[61]<<2)|(x0p[63]<<1)|x0p[65];
+        ((int16_t *)&txdataF[0][tti_offset])[20]=qam_table_s0[qam64_table_offset_re];
+        ((int16_t *)&txdataF[0][tti_offset])[21]=qam_table_s0[qam64_table_offset_im];
 
-      qam64_table_offset_re=(x0p[66]<<2)|(x0p[68]<<1)|x0p[70];
-      qam64_table_offset_im=(x0p[67]<<2)|(x0p[69]<<1)|x0p[71];
-      ((int16_t *)&txdataF[0][tti_offset])[22]=qam_table_s0[qam64_table_offset_re];
-      ((int16_t *)&txdataF[0][tti_offset])[23]=qam_table_s0[qam64_table_offset_im];
-
+        qam64_table_offset_re=(x0p[66]<<2)|(x0p[68]<<1)|x0p[70];
+        qam64_table_offset_im=(x0p[67]<<2)|(x0p[69]<<1)|x0p[71];
+        ((int16_t *)&txdataF[0][tti_offset])[22]=qam_table_s0[qam64_table_offset_re];
+        ((int16_t *)&txdataF[0][tti_offset])[23]=qam_table_s0[qam64_table_offset_im];
+      }
 
       //    }
   }
@@ -584,8 +659,16 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
     }
   }
 
-  *re_allocated = *re_allocated + 12;
-  *jj=*jj + 72;
+  if(skip_half!=0)
+  {
+    *re_allocated = *re_allocated + 6;
+    *jj=*jj + 36;
+  }
+  else
+  {
+    *re_allocated = *re_allocated + 12;
+    *jj=*jj + 72;
+  }
 
   return(0);
 }
@@ -623,12 +706,21 @@ int allocate_REs_in_RB_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
   uint32_t tti_offset;
   uint8_t re;
   uint8_t *x0p;
+  uint8_t first_re,last_re;
+
+  last_re=12;
+  first_re=0;
+  if (skip_half==1)
+    last_re=6;
+  else if (skip_half==2)
+    first_re=6;
+  re=first_re+P1_SHIFT[0];
 
 
   if (skip_dc == 0) {
     //    LOG_I(PHY,"pilots: P1_SHIFT[0] %d\n",P1_SHIFT[0]);
-    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+P1_SHIFT[0],re=P1_SHIFT[0];
-         re<12;
+    for (x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+re;
+         re<last_re;
          x0p+=6) {
 
       qam64_table_offset_re=FOUR[x0p[0]];
@@ -677,8 +769,16 @@ int allocate_REs_in_RB_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
       re+=P1_SHIFT[re+1];
     }
   }
-  *re_allocated = *re_allocated + 10;
-  *jj=*jj + 60;
+  if(skip_half!=0)
+  {
+    *re_allocated = *re_allocated + 5;
+    *jj=*jj + 30;
+  }
+  else
+  {
+    *re_allocated = *re_allocated + 10;
+    *jj=*jj + 60;
+  }
 
   return(0);
 }
@@ -2423,7 +2523,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
        * with above code that needs to be analyzed and fixed. In the
        * meantime, let's use the generic function.
        */
-      allocate_REs = allocate_REs_in_RB;
+//      allocate_REs = allocate_REs_in_RB;
       break;
 
     }
@@ -2432,7 +2532,8 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
      * previous version. Some more work/validation is needed before
      * we switch to the new version.
      */
-    allocate_REs = allocate_REs_in_RB;
+//    allocate_REs = allocate_REs_in_RB;
+//
 
     switch (mod_order1) {
     case 2:
@@ -2485,8 +2586,6 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
       skip_half = check_skiphalf(rb,subframe_offset,frame_parms,l,nsymb);
       skip_dc   = check_skip_dc(rb,frame_parms);
-
-
 
      if (dlsch0) {
         if (dlsch0_harq->Nlayers>1) {
