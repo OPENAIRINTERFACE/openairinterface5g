@@ -1636,36 +1636,36 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
                     b_existed = 1;
                     break;
                 }
-            }
-            if(b_existed == 0) {
-                //no e_rab_id
-                ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
-                ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
-                ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 30;
-                ue_context_p->ue_context.nb_release_of_e_rabs++;
-            } else {
-                if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_FAILED){
+		
+		if(b_existed == 0) {
+		  //no e_rab_id
+		  ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
+		  ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
+		  ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 30;
+		  ue_context_p->ue_context.nb_release_of_e_rabs++;
+		} else {
+		  if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_FAILED){
                     ue_context_p->ue_context.e_rab[i].xid = xid;
                     continue;
-                } else if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED){
+		  } else if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED){
                     ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_TORELEASE;
                     ue_context_p->ue_context.e_rab[i].xid = xid;
                     e_rab_release_drb++;
-                }else{
+		  }else{
                     //e_rab_id status NG
                     ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
                     ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
                     ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 0;
                     ue_context_p->ue_context.nb_release_of_e_rabs++;
-                }
-            }
-        }
-      }
-
-      if(is_existed == 1) {
-        //e_rab_id is existed
-        continue;
-      }
+		  }
+		}
+	    }
+	
+    
+	    if(is_existed == 1) {
+	      //e_rab_id is existed
+	      continue;
+	    }
 
       for ( i = 0;  i < NB_RB_MAX; i++) {
         if (e_rab_release_params[erab].e_rab_id == ue_context_p->ue_context.e_rab[i].param.e_rab_id) {
