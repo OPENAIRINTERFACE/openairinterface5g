@@ -99,10 +99,7 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
   s1ap_eNB_mme_data_t        *s1ap_mme_data_p             = NULL;
   struct s1ap_eNB_mme_data_s *mme                         = NULL;
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/develop
   DevAssert(instance_p != NULL);
   DevAssert(mme_ip_address != NULL);
   message_p = itti_alloc_new_message(TASK_S1AP, SCTP_NEW_ASSOCIATION_REQ);
@@ -117,21 +114,6 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
   memcpy(&sctp_new_association_req_p->local_address,
          local_ip_addr,
          sizeof(*local_ip_addr));
-<<<<<<< HEAD
-  S1AP_INFO("[eNB %d] check the mme registration state\n",instance_p->instance);
-  mme = s1ap_eNB_get_MME_from_instance(instance_p);
-
-  if ( mme == NULL ) {
-    /* Create new MME descriptor */
-    s1ap_mme_data_p = calloc(1, sizeof(*s1ap_mme_data_p));
-    DevAssert(s1ap_mme_data_p != NULL);
-    s1ap_mme_data_p->cnx_id                = s1ap_eNB_fetch_add_global_cnx_id();
-    sctp_new_association_req_p->ulp_cnx_id = s1ap_mme_data_p->cnx_id;
-    s1ap_mme_data_p->assoc_id          = -1;
-    s1ap_mme_data_p->s1ap_eNB_instance = instance_p;
-    STAILQ_INIT(&s1ap_mme_data_p->served_gummei);
-=======
-
   S1AP_INFO("[eNB %d] check the mme registration state\n",instance_p->instance);
 
   mme = s1ap_eNB_get_MME_from_instance(instance_p);
@@ -150,7 +132,6 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
 
     STAILQ_INIT(&s1ap_mme_data_p->served_gummei);
 
->>>>>>> origin/develop
     /* Insert the new descriptor in list of known MME
      * but not yet associated.
      */
@@ -165,10 +146,7 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
               instance_p->instance,
               mme->state, mme->cnx_id,
               instance_p->s1ap_mme_nb, instance_p->s1ap_mme_pending_nb);
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/develop
     /*s1ap_mme_data_p->cnx_id                = mme->cnx_id;
     sctp_new_association_req_p->ulp_cnx_id = mme->cnx_id;
 
@@ -419,16 +397,12 @@ static int s1ap_eNB_generate_s1_setup_request(
   uint8_t  *buffer;
   uint32_t  len;
   int       ret = 0;
-<<<<<<< HEAD
-  s1ap_mme_data_p->state = S1AP_ENB_STATE_WAITING;
-=======
 
   DevAssert(instance_p != NULL);
   DevAssert(s1ap_mme_data_p != NULL);
 
   s1ap_mme_data_p->state = S1AP_ENB_STATE_WAITING;
 
->>>>>>> origin/develop
   /* Prepare the S1AP message to encode */
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = S1AP_S1AP_PDU_PR_initiatingMessage;
@@ -436,11 +410,8 @@ static int s1ap_eNB_generate_s1_setup_request(
   pdu.choice.initiatingMessage.criticality = S1AP_Criticality_reject;
   pdu.choice.initiatingMessage.value.present = S1AP_InitiatingMessage__value_PR_S1SetupRequest;
   out = &pdu.choice.initiatingMessage.value.choice.S1SetupRequest;
-<<<<<<< HEAD
-=======
 
   /* mandatory */
->>>>>>> origin/develop
   ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_Global_ENB_ID;
   ie->criticality = S1AP_Criticality_reject;
@@ -467,23 +438,12 @@ static int s1ap_eNB_generate_s1_setup_request(
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
-<<<<<<< HEAD
-=======
+
   /* mandatory */
->>>>>>> origin/develop
   ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_SupportedTAs;
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_S1SetupRequestIEs__value_PR_SupportedTAs;
-<<<<<<< HEAD
-  ta = (S1AP_SupportedTAs_Item_t *)calloc(1, sizeof(S1AP_SupportedTAs_Item_t));
-  INT16_TO_OCTET_STRING(instance_p->tac, &ta->tAC);
-  plmn = (S1AP_PLMNidentity_t *)calloc(1, sizeof(S1AP_PLMNidentity_t));
-  MCC_MNC_TO_TBCD(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length, plmn);
-  ASN_SEQUENCE_ADD(&ta->broadcastPLMNs.list, plmn);
-  ASN_SEQUENCE_ADD(&ie->value.choice.SupportedTAs.list, ta);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-=======
   {
     ta = (S1AP_SupportedTAs_Item_t *)calloc(1, sizeof(S1AP_SupportedTAs_Item_t));
     INT16_TO_OCTET_STRING(instance_p->tac, &ta->tAC);
@@ -497,7 +457,6 @@ static int s1ap_eNB_generate_s1_setup_request(
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
->>>>>>> origin/develop
   ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_DefaultPagingDRX;
   ie->criticality = S1AP_Criticality_ignore;
@@ -516,16 +475,10 @@ static int s1ap_eNB_generate_s1_setup_request(
   }
 
   /* optional */
-<<<<<<< HEAD
-  if (0) {
-    ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_UE_RetentionInformation  ;
-=======
 #if (S1AP_VERSION >= MAKE_VERSION(13, 0, 0))
   if (0) {
     ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
     ie->id = S1AP_ProtocolIE_ID_id_UE_RetentionInformation;
->>>>>>> origin/develop
     ie->criticality = S1AP_Criticality_ignore;
     ie->value.present = S1AP_S1SetupRequestIEs__value_PR_UE_RetentionInformation;
     // ie->value.choice.UE_RetentionInformation = ;

@@ -1577,8 +1577,8 @@ rrc_ue_process_radioResourceConfigDedicated(
            NULL,
            NULL
 #endif
-
-        }
+				);
+	}
       }
     }
   }
@@ -2580,7 +2580,7 @@ rrc_ue_decode_dcch(
 #endif
 #endif
           }
-        }
+      
 
         //TTN test D2D (should not be here - in reality, this message will be triggered from ProSeApp)
         if (send_ue_information == 0) {
@@ -3877,75 +3877,63 @@ uint64_t arfcn_to_freq(long arfcn) {
 
         break;
 
-      case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib4:
-        if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&8) == 0) {
-          UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=8;
-          new_sib=1;
-          memcpy( UE_rrc_inst[ctxt_pP->module_id].sib4[eNB_index], &typeandinfo->choice.sib4, sizeof(SystemInformationBlockType4_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB4 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
-        }
-
+    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib4:
+      if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&8) == 0) {
+	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=8;
+	new_sib=1;
+	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib4[eNB_index], &typeandinfo->choice.sib4, sizeof(SystemInformationBlockType4_t) );
+	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB4 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
+      }
+      
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib5:
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&16) == 0) {
 	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=16;
 	new_sib=1;
-
+	
 	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib5[eNB_index], &typeandinfo->choice.sib5, sizeof(SystemInformationBlockType5_t) );
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB5 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
 	dump_sib5(UE_rrc_inst[ctxt_pP->module_id].sib5[eNB_index]);
       }
       break;
-
+      
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib6:
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&32) == 0) {
 	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=32;
 	new_sib=1;
-
 	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib6[eNB_index], &typeandinfo->choice.sib6, sizeof(SystemInformationBlockType6_t) );
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB6 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
       }
-      break;
-
-        break;
-
-      case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib6:
-        if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&32) == 0) {
-          UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=32;
-          new_sib=1;
-          memcpy( UE_rrc_inst[ctxt_pP->module_id].sib6[eNB_index], &typeandinfo->choice.sib6, sizeof(SystemInformationBlockType6_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB6 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
-        }
-
+      
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib9:
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&256) == 0) {
 	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=256;
 	new_sib=1;
-
+	
 	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib9[eNB_index], &typeandinfo->choice.sib9, sizeof(SystemInformationBlockType9_t) );
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB9 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
       }
       break;
-
-      case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib7:
-        if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&64) == 0) {
-          UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=64;
-          new_sib=1;
-          memcpy( UE_rrc_inst[ctxt_pP->module_id].sib7[eNB_index], &typeandinfo->choice.sib7, sizeof(SystemInformationBlockType7_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB7 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
-        }
-
-        break;
-
-      case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib8:
-        if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&128) == 0) {
-          UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=128;
-          new_sib=1;
-          memcpy( UE_rrc_inst[ctxt_pP->module_id].sib8[eNB_index], &typeandinfo->choice.sib8, sizeof(SystemInformationBlockType8_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB8 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
-        }
-
+      
+    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib7:
+      if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&64) == 0) {
+	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=64;
+	new_sib=1;
+	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib7[eNB_index], &typeandinfo->choice.sib7, sizeof(SystemInformationBlockType7_t) );
+	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB7 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
+      }
+      
+      break;
+      
+    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib8:
+      if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&128) == 0) {
+	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=128;
+	new_sib=1;
+	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib8[eNB_index], &typeandinfo->choice.sib8, sizeof(SystemInformationBlockType8_t) );
+	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB8 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
+      }
+      
 #if (RRC_VERSION >= MAKE_VERSION(9, 2, 0))
-
+      
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib12_v920:
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&2048) == 0) {
 	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=2048;
@@ -3954,12 +3942,12 @@ uint64_t arfcn_to_freq(long arfcn) {
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB12 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
       }
       break;
-
+      
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920:
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&4096) == 0) {
 	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=4096;
 	new_sib=1;
-
+	
 	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib13[eNB_index], &typeandinfo->choice.sib13_v920, sizeof(SystemInformationBlockType13_r9_t) );
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB13 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
 	dump_sib13( UE_rrc_inst[ctxt_pP->module_id].sib13[eNB_index] );
@@ -4068,12 +4056,9 @@ uint64_t arfcn_to_freq(long arfcn) {
 
 
 #endif
+
     default:
       break;
-    }
-
-      default:
-        break;
     }
   }
 
@@ -4608,17 +4593,7 @@ void *rrc_ue_task( void *args_p )
       LOG_D(RRC, "[UE %d] Received %s: eNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
             RRC_MAC_CCCH_DATA_CNF (msg_p).enb_index);
 
-      case RRC_MAC_BCCH_DATA_IND:
-        LOG_D(RRC, "[UE %d] Received %s: frameP %d, eNB %d\n", ue_mod_id, msg_name,
-              RRC_MAC_BCCH_DATA_IND (msg_p).frame, RRC_MAC_BCCH_DATA_IND (msg_p).enb_index);
-        //      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0);
-        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,RRC_MAC_BCCH_DATA_IND (msg_p).enb_index);
-        decode_BCCH_DLSCH_Message (&ctxt,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).enb_index,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
+
         break;
 
     case RRC_MAC_CCCH_DATA_IND:
@@ -4753,11 +4728,11 @@ void *rrc_ue_task( void *args_p )
       case RRC_STATE_INACTIVE: {
         /* Need to first activate lower layers */
         MessageDef *message_p;
-
+	
         message_p = itti_alloc_new_message(TASK_RRC_UE, ACTIVATE_MESSAGE);
-
+	
         itti_send_msg_to_task(TASK_L2L1, UE_MODULE_ID_TO_INSTANCE(ue_mod_id), message_p);
-
+	
         /* Save cell selection criterion */
         {
           UE_rrc_inst[ue_mod_id].plmnID = NAS_CELL_SELECTION_REQ (msg_p).plmnID;
@@ -4771,74 +4746,64 @@ void *rrc_ue_task( void *args_p )
                 UE_rrc_inst[ue_mod_id].plmnID.MNCdigit2,
                 UE_rrc_inst[ue_mod_id].plmnID.MNCdigit3);
         }
-
+	
         switch (rrc_get_state(ue_mod_id)) {
-          case RRC_STATE_INACTIVE: {
-            /* Need to first activate lower layers */
-            MessageDef *message_p;
-            message_p = itti_alloc_new_message(TASK_RRC_UE, ACTIVATE_MESSAGE);
-            itti_send_msg_to_task(TASK_L2L1, UE_MODULE_ID_TO_INSTANCE(ue_mod_id), message_p);
-            rrc_set_state (ue_mod_id, RRC_STATE_IDLE);
-            /* Fall through to next case */
-          }
-
-          case RRC_STATE_IDLE: {
-            /* Ask to layer 1 to find a cell matching the criterion */
-            MessageDef *message_p;
-            message_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_CELL_REQ);
-            PHY_FIND_CELL_REQ (message_p).earfcn_start = 1;
-            PHY_FIND_CELL_REQ (message_p).earfcn_end = 1;
-            itti_send_msg_to_task(TASK_PHY_UE, UE_MODULE_ID_TO_INSTANCE(ue_mod_id), message_p);
-            rrc_set_sub_state (ue_mod_id, RRC_SUB_STATE_IDLE_SEARCHING);
-            break;
-          }
-
-          case RRC_STATE_CONNECTED:
-            /* should not happen */
-            LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, msg_name, rrc_get_state(ue_mod_id));
-            break;
-
-          default:
-            LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
-            break;
+	case RRC_STATE_INACTIVE: {
+	  /* Need to first activate lower layers */
+	  MessageDef *message_p;
+	  message_p = itti_alloc_new_message(TASK_RRC_UE, ACTIVATE_MESSAGE);
+	  itti_send_msg_to_task(TASK_L2L1, UE_MODULE_ID_TO_INSTANCE(ue_mod_id), message_p);
+	  rrc_set_state (ue_mod_id, RRC_STATE_IDLE);
+	  /* Fall through to next case */
+	}
+	  
+	case RRC_STATE_IDLE: {
+	  /* Ask to layer 1 to find a cell matching the criterion */
+	  MessageDef *message_p;
+	  message_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_CELL_REQ);
+	  PHY_FIND_CELL_REQ (message_p).earfcn_start = 1;
+	  PHY_FIND_CELL_REQ (message_p).earfcn_end = 1;
+	  itti_send_msg_to_task(TASK_PHY_UE, UE_MODULE_ID_TO_INSTANCE(ue_mod_id), message_p);
+	  rrc_set_sub_state (ue_mod_id, RRC_SUB_STATE_IDLE_SEARCHING);
+	  break;
+	}
+	  
+	case RRC_STATE_CONNECTED:
+	  /* should not happen */
+	  LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
+	  break;
+	  
+	default:
+	  LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
+	  break;
         }
 
         break;
-
-      case RRC_STATE_CONNECTED:
-        /* should not happen */
-        LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), rrc_get_state(ue_mod_id));
-        break;
-
-      default:
-        LOG_E(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
-        break;
-      }
-
-          case RRC_STATE_INACTIVE:
-          case RRC_STATE_CONNECTED:
-            /* should not happen */
-            LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, msg_name, rrc_get_state(ue_mod_id));
-            break;
-
-    case NAS_CONN_ESTABLI_REQ:
-      LOG_D(RRC, "[UE %d] Received %s: cause %d, type %d, s_tmsi (mme code %"PRIu8", m-tmsi %"PRIu32"), plmnID (%d%d%d.%d%d%d)\n", ue_mod_id, ITTI_MSG_NAME (msg_p), NAS_CONN_ESTABLI_REQ (msg_p).cause,
-            NAS_CONN_ESTABLI_REQ (msg_p).type,
-            NAS_CONN_ESTABLI_REQ (msg_p).s_tmsi.MMEcode,
-            NAS_CONN_ESTABLI_REQ (msg_p).s_tmsi.m_tmsi,
-            NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MCCdigit1,
-            NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MCCdigit2,
-            NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MCCdigit3,
-            NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MNCdigit1,
-            NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MNCdigit2,
-            NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MNCdigit3);
-
-      //PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, NOT_A_RNTI, 0, 0);
-      PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, NOT_A_RNTI, 0, 0, 0);
-
-      UE_rrc_inst[ue_mod_id].initialNasMsg = NAS_CONN_ESTABLI_REQ (msg_p).initialNasMsg;
-
-      switch (rrc_get_state(ue_mod_id)) {
+	
+	case RRC_STATE_INACTIVE:
+	case RRC_STATE_CONNECTED:
+	  /* should not happen */
+	  LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, msg_name, rrc_get_state(ue_mod_id));
+	  break;
+	  
+	case NAS_CONN_ESTABLI_REQ:
+	  LOG_D(RRC, "[UE %d] Received %s: cause %d, type %d, s_tmsi (mme code %"PRIu8", m-tmsi %"PRIu32"), plmnID (%d%d%d.%d%d%d)\n", ue_mod_id, ITTI_MSG_NAME (msg_p), NAS_CONN_ESTABLI_REQ (msg_p).cause,
+		NAS_CONN_ESTABLI_REQ (msg_p).type,
+		NAS_CONN_ESTABLI_REQ (msg_p).s_tmsi.MMEcode,
+		NAS_CONN_ESTABLI_REQ (msg_p).s_tmsi.m_tmsi,
+		NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MCCdigit1,
+		NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MCCdigit2,
+		NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MCCdigit3,
+		NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MNCdigit1,
+		NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MNCdigit2,
+		NAS_CONN_ESTABLI_REQ (msg_p).plmnID.MNCdigit3);
+	  
+	  //PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, NOT_A_RNTI, 0, 0);
+	  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, NOT_A_RNTI, 0, 0, 0);
+	  
+	  UE_rrc_inst[ue_mod_id].initialNasMsg = NAS_CONN_ESTABLI_REQ (msg_p).initialNasMsg;
+	  
+	  switch (rrc_get_state(ue_mod_id)) {
       case RRC_STATE_IDLE: {
         if (rrc_get_sub_state(ue_mod_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE) {
           rrc_ue_generate_RRCConnectionRequest(&ctxt, 0);
@@ -4906,94 +4871,95 @@ void *rrc_ue_task( void *args_p )
       case RRC_STATE_INACTIVE: {
         /* Need to first activate lower layers */
         MessageDef *message_p;
-
+	
         message_p = itti_alloc_new_message(TASK_RRC_UE, ACTIVATE_MESSAGE);
-
+	
         itti_send_msg_to_task(TASK_L2L1, instance, message_p);
-
+	
         rrc_set_state (ue_mod_id, RRC_STATE_IDLE);
         /* Fall through to next case */
       }
-
+	
       case RRC_STATE_IDLE: {
         if (rrc_get_sub_state(ue_mod_id) != RRC_SUB_STATE_IDLE_SEARCHING) {
           /* Ask to layer 1 to find a cell matching the criterion */
           MessageDef *message_p;
-
-          case RRC_STATE_IDLE: {
-            if (rrc_get_sub_state(ue_mod_id) != RRC_SUB_STATE_IDLE_SEARCHING) {
-              /* Ask to layer 1 to find a cell matching the criterion */
-              MessageDef *message_p;
-              message_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_CELL_REQ);
-              rrc_set_sub_state (ue_mod_id, RRC_SUB_STATE_IDLE_SEARCHING);
-              PHY_FIND_CELL_REQ (message_p).transaction_id = RRC_RAL_SCAN_REQ (msg_p).transaction_id;
-              PHY_FIND_CELL_REQ (message_p).earfcn_start   = 1;
-              PHY_FIND_CELL_REQ (message_p).earfcn_end     = 1; //44
-              itti_send_msg_to_task(TASK_PHY_UE, instance, message_p);
-            }
-
-            break;
-          }
-
-          case RRC_STATE_CONNECTED:
-            /* should not happen */
-            LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, msg_name, rrc_get_state(ue_mod_id));
-            break;
-
-          default:
-            LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
-            break;
+	  
+	case RRC_STATE_IDLE: {
+	  if (rrc_get_sub_state(ue_mod_id) != RRC_SUB_STATE_IDLE_SEARCHING) {
+	    /* Ask to layer 1 to find a cell matching the criterion */
+	    MessageDef *message_p;
+	    message_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_CELL_REQ);
+	    rrc_set_sub_state (ue_mod_id, RRC_SUB_STATE_IDLE_SEARCHING);
+	    PHY_FIND_CELL_REQ (message_p).transaction_id = RRC_RAL_SCAN_REQ (msg_p).transaction_id;
+	    PHY_FIND_CELL_REQ (message_p).earfcn_start   = 1;
+	    PHY_FIND_CELL_REQ (message_p).earfcn_end     = 1; //44
+	    itti_send_msg_to_task(TASK_PHY_UE, instance, message_p);
+	  }
+	  
+	  break;
+	}
+	    
+	case RRC_STATE_CONNECTED:
+	  /* should not happen */
+	  LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, msg_name, rrc_get_state(ue_mod_id));
+	  break;
+	  
+	default:
+	  LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
+	  break;
         }
-
+	
         break;
 
-      case RRC_STATE_CONNECTED:
-        /* should not happen */
-        LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), rrc_get_state(ue_mod_id));
-        break;
-
-      default:
-        LOG_E(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
-        break;
+	case RRC_STATE_CONNECTED:
+	  /* should not happen */
+	  LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), rrc_get_state(ue_mod_id));
+	  break;
+	  
+	default:
+	  LOG_E(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
+	  break;
       }
-
-      break;
-
-    case PHY_FIND_CELL_IND:
-      LOG_D(RRC, "[UE %d] Received %s: state %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), rrc_get_state(ue_mod_id));
-
-      switch (rrc_get_state(ue_mod_id)) {
-      case RRC_STATE_IDLE:
-        switch (rrc_get_sub_state(ue_mod_id)) {
-        case RRC_SUB_STATE_IDLE_SEARCHING: {
-          MessageDef *message_p;
-          int         i;
-
-          message_p = itti_alloc_new_message(TASK_RRC_UE, RRC_RAL_SCAN_CONF);
-
-          RRC_RAL_SCAN_CONF (message_p).transaction_id = PHY_FIND_CELL_IND(msg_p).transaction_id;
-          RRC_RAL_SCAN_CONF (message_p).num_scan_resp  = PHY_FIND_CELL_IND(msg_p).cell_nb;
-
-                rrc_set_sub_state (ue_mod_id, RRC_SUB_STATE_IDLE);
-                itti_send_msg_to_task(TASK_RAL_UE, instance, message_p);
-                break;
-              }
-
-              default:
-                LOG_C(RRC, "[UE %d] Invalid RRC state %d substate %d\n",
-                      ue_mod_id,
-                      rrc_get_state(ue_mod_id),
-                      rrc_get_sub_state(ue_mod_id));
-            }
-
-            break;
-
-          case RRC_STATE_INACTIVE:
-          case RRC_STATE_CONNECTED:
-            /* should not happen */
-            LOG_E(RRC, "[UE %d] indication %s in RRC state %d\n", ue_mod_id, msg_name, rrc_get_state(ue_mod_id));
-            break;
-
+	
+	break;
+	
+      case PHY_FIND_CELL_IND:
+	LOG_D(RRC, "[UE %d] Received %s: state %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), rrc_get_state(ue_mod_id));
+	
+	switch (rrc_get_state(ue_mod_id)) {
+	case RRC_STATE_IDLE:
+	  switch (rrc_get_sub_state(ue_mod_id)) {
+	  case RRC_SUB_STATE_IDLE_SEARCHING: 
+	    {
+	      MessageDef *message_p;
+	      int         i;
+	      
+	      message_p = itti_alloc_new_message(TASK_RRC_UE, RRC_RAL_SCAN_CONF);
+	      
+	      RRC_RAL_SCAN_CONF (message_p).transaction_id = PHY_FIND_CELL_IND(msg_p).transaction_id;
+	      RRC_RAL_SCAN_CONF (message_p).num_scan_resp  = PHY_FIND_CELL_IND(msg_p).cell_nb;
+	      
+	      rrc_set_sub_state (ue_mod_id, RRC_SUB_STATE_IDLE);
+	      itti_send_msg_to_task(TASK_RAL_UE, instance, message_p);
+	      break;
+	    }
+	    
+	  default:
+	    LOG_C(RRC, "[UE %d] Invalid RRC state %d substate %d\n",
+		  ue_mod_id,
+		  rrc_get_state(ue_mod_id),
+		  rrc_get_sub_state(ue_mod_id));
+	  }
+	  
+	  break;
+	  
+	case RRC_STATE_INACTIVE:
+	case RRC_STATE_CONNECTED:
+	  /* should not happen */
+	  LOG_E(RRC, "[UE %d] indication %s in RRC state %d\n", ue_mod_id, msg_name, rrc_get_state(ue_mod_id));
+	  break;
+	  
         default:
           LOG_E(RRC, "[UE %d] Invalid RRC state %d substate %d\n",
                 ue_mod_id,
@@ -5002,80 +4968,57 @@ void *rrc_ue_task( void *args_p )
         }
 
         break;
-
-      case RRC_STATE_INACTIVE:
-      case RRC_STATE_CONNECTED:
-        /* should not happen */
-        LOG_E(RRC, "[UE %d] indication %s in RRC state %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), rrc_get_state(ue_mod_id));
-        break;
-
-      default:
-        LOG_E(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
-        break;
-      }
-
+	
       case RRC_RAL_CONFIGURE_THRESHOLD_REQ:
-        rrc_ue_ral_handle_configure_threshold_request(ue_mod_id, msg_p);
-        break;
-
+	rrc_ue_ral_handle_configure_threshold_request(ue_mod_id, msg_p);
+	break;
+	
       case RRC_RAL_CONNECTION_ESTABLISHMENT_REQ:
-        LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, msg_name);
-
-        switch (rrc_get_state(ue_mod_id)) {
-          case RRC_STATE_IDLE: {
-            if (rrc_get_sub_state(ue_mod_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE) {
-              PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, UE_rrc_inst[ue_mod_id].Info[0].rnti, 0, 0, 0);
-              rrc_ue_generate_RRCConnectionRequest(&ctxt, 0);
-              LOG_D(RRC, "not sending connection request\n");
-              rrc_set_sub_state (ue_mod_id, RRC_SUB_STATE_IDLE_CONNECTING);
-            }
-
-            break;
-          }
-
-    case RRC_RAL_CONNECTION_ESTABLISHMENT_REQ:
-      LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
-
-          default:
-            LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
-            break;
-        }
-
-        break;
-
+	LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, msg_name);
+	
+	switch (rrc_get_state(ue_mod_id)) {
+	case RRC_STATE_IDLE: {
+	  if (rrc_get_sub_state(ue_mod_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE) {
+	    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, UE_rrc_inst[ue_mod_id].Info[0].rnti, 0, 0, 0);
+	    rrc_ue_generate_RRCConnectionRequest(&ctxt, 0);
+	    LOG_D(RRC, "not sending connection request\n");
+	    rrc_set_sub_state (ue_mod_id, RRC_SUB_STATE_IDLE_CONNECTING);
+	  }
+	  
+	  break;
+	}
+	  
+	case RRC_RAL_CONNECTION_ESTABLISHMENT_REQ:
+	      LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
+	      
+	default:
+	  LOG_C(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
+	  break;
+	}
+	
+	break;
+	
       case RRC_STATE_INACTIVE:
       case RRC_STATE_CONNECTED:
-        /* should not happen */
-        LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), rrc_get_state(ue_mod_id));
-        break;
+	/* should not happen */
+	LOG_E(RRC, "[UE %d] request %s in RRC state %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), rrc_get_state(ue_mod_id));
+	break;
 #endif
-
+	
       default:
-        LOG_E(RRC, "[UE %d] Invalid RRC state %d\n", ue_mod_id, rrc_get_state(ue_mod_id));
-        break;
+	LOG_E(RRC, "[UE %d] Received unexpected message %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
+	break;
       }
-
-      break;
-
-    case RRC_RAL_CONNECTION_RELEASE_REQ:
-      LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
-      break;
-#endif
-
-    default:
-      LOG_E(RRC, "[UE %d] Received unexpected message %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
-      break;
-    }
-
-    result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
-    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    msg_p = NULL;
-  }
+      
+      result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+      AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+      AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+      msg_p = NULL;
+   }
 }
 #endif
-
-
+	
+	
 
 /*------------------------------------------------------------------------------*/
 void

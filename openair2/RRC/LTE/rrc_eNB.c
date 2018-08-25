@@ -345,7 +345,6 @@ init_SI(
 
 #endif
 
-#endif
   LOG_D(RRC,
 	PROTOCOL_RRC_CTXT_FMT" RRC_UE --- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) ---> MAC_UE\n",
 	PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
