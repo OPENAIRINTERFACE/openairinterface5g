@@ -287,7 +287,7 @@ typedef struct {
 
 /// Measurement Variables
 
-#define NUMBER_OF_SUBBANDS_MAX 13
+//#define NUMBER_OF_SUBBANDS_MAX 13
 #define NUMBER_OF_HARQ_PID_MAX 8
 
 #define MAX_FRAME_NUMBER 0x400
@@ -302,9 +302,9 @@ typedef struct {
 
 #ifndef malloc16
 #  ifdef __AVX2__
-#    define malloc16(x) memalign(32,x)
+#    define malloc16(x) memalign(32,x+32)
 #  else
-#    define malloc16(x) memalign(16,x)
+#    define malloc16(x) memalign(16,x+16)
 #  endif
 #endif
 #define free16(y,x) free(y)
@@ -321,9 +321,9 @@ typedef struct {
 static inline void* malloc16_clear( size_t size )
 {
 #ifdef __AVX2__
-  void* ptr = memalign(32, size);
+  void* ptr = memalign(32, size+32);
 #else
-  void* ptr = memalign(16, size);
+  void* ptr = memalign(16, size+16);
 #endif
   DevAssert(ptr);
   memset( ptr, 0, size );

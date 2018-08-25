@@ -48,7 +48,7 @@ if [ "$1" = "eNB" ]; then
 else
     if [ "$1" = "UE" ]; then 
        echo "bring up oai0 interface for UE"
-       sudo ifconfig oai0 10.0.1.9 netmask 255.255.255.0 broadcast 10.0.1.255
+       sudo ifconfig oai0 10.0.1.2 netmask 255.255.255.0 broadcast 10.0.1.255
        $OPENAIR_DIR/targets/bin/rb_tool -a -c0 -i0 -z0 -s 10.0.1.2 -t 10.0.1.1 -r 1
     fi
 fi  

@@ -25,7 +25,7 @@
  * \date 2010 - 2014
  * \email navid.nikaein@eurecom.fr
  * \version 1.0
- 
+
  */
 /** \addtogroup _rrc
  *  @{
@@ -106,6 +106,14 @@ rrc_ue_decode_dcch(
   const uint8_t                eNB_indexP
 );
 
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+int decode_SL_Discovery_Message(
+  const protocol_ctxt_t* const ctxt_pP,
+  const uint8_t                eNB_index,
+  const uint8_t*               Sdu,
+  const uint8_t                Sdu_len);
+#endif
+
 /** \brief Generate/Encodes RRCConnnectionRequest message at UE
     \param ctxt_pP Running context
     \param eNB_index Index of corresponding eNB/CH*/
@@ -180,6 +188,28 @@ void rrc_ue_process_radioResourceConfigDedicated(
   const protocol_ctxt_t* const ctxt_pP,
   uint8_t eNB_index,
   RadioResourceConfigDedicated_t *radioResourceConfigDedicated);
+
+
+/** \brief Process a RadioResourceConfig and configure PHY/MAC for SL communication/discovery
+    \param Mod_idP
+    \param eNB_index Index of corresponding CH/eNB
+    \param sib18 Pointer to SIB18 from SI message
+    \param sib19 Pointer to SIB19 from SI message
+    \param sl_CommConfig Pointer to SL_CommConfig RRCConnectionConfiguration
+    \param sl_DiscConfig Pointer to SL_DiscConfig RRCConnectionConfiguration */
+void rrc_ue_process_sidelink_radioResourceConfig(
+  module_id_t Mod_idP,
+  uint8_t eNB_index,
+  SystemInformationBlockType18_r12_t     *sib18,
+  SystemInformationBlockType19_r12_t     *sib19,
+  SL_CommConfig_r12_t* sl_CommConfig,
+  SL_DiscConfig_r12_t* sl_DiscConfig);
+
+/** \brief Init control socket to listen to incoming packets from ProSe App
+ *
+ */
+void rrc_control_socket_init(void);
+
 
 // eNB/CH RRC Procedures
 
@@ -327,6 +357,54 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   const uint32_t                nas_length
 );
 
+/**\brief Generate/decode the RRCConnectionReconfiguration for Sidelink at eNB
+   \param ctxt_pP       Running context
+   \param ue_context_pP RRC UE context
+   \param destinationInfoList List of the destinations
+   \param n_discoveryMessages Number of discovery messages*/
+int
+rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
+      const protocol_ctxt_t* const ctxt_pP,
+      rrc_eNB_ue_context_t*           const ue_context_pP,
+      SL_DestinationInfoList_r12_t  *destinationInfoList,
+      int n_discoveryMessages
+);
+
+/** \brief process the received SidelinkUEInformation message at eNB
+    \param ctxt_pP Running context
+    \param sidelinkUEInformation sidelinkUEInformation message from UE*/
+uint8_t
+rrc_eNB_process_SidelinkUEInformation(
+      const protocol_ctxt_t* const ctxt_pP,
+      rrc_eNB_ue_context_t*         ue_context_pP,
+      SidelinkUEInformation_r12_t*  sidelinkUEInformation
+);
+
+/** \brief Get a Resource Pool to transmit SL communication
+    \param ctxt_pP Running context
+    \param ue_context_pP UE context
+    \param destinationInfoList Pointer to the list of SL destinations*/
+SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool(
+      const protocol_ctxt_t* const ctxt_pP,
+      rrc_eNB_ue_context_t* const ue_context_pP,
+      SL_DestinationInfoList_r12_t  *destinationInfoList
+);
+
+/** \brief Get a Resource Pool for Discovery
+    \param ctxt_pP Running context
+    \param ue_context_pP UE context
+    \param n_discoveryMessages Number of discovery messages*/
+SL_DiscConfig_r12_t rrc_eNB_get_sidelink_discTXPool(
+      const protocol_ctxt_t* const ctxt_pP,
+      rrc_eNB_ue_context_t* const ue_context_pP,
+      int n_discoveryMessages
+);
+
+/** \brief Process request from control socket
+ *  \param arg
+ */
+void *rrc_control_socket_thread_fct(void *arg);
+
 //L2_interface.c
 int8_t
 mac_rrc_data_req(
@@ -380,8 +458,8 @@ mac_rrc_data_ind_ue(
 
 void mac_sync_ind( module_id_t Mod_instP, uint8_t status);
 
-void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP, 
-			    const int CC_id, 
+void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
+			    const int CC_id,
 			    const frame_t frameP,
 			    const sub_frame_t subframeP,
 			    const rnti_t rnti);
@@ -550,5 +628,11 @@ void openair_rrc_top_init_ue(
                         uint8_t cba_group_active,
                         uint8_t HO_active
 );
+pthread_mutex_t      rrc_release_freelist;
+RRC_release_list_t rrc_release_info;
+pthread_mutex_t      lock_ue_freelist;
+void remove_UE_from_freelist(module_id_t mod_id, rnti_t rnti);
+void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, boolean_t removeFlag);
+void release_UE_in_freeList(module_id_t mod_id);
 
 /** @}*/

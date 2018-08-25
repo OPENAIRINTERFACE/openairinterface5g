@@ -37,9 +37,11 @@
 
 #include "SCHED_UE/sched_UE.h"
 #include "SCHED/sched_common_extern.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "../LTE_TRANSPORT/prach_extern.h"
+
+//#define PRACH_DEBUG 1
 
 int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf )
 {
@@ -98,7 +100,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
 #else //normal case (simulation)
   prach_start = subframe*ue->frame_parms.samples_per_tti-ue->N_TA_offset;
-  LOG_D(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
+  LOG_I(PHY,"[UE %d] prach_start %d, rx_offset %d, hw_timing_advance %d, N_TA_offset %d\n", ue->Mod_id,
     prach_start,
     ue->rx_offset,
     ue->hw_timing_advance,
@@ -413,7 +415,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       memmove( prach, prach+4096, Ncp<<2 );
       prach_len = 2048+Ncp;
     } else {
-      idft12288(prachF,prach2);
+      idft12288(prachF,prach2,1);
       memmove( prach, prach+24576, Ncp<<2 );
       prach_len = 12288+Ncp;
 
@@ -432,7 +434,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       memmove( prach, prach+6144, Ncp<<2 );
       prach_len = 3072+Ncp;
     } else {
-      idft18432(prachF,prach2);
+      idft18432(prachF,prach2,1);
       memmove( prach, prach+36864, Ncp<<2 );
       prach_len = 18432+Ncp;
 
@@ -451,7 +453,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 	memmove( prach, prach+8192, Ncp<<2 );
 	prach_len = 4096+Ncp;
       } else {
-	idft24576(prachF,prach2);
+	idft24576(prachF,prach2,1);
 	memmove( prach, prach+49152, Ncp<<2 );
 	prach_len = 24576+Ncp;
 	
@@ -468,7 +470,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 	memmove( prach, prach+6144, Ncp<<2 );
 	prach_len = 3072+Ncp;
       } else {
-	idft18432(prachF,prach2);
+	idft18432(prachF,prach2,1);
 	memmove( prach, prach+36864, Ncp<<2 );
 	prach_len = 18432+Ncp;
 	printf("Generated prach for 100 PRB, 3/4 sampling\n");
@@ -486,19 +488,19 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
   AssertFatal(prach_fmt<4,
 	      "prach_fmt4 not fully implemented" );
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   int j;
   int overflow = prach_start + prach_len - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*ue->frame_parms.samples_per_tti;
   LOG_I( PHY, "prach_start=%d, overflow=%d\n", prach_start, overflow );
   
   for (i=prach_start,j=0; i<min(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,prach_start+prach_len); i++,j++) {
-    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j]<<4;
-    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
+    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j];
+    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
   }
   
   for (i=0; i<overflow; i++,j++) {
-    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j]<<4;
-    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1]<<4;
+    ((int16_t*)ue->common_vars.txdata[0])[2*i] = prach[2*j];
+    ((int16_t*)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
   }
 #if defined(EXMIMO)
   // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
@@ -523,9 +525,9 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
   
 #if defined(PRACH_WRITE_OUTPUT_DEBUG)
-  write_output("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);
-  write_output("prach_tx0.m","prachtx0",prach+(Ncp<<1),prach_len-Ncp,1,1);
-  write_output("txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][0]),2*ue->frame_parms.samples_per_tti,1,1);
+  LOG_M("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);
+  LOG_M("prach_tx0.m","prachtx0",prach+(Ncp<<1),prach_len-Ncp,1,1);
+  LOG_M("txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][0]),2*ue->frame_parms.samples_per_tti,1,1);
   exit(-1);
 #endif
 

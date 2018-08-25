@@ -31,7 +31,7 @@
 */
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 unsigned short msrsb_6_40[8][4] = {{36,12,4,4},
   {32,16,8,4},
@@ -134,7 +134,6 @@ int32_t generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
   //uint32_t subframe_offset;
   uint8_t Bsrs  = soundingrs_ul_config_dedicated->srs_Bandwidth;
   uint8_t Csrs  = frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
-  uint8_t Ssrs  = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
   uint8_t n_RRC = soundingrs_ul_config_dedicated->freqDomainPosition;
   uint8_t kTC   = soundingrs_ul_config_dedicated->transmissionComb;
 
@@ -144,7 +143,9 @@ int32_t generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
   uint32_t v=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
 
   LOG_D(PHY,"SRS root sequence: u %d, v %d\n",u,v);
-  LOG_D(PHY,"CommonSrsConfig:    Csrs %d, Ssrs %d, AnSrsSimultan %d \n",Csrs,Ssrs,frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission);
+  LOG_D(PHY,"CommonSrsConfig:    Csrs %d, Ssrs %d, AnSrsSimultan %d \n",Csrs,
+        frame_parms->soundingrs_ul_config_common.srs_SubframeConfig,
+        frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission);
   LOG_D(PHY,"DedicatedSrsConfig: Bsrs %d, bhop %d, nRRC %d, Isrs %d, kTC %d, n_SRS %d\n",Bsrs,soundingrs_ul_config_dedicated->srs_HoppingBandwidth,n_RRC
                                                                                        ,soundingrs_ul_config_dedicated->srs_ConfigIndex,kTC
                                                                                        ,soundingrs_ul_config_dedicated->cyclicShift);
@@ -219,113 +220,6 @@ int generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,uint8_t subframe)
   LOG_D(PHY,"[UE] generate_srs_tx_emul for subframe %d\n",subframe);
   return(0);
 }
-
-#if 0
-int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
-                    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
-                    int *txdataF)
-{
-
-  uint16_t msrsb=0,Nb=0,nb,b,msrs0=0,k,Msc_RS,Msc_RS_idx,carrier_pos;
-  uint16_t *Msc_idx_ptr;
-  int k0;
-  uint8_t Bsrs  = soundingrs_ul_config_dedicated->srs_Bandwidth;
-  uint8_t Csrs  = frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
-  uint8_t n_RRC = soundingrs_ul_config_dedicated->freqDomainPosition;
-  uint8_t kTC   = soundingrs_ul_config_dedicated->transmissionComb;
-
-  if (frame_parms->N_RB_UL < 41) {
-    msrs0 = msrsb_6_40[Csrs][0];
-    msrsb = msrsb_6_40[Csrs][Bsrs];
-    Nb    = Nb_6_40[Csrs][Bsrs];
-  } else if (frame_parms->N_RB_UL < 61) {
-    msrs0 = msrsb_41_60[Csrs][0];
-    msrsb = msrsb_41_60[Csrs][Bsrs];
-    Nb    = Nb_41_60[Csrs][Bsrs];
-  } else if (frame_parms->N_RB_UL < 81) {
-    msrs0 = msrsb_61_80[Csrs][0];
-    msrsb = msrsb_61_80[Csrs][Bsrs];
-    Nb    = Nb_61_80[Csrs][Bsrs];
-  } else if (frame_parms->N_RB_UL <111) {
-    msrs0 = msrsb_81_110[Csrs][0];
-    msrsb = msrsb_81_110[Csrs][Bsrs];
-    Nb    = Nb_81_110[Csrs][Bsrs];
-  }
-
-  Msc_RS = msrsb * 6;
-  k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + kTC;
-  nb  = (4*n_RRC/msrsb)%Nb;
-
-  for (b=0; b<=Bsrs; b++) {
-    k0 += 2*nb*Msc_RS;
-  }
-
-  if (k0<0) {
-    LOG_E(PHY,"Invalid parameter set msrs0=%d, msrsb=%d, Nb=%d => nb=%d, k0=%d\n",msrs0,msrsb,Nb,nb,k0);
-    return(-1);
-  }
-
-  Msc_idx_ptr = (uint16_t*) bsearch((uint16_t*) &Msc_RS, (uint16_t*) dftsizes, 33, sizeof(uint16_t), compareints);
-
-  if (Msc_idx_ptr)
-    Msc_RS_idx = Msc_idx_ptr - dftsizes;
-  else {
-    LOG_E(PHY,"generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
-    return(-1);
-  }
-
-#ifdef DEBUG_SRS
-  LOG_I(PHY,"generate_srs_rx: Msc_RS = %d, Msc_RS_idx = %d, k0=%d\n",Msc_RS, Msc_RS_idx,k0);
-#endif
-
-  carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
-
-  for (k=0; k<Msc_RS; k++) {
-    ((short*) txdataF)[carrier_pos<<1]   = ul_ref_sigs_rx[0][0][Msc_RS_idx][k<<1];
-    ((short*) txdataF)[(carrier_pos<<1)+1] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<1)+1];
-    carrier_pos+=2;
-
-    if (carrier_pos >= frame_parms->ofdm_symbol_size)
-      carrier_pos=1;
-  }
-
-  /*
-  for (k=0;k<Msc_RS;k++) {
-    if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0)) {
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)] = ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+1] = ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+2] = -ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+3] = ONE_OVER_SQRT2_Q15;
-    }
-    else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] < 0)) {
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)] = ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+1] = -ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+2] = ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+3] = ONE_OVER_SQRT2_Q15;
-    }
-    else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0)) {
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)] = -ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+1] = ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+2] = -ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+3] = -ONE_OVER_SQRT2_Q15;
-    }
-    else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] < 0)) {
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)] = -ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+1] = -ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+2] = ONE_OVER_SQRT2_Q15;
-      ((short*) txdataF)[4*(symbol_offset + carrier_pos)+3] = -ONE_OVER_SQRT2_Q15;
-    }
-
-    carrier_pos+=2;
-    if (carrier_pos >= frame_parms->ofdm_symbol_size)
-      carrier_pos=0;
-  }
-  */
-
-  //  write_output("srs_rx.m","srsrx",txdataF,1024,2,1);
-  return(0);
-}
-#endif
 
 #ifdef MAIN
 main()

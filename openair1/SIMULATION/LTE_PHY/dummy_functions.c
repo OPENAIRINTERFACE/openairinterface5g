@@ -38,6 +38,14 @@ void ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frame,
 		 sub_frame_t subframe, uint8_t * sdu, uint16_t sdu_len,
 		 uint8_t CH_index){}
 
+SLSS_t *ue_get_slss(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe) {return(NULL);}
+
+SLDCH_t *ue_get_sldch(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe) {return(NULL);}
+
+SLSCH_t *ue_get_slsch(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe) {return(NULL);}
+
+void multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP) {}
+
 uint16_t
 ue_process_rar(const module_id_t module_idP,
 	       const int CC_id,
@@ -52,7 +60,7 @@ void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 		     uint8_t * sdu, uint16_t sdu_len, uint8_t eNB_index,
 		     uint8_t sync_area){}
 
-int ue_query_mch(uint8_t Mod_id, uint8_t CC_id, uint32_t frame,
+int ue_query_mch(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
 		 sub_frame_t subframe, uint8_t eNB_index,
 		 uint8_t * sync_area, uint8_t * mcch_active){ return(0);}
 

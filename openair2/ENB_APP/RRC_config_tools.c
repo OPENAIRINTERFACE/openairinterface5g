@@ -31,8 +31,7 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "log.h"
-#include "log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "assertions.h"
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"

@@ -39,7 +39,6 @@ int16_t *primary_synch1_time;
 int16_t *primary_synch2_time;
 
 
-#include "PHY/CODING/coding_vars.h"
 
 //PHY_VARS *PHY_vars;
 #ifndef OCP_FRAMEWORK
@@ -61,7 +60,6 @@ char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
 
-unsigned char NB_RU=0;
 
 #ifndef OPENAIR2
 unsigned char NB_eNB_INST=0;

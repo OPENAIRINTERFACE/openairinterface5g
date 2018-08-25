@@ -97,7 +97,77 @@ int st;
 }
 /*-----------------------------------------------------------------------------------*/
 /* from here: interface implementtion of the configuration module */
+int nooptfunc(void) {
+   return 0;
+};
 
+int config_cmdlineonly_getlist(paramlist_def_t *ParamList, 
+                                   paramdef_t *params, int numparams, char *prefix)
+{
+     ParamList->numelt = 0;
+     return 0;
+}
+
+
+int config_cmdlineonly_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
+{
+  int defval;
+  int fatalerror=0;
+  int numdefvals=0;
+  
+
+  for(int i=0;i<numoptions;i++) {
+     defval=0;
+     switch(cfgoptions[i].type) {
+       case TYPE_STRING:
+            defval=config_setdefault_string(&(cfgoptions[i]), prefix);
+       break;
+       case TYPE_STRINGLIST:
+            defval=config_setdefault_stringlist(&(cfgoptions[i]), prefix);
+       break;
+       	case TYPE_UINT8:
+       	case TYPE_INT8:	
+       	case TYPE_UINT16:
+       	case TYPE_INT16:
+       	case TYPE_UINT32:
+       	case TYPE_INT32:
+       	case TYPE_MASK:	
+             defval=config_setdefault_int(&(cfgoptions[i]), prefix);
+        break;
+       	case TYPE_UINT64:
+       	case TYPE_INT64:
+             defval=config_setdefault_int64(&(cfgoptions[i]), prefix);
+        break;        
+       	case TYPE_UINTARRAY:
+       	case TYPE_INTARRAY:
+             defval=config_setdefault_intlist(&(cfgoptions[i]), prefix);
+        break;
+       	case TYPE_DOUBLE:
+             defval=config_setdefault_double(&(cfgoptions[i]), prefix);  
+        break;  
+       	case TYPE_IPV4ADDR:
+             defval=config_setdefault_ipv4addr(&(cfgoptions[i]), prefix); 
+              
+        break;
+        default:
+            fprintf(stderr,"[CONFIG] %s.%s type %i  not supported\n",prefix, cfgoptions[i].optname,cfgoptions[i].type);
+            fatalerror=1;
+        break;
+      } /* switch on param type */
+    if (defval == 1) {
+    	numdefvals++;
+        cfgoptions[i].paramflags = cfgoptions[i].paramflags |  PARAMFLAG_PARAMSETDEF;
+    }
+  } /* for loop on options */
+  printf("[CONFIG] %s: %i/%i parameters successfully set \n",
+         ((prefix == NULL)?"(root)":prefix), 
+         numdefvals,numoptions );
+  if (fatalerror == 1) {
+      fprintf(stderr,"[CONFIG] fatal errors found when assigning %s parameters \n",
+             prefix);
+  }
+  return numdefvals;
+}
 
 configmodule_interface_t *load_configmodule(int argc, char **argv)
 {
@@ -110,17 +180,19 @@ uint32_t tmpflags=0;
 int i;
  
 /* first parse the command line to look for the -O option */
-  opterr=0;
   for (i = 0;i<argc;i++) {
        if (strlen(argv[i]) < 2) continue;
        if ( argv[i][1] == 'O' && i < (argc -1)) {
           cfgparam = argv[i+1]; 
        } 
-        if ( argv[i][1] == 'h' ) {
+       if ( strstr(argv[i], "help_config") != NULL  ) {
+          config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params));
+          exit(0);
+       }
+       if ( (strcmp(argv[i]+1, "h") == 0) || (strstr(argv[i]+1, "help_") != NULL ) ) {
           tmpflags = CONFIG_HELP; 
        }            
    }
-   optind=1;
 
 /* look for the OAI_CONFIGMODULE environement variable */
   if ( cfgparam == NULL ) {
@@ -129,21 +201,25 @@ int i;
 
 /* default */
   if (cfgparam == NULL) {
-     tmpflags = tmpflags | CONFIG_NOOOPT;
-     cfgparam = DEFAULT_CFGMODE ":" DEFAULT_CFGFILENAME;
-     }
+         tmpflags = tmpflags | CONFIG_NOOOPT;
+     if (strstr(argv[0],"uesoftmodem") == NULL) {
+         cfgparam = CONFIG_LIBCONFIGFILE ":" DEFAULT_CFGFILENAME;
+      } else {
+         cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;         
+      }
+   }
+   
 /* parse the config parameters to set the config source */
    i = sscanf(cfgparam,"%m[^':']:%ms",&cfgmode,&modeparams);
    if (i< 0) {
        fprintf(stderr,"[CONFIG] %s, %d, sscanf error parsing config source  %s: %s\n", __FILE__, __LINE__,cfgparam, strerror(errno));
-       cfgmode=strdup(DEFAULT_CFGMODE);
-       modeparams = strdup(DEFAULT_CFGFILENAME);
+       exit(-1);
    }
    else if ( i == 1 ) {
   /* -O argument doesn't contain ":" separator, assume -O <conf file> option, default cfgmode to libconfig
      with one parameter, the path to the configuration file */
        modeparams=cfgmode;
-       cfgmode=strdup(DEFAULT_CFGMODE);
+       cfgmode=strdup(CONFIG_LIBCONFIGFILE);
    }
 
    cfgptr = malloc(sizeof(configmodule_interface_t));
@@ -153,7 +229,6 @@ int i;
    cfgptr->argc   = argc;
    cfgptr->argv   = argv; 
    cfgptr->cfgmode=strdup(cfgmode);
-
    cfgptr->num_cfgP=0;
    atoken=strtok_r(modeparams,":",&strtokctx);     
    while ( cfgptr->num_cfgP< CONFIG_MAX_OOPT_PARAMS && atoken != NULL) {
@@ -176,24 +251,33 @@ int i;
    for (i=0;i<cfgptr->num_cfgP; i++) {
         printf("%s ",cfgptr->cfgP[i]); 
    }
-   printf("\n");
+   printf(", debug flags: 0x%08x\n",cfgptr->rtflags);
 
- 
-   i=load_config_sharedlib(cfgptr);
-   if (i< 0) {
-      fprintf(stderr,"[CONFIG] %s %d config module %s couldn't be loaded\n", __FILE__, __LINE__,cfgmode);
-      cfgptr->rtflags = cfgptr->rtflags | CONFIG_HELP | CONFIG_ABORT;
+   if (strstr(cfgparam,CONFIG_CMDLINEONLY) == NULL) {
+      i=load_config_sharedlib(cfgptr);
+      if (i ==  0) {
+         printf("[CONFIG] config module %s loaded\n",cfgmode);
+         Config_Params[CONFIGPARAM_DEBUGFLAGS_IDX].uptr=&(cfgptr->rtflags);
+         config_get(Config_Params,CONFIG_PARAMLENGTH(Config_Params), CONFIG_SECTIONNAME );
+      } else {
+         fprintf(stderr,"[CONFIG] %s %d config module \"%s\" couldn't be loaded\n", __FILE__, __LINE__,cfgmode);
+         cfgptr->rtflags = cfgptr->rtflags | CONFIG_HELP | CONFIG_ABORT;
+      } 
    } else {
-      printf("[CONFIG] config module %s loaded\n",cfgmode);
-      Config_Params[CONFIGPARAM_DEBUGFLAGS_IDX].uptr=&(cfgptr->rtflags);
-      config_get(Config_Params,CONFIG_PARAMLENGTH(Config_Params), CONFIG_SECTIONNAME ); 
+      cfgptr->init = (configmodule_initfunc_t)nooptfunc;
+      cfgptr->get = config_cmdlineonly_get;
+      cfgptr->getlist = config_cmdlineonly_getlist;
+      cfgptr->end = (configmodule_endfunc_t)nooptfunc;
    }
 
   
 
    if (modeparams != NULL) free(modeparams);
    if (cfgmode != NULL) free(cfgmode);
-   if (CONFIG_ISFLAGSET(CONFIG_ABORT)) config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params));
+   if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
+       config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params));
+//       exit(-1);   
+   }
    return cfgptr;
 }
 

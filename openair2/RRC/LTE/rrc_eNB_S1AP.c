@@ -74,7 +74,7 @@ static const uint16_t S1AP_ENCRYPTION_EEA2_MASK = 0x4000;
 static const uint16_t S1AP_INTEGRITY_EIA1_MASK = 0x8000;
 static const uint16_t S1AP_INTEGRITY_EIA2_MASK = 0x4000;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 2, 0))
 # define INTEGRITY_ALGORITHM_NONE SecurityAlgorithmConfig__integrityProtAlgorithm_eia0_v920
 #else
 #ifdef EXMIMO_IOT
@@ -1192,54 +1192,6 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const ch
                   instance,
                   eNB_ue_s1ap_id);
     */
-    {
-      int      e_rab;
-      //int      mod_id = 0;
-      MessageDef *msg_delete_tunnels_p = NULL;
-      MSC_LOG_TX_MESSAGE(
-        MSC_RRC_ENB,
-        MSC_GTPU_ENB,
-        NULL,0,
-        "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ",
-        eNB_ue_s1ap_id);
-      msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-      memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p),
-             0,
-             sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-      // do not wait response
-      GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-
-      for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-        GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
-          ue_context_p->ue_context.enb_gtp_ebi[e_rab];
-        // erase data
-        ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
-        memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
-        ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
-      }
-
-      itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
-      MSC_LOG_TX_MESSAGE(
-        MSC_RRC_ENB,
-        MSC_S1AP_ENB,
-        NULL,0,
-        "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
-        eNB_ue_s1ap_id);
-      MessageDef *msg_complete_p = NULL;
-      msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
-      S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-      itti_send_msg_to_task(TASK_S1AP, instance, msg_complete_p);
-      rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(
-                          RC.rrc[instance],
-                          UE_INITIAL_ID_INVALID,
-                          eNB_ue_s1ap_id);
-
-      if (NULL != rrc_ue_s1ap_ids) {
-        rrc_eNB_S1AP_remove_ue_ids(
-          RC.rrc[instance],
-          rrc_ue_s1ap_ids);
-      }
-    }
     return (0);
   }
 }
@@ -1641,40 +1593,72 @@ int rrc_eNB_send_S1AP_E_RAB_MODIFY_RESP(const protocol_ctxt_t *const ctxt_pP,
 
   return 0;
 }
-int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *msg_name, instance_t instance) {
-  uint16_t                        mme_ue_s1ap_id;
-  uint32_t                        eNB_ue_s1ap_id;
-  struct rrc_eNB_ue_context_s    *ue_context_p = NULL;
-  protocol_ctxt_t                 ctxt;
-  e_rab_release_t e_rab_release_params[S1AP_MAX_E_RAB];
-  uint8_t nb_e_rabs_torelease;
-  int erab;
-  int i;
-  uint8_t b_existed,is_existed;
-  uint8_t xid;
-  uint8_t e_rab_release_drb;
-  MessageDef                     *msg_delete_tunnels_p = NULL;
-  e_rab_release_drb = 0;
-  memcpy(&e_rab_release_params[0], &(S1AP_E_RAB_RELEASE_COMMAND (msg_p).e_rab_release_params[0]), sizeof(e_rab_release_t)*S1AP_MAX_E_RAB);
-  mme_ue_s1ap_id  = S1AP_E_RAB_RELEASE_COMMAND (msg_p).mme_ue_s1ap_id;
-  eNB_ue_s1ap_id = S1AP_E_RAB_RELEASE_COMMAND (msg_p).eNB_ue_s1ap_id;
-  nb_e_rabs_torelease = S1AP_E_RAB_RELEASE_COMMAND (msg_p).nb_e_rabs_torelease;
-  ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
+int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *msg_name, instance_t instance){
+    uint32_t                        eNB_ue_s1ap_id;
+    struct rrc_eNB_ue_context_s*    ue_context_p = NULL;
+    protocol_ctxt_t                 ctxt;
+    e_rab_release_t e_rab_release_params[S1AP_MAX_E_RAB];
+    uint8_t nb_e_rabs_torelease;
+    int erab;
+    int i;
+    uint8_t b_existed,is_existed;
+    uint8_t xid;
+    uint8_t e_rab_release_drb;
+    MessageDef *                    msg_delete_tunnels_p = NULL;
+    e_rab_release_drb = 0;
+    memcpy(&e_rab_release_params[0], &(S1AP_E_RAB_RELEASE_COMMAND (msg_p).e_rab_release_params[0]), sizeof(e_rab_release_t)*S1AP_MAX_E_RAB);
 
-  if(ue_context_p != NULL) {
-    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
-    xid = rrc_eNB_get_next_transaction_identifier(ctxt.module_id);
-    LOG_D(RRC,"S1AP-E-RAB Release Command: MME_UE_S1AP_ID %d  ENB_UE_S1AP_ID %d release_e_rabs %d \n",
-          mme_ue_s1ap_id, eNB_ue_s1ap_id,nb_e_rabs_torelease);
+    eNB_ue_s1ap_id = S1AP_E_RAB_RELEASE_COMMAND (msg_p).eNB_ue_s1ap_id;
+    nb_e_rabs_torelease = S1AP_E_RAB_RELEASE_COMMAND (msg_p).nb_e_rabs_torelease;
+    ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
+    if(ue_context_p != NULL){
+        PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
 
-    for(erab = 0; erab < nb_e_rabs_torelease; erab++) {
-      b_existed = 0;
-      is_existed = 0;
+        xid = rrc_eNB_get_next_transaction_identifier(ctxt.module_id);
 
-      for ( i = erab-1;  i>= 0; i--) {
-        if (e_rab_release_params[erab].e_rab_id == e_rab_release_params[i].e_rab_id) {
-          is_existed = 1;
-          break;
+        LOG_D(RRC,"S1AP-E-RAB Release Command: MME_UE_S1AP_ID %d  ENB_UE_S1AP_ID %d release_e_rabs %d \n",
+            S1AP_E_RAB_RELEASE_COMMAND (msg_p).mme_ue_s1ap_id, eNB_ue_s1ap_id,nb_e_rabs_torelease);
+        for(erab = 0; erab < nb_e_rabs_torelease; erab++){
+            b_existed = 0;
+            is_existed = 0;
+            for ( i = erab-1;  i>= 0; i--){
+                if (e_rab_release_params[erab].e_rab_id == e_rab_release_params[i].e_rab_id){
+                    is_existed = 1;
+                    break;
+                }
+            }
+            if(is_existed == 1){
+                //e_rab_id is existed
+                continue;
+            }
+            for ( i = 0;  i < NB_RB_MAX; i++){
+                if (e_rab_release_params[erab].e_rab_id == ue_context_p->ue_context.e_rab[i].param.e_rab_id){
+                    b_existed = 1;
+                    break;
+                }
+            }
+            if(b_existed == 0) {
+                //no e_rab_id
+                ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
+                ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
+                ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 30;
+                ue_context_p->ue_context.nb_release_of_e_rabs++;
+            } else {
+                if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_FAILED){
+                    ue_context_p->ue_context.e_rab[i].xid = xid;
+                    continue;
+                } else if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED){
+                    ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_TORELEASE;
+                    ue_context_p->ue_context.e_rab[i].xid = xid;
+                    e_rab_release_drb++;
+                }else{
+                    //e_rab_id status NG
+                    ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
+                    ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
+                    ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 0;
+                    ue_context_p->ue_context.nb_release_of_e_rabs++;
+                }
+            }
         }
       }
 
@@ -1793,114 +1777,127 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
   uint32_t T;  /* DRX cycle */
 
   for (uint16_t tai_size = 0; tai_size < S1AP_PAGING_IND(msg_p).tai_size; tai_size++) {
+       LOG_D(RRC,"[eNB %d] In S1AP_PAGING_IND: MCC %d, MNC %d, TAC %d\n", instance, S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mcc,
+             S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mnc, S1AP_PAGING_IND(msg_p).tac[tai_size]);
+      if (RC.rrc[instance]->configuration.mcc == S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mcc
+          && RC.rrc[instance]->configuration.mnc == S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mnc
+          && RC.rrc[instance]->configuration.tac == S1AP_PAGING_IND(msg_p).tac[tai_size]) {
+          for (uint8_t CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+              lte_frame_type_t frame_type = RC.eNB[instance][CC_id]->frame_parms.frame_type;
+              /* get nB from configuration */
+              /* get default DRX cycle from configuration */
+              Tc = (uint8_t)RC.rrc[instance]->configuration.pcch_defaultPagingCycle[CC_id];
+              if (Tc < PCCH_Config__defaultPagingCycle_rf32 || Tc > PCCH_Config__defaultPagingCycle_rf256) {
+                  continue;
+              }
+              Tue = (uint8_t)S1AP_PAGING_IND(msg_p).paging_drx;
+              /* set T = min(Tc,Tue) */
+              T = Tc < Tue ? Ttab[Tc] : Ttab[Tue];
+              /* set pcch_nB = PCCH-Config->nB */
+              pcch_nB = (uint32_t)RC.rrc[instance]->configuration.pcch_nB[CC_id];
+              switch (pcch_nB) {
+                case PCCH_Config__nB_fourT:
+                    Ns = 4;
+                    break;
+                case PCCH_Config__nB_twoT:
+                    Ns = 2;
+                    break;
+                default:
+                    Ns = 1;
+                    break;
+              }
+              /* set N = min(T,nB) */
+              if (pcch_nB > PCCH_Config__nB_oneT) {
+                switch (pcch_nB) {
+                case PCCH_Config__nB_halfT:
+                  N = T/2;
+                  break;
+                case PCCH_Config__nB_quarterT:
+                  N = T/4;
+                  break;
+                case PCCH_Config__nB_oneEighthT:
+                  N = T/8;
+                  break;
+                case PCCH_Config__nB_oneSixteenthT:
+                  N = T/16;
+                  break;
+                case PCCH_Config__nB_oneThirtySecondT:
+                  N = T/32;
+                  break;
+                default:
+                  /* pcch_nB error */
+                  LOG_E(RRC, "[eNB %d] In S1AP_PAGING_IND:  pcch_nB error (pcch_nB %d) \n",
+                      instance, pcch_nB);
+                  return (-1);
+                }
+              } else {
+                N = T;
+              }
 
-    LOG_D(RRC,"[eNB %d] In S1AP_PAGING_IND: MCC %d, MNC %d, TAC %d\n", instance, S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mcc,
-          S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mnc, S1AP_PAGING_IND(msg_p).tac[tai_size]);
+              /* insert data to UE_PF_PO or update data in UE_PF_PO */
+              pthread_mutex_lock(&ue_pf_po_mutex);
+              uint16_t i = 0;
+              for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+                if ((UE_PF_PO[CC_id][i].enable_flag == TRUE && UE_PF_PO[CC_id][i].ue_index_value == (uint16_t)(S1AP_PAGING_IND(msg_p).ue_index_value))
+                    || (UE_PF_PO[CC_id][i].enable_flag != TRUE)) {
+                    /* set T = min(Tc,Tue) */
+                    UE_PF_PO[CC_id][i].T = T;
+                    /* set UE_ID */
+                    UE_PF_PO[CC_id][i].ue_index_value = (uint16_t)S1AP_PAGING_IND(msg_p).ue_index_value;
+                    /* calculate PF and PO */
+                    /* set PF_min : SFN mod T = (T div N)*(UE_ID mod N) */
+                    UE_PF_PO[CC_id][i].PF_min = (T / N) * (UE_PF_PO[CC_id][i].ue_index_value % N);
+                    /* set PO */
+                    /* i_s = floor(UE_ID/N) mod Ns */
+                    i_s = (uint8_t)((UE_PF_PO[CC_id][i].ue_index_value / N) % Ns);
+                    if (Ns == 1) {
+                        UE_PF_PO[CC_id][i].PO = (frame_type==FDD) ? 9 : 0;
+                    } else if (Ns==2) {
+                        UE_PF_PO[CC_id][i].PO = (frame_type==FDD) ? (4+(5*i_s)) : (5*i_s);
+                    } else if (Ns==4) {
+                        UE_PF_PO[CC_id][i].PO = (frame_type==FDD) ? (4*(i_s&1)+(5*(i_s>>1))) : ((i_s&1)+(5*(i_s>>1)));
+                    }
+                    if (UE_PF_PO[CC_id][i].enable_flag == TRUE) {
+                        //paging exist UE log
+                        LOG_D(RRC,"[eNB %d] CC_id %d In S1AP_PAGING_IND: Update exist UE %d, T %d, PF %d, PO %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value, T, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].PO);
+                    } else {
+                        /* set enable_flag */
+                        UE_PF_PO[CC_id][i].enable_flag = TRUE;
+                        //paging new UE log
+                        LOG_D(RRC,"[eNB %d] CC_id %d In S1AP_PAGING_IND: Insert a new UE %d, T %d, PF %d, PO %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value, T, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].PO);
+                    }
+                    break;
+                }
+              }
+              pthread_mutex_unlock(&ue_pf_po_mutex);
 
-    if (RC.rrc[instance]->configuration.mcc == S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mcc
-        && RC.rrc[instance]->configuration.mnc == S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mnc
-        && RC.rrc[instance]->configuration.tac == S1AP_PAGING_IND(msg_p).tac[tai_size]) {
-      for (uint8_t CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-        lte_frame_type_t frame_type = RC.eNB[instance][CC_id]->frame_parms.frame_type;
-        /* get nB from configuration */
-        /* get default DRX cycle from configuration */
-        Tc = (uint8_t)RC.rrc[instance]->configuration.pcch_defaultPagingCycle[CC_id];
-
-        if (Tc < PCCH_Config__defaultPagingCycle_rf32 || Tc > PCCH_Config__defaultPagingCycle_rf256) {
-          continue;
-        }
-
-        Tue = (uint8_t)S1AP_PAGING_IND(msg_p).paging_drx;
-        /* set T = min(Tc,Tue) */
-        T = Tc < Tue ? Ttab[Tc] : Ttab[Tue];
-        /* set pcch_nB = PCCH-Config->nB */
-        pcch_nB = (uint32_t)RC.rrc[instance]->configuration.pcch_nB[CC_id];
-
-        switch (pcch_nB) {
-          case PCCH_Config__nB_fourT:
-            Ns = 4;
-            break;
-
-          case PCCH_Config__nB_twoT:
-            Ns = 2;
-            break;
-
-          default:
-            Ns = 1;
-            break;
-        }
-
-        /* set N = min(T,nB) */
-        if (pcch_nB > PCCH_Config__nB_oneT) {
-          switch (pcch_nB) {
-            case PCCH_Config__nB_halfT:
-              N = T/2;
-              break;
-
-            case PCCH_Config__nB_quarterT:
-              N = T/4;
-              break;
-
-            case PCCH_Config__nB_oneEighthT:
-              N = T/8;
-              break;
-
-            case PCCH_Config__nB_oneSixteenthT:
-              N = T/16;
-              break;
-
-            case PCCH_Config__nB_oneThirtySecondT:
-              N = T/32;
-              break;
-
-            default:
-              /* pcch_nB error */
-              LOG_E(RRC, "[eNB %d] In S1AP_PAGING_IND:  pcch_nB error (pcch_nB %d) \n",
-                    instance, pcch_nB);
-              return (-1);
-          }
-        } else {
-          N = T;
-        }
-
-        /* insert data to UE_PF_PO or update data in UE_PF_PO */
-        pthread_mutex_lock(&ue_pf_po_mutex);
-        uint8_t i = 0;
-
-        for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
-          if ((UE_PF_PO[CC_id][i].enable_flag == TRUE && UE_PF_PO[CC_id][i].ue_index_value == (uint16_t)(S1AP_PAGING_IND(msg_p).ue_index_value))
-              || (UE_PF_PO[CC_id][i].enable_flag != TRUE)) {
-            /* set T = min(Tc,Tue) */
-            UE_PF_PO[CC_id][i].T = T;
-            /* set UE_ID */
-            UE_PF_PO[CC_id][i].ue_index_value = (uint16_t)S1AP_PAGING_IND(msg_p).ue_index_value;
-            /* calculate PF and PO */
-            /* set PF_min : SFN mod T = (T div N)*(UE_ID mod N) */
-            UE_PF_PO[CC_id][i].PF_min = (T / N) * (UE_PF_PO[CC_id][i].ue_index_value % N);
-            /* set PO */
-            /* i_s = floor(UE_ID/N) mod Ns */
-            i_s = (uint8_t)((UE_PF_PO[CC_id][i].ue_index_value / N) % Ns);
-
-            if (Ns == 1) {
-              UE_PF_PO[CC_id][i].PO = (frame_type==FDD) ? 9 : 0;
-            } else if (Ns==2) {
-              UE_PF_PO[CC_id][i].PO = (frame_type==FDD) ? (4+(5*i_s)) : (5*i_s);
-            } else if (Ns==4) {
-              UE_PF_PO[CC_id][i].PO = (frame_type==FDD) ? (4*(i_s&1)+(5*(i_s>>1))) : ((i_s&1)+(5*(i_s>>1)));
-            }
-
-            if (UE_PF_PO[CC_id][i].enable_flag == TRUE) {
-              //paging exist UE log
-              LOG_D(RRC,"[eNB %d] CC_id %d In S1AP_PAGING_IND: Update exist UE %d, T %d, PF %d, PO %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value, T, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].PO);
-            } else {
-              /* set enable_flag */
-              UE_PF_PO[CC_id][i].enable_flag = TRUE;
-              //paging new UE log
-              LOG_D(RRC,"[eNB %d] CC_id %d In S1AP_PAGING_IND: Insert a new UE %d, T %d, PF %d, PO %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value, T, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].PO);
-            }
-
-            break;
-
+              uint32_t length;
+              uint8_t buffer[RRC_BUF_SIZE];
+              uint8_t *message_buffer;
+              /* Transfer data to PDCP */
+              MessageDef *message_p;
+              message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_PCCH_DATA_REQ);
+              /* Create message for PDCP (DLInformationTransfer_t) */
+              length = do_Paging (instance,
+                                  buffer,
+                                  S1AP_PAGING_IND(msg_p).ue_paging_identity,
+                                  S1AP_PAGING_IND(msg_p).cn_domain);
+              if(length == -1)
+              {
+                LOG_I(RRC, "do_Paging error");
+                return -1;
+              }
+              message_buffer = itti_malloc (TASK_RRC_ENB, TASK_PDCP_ENB, length);
+              /* Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling). */
+              memcpy (message_buffer, buffer, length);
+              RRC_PCCH_DATA_REQ (message_p).sdu_size  = length;
+              RRC_PCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
+              RRC_PCCH_DATA_REQ (message_p).mode      = PDCP_TRANSMISSION_MODE_TRANSPARENT;  /* not used */
+              RRC_PCCH_DATA_REQ (message_p).rnti      = P_RNTI;
+              RRC_PCCH_DATA_REQ (message_p).ue_index  = i;
+              RRC_PCCH_DATA_REQ (message_p).CC_id  = CC_id;
+              LOG_D(RRC, "[eNB %d] CC_id %d In S1AP_PAGING_IND: send encdoed buffer to PDCP buffer_size %d\n", instance, CC_id, length);
+              itti_send_msg_to_task (TASK_PDCP_ENB, instance, message_p);
           }
         }
 

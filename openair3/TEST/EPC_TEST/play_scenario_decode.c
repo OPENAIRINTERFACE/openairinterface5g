@@ -38,6 +38,7 @@ int et_s1ap_decode_pdu(S1AP_PDU_t *const pdu, const uint8_t *const buffer, const
 {
   asn_dec_rval_t dec_ret;
   DevAssert(buffer != NULL);
+
   memset((void *)pdu, 0, sizeof(S1AP_S1AP_PDU_t));
   dec_ret = aper_decode(NULL,
                         &asn_DEF_S1AP_S1AP_PDU,

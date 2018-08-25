@@ -49,9 +49,12 @@ telnetshell_vardef_t proc_vardef[] = {
  online, noonline:	     enable or disable console logs \n\
  enable, disable id1-id2:    enable or disable logs for components index id1 to id2 \n\
  level_<level> id1-id2:      set log level to <level> for components index id1 to id2 \n\
- level_<verbosity> id1-id2:  set log verbosity to <verbosity> for components index id1 to id2 \n\
-use the show command to get the values for <level>, <verbosity> and the list of component indexes \
-that can be used for id1 and id2 \n"    
+use the show command to get the authorized values for <level> and the list of component \
+indexes that can be used for id1 and id2 \n\
+ print_<opt> <0|1>           disable or enable the \"opt\" log option, use the show command to get \
+the available options\n\
+ matlab_<opt> debug_<func>   disable or enable the debug code or matlab file generation \
+for \"func\" function. use the show command to get the available options\n"  
 
 #define PROCCMD_THREAD_HELP_STRING " thread sub commands: \n\
  <thread id> aff <core>  :    set affinity of thread <thread id> to core <core> \n\

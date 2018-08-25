@@ -45,6 +45,7 @@ configure_pdcp_req (struct pdcp_entity *pdcpP, void *rlcP, uint8_t rlc_sap_typeP
   mem_block      *mb;
 
   mb = get_free_mem_block (sizeof (struct cpdcp_primitive), __func__);
+  if(mb==NULL) return;
   ((struct cpdcp_primitive *) mb->data)->type = CPDCP_CONFIG_REQ;
   ((struct cpdcp_primitive *) mb->data)->primitive.config_req.rlc_sap = rlcP;
   ((struct cpdcp_primitive *) mb->data)->primitive.config_req.rlc_type_sap = rlc_sap_typeP;

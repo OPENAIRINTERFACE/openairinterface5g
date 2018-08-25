@@ -58,6 +58,7 @@ Description Defines the EMMESM Service Access Point that provides
 /*
  * String representation of EMMESM-SAP primitives
  */
+const char *emm_esm_primitive2str(int esmprim) {
 static const char *_emm_esm_primitive_str[] = {
   "EMMESM_ESTABLISH_REQ",
   "EMMESM_ESTABLISH_CNF",
@@ -66,6 +67,8 @@ static const char *_emm_esm_primitive_str[] = {
   "EMMESM_UNITDATA_REQ",
   "EMMESM_UNITDATA_IND",
 };
+  return _emm_esm_primitive_str[esmprim];
+}
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -116,7 +119,7 @@ int emm_esm_send(nas_user_t *user, const emm_esm_t *msg)
   emm_esm_primitive_t primitive = msg->primitive;
 
   LOG_TRACE(INFO, "EMMESM-SAP - Received primitive %s (%d)",
-            _emm_esm_primitive_str[primitive - _EMMESM_START - 1], primitive);
+            emm_esm_primitive2str(primitive - _EMMESM_START - 1), primitive);
 
   switch (primitive) {
 
@@ -159,7 +162,7 @@ int emm_esm_send(nas_user_t *user, const emm_esm_t *msg)
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING, "EMMESM-SAP - Failed to process primitive %s (%d)",
-              _emm_esm_primitive_str[primitive - _EMMESM_START - 1],
+              emm_esm_primitive2str(primitive - _EMMESM_START - 1),
               primitive);
   }
 

@@ -106,6 +106,22 @@ void qpsk_qpsk(int16_t *stream0_in,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr128p pointer to pointer to symbol in dlsch_llr*/
+
+void qpsk_llr(int16_t *stream0_in,
+              int16_t *stream0_out,
+              int length);
+
+void qam16_llr(int16_t *stream0_in,
+               int16_t *chan_magn,
+               int16_t *llr,
+               int length);
+
+void qam64_llr(int16_t *stream0_in,
+               int16_t *chan_magn,
+               int16_t *chan_magn_b,
+               int16_t *llr,
+               int length);
+
 int32_t dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                             int32_t **rxdataF_comp,
                             int32_t **rxdataF_comp_i,
@@ -816,6 +832,19 @@ void dlsch_channel_compensation(int32_t **rxdataF_ext,
                                 uint8_t output_shift,
                                 PHY_MEASUREMENTS *phy_measurements);
 
+void dlsch_channel_compensation_core(int **rxdataF_ext,
+                                     int **dl_ch_estimates_ext,
+                                     int **dl_ch_mag,
+                                     int **dl_ch_magb,
+                                     int **rxdataF_comp,
+                                     int **rho,
+                                     unsigned char n_tx,
+                                     unsigned char n_rx,
+                                     unsigned char mod_order,
+                                     unsigned char output_shift,
+                                     int length,
+                                     int start_point);
+
 void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
                                    unsigned char symbol,
                                    unsigned short nb_rb,
@@ -912,6 +941,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                                     int round,
                                     MIMO_mode_t mimo_mode,
                                     unsigned short nb_rb,
+                                    unsigned short mmse_flag,
                                     unsigned char output_shift0,
                                     unsigned char output_shift1);
 
@@ -929,6 +959,20 @@ void dlsch_channel_level(int32_t **dl_ch_estimates_ext,
                          uint8_t pilots_flag,
                          uint16_t nb_rb);
 
+void dlsch_channel_level_core(int32_t **dl_ch_estimates_ext,
+                              int32_t *avg,
+                              int n_tx,
+                              int n_rx,
+                              int length,
+                              int start_point);
+
+void dlsch_channel_level_median(int **dl_ch_estimates_ext,
+                                int32_t *median,
+                                int n_tx,
+                                int n_rx,
+                                int length,
+                                int start_point);
+
 
 void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
                               LTE_DL_FRAME_PARMS *frame_parms,
@@ -937,6 +981,7 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
                               int *avg_1,
                               uint8_t symbol,
                               unsigned short nb_rb,
+                              unsigned int mmse_flag,
                               MIMO_mode_t mimo_mode);
 
 
@@ -1096,6 +1141,29 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
                        uint32_t length,
                        uint8_t frame_mod4);
 
+/*! \brief Top-level generation route for Sidelink BCH,PSS and SSS
+  \param ue pointer to UE descriptor
+  \param slss pointer to SLSS configuration and payload
+  \param frame_tx Frame number
+  \param subframe_tx subframe number
+*/
+void generate_slss(PHY_VARS_UE *ue,SLSS_t *slss,int frame_tx,int subframe_tx);
+
+/*! \brief Top-level generation route for Sidelink Discovery Channel
+  \param ue pointer to UE descriptor
+  \param sldch pointer to SLDCH configuration and payload
+  \param frame_tx Frame number
+  \param subframe_tx subframe number
+*/
+void generate_sldch(PHY_VARS_UE *ue,SLDCH_t *sldch,int frame_tx,int subframe_tx);
+
+/*! \brief Top-level generation route for Sidelink Shared Channel
+  \param ue pointer to UE descriptor
+  \param slsch pointer to SLSCH configuration and payload
+  \param frame_tx Frame number
+  \param subframe_tx subframe number
+*/
+void generate_slsch(PHY_VARS_UE *ue,SLSCH_t *slss,int frame_tx,int subframe_tx);
 
 void generate_64qam_table(void);
 void generate_16qam_table(void);
@@ -1649,14 +1717,10 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
   LTE_UE_DLSCH_t *dlsch_ue);
 */
 
-uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms, 
-			     uint8_t prach_ConfigIndex, 
+uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms,
+			     uint8_t prach_ConfigIndex,
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
-
-
-
-
 
 /**@}*/
 #endif

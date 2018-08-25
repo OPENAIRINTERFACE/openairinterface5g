@@ -100,10 +100,12 @@ err:
   int last_frame = -1;
   int last_subframe = -1;
   int subframe_written = 0;
+
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   while (1) {
-    char v[T_BUFFER_MAX];
     event e;
-    e = get_event(fd, v, database);
+    e = get_event(fd, &ebuf, database);
     if (e.type == -1) break;
     if (e.type != output_event_id) continue;
     if (verbose)
@@ -122,12 +124,6 @@ err:
     }
     last_frame = frame;
     last_subframe = subframe;
-#if 0
-for (i = 0; i < e.e[buffer_arg].bsize/2; i++) {
-short *x = e.e[buffer_arg].b;
-x[i] *= 14;
-}
-#endif
     if (verbose)
       printf("save output frame %d subframe %d size %d\n",
              e.e[frame_arg].i, e.e[subframe_arg].i, e.e[buffer_arg].bsize);

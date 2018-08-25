@@ -29,7 +29,7 @@
 #include "rlc_am.h"
 #include "list.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 
 //-----------------------------------------------------------------------------
@@ -47,9 +47,15 @@ rlc_am_get_data_pdu_infos(
     pdu_info_pP->d_c = header_pP->b1 >> 7;
     pdu_info_pP->num_li = 0;
 
-
+//Assertion(eNB)_PRAN_DesignDocument_annex No.766
+  if(pdu_info_pP->d_c == 0)
+  {
+     LOG_E(RLC, "RLC AM Rx PDU Data D/C Header Error LcId=%d\n", rlc_pP->channel_id);
+     return -2;
+  }
+/*
     AssertFatal (pdu_info_pP->d_c != 0, "RLC AM Rx PDU Data D/C Header Error LcId=%d\n", rlc_pP->channel_id);
-
+*/
     pdu_info_pP->rf  = (header_pP->b1 >> 6) & 0x01;
     pdu_info_pP->p   = (header_pP->b1 >> 5) & 0x01;
     pdu_info_pP->fi  = (header_pP->b1 >> 3) & 0x03;
@@ -264,9 +270,17 @@ rlc_am_receive_routing (
         rlc_pP->stat_rx_control_pdu += 1;
         rlc_am_receive_process_control_pdu (ctxt_pP, rlc_pP, tb_p, &first_byte_p, &tb_size_in_bytes);
         // Test if remaining bytes not processed (up to know, highest probability is bug in MAC)
+//Assertion(eNB)_PRAN_DesignDocument_annex No.767
+  if(tb_size_in_bytes != 0)
+  {
+     LOG_E(RLC, "Remaining %d bytes following a control PDU\n",
+             tb_size_in_bytes);
+  }
+/*
         AssertFatal( tb_size_in_bytes == 0,
                      "Remaining %d bytes following a control PDU",
                      tb_size_in_bytes);
+*/
       }
 
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RX ROUTING] VR(R)=%03d VR(MR)=%03d\n",
@@ -396,14 +410,20 @@ rlc_am_receive_process_data_pdu (
         }
 
         if (pdu_info_p->sn == rlc_pP->vr_r) {
+mem_block_t*       cursor_p                    = rlc_pP->receiver_buffer.head;
+rlc_am_rx_pdu_management_t * pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (cursor_p->data);
+if( (((rlc_am_rx_pdu_management_t*)(tb_pP->data))->all_segments_received) == (pdu_cursor_mgnt_p->all_segments_received)){
           if (((rlc_am_rx_pdu_management_t*)(tb_pP->data))->all_segments_received) {
             rlc_am_rx_update_vr_r(ctxt_pP, rlc_pP, tb_pP);
             rlc_pP->vr_mr = (rlc_pP->vr_r + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
           }
-
           reassemble = rlc_am_rx_check_vr_reassemble(ctxt_pP, rlc_pP);
           //TODO : optimization : check whether a reassembly is needed by looking at LI, FI, SO, etc...
-
+}else{
+  LOG_E(RLC, "BAD all_segments_received!!! discard buffer!!!\n");
+  /* Discard received block if out of window, duplicate or header error */
+  free_mem_block (tb_pP, __func__);
+}
         }
 
         //FNA: fix check VrX out of receiving window

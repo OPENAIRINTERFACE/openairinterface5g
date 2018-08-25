@@ -300,6 +300,20 @@ static void forward(void *_forwarder, char *buf, int size)
   if (f->tail != NULL) f->tail->next = new;
   f->tail = new;
 
+#if BASIC_SIMULATOR
+  /* When runnng the basic simulator, the tracer may be too slow.
+   * Let's not take too much memory in the tracee and
+   * wait if there is too much data to send. 200MB is
+   * arbitrary.
+   */
+  while (f->memusage > 200 * 1024 * 1024) {
+    if (pthread_cond_signal(&f->cond)) abort();
+    if (pthread_mutex_unlock(&f->lock)) abort();
+    usleep(1000);
+    if (pthread_mutex_lock(&f->lock)) abort();
+  }
+#endif /* BASIC_SIMULATOR */
+
   f->memusage += size+4;
   /* warn every 100MB */
   if (f->memusage > f->last_warning_memusage &&
@@ -323,31 +337,11 @@ static void forward(void *_forwarder, char *buf, int size)
 
 static void wait_message(void)
 {
-  while (T_local_cache[T_busylist_head].busy == 0) usleep(1000);
-}
-
-static void init_shm(void)
-{
-  int i;
-  int s = shm_open(T_SHM_FILENAME, O_RDWR | O_CREAT /*| O_SYNC*/, 0666);
-  if (s == -1) { perror(T_SHM_FILENAME); abort(); }
-  if (ftruncate(s, T_CACHE_SIZE * sizeof(T_cache_t)))
-    { perror(T_SHM_FILENAME); abort(); }
-  T_local_cache = mmap(NULL, T_CACHE_SIZE * sizeof(T_cache_t),
-                       PROT_READ | PROT_WRITE, MAP_SHARED, s, 0);
-  if (T_local_cache == NULL)
-    { perror(T_SHM_FILENAME); abort(); }
-  close(s);
-
-  /* let's garbage the memory to catch some potential problems
-   * (think multiprocessor sync issues, barriers, etc.)
-   */
-  memset(T_local_cache, 0x55, T_CACHE_SIZE * sizeof(T_cache_t));
-  for (i = 0; i < T_CACHE_SIZE; i++) T_local_cache[i].busy = 0;
+  while ((T_local_cache[T_busylist_head].busy & 0x02) == 0) usleep(1000);
 }
 
 void T_local_tracer_main(int remote_port, int wait_for_tracer,
-    int local_socket)
+    int local_socket, void *shm_array)
 {
   int s;
   int port = remote_port;
@@ -355,9 +349,13 @@ void T_local_tracer_main(int remote_port, int wait_for_tracer,
   void *f;
 
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
-  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
+  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+       printf("local tracer received SIGPIPE\n");
+       abort();
+  }
 
-  init_shm();
+  T_local_cache = shm_array;
+
   s = local_socket;
 
   if (dont_wait) {

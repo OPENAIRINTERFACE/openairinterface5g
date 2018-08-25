@@ -22,7 +22,7 @@
 #ifndef GTPV1_U_MESSAGES_TYPES_H_
 #define GTPV1_U_MESSAGES_TYPES_H_
 
-#include "asn1_constants.h"
+#include "asn_constant.h"
 
 
 #define GTPV1U_MAX_BEARERS_PER_UE max_val_DRB_Identity

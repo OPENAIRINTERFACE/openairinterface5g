@@ -43,46 +43,44 @@
 void dump_mch(PHY_VARS_UE *ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int subframe)
 {
 
-  unsigned int nsymb_pmch=12;
   char fname[32],vname[32];
-  int N_RB_DL=ue->frame_parms.N_RB_DL;
-
+#define NSYMB_PMCH 12
   sprintf(fname,"mch_rxF_ext0.m");
   sprintf(vname,"pmch_rxF_ext0");
-  write_output(fname,vname,ue->pdsch_vars_MCH[eNB_id]->rxdataF_ext[0],12*N_RB_DL*nsymb_pmch,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars_MCH[eNB_id]->rxdataF_ext[0],12*(ue->frame_parms.N_RB_DL)*12,1,1);
   sprintf(fname,"mch_ch_ext00.m");
   sprintf(vname,"pmch_ch_ext00");
-  write_output(fname,vname,ue->pdsch_vars_MCH[eNB_id]->dl_ch_estimates_ext[0],12*N_RB_DL*nsymb_pmch,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars_MCH[eNB_id]->dl_ch_estimates_ext[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
   /*
-    write_output("dlsch%d_ch_ext01.m","dl01_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*nsymb_pmch,1,1);
-    write_output("dlsch%d_ch_ext10.m","dl10_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*nsymb_pmch,1,1);
-    write_output("dlsch%d_ch_ext11.m","dl11_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[3],12*N_RB_DL*nsymb_pmch,1,1);
-    write_output("dlsch%d_rho.m","dl_rho",pdsch_vars[eNB_id]->rho[0],12*N_RB_DL*nsymb_pmch,1,1);
+    LOG_M("dlsch%d_ch_ext01.m","dl01_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*NSYMB_PMCH,1,1);
+    LOG_M("dlsch%d_ch_ext10.m","dl10_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*NSYMB_PMCH,1,1);
+    LOG_M("dlsch%d_ch_ext11.m","dl11_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[3],12*N_RB_DL*NSYMB_PMCH,1,1);
+    LOG_M("dlsch%d_rho.m","dl_rho",pdsch_vars[eNB_id]->rho[0],12*N_RB_DL*NSYMB_PMCH,1,1);
   */
   sprintf(fname,"mch_rxF_comp0.m");
   sprintf(vname,"pmch_rxF_comp0");
-  write_output(fname,vname,ue->pdsch_vars_MCH[eNB_id]->rxdataF_comp0[0],12*N_RB_DL*nsymb_pmch,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars_MCH[eNB_id]->rxdataF_comp0[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
   sprintf(fname,"mch_rxF_llr.m");
   sprintf(vname,"pmch_llr");
-  write_output(fname,vname, ue->pdsch_vars_MCH[eNB_id]->llr[0],coded_bits_per_codeword,1,0);
+  LOG_M(fname,vname, ue->pdsch_vars_MCH[eNB_id]->llr[0],coded_bits_per_codeword,1,0);
   sprintf(fname,"mch_mag1.m");
   sprintf(vname,"pmch_mag1");
-  write_output(fname,vname,ue->pdsch_vars_MCH[eNB_id]->dl_ch_mag0[0],12*N_RB_DL*nsymb_pmch,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars_MCH[eNB_id]->dl_ch_mag0[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
   sprintf(fname,"mch_mag2.m");
   sprintf(vname,"pmch_mag2");
-  write_output(fname,vname,ue->pdsch_vars_MCH[eNB_id]->dl_ch_magb0[0],12*N_RB_DL*nsymb_pmch,1,1);
+  LOG_M(fname,vname,ue->pdsch_vars_MCH[eNB_id]->dl_ch_magb0[0],12*(ue->frame_parms.N_RB_DL)*NSYMB_PMCH,1,1);
 
-  write_output("mch00_ch0.m","pmch00_ch0",
+  LOG_M("mch00_ch0.m","pmch00_ch0",
                &(ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][0][0]),
                ue->frame_parms.ofdm_symbol_size*12,1,1);
 
-  write_output("rxsig_mch.m","rxs_mch",
+  LOG_M("rxsig_mch.m","rxs_mch",
                &ue->common_vars.rxdata[0][subframe*ue->frame_parms.samples_per_tti],
                ue->frame_parms.samples_per_tti,1,1);
 
   /*
   if (PHY_vars_eNB_g)
-    write_output("txsig_mch.m","txs_mch",
+    LOG_M("txsig_mch.m","txs_mch",
                  &PHY_vars_eNB_g[0][0]->common_vars.txdata[0][0][subframe*ue->frame_parms.samples_per_tti],
                  ue->frame_parms.samples_per_tti,1,1);*/
 }

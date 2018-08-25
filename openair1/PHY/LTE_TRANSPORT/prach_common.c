@@ -33,7 +33,7 @@
 #include "PHY/defs_common.h"
 #include "PHY/phy_extern.h"
 #include "PHY/phy_extern_ue.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 
 uint16_t NCS_unrestricted[16] = {0,13,15,18,22,26,32,38,46,59,76,93,119,167,279,419};
@@ -570,7 +570,7 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t su
   uint8_t prach_ConfigIndex  = frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
   int prach_mask             = is_prach_subframe0(frame_parms,prach_ConfigIndex,frame,subframe);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int i;
 
   for (i=0;i<4;i++) {

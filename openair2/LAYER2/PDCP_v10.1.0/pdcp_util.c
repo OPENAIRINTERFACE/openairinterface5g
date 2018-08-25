@@ -27,7 +27,7 @@
 
 #include <assert.h>
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "pdcp_util.h"
 
 /*

@@ -290,31 +290,6 @@ int encode_activate_default_eps_bearer_context_request(activate_default_eps_bear
       encoded += encode_result;
   }
 
-#if 0 /* LW: force Protocol Configuration Options to be included in the ESM message */
-  {
-#define CONFIGURATION_PROTOCOL_PPP          0
-
-#define PROTOCOL_ID_IPCP                    0x8021
-#define PROTOCOL_ID_DNS_SERVER_IPV4_ADDRESS 0x000D
-
-    /* Force this item to be present */
-    activate_default_eps_bearer_context_request->presencemask |= ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_PROTOCOL_CONFIGURATION_OPTIONS_PRESENT;
-    /* Fill this item with data from PFT trace */
-    activate_default_eps_bearer_context_request->protocolconfigurationoptions.configurationprotol = CONFIGURATION_PROTOCOL_PPP;
-    activate_default_eps_bearer_context_request->protocolconfigurationoptions.protocolid = PROTOCOL_ID_IPCP;
-    activate_default_eps_bearer_context_request->protocolconfigurationoptions.lengthofprotocolid = 16; /* Size of PROTOCOL_ID_IPCP */
-    activate_default_eps_bearer_context_request->protocolconfigurationoptions.protocolidcontents.value = (uint8_t *)
-        /* PROTOCOL_ID_IPCP data */
-        "\x03\x00\x00\x10\x81\x06\xC0\xA8\x0C\x64\x83\x06\xC0\xA8\x6A\x0C";
-    /* Additional parameters PROTOCOL_ID_DNS_SERVER_IPV4_ADDRESS data */
-    //"\x00\x0d\x04\x52\x61\x00\x78"
-    /* Additional parameters PROTOCOL_ID_DNS_SERVER_IPV4_ADDRESS data */
-    //"\x00\x0d\x04\x52\x61\x01\x78";
-    //activate_default_eps_bearer_context_request->protocolconfigurationoptions.protocolidcontents.length = 16 + 7 + 7;
-    activate_default_eps_bearer_context_request->protocolconfigurationoptions.protocolidcontents.length = 16;
-  }
-#endif
-
   if ((activate_default_eps_bearer_context_request->presencemask & ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_PROTOCOL_CONFIGURATION_OPTIONS_PRESENT)
       == ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST_PROTOCOL_CONFIGURATION_OPTIONS_PRESENT) {
     if ((encode_result =

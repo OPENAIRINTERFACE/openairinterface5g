@@ -60,7 +60,7 @@ extern uint32_t        g_constraints;
 //{
 //}
 
-void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t *const s1ap, xmlNode *node, const S1AP_MME_UE_S1AP_ID_t new_id)
+void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, const S1ap_MME_UE_S1AP_ID_t new_id)
 {
   xmlNode       *cur_node = NULL;
   xmlAttrPtr     attr     = NULL;

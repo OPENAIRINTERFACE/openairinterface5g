@@ -54,7 +54,7 @@
 #include "socket.h"
 #include "multicast_link.h"
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 extern unsigned short Master_id;
 
@@ -99,7 +99,7 @@ multicast_link_init(void)
                                  SOCK_DGRAM,
                                  &group_list[group].port, &sin);
 
-    LOG_D(EMU, "multicast_link_init(): Created socket %d for group %d, port %d\n",
+    LOG_D(PHY, "multicast_link_init(): Created socket %d for group %d, port %d\n",
           group_list[group].socket,group,group_list[group].port);
 
     /* Used so we can re-bind to our port while a previous connection is still
@@ -107,17 +107,17 @@ multicast_link_init(void)
      */
     if (setsockopt(group_list[group].socket, SOL_SOCKET, SO_REUSEADDR,
                    &reuse_addr, sizeof (reuse_addr)) < 0) {
-      LOG_E(EMU, "[MULTICAST] ERROR : setsockopt:SO_REUSEADDR, exiting ...");
+      LOG_E(PHY, "[MULTICAST] ERROR : setsockopt:SO_REUSEADDR, exiting ...");
       exit (EXIT_FAILURE);
     }
 
     if (multicast_if != NULL) {
       if (setsockopt(group_list[group].socket, SOL_SOCKET,SO_BINDTODEVICE,
-                     multicast_if, 4) < 0) {
-        LOG_E(EMU,
+                     multicast_if, strlen(multicast_if)) < 0) {
+        LOG_E(PHY,
               "[MULTICAST] ERROR : setsockopt:SO_BINDTODEVICE on interface %s, exiting ...\n",
               multicast_if);
-        LOG_E(EMU,
+        LOG_E(PHY,
               "[MULTICAST] make sure that you have a root privilage or run with sudo -E \n");
         exit (EXIT_FAILURE);
       }
@@ -132,7 +132,7 @@ multicast_link_init(void)
 
     if (setsockopt (group_list[group].socket, IPPROTO_IP, IP_MULTICAST_LOOP,
                     &multicast_loop, sizeof (multicast_loop)) < 0) {
-      LOG_E(EMU,
+      LOG_E(PHY,
             "[MULTICAST] ERROR: %s line %d multicast_link_main_loop() IP_MULTICAST_LOOP %m",
             __FILE__, __LINE__);
       exit (EXIT_FAILURE);
@@ -143,13 +143,13 @@ multicast_link_init(void)
     command.imr_interface.s_addr = htonl (INADDR_ANY);
 
     if (command.imr_multiaddr.s_addr == -1) {
-      LOG_E(EMU, "[MULTICAST] ERROR: %s line %d NO MULTICAST", __FILE__, __LINE__);
+      LOG_E(PHY, "[MULTICAST] ERROR: %s line %d NO MULTICAST", __FILE__, __LINE__);
       exit (EXIT_FAILURE);
     }
 
     if (setsockopt (group_list[group].socket, IPPROTO_IP, IP_ADD_MEMBERSHIP,
                     &command, sizeof (command)) < 0) {
-      LOG_E(EMU, "[MULTICAST] ERROR: %s line %d IP_ADD_MEMBERSHIP %m", __FILE__,
+      LOG_E(PHY, "[MULTICAST] ERROR: %s line %d IP_ADD_MEMBERSHIP %m", __FILE__,
             __LINE__);
       exit (EXIT_FAILURE);
     }
@@ -202,13 +202,13 @@ multicast_link_read_data (int groupP)
   if ((groupP < MULTICAST_LINK_NUM_GROUPS) && (groupP >= 0)) {
     if ((num_bytes = recvfrom (group_list[groupP].socket,
                                group_list[groupP].rx_buffer, 40000, 0, 0, 0)) < 0) {
-      LOG_E(EMU, "[MULTICAST] recvfrom has failed (%d:%s)\n   (%s:%d)\n",
+      LOG_E(PHY, "[MULTICAST] recvfrom has failed (%d:%s)\n   (%s:%d)\n",
             errno, strerror(errno), __FILE__, __LINE__);
     } else {
       rx_handler(num_bytes,group_list[groupP].rx_buffer);
     }
   } else {
-    LOG_E(EMU, "[MULTICAST] ERROR: groupP out of bounds %d\n", groupP);
+    LOG_E(PHY, "[MULTICAST] ERROR: groupP out of bounds %d\n", groupP);
   }
 }
 
@@ -242,7 +242,7 @@ multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP)
   if ((num = sendto (group_list[groupP].socket, dataP, sizeP, 0,
                      (struct sockaddr *) &group_list[groupP].sock_remote_addr,
                      sizeof (group_list[groupP].sock_remote_addr))) < 0) {
-    LOG_E(EMU, "[MULTICAST] sendto has failed (%d:%s)\n   (%s:%d)\n",
+    LOG_E(PHY, "[MULTICAST] sendto has failed (%d:%s)\n   (%s:%d)\n",
           errno, strerror(errno),
           __FILE__, __LINE__);
   }
@@ -274,22 +274,19 @@ int multicast_link_read_data_from_sock(uint8_t is_master)
 
   multicast_link_build_select_list ();
 
-  LOG_D(EMU, "Stuck on select with timeout %s\n",
+  LOG_D(PHY, "Stuck on select with timeout %s\n",
         timeout_p == NULL ? "infinite" : "15000 usecs");
 
   readsocks = select(highsock + 1, &socks, (fd_set *) 0, (fd_set *) 0, timeout_p);
 
   if (readsocks < 0) {
-    LOG_E(EMU, "Multicast select failed (%d:%s)\n", errno, strerror(errno));
+    LOG_E(PHY, "Multicast select failed (%d:%s)\n", errno, strerror(errno));
     exit(EXIT_FAILURE);
   } else if (readsocks > 0) {
-#ifdef DEBUG_EMU
-    LOG_D(EMU, "Multicast Normal read\n");
-#endif
     multicast_link_read();
   } else {
     /* Timeout */
-    LOG_I(EMU, "Multicast select time-out\n");
+    LOG_I(PHY, "Multicast select time-out\n");
     return 1;
   }
 
@@ -311,21 +308,21 @@ void multicast_link_start(void (*rx_handlerP) (unsigned int, char *),
   rx_handler = rx_handlerP;
   multicast_group = _multicast_group;
   multicast_if =  multicast_ifname;
-  LOG_I(EMU, "[MULTICAST] LINK START on interface=%s for group=%d: handler=%p\n",
+  LOG_I(PHY, "[MULTICAST] LINK START on interface=%s for group=%d: handler=%p\n",
         (multicast_if == NULL) ? "not specified" : multicast_if, multicast_group,
         rx_handler);
   multicast_link_init ();
 #if ! defined(ENABLE_NEW_MULTICAST)
-  LOG_D(EMU, "[MULTICAST] multicast link start thread\n");
+  LOG_D(PHY, "[MULTICAST] multicast link start thread\n");
 
   if (pthread_create (&main_loop_thread, NULL, multicast_link_main_loop,
                       NULL) != 0) {
-    LOG_E(EMU, "[MULTICAST LINK] Error in pthread_create (%d:%s)\n",
+    LOG_E(PHY, "[MULTICAST LINK] Error in pthread_create (%d:%s)\n",
           errno, strerror(errno));
     exit(EXIT_FAILURE);
   } else {
     pthread_detach(main_loop_thread);  // disassociate from parent
-    LOG_I(EMU, "[MULTICAST LINK] Thread detached\n");
+    LOG_I(PHY, "[MULTICAST LINK] Thread detached\n");
   }
 
 #endif

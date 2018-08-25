@@ -33,8 +33,8 @@
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -59,7 +59,7 @@ extern RAN_CONTEXT_t RC;
 // NEED TO ADD schedule_SI_BR for SIB1_BR and SIB23_BR
 // CCE_allocation_infeasible to be done for EPDCCH/MPDCCH
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 #define size_Sj25 2
 int Sj25[size_Sj25] = { 0, 3 };
@@ -81,7 +81,6 @@ schedule_SIB1_BR(module_id_t module_idP,
 		 frame_t frameP, sub_frame_t subframeP)
 //------------------------------------------------------------------------------
 {
-
     int8_t bcch_sdu_length;
     int CC_id;
     eNB_MAC_INST *eNB = RC.mac[module_idP];
@@ -506,7 +505,6 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
 void
 schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 {
-
     eNB_MAC_INST *eNB = RC.mac[module_idP];
     COMMON_channels_t *cc;
     nfapi_dl_config_request_pdu_t *dl_config_pdu;
@@ -535,7 +533,7 @@ schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	    LOG_D(MAC, "Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n", frameP, subframeP, dl_req->number_pdu, mib_sdu_length);
 
 	    if ((frameP & 1023) < 40)
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		LOG_D(MAC,
 		      "[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes (cc->mib->message.schedulingInfoSIB1_BR_r13 %d)\n",
 		      module_idP, frameP, CC_id, mib_sdu_length,
@@ -791,7 +789,7 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	    }
 	}
     }
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     schedule_SIB1_BR(module_idP, frameP, subframeP);
     schedule_SI_BR(module_idP, frameP, subframeP);
 #endif

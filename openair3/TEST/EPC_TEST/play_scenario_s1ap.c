@@ -170,13 +170,13 @@ void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, 
 //------------------------------------------------------------------------------
 int et_handle_s1ap_mismatch_mme_ue_s1ap_id(et_packet_t *const spacket, et_packet_t *const rx_packet)
 {
-  S1ap_MME_UE_S1AP_ID_t scenario_mme_ue_s1ap_id = 0;
-  S1ap_MME_UE_S1AP_ID_t rx_mme_ue_s1ap_id       = 0;
+  S1AP_MME_UE_S1AP_ID_t scenario_mme_ue_s1ap_id = 0;
+  S1AP_MME_UE_S1AP_ID_t rx_mme_ue_s1ap_id       = 0;
   S1AP_PDU_PR           present;
   present = rx_packet->sctp_hdr.u.data_hdr.payload.pdu.present;
 
   switch (rx_packet->sctp_hdr.u.data_hdr.payload.message.procedureCode) {
-    case  S1AP_ProcedureCode_id_HandoverPreparation:
+    case S1AP_ProcedureCode_id_HandoverPreparation:
       if (present == S1AP_S1AP_PDU_PR_initiatingMessage) {
         rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverRequiredIEs.mme_ue_s1ap_id;
         scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverRequiredIEs.mme_ue_s1ap_id;
@@ -187,7 +187,7 @@ int et_handle_s1ap_mismatch_mme_ue_s1ap_id(et_packet_t *const spacket, et_packet
 
       break;
 
-    case  S1AP_ProcedureCode_id_HandoverResourceAllocation:
+    case S1AP_ProcedureCode_id_HandoverResourceAllocation:
       if (present == S1AP_S1AP_PDU_PR_initiatingMessage) {
         rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverRequestIEs.mme_ue_s1ap_id;
         scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverRequestIEs.mme_ue_s1ap_id;
@@ -201,17 +201,17 @@ int et_handle_s1ap_mismatch_mme_ue_s1ap_id(et_packet_t *const spacket, et_packet
 
       break;
 
-    case  S1AP_ProcedureCode_id_HandoverNotification:
+    case S1AP_ProcedureCode_id_HandoverNotification:
       rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverNotifyIEs.mme_ue_s1ap_id;
       scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverNotifyIEs.mme_ue_s1ap_id;
       break;
 
-    case  S1AP_ProcedureCode_id_PathSwitchRequest:
+    case S1AP_ProcedureCode_id_PathSwitchRequest:
       //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_PathSwitchRequestIEs.mme_ue_s1ap_id;
       //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_PathSwitchRequestIEs.mme_ue_s1ap_id;
       break;
 
-    case  S1AP_ProcedureCode_id_HandoverCancel:
+    case S1AP_ProcedureCode_id_HandoverCancel:
       rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverCancelIEs.mme_ue_s1ap_id;
       scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverCancelIEs.mme_ue_s1ap_id;
       break;
@@ -453,28 +453,28 @@ int et_handle_s1ap_mismatch_mme_ue_s1ap_id(et_packet_t *const spacket, et_packet
       }*/
       break;
 
-    case  S1AP_ProcedureCode_id_eNBDirectInformationTransfer:
+    case S1AP_ProcedureCode_id_eNBDirectInformationTransfer:
       //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBDirectInformationTransferIEs.mme_ue_s1ap_id;
       //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBDirectInformationTransferIEs.mme_ue_s1ap_id;
       break;
 
-    case  S1AP_ProcedureCode_id_MMEDirectInformationTransfer:
+    case S1AP_ProcedureCode_id_MMEDirectInformationTransfer:
       //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEDirectInformationTransferIEs.mme_ue_s1ap_id;
       //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEDirectInformationTransferIEs.mme_ue_s1ap_id;
       break;
 
-    case  S1AP_ProcedureCode_id_PrivateMessage:
-    case  S1AP_ProcedureCode_id_eNBConfigurationTransfer:
-    case  S1AP_ProcedureCode_id_MMEConfigurationTransfer:
+    case S1AP_ProcedureCode_id_PrivateMessage:
+    case S1AP_ProcedureCode_id_eNBConfigurationTransfer:
+    case S1AP_ProcedureCode_id_MMEConfigurationTransfer:
       AssertFatal(0, "TODO");
       break;
 
-    case  S1AP_ProcedureCode_id_CellTrafficTrace:
+    case S1AP_ProcedureCode_id_CellTrafficTrace:
       rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_CellTrafficTraceIEs.mme_ue_s1ap_id;
       scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_CellTrafficTraceIEs.mme_ue_s1ap_id;
       break;
 
-    case  S1AP_ProcedureCode_id_Kill:
+    case S1AP_ProcedureCode_id_Kill:
       /*if (present == S1AP_S1AP_PDU_PR_initiatingMessage) {
         rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_KillRequestIEs.mme_ue_s1ap_id;
         scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_KillRequestIEs.mme_ue_s1ap_id;
@@ -484,22 +484,22 @@ int et_handle_s1ap_mismatch_mme_ue_s1ap_id(et_packet_t *const spacket, et_packet
       }*/
       break;
 
-    case  S1AP_ProcedureCode_id_downlinkUEAssociatedLPPaTransport:
+    case S1AP_ProcedureCode_id_downlinkUEAssociatedLPPaTransport:
       rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
       scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
       break;
 
-    case  S1AP_ProcedureCode_id_uplinkUEAssociatedLPPaTransport:
+    case S1AP_ProcedureCode_id_uplinkUEAssociatedLPPaTransport:
       rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
       scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
       break;
 
-    case  S1AP_ProcedureCode_id_downlinkNonUEAssociatedLPPaTransport:
+    case S1AP_ProcedureCode_id_downlinkNonUEAssociatedLPPaTransport:
       //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkNonUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
       //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkNonUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
       break;
 
-    case  S1AP_ProcedureCode_id_uplinkNonUEAssociatedLPPaTransport:
+    case S1AP_ProcedureCode_id_uplinkNonUEAssociatedLPPaTransport:
       //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkNonUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
       //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkNonUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
       break;
@@ -705,7 +705,7 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t *const s1ap_data_ind)
           S1AP_DEBUG("Result err code %s(%u) ASN1 struct name %s\n",
                      et_error_match2str(comp_results->err_code), comp_results->err_code, comp_results->name);
 
-          // (each asn1 rc <= 166 (enum e_S1ap_ProtocolIE_ID, in generated file S1ap_ProtocolIE_ID.h))
+          // (each asn1 rc <= 166 (enum e_S1AP_ProtocolIE_ID, in generated file S1AP_ProtocolIE_ID.h))
           if (comp_results->err_code == COMPARE_ERR_CODE_NO_MATCH) {
             //TODO MME_UE_S1AP_ID, etc.
             // get latest error code

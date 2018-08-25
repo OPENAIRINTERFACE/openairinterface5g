@@ -38,6 +38,7 @@ MESSAGE_DEF(S1AP_E_RAB_MODIFY_RESPONSE_LOG    , MESSAGE_PRIORITY_MED, IttiMsgTex
 MESSAGE_DEF(S1AP_PAGING_LOG    , MESSAGE_PRIORITY_MED, IttiMsgText                      , s1ap_paging_log)
 MESSAGE_DEF(S1AP_E_RAB_RELEASE_REQUEST_LOG   , MESSAGE_PRIORITY_MED, IttiMsgText                      , s1ap_e_rab_release_request_log)
 MESSAGE_DEF(S1AP_E_RAB_RELEASE_RESPONSE_LOG  , MESSAGE_PRIORITY_MED, IttiMsgText                      , s1ap_e_rab_release_response_log)
+MESSAGE_DEF(S1AP_ERROR_INDICATION_LOG        , MESSAGE_PRIORITY_MED, IttiMsgText                      , s1ap_error_indication_log)
 
 /* eNB application layer -> S1AP messages */
 MESSAGE_DEF(S1AP_REGISTER_ENB_REQ          , MESSAGE_PRIORITY_MED, s1ap_register_enb_req_t          , s1ap_register_enb_req)

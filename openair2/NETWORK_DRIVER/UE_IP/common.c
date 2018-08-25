@@ -248,6 +248,13 @@ ue_ip_common_ip2wireless(
   //---------------------------------------------------------------------------
   struct pdcp_data_req_header_s     pdcph;
   ue_ip_priv_t                     *priv_p=netdev_priv(ue_ip_dev[instP]);
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  ipversion_t         *ipv_p             = NULL;
+  unsigned int         hard_header_len   = 0;
+  unsigned char       *src_addr          = 0;
+  unsigned char       *dst_addr          = 0;
+#endif
+
 #ifdef LOOPBACK_TEST
   int i;
 #endif
@@ -277,6 +284,37 @@ ue_ip_common_ip2wireless(
   }
 
   pdcph.inst       = instP;
+
+  //pass source/destination IP addresses to PDCP header
+  hard_header_len = ue_ip_dev[instP]->hard_header_len;
+  ipv_p = (ipversion_t *)((void *)&(skb_pP->data[hard_header_len]));
+
+  switch (ipv_p->version) {
+  case 6:
+    printk("[UE_IP_DRV][%s] receive IPv6 message\n",__FUNCTION__);
+    //TODO
+    break;
+
+  case 4:
+     src_addr = (unsigned char *)&((struct iphdr *)&skb_pP->data[hard_header_len])->saddr;
+    if (src_addr) {
+      printk("[UE_IP_DRV][%s] Source %d.%d.%d.%d\n",__FUNCTION__, src_addr[0],src_addr[1],src_addr[2],src_addr[3]);
+    }
+    dst_addr = (unsigned char *)&((struct iphdr *)&skb_pP->data[hard_header_len])->daddr;
+    if (dst_addr) {
+      printk("[UE_IP_DRV][%s] Dest %d.%d.%d.%d\n",__FUNCTION__, dst_addr[0],dst_addr[1],dst_addr[2],dst_addr[3]);
+    }
+
+    //get Ipv4 address and pass to PCDP header
+    printk("[UE_IP_DRV] source Id: 0x%08x\n",pdcph.sourceL2Id );
+    printk("[UE_IP_DRV] destinationL2Id Id: 0x%08x\n",pdcph.destinationL2Id );
+    pdcph.sourceL2Id = ntohl( ((struct iphdr *)&skb_pP->data[hard_header_len])->saddr) & 0x00FFFFFF;
+    pdcph.destinationL2Id = ntohl( ((struct iphdr *)&skb_pP->data[hard_header_len])->daddr) & 0x00FFFFFF;
+    break;
+
+  default:
+     break;
+  }
 
 
   bytes_wrote = ue_ip_netlink_send((char *)&pdcph,UE_IP_PDCPH_SIZE);
