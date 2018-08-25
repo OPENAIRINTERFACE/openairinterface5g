@@ -203,46 +203,13 @@ mac_rrc_data_req(
              RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
 
 
-#if defined(Rel10) || defined(Rel14)
-
-  if((Srb_id & RAB_OFFSET) == MCCH) {
-    if(RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESS[mbsfn_sync_area].Active==0) {
-      return 0;  // this parameter is set in function init_mcch in rrc_eNB.c
-    }
-
-#if 0 // defined(ENABLE_ITTI)
-    {
-      MessageDef *message_p;
-      int mcch_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area];
-      int sdu_size = sizeof(RRC_MAC_MCCH_DATA_REQ (message_p).sdu);
-
-      if (mcch_size > sdu_size) {
-        LOG_E(RRC, "SDU larger than MCCH SDU buffer size (%d, %d)", mcch_size, sdu_size);
-        mcch_size = sdu_size;
-      }
-
-      message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_MAC_MCCH_DATA_REQ);
-      RRC_MAC_MCCH_DATA_REQ (message_p).frame = frameP;
-      RRC_MAC_MCCH_DATA_REQ (message_p).sdu_size = mcch_size;
-      memset (RRC_MAC_MCCH_DATA_REQ (message_p).sdu, 0, MCCH_SDU_SIZE);
-      memcpy (RRC_MAC_MCCH_DATA_REQ (message_p).sdu,
-              RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
-              mcch_size);
-      RRC_MAC_MCCH_DATA_REQ (message_p).enb_index = eNB_index;
-      RRC_MAC_MCCH_DATA_REQ (message_p).mbsfn_sync_area = mbsfn_sync_area;
-      itti_send_msg_to_task (TASK_MAC_ENB, ENB_MODULE_ID_TO_INSTANCE(Mod_idP), message_p);
-    }
-#endif
-    memcpy(&buffer_pP[0],
-           RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
-           RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
 #ifdef DEBUG_RRC
     LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
 
     for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]; i++) {
       LOG_T(RRC,"%x.",buffer_pP[i]);
     }
-
+#endif
 #endif // #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))

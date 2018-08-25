@@ -1636,97 +1636,61 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
                     b_existed = 1;
                     break;
                 }
-		
-		if(b_existed == 0) {
-		  //no e_rab_id
-		  ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
-		  ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
-		  ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 30;
-		  ue_context_p->ue_context.nb_release_of_e_rabs++;
-		} else {
-		  if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_FAILED){
-                    ue_context_p->ue_context.e_rab[i].xid = xid;
-                    continue;
-		  } else if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED){
-                    ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_TORELEASE;
-                    ue_context_p->ue_context.e_rab[i].xid = xid;
-                    e_rab_release_drb++;
-		  }else{
+	    }
+	    if(b_existed == 0) {
+	      //no e_rab_id
+	      ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
+	      ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
+	      ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 30;
+	      ue_context_p->ue_context.nb_release_of_e_rabs++;
+	    } else {
+	      if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_FAILED){
+		ue_context_p->ue_context.e_rab[i].xid = xid;
+		continue;
+	      } else if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED){
+		ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_TORELEASE;
+		ue_context_p->ue_context.e_rab[i].xid = xid;
+		e_rab_release_drb++;
+	      }else{
                     //e_rab_id status NG
                     ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
                     ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
                     ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 0;
                     ue_context_p->ue_context.nb_release_of_e_rabs++;
-		  }
-		}
+	      }
 	    }
+	}
 	
-    
-	    if(is_existed == 1) {
-	      //e_rab_id is existed
-	      continue;
+	
+	if(e_rab_release_drb > 0) {
+	  //RRCConnectionReconfiguration To UE
+	  rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(&ctxt, ue_context_p, xid, S1AP_E_RAB_RELEASE_COMMAND (msg_p).nas_pdu.length, S1AP_E_RAB_RELEASE_COMMAND (msg_p).nas_pdu.buffer);
+	} else {
+	  //gtp tunnel delete
+	  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+	  memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
+	  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+	  
+	  for(i = 0; i < NB_RB_MAX; i++) {
+	    if(xid == ue_context_p->ue_context.e_rab[i].xid) {
+	      GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] = ue_context_p->ue_context.enb_gtp_ebi[i];
+	      ue_context_p->ue_context.enb_gtp_teid[i] = 0;
+	      memset(&ue_context_p->ue_context.enb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[i]));
+	      ue_context_p->ue_context.enb_gtp_ebi[i]  = 0;
 	    }
-
-      for ( i = 0;  i < NB_RB_MAX; i++) {
-        if (e_rab_release_params[erab].e_rab_id == ue_context_p->ue_context.e_rab[i].param.e_rab_id) {
-          b_existed = 1;
-          break;
-        }
-      }
-
-      if(b_existed == 0) {
-        //no e_rab_id
-        ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
-        ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
-        ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 30;
-        ue_context_p->ue_context.nb_release_of_e_rabs++;
-      } else {
-        if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_FAILED) {
-          ue_context_p->ue_context.e_rab[i].xid = xid;
-          continue;
-        } else if(ue_context_p->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED) {
-          ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_TORELEASE;
-          ue_context_p->ue_context.e_rab[i].xid = xid;
-          e_rab_release_drb++;
-        } else {
-          //e_rab_id status NG
-          ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].e_rab_id = e_rab_release_params[erab].e_rab_id;
-          ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause = S1AP_CAUSE_RADIO_NETWORK;
-          ue_context_p->ue_context.e_rabs_release_failed[ue_context_p->ue_context.nb_release_of_e_rabs].cause_value = 0;
-          ue_context_p->ue_context.nb_release_of_e_rabs++;
-        }
-      }
-    }
-
-    if(e_rab_release_drb > 0) {
-      //RRCConnectionReconfiguration To UE
-      rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(&ctxt, ue_context_p, xid, S1AP_E_RAB_RELEASE_COMMAND (msg_p).nas_pdu.length, S1AP_E_RAB_RELEASE_COMMAND (msg_p).nas_pdu.buffer);
+	  }
+	  
+	  itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
+	  //S1AP_E_RAB_RELEASE_RESPONSE
+	  rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(&ctxt, ue_context_p, xid);
+	}
     } else {
-      //gtp tunnel delete
-      msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-      memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-      GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-
-      for(i = 0; i < NB_RB_MAX; i++) {
-        if(xid == ue_context_p->ue_context.e_rab[i].xid) {
-          GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] = ue_context_p->ue_context.enb_gtp_ebi[i];
-          ue_context_p->ue_context.enb_gtp_teid[i] = 0;
-          memset(&ue_context_p->ue_context.enb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[i]));
-          ue_context_p->ue_context.enb_gtp_ebi[i]  = 0;
-        }
-      }
-
-      itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
-      //S1AP_E_RAB_RELEASE_RESPONSE
-      rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(&ctxt, ue_context_p, xid);
+      LOG_E(RRC,"S1AP-E-RAB Release Command: MME_UE_S1AP_ID %d  ENB_UE_S1AP_ID %d  Error ue_context_p NULL \n",
+	    S1AP_E_RAB_RELEASE_COMMAND (msg_p).mme_ue_s1ap_id, S1AP_E_RAB_RELEASE_COMMAND (msg_p).eNB_ue_s1ap_id);
+      return -1;
     }
-  } else {
-    LOG_E(RRC,"S1AP-E-RAB Release Command: MME_UE_S1AP_ID %d  ENB_UE_S1AP_ID %d  Error ue_context_p NULL \n",
-          S1AP_E_RAB_RELEASE_COMMAND (msg_p).mme_ue_s1ap_id, S1AP_E_RAB_RELEASE_COMMAND (msg_p).eNB_ue_s1ap_id);
-    return -1;
-  }
-
-  return 0;
+    
+    return 0;
 }
 
 
@@ -1900,33 +1864,8 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
               itti_send_msg_to_task (TASK_PDCP_ENB, instance, message_p);
           }
         }
-
-        pthread_mutex_unlock(&ue_pf_po_mutex);
-        uint32_t length;
-        uint8_t buffer[RRC_BUF_SIZE];
-        uint8_t *message_buffer;
-        /* Transfer data to PDCP */
-        MessageDef *message_p;
-        message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_PCCH_DATA_REQ);
-        /* Create message for PDCP (DLInformationTransfer_t) */
-        length = do_Paging (instance,
-                            buffer,
-                            S1AP_PAGING_IND(msg_p).ue_paging_identity,
-                            S1AP_PAGING_IND(msg_p).cn_domain);
-        message_buffer = itti_malloc (TASK_RRC_ENB, TASK_PDCP_ENB, length);
-        /* Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling). */
-        memcpy (message_buffer, buffer, length);
-        RRC_PCCH_DATA_REQ (message_p).sdu_size  = length;
-        RRC_PCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
-        RRC_PCCH_DATA_REQ (message_p).mode      = PDCP_TRANSMISSION_MODE_TRANSPARENT;  /* not used */
-        RRC_PCCH_DATA_REQ (message_p).rnti      = P_RNTI;
-        RRC_PCCH_DATA_REQ (message_p).ue_index  = i;
-        RRC_PCCH_DATA_REQ (message_p).CC_id  = CC_id;
-        LOG_D(RRC, "[eNB %d] CC_id %d In S1AP_PAGING_IND: send encdoed buffer to PDCP buffer_size %d\n", instance, CC_id, length);
-        itti_send_msg_to_task (TASK_PDCP_ENB, instance, message_p);
-      }
-    }
   }
+
 
   return (0);
 }
