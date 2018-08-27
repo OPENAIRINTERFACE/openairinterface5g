@@ -3147,6 +3147,13 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   #endif
   // p in TS 38.212 Subclause 10.1, for each active BWP the UE can deal with 3 different CORESETs (including coresetId 0 for common search space)
   int nb_coreset_total = NR_NBR_CORESET_ACT_BWP;
+  unsigned int dci_cnt=0;
+  // this table contains 56 (NBR_NR_DCI_FIELDS) elements for each dci field and format described in TS 38.212. Each element represents the size in bits for each dci field
+  uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {0};
+  // this is the UL bandwidth part. FIXME! To be defined where this value comes from
+  uint16_t n_RB_ULBWP = 106;
+  // this is the DL bandwidth part. FIXME! To be defined where this value comes from
+  uint16_t n_RB_DLBWP = 106;
 
   // First we have to identify each searchSpace active at a time and do PDCCH monitoring corresponding to current searchSpace
   // Up to 10 searchSpaces can be configured to UE (s<=10)
@@ -3213,7 +3220,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                                                                                   // FIXME! A table of five enum elements
       // searchSpaceType indicates whether this is a common search space or a UE-specific search space
       //int searchSpaceType                             = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceType.type;
-      int searchSpaceType                             = common;
+      NR_SEARCHSPACE_TYPE_t searchSpaceType                             = common;
       #ifdef NR_PDCCH_SCHED_DEBUG
         printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> searchSpaceType=%d is hardcoded THIS HAS TO BE FIXED!!!\n",
                 searchSpaceType);
@@ -3225,7 +3232,6 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
       if (nb_coreset_active >= nb_coreset_total) return 0; // the coreset_id could not be found. There is a problem
       }*/
 
-      unsigned int dci_cnt=0, i;
       /*
        * we do not need these parameters yet
        *
@@ -3240,12 +3246,6 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
       int tci_present                                           = pdcch_vars2->coreset[nb_coreset_active].tciPresentInDCI;
       uint16_t pdcch_DMRS_scrambling_id                         = pdcch_vars2->coreset[nb_coreset_active].pdcchDMRSScramblingID;
       */
-      // this table contains 56 (NBR_NR_DCI_FIELDS) elements for each dci field and format described in TS 38.212. Each element represents the size in bits for each dci field
-      uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {0};
-      // this is the UL bandwidth part. FIXME! To be defined where this value comes from
-      uint16_t n_RB_ULBWP = 106;
-      // this is the DL bandwidth part. FIXME! To be defined where this value comes from
-      uint16_t n_RB_DLBWP = 106;
 
       // A set of PDCCH candidates for a UE to monitor is defined in terms of PDCCH search spaces.
       // Searchspace types:
@@ -3346,10 +3346,10 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                     nb_coreset_active,
                     dci_cnt);
           #endif
-          dci_cnt = nr_dci_decoding_procedure(nb_searchspace_active,
+          dci_cnt += nr_dci_decoding_procedure(nb_searchspace_active,
                                               nb_coreset_active,
                                               ue,
-                                              dci_alloc_rx,
+                                              dci_alloc_rx[dci_cnt],
                                               searchSpaceType,  // if we're in PUSCH don't listen to common search space,
                                                                 // later when we need paging or RA during connection, update this ...
                                               eNB_id,
@@ -3371,10 +3371,10 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                     nb_coreset_active,
                     dci_cnt);
           #endif
-          dci_cnt = nr_dci_decoding_procedure(nb_searchspace_active,
+          dci_cnt += nr_dci_decoding_procedure(nb_searchspace_active,
                                               nb_coreset_active,
                                               ue,
-                                              dci_alloc_rx,
+                                              dci_alloc_rx[dci_cnt],
                                               searchSpaceType,  // if we're in PUSCH don't listen to common search space,
                                                                 // later when we need paging or RA during connection, update this ...
                                               eNB_id,
@@ -3470,7 +3470,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
       ue->dci_ind.number_of_dcis = dci_cnt;
       ue->dl_indication.dci_ind = &ue->dci_ind; //  hang on rx_ind instance
 
-      for (i=0; i<dci_cnt; i++) {
+      for (int i=0; i<dci_cnt; i++) {
         /*
          * This is the NR part
          */
@@ -3508,7 +3508,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                                 eNB_id,
                                                 frame_rx,
                                                 nr_tti_rx,
-                                                (void *)&dci_alloc_rx[i].dci_pdu,
+                                                dci_alloc_rx[i].dci_pdu,
                                                 dci_alloc_rx[i].rnti,
                                                 dci_alloc_rx[i].dci_length,
                                                 dci_alloc_rx[i].format,
