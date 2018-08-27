@@ -820,6 +820,7 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
     break;
 
   default:
+
     AssertFatal(1==0,"subframe %d Unsupported TDD configuration %d\n",subframe,frame_parms->tdd_config);
     return(255);
 

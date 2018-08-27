@@ -2454,7 +2454,10 @@ void configure_rru(int idx,
     ru->frame_parms->tdd_config                                            = config->tdd_config[0];
     ru->frame_parms->tdd_config_S                                          = config->tdd_config_S[0]; 
   }
-  else ru->frame_parms->frame_type                                            = FDD;
+  else {
+    ru->frame_parms->frame_type                                            = FDD;
+    ru->frame_parms->tdd_config                                            = 1;
+  }
   ru->att_tx                                                               = config->att_tx[0];
   ru->att_rx                                                               = config->att_rx[0];
   ru->frame_parms->N_RB_DL                                                  = config->N_RB_DL[0];

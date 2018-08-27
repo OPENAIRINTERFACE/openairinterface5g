@@ -189,7 +189,7 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
    
  
     subframe = (sim.last_ru_rx_timestamp[ru_id][CC_id]/RC.ru[ru_id]->frame_parms->samples_per_tti)%10;
-    if (subframe_select(&RC.ru[ru_id]->frame_parms,subframe) != SF_DL || RC.ru[ru_id]->frame_parms->frame_type == FDD) { 
+    if (subframe_select(RC.ru[ru_id]->frame_parms,subframe) != SF_DL || RC.ru[ru_id]->frame_parms->frame_type == FDD) { 
       LOG_D(SIM,"RU_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
 	    subframe,(unsigned long long)*ptimestamp,
 	    (unsigned long long)sim.current_ru_rx_timestamp[ru_id][CC_id]);
@@ -508,8 +508,8 @@ void *rfsim_top(void *n_frames) {
 	
 	pthread_mutex_lock(&sim.subframe_mutex);
 
-	int subframe_ru_mask_local  = (subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_UL) ? sim.subframe_ru_mask : ((1<<RC.nb_RU)-1);
-	int subframe_UE_mask_local  = (RC.ru[0]->frame_parms->frame_type == FDD || subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_DL) ? sim.subframe_UE_mask : ((1<<NB_UE_INST)-1);
+	int subframe_ru_mask_local  = (subframe_select(RC.ru[0]->frame_parms,(sf+4)%10)!=SF_UL) ? sim.subframe_ru_mask : ((1<<RC.nb_RU)-1);
+	int subframe_UE_mask_local  = (RC.ru[0]->frame_parms->frame_type == FDD || subframe_select(RC.ru[0]->frame_parms,(sf+4)%10)!=SF_DL) ? sim.subframe_UE_mask : ((1<<NB_UE_INST)-1);
 	pthread_mutex_unlock(&sim.subframe_mutex);
 	LOG_D(SIM,"Frame %d, Subframe %d, NB_RU %d, NB_UE %d: Checking masks %x,%x\n",frame,sf,RC.nb_RU,NB_UE_INST,subframe_ru_mask_local,subframe_UE_mask_local);
 	if ((subframe_ru_mask_local == ((1<<RC.nb_RU)-1)) &&
