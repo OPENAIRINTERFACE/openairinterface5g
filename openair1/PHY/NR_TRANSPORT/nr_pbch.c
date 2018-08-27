@@ -288,7 +288,7 @@ pbch_a_b[m] = ((pbch->pbch_a_prime[m/8]>>(m&7))&01);
 }
 
   /// CRC, coding and rate matching
-  polar_encoder (pbch->pbch_a_prime, pbch->pbch_e, &frame_parms->pbch_polar_params);
+  //polar_encoder (pbch->pbch_a_prime, pbch->pbch_e, &frame_parms->pbch_polar_params);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
   for (int i=0; i<NR_POLAR_PBCH_E>>3; i++)

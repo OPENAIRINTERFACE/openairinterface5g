@@ -916,10 +916,10 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
       gNB                     = RC.gNB[inst][CC_id]; 
       gNB->abstraction_flag   = 0;
       gNB->single_thread_flag = single_thread_flag;
-      nr_polar_init(&gNB->nrPolar_params,
+      /*nr_polar_init(&gNB->nrPolar_params,
     		  	  	NR_POLAR_PBCH_MESSAGE_TYPE,
 					NR_POLAR_PBCH_PAYLOAD_BITS,
-					NR_POLAR_PBCH_AGGREGATION_LEVEL);
+					NR_POLAR_PBCH_AGGREGATION_LEVEL);*/
 
       LOG_I(PHY,"Initializing gNB %d CC_id %d single_thread_flag:%d\n",inst,CC_id,single_thread_flag);
 #ifndef OCP_FRAMEWORK
