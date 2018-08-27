@@ -50,7 +50,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   unsigned int frame_length_samples = frame_parms->samples_per_subframe * 10;
   unsigned int rx_offset;
   //NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns>>1]][0];
-  uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset;
+  uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset+516;
   uint16_t nb_rb_coreset = 24;
   uint16_t bwp_start_subcarrier = frame_parms->first_carrier_offset;
   uint16_t nb_rb_pdsch = 100;
@@ -239,7 +239,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
       for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
 #ifdef DEBUG_FEP
-          printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
+          printf("PDCCH Channel estimation eNB %d, aatx %d, slot %d, symbol %d start_sc %d\n",eNB_id,aa,Ns,l,coreset_start_subcarrier);
 #endif
 #if UE_TIMING_TRACE
           start_meas(&ue->dlsch_channel_estimation_stats);
