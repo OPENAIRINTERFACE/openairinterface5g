@@ -2552,9 +2552,6 @@ target_link_libraries(polartest m SIMU PHY PHY_NR PHY_COMMON -lm ${ATLAS_LIBRARI
 add_executable(ldpctest  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c)
 target_link_libraries(ldpctest m SIMU PHY PHY_NR ${ATLAS_LIBRARIES})
 
-add_executable(ldpctest  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c)
-target_link_libraries(ldpctest m SIMU PHY PHY_NR ${ATLAS_LIBRARIES})
-
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 
   add_executable(${myExe}
