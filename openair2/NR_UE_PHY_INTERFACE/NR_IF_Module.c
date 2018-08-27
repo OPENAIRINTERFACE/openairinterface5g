@@ -72,6 +72,12 @@ int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
     module_id_t module_id = ul_info->module_id;
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
+    // clean previous FAPI messages
+    mac->tx_request.number_of_pdus = 0;
+    mac->ul_config_request.number_pdus = 0;
+    mac->dl_config_request.number_pdus = 0;
+    // clean previous FAPI messages
+
     ret = nr_ue_scheduler(
         ul_info->module_id,
         ul_info->gNB_index,
