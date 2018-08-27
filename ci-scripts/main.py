@@ -277,7 +277,11 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = True
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		# Initialize_eNB_args usually start with -O and followed by the location in repository
@@ -422,7 +426,11 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = False
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		multi_jobs = []
 		status_queue = SimpleQueue()
 		lock = Lock()
@@ -435,7 +443,7 @@ class SSHConnection():
 			job.join()
 
 		if (status_queue.empty()):
-			self.CreateHtmlTestRow('N/A', 'KO', len(self.UEDevices))
+			self.CreateHtmlTestRow('N/A', 'KO', 0)
 			sys.exit(1)
 		else:
 			attach_status = True
@@ -472,7 +480,11 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = False
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		multi_jobs = []
 		for device_id in self.UEDevices:
 			p = Process(target = SSH.DetachUE_common, args = (device_id,))
@@ -527,7 +539,11 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = False
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		multi_jobs = []
 		for device_id in self.UEDevices:
 			p = Process(target = SSH.RebootUE_common, args = (device_id,))
@@ -649,7 +665,11 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = False
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		self.GetAllUEIPAddresses()
 		multi_jobs = []
 		i = 0
@@ -666,7 +686,7 @@ class SSHConnection():
 			job.join()
 
 		if (status_queue.empty()):
-			self.CreateHtmlTestRow(self.ping_args, 'KO', len(self.UEDevices))
+			self.CreateHtmlTestRow(self.ping_args, 'KO', 0)
 			self.CreateHtmlFooter()
 			sys.exit(1)
 		else:
@@ -1073,7 +1093,11 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = False
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		self.GetAllUEIPAddresses()
 		multi_jobs = []
 		i = 0
@@ -1091,7 +1115,7 @@ class SSHConnection():
 			job.join()
 
 		if (status_queue.empty()):
-			self.CreateHtmlTestRow(self.iperf_args, 'KO', len(self.UEDevices))
+			self.CreateHtmlTestRow(self.iperf_args, 'KO', 0)
 			self.CreateHtmlFooter()
 			sys.exit(1)
 		else:
@@ -1120,39 +1144,53 @@ class SSHConnection():
 
 	def CheckProcessExist(self, initialize_eNB_flag):
 		multi_jobs = []
-		p = Process(target = SSH.CheckHSSProcess, args = ())
+		status_queue = SimpleQueue()
+		p = Process(target = SSH.CheckHSSProcess, args = (status_queue,))
 		p.daemon = True
 		p.start()
 		multi_jobs.append(p)
-		p = Process(target = SSH.CheckMMEProcess, args = ())
+		p = Process(target = SSH.CheckMMEProcess, args = (status_queue,))
 		p.daemon = True
 		p.start()
 		multi_jobs.append(p)
-		p = Process(target = SSH.CheckSPGWProcess, args = ())
+		p = Process(target = SSH.CheckSPGWProcess, args = (status_queue,))
 		p.daemon = True
 		p.start()
 		multi_jobs.append(p)
 		if initialize_eNB_flag == False:
-			p = Process(target = SSH.CheckeNBProcess, args = ())
+			p = Process(target = SSH.CheckeNBProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
 
-	def CheckeNBProcess(self):
+		if (status_queue.empty()):
+			return -15
+		else:
+			result = 0
+			while (not status_queue.empty()):
+				status = status_queue.get()
+				if (status < 0):
+					result = status
+			return result
+
+	def CheckeNBProcess(self, status_queue):
 		try:
 			self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 			self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never lte-softmodem', '\$', 5)
 			result = re.search('lte-softmodem', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m eNB Process Not Found! \u001B[0m')
-				sys.exit(1)
+				#sys.exit(1)
+				status_queue.put(-1)
+			else:
+				status_queue.put(1)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def CheckHSSProcess(self):
+	def CheckHSSProcess(self, status_queue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never hss', '\$', 5)
@@ -1162,12 +1200,15 @@ class SSHConnection():
 				result = re.search('hss_sim s6as diam_hss', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m HSS Process Not Found! \u001B[0m')
-				sys.exit(1)
+				status_queue.put(-2)
+				#sys.exit(1)
+			else:
+				status_queue.put(2)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def CheckMMEProcess(self):
+	def CheckMMEProcess(self, status_queue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never mme', '\$', 5)
@@ -1177,12 +1218,15 @@ class SSHConnection():
 				result = re.search('mme', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m MME Process Not Found! \u001B[0m')
-				sys.exit(1)
+				status_queue.put(-3)
+				#sys.exit(1)
+			else:
+				status_queue.put(3)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def CheckSPGWProcess(self):
+	def CheckSPGWProcess(self, status_queue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			if re.match('OAI', self.EPCType, re.IGNORECASE):
@@ -1193,7 +1237,10 @@ class SSHConnection():
 				result = re.search('xGw', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m SPGW Process Not Found! \u001B[0m')
-				sys.exit(1)
+				status_queue.put(-4)
+				#sys.exit(1)
+			else:
+				status_queue.put(4)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -1396,7 +1443,7 @@ class SSHConnection():
 			self.htmlFile.write('  <table border = "1">\n')
 			self.htmlFile.write('     <tr>\n')
 			self.htmlFile.write('       <td bgcolor = "lightcyan" >GIT Repository</td>\n')
-			self.htmlFile.write('       <td>' + SSH.eNBRepository + '</td>\n')
+			self.htmlFile.write('       <td><a href="' + SSH.eNBRepository + '">' + SSH.eNBRepository + '</a></td>\n')
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
 			self.htmlFile.write('       <td bgcolor = "lightcyan" >Job Trigger</td>\n')
@@ -1454,7 +1501,7 @@ class SSHConnection():
 			self.htmlFile.close()
 		self.htmlFooterCreated = False
 
-	def CreateHtmlTestRow(self, options, status, ue_status):
+	def CreateHtmlTestRow(self, options, status, processesStatus):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + SSH.testCase_id  + '</td>\n')
@@ -1463,15 +1510,23 @@ class SSHConnection():
 			if (str(status) == 'OK'):
 				self.htmlFile.write('        <td bgcolor = "lightgreen" >' + str(status)  + '</td>\n')
 			elif (str(status) == 'KO'):
-				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+				if (processesStatus == 0):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+				elif (processesStatus == -1):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process not found</td>\n')
+				elif (processesStatus == -2):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - HSS process not found</td>\n')
+				elif (processesStatus == -3):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - MME process not found</td>\n')
+				elif (processesStatus == -4):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - SPGW process not found</td>\n')
+				else:
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
 			else:
 				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
 			i = 0
 			while (i < self.htmlUEConnected):
-				if (i < ue_status):
-					self.htmlFile.write('        <td>-</td>\n')
-				else:
-					self.htmlFile.write('        <td>-</td>\n')
+				self.htmlFile.write('        <td>-</td>\n')
 				i += 1
 			self.htmlFile.write('      </tr>\n')
 
