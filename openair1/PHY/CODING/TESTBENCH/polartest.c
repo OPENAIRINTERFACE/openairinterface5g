@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
 	uint8_t decoderListSize = 8, pathMetricAppr = 0; //0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
 
-	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:")) != -1)
+	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:h")) != -1)
 	switch (arguments)
 	{
 		case 's':
@@ -65,9 +65,13 @@ int main(int argc, char *argv[]) {
 			pathMetricAppr = (uint8_t) atoi(optarg);
 			break;
 
+	        case 'h':
+		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=DCI|1=PBCH|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
+		  exit(-1);
+
 		default:
 			perror("[polartest.c] Problem at argument parsing with getopt");
-			abort ();
+			exit(-1);
 	}
 
 	if (polarMessageType == 0) { //DCI
