@@ -226,5 +226,4 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 		AssertFatal(1==0, "[nr_fill_dci_and_dlsch] Incorrect DCI Format(%d)",rel15->dci_format);
 	}*/
 
-	return;
 }

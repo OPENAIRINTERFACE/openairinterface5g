@@ -61,7 +61,7 @@ typedef struct {
 
 typedef struct {
   uint8_t     num_dci;
-  NR_gNB_DCI_ALLOC_t dci_alloc[32];
+  NR_gNB_DCI_ALLOC_t dci_alloc[256];
 } NR_gNB_PDCCH;
 
 typedef struct {
