@@ -1155,15 +1155,15 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       #endif
     }
 
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol * (frame_parms->N_RB_DL * NBR_RE_PER_RB_WITH_DMRS)];
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol * (frame_parms->N_RB_DL * NBR_RE_PER_RB_WITHOUT_DMRS)];
     #ifdef NR_PDCCH_DCI_DEBUG
-      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0_ext = &dl_ch_estimates_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 12) = (%d)]\n",
-             aarx,symbol * (frame_parms->N_RB_DL * 12));
+      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0_ext = &dl_ch_estimates_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 9) = (%d)]\n",
+             aarx,symbol * (frame_parms->N_RB_DL * NBR_RE_PER_RB_WITHOUT_DMRS));
     #endif
-    rxF_ext = &rxdataF_ext[aarx][symbol * (frame_parms->N_RB_DL * NBR_RE_PER_RB_WITH_DMRS)];
+    rxF_ext = &rxdataF_ext[aarx][symbol * (frame_parms->N_RB_DL * NBR_RE_PER_RB_WITHOUT_DMRS)];
     #ifdef NR_PDCCH_DCI_DEBUG
-      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> rxF_ext = &rxdataF_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 12) = (%d)]\n",
-             aarx,symbol * (frame_parms->N_RB_DL * 12));
+      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> rxF_ext = &rxdataF_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 9) = (%d)]\n",
+             aarx,symbol * (frame_parms->N_RB_DL * NBR_RE_PER_RB_WITHOUT_DMRS));
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> (for symbol=%d, aarx=%d), symbol_mod=%d, nushiftmod3=%d \n",symbol,aarx,symbol_mod,nushiftmod3);
     #endif
 
@@ -1174,14 +1174,14 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
  * Several cases have to be handled differently as IQ symbols are situated in different parts of rxdataF:
  * 1. Number of RBs in the system bandwidth is even
  *    1.1 The RB is <  than the N_RB_DL/2 -> IQ symbols are in the second half of the rxdataF (from first_carrier_offset)
- *    1.2 The RB is >= than the N_RB_DL/2 -> IQ symbols are in the first half of the rxdataF (from element 1)
+ *    1.2 The RB is >= than the N_RB_DL/2 -> IQ symbols are in the first half of the rxdataF (from element 0)
  * 2. Number of RBs in the system bandwidth is odd
  * (particular case when the RB with DC as it is treated differently: it is situated in symbol borders of rxdataF)
  *    2.1 The RB is <= than the N_RB_DL/2   -> IQ symbols are in the second half of the rxdataF (from first_carrier_offset)
- *    2.2 The RB is >  than the N_RB_DL/2+1 -> IQ symbols are in the first half of the rxdataF (from element 1 + 2nd half RB containing DC)
+ *    2.2 The RB is >  than the N_RB_DL/2+1 -> IQ symbols are in the first half of the rxdataF (from element 0 + 2nd half RB containing DC)
  *    2.3 The RB is == N_RB_DL/2+1          -> IQ symbols are in the lower border of the rxdataF for first 6 IQ element and the upper border of the rxdataF for the last 6 IQ elements
  * If the first RB containing PDCCH within the UE BWP and within the CORESET is higher than half of the system bandwidth (N_RB_DL),
- * then the IQ symbol is going to be found at the position 1+c_rb-N_RB_DL/2 in rxdataF and
+ * then the IQ symbol is going to be found at the position 0+c_rb-N_RB_DL/2 in rxdataF and
  * we have to point the pointer at (1+c_rb-N_RB_DL/2) in rxdataF
  */
 
@@ -2736,7 +2736,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     uint8_t is_secondary_ue,
                     int nb_coreset_active,
                     uint16_t symbol_mon,
-                    int do_common) {
+                    NR_SEARCHSPACE_TYPE_t searchSpaceType) {
 
 	#ifdef MU_RECEIVER
 	uint8_t eNB_id_i=eNB_id+1; //add 1 to eNB_id to separate from wanted signal, chosen as the B/F'd pilots from the SeNB are shifted by 1
@@ -2747,6 +2747,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   NR_UE_PDCCH **pdcch_vars       = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]];
   NR_UE_PDCCH *pdcch_vars2       = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id];
 
+  int do_common;
+  if (searchSpaceType == common) do_common=1;
+  if (searchSpaceType == ue_specific) do_common=0;
   uint8_t log2_maxh, aatx, aarx;
   int32_t avgs;
   uint8_t n_pdcch_symbols;
@@ -2810,7 +2813,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   // For each BWP the number of CORESETs is limited to 3 (including initial CORESET Id=0 -> ControlResourceSetId (0..maxNrofControlReourceSets-1) (0..12-1)
   //uint32_t n_BWP_start = 0;
   //uint32_t n_rb_offset = 0;
-  uint32_t n_rb_offset = pdcch_vars2->coreset[nb_coreset_active].rb_offset;
+  uint32_t n_rb_offset                                      = pdcch_vars2->coreset[nb_coreset_active].rb_offset;
   // start time position for CORESET
   // parameter symbol_mon is a 14 bits bitmap indicating monitoring symbols within a slot
   uint8_t start_symbol = 0;
@@ -2824,7 +2827,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     }
   }
 #ifdef NR_PDCCH_DCI_DEBUG
-  printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> symbol_mon=(%d) and start_symbol=%d\n",symbol_mon,start_symbol);
+  printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> symbol_mon=(%d) and start_symbol=(%d)\n",symbol_mon,start_symbol);
+  printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> coreset_freq_dom=(%lld) n_rb_offset=(%d) coreset_time_dur=(%d) n_shift=(%d) reg_bundle_size_L=(%d) coreset_interleaver_size_R=(%d) \n",
+          coreset_freq_dom,n_rb_offset,coreset_time_dur,n_shift,reg_bundle_size_L,coreset_interleaver_size_R);
 #endif
 
   //
@@ -4265,14 +4270,14 @@ void nr_dci_decoding_procedure0(int s,                                          
 							dci_decoded_output[current_thread_id][3]);
 #endif
         } else {
-          dci_alloc[*dci_cnt].dci_pdu[7] = dci_decoded_output[current_thread_id][0];
+/*        dci_alloc[*dci_cnt].dci_pdu[7] = dci_decoded_output[current_thread_id][0];
           dci_alloc[*dci_cnt].dci_pdu[6] = dci_decoded_output[current_thread_id][1];
           dci_alloc[*dci_cnt].dci_pdu[5] = dci_decoded_output[current_thread_id][2];
-          dci_alloc[*dci_cnt].dci_pdu[4] = dci_decoded_output[current_thread_id][3];
-          dci_alloc[*dci_cnt].dci_pdu[3] = dci_decoded_output[current_thread_id][4];
-          dci_alloc[*dci_cnt].dci_pdu[2] = dci_decoded_output[current_thread_id][5];
-          dci_alloc[*dci_cnt].dci_pdu[1] = dci_decoded_output[current_thread_id][6];
-          dci_alloc[*dci_cnt].dci_pdu[0] = dci_decoded_output[current_thread_id][7];
+          dci_alloc[*dci_cnt].dci_pdu[4] = dci_decoded_output[current_thread_id][3];*/
+          dci_alloc[*dci_cnt].dci_pdu[3] = dci_decoded_output[current_thread_id][0];
+          dci_alloc[*dci_cnt].dci_pdu[2] = dci_decoded_output[current_thread_id][1];
+          dci_alloc[*dci_cnt].dci_pdu[1] = dci_decoded_output[current_thread_id][2];
+          dci_alloc[*dci_cnt].dci_pdu[0] = dci_decoded_output[current_thread_id][3];
           // MAX_DCI_SIZE_BITS has to be redefined for dci_decoded_output FIXME
           // format2_0, format2_1 can be longer than 8 bytes. FIXME
 #ifdef DEBUG_DCI_DECODING
