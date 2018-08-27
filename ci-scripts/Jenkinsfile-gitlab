@@ -45,6 +45,44 @@ pipeline {
                     }
                 }
             }
+            post {
+                failure {
+                    script {
+                        def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Merge Conflicts -- Cannot perform CI"
+                        addGitLabMRComment comment: message
+                    }
+                }
+            }
+        }
+
+        stage ("Start VM -- cppcheck") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- enb-usrp") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- phy-sim") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- gnb-usrp") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- nu-ue-usrp") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
         }
 
         stage ("Variant Builds") {

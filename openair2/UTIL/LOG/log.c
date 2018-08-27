@@ -172,6 +172,14 @@ int logInit (void)
   g_log->log_component[PHY].filelog = 0;
   g_log->log_component[PHY].filelog_name = "/tmp/phy.log";
 
+  g_log->log_component[NR_PHY].name = "NR_PHY";
+  g_log->log_component[NR_PHY].level = LOG_EMERG;
+  g_log->log_component[NR_PHY].flag =  LOG_MED;
+  g_log->log_component[NR_PHY].interval =  1;
+  g_log->log_component[NR_PHY].fd = 0;
+  g_log->log_component[NR_PHY].filelog = 0;
+  g_log->log_component[NR_PHY].filelog_name = "/tmp/nrphy.log";
+
   g_log->log_component[MAC].name = "MAC";
   g_log->log_component[MAC].level = LOG_EMERG;
   g_log->log_component[MAC].flag =  LOG_MED;
@@ -179,6 +187,14 @@ int logInit (void)
   g_log->log_component[MAC].fd = 0;
   g_log->log_component[MAC].filelog = 0;
   g_log->log_component[MAC].filelog_name = "/tmp/mac.log";
+
+  g_log->log_component[NR_MAC].name = "NR_MAC";
+  g_log->log_component[NR_MAC].level = LOG_EMERG;
+  g_log->log_component[NR_MAC].flag =  LOG_MED;
+  g_log->log_component[NR_MAC].interval =  1;
+  g_log->log_component[NR_MAC].fd = 0;
+  g_log->log_component[NR_MAC].filelog = 0;
+  g_log->log_component[NR_MAC].filelog_name = "/tmp/nrmac.log";
 
   g_log->log_component[OPT].name = "OPT";
   g_log->log_component[OPT].level = LOG_EMERG;
@@ -211,6 +227,14 @@ int logInit (void)
   g_log->log_component[RRC].fd = 0;
   g_log->log_component[RRC].filelog = 0;
   g_log->log_component[RRC].filelog_name = "/tmp/rrc.log";
+
+  g_log->log_component[NR_RRC].name = "NR_RRC";
+  g_log->log_component[NR_RRC].level = LOG_TRACE;
+  g_log->log_component[NR_RRC].flag = LOG_MED;
+  g_log->log_component[NR_RRC].interval =  1;
+  g_log->log_component[NR_RRC].fd = 0;
+  g_log->log_component[NR_RRC].filelog = 0;
+  g_log->log_component[NR_RRC].filelog_name = "/tmp/nrrrc.log";
 
   g_log->log_component[EMU].name = "EMU";
   g_log->log_component[EMU].level = LOG_EMERG;
@@ -363,6 +387,14 @@ int logInit (void)
   g_log->log_component[ENB_APP].fd = 0;
   g_log->log_component[ENB_APP].filelog = 0;
   g_log->log_component[ENB_APP].filelog_name = "";
+
+  g_log->log_component[GNB_APP].name = "GNB_APP";
+  g_log->log_component[GNB_APP].level = LOG_EMERG;
+  g_log->log_component[GNB_APP].flag = LOG_MED;
+  g_log->log_component[GNB_APP].interval = 1;
+  g_log->log_component[GNB_APP].fd = 0;
+  g_log->log_component[GNB_APP].filelog = 0;
+  g_log->log_component[GNB_APP].filelog_name = "";
 
   g_log->log_component[FLEXRAN_AGENT].name = "FLEXRAN_AGENT";
   g_log->log_component[FLEXRAN_AGENT].level = LOG_DEBUG;

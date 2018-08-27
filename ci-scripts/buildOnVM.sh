@@ -24,12 +24,14 @@ function usage {
     echo "    --workspace #### OR -ws ####"
     echo "    Specify the workspace."
     echo ""
-    echo "    --variant enb-usrp   OR -v1"
-    echo "    --variant basic-sim  OR -v2"
-    echo "    --variant phy-sim    OR -v3"
-    echo "    --variant cppcheck   OR -v4"
-    echo "    --variant gnb-usrp   OR -v5"
-    echo "    --variant nu-ue-usrp OR -v6"
+    echo "    --variant enb-usrp     OR -v1"
+    echo "    --variant basic-sim    OR -v2"
+    echo "    --variant phy-sim      OR -v3"
+    echo "    --variant cppcheck     OR -v4"
+    echo "    --variant gnb-usrp     OR -v5"
+    echo "    --variant nu-ue-usrp   OR -v6"
+    echo "    --variant enb-ethernet OR -v7"
+    echo "    --variant ue-ethernet  OR -v8"
     echo "    Specify the variant to build."
     echo ""
     echo "    --keep-vm-alive OR -k"
@@ -44,12 +46,14 @@ function variant_usage {
     echo "OAI VM Build Check script"
     echo "   Original Author: Raphael Defosseux"
     echo ""
-    echo "    --variant enb-usrp   OR -v1"
-    echo "    --variant basic-sim  OR -v2"
-    echo "    --variant phy-sim    OR -v3"
-    echo "    --variant cppcheck   OR -v4"
-    echo "    --variant gnb-usrp   OR -v5"
-    echo "    --variant nu-ue-usrp OR -v6"
+    echo "    --variant enb-usrp     OR -v1"
+    echo "    --variant basic-sim    OR -v2"
+    echo "    --variant phy-sim      OR -v3"
+    echo "    --variant cppcheck     OR -v4"
+    echo "    --variant gnb-usrp     OR -v5"
+    echo "    --variant nu-ue-usrp   OR -v6"
+    echo "    --variant enb-ethernet OR -v7"
+    echo "    --variant ue-ethernet  OR -v8"
     echo ""
 }
 
@@ -65,6 +69,7 @@ VM_TEMPLATE=ci-
 JOB_NAME=XX
 BUILD_ID=XX
 VM_NAME=ci-enb-usrp
+VM_MEMORY=2048
 ARCHIVES_LOC=enb_usrp
 LOG_PATTERN=.Rel14.txt
 NB_PATTERN_FILES=4
@@ -126,10 +131,11 @@ case $key in
     ;;
     -v4)
     VM_NAME=ci-cppcheck
+    VM_MEMORY=8192
     ARCHIVES_LOC=cppcheck
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
-    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c"
     shift
     ;;
     -v5)
@@ -146,6 +152,22 @@ case $key in
     LOG_PATTERN=.Rel14.txt
     NB_PATTERN_FILES=4
     BUILD_OPTIONS="--nrUE -w USRP"
+    shift
+    ;;
+    -v7)
+    VM_NAME=ci-enb-ethernet
+    ARCHIVES_LOC=enb_eth
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=6
+    BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+    shift
+    ;;
+    -v8)
+    VM_NAME=ci-ue-ethernet
+    ARCHIVES_LOC=ue_eth
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=6
+    BUILD_OPTIONS="--UE -t ETHERNET --noS1"
     shift
     ;;
     --variant)
@@ -174,10 +196,11 @@ case $key in
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck
+        VM_MEMORY=8192
         ARCHIVES_LOC=cppcheck
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
-        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c"
         ;;
         gnb-usrp)
         VM_NAME=ci-gnb-usrp
@@ -192,6 +215,20 @@ case $key in
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=4
         BUILD_OPTIONS="--nrUE -w USRP"
+        ;;
+        enb-ethernet)
+        VM_NAME=ci-enb-ethernet
+        ARCHIVES_LOC=enb_eth
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=6
+        BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+        ;;
+        ue-ethernet)
+        VM_NAME=ci-ue-ethernet
+        ARCHIVES_LOC=ue_eth
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=6
+        BUILD_OPTIONS="--UE -t ETHERNET --noS1"
         ;;
         *)
         echo ""
@@ -240,10 +277,16 @@ echo "JENKINS_WKSP        = $JENKINS_WKSP"
 echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
 echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
-echo "############################################################"
-echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
-echo "############################################################"
-uvt-kvm create $VM_NAME release=xenial --memory 2048 --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
+
+if [ $IS_VM_ALIVE -eq 0 ]
+then
+    echo "############################################################"
+    echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
+    echo "############################################################"
+    uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+fi
+
 echo "Waiting for VM to be started"
 uvt-kvm wait $VM_NAME --insecure
 
@@ -267,7 +310,8 @@ then
     echo "sudo apt-get --yes install zip cppcheck >> zip-install.txt 2>&1" >> $VM_CMDS
 else
     echo "echo \"sudo apt-get --yes --quiet install zip subversion libboost-dev \"" >> $VM_CMDS
-    echo "sudo apt-get --yes install zip subversion libboost-dev > zip-install.txt 2>&1" >> $VM_CMDS
+    echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+    echo "sudo apt-get --yes install zip subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
 fi
 echo "mkdir tmp" >> $VM_CMDS
 echo "cd tmp" >> $VM_CMDS

@@ -185,6 +185,10 @@ typedef enum {
     LOCALIZE,
     RRH,
     X2AP,
+    GNB_APP,
+    NR_RRC,
+    NR_MAC,
+    NR_PHY,
     MAX_LOG_COMPONENTS,
 }
 comp_name_t;
@@ -384,8 +388,8 @@ static __inline__ uint64_t rdtsc(void) {
 extern double cpuf;
 
 static inline uint64_t checkTCPU(int timeout, char * file, int line) {
-    static uint64_t __thread lastCPUTime=0;
-    static uint64_t __thread last=0;
+    static __thread uint64_t  lastCPUTime=0;
+    static __thread uint64_t  last=0;
     uint64_t cur=rdtsc();
     struct timespec CPUt;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &CPUt);
@@ -404,7 +408,7 @@ static inline uint64_t checkTCPU(int timeout, char * file, int line) {
 }
 
 static inline unsigned long long checkT(int timeout, char * file, int line) {
-    static unsigned long long __thread last=0;
+    static __thread unsigned long long last=0;
     unsigned long long cur=rdtsc();
     int microCycles=(int)(cpuf*1000);
     int duration=(int)((cur-last)/microCycles);

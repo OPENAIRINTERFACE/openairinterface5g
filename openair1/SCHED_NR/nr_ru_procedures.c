@@ -86,7 +86,7 @@ void nr_feptx0(RU_t *ru,int slot) {
 void nr_feptx_ofdm_2thread(RU_t *ru) {
 
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
-  nfapi_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   RU_proc_t *proc = &ru->proc;
   struct timespec wait;
   int subframe = ru->proc.subframe_tx;
@@ -185,7 +185,7 @@ void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx) {
 void nr_feptx_ofdm(RU_t *ru) {
      
   NR_DL_FRAME_PARMS *fp=ru->nr_frame_parms;
-  nfapi_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
 
   unsigned int aa,slot_offset, slot_offset_F;
   int dummy_tx_b[7680*4] __attribute__((aligned(32)));
@@ -238,7 +238,7 @@ void nr_feptx_ofdm(RU_t *ru) {
       }
 
       // if S-subframe generate first slot only
-      if (nr_subframe_select(fp,subframe) == SF_S)
+      if (nr_subframe_select(cfg,subframe) == SF_S)
 	len = fp->samples_per_subframe / fp->slots_per_subframe;
       else
 	len = fp->samples_per_subframe;

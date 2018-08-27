@@ -133,7 +133,7 @@ extern volatile int                    oai_exit;
 
 extern void  nr_phy_init_RU(RU_t*);
 extern void  nr_phy_free_RU(RU_t*);
-extern void  nr_phy_config_request(PHY_VARS_gNB *gNB);
+extern void  nr_phy_config_request(NR_PHY_Config_t *gNB);
 
 void init_RU(char*);
 void stop_RU(int nb_ru);
@@ -600,7 +600,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  nfapi_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   RU_proc_t *proc        = &ru->proc;
 
   uint16_t packet_type;
@@ -782,7 +782,7 @@ void tx_rf(RU_t *ru) {
 
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  nfapi_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
   void *txp[ru->nb_tx]; 
   unsigned int txs;
   int i;
@@ -1179,7 +1179,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   int i;
 
   NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
-  nfapi_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
+  nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
   openair0_config_t *cfg   = &ru->openair0_cfg;
   int N_RB = gNB_config->rf_config.dl_channel_bandwidth.value;
   int mu = gNB_config->subframe_config.numerology_index_mu.value;
@@ -1281,7 +1281,7 @@ int setup_RU_buffers(RU_t *ru) {
   //uint16_t N_TA_offset = 0;
 
   NR_DL_FRAME_PARMS *frame_parms;
-  //nfapi_config_request_t *gNB_config = ru->gNB_list[0]->gNB_config; //tmp index
+  //nfapi_nr_config_request_t *gNB_config = ru->gNB_list[0]->gNB_config; //tmp index
   
   if (ru) {
     frame_parms = ru->nr_frame_parms;
@@ -1841,7 +1841,7 @@ void configure_ru(int idx,
   RU_t               *ru           = RC.ru[idx];
   RRU_config_t       *config       = (RRU_config_t *)arg;
   RRU_capabilities_t *capabilities = (RRU_capabilities_t*)arg;
-  nfapi_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
   int ret;
 
   LOG_I(PHY, "Received capabilities from RRU %d\n",idx);
@@ -1885,7 +1885,7 @@ void configure_rru(int idx,
 
   RRU_config_t *config = (RRU_config_t *)arg;
   RU_t         *ru         = RC.ru[idx];
-  nfapi_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
+  nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config;
 
   ru->nr_frame_parms->eutra_band                                               = config->band_list[0];
   ru->nr_frame_parms->dl_CarrierFreq                                           = config->tx_freq[0];
@@ -2120,11 +2120,11 @@ void init_RU(char *rf_config_file) {
   // read in configuration file)
   printf("configuring RU from file\n");
   RCconfig_RU();
-  LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_L1_inst,RC.nb_RU,get_nprocs());
+  LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_nr_L1_inst,RC.nb_RU,get_nprocs());
 
-  if (RC.nb_CC != 0)
-    for (i=0;i<RC.nb_L1_inst;i++) 
-      for (CC_id=0;CC_id<RC.nb_CC[i];CC_id++) RC.gNB[i][CC_id]->num_RU=0;
+  if (RC.nb_nr_CC != 0)
+    for (i=0;i<RC.nb_nr_L1_inst;i++) 
+      for (CC_id=0;CC_id<RC.nb_nr_CC[i];CC_id++) RC.gNB[i][CC_id]->num_RU=0;
 
   LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
   for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
@@ -2237,7 +2237,7 @@ void RCconfig_RU(void) {
       printf("Creating RC.ru[%d]:%p\n", j, RC.ru[j]);
 
       RC.ru[j]->if_timing                           = synch_to_ext_device;
-      if (RC.nb_L1_inst >0)
+      if (RC.nb_nr_L1_inst >0)
         RC.ru[j]->num_gNB                           = RUParamList.paramarray[j][RU_ENB_LIST_IDX].numelt;
       else
 	    RC.ru[j]->num_gNB                           = 0;

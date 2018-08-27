@@ -277,7 +277,7 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
-        $SUDO pip install requests
+        $SUDO -H pip install requests
         if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
             # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
             $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
@@ -460,8 +460,8 @@ check_install_additional_tools (){
 
   #The packages below are already installed for Redhat distros (RHEL, CentOS, Fedora)
   if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-    $SUDO pip install paramiko
-    $SUDO pip install pyroute2 colorama
+    $SUDO -H pip install paramiko
+    $SUDO -H pip install pyroute2 colorama
     log_netiface=$OPENAIR_DIR/cmake_targets/log/netiface_install_log.txt
     echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
     (
@@ -659,10 +659,9 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c
-    # GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
-    git clone https://github.com/velichkov/asn1c /tmp/asn1c
+    git clone https://github.com/brchiu/asn1c /tmp/asn1c
     cd /tmp/asn1c
-    git checkout s1ap
+    git checkout velichkov_s1ap_plus_option_group
     test -f configure || autoreconf -iv
     ./configure
     make -j`nproc`

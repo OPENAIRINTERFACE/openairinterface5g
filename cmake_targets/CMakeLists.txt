@@ -176,7 +176,8 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CU
 # these changes are related to hardcoded path to include .h files
 add_definitions(-DCMAKER)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2")
+#set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
 
 
 set(GIT_BRANCH        "UNKNOWN")
@@ -350,7 +351,7 @@ add_custom_command (
 add_list2_option(NR_RRC_ASN1_VERSION "NR_Rel15" "ASN.1 version of NR_RRC interface")
 
 if (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
-  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-Definitions.asn)
+  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/NR-RRC-38331-f10.asn)
 endif  (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
 
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
@@ -359,12 +360,15 @@ if(NOT EXISTS ${asn1c_call})
 message( FATAL_ERROR "The script ${asn1c_call} must be present" )
 endif(NOT EXISTS ${asn1c_call})
 
-message("calling ASN1C_PREFIX=NR_ asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
+message("calling ASN1C_PREFIX=NR_ asn1c -findirect-choice -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
+
 execute_process(COMMAND ${asn1c_call}  
 			${NR_RRC_FULL_DIR} 
 			${NR_RRC_GRAMMAR}
 			NR_RRC
-                        RESULT_VARIABLE ret)
+                        RESULT_VARIABLE ret
+                        OUTPUT_QUIET
+                        ERROR_QUIET )
 
 if (NOT ${ret} STREQUAL 0)
    message(FATAL_ERROR "${asn1c_call}: error")
@@ -373,7 +377,6 @@ endif (NOT ${ret} STREQUAL 0)
 if(NOT EXISTS ${fix_asn1c_call})
   message( FATAL_ERROR "The script ${fix_asn1c_call} must be present" )
 endif(NOT EXISTS ${fix_asn1c_call})
-
 execute_process(COMMAND ${fix_asn1c_call} 
 			${NR_RRC_FULL_DIR} 
 			NR_RRC 
@@ -388,12 +391,15 @@ file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
 file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
 set(nr_rrc_h ${nr_rrc_h} ${NR_RRC_FULL_DIR}/asn1_constants.h)
 set_source_files_properties(${nr_rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
-add_library(NR_RRC_LIB ${nr_rrc_h} ${nr_rrc_source}
-    ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
+add_library(NR_RRC_LIB 
+	    ${nr_rrc_h} 
+	    ${nr_rrc_source}
+            ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
 include_directories ("${NR_RRC_FULL_DIR}")
 
 # add the command to generate the source code
 # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
+
 
 add_custom_command (
   OUTPUT ${NR_RRC_FULL_DIR}/asn1_constants.h
@@ -431,7 +437,11 @@ message("calling ASN1C_PREFIX=S1AP_ asn1c -fcompound-names -fno-include-deps -ge
 
 execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret
+                OUTPUT_QUIET
+                ERROR_QUIET
+)
+
 
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
@@ -491,10 +501,21 @@ endif(${X2AP_VERSION} STREQUAL "R14")
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
 
 set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${ASN1RELDIR})
+
 message("calling asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}")
+
 execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret 
+                OUTPUT_QUIET
+                ERROR_QUIET )
+
+#execute_process(COMMAND ${asn1c_call}  
+#			${X2AP_C_DIR} 
+#			${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
+#			X2AP
+#                       RESULT_VARIABLE ret)
+
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -509,6 +530,13 @@ add_custom_command (
   COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
   DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
   )
+
+#add_custom_command (
+#  OUTPUT ${X2AP_C_DIR}/X2AP_asn_constant.h
+#  COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES} X2AP
+#  COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_VERSION}
+#  DEPENDS ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
+#  )
 
 add_library(X2AP_LIB
   ${X2AP_source}
@@ -794,6 +822,7 @@ include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
+include_directories("${OPENAIR2_DIR}/GNB_APP")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP")
@@ -1002,6 +1031,7 @@ set(SCHED_SRC
 add_library(SCHED_LIB ${SCHED_SRC})
 
 set(SCHED_NR_SRC
+  ${OPENAIR1_DIR}/SCHED_NR/fapi_nr_l1.c
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_gNB.c
 )
@@ -1022,6 +1052,17 @@ set(SCHED_SRC_UE
   ${OPENAIR1_DIR}/SCHED_UE/srs_pc.c
 )
 add_library(SCHED_UE_LIB ${SCHED_SRC_UE})
+
+set(SCHED_SRC_NR_UE
+  ${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_ue.c
+  ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
+  ${OPENAIR1_DIR}/SCHED_NR_UE/fapi_nr_ue_l1.c 
+  ${OPENAIR1_DIR}/SCHED_NR_UE/phy_frame_config_nr.c
+  ${OPENAIR1_DIR}/SCHED_NR_UE/harq_nr.c
+  ${OPENAIR1_DIR}/SCHED_NR_UE/pucch_uci_ue_nr.c
+  ${OPENAIR1_DIR}/SCHED_NR_UE/pucch_power_control_ue_nr.c 
+)
+add_library(SCHED_NR_UE_LIB ${SCHED_SRC_NR_UE})
 
 # nFAPI
 #################################
@@ -1106,7 +1147,13 @@ set(PHY_POLARSRC
 )
 set(PHY_TURBOIF
   ${OPENAIR1_DIR}/PHY/CODING/coding_load.c
-)
+  )
+set(PHY_LDPCSRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder2.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_generate_coefficient.c
+  )
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
 
@@ -1259,6 +1306,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${PHY_POLARSRC}
+  ${PHY_LDPCSRC}
   )
 
   set(PHY_NR_UE_SRC
@@ -1277,6 +1325,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/srs_modulation_nr.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/dci_nr.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/dci_tools_nr.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/pucch_nr.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/ul_ref_seq_nr.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold_ue.c
@@ -1294,8 +1343,8 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_init_ue.c
-  ${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_ue.c
-  #${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_common_ue.c
+  ${PHY_POLARSRC}
+  ${PHY_LDPCSRC}
   )
 
 
@@ -1308,6 +1357,10 @@ if (${COMPILATION_AVX2} STREQUAL "True")
   set(PHY_SRC_UE ${PHY_SRC_UE} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
 endif ()
 
+if (${COMPILATION_AVX2} STREQUAL "True")
+  set(PHY_NR_UE_SRC ${PHY_NR_UE_SRC} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
+endif ()
+
 add_library(PHY_COMMON ${PHY_SRC_COMMON})
 add_library(PHY ${PHY_SRC})
 add_library(PHY_UE ${PHY_SRC_UE})
@@ -1318,12 +1371,18 @@ add_library(PHY_RU ${PHY_SRC_RU})
 #Layer 2 library
 #####################
 set(MAC_DIR ${OPENAIR2_DIR}/LAYER2/MAC)
+set(NR_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_gNB)
+set(NR_UE_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_UE)
 set(PHY_INTERFACE_DIR ${OPENAIR2_DIR}/PHY_INTERFACE)
+set(NR_PHY_INTERFACE_DIR ${OPENAIR2_DIR}/NR_PHY_INTERFACE)
+set(NR_UE_PHY_INTERFACE_DIR ${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE)
 set(RLC_DIR ${OPENAIR2_DIR}/LAYER2/RLC)
 set(RLC_UM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/UM_v9.3.0)
 set(RLC_AM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/AM_v9.3.0)
 set(RLC_TM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/TM_v9.3.0)
 set(RRC_DIR ${OPENAIR2_DIR}/RRC/LTE)
+set(NR_RRC_DIR ${OPENAIR2_DIR}/RRC/NR)
+set(NR_UE_RRC_DIR ${OPENAIR2_DIR}/RRC/NR_UE)
 set(PDCP_DIR  ${OPENAIR2_DIR}/LAYER2/PDCP_v10.1.0)
 set(L2_SRC
   ${OPENAIR2_DIR}/LAYER2/openair2_proc.c
@@ -1369,6 +1428,9 @@ set(L2_SRC
   ${RRC_DIR}/L2_interface.c
   ${RRC_DIR}/L2_interface_common.c
   ${RRC_DIR}/L2_interface_ue.c
+  ${NR_RRC_DIR}/rrc_gNB.c
+  ${NR_RRC_DIR}/nr_rrc_common.c
+  ${NR_RRC_DIR}/L2_nr_interface.c
   )
 
 set(L2_SRC_UE
@@ -1412,6 +1474,14 @@ set(L2_SRC_UE
   ${RRC_DIR}/L2_interface_ue.c
   )
 
+set(NR_L2_SRC_UE
+  ${NR_UE_RRC_DIR}/L2_interface_ue.c
+  ${NR_UE_RRC_DIR}/main_ue.c
+  ${NR_UE_RRC_DIR}/rrc_UE.c
+#  ${NR_UE_RRC_DIR}/mac_vars.c
+#${RRC_DIR}/rrc_UE.c
+  )
+
 set (MAC_SRC
   ${PHY_INTERFACE_DIR}/IF_Module.c
   ${MAC_DIR}/main.c
@@ -1432,7 +1502,14 @@ set (MAC_SRC
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
   ${MAC_DIR}/config_ue.c
+  ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
+  ${NR_MAC_DIR}/main.c
+  ${NR_MAC_DIR}/config.c
+  ${NR_MAC_DIR}/gNB_scheduler.c
+  ${NR_MAC_DIR}/gNB_scheduler_bch.c
+  ${NR_MAC_DIR}/gNB_scheduler_primitives.c
  )
+
 
 set (MAC_SRC_UE
   ${MAC_DIR}/main_ue.c
@@ -1441,7 +1518,16 @@ set (MAC_SRC_UE
   ${MAC_DIR}/l1_helpers.c
   ${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/config_ue.c
+  
  )
+
+set (MAC_NR_SRC_UE
+  ${NR_UE_PHY_INTERFACE_DIR}/NR_IF_Module.c
+  ${NR_UE_MAC_DIR}/config_ue.c
+  ${NR_UE_MAC_DIR}/mac_vars.c
+  ${NR_UE_MAC_DIR}/main_ue_nr.c
+  ${NR_UE_MAC_DIR}/nr_ue_procedures.c
+)
 
 set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/enb_app.c
@@ -1449,19 +1535,67 @@ set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/RRC_config_tools.c
   )
 
+set (GNB_APP_SRC
+  ${OPENAIR2_DIR}/GNB_APP/gnb_app.c
+  ${OPENAIR2_DIR}/GNB_APP/gnb_config.c
+  )
+
 add_library(L2
   ${L2_SRC}
   ${MAC_SRC}
-  ${ENB_APP_SRC})
+  ${ENB_APP_SRC}
+  ${GNB_APP_SRC})
 #  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
 
 add_library(L2_UE
   ${L2_SRC_UE}
   ${MAC_SRC_UE}
+  #${MAC_NR_SRC_UE}
 )
 
+add_library( NR_L2_UE
+    #${L2_SRC_UE}
+    ${NR_L2_SRC_UE}
+    ${MAC_NR_SRC_UE}
+    #${MAC_SRC_UE}
+)
 
-include_directories(${NFAPI_USER_DIR})
+set ( NR_LTE_UE_REUSE_SRC
+    ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_timefreq.c
+  ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_common.c
+  #${OPENAIR1_DIR}/SCHED_UE/phy_procedures_lte_ue.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_mcs.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch_common.c
+
+  ${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_dl_cell_spec.c
+  ${OPENAIR1_DIR}/PHY/CODING/lte_segmentation.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach_common.c
+#  ${OPENAIR1_DIR}/PHY/INIT/lte_init_ue.c
+  ${OPENAIR1_DIR}/PHY/CODING/crc_byte.c
+  ${OPENAIR1_DIR}/PHY/CODING/viterbi_lte.c
+  ${OPENAIR1_DIR}/PHY/CODING/viterbi.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/phich_common.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci_tools_common.c
+  ${OPENAIR1_DIR}/PHY/CODING/lte_rate_matching.c
+  ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte_lte.c
+  ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte.c
+  ${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_gold.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_est_freq_offset.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
+  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
+  #${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c
+)
+
+add_library( NR_LTE_UE_REUSE_LIB
+    ${NR_LTE_UE_REUSE_SRC}
+)
+
+include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
+include_directories("${OPENAIR2_DIR}/LAYER2/NR_MAC_UE")
+include_directories("${OPENAIR1_DIR}/SCHED_NR_UE")
+#include_directories("${NFAPI_USER_DIR}"")
 
 # L3 Libs
 ##########################
@@ -2135,6 +2269,7 @@ target_link_libraries (lte-uesoftmodem-nos1 ${T_LIB})
 
 add_executable(nr-softmodem
   ${rrc_h}
+  ${nr_rrc_h}
   ${s1ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
@@ -2142,7 +2277,7 @@ add_executable(nr-softmodem
   ${OPENAIR_TARGETS}/RT/USER/nr-ru.c
   ${OPENAIR_TARGETS}/RT/USER/nr-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_TARGETS}/COMMON/create_nr_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/utils.c
@@ -2159,7 +2294,7 @@ target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB}
-  RRC_LIB S1AP_LIB S1AP_ENB L2
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
@@ -2195,18 +2330,18 @@ add_executable(nr-softmodem-nos1
   ${SHLIB_LOADER_SOURCES}
   )
 
-target_link_libraries (nr-softmodem
+target_link_libraries (nr-softmodem-nos1
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${MIH_LIB}
-  RRC_LIB S1AP_LIB S1AP_ENB L2
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
-target_link_libraries (nr-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (nr-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
-target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
-target_link_libraries (nr-softmodem ${T_LIB})
+target_link_libraries (nr-softmodem-nos1 ${LIBXML2_LIBRARIES})
+target_link_libraries (nr-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (nr-softmodem-nos1 ${LIB_LMS_LIBRARIES})
+target_link_libraries (nr-softmodem-nos1 ${T_LIB})
 
 # nr-uesoftmodem is  UE implementation
 #######################################
@@ -2219,7 +2354,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/nr-ue.c
   ${OPENAIR_TARGETS}/RT/USER/nr-uesoftmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
+#  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
@@ -2234,7 +2369,7 @@ add_executable(nr-uesoftmodem
 
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_NR_UE PHY_COMMON PHY_UE PHY_RU LFDS L2_UE 
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_NR_UE_LIB PHY_NR_UE PHY_RU LFDS NR_L2_UE NR_LTE_UE_REUSE_LIB 
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
   -Wl,--end-group z dl)
 
@@ -2269,7 +2404,7 @@ add_executable(nr-uesoftmodem-nos1
 
 target_link_libraries (nr-uesoftmodem-nos1
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_NR_UE PHY_COMMON PHY_UE PHY_RU LFDS L2_UE 
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB PHY_NR_UE PHY_COMMON PHY_UE PHY_RU LFDS L2_UE 
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7
   -Wl,--end-group z dl)
 
@@ -2413,6 +2548,9 @@ target_link_libraries (dlsim_tm4
 
 add_executable(polartest ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c)
 target_link_libraries(polartest m SIMU PHY PHY_NR PHY_COMMON -lm ${ATLAS_LIBRARIES})
+
+add_executable(ldpctest  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c)
+target_link_libraries(ldpctest m SIMU PHY PHY_NR ${ATLAS_LIBRARIES})
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 

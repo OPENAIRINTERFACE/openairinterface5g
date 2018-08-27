@@ -34,6 +34,8 @@
 
 
 #include "defs_nr_common.h"
+#include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+
 
 #define _GNU_SOURCE 
 #include <stdio.h>
@@ -80,6 +82,15 @@
 //#define RX_NB_TH_MAX 3
 //#define RX_NB_TH 3
 
+#ifdef NR_UNIT_TEST
+  #define FILE_NAME                " "
+  #define LINE_FILE                (0)
+  #define NR_TST_PHY_PRINTF(...)   printf(__VA_ARGS__)
+#else
+  #define FILE_NAME                (__FILE__)
+  #define LINE_FILE                (__LINE__)
+  #define NR_TST_PHY_PRINTF(...)
+#endif
 
 //#ifdef SHRLIBDEV
 //extern int rxrescale;
@@ -110,8 +121,8 @@
 #define openair_sched_exit() exit(-1)
 
 
-#define max(a,b)  ((a)>(b) ? (a) : (b))
-#define min(a,b)  ((a)<(b) ? (a) : (b))
+//#define max(a,b)  ((a)>(b) ? (a) : (b))
+//#define min(a,b)  ((a)<(b) ? (a) : (b))
 
 
 #define bzero(s,n) (memset((s),0,(n)))
@@ -147,7 +158,28 @@
 
 #include "targets/ARCH/COMMON/common_lib.h"
 
+#include "NR_IF_Module.h"
 
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+                        /* see 38.321  Table 7.1-2  RNTI usage */
+typedef enum {          /* Type for Radio Network Temporary Identifier */
+  C_RNTI_NR = 0,        /* Cell RNTI */
+  Temporary_C_RNTI_NR,  /* Temporary C-RNTI */
+  CS_RNTI_NR,           /* Configured Scheduling RNTI */
+  P_RNTI_NR,            /* Paging RNTI */
+  SI_RNTI_NR,           /* System information RNTI */
+  RA_RNTI_NR,           /* Random Access RNTI */
+  TPC_CS_RNTI_NR,       /* configured scheduling uplink power control */
+  TPC_PUCCH_RNTI_NR,    /* PUCCH power control */
+  TPC_PUSCH_RNTI_NR,    /* PUSCH power control */
+  TPC_SRS_RNTI_NR,      /* SRS trigger and power control */
+  INT_RNTI_NR,          /* Indication pre-emption in DL */
+  SFI_RNTI_NR,          /* Slot Format Indication on the given cell */
+  SP_CSI_RNTI_NR        /* Semipersistent CSI reporting on PUSCH */
+} nr_rnti_type_t;
+
+#endif
 
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
@@ -279,6 +311,13 @@ typedef struct {
   /// set of scheduling variables RXn-TXnp4 threads
   UE_nr_rxtx_proc_t proc_rxtx[RX_NB_TH];
 } UE_nr_proc_t;
+
+typedef enum {
+  NR_PBCH_EST=0,
+  NR_PDCCH_EST,
+  NR_PDSCH_EST,
+  NR_SSS_EST,
+} NR_CHANNEL_EST_t;
 
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
 
@@ -572,61 +611,112 @@ typedef struct {
 } NR_UE_PDSCH_FLP;
 
 #define NR_PDCCH_DEFS_NR_UE
-#define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
-#define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearchSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
+#define NR_NBR_CORESET_ACT_BWP      3  // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
+#define NR_NBR_SEARCHSPACE_ACT_BWP  10 // The number of SearchSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
 #ifdef NR_PDCCH_DEFS_NR_UE
 
-#define NBR_NR_FORMATS         8
-#define NBR_NR_DCI_FIELDS     48
-// The following parameters define 'position' of each DCI field described in TS 38.212
-#define CARRIER_IND                      0
-#define SUL_IND_0_1                      1
-#define IDENTIFIER_DCI_FORMATS           2
+#define MAX_NR_DCI_DECODED_SLOT     10    // This value is not specified
+#define NBR_NR_FORMATS              8     // The number of formats is 8 (0_0, 0_1, 1_0, 1_1, 2_0, 2_1, 2_2, 2_3)
+#define NBR_NR_DCI_FIELDS           56    // The number of different dci fields defined in TS 38.212 subclause 7.3.1
+
+#define IDENTIFIER_DCI_FORMATS           0
+#define CARRIER_IND                      1
+#define SUL_IND_0_1                      2
 #define SLOT_FORMAT_IND                  3
 #define PRE_EMPTION_IND                  4
 #define TPC_CMD_NUMBER                   5
 #define BLOCK_NUMBER                     6
 #define BANDWIDTH_PART_IND               7
-#define FREQ_DOM_RESOURCE_ASSIGNMENT_UL  8
-#define FREQ_DOM_RESOURCE_ASSIGNMENT_DL  9
-#define TIME_DOM_RESOURCE_ASSIGNMENT    10
-#define VRB_TO_PRB_MAPPING              11
-#define PRB_BUNDLING_SIZE_IND           12
-#define RATE_MATCHING_IND               13
-#define ZP_CSI_RS_TRIGGER               14
-#define FREQ_HOPPING_FLAG               15
-#define TB1_MCS                         16
-#define TB1_NDI                         17
-#define TB1_RV                          18
-#define TB2_MCS                         19
-#define TB2_NDI                         20
-#define TB2_RV                          21
-#define MCS                             22
-#define NDI                             23
-#define RV                              24
-#define HARQ_PROCESS_NUMBER             25
-#define DAI_                            26
-#define FIRST_DAI                       27
-#define SECOND_DAI                      28
-#define TPC_PUSCH                       29
-#define TPC_PUCCH                       30
-#define PUCCH_RESOURCE_IND              31
-#define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 32
-#define SHORT_MESSAGE_IND               33
-#define SRS_RESOURCE_IND                34
-#define PRECOD_NBR_LAYERS               35
-#define ANTENNA_PORTS                   36
-#define TCI                             37
-#define SRS_REQUEST                     38
-#define TPC_CMD_NUMBER_FORMAT2_3        39
-#define CSI_REQUEST                     40
-#define CBGTI                           41
-#define CBGFI                           42
-#define PTRS_DMRS                       43
-#define BETA_OFFSET_IND                 44
-#define DMRS_SEQ_INI                    45
-#define SUL_IND_0_0                     46
-#define PADDING                         47
+#define SHORT_MESSAGE_IND                8
+#define SHORT_MESSAGES                   9
+#define FREQ_DOM_RESOURCE_ASSIGNMENT_UL 10
+#define FREQ_DOM_RESOURCE_ASSIGNMENT_DL 11
+#define TIME_DOM_RESOURCE_ASSIGNMENT    12
+#define VRB_TO_PRB_MAPPING              13
+#define PRB_BUNDLING_SIZE_IND           14
+#define RATE_MATCHING_IND               15
+#define ZP_CSI_RS_TRIGGER               16
+#define FREQ_HOPPING_FLAG               17
+#define TB1_MCS                         18
+#define TB1_NDI                         19
+#define TB1_RV                          20
+#define TB2_MCS                         21
+#define TB2_NDI                         22
+#define TB2_RV                          23
+#define MCS                             24
+#define NDI                             25
+#define RV                              26
+#define HARQ_PROCESS_NUMBER             27
+#define DAI_                            28
+#define FIRST_DAI                       29
+#define SECOND_DAI                      30
+#define TB_SCALING                      31
+#define TPC_PUSCH                       32
+#define TPC_PUCCH                       33
+#define PUCCH_RESOURCE_IND              34
+#define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 35
+#define SRS_RESOURCE_IND                36
+#define PRECOD_NBR_LAYERS               37
+#define ANTENNA_PORTS                   38
+#define TCI                             39
+#define SRS_REQUEST                     40
+#define TPC_CMD_NUMBER_FORMAT2_3        41
+#define CSI_REQUEST                     42
+#define CBGTI                           43
+#define CBGFI                           44
+#define PTRS_DMRS                       45
+#define BETA_OFFSET_IND                 46
+#define DMRS_SEQ_INI                    47
+#define UL_SCH_IND                      48
+#define PADDING_NR_DCI                  49
+#define SUL_IND_0_0                     50
+#define RA_PREAMBLE_INDEX               51
+#define SUL_IND_1_0                     52
+#define SS_PBCH_INDEX                   53
+#define PRACH_MASK_INDEX                54
+#define RESERVED_NR_DCI                 55
+
+
+typedef enum {
+  _format_0_0_found=0,
+  _format_0_1_found=1,
+  _format_1_0_found=2,
+  _format_1_1_found=3,
+  _format_2_0_found=4,
+  _format_2_1_found=5,
+  _format_2_2_found=6,
+  _format_2_3_found=7} format_found_t;
+#define TOTAL_NBR_SCRAMBLED_VALUES 13
+#define _C_RNTI_           0
+#define _CS_RNTI_          1
+#define _NEW_RNTI_         2
+#define _TC_RNTI_          3
+#define _P_RNTI_           4
+#define _SI_RNTI_          5
+#define _RA_RNTI_          6
+#define _SP_CSI_RNTI_      7
+#define _SFI_RNTI_         8
+#define _INT_RNTI_         9
+#define _TPC_PUSCH_RNTI_  10
+#define _TPC_PUCCH_RNTI_  11
+#define _TPC_SRS_RNTI_    12
+  typedef enum {
+      _c_rnti         = _C_RNTI_,
+      _cs_rnti        = _CS_RNTI_,
+      _new_rnti       = _NEW_RNTI_,
+      _tc_rnti        = _TC_RNTI_,
+      _p_rnti         = _P_RNTI_,
+      _si_rnti        = _SI_RNTI_,
+      _ra_rnti        = _RA_RNTI_,
+      _sp_csi_rnti    = _SP_CSI_RNTI_,
+      _sfi_rnti       = _SFI_RNTI_,
+      _int_rnti       = _INT_RNTI_,
+      _tpc_pusch_rnti = _TPC_PUSCH_RNTI_,
+      _tpc_pucch_rnti = _TPC_PUCCH_RNTI_,
+      _tpc_srs_rnti   = _TPC_SRS_RNTI_} crc_scrambled_t;
+
+
+
 
 typedef enum {bundle_n2=2,bundle_n3=3,bundle_n6=6} NR_UE_CORESET_REG_bundlesize_t;
 
@@ -683,11 +773,11 @@ typedef struct {
   int tciStatesPDCCH;
   int tciPresentInDCI;
   uint16_t pdcchDMRSScramblingID;
-
+  uint16_t rb_offset;
 } NR_UE_PDCCH_CORESET;
 
 // Slots for PDCCH Monitoring configured as periodicity and offset
-typedef enum {nr_sl1=1,nr_sl2=2,nr_sl4=4,nr_sl5=5,nr_sl8=8,nr_sl10=10,nr_sl16=16,nr_sl20=20} NR_UE_SLOT_PERIOD_OFFSET_t;
+typedef enum {nr_sl1=1,nr_sl2=2,nr_sl4=4,nr_sl5=5,nr_sl8=8,nr_sl10=10,nr_sl16=16,nr_sl20=20,nr_sl40=40,nr_sl80=80,nr_sl160=160,nr_sl320=320,nr_sl640=640,nr_sl1280=1280,nr_sl2560=2560} NR_UE_SLOT_PERIOD_OFFSET_t;
 typedef enum {nc0=0,nc1=1,nc2=2,nc3=3,nc4=4,nc5=5,nc6=6,nc8=8} NR_UE_SEARCHSPACE_nbrCAND_t;
 typedef enum {nsfi1=1,nsfi2=2} NR_UE_SEARCHSPACE_nbrCAND_SFI_t;
 typedef enum {n2_3_1=1,n2_3_2=2} NR_UE_SEARCHSPACE_nbrCAND_2_3_t;
@@ -757,9 +847,12 @@ typedef struct {
   // INTEGER (0..maxNrofSearchSpaces-1) (0..40-1)
   int searchSpaceId;
   int controlResourceSetId;
-  // FIXME! Verify type to be used for this parameter (sl1, sl2, sl4, sl5, sl8, sl10, sl16, sl20). Maybe enum.
   NR_UE_SLOT_PERIOD_OFFSET_t monitoringSlotPeriodicityAndOffset;
-  int monitoringSlotPeriodicityAndOffset_offset;
+  uint16_t monitoringSlotPeriodicityAndOffset_offset;
+  // duration is number of consecutive slots that a SearchSpace lasts in every occasion, i.e., upon every period as given in the periodicityAndOffset
+  // if the field is absent, the UE applies the value 1 slot
+  // the maximum valid duration is peridicity-1 (periodicity as given in the monitoringSlotPeriodicityAndOffset)
+  uint16_t duration;
   // bit string size 14. Bitmap to indicate symbols within slot where PDCCH has to be monitored
   // the MSB (left) bit represents first OFDM in slot
   uint16_t monitoringSymbolWithinSlot;
@@ -825,11 +918,14 @@ typedef struct {
   uint8_t dciFormat;
   uint8_t agregationLevel;
   #ifdef NR_PDCCH_DEFS_NR_UE
+  int nb_searchSpaces;
   // CORESET structure, where maximum number of CORESETs to be handled is 3 (according to 38.331 V15.1.0)
   NR_UE_PDCCH_CORESET coreset[NR_NBR_CORESET_ACT_BWP];
   // SEARCHSPACE structure, where maximum number of SEARCHSPACEs to be handled is 10 (according to 38.331 V15.1.0)
   // Each SearchSpace is associated with one ControlResourceSet 
   NR_UE_PDCCH_SEARCHSPACE searchSpace[NR_NBR_SEARCHSPACE_ACT_BWP];
+
+  uint32_t nb_search_space;
   #endif
 } NR_UE_PDCCH;
 
@@ -848,6 +944,11 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..287] (hard coded)
   int32_t **dl_ch_estimates_ext;
+  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint8_t pbch_a_interleaved[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint8_t pbch_a_prime[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint8_t pbch_e[NR_POLAR_PBCH_E];
+  double  demod_pbch_e[NR_POLAR_PBCH_E];
   /// \brief Pointer to PBCH llrs.
   /// - first index: ? [0..1919] (hard coded)
   int8_t *llr;
@@ -919,9 +1020,9 @@ typedef struct {
   /// \brief Total gains with bypassed RF gain stage (ExpressMIMO2/Lime)
   uint32_t rx_gain_byp[4];
   /// \brief Current transmit power
-  int16_t tx_power_dBm[10];
+  int16_t tx_power_dBm[MAX_NR_OF_SLOTS];
   /// \brief Total number of REs in current transmission
-  int tx_total_RE[10];
+  int tx_total_RE[MAX_NR_OF_SLOTS];
   /// \brief Maximum transmit power
   int8_t tx_power_max_dBm;
   /// \brief Number of eNB seen by UE
@@ -936,6 +1037,12 @@ typedef struct {
   /// \brief Frame parame before ho used to recover if ho fails.
   NR_DL_FRAME_PARMS  frame_parms_before_ho;
   NR_UE_COMMON    common_vars;
+
+  nr_ue_if_module_t *if_inst;
+  nr_downlink_indication_t dl_indication;
+  nr_uplink_indication_t ul_indication;
+  fapi_nr_rx_indication_t rx_ind;
+  fapi_nr_dci_indication_t dci_ind;
 
   // point to the current rxTx thread index
   uint8_t current_thread_id[10];
@@ -986,7 +1093,7 @@ typedef struct {
   uint32_t nr_gold_pdsch[2][20][2][21];
 
   /// PDCCH DMRS
-  uint32_t nr_gold_pdcch[10][3][42];
+  uint32_t nr_gold_pdcch[7][20][3][52];
 
   uint32_t X_u[64][839];
 
@@ -1093,6 +1200,22 @@ typedef struct {
 
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+
+  SystemInformationBlockType1_nr_t systemInformationBlockType1_nr;
+
+  CellGroupConfig_t          cell_group_config;
+  PDSCH_ServingCellConfig_t  PDSCH_ServingCellConfig;
+  PDSCH_Config_t             PDSCH_Config;
+
+  PUCCH_ConfigCommon_nr_t    pucch_config_common_nr[NUMBER_OF_CONNECTED_eNB_MAX];
+  PUCCH_Config_t             pucch_config_dedicated_nr[NUMBER_OF_CONNECTED_eNB_MAX];
+
+  PUSCH_Config_t             pusch_config;
+
+#endif
+
   uint8_t ncs_cell[20][7];
 
   /// UL-POWER-Control
@@ -1110,6 +1233,12 @@ typedef struct {
 
   /// Scheduling Request Config
   SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_CONNECTED_eNB_MAX];
+
+//#if defined(UPGRADE_RAT_NR)
+#if 1
+  scheduling_request_config_t scheduling_request_config_nr[NUMBER_OF_CONNECTED_eNB_MAX];
+
+#endif
 
   /// Transmission mode per eNB
   uint8_t transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];

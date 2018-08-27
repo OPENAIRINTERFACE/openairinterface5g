@@ -33,16 +33,19 @@
 
 #include "rt_wrapper.h"
 
-#include "LAYER2/MAC/mac.h"
-#include "RRC/LTE/rrc_extern.h"
+#include "LAYER2/NR_MAC_UE/mac.h"
+//#include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
+#include "fapi_nr_ue_l1.h"
 #include "PHY/phy_extern_nr_ue.h"
-#include "LAYER2/MAC/mac_extern.h"
-#include "LAYER2/MAC/mac_proto.h"
+#include "PHY/INIT/phy_init.h"
+#include "PHY/MODULATION/modulation_UE.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "RRC/NR_UE/rrc_proto.h"
 
 #include "SCHED_NR/extern.h"
 //#ifndef NO_RAT_NR
@@ -61,6 +64,71 @@
 #include "T.h"
 
 extern double cpuf;
+static  nfapi_nr_config_request_t config_t;
+static  nfapi_nr_config_request_t* config =&config_t;
+
+/*
+ *  NR SLOT PROCESSING SEQUENCE
+ *
+ *  Processing occurs with following steps for connected mode:
+ *
+ *  - Rx samples for a slot are received,
+ *  - PDCCH processing (including DCI extraction for downlink and uplink),
+ *  - PDSCH processing (including transport blocks decoding),
+ *  - PUCCH/PUSCH (transmission of acknowledgements, CSI, ... or data).
+ *
+ *  Time between reception of the slot and related transmission depends on UE processing performance.
+ *  It is defined by the value NR_UE_CAPABILITY_SLOT_RX_TO_TX.
+ *
+ *  In NR, network gives the duration between Rx slot and Tx slot in the DCI:
+ *  - for reception of a PDSCH and its associated acknowledgment slot (with a PUCCH or a PUSCH),
+ *  - for reception of an uplink grant and its associated PUSCH slot.
+ *
+ *  So duration between reception and it associated transmission depends on its transmission slot given in the DCI.
+ *  NR_UE_CAPABILITY_SLOT_RX_TO_TX means the minimum duration but higher duration can be given by the network because UE can support it.
+ *
+*                                                                                                    Slot k
+*                                                                                  -------+------------+--------
+*                Frame                                                                    | Tx samples |
+*                Subframe                                                                 |   buffer   |
+*                Slot n                                                            -------+------------+--------
+*       ------ +------------+--------                                                     |
+*              | Rx samples |                                                             |
+*              |   buffer   |                                                             |
+*       -------+------------+--------                                                     |
+*                           |                                                             |
+*                           V                                                             |
+*                           +------------+                                                |
+*                           |   PDCCH    |                                                |
+*                           | processing |                                                |
+*                           +------------+                                                |
+*                           |            |                                                |
+*                           |            v                                                |
+*                           |            +------------+                                   |
+*                           |            |   PDSCH    |                                   |
+*                           |            | processing | decoding result                   |
+*                           |            +------------+    -> ACK/NACK of PDSCH           |
+*                           |                         |                                   |
+*                           |                         v                                   |
+*                           |                         +-------------+------------+        |
+*                           |                         | PUCCH/PUSCH | Tx samples |        |
+*                           |                         |  processing | transfer   |        |
+*                           |                         +-------------+------------+        |
+*                           |                                                             |
+*                           |/___________________________________________________________\|
+*                            \  duration between reception and associated transmission   /
+*
+* Remark: processing is done slot by slot, it can be distribute on different threads which are executed in parallel.
+* This is an architecture optimization in order to cope with real time constraints.
+* By example, for LTE, subframe processing is spread over 4 different threads.
+*
+ */
+
+#ifndef NO_RAT_NR
+  #define DURATION_RX_TO_TX           (NR_UE_CAPABILITY_SLOT_RX_TO_TX)  /* for NR this will certainly depends to such UE capability which is not yet defined */
+#else
+  #define DURATION_RX_TO_TX           (4)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
+#endif
 
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
@@ -211,19 +279,28 @@ void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_
 
 void init_UE(int nb_inst)
 {
-  int inst;
-  for (inst=0; inst < nb_inst; inst++) {
-    //    UE->rfdevice.type      = NONE_DEV;
-    PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
-    LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
-        PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
+    int inst;
+    NR_UE_MAC_INST_t *mac_inst;
+    for (inst=0; inst < nb_inst; inst++) {
+        //    UE->rfdevice.type      = NONE_DEV;
+        PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
+        LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
+            PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
 
+        AssertFatal((UE->if_inst = nr_ue_if_module_init(inst)) != NULL, "can not initial IF module\n");
+        nr_l3_init_ue();
+        nr_l2_init_ue();
+        
+        mac_inst = get_mac_inst(0);
+        mac_inst->if_module = UE->if_inst;
+        UE->if_inst->scheduled_response = nr_ue_scheduled_response;
+        UE->if_inst->phy_config_request = nr_ue_phy_config_request;
 
-    AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
-                                    &UE->proc.attr_ue,
-                                    UE_thread,
-                                    (void*)UE), "");
-  }
+        AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
+                                        &UE->proc.attr_ue,
+                                        UE_thread,
+                                        (void*)UE), "");
+    }
 
   printf("UE threads created by %ld\n", gettid());
 #if 0
@@ -319,7 +396,7 @@ static void *UE_thread_synch(void *arg) {
         switch (sync_mode) {
         case pss:
             LOG_I(PHY,"[SCHED][UE] Scanning band %d (%d), freq %u\n",bands_to_scan.band_info[current_band].band, current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
-            lte_sync_timefreq(UE,current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
+            //lte_sync_timefreq(UE,current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
             current_offset += 20000000; // increase by 20 MHz
 
             if (current_offset > bands_to_scan.band_info[current_band].dl_max-bands_to_scan.band_info[current_band].dl_min) {
@@ -413,7 +490,7 @@ static void *UE_thread_synch(void *arg) {
                     //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
                     //UE->rfdevice.trx_stop_func(&UE->rfdevice);
                     // sleep(1);
-                    nr_init_frame_parms_ue(&UE->frame_parms);
+		            nr_init_frame_parms_ue(&UE->frame_parms);
                     /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
                         LOG_E(HW,"Could not start the device\n");
                         oai_exit=1;
@@ -572,9 +649,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
 #ifndef NO_RAT_NR
         // Process Rx data for one sub-frame
-        nr_slot_t nr_slot ; //= slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx);
-
-        if (nr_slot == NR_TDD_DOWNLINK_SLOT) {
+        if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
 #else
         // Process Rx data for one sub-frame
         lte_subframe_t sf_type = subframe_select( &UE->frame_parms, proc->subframe_rx);
@@ -602,7 +677,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #ifdef UE_SLOT_PARALLELISATION
             phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
-            phy_procedures_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+            phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #endif
         }
 
@@ -610,6 +685,24 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         start_meas(&UE->generic_stat);
 #endif
         if (UE->mac_enabled==1) {
+
+            //  trigger L2 to run ue_scheduler thru IF module
+            //  [TODO] mapping right after NR initial sync
+            if(1)
+            if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
+                UE->ul_indication.module_id = 0;
+                UE->ul_indication.gNB_index = 0;
+                UE->ul_indication.cc_id = 0;
+                UE->ul_indication.slot = 0;     //  to be fill
+                UE->ul_indication.frame = 0;    //  to be fill
+                //  [TODO] mapping right after NR initial sync
+                //UE->ul_indication.frame = ; 
+                //UE->ul_indication.slot = ;
+                
+                UE->if_inst->ul_indication(&UE->ul_indication);
+            }
+
+
 
 #ifdef NEW_MAC
           ret = mac_xface->ue_scheduler(UE->Mod_id,
@@ -662,18 +755,23 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #endif
 
         // Prepare the future Tx data
-#if 1
+#if 0
+#ifndef NO_RAT_NR
+        if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_UPLINK_SLOT)
+#else
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
                 (UE->frame_parms.frame_type == FDD) )
             if (UE->mode != loop_through_memory)
                 phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
 #endif
-
+#endif
+#if 0
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
                 (UE->frame_parms.frame_type == TDD))
             if (UE->mode != loop_through_memory)
-                phy_procedures_UE_S_TX(UE,0,0,no_relay);
+                //phy_procedures_UE_S_TX(UE,0,0,no_relay);
         updateTimes(current, &t3, 10000, timing_proc_name);
+#endif
 
         if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
           LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
@@ -732,7 +830,7 @@ void *UE_thread(void *arg) {
     init_UE_threads(UE);
 
 #ifdef NAS_UE
-    MessageDef *message_p;
+    //MessageDef *message_p;
     //message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
     //itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif
@@ -777,7 +875,7 @@ void *UE_thread(void *arg) {
                 if (UE->mode != loop_through_memory) {
                     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
                         rxp[i] = (void*)&dummy_rx[i][0];
-                    for (int sf=0; sf<10; sf++)
+                    for (int sf=0; sf<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME; sf++)
                         //	    printf("Reading dummy sf %d\n",sf);
                           UE->rfdevice.trx_read_func(&UE->rfdevice,
                                               &timestamp,
@@ -817,14 +915,15 @@ void *UE_thread(void *arg) {
                                                             (void**)UE->common_vars.rxdata,
                                                             UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
                                                             UE->frame_parms.nb_antennas_rx),"");
-                    slot_fep_pbch(UE,0, 0, 0, 0, 0);
+                    nr_slot_fep(UE,0, 0, 0, 0, 0, NR_PBCH_EST);
                 } //UE->mode != loop_through_memory
                 else
                     rt_sleep_ns(1000*1000);
 
             } else {
                 tti_nr++;
-                tti_nr%=10*UE->frame_parms.ttis_per_subframe;
+                int ttis_per_frame = LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*UE->frame_parms.ttis_per_subframe;
+                tti_nr %= ttis_per_frame;               
                 UE_nr_rxtx_proc_t *proc = &UE->proc.proc_rxtx[thread_idx];
                 // update thread index for received subframe
                 UE->current_thread_id[tti_nr] = thread_idx;
@@ -845,7 +944,7 @@ void *UE_thread(void *arg) {
                         txp[i] = (void*)&UE->common_vars.txdata[i][((tti_nr+2)%10*UE->frame_parms.ttis_per_subframe)*UE->frame_parms.samples_per_tti];
 
                     int readBlockSize, writeBlockSize;
-                    if (tti_nr<(10*UE->frame_parms.ttis_per_subframe-1)) {
+                    if (tti_nr<(ttis_per_frame - 1)) {
                         readBlockSize=UE->frame_parms.samples_per_tti;
                         writeBlockSize=UE->frame_parms.samples_per_tti;
                     } else {
@@ -884,7 +983,7 @@ void *UE_thread(void *arg) {
                                          writeBlockSize,
                                          UE->frame_parms.nb_antennas_tx,
                                          1),"");
-                    if( tti_nr==(10*UE->frame_parms.ttis_per_subframe-1)) {
+                    if( tti_nr==(ttis_per_frame-1)) {
                         // read in first symbol of next frame and adjust for timing drift
                         int first_symbols=writeBlockSize-readBlockSize;
                         if ( first_symbols > 0 )
@@ -921,13 +1020,19 @@ void *UE_thread(void *arg) {
                     for (th_id=0; th_id < RX_NB_TH; th_id++) {
                         UE->proc.proc_rxtx[th_id].gotIQs=readTime(gotIQs);
                     }
+
                     proc->nr_tti_rx=tti_nr;
-                    proc->nr_tti_tx=(tti_nr+4)%(10*UE->frame_parms.ttis_per_subframe);
                     proc->subframe_rx=tti_nr>>((uint8_t)(log2 (UE->frame_parms.ttis_per_subframe)));
-                    proc->frame_tx = proc->frame_rx + (proc->subframe_rx>5?1:0);
+
+                    proc->frame_tx = proc->frame_rx;
+                    proc->nr_tti_tx= tti_nr + DURATION_RX_TO_TX;
+                    if (proc->nr_tti_tx > ttis_per_frame) {
+                      proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
+                      proc->nr_tti_tx %= ttis_per_frame;
+                    }
                     proc->subframe_tx=(proc->nr_tti_tx)>>((uint8_t)(log2 (UE->frame_parms.ttis_per_subframe)));
                     proc->timestamp_tx = timestamp+
-                                         (4*UE->frame_parms.samples_per_tti)-
+                                         (DURATION_RX_TO_TX*UE->frame_parms.samples_per_tti)-
                                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
                     proc->instance_cnt_rxtx++;
@@ -1035,6 +1140,7 @@ void init_UE_threads(PHY_VARS_NR_UE *UE) {
 
 
 #ifdef OPENAIR2
+/*
 void fill_ue_band_info(void) {
 
     UE_EUTRA_Capability_t *UE_EUTRA_Capability = UE_rrc_inst[0].UECap->UE_EUTRA_Capability;
@@ -1061,13 +1167,13 @@ void fill_ue_band_info(void) {
                 break;
             }
     }
-}
+}*/
 #endif
 
 int setup_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg) {
 
     int i, CC_id;
-    LTE_DL_FRAME_PARMS *frame_parms;
+    NR_DL_FRAME_PARMS *frame_parms;
     openair0_rf_map *rf_map;
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

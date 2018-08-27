@@ -33,6 +33,10 @@
 #include "assertions.h"
 #include <math.h>
 
+#include "PHY/NR_REFSIG/defs.h" 
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "SCHED_NR/fapi_nr_l1.h"
+
 extern uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn);
 extern int32_t get_uldl_offset(int eutra_bandP);
 
@@ -40,36 +44,35 @@ int l1_north_init_gNB() {
 
   int i,j;
 
-  if (RC.nb_L1_inst > 0 && RC.nb_L1_CC != NULL && RC.gNB != NULL)
+  if (RC.nb_nr_L1_inst > 0 && RC.nb_nr_L1_CC != NULL && RC.gNB != NULL)
   {
-    AssertFatal(RC.nb_L1_inst>0,"nb_L1_inst=%d\n",RC.nb_L1_inst);
-    AssertFatal(RC.nb_L1_CC!=NULL,"nb_L1_CC is null\n");
+    AssertFatal(RC.nb_nr_L1_inst>0,"nb_nr_L1_inst=%d\n",RC.nb_nr_L1_inst);
+    AssertFatal(RC.nb_nr_L1_CC!=NULL,"nb_nr_L1_CC is null\n");
     AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
 
-    LOG_I(PHY,"%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_L1_inst);
+    LOG_I(PHY,"%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
 
-    for (i=0;i<RC.nb_L1_inst;i++) {
+    for (i=0;i<RC.nb_nr_L1_inst;i++) {
       AssertFatal(RC.gNB[i]!=NULL,"RC.gNB[%d] is null\n",i);
-      AssertFatal(RC.nb_L1_CC[i]>0,"RC.nb_L1_CC[%d]=%d\n",i,RC.nb_L1_CC[i]);
+      AssertFatal(RC.nb_nr_L1_CC[i]>0,"RC.nb_nr_L1_CC[%d]=%d\n",i,RC.nb_nr_L1_CC[i]);
 
-      LOG_I(PHY,"%s() RC.nb_L1_CC[%d]:%d\n", __FUNCTION__, i,  RC.nb_L1_CC[i]);
+      LOG_I(PHY,"%s() RC.nb_nr_L1_CC[%d]:%d\n", __FUNCTION__, i,  RC.nb_nr_L1_CC[i]);
 
-      for (j=0;j<RC.nb_L1_CC[i];j++) {
+      for (j=0;j<RC.nb_nr_L1_CC[i];j++) {
         AssertFatal(RC.gNB[i][j]!=NULL,"RC.gNB[%d][%d] is null\n",i,j);
 
-        if ((RC.gNB[i][j]->if_inst =  IF_Module_init(i))<0) return(-1); 
+        if ((RC.gNB[i][j]->if_inst =  NR_IF_Module_init(i))<0) return(-1); 
 
         LOG_I(PHY,"%s() RC.gNB[%d][%d] installing callbacks\n", __FUNCTION__, i,  j);
 
-        RC.gNB[i][j]->if_inst->PHY_config_req = phy_config_request;
-        nr_phy_config_request(RC.gNB[i][j]);
-        RC.gNB[i][j]->if_inst->schedule_response = schedule_response;
+        RC.gNB[i][j]->if_inst->NR_PHY_config_req = nr_phy_config_request;
+        RC.gNB[i][j]->if_inst->NR_Schedule_response = nr_schedule_response;
       }
     }
   }
   else
   {
-    LOG_I(PHY,"%s() Not installing PHY callbacks - RC.nb_L1_inst:%d RC.nb_L1_CC:%p RC.gNB:%p\n", __FUNCTION__, RC.nb_L1_inst, RC.nb_L1_CC, RC.gNB);
+    LOG_I(PHY,"%s() Not installing PHY callbacks - RC.nb_nr_L1_inst:%d RC.nb_nr_L1_CC:%p RC.gNB:%p\n", __FUNCTION__, RC.nb_nr_L1_inst, RC.nb_nr_L1_CC, RC.gNB);
   }
   return(0);
 }
@@ -82,7 +85,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   // shortcuts
   NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
-  nfapi_config_request_t* cfg       = &gNB->gNB_config;
+  nfapi_nr_config_request_t* cfg       = &gNB->gNB_config;
   NR_gNB_COMMON* const common_vars  = &gNB->common_vars;
   LTE_eNB_PUSCH** const pusch_vars   = gNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = gNB->srs_vars;
@@ -227,7 +230,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
 
   uint8_t Mod_id              = phy_config->Mod_id;
   int CC_id                   = phy_config->CC_id;
-  nfapi_config_request_t *cfg = phy_config->cfg;
+  nfapi_nr_config_request_t *cfg = phy_config->cfg;
 
   NR_DL_FRAME_PARMS *fp;
   PHICH_RESOURCE_t phich_resource_table[4]={oneSixth,half,one,two};
@@ -269,7 +272,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
 void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 {
 //  NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
-  nfapi_config_request_t *cfg       = &gNB->gNB_config;
+  nfapi_nr_config_request_t *cfg       = &gNB->gNB_config;
   NR_gNB_COMMON* const common_vars  = &gNB->common_vars;
   LTE_eNB_PUSCH** const pusch_vars   = gNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = gNB->srs_vars;
@@ -338,10 +341,11 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 }*/
 
 /// this function is a temporary addition for NR configuration
-void nr_phy_config_request(PHY_VARS_gNB *gNB)
+
+/*void nr_phy_config_request(PHY_VARS_gNB *gNB)
 {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-  nfapi_config_request_t *gNB_config = &gNB->gNB_config;
+  nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
 
   //overwrite for new NR parameters
   gNB_config->nfapi_config.rf_bands.rf_band[0] = 22;
@@ -367,4 +371,63 @@ void nr_phy_config_request(PHY_VARS_gNB *gNB)
 
   gNB->configured                                   = 1;
   LOG_I(PHY,"gNB configured\n");
+}*/
+
+
+void nr_phy_config_request(NR_PHY_Config_t *phy_config)
+{
+
+  uint8_t Mod_id                  = phy_config->Mod_id;
+  int     CC_id                   = phy_config->CC_id;
+
+  NR_DL_FRAME_PARMS         *fp         = &RC.gNB[Mod_id][CC_id]->frame_parms;
+  nfapi_nr_config_request_t *gNB_config = &RC.gNB[Mod_id][CC_id]->gNB_config;
+
+
+  gNB_config->nfapi_config.rf_bands.rf_band[0]          = phy_config->cfg->nfapi_config.rf_bands.rf_band[0]; //22
+  gNB_config->nfapi_config.earfcn.value                 = phy_config->cfg->nfapi_config.earfcn.value; //6600
+  gNB_config->subframe_config.numerology_index_mu.value = phy_config->cfg->subframe_config.numerology_index_mu.value;//1
+  gNB_config->rf_config.tx_antenna_ports.value          = phy_config->cfg->rf_config.tx_antenna_ports.value; //1
+  gNB_config->rf_config.dl_channel_bandwidth.value      = phy_config->cfg->rf_config.dl_channel_bandwidth.value;//106;
+  gNB_config->rf_config.ul_channel_bandwidth.value      = phy_config->cfg->rf_config.ul_channel_bandwidth.value;//106;
+  gNB_config->sch_config.half_frame_index.value         = 0;
+  gNB_config->sch_config.ssb_subcarrier_offset.value    = phy_config->cfg->sch_config.ssb_subcarrier_offset.value;//0;
+  gNB_config->sch_config.n_ssb_crb.value                = 86;
+  gNB_config->sch_config.physical_cell_id.value         = phy_config->cfg->sch_config.physical_cell_id.value;
+
+  if (phy_config->cfg->subframe_config.duplex_mode.value == 0) {
+    gNB_config->subframe_config.duplex_mode.value    = TDD;
+  }
+  else {
+    gNB_config->subframe_config.duplex_mode.value    = FDD;
+  }
+
+  RC.gNB[Mod_id][CC_id]->mac_enabled     = 1;
+
+  fp->dl_CarrierFreq = from_earfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.earfcn.value);
+  fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
+  fp->threequarter_fs                    = 0;
+
+  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,gNB_tx_antenna_ports %d,DL freq %u)\n",
+  Mod_id, 
+  CC_id, 
+  gNB_config->nfapi_config.rf_bands.rf_band[0], 
+  gNB_config->rf_config.dl_channel_bandwidth.value, 
+  gNB_config->rf_config.ul_channel_bandwidth.value, 
+  gNB_config->sch_config.physical_cell_id.value, 
+  gNB_config->rf_config.tx_antenna_ports.value,
+  fp->dl_CarrierFreq );
+
+  nr_init_frame_parms(gNB_config, fp);
+
+  if (RC.gNB[Mod_id][CC_id]->configured == 1){
+    LOG_E(PHY,"Already gNB already configured, do nothing\n");
+    return;
+  }
+
+  RC.gNB[Mod_id][CC_id]->configured     = 1;
+  LOG_I(PHY,"gNB %d/%d configured\n",Mod_id,CC_id);
+
+
+
 }

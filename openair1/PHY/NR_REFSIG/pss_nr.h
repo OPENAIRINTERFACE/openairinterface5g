@@ -49,7 +49,7 @@
 
 //#define CIC_DECIMATOR                          /* it allows enabling decimation based on CIC filter. By default, decimation is based on a FIF filter */
 
-#define TEST_SYNCHRO_TIMING_PSS        (1)     /* enable time profiling */
+#define TEST_SYNCHRO_TIMING_PSS        (1)       /* enable time profiling */
 
 //#define DBG_PSS_NR
 

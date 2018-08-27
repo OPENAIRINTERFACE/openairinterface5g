@@ -535,17 +535,19 @@ void nr_pdcch_deinterleaving(NR_DL_FRAME_PARMS *frame_parms, uint16_t *z,
  * reg_bundle_size (2,3,6)
  */
 #ifdef NR_PDCCH_DCI_DEBUG
-  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_deinterleaving)-> coreset_nbr_rb=(%lld), reg_bundle_size_L=(%d)\n",
-		  coreset_nbr_rb,reg_bundle_size_L);
+  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_deinterleaving)-> coreset_nbr_rb=(%lld), reg_bundle_size_L=(%d), coreset_interleaver_size_R=(%d), n_shift=(%d)\n",
+		  coreset_nbr_rb,reg_bundle_size_L,coreset_interleaver_size_R,n_shift);
 #endif
 /*
  * First verify that CORESET is interleaved or not interleaved depending on parameter cce-REG-MappingType
- * To be done
- * if non-interleaved then do nothing: wbar table stays as it is
+ * if non-interleaved then do nothing: wbar table stays as it is (if REG bundle size is set to 0 by higher layer, then we consider that there is no interleaving)
+ */
+  int coreset_interleaved = 1;
+  if (reg_bundle_size_L==0) coreset_interleaved=0;
+/*
  * if interleaved then do this: wbar table has bundles interleaved. We have to de-interleave then
  * following procedure described in 38.211 Section 7.3.2.2:
-  */
-  int coreset_interleaved = 1;
+ */
   uint32_t bundle_id, bundle_interleaved, c=0 ,r=-1, k, l, i=0;
   uint32_t coreset_C = (uint32_t)(coreset_nbr_rb / (coreset_interleaver_size_R*reg_bundle_size_L));
   uint16_t *wptr;
@@ -553,34 +555,34 @@ void nr_pdcch_deinterleaving(NR_DL_FRAME_PARMS *frame_parms, uint16_t *z,
   z = &wtemp_rx[0];
   bundle_id=0;
   for (k=0 ; k<9*coreset_nbr_rb*coreset_time_dur; k++){
-#ifdef NR_PDCCH_DCI_DEBUG
-    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_deinterleaving)-> k=%d \t coreset_interleaved=%d reg_bundle_size_L=%d coreset_C=%d coreset_interleaver_R=%d",
-           k,coreset_interleaved,reg_bundle_size_L, coreset_C,coreset_interleaver_size_R);
-#endif
+    #ifdef NR_PDCCH_DCI_DEBUG
+      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_deinterleaving)-> k=%d \t coreset_interleaved=%d reg_bundle_size_L=%d coreset_C=%d coreset_interleaver_R=%d",
+              k,coreset_interleaved,reg_bundle_size_L, coreset_C,coreset_interleaver_size_R);
+    #endif
     if (k%(9*reg_bundle_size_L)==0) {
       // calculate offset properly
       if (r==coreset_interleaver_size_R-1) {
       //if (bundle_id>=(c+1)*coreset_interleaver_size_R) {
         c++;
         r=0;
-      } else{
+      } else {
         r++;
       }
-#ifdef NR_PDCCH_DCI_DEBUG
-      printf("\t --> time to modify bundle_interleaved and bundle_id --> r=%d c=%d",r,c);
-#endif
+      #ifdef NR_PDCCH_DCI_DEBUG
+       printf("\t --> time to modify bundle_interleaved and bundle_id --> r=%d c=%d",r,c);
+      #endif
       bundle_id=c*coreset_interleaver_size_R+r;
       bundle_interleaved=(r*coreset_C+c+n_shift)%(coreset_nbr_rb * coreset_time_dur/reg_bundle_size_L);
     }
     if (coreset_interleaved == 1){
       //wptr[i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L]=wbar[i];
-#ifdef NR_PDCCH_DCI_DEBUG
-      printf("\n\t\t\t\t\t\t\t\t\t wptr[%d] <-> wbar[%d]",i,i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L);
-#endif
+      #ifdef NR_PDCCH_DCI_DEBUG
+        printf("\n\t\t\t\t\t\t\t\t\t wptr[%d] <-> wbar[%d]",i,i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L);
+      #endif
       wptr[i]=wbar[i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L];
-#ifdef NR_PDCCH_DCI_DEBUG
-      printf("\t\t bundle_id = %d \t bundle_interleaved = %d\n",bundle_id,bundle_interleaved);
-#endif
+      #ifdef NR_PDCCH_DCI_DEBUG
+        printf("\t\t bundle_id = %d \t bundle_interleaved = %d (r=%d, c=%d)\n",bundle_id,bundle_interleaved,r,c);
+      #endif
       i++;
     } else {
       wptr[i]=wbar[i];
@@ -1141,16 +1143,15 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
     if (high_speed_flag == 1){
-      dl_ch0 = &dl_ch_estimates[aarx][5 + (symbol * (frame_parms->ofdm_symbol_size))];
+      dl_ch0 = &dl_ch_estimates[aarx][(symbol * (frame_parms->ofdm_symbol_size))];
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][5 + (symbol * (frame_parms->ofdm_symbol_size (%d))) = (%d)]\n",
-               aarx,frame_parms->ofdm_symbol_size,5 + (symbol * (frame_parms->ofdm_symbol_size)));
-        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> why pointer is pointing to that position (what does '5' mean)?\n");
+        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][ (symbol * (frame_parms->ofdm_symbol_size (%d))) = (%d)]\n",
+               aarx,frame_parms->ofdm_symbol_size,(symbol * (frame_parms->ofdm_symbol_size)));
       #endif
     } else {
-      dl_ch0 = &dl_ch_estimates[aarx][5];
+      dl_ch0 = &dl_ch_estimates[aarx][0];
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][5]\n",aarx);
+        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0 = &dl_ch_estimates[aarx = (%d)][0]\n",aarx);
       #endif
     }
 
@@ -2142,6 +2143,14 @@ short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
         mmtmpPD1 = _mm_shufflelo_epi16(dl_ch128[0], _MM_SHUFFLE(2,3,0,1));
         mmtmpPD1 = _mm_shufflehi_epi16(mmtmpPD1, _MM_SHUFFLE(2,3,0,1));
         mmtmpPD1 = _mm_sign_epi16(mmtmpPD1, *(__m128i * )&conjugate[0]);
+
+        #ifdef NR_PDCCH_DCI_DEBUG
+        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_channel_compensation)-> conjugate\t ### \t");
+        for (int conjugate_index=0 ; conjugate_index< 8 ; conjugate_index++)
+          printf("conjugate[%d]=%d",conjugate_index,conjugate[conjugate_index]);
+        printf("\n");
+        #endif
+      
         // print_ints("im",&mmtmpPD1);
         mmtmpPD1 = _mm_madd_epi16(mmtmpPD1, rxdataF128[0]); // mmtmpPD1 contains imag part of 4 consecutive outputs (32-bit)
         mmtmpPD0 = _mm_srai_epi32(mmtmpPD0, output_shift);
@@ -2751,11 +2760,11 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
  * pdcch-Config
  * pdcch-ConfigCommon
  */
-
+#if 0
 /*
  * initialize this values for testing
  */
-#if 0
+
         pdcch_vars2->coreset[nb_coreset_active].frequencyDomainResources                  = 0x1FFF2FF00000;
         //pdcch_vars2->coreset[nb_coreset_active].frequencyDomainResources                  = 0x1E0000000000;
         pdcch_vars2->coreset[nb_coreset_active].duration                                  = 2;
@@ -2775,10 +2784,11 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
           pdcch_vars[eNB_id]->searchSpace[i].searchSpaceType.sfi_nrofCandidates_aggrlevel8  = 3;
           pdcch_vars[eNB_id]->searchSpace[i].searchSpaceType.sfi_nrofCandidates_aggrlevel16 = 1;
         }
-#endif //(0)
+
 /*
  * to be removed after testing
  */
+#endif //(0)
 
   // number of RB (1 symbol) or REG (12 RE) in one CORESET: higher-layer parameter CORESET-freq-dom
   // (bit map 45 bits: each bit indicates 6 RB in CORESET -> 1 bit MSB indicates PRB 0..6 are part of CORESET)
@@ -2798,19 +2808,24 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 
   // The UE can be assigned 4 different BWP but only one active at a time.
   // For each BWP the number of CORESETs is limited to 3 (including initial CORESET Id=0 -> ControlResourceSetId (0..maxNrofControlReourceSets-1) (0..12-1)
-  uint32_t n_BWP_start = 0;
+  //uint32_t n_BWP_start = 0;
+  //uint32_t n_rb_offset = 0;
+  uint32_t n_rb_offset = pdcch_vars2->coreset[nb_coreset_active].rb_offset;
   // start time position for CORESET
   // parameter symbol_mon is a 14 bits bitmap indicating monitoring symbols within a slot
   uint8_t start_symbol = 0;
 
   // at the moment we are considering that the PDCCH is always starting at symbol 0 of current slot
   // the following code to initialize start_symbol must be activated once we implement PDCCH demapping on symbol not equal to 0 (considering symbol_mon)
-  /*for (int i=0; i < 14; i++) {
+  for (int i=0; i < 14; i++) {
     if (symbol_mon >> (13-i) != 0) {
       start_symbol = i;
       i=14;
     }
-  }*/
+  }
+#ifdef NR_PDCCH_DCI_DEBUG
+  printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> symbol_mon=(%d) and start_symbol=%d\n",symbol_mon,start_symbol);
+#endif
 
   //
   // according to 38.213 v15.1.0: a PDCCH monitoring pattern within a slot,
@@ -2853,7 +2868,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   for (int s = start_symbol; s < (start_symbol + coreset_time_dur); s++) {
     printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter process pdcch ofdm symbol s=%d where coreset_time_dur=%d\n",s,coreset_time_dur);
 
-	if (is_secondary_ue == 1) {
+/*	if (is_secondary_ue == 1) {
 		pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
 				common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id+1], //add 1 to eNB_id to compensate for the shifted B/F'd pilots from the SeNB
 				pdcch_vars[eNB_id]->rxdataF_ext,
@@ -2878,7 +2893,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 				0,
 				high_speed_flag,
 				frame_parms);
-	} else {
+	} else {*/
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter nr_pdcch_extract_rbs_single(is_secondary_ue=%d) to remove DM-RS PDCCH\n",
               is_secondary_ue);
@@ -2892,7 +2907,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                                 frame_parms,
                                 coreset_freq_dom,
                                 coreset_nbr_rb,
-                                n_BWP_start);
+                                n_rb_offset);
 /*
 	printf("\t### in nr_rx_pdcch() function we enter pdcch_extract_rbs_single(is_secondary_ue=%d) to remove DM-RS PDCCH\n",is_secondary_ue);
 	pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
@@ -2904,7 +2919,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 			frame_parms);
 */
 
-}
+//}
 
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",avgP);
@@ -3009,9 +3024,9 @@ printf("\t### in nr_rx_pdcch() function we enter pdcch_channel_compensation(log2
     }
     if (mimo_mode == SISO) {
       #ifdef NR_PDCCH_DCI_DEBUG
-       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter pdcch_siso(for symbol 0) ---> pdcch_vars[eNB_id]->rxdataF_comp\n");
+       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter pdcch_siso ---> pdcch_vars[eNB_id]->rxdataF_comp Nothing to do here. TO BE REMOVED!!!\n");
       #endif
-      pdcch_siso(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
+      //pdcch_siso(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
     } else pdcch_alamouti(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
 
 #ifdef MU_RECEIVER
@@ -3053,21 +3068,11 @@ printf("\t### in nr_rx_pdcch() function we enter pdcch_channel_compensation(log2
 #ifdef MU_RECEIVER
 }
 #endif //MU_RECEIVER
-
 #if T_TRACER
 T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
   T_INT(n_pdcch_symbols),
   T_BUFFER(pdcch_vars[eNB_id]->rxdataF_comp, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
 #endif
-
-    /* We do not enter this function: in NR the number of PDCCH symbols is determined by higher layers parameter CORESET-time-dur
-    /*/
-    printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we do not enter function rx_pcfich()\n as the number of PDCCH symbols is determined by higher layers parameter CORESET-time-dur and n_pdcch_symbols=%d\n",n_pdcch_symbols);
-    /*
-    // decode pcfich here and find out pdcch ofdm symbol number
-    n_pdcch_symbols = rx_pcfich(frame_parms, nr_tti_rx, pdcch_vars[eNB_id],mimo_mode);
-    if (n_pdcch_symbols > 3) n_pdcch_symbols = 1;
-    */
 #ifdef DEBUG_DCI_DECODING
 	printf("demapping: nr_tti_rx %d, mi %d, tdd_config %d\n",nr_tti_rx,get_mi(frame_parms,nr_tti_rx),frame_parms->tdd_config);
 #endif
@@ -3940,37 +3945,26 @@ int get_nCCE_offset_l1(int *CCE_table,
 
 
 #ifdef NR_PDCCH_DCI_RUN
-void nr_dci_decoding_procedure0(int s,
-                                int p,
-                                NR_UE_PDCCH **pdcch_vars,
-                                int do_common,
-                                //dci_detect_mode_t mode,
-                                uint8_t nr_tti_rx,
-                                NR_DCI_ALLOC_t *dci_alloc,
-                                // uint8_t nr_tti_rx, NR_DCI_ALLOC_t *dci_alloc,
-                                int16_t eNB_id,
-                                uint8_t current_thread_id,
-                                NR_DL_FRAME_PARMS *frame_parms,
+void nr_dci_decoding_procedure0(int s,                                                                        //x
+                                int p,                                                                        //x
+                                NR_UE_PDCCH **pdcch_vars,                                                    //x
+                                int do_common,                                                                //x
+                                //dci_detect_mode_t mode,                                                       //not sure if necessary
+                                uint8_t nr_tti_rx,                                                            //x
+                                NR_DCI_ALLOC_t *dci_alloc,                                                       //x
+                                int16_t eNB_id,                                                               //x
+                                uint8_t current_thread_id,                                                    //x
+                                NR_DL_FRAME_PARMS *frame_parms,                                              //x
                                 uint8_t mi,
-                                uint16_t si_rnti,
-                                uint16_t ra_rnti,
-                                uint16_t p_rnti,
-                                uint16_t tc_rnti,
-                                uint16_t int_rnti,
-                                uint16_t sfi_rnti,
-                                uint16_t tpc_pusch_rnti,
-                                uint16_t tpc_pucch_rnti,
-                                uint16_t tpc_srs_rnti,
+                                uint16_t crc_scrambled_values[13],                                            //x
                                 uint8_t L,
-                                uint8_t format_si,
-                                uint8_t format_p,
-                                uint8_t format_ra,
-                                uint8_t format_c,
+                                NR_UE_SEARCHSPACE_CSS_DCI_FORMAT_t format_css,
+                                NR_UE_SEARCHSPACE_USS_DCI_FORMAT_t format_uss,
                                 uint8_t sizeof_bits,
                                 uint8_t sizeof_bytes,
                                 uint8_t *dci_cnt,
-                                uint8_t *format0_found,
-                                uint8_t *format_c_found,
+                                crc_scrambled_t *crc_scrambled,
+                                format_found_t *format_found,
                                 uint32_t *CCEmap0,
                                 uint32_t *CCEmap1,
                                 uint32_t *CCEmap2) {
@@ -3991,15 +3985,15 @@ void nr_dci_decoding_procedure0(int s,
   int coreset_nbr_cce_per_symbol=0;
 
   #ifdef NR_PDCCH_DCI_DEBUG
-    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> \n");
+    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> format_found is %d \n", *format_found);
   #endif
 
-//  if (mode == NO_DCI) {
-//    #ifdef NR_PDCCH_DCI_DEBUG
-//      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> skip DCI decoding: expect no DCIs at nr_tti_rx %d in current searchSpace\n", nr_tti_rx);
-//    #endif
-//    return;
-//  }
+  //if (mode == NO_DCI) {
+  //  #ifdef NR_PDCCH_DCI_DEBUG
+  //    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> skip DCI decoding: expect no DCIs at nr_tti_rx %d in current searchSpace\n", nr_tti_rx);
+  //  #endif
+  //  return;
+  //}
 
   #ifdef NR_PDCCH_DCI_DEBUG
     printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> frequencyDomainResources=%llx, duration=%d\n",
@@ -4093,7 +4087,7 @@ void nr_dci_decoding_procedure0(int s,
     // compute Yk
     Yk = (unsigned int) pdcch_vars[eNB_id]->crnti;
     for (i = 0; i <= nr_tti_rx; i++)
-      Yk = (Yk * A[p]) % 65537;
+      Yk = (Yk * A[p%3]) % 65537;
   }
   #ifdef NR_PDCCH_DCI_DEBUG
     printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> L2(%d) | nCCE[%d](%d) | Yk(%d) | nb_candidates(%d)\n",L2,p,nCCE[p],Yk,nb_candidates);
@@ -4105,20 +4099,21 @@ void nr_dci_decoding_procedure0(int s,
 //		nb_candidates = nCCE[p] / L2;
 
 // In the next code line there is maybe a bug. The spec is not comparing Table 10.1-2 with nb_candidates, but with total number of candidates for all s and all p
-  int m_p_s_L_max = (m_max_slot_pdcch_Table10_1_2[L]<=nb_candidates ? m_max_slot_pdcch_Table10_1_2[L] : nb_candidates);
+  int m_p_s_L_max = (m_max_slot_pdcch_Table10_1_2[1]<=nb_candidates ? m_max_slot_pdcch_Table10_1_2[1] : nb_candidates);
   if (L==4) m_p_s_L_max=1; // Table 10.1-2 is not defined for L=4
   #ifdef NR_PDCCH_DCI_DEBUG
     printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> m_max_slot_pdcch_Table10_1_2(%d)=%d\n",L,m_max_slot_pdcch_Table10_1_2[L]);
   #endif
   for (m = 0; m < nb_candidates; m++) {
     int n_ci = 0;
+    if (nCCE[p] < L2) return;
     int debug1 = nCCE[p] / L2;
     int debug2 = L2*m_p_s_L_max;
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug1(%d)=nCCE[p]/L2 | nCCE[%d](%d) | L2(%d)\n",debug1,p,nCCE[p],L2);
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug2(%d)=L2*m_p_s_L_max | L2(%d) | m_p_s_L_max(%d)\n",debug2,L2,m_p_s_L_max);
     #endif
-    CCEind = (((Yk + ((m*nCCE[p])/(L2*m_p_s_L_max)) + n_ci) % (nCCE[p] / L2)) * L2);
+    CCEind = (((Yk + (uint16_t)(floor((m*nCCE[p])/(L2*m_p_s_L_max))) + n_ci) % (uint16_t)(floor(nCCE[p] / L2))) * L2);
     #ifdef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> CCEind(%d) = (((Yk(%d) + ((m(%d)*nCCE[p](%d))/(L2(%d)*m_p_s_L_max(%d)))) % (nCCE[p] / L2)) * L2)\n",
                CCEind,Yk,m,nCCE[p],L2,m_p_s_L_max);
@@ -4183,18 +4178,74 @@ void nr_dci_decoding_procedure0(int s,
       */
       crc = (crc16(&dci_decoded_output[current_thread_id][0], sizeof_bits) >> 16) ^ extract_crc(&dci_decoded_output[current_thread_id][0], sizeof_bits);
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we end function dci_decoding() with crc=%d\n",crc);
+        printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we end function dci_decoding() with crc=%x\n",crc);
         printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
       #endif
       #ifdef DEBUG_DCI_DECODING
         printf("crc =>%x\n",crc);
       #endif //uint16_t tc_rnti, uint16_t int_rnti, uint16_t sfi_rnti, uint16_t tpc_pusch_rnti, uint16_t tpc_pucch_rnti, uint16_t tpc_srs__rnti
+     #ifdef NR_PDCCH_DCI_DEBUG
+       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> format_found=%d\n",*format_found);
+       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> crc_scrambled=%d\n",*crc_scrambled);
+     #endif
 
-      if ((crc == si_rnti) || (crc == p_rnti) || (crc == ra_rnti) || (crc == tc_rnti)
-        || (crc == int_rnti) || (crc == sfi_rnti) || (crc == tpc_pusch_rnti) || (crc == tpc_pucch_rnti) || (crc == tpc_srs_rnti)
-        || (crc == pdcch_vars[eNB_id]->crnti)) {
-/*			if (((L > 1) && ((crc == si_rnti) || (crc == p_rnti) || (crc == ra_rnti)))
-					|| (crc == pdcch_vars[eNB_id]->crnti)) {*/
+      if (crc == crc_scrambled_values[_C_RNTI_])  {
+        *crc_scrambled =_c_rnti;
+        *format_found=1;
+      }
+      if (crc == crc_scrambled_values[_CS_RNTI_])  {
+        *crc_scrambled =_cs_rnti;
+        *format_found=1;
+      }
+      if (crc == crc_scrambled_values[_NEW_RNTI_])  {
+        *crc_scrambled =_new_rnti;
+        *format_found=1;
+      }
+      if (crc == crc_scrambled_values[_TC_RNTI_])  {
+        *crc_scrambled =_tc_rnti;
+        *format_found=_format_1_0_found;
+      }
+      if (crc == crc_scrambled_values[_P_RNTI_])  {
+        *crc_scrambled =_p_rnti;
+        *format_found=_format_1_0_found;
+      }
+      if (crc == crc_scrambled_values[_SI_RNTI_])  {
+        *crc_scrambled =_si_rnti;
+        *format_found=_format_1_0_found;
+      }
+      if (crc == crc_scrambled_values[_RA_RNTI_])  {
+        *crc_scrambled =_ra_rnti;
+        *format_found=_format_1_0_found;
+      }
+      if (crc == crc_scrambled_values[_SP_CSI_RNTI_])  {
+        *crc_scrambled =_sp_csi_rnti;
+        *format_found=_format_0_1_found;
+      }
+      if (crc == crc_scrambled_values[_SFI_RNTI_])  {
+        *crc_scrambled =_sfi_rnti;
+        *format_found=_format_2_0_found;
+      }
+      if (crc == crc_scrambled_values[_INT_RNTI_])  {
+        *crc_scrambled =_int_rnti;
+        *format_found=_format_2_1_found;
+      }
+      if (crc == crc_scrambled_values[_TPC_PUSCH_RNTI_]) {
+        *crc_scrambled =_tpc_pusch_rnti;
+        *format_found=_format_2_2_found;
+      }
+      if (crc == crc_scrambled_values[_TPC_PUCCH_RNTI_]) {
+        *crc_scrambled =_tpc_pucch_rnti;
+        *format_found=_format_2_2_found;
+      }
+      if (crc == crc_scrambled_values[_TPC_SRS_RNTI_]) {
+        *crc_scrambled =_tpc_srs_rnti;
+        *format_found=_format_2_3_found;
+      }
+#ifdef NR_PDCCH_DCI_DEBUG
+  printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> format_found=%d %d %d\n",*format_found, format_found, &format_found);
+  printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> crc_scrambled=%d\n",*crc_scrambled);
+#endif
+      if (*format_found!=255) {
         #ifdef NR_PDCCH_DCI_DEBUG
           printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> rnti matches -> DCI FOUND !!! crc =>%x, sizeof_bits %d, sizeof_bytes %d \n",crc, sizeof_bits, sizeof_bytes);
         #endif
@@ -4220,7 +4271,9 @@ void nr_dci_decoding_procedure0(int s,
           dci_alloc[*dci_cnt].dci_pdu[4] = dci_decoded_output[current_thread_id][3];
           dci_alloc[*dci_cnt].dci_pdu[3] = dci_decoded_output[current_thread_id][4];
           dci_alloc[*dci_cnt].dci_pdu[2] = dci_decoded_output[current_thread_id][5];
-          dci_alloc[*dci_cnt].dci_pdu[1] = dci_decoded_output[current_thread_id][7];
+          dci_alloc[*dci_cnt].dci_pdu[1] = dci_decoded_output[current_thread_id][6];
+          dci_alloc[*dci_cnt].dci_pdu[0] = dci_decoded_output[current_thread_id][7];
+          // MAX_DCI_SIZE_BITS has to be redefined for dci_decoded_output FIXME
           // format2_0, format2_1 can be longer than 8 bytes. FIXME
 #ifdef DEBUG_DCI_DECODING
 					printf("DCI => %x,%x,%x,%x,%x,%x,%x,%x\n",
@@ -4228,37 +4281,45 @@ void nr_dci_decoding_procedure0(int s,
 							dci_decoded_output[current_thread_id][4],dci_decoded_output[current_thread_id][5],dci_decoded_output[current_thread_id][6],dci_decoded_output[current_thread_id][7]);
 #endif
         }
-        if (crc == si_rnti) {
-          dci_alloc[*dci_cnt].format = format1_0;
-          *dci_cnt = *dci_cnt + 1;
-        } else if (crc == p_rnti) {
-          dci_alloc[*dci_cnt].format = format1_0;
-          *dci_cnt = *dci_cnt + 1;
-        } else if (crc == ra_rnti) {
-          dci_alloc[*dci_cnt].format = format1_0;
-          *dci_cnt = *dci_cnt + 1;
-        } else if (crc == tc_rnti) {
-          dci_alloc[*dci_cnt].format = cformat0_0_and_1_0; // this tc-rnti scrambled crc can contain formats 0_0 or 0_1. FIXME
-          *dci_cnt = *dci_cnt + 1;
-        } else if (crc == int_rnti) {
-          dci_alloc[*dci_cnt].format = format2_1;
-          *dci_cnt = *dci_cnt + 1;
-        } else if (crc == sfi_rnti) {
+        if ((format_css == cformat0_0_and_1_0) || (format_uss == uformat0_0_and_1_0)){
+          if ((crc_scrambled == _p_rnti) || (crc_scrambled == _si_rnti) || (crc_scrambled == _ra_rnti)){
+            dci_alloc[*dci_cnt].format = format1_0;
+            *dci_cnt = *dci_cnt + 1;
+            format_found=_format_1_0_found;
+          } else {
+            if ((dci_decoded_output[current_thread_id][7]>>(sizeof_bits-1))&1 == 0){
+              dci_alloc[*dci_cnt].format = format0_0;
+              *dci_cnt = *dci_cnt + 1;
+              format_found=_format_0_0_found;
+            }
+            if ((dci_decoded_output[current_thread_id][7]>>(sizeof_bits-1))&1 == 1){
+              dci_alloc[*dci_cnt].format = format1_0;
+              *dci_cnt = *dci_cnt + 1;
+              format_found=_format_1_0_found;
+            }
+          }
+        }
+        if (format_css == cformat2_0){
           dci_alloc[*dci_cnt].format = format2_0;
           *dci_cnt = *dci_cnt + 1;
-        } else if (crc == tpc_pusch_rnti) {
-          dci_alloc[*dci_cnt].format = format2_2;
-          *dci_cnt = *dci_cnt + 1;
-        } else if (crc == tpc_pucch_rnti) {
-          dci_alloc[*dci_cnt].format = format2_2;
-          *dci_cnt = *dci_cnt + 1;
-        } else if (crc == tpc_srs_rnti) {
-          dci_alloc[*dci_cnt].format = format2_3;
-          *dci_cnt = *dci_cnt + 1;
-        } else if (crc == pdcch_vars[eNB_id]->crnti) {
-          dci_alloc[*dci_cnt].format = uformat0_0_and_1_0; // or uformat0_1_and_1_1. FIXME
+        }
+        if (format_css == cformat2_1){
+          dci_alloc[*dci_cnt].format = format2_1;
           *dci_cnt = *dci_cnt + 1;
         }
+        if (format_css == cformat2_2){
+          dci_alloc[*dci_cnt].format = format2_2;
+          *dci_cnt = *dci_cnt + 1;
+        }
+        if (format_css == cformat2_3){
+          dci_alloc[*dci_cnt].format = format2_3;
+          *dci_cnt = *dci_cnt + 1;
+        }
+        if (format_uss == uformat0_1_and_1_1){
+          // Not implemented yet FIXME
+        }
+        // store first nCCE of group for PUCCH transmission of ACK/NAK
+        pdcch_vars[eNB_id]->nCCE[nr_tti_rx] = CCEind;
 /*				if (crc == si_rnti) {
 					dci_alloc[*dci_cnt].format = format_si;
 					*dci_cnt = *dci_cnt + 1;
@@ -4341,6 +4402,7 @@ void nr_dci_decoding_procedure0(int s,
 }
 
 #endif
+
 
 
 
@@ -4793,137 +4855,173 @@ uint16_t dci_CRNTI_decoding_procedure(PHY_VARS_NR_UE *ue,
 */
 
 #ifdef NR_PDCCH_DCI_RUN
-uint16_t nr_dci_format_size (NR_DCI_format_t format,
+
+uint16_t nr_dci_format_size (crc_scrambled_t crc_scrambled,
                              uint8_t pusch_alloc_list,
                              uint16_t n_RB_ULBWP,
                              uint16_t n_RB_DLBWP,
-                             uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS]){
+                             uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS]){
 #ifdef NR_PDCCH_DCI_DEBUG
-    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size)-> \n");
+    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size)-> crc_scrambled=%d, pusch_alloc_list=%d, n_RB_ULBWP=%d, n_RB_DLBWP=%d\n",crc_scrambled,pusch_alloc_list,n_RB_ULBWP,n_RB_DLBWP);
 #endif
 
 /*
  * Formats 0_1, not completely implemented. See (*)
  */
 // format {0_0,0_1,1_0,1_1,2_0,2_1,2_2,2_3} according to 38.212 Section 7.3.1
-/*#define NBR_NR_FORMATS  8
-#define NBR_NR_DCI FIELDS     48
-#define CARRIER_IND                      0
-#define SUL_IND_0_1                      1
-#define IDENTIFIER_DCI_FORMATS           2
+/*
+#define NBR_NR_FORMATS         8
+#define NBR_NR_DCI_FIELDS     56
+
+#define IDENTIFIER_DCI_FORMATS           0
+#define CARRIER_IND                      1
+#define SUL_IND_0_1                      2
 #define SLOT_FORMAT_IND                  3
 #define PRE_EMPTION_IND                  4
 #define TPC_CMD_NUMBER                   5
 #define BLOCK_NUMBER                     6
 #define BANDWIDTH_PART_IND               7
-#define FREQ_DOM_RESOURCE_ASSIGNMENT_UL  8
-#define FREQ_DOM_RESOURCE_ASSIGNMENT_DL  9
-#define TIME_DOM_RESOURCE_ASSIGNMENT    10
-#define VRB_TO_PRB_MAPPING              11
-#define PRB_BUNDLING_SIZE_IND           12
-#define RATE_MATCHING_IND               13
-#define ZP_CSI_RS_TRIGGER               14
-#define FREQ_HOPPING_FLAG               15
-#define TB1_MCS                         16
-#define TB1_NDI                         17
-#define TB1_RV                          18
-#define TB2_MCS                         19
-#define TB2_NDI                         20
-#define TB2_RV                          21
-#define MCS                             22
-#define NDI                             23
-#define RV                              24
-#define HARQ_PROCESS_NUMBER             25
-#define DAI                             26
-#define FIRST_DAI                       27
-#define SECOND_DAI                      28
-#define TPC_PUSCH                       29
-#define TPC_PUCCH                       30
-#define PUCCH_RESOURCE_IND              31
-#define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 32
-#define SHORT_MESSAGE_IND               33
-#define SRS_RESOURCE_IND                34
-#define PRECOD_NBR_LAYERS               35
-#define ANTENNA_PORTS                   36
-#define TCI                             37
-#define SRS_REQUEST                     38
-#define TPC_CMD_NUMBER_FORMAT2_3        39
-#define CSI_REQUEST                     40
-#define CBGTI                           41
-#define CBGFI                           42
-#define PTRS_DMRS                       43
-#define BETA_OFFSET_IND                 44
-#define DMRS_SEQ_INI                    45
-#define SUL_IND_0_0                     46
-#define PADDING                         47*/
+#define SHORT_MESSAGE_IND                8
+#define SHORT_MESSAGES                   9
+#define FREQ_DOM_RESOURCE_ASSIGNMENT_UL 10
+#define FREQ_DOM_RESOURCE_ASSIGNMENT_DL 11
+#define TIME_DOM_RESOURCE_ASSIGNMENT    12
+#define VRB_TO_PRB_MAPPING              13
+#define PRB_BUNDLING_SIZE_IND           14
+#define RATE_MATCHING_IND               15
+#define ZP_CSI_RS_TRIGGER               16
+#define FREQ_HOPPING_FLAG               17
+#define TB1_MCS                         18
+#define TB1_NDI                         19
+#define TB1_RV                          20
+#define TB2_MCS                         21
+#define TB2_NDI                         22
+#define TB2_RV                          23
+#define MCS                             24
+#define NDI                             25
+#define RV                              26
+#define HARQ_PROCESS_NUMBER             27
+#define DAI_                            28
+#define FIRST_DAI                       29
+#define SECOND_DAI                      30
+#define TB_SCALING                      31
+#define TPC_PUSCH                       32
+#define TPC_PUCCH                       33
+#define PUCCH_RESOURCE_IND              34
+#define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 35
+//#define SHORT_MESSAGE_IND             33
+#define SRS_RESOURCE_IND                36
+#define PRECOD_NBR_LAYERS               37
+#define ANTENNA_PORTS                   38
+#define TCI                             39
+#define SRS_REQUEST                     40
+#define TPC_CMD_NUMBER_FORMAT2_3        41
+#define CSI_REQUEST                     42
+#define CBGTI                           43
+#define CBGFI                           44
+#define PTRS_DMRS                       45
+#define BETA_OFFSET_IND                 46
+#define DMRS_SEQ_INI                    47
+#define UL_SCH_IND                      48
+#define PADDING_NR_DCI                  49
+#define SUL_IND_0_0                     50
+#define RA_PREAMBLE_INDEX               51
+#define SUL_IND_1_0                     52
+#define SS_PBCH_INDEX                   53
+#define PRACH_MASK_INDEX                54
+#define RESERVED_NR_DCI                 55
+*/
   //uint8_t pusch_alloc_list=1;
-  uint8_t n_zp = 1; // number of ZP CSI-RS resource sets in the higher layer parameter [ZP-CSI-RS-ResourceConfigList].
+  // number of ZP CSI-RS resource sets in the higher layer parameter [ZP-CSI-RS-ResourceConfigList]
+  uint8_t n_zp = 1;
   uint8_t n_SRS=1;
+  // for PUSCH hopping with resource allocation type 1
+  //      n_UL_hopping = 1 if the higher layer parameter frequencyHoppingOffsetLists contains two  offset values
+  //      n_UL_hopping = 2 if the higher layer parameter frequencyHoppingOffsetLists contains four offset values
+  uint8_t n_UL_hopping=0;
   uint8_t dci_field_size_table [NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = { // This table contains the number of bits for each field (row) contained in each dci format (column).
                                                                        // The values of the variables indicate field sizes in number of bits
-//Format0_0                              Format0_1                               Format1_0                               Format1_1                      Formats2_0/1/2/3
-{0,                                      3,                                      0,                                      3,                                      0,0,0,0}, // 0  CARRIER_IND: 0 or 3 bits, as defined in Subclause x.x of [5, TS38.213]
-{0,                                      0,                                      0,                                      0,                                      0,0,0,0}, // 1  SUL_IND_0_1:
-{1,                                      1,                                      1,                                      1,                                      1,1,1,1}, // 2  IDENTIFIER_DCI_FORMATS:
-{0,                                      0,                                      0,                                      0,                                      1,0,0,0}, // 3  SLOT_FORMAT_IND: size of DCI format 2_0 is configurable by higher layers up to 128 bits, according to Subclause 11.1.1 of [5, TS 38.213]
-{0,                                      0,                                      0,                                      0,                                      0,1,0,0}, // 4  PRE_EMPTION_IND: size of DCI format 2_1 is configurable by higher layers up to 126 bits, according to Subclause 11.2 of [5, TS 38.213]. Each pre-emption indication is 14 bits
-{0,                                      0,                                      0,                                      0,                                      0,0,1,0}, // 5  TPC_CMD_NUMBER: The parameter xxx provided by higher layers determines the index to the TPC command number for an UL of a cell. Each TPC command number is 2 bits
-{0,                                      0,                                      0,                                      0,                                      0,0,0,1}, // 6  BLOCK_NUMBER: starting position of a block is determined by the parameter startingBitOfFormat2_3
-{0,                                      ceil(log2(n_RB_ULBWP)),                 0,                                      ceil(log2(n_RB_ULBWP)),                 0,0,0,0}, // 7  BANDWIDTH_PART_IND:
-{ceil(log2(n_RB_ULBWP*(n_RB_ULBWP+1)/2)),ceil(log2(n_RB_ULBWP*(n_RB_ULBWP+1)/2)),0,                                      0,                                      0,0,0,0}, // 8  FREQ_DOM_RESOURCE_ASSIGNMENT_UL: PUSCH hopping with resource allocation type 1 not considered
-                                                                                                                                                                           // (NOTE 1) If DCI format 0_0 is monitored in common search space
-                                                                                                                                                                           // and if the number of information bits in the DCI format 0_0 prior to padding
-                                                                                                                                                                           // is larger than the payload size of the DCI format 1_0 monitored in common search space
-                                                                                                                                                                           // the bitwidth of the frequency domain resource allocation field in the DCI format 0_0
-                                                                                                                                                                           // is reduced such that the size of DCI format 0_0 equals to the size of the DCI format 1_0
-{0,                                      0,                                      ceil(log2(n_RB_DLBWP*(n_RB_DLBWP+1)/2)),ceil(log2(n_RB_DLBWP*(n_RB_DLBWP+1)/2)),0,0,0,0}, // 9  FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
-{log2(pusch_alloc_list),                 log2(pusch_alloc_list),                 log2(pusch_alloc_list),                 log2(pusch_alloc_list),                 0,0,0,0}, // 10 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 6.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
-                                                                                                                                                                           // where I the number of entries in the higher layer parameter pusch-AllocationList
-{0,                                      1,                                      1,                                      1,                                      0,0,0,0}, // 11 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
-{0,                                      0,                                      0,                                      1,                                      0,0,0,0}, // 12 PRB_BUNDLING_SIZE_IND:0 bit if the higher layer parameter PRB_bundling is not configured or is set to 'static', or 1 bit if the higher layer parameter PRB_bundling is set to 'dynamic' according to Subclause 5.1.2.3 of [6, TS 38.214]
-{0,                                      0,                                      0,                                      2,                                      0,0,0,0}, // 13 RATE_MATCHING_IND: 0, 1, or 2 bits according to higher layer parameter rate-match-PDSCH-resource-set
-{0,                                      0,                                      0,                                      log2(n_zp)+1,                           0,0,0,0}, // 14 ZP_CSI_RS_TRIGGER:
-{1,                                      1,                                      0,                                      0,                                      0,0,0,0}, // 15 FREQ_HOPPING_FLAG: 0 bit if only resource allocation type 0
-{0,                                      0,                                      0,                                      5,                                      0,0,0,0}, // 16 TB1_MCS:
-{0,                                      0,                                      0,                                      1,                                      0,0,0,0}, // 17 TB1_NDI:
-{0,                                      0,                                      0,                                      2,                                      0,0,0,0}, // 18 TB1_RV:
-{0,                                      0,                                      0,                                      5,                                      0,0,0,0}, // 19 TB2_MCS:
-{0,                                      0,                                      0,                                      1,                                      0,0,0,0}, // 20 TB2_NDI:
-{0,                                      0,                                      0,                                      2,                                      0,0,0,0}, // 21 TB2_RV:
-{5,                                      5,                                      5,                                      0,                                      0,0,0,0}, // 22 MCS:
-{1,                                      1,                                      1,                                      0,                                      0,0,0,0}, // 23 NDI:
-{2,                                      2,                                      2,                                      0,                                      0,0,0,0}, // 24 RV:
-{4,                                      4,                                      4,                                      4,                                      0,0,0,0}, // 25 HARQ_PROCESS_NUMBER:
-{0,                                      0,                                      2,                                      4,                                      0,0,0,0}, // 26 DAI: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
-                                                                                                                                                                           // 2 if one serving cell is configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 bits are the counter DAI
-                                                                                                                                                                           // 0 otherwise
-{0,                                      2,                                      0,                                      0,                                      0,0,0,0}, // 27 FIRST_DAI: (1 or 2 bits) 1 bit for semi-static HARQ-ACK // 2 bits for dynamic HARQ-ACK codebook with single HARQ-ACK codebook
-{0,                                      2,                                      0,                                      0,                                      0,0,0,0}, // 28 SECOND_DAI: (0 or 2 bits) 2 bits for dynamic HARQ-ACK codebook with two HARQ-ACK sub-codebooks // 0 bits otherwise
-{2,                                      2,                                      0,                                      0,                                      0,0,0,0}, // 29 TPC_PUSCH:
-{0,                                      0,                                      2,                                      2,                                      0,0,0,0}, // 30 TPC_PUCCH:
-{0,                                      0,                                      3,                                      3,                                      0,0,0,0}, // 31 PUCCH_RESOURCE_IND:
-{0,                                      0,                                      3,                                      3,                                      0,0,0,0}, // 32 PDSCH_TO_HARQ_FEEDBACK_TIME_IND:
-{0,                                      0,                                      0,                                      0,                                      0,0,0,0}, // 33 SHORT_MESSAGE_IND: 1 bit if crc scrambled with P-RNTI
-                                                                                                                                                                           // not implemented at the moment
-{0,                                      log2(n_SRS),                            0,                                      0,                                      0,0,0,0}, // 34 SRS_RESOURCE_IND:
-{0,                                      0,                                      0,                                      0,                                      0,0,0,0}, // 35 PRECOD_NBR_LAYERS:
-{0,                                      0,                                      0,                                      0,                                      0,0,0,0}, // 36 ANTENNA_PORTS:
-{0,                                      0,                                      0,                                      3,                                      0,0,0,0}, // 37 TCI: 0 bit if higher layer parameter tci-PresentInDCI is not enabled; otherwise 3 bits
-{0,                                      3,                                      0,                                      0,                                      0,0,0,2}, // 38 SRS_REQUEST:
-{0,                                      0,                                      0,                                      0,                                      0,0,0,2}, // 39 TPC_CMD_NUMBER_FORMAT2_3:
-{0,                                      6,                                      0,                                      0,                                      0,0,0,0}, // 40 CSI_REQUEST:
-{0,                                      8,                                      0,                                      8,                                      0,0,0,0}, // 41 CBGTI: 0, 2, 4, 6, or 8 bits determined by higher layer parameter maxCodeBlockGroupsPerTransportBlock for the PDSCH
-{0,                                      0,                                      0,                                      1,                                      0,0,0,0}, // 42 CBGFI: 0 or 1 bit determined by higher layer parameter codeBlockGroupFlushIndicator
-{0,                                      2,                                      0,                                      0,                                      0,0,0,0}, // 43 PTRS_DMRS:
-{0,                                      2,                                      0,                                      0,                                      0,0,0,0}, // 44 BETA_OFFSET_IND:
-{0,                                      1,                                      0,                                      1,                                      0,0,0,0}, // 45 DMRS_SEQ_INI: 1 bit if the cell has two ULs and the number of bits for DCI format 1_0 before padding
-                                                                                                                                                                           //is larger than the number of bits for DCI format 0_0 before padding; 0 bit otherwise
-{0,                                      0,                                      0,                                      0,                                      0,0,0,0}, // 46 SUL_IND_0_0:
-{0,                                      0,                                      0,                                      0,                                      0,0,0,0}  // 47 PADDING: (Note 2) If DCI format 0_0 is monitored in common search space
-                                                                                                                                                                           // and if the number of information bits in the DCI format 0_0 prior to padding
-                                                                                                                                                                           // is less than the payload size of the DCI format 1_0 monitored in common search space
-                                                                                                                                                                           // zeros shall be appended to the DCI format 0_0
-                                                                                                                                                                           // until the payload size equals that of the DCI format 1_0
+//Format0_0                     Format0_1                      Format1_0                      Format1_1             Formats2_0/1/2/3
+{1,                             1,                             (((crc_scrambled == _p_rnti) || (crc_scrambled == _si_rnti) || (crc_scrambled == _ra_rnti)) ? 0:1),
+                                                                                              1,                             0,0,0,0}, // 0  IDENTIFIER_DCI_FORMATS:
+{0,                             3,                             0,                             3,                             0,0,0,0}, // 1  CARRIER_IND: 0 or 3 bits, as defined in Subclause x.x of [5, TS38.213]
+{0,                             0,                             0,                             0,                             0,0,0,0}, // 2  SUL_IND_0_1:
+{0,                             0,                             0,                             0,                             1,0,0,0}, // 3  SLOT_FORMAT_IND: size of DCI format 2_0 is configurable by higher layers up to 128 bits, according to Subclause 11.1.1 of [5, TS 38.213]
+{0,                             0,                             0,                             0,                             0,1,0,0}, // 4  PRE_EMPTION_IND: size of DCI format 2_1 is configurable by higher layers up to 126 bits, according to Subclause 11.2 of [5, TS 38.213]. Each pre-emption indication is 14 bits
+{0,                             0,                             0,                             0,                             0,0,1,0}, // 5  TPC_CMD_NUMBER: The parameter xxx provided by higher layers determines the index to the TPC command number for an UL of a cell. Each TPC command number is 2 bits
+{0,                             0,                             0,                             0,                             0,0,0,1}, // 6  BLOCK_NUMBER: starting position of a block is determined by the parameter startingBitOfFormat2_3
+{0,                             ceil(log2(n_RB_ULBWP)),        0,                             ceil(log2(n_RB_ULBWP)),        0,0,0,0}, // 7  BANDWIDTH_PART_IND:
+{0,                             0,                             ((crc_scrambled == _p_rnti) ? 2:0),
+                                                                                              0,                             0,0,0,0}, // 8  SHORT_MESSAGE_IND 2 bits if crc scrambled with P-RNTI
+{0,                             0,                             ((crc_scrambled == _p_rnti) ? 8:0),
+                                                                                              0,                             0,0,0,0}, // 9  SHORT_MESSAGES 8 bit8 if crc scrambled with P-RNTI
+{(ceil(log2(n_RB_ULBWP*(n_RB_ULBWP+1)/2)))-n_UL_hopping,
+                                (ceil(log2(n_RB_ULBWP*(n_RB_ULBWP+1)/2)))-n_UL_hopping,
+                                                               0,                             0,                             0,0,0,0}, // 10 FREQ_DOM_RESOURCE_ASSIGNMENT_UL: PUSCH hopping with resource allocation type 1 not considered
+                                                                                                                                       //    (NOTE 1) If DCI format 0_0 is monitored in common search space
+                                                                                                                                       //    and if the number of information bits in the DCI format 0_0 prior to padding
+                                                                                                                                       //    is larger than the payload size of the DCI format 1_0 monitored in common search space
+                                                                                                                                       //    the bitwidth of the frequency domain resource allocation field in the DCI format 0_0
+                                                                                                                                       //    is reduced such that the size of DCI format 0_0 equals to the size of the DCI format 1_0
+{0,                             0,                             ceil(log2(n_RB_DLBWP*(n_RB_DLBWP+1)/2)),
+                                                                                              ceil(log2(n_RB_DLBWP*(n_RB_DLBWP+1)/2)),
+                                                                                                                             0,0,0,0}, // 11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+{4,                             log2(pusch_alloc_list),        4,                             log2(pusch_alloc_list),        0,0,0,0}, // 12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 6.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+                                                                                                                                       //    where I the number of entries in the higher layer parameter pusch-AllocationList
+{0,                             1,                             1,                             1,                             0,0,0,0}, // 13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+{0,                             0,                             0,                             1,                             0,0,0,0}, // 14 PRB_BUNDLING_SIZE_IND:0 bit if the higher layer parameter PRB_bundling is not configured or is set to 'static', or 1 bit if the higher layer parameter PRB_bundling is set to 'dynamic' according to Subclause 5.1.2.3 of [6, TS 38.214]
+{0,                             0,                             0,                             2,                             0,0,0,0}, // 15 RATE_MATCHING_IND: 0, 1, or 2 bits according to higher layer parameter rate-match-PDSCH-resource-set
+{0,                             0,                             0,                             log2(n_zp)+1,                  0,0,0,0}, // 16 ZP_CSI_RS_TRIGGER:
+{1,                             1,                             0,                             0,                             0,0,0,0}, // 17 FREQ_HOPPING_FLAG: 0 bit if only resource allocation type 0
+{0,                             0,                             0,                             5,                             0,0,0,0}, // 18 TB1_MCS:
+{0,                             0,                             0,                             1,                             0,0,0,0}, // 19 TB1_NDI:
+{0,                             0,                             0,                             2,                             0,0,0,0}, // 20 TB1_RV:
+{0,                             0,                             0,                             5,                             0,0,0,0}, // 21 TB2_MCS:
+{0,                             0,                             0,                             1,                             0,0,0,0}, // 22 TB2_NDI:
+{0,                             0,                             0,                             2,                             0,0,0,0}, // 23 TB2_RV:
+{5,                             5,                             5,                             0,                             0,0,0,0}, // 24 MCS:
+{1,                             1,                             (crc_scrambled == _c_rnti)?1:0,0,                             0,0,0,0}, // 25 NDI:
+{2,                             2,                             (((crc_scrambled == _c_rnti) || (crc_scrambled == _si_rnti)) ? 2:0),
+                                                                                              0,                             0,0,0,0}, // 26 RV:
+{4,                             4,                             (crc_scrambled == _c_rnti)?4:0,4,                             0,0,0,0}, // 27 HARQ_PROCESS_NUMBER:
+{0,                             0,                             (crc_scrambled == _c_rnti)?2:0,2,                             0,0,0,0}, // 28 DAI: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
+                                                                                                                                       //    2 if one serving cell is configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 bits are the counter DAI
+                                                                                                                                       //    0 otherwise
+{0,                             2,                             0,                             0,                             0,0,0,0}, // 29 FIRST_DAI: (1 or 2 bits) 1 bit for semi-static HARQ-ACK // 2 bits for dynamic HARQ-ACK codebook with single HARQ-ACK codebook
+{0,                             2,                             0,                             0,                             0,0,0,0}, // 30 SECOND_DAI: (0 or 2 bits) 2 bits for dynamic HARQ-ACK codebook with two HARQ-ACK sub-codebooks // 0 bits otherwise
+{0,                             0,                             (((crc_scrambled == _p_rnti) || (crc_scrambled == _ra_rnti)) ? 2:0),
+                                                                                              0,                             0,0,0,0}, // 31 TB_SCALING
+{2,                             2,                             0,                             0,                             0,0,0,0}, // 32 TPC_PUSCH:
+{0,                             0,                             (crc_scrambled == _c_rnti)?2:0,2,                             0,0,0,0}, // 33 TPC_PUCCH:
+{0,                             0,                             (crc_scrambled == _c_rnti)?3:0,3,                             0,0,0,0}, // 34 PUCCH_RESOURCE_IND:
+{0,                             0,                             (crc_scrambled == _c_rnti)?3:0,3,                             0,0,0,0}, // 35 PDSCH_TO_HARQ_FEEDBACK_TIME_IND:
+{0,                             log2(n_SRS),                   0,                             0,                             0,0,0,0}, // 36 SRS_RESOURCE_IND:
+{0,                             0,                             0,                             0,                             0,0,0,0}, // 37 PRECOD_NBR_LAYERS:
+{0,                             0,                             0,                             0,                             0,0,0,0}, // 38 ANTENNA_PORTS:
+{0,                             0,                             0,                             3,                             0,0,0,0}, // 39 TCI: 0 bit if higher layer parameter tci-PresentInDCI is not enabled; otherwise 3 bits
+{0,                             3,                             0,                             0,                             0,0,0,2}, // 40 SRS_REQUEST:
+{0,                             0,                             0,                             0,                             0,0,0,2}, // 41 TPC_CMD_NUMBER_FORMAT2_3:
+{0,                             6,                             0,                             0,                             0,0,0,0}, // 42 CSI_REQUEST:
+{0,                             8,                             0,                             8,                             0,0,0,0}, // 43 CBGTI: 0, 2, 4, 6, or 8 bits determined by higher layer parameter maxCodeBlockGroupsPerTransportBlock for the PDSCH
+{0,                             0,                             0,                             1,                             0,0,0,0}, // 44 CBGFI: 0 or 1 bit determined by higher layer parameter codeBlockGroupFlushIndicator
+{0,                             2,                             0,                             0,                             0,0,0,0}, // 45 PTRS_DMRS:
+{0,                             2,                             0,                             0,                             0,0,0,0}, // 46 BETA_OFFSET_IND:
+{0,                             1,                             0,                             1,                             0,0,0,0}, // 47 DMRS_SEQ_INI: 1 bit if the cell has two ULs and the number of bits for DCI format 1_0 before padding
+                                                                                                                                       //    is larger than the number of bits for DCI format 0_0 before padding; 0 bit otherwise
+{0,                             1,                             0,                             0,                             0,0,0,0}, // 48 UL_SCH_IND: value of "1" indicates UL-SCH shall be transmitted on the PUSCH and a value of "0" indicates UL-SCH shall not be transmitted on the PUSCH
+{0,                             0,                             0,                             0,                             0,0,0,0}, // 49 PADDING_NR_DCI:
+                                                                                                                                       //    (NOTE 2) If DCI format 0_0 is monitored in common search space
+                                                                                                                                       //    and if the number of information bits in the DCI format 0_0 prior to padding
+                                                                                                                                       //    is less than the payload size of the DCI format 1_0 monitored in common search space
+                                                                                                                                       //    zeros shall be appended to the DCI format 0_0
+                                                                                                                                       //    until the payload size equals that of the DCI format 1_0
+{0,                             0,                             0,                             0,                             0,0,0,0}, // 50 SUL_IND_0_0:
+{0,                             0,                             0,                             0,                             0,0,0,0}, // 51 RA_PREAMBLE_INDEX (random access procedure initiated by a PDCCH order not implemented, FIXME!!!)
+{0,                             0,                             0,                             0,                             0,0,0,0}, // 52 SUL_IND_1_0 (random access procedure initiated by a PDCCH order not implemented, FIXME!!!)
+{0,                             0,                             0,                             0,                             0,0,0,0}, // 53 SS_PBCH_INDEX (random access procedure initiated by a PDCCH order not implemented, FIXME!!!)
+{0,                             0,                             0,                             0,                             0,0,0,0}, // 54 PRACH_MASK_INDEX (random access procedure initiated by a PDCCH order not implemented, FIXME!!!)
+{0,                             0,                             ((crc_scrambled == _p_rnti)?6:(((crc_scrambled == _si_rnti) || (crc_scrambled == _ra_rnti))?16:0)),
+                                                                                              0,                             0,0,0,0}  // 55 RESERVED_NR_DCI
 };
 
 // NOTE 1: adjustments in freq_dom_resource_assignment_UL to be done if necessary
@@ -4932,60 +5030,76 @@ uint16_t nr_dci_format_size (NR_DCI_format_t format,
 uint8_t dci_size [8] = {0,0,0,0,0,0,0,0}; // will contain size for each format
 
   for (int i=0 ; i<NBR_NR_FORMATS ; i++) {
+//#ifdef NR_PDCCH_DCI_DEBUG
+//  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size)-> i=%d, j=%d\n", i, j);
+//#endif
     for (int j=0; j<NBR_NR_DCI_FIELDS; j++) {
-      #ifdef NR_PDCCH_DCI_DEBUG
-      //printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size)-> i=%d, j=%d\n", i, j);
-      #endif
       dci_size [i] = dci_size [i] + dci_field_size_table[j][i]; // dci_size[i] contains the size in bits of the dci pdu format i
-      if (i==(int)format) {                                  // (int)format indicates the position of each format in the table (e.g. format1_0=2 -> position in table is 2)
-        dci_fields_sizes[j] = dci_field_size_table[j][i];       // dci_fields_sizes[j] contains the sizes of each field (j) for a determined format i
-      }
+      //if (i==(int)format-15) {                                  // (int)format-15 indicates the position of each format in the table (e.g. format1_0=17 -> position in table is 2)
+      dci_fields_sizes[j][i] = dci_field_size_table[j][i];       // dci_fields_sizes[j] contains the sizes of each field (j) for a determined format i
+      //}
     }
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_size[%d]=%d for n_RB_ULBWP=%d\n",
              i,dci_size[i],n_RB_ULBWP);
     #endif
   }
-  #ifdef NR_PDCCH_DCI_DEBUG
-    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_field_size_table[%d] = { ",format);
-    for (int j=0; j<NBR_NR_DCI_FIELDS; j++) printf("%d, ",dci_field_size_table[j][(int)format-15]);
-    printf(" }\n");
-  #endif
+#ifdef NR_PDCCH_DCI_DEBUG
+  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_fields_sizes[][] = { \n");
+  for (int j=0; j<NBR_NR_DCI_FIELDS; j++){
+    printf("\t\t");
+    for (int i=0; i<NBR_NR_FORMATS ; i++) printf("%d\t",dci_fields_sizes[j][i]);
+    printf("\n");
+  }
+  printf(" }\n");
+  printf("\n\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_size[0]=%d, dci_size[2]=%d\n",dci_size[0],dci_size[2]);
+#endif
 
-  if ((format == format0_0) || (format == format1_0)) {
+//  if ((format == format0_0) || (format == format1_0)) {
   // According to Section 7.3.1.1.1 in TS 38.212
   // If DCI format 0_0 is monitored in common search space and if the number of information bits in the DCI format 0_0 prior to padding
   // is less than the payload size of the DCI format 1_0 monitored in common search space for scheduling the same serving cell,
   // zeros shall be appended to the DCI format 0_0 until the payload size equals that of the DCI format 1_0.
-    if (dci_size[0] < dci_size[2]) { // '0' corresponding to index for format0_0 and '2' corresponding to index of format1_0
-      if (format == format0_0) {
-        dci_fields_sizes[PADDING] = dci_size[2] - dci_size[0];
-        dci_size[0] = dci_size[2];
-        #ifdef NR_PDCCH_DCI_DEBUG
-          printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) new dci_size[format0_0]=%d\n",dci_size[0]);
-        #endif
-      }
-    }
+  if (dci_size[0] < dci_size[2]) { // '0' corresponding to index for format0_0 and '2' corresponding to index of format1_0
+    //if (format == format0_0) {
+    dci_fields_sizes[PADDING_NR_DCI][0] = dci_size[2] - dci_size[0];
+    dci_size[0] = dci_size[2];
+    #ifdef NR_PDCCH_DCI_DEBUG
+      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) new dci_size[format0_0]=%d\n",dci_size[0]);
+    #endif
+    //}
+  }
   // If DCI format 0_0 is monitored in common search space and if the number of information bits in the DCI format 0_0 prior to padding
   // is larger than the payload size of the DCI format 1_0 monitored in common search space for scheduling the same serving cell,
   // the bitwidth of the frequency domain resource allocation field in the DCI format 0_0 is reduced
   // such that the size of DCI format 0_0 equals to the size of the DCI format 1_0..
-    if (dci_size[0] > dci_size[2]) {
-      if (format == format0_0) {
-        dci_fields_sizes[BANDWIDTH_PART_IND] -= (dci_size[0] - dci_size[2]);
-        dci_size[0] = dci_size[2];
-        #ifdef NR_PDCCH_DCI_DEBUG
-          printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) new dci_size[format0_0]=%d\n",dci_size[0]);
-        #endif
-      }
-    }
+  if (dci_size[0] > dci_size[2]) {
+    //if (format == format0_0) {
+    dci_fields_sizes[FREQ_DOM_RESOURCE_ASSIGNMENT_UL][0] -= (dci_size[0] - dci_size[2]);
+    dci_size[0] = dci_size[2];
+    #ifdef NR_PDCCH_DCI_DEBUG
+      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) new dci_size[format0_0]=%d\n",dci_size[0]);
+    #endif
+    //}
   }
+//  }
+  #ifdef NR_PDCCH_DCI_DEBUG
+    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_fields_sizes[][] = { \n");
+    for (int j=0; j<NBR_NR_DCI_FIELDS; j++){
+      printf("\t\t");
+      for (int i=0; i<NBR_NR_FORMATS ; i++) printf("%d\t",dci_fields_sizes[j][i]);
+      printf("\n");
+    }
+    printf(" }\n");
+  #endif
 
-  return dci_size[(int)format];
+  return dci_size[0];
 }
+
 #endif
 
 #ifdef NR_PDCCH_DCI_RUN
+
 uint8_t nr_dci_decoding_procedure(int s,
                                   int p,
                                   PHY_VARS_NR_UE *ue,
@@ -4993,11 +5107,17 @@ uint8_t nr_dci_decoding_procedure(int s,
                                   int do_common,
                                   int16_t eNB_id,
                                   uint8_t nr_tti_rx,
-                                  uint8_t dci_fields_sizes[48],
+                                  uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
+                                  uint8_t dci_fields_sizes_cnt[MAX_NR_DCI_DECODED_SLOT][NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
                                   uint16_t n_RB_ULBWP,
-                                  uint16_t n_RB_DLBWP) {
+                                  uint16_t n_RB_DLBWP,
+                                  crc_scrambled_t *crc_scrambled,
+                                  format_found_t *format_found) {
+
+  crc_scrambled_t crc_scrambled_ = *crc_scrambled;
+  format_found_t format_found_   = *format_found;
   #ifdef NR_PDCCH_DCI_DEBUG
-    printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure) nr_tti_rx=%d\n",nr_tti_rx);
+    printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure) nr_tti_rx=%d and format_found=%d %d\n",nr_tti_rx,*format_found,format_found_);
   #endif
   uint8_t dci_cnt = 0, old_dci_cnt = 0;
   uint32_t CCEmap0 = 0, CCEmap1 = 0, CCEmap2 = 0;
@@ -5005,39 +5125,25 @@ uint8_t nr_dci_decoding_procedure(int s,
   NR_UE_PDCCH **pdcch_vars = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]];
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   uint8_t mi;// = get_mi(&ue->frame_parms, nr_tti_rx);
-  uint16_t ra_rnti = 99;
-  uint16_t tc_rnti = 1; // FIXME
-  uint16_t int_rnti = 1; // FIXME
-  uint16_t sfi_rnti = 1; // FIXME
-  uint16_t tpc_pusch_rnti =1; // FIXME
-  uint16_t tpc_pucch_rnti = 1; // FIXME
-  uint16_t tpc_srs_rnti = 1; // FIXME
-  uint8_t format0_found = 0, format_c_found = 0;
+  // we need to initialize this values as crc is going to be compared with them
+  uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
+  uint16_t cs_rnti,new_rnti,tc_rnti;
+  uint16_t p_rnti=P_RNTI;
+  uint16_t si_rnti=SI_RNTI;
+  uint16_t ra_rnti=99;
+  uint16_t sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti; //FIXME
+  uint16_t crc_scrambled_values[13] = {c_rnti,cs_rnti,new_rnti,tc_rnti,p_rnti,si_rnti,ra_rnti,sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti};
+
+  //uint8_t format0_found = 0, format_c_found = 0;
   uint8_t tmode = ue->transmission_mode[eNB_id];
   uint8_t frame_type = frame_parms->frame_type;
-  //uint8_t dci_fields_sizes[48];
-  uint8_t format0_0_size_bits = 0, format0_0_size_bytes = 0; //FIXME
-  uint8_t format0_1_size_bits = 0, format0_1_size_bytes = 0; //FIXME
-  uint8_t format1_0_size_bits = 0, format1_0_size_bytes = 0; //FIXME
-  uint8_t format1_1_size_bits = 0, format1_1_size_bytes = 0; //FIXME
-  uint8_t format2_0_size_bits = 0, format2_0_size_bytes = 0; //FIXME
-  uint8_t format2_1_size_bits = 0, format2_1_size_bytes = 0; //FIXME
-  uint8_t format2_2_size_bits = 0, format2_2_size_bytes = 0; //FIXME
-  uint8_t format2_3_size_bits = 0, format2_3_size_bytes = 0; //FIXME
 
-  /*
-   * the following variables have to be removed
-   */
-  uint8_t format1A_size_bits = 0, format1A_size_bytes = 0;
-  uint8_t format1C_size_bits = 0, format1C_size_bytes = 0;
-  uint8_t format0_size_bits  = 0, format0_size_bytes  = 0;
-  uint8_t format1_size_bits  = 0, format1_size_bytes  = 0;
-  uint8_t format2_size_bits  = 0, format2_size_bytes  = 0;
-  uint8_t format2A_size_bits = 0, format2A_size_bytes = 0;
-  /*
-   *
-   */
-
+  uint8_t format_0_0_1_0_size_bits = 0, format_0_0_1_0_size_bytes = 0; //FIXME
+  uint8_t format_0_1_1_1_size_bits = 0, format_0_1_1_1_size_bytes = 0; //FIXME
+  uint8_t format_2_0_size_bits = 0, format_2_0_size_bytes = 0; //FIXME
+  uint8_t format_2_1_size_bits = 0, format_2_1_size_bytes = 0; //FIXME
+  uint8_t format_2_2_size_bits = 0, format_2_2_size_bytes = 0; //FIXME
+  uint8_t format_2_3_size_bits = 0, format_2_3_size_bytes = 0; //FIXME
   /*
    *
    * The implementation of this function will depend on the information given by the searchSpace IE
@@ -5104,237 +5210,298 @@ uint8_t nr_dci_decoding_procedure(int s,
       // blind decoding (Type0-PDCCH,Type0A-PDCCH,Type1-PDCCH,Type2-PDCCH)
       // for format0_0 => we are NOT implementing format0_0 for common search spaces. FIXME!
 
-      // for format1_0, first we calculate dci pdu size
-      format1_0_size_bits = nr_dci_format_size(format1_0,1,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
-      // the second parameter '1' is the pusch_alloc_list used to calculate size of field TIME_DOM_RESOURCE_ASSIGNMENT
-      //format1_0_size_bits = nr_dci_format_size(2,1,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
-      format1_0_size_bytes = (format1_0_size_bits%8 == 0) ? (uint8_t)floor(format1_0_size_bits/8) : (uint8_t)(floor(format1_0_size_bits/8) + 1);
+      // for format0_0 and format1_0, first we calculate dci pdu size
+      format_0_0_1_0_size_bits = nr_dci_format_size(_c_rnti,16,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
+      format_0_0_1_0_size_bytes = (format_0_0_1_0_size_bits%8 == 0) ? (uint8_t)floor(format_0_0_1_0_size_bits/8) : (uint8_t)(floor(format_0_0_1_0_size_bits/8) + 1);
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format1_0_size_bits=%d, format1_0_size_bytes=%d\n",
-                css_dci_format,format1_0_size_bits,format1_0_size_bytes);
+        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
+                css_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
       // for aggregation level 4. The number of candidates (L2=4) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
                 css_dci_format,(1<<2));
       #endif
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 2,
-                cformat0_0_and_1_0, format1A, format1A, format0,
-                format1_0_size_bits, format1A_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 2,
+                cformat0_0_and_1_0, uformat0_0_and_1_0,
+                format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        format_0_0_1_0_size_bits = nr_dci_format_size(crc_scrambled_,16,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes); // after decoding dci successfully we recalculate dci pdu size with correct crc scrambled to get the right field sizes
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
       // for aggregation level 8. The number of candidates (L2=8) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
                 css_dci_format,(1<<3));
       #endif
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 3,
-                cformat0_0_and_1_0, format1A, format1A, format0,
-                format1_0_size_bits, format1A_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 3,
+                cformat0_0_and_1_0, uformat0_0_and_1_0,
+                format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        format_0_0_1_0_size_bits = nr_dci_format_size(crc_scrambled_,16,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes); // after decoding dci successfully we recalculate dci pdu size with correct crc scrambled to get the right field sizes
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
       // for aggregation level 16. The number of candidates (L2=16) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
                 css_dci_format,(1<<4));
       #endif
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 4,
-                cformat0_0_and_1_0, format1A, format1A, format0,
-                format1_0_size_bits, format1A_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 4,
+                cformat0_0_and_1_0, uformat0_0_and_1_0,
+                format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        format_0_0_1_0_size_bits = nr_dci_format_size(crc_scrambled_,16,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes); // after decoding dci successfully we recalculate dci pdu size with correct crc scrambled to get the right field sizes
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
     }
 
     // Type3-PDCCH  common search space for a DCI format with CRC scrambled by INT-RNTI, or SFI-RNTI,
     //    or TPC-PUSCH-RNTI, or TPC-PUCCH-RNTI, or TPC-SRS-RNTI, or C-RNTI, or CS-RNTI(s), or SP-CSI-RNTI
     if (css_dci_format == cformat2_0) {
       // for format2_0, first we calculate dci pdu size
-      format2_0_size_bits = nr_dci_format_size(format2_0,0,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
-      format2_0_size_bytes = (format2_0_size_bits%8 == 0) ? (uint8_t)floor(format2_0_size_bits/8) : (uint8_t)(floor(format2_0_size_bits/8) + 1);
+      format_2_0_size_bits = nr_dci_format_size(_sfi_rnti,0,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
+      format_2_0_size_bytes = (format_2_0_size_bits%8 == 0) ? (uint8_t)floor(format_2_0_size_bits/8) : (uint8_t)(floor(format_2_0_size_bits/8) + 1);
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_0_size_bits=%d, format2_0_size_bytes=%d\n",
-                css_dci_format,format2_0_size_bits,format2_0_size_bytes);
+                css_dci_format,format_2_0_size_bits,format_2_0_size_bytes);
       #endif
       // for aggregation level 1. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 0,
-                format1A, format1A, format1A, format0,
-                format1A_size_bits, format1A_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 0,
+                cformat2_0, uformat0_0_and_1_0,
+                format_2_0_size_bits, format_2_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
       // for aggregation level 2. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 1,
-                format1A, format1A, format1A, format0,
-                format1A_size_bits, format1A_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 1,
+                cformat2_0, uformat0_0_and_1_0,
+                format_2_0_size_bits, format_2_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
       // for aggregation level 4. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 2,
-                format1A, format1A, format1A, format0,
-                format1A_size_bits, format1A_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 2,
+                cformat2_0, uformat0_0_and_1_0,
+                format_2_0_size_bits, format_2_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
       // for aggregation level 8. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 3,
-                format1A, format1A, format1A, format0,
-                format1A_size_bits, format1A_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 3,
+                cformat2_0, uformat0_0_and_1_0,
+                format_2_0_size_bits, format_2_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
       // for aggregation level 16. The number of candidates (nrofCandidates-SFI) will be calculated in function nr_dci_decoding_procedure0
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 1, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 4,
-                format1A, format1A, format1A, format0,
-                format1A_size_bits, format1A_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 4,
+                cformat2_0, uformat0_0_and_1_0,
+                format_2_0_size_bits, format_2_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
     }
     if (css_dci_format == cformat2_1) {
       // for format2_1, first we calculate dci pdu size
-      format2_1_size_bits = nr_dci_format_size(format2_1,0,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
-      format2_1_size_bytes = (format2_1_size_bits%8 == 0) ? (uint8_t)floor(format2_1_size_bits/8) : (uint8_t)(floor(format2_1_size_bits/8) + 1);
+      format_2_1_size_bits = nr_dci_format_size(_int_rnti,0,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
+      format_2_1_size_bytes = (format_2_1_size_bits%8 == 0) ? (uint8_t)floor(format_2_1_size_bits/8) : (uint8_t)(floor(format_2_1_size_bits/8) + 1);
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_1_size_bits=%d, format2_1_size_bytes=%d\n",
-                css_dci_format,format2_1_size_bits,format2_1_size_bytes);
+                css_dci_format,format_2_1_size_bits,format_2_1_size_bytes);
       #endif
     }
     if (css_dci_format == cformat2_2) {
       // for format2_2, first we calculate dci pdu size
-      format2_2_size_bits = nr_dci_format_size(format2_2,0,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
-      format2_2_size_bytes = (format2_2_size_bits%8 == 0) ? (uint8_t)floor(format2_2_size_bits/8) : (uint8_t)(floor(format2_2_size_bits/8) + 1);
+      format_2_2_size_bits = nr_dci_format_size(_tpc_pucch_rnti,0,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
+      format_2_2_size_bytes = (format_2_2_size_bits%8 == 0) ? (uint8_t)floor(format_2_2_size_bits/8) : (uint8_t)(floor(format_2_2_size_bits/8) + 1);
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_2_size_bits=%d, format2_2_size_bytes=%d\n",
-                css_dci_format,format2_2_size_bits,format2_2_size_bytes);
+                css_dci_format,format_2_2_size_bits,format_2_2_size_bytes);
       #endif
     }
     if (css_dci_format == cformat2_3) {
       // for format2_1, first we calculate dci pdu size
-      format2_3_size_bits = nr_dci_format_size(format2_3,0,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
-      format2_3_size_bytes = (format2_3_size_bits%8 == 0) ? (uint8_t)floor(format2_3_size_bits/8) : (uint8_t)(floor(format2_3_size_bits/8) + 1);
+      format_2_3_size_bits = nr_dci_format_size(_tpc_srs_rnti,0,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
+      format_2_3_size_bytes = (format_2_3_size_bits%8 == 0) ? (uint8_t)floor(format_2_3_size_bits/8) : (uint8_t)(floor(format_2_3_size_bits/8) + 1);
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format2_3_size_bits=%d, format2_3_size_bytes=%d\n",
-                css_dci_format,format2_3_size_bits,format2_3_size_bytes);
+                css_dci_format,format_2_3_size_bits,format_2_3_size_bytes);
       #endif
     }
   } else { // UE-SPECIFIC SearchSpaceType assigned to current SearchSpace/CORESET
     // UE-specific search space for a DCI format with CRC scrambled by C-RNTI, or CS-RNTI(s), or SP-CSI-RNTI
     if (uss_dci_format == uformat0_0_and_1_0) {
-      // for format0_0, first we calculate dci pdu size
-      format0_0_size_bits = nr_dci_format_size(format0_0,1,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
-      format0_0_size_bytes = (format0_0_size_bits%8 == 0) ? (uint8_t)floor(format0_0_size_bits/8) : (uint8_t)(floor(format0_0_size_bits/8) + 1);
+      // for format0_0 and format1_0, first we calculate dci pdu size
+      format_0_0_1_0_size_bits = nr_dci_format_size(_c_rnti,16,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
+      format_0_0_1_0_size_bytes = (format_0_0_1_0_size_bits%8 == 0) ? (uint8_t)floor(format_0_0_1_0_size_bits/8) : (uint8_t)(floor(format_0_0_1_0_size_bits/8) + 1);
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format0_0_size_bits=%d, format0_0_size_bytes=%d\n",
-                css_dci_format,format0_0_size_bits,format0_0_size_bytes);
+        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
+                css_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
       // blind decoding format0_0 for aggregation level 1. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 1, format0_0_size_bits=%d, format0_0_size_bytes=%d\n",
-                uss_dci_format,format0_0_size_bits,format0_0_size_bytes);
+        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 1, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
+                uss_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
+      old_dci_cnt = dci_cnt;
+/*
+ * To be removed, just for unitary testing
+ */
+//#ifdef NR_PDCCH_DCI_DEBUG
+//      printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ### WE PROVOKE DCI DETECTION !!! ### old_dci_cnt=%d and dci_cnt=%d\n",
+//              old_dci_cnt,dci_cnt);
+//      dci_cnt++;
+//#endif
+/*
+ * To be removed until here
+ */
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 0,
-                format1A, format1A, format1A, format0,
-                format0_0_size_bits, format0_0_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 0,
+                cformat0_0_and_1_0, uformat0_0_and_1_0,
+                format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++){
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+/*
+ * To be removed, just for unitary testing
+ */
+//#ifdef NR_PDCCH_DCI_DEBUG
+//            printf("dci_fields_sizes_cnt(%d,0,1][%d][%d]=(%d,%d,%d)\t\tdci_fields_sizes[%d][%d]=(%d)\n",
+//              dci_cnt-1,i,j,dci_fields_sizes_cnt[dci_cnt-1][i][j],dci_fields_sizes_cnt[0][i][j],dci_fields_sizes_cnt[1][i][j],i,j,dci_fields_sizes[i][j]);
+//#endif
+/*
+ * To be removed until here
+ */
+          }
+      }
       // blind decoding format0_0 for aggregation level 2. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 2, format0_0_size_bits=%d, format0_0_size_bytes=%d\n",
-                uss_dci_format,format0_0_size_bits,format0_0_size_bytes);
+        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 2, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
+                uss_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 1,
-                format1A, format1A, format1A, format0,
-                format0_0_size_bits, format0_0_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 1,
+                cformat0_0_and_1_0, uformat0_0_and_1_0,
+                format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
       // blind decoding format0_0 for aggregation level 4. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 4, format0_0_size_bits=%d, format0_0_size_bytes=%d\n",
-                uss_dci_format,format0_0_size_bits,format0_0_size_bytes);
+        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 4, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
+                uss_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 2,
-                format1A, format1A, format1A, format0,
-                format0_0_size_bits, format0_0_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 2,
+                cformat0_0_and_1_0, uformat0_0_and_1_0,
+                format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
       // blind decoding format0_0 for aggregation level 8. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 8, format0_0_size_bits=%d, format0_0_size_bytes=%d\n",
-                uss_dci_format,format0_0_size_bits,format0_0_size_bytes);
+        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 8, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
+                uss_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 3,
-                format1A, format1A, format1A, format0,
-                format0_0_size_bits, format0_0_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 3,
+                cformat0_0_and_1_0, uformat0_0_and_1_0,
+                format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
       // blind decoding format0_0 for aggregation level 16. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 16, format0_0_size_bits=%d, format0_0_size_bytes=%d\n",
-                uss_dci_format,format0_0_size_bits,format0_0_size_bytes);
+        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 16, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
+                uss_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
+      old_dci_cnt = dci_cnt;
       nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti,  tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 4,
-                format1A, format1A, format1A, format0,
-                format0_0_size_bits, format0_0_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
-
-      // for format1_0, first we calculate dci pdu size
-      format1_0_size_bits = nr_dci_format_size(format1_0,1,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
-      format1_0_size_bytes = (format1_0_size_bits%8 == 0) ? (uint8_t)floor(format1_0_size_bits/8) : (uint8_t)(floor(format1_0_size_bits/8) + 1);
-      #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format1_0_size_bits=%d, format1_0_size_bytes=%d\n",
-                css_dci_format,format1_0_size_bits,format1_0_size_bytes);
-      #endif
-      // blind decoding format1_0 for aggregation level 1. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
-      #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 1, format1_0_size_bits=%d, format1_0_size_bytes=%d\n",
-              uss_dci_format,format1_0_size_bits,format1_0_size_bytes);
-      #endif
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 0,
-                format1A, format1A, format1A, format0,
-                format1_0_size_bits, format1_0_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
-      // blind decoding format1_0 for aggregation level 2. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
-      #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 2, format1_0_size_bits=%d, format1_0_size_bytes=%d\n",
-                uss_dci_format,format1_0_size_bits,format1_0_size_bytes);
-      #endif
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 1,
-                format1A, format1A, format1A, format0,
-                format1_0_size_bits, format1_0_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
-      // blind decoding format1_0 for aggregation level 4. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
-      #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 4, format1_0_size_bits=%d, format1_0_size_bytes=%d\n",
-                uss_dci_format,format1_0_size_bits,format1_0_size_bytes);
-      #endif
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 2,
-                format1A, format1A, format1A, format0,
-                format1_0_size_bits, format1_0_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
-      // blind decoding format1_0 for aggregation level 8. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
-      #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 8, format1_0_size_bits=%d, format1_0_size_bytes=%d\n",
-                uss_dci_format,format1_0_size_bits,format1_0_size_bytes);
-      #endif
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti, tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 3,
-                format1A, format1A, format1A, format0,
-                format1_0_size_bits, format1_0_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
-      // blind decoding format1_0 for aggregation level 16. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
-      #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> ue-Specific searchSpaces with format uss_dci_format=%d and aggregation level 16, format1_0_size_bits=%d, format1_0_size_bytes=%d\n",
-                uss_dci_format,format1_0_size_bits,format1_0_size_bytes);
-      #endif
-      nr_dci_decoding_procedure0(s,p,pdcch_vars, 0, nr_tti_rx, dci_alloc, eNB_id, ue->current_thread_id[nr_tti_rx], frame_parms, mi,
-                ((ue->decode_SIB == 1) ? SI_RNTI : 0), ra_rnti, P_RNTI, tc_rnti, int_rnti, sfi_rnti,  tpc_pusch_rnti, tpc_pucch_rnti, tpc_srs_rnti, 4,
-                format1A, format1A, format1A, format0,
-                format1_0_size_bits, format1_0_size_bytes, &dci_cnt,
-                &format0_found, &format_c_found, &CCEmap0, &CCEmap1, &CCEmap2);
+                crc_scrambled_values, 4,
+                cformat0_0_and_1_0, uformat0_0_and_1_0,
+                format_0_0_1_0_size_bits, format_0_0_1_0_size_bytes, &dci_cnt,
+                &crc_scrambled_, &format_found_, &CCEmap0, &CCEmap1, &CCEmap2);
+      if (dci_cnt != old_dci_cnt){
+        old_dci_cnt = dci_cnt;
+        for (int i=0; i<NBR_NR_DCI_FIELDS; i++)
+          for (int j=0; j<NBR_NR_FORMATS; j++)
+            dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
+      }
     }
-    if (uss_dci_format == uformat0_1_and_1_1) { // Not implemented yet. FIXME!!!
+    *crc_scrambled = crc_scrambled_;
+    *format_found  = format_found_;
+#ifdef NR_PDCCH_DCI_DEBUG
+  printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> at the end crc_scrambled=%d and format_found=%d\n",*crc_scrambled,*format_found);
+#endif
+  /*if (uss_dci_format == uformat0_1_and_1_1) { // Not implemented yet. FIXME!!!
       // for format0_1, first we calculate dci pdu size
-      format0_1_size_bits = nr_dci_format_size(format0_1,1,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
+      format0_1_size_bits = nr_dci_format_size(format0_1,c_rnti,16,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
       format0_1_size_bytes = (format0_1_size_bits%8 == 0) ? (uint8_t)floor(format0_1_size_bits/8) : (uint8_t)(floor(format0_1_size_bits/8) + 1);
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format0_1_size_bits=%d, format0_1_size_bytes=%d\n",
@@ -5347,7 +5514,7 @@ uint8_t nr_dci_decoding_procedure(int s,
       // blind decoding format0_1 for aggregation level 16. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
 
       // for format1_1, first we calculate dci pdu size
-      format1_1_size_bits = nr_dci_format_size(format1_1,1,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
+      format1_1_size_bits = nr_dci_format_size(format1_1,c_rnti,16,n_RB_ULBWP,n_RB_DLBWP,dci_fields_sizes);
       format1_1_size_bytes = (format1_1_size_bits%8 == 0) ? (uint8_t)floor(format1_1_size_bits/8) : (uint8_t)(floor(format1_1_size_bits/8) + 1);
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format1_1_size_bits=%d, format1_1_size_bytes=%d\n",
@@ -5358,10 +5525,17 @@ uint8_t nr_dci_decoding_procedure(int s,
       // blind decoding format1_1 for aggregation level 4.  The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
       // blind decoding format1_1 for aggregation level 8.  The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
       // blind decoding format1_1 for aggregation level 16. The number of candidates (nrofCandidates) will be calculated in function nr_dci_decoding_procedure0
-    }
+    }*/
   }
+#ifdef NR_PDCCH_DCI_DEBUG
+  printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> at the end dci_cnt=%d \n",dci_cnt);
+#endif
   return(dci_cnt);
 }
+
+
+
+
 #endif
 
 

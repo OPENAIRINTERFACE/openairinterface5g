@@ -49,6 +49,7 @@
 #include "PHY/defs_gNB.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
+#include "SCHED_NR/fapi_nr_l1.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -196,12 +197,12 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_rxtx_proc_t *proc, char *thread_nam
     return 0;
   }
   /// NR disabling
-/*
+
   // ****************************************
   // Common RX procedures subframe n
 
   T(T_gNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx));
-
+/*
   // if this is IF5 or 3GPP_gNB
   if (gNB && gNB->RU_list && gNB->RU_list[0] && gNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
     wakeup_prach_gNB(gNB,NULL,proc->frame_rx,proc->subframe_rx);
@@ -211,7 +212,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_rxtx_proc_t *proc, char *thread_nam
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     phy_procedures_gNB_uespec_RX(gNB, proc, no_relay );
   }
-
+*/
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
   gNB->UL_INFO.frame     = proc->frame_rx;
@@ -219,10 +220,10 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_rxtx_proc_t *proc, char *thread_nam
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
 
-  gNB->if_inst->UL_indication(&gNB->UL_INFO);
+  gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
 
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-*/
+
 /// end
   // *****************************************
   // TX processing for subframe n+sf_ahead
@@ -578,9 +579,9 @@ void init_gNB_proc(int inst) {
   pthread_attr_t *attr0=NULL,*attr1=NULL;
   //*attr_prach=NULL;
 
-  LOG_I(PHY,"%s(inst:%d) RC.nb_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_CC[inst]);
+  LOG_I(PHY,"%s(inst:%d) RC.nb_nr_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_nr_CC[inst]);
 
-  for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
+  for (CC_id=0; CC_id<RC.nb_nr_CC[inst]; CC_id++) {
     gNB = RC.gNB[inst][CC_id];
 #ifndef OCP_FRAMEWORK
     LOG_I(PHY,"Initializing gNB processes instance:%d CC_id %d \n",inst,CC_id);
@@ -817,13 +818,13 @@ void init_eNB_afterRU(void) {
   int inst,CC_id,ru_id,i,aa;
   PHY_VARS_gNB *gNB;
 
-  LOG_I(PHY,"%s() RC.nb_inst:%d\n", __FUNCTION__, RC.nb_inst);
+  LOG_I(PHY,"%s() RC.nb_nr_inst:%d\n", __FUNCTION__, RC.nb_nr_inst);
 
-  for (inst=0;inst<RC.nb_inst;inst++) {
-    LOG_I(PHY,"RC.nb_CC[inst]:%d\n", RC.nb_CC[inst]);
-    for (CC_id=0;CC_id<RC.nb_CC[inst];CC_id++) {
+  for (inst=0;inst<RC.nb_nr_inst;inst++) {
+    LOG_I(PHY,"RC.nb_nr_CC[inst]:%d\n", RC.nb_nr_CC[inst]);
+    for (CC_id=0;CC_id<RC.nb_nr_CC[inst];CC_id++) {
 
-      LOG_I(PHY,"RC.nb_CC[inst:%d][CC_id:%d]:%p\n", inst, CC_id, RC.gNB[inst][CC_id]);
+      LOG_I(PHY,"RC.nb_nr_CC[inst:%d][CC_id:%d]:%p\n", inst, CC_id, RC.gNB[inst][CC_id]);
 
       gNB                                  =  RC.gNB[inst][CC_id];
       phy_init_nr_gNB(gNB,0,0);
@@ -908,13 +909,13 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
   int inst;
   PHY_VARS_gNB *gNB;
 
-  LOG_I(PHY,"[nr-softmodem.c] gNB structure about to allocated RC.nb_L1_inst:%d RC.nb_L1_CC[0]:%d\n",RC.nb_L1_inst,RC.nb_L1_CC[0]);
+  LOG_I(PHY,"[nr-softmodem.c] gNB structure about to allocated RC.nb_nr_L1_inst:%d RC.nb_nr_L1_CC[0]:%d\n",RC.nb_nr_L1_inst,RC.nb_nr_L1_CC[0]);
 
-  if (RC.gNB == NULL) RC.gNB = (PHY_VARS_gNB***) malloc(RC.nb_L1_inst*sizeof(PHY_VARS_gNB **));
+  if (RC.gNB == NULL) RC.gNB = (PHY_VARS_gNB***) malloc(RC.nb_nr_L1_inst*sizeof(PHY_VARS_gNB **));
   LOG_I(PHY,"[lte-softmodem.c] gNB structure RC.gNB allocated\n");
-  for (inst=0;inst<RC.nb_L1_inst;inst++) {
-    if (RC.gNB[inst] == NULL) RC.gNB[inst] = (PHY_VARS_gNB**) malloc(RC.nb_CC[inst]*sizeof(PHY_VARS_gNB *));
-    for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) {
+  for (inst=0;inst<RC.nb_nr_L1_inst;inst++) {
+    if (RC.gNB[inst] == NULL) RC.gNB[inst] = (PHY_VARS_gNB**) malloc(RC.nb_nr_CC[inst]*sizeof(PHY_VARS_gNB *));
+    for (CC_id=0;CC_id<RC.nb_nr_L1_CC[inst];CC_id++) {
       if (RC.gNB[inst][CC_id] == NULL) RC.gNB[inst][CC_id] = (PHY_VARS_gNB*) malloc(sizeof(PHY_VARS_gNB));
       gNB                     = RC.gNB[inst][CC_id]; 
       gNB->abstraction_flag   = 0;
@@ -927,10 +928,9 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
 #endif
 
       LOG_I(PHY,"Registering with MAC interface module\n");
-      AssertFatal((gNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
-      gNB->if_inst->schedule_response   = schedule_response;
-      gNB->if_inst->PHY_config_req      = phy_config_request;
-      nr_phy_config_request(gNB);
+      AssertFatal((gNB->if_inst         = NR_IF_Module_init(inst))!=NULL,"Cannot register interface");
+      gNB->if_inst->NR_Schedule_response   = nr_schedule_response;
+      gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
       memset((void*)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
       memset((void*)&gNB->Sched_INFO,0,sizeof(gNB->Sched_INFO));
       LOG_I(PHY,"Setting indication lists\n");
