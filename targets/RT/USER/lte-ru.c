@@ -2445,16 +2445,16 @@ void configure_rru(int idx,
   RRU_config_t *config = (RRU_config_t *)arg;
   RU_t         *ru         = RC.ru[idx];
 
-  ru->frame_parms.eutra_band                                               = config->band_list[0];
-  ru->frame_parms.dl_CarrierFreq                                           = config->tx_freq[0];
-  ru->frame_parms.ul_CarrierFreq                                           = config->rx_freq[0];
-  if (ru->frame_parms.dl_CarrierFreq == ru->frame_parms.ul_CarrierFreq) {
+  ru->frame_parms->eutra_band                                               = config->band_list[0];
+  ru->frame_parms->dl_CarrierFreq                                           = config->tx_freq[0];
+  ru->frame_parms->ul_CarrierFreq                                           = config->rx_freq[0];
+  if (ru->frame_parms->dl_CarrierFreq == ru->frame_parms->ul_CarrierFreq) {
     LOG_I(PHY,"Setting RRU to TDD frame type\n");
-    ru->frame_parms.frame_type                                            = TDD;
-    ru->frame_parms.tdd_config                                            = config->tdd_config[0];
-    ru->frame_parms.tdd_config_S                                          = config->tdd_config_S[0]; 
+    ru->frame_parms->frame_type                                            = TDD;
+    ru->frame_parms->tdd_config                                            = config->tdd_config[0];
+    ru->frame_parms->tdd_config_S                                          = config->tdd_config_S[0]; 
   }
-  else ru->frame_parms.frame_type                                            = FDD;
+  else ru->frame_parms->frame_type                                            = FDD;
   ru->att_tx                                                               = config->att_tx[0];
   ru->att_rx                                                               = config->att_rx[0];
   ru->frame_parms->N_RB_DL                                                  = config->N_RB_DL[0];
@@ -2462,13 +2462,13 @@ void configure_rru(int idx,
   ru->frame_parms->threequarter_fs                                          = config->threequarter_fs[0];
   ru->frame_parms->pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
   if (ru->function==NGFI_RRU_IF4p5) {
-    ru->frame_parms.att_rx = ru->att_rx;
-    ru->frame_parms.att_tx = ru->att_tx;
+    ru->frame_parms->att_rx = ru->att_rx;
+    ru->frame_parms->att_tx = ru->att_tx;
     
     LOG_I(PHY,"Setting ru->function to NGFI_RRU_IF4p5, prach_FrequOffset %d, prach_ConfigIndex %d, att (%d,%d)\n",
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0],ru->att_tx,ru->att_rx);
-    ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset  = config->prach_FreqOffset[0]; 
-    ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0]; 
+    ru->frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = config->prach_FreqOffset[0]; 
+    ru->frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0]; 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     for (int i=0;i<4;i++) {
       ru->frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] = config->emtc_prach_CElevel_enable[0][i];

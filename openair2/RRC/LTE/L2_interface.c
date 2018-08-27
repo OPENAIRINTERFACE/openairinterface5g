@@ -86,31 +86,27 @@ mac_rrc_data_req(
     AssertFatal(RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1 != 255,
                 "[eNB %d] MAC Request for SIB1 and SIB1 not initialized\n",Mod_idP);
 
-#ifdef DEBUG_RRC
-        LOG_T(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_idP,frameP);
-
-        if (sib1_size > sdu_size) {
-          LOG_E(RRC, "SIB1 SDU larger than BCCH SDU buffer size (%d, %d)", sib1_size, sdu_size);
-          sib1_size = sdu_size;
-        }
-
-        message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_MAC_BCCH_DATA_REQ);
-        RRC_MAC_BCCH_DATA_REQ (message_p).frame    = frameP;
-        RRC_MAC_BCCH_DATA_REQ (message_p).sdu_size = sib1_size;
-        memset (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, 0, BCCH_SDU_SIZE);
-        memcpy (RRC_MAC_BCCH_DATA_REQ (message_p).sdu,
-                RC.rrc[Mod_idP]->carrier[CC_id].SIB1,
-                sib1_size);
-        RRC_MAC_BCCH_DATA_REQ (message_p).enb_index = eNB_index;
-        itti_send_msg_to_task (TASK_MAC_ENB, ENB_MODULE_ID_TO_INSTANCE(Mod_idP), message_p);
-      }
-#endif
+    if ((frameP%2) == 0) {
+      memcpy(&buffer_pP[0],
+	     RC.rrc[Mod_idP]->carrier[CC_id].SIB1,
+	     RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1);
+      
 #ifdef DEBUG_RRC
       LOG_T(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_idP,frameP);
-
+      
       for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1; i++) {
-        LOG_T(RRC,"%x.",buffer_pP[i]);
+	LOG_T(RRC,"%x.",buffer_pP[i]);
       }
+      
+      LOG_T(RRC,"\n");
+#endif
+      
+      return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1);
+    } // All RFN mod 8 transmit SIB2-3 in SF 5
+    else if ((frameP%8) == 1) {
+      memcpy(&buffer_pP[0],
+	     RC.rrc[Mod_idP]->carrier[CC_id].SIB23,
+	     RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23);
 
 #ifdef DEBUG_RRC
         LOG_T(RRC,"[eNB %d] Frame %d BCCH request => SIB 2-3\n",Mod_idP,frameP);
@@ -119,17 +115,14 @@ mac_rrc_data_req(
           LOG_T(RRC,"%x.",buffer_pP[i]);
         }
 
-        message_p = itti_alloc_new_message (TASK_RRC_ENB, RRC_MAC_BCCH_DATA_REQ);
-        RRC_MAC_BCCH_DATA_REQ (message_p).frame = frameP;
-        RRC_MAC_BCCH_DATA_REQ (message_p).sdu_size = sib23_size;
-        memset (RRC_MAC_BCCH_DATA_REQ (message_p).sdu, 0, BCCH_SDU_SIZE);
-        memcpy (RRC_MAC_BCCH_DATA_REQ (message_p).sdu,
-                RC.rrc[Mod_idP]->carrier[CC_id].SIB23,
-                sib23_size);
-        RRC_MAC_BCCH_DATA_REQ (message_p).enb_index = eNB_index;
-        itti_send_msg_to_task (TASK_MAC_ENB, ENB_MODULE_ID_TO_INSTANCE(Mod_idP), message_p);
+        LOG_T(RRC,"\n");
+#endif
+        return(RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23);
+      } else {
+        return(0);
       }
     }
+
     if( (Srb_id & RAB_OFFSET ) == MIBCH) {
 
         mib->message.systemFrameNumber.buf = &sfn;
@@ -150,47 +143,38 @@ mac_rrc_data_req(
     if( (Srb_id & RAB_OFFSET ) == CCCH) {
       LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d)\n",Mod_idP,frameP, Srb_id);
 
-      for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23; i++) {
-        LOG_T(RRC,"%x.",buffer_pP[i]);
+      if(RC.rrc[Mod_idP]->carrier[CC_id].Srb0.Active==0) {
+	LOG_E(RRC,"[eNB %d] CCCH Not active\n",Mod_idP);
+	return -1;
       }
 
       Srb_info=&RC.rrc[Mod_idP]->carrier[CC_id].Srb0;
 
       // check if data is there for MAC
       if(Srb_info->Tx_buffer.payload_size>0) { //Fill buffer
-        LOG_D(RRC,"[eNB %d] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Mod_idP,Srb_info,Srb_info->Tx_buffer.payload_size,buffer_pP,Srb_info->Tx_buffer.Payload);
-
-        memcpy(buffer_pP,Srb_info->Tx_buffer.Payload,Srb_info->Tx_buffer.payload_size);
-        Sdu_size = Srb_info->Tx_buffer.payload_size;
-        Srb_info->Tx_buffer.payload_size=0;
+	LOG_D(RRC,"[eNB %d] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Mod_idP,Srb_info,Srb_info->Tx_buffer.payload_size,buffer_pP,Srb_info->Tx_buffer.Payload);
+	memcpy(buffer_pP,Srb_info->Tx_buffer.Payload,Srb_info->Tx_buffer.payload_size);
+	Sdu_size = Srb_info->Tx_buffer.payload_size;
+	Srb_info->Tx_buffer.payload_size=0;
       }
-
-    if(RC.rrc[Mod_idP]->carrier[CC_id].Srb0.Active==0) {
-      LOG_E(RRC,"[eNB %d] CCCH Not active\n",Mod_idP);
-      return -1;
+      return (Sdu_size);
     }
 
-    Srb_info=&RC.rrc[Mod_idP]->carrier[CC_id].Srb0;
+    if( (Srb_id & RAB_OFFSET ) == PCCH) {
+      LOG_T(RRC,"[eNB %d] Frame %d PCCH request (Srb_id %d)\n",Mod_idP,frameP, Srb_id);
 
-    // check if data is there for MAC
-    if(Srb_info->Tx_buffer.payload_size>0) { //Fill buffer
-      LOG_D(RRC,"[eNB %d] CCCH (%p) has %d bytes (dest: %p, src %p)\n",Mod_idP,Srb_info,Srb_info->Tx_buffer.payload_size,buffer_pP,Srb_info->Tx_buffer.Payload);
-#if 0 // defined(ENABLE_ITTI)
-      {
-        MessageDef *message_p;
-        int ccch_size = Srb_info->Tx_buffer.payload_size;
-        int sdu_size = sizeof(RRC_MAC_CCCH_DATA_REQ (message_p).sdu);
+      // check if data is there for MAC
+      if(RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area] > 0) { //Fill buffer
+        LOG_D(RRC,"[eNB %d] PCCH (%p) has %d bytes\n",Mod_idP,&RC.rrc[Mod_idP]->carrier[CC_id].paging[mbsfn_sync_area],
+               RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area]);
 
         memcpy(buffer_pP, RC.rrc[Mod_idP]->carrier[CC_id].paging[mbsfn_sync_area], RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area]);
         Sdu_size = RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area];
         RC.rrc[Mod_idP]->carrier[CC_id].sizeof_paging[mbsfn_sync_area] = 0;
       }
-#endif
-      memcpy(buffer_pP,Srb_info->Tx_buffer.Payload,Srb_info->Tx_buffer.payload_size);
-      Sdu_size = Srb_info->Tx_buffer.payload_size;
-      Srb_info->Tx_buffer.payload_size=0;
-    }
 
+      return (Sdu_size);
+    }
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     if((Srb_id & RAB_OFFSET) == MCCH) {
@@ -202,14 +186,21 @@ mac_rrc_data_req(
              RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
              RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
 
-
 #ifdef DEBUG_RRC
-    LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
+      LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
 
-    for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]; i++) {
-      LOG_T(RRC,"%x.",buffer_pP[i]);
-    }
+      for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]; i++) {
+        LOG_T(RRC,"%x.",buffer_pP[i]);
+      }
+
+      LOG_T(RRC,"\n");
 #endif
+     return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
+      //      }
+      //else
+      //return(0);
+    }
+
 #endif // #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -227,21 +218,9 @@ mac_rrc_data_req(
         return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23_BR);
     }
 
-  if ((Srb_id & RAB_OFFSET) == BCCH_SIB1_BR) {
-    memcpy(&buffer_pP[0],
-           RC.rrc[Mod_idP]->carrier[CC_id].SIB1_BR,
-           RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_BR);
-    return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_BR);
-  }
-
-  if ((Srb_id & RAB_OFFSET) == BCCH_SI_BR) { // First SI message with SIB2/3
-    memcpy(&buffer_pP[0],
-           RC.rrc[Mod_idP]->carrier[CC_id].SIB23_BR,
-           RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23_BR);
-    return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23_BR);
-  }
-
 #endif
+
+
   return(0);
 }
 

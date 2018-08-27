@@ -111,71 +111,27 @@ void mac_top_init_eNB(void)
 	RC.mac = NULL;
     }
 
-    // Initialize Linked-List for Active UEs
-
+     // Initialize Linked-List for Active UEs
     for (i = 0; i < RC.nb_macrlc_inst; i++) {
-        RC.mac[i] = (eNB_MAC_INST *) malloc16(sizeof(eNB_MAC_INST));
-        
-        AssertFatal(RC.mac != NULL,"can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",
-                    RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *),
-                    RC.nb_macrlc_inst, sizeof(eNB_MAC_INST));
-        
-        LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",sizeof(eNB_MAC_INST), RC.nb_macrlc_inst, RC.mac);
-       
-        bzero(RC.mac[i], sizeof(eNB_MAC_INST));
-        
-        RC.mac[i]->Mod_id = i;
-        
-        for (j = 0; j < MAX_NUM_CCs; j++) {
-          RC.mac[i]->DL_req[j].dl_config_request_body.
-          dl_config_pdu_list = RC.mac[i]->dl_config_pdu_list[j];
-          RC.mac[i]->UL_req[j].ul_config_request_body.
-          ul_config_pdu_list = RC.mac[i]->ul_config_pdu_list[j];
-          
-          for (int k = 0; k < 10; k++)
-            RC.mac[i]->UL_req_tmp[j][k].ul_config_request_body.ul_config_pdu_list =RC.mac[i]->ul_config_pdu_list_tmp[j][k];
-        
-        RC.mac[i]->HI_DCI0_req[j].hi_dci0_request_body.hi_dci0_pdu_list =RC.mac[i]->hi_dci0_pdu_list[j];
-        RC.mac[i]->TX_req[j].tx_request_body.tx_pdu_list =
-        RC.mac[i]->tx_request_pdu[j];
-        RC.mac[i]->ul_handle = 0;
-        
-        }
-    }//END for (i = 0; i < RC.nb_macrlc_inst; i++)
-
-  AssertFatal(rlc_module_init() == 0,
-  "Could not initialize RLC layer\n");
-
-  // These should be out of here later
-  pdcp_layer_init();
-
-  rrc_init_global_param();
-
-  }else {
-    RC.mac = NULL;
-  }
-
-  // Initialize Linked-List for Active UEs
-  for (i = 0; i < RC.nb_macrlc_inst; i++) {
-    
-    mac = RC.mac[i];
-    mac->if_inst = IF_Module_init(i);
-
-    UE_list = &mac->UE_list;
-    UE_list->num_UEs = 0;
-    UE_list->head = -1;
-    UE_list->head_ul = -1;
-    UE_list->avail = 0;
-
-    for (list_el = 0; list_el < MAX_MOBILES_PER_ENB - 1; list_el++) {
-      UE_list->next[list_el] = list_el + 1;
-      UE_list->next_ul[list_el] = list_el + 1;
+      
+      mac = RC.mac[i];
+      mac->if_inst = IF_Module_init(i);
+      
+      UE_list = &mac->UE_list;
+      UE_list->num_UEs = 0;
+      UE_list->head = -1;
+      UE_list->head_ul = -1;
+      UE_list->avail = 0;
+      
+      for (list_el = 0; list_el < MAX_MOBILES_PER_ENB - 1; list_el++) {
+	UE_list->next[list_el] = list_el + 1;
+	UE_list->next_ul[list_el] = list_el + 1;
+      }
+      
+      UE_list->next[list_el] = -1;
+      UE_list->next_ul[list_el] = -1;
     }
-
-    UE_list->next[list_el] = -1;
-    UE_list->next_ul[list_el] = -1;
-  }
-
+    
 }
 
 void mac_init_cell_params(int Mod_idP, int CC_idP)

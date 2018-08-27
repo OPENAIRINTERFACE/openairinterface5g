@@ -1,7 +1,7 @@
 #include "platform_types.h"
 #include "rrc_defs.h"
 #include "rrc_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "pdcp.h"
 #include "msc.h"
 #include "common/ran_context.h"
@@ -9,6 +9,9 @@
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
 #endif
+
+#include "NR_MIB.h"
+#include "NR_BCCH-BCH-Message.h"
 
 extern RAN_CONTEXT_t RC;
 

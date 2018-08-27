@@ -30,8 +30,8 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "log.h"
-#include "log_extern.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/log_extern.h"
 #include "assertions.h"
 #include "gnb_config.h"
 #include "UTIL/OTG/otg.h"
@@ -59,6 +59,22 @@
 #include "RRC_config_tools.h"
 #include "gnb_paramdef.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+
+#include "NR_SCS-SpecificCarrier.h"
+#include "NR_TDD-UL-DL-ConfigCommon.h"
+#include "NR_FrequencyInfoUL.h"
+#include "NR_RACH-ConfigGeneric.h"
+#include "NR_RACH-ConfigCommon.h"
+#include "NR_PUSCH-TimeDomainResourceAllocation.h"
+#include "NR_PUSCH-ConfigCommon.h"
+#include "NR_PUCCH-ConfigCommon.h"
+#include "NR_PDSCH-TimeDomainResourceAllocation.h"
+#include "NR_PDSCH-ConfigCommon.h"
+#include "NR_RateMatchPattern.h"
+#include "NR_RateMatchPatternLTE-CRS.h"
+#include "NR_SearchSpace.h"
+#include "NR_ControlResourceSet.h"
+#include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
 extern uint16_t sf_ahead;
 
