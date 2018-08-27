@@ -1459,18 +1459,19 @@ void *UE_thread(void *arg) {
 
 
   while (!oai_exit) {
+#if BASIC_SIMULATOR
+    while (!(UE->proc.instance_cnt_synch < 0)) {
+      printf("ue sync not ready\n");
+      usleep(500*1000);
+    }
+#endif
+
     AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
     int instance_cnt_synch = UE->proc.instance_cnt_synch;
     int is_synchronized    = UE->is_synchronized;
     AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
 
     if (is_synchronized == 0) {
-#if BASIC_SIMULATOR
-      while (!((instance_cnt_synch = UE->proc.instance_cnt_synch) < 0)) {
-        printf("ue sync not ready\n");
-        usleep(500*1000);
-      }
-#endif
       if (instance_cnt_synch < 0) {  // we can invoke the synch
 	// grab 10 ms of signal and wakeup synch thread
 	for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
