@@ -1381,7 +1381,7 @@ endif ()
 
 add_library(PHY_COMMON ${PHY_SRC_COMMON})
 add_library(PHY ${PHY_SRC})
-add_library(PHY_UE ${PHY_SRC_UE})
+add_library(PHY_UE ${PHY_SRC_UE}   ${OPENAIR1_DIR}/PHY/NR_UE_ESTIMATION/nr_dl_channel_estimation.c   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c)
 add_library(PHY_NR ${PHY_NR_SRC})
 add_library(PHY_NR_UE ${PHY_NR_UE_SRC})
 add_library(PHY_RU ${PHY_SRC_RU})

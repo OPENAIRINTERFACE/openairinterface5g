@@ -257,8 +257,8 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
     if (simL1flag == 0) PHY_vars_UE_g[inst][0] = init_ue_vars(fp0,inst,0);
     else {
       // needed for memcopy below. these are not used in the RU, but needed for UE
-       RC.ru[0]->frame_parms.nb_antennas_rx = fp0->nb_antennas_rx;
-       RC.ru[0]->frame_parms.nb_antennas_tx = fp0->nb_antennas_tx;
+       RC.ru[0]->frame_parms->nb_antennas_rx = fp0->nb_antennas_rx;
+       RC.ru[0]->frame_parms->nb_antennas_tx = fp0->nb_antennas_tx;
        PHY_vars_UE_g[inst][0]  = init_ue_vars(&RC.ru[0]->frame_parms,inst,0);
     }
     // turn off timing control loop in UE
@@ -2073,7 +2073,7 @@ int init_timer_thread(void) {
 /* HACK: this function is needed to compile the UE
  * fix it somehow
  */
-int8_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
+int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
 {
   printf("you cannot read this\n");
   abort();
