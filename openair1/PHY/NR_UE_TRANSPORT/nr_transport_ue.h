@@ -33,6 +33,7 @@
 #define __NR_TRANSPORT_UE__H__
 #include <limits.h>
 #include "PHY/impl_defs_top.h"
+
 //#include "PHY/defs_nr_UE.h"
 //#include "../LTE_TRANSPORT/dci.h"
 //#include "../LTE_TRANSPORT/mdci.h"
@@ -50,11 +51,18 @@
  * @{
  */
 
+typedef enum {
+ NEW_TRANSMISSION_HARQ,
+ RETRANSMISSION_HARQ
+} harq_result_t;
+
 //#if defined(UPGRADE_RAT_NR)
 #if 1
 typedef struct {
   /// HARQ process id
   uint8_t harq_id;
+  /// HARQ rx status
+  harq_result_t rx_status;
   /// ACK bits (after decoding) 0:NACK / 1:ACK / 2:DTX
   uint8_t ack;
   /// send status (for PUCCH)
@@ -81,6 +89,8 @@ typedef struct {
   uint8_t first_tx;
   /// Last Ndi received for this process on DCI (used for C-RNTI only)
   uint8_t DCINdi;
+  /// HARQ tx status
+  harq_result_t tx_status;
   /// Flag indicating that this ULSCH has a new packet (start of new round)
   //  uint8_t Ndi;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
@@ -145,7 +155,6 @@ typedef struct {
   //  int calibration_flag;
   /// Number of soft channel bits
   uint32_t G;
-
   // decode phich
   uint8_t decode_phich;
 } NR_UL_UE_HARQ_t;
@@ -159,7 +168,7 @@ typedef struct {
 #if 1
   // Pointers to HARQ processes for the ULSCH
   NR_UL_UE_HARQ_t *harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES];
-  int harq_process_id[NR_MAX_SLOTS_PAR_FRAME];
+  int harq_process_id[NR_MAX_SLOTS_PER_FRAME];
   // UL number of harq processes
   uint8_t number_harq_processes_for_pusch;
 #endif 
@@ -211,6 +220,8 @@ typedef struct {
   uint8_t cooperation_flag;
   /// RNTI attributed to this ULSCH
   uint16_t rnti;
+  /// RNTI type
+  uint8_t rnti_type;
   /// f_PUSCH parameter for PUSCH power control
   int16_t f_pusch;
   /// Po_PUSCH - target output power for PUSCH
@@ -311,6 +322,8 @@ typedef struct {
 typedef struct {
   /// RNTI
   uint16_t rnti;
+  /// RNTI type
+  uint8_t rnti_type;
   /// Active flag for DLSCH demodulation
   uint8_t active;
   /// Transmission mode

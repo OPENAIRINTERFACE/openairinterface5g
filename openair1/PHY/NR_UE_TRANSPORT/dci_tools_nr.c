@@ -39,6 +39,7 @@
 #endif
 #include "assertions.h"
 
+#include "SCHED_NR_UE/harq_nr.h"
 
 //#define DEBUG_HARQ
 
@@ -4180,6 +4181,22 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
     #endif
   }
 
+  /* store rnti type */
+  for (int k=0; k < TOTAL_NBR_SCRAMBLED_VALUES; k++) {
+    if (rnti == crc_scrambled_values[k]) {
+      if ((dci_format == format1_0) || (dci_format == format1_1)) {
+        pdlsch0->rnti_type = k;
+      }
+      else  {
+        ulsch0->rnti_type = k;
+      }
+    }
+  }
+
+  if (j == TOTAL_NBR_SCRAMBLED_VALUES) {
+    LOG_E(PHY, "Fatal error in DCI due to unknown RNTI type at line %d in function %s of file %s \n", __LINE__ , __func__, __FILE__);
+  }
+
   if ((dci_format == format1_0) || (dci_format == format1_1)) {
     if (rnti==crc_scrambled_values[_SI_RNTI_]) {
       ue->dlsch_SI[eNB_id]->active = 1;
@@ -4335,9 +4352,6 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
             start_RB = n_RB_DLBWP - start_RB - 1;
           }
           pdlsch0_harq->nb_rb = l_RB;
-          pdlsch0->current_harq_pid = nr_pdci_info_extracted->harq_process_number;
-          pdlsch0->active           = 1;
-          pdlsch0->rnti             = rnti;
         }
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->freq_dom_resource_assignment_DL=%x, RIV = %d\n",nr_pdci_info_extracted->freq_dom_resource_assignment_DL,nr_pdci_info_extracted->freq_dom_resource_assignment_DL);
@@ -4534,30 +4548,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
 
       case NDI: // 25 NDI: (field defined for format0_0,format0_1,format1_0,-,-,-,-,-)
         nr_pdci_info_extracted->ndi                              = (uint8_t)(((((*(uint64_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format-15]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format-15]));
-        if (dci_format == format0_0 || dci_format == format0_1) {
-          ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi = nr_pdci_info_extracted->ndi;
-          if (ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->first_tx==1) {
-            ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->first_tx=0;
-            ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi= nr_pdci_info_extracted->ndi;
-            ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->round = 0;
-          } else {
-            if (ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi != nr_pdci_info_extracted->ndi) { // new SDU opportunity
-              ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi= nr_pdci_info_extracted->ndi;
-              ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->round = 0;
-            }
-          }
-        } else {
-          if (rnti == crc_scrambled_values[_TC_RNTI_]) { //fix for standalone Contention Resolution Id
-            pdlsch0_harq->DCINdi = (uint8_t)-1;
-          } else {
-            if ((prev_ndi != nr_pdci_info_extracted->ndi) || (pdlsch0_harq->first_tx==1)) {
-              pdlsch0_harq->round    = 0;
-              pdlsch0_harq->first_tx = 0;
-              pdlsch0_harq->status   = ACTIVE;
-            }
-            pdlsch0_harq->DCINdi = nr_pdci_info_extracted->ndi;
-          }
-        }
+
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->ndi=%x\n",nr_pdci_info_extracted->ndi);
         #endif
@@ -4565,29 +4556,12 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
 
       case RV: // 26 RV: (field defined for format0_0,format0_1,format1_0,-,-,-,-,-)
         nr_pdci_info_extracted->rv                               = (uint8_t)(((((*(uint64_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format-15]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format-15]));
+
         if (dci_format == format0_0 || dci_format == format0_1)
           ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->rvidx = nr_pdci_info_extracted->rv;
         else
           pdlsch0_harq->rvidx = nr_pdci_info_extracted->rv;
-        if ((prev_ndi == nr_pdci_info_extracted->ndi) && (pdlsch0_harq->rvidx != 0)) { // NDI has not been toggled but rv was increased by eNB: retransmission
-          if (pdlsch0_harq->status == SCH_IDLE) {
-                        // packet was actually decoded in previous transmission (ACK was missed by eNB)
-                        // however, the round is not a good check as it might have been decoded in a retransmission prior to this one.
-                        // skip pdsch decoding and report ack
-            
-            pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.ack = 1;
-            pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.send_harq_status;
-#if 0            
-            pdlsch0->active       = 0;
-            pdlsch0->harq_ack[nr_tti_rx].ack = 1;
-            pdlsch0->harq_ack[nr_tti_rx].harq_id = nr_pdci_info_extracted->harq_process_number;
-            pdlsch0->harq_ack[nr_tti_rx].send_harq_status = 1;
-#endif            
-          } else { // normal retransmission, nothing special to do
-          }
-        } else {
-          pdlsch0_harq->status   = ACTIVE;
-        }
+
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
          printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->rv=%x\n",nr_pdci_info_extracted->rv);
         #endif
@@ -4595,7 +4569,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
 
       case HARQ_PROCESS_NUMBER: // 27 HARQ_PROCESS_NUMBER: (field defined for format0_0,format0_1,format1_0,format1_1,-,-,-,-)
         nr_pdci_info_extracted->harq_process_number              = (uint8_t)(((((*(uint64_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format-15]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format-15]));
-        pdlsch0->current_harq_pid = nr_pdci_info_extracted->harq_process_number;
+
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->harq_process_number=%x\n",nr_pdci_info_extracted->harq_process_number);
         #endif
@@ -4607,8 +4581,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
                // 2 if one serving cell is configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 bits are the counter DAI
                // 0 otherwise
         nr_pdci_info_extracted->dai                              = (uint8_t)(((((*(uint64_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format-15]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format-15]));
-        pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.vDAI_DL = nr_pdci_info_extracted->dai+1;
-        //pdlsch0->harq_ack[nr_tti_rx].vDAI_DL = nr_pdci_info_extracted->dai+1;
+
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->dai=%x\n",nr_pdci_info_extracted->dai);
         #endif
@@ -4811,10 +4784,12 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
         printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->reserved_nr_dci=%x\n",nr_pdci_info_extracted->reserved_nr_dci);
 #endif
         break;
-
       }
     }
   }
+
+  /* process harq ->  set dlsch[0]->harq_processes[dlsch[0]->current_harq_pid].rx_status give NEW TRANSMISSION or RETRANSMISSION */
+  get_dci_info_for_harq(ue, nr_pdci_info_extracted, pdlsch0, ulsch0, nr_tti_rx, k_offset);
 
   #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
     printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> Ending function nr_extract_dci_info()\n");

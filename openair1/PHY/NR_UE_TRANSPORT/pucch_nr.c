@@ -453,7 +453,9 @@ void nr_generate_pucch0(int32_t **txdataF,
     PUCCH_GroupHopping=0;
     n_id=10;
     PUCCH_Frequency_Hopping = 0;
+#ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation: variable initialization for test\n");
+#endif
   /////////////////////////////////////////////////////// ending variables initialization for test
 
   // x_n contains the sequence r_u_v_alpha_delta(n)
@@ -862,7 +864,7 @@ inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,
   for (i=0;i<M_bit;i++) {
     c = (uint8_t)((s>>i)&1);
     btilde[i] = (((B>>i)&1) ^ c);
-    #ifndef DEBUG_NR_PUCCH_TX
+    #ifdef DEBUG_NR_PUCCH_TX
       printf("\t\t\t btilde[%d]=%lx from scrambled bit %d\n",i,btilde[i],((B>>i)&1));
     #endif
   }
@@ -1303,7 +1305,7 @@ void nr_generate_pucch3_4(int32_t **txdataF,
         z_im[l*(12*nrofPRB)+k] = z_im[l*(12*nrofPRB)+k]
                                + (int16_t)(((int32_t)round(32767/sqrt(12*nrofPRB))*(int16_t)((((int32_t)y_n_im[l*(12*nrofPRB)+m] * (int16_t)round(32767 * cos(2*M_PI*m*k/(12*nrofPRB))))>>15)
                                                                                            - (((int32_t)y_n_re[l*(12*nrofPRB)+m] * (int16_t)round(32767 * sin(2*M_PI*m*k/(12*nrofPRB))))>>15)))>>15);
-        #ifndef DEBUG_NR_PUCCH_TX
+        #ifdef DEBUG_NR_PUCCH_TX
           printf("\t [nr_generate_pucch3_4] transform precoding for formats 3 and 4: (l,k,m)=(%d,%d,%d)\tz(%d)   = \t(%d, %d)\n",
                   l,k,m,l*(12*nrofPRB)+k,z_re[l*(12*nrofPRB)+k],z_im[l*(12*nrofPRB)+k]);
         #endif
