@@ -11,7 +11,7 @@
 #include "SIMULATION/TOOLS/sim.h"
 
 //#define DEBUG_POLAR_PARAMS
-#define DEBUG_DCI_POLAR_PARAMS
+//#define DEBUG_DCI_POLAR_PARAMS
 
 int main(int argc, char *argv[]) {
 
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
 				modulatedInput[i]=(-1)/sqrt(2);
 
 			channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
-			printf("%f\n",channelOutput[i]);
+			//printf("%f\n",channelOutput[i]);
 		}
 
 
@@ -273,8 +273,8 @@ int main(int argc, char *argv[]) {
 	print_meas(&timeDecoder,"polar_decoder",NULL,NULL);
 
 	fclose(logFile);
-	free(testInput);
-	free(encoderOutput);
+	//free(testInput);
+	//free(encoderOutput);
 	free(modulatedInput);
 	free(channelOutput);
 	free(estimatedOutput);
