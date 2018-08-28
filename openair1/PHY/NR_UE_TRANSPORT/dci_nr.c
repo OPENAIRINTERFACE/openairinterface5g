@@ -2934,7 +2934,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     pdcch_channel_level(pdcch_vars[eNB_id]->dl_ch_estimates_ext,
                         frame_parms,
                         avgP,
-						n_rb_offset);
+						coreset_nbr_rb);
     avgs = 0;
     for (aatx = 0; aatx < frame_parms->nb_antenna_ports_eNB; aatx++)
       for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++)
@@ -4146,8 +4146,10 @@ void nr_dci_decoding_procedure0(int s,                                          
         printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we enter function dci_decoding(sizeof_bits=%d L=%d) -----\n",sizeof_bits,L);
         printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
       #endif
-      //&pdcch_vars[eNB_id]->e_rx[CCEind * 54]
       
+      for (int m=0; m < (nCCE[p]*6*9*2); m++)
+        polar_input[m] = (pdcch_vars[eNB_id]->e_rx[CCEind * 54+m]>0) ? (1.0):(-1.0);
+
       nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, sizeof_bits, L);
 	  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, sizeof_bits,L);
       
